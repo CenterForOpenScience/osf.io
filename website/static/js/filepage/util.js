@@ -41,11 +41,11 @@ var PanelToggler = {
         //Dirty hack because of the treebeard redraw issues
         //Dont ever do this
         if (shown === 2) {
-            $('#mfrIframeParent').removeClass().addClass('col-md-6');
-            $('.file-view-panels').removeClass().addClass('file-view-panels').addClass('col-md-6');
+            $('#mfrIframeParent').removeClass().addClass('col-md-5');
+            $('.file-view-panels').removeClass().addClass('file-view-panels').addClass('col-md-7');
         } else if (shown === 1) {
-            $('#mfrIframeParent').removeClass().addClass('col-md-9');
-            $('.file-view-panels').removeClass().addClass('file-view-panels').addClass('col-md-3');
+            $('#mfrIframeParent').removeClass().addClass('col-md-8');
+            $('.file-view-panels').removeClass().addClass('file-view-panels').addClass('col-md-4');
         } else {
             $('#mfrIframeParent').removeClass().addClass('col-md-11');
             $('.file-view-panels').removeClass().addClass('file-view-panels').addClass('col-md-1');
