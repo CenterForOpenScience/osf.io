@@ -91,7 +91,8 @@ def update_status(node, addon, status, meta={}):
 
 def delete_registration_tree(node):
     node.is_deleted = True
-    node.registered_from = None
+    if not getattr(node.embargo, 'for_existing_registration', False):
+        node.registered_from = None
     node.save()
     for child in node.nodes:
         delete_registration_tree(child)
