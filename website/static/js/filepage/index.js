@@ -35,7 +35,7 @@ var FileViewPage = {
             content: waterbutler.buildDownloadUrl(self.file.path, self.file.provider, self.node.id, {accept_url: false, mode: 'render'}),
         });
 
-        self.deleteFile = function() {
+        $(document).on('fileviewpage:delete', function() {
             bootbox.confirm({
                 title: 'Delete file?',
                 message: '<p class="overflow">' +
@@ -55,31 +55,18 @@ var FileViewPage = {
                     });
                 }
             });
-        };
+        });
 
-        self.downloadFile = function() {
+        $(document).on('fileviewpage:download', function() {
             window.location = self.file.urls.content;
             return false;
-        };
+        });
 
         self.shareJSObservables = {
             activeUsers: m.prop([]),
             status: m.prop('connecting'),
             userId: self.context.currentUser.id
         };
-
-        revisionsHeader = m('.row', [
-            m('.col-md-6', 'Revisions'),
-            m('.col-md-6', [
-                m('.pull-right.btn-group.btn-group-sm', [
-                    m('button.btn.btn-danger', {onclick: self.deleteFile}, 'Delete'),
-                    m('button.btn.btn-success', {
-                        onclick: self.downloadFile,
-                        href: '?' + $.param($.extend(true, {}, $osf.urlParams(), {download: true}))
-                    }, 'Download')
-                ])
-            ])
-        ]);
 
         editHeader = function() {
             return m('.row', [
@@ -150,7 +137,7 @@ var FileViewPage = {
         };
 
         self.panels = [
-            Panel('Revisions', revisionsHeader, FileRevisionsTable, [self.file, self.node, self.enableEditing], true),
+            Panel('Revisions', undefined, FileRevisionsTable, [self.file, self.node, self.enableEditing], true),
             // View has been removed to prefer the iframe method described below
             // Panel('View', null, FileRenderer, [self.file.urls.render, self.file.error], true),
         ];
