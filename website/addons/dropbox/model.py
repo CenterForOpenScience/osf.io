@@ -10,6 +10,7 @@ from modularodm import fields
 from framework.auth import Auth
 from website.addons.base import exceptions
 from website.addons.base import AddonUserSettingsBase, AddonNodeSettingsBase, GuidFile
+from website.addons.base import StorageAddonBase
 
 from website.addons.dropbox.utils import clean_path, DropboxNodeLogger
 
@@ -105,9 +106,7 @@ class DropboxUserSettings(AddonUserSettingsBase):
     def __repr__(self):
         return u'<DropboxUserSettings(user={self.owner.username!r})>'.format(self=self)
 
-
-class DropboxNodeSettings(AddonNodeSettingsBase):
-
+class DropboxNodeSettings(StorageAddonBase, AddonNodeSettingsBase):
     user_settings = fields.ForeignField(
         'dropboxusersettings', backref='authorized'
     )
@@ -117,6 +116,10 @@ class DropboxNodeSettings(AddonNodeSettingsBase):
     #: Information saved at the time of registration
     #: Note: This is unused right now
     registration_data = fields.DictionaryField()
+
+    @property
+    def folder_name(self):
+        return self.folder
 
     @property
     def display_name(self):

@@ -4,14 +4,22 @@ var ko = require('knockout');
 var bootbox = require('bootbox');
 var $osf = require('js/osfHelpers');
 
-var MetaData = require('../metadata_1.js');
+var MetaData = require('js/metadata_1.js');
 var ctx = window.contextVars;
+
+require('pikaday-css');
+
 /**
     * Unblock UI and display error modal
     */
-function registration_failed() {
+function registrationFailed() {
     $osf.unblock();
     bootbox.alert('Registration failed');
+}
+
+function postRegisterNode() {
+    $('#registration_template').children().remove();
+    $osf.block('<h4>Your registration request was submitted successfully. Files are being copied to the newly created registration, and you will recieve an email notification containing a link to the registration when the copying is finished.</h4> <br /> <h4>Click <a href="' + ctx.node.urls.web + 'registrations/">here</a> to return the to registrations page.</h4>');
 }
 
 function registerNode(data) {
@@ -27,14 +35,15 @@ function registerNode(data) {
         contentType: 'application/json',
         dataType: 'json'
     }).done(function(response) {
-        if (response.status === 'success') {
-            window.location.href = response.result;
+        if (response.status === 'initiated') {
+            $osf.unblock();
+            postRegisterNode();
         }
         else if (response.status === 'error') {
-            registration_failed();
+            registrationFailed();
         }
     }).fail(function() {
-        registration_failed();
+        registrationFailed();
     });
 
     // Stop event propagation
@@ -65,6 +74,19 @@ $(document).ready(function() {
 
     $('#registration_template form').on('submit', function() {
 
+        // If embargo is requested, verify its end date, and inform user if date is out of range
+        if (registrationViewModel.embargoAddon.requestingEmbargo()) {
+            if (!registrationViewModel.embargoAddon.isEmbargoEndDateValid()) {
+                registrationViewModel.continueText('');
+                $osf.growl(
+                    'Invalid embargo end date',
+                    'Please choose a date more than two days, but less than one year, from today.',
+                    'warning'
+                );
+                $('#endDatePicker').focus();
+                return false;
+            }
+        }
         // Serialize responses
         var serialized = registrationViewModel.serialize(),
             data = serialized.data,
