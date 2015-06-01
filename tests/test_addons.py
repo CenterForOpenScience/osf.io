@@ -9,6 +9,7 @@ import webtest
 import furl
 import itsdangerous
 from modularodm import storage
+from modularodm.exceptions import ValidationError
 
 from framework.auth import signing
 from framework.auth.core import Auth
@@ -20,6 +21,8 @@ from website import settings
 from website.util import api_url_for, rubeus
 from website.addons.base import exceptions, GuidFile
 from website.project import new_private_link
+from website.project.model import NodeLog
+from website.project.utils import serialize_node
 from website.project.views.node import _view_project as serialize_node
 from website.addons.base import AddonConfig, AddonNodeSettingsBase, views
 from website.addons.github.model import AddonGitHubOauthSettings
@@ -753,3 +756,71 @@ class TestLegacyViews(OsfTestCase):
             provider='mycooladdon',
         )
         assert_urls_equal(res.location, expected_url)
+
+
+class TestFileTags(OsfTestCase):
+
+    def setUp(self):
+        super(TestFileTags, self).setUp()
+        self.user = AuthUserFactory()
+        self.project = ProjectFactory(creator=self.user)
+
+        self.user.add_addon('github')
+        self.project.add_addon('github', auth=Auth(self.user))
+
+        self.user_addon = self.user.get_addon('github')
+        self.node_addon = self.project.get_addon('github')
+        self.oauth = AddonGitHubOauthSettings(
+            github_user_id='denbarell',
+            oauth_access_token='Truthy'
+        )
+
+        self.oauth.save()
+
+        self.user_addon.oauth_settings = self.oauth
+        self.user_addon.save()
+
+        self.node_addon.user_settings = self.user_addon
+        self.node_addon.save()
+
+        self.path = 'cloudfiles'
+        self.guid, _ = self.node_addon.find_or_create_file_guid('/' + self.path)
+
+    def test_add_tag(self):
+        self.guid.add_tag('footag', auth=Auth(self.user), node=self.project)
+        assert_in('footag', self.guid.tags)
+        assert_equal(
+            self.project.logs[-1].action,
+            NodeLog.FILETAG_ADDED
+        )
+
+    def test_add_tag_too_long(self):
+        with assert_raises(ValidationError):
+            self.guid.add_tag('a' * 129, auth=Auth(self.user), node=self.project)
+        assert_equal(0, len(self.guid.tags))
+
+    def test_add_tag_already_present(self):
+        assert_equal(0, len(self.guid.tags))
+        self.guid.add_tag('footag', auth=Auth(self.user), node=self.project)
+        assert_in('footag', self.guid.tags)
+        assert_equal(1, len(self.guid.tags))
+        self.guid.add_tag('footag', auth=Auth(self.user), node=self.project)
+        assert_equal(1, len(self.guid.tags))
+
+    def test_remove_tag(self):
+        self.guid.add_tag('footag', auth=Auth(self.user), node=self.project)
+        assert_in('footag', self.guid.tags)
+        self.guid.remove_tag('footag', auth=Auth(self.user), node=self.project)
+        assert_not_in('footag', self.guid.tags)
+        assert_equal(
+            self.project.logs[-1].action,
+            NodeLog.FILETAG_REMOVED
+        )
+
+    def test_remove_tag_not_present(self):
+        assert_equal(0, len(self.guid.tags))
+        self.guid.remove_tag('footag', auth=Auth(self.user), node=self.project)
+        assert_equal(
+            self.project.logs[-1].action,
+            NodeLog.ADDON_ADDED
+        )
