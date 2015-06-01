@@ -18,20 +18,23 @@
 
 <div class="page-header">
     <div class="profile-fullname">
-        <span class="profile-avatar">
-        % if user['is_profile']:
-            <a href="#changeAvatarModal" data-toggle="modal"><img id='profile-gravatar' src="${profile['gravatar_url']}"
-                    rel="tooltip" title="Click to change avatar"/></a>
-        % else:
-            <img id='profile-gravatar' src="${profile['gravatar_url']}"/>
-        % endif
-        </span>
-    <span id="profileFullname" class="h1 overflow ">${profile["fullname"]}</span>
-        <span class="edit-profile-settings">
-        % if user['is_profile']:
-            <a href="/settings/">Edit your profile</a></span>
-        % endif
+        <div class="avatar_div">
+            % if user['is_profile']:
+                <a href="#changeAvatarModal" data-toggle="modal"><img id='profile-gravatar' src="${profile['gravatar_url']}"
+                        rel="tooltip" title="Click to change avatar"/></a>
+            % else:
+                <img id='profile-gravatar' src="${profile['gravatar_url']}"/>
+            % endif
+        </div>
+        <div id="profileFullname" class="h1 overflow name_div">
+            ${profile["fullname"]}
+        </div>
     </div>
+    <span class="edit-profile-settings">
+        % if user['is_profile']:
+            <a href="/settings/">Edit your profile</a>
+        % endif
+    </span>
 </div><!-- end-page-header -->
 
 

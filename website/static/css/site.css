@@ -1768,6 +1768,15 @@ span#profileFullname{
     bottom: 0;
 }
 
+.avatar_div {
+    display: table-cell;
+    vertical-align: middle;
+}
+.name_div {
+    display: table-cell;
+    vertical-align: middle;
+}
+
 .scripted {display: none;}
 
 .pointer {cursor: pointer;}
