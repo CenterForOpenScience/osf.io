@@ -353,11 +353,11 @@ function doItemOp(operation, to, from, rename, conflict) {
         from.move(to.id);
     }
 
-    tb.redraw();
-
     if (to.data.provider === from.provider) {
         tb.pendingFileOps.push(from.id);
     }
+    _fangornOrderFolder.call(tb, from.parent());
+
 
     $.ajax({
         type: 'POST',
@@ -413,8 +413,8 @@ function doItemOp(operation, to, from, rename, conflict) {
             from.open = true;
             from.load = true;
         }
-
-        tb.redraw();
+        _fangornOrderFolder.call(tb, from.parent());
+        // no need to redraw because fangornOrderFolder does it
     }).fail(function(xhr, textStatus) {
         if (to.data.provider === from.provider) {
             tb.pendingFileOps.pop();
@@ -450,7 +450,7 @@ function doItemOp(operation, to, from, rename, conflict) {
             }
         });
 
-        tb.redraw();
+        _fangornOrderFolder.call(tb, from.parent());
     });
 }
 
@@ -1007,7 +1007,7 @@ function _fangornOrderFolder(tree) {
     // Checking if this column does in fact have sorting
     if (this.isSorted[0]) {
         var sortDirection = this.isSorted[0].desc ? 'desc' : 'asc';
-        tree.sortChildren(this, sortDirection, 'text', 0);
+        tree.sortChildren(this, sortDirection, 'text', 0, 1);
         this.redraw();
     }
 }
