@@ -1,4 +1,4 @@
-var $ = require('jquery');
+    var $ = require('jquery');
 var m = require('mithril');
 var Treebeard = require('treebeard');
 

@@ -125,7 +125,7 @@ def add_poster_by_email(conference, message):
     )
 
 
-def _render_conference_node(node, idx):
+def _render_conference_node(node, idx, downloads=False):
     storage_settings = node.get_addon('osfstorage')
     records = storage_settings.root_node.children
     try:
@@ -146,18 +146,21 @@ def _render_conference_node(node, idx):
         download_url = ''
         download_count = 0
 
-    author = node.visible_contributors[0]
+    if not downloads:
+        author = node.visible_contributors[0]
 
-    return {
-        'id': idx,
-        'title': node.title,
-        'nodeUrl': node.url,
-        'author': author.family_name,
-        'authorUrl': node.creator.url,
-        'category': 'talk' if 'talk' in node.system_tags else 'poster',
-        'download': download_count,
-        'downloadUrl': download_url,
-    }
+        return {
+            'id': idx,
+            'title': node.title,
+            'nodeUrl': node.url,
+            'author': author.family_name,
+            'authorUrl': node.creator.url,
+            'category': 'talk' if 'talk' in node.system_tags else 'poster',
+            'download': download_count,
+            'downloadUrl': download_url,
+        }
+    else:
+        return download_count
 
 
 def conference_data(meeting):
@@ -215,6 +218,14 @@ def conference_view(**kwargs):
         )
         projects = Node.find(query)
         submissions = projects.count()
+        downloads_list = [
+            _render_conference_node(each, idx, downloads=True)
+            for idx, each in enumerate(projects)
+        ]
+        total = 0
+        for count in downloads_list:
+            total += count
+
         if submissions < settings.CONFERNCE_MIN_COUNT:
             continue
         meetings.append({
@@ -222,6 +233,7 @@ def conference_view(**kwargs):
             'active': conf.active,
             'url': web_url_for('conference_results', meeting=conf.endpoint),
             'submissions': submissions,
+            'downloads': total,
         })
     meetings.sort(key=lambda meeting: meeting['submissions'], reverse=True)
 
