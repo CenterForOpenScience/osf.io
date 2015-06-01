@@ -1,3 +1,4 @@
+
 import requests
 import json
 
@@ -21,10 +22,8 @@ from website.archiver import (
 )
 from website.archiver import utils as archiver_utils
 
-from website import mails
 from website.project.model import Node
 from website.project import signals as project_signals
-from website.mails import send_mail
 from website import settings
 from website.app import init_addons, do_set_backends
 from website.addons.base import StorageAddonBase
@@ -240,21 +239,3 @@ def archive(self, src_pk, dst_pk, user_pk):
     dst.archive_task_id = self.request.id
     dst.save()
     stat_node.delay(src_pk, dst_pk, user_pk)
-
-
-@celery_app.task
-def send_success_message(dst_pk):
-    """Send success email when archive completes
-
-    :param dst_pk: primary key of registration Node
-    :return: None
-    """
-    dst = Node.load(dst_pk)
-    user = dst.creator
-    send_mail(
-        to_addr=user.username,
-        mail=mails.ARCHIVE_SUCCESS,
-        user=user,
-        src=dst,
-        mimetype='html',
-    )

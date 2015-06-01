@@ -1,9 +1,10 @@
 from framework.tasks.handlers import enqueue_task
 
-from website.archiver.tasks import archive, send_success_message
+from website.archiver.tasks import archive
 from website.archiver.utils import (
     link_archive_provider,
     handle_archive_fail,
+    send_archiver_success_mail,
 )
 from website.archiver import (
     ARCHIVER_SUCCESS,
@@ -12,6 +13,7 @@ from website.archiver import (
 )
 
 from website.project import signals as project_signals
+from website.project import utils as project_utils
 
 @project_signals.after_create_registration.connect
 def archive_node(src, dst, user):
@@ -44,4 +46,8 @@ def archive_callback(dst):
                 dst.archived_providers
             )
         else:
-            send_success_message.delay(dst._id)
+            if dst.pending_embargo:
+                for contributor in dst.contributors:
+                    project_utils.send_embargo_mail(dst, contributor)
+            else:
+                send_archiver_success_mail(dst)

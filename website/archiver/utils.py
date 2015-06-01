@@ -10,6 +10,17 @@ from website.archiver import (
 from website import mails
 from website import settings
 
+def send_archiver_success_mail(dst):
+    user = dst.creator
+    mails.send_mail(
+        to_addr=user.username,
+        mail=mails.ARCHIVE_SUCCESS,
+        user=user,
+        src=dst,
+        mimetype='html',
+    )
+
+
 def send_archiver_size_exceeded_mails(src, user, stat_result):
     mails.send_mail(
         to_addr=settings.SUPPORT_EMAIL,
