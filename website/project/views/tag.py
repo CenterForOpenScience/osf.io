@@ -36,13 +36,11 @@ def project_tag(tag, auth, **kwargs):
 @must_have_permission('write')
 @must_not_be_registration
 def project_addtag(auth, node, **kwargs):
+
     tag = clean_tag(kwargs['tag'])
     if tag:
         try:
             node.add_tag(tag=tag, auth=auth)
-            # if kwargs is not None:
-            #     for key, value in kwargs.iteritems():
-            #         print("%s == %s" %(key,value))
             return {'status': 'success'}, http.CREATED
         except ValidationError:
             return {'status': 'error'}, http.BAD_REQUEST
