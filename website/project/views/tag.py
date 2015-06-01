@@ -68,19 +68,19 @@ def file_addtag(auth, node, guid, **kwargs):
         try:
             fileobject = Guid.load(guid).referent
             fileobject.add_tag(tag=tag, auth=auth, node=node)
-
             return {'status': 'success'}, http.CREATED
         except ValidationError:
             return {'status': 'error'}, http.BAD_REQUEST
 
 
+@must_be_valid_project # injects project
 @must_be_valid_file # injects file
 @must_have_permission('write')
 @must_not_be_registration
-def file_removetag(auth, guid, **kwargs):
+def file_removetag(auth, node, guid, **kwargs):
     tag = clean_tag(kwargs['tag'])
     if tag:
         fileobject = Guid.load(guid).referent
-        fileobject.remove_tag(tag=tag, auth=auth)
+        fileobject.remove_tag(tag=tag, auth=auth, node=node)
         return {'status': 'success'}
 

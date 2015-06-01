@@ -359,20 +359,24 @@ class GuidFile(GuidStoredObject):
     def revision(self):
         return getattr(self, '_revision', None)
 
-    def remove_tag(self, tag, auth, save=True):
+    def remove_tag(self, tag, auth, node, save=True):
         if tag in self.tags:
             self.tags.remove(tag)
-            self.add_log(
+            node.add_log(
                 action=NodeLog.FILETAG_REMOVED,
                 params={
+                    'node': node._primary_key,
                     'file': self._id,
                     'tag': tag,
+                    'path': self.waterbutler_path.lstrip('/'),
+                    'url': self.guid_url
                 },
                 auth=auth,
                 save=False,
             )
             if save:
                 self.save()
+                node.save()
 
     def add_tag(self, tag, auth, node, save=True):
         if tag not in self.tags:
