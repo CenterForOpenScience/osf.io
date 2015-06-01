@@ -1766,11 +1766,13 @@ div.profile-fullname{
     display: table-cell;
     vertical-align: middle;
 }
+
 .name_div {
     display: table-cell;
     vertical-align: middle;
     padding-left: 10px;
     margin-bottom: 10px;
+    word-break: break-all;
 }
 
 .scripted {display: none;}
