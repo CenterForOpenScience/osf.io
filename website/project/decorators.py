@@ -16,6 +16,7 @@ from website.models import Node
 
 _load_node_or_fail = lambda pk: get_or_http_error(Node, pk)
 
+
 def _kwargs_to_nodes(kwargs):
     """Retrieve project and component objects from keyword arguments.
 
@@ -38,19 +39,62 @@ def _kwargs_to_nodes(kwargs):
     elif nid and not pid:
         node = _load_node_or_fail(nid)
     elif not pid and not nid:
-        raise HTTPError(http.NOT_FOUND)
+        raise HTTPError(
+            http.NOT_FOUND,
+            data={
+                'message_short': 'Node not found',
+                'message_long': "No Node with that primary key could be found",
+            }
+        )
     return parent, node
+
 
 def _inject_nodes(kwargs):
     kwargs['parent'], kwargs['node'] = _kwargs_to_nodes(kwargs)
 
-def must_be_valid_project(func):
+
+def must_be_valid_project(func=None, retractions_valid=False):
+    """ Ensures permissions to retractions are never implicitly granted. """
 
     # TODO: Check private link
+    def must_be_valid_project_inner(func):
+
+        @functools.wraps(func)
+        def wrapped(*args, **kwargs):
+
+            _inject_nodes(kwargs)
+
+            if not retractions_valid and getattr(kwargs['node'].retraction, 'is_retracted', False):
+                raise HTTPError(
+                    http.BAD_REQUEST,
+                    data=dict(message_long='Viewing retracted registrations is not permitted')
+                )
+            else:
+                return func(*args, **kwargs)
+
+        return wrapped
+
+    if func:
+        return must_be_valid_project_inner(func)
+
+    return must_be_valid_project_inner
+
+
+def must_be_public_registration(func):
 
     @functools.wraps(func)
     def wrapped(*args, **kwargs):
+
         _inject_nodes(kwargs)
+
+        node = kwargs['node']
+
+        if not node.is_public or not node.is_registration:
+            raise HTTPError(
+                http.BAD_REQUEST,
+                data=dict(message_long='Must be a public registration to view')
+            )
+
         return func(*args, **kwargs)
 
     return wrapped
@@ -64,8 +108,33 @@ def must_not_be_registration(func):
         _inject_nodes(kwargs)
         node = kwargs['node']
 
-        if node.is_registration:
-            raise HTTPError(http.BAD_REQUEST)
+        if not node.archiving and node.is_registration:
+            raise HTTPError(
+                http.BAD_REQUEST,
+                data={
+                    'message_short': 'Registered Nodes are immutable',
+                    'message_long': "The operation you're trying to do cannot be applied to registered Nodes, which are immutable",
+                }
+            )
+        return func(*args, **kwargs)
+
+    return wrapped
+
+def must_be_registration(func):
+
+    @functools.wraps(func)
+    def wrapped(*args, **kwargs):
+        _inject_nodes(kwargs)
+        node = kwargs['node']
+
+        if not node.is_registration:
+            raise HTTPError(
+                http.BAD_REQUEST,
+                data={
+                    'message_short': 'Registered Nodes only',
+                    'message_long': "This view is restricted to registered Nodes only",
+                }
+            )
         return func(*args, **kwargs)
 
     return wrapped
@@ -99,7 +168,6 @@ def check_key_expired(key, node, url):
         url = furl(url).add({'status': 'expired'}).url
 
     return url
-
 
 def _must_be_contributor_factory(include_public):
     """Decorator factory for authorization wrappers. Decorators verify whether

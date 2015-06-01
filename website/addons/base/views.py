@@ -169,7 +169,7 @@ def get_auth(**kwargs):
         'credentials': credentials,
         'settings': settings,
         'callback_url': node.api_url_for(
-            'create_waterbutler_log',
+            ('create_waterbutler_log' if not node.is_registration else 'registration_callbacks'),
             _absolute=True,
         ),
     }

@@ -7,6 +7,7 @@ import logging
 import unittest
 import functools
 import datetime as dt
+from flask import g
 
 import blinker
 import httpretty
@@ -141,6 +142,8 @@ class AppTestCase(unittest.TestCase):
         self.app = TestApp(test_app)
         self.context = test_app.test_request_context()
         self.context.push()
+        with self.context:
+            g._celery_tasks = []
 
     def tearDown(self):
         super(AppTestCase, self).tearDown()
