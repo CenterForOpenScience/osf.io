@@ -4,8 +4,8 @@ from website.archiver.tasks import archive
 from website.archiver.utils import (
     link_archive_provider,
     handle_archive_fail,
-    send_archiver_success_mail,
 )
+from website.archiver import utils as archiver_utils
 from website.archiver import (
     ARCHIVER_SUCCESS,
     ARCHIVER_FAILURE,
@@ -50,4 +50,4 @@ def archive_callback(dst):
                 for contributor in dst.contributors:
                     project_utils.send_embargo_mail(dst, contributor)
             else:
-                send_archiver_success_mail(dst)
+                archiver_utils.send_archiver_success_mail(dst)

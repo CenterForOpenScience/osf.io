@@ -389,6 +389,14 @@ class TestArchiverUtils(ArchiverTestCase):
         archiver_utils.delete_registration_tree(reg)
         assert_false(Node.find(Q('_id', 'in', reg_ids) & Q('is_deleted', 'eq', False)).count())
 
+    def test_delete_registration_tree_deletes_backrefs(self):
+        proj = factories.NodeFactory()
+        factories.NodeFactory(parent=proj)
+        comp2 = factories.NodeFactory(parent=proj)
+        factories.NodeFactory(parent=comp2)
+        reg = factories.RegistrationFactory(project=proj)
+        archiver_utils.delete_registration_tree(reg)
+        assert_false(proj.node__registrations)
 
 class TestArchiverListeners(ArchiverTestCase):
 
@@ -416,24 +424,19 @@ class TestArchiverListeners(ArchiverTestCase):
             'status': ARCHIVER_SUCCESS
         }
         self.dst.save()
-        with mock.patch('website.archiver.tasks.send_success_message') as mock_send:
+        with mock.patch('website.archiver.utils.send_archiver_success_mail') as mock_send:
             with mock.patch('website.archiver.utils.handle_archive_fail') as mock_fail:
                 listeners.archive_callback(self.dst)
         assert_false(mock_send.called)
         assert_false(mock_fail.called)
 
-    @mock.patch('website.archiver.tasks.send_success_message.delay')
+    @mock.patch('website.archiver.utils.send_archiver_success_mail')
     def test_archive_callback_done_success(self, mock_send):
-        self.dst.archived_providers = {
-            addon: {
-                'status': ARCHIVER_SUCCESS
-            } for addon in settings.ADDONS_ARCHIVABLE if addon not in ['osfstorage', 'wiki']
-        }
+        for addon in self.dst.archived_providers:
+            self.dst.archived_providers[addon]['status'] = ARCHIVER_SUCCESS
         self.dst.save()
-        with mock.patch.object(handlers, 'enqueue_task') as mock_enqueue:
-            listeners.archive_callback(self.dst)
-        send_success_message_sig = send_success_message.si(self.dst._id)
-        assert(mock_enqueue.called_with(send_success_message_sig))
+        listeners.archive_callback(self.dst)
+        mock_send.assert_called_with(self.dst)
 
     def test_archive_callback_done_errors(self):
         self.dst.archived_providers = {
