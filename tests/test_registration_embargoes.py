@@ -581,11 +581,9 @@ class RegistrationEmbargoViewsTestCase(OsfTestCase):
             u'registrationChoice': 'immediate',
             u'summary': unicode(fake.sentence())
         })
+        valid_date = datetime.datetime.now() + datetime.timedelta(days=180)
         self.valid_embargo_payload = json.dumps({
-            u'embargoEndDate': u"Thu, 01 {month} {year} 05:00:00 GMT".format(
-                month=current_month,
-                year=str(int(current_year)+1)
-            ),
+            u'embargoEndDate': unicode(valid_date.strftime('%a, %d, %B %Y %H:%M:%S')) + u' GMT',
             u'registrationChoice': 'embargo',
             u'summary': unicode(fake.sentence())
         })

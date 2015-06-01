@@ -389,6 +389,14 @@ class TestArchiverUtils(ArchiverTestCase):
         archiver_utils.delete_registration_tree(reg)
         assert_false(Node.find(Q('_id', 'in', reg_ids) & Q('is_deleted', 'eq', False)).count())
 
+    def test_delete_registration_tree_deletes_backrefs(self):
+        proj = factories.NodeFactory()
+        factories.NodeFactory(parent=proj)
+        comp2 = factories.NodeFactory(parent=proj)
+        factories.NodeFactory(parent=comp2)
+        reg = factories.RegistrationFactory(project=proj)
+        archiver_utils.delete_registration_tree(reg)
+        assert_false(proj.node__registrations)
 
 class TestArchiverListeners(ArchiverTestCase):
 
@@ -416,24 +424,29 @@ class TestArchiverListeners(ArchiverTestCase):
             'status': ARCHIVER_SUCCESS
         }
         self.dst.save()
-        with mock.patch('website.archiver.tasks.send_success_message') as mock_send:
+        with mock.patch('website.archiver.utils.send_archiver_success_mail') as mock_send:
             with mock.patch('website.archiver.utils.handle_archive_fail') as mock_fail:
                 listeners.archive_callback(self.dst)
         assert_false(mock_send.called)
         assert_false(mock_fail.called)
 
-    @mock.patch('website.archiver.tasks.send_success_message.delay')
+    @mock.patch('website.archiver.utils.send_archiver_success_mail')
     def test_archive_callback_done_success(self, mock_send):
-        self.dst.archived_providers = {
-            addon: {
-                'status': ARCHIVER_SUCCESS
-            } for addon in settings.ADDONS_ARCHIVABLE if addon not in ['osfstorage', 'wiki']
-        }
+        for addon in self.dst.archived_providers:
+            self.dst.archived_providers[addon]['status'] = ARCHIVER_SUCCESS
         self.dst.save()
-        with mock.patch.object(handlers, 'enqueue_task') as mock_enqueue:
-            listeners.archive_callback(self.dst)
-        send_success_message_sig = send_success_message.si(self.dst._id)
-        assert(mock_enqueue.called_with(send_success_message_sig))
+        listeners.archive_callback(self.dst)
+        mock_send.assert_called_with(self.dst)
+
+    @mock.patch('website.project.utils.send_embargo_email')
+    def test_archive_callback_done_embargoed(self, mock_send):
+        end_date = datetime.datetime.now() + datetime.timedelta(days=30)
+        self.dst.embargo_registration(self.user, end_date)
+        for addon in self.dst.archived_providers:
+            self.dst.archived_providers[addon]['status'] = ARCHIVER_SUCCESS
+        self.dst.save()
+        listeners.archive_callback(self.dst)
+        mock_send.assert_called_with(self.dst, self.user)
 
     def test_archive_callback_done_errors(self):
         self.dst.archived_providers = {
@@ -447,6 +460,60 @@ class TestArchiverListeners(ArchiverTestCase):
             listeners.archive_callback(self.dst)
         assert(mock_fail.called_with(ARCHIVE_COPY_FAIL, self.src, self.dst, self.user, self.dst.archived_providers))
 
+    def test_archive_tree_finished_d1(self):
+        self.dst.archived_providers = {
+            addon: {
+                'status': ARCHIVER_SUCCESS
+            }
+            for addon in ['box', 'osfstorage']
+        }
+        self.dst.save()
+        assert_true(listeners.archive_tree_finished)
+
+    def test_archive_tree_finished_d3(self):
+        proj = factories.NodeFactory()
+        child = factories.NodeFactory(parent=proj)
+        factories.NodeFactory(parent=child)
+        reg = factories.RegistrationFactory(project=proj)
+        rchild = reg.nodes[0]
+        rchild2 = rchild.nodes[0]
+        for node in [reg, rchild, rchild2]:
+            node.archived_providers = {
+                addon: {
+                    'status': ARCHIVER_SUCCESS
+                }
+                for addon in ['box', 'osfstorage']
+            }
+            node.save()
+            node.reload()
+        for node in [reg, rchild, rchild2]:
+            assert_true(listeners.archive_tree_finished(node))
+
+    def test_archive_tree_finished_false(self):
+        proj = factories.NodeFactory()
+        child = factories.NodeFactory(parent=proj)
+        factories.NodeFactory(parent=child)
+        reg = factories.RegistrationFactory(project=proj)
+        rchild = reg.nodes[0]
+        rchild2 = rchild.nodes[0]
+        for node in [reg, rchild, rchild2]:
+            node.archived_providers = {
+                addon: {
+                    'status': ARCHIVER_SUCCESS
+                }
+                for addon in ['box', 'osfstorage']
+            }
+            node.save()
+            node.reload()
+        rchild.archived_providers.update({
+            'box': {
+                'status': ARCHIVER_CHECKING,
+            },
+        })
+        rchild.save()
+        rchild.reload()
+        for node in [reg, rchild, rchild2]:
+            assert_false(listeners.archive_tree_finished(node))
 
 class TestArchiverScripts(ArchiverTestCase):
 

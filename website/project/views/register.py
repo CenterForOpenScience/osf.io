@@ -395,54 +395,6 @@ def project_before_register(auth, node, **kwargs):
     return {'prompts': prompts}
 
 
-def _send_embargo_email(node, user):
-    """ Sends pending embargo announcement email to contributors. Project
-    admins will also receive approval/disapproval information.
-    :param node: Node being embargoed
-    :param user: User to be emailed
-    """
-
-    embargo_end_date = node.embargo.end_date
-    registration_link = node.web_url_for('view_project', _absolute=True)
-    initiators_fullname = node.embargo.initiated_by.fullname
-
-    if node.has_permission(user, 'admin'):
-        approval_token = node.embargo.approval_state[user._id]['approval_token']
-        disapproval_token = node.embargo.approval_state[user._id]['disapproval_token']
-        approval_link = node.web_url_for(
-            'node_registration_embargo_approve',
-            token=approval_token,
-            _absolute=True)
-        disapproval_link = node.web_url_for(
-            'node_registration_embargo_disapprove',
-            token=disapproval_token,
-            _absolute=True)
-        approval_time_span = settings.EMBARGO_PENDING_TIME.days * 24
-
-        mails.send_mail(
-            user.username,
-            mails.PENDING_EMBARGO_ADMIN,
-            'plain',
-            user=user,
-            initiated_by=initiators_fullname,
-            approval_link=approval_link,
-            disapproval_link=disapproval_link,
-            registration_link=registration_link,
-            embargo_end_date=embargo_end_date,
-            approval_time_span=approval_time_span
-        )
-    else:
-        mails.send_mail(
-            user.username,
-            mails.PENDING_EMBARGO_NON_ADMIN,
-            user=user,
-            initiated_by=initiators_fullname,
-            registration_link=registration_link,
-            embargo_end_date=embargo_end_date,
-
-        )
-
-
 @must_be_valid_project
 @must_have_permission(ADMIN)
 @must_not_be_registration
@@ -470,6 +422,7 @@ def node_register_template_page_post(auth, node, **kwargs):
     register = node.register_node(
         schema, auth, template, json.dumps(clean_data),
     )
+    project_signals.after_create_registration.send(node, dst=register, user=auth.user)
 
     if data['registrationChoice'] == 'embargo':
         embargo_end_date = parse_date(data['embargoEndDate'], ignoretz=True)
@@ -480,9 +433,6 @@ def node_register_template_page_post(auth, node, **kwargs):
             register.save()
         except ValidationValueError as err:
             raise HTTPError(http.BAD_REQUEST, data=dict(message_long=err.message))
-
-        for contributor in register.contributors:
-            _send_embargo_email(register, contributor)
     else:
         register.is_public = True
         register.save()

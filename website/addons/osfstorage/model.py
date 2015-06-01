@@ -73,8 +73,8 @@ class OsfStorageNodeSettings(StorageAddonBase, AddonNodeSettingsBase):
         clone.owner = registration
         clone.save()
 
-        clone.root_node = utils.copy_files(self.root_node, clone)
-        clone.save()
+        # handler in Archiver-- clone.root_node = utils.copy_files(self.root_node, clone)
+        # clone.save()
 
         return clone, None
 

@@ -10,6 +10,16 @@ from website.archiver import (
 from website import mails
 from website import settings
 
+def send_archiver_success_mail(dst):
+    user = dst.creator
+    mails.send_mail(
+        to_addr=user.username,
+        mail=mails.ARCHIVE_SUCCESS,
+        user=user,
+        src=dst,
+        mimetype='html',
+    )
+
 def send_archiver_size_exceeded_mails(src, user, stat_result):
     mails.send_mail(
         to_addr=settings.SUPPORT_EMAIL,
@@ -83,14 +93,19 @@ def link_archive_provider(node, user):
     node.save()
 
 def update_status(node, addon, status, meta={}):
-    tmp = node.archived_providers.get(addon) or {}
-    tmp['status'] = status
-    tmp.update(meta)
-    node.archived_providers[addon] = tmp
+    up = {
+        'status': status,
+    }
+    up.update(meta)
+    node.archived_providers.update({
+        addon: up
+    })
     node.save()
 
 def delete_registration_tree(node):
     node.is_deleted = True
+    if not getattr(node.embargo, 'for_existing_registration', False):
+        node.registered_from = None
     node.save()
     for child in node.nodes:
         delete_registration_tree(child)
