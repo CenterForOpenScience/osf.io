@@ -40,10 +40,6 @@
     <div class="col-sm-6">
 
         <table class="table table-plain">
-            <tr>
-                <td>Name</td>
-                <td class="fullname" width="300px">${profile["fullname"]}</td>
-            </tr>
             % if profile.get('date_registered'):
                 <tr>
                     <td>Member&nbsp;Since</td>
