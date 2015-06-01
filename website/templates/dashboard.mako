@@ -1,4 +1,4 @@
-f<%inherit file="base.mako"/>
+<%inherit file="base.mako"/>
 <%def name="title()">Dashboard</%def>
 
 <%def name="content()">
