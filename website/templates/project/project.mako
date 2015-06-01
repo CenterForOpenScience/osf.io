@@ -106,7 +106,7 @@
                     <div id="contributor-gradient" data-bind="visible : collapsed()" ></div>
                 </div>
                 <div id="contributor-toggle" class="text-center m-b-xs" data-bind="visible : showToggle(), click : toggleHeight">
-                <i style="display:none" data-bind="visible : collapsed()" class="fa fa-angle-down"></i>
+                <i style="display:none" data-bind="visible : collapsed()" class="fa fa-ellipsis-h"></i>
                 <i style="display:none"  data-bind="visible : !collapsed()" class="fa fa-angle-up"></i>
 
                 </div>

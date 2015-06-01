@@ -328,15 +328,25 @@ var ProjectViewModel = function(data) {
     self.showToggle = ko.observable(false);
     self.collapsed = ko.observable(false);
     self.collapseLimit = 40;
-    self.collapseHeight = ko.observable($('#contributors-list').height());
-    if(self.collapseHeight() > self.collapseLimit ){
-        self.showToggle(true);
-        self.collapsed(true);
-    }
+    self.contributorsEl = $('#contributors-list');
+    self.collapseHeight = ko.observable(self.contributorsEl.height());
+    var checkCollapse = function () {
+        self.collapseHeight((self.contributorsEl.height()));
+        if(self.collapseHeight() > self.collapseLimit ){
+            self.showToggle(true);
+            self.collapsed(true);
+        } else {
+            self.showToggle(false);
+            self.collapsed(false);
+            var height = self.collapsed() ? self.collapseLimit : self.contributorsEl[0].scrollHeight;
+            self.contributorsEl.height(height);
+        }
+    };
     self.toggleHeight = function(){
         self.collapsed(!self.collapsed());
     };
-
+    $(window).resize(checkCollapse);
+    checkCollapse();
     ko.bindingHandlers.animateHeight = {
         init : function(element,valueAccessor){
             var value = valueAccessor();
@@ -345,7 +355,7 @@ var ProjectViewModel = function(data) {
         },
         update: function(element, valueAccessor) {
             var value = valueAccessor();
-            var speed = 400;
+            var speed = 300;
             //var height = value.state ? value.shortHeight : value.longHeight;
             if(value.state){
                 $(element).animate({
