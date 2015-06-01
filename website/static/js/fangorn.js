@@ -191,7 +191,7 @@ function _fangornResolveIcon(item) {
 
     if (item.kind === 'folder') {
         if (item.data.iconUrl) {
-            return m('img', {src: item.data.iconUrl, style: {width: '16px', height: 'auto'}});
+            return m('span', {style: {width:'16px', height:'16px', background:'url(' + item.data.iconUrl+ ')', display:'block'}}, '');
         }
         if (!item.data.permissions.view) {
             return privateFolder;
