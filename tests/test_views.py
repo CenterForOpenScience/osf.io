@@ -455,10 +455,11 @@ class TestProjectViews(OsfTestCase):
         self.project.reload()
         assert_not_in("footag", self.project.tags)
 
-    def test_register_template_page(self):
+    @mock.patch('website.archiver.tasks.archive.si')
+    def test_register_template_page(self, mock_archive):
         url = "/api/v1/project/{0}/register/Replication_Recipe_(Brandt_et_al.,_2013):_Post-Completion/".format(
             self.project._primary_key)
-        self.app.post_json(url, {}, auth=self.auth)
+        self.app.post_json(url, {'registrationChoice': 'Make registration public immediately'}, auth=self.auth)
         self.project.reload()
         # A registration was added to the project's registration list
         assert_equal(len(self.project.node__registrations), 1)
@@ -468,6 +469,40 @@ class TestProjectViews(OsfTestCase):
         reg = Node.load(self.project.node__registrations[-1])
         assert_true(reg.is_registration)
 
+    @mock.patch('website.archiver.tasks.archive.si')
+    def test_register_template_make_public_creates_public_registration(self, mock_archive):
+        url = "/api/v1/project/{0}/register/Replication_Recipe_(Brandt_et_al.,_2013):_Post-Completion/".format(
+            self.project._primary_key)
+        self.app.post_json(url, {'registrationChoice': 'immediate'}, auth=self.auth)
+        self.project.reload()
+        # Most recent node is a registration
+        reg = Node.load(self.project.node__registrations[-1])
+        assert_true(reg.is_registration)
+        # The registration created is public
+        assert_true(reg.is_public)
+
+    @mock.patch('website.archiver.tasks.archive.si')
+    def test_register_template_with_embargo_creates_embargo(self, mock_archive):
+        url = "/api/v1/project/{0}/register/Replication_Recipe_(Brandt_et_al.,_2013):_Post-Completion/".format(
+            self.project._primary_key)
+        self.app.post_json(
+            url,
+            {
+                'registrationChoice': 'embargo',
+                'embargoEndDate': "Fri, 01 Jan {year} 05:00:00 GMT".format(year=str(dt.date.today().year + 1))
+            },
+            auth=self.auth)
+
+        self.project.reload()
+        # Most recent node is a registration
+        reg = Node.load(self.project.node__registrations[-1])
+        assert_true(reg.is_registration)
+        # The registration created is not public
+        assert_false(reg.is_public)
+        # The registration is pending an embargo that has not been approved
+        assert_true(reg.pending_embargo)
+        assert_false(reg.embargo_end_date)
+
     def test_register_template_page_with_invalid_template_name(self):
         url = self.project.web_url_for('node_register_template_page', template='invalid')
         res = self.app.get(url, expect_errors=True, auth=self.auth)
@@ -475,7 +510,8 @@ class TestProjectViews(OsfTestCase):
         assert_in('Template not found', res)
 
     # Regression test for https://github.com/CenterForOpenScience/osf.io/issues/1478
-    def test_registered_projects_contributions(self):
+    @mock.patch('website.archiver.tasks.archive.si')
+    def test_registered_projects_contributions(self, mock_archive):
         # register a project
         self.project.register_node(None, Auth(user=self.project.creator), '', None)
         # get the first registered project of a project
@@ -1394,7 +1430,7 @@ class TestAddingContributorViews(OsfTestCase):
 
     def test_deserialize_contributors_sends_unreg_contributor_added_signal(self):
         unreg = UnregUserFactory()
-        from website.project.model import unreg_contributor_added
+        from website.project.signals import unreg_contributor_added
         serialized = [serialize_unregistered(fake.name(), unreg.username)]
         serialized[0]['visible'] = True
         with capture_signals() as mock_signals:
@@ -3651,7 +3687,8 @@ class TestDashboardViews(OsfTestCase):
         res = self.app.get(url, auth=self.creator.auth, expect_errors=True)
         assert_equal(res.status_code, 400)
 
-    def test_registered_components_with_are_accessible_from_dashboard(self):
+    @mock.patch('website.archiver.tasks.archive.si')
+    def test_registered_components_with_are_accessible_from_dashboard(self, mock_archive):
         project = ProjectFactory(creator=self.creator, public=False)
         component = NodeFactory(creator=self.creator, parent=project)
         component.add_contributor(self.contrib, auth=Auth(self.creator))

@@ -17,52 +17,7 @@ from website.addons.osfstorage.model import OsfStorageTrashedFileNode
 
 
 def main():
-    number_users = models.User.find().count()
 
-    projects = models.Node.find(
-        Q('category', 'eq', 'project') &
-        Q('is_deleted', 'eq', False) &
-        Q('is_folder', 'ne', True)
-    )
-    projects_forked = list(models.Node.find(
-        Q('category', 'eq', 'project') &
-        Q('is_deleted', 'eq', False) &
-        Q('is_folder', 'ne', True) &
-        Q('is_fork', 'eq', True)
-    ))
-    projects_registered = models.Node.find(
-        Q('category', 'eq', 'project') &
-        Q('is_deleted', 'eq', False) &
-        Q('is_folder', 'ne', True) &
-        Q('is_registration', 'eq', True)
-    )
-
-    pf = []
-    for p in projects_forked:
-        if not p.contributors[0]:
-            continue
-        name = p.contributors[0].fullname
-        if unicode(name) not in [u'Jeffres R. Spies', 'Brian A. Nosek']:
-            pf.append(p)
-
-    pr = []
-    for p in projects_registered:
-        name = p.contributors[0].fullname
-        if not p.contributors[0]:
-            continue
-        if not unicode(name)==u'Jeffrey R. Spies' and not unicode(name)==u'Brian A. Nosek':
-            pr.append(p)
-
-    number_projects = len(projects)
-    number_projects_public = models.Node.find(
-        Q('category', 'eq', 'project') &
-        Q('is_deleted', 'eq', False) &
-        Q('is_folder', 'ne', True) &
-        Q('is_public', 'eq', True)
-    ).count()
-    number_projects_forked = len(pf)
-
-    number_projects_registered = len(pr)
 
     ##############
 

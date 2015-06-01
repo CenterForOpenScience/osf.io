@@ -1,7 +1,7 @@
 """Consolidates all signals used by the OSF."""
 
 from framework.auth import signals as auth
-from website.project import model as project
+from website.project import signals as project
 
 
 ALL_SIGNALS = [

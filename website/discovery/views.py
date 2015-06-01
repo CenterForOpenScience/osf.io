@@ -68,7 +68,8 @@ def activity():
     # Registrations
     recent_public_registrations = Node.find(
         recent_query &
-        Q('is_registration', 'eq', True)
+        Q('is_registration', 'eq', True) &
+        Q('is_retracted', 'eq', False)
     ).sort(
         '-registered_date'
     ).limit(10)
