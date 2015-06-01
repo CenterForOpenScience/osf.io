@@ -172,7 +172,7 @@ module.exports = function(context) {
         //Need token in url as we cannot send headers with an Iframe
         var mfrIframe = new pym.Parent('mfrIframe', context.file.urls.render + '&token=' + context.accessToken, {});
         $(document).on('fileviewpage:reload', function() {
-            mfrIframe.sendMessage('reload', 'reload');
+            mfrIframe.sendMessage('reload', 'x'); //Must send some kind of data
         });
     }
     return m.component(FileViewPage, context);
