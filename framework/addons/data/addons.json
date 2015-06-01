@@ -6,13 +6,16 @@
                 "text": "Making an OSF project public or private is independent of making a GitHub repo public or private. The OSF does not alter the permissions of linked GitHub repos."
             },
             "View / download file versions": {
-                "status": "full"
+                "status": "full",
+                "text": "GitHub files and their versions can be viewed/downloaded via OSF."
             },
             "Add / update files": {
-                "status": "full"
+                "status": "full",
+                "text": "Adding/updating files in the project via OSF will be reflected in GitHub."
             },
             "Delete files": {
-                "status": "full"
+                "status": "full",
+                "text": "Files deleted via OSF will be deleted in GitHub."
             },
             "Logs": {
                 "status": "full",
@@ -37,10 +40,12 @@
                 "text": "The S3 add-on supports file versions if versioning is enabled for your S3 buckets."
             },
             "Add / update files": {
-                "status": "full"
+                "status": "full",
+                "text": "Adding/updating files in the project via OSF will be reflected in Amazon S3."
             },
             "Delete files": {
-                "status": "full"
+                "status": "full",
+                "text": "Files deleted via OSF will be deleted in Amazon S3."
             },
             "Logs": {
                 "status": "partial",
@@ -69,7 +74,8 @@
                 "text": "Files can be added but not updated."
             },
             "Delete files": {
-                "status": "none"
+                "status": "none",
+                "text": "figshare files cannot be deleted via OSF."
             },
             "Logs": {
                 "status": "partial",
@@ -90,13 +96,16 @@
                 "text": "Making an OSF project public or private is independent of Dropbox privacy. The OSF does not alter the permissions of linked Dropbox folders."
             },
             "View / download file versions": {
-                "status": "full"
+                "status": "full",
+                "text": "Dropbox files and their versions can be viewed/downloaded via OSF."
             },
             "Add / update files": {
-                "status": "full"
+                "status": "full",
+                "text": "Adding/updating files in the project via OSF will be reflected in Dropbox."
             },
             "Delete files": {
-                "status": "full"
+                "status": "full",
+                "text": "Files deleted via OSF will be deleted in Dropbox."
             },
             "Logs": {
                 "status": "partial",
@@ -121,10 +130,12 @@
                 "text": "Files from the latest release of the selected Dataverse study can be viewed/downloaded. OSF users with write permissions can view/download draft files as well."
             },
             "Add / update files": {
-                "status": "full"
+                "status": "full",
+                "text": "Adding/updating files in the project via OSF will be reflected in Dataverse."
             },
             "Delete files": {
-                "status": "full"
+                "status": "full",
+                "text": "Files deleted via OSF will be deleted in Dataverse."
             },
             "Logs": {
                 "status": "partial",
@@ -145,13 +156,16 @@
                 "text": "Making an OSF project public or private is independent of Google Drive privacy. The OSF does not alter the permissions of linked Google Drive folders."
             },
             "View / download file versions": {
-                "status": "full"
+                "status": "full",
+                "text": "Google Drive files and their versions can be viewed/downloaded via OSF."
             },
             "Add / update files": {
-                "status": "full"
+                "status": "full",
+                "text": "Adding/updating files in the project via OSF will be reflected in Google Drive."
             },
             "Delete files": {
-                "status": "full"
+                "status": "full",
+                "text": "Files deleted via OSF will be deleted in Google Drive."
             },
             "Logs": {
                 "status": "partial",
@@ -172,13 +186,16 @@
                 "text": "Making an OSF project public or private is independent of Box privacy. The OSF does not alter the permissions of linked Box folders."
             },
             "View / download file versions": {
-                "status": "full"
+                "status": "full",
+                "text": "Box files and their versions can be viewed/downloaded via OSF."
             },
             "Add / update files": {
-                "status": "full"
+                "status": "full",
+                "text": "Adding/updating files in the project via OSF will be reflected in Box."
             },
             "Delete files": {
-                "status": "full"
+                "status": "full",
+                "text": "Files deleted via OSF will be deleted in Box."
             },
             "Logs": {
                 "status": "partial",

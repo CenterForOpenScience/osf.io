@@ -2,3 +2,6 @@
 
 User-agent: *
 Disallow: /piwik/
+
+User-agent: *
+Disallow: /api/*

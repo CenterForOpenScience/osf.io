@@ -200,10 +200,17 @@ def make_url_map(app):
         ),
 
         Rule(
-            '/presentations/',
+            '/meetings/',
             'get',
             conference_views.conference_view,
             OsfWebRenderer('public/pages/meeting_landing.mako'),
+        ),
+
+        Rule(
+            '/presentations/',
+            'get',
+            conference_views.redirect_to_meetings,
+            json_renderer,
         ),
 
         Rule('/news/', 'get', {}, OsfWebRenderer('public/pages/news.mako')),
