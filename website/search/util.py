@@ -40,9 +40,19 @@ def build_query(qs='*', start=0, size=10, sort=None):
 
 
 def build_query_string(qs):
+    field_boosts = {
+        'title': 2,
+    }
+
+    fields = ['_all']
+    for field, boost in field_boosts.iteritems():
+        field = '{}^{}'.format(field, boost) if boost != 1 else field
+        fields.append(field)
+
     return {
         'query_string': {
             'default_field': '_all',
+            'fields': fields,
             'query': qs,
             'analyze_wildcard': True,
             'lenient': True  # TODO, may not want to do this
