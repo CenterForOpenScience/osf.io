@@ -135,7 +135,6 @@ from
 <a class="log-file-link overflow" data-bind="attr: {href: params.url}, text: params.path"></a>
 </script>
 
-
 <script type="text/html" id="edit_title">
 changed the title from <span class="overflow" data-bind="text: params.title_original"></span>
 to

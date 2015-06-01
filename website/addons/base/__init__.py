@@ -33,10 +33,6 @@ from website.oauth.signals import oauth_complete
 from website.models import Tag
 from website.models import NodeLog
 
-from framework.analytics import (
-    get_basic_counters, increment_user_activity_counters
-)
-
 NODE_SETTINGS_TEMPLATE_DEFAULT = os.path.join(
     settings.TEMPLATES_PATH,
     'project',
