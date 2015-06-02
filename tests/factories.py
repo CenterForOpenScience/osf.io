@@ -446,3 +446,11 @@ class MockAddonUserSettings(addons_base.AddonUserSettingsBase):
 class MockAddonUserSettingsMergeable(addons_base.AddonUserSettingsBase):
     def merge(self):
         pass
+
+
+class MockOAuthAddonUserSettings(addons_base.AddonOAuthUserSettingsBase):
+    oauth_provider = MockOAuth2Provider
+
+
+class MockOAuthAddonNodeSettings(addons_base.AddonOAuthNodeSettingsBase):
+    oauth_provider = MockOAuth2Provider

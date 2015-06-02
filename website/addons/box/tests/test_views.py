@@ -45,7 +45,7 @@ class TestConfigViews(BoxAddonTestCase):
         res = self.app.get(url)
         # Redirects to login
         assert_equal(res.status_code, 302)
-        assert_in('/login/?next=/api/v1/settings/box/accounts/', res.text)
+        assert_in('/login?service=http://localhost:80/api/v1/settings/box/accounts', res.text)
 
     def test_serialized_urls_returns_correct_urls(self):
         urls = BoxSerializer(node_settings=self.node_settings).serialized_urls

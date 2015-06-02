@@ -53,8 +53,14 @@ text-align: center;
 	background: #337AB7;
 	color: #FFF;
 }
+.fangorn-selected .text-muted {
+    color: #eeeeee;
+}
 .fangorn-selected a {
 	color : white;
+}
+.fangorn-selected > div span.text-muted {
+	color: #DDD;
 }
 .tb-disabled {
 	background: #eee;
@@ -118,6 +124,10 @@ text-align: center;
     padding-top: 4px;
 }
 
+.tb-row .progress {
+    height: 12px;
+    margin-top: 5px;
+}
 .tb-expand-icon-holder {
 	cursor: default;
 }
@@ -140,13 +150,15 @@ text-align: center;
 }
 .tb-modal-btn {
     text-transform: uppercase;
-    font-size: 16px;
+    font-size: 15px;
     cursor: pointer;
-    padding: 8px;
+    padding: 5px 10px;
     border: 1px solid #EEE;
-    margin-left: 9px;
+    margin-left: 12px;
     border-radius: 3px;
     background: #F8F8F8;
+    display: inline-block;
+    margin-bottom: 7px;
 }
 .tb-modal-btn:hover {
 	background-color: #efefef;
@@ -232,6 +244,7 @@ text-align: center;
 .file-extension {
 	width: 16px;
 	height: 16px;
+    display: inline-block;
 }
 
 

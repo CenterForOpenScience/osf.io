@@ -366,7 +366,7 @@ class TestBoxNodeSettingsModel(OsfTestCase):
         self.node_settings.create_waterbutler_log(
             auth=Auth(user=self.user),
             action=action,
-            metadata={'path': path},
+            metadata={'path': path, 'materialized': path},
         )
         self.node.reload()
         assert_equal(len(self.node.logs), nlog + 1)
@@ -376,7 +376,7 @@ class TestBoxNodeSettingsModel(OsfTestCase):
         )
         assert_equal(
             self.node.logs[-1].params['path'],
-            os.path.join(self.node_settings.folder_id, path),
+            path
         )
 
 

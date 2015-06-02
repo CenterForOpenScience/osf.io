@@ -212,7 +212,7 @@ class TestProvisionNode(ContextTestCase):
         mock_get_url.assert_called_with(
             'upload',
             'osfstorage',
-            self.attachment.filename,
+            '/' + self.attachment.filename,
             self.node,
             user=self.user,
         )
@@ -231,7 +231,7 @@ class TestProvisionNode(ContextTestCase):
         mock_get_url.assert_called_with(
             'upload',
             'osfstorage',
-            settings.MISSING_FILE_NAME,
+            '/' + settings.MISSING_FILE_NAME,
             self.node,
             user=self.user,
         )
@@ -390,6 +390,13 @@ class TestMessage(ContextTestCase):
 
 
 class TestConferenceEmailViews(OsfTestCase):
+
+    def test_redirect_to_meetings_url(self):
+        url = '/presentations/'
+        res = self.app.get(url)
+        assert_equal(res.status_code, 302)
+        res = res.follow()
+        assert_equal(res.request.path, '/meetings/')
 
     def test_conference_plain_returns_200(self):
         conference = ConferenceFactory()
