@@ -2241,7 +2241,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
             return True
 
         #Permissions must be overridden if changed when contributor is added to parent he/she is already on a child of.
-        elif contrib_to_add in self.contributors and contrib_to_add.get_permissions() != []:
+        elif contrib_to_add in self.contributors and self.get_permissions(contrib_to_add) != []:
             self.set_permissions(contrib_to_add, permissions)
             return True
         else:
