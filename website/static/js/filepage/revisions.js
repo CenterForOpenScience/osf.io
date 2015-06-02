@@ -15,8 +15,8 @@ var model = {
     revisions: [],
     loaded: m.prop(false),
     errorMessage: undefined,
-    hasUser: true,
-    hasDate: null,
+    hasUser: false,
+    hasDate: false,
     selectedRevision: 0
 };
 
