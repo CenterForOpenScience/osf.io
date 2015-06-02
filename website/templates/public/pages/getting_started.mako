@@ -4,7 +4,7 @@
     <div class="row"  href="#start">
         <div class="col-sm-3 nav-list-spy">
             <div data-spy="affix" class="gs-sidebar hidden-print hidden-xs panel panel-default" role="complementary">
-                <ul class="nav nav-stacked nav-pills gs-sidenav" style=" min-width: 210px">
+                <ul class="nav nav-stacked nav-pills gs-sidenav" style="min-width: 210px">
                     <li>
                         <a  class="active" href="#start">Getting Started</a>
                         <ul class="nav">

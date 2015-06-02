@@ -5,7 +5,7 @@ from flask import request
 
 from framework.auth.decorators import must_be_logged_in
 from framework.exceptions import HTTPError
-from framework.status import push_status_message
+from framework.status import push_status_message 
 
 from website.project.decorators import must_have_addon
 
@@ -21,7 +21,7 @@ def user_settings(user_addon, *args, **kwargs):
     if user_addon.verify_code(code):
         user_addon.is_confirmed = True
         user_addon.save()
-        push_status_message('Successfully verified two-factor authentication!')
+        push_status_message('Successfully verified two-factor authentication.', kind='success')
         return http.OK
     raise HTTPError(http.FORBIDDEN, data=dict(
         message_short='Forbidden',
