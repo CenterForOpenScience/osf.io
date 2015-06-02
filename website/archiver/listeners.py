@@ -56,6 +56,9 @@ def archive_callback(dst):
 
     :param dst: registration Node
     """
+    if archive_node_finished(dst):
+        dst.archiving = False
+        dst.save()
     if archive_tree_finished(dst):
         dst.archiving = False
         dst.save()
