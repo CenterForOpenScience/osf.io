@@ -19,45 +19,55 @@
                 </div>
                 <div class="collapse navbar-collapse project-nav">
                     <ul class="nav navbar-nav">
+
                     % if parent_node['id']:
+
                         % if parent_node['can_view'] or parent_node['is_public'] or parent_node['is_contributor']:
                             <li><a href="${parent_node['url']}" data-toggle="tooltip" title="${parent_node['title']}" data-placement="bottom" style="padding: 13px 17px;"> <i class="fa fa-level-down fa-rotate-180"></i>  </a></li>
+
                         % else:
                             <li><a href="#" data-toggle="tooltip" title="Parent project is private" data-placement="bottom" style="cursor: default"> <i class="fa fa-level-down fa-rotate-180 text-muted"></i>  </a></li>
                         % endif
+
                     % endif
                         <li><a href="${node['url']}"  class="project-title"> ${node['title'] | n}  </a></li>
 
-                        % if not node['is_retracted']:
-                            <li><a href="${node['url']}files/">Files</a></li>
-                            <!-- Add-on tabs -->
-                            % for addon in addons_enabled:
-                                % if addons[addon]['has_page']:
-                                    <li>
-                                        <a href="${node['url']}${addons[addon]['short_name']}">
-                                            % if addons[addon]['icon']:
-                                                <img src="${addons[addon]['icon']}" class="addon-logo"/>
-                                            % endif
-                                            ${addons[addon]['full_name']}
-                                        </a>
-                                    </li>
-                                % endif
-                            % endfor
+                    % if not node['is_retracted']:
+                        <li><a href="${node['url']}files/">Files</a></li>
+                        <!-- Add-on tabs -->
+                        % for addon in addons_enabled:
 
-                            % if node['is_public'] or user['is_contributor']:
-                                <li><a href="${node['url']}statistics/">Statistics</a></li>
+                            % if addons[addon]['has_page']:
+                                <li>
+                                    <a href="${node['url']}${addons[addon]['short_name']}">
+
+                                        % if addons[addon]['icon']:
+                                            <img src="${addons[addon]['icon']}" class="addon-logo"/>
+                                        % endif
+                                        ${addons[addon]['full_name']}
+                                    </a>
+                                </li>
                             % endif
-                            % if not node['is_registration']:
-                                <li><a href="${node['url']}registrations/">Registrations</a></li>
-                            % endif
-                            <li><a href="${node['url']}forks/">Forks</a></li>
-                            % if user['is_contributor']:
-                                <li><a href="${node['url']}contributors/">Sharing</a></li>
-                            % endif
-                            % if 'write' in user['permissions']:
-                                <li><a href="${node['url']}settings/">Settings</a></li>
-                            % endif
+                        % endfor
+
+                        % if node['is_public'] or user['is_contributor']:
+                            <li><a href="${node['url']}statistics/">Statistics</a></li>
                         % endif
+
+                        % if not node['is_registration']:
+                            <li><a href="${node['url']}registrations/">Registrations</a></li>
+                        % endif
+
+                        <li><a href="${node['url']}forks/">Forks</a></li>
+                        % if user['is_contributor']:
+                            <li><a href="${node['url']}contributors/">Sharing</a></li>
+                        % endif
+
+                        % if not node['is_registration'] or (node['is_registration'] and 'admin' in user['permissions']):
+                            <li><a href="${node['url']}settings/">Settings</a></li>
+                        % endif
+
+                    % endif
 
                     </ul>
                 </div>
