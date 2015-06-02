@@ -4,6 +4,7 @@ from nose.tools import *  # flake8: noqa
 from framework.auth.core import Auth
 from website.models import Node
 from tests.base import ApiTestCase, fake
+from rest_framework import generics, permissions as drf_permissions
 from tests.factories import UserFactory, ProjectFactory, FolderFactory, DashboardFactory
 
 
@@ -139,7 +140,6 @@ class TestUserNodes(ApiTestCase):
         self.deleted_folder = FolderFactory(title="Deleted Folder User One", is_public=False, creator=self.user_one, is_deleted=True)
         self.dashboard = DashboardFactory()
 
-
     def tearDown(self):
         ApiTestCase.tearDown(self)
         Node.remove()
@@ -201,16 +201,69 @@ class TestUserUpdate(ApiTestCase):
         ApiTestCase.setUp(self)
         self.user_one = UserFactory.build()
         self.user_one.set_password('justapoorboy')
-        self.user_one.social['twitter'] = 'howtopizza'
-        self.user_one.fullname = 'My Full Name'
+        self.user_one.social_accounts = {
+            'github' : '',
+            "scholar" : "",
+            "personal" : 'http://mymom.com',
+            "twitter" : "billyhunt",
+            "linkedIn" : "",
+            "impactStory": "",
+            "orcid": "",
+            "researcherId": ""
+        }
+
+        self.user_one.fullname = 'Martin Luther Kung Jr.'
+        self.user_one.given_name = 'Martin'
+        self.user_one.family_name = 'King'
+        self.user_one.suffix = 'Jr.'
+        self.user_one.employment_institutions = [
+            {
+                'startYear': '1995',
+                'title': '',
+                'startMonth': 1,
+                'endMonth': None,
+                'endYear': None,
+                'ongoing': False,
+                'department': '',
+                'institution': 'Waffle House'
+            }
+        ]
         self.user_one.save()
         self.auth_one = (self.user_one.username, 'justapoorboy')
         self.user_two = UserFactory.build()
         self.user_two.set_password('justapoorboy')
+        self.user_two.social['twitter'] = 'ihaveadream'
+        self.user_two.fullname = 'el-Hajj Malik el-Shabazz'
+        self.user_two.given_name = 'Malcolm'
+        self.user_two.family_name = 'X'
+        self.user_two.suffix = ''
+        self.user_two.employment_institutions = [
+            {
+                'startYear': '1982',
+                'title': '',
+                'startMonth': 1,
+                'endMonth': None,
+                'endYear': None,
+                'ongoing': False,
+                'department': '',
+                'institution': 'IHop'
+            }
+        ]
+
         self.user_two.save()
         self.auth_two = (self.user_two.username, 'justapoorboy')
         self.twitter = 'hotcrossbuns'
-        self.new_twitter = 'yourmom'
+        self.new_social_accounts =  {
+            'github': '',
+            'scholar': '',
+            'personal': 'http://mymom.com',
+            'twitter': 'billyhunt',
+            'linkedIn': '',
+            'impactStory': '',
+            'orcid': '',
+            'researcherId': ''
+        }
+
         self.new_name = 'Flash Gordon'
         self.public_project_user_one = ProjectFactory(title="Public Project User One", is_public=True, creator=self.user_one)
         self.private_project_user_one = ProjectFactory(title="Private Project User One", is_public=False, creator=self.user_one)
@@ -223,8 +276,8 @@ class TestUserUpdate(ApiTestCase):
         self.user_one_url = "/v2/users/{}/".format(self.user_one._id)
         self.user_two_url = "/v2/users/{}/".format(self.user_two._id)
 
-    def test_user_logged_out(self):
-        res = self.app.put_json(self.user_one_url, {
+    def test_patch_user_logged_out(self):
+        res = self.app.patch_json(self.user_one_url, {
             'fullname': self.new_name,
         }, expect_errors=True)
         # This is 403 instead of 401 because basic authentication is only for unit tests and, in order to keep from
@@ -232,139 +285,30 @@ class TestUserUpdate(ApiTestCase):
         # a little better
         assert_equal(res.status_code, 403)
 
-    def test_update_user_logged_in(self):
+    def test_patch_user_logged_in(self):
         # Logged in User updates his own stuff
-        res = self.app.put_json(self.user_one_url, {
+        res = self.app.patch_json(self.user_one_url, {
             'fullname': self.new_name
         }, auth=self.auth_one)
         assert_equal(res.status_code, 200)
         assert_equal(res.json['data']['fullname'], self.new_name)
 
-    #
-    # def test_update_private_project_logged_out(self):
-    #     res = self.app.put_json(self.private_url, {
-    #         'title': self.new_title,
-    #         'description': self.new_description,
-    #         'category': self.new_category,
-    #         'public': False,
-    #     }, expect_errors=True)
-    #     # This is 403 instead of 401 because basic authentication is only for unit tests and, in order to keep from
-    #     # presenting a basic authentication dialog box in the front end. We may change this as we understand CAS
-    #     # a little better
-    #     assert_equal(res.status_code, 403)
-    #
-    # def test_update_private_project_logged_in_contributor(self):
-    #     res = self.app.put_json(self.private_url, {
-    #         'title': self.new_title,
-    #         'description': self.new_description,
-    #         'category': self.new_category,
-    #         'public': False,
-    #     }, auth=self.basic_auth)
-    #     assert_equal(res.status_code, 200)
-    #     assert_equal(res.json['data']['title'], self.new_title)
-    #     assert_equal(res.json['data']['description'], self.new_description)
-    #     assert_equal(res.json['data']['category'], self.new_category)
-    #
-    # def test_update_private_project_logged_in_non_contributor(self):
-    #     res = self.app.put_json(self.private_url, {
-    #         'title': self.new_title,
-    #         'description': self.new_description,
-    #         'category': self.new_category,
-    #         'public': False,
-    #     }, auth=self.basic_auth_two, expect_errors=True)
-    #     assert_equal(res.status_code, 403)
-    #
-    # def test_update_project_sanitizes_html_properly(self):
-    #     """Post request should update resource, and any HTML in fields should be stripped"""
-    #     new_title = '<strong>Super</strong> Cool Project'
-    #     new_description = 'An <script>alert("even cooler")</script> project'
-    #     project = self.project = ProjectFactory(
-    #         title=self.title, description=self.description, category=self.category, is_public=True, creator=self.user)
-    #
-    #     url = '/v2/users/{}/'.format(project._id)
-    #     res = self.app.put_json(url, {
-    #         'title': new_title,
-    #         'description': new_description,
-    #         'category': self.new_category,
-    #         'public': True,
-    #     }, auth=self.basic_auth)
-    #     assert_equal(res.status_code, 200)
-    #     assert_equal(res.json['data']['title'], strip_html(new_title))
-    #     assert_equal(res.json['data']['description'], strip_html(new_description))
-    #
-    # def test_partial_update_project_updates_project_correctly_and_sanitizes_html(self):
-    #     new_title = 'An <script>alert("even cooler")</script> project'
-    #     project = self.project = ProjectFactory(
-    #         title=self.title, description=self.description, category=self.category, is_public=True, creator=self.user)
-    #
-    #     url = '/v2/users/{}/'.format(project._id)
-    #     res = self.app.patch_json(url, {
-    #         'title': new_title,
-    #     }, auth=self.basic_auth)
-    #     assert_equal(res.status_code, 200)
-    #     res = self.app.get(url)
-    #     assert_equal(res.status_code, 200)
-    #     assert_equal(res.json['data']['title'], strip_html(new_title))
-    #     assert_equal(res.json['data']['description'], self.description)
-    #     assert_equal(res.json['data']['category'], self.category)
-    #
-    # def test_writing_to_public_field(self):
-    #     title = "Cool project"
-    #     description = 'A Properly Cool Project'
-    #     category = 'data'
-    #     project = self.project = ProjectFactory(
-    #         title=title, description=description, category=category, is_public=True, creator=self.user)
-    #     # Test non-contrib writing to public field
-    #     url = '/v2/users/{}/'.format(project._id)
-    #     res = self.app.patch_json(url, {
-    #         'is_public': False,
-    #     }, auth=self.basic_auth_two, expect_errors=True)
-    #     assert_equal(res.status_code, 403)
-    #     # Test creator writing to public field (supposed to be read-only)
-    #     res = self.app.patch_json(url, {
-    #         'is_public': False,
-    #     }, auth=self.basic_auth, expect_errors=True)
-    #     assert_true(res.json['data']['public'])
-    #     # TODO: Figure out why the validator isn't raising when attempting to write to a read-only field
-    #     # assert_equal(res.status_code, 403)
-    #
-    # def test_partial_update_public_project_logged_out(self):
-    #     res = self.app.patch_json(self.public_url, {'title': self.new_title}, expect_errors=True)
-    #     # This is 403 instead of 401 because basic authentication is only for unit tests and, in order to keep from
-    #     # presenting a basic authentication dialog box in the front end. We may change this as we understand CAS
-    #     # a little better
-    #     assert_equal(res.status_code, 403)
-    #
-    # def test_partial_update_public_project_logged_in(self):
-    #     res = self.app.patch_json(self.public_url, {
-    #         'title': self.new_title,
-    #     }, auth=self.basic_auth)
-    #     assert_equal(res.status_code, 200)
-    #     assert_equal(res.json['data']['title'], self.new_title)
-    #     assert_equal(res.json['data']['description'], self.description)
-    #     assert_equal(res.json['data']['category'], self.category)
-    #
-    #     # Public resource, logged in, unauthorized
-    #     res = self.app.patch_json(self.public_url, {
-    #         'title': self.new_title,
-    #     }, auth=self.basic_auth_two, expect_errors=True)
-    #     assert_equal(res.status_code, 403)
-    #
-    # def test_partial_update_private_project_logged_out(self):
-    #     res = self.app.patch_json(self.private_url, {'title': self.new_title}, expect_errors=True)
-    #     # This is 403 instead of 401 because basic authentication is only for unit tests and, in order to keep from
-    #     # presenting a basic authentication dialog box in the front end. We may change this as we understand CAS
-    #     # a little better
-    #     assert_equal(res.status_code, 403)
-    #
-    # def test_partial_update_private_project_logged_in_contributor(self):
-    #     res = self.app.patch_json(self.private_url, {'title': self.new_title}, auth=self.basic_auth)
-    #     assert_equal(res.status_code, 200)
-    #     assert_equal(res.json['data']['title'], self.new_title)
-    #     assert_equal(res.json['data']['description'], self.description)
-    #     assert_equal(res.json['data']['category'], self.category)
-    #
-    # def test_partial_update_private_project_logged_in_non_contributor(self):
-    #     res = self.app.patch_json(self.private_url, {'title': self.new_title}, auth=self.basic_auth_two, expect_errors=True)
-    #     assert_equal(res.status_code, 403)
-    #
+    def test_put_user_logged_out(self):
+        res = self.app.put_json(self.user_one_url, {
+            'fullname': self.new_name,
+            'social_accounts' : self.new_social_accounts,
+        }, expect_errors=True)
+        # This is 403 instead of 401 because basic authentication is only for unit tests and, in order to keep from
+        # presenting a basic authentication dialog box in the front end. We may change this as we understand CAS
+        # a little better
+        assert_equal(res.status_code, 403)
+
+    def test_put_user_logged_in(self):
+        # Logged in User updates his own stuff
+        res = self.app.put_json(self.user_one_url, {
+            'fullname': self.new_name,
+            'social_accounts' : self.new_social_accounts,
+        }, auth=self.auth_one)
+        assert_equal(res.status_code, 200)
+        assert_equal(res.json['data']['fullname'], self.new_name)
+        assert_equal(res.json['data']['social_accounts'], self.new_social_accounts)
