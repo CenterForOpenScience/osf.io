@@ -160,7 +160,6 @@ def _render_conference_node(node, idx):
     }
 
 
-
 def conference_data(meeting):
     try:
         Conference.find_one(Q('endpoint', 'iexact', meeting))
