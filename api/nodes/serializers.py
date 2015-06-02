@@ -235,8 +235,9 @@ class ReplicationRecipePreRegistrationSerializer(JSONAPISerializer):
     item28 = ser.CharField(default='', write_only=True, help_text = "A successful replication is defined as")
 
     def create(self, validated_data):
-        template = "Replication_Recipe_(Brandt_et_al__!dot!__,_2013):_Pre-Registration"
-        schema = 1
+        template = "Replication_Recipe_(Brandt_et_al.,_2013):_Pre-Registration""
+        schema = MetaSchema.find(
+            Q('name', 'eq', template)).sort('-schema_version')[0]
         request = self.context['request']
         user = request.user
         node = self.context['view'].get_node()
@@ -246,14 +247,48 @@ class ReplicationRecipePreRegistrationSerializer(JSONAPISerializer):
             schema = schema,
             auth = Auth(user),
             template = template,
-            #data = json.dumps({"item"+str(j): clean_data["item"+str(j)] for j in range(1,29)})
-            data = json.dumps(({"item1": clean_data['item1'], "item2": clean_data['item2'], "item3": clean_data['item3'], "item4": clean_data['item4'], "item5": clean_data['item5'], "item6": clean_data['item6'], "item7": clean_data['item7'], "item8": clean_data['item8'], "item9": clean_data['item9'], "item10": clean_data['item10'], "item11": clean_data['item11'], "item12": clean_data['item12'], "item13": clean_data['item13'], "item14": clean_data['item14'], "item15": clean_data['item15'], "item16": clean_data['item16'], "item17": clean_data['item17'], "item18": clean_data['item18'], "item19": clean_data['item19'], "item20": clean_data['item20'], "item21": clean_data['item21'], "item22": clean_data['item22'], "item23": clean_data['item23'], "item24": clean_data['item24'], "item25": clean_data['item25'], "item26": clean_data['item26'], "item27": clean_data['item27'], "item28": clean_data['item28']})
-))
+            data = json.dumps({"item"+str(j): clean_data["item"+str(j)] for j in range(1,29)}))
         return registration
 
     class Meta:
         type_='registrations'
 
+class ReplicationRecipePostCompletionSerializer(JSONAPISerializer):
+    EFFECT_SIZE = ["significantly different from the original effect size", "not significantly different from the original effect size"]
+    REPLICATION_CONCLUSION = ["success", "informative failure to replicate", "practical failure to replicate", "inconclusive"]
+
+    id = ser.CharField(read_only=True, source='_id')
+    title = ser.CharField(read_only=True)
+    registered_meta = ser.CharField(read_only=True)
+
+    item29 = ser.CharField(default='', write_only=True, help_text = "The finalized materials, procedures, analysis plan etc of the replication are registered here")
+    item30 = ser.CharField(default='', write_only=True, help_text = "The effect size of the replication is")
+    item31 = ser.CharField(default='', write_only=True, help_text = "The confidence interval of the replication effect size is")
+    item32 = ser.ChoiceField(default='', choices=EFFECT_SIZE, write_only=True, help_text = "The replication effect size is")
+    item33 = ser.ChoiceField(default='', choices=REPLICATION_CONCLUSION, write_only=True, help_text = "I judge the replication to be a(n)")
+    item34 = ser.CharField(default='', write_only=True, help_text = "I judge it so because")
+    item35 = ser.CharField(default='', write_only=True, help_text = "Interested experts can obtain my data and syntax here")
+    item36 = ser.CharField(default='', write_only=True, help_text = "All of the analyses were reported in the report or are available here")
+    item37 = ser.CharField(default='', write_only=True, help_text = "The limitations of my replication study are")
+
+    def create(self, validated_data):
+        template = 'Replication_Recipe_(Brandt_et_al__!dot!__,_2013):_Post-Completion'
+        schema =  MetaSchema.find(
+            Q('name', 'eq', template)).sort('-schema_version')[0]
+        request = self.context['request']
+        user = request.user
+        node = self.context['view'].get_node()
+        clean_data = process_payload({"item"+str(j): validated_data["item"+str(j)] for j in range(29,38)})
+
+        registration = node.register_node(
+            schema = schema,
+            auth = Auth(user),
+            template = template,
+            data = json.dumps({"item"+str(j): clean_data["item"+str(j)] for j in range(29,38)}))
+        return registration
+
+    class Meta:
+        type_='registrations'
 class NodePointersSerializer(JSONAPISerializer):
 
     id = ser.CharField(read_only=True, source='_id')
