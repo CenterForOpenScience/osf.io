@@ -4,16 +4,21 @@
 <%def name="container_class()">container-xxl</%def>
 
 <%def name="title()">${file_name | h}</%def>
-
-<div>
-  <div>
+<div class="row">
+  <div class="col-sm-6">
     <h2 class="break-word">
       ${file_name | h}
       % if file_revision:
         <small>&nbsp;${file_revision | h}</small>
       % endif
-    </h2><hr>
+    </h2>
   </div>
+  <div class="col-sm-6">
+    <div id="toggleBar" class="pull-right"></div>
+  </div>
+</div>
+<hr>
+<div class="row">
 
   <div id="file-navigation" class="panel-toggle col-md-3 file-tree">
     <div class="osf-panel osf-panel-flex hidden-xs reset-height">
@@ -44,13 +49,13 @@
 
   </div>
 
-  <div id="fileViewPanelLeft" class="col-md-9 panel-expand">
+  <div id="fileViewPanelLeft" class="col-lg-9 panel-expand">
     <div class="row">
       <div id="mfrIframeParent" class="col-md-9">
         <div id="mfrIframe" class="mfr mfr-file"></div>
       </div>
 
-      <div class="file-view-panels col-md-3" style="margin-top: -75px"></div>
+      <div class="file-view-panels col-md-3"></div>
     </div>
   </div>
 

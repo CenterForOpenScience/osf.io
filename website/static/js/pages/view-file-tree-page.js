@@ -20,8 +20,8 @@ $(document).ready(function() {
         var panelHeight = $('.osf-panel.hidden-xs').height();
         var el = $(this).closest('.panel-toggle');
         el.children('.osf-panel.hidden-xs').hide();
-        panelToggle.removeClass('col-md-3').addClass('col-md-1');
-        panelExpand.removeClass('col-md-9').addClass('col-md-11');
+        panelToggle.removeClass('col-lg-3').addClass('col-lg-1');
+        panelExpand.removeClass('col-lg-9').addClass('col-lg-11');
         el.children('.panel-collapsed').show();
         el.children('.panel-collapsed').css('height', panelHeight);
     });
@@ -30,8 +30,8 @@ $(document).ready(function() {
         var toggle = el.closest('.panel-toggle');
         toggle.children('.osf-panel').show();
         el.hide();
-        panelToggle.removeClass('col-md-1').addClass('col-md-3');
-        panelExpand.removeClass('col-md-11').addClass('col-md-9');
+        panelToggle.removeClass('col-lg-1').addClass('col-lg-3');
+        panelExpand.removeClass('col-lg-11').addClass('col-lg-9');
     });
 
 });

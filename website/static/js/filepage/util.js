@@ -44,33 +44,54 @@ var PanelToggler = {
             $('#mfrIframeParent').removeClass().addClass('col-md-5');
             $('.file-view-panels').removeClass().addClass('file-view-panels').addClass('col-md-7');
         } else if (shown === 1) {
-            $('#mfrIframeParent').removeClass().addClass('col-md-8');
-            $('.file-view-panels').removeClass().addClass('file-view-panels').addClass('col-md-4');
+            $('#mfrIframeParent').removeClass().addClass('col-md-6');
+            $('.file-view-panels').removeClass().addClass('file-view-panels').addClass('col-md-6');
         } else {
             $('#mfrIframeParent').removeClass().addClass('col-md-11');
             $('.file-view-panels').removeClass().addClass('file-view-panels').addClass('col-md-1');
         }
 
+        m.render(document.getElementById('toggleBar'), m('.btn-toolbar[style=margin-top:20px]', [
+            m('.btn-group', [
+                m('.btn.btn-sm.btn-danger', {onclick: $(document).trigger.bind($(document), 'fileviewpage:delete')}, 'Delete'),
+            ]),
+            m('.btn-group', [
+                m('.btn.btn-sm.btn-success', {onclick: $(document).trigger.bind($(document), 'fileviewpage:download')}, 'Download'),
+            ]),
+            m('.btn-group.btn-group-sm', [
+                m('.btn.btn-default.disabled', 'Toggle View: ')
+            ].concat(
+                ctrl.panels.map(function(panel) {
+                    return m('.btn' + (panel.selected ? '.btn-primary' : '.btn-default'), {
+                        onclick: function(e) {
+                            e.preventDefault();
+                            panel.selected = !panel.selected;
+                        }
+                    }, panel.title);
+                })
+            )),
+        ]));
+
         return m('.panel-toggler', [
-            m('.row', m('.col-md-12', [
-                m('.btn-toolbar.pull-right[style="width:355px!important;"]', [
-                    m('.btn-group.btn-group-sm.file-toggle-btn.pull-right', [
-                        m('.btn.btn-default.disabled', 'Toggle View: ')
-                    ].concat(
-                        ctrl.panels.map(function(panel) {
-                            return m('.btn' + (panel.selected ? '.btn-primary' : '.btn-default'), {
-                                onclick: function(e) {
-                                    e.preventDefault();
-                                    panel.selected = !panel.selected;
-                                }
-                            }, panel.title);
-                        })
-                    )),
-                    m('.btn.btn-sm.btn-danger.pull-right', {onclick: $(document).trigger.bind($(document), 'fileviewpage:delete')}, 'Delete'),
-                    m('.btn.btn-sm.btn-success.pull-right', {onclick: $(document).trigger.bind($(document), 'fileviewpage:download')}, 'Download'),
-                ])
-            ])),
-            m('br'),
+            // m('.row', m('.col-md-12', [
+            //     m('.btn-toolbar.pull-right[style="width:355px!important;"]', [
+            //         m('.btn-group.btn-group-sm.file-toggle-btn.pull-right', [
+            //             m('.btn.btn-default.disabled', 'Toggle View: ')
+            //         ].concat(
+            //             ctrl.panels.map(function(panel) {
+            //                 return m('.btn' + (panel.selected ? '.btn-primary' : '.btn-default'), {
+            //                     onclick: function(e) {
+            //                         e.preventDefault();
+            //                         panel.selected = !panel.selected;
+            //                     }
+            //                 }, panel.title);
+            //             })
+            //         )),
+            //         m('.btn.btn-sm.btn-danger.pull-right', {onclick: $(document).trigger.bind($(document), 'fileviewpage:delete')}, 'Delete'),
+            //         m('.btn.btn-sm.btn-success.pull-right', {onclick: $(document).trigger.bind($(document), 'fileviewpage:download')}, 'Download'),
+            //     ])
+            // ])),
+            // m('br'),
             m('.row', ctrl.panels.map(function(panel, index) {
                 if (!panel.selected) return m('[style="display:none"]', panel);
                 return m('.col-md-' + Math.floor(12/shown), panel);
