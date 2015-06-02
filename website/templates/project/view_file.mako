@@ -5,6 +5,10 @@
 
 <%def name="title()">${file_name | h}</%def>
 
+<link href="//localhost:7778/static/css/mfr.css" media="all" rel="stylesheet" />
+<script src="//localhost:7778/static/js/pym.js"></script>
+<script src="//localhost:7778/static/js/mfr.js"></script>
+
 <div>
   <div>
     <h2 class="break-word">
@@ -44,7 +48,15 @@
 
   </div>
 
-  <div class="file-view-panels panel-expand col-md-9" style="margin-top: -75px"></div>
+  <div id="fileViewPanelLeft" class="col-md-9 panel-expand">
+    <div class="row">
+      <div id="mfrIframeParent" class="col-md-9">
+        <div id="mfrIframe" class="mfr mfr-file"></div>
+      </div>
+
+      <div class="file-view-panels col-md-3" style="margin-top: -75px"></div>
+    </div>
+  </div>
 
 </div>
 
