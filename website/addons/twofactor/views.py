@@ -5,7 +5,7 @@ from flask import request
 
 from framework.auth.decorators import must_be_logged_in
 from framework.exceptions import HTTPError
-from framework.status import push_status_message 
+from framework.status import push_status_message
 
 from website.project.decorators import must_have_addon
 
