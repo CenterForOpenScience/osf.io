@@ -91,7 +91,7 @@
         <div id="contributors" class="row" style="line-height:25px">
             <div class="col-sm-12">
                 % if user['is_contributor']:
-                    <a href="${node['url']}contributors/">Contributors</a>:
+                    <a class="dotted-underline" href="${node['url']}contributors/">Contributors</a>:
                 % else:
                     Contributors:
                 % endif
