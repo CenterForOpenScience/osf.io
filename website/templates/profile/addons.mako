@@ -4,11 +4,11 @@
 <% from website import settings %>
 <h2 class="page-header">Configure Add-ons</h2>
 
-<div class="row">
 
-    <div class="col-sm-3">
+<div id="addonSettings" class="row">
 
-        <div>
+    <div class="col-sm-3 affix-parent">
+        <div id="affix-nav" data-spy="affix" data-offset-top="70" data-offset-bottom="268">
             <ul class="nav nav-stacked nav-pills">
                 <li><a href="${ web_url_for('user_profile') }">Profile Information</a></li>
                 <li><a href="${ web_url_for('user_account') }">Account Settings</a></li>
@@ -16,7 +16,6 @@
                 <li><a href="${ web_url_for('user_notifications') }">Notifications</a></li>
             </ul>
         </div><!-- end sidebar -->
-
     </div>
 
     <div class="col-sm-9 col-md-7">

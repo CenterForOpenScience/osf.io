@@ -2778,3 +2778,21 @@ span#profileFullname{
         position: relative;
     }
 }
+
+
+/* Settings side-nav positions */
+#profileSettings .affix {
+    top: 80px;
+}
+
+#accountSettings .affix {
+    top: 80px;
+}
+
+#addonSettings .affix {
+    top: 80px;
+}
+
+#notificationSettings .affix {
+    top: 80px;
+}

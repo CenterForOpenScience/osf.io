@@ -5,10 +5,10 @@
 <% from website import settings%>
 <h2 class="page-header">Notifications</h2>
 
-<div class="row">
+<div id="notificationSettings" class="row">
 
-    <div class="col-md-3">
-        <div>
+    <div class="col-md-3 affix-parent">
+        <div id="affix-nav" data-spy="affix" data-offset-top="70" data-offset-bottom="268">
             <ul class="nav nav-stacked nav-pills">
                 <li><a href="${ web_url_for('user_profile') }">Profile Information</a></li>
                 <li><a href="${ web_url_for('user_account') }">Account Settings</a></li>
