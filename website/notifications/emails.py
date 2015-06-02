@@ -1,6 +1,8 @@
 from babel import dates, core, Locale
 from mako.lookup import Template
 
+from modularodm import Q
+
 from website import mails
 from website import models as website_models
 from website.notifications import constants
@@ -115,7 +117,9 @@ def remove_users_from_subscription(recipients, event, user, node, timestamp, **c
     :return:
     """
     event_id = utils.to_subscription_key(node._id, event)
-    subscription = NotificationSubscription(_id=event_id, owner=node, event_name=event)
+    subscription = NotificationSubscription.load(event_id)
+    if not subscription:
+        subscription = NotificationSubscription(_id=event_id, owner=node, event_name=event)
     for notification_type in recipients:
         recipient_list = recipients[notification_type]
         if len(recipient_list) == 0:
@@ -124,6 +128,7 @@ def remove_users_from_subscription(recipients, event, user, node, timestamp, **c
             subscription.add_user_to_subscription(recipient, notification_type)
     subscription.save()
     notify(node._id, event, user, node, timestamp, **context)
+    NotificationSubscription.remove(Q('_id', 'eq', event_id))
 
 
 def compile_subscriptions(node, event_type, event=None):

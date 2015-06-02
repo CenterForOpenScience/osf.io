@@ -77,10 +77,12 @@ def file_moved(node, f_url, payload, user):
     old_guid, old_sub, old_path = file_info(old_node, payload['destination']['path'],
                                             payload['source']['provider'])
     if file_guid != old_guid:
+        rm_url = f_url
+        rm_url.path = node.web_url_for('collect_file_trees')
         rm_users = move_file_subscription(old_sub, payload['source']['node']['_id'],
                                           event_sub, node)
         remove_users_from_subscription(rm_users, old_sub, user, old_node, timestamp=None,
-                                       gravatar_url=user.gravatar_url, message="Removed")
+                                       gravatar_url=user.gravatar_url, message="Removed", url=rm_url)
     message = 'moved "<strong>{}</strong>" from "<strong>{}/{}{}</strong>" to "<strong>{}/{}/{}</strong>".'.format(
         payload['destination']['name'],
         payload['source']['node']['title'], payload['source']['provider'], payload['source']['materialized'],

@@ -135,7 +135,11 @@ var RevisionsViewModel = function(node, file, editable) {
         dataType: 'json',
         data: payload
     }).done(function (response) {
-        self.curSubscription(self.getSub(response.event.notificationType));
+        if(response.event.notificationType === 'null') {
+            self.curSubscription(self.getSub('adopt_parent'));
+        } else {
+            self.curSubscription(self.getSub(response.event.notificationType));
+        }
         self.subscription(self.curSubscription().value);
         self.change = ko.computed(function () {
             var notification_type = self.curSubscription();
