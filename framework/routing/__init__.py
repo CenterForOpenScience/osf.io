@@ -37,7 +37,7 @@ _tpl_lookup_safe = TemplateLookup(
         os.path.join(settings.BASE_PATH, 'addons/'),
     ],
     module_directory='/tmp/mako_modules',
-    default_filters=('h',)
+    default_filters=['h']
 )
 
 REDIRECT_CODES = [
