@@ -1,6 +1,5 @@
 var $ = require('jquery');
 var m = require('mithril');
-var pym = require('pym.js');
 var mime = require('js/mime');
 var bootbox = require('bootbox');
 var $osf = require('js/osfHelpers');
