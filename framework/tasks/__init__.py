@@ -3,7 +3,6 @@
 
 from celery import Celery
 from celery.utils.log import get_task_logger
-from kombu import Exchange, Queue
 
 from raven import Client
 from raven.contrib.celery import register_signal
@@ -14,13 +13,6 @@ app = Celery()
 
 # TODO: Hardcoded settings module. Should be set using framework's config handler
 app.config_from_object('website.settings')
-
-app.conf.CELERY_QUEUES = (
-    Queue(
-        settings.CELERY_DEFAULT_QUEUE,
-        Exchange(settings.CELERY_DEFAULT_QUEUE),
-        routing_key=settings.CELERY_DEFAULT_QUEUE),
-)
 
 if settings.SENTRY_DSN:
     client = Client(settings.SENTRY_DSN)
