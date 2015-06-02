@@ -930,7 +930,6 @@ class StorageAddonBase(object):
         ]
         return filenode
 
-
 class AddonOAuthNodeSettingsBase(AddonNodeSettingsBase):
     _meta = {
         'abstract': True,

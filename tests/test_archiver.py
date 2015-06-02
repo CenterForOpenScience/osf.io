@@ -20,8 +20,8 @@ from website.archiver import (
     ARCHIVER_PENDING,
     ARCHIVER_SUCCESS,
     ARCHIVER_FAILURE,
-    ARCHIVE_COPY_FAIL,
-    ARCHIVE_SIZE_EXCEEDED,
+    ARCHIVER_NETWORK_ERROR,
+    ARCHIVER_SIZE_EXCEEDED,
 )
 from website.archiver import utils as archiver_utils
 from website.app import *  # noqa

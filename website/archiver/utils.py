@@ -1,14 +1,16 @@
+from modularodm import Q
+
 from framework.auth import Auth
 
 from website.archiver import (
     StatResult, AggregateStatResult,
-    ARCHIVE_COPY_FAIL,
-    ARCHIVE_SIZE_EXCEEDED,
-    ARCHIVE_METADATA_FAIL,
+    ARCHIVER_NETWORK_ERROR,
+    ARCHIVER_SIZE_EXCEEDED,
 )
 
 from website import mails
 from website import settings
+from website.project.model import NodeLog
 
 def send_archiver_success_mail(dst):
     user = dst.creator
@@ -54,12 +56,31 @@ def send_archiver_copy_error_mails(src, user, results):
         mimetype='html',
     )
 
+def send_archiver_uncaught_error_mails(src, user, results):
+    mails.send_mail(
+        to_addr=settings.SUPPORT_EMAIL,
+        mail=mails.ARCHIVE_UNCAUGHT_ERROR_DESK,
+        user=user,
+        src=src,
+        results=results,
+    )
+    mails.send_mail(
+        to_addr=user.username,
+        mail=mails.ARCHIVE_UNCAUGHT_ERROR_USER,
+        user=user,
+        src=src,
+        results=results,
+        mimetype='html',
+    )
+
 def handle_archive_fail(reason, src, dst, user, result):
-    delete_registration_tree(dst)
-    if reason in [ARCHIVE_COPY_FAIL, ARCHIVE_METADATA_FAIL]:
+    delete_registration_tree(dst.root)
+    if reason == ARCHIVER_NETWORK_ERROR:
         send_archiver_copy_error_mails(src, user, result)
-    elif reason == ARCHIVE_SIZE_EXCEEDED:
+    elif reason == ARCHIVER_SIZE_EXCEEDED:
         send_archiver_size_exceeded_mails(src, user, result)
+    else:  # reason == ARCHIVER_UNCAUGHT_ERROR
+        send_archiver_uncaught_error_mails(src, user, result)
 
 def archive_provider_for(node, user):
     """A generic function to get the archive provider for some node, user pair.
@@ -104,6 +125,13 @@ def update_status(node, addon, status, meta={}):
 
 def delete_registration_tree(node):
     node.is_deleted = True
+    NodeLog.remove_one(
+        (
+            Q('action', 'eq', NodeLog.PROJECT_REGISTERED) &
+            Q('params.node', 'eq', node.registered_from._id) &
+            Q('params.registration', 'eq', node._id)
+        )
+    )
     if not getattr(node.embargo, 'for_existing_registration', False):
         node.registered_from = None
     node.save()
