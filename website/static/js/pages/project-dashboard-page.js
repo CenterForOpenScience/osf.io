@@ -113,11 +113,14 @@ $(document).ready(function () {
         interactive: window.contextVars.currentUser.canEdit,
         maxChars: 128,
         onAddTag: function(tag){
-            var url = window.contextVars.node.urls.api + 'addtag/' + tag + '/';
+            var url = window.contextVars.node.urls.api + 'addtag/';
+            var tagData = {"tag": tag};
             var request = $.ajax({
-                url: url,
                 type: 'POST',
-                contentType: 'application/json'
+                url: url,
+                contentType: 'application/json',
+                datatype: "json",
+                data: tagData
             });
             request.fail(function(xhr, textStatus, error) {
                 Raven.captureMessage('Failed to add tag', {
@@ -126,11 +129,14 @@ $(document).ready(function () {
             });
         },
         onRemoveTag: function(tag){
-            var url = window.contextVars.node.urls.api + 'removetag/' + tag + '/';
+            var url = window.contextVars.node.urls.api + 'removetag/';
+            var tagData = {"tag": tag};
             var request = $.ajax({
                 url: url,
                 type: 'POST',
-                contentType: 'application/json'
+                contentType: 'application/json',
+                datatype: "json",
+                data: JSON.stringify(tagData)
             });
             request.fail(function(xhr, textStatus, error) {
                 Raven.captureMessage('Failed to remove tag', {
