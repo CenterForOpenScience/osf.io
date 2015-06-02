@@ -235,7 +235,7 @@ class ReplicationRecipePreRegistrationSerializer(JSONAPISerializer):
     item28 = ser.CharField(default='', write_only=True, help_text = "A successful replication is defined as")
 
     def create(self, validated_data):
-        template = "Replication_Recipe_(Brandt_et_al.,_2013):_Pre-Registration""
+        template = "Replication_Recipe_(Brandt_et_al.,_2013):_Pre-Registration"
         schema = MetaSchema.find(
             Q('name', 'eq', template)).sort('-schema_version')[0]
         request = self.context['request']
@@ -272,7 +272,7 @@ class ReplicationRecipePostCompletionSerializer(JSONAPISerializer):
     item37 = ser.CharField(default='', write_only=True, help_text = "The limitations of my replication study are")
 
     def create(self, validated_data):
-        template = 'Replication_Recipe_(Brandt_et_al__!dot!__,_2013):_Post-Completion'
+        template = 'Replication_Recipe_(Brandt_et_al.,_2013):_Post-Completion'
         schema =  MetaSchema.find(
             Q('name', 'eq', template)).sort('-schema_version')[0]
         request = self.context['request']
