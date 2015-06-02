@@ -9,6 +9,7 @@ from framework.auth.core import User
 from framework.exceptions import HTTPError
 
 from website.archiver import (
+    ARCHIVER_INITIATED,
     ARCHIVER_PENDING,
     ARCHIVER_CHECKING,
     ARCHIVER_SUCCESS,
@@ -46,18 +47,24 @@ class ArchiverTask(celery.Task):
         dst = Node.load(kwargs['dst_pk'])
         user = User.load(kwargs['user_pk'])
         if isinstance(exc, ArchiverSizeExceeded):
+            dst.archive_status = ARCHIVER_SIZE_EXCEEDED
+            dst.save()
             utils.handle_archive_fail(
                 ARCHIVER_SIZE_EXCEEDED,
                 src, dst, user,
                 exc.result
             )
         elif isinstance(exc, HTTPError):
+            dst.archive_status = ARCHIVER_NETWORK_ERROR
+            dst.save()
             utils.handler_archive_fail(
                 ARCHIVER_NETWORK_ERROR,
                 src, dst, user,
                 [exc.data['error']]
             )
         else:
+            dst.archive_status = ARCHIVER_UNCAUGHT_ERROR
+            dst.save()
             utils.handler_archive_fail(
                 ARCHIVER_UNCAUGHT_ERROR,
                 src, dst, user,
@@ -181,6 +188,9 @@ def archive_node(results, src_pk, dst_pk, user_pk):
     """
     logger.info("Archiving node: {0}".format(src_pk))
     src = Node.load(src_pk)
+    dst = Node.load(dst_pk)
+    dst.archive_status = ARCHIVER_PENDING
+    dst.save()
     stat_result = AggregateStatResult(
         src_pk,
         src.title,
@@ -219,6 +229,7 @@ def archive(self, src_pk, dst_pk, user_pk):
     utils.link_archive_provider(dst, user)
     dst.archiving = True
     dst.archive_task_id = self.request.id
+    dst.archive_status = ARCHIVER_INITIATED
     dst.save()
     src = Node.load(src_pk)
     targets = [src.get_addon(name) for name in settings.ADDONS_ARCHIVABLE]
