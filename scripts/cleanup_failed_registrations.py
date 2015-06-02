@@ -10,7 +10,7 @@ from website.archiver import (
     ARCHIVER_CHECKING,
     ARCHIVER_FAILURE,
     ARCHIVER_PENDING,
-    ARCHIVE_COPY_FAIL,
+    ARCHIVER_NETWORK_ERROR,
 )
 from website.settings import ARCHIVE_TIMEOUT_TIMEDELTA
 from website.archiver.utils import handle_archive_fail
@@ -38,7 +38,7 @@ def remove_failed_registrations(dry_run=True):
     if not dry_run:
         for f in failed:
             handle_archive_fail(
-                ARCHIVE_COPY_FAIL,
+                ARCHIVER_NETWORK_ERROR,
                 f.registered_from,
                 f,
                 f.creator,
