@@ -41,20 +41,22 @@ var PanelToggler = {
         //Dirty hack because of the treebeard redraw issues
         //Dont ever do this
         if (shown === 2) {
-            $('#mfrIframeParent').removeClass().addClass('col-md-6');
-            $('.file-view-panels').removeClass().addClass('file-view-panels').addClass('col-md-6');
+            $('#mfrIframeParent').removeClass().addClass('col-md-5');
+            $('.file-view-panels').removeClass().addClass('file-view-panels').addClass('col-md-7');
         } else if (shown === 1) {
-            $('#mfrIframeParent').removeClass().addClass('col-md-9');
-            $('.file-view-panels').removeClass().addClass('file-view-panels').addClass('col-md-3');
+            $('#mfrIframeParent').removeClass().addClass('col-md-8');
+            $('.file-view-panels').removeClass().addClass('file-view-panels').addClass('col-md-4');
         } else {
             $('#mfrIframeParent').removeClass().addClass('col-md-11');
             $('.file-view-panels').removeClass().addClass('file-view-panels').addClass('col-md-1');
         }
 
         return m('.panel-toggler', [
-            m('.row', [
-                m('.pull-right', [
-                    m('.btn-group.btn-group-sm', {class: 'file-toggle-btn'}, [m('.btn.btn-default.disabled', 'Toggle View: ')].concat(
+            m('.row', m('.col-md-12', [
+                m('.btn-toolbar.pull-right[style="width:355px!important;"]', [
+                    m('.btn-group.btn-group-sm.file-toggle-btn.pull-right', [
+                        m('.btn.btn-default.disabled', 'Toggle View: ')
+                    ].concat(
                         ctrl.panels.map(function(panel) {
                             return m('.btn' + (panel.selected ? '.btn-primary' : '.btn-default'), {
                                 onclick: function(e) {
@@ -63,9 +65,11 @@ var PanelToggler = {
                                 }
                             }, panel.title);
                         })
-                    ))
+                    )),
+                    m('.btn.btn-sm.btn-danger.pull-right', {onclick: $(document).trigger.bind($(document), 'fileviewpage:delete')}, 'Delete'),
+                    m('.btn.btn-sm.btn-success.pull-right', {onclick: $(document).trigger.bind($(document), 'fileviewpage:download')}, 'Download'),
                 ])
-            ]),
+            ])),
             m('br'),
             m('.row', ctrl.panels.map(function(panel, index) {
                 if (!panel.selected) return m('[style="display:none"]', panel);

@@ -11,7 +11,7 @@ var utils = require('./util.js');
 var FileEditor = require('./editor.js');
 var FileRevisionsTable = require('./revisions.js');
 
-//Sanity
+// Sanity
 var Panel = utils.Panel;
 var PanelToggler = utils.PanelToggler;
 
@@ -32,10 +32,10 @@ var FileViewPage = {
             delete: waterbutler.buildDeleteUrl(self.file.path, self.file.provider, self.node.id),
             metadata: waterbutler.buildMetadataUrl(self.file.path, self.file.provider, self.node.id),
             revisions: waterbutler.buildRevisionsUrl(self.file.path, self.file.provider, self.node.id),
-            content: waterbutler.buildDownloadUrl(self.file.path, self.file.provider, self.node.id, {accept_url: false, mode: 'render'}),
+            content: waterbutler.buildDownloadUrl(self.file.path, self.file.provider, self.node.id, {accept_url: false, mode: 'render'})
         });
 
-        self.deleteFile = function() {
+        $(document).on('fileviewpage:delete', function() {
             bootbox.confirm({
                 title: 'Delete file?',
                 message: '<p class="overflow">' +
@@ -55,12 +55,12 @@ var FileViewPage = {
                     });
                 }
             });
-        };
+        });
 
-        self.downloadFile = function() {
+        $(document).on('fileviewpage:download', function() {
             window.location = self.file.urls.content;
             return false;
-        };
+        });
 
         self.shareJSObservables = {
             activeUsers: m.prop([]),
@@ -68,47 +68,34 @@ var FileViewPage = {
             userId: self.context.currentUser.id
         };
 
-        revisionsHeader = m('.row', [
-            m('.col-md-6', 'Revisions'),
-            m('.col-md-6', [
-                m('.pull-right.btn-group.btn-group-sm', [
-                    m('button.btn.btn-danger', {onclick: self.deleteFile}, 'Delete'),
-                    m('button.btn.btn-success', {
-                        onclick: self.downloadFile,
-                        href: '?' + $.param($.extend(true, {}, $osf.urlParams(), {download: true}))
-                    }, 'Download')
-                ])
-            ])
-        ]);
-
         editHeader = function() {
             return m('.row', [
                 m('.col-md-3', [
                     m('i.fa.fa-pencil-square-o'),
-                    ' Edit',
+                    ' Edit'
                 ]),
-                m('.col-md-6', [
+                m('.col-md-5', [
                     m('', [
                         m('.progress.progress-no-margin.pointer', {
                             'data-toggle': 'modal',
-                            'data-target': '#' + self.shareJSObservables.status() + 'Modal',
+                            'data-target': '#' + self.shareJSObservables.status() + 'Modal'
                         }, [
                             m('.progress-bar.progress-bar-success', {
                                 connected: {
                                     style: 'width: 100%',
-                                    class: 'progress-bar progress-bar-success',
+                                    class: 'progress-bar progress-bar-success'
                                 },
                                 connecting: {
                                     style: 'width: 100%',
-                                    class: 'progress-bar progress-bar-warning progress-bar-striped active',
+                                    class: 'progress-bar progress-bar-warning progress-bar-striped active'
                                 },
                                 saving: {
                                     style: 'width: 100%',
-                                    class: 'progress-bar progress-bar-info progress-bar-striped active',
+                                    class: 'progress-bar progress-bar-info progress-bar-striped active'
                                 }
                             }[self.shareJSObservables.status()] || {
                                     style: 'width: 100%',
-                                    class: 'progress-bar progress-bar-danger',
+                                    class: 'progress-bar progress-bar-danger'
                                 }, [
                                     m('span.progress-bar-content', [
                                         {
@@ -123,7 +110,7 @@ var FileViewPage = {
                             ])
                         ])
                     ]),
-                    m('.col-md-3', [
+                    m('.col-md-4', [
                         m('.pull-right.btn-group.btn-group-sm', [
                             m('button#fileEditorRevert.btn.btn-warning', {onclick: function(){$(document).trigger('fileviewpage:revert');}}, 'Revert'),
                             m('button#fileEditorSave.btn.btn-success', {onclick: function() {$(document).trigger('fileviewpage:save');}}, 'Save')
@@ -133,15 +120,15 @@ var FileViewPage = {
         };
 
 
-        //crappy hack to delay creation of the editor
-        //until we know this is the current file revsion
+        // Hack to delay creation of the editor
+        // until we know this is the current file revsion
         self.enableEditing = function() {
-            //Sometimes we can get here twice, check just in case
+            // Sometimes we can get here twice, check just in case
             if (self.editor || !self.context.currentUser.canEdit) return;
             var fileType = mime.lookup(self.file.name.toLowerCase());
-            //Only allow files < 1MB to be editable
+            // Only allow files < 1MB to be editable
             if (self.file.size < 1048576 && fileType) { //May return false
-                editor = EDITORS[fileType.split('/')[0]];
+                var editor = EDITORS[fileType.split('/')[0]];
                 if (editor) {
                     self.editor = Panel('Edit', editHeader, editor, [self.file.urls.content, self.file.urls.sharejs, self.editorMeta, self.shareJSObservables], false);
                     self.panels.splice(1, 0, self.editor);
@@ -150,7 +137,7 @@ var FileViewPage = {
         };
 
         self.panels = [
-            Panel('Revisions', revisionsHeader, FileRevisionsTable, [self.file, self.node, self.enableEditing], true),
+            Panel('Revisions', undefined, FileRevisionsTable, [self.file, self.node, self.enableEditing], true)
             // View has been removed to prefer the iframe method described below
             // Panel('View', null, FileRenderer, [self.file.urls.render, self.file.error], true),
         ];
