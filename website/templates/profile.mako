@@ -130,7 +130,6 @@
 ##        </div>
 ##    </div>
 ##</div>
-<% import json %>
 <hr />
 <div class="row">
     <div class="col-sm-6">
@@ -139,7 +138,7 @@
                 "tpl" : "util/render_nodes.mako",
                 "uri" : "/api/v1/profile/${profile["id"]}/public_projects/",
                 "replace" : true,
-                "kwargs" : {"sortable" : true, "user": ${json.dumps(user) | n}, "pluralized_node_type": "projects"}
+                "kwargs" : {"sortable" : true, "user": ${user | json, n}, "pluralized_node_type": "projects"}
             }'></div>
     </div>
     <div class="col-sm-6">
@@ -148,7 +147,7 @@
                   "tpl" : "util/render_nodes.mako",
                   "uri" : "/api/v1/profile/${profile["id"]}/public_components/",
                   "replace" : true,
-                  "kwargs" : {"sortable" : true,  "user": ${json.dumps(user) | n}, "pluralized_node_type": "components"}
+                  "kwargs" : {"sortable" : true,  "user": ${user | json, n}, "pluralized_node_type": "components"}
               }'></div>
     </div>
 </div><!-- end row -->
@@ -160,13 +159,13 @@
 <script type="text/javascript">
   (function() {
       var socialUrls = {
-          crud: '${ api_url_for('serialize_social', uid=profile['id']) }'
+          crud: ${ api_url_for('serialize_social', uid=profile['id']) | json }
       };
       var jobsUrls = {
-          crud: '${ api_url_for('serialize_jobs', uid=profile['id']) }'
+          crud: ${ api_url_for('serialize_jobs', uid=profile['id']) | json }
       };
       var schoolsUrls = {
-          crud: '${ api_url_for('serialize_schools', uid=profile['id']) }'
+          crud: ${ api_url_for('serialize_schools', uid=profile['id']) | json }
       };
 
       window.contextVars = $.extend(true, {}, window.contextVars, {
