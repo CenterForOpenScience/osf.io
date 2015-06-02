@@ -1,18 +1,23 @@
 # -*- coding: utf-8 -*-
-
-from modularodm import fields
+import random
+from modularodm import fields, Q
+from modularodm.storage.base import KeyExistsException
 
 from framework.mongo import StoredObject
+
+
+ALPHABET = '23456789abcdefghijkmnpqrstuvwxyz'
+
+
+class CleanGuid(StoredObject):
+
+    _id = fields.StringField(primary=True)
 
 
 class Guid(StoredObject):
 
     _id = fields.StringField(primary=True)
     referent = fields.AbstractForeignField()
-
-    _meta = {
-        'optimistic': True,
-    }
 
     def __repr__(self):
         return '<id:{0}, referent:({1}, {2})>'.format(self._id, self.referent._primary_key, self.referent._name)
@@ -49,12 +54,27 @@ class GuidStoredObject(StoredObject):
             )
             guid.save()
 
-        # Else create GUID optimistically
+        # Else try to create GUID using database of "clean" guids, otherwise default to random generation
         else:
+            while True:
+                # Get a clean guid from the database
+                clean_guid = CleanGuid.find()
+                if clean_guid:
+                    rand = random.randint(0, clean_guid.count() - 1)
+                    id = clean_guid[rand]._id
+                else:
+                    id = ''.join(random.sample(ALPHABET, 5))
 
-            # Create GUID
-            guid = Guid()
-            guid.save()
+                try:
+                    guid = Guid(_id=id)
+                    guid.save()
+                    break
+                except KeyExistsException:
+                    if clean_guid:
+                        CleanGuid.remove(Q('_id', 'eq', id))
+                    pass
+
+            CleanGuid.remove(Q('_id', 'eq', id))
             guid.referent = (guid._primary_key, self._name)
             guid.save()
 
