@@ -386,6 +386,7 @@ $.extend(mime.types, {
     twig: 'text/plain',
     txt: 'text/plain',
     md: 'text/plain',
+    rmd: 'text/plain',
     u: 'text/plain',
     v: 'text/plain',
     vala: 'text/plain',
