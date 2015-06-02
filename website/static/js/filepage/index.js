@@ -69,12 +69,10 @@ var FileViewPage = {
 
         editHeader = function() {
             return m('.row', [
-                m('.col-md-3', [
+                m('.col-md-12', m('span[style=display:block;]', [
                     m('i.fa.fa-pencil-square-o'),
-                    ' Edit'
-                ]),
-                m('.col-md-5', [
-                    m('', [
+                    ' Edit',
+                    m('.pull-right', [
                         m('.progress.progress-no-margin.pointer', {
                             'data-toggle': 'modal',
                             'data-target': '#' + self.shareJSObservables.status() + 'Modal'
@@ -108,13 +106,7 @@ var FileViewPage = {
                                 ])
                             ])
                         ])
-                    ]),
-                    m('.col-md-4', [
-                        m('.pull-right.btn-group.btn-group-sm', [
-                            m('button#fileEditorRevert.btn.btn-warning', {onclick: function(){$(document).trigger('fileviewpage:revert');}}, 'Revert'),
-                            m('button#fileEditorSave.btn.btn-success', {onclick: function() {$(document).trigger('fileviewpage:save');}}, 'Save')
-                        ])
-                    ])
+                    ])),
                 ]);
         };
 
@@ -131,7 +123,7 @@ var FileViewPage = {
                 if (editor) {
                     self.editor = Panel('Edit', editHeader, editor, [self.file.urls.content, self.file.urls.sharejs, self.editorMeta, self.shareJSObservables], false);
                     self.panels.splice(0, 0, self.editor);
-                    m.redraw();
+                    m.redraw(true);
                 }
             }
         };
@@ -165,5 +157,6 @@ module.exports = function(context) {
             mfrRender.reload();
         });
     }
+
     return m.component(FileViewPage, context);
 };

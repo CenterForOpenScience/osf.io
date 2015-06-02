@@ -143,6 +143,16 @@ var FileEditor = {
             m('', {style: {'padding-top': '10px'}}, [
                 m('.wmd-input.wiki-editor#editor', {config: ctrl.bindAce})
             ]),
+            m('br'),
+            m('.osf-panel-footer[style=position:inherit]', [
+                m('.row', m('.col-md-12', [
+                    m('.pull-right', [
+                        m('button#fileEditorRevert.btn.btn-sm.btn-danger', {onclick: function(){$(document).trigger('fileviewpage:revert');}}, 'Revert'),
+                        ' ',
+                        m('button#fileEditorSave.btn.btn-sm.btn-success', {onclick: function() {$(document).trigger('fileviewpage:save');}}, 'Save')
+                    ])
+                ]))
+            ])
         ]);
 
     }
