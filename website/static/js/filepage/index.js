@@ -131,7 +131,8 @@ var FileViewPage = {
                 var editor = EDITORS[fileType.split('/')[0]];
                 if (editor) {
                     self.editor = Panel('Edit', editHeader, editor, [self.file.urls.content, self.file.urls.sharejs, self.editorMeta, self.shareJSObservables], false);
-                    self.panels.splice(1, 0, self.editor);
+                    self.panels.splice(0, 0, self.editor);
+                    m.redraw();
                 }
             }
         };
