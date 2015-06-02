@@ -5,6 +5,10 @@
 
 <%def name="title()">${file_name | h}</%def>
 
+<link href="//localhost:7778/static/css/mfr.css" media="all" rel="stylesheet" />
+<script src="//localhost:7778/static/js/pym.js"></script>
+<script src="//localhost:7778/static/js/mfr.js"></script>
+
 <div>
   <div>
     <h2 class="break-word">

@@ -164,15 +164,18 @@ var FileViewPage = {
 };
 
 module.exports = function(context) {
-    //Treebeard forces all mithril to load twice
-    //To avoid destroying the page iframe this out side of mithril
+    // Treebeard forces all mithril to load twice, to avoid
+    // destroying the page iframe this out side of mithril.
     if (!context.file.urls.render) {
         $('#mfrIframe').html(context.file.error);
     } else {
-        //Need token in url as we cannot send headers with an Iframe
-        var mfrIframe = new pym.Parent('mfrIframe', context.file.urls.render + '&token=' + context.accessToken, {});
+        var url = context.file.urls.render;
+        if (context.accessToken) {
+            url += '&token=' + context.accessToken;
+        }
+        var mfrRender = new mfr.Render('mfrIframe', url);
         $(document).on('fileviewpage:reload', function() {
-            mfrIframe.sendMessage('reload', 'x'); //Must send some kind of data
+            mfrRender.reload();
         });
     }
     return m.component(FileViewPage, context);
