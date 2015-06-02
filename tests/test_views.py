@@ -2486,6 +2486,27 @@ class TestAuthViews(OsfTestCase):
         user = User.find_one(Q('username', 'eq', email))
         assert_equal(user.fullname, name)
 
+    def test_register_scrubs_username(self):
+        """Usernames are scrubbed of malicious HTML when registering"""
+        url = api_url_for('register_user')
+        name = "<i>Eunice</i> O' \"Cornwallis\"<script type='text/javascript' src='http://www.cornify.com/js/cornify.js'></script><script type='text/javascript'>cornify_add()</script>"
+        email, password = fake.email(), 'underpressure'
+        res = self.app.post_json(
+            url,
+            {
+                'fullName': name,
+                'email1': email,
+                'email2': email,
+                'password': password,
+            }
+        )
+
+        expected_scrub_username = "Eunice O' \"Cornwallis\"cornify_add()"
+        user = User.find_one(Q('username', 'eq', email))
+
+        assert_equal(res.status_code, http.OK)
+        assert_equal(user.fullname, expected_scrub_username)
+
     def test_register_email_mismatch(self):
         url = api_url_for('register_user')
         name, email, password = fake.name(), fake.email(), 'underpressure'
