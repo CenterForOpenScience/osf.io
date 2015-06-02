@@ -1,4 +1,5 @@
 'use strict';
+
 require('css/user-addon-settings.css');
 var $ = require('jquery');
 var ko = require('knockout');
@@ -101,3 +102,19 @@ $('.addon-oauth').each(function(index, elem) {
     ko.applyBindings(viewModel, elem);
     viewModel.updateAccounts();
 });
+
+//Fixes profile settings side menu to left column
+function fixAffixWidth() {
+    $('.affix, .affix-top, .affix-bottom').each(function (){
+        var el = $(this);
+        var colsize = el.parent('.affix-parent').width();
+        el.outerWidth(colsize);
+    });
+}
+
+
+$(document).ready(function() {
+    $(window).resize(function (){ fixAffixWidth(); });
+    $('.profile-page .panel').on('affixed.bs.affix', function(){ fixAffixWidth();});
+});
+

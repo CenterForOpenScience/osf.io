@@ -74,5 +74,4 @@
 <%def name="javascript_bottom()">
     ${parent.javascript_bottom()}
     <script src="${"/static/public/js/notifications-config-page.js" | webpack_asset}"></script>
-    <script src=${"/static/public/js/profile-settings-menu.js" | webpack_asset}></script>
 </%def>

@@ -31,7 +31,6 @@ var entry = {
     'project-base-page': staticPath('js/pages/project-base-page.js'),
     'wiki-edit-page': staticPath('js/pages/wiki-edit-page.js'),
     'files-page': staticPath('js/pages/files-page.js'),
-    'profile-settings-menu': staticPath('js/pages/profile-settings-menu.js'),
     'profile-settings-page': staticPath('js/pages/profile-settings-page.js'),
     'profile-account-settings-page': staticPath('js/pages/profile-account-settings-page.js'),
     'register_1-page': staticPath('js/pages/register_1-page.js'),
