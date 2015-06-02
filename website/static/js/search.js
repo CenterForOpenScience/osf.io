@@ -123,8 +123,8 @@ var ViewModel = function(params) {
                 'query': self.query(),
                 'analyze_wildcard': true,
                 'lenient': true,
-                'auto_generate_phrase_queries':true,
-            }+
+                'auto_generate_phrase_queries': true,
+            }
         };
     });
 
