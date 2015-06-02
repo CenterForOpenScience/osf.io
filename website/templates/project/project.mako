@@ -100,7 +100,13 @@
                             "uri": "${node["api_url"]}get_contributors/",
                             "replace": true
                         }'></div>
+
                     </ol>
+                    % if 'admin' in user['permissions']:
+                        <a class="btn-mini btn-success btn-sm" href="${node['url']}contributors/">
+                            <i class="fa fa-external-link"></i> Manage
+                        </a>
+                    % endif
                 % endif
                 % if node['is_fork']:
                     <br />Forked from <a class="node-forked-from" href="/${node['forked_from_id']}/">${node['forked_from_display_absolute_url']}</a> on
