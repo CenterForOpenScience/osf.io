@@ -384,7 +384,7 @@ class TestFilebrowserViews(BoxAddonTestCase):
             node_settings=self.node_settings, auth=self.user.auth)
         assert_true(root)
 
-    @mock.patch('website.addons.box.client.BoxClient.get_folder')
+    @mock.patch('website.addons.box.views.BoxClient.get_folder')
     def test_box_list_folders_deleted(self, mock_metadata):
         # Example metadata for a deleted folder
         mock_metadata.return_value = {
@@ -406,14 +406,14 @@ class TestFilebrowserViews(BoxAddonTestCase):
         res = self.app.get(url, auth=self.user.auth, expect_errors=True)
         assert_equal(res.status_code, httplib.NOT_FOUND)
 
-    @mock.patch('website.addons.box.client.BoxClient.get_folder')
+    @mock.patch('website.addons.box.views.BoxClient.get_folder')
     def test_box_list_folders_returns_error_if_invalid_path(self, mock_metadata):
         mock_metadata.side_effect = BoxClientException(status_code=404, message='File not found')
         url = self.project.api_url_for('box_folder_list', folderId='lolwut')
         res = self.app.get(url, auth=self.user.auth, expect_errors=True)
         assert_equal(res.status_code, httplib.NOT_FOUND)
 
-    @mock.patch('website.addons.box.client.BoxClient.get_folder')
+    @mock.patch('website.addons.box.views.BoxClient.get_folder')
     def test_box_list_folders_handles_max_retry_error(self, mock_metadata):
         mock_response = mock.Mock()
         url = self.project.api_url_for('box_folder_list', folderId='fo')
