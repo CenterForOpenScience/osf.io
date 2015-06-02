@@ -199,6 +199,15 @@ ARCHIVE_COPY_ERROR_USER = Mail(
     subject="Problem registering ${src.title}"
 )
 
+ARCHIVE_UNCAUGHT_ERROR_DESK = Mail(
+    'archive_uncaught_error_desk',
+    subject="Problem registering ${src.title}"
+)
+ARCHIVE_UNCAUGHT_ERROR_USER = Mail(
+    'archive_uncaught_error_user',
+    subject="Problem registering ${src.title}"
+)
+
 ARCHIVE_SUCCESS = Mail(
     'archive_success',
     subject="Registration of ${src.title} complete"

@@ -1,6 +1,6 @@
 User: ${user.fullname} (${user.username}) [${user._id}]
 
-Tried to register ${src.title} (${src.url}) [${src._id}], but the archive task failed when copying files.
+Tried to register ${src.title} (${src.url}) [${src._id}], but the archive task failed unexpectedly.
 
 A report is included below:
 

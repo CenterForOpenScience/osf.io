@@ -41,15 +41,10 @@ class ArchiverTask(celery.Task):
     abstract = True
     max_retries = 0
 
-
-class ArchiverMainTask(celery.Task):
-
     def on_failure(self, exc, task_id, args, kwargs, einfo):
-        import pydevd
-        pydevd.settrace('localhost', port=54735, stdoutToServer=True, stderrToServer=True)
-        src = Node.load(args[0])
-        dst = Node.load(args[1])
-        user = User.load(args[2])
+        src = Node.load(kwargs['src_pk'])
+        dst = Node.load(kwargs['dst_pk'])
+        user = User.load(kwargs['user_pk'])
         if isinstance(exc, ArchiverSizeExceeded):
             utils.handle_archive_fail(
                 ARCHIVER_SIZE_EXCEEDED,
@@ -60,14 +55,15 @@ class ArchiverMainTask(celery.Task):
             utils.handler_archive_fail(
                 ARCHIVER_NETWORK_ERROR,
                 src, dst, user,
-                exc.data['error']
+                [exc.data['error']]
             )
-        else:  # TODO
+        else:
             utils.handler_archive_fail(
                 ARCHIVER_UNCAUGHT_ERROR,
                 src, dst, user,
-                exc.data['error']
+                [einfo]
             )
+        raise exc
 
 class ArchiverSizeExceeded(Exception):
 
@@ -171,7 +167,7 @@ def archive_addon(addon_short_name, src_pk, dst_pk, user_pk, stat_result):
     make_copy_request.si(dst_pk, copy_url, data)()
 
 
-@celery_app.task(name="archiver.archive_node")
+@celery_app.task(base=ArchiverTask, name="archiver.archive_node")
 def archive_node(results, src_pk, dst_pk, user_pk):
     """First use the results of #stat_node to check disk usage of the
     initated registration, then either fail the registration or
@@ -195,18 +191,20 @@ def archive_node(results, src_pk, dst_pk, user_pk):
     else:
         celery.chain(
             archive_addon.si(
-                result.target_name,
-                src_pk,
-                dst_pk,
-                user_pk,
-                result,
+                addon_short_name=result.target_name,
+                src_pk=src_pk,
+                dst_pk=dst_pk,
+                user_pk=user_pk,
+                stat_result=result,
             )
             for result in stat_result.targets.values()
         ).apply_async()
 
-@celery_app.task(bind=True, base=ArchiverMainTask, name='archiver.archive')
+@celery_app.task(bind=True, base=ArchiverTask, name='archiver.archive')
 def archive(self, src_pk, dst_pk, user_pk):
-    """Saves the celery task id, and kicks off a stat_node task
+    """Saves the celery task id, and start a celery.chord
+    that runs stat_addon for each addon attached to the Node,
+    then runs archive node with the result
 
     :param src_pk: primary key of node being registered
     :param dst_pk: primary key of registration node
@@ -225,13 +223,13 @@ def archive(self, src_pk, dst_pk, user_pk):
     src = Node.load(src_pk)
     targets = [src.get_addon(name) for name in settings.ADDONS_ARCHIVABLE]
     celery.chord(
-        celery.group(
+        celery.chain(
             stat_addon.si(
-                addon.config.short_name,
-                src_pk,
-                dst_pk,
-                user_pk,
+                addon_short_name=addon.config.short_name,
+                src_pk=src_pk,
+                dst_pk=dst_pk,
+                user_pk=user_pk,
             )
             for addon in targets if (addon and isinstance(addon, StorageAddonBase))
         )
-    )(archive_node.s(src_pk, dst_pk, user_pk))
+    )(archive_node.s(src_pk=src_pk, dst_pk=dst_pk, user_pk=user_pk))
