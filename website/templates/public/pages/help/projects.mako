@@ -1,4 +1,4 @@
-<div class="col-md-12 col-sm-12">
+<div class="row">
     <span id="projects" class="anchor"></span>
 
     <h4>Projects</h4>
@@ -7,7 +7,10 @@
     <p>When you click on a project to open it, you are taken to the Project Overview page. This page provides access
         to the features of the project via a gray navigation bar, as well as an overview of the components, files, tags,
         history, and wiki associated with the project.</p>
-    <div class="col-md-8 col-md-offset-2 col-sm-12">
+</div>
+
+<div class="row">
+    <div class="col-md-8 col-md-offset-2">
         <div class="gs-video embed-responsive embed-responsive-16by9">
             <div class="embed-responsive-item youtube-loader" id="Qx4MNTz3HMk"></div>
         </div>

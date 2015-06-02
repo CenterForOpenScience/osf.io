@@ -1,4 +1,4 @@
-<div class="col-md-12 col-sm-12">
+<div class="row">
     <span id="contributors" class="anchor"></span>
     <h4>Contributors</h4>
     <p>Adding contributors to a project allows credit to be given to those who have worked on the project, and
@@ -14,7 +14,9 @@
     <p>Assigning "read" privileges means that the contributor can see any project or component they are listed as a contributor
         on. "Read and write" privileges means that the contributor can see and edit any project or component they
         are a contributor on, but they cannot add or remove contributors like an administrator.</p>
-    <div class="col-md-8 col-md-offset-2 col-sm-12">
+</div>
+<div class="row">
+    <div class="col-md-8 col-md-offset-2">
         <div class="gs-video embed-responsive embed-responsive-16by9">
             <div class="embed-responsive-item youtube-loader" id="eYpAn59G6Yk"></div>
         </div>

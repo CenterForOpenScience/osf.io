@@ -1,4 +1,4 @@
-<div class="col-md-12 col-sm-12">
+<div class="row">
     <span id="links" class="anchor"></span>
     <h4>Links</h4>
     <p>Links are an alternative to building a component within a project. Adding a link means that
@@ -9,7 +9,10 @@
         project.</p>
     <p>A link can created be by visiting the project you want to add the link to. Click "Add Links" in the components
         section of your project dashboard and search for the project you wish to link to.</p>
-    <div class="col-md-8 col-md-offset-2 col-sm-12">
+</div>
+
+<div class="row">
+    <div class="col-md-8 col-md-offset-2">
         <div class="gs-video embed-responsive embed-responsive-16by9">
             <div class="embed-responsive-item youtube-loader" id="zqZfScxCWLg"></div>
         </div>

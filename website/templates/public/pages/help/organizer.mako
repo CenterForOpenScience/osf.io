@@ -1,4 +1,4 @@
-<div class="col-md-12 col-sm-12">
+<div class="row">
     <span id="organizer" class="anchor"></span>
     <h4>Project Organizer</h4>
     <p>The Project Organizer displays your projects, components, and registrations and makes it easy for
@@ -18,7 +18,10 @@
         clicking on the "info" icon adjacent to the collection, and then clicking on the pencil icon next to the
         collection name. Projects and components can be renamed in this way too. Collections can be deleted by clicking
         on the collection name and then on the "Delete" button in the toolbar.</p>
-    <div class="col-md-8 col-md-offset-2 col-sm-12">
+</div>
+
+<div class="row">
+    <div class="col-md-8 col-md-offset-2">
         <div class="gs-video embed-responsive embed-responsive-16by9">
             <div class="embed-responsive-item youtube-loader" id="4K9abeIl4zE"></div>
         </div>

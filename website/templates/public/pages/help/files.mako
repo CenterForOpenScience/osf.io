@@ -1,4 +1,4 @@
-<div class="col-md-12 col-sm-12">
+<div class="row">
     <span id="files" class="anchor"></span>
     <h4>Files</h4>
     <p>Each project and component can have its own set of files. This allows you to organize your files into meaningful
@@ -10,7 +10,10 @@
     <p>Only contributors of that component with writing privileges can add or delete a file. If a component is set to
         be private, then no one will be able to see the enclosed files, but public components and projects allow
         anyone to download their materials.</p>
-    <div class="col-md-8 col-md-offset-2 col-sm-12">
+</div>
+
+<div class="row">
+    <div class="col-md-8 col-md-offset-2">
         <div class="gs-video embed-responsive embed-responsive-16by9">
             <div class="embed-responsive-item youtube-loader" id="_8-nrjOWpfE"></div>
         </div>

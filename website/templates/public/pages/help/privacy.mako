@@ -1,4 +1,4 @@
-<div class="col-md-12 col-sm-12">
+<div class="row">
     <span id="privacy" class="anchor"></span>
     <h4>Privacy</h4>
     <p>All projects are private by default. However, you can choose to make your project's contents available for
@@ -7,7 +7,10 @@
     <p>Components you have added can have their own privacy settings. Making the project public does not make all
         of its components public. For example, you can make your methodology component public, but leave the data
         in a private component.</p>
-    <div class="col-md-8 col-md-offset-2 col-sm-12">
+</div>
+
+<div class="row">
+    <div class="col-md-8 col-md-offset-2">
         <div class="gs-video embed-responsive embed-responsive-16by9">
             <div class="embed-responsive-item youtube-loader" id="hmWjJ4En33Q"></div>
         </div>
