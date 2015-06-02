@@ -25,6 +25,12 @@ var md = require('js/markdown').full;
 var ctx = window.contextVars;
 var nodeApiUrl = ctx.node.urls.api;
 
+
+
+
+$osf.applyBindings(NodeControl, '#componentScope');
+
+
 // Initialize controller for "Add Links" modal
 new pointers.PointerManager('#addPointer', window.contextVars.node.title);
 

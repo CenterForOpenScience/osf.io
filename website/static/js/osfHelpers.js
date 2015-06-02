@@ -4,6 +4,7 @@ var $ = require('jquery');
 require('jquery-blockui');
 var Raven = require('raven-js');
 var moment = require('moment');
+var iconmap = require('js/iconmap');
 
 // TODO: For some reason, this require is necessary for custom ko validators to work
 // Why?!
@@ -495,6 +496,41 @@ ko.bindingHandlers.listing = {
             return ret;
         }).join('');
         $(element).html(list);
+    }
+};
+
+ko.bindingHandlers.getTheIcon = {
+    init: function(elem, valueAccessor) {
+        console.log(valueAccessor());
+        //$(elem).addClass("fa fa-lock");
+        var icon;
+        var text = '';
+        var category = valueAccessor();
+        if (Object.keys(iconmap.componentIcons).indexOf(category) >=0 ){
+            icon = iconmap.componentIcons[category];
+        }
+        else {
+            icon = iconmap.projectIcons[category];
+        }
+        //text = '<i class=' + icon + '><i/>';
+        $(elem).addClass(icon);
+        //debugger;
+    },
+    update: function(elem, valueAccessor) {
+        console.log(valueAccessor);
+        console.log(valueAccessor());
+        var icon;
+        var text = '';
+        var category = valueAccessor();
+        if (Object.keys(iconmap.componentIcons).indexOf(category) >=0 ){
+            icon = iconmap.componentIcons[category];
+        }
+        else {
+            icon = iconmap.projectIcons[category];
+        }
+        //text = '<i class=' + icon + '><i/>';
+        console.log(elem);
+        $(elem).addClass(icon);
     }
 };
 

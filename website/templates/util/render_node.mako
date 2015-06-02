@@ -17,6 +17,7 @@
             % if not summary['is_public']:
                 <span class="fa fa-lock" data-toggle="tooltip" title="This project is private"></span>
             % endif
+            <span data-bind="getTheIcon: '${summary['category']}'"></span>
             <a href="${summary['url']}">${summary['title']}</a>
 
             % if summary['is_registration']:
