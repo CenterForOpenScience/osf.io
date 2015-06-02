@@ -108,8 +108,6 @@ MFR_TEMP_PATH = os.path.join(BASE_PATH, 'mfrtemp')
 # Use Celery for file rendering
 USE_CELERY = True
 
-CELERY_DEFAULT_QUEUE = 'osf'
-
 # Use GnuPG for encryption
 USE_GNUPG = True
 
@@ -177,7 +175,7 @@ WIKI_WHITELIST = {
 BROKER_URL = 'amqp://'
 
 # Default RabbitMQ backend
-CELERY_RESULT_BACKEND = None
+CELERY_RESULT_BACKEND = 'amqp://'
 
 # Modules to import when celery launches
 CELERY_IMPORTS = (
