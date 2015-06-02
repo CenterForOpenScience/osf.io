@@ -34,3 +34,9 @@ class TestSanitize(unittest.TestCase):
             sanitize.strip_html('<foo>bar</foo>'),
             'bar'
         )
+
+    def test_unescape_html(self):
+        assert_equal(
+            sanitize.safe_unescape_html('&lt;&gt; diamonds &amp; diamonds &lt;&gt;'),
+            '<> diamonds & diamonds <>'
+        )
