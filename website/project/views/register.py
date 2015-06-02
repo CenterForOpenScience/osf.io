@@ -546,8 +546,11 @@ def registration_callbacks(node, payload, *args, **kwargs):
     if errors:
         update_status(
             registration,
-            'src_provider',
-            ARCHIVER_FAILURE
+            src_provider,
+            ARCHIVER_FAILURE,
+            meta={
+                'errors': errors
+            }
         )
     else:
         update_status(
