@@ -8,7 +8,7 @@ from framework.auth.core import Auth
 from website.models import Node, Pointer
 from api.base.utils import get_object_or_404, waterbutler_url_for
 from api.base.filters import ODMFilterMixin, ListFilterMixin
-from .serializers import NodeSerializer, NodePointersSerializer, NodeFilesSerializer, RegistrationOpenEndedSerializer, RegistrationPreDataCollectionSerializer
+from .serializers import NodeSerializer, NodePointersSerializer, NodeFilesSerializer, RegistrationOpenEndedSerializer, RegistrationPreDataCollectionSerializer, ReplicationRecipePreRegistrationSerializer
 from api.users.serializers import ContributorSerializer
 from .permissions import ContributorOrPublic, ReadOnlyIfRegistration, ContributorOrPublicForPointers
 
@@ -182,16 +182,6 @@ class NodeRegistrationsPreDataCollection(generics.CreateAPIView, NodeMixin):
 
     serializer_class = RegistrationPreDataCollectionSerializer
 
-    # overrides ListAPIView
-    def get_queryset(self):
-        nodes = self.get_node().node__registrations
-        user = self.request.user
-        if user.is_anonymous():
-            auth = Auth(None)
-        else:
-            auth = Auth(user)
-        registrations = [node for node in nodes if node.can_view(auth)]
-        return registrations
 
 class NodeRegistrationsReplicationRecipePreRegistration(generics.CreateAPIView, NodeMixin):
     """Registrations of the current node.
@@ -203,18 +193,8 @@ class NodeRegistrationsReplicationRecipePreRegistration(generics.CreateAPIView, 
         drf_permissions.IsAuthenticatedOrReadOnly,
     )
 
-    serializer_class = NodeSerializer
+    serializer_class = ReplicationRecipePreRegistrationSerializer
 
-    # overrides ListAPIView
-    def get_queryset(self):
-        nodes = self.get_node().node__registrations
-        user = self.request.user
-        if user.is_anonymous():
-            auth = Auth(None)
-        else:
-            auth = Auth(user)
-        registrations = [node for node in nodes if node.can_view(auth)]
-        return registrations
 
 class NodeRegistrationsReplicationRecipePostCompletion(generics.CreateAPIView, NodeMixin):
     """Registrations of the current node.

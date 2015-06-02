@@ -176,20 +176,16 @@ class RegistrationPreDataCollectionSerializer(JSONAPISerializer):
 
     looked = ser.ChoiceField(choices=TRUE_FALSE_CHOICES, required=True, help_text = "Is data collection for this project underway or complete?", write_only=True)
     datacompletion = ser.ChoiceField(choices=TRUE_FALSE_CHOICES, required=True, help_text = "Have you looked at the data?", write_only=True)
-    comments = ser.CharField(required=True, allow_blank=False, allow_null=False, help_text="Other comments", write_only=True)
+    comments = ser.CharField(default='', help_text="Other comments", write_only=True)
 
     def create(self, validated_data):
-        looked = validated_data.get('looked')
-        datacompletion = validated_data.get('datacompletion')
-        comments = validated_data.get('comments')
-
         template = "OSF-Standard_Pre-Data_Collection_Registration"
         schema =  MetaSchema.find(
             Q('name', 'eq', template)).sort('-schema_version')[0]
         request = self.context['request']
         user = request.user
         node = self.context['view'].get_node()
-        clean_data = process_payload({"looked": looked, "datacompletion": datacompletion, "comments": comments})
+        clean_data = process_payload({"looked": validated_data['looked'], "datacompletion": validated_data['datacompletion'], "comments": validated_data['comments']})
         registration = node.register_node(
             schema = schema,
             auth = Auth(user),
@@ -201,6 +197,62 @@ class RegistrationPreDataCollectionSerializer(JSONAPISerializer):
     class Meta:
         type_='registrations'
 
+class ReplicationRecipePreRegistrationSerializer(JSONAPISerializer):
+    YES_NO_CHOICES = ["yes", "no"]
+    SIM_DIFF_CHOICES = ["Exact", "Close", "Different"]
+
+    id = ser.CharField(read_only=True, source='_id')
+    title = ser.CharField(read_only=True)
+    registered_meta = ser.CharField(read_only=True)
+
+    item1 = ser.CharField(default='', write_only=True, help_text = "Verbal description of the effect I am trying to replicate")
+    item2 = ser.CharField(default='', write_only=True, help_text = "It is important to replicate this effect because")
+    item3 = ser.CharField(default='', write_only=True, help_text = "The effect size of the effect I am trying to replicate is")
+    item4 = ser.CharField(default='', write_only=True, help_text = "The confidence interval of the original effect is")
+    item5 = ser.CharField(default='', write_only=True, help_text = "The sample size of the original effect is")
+    item6 = ser.CharField(default='', write_only=True, help_text = "Where was the original study conducted? (e.g., lab, in the field, online)")
+    item7 = ser.CharField(default='', write_only=True, help_text = "What country/region was the original study conducted in?")
+    item8 = ser.CharField(default='', write_only=True, help_text = "What kind of sample did the original study use? (e.g., student, Mturk, representative)")
+    item9 = ser.CharField(default='', write_only=True, help_text = "Was the original study conducted with paper-and-pencil surveys, on a computer, or something else?")
+    item10= ser.ChoiceField(default='', write_only=True, choices=YES_NO_CHOICES, help_text =  "Are the original materials for the study available from the author?")
+    item11 = ser.CharField(default='', write_only=True, help_text = "I know that assumptions (e.g., about the meaning of the stimuli) in the original study will also hold in my replication because")
+    item12 = ser.CharField(default='', write_only=True, help_text = "Location of the experimenter during data collection")
+    item13 = ser.CharField(default='', write_only=True, help_text = "Experimenter knowledge of participant experimental condition")
+    item14 = ser.CharField(default='', write_only=True, help_text = "Experimenter knowledge of overall hypotheses")
+    item15 = ser.CharField(default='', write_only=True, help_text = "My target sample size is")
+    item16 = ser.CharField(default='', write_only=True, help_text = "The rationale for my sample size is")
+    item17= ser.ChoiceField(default='', write_only=True, choices=SIM_DIFF_CHOICES, help_text =  "The similarities/differences in the instructions are")
+    item18= ser.ChoiceField(default='', write_only=True, choices=SIM_DIFF_CHOICES, help_text =  "The similarities/differences in the measures are")
+    item19= ser.ChoiceField(default='', write_only=True, choices=SIM_DIFF_CHOICES, help_text =  "The similarities/differences in the stimuli are")
+    item20= ser.ChoiceField(default='', write_only=True, choices=SIM_DIFF_CHOICES, help_text =  "The similarities/differences in the procedure are")
+    item21= ser.ChoiceField(default='', write_only=True, choices=SIM_DIFF_CHOICES, help_text =  "The similarities/differences in the location (e.g., lab vs. online; alone vs. in groups) are")
+    item22= ser.ChoiceField(default='', write_only=True, choices=SIM_DIFF_CHOICES, help_text =  "The similarities/difference in remuneration are")
+    item23= ser.ChoiceField(default='', write_only=True, choices=SIM_DIFF_CHOICES, help_text =  "The similarities/differences between participant populations are")
+    item24 = ser.CharField(default='', write_only=True, help_text = "What differences between the original study and your study might be expected to influence the size and/or direction of the effect?")
+    item25 = ser.CharField(default='', write_only=True, help_text = "I have taken the following steps to test whether the differences listed in #22 will influence the outcome of my replication attempt")
+    item26 = ser.CharField(default='', write_only=True, help_text = "My exclusion criteria are (e.g., handling outliers, removing participants from analysis)")
+    item27 = ser.CharField(default='', write_only=True, help_text = "My analysis plan is (justify differences from the original)")
+    item28 = ser.CharField(default='', write_only=True, help_text = "A successful replication is defined as")
+
+    def create(self, validated_data):
+        template = "Replication_Recipe_(Brandt_et_al__!dot!__,_2013):_Pre-Registration"
+        schema = 1
+        request = self.context['request']
+        user = request.user
+        node = self.context['view'].get_node()
+        clean_data = process_payload({"item"+str(j): validated_data["item"+str(j)] for j in range(1,29)})
+
+        registration = node.register_node(
+            schema = schema,
+            auth = Auth(user),
+            template = template,
+            #data = json.dumps({"item"+str(j): clean_data["item"+str(j)] for j in range(1,29)})
+            data = json.dumps(({"item1": clean_data['item1'], "item2": clean_data['item2'], "item3": clean_data['item3'], "item4": clean_data['item4'], "item5": clean_data['item5'], "item6": clean_data['item6'], "item7": clean_data['item7'], "item8": clean_data['item8'], "item9": clean_data['item9'], "item10": clean_data['item10'], "item11": clean_data['item11'], "item12": clean_data['item12'], "item13": clean_data['item13'], "item14": clean_data['item14'], "item15": clean_data['item15'], "item16": clean_data['item16'], "item17": clean_data['item17'], "item18": clean_data['item18'], "item19": clean_data['item19'], "item20": clean_data['item20'], "item21": clean_data['item21'], "item22": clean_data['item22'], "item23": clean_data['item23'], "item24": clean_data['item24'], "item25": clean_data['item25'], "item26": clean_data['item26'], "item27": clean_data['item27'], "item28": clean_data['item28']})
+))
+        return registration
+
+    class Meta:
+        type_='registrations'
 
 class NodePointersSerializer(JSONAPISerializer):
 
