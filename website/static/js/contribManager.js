@@ -96,10 +96,10 @@ var ContributorModel = function(contributor, currentUserCanEdit, pageOwner, isRe
         return (self.id === pageOwner.id) && !isRegistration;
     });
 
-    self.change = ko.computed(function() {
+    self.change = ko.pureComputed(function() {
         self.permission(self.curPermission().value);
-        var current_val = self.curPermission().value;
-        return current_val === self.original;
+        var currentValue = self.curPermission().value;
+        return currentValue === self.original;
     });
 
     // TODO: copied-and-pasted from nodeControl. When nodeControl
@@ -324,9 +324,7 @@ var ContributorsViewModel = function(contributors, adminContributors, user, isRe
                 return !contributor.deleteStaged();
             }),
             function(contributor) {
-                var temp = contributor.serialize();
-                var minInfo = {id: temp.id, permission: temp.permission, registered: temp.registered, visible: temp.visible};
-                return minInfo;
+                return contributor.serialize();
             }
         );
     };
