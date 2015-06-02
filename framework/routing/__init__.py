@@ -204,7 +204,7 @@ def render_mako_string(tpldir, tplname, data, safe=False):
         default_filters = ['h']  # Escape HTML entities by default
     else:
         lookup_obj = _tpl_lookup
-        default_filters=None
+        default_filters = None
 
     tpl = mako_cache.get(tplname)
     if tpl is None:
