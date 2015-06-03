@@ -1744,7 +1744,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
                 status.push_status_message(message)
         registered.nodes = []
 
-        for node_contained in original.nodes:
+        for node_contained in original.nodes.find(Q('is_deleted', 'eq', False)):
             registered_node = node_contained.register_node(
                 schema, auth, template, data,
             )
