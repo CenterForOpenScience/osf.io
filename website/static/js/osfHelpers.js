@@ -501,10 +501,7 @@ ko.bindingHandlers.listing = {
 
 ko.bindingHandlers.getTheIcon = {
     init: function(elem, valueAccessor) {
-        console.log(valueAccessor());
-        //$(elem).addClass("fa fa-lock");
         var icon;
-        var text = '';
         var category = valueAccessor();
         if (Object.keys(iconmap.componentIcons).indexOf(category) >=0 ){
             icon = iconmap.componentIcons[category];
@@ -512,15 +509,10 @@ ko.bindingHandlers.getTheIcon = {
         else {
             icon = iconmap.projectIcons[category];
         }
-        //text = '<i class=' + icon + '><i/>';
         $(elem).addClass(icon);
-        //debugger;
     },
     update: function(elem, valueAccessor) {
-        console.log(valueAccessor);
-        console.log(valueAccessor());
         var icon;
-        var text = '';
         var category = valueAccessor();
         if (Object.keys(iconmap.componentIcons).indexOf(category) >=0 ){
             icon = iconmap.componentIcons[category];
@@ -528,11 +520,17 @@ ko.bindingHandlers.getTheIcon = {
         else {
             icon = iconmap.projectIcons[category];
         }
-        //text = '<i class=' + icon + '><i/>';
-        console.log(elem);
         $(elem).addClass(icon);
     }
 };
+
+ko.bindingHandlers.stopBinding = {
+    init: function() {
+        return { controlsDescendantBindings: true };
+    }
+};
+
+ko.virtualElements.allowedBindings.stopBinding = true;
 
 
 // Also export these to the global namespace so that these can be used in inline

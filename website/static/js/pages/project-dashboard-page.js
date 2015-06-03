@@ -26,11 +26,6 @@ var ctx = window.contextVars;
 var nodeApiUrl = ctx.node.urls.api;
 
 
-
-
-$osf.applyBindings(NodeControl, '#componentScope');
-
-
 // Initialize controller for "Add Links" modal
 new pointers.PointerManager('#addPointer', window.contextVars.node.title);
 
@@ -39,6 +34,8 @@ $('body').on('nodeLoad', function(event, data) {
     new LogFeed('#logScope', nodeApiUrl + 'log/');
     // Initialize nodeControl
     new NodeControl.NodeControl('#projectScope', data);
+
+    $osf.applyBindings(NodeControl, '#componentScope');
 });
 
 // Initialize comment pane w/ it's viewmodel
