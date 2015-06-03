@@ -580,7 +580,7 @@ function OBUploaderViewModel(params) {
         //stop user from leaving if file is staged for upload
         $(window).on('beforeunload', function() {
             if(!self.enableUpload()) {
-                return 'You have a pending upload. If you leave' +
+                return 'You have a pending upload. If you leave ' +
                     'the page now, your file will not be stored.';
             }
         });
