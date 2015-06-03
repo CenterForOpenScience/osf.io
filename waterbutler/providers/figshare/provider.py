@@ -180,6 +180,9 @@ class FigshareProjectProvider(BaseFigshareProvider):
         if path.is_root:
             return (yield from self._project_metadata_contents())
 
+        if path.identifier is None:
+            raise exceptions.NotFoundError(str(path))
+
         provider = yield from self._make_article_provider(path.parts[1].identifier)
         return (yield from provider.metadata(path, **kwargs))
 
@@ -327,6 +330,9 @@ class FigshareArticleProvider(BaseFigshareProvider):
 
     @asyncio.coroutine
     def metadata(self, path, **kwargs):
+        if path.identifier is None:
+            raise exceptions.NotFoundError(str(path))
+
         article_json = yield from self._get_article_json()
 
         if path.is_root or str(path.identifier) == self.article_id:
