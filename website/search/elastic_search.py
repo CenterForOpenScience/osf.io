@@ -328,6 +328,14 @@ def create_index(index=INDEX):
             },
         }
     }
+
+    require_english_analyzer = ['title', 'description']
+    for field in require_english_analyzer:
+        mapping['properties'][field] = {
+            'type': 'string',
+            'analyzer': 'english'
+        }
+
     es.indices.create(index, ignore=[400])
     for type_ in ['project', 'component', 'registration', 'user']:
         es.indices.put_mapping(index=index, doc_type=type_, body=mapping, ignore=[400, 404])
