@@ -9,6 +9,11 @@ from modularodm import Q
 from framework.forms.utils import process_payload
 from rest_framework import serializers
 import json
+import hashlib
+from api.base.utils import absolute_reverse
+
+
+
 
 
 
@@ -136,9 +141,25 @@ class RegistrationOpenEndedSerializer(JSONAPISerializer):
 
     id = ser.CharField(read_only=True, source='_id')
     title = ser.CharField(read_only=True)
+    token = ser.CharField(read_only = True, default = '')
 
-    summary = ser.CharField(required=True, allow_blank=False, allow_null=False, source="registered_meta", help_text="Provide a summary or describe how this differs from prior registrations.")
+    summary = ser.CharField(required=True, allow_blank=False, allow_null=False, write_only = True, help_text="Provide a summary or describe how this differs from prior registrations.")
 
+    def validate(self, data):
+        if data['token'] == '':
+            request = self.context['request']
+            user = request.user
+            node = self.context['view'].get_node()
+            token = hashlib.md5()
+            token.update('node._id')
+            token.update('user._id')
+            token.update(data['summary'])
+            token = token.hexdigest()
+            url = absolute_reverse('nodes:node-registration-open-ended-token', kwargs={'pk': node._id, 'token': token})
+            #raise serializers.ValidationError("Are you sure you want to register {}? Here is your registration token: {}".format(node.title, token))
+            raise serializers.ValidationError("Use new URL to confirm registration of project {}: {}".format(node.title, url) )
+
+        return data
 
     def create(self, validated_data):
         template = "Open-Ended_Registration"
@@ -152,17 +173,9 @@ class RegistrationOpenEndedSerializer(JSONAPISerializer):
             schema = schema,
             auth = Auth(user),
             template = template,
-            data = json.dumps({"summary": clean_data["registered_meta"]})
+            data = json.dumps({"summary": clean_data["summary"]})
         )
         return registration
-
-    #
-    # def create(self, validated_data):
-    #     request = self.context['request']
-    #     user = request.user
-    #     node = self.context['view'].get_node()
-    #     registration = node_register_template_page_post(Auth(user), node, kwargs={'node': node, 'nid':node, 'pid':node, 'template': 'Open-Ended_Registration', })
-    #     return registration
 
     class Meta:
         type_='registrations'
