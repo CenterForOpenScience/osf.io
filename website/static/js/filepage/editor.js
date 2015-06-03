@@ -31,7 +31,7 @@ var FileEditor = {
         self.bindAce = function(element, isInitialized, context) {
             if (isInitialized) return;
             model.editor = ace.edit(element.id);
-            model.editor.setValue(self.initialText);
+            model.editor.setValue(self.initialText, -1);
             new ShareJSDoc(shareWSUrl, self.editorMeta, model.editor, self.observables);
         };
 
