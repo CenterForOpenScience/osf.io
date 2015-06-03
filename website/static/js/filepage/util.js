@@ -27,61 +27,6 @@ Panel.view = function(ctrl) {
 };
 
 
-var PanelToggler = {
-    controller: function(header, panels) {
-        var self = this;
-        self.panels = panels;
-        self.header = header || '';
-    },
-    view: function(ctrl) {
-        var shown = ctrl.panels.reduce(function(accu, panel) {
-            return accu + (panel.selected ? 1 : 0);
-        }, 0);
-
-        //Dirty hack because of the treebeard redraw issues
-        //Dont ever do this
-        if (shown === 2) {
-            $('#mfrIframeParent').removeClass().addClass('col-md-5');
-            $('.file-view-panels').removeClass().addClass('file-view-panels').addClass('col-md-7');
-        } else if (shown === 1) {
-            $('#mfrIframeParent').removeClass().addClass('col-md-6');
-            $('.file-view-panels').removeClass().addClass('file-view-panels').addClass('col-md-6');
-        } else {
-            $('#mfrIframeParent').removeClass().addClass('col-md-11');
-            $('.file-view-panels').removeClass().addClass('file-view-panels').addClass('col-md-1');
-        }
-
-        m.render(document.getElementById('toggleBar'), m('.btn-toolbar[style=margin-top:20px]', [
-            m('.btn-group', [
-                m('.btn.btn-sm.btn-danger', {onclick: $(document).trigger.bind($(document), 'fileviewpage:delete')}, 'Delete'),
-            ]),
-            m('.btn-group', [
-                m('.btn.btn-sm.btn-success', {onclick: $(document).trigger.bind($(document), 'fileviewpage:download')}, 'Download'),
-            ]),
-            m('.btn-group.btn-group-sm', [
-                m('.btn.btn-default.disabled', 'Toggle View: ')
-            ].concat(
-                ctrl.panels.map(function(panel) {
-                    return m('.btn' + (panel.selected ? '.btn-primary' : '.btn-default'), {
-                        onclick: function(e) {
-                            e.preventDefault();
-                            panel.selected = !panel.selected;
-                        }
-                    }, panel.title);
-                })
-            )),
-        ]));
-
-        return m('.panel-toggler', [
-            m('.row', ctrl.panels.map(function(pane, index) {
-                if (!pane.selected) return m('[style="display:none"]', pane);
-                return m('.col-md-' + Math.floor(12/shown), pane);
-            }))
-        ]);
-    }
-};
-
-
 var Spinner = m.component({
     controller: function(){},
     view: function() {
@@ -98,5 +43,4 @@ var Spinner = m.component({
 module.exports = {
     Panel: Panel,
     Spinner: Spinner,
-    PanelToggler: PanelToggler
 };

@@ -12,7 +12,6 @@ var FileRevisionsTable = require('./revisions.js');
 
 // Sanity
 var Panel = utils.Panel;
-var PanelToggler = utils.PanelToggler;
 
 
 var EDITORS = {'text': FileEditor};
@@ -125,25 +124,71 @@ var FileViewPage = {
                 var editor = EDITORS[fileType.split('/')[0]];
                 if (editor) {
                     self.editor = new Panel('Edit', editHeader, editor, [self.file.urls.content, self.file.urls.sharejs, self.editorMeta, self.shareJSObservables], false);
-                    self.comp = m.component(PanelToggler, m('h3', self.file.name), [self.editor, self.panels[0]]);
                 }
             }
             m.redraw(true);
         };
 
-        self.panels = [
-            new Panel('Revisions', undefined, FileRevisionsTable, [self.file, self.node, self.enableEditing], true)
-            // View has been removed to prefer the iframe method described below
-            // Panel('View', null, FileRenderer, [self.file.urls.render, self.file.error], true),
-        ];
-
-        self.comp = m.component(PanelToggler, m('h3', self.file.name), self.panels);
+        //Hack to polyfill the Panel interface
+        //Ran into problems with mithrils caching messing up with multiple "Panels"
+        self.revisions = m.component(FileRevisionsTable, self.file, self.node, self.enableEditing);
+        self.revisions.selected = true;
+        self.revisions.title = 'Revisions';
 
     },
     view: function(ctrl) {
-        return m('.file-view-page', [
-            ctrl.comp
-        ]);
+        //This code was abstracted into a panel toggler at one point
+        //it was removed and shoved here due to issues with mithrils caching and interacting
+        //With other non-mithril components on the page
+        var panels;
+        if (ctrl.editor) {
+            panels = [ctrl.editor, ctrl.revisions];
+        } else {
+            panels = [ctrl.revisions];
+        }
+
+        var shown = panels.reduce(function(accu, panel) {
+            return accu + (panel.selected ? 1 : 0);
+        }, 0);
+
+        if (shown === 2) {
+            $('#mfrIframeParent').removeClass().addClass('col-md-5');
+            $('.file-view-panels').removeClass().addClass('file-view-panels').addClass('col-md-7');
+        } else if (shown === 1) {
+            $('#mfrIframeParent').removeClass().addClass('col-md-6');
+            $('.file-view-panels').removeClass().addClass('file-view-panels').addClass('col-md-6');
+        } else {
+            $('#mfrIframeParent').removeClass().addClass('col-md-11');
+            $('.file-view-panels').removeClass().addClass('file-view-panels').addClass('col-md-1');
+        }
+
+        m.render(document.getElementById('toggleBar'), m('.btn-toolbar[style=margin-top:20px]', [
+            m('.btn-group', [
+                m('.btn.btn-sm.btn-danger', {onclick: $(document).trigger.bind($(document), 'fileviewpage:delete')}, 'Delete'),
+            ]),
+            m('.btn-group', [
+                m('.btn.btn-sm.btn-success', {onclick: $(document).trigger.bind($(document), 'fileviewpage:download')}, 'Download'),
+            ]),
+            m('.btn-group.btn-group-sm', [
+                m('.btn.btn-default.disabled', 'Toggle View: ')
+            ].concat(
+                panels.map(function(panel) {
+                    return m('.btn' + (panel.selected ? '.btn-primary' : '.btn-default'), {
+                        onclick: function(e) {
+                            e.preventDefault();
+                            panel.selected = !panel.selected;
+                        }
+                    }, panel.title);
+                })
+            ))
+        ]));
+
+        return m('.file-view-page', m('.panel-toggler', [
+            m('.row', panels.map(function(pane, index) {
+                if (!pane.selected) return m('[style="display:none"]', pane);
+                return m('.col-md-' + Math.floor(12/shown), pane);
+            }))
+        ]));
     }
 };
 
