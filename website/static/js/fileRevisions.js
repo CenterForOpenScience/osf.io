@@ -161,7 +161,7 @@ RevisionsViewModel.prototype.fetch = function() {
                 url: self.urls.metadata,
                 beforeSend: $osf.setXHRAuthorization
             }).done(function(resp) {
-                self.editable(resp.data.extra.canDelete && resp.data.permissions.edit );
+                self.editable(resp.data.extra.canDelete);
             }).fail(function(xhr) {
                 self.editable(false);
             });
