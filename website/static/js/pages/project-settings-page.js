@@ -1,4 +1,6 @@
 'use strict';
+require('js/affix-menu.js');
+
 
 var $ = require('jquery');
 var bootbox = require('bootbox');
@@ -30,15 +32,6 @@ $.ajax({
     });
 });
 
-// Reusable function to fix affix widths to columns.
-function fixAffixWidth() {
-    $('.affix, .affix-top, .affix-bottom').each(function (){
-        var el = $(this);
-        var colsize = el.parent('.affix-parent').width();
-        el.outerWidth(colsize);
-    });
-}
-
 $(document).ready(function() {
 
     // Apply KO bindings for Node Category Settings
@@ -58,9 +51,6 @@ $(document).ready(function() {
         disableCategory
     );
     ko.applyBindings(categorySettingsVM, $('#nodeCategorySettings')[0]);
-
-    $(window).resize(function (){ fixAffixWidth(); });
-    $('.project-page .panel').on('affixed.bs.affix', function(){ fixAffixWidth(); });
 
     $('#deleteNode').on('click', function() {
         ProjectSettings.getConfirmationCode(ctx.node.nodeType);

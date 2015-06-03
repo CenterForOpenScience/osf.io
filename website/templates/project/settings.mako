@@ -15,7 +15,7 @@
   <h2 class="text-300">Settings</h2>
 </div>
 
-<div class="row project-page">
+<div class="row affix-menu">
     <div class="col-sm-3 affix-parent">
         % if 'write' in user['permissions'] and not node['is_registration']:
             <div class="panel panel-default" data-spy="affix" data-offset-bottom="268">
