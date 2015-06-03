@@ -73,28 +73,9 @@ var PanelToggler = {
         ]));
 
         return m('.panel-toggler', [
-            // m('.row', m('.col-md-12', [
-            //     m('.btn-toolbar.pull-right[style="width:355px!important;"]', [
-            //         m('.btn-group.btn-group-sm.file-toggle-btn.pull-right', [
-            //             m('.btn.btn-default.disabled', 'Toggle View: ')
-            //         ].concat(
-            //             ctrl.panels.map(function(panel) {
-            //                 return m('.btn' + (panel.selected ? '.btn-primary' : '.btn-default'), {
-            //                     onclick: function(e) {
-            //                         e.preventDefault();
-            //                         panel.selected = !panel.selected;
-            //                     }
-            //                 }, panel.title);
-            //             })
-            //         )),
-            //         m('.btn.btn-sm.btn-danger.pull-right', {onclick: $(document).trigger.bind($(document), 'fileviewpage:delete')}, 'Delete'),
-            //         m('.btn.btn-sm.btn-success.pull-right', {onclick: $(document).trigger.bind($(document), 'fileviewpage:download')}, 'Download'),
-            //     ])
-            // ])),
-            // m('br'),
-            m('.row', ctrl.panels.map(function(panel, index) {
-                if (!panel.selected) return m('[style="display:none"]', panel);
-                return m('.col-md-' + Math.floor(12/shown), panel);
+            m('.row', ctrl.panels.map(function(pane, index) {
+                if (!pane.selected) return m('[style="display:none"]', pane);
+                return m('.col-md-' + Math.floor(12/shown), pane);
             }))
         ]);
     }
