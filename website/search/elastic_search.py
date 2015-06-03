@@ -320,22 +320,24 @@ def delete_index(index):
 def create_index(index=INDEX):
     '''Creates index with some specified mappings to begin with,
     all of which are applied to all projects, components, and registrations'''
+    english_analyzer = {
+        'type': 'string',
+        'analyzer': 'english'
+    }
     mapping = {
         'properties': {
             'tags': {
                 'type': 'string',
                 'index': 'not_analyzed',
             },
+        },
+        'project': {
+            'properties': {
+                'title': english_analyzer,
+                'description': english_analyzer,
+            }
         }
     }
-
-    require_english_analyzer = ['title', 'description']
-    for field in require_english_analyzer:
-        mapping['properties'][field] = {
-            'type': 'string',
-            'analyzer': 'english'
-        }
-
     es.indices.create(index, ignore=[400])
     for type_ in ['project', 'component', 'registration', 'user']:
         es.indices.put_mapping(index=index, doc_type=type_, body=mapping, ignore=[400, 404])
