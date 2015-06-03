@@ -126,13 +126,19 @@ var FileRevisionsTable = {
         return self;
     },
     view: function(ctrl) {
-        if (!model.loaded()) return util.Spinner;
-        if (model.errorMessage) return m('.alert.alert-warning', {style:{margin: '10px'}}, model.errorMessage);
+        return m('#revisionsPanel', [
+            m('.osf-panel-header', 'Revisions'),
+            m('', (function() {
+                if (!model.loaded()) return util.Spinner;
+                if (model.errorMessage) return m('.alert.alert-warning', {style:{margin: '10px'}}, model.errorMessage);
 
-        return m('table.table', [
-            ctrl.getTableHead(),
-            m('tbody', model.revisions.map(ctrl.makeTableRow))
+                return m('table.table', [
+                    ctrl.getTableHead(),
+                    m('tbody', model.revisions.map(ctrl.makeTableRow))
+                ]);
+            })())
         ]);
+
     },
     postProcessRevision: function(file, node, revision, index) {
         var options = {};
