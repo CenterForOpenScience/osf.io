@@ -1,12 +1,14 @@
+import os
 from framework.mongo import database as db
 from website.app import init_app
 
-blacklist_file = 'guid_blacklist.txt'
+HERE = os.path.dirname(os.path.abspath(__file__))
+BLACKLIST_FILE = os.path.join(HERE, 'guid_blacklist.txt')
 
 
 def main():
     init_app(set_backends=True)
-    with open(blacklist_file, 'r') as reader:
+    with open(BLACKLIST_FILE, 'r') as reader:
         blacklist = [item.rstrip('\n') for item in reader]
 
     chunk_size = len(blacklist)/4
