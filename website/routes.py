@@ -1137,8 +1137,8 @@ def make_url_map(app):
 
         # Tags
         Rule([
-            '/project/<pid>/addtag/<tag>/',
-            '/project/<pid>/node/<nid>/addtag/<tag>/',
+            '/project/<pid>/addtag/',
+            '/project/<pid>/node/<nid>/addtag/',
         ], 'post', project_views.tag.project_addtag, json_renderer),
         Rule([
             '/project/<pid>/removetag/<tag>/',

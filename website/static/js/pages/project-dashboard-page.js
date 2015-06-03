@@ -113,11 +113,12 @@ $(document).ready(function () {
         interactive: window.contextVars.currentUser.canEdit,
         maxChars: 128,
         onAddTag: function(tag){
-            var url = window.contextVars.node.urls.api + 'addtag/' + tag + '/';
+            var url = window.contextVars.node.urls.api + 'addtag/';
             var request = $.ajax({
                 url: url,
                 type: 'POST',
-                contentType: 'application/json'
+                contentType: 'application/json',
+                data: {'tag': tag}
             });
             request.fail(function(xhr, textStatus, error) {
                 Raven.captureMessage('Failed to add tag', {
