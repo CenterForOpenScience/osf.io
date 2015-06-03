@@ -115,29 +115,34 @@ var FileViewPage = {
         // until we know this is the current file revsion
         self.enableEditing = function() {
             // Sometimes we can get here twice, check just in case
-            if (self.editor || !self.context.currentUser.canEdit) return;
+            if (self.editor || !self.context.currentUser.canEdit) {
+                m.redraw(true);
+                return;
+            }
             var fileType = mime.lookup(self.file.name.toLowerCase());
             // Only allow files < 1MB to be editable
             if (self.file.size < 1048576 && fileType) { //May return false
                 var editor = EDITORS[fileType.split('/')[0]];
                 if (editor) {
-                    self.editor = Panel('Edit', editHeader, editor, [self.file.urls.content, self.file.urls.sharejs, self.editorMeta, self.shareJSObservables], false);
-                    self.panels.splice(0, 0, self.editor);
-                    m.redraw(true);
+                    self.editor = new Panel('Edit', editHeader, editor, [self.file.urls.content, self.file.urls.sharejs, self.editorMeta, self.shareJSObservables], false);
+                    self.comp = m.component(PanelToggler, m('h3', self.file.name), [self.editor, self.panels[0]]);
                 }
             }
+            m.redraw(true);
         };
 
         self.panels = [
-            Panel('Revisions', undefined, FileRevisionsTable, [self.file, self.node, self.enableEditing], true)
+            new Panel('Revisions', undefined, FileRevisionsTable, [self.file, self.node, self.enableEditing], true)
             // View has been removed to prefer the iframe method described below
             // Panel('View', null, FileRenderer, [self.file.urls.render, self.file.error], true),
         ];
 
+        self.comp = m.component(PanelToggler, m('h3', self.file.name), self.panels);
+
     },
     view: function(ctrl) {
         return m('.file-view-page', [
-            m.component(PanelToggler, m('h3', ctrl.file.name), ctrl.panels)
+            ctrl.comp
         ]);
     }
 };

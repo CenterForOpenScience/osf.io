@@ -52,7 +52,7 @@ var FileRevisionsTable = {
                 model.loaded(true);
                 // Can only edit the latest version of a file
                 if (model.selectedRevision === 0) {
-                    self.enableEditing(self.selectedRevision === 0);
+                    self.enableEditing();
                 }
                 model.hasUser = model.revisions[0] && model.revisions[0].extra && model.revisions[0].extra.user;
                 m.endComputation();
