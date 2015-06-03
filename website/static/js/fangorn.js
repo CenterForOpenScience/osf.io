@@ -1811,13 +1811,19 @@ function getCopyMode(folder, items) {
     var tb = this;
     var canMove = true;
     var mustBeIntra = (folder.data.provider === 'github');
+    var cannotBeFolder = (folder.data.provider === 'figshare' || folder.data.provider === 'dataverse');
 
     if (folder.parentId === 0) return 'forbidden';
     if (folder.data.kind !== 'folder' || !folder.data.permissions.edit) return 'forbidden';
     if (!folder.data.provider || folder.data.status) return 'forbidden';
 
-    if (folder.data.provider === 'figshare') return 'forbidden';
     if (folder.data.provider === 'dataverse') return 'forbidden';
+
+    if (
+        folder.data.provider === 'figshare' &&
+        folder.data.extra &&
+        folder.data.extra.status === 'public'
+    ) return 'forbidden';
 
     for(var i = 0; i < items.length; i++) {
         var item = items[i];
@@ -1826,9 +1832,10 @@ function getCopyMode(folder, items) {
             item.data.isAddonRoot ||
             item.id === folder.id ||
             item.parentID === folder.id ||
-            item.data.provider === 'figshare' ||
             item.data.provider === 'dataverse' ||
+            (cannotBeFolder && item.data.kind == 'folder') ||
             (mustBeIntra && item.data.provider !== folder.data.provider)
+            (item.data.provider === 'figshare' && item.data.extra && item.data.status !== 'public') ||
         ) return 'forbidden';
 
         mustBeIntra = mustBeIntra || item.data.provider === 'github';
