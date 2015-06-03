@@ -68,7 +68,7 @@ def get_globals():
         'api_url_for': util.api_url_for,
         'sanitize': sanitize,
         'js_str': lambda x: x.replace("'", r"\'").replace('"', r'\"'),
-        'json': lambda x: json.dumps(x),
+        'json': lambda x: json.dumps(x).replace('</', '<\\/'),  # Fix injection of closing markup in strings
         'webpack_asset': paths.webpack_asset,
         'waterbutler_url': settings.WATERBUTLER_URL,
         'login_url': cas.get_login_url(request.url, auto=True),
