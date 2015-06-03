@@ -8,7 +8,7 @@ from framework.auth.core import Auth
 from website.models import Node, Pointer
 from api.base.utils import get_object_or_404, waterbutler_url_for
 from api.base.filters import ODMFilterMixin, ListFilterMixin
-from .serializers import NodeSerializer, NodePointersSerializer, NodeFilesSerializer, RegistrationOpenEndedSerializer, RegistrationPreDataCollectionSerializer, ReplicationRecipePreRegistrationSerializer, ReplicationRecipePostCompletionSerializer
+from .serializers import NodeSerializer, NodePointersSerializer, NodeFilesSerializer, RegistrationOpenEndedSerializer, RegistrationPreDataCollectionSerializer, ReplicationRecipePreRegistrationSerializer, ReplicationRecipePostCompletionSerializer, RegistrationOpenEndedWithTokenSerializer
 from api.users.serializers import ContributorSerializer
 from .permissions import ContributorOrPublic, ReadOnlyIfRegistration, ContributorOrPublicForPointers
 
@@ -170,7 +170,31 @@ class NodeRegistrationsOpenEnded(generics.CreateAPIView, NodeMixin):
 
     serializer_class = RegistrationOpenEndedSerializer
 
+class NodeRegistrationsOpenEndedWithToken(generics.CreateAPIView, NodeMixin):
+    """Registrations of the current node.
+
+    Registrations are read-only snapshots of a project. This view lists all of the existing registrations
+     created for the current node."""
+    permission_classes = (
+        ContributorOrPublic,
+        drf_permissions.IsAuthenticatedOrReadOnly,
+    )
+
+    serializer_class = RegistrationOpenEndedWithTokenSerializer
+
 class NodeRegistrationsPreDataCollection(generics.CreateAPIView, NodeMixin):
+    """Registrations of the current node.
+
+    Registrations are read-only snapshots of a project. This view lists all of the existing registrations
+     created for the current node."""
+    permission_classes = (
+        ContributorOrPublic,
+        drf_permissions.IsAuthenticatedOrReadOnly,
+    )
+
+    serializer_class = RegistrationPreDataCollectionSerializer
+
+class NodeRegistrationsPreDataCollectionWithToken(generics.CreateAPIView, NodeMixin):
     """Registrations of the current node.
 
     Registrations are read-only snapshots of a project. This view lists all of the existing registrations
@@ -196,7 +220,33 @@ class NodeRegistrationsReplicationRecipePreRegistration(generics.CreateAPIView, 
     serializer_class = ReplicationRecipePreRegistrationSerializer
 
 
+class NodeRegistrationsReplicationRecipePreRegistrationWithToken(generics.CreateAPIView, NodeMixin):
+    """Registrations of the current node.
+
+    Registrations are read-only snapshots of a project. This view lists all of the existing registrations
+     created for the current node."""
+    permission_classes = (
+        ContributorOrPublic,
+        drf_permissions.IsAuthenticatedOrReadOnly,
+    )
+
+    serializer_class = ReplicationRecipePreRegistrationSerializer
+
+
 class NodeRegistrationsReplicationRecipePostCompletion(generics.CreateAPIView, NodeMixin):
+    """Registrations of the current node.
+
+    Registrations are read-only snapshots of a project. This view lists all of the existing registrations
+     created for the current node."""
+    permission_classes = (
+        ContributorOrPublic,
+        drf_permissions.IsAuthenticatedOrReadOnly,
+    )
+
+    serializer_class = ReplicationRecipePostCompletionSerializer
+
+
+class NodeRegistrationsReplicationRecipePostCompletionWithToken(generics.CreateAPIView, NodeMixin):
     """Registrations of the current node.
 
     Registrations are read-only snapshots of a project. This view lists all of the existing registrations

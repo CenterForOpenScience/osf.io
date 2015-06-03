@@ -11,6 +11,8 @@ from rest_framework import serializers
 import json
 import hashlib
 from api.base.utils import absolute_reverse
+from urlparse import urlparse
+from posixpath import basename
 
 
 
@@ -141,24 +143,45 @@ class RegistrationOpenEndedSerializer(JSONAPISerializer):
 
     id = ser.CharField(read_only=True, source='_id')
     title = ser.CharField(read_only=True)
-    token = ser.CharField(read_only = True, default = '')
-
     summary = ser.CharField(required=True, allow_blank=False, allow_null=False, write_only = True, help_text="Provide a summary or describe how this differs from prior registrations.")
 
-    def validate(self, data):
-        if data['token'] == '':
-            request = self.context['request']
-            user = request.user
-            node = self.context['view'].get_node()
-            token = hashlib.md5()
-            token.update('node._id')
-            token.update('user._id')
-            token.update(data['summary'])
-            token = token.hexdigest()
-            url = absolute_reverse('nodes:node-registration-open-ended-token', kwargs={'pk': node._id, 'token': token})
-            #raise serializers.ValidationError("Are you sure you want to register {}? Here is your registration token: {}".format(node.title, token))
-            raise serializers.ValidationError("Use new URL to confirm registration of project {}: {}".format(node.title, url) )
 
+    def validate(self, data):
+        request = self.context['request']
+        user = request.user
+        node = self.context['view'].get_node()
+        token = hashlib.md5()
+        token.update(node._id)
+        token.update(user._id)
+        token = token.hexdigest()
+        url = absolute_reverse('nodes:node-registration-open-ended-token', kwargs={'pk': node._id, 'token': token})
+        raise serializers.ValidationError("Use new URL to confirm project registration for {}: {}".format(node.title, url) )
+
+    class Meta:
+        type_='registrations'
+
+class RegistrationOpenEndedWithTokenSerializer(JSONAPISerializer):
+
+    id = ser.CharField(read_only=True, source='_id')
+    title = ser.CharField(read_only=True)
+    summary = ser.CharField(required=True, allow_blank=False, allow_null=False, write_only = True, help_text="Provide a summary or describe how this differs from prior registrations.")
+    token = serializers.ReadOnlyField()
+    registered_meta = ser.CharField(read_only=True)
+
+    def validate(self, data):
+        request = self.context['request']
+        user = request.user
+        node = self.context['view'].get_node()
+        parse_object = urlparse(request.path)
+        given_token = basename(parse_object.path)
+
+        token = hashlib.md5()
+        token.update(node._id)
+        token.update(user._id)
+        correct_token = token.hexdigest()
+
+        if given_token != correct_token:
+            raise serializers.ValidationError("Incorrect token.")
         return data
 
     def create(self, validated_data):
@@ -181,6 +204,36 @@ class RegistrationOpenEndedSerializer(JSONAPISerializer):
         type_='registrations'
 
 class RegistrationPreDataCollectionSerializer(JSONAPISerializer):
+    TRUE_FALSE_CHOICES = ["Yes", "No"]
+
+    id = ser.CharField(read_only=True, source='_id')
+    title = ser.CharField(read_only=True)
+    registered_meta = ser.CharField(read_only=True)
+    token = ser.CharField(read_only=True, default='')
+
+    looked = ser.ChoiceField(choices=TRUE_FALSE_CHOICES, required=True, help_text = "Is data collection for this project underway or complete?", write_only=True)
+    datacompletion = ser.ChoiceField(choices=TRUE_FALSE_CHOICES, required=True, help_text = "Have you looked at the data?", write_only=True)
+    comments = ser.CharField(default='', help_text="Other comments", write_only=True)
+
+    def create(self, validated_data):
+        template = "OSF-Standard_Pre-Data_Collection_Registration"
+        schema =  MetaSchema.find(
+            Q('name', 'eq', template)).sort('-schema_version')[0]
+        request = self.context['request']
+        user = request.user
+        node = self.context['view'].get_node()
+        clean_data = process_payload({"looked": validated_data['looked'], "datacompletion": validated_data['datacompletion'], "comments": validated_data['comments']})
+        registration = node.register_node(
+            schema = schema,
+            auth = Auth(user),
+            template = template,
+            data = json.dumps({"looked": clean_data["looked"], "datacompletion": clean_data["datacompletion"] , "comments": clean_data["comments"]}))
+        return registration
+
+    class Meta:
+        type_='registrations'
+
+class RegistrationPreDataCollectionWithTokenSerializer(JSONAPISerializer):
     TRUE_FALSE_CHOICES = ["Yes", "No"]
 
     id = ser.CharField(read_only=True, source='_id')
