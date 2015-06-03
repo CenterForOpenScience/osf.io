@@ -102,10 +102,10 @@ def stat_addon(addon_short_name, src_pk, dst_pk, user_pk):
     )
     return result
 
-@celery_app.task(name="archiver.make_copy_request")
-def make_copy_request(dst_pk, url, data):
+@celery_app.task(base=ArchiverTask, name="archiver.make_copy_request")
+def make_copy_request(src_pk, dst_pk, user_pk, url, data):
     """Make the copy request to the WaterBulter API and handle
-    successful and fauled responses
+    successful and failed responses
 
     :param dst_pk: primary key of registration node
     :param url: URL to send request to
@@ -171,7 +171,7 @@ def archive_addon(addon_short_name, src_pk, dst_pk, user_pk, stat_result):
         'rename': folder_name,
     }
     copy_url = settings.WATERBUTLER_URL + '/ops/copy'
-    make_copy_request.si(dst_pk, copy_url, data)()
+    make_copy_request.delay(src_pk, dst_pk, user_pk, copy_url, data)
 
 
 @celery_app.task(base=ArchiverTask, name="archiver.archive_node")
