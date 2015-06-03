@@ -293,7 +293,7 @@ class NodeLog(StoredObject):
     params = fields.DictionaryField()
     should_hide = fields.BooleanField(default=False)
 
-    was_connected_to = fields.ForeignField('node', list=True, backref='connected')
+    was_connected_to = fields.ForeignField('node', list=True)
 
     user = fields.ForeignField('user', backref='created')
     api_key = fields.ForeignField('apikey', backref='created')
@@ -425,6 +425,7 @@ class NodeLog(StoredObject):
             'fullname': privacy_info_handle(fullname, anonymous, name=True),
             'registered': user.is_registered,
         }
+
 
 class Tag(StoredObject):
 
