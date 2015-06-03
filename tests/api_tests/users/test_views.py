@@ -202,11 +202,11 @@ class TestUserUpdate(ApiTestCase):
         self.user_one = UserFactory.build()
         self.user_one.set_password('justapoorboy')
         self.user_one.social_accounts = {
-            'github' : '',
-            "scholar" : "",
-            "personal" : 'http://mymom.com',
-            "twitter" : "billyhunt",
-            "linkedIn" : "",
+            'github': '',
+            "scholar": "",
+            "personal": 'http://mymom.com',
+            "twitter": "billyhunt",
+            "linkedIn": "",
             "impactStory": "",
             "orcid": "",
             "researcherId": ""
@@ -253,7 +253,7 @@ class TestUserUpdate(ApiTestCase):
         self.user_two.save()
         self.auth_two = (self.user_two.username, 'justapoorboy')
         self.twitter = 'hotcrossbuns'
-        self.new_social_accounts =  {
+        self.new_social_accounts = {
             'github': '',
             'scholar': '',
             'personal': 'http://mymom.com',
@@ -265,14 +265,6 @@ class TestUserUpdate(ApiTestCase):
         }
 
         self.new_name = 'Flash Gordon'
-        self.public_project_user_one = ProjectFactory(title="Public Project User One", is_public=True, creator=self.user_one)
-        self.private_project_user_one = ProjectFactory(title="Private Project User One", is_public=False, creator=self.user_one)
-        self.public_project_user_two = ProjectFactory(title="Public Project User Two", is_public=True, creator=self.user_two)
-        self.private_project_user_two = ProjectFactory(title="Private Project User Two", is_public=False, creator=self.user_two)
-        self.deleted_project_user_one = FolderFactory(title="Deleted Project User One", is_public=False, creator=self.user_one, is_deleted=True)
-        self.folder = FolderFactory()
-        self.deleted_folder = FolderFactory(title="Deleted Folder User One", is_public=False, creator=self.user_one, is_deleted=True)
-        self.dashboard = DashboardFactory()
         self.user_one_url = "/v2/users/{}/".format(self.user_one._id)
         self.user_two_url = "/v2/users/{}/".format(self.user_two._id)
 
@@ -286,7 +278,7 @@ class TestUserUpdate(ApiTestCase):
         assert_equal(res.status_code, 403)
 
     def test_patch_user_logged_in(self):
-        # Logged in User updates his own stuff
+        # Logged in user updates their user information via patch
         res = self.app.patch_json(self.user_one_url, {
             'fullname': self.new_name
         }, auth=self.auth_one)
@@ -296,19 +288,29 @@ class TestUserUpdate(ApiTestCase):
     def test_put_user_logged_out(self):
         res = self.app.put_json(self.user_one_url, {
             'fullname': self.new_name,
-            'social_accounts' : self.new_social_accounts,
+            'social_accounts': self.new_social_accounts,
         }, expect_errors=True)
         # This is 403 instead of 401 because basic authentication is only for unit tests and, in order to keep from
         # presenting a basic authentication dialog box in the front end. We may change this as we understand CAS
         # a little better
         assert_equal(res.status_code, 403)
 
-    def test_put_user_logged_in(self):
-        # Logged in User updates his own stuff
+    def test_put_wrong_user_auth(self):
+        # User tries to update someone else's user information via put
         res = self.app.put_json(self.user_one_url, {
             'fullname': self.new_name,
-            'social_accounts' : self.new_social_accounts,
-        }, auth=self.auth_one)
-        assert_equal(res.status_code, 200)
-        assert_equal(res.json['data']['fullname'], self.new_name)
-        assert_equal(res.json['data']['social_accounts'], self.new_social_accounts)
+            'social_accounts': self.new_social_accounts,
+        }, auth=self.auth_two)
+        assert_not_equal(res.status_code, 200)
+        assert_not_equal(res.json['data']['fullname'], self.new_name)
+        assert_not_equal(res.json['data']['social_accounts'], self.new_social_accounts)
+
+    def test_patch_wrong_user_auth(self):
+        # User tries to update someone else's user information via patch
+        res = self.app.patch_json(self.user_one_url, {
+            'fullname': self.new_name,
+            'social_accounts': self.new_social_accounts,
+        }, auth=self.auth_two)
+        assert_not_equal(res.status_code, 200)
+        assert_not_equal(res.json['data']['fullname'], self.new_name)
+        assert_not_equal(res.json['data']['social_accounts'], self.new_social_accounts)
