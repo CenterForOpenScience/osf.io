@@ -1,4 +1,6 @@
-//Fixes profile settings side menu to left column
+/*
+* Affixes menu resize with menu and have constant width when scrolling
+ */
 function fixAffixWidth() {
     $('.affix, .affix-top, .affix-bottom').each(function (){
         var el = $(this);
@@ -10,5 +12,5 @@ function fixAffixWidth() {
 
 $(document).ready(function() {
     $(window).resize(function (){ fixAffixWidth(); });
-    $('.profile-page .panel').on('affixed.bs.affix', function(){ fixAffixWidth();});
+    $('.affix-menu .panel').on('affixed.bs.affix', function(){ fixAffixWidth();});
 });

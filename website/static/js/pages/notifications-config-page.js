@@ -1,3 +1,5 @@
+require('js/affix-menu.js');
+
 var $ = require('jquery');
 
 // initialize view model for configuring mailchimp subscriptions
@@ -17,19 +19,4 @@ $.ajax({
 }).fail( function() {
     $notificationsMsg.addClass('text-danger');
     $notificationsMsg.text('Could not retrieve notification settings.');
-});
-
-//Fixes profile settings side menu to left column
-function fixAffixWidth() {
-    $('.affix, .affix-top, .affix-bottom').each(function (){
-        var el = $(this);
-        var colsize = el.parent('.affix-parent').width();
-        el.outerWidth(colsize);
-    });
-}
-
-
-$(document).ready(function() {
-    $(window).resize(function (){ fixAffixWidth(); });
-    $('.profile-page .panel').on('affixed.bs.affix', function(){ fixAffixWidth();});
 });

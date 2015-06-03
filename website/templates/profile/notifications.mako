@@ -5,7 +5,7 @@
 <% from website import settings%>
 <h2 class="page-header">Notifications</h2>
 
-<div class="row profile-page">
+<div class="row affix-menu">
 
     <div class="col-sm-3 affix-parent">
         <div class="panel panel-default profile-panel" data-spy="affix" data-offset-top="100" data-offset-bottom="268">
