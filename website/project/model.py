@@ -1744,12 +1744,13 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
                 status.push_status_message(message)
         registered.nodes = []
 
-        for node_contained in original.nodes.find(Q('is_deleted', 'eq', False)):
-            registered_node = node_contained.register_node(
-                schema, auth, template, data,
-            )
-            if registered_node is not None:
-                registered.nodes.append(registered_node)
+        for node_contained in original.nodes:
+            if not node_contained.is_deleted:
+                registered_node = node_contained.register_node(
+                    schema, auth, template, data,
+                )
+                if registered_node is not None:
+                    registered.nodes.append(registered_node)
 
         original.add_log(
             action=NodeLog.PROJECT_REGISTERED,
