@@ -1509,6 +1509,14 @@ tbody.file-version{
     width: 400px;
 }
 
+.dotted-underline{
+    color: #000;
+    border-bottom: 1px dotted;
+    text-decoration: none;
+}
+a.dotted-underline:hover {
+    text-decoration: none;
+}
 /* Contributors list */
 
 #contributors {
