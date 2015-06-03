@@ -439,6 +439,54 @@ class TestAddContributor(SearchTestCase):
         assert_equal(len(contribs['users']), 0)
 
 
+@requires_search
+class TestProjectSearchResults(SearchTestCase):
+    def setUp(self):
+        super(TestProjectSearchResults, self).setUp()
+        self.user = UserFactory(usename='Doug Bogie')
+        self.consolidate_auth = Auth(user=self.user)
+
+        self.title_singular = 'Spanish Inquisition'
+        self.title_plural = 'Spanish Inquisitions'
+        self.title_possesive = 'Spanish\'s Inquisition'
+
+        self.project_singular = ProjectFactory(
+            title=self.title_singular,
+            creator=self.user,
+            is_public=True,
+        )
+
+        self.project_plural = ProjectFactory(
+            title=self.title_plural,
+            creator=self.user,
+            is_public=True,
+        )
+
+        self.project_possesive = ProjectFactory(
+            title=self.title_possesive,
+            creator=self.user,
+            is_public=True,
+        )
+
+        self.project_unrelated = ProjectFactory(
+            title='Cardinal Richelieu',
+            creator=self.user,
+            is_public=True,
+        )
+
+    def test_singular_query(self):
+        results = query(self.title_singular)['results']
+        assert_equal(len(results), 3)
+
+    def test_plural_query(self):
+        results = query(self.title_plural)['results']
+        assert_equal(len(results), 3)
+
+    def test_possive_query(self):
+        results = query(self.title_possesive)['results']
+        assert_equal(len(results), 3)
+
+
 class TestSearchExceptions(OsfTestCase):
     """
     Verify that the correct exception is thrown when the connection is lost
