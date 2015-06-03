@@ -21,7 +21,7 @@ def figshare_hgrid_data(node_settings, auth, parent=None, **kwargs):
             node_settings, u'{0}:{1}'.format(node_settings.figshare_title or "Unnamed {0}".format(node_settings.figshare_type or ''), node_settings.figshare_id), permissions=auth,
             nodeUrl=node.url, nodeApiUrl=node.api_url,
             extra={
-                'status': (item.get('status') or item['items'][0]['status']).lower()
+                'status': (item.get('articles') or item['items'])[0]['status'].lower()
             }
         )
     ]
