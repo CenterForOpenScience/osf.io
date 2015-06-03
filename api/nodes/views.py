@@ -8,7 +8,8 @@ from framework.auth.core import Auth
 from website.models import Node, Pointer
 from api.base.utils import get_object_or_404, waterbutler_url_for
 from api.base.filters import ODMFilterMixin, ListFilterMixin
-from .serializers import NodeSerializer, NodePointersSerializer, NodeFilesSerializer, RegistrationOpenEndedSerializer, RegistrationPreDataCollectionSerializer, ReplicationRecipePreRegistrationSerializer, ReplicationRecipePostCompletionSerializer, RegistrationOpenEndedWithTokenSerializer
+from .serializers import NodeSerializer, NodePointersSerializer, NodeFilesSerializer, RegistrationOpenEndedSerializer, RegistrationPreDataCollectionSerializer, ReplicationRecipePreRegistrationSerializer, ReplicationRecipePostCompletionSerializer
+from .serializers import RegistrationOpenEndedWithTokenSerializer, RegistrationPreDataCollectionWithTokenSerializer, ReplicationRecipePreRegistrationWithTokenSerializer, ReplicationRecipePostCompletionWithTokenSerializer
 from api.users.serializers import ContributorSerializer
 from .permissions import ContributorOrPublic, ReadOnlyIfRegistration, ContributorOrPublicForPointers
 
@@ -143,7 +144,6 @@ class NodeRegistrationsList(generics.ListAPIView, NodeMixin):
         ContributorOrPublic,
         drf_permissions.IsAuthenticatedOrReadOnly,
     )
-
     serializer_class = NodeSerializer
 
     # overrides ListAPIView
@@ -167,7 +167,6 @@ class NodeRegistrationsOpenEnded(generics.CreateAPIView, NodeMixin):
         ContributorOrPublic,
         drf_permissions.IsAuthenticatedOrReadOnly,
     )
-
     serializer_class = RegistrationOpenEndedSerializer
 
 class NodeRegistrationsOpenEndedWithToken(generics.CreateAPIView, NodeMixin):
@@ -179,7 +178,6 @@ class NodeRegistrationsOpenEndedWithToken(generics.CreateAPIView, NodeMixin):
         ContributorOrPublic,
         drf_permissions.IsAuthenticatedOrReadOnly,
     )
-
     serializer_class = RegistrationOpenEndedWithTokenSerializer
 
 class NodeRegistrationsPreDataCollection(generics.CreateAPIView, NodeMixin):
@@ -191,7 +189,6 @@ class NodeRegistrationsPreDataCollection(generics.CreateAPIView, NodeMixin):
         ContributorOrPublic,
         drf_permissions.IsAuthenticatedOrReadOnly,
     )
-
     serializer_class = RegistrationPreDataCollectionSerializer
 
 class NodeRegistrationsPreDataCollectionWithToken(generics.CreateAPIView, NodeMixin):
@@ -203,8 +200,7 @@ class NodeRegistrationsPreDataCollectionWithToken(generics.CreateAPIView, NodeMi
         ContributorOrPublic,
         drf_permissions.IsAuthenticatedOrReadOnly,
     )
-
-    serializer_class = RegistrationPreDataCollectionSerializer
+    serializer_class = RegistrationPreDataCollectionWithTokenSerializer
 
 
 class NodeRegistrationsReplicationRecipePreRegistration(generics.CreateAPIView, NodeMixin):
@@ -216,7 +212,6 @@ class NodeRegistrationsReplicationRecipePreRegistration(generics.CreateAPIView, 
         ContributorOrPublic,
         drf_permissions.IsAuthenticatedOrReadOnly,
     )
-
     serializer_class = ReplicationRecipePreRegistrationSerializer
 
 
@@ -229,8 +224,7 @@ class NodeRegistrationsReplicationRecipePreRegistrationWithToken(generics.Create
         ContributorOrPublic,
         drf_permissions.IsAuthenticatedOrReadOnly,
     )
-
-    serializer_class = ReplicationRecipePreRegistrationSerializer
+    serializer_class = ReplicationRecipePreRegistrationWithTokenSerializer
 
 
 class NodeRegistrationsReplicationRecipePostCompletion(generics.CreateAPIView, NodeMixin):
@@ -242,7 +236,6 @@ class NodeRegistrationsReplicationRecipePostCompletion(generics.CreateAPIView, N
         ContributorOrPublic,
         drf_permissions.IsAuthenticatedOrReadOnly,
     )
-
     serializer_class = ReplicationRecipePostCompletionSerializer
 
 
@@ -255,8 +248,7 @@ class NodeRegistrationsReplicationRecipePostCompletionWithToken(generics.CreateA
         ContributorOrPublic,
         drf_permissions.IsAuthenticatedOrReadOnly,
     )
-
-    serializer_class = ReplicationRecipePostCompletionSerializer
+    serializer_class = ReplicationRecipePostCompletionWithTokenSerializer
 
 class NodeChildrenList(generics.ListAPIView, NodeMixin):
     """Children of the current node.
