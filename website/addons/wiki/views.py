@@ -445,20 +445,32 @@ def project_wiki_validate_name(wname, **kwargs):
 @must_be_contributor_or_public
 def project_wiki_grid_data(auth, wname, **kwargs):
     node = kwargs['node'] or kwargs['project']
-    toc = _serialize_wiki_toc(node, auth=auth)
+    project_wiki_pages = _get_wiki_pages_current(node)
+    component_wiki_pages = _serialize_wiki_toc(node, auth=auth)
 
     items = []
 
-    for child in toc:
+    for page in project_wiki_pages:
         item = {
             'page': {
-                'id': child['id'],
-                'url': child['url'],
-                'title': child['title']
+                'url': page['url'],
+                'title': page['name']
             },
-            'children': child['pages_current'],
+            'children': [],
+            'kind': 'project'
         }
 
+        items.append(item)
+
+    for page in component_wiki_pages:
+        item = {
+            'page': {
+                'url': page['url'],
+                'title': page['title'],
+            },
+            'children': page['pages_current'],
+            'kind': 'component'
+        }
         items.append(item)
 
     return items
