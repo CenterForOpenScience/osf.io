@@ -14,7 +14,8 @@
                         },
                         value: projectInput,
                         attr: {readonly: hasSelectedProject(),
-                            placeholder: projectPlaceholder}"
+                            placeholder: projectPlaceholder},
+                        event: {keypress: disableDefaultEnter}"
                 class="typeahead ob-typeahead-input form-control"
                 name="project"
                 type="text"
