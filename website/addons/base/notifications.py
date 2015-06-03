@@ -42,30 +42,27 @@ def file_info(node, path, provider):
 
 def file_created(node, f_url, payload):
     file_guid, event_sub, f_url.path = file_info(node, path=payload['metadata']['path'], provider=payload['provider'])
-    message = 'added file "<strong>{}{}</strong>".'.format(payload['provider'],
-                                                           payload['metadata']['materialized'])
+    message = 'added file "<b>{}</b>".'.format(payload['metadata']['materialized'])
     return event_sub, f_url, message
 
 
 def file_updated(node, f_url, payload):
     file_guid, event_sub, f_url.path = file_info(node, path=payload['metadata']['path'], provider=payload['provider'])
-    message = 'updated file "<strong>{}{}</strong>".'.format(payload['provider'],
-                                                             payload['metadata']['materialized'])
+    message = 'updated file "<b>{}</b>".'.format(payload['metadata']['materialized'])
     return event_sub, f_url, message
 
 
 def file_deleted(node, f_url, payload):
     event_sub = "file_updated"
     f_url.path = node.web_url_for('collect_file_trees')
-    message = 'deleted file "<strong>{}</strong>".'.format(payload['metadata']['materialized'])
+    message = 'removed file "<b>{}</b>".'.format(payload['metadata']['materialized'])
     return event_sub, f_url, message
 
 
 def folder_added(node, f_url, payload):
     event_sub = "file_updated"
     f_url.path = node.web_url_for('collect_file_trees')
-    message = 'added folder "<strong>{}{}</strong>".'.format(payload['provider'],
-                                                             payload['metadata']['materialized'])
+    message = 'created folder "<b>{}</b>".'.format(payload['metadata']['materialized'])
     return event_sub, f_url, message
 
 
@@ -83,11 +80,10 @@ def file_moved(node, f_url, payload, user):
                                           event_sub, node)
         remove_users_from_subscription(rm_users, old_sub, user, old_node, timestamp=None,
                                        gravatar_url=user.gravatar_url, message="Removed", url=rm_url)
-    message = 'moved "<strong>{}</strong>" from "<strong>{}/{}{}</strong>" to "<strong>{}/{}/{}</strong>".'.format(
-        payload['destination']['name'],
-        payload['source']['node']['title'], payload['source']['provider'], payload['source']['materialized'],
-        payload['destination']['node']['title'], payload['destination']['provider'],
-        payload['destination']['materialized']
+    message = 'moved "<b>{}</b>" from {} in {} to "<b>{}</b>" in {} in {}.'.format(
+        payload['source']['materialized'], payload['source']['addon'], payload['source']['node']['title'],
+        payload['destination']['materialized'], payload['destination']['addon'],
+        payload['destination']['node']['title']
     )
     return event_sub, f_url, message
 
@@ -100,10 +96,9 @@ def file_copied(node, f_url, payload):
     old_guid, old_sub, old_path = file_info(Node.load(payload['source']['node']['_id']),
                                             payload['destination']['path'],
                                             payload['source']['provider'])
-    message = 'copied "<strong>{}</strong>" from "<strong>{}/{}{}</strong>" to "<strong>{}/{}/{}</strong>".'.format(
-        payload['destination']['name'],
-        payload['source']['node']['title'], payload['source']['provider'], payload['source']['materialized'],
-        payload['destination']['node']['title'], payload['destination']['provider'],
-        payload['destination']['materialized']
+    message = 'copied "<b>{}</b>" from {} in {} to "<b>{}</b>" in {} in {}.'.format(
+        payload['source']['materialized'], payload['source']['addon'], payload['source']['node']['title'],
+        payload['destination']['materialized'], payload['destination']['addon'],
+        payload['destination']['node']['title']
     )
     return event_sub, f_url, message

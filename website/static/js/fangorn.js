@@ -367,7 +367,6 @@ function doItemOp(operation, to, from, rename, conflict) {
     }
     _fangornOrderFolder.call(tb, from.parent());
 
-
     $.ajax({
         type: 'POST',
         beforeSend: $osf.setXHRAuthorization,
