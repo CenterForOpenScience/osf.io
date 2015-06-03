@@ -45,12 +45,10 @@ class Box(ExternalProvider):
 
         about = client.get_user_info()
 
-        url = 'https://app.box.com/profile/' + about['id']
-
         return {
             'provider_id': about['id'],
             'display_name': about['name'],
-            'profile_url': url
+            'profile_url': 'https://app.box.com/profile/{0}'.format(about['id'])
         }
 
 
@@ -235,5 +233,4 @@ class BoxNodeSettings(AddonOAuthNodeSettingsBase):
             self.deauthorize(add_log=True)
         self.save()
 
-    def on_delete(self, node=None, user=None):
-        self.after_delete(node, user)
+    on_delete = after_delete
