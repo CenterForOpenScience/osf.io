@@ -158,8 +158,8 @@ var FileViewPage = {
             $('#mfrIframeParent').removeClass().addClass('col-md-6');
             $('.file-view-panels').removeClass().addClass('file-view-panels').addClass('col-md-6');
         } else {
-            $('#mfrIframeParent').removeClass().addClass('col-md-11');
-            $('.file-view-panels').removeClass().addClass('file-view-panels').addClass('col-md-1');
+            $('#mfrIframeParent').removeClass().addClass('col-md-12');
+            $('.file-view-panels').removeClass().addClass('file-view-panels');
         }
 
         m.render(document.getElementById('toggleBar'), m('.btn-toolbar[style=margin-top:20px]', [
