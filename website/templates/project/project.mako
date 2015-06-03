@@ -90,7 +90,12 @@
         </div>
         <div id="contributors" class="row" style="line-height:25px">
             <div class="col-sm-12">
-                Contributors:
+                % if user['is_contributor']:
+                    <a class="dotted-underline" href="${node['url']}contributors/">Contributors</a>:
+                % else:
+                    Contributors:
+                % endif
+
                 % if node['anonymous'] and not node['is_public']:
                     <ol>Anonymous Contributors</ol>
                 % else:
@@ -100,6 +105,7 @@
                             "uri": "${node["api_url"]}get_contributors/",
                             "replace": true
                         }'></div>
+
                     </ol>
                 % endif
                 % if node['is_fork']:
