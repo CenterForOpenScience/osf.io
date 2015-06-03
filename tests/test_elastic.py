@@ -446,24 +446,24 @@ class TestProjectSearchResults(SearchTestCase):
         self.user = UserFactory(usename='Doug Bogie')
         self.consolidate_auth = Auth(user=self.user)
 
-        self.title_singular = 'Spanish Inquisition'
-        self.title_plural = 'Spanish Inquisitions'
-        self.title_possesive = 'Spanish\'s Inquisition'
+        self.singular = 'Spanish Inquisition'
+        self.plural = 'Spanish Inquisitions'
+        self.possessive = 'Spanish\'s Inquisition'
 
         self.project_singular = ProjectFactory(
-            title=self.title_singular,
+            title=self.singular,
             creator=self.user,
             is_public=True,
         )
 
         self.project_plural = ProjectFactory(
-            title=self.title_plural,
+            title=self.plural,
             creator=self.user,
             is_public=True,
         )
 
         self.project_possesive = ProjectFactory(
-            title=self.title_possesive,
+            title=self.possessive,
             creator=self.user,
             is_public=True,
         )
@@ -475,15 +475,15 @@ class TestProjectSearchResults(SearchTestCase):
         )
 
     def test_singular_query(self):
-        results = query(self.title_singular)['results']
+        results = query(self.singular)['results']
         assert_equal(len(results), 3)
 
     def test_plural_query(self):
-        results = query(self.title_plural)['results']
+        results = query(self.plural)['results']
         assert_equal(len(results), 3)
 
-    def test_possive_query(self):
-        results = query(self.title_possesive)['results']
+    def test_possessive_query(self):
+        results = query(self.possessive)['results']
         assert_equal(len(results), 3)
 
 
