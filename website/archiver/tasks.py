@@ -171,7 +171,7 @@ def archive_addon(addon_short_name, src_pk, dst_pk, user_pk, stat_result):
         'rename': folder_name,
     }
     copy_url = settings.WATERBUTLER_URL + '/ops/copy'
-    make_copy_request.delay(src_pk, dst_pk, user_pk, copy_url, data)
+    make_copy_request.delay(src_pk=src_pk, dst_pk=dst_pk, user_pk=user_pk, url=copy_url, data=data)
 
 
 @celery_app.task(base=ArchiverTask, name="archiver.archive_node")
