@@ -26,6 +26,7 @@ from website import language
 from website import security
 from website.models import User
 from website.util import web_url_for
+from website.util.sanitize import strip_html
 
 
 @collect_auth
@@ -246,12 +247,14 @@ def register_user(**kwargs):
             http.BAD_REQUEST,
             data=dict(message_long='Email addresses must match.')
         )
-    # TODO: Sanitize fields
     try:
+        full_name = request.json['fullName']
+        full_name = strip_html(full_name)
+
         user = framework.auth.register_unconfirmed(
             request.json['email1'],
             request.json['password'],
-            request.json['fullName'],
+            full_name,
         )
         framework.auth.signals.user_registered.send(user)
     except (ValidationValueError, DuplicateEmailError):
