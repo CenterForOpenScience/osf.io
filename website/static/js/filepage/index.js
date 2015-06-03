@@ -152,13 +152,13 @@ var FileViewPage = {
         }, 0);
 
         if (shown === 2) {
-            $('#mfrIframeParent').removeClass().addClass('col-md-5');
-            $('.file-view-panels').removeClass().addClass('file-view-panels').addClass('col-md-7');
+            $('#mfrIframeParent').removeClass().addClass('col-lg-5');
+            $('.file-view-panels').removeClass().addClass('file-view-panels').addClass('col-lg-7');
         } else if (shown === 1) {
-            $('#mfrIframeParent').removeClass().addClass('col-md-6');
-            $('.file-view-panels').removeClass().addClass('file-view-panels').addClass('col-md-6');
+            $('#mfrIframeParent').removeClass().addClass('col-lg-6');
+            $('.file-view-panels').removeClass().addClass('file-view-panels').addClass('col-lg-6');
         } else {
-            $('#mfrIframeParent').removeClass().addClass('col-md-12');
+            $('#mfrIframeParent').removeClass().addClass('col-lg-12');
             $('.file-view-panels').removeClass().addClass('file-view-panels');
         }
 
