@@ -1513,6 +1513,9 @@ tbody.file-version{
     border-bottom: 1px dotted;
     text-decoration: none;
 }
+a.dotted-underline:hover {
+    text-decoration: none;
+}
 /* Contributors list */
 
 #contributors {
