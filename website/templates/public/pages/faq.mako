@@ -35,11 +35,6 @@
     important points of the lifecycle, such as manuscript submission or the
     onset of data collection.</p>
 
-<h3>Do registrations have to be public?</h3><p>No. Registration can occur
-    privately. Others could only know that a registration has occurred, but not
-    what was registered. The most common use case of private registration is to
-    keep a research design private before data collection is complete.</p>
-
 <h3>What if I don't want to register anything in the OSF?</h3><p>Registering is
     an optional feature of the OSF.</p>
 
@@ -97,8 +92,8 @@
 <h3>How do I rename a project?</h3>
 <p>You can rename a project or a component by clicking on the project title in the project or component overview page.</p>
 
-<h3>Can I move a component to another project? Or a file to a different component?</h3>
-<p>At this time, it is not possible to move a component to another project, nor is it possible to move a file between components. You will have to delete the component or file and re-upload it to the appropriate location. There are plans to implement these features in the future.</p>
+<h3>Can I move a file from one storage add-on to another? Or one component to another?</h3>
+<p>Yes, you can move files between add-ons and between components, provided the add-ons or components are a part of the same project.</p>
 
 <h3>Can I rename files after they are uploaded?</h3>
 <p>Unfortunately, no - you will have to delete the file and re-upload a new file with the desired name.</p>
