@@ -88,3 +88,6 @@ src/
 website/mfrtemp/
 docs/_build
 website/static/img/badges
+
+# GUIDS
+scripts/guid_blacklist.txt
