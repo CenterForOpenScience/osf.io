@@ -1835,7 +1835,7 @@ function getCopyMode(folder, items) {
             item.id === folder.id ||
             item.parentID === folder.id ||
             item.data.provider === 'dataverse' ||
-            (cannotBeFolder && item.data.kind == 'folder') ||
+            (cannotBeFolder && item.data.kind === 'folder') ||
             (mustBeIntra && item.data.provider !== folder.data.provider) ||
             //Disallow moving OUT of a public figshare folder
             (item.data.provider === 'figshare' && item.data.extra && item.data.status && item.data.status !== 'public')
