@@ -7,6 +7,9 @@ from api.base.utils import get_object_or_404
 from api.base.filters import ODMFilterMixin
 from api.nodes.serializers import NodeSerializer
 from .serializers import UserSerializer
+from .permissions import AuthorizedUserOrPublic
+
+
 
 class UserMixin(object):
     """Mixin with convenience methods for retrieving the current node based on the
@@ -30,6 +33,10 @@ class UserList(generics.ListAPIView, ODMFilterMixin):
     You can filter on users by their id, fullname, given_name, middle_name, or family_name.
     """
 
+    permission_classes = (
+        drf_permissions.IsAuthenticatedOrReadOnly,
+    )
+
     serializer_class = UserSerializer
     ordering = ('-date_registered')
 
@@ -52,7 +59,7 @@ class UserDetail(generics.RetrieveUpdateAPIView, UserMixin):
     """Details about a specific user.
     """
     permission_classes = (
-        drf_permissions.IsAuthenticatedOrReadOnly,
+        AuthorizedUserOrPublic,
     )
     serializer_class = UserSerializer
 
