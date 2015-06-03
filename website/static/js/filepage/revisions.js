@@ -29,7 +29,6 @@ var FileRevisionsTable = {
         self.enableEditing = enableEditing;
 
         model.hasDate = self.file.provider !== 'dataverse';
-        model.selectedRevision = 0;
 
         self.reload = function() {
             model.loaded(false);
