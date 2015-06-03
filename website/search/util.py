@@ -38,12 +38,15 @@ def build_query(qs='*', start=0, size=10, sort=None):
     return query
 
 
+# Match queryObject in search.js
 def build_query_string(qs):
     return {
         'query_string': {
             'default_field': '_all',
+            'fields': ['title^2', '_all', 'description^1.2'],
             'query': qs,
             'analyze_wildcard': True,
+            'auto_generate_phrase_queries': True,
             'lenient': True  # TODO, may not want to do this
         }
     }

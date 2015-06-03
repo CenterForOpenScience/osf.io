@@ -122,8 +122,8 @@ var ViewModel = function(params) {
                 'fields': ['title^2', '_all', 'description^1.2'],
                 'query': self.query(),
                 'analyze_wildcard': true,
-                'lenient': true,
                 'auto_generate_phrase_queries': true,
+                'lenient': true,
             }
         };
     });
