@@ -202,7 +202,9 @@ class TestArchiverTasks(ArchiverTestCase):
         assert_equal(self.dst.archived_providers['dropbox']['status'], ARCHIVER_PENDING)
         cookie = self.user.get_or_create_cookie()
         assert(mock_make_copy_request.called_with(
+            src_pk,
             dst_pk,
+            user_pk,
             settings.WATERBUTLER_URL + '/ops/copy',
             data=dict(
                 source=dict(
@@ -239,11 +241,12 @@ class TestArchiverTasks(ArchiverTestCase):
                                body=callback_OK,
                                content_type='application/json')
         with mock.patch.object(project_signals, 'archive_callback') as mock_callback:
-            make_copy_request(dst_pk, url, {
-                'source': {
-                    'provider': 'dropbox'
-                }
-            })
+            make_copy_request(src_pk, dst_pk, user_pk,
+                              url, {
+                                  'source': {
+                                      'provider': 'dropbox'
+                                  }
+                              })
         assert_equal(self.dst.archived_providers['dropbox']['status'], ARCHIVER_SUCCESS)
         assert(mock_callback.called_with(self.dst))
 
@@ -267,11 +270,12 @@ class TestArchiverTasks(ArchiverTestCase):
                                body=callback_400,
                                content_type='application/json')
         with mock.patch('website.archiver.utils.update_status') as mock_update:
-            make_copy_request(dst_pk, url, {
-                'source': {
-                    'provider': 'dropbox'
-                }
-            })
+            make_copy_request(src_pk, dst_pk, user_pk,
+                              url, {
+                                  'source': {
+                                      'provider': 'dropbox'
+                                  }
+                              })
         mock_update.assert_called_with(self.dst, 'dropbox', ARCHIVER_FAILURE, meta={'errors': [error]})
 
 class TestArchiverUtils(ArchiverTestCase):

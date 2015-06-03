@@ -608,6 +608,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
 
     archiving = fields.BooleanField(default=False)
     archive_task_id = fields.StringField()
+    archive_status = fields.StringField()
     archived_providers = fields.DictionaryField()
 
     is_fork = fields.BooleanField(default=False, index=True)
@@ -1744,11 +1745,12 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         registered.nodes = []
 
         for node_contained in original.nodes:
-            registered_node = node_contained.register_node(
-                schema, auth, template, data,
-            )
-            if registered_node is not None:
-                registered.nodes.append(registered_node)
+            if not node_contained.is_deleted:
+                registered_node = node_contained.register_node(
+                    schema, auth, template, data,
+                )
+                if registered_node is not None:
+                    registered.nodes.append(registered_node)
 
         original.add_log(
             action=NodeLog.PROJECT_REGISTERED,

@@ -5,10 +5,12 @@ import celery
 from celery.utils.log import get_task_logger
 
 from framework.tasks import app as celery_app
+from framework.tasks.utils import logged
 from framework.auth.core import User
 from framework.exceptions import HTTPError
 
 from website.archiver import (
+    ARCHIVER_INITIATED,
     ARCHIVER_PENDING,
     ARCHIVER_CHECKING,
     ARCHIVER_SUCCESS,
@@ -42,23 +44,33 @@ class ArchiverTask(celery.Task):
     max_retries = 0
 
     def on_failure(self, exc, task_id, args, kwargs, einfo):
+        import pydevd
+        pydevd.settrace('localhost', port=54735, stdoutToServer=True, stderrToServer=True)
+        if not kwargs:
+            return
         src = Node.load(kwargs['src_pk'])
         dst = Node.load(kwargs['dst_pk'])
         user = User.load(kwargs['user_pk'])
         if isinstance(exc, ArchiverSizeExceeded):
+            dst.archive_status = ARCHIVER_SIZE_EXCEEDED
+            dst.save()
             utils.handle_archive_fail(
                 ARCHIVER_SIZE_EXCEEDED,
                 src, dst, user,
                 exc.result
             )
         elif isinstance(exc, HTTPError):
-            utils.handler_archive_fail(
+            dst.archive_status = ARCHIVER_NETWORK_ERROR
+            dst.save()
+            utils.handle_archive_fail(
                 ARCHIVER_NETWORK_ERROR,
                 src, dst, user,
-                [exc.data['error']]
+                dst.archived_providers
             )
         else:
-            utils.handler_archive_fail(
+            dst.archive_status = ARCHIVER_UNCAUGHT_ERROR
+            dst.save()
+            utils.handle_archive_fail(
                 ARCHIVER_UNCAUGHT_ERROR,
                 src, dst, user,
                 [einfo]
@@ -72,6 +84,7 @@ class ArchiverSizeExceeded(Exception):
         self.result = result
 
 @celery_app.task(base=ArchiverTask, name="archiver.stat_addon")
+@logged('stat_addon')
 def stat_addon(addon_short_name, src_pk, dst_pk, user_pk):
     """Collect metadata about the file tree of a given addon
 
@@ -87,7 +100,13 @@ def stat_addon(addon_short_name, src_pk, dst_pk, user_pk):
     utils.update_status(dst, addon_short_name, ARCHIVER_CHECKING)
     src_addon = src.get_addon(addon_short_name)
     user = User.load(user_pk)
-    file_tree = src_addon._get_file_tree(user=user)
+    try:
+        file_tree = src_addon._get_file_tree(user=user)
+    except HTTPError as e:
+        utils.update_status(dst, addon_short_name, ARCHIVER_NETWORK_ERROR, meta={
+            'errors': [e.data['error']],
+        })
+        raise
     result = AggregateStatResult(
         src_addon._id,
         addon_short_name,
@@ -95,10 +114,11 @@ def stat_addon(addon_short_name, src_pk, dst_pk, user_pk):
     )
     return result
 
-@celery_app.task(name="archiver.make_copy_request")
-def make_copy_request(dst_pk, url, data):
+@celery_app.task(base=ArchiverTask, name="archiver.make_copy_request")
+@logged('make_copy_request')
+def make_copy_request(src_pk, dst_pk, user_pk, url, data):
     """Make the copy request to the WaterBulter API and handle
-    successful and fauled responses
+    successful and failed responses
 
     :param dst_pk: primary key of registration node
     :param url: URL to send request to
@@ -126,6 +146,7 @@ def make_copy_request(dst_pk, url, data):
     project_signals.archive_callback.send(dst)
 
 @celery_app.task(base=ArchiverTask, name="archiver.archive_addon")
+@logged('archive_addon')
 def archive_addon(addon_short_name, src_pk, dst_pk, user_pk, stat_result):
     """Archive the contents of an addon by making a copy request to the
     WaterBulter API
@@ -164,10 +185,11 @@ def archive_addon(addon_short_name, src_pk, dst_pk, user_pk, stat_result):
         'rename': folder_name,
     }
     copy_url = settings.WATERBUTLER_URL + '/ops/copy'
-    make_copy_request.si(dst_pk, copy_url, data)()
+    make_copy_request.delay(src_pk=src_pk, dst_pk=dst_pk, user_pk=user_pk, url=copy_url, data=data)
 
 
 @celery_app.task(base=ArchiverTask, name="archiver.archive_node")
+@logged('archive_node')
 def archive_node(results, src_pk, dst_pk, user_pk):
     """First use the results of #stat_node to check disk usage of the
     initated registration, then either fail the registration or
@@ -181,6 +203,9 @@ def archive_node(results, src_pk, dst_pk, user_pk):
     """
     logger.info("Archiving node: {0}".format(src_pk))
     src = Node.load(src_pk)
+    dst = Node.load(dst_pk)
+    dst.archive_status = ARCHIVER_PENDING
+    dst.save()
     stat_result = AggregateStatResult(
         src_pk,
         src.title,
@@ -201,6 +226,7 @@ def archive_node(results, src_pk, dst_pk, user_pk):
         ).apply_async()
 
 @celery_app.task(bind=True, base=ArchiverTask, name='archiver.archive')
+@logged('archive')
 def archive(self, src_pk, dst_pk, user_pk):
     """Saves the celery task id, and start a celery.chord
     that runs stat_addon for each addon attached to the Node,
@@ -219,6 +245,7 @@ def archive(self, src_pk, dst_pk, user_pk):
     utils.link_archive_provider(dst, user)
     dst.archiving = True
     dst.archive_task_id = self.request.id
+    dst.archive_status = ARCHIVER_INITIATED
     dst.save()
     src = Node.load(src_pk)
     targets = [src.get_addon(name) for name in settings.ADDONS_ARCHIVABLE]

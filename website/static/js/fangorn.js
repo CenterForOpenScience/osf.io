@@ -1817,13 +1817,21 @@ function getCopyMode(folder, items) {
     var tb = this;
     var canMove = true;
     var mustBeIntra = (folder.data.provider === 'github');
+    var cannotBeFolder = (folder.data.provider === 'figshare' || folder.data.provider === 'dataverse');
 
     if (folder.parentId === 0) return 'forbidden';
     if (folder.data.kind !== 'folder' || !folder.data.permissions.edit) return 'forbidden';
     if (!folder.data.provider || folder.data.status) return 'forbidden';
 
-    if (folder.data.provider === 'figshare') return 'forbidden';
     if (folder.data.provider === 'dataverse') return 'forbidden';
+
+    //Disallow moving INTO a public figshare folder
+    if (
+        folder.data.provider === 'figshare' &&
+        folder.data.extra &&
+        folder.data.extra.status &&
+        folder.data.extra.status === 'public'
+    ) return 'forbidden';
 
     for(var i = 0; i < items.length; i++) {
         var item = items[i];
@@ -1832,13 +1840,21 @@ function getCopyMode(folder, items) {
             item.data.isAddonRoot ||
             item.id === folder.id ||
             item.parentID === folder.id ||
-            item.data.provider === 'figshare' ||
             item.data.provider === 'dataverse' ||
-            (mustBeIntra && item.data.provider !== folder.data.provider)
+            (cannotBeFolder && item.data.kind === 'folder') ||
+            (mustBeIntra && item.data.provider !== folder.data.provider) ||
+            //Disallow moving OUT of a public figshare folder
+            (item.data.provider === 'figshare' && item.data.extra && item.data.status && item.data.status !== 'public')
         ) return 'forbidden';
 
         mustBeIntra = mustBeIntra || item.data.provider === 'github';
-        canMove = canMove && item.data.permissions.edit && (!mustBeIntra || (item.data.provider === folder.data.provider && item.data.nodeId === folder.data.nodeId));
+        canMove = (
+            canMove &&
+            item.data.permissions.edit &&
+            //Can only COPY OUT of figshare
+            item.data.provider !== 'figshare' &&
+            (!mustBeIntra || (item.data.provider === folder.data.provider && item.data.nodeId === folder.data.nodeId))
+        );
     }
     if (folder.data.isPointer) return 'copy';
     if (altKey) return 'copy';
