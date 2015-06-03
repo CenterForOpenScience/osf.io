@@ -13,6 +13,7 @@ require('addons/wiki/static/ace-markdown-snippets.js');
 
 var $osf = require('js/osfHelpers');
 
+var wikiMenu = require('../wikiTreebeard');
 
 var ctx = window.contextVars.wiki;  // mako context variables
 
@@ -85,6 +86,15 @@ if (ctx.canEditPageName) {
 
 // Apply panels
 $(document).ready(function () {
+
+    // Treebeard Wiki Menu
+    $.ajax({
+        url: ctx.urls.grid
+    })
+    .done(function (data) {
+        new wikiMenu(data);
+    });
+
     var bodyElement = $('body');
 
     $('*[data-osf-panel]').osfPanel({

@@ -24,7 +24,13 @@
                 <div class="pull-right"> <div class="panel-collapse"> <i class="fa fa-angle-left pointer"> </i> </div></div>
             </div>
             <div class="osf-panel-body" data-bind="css: {  'osf-panel-body-flex': !$root.singleVis()}">
-                <%include file="wiki/templates/toc.mako"/>
+##                <%include file="wiki/templates/toc.mako"/>
+                <div id="grid">
+                    <div class="fangorn-loading">
+                        <div class="logo-spin text-center"><img src="/static/img/logo_spin.png" alt="loader"></div>
+                        <p class="m-t-sm fg-load-message">Loading wiki pages... </p>
+                    </div>
+                </div>
             </div>
         </div>
 
@@ -342,6 +348,7 @@ ${parent.javascript_bottom()}
             draft: '${urls['api']['draft']}',
             content: '${urls['api']['content']}',
             rename: '${urls['api']['rename']}',
+            grid: '${urls['api']['grid']}',
             page: '${urls['web']['page']}',
             base: '${urls['web']['base']}',
             sharejs: '${sharejs_url}'

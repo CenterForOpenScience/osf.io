@@ -107,6 +107,7 @@ def _get_wiki_api_urls(node, name, additional_urls=None):
         'delete': node.api_url_for('project_wiki_delete', wname=name),
         'rename': node.api_url_for('project_wiki_rename', wname=name),
         'content': node.api_url_for('wiki_page_content', wname=name),
+        'grid': node.api_url_for('project_wiki_grid_data', wname=name)
     }
     if additional_urls:
         urls.update(additional_urls)
@@ -439,3 +440,26 @@ def project_wiki_validate_name(wname, **kwargs):
             message_long='A wiki page with that name already exists.'
         ))
     return {'message': wiki_name}
+
+@must_be_valid_project
+@must_be_contributor_or_public
+def project_wiki_grid_data(auth, wname, **kwargs):
+    node = kwargs['node'] or kwargs['project']
+    toc = _serialize_wiki_toc(node, auth=auth)
+
+    items = []
+
+    for child in toc:
+        item = {
+            'page': {
+                'id': child['id'],
+                'url': child['url'],
+                'title': child['title']
+            },
+            'children': child['pages_current'],
+        }
+
+        items.append(item)
+
+    return items
+
