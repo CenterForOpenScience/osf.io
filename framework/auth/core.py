@@ -846,7 +846,7 @@ class User(GuidStoredObject, AddonModelMixin):
         :return:
         """
         from website.search import search
-        search.update_contributors(self.node__contributed)
+        search.update_contributors(self.visible_contributor_to)
 
     @property
     def is_confirmed(self):
@@ -952,6 +952,23 @@ class User(GuidStoredObject, AddonModelMixin):
     @property
     def profile_url(self):
         return '/{}/'.format(self._id)
+
+    @property
+    def contributor_to(self):
+        return (
+            node for node in self.node__contributed
+            if not (
+                node.is_deleted
+                or node.is_dashboard
+            )
+        )
+
+    @property
+    def visible_contributor_to(self):
+        return (
+            node for node in self.contributor_to
+            if self._id in node.visible_contributor_ids
+        )
 
     def get_summary(self, formatter='long'):
         return {
