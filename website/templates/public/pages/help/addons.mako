@@ -25,7 +25,7 @@
 
 <div class="row">
     <h3 class="text-center" style="padding-top: 20px;">Storage Options</h3>
-    <div class=" col-md-12">
+    <div class="col-md-12">
         <%include file="/public/pages/help/addons/dropbox.mako"/>
         <%include file="/public/pages/help/addons/github.mako"/>
         <%include file="/public/pages/help/addons/amazons3.mako"/>
