@@ -1819,9 +1819,11 @@ function getCopyMode(folder, items) {
 
     if (folder.data.provider === 'dataverse') return 'forbidden';
 
+    //Disallow moving INTO a public figshare folder
     if (
         folder.data.provider === 'figshare' &&
         folder.data.extra &&
+        folder.data.extra.status &&
         folder.data.extra.status === 'public'
     ) return 'forbidden';
 
@@ -1834,12 +1836,19 @@ function getCopyMode(folder, items) {
             item.parentID === folder.id ||
             item.data.provider === 'dataverse' ||
             (cannotBeFolder && item.data.kind == 'folder') ||
-            (mustBeIntra && item.data.provider !== folder.data.provider)
-            (item.data.provider === 'figshare' && item.data.extra && item.data.status !== 'public') ||
+            (mustBeIntra && item.data.provider !== folder.data.provider) ||
+            //Disallow moving OUT of a public figshare folder
+            (item.data.provider === 'figshare' && item.data.extra && item.data.status && item.data.status !== 'public')
         ) return 'forbidden';
 
         mustBeIntra = mustBeIntra || item.data.provider === 'github';
-        canMove = canMove && item.data.permissions.edit && (!mustBeIntra || (item.data.provider === folder.data.provider && item.data.nodeId === folder.data.nodeId));
+        canMove = (
+            canMove &&
+            item.data.permissions.edit &&
+            //Can only COPY OUT of figshare
+            item.data.provider !== 'figshare' &&
+            (!mustBeIntra || (item.data.provider === folder.data.provider && item.data.nodeId === folder.data.nodeId))
+        );
     }
     if (folder.data.isPointer) return 'copy';
     if (altKey) return 'copy';
