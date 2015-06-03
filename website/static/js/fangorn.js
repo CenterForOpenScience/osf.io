@@ -135,12 +135,21 @@ function cancelUploads (row) {
 
 var uploadRowTemplate = function(item){
     var tb = this;
+    var padding;
     var progress = item.data.uploadState() === 'pending' ? 0 : Math.floor(item.data.progress);
+    if (tb.filterOn) {
+        padding = 20;
+    } else {
+        padding = (item.depth - 1) * 20;
+    }
     var columns = [{
         data : '',  // Data field name
         css : '',
         custom : function(){ return m('row.text-muted', [
-            m('.col-xs-7', {style: 'padding-left:40px;overflow: hidden;text-overflow: ellipsis;'}, item.data.name),
+            m('.col-xs-7', {style: 'overflow: hidden;text-overflow: ellipsis;'}, [
+                m('span', { style : 'padding-left:' + padding + 'px;'}, tb.options.resolveIcon.call(tb, item)),
+                m('span',{ style : 'margin-left: 9px;'}, item.data.name)
+            ]),
             m('.col-xs-3',
                 m('.progress', [
                     m('.progress-bar.progress-bar-info.progress-bar-striped', {
@@ -224,7 +233,7 @@ function _fangornResolveIcon(item) {
 
     if (item.kind === 'folder') {
         if (item.data.iconUrl) {
-            return m('img', {src: item.data.iconUrl, style: {width: '16px', height: 'auto'}});
+            return m('span', {style: {width:'16px', height:'16px', background:'url(' + item.data.iconUrl+ ')', display:'block'}}, '');
         }
         if (!item.data.permissions.view) {
             return privateFolder;
@@ -386,11 +395,11 @@ function doItemOp(operation, to, from, rename, conflict) {
         from.move(to.id);
     }
 
-    tb.redraw();
-
     if (to.data.provider === from.provider) {
         tb.pendingFileOps.push(from.id);
     }
+    _fangornOrderFolder.call(tb, from.parent());
+
 
     $.ajax({
         type: 'POST',
@@ -446,8 +455,8 @@ function doItemOp(operation, to, from, rename, conflict) {
             from.open = true;
             from.load = true;
         }
-
-        tb.redraw();
+        // no need to redraw because fangornOrderFolder does it
+        _fangornOrderFolder.call(tb, from.parent());
     }).fail(function(xhr, textStatus) {
         if (to.data.provider === from.provider) {
             tb.pendingFileOps.pop();
@@ -483,7 +492,7 @@ function doItemOp(operation, to, from, rename, conflict) {
             }
         });
 
-        tb.redraw();
+        _fangornOrderFolder.call(tb, from.parent());
     });
 }
 
@@ -1040,7 +1049,7 @@ function _fangornOrderFolder(tree) {
     // Checking if this column does in fact have sorting
     if (this.isSorted[0]) {
         var sortDirection = this.isSorted[0].desc ? 'desc' : 'asc';
-        tree.sortChildren(this, sortDirection, 'text', 0);
+        tree.sortChildren(this, sortDirection, 'text', 0, 1);
         this.redraw();
     }
 }
@@ -1110,7 +1119,7 @@ function _fangornResolveRows(item) {
         return uploadRowTemplate.call(tb, item);
     }
 
-    if(item.data.status) {
+    if (item.data.status) {
         return [{
             data : '',  // Data field name
             css : 't-a-c',
@@ -1439,7 +1448,6 @@ var FGItemButtons = {
                     onclick: function() {
                         mode(toolbarModes.RENAME);
                     },
-                    tooltip: 'Change the name of the item',
                     icon: 'fa fa-font',
                     className : 'text-info'
                 }, 'Rename')
@@ -1531,7 +1539,6 @@ var FGToolbar = {
                     helpTextId : 'renameHelpText',
                     placeholder : null,
                     value : ctrl.tb.inputValue(),
-                    tooltip: 'Change the name of the item here'
                 }, ctrl.helpText())
             ),
             m('.col-xs-3.tb-buttons-col',
@@ -1541,7 +1548,6 @@ var FGToolbar = {
                             onclick: function () {
                                 _renameEvent.call(ctrl.tb);
                             },
-                            tooltip: 'Rename item',
                             icon : 'fa fa-pencil',
                             className : 'text-info'
                         }, 'Rename'),
@@ -1844,13 +1850,21 @@ function getCopyMode(folder, items) {
     var tb = this;
     var canMove = true;
     var mustBeIntra = (folder.data.provider === 'github');
+    var cannotBeFolder = (folder.data.provider === 'figshare' || folder.data.provider === 'dataverse');
 
     if (folder.parentId === 0) return 'forbidden';
     if (folder.data.kind !== 'folder' || !folder.data.permissions.edit) return 'forbidden';
     if (!folder.data.provider || folder.data.status) return 'forbidden';
 
-    if (folder.data.provider === 'figshare') return 'forbidden';
     if (folder.data.provider === 'dataverse') return 'forbidden';
+
+    //Disallow moving INTO a public figshare folder
+    if (
+        folder.data.provider === 'figshare' &&
+        folder.data.extra &&
+        folder.data.extra.status &&
+        folder.data.extra.status === 'public'
+    ) return 'forbidden';
 
     for(var i = 0; i < items.length; i++) {
         var item = items[i];
@@ -1859,13 +1873,21 @@ function getCopyMode(folder, items) {
             item.data.isAddonRoot ||
             item.id === folder.id ||
             item.parentID === folder.id ||
-            item.data.provider === 'figshare' ||
             item.data.provider === 'dataverse' ||
-            (mustBeIntra && item.data.provider !== folder.data.provider)
+            (cannotBeFolder && item.data.kind === 'folder') ||
+            (mustBeIntra && item.data.provider !== folder.data.provider) ||
+            //Disallow moving OUT of a public figshare folder
+            (item.data.provider === 'figshare' && item.data.extra && item.data.status && item.data.status !== 'public')
         ) return 'forbidden';
 
         mustBeIntra = mustBeIntra || item.data.provider === 'github';
-        canMove = canMove && item.data.permissions.edit && (!mustBeIntra || (item.data.provider === folder.data.provider && item.data.nodeId === folder.data.nodeId));
+        canMove = (
+            canMove &&
+            item.data.permissions.edit &&
+            //Can only COPY OUT of figshare
+            item.data.provider !== 'figshare' &&
+            (!mustBeIntra || (item.data.provider === folder.data.provider && item.data.nodeId === folder.data.nodeId))
+        );
     }
     if (folder.data.isPointer) return 'copy';
     if (altKey) return 'copy';
