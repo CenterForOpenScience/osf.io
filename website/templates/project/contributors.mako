@@ -18,6 +18,11 @@
                           <i class="fa fa-plus"></i> Add
                         </a>
                     <!-- /ko -->
+                    <!-- ko if: canEdit -->
+                        <a href="#removeBatchContribs" data-toggle="modal" class="btn btn-danger btn-sm" style="margin-left:20px;margin-top: -3px">
+                          <i class="fa fa-minus"></i> Remove
+                        </a>
+                    <!-- /ko -->
                 </h3>
                 % if 'admin' in user['permissions'] and not node['is_registration']:
                     <p>Drag and drop contributors to change listing order.</p>

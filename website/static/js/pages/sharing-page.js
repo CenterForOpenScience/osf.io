@@ -3,6 +3,7 @@ var $ = require('jquery');
 
 var ContribManager = require('js/contribManager');
 var ContribAdder = require('js/contribAdder');
+var ContribRemover = require('js/contribRemover');
 var PrivateLinkManager = require('js/privateLinkManager');
 var PrivateLinkTable = require('js/privateLinkTable');
 
@@ -16,6 +17,12 @@ $('body').on('nodeLoad', function(event, data) {
     if (data.user.can_edit) {
         new ContribAdder(
             '#addContributors',
+            data.node.title,
+            data.parent_node.id,
+            data.parent_node.title
+        );
+        new ContribRemover(
+            '#batchRemoveContribs',
             data.node.title,
             data.parent_node.id,
             data.parent_node.title
