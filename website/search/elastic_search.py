@@ -271,29 +271,32 @@ def update_node(node, index=INDEX):
         es.index(index=index, doc_type=category, id=elastic_document_id, body=elastic_document, refresh=True)
 
 
-def bulk_update_contributors(nodes, index='website'):
-    """
-    Updates only the list of contributors of input projects
+def bulk_update_contributors(nodes, index=INDEX):
+    """Updates only the list of contributors of input projects
+
     :param nodes: Projects, components or registrations
     :param index: Indices of the nodes
     :return:
     """
     actions = []
     for node in nodes:
-        actions.extend(map(lambda type: {
+        actions.append({
             '_op_type': 'update',
             '_index': index,
-            '_type': type,
             '_id': node._id,
+            '_type': get_doctype_from_node(node),
             'doc': {
                 'contributors': [
-                    x.fullname for x in node.visible_contributors
-                    if x is not None
-                    and x.is_active()
+                    {
+                        'fullname': user.fullname,
+                        'url': user.profile_url if user.is_active else None
+                    } for user in node.visible_contributors
+                    if user is not None
+                    and user.is_active
                 ]
             }
-        }, ['project', 'component', 'registration']))
-    helpers.bulk(es, actions)
+        })
+    return helpers.bulk(es, actions)
 
 
 @requires_search
