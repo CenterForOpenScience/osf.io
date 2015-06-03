@@ -365,6 +365,7 @@ class NodeProjectCollector(object):
             'description': node.description,
             'registeredMeta': node.registered_meta,
             'childrenCount': children_count,
+            'nodeType': node.project_or_component,
         }
 
     def _collect_addons(self, node):

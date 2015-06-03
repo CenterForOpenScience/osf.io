@@ -323,53 +323,11 @@ function _poToggleCheck(item) {
  * @private
  */
 function _poResolveIcon(item) {
-    var icons = iconmap.projectIcons;
-    var componentIcons = iconmap.componentIcons;
-    var projectIcons = iconmap.projectIcons;
-    var viewLink = item.data.urls.fetch;
-    function returnView(type, category) {
-        var iconType = icons[type];
-        if (type === 'component' || type === 'registeredComponent') {
-            iconType = componentIcons[category];
-        } else if (type === 'project' || type === 'registeredProject') {
-            iconType = projectIcons[category];
-        }
-        if (type === 'registeredComponent' || type === 'registeredProject') {
-            iconType += ' po-icon-registered';
-        } else {
-            iconType += ' po-icon';
-        }
-        var template = m('span', { 'class' : iconType});
-        return template;
+    var newIcon = Fangorn.Utils.resolveIconHelper(item);
+    if (newIcon === null) {
+        return m('span', { 'class' : 'collection'});
     }
-    if (item.data.isSmartFolder) {
-        return returnView('smartCollection');
-    }
-    if (item.data.isFolder) {
-        return returnView('collection');
-    }
-    if (item.data.isPointer && !item.parent().data.isFolder) {
-        return returnView('link');
-    }
-    if (item.data.isProject) {
-        if (item.data.isRegistration) {
-            return returnView('registeredProject', item.data.category);
-        } else {
-            return returnView('project', item.data.category);
-        }
-    }
-
-    if (item.data.isComponent) {
-        if (item.data.isRegistration) {
-            return returnView('registeredComponent', item.data.category);
-        }
-        return returnView('component', item.data.category);
-    }
-
-    if (item.data.isPointer) {
-        return returnView('link');
-    }
-    return returnView('collection');
+    return newIcon;
 }
 
 /**
