@@ -358,6 +358,57 @@ ko.bindingHandlers.anchorScroll = {
 };
 
 /**
+ * Adds class returned from iconmap to the element. The value accessor should be the 
+ * category of the node.
+ * Example:
+ * <span data-bind="getTheIcon: 'analysis'"></span>
+ */
+ko.bindingHandlers.getTheIcon = {
+    init: function(elem, valueAccessor) {
+        var icon;
+        var category = valueAccessor();
+        if (Object.keys(iconmap.componentIcons).indexOf(category) >=0 ){
+            icon = iconmap.componentIcons[category];
+        }
+        else {
+            icon = iconmap.projectIcons[category];
+        }
+        $(elem).addClass(icon);
+    },
+    update: function(elem, valueAccessor) {
+        var icon;
+        var category = valueAccessor();
+        if (Object.keys(iconmap.componentIcons).indexOf(category) >=0 ){
+            icon = iconmap.componentIcons[category];
+        }
+        else {
+            icon = iconmap.projectIcons[category];
+        }
+        $(elem).addClass(icon);
+    }
+};
+
+/**
+ * Required in render_node.mako to call getTheIcon. As a result of modularity there 
+ * are overlapping scopes. To temporarily escape the parent scope and allow other binding
+ * stopBinding can be used. Only other option was to redo the structure of the scopes.
+ * Example:
+ * <span data-bind="stopBinding: true"></span>
+ */
+ko.bindingHandlers.stopBinding = {
+    init: function() {
+        return { controlsDescendantBindings: true };
+    }
+};
+
+/**
+ * Allows data-bind to be called without a div so the layout of the page is not effected.
+ * Example:
+ * <!-- ko stopBinding: true -->
+ */
+ko.virtualElements.allowedBindings.stopBinding = true;
+
+/**
   * A thin wrapper around ko.applyBindings that ensures that a view model
   * is bound to the expected element. Also shows the element (and child elements) if it was
   * previously hidden by applying the 'scripted' CSS class.
@@ -498,40 +549,6 @@ ko.bindingHandlers.listing = {
         $(element).html(list);
     }
 };
-
-ko.bindingHandlers.getTheIcon = {
-    init: function(elem, valueAccessor) {
-        var icon;
-        var category = valueAccessor();
-        if (Object.keys(iconmap.componentIcons).indexOf(category) >=0 ){
-            icon = iconmap.componentIcons[category];
-        }
-        else {
-            icon = iconmap.projectIcons[category];
-        }
-        $(elem).addClass(icon);
-    },
-    update: function(elem, valueAccessor) {
-        var icon;
-        var category = valueAccessor();
-        if (Object.keys(iconmap.componentIcons).indexOf(category) >=0 ){
-            icon = iconmap.componentIcons[category];
-        }
-        else {
-            icon = iconmap.projectIcons[category];
-        }
-        $(elem).addClass(icon);
-    }
-};
-
-ko.bindingHandlers.stopBinding = {
-    init: function() {
-        return { controlsDescendantBindings: true };
-    }
-};
-
-ko.virtualElements.allowedBindings.stopBinding = true;
-
 
 // Also export these to the global namespace so that these can be used in inline
 // JS. This is used on the /goodbye page at the moment.

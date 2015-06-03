@@ -25,6 +25,10 @@ var md = require('js/markdown').full;
 var ctx = window.contextVars;
 var nodeApiUrl = ctx.node.urls.api;
 
+// model for components, due to simplicity did not create a new file
+var ComponentControl = {
+};
+
 
 // Initialize controller for "Add Links" modal
 new pointers.PointerManager('#addPointer', window.contextVars.node.title);
@@ -35,7 +39,16 @@ $('body').on('nodeLoad', function(event, data) {
     // Initialize nodeControl
     new NodeControl.NodeControl('#projectScope', data);
 
-    $osf.applyBindings(NodeControl, '#componentScope');
+    if (data.node.children) {
+        // model for components, due to simplicity did not create a new file
+        var ComponentControl = {
+        };
+
+        // binds to component scope in render_nodes.mako
+        $osf.applyBindings(ComponentControl, '#componentScope');
+
+    }
+
 });
 
 // Initialize comment pane w/ it's viewmodel
@@ -103,9 +116,11 @@ $(document).ready(function () {
                 var configOption = Fangorn.Utils.resolveconfigOption.call(this, item, 'resolveRows', [item]);
                 return configOption || defaultColumns;
             }
+
         };
         var filebrowser = new Fangorn(fangornOpts);
     });
+
 
     // Tooltips
     $('[data-toggle="tooltip"]').tooltip({container: 'body'});
