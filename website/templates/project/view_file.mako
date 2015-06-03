@@ -20,7 +20,7 @@
 <hr>
 <div class="row">
 
-  <div id="file-navigation" class="panel-toggle col-md-3 file-tree">
+  <div id="file-navigation" class="panel-toggle col-lg-3 file-tree">
     <div class="osf-panel osf-panel-flex hidden-xs reset-height">
       <div class="osf-panel-header osf-panel-header-flex" style="display:none">
         <div id="filesSearch"></div>
@@ -51,11 +51,11 @@
 
   <div id="fileViewPanelLeft" class="col-lg-9 panel-expand">
     <div class="row">
-      <div id="mfrIframeParent" class="col-md-9">
+      <div id="mfrIframeParent" class="col-lg-9">
         <div id="mfrIframe" class="mfr mfr-file"></div>
       </div>
 
-      <div class="file-view-panels col-md-3"></div>
+      <div class="file-view-panels col-lg-3"></div>
     </div>
   </div>
 
