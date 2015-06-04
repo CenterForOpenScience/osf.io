@@ -39,7 +39,13 @@ var AddonFolderPickerViewModel = oop.extend(FolderPickerViewModel, {
             return (userHasAuth && selected) ? selected.type : '';
         });
         self.messages.submitSettingsSuccess =  ko.pureComputed(function() {
-            return 'Successfully linked "' + $osf.htmlEscape(self.folder().name) + '". Go to the <a href="' +
+            if(addonName === "Google Drive"){
+                var name = decodeURIComponent($osf.htmlEscape(self.folder().name));
+            }
+            else {
+                var name = $osf.htmlEscape(self.folder().name);
+            }
+            return 'Successfully linked "' + name + '". Go to the <a href="' +
                 self.urls().files + '">Files page</a> to view your content.';
         });
         // Overrides
