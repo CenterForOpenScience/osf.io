@@ -122,7 +122,7 @@ var FileEditor = {
         if (!ctrl.loaded) return util.Spinner;
 
         return m('.editor-pane', [
-            m('.wiki-connected-users', m('.row', m('.col-md-12', [
+            m('.wiki-connected-users', m('.row', m('.col-sm-12', [
                 m('.ul.list-inline', {style: {'margin-top': '10px'}}, [
                     ctrl.observables.activeUsers().map(function(user) {
                         return m('li', m('a', {href: user.url}, [
@@ -144,7 +144,7 @@ var FileEditor = {
             ]),
             m('br'),
             m('.osf-panel-footer[style=position:inherit]', [
-                m('.row', m('.col-md-12', [
+                m('.row', m('.col-sm-12', [
                     m('.pull-right', [
                         m('button#fileEditorRevert.btn.btn-sm.btn-danger', {onclick: function(){$(document).trigger('fileviewpage:revert');}}, 'Revert'),
                         ' ',
