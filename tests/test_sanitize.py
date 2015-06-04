@@ -40,3 +40,11 @@ class TestSanitize(unittest.TestCase):
             sanitize.safe_unescape_html('&lt;&gt; diamonds &amp; diamonds &lt;&gt;'),
             '<> diamonds & diamonds <>'
         )
+        assert_equal(
+            sanitize.safe_unescape_html(['&lt;&gt;&amp;'])[0],
+            '<>&'
+        )
+        assert_equal(
+            sanitize.safe_unescape_html({'key': '&lt;&gt;&amp;'})['key'],
+            '<>&'
+        )
