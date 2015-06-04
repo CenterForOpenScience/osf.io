@@ -2,9 +2,9 @@
 '''Consolidates settings from defaults.py and local.py.
 
 ::
-    >>> from website import settings
-    >>> settings.MAIL_SERVER
-    'smtp.sendgrid.net'
+    >>> from api.base import settings
+    >>> settings.API_BASE
+    'v2/'
 '''
 from .defaults import *
 
