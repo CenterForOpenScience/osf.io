@@ -9,6 +9,7 @@ from framework.tasks.utils import logged
 from framework.auth.core import User
 from framework.exceptions import HTTPError
 
+
 from website.archiver import (
     ARCHIVER_INITIATED,
     ARCHIVER_PENDING,
@@ -123,6 +124,7 @@ def make_copy_request(src_pk, dst_pk, user_pk, url, data):
     :param data: <dict> of setting to send in POST to WaterBulter API
     :return: None
     """
+    create_app_context()
     dst = Node.load(dst_pk)
     provider = data['source']['provider']
     utils.update_status(dst, provider, ARCHIVER_SENDING)
@@ -139,6 +141,7 @@ def make_copy_request(src_pk, dst_pk, user_pk, url, data):
                 'errors': [res.json()]
             }
         )
+        raise HTTPError(res.status_code)
     elif res.status_code in (200, 201):
         utils.update_status(dst, provider, ARCHIVER_SUCCESS)
     project_signals.archive_callback.send(dst)
@@ -200,6 +203,7 @@ def archive_node(results, src_pk, dst_pk, user_pk):
     :return: None
     """
     logger.info("Archiving node: {0}".format(src_pk))
+    create_app_context()
     src = Node.load(src_pk)
     dst = Node.load(dst_pk)
     dst.archive_status = ARCHIVER_PENDING
@@ -235,9 +239,9 @@ def archive(self, src_pk, dst_pk, user_pk):
     """
     logger = get_task_logger(__name__)
     logger.info("Received archive task for Node: {0} into Node: {1}".format(src_pk, dst_pk))
+    create_app_context()
     dst = Node.load(dst_pk)
     user = User.load(user_pk)
-    create_app_context()
     utils.link_archive_provider(dst, user)
     dst.archiving = True
     dst.archive_task_id = self.request.id

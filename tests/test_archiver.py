@@ -137,14 +137,14 @@ class TestArchiverTasks(ArchiverTestCase):
         src_pk, dst_pk, user_pk = self.pks
         archive(src_pk, dst_pk, user_pk)
         targets = [self.src.get_addon(name) for name in settings.ADDONS_ARCHIVABLE]
-        chain_sig = celery.chain(
+        chain_sig = celery.group(
             stat_addon.si(
                 addon_short_name=addon.config.short_name,
                 src_pk=src_pk,
                 dst_pk=dst_pk,
                 user_pk=user_pk,
             )
-            for addon in targets if (addon and isinstance(addon, StorageAddonBase))
+            for addon in targets if (addon and addon.complete and isinstance(addon, StorageAddonBase))
         )
         assert_true(self.dst.archiving)
         mock_chord.assert_called_with(chain_sig)
@@ -428,6 +428,7 @@ class TestArchiverListeners(ArchiverTestCase):
 
     @mock.patch('website.archiver.utils.send_archiver_success_mail')
     def test_archive_callback_done_success(self, mock_send):
+        self.dst.archiving = True
         for addon in self.dst.archived_providers:
             self.dst.archived_providers[addon]['status'] = ARCHIVER_SUCCESS
         self.dst.save()
@@ -436,6 +437,7 @@ class TestArchiverListeners(ArchiverTestCase):
 
     @mock.patch('website.project.utils.send_embargo_email')
     def test_archive_callback_done_embargoed(self, mock_send):
+        self.dst.archiving = True
         end_date = datetime.datetime.now() + datetime.timedelta(days=30)
         self.dst.embargo_registration(self.user, end_date)
         for addon in self.dst.archived_providers:
