@@ -445,48 +445,63 @@ def project_wiki_validate_name(wname, **kwargs):
 @must_be_contributor_or_public
 def project_wiki_grid_data(auth, wname, **kwargs):
     node = kwargs['node'] or kwargs['project']
+
+    ret = [
+        {
+            'title': 'Project Wiki Pages',
+            'kind': 'heading',
+            'children': format_project_wiki_pages(node)
+        },
+        {
+            'title': 'Component Wiki Pages',
+            'kind': 'heading',
+            'children': format_component_wiki_pages(node, auth)
+        }
+    ]
+    print ret
+    return ret
+
+
+def format_project_wiki_pages(node):
+    pages = []
     project_wiki_pages = _get_wiki_pages_current(node)
-    component_wiki_pages = _serialize_wiki_toc(node, auth=auth)
-
-    items = []
-
-    for page in project_wiki_pages:
-        item = {
+    for wiki_page in project_wiki_pages:
+        page = {
             'page': {
-                'url': page['url'],
-                'title': page['name']
+                'url': wiki_page['url'],
+                'name': wiki_page['name']
             },
             'children': [],
             'kind': 'project'
         }
+        pages.append(page)
+    return pages
 
-        items.append(item)
 
-    for page in component_wiki_pages:
+def format_component_wiki_pages(node, auth):
+    pages = []
+    component_wiki_pages = _serialize_wiki_toc(node, auth)
+    for wiki_page in component_wiki_pages:
         children = []
-        for component_page in page['pages_current']:
+        for component_page in wiki_page['pages_current']:
             if component_page['name'] != 'home':
                 child = {
                     'page': {
                         'url': component_page['url'],
-                        'title': component_page['name']
+                        'name': component_page['name']
                     },
                     'children': [],
-                    'kind': ''
+                    'kind': 'inner_component'
                 }
                 children.append(child)
 
-        item = {
+        page = {
             'page': {
-                'url': page['url'],
-                'title': page['title'],
+                'url': wiki_page['url'],
+                'name': wiki_page['title']
             },
             'children': children,
             'kind': 'component'
         }
-        items.append(item)
-
-    print items
-
-    return items
-
+        pages.append(page)
+    return pages

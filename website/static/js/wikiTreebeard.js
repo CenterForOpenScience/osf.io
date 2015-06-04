@@ -38,7 +38,6 @@ function WikiMenu(data) {
     var tbOptions = {
         divID: 'grid',
         filesData: data,
-        rowHeight: 33,
         resolveToggle: resolveToggle,
         paginate : false,       // Whether the applet starts with pagination or not.
         paginateToggle : false, // Show the buttons that allow users to switch between scroll and paginate.
@@ -52,32 +51,25 @@ function WikiMenu(data) {
         },
         resolveRows : function (item){
             var columns = [];
-            var iconcss = '';
-            // check if should not get icon
-            if(item.children.length < 1 ){
-                iconcss = 'tb-no-icon';
-            }
 
-            if(item.data.kind === 'project') {
-                columns.push({
-                    folderIcons: false,
-                    custom: function() {
-                        if(item.data.page.title == 'home') {
-                           return m('a', {href: item.data.page.url}, 'Home');
+            if(item.data.kind === 'heading') {
+                columns.push(
+                    {
+                        folderIcons: true,
+                        custom: function() {
+                            return m('b', item.data.title);
                         }
-                        return m('a', {href: item.data.page.url}, item.data.page.title);
                     }
-                });
+                )
             } else {
-                columns.push({
-                    folderIcons: true,
-                    custom: function() {
-//                        if(item.data.page.title == 'home') {
-//                           return m('a', {href: item.data.page.url}, 'Home');
-//                        }
-                        return m('a', {href: item.data.page.url}, item.data.page.title);
+                columns.push(
+                    {
+                        folderIcons: true,
+                        custom: function() {
+                            return m('a', {href: item.data.page.url}, item.data.page.name);
+                        }
                     }
-                });
+                )
             }
 
             return columns;
