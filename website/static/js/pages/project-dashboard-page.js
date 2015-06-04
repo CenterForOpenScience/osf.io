@@ -55,6 +55,22 @@ $(document).ready(function () {
     $.ajax({
         url:  nodeApiUrl + 'files/grid/'
     }).done(function (data) {
+        // console.log(data.data[0]);
+        // var children = data.data[0].children;
+        // var noPrivateData = [];
+        // var privateData = [];
+        // var x;
+        // for (x in data.data[0].children) {
+        //     if (children[x].name !== 'Private Component') {
+        //         noPrivateData.push(children[x]);
+        //     } else {
+        //         privateData.push(children[x]);
+        //     }
+        // }
+        // noPrivateData.push(privateData);
+        // data.data[0].children = noPrivateData;
+        // console.log(data.data);
+
         var fangornOpts = {
             divID: 'treeGrid',
             filesData: data.data,
@@ -75,32 +91,38 @@ $(document).ready(function () {
                 ];
             },
             resolveRows : function (item) {
-                var tb = this;
-                item.css = '';
-                if(tb.isMultiselected(item.id)){
-                    item.css = 'fangorn-selected';
-                }
-                var defaultColumns = [
-                        {
-                            data: 'name',
-                            folderIcons: true,
-                            filter: true,
-                            custom: Fangorn.DefaultColumns._fangornTitleColumn
-                        }];
-                if (item.parentID) {
-                    item.data.permissions = item.data.permissions || item.parent().data.permissions;
-                    if (item.data.kind === 'folder') {
-                        item.data.accept = item.data.accept || item.parent().data.accept;
-                    }
-                }
-                if(item.data.uploadState && (item.data.uploadState() === 'pending' || item.data.uploadState() === 'uploading')){
-                    return Fangorn.Utils.uploadRowTemplate.call(tb, item);
-                }
+                //if (item.data.name != 'Private Component') {
+                console.log(item.data.name);
 
-                var configOption = Fangorn.Utils.resolveconfigOption.call(this, item, 'resolveRows', [item]);
-                return configOption || defaultColumns;
-            }
+                    var tb = this;
+                    item.css = '';
+                    if(tb.isMultiselected(item.id)){
+                        item.css = 'fangorn-selected';
+                    }
+                    var defaultColumns = [
+                            {
+                                data: 'name',
+                                folderIcons: true,
+                                filter: true,
+                                custom: Fangorn.DefaultColumns._fangornTitleColumn
+                            }];
+                    if (item.parentID) {
+                        item.data.permissions = item.data.permissions || item.parent().data.permissions;
+                        if (item.data.kind === 'folder') {
+                            item.data.accept = item.data.accept || item.parent().data.accept;
+                        }
+                    }
+                    if(item.data.uploadState && (item.data.uploadState() === 'pending' || item.data.uploadState() === 'uploading')){
+                        return Fangorn.Utils.uploadRowTemplate.call(tb, item);
+                    }
+
+                    var configOption = Fangorn.Utils.resolveconfigOption.call(this, item, 'resolveRows', [item]);
+                    return configOption || defaultColumns;
+                }
+                //return defaultColumns;
+           // }
         };
+        
         var filebrowser = new Fangorn(fangornOpts);
     });
 
