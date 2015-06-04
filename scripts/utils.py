@@ -10,8 +10,7 @@ from werkzeug.local import LocalProxy
 from framework.mongo import database
 from framework.transactions.context import transaction
 
-from website import models
-from website import settings
+from website import models, settings
 
 
 def format_now():
