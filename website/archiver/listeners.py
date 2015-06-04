@@ -56,12 +56,12 @@ def archive_callback(dst):
 
     :param dst: registration Node
     """
+    if not dst.archiving:
+        return
     if archive_node_finished(dst):
         dst.archiving = False
         dst.save()
     if archive_tree_finished(dst):
-        dst.archiving = False
-        dst.save()
         if ARCHIVER_FAILURE in [value['status'] for value in dst.archived_providers.values()]:
             handle_archive_fail(
                 ARCHIVER_NETWORK_ERROR,
