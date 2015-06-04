@@ -463,15 +463,29 @@ def project_wiki_grid_data(auth, wname, **kwargs):
         items.append(item)
 
     for page in component_wiki_pages:
+        children = []
+        for component_page in page['pages_current']:
+            child = {
+                'page': {
+                    'url': component_page['url'],
+                    'title': component_page['name']
+                },
+                'children': [],
+                'kind': ''
+            }
+            children.append(child)
+
         item = {
             'page': {
                 'url': page['url'],
                 'title': page['title'],
             },
-            'children': page['pages_current'],
+            'children': children,
             'kind': 'component'
         }
         items.append(item)
+
+    # print items
 
     return items
 
