@@ -274,7 +274,7 @@
 </div>
 
 <%def name="children()">
-% if 'write' in user['permissions'] or node['children']:
+% if ('write' in user['permissions'] and not node['is_registration']) or node['children']:
     <div class="components addon-widget-container">
         <div class="addon-widget-header clearfix">
             <h4>Components </h4>
