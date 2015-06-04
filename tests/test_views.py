@@ -2486,6 +2486,21 @@ class TestAuthViews(OsfTestCase):
         user = User.find_one(Q('username', 'eq', email))
         assert_equal(user.fullname, name)
 
+    def test_register_email_case_insensitive(self):
+        url = api_url_for('register_user')
+        name, email, password = fake.name(), fake.email(), 'underpressure'
+        self.app.post_json(
+            url,
+            {
+                'fullName': name,
+                'email1': email,
+                'email2': str(email).upper(),
+                'password': password,
+            }
+        )
+        user = User.find_one(Q('username', 'eq', email))
+        assert_equal(user.fullname, name)
+
     def test_register_email_mismatch(self):
         url = api_url_for('register_user')
         name, email, password = fake.name(), fake.email(), 'underpressure'
