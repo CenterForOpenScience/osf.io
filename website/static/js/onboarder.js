@@ -95,7 +95,7 @@ function initTypeahead(element, nodes, viewModel, params){
 function serializeNode(node) {
     var dateModified = new $osf.FormattableDate(node.date_modified);
     return {
-        name: node.title,
+        name: $osf.htmlDecode(node.title),
         id: node.id,
         dateModified: dateModified,
         urls: {
