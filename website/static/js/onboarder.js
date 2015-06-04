@@ -422,7 +422,7 @@ function OBUploaderViewModel(params) {
     self.messageClass = ko.observable('text-info');
     // The target node to upload to to
     self.target = ko.observable(null);
-    //Boolean to track of if upload was successful
+    //Boolean to track if upload was successful
     self.success = false;
     /* Functions */
     self.toggle = function() {
