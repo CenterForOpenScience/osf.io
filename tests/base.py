@@ -318,3 +318,29 @@ def remove_mock_addon(addon_config):
         settings.ADDONS_REQUESTED.remove(addon_config.short_name)
     except ValueError:
         pass
+
+
+class UploadsBackupTestCase(unittest.TestCase):
+
+    UPLOADS_BACKUP_PATH = getattr(
+        settings,
+        'TEST_UPLOADS_BACKUP_PATH',
+        '/tmp/test_uploads_backup',
+    )
+
+    @classmethod
+    def setUpClass(cls):
+        super(UploadsBackupTestCase, cls).setUpClass()
+        try:
+            os.mkdir(cls.UPLOADS_BACKUP_PATH)
+        except OSError:
+            pass
+        cls._UPLOADS_BACKUP_PATH, settings.UPLOADS_BACKUP_PATH = (
+            settings.UPLOADS_BACKUP_PATH, cls.UPLOADS_BACKUP_PATH
+        )
+
+    @classmethod
+    def tearDownClass(cls):
+        super(UploadsBackupTestCase, cls).tearDownClass()
+        shutil.rmtree(cls.UPLOADS_BACKUP_PATH)
+        settings.UPLOADS_BACKUP_PATH = cls._UPLOADS_BACKUP_PATH

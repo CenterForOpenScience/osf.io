@@ -15,6 +15,7 @@ import datetime as dt
 
 logger = logging.getLogger(__name__)
 
+
 def do_migration(records):
     for user in records:
         log_info(user)

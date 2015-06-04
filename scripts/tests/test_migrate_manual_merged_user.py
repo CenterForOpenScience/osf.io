@@ -5,6 +5,7 @@ from scripts.migrate_manual_merged_user import (
     get_targets,
 )
 
+
 class TestMigrateManualMergedUser(OsfTestCase):
 
     def test_get_targets(self):
