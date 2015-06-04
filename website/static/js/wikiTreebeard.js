@@ -44,8 +44,13 @@ function WikiMenu(data) {
         uploads : false,         // Turns dropzone on/off.
         hideColumnTitles: true,
         resolveIcon : resolveIcon,
+        columnTitles: function () {
+            return[{
+                title: 'Name',
+                width: '100%'
+            }]
+        },
         resolveRows : function (item){
-            console.log(item);
 
             var columns = [];
 

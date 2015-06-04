@@ -24,7 +24,6 @@
                 <div class="pull-right"> <div class="panel-collapse"> <i class="fa fa-angle-left pointer"> </i> </div></div>
             </div>
             <div class="osf-panel-body" data-bind="css: {  'osf-panel-body-flex': !$root.singleVis()}">
-##                <%include file="wiki/templates/toc.mako"/>
                 <div id="grid">
                     <div class="fangorn-loading">
                         <div class="logo-spin text-center"><img src="/static/img/logo_spin.png" alt="loader"></div>
