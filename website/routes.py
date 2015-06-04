@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 import os
 import httplib as http
-import json
 
 from flask import request
 from flask import send_from_directory
@@ -68,7 +67,7 @@ def get_globals():
         'api_url_for': util.api_url_for,
         'sanitize': sanitize,
         'js_str': lambda x: x.replace("'", r"\'").replace('"', r'\"'),
-        'json': lambda x: json.dumps(x).replace('</', '<\\/'),  # Fix injection of closing markup in strings
+        'json': lambda s: sanitize.safe_json(s),
         'webpack_asset': paths.webpack_asset,
         'waterbutler_url': settings.WATERBUTLER_URL,
         'login_url': cas.get_login_url(request.url, auto=True),
