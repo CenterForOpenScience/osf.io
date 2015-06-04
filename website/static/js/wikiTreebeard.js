@@ -62,12 +62,13 @@ function WikiMenu(data) {
         onload: function(tree) {
             var tb = this;
             tb.wikiID = window.contextVars.wiki.wikiID;
-            if(tb.wikiID !== undefined) {
-                var index = tb.returnIndex(tb.wikiID);
-                var visibleIndex = tb.visibleIndexes.indexOf(index);
-                var scrollTo = visibleIndex * tb.options.rowHeight;
-                tb.select('#tb-tbody').scrollTop(scrollTo);
-            }
+//            if(tb.wikiID !== undefined) {
+//                var index = tb.returnIndex(tb.wikiID);
+//                console.log("INDEX IS: " + index);
+//                var visibleIndex = tb.visibleIndexes.indexOf(index);
+//                var scrollTo = visibleIndex * tb.options.rowHeight;
+//                tb.select('#tb-tbody').scrollTop(scrollTo);
+//            }
         },
         resolveRows : function (item){
             var tb = this;
@@ -91,6 +92,9 @@ function WikiMenu(data) {
                     {
                         folderIcons: true,
                         custom: function() {
+                            if(item.data.page.name === 'home') {
+                                return m('a', {href: item.data.page.url}, 'Home');
+                            }
                             return m('a', {href: item.data.page.url}, item.data.page.name);
                         }
                     }
