@@ -7,8 +7,6 @@ from api.base.utils import get_object_or_404
 from api.base.filters import ODMFilterMixin
 from api.nodes.serializers import NodeSerializer
 from .serializers import UserSerializer
-from .permissions import AuthorizedUserOrPublic
-
 
 
 class UserMixin(object):
@@ -17,10 +15,10 @@ class UserMixin(object):
     """
 
     serializer_class = UserSerializer
-    node_lookup_url_kwarg = 'pk'
+    user_lookup_url_kwarg = 'pk'
 
     def get_user(self, check_permissions=True):
-        obj = get_object_or_404(User, self.kwargs[self.node_lookup_url_kwarg])
+        obj = get_object_or_404(User, self.kwargs[self.user_lookup_url_kwarg])
         if check_permissions:
             # May raise a permission denied
             self.check_object_permissions(self.request, obj)
@@ -59,7 +57,7 @@ class UserDetail(generics.RetrieveUpdateAPIView, UserMixin):
     """Details about a specific user.
     """
     permission_classes = (
-        AuthorizedUserOrPublic,
+        drf_permissions.IsAuthenticatedOrReadOnly,
     )
     serializer_class = UserSerializer
 
