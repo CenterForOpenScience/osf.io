@@ -60,7 +60,6 @@ function WikiMenu(data) {
 
             if(item.data.kind === 'project') {
                 columns.push({
-                    data: 'project',
                     folderIcons: false,
                     custom: function() {
                         if(item.data.page.title == 'home') {
@@ -71,9 +70,11 @@ function WikiMenu(data) {
                 });
             } else {
                 columns.push({
-                    data: 'project',
                     folderIcons: true,
                     custom: function() {
+//                        if(item.data.page.title == 'home') {
+//                           return m('a', {href: item.data.page.url}, 'Home');
+//                        }
                         return m('a', {href: item.data.page.url}, item.data.page.title);
                     }
                 });

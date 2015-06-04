@@ -465,15 +465,16 @@ def project_wiki_grid_data(auth, wname, **kwargs):
     for page in component_wiki_pages:
         children = []
         for component_page in page['pages_current']:
-            child = {
-                'page': {
-                    'url': component_page['url'],
-                    'title': component_page['name']
-                },
-                'children': [],
-                'kind': ''
-            }
-            children.append(child)
+            if component_page['name'] != 'home':
+                child = {
+                    'page': {
+                        'url': component_page['url'],
+                        'title': component_page['name']
+                    },
+                    'children': [],
+                    'kind': ''
+                }
+                children.append(child)
 
         item = {
             'page': {
@@ -485,7 +486,7 @@ def project_wiki_grid_data(auth, wname, **kwargs):
         }
         items.append(item)
 
-    # print items
+    print items
 
     return items
 
