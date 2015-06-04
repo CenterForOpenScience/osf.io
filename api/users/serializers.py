@@ -3,6 +3,7 @@ from rest_framework import serializers as ser
 from api.base.serializers import JSONAPISerializer, LinksField, Link
 from website.models import User
 
+
 class UserSerializer(JSONAPISerializer):
     filterable_fields = frozenset([
         'fullname',
