@@ -2543,6 +2543,8 @@ class TestAuthViews(OsfTestCase):
         res = self.app.post_json(
             url,
             {
+                'fullName': name,
+                'email1': email,
                 'email2': email,
                 'password': password,
             }
