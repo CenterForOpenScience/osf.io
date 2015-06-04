@@ -34,7 +34,11 @@
                 <p class="break-word">
                     <strong>Current Folder:</strong>
                     <a data-bind="ifnot: folderName() === '', attr.href: urls().files">
-                        {{folderName}}
+                        %if (addon_short_name == 'googledrive'):
+                            {{decodedFolderName}}
+                        %else:
+                            {{folderName}}
+                        %endif
                     </a>
                     <span data-bind="if: folderName() === ''" class="text-muted">
                         None
@@ -57,7 +61,11 @@
                         <form data-bind="submit: submitSettings">
                             <div class="break-word">
                                 <h4 data-bind="if: selected" class="${addon_short_name}-confirm-dlg">
-                                    Connect &ldquo;{{ selectedFolderName }}&rdquo;?
+                                     %if (addon_short_name == 'googledrive'):
+                                        Connect &ldquo;{{ decodedSelectedFolderName }}&rdquo;?
+                                    %else:
+                                        Connect &ldquo;{{ selectedFolderName }}&rdquo;?
+                                    %endif
                                 </h4>
                             </div>
                             <div class="pull-right">
