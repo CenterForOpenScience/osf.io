@@ -5,7 +5,7 @@ from nose.tools import *
 import mock
 
 from framework.auth import Auth
-from website.util import api_url_for, web_url_for
+from website import settings
 from tests.base import OsfTestCase
 from tests import factories
 
@@ -43,32 +43,61 @@ class TestNotifications(OsfTestCase):
         )
         self.f_url = furl(self.node.absolute_url)
 
-    # Should test all the event options.
     @mock.patch('website.notifications.emails.notify')
-    def test_file_notify(self, notify):
+    @mock.patch('website.addons.base.notifications.file_created',
+                return_value=('event_sub', furl('localhost:5000/crazy'), 'message'))
+    def test_file_notify(self, file_added, notify):
         event = 'file_added'
         payload = self.other_payload
         notifications.file_notify(self.user, self.node, event, payload)
-        assert_true(notify.called)
+        assert_true(file_added.called)
+        # assert_true(notify.called)
 
     def test_file_info(self):
         notifications.file_info(self.node, self.other_payload['metadata']['path'], self.other_payload['provider'])
 
-    def test_file_created(self):
-        notifications.file_created(self.node, self.f_url, self.other_payload)
+    @mock.patch('website.addons.base.notifications.file_info',
+                return_value=('crazy', 'crazy_file_updated', '/crazy/'))
+    def test_file_created(self, file_info):
+        event_sub, f_url, message = notifications.file_created(self.node, self.f_url, self.other_payload)
+        assert_equal(event_sub, 'crazy_file_updated')
+        assert_equal(settings.DOMAIN + 'crazy/', f_url.url)
+        assert_equal(message, 'added file "<b>this/that.txt</b>".')
 
-    def test_file_updated(self):
-        notifications.file_updated(self.node, self.f_url, self.other_payload)
+    @mock.patch('website.addons.base.notifications.file_info',
+                return_value=('crazy', 'crazy_file_updated', '/crazy/'))
+    def test_file_updated(self, file_info):
+        event_sub, f_url, message = notifications.file_updated(self.node, self.f_url, self.other_payload)
+        assert_equal(event_sub, 'crazy_file_updated')
+        assert_equal(message, 'updated file "<b>this/that.txt</b>".')
+        assert_equal(settings.DOMAIN + 'crazy/', f_url.url)
 
     def test_file_deleted(self):
-        notifications.file_deleted(self.node, self.f_url, self.other_payload)
+        event_sub, f_url, message = notifications.file_deleted(self.node, self.f_url, self.other_payload)
+        assert_equal(event_sub, 'file_updated')
+        assert_equal(message, 'removed file "<b>this/that.txt</b>".')
+        assert_equal(settings.DOMAIN + 'project/' + self.node._id + '/files/', f_url.url)
 
     def test_folder_added(self):
-        notifications.folder_added(self.node, self.f_url, self.other_payload)
+        event_sub, f_url, message = notifications.folder_added(self.node, self.f_url, self.other_payload)
+        assert_equal(event_sub, 'file_updated')
+        assert_equal(message, 'created folder "<b>this/that.txt</b>".')
+        assert_equal(settings.DOMAIN + 'project/' +self.node._id + '/files/', f_url.url)
 
-    # mock call to updating subscription
-    def test_file_moved(self):
-        notifications.file_moved(self.node, self.f_url, self.move_copy_payload, self.user)
+    @mock.patch('website.notifications.utils.move_file_subscription')
+    @mock.patch('website.notifications.emails.remove_users_from_subscription')
+    @mock.patch('website.addons.base.notifications.file_info',
+                return_value=('crazy', 'crazy_file_updated', '/crazy/'))
+    def test_file_moved(self, file_info, remove, move):
+        event_sub, f_url, message = notifications.file_moved(self.node, self.f_url, self.move_copy_payload, self.user)
+        assert_equal(event_sub, 'crazy_file_updated')
+        assert_equal(settings.DOMAIN + 'crazy/', f_url.url)
+        assert_equal(message, 'moved "<b>this/that.txt</b>" from OSF Storage in The meaning of life to "<b>other/that.txt</b>" in OSF Storage in The meaning of life.')
 
-    def test_file_copied(self):
-        notifications.file_copied(self.node, self.f_url, self.move_copy_payload)
+    @mock.patch('website.addons.base.notifications.file_info',
+                return_value=('crazy', 'crazy_file_updated', '/crazy/'))
+    def test_file_copied(self, file_info):
+        event_sub, f_url, message = notifications.file_copied(self.node, self.f_url, self.move_copy_payload)
+        assert_equal(message, 'copied "<b>this/that.txt</b>" from OSF Storage in The meaning of life to "<b>other/that.txt</b>" in OSF Storage in The meaning of life.')
+        assert_equal(event_sub, 'crazy_file_updated')
+        assert_equal(settings.DOMAIN + 'crazy/', f_url.url)
