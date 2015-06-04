@@ -26,6 +26,7 @@ var FileEditor = {
 
         self.observables = observables;
 
+        self.unthrottledStatus = self.observables.status;
         $osf.throttle(self.observables.status, 4000, {leading: false});
 
         self.bindAce = function(element, isInitialized, context) {
@@ -62,11 +63,11 @@ var FileEditor = {
         //Really crappy hack, panel and m.component blackbox this module
         //so its not possible, in the alotted time, to bind a function here to
         //buttons ~2 levels up
-        $(document).on('fileviewpage:save', function() {
+        $(document).on('fileviewpage:save', $osf.throttle(function() {
             if(self.changed()) {
                 var oldstatus = self.observables.status();
                 model.editor.setReadOnly(true);
-                self.observables.status('saving');
+                self.unthrottledStatus('saving');
                 m.redraw();
                 var request = $.ajax({
                     type: 'PUT',
@@ -75,13 +76,13 @@ var FileEditor = {
                     beforeSend: $osf.setXHRAuthorization
                 }).done(function () {
                     model.editor.setReadOnly(false);
-                    self.observables.status(oldstatus);
+                    self.unthrottledStatus(oldstatus);
                     $(document).trigger('fileviewpage:reload');
                     self.initialText = model.editor.getValue();
                     m.redraw();
                 }).fail(function(error) {
                     model.editor.setReadOnly(false);
-                    self.observables.status(oldstatus);
+                    self.unthrottledStatus(oldstatus);
                     $(document).trigger('fileviewpage:reload');
                     model.editor.setValue(self.initialText);
                     $osf.growl('Error', 'The file could not be updated.');
@@ -94,7 +95,7 @@ var FileEditor = {
             } else {
                 alert('There are no changes to save.');
             }
-        });
+        }, 500));
 
         //See Above comment
         $(document).on('fileviewpage:revert', function() {

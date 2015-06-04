@@ -24,6 +24,7 @@ function FileViewTreebeard(data) {
         title: undefined,
         hideColumnTitles: true,
         multiselect : false,
+        toolbarComponent : null,
         placement : 'fileview',
         allowMove : false,
         filterTemplate: function () {
