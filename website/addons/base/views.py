@@ -429,6 +429,7 @@ def addon_view_file(auth, node, node_addon, guid_file, extras):
             'files': node.web_url_for('collect_file_trees'),
             'render': guid_file.mfr_render_url,
             'sharejs': wiki_settings.SHAREJS_URL,
+            'mfr': settings.MFR_SERVER_URL,
             'gravatar': get_gravatar(auth.user, 25),
         },
         # Note: must be called after get_or_start_render. This is really only for github
