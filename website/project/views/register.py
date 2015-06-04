@@ -40,6 +40,8 @@ from website import language, mails
 from website.project import signals as project_signals
 from website import util
 
+from website.archiver.decorators import fail_archive_on_error
+
 from website.identifiers.client import EzidClient
 
 from .node import _view_project
@@ -539,6 +541,7 @@ def get_referent_by_identifier(category, value):
         return redirect(identifier.referent.url)
     raise HTTPError(http.NOT_FOUND)
 
+@fail_archive_on_error
 @must_be_signed
 @must_be_registration
 def registration_callbacks(node, payload, *args, **kwargs):
