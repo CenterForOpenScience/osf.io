@@ -6,7 +6,7 @@ from framework.auth.core import Auth
 from website.models import Node
 from website.util.sanitize import strip_html
 import unittest
-
+import hashlib
 from tests.base import ApiTestCase, fake
 from tests.factories import UserFactory, ProjectFactory, FolderFactory, RegistrationFactory, DashboardFactory, NodeFactory, PointerFactory
 
@@ -759,6 +759,29 @@ class TestNodeRegistrationList(ApiTestCase):
     def test_return_private_registrations_logged_in_non_contributor(self):
         res = self.app.get(self.private_url, auth=self.basic_auth_two, expect_errors=True)
         assert_equal(res.status_code, 403)
+
+class TestNodeCreateOpenEndedRegistration(ApiTestCase):
+    def setUp(self):
+        ApiTestCase.setUp(self)
+        self.user = UserFactory.build()
+        password = fake.password()
+        self.password = password
+        self.user.set_password(password)
+        self.user.save()
+        self.basic_auth = (self.user.username, password)
+        self.project = ProjectFactory(is_public=True, creator=self.user)
+        token = hashlib.md5()
+        token.update(self.project._id)
+        token.update(self.user._id)
+        self.token = token.hexdigest()
+        self.url_no_token = '/v2/nodes/{}/registrations/Open-Ended_Registration'.format(self.project._id)
+        self.open_ended_payload = {'summary': "Open-Ended project summary"}
+        self.url_token = '/v2/nodes/{}/registrations/Open-Ended_Registration/{}'.format(self.project._id, self.token)
+
+    def test_create_private_registration_returns_token(self):
+        res = self.app.post(self.url_no_token, self.open_ended_payload, auth=self.basic_auth, expect_errors = True)
+        assert_equal(res.status_code, 400)
+        assert_equal(res.json['non_field_errors'], self.token)
 
 class TestNodeChildrenList(ApiTestCase):
     def setUp(self):

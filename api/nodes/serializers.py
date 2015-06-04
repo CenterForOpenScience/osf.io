@@ -13,6 +13,7 @@ import hashlib
 from api.base.utils import absolute_reverse
 from urlparse import urlparse
 from posixpath import basename
+from api.base.utils import absolute_reverse
 
 class NodeSerializer(JSONAPISerializer):
     # TODO: If we have to redo this implementation in any of the other serializers, subclass ChoiceField and make it
@@ -138,7 +139,7 @@ class RegistrationOpenEndedSerializer(JSONAPISerializer):
 
     id = ser.CharField(read_only=True, source='_id')
     title = ser.CharField(read_only=True)
-    summary = ser.CharField(required=True, allow_blank=False, allow_null=False, write_only = True, help_text="Provide a summary or describe how this differs from prior registrations.")
+    summary = ser.CharField(required=True, allow_blank=False, allow_null=False, write_only=True, help_text="Provide a summary or describe how this differs from prior registrations.")
 
     def validate(self, data):
         request = self.context['request']
@@ -149,7 +150,7 @@ class RegistrationOpenEndedSerializer(JSONAPISerializer):
         token.update(user._id)
         token = token.hexdigest()
         url = absolute_reverse('nodes:node-registration-open-ended-token', kwargs={'pk': node._id, 'token': token})
-        raise serializers.ValidationError("Use new URL to confirm project registration for {}: {}".format(node.title, url) )
+        raise serializers.ValidationError("Use new URL to confirm project registration for {}: {}".format(node.title, url))
 
     class Meta:
         type_='registrations'
@@ -158,7 +159,7 @@ class RegistrationOpenEndedWithTokenSerializer(JSONAPISerializer):
 
     id = ser.CharField(read_only=True, source='_id')
     title = ser.CharField(read_only=True)
-    summary = ser.CharField(required=True, allow_blank=False, allow_null=False, write_only = True, help_text="Provide a summary or describe how this differs from prior registrations.")
+    summary = ser.CharField(required=True, allow_blank=False, allow_null=False, write_only=True, help_text="Provide a summary or describe how this differs from prior registrations.")
     token = serializers.ReadOnlyField()
     registered_meta = ser.CharField(read_only=True)
 
@@ -187,10 +188,10 @@ class RegistrationOpenEndedWithTokenSerializer(JSONAPISerializer):
         node = self.context['view'].get_node()
         clean_data = process_payload(validated_data);
         registration = node.register_node(
-            schema = schema,
-            auth = Auth(user),
-            template = template,
-            data = json.dumps({"summary": clean_data["summary"]})
+            schema=schema,
+            auth=Auth(user),
+            template=template,
+            data=json.dumps({"summary": clean_data["summary"]})
         )
         return registration
 
@@ -205,8 +206,8 @@ class RegistrationPreDataCollectionSerializer(JSONAPISerializer):
     registered_meta = ser.CharField(read_only=True)
     token = ser.CharField(read_only=True, default='')
 
-    looked = ser.ChoiceField(choices=TRUE_FALSE_CHOICES, required=True, help_text = "Is data collection for this project underway or complete?", write_only=True)
-    datacompletion = ser.ChoiceField(choices=TRUE_FALSE_CHOICES, required=True, help_text = "Have you looked at the data?", write_only=True)
+    looked = ser.ChoiceField(choices=TRUE_FALSE_CHOICES, required=True, help_text="Is data collection for this project underway or complete?", write_only=True)
+    datacompletion = ser.ChoiceField(choices=TRUE_FALSE_CHOICES, required=True, help_text="Have you looked at the data?", write_only=True)
     comments = ser.CharField(default='', help_text="Other comments", write_only=True)
 
     def validate(self, data):
@@ -218,7 +219,7 @@ class RegistrationPreDataCollectionSerializer(JSONAPISerializer):
         token.update(user._id)
         token = token.hexdigest()
         url = absolute_reverse('nodes:node-registration-pre-data-collection-token', kwargs={'pk': node._id, 'token': token})
-        raise serializers.ValidationError("Use new URL to confirm project registration for {}: {}".format(node.title, url) )
+        raise serializers.ValidationError("Use new URL to confirm project registration for {}: {}".format(node.title, url))
 
 
     class Meta:
@@ -231,8 +232,8 @@ class RegistrationPreDataCollectionWithTokenSerializer(JSONAPISerializer):
     title = ser.CharField(read_only=True)
     registered_meta = ser.CharField(read_only=True)
 
-    looked = ser.ChoiceField(choices=TRUE_FALSE_CHOICES, required=True, help_text = "Is data collection for this project underway or complete?", write_only=True)
-    datacompletion = ser.ChoiceField(choices=TRUE_FALSE_CHOICES, required=True, help_text = "Have you looked at the data?", write_only=True)
+    looked = ser.ChoiceField(choices=TRUE_FALSE_CHOICES, required=True, help_text="Is data collection for this project underway or complete?", write_only=True)
+    datacompletion = ser.ChoiceField(choices=TRUE_FALSE_CHOICES, required=True, help_text="Have you looked at the data?", write_only=True)
     comments = ser.CharField(default='', help_text="Other comments", write_only=True)
 
     def validate(self, data):
@@ -260,10 +261,10 @@ class RegistrationPreDataCollectionWithTokenSerializer(JSONAPISerializer):
         node = self.context['view'].get_node()
         clean_data = process_payload({"looked": validated_data['looked'], "datacompletion": validated_data['datacompletion'], "comments": validated_data['comments']})
         registration = node.register_node(
-            schema = schema,
-            auth = Auth(user),
-            template = template,
-            data = json.dumps({"looked": clean_data["looked"], "datacompletion": clean_data["datacompletion"] , "comments": clean_data["comments"]}))
+            schema=schema,
+            auth=Auth(user),
+            template=template,
+            dat=json.dumps({"looked": clean_data["looked"], "datacompletion": clean_data["datacompletion"] , "comments": clean_data["comments"]}))
         return registration
 
 
@@ -287,20 +288,20 @@ class ReplicationRecipePreRegistrationSerializer(JSONAPISerializer):
     item7 = ser.CharField(default='', write_only=True, help_text = "What country/region was the original study conducted in?")
     item8 = ser.CharField(default='', write_only=True, help_text = "What kind of sample did the original study use? (e.g., student, Mturk, representative)")
     item9 = ser.CharField(default='', write_only=True, help_text = "Was the original study conducted with paper-and-pencil surveys, on a computer, or something else?")
-    item10= ser.ChoiceField(default='', write_only=True, choices=YES_NO_CHOICES, help_text =  "Are the original materials for the study available from the author?")
+    item10 = ser.ChoiceField(default='', write_only=True, choices=YES_NO_CHOICES, help_text =  "Are the original materials for the study available from the author?")
     item11 = ser.CharField(default='', write_only=True, help_text = "I know that assumptions (e.g., about the meaning of the stimuli) in the original study will also hold in my replication because")
     item12 = ser.CharField(default='', write_only=True, help_text = "Location of the experimenter during data collection")
     item13 = ser.CharField(default='', write_only=True, help_text = "Experimenter knowledge of participant experimental condition")
     item14 = ser.CharField(default='', write_only=True, help_text = "Experimenter knowledge of overall hypotheses")
     item15 = ser.CharField(default='', write_only=True, help_text = "My target sample size is")
     item16 = ser.CharField(default='', write_only=True, help_text = "The rationale for my sample size is")
-    item17= ser.ChoiceField(default='', write_only=True, choices=SIM_DIFF_CHOICES, help_text =  "The similarities/differences in the instructions are")
-    item18= ser.ChoiceField(default='', write_only=True, choices=SIM_DIFF_CHOICES, help_text =  "The similarities/differences in the measures are")
-    item19= ser.ChoiceField(default='', write_only=True, choices=SIM_DIFF_CHOICES, help_text =  "The similarities/differences in the stimuli are")
-    item20= ser.ChoiceField(default='', write_only=True, choices=SIM_DIFF_CHOICES, help_text =  "The similarities/differences in the procedure are")
-    item21= ser.ChoiceField(default='', write_only=True, choices=SIM_DIFF_CHOICES, help_text =  "The similarities/differences in the location (e.g., lab vs. online; alone vs. in groups) are")
-    item22= ser.ChoiceField(default='', write_only=True, choices=SIM_DIFF_CHOICES, help_text =  "The similarities/difference in remuneration are")
-    item23= ser.ChoiceField(default='', write_only=True, choices=SIM_DIFF_CHOICES, help_text =  "The similarities/differences between participant populations are")
+    item17 = ser.ChoiceField(default='', write_only=True, choices=SIM_DIFF_CHOICES, help_text =  "The similarities/differences in the instructions are")
+    item18 = ser.ChoiceField(default='', write_only=True, choices=SIM_DIFF_CHOICES, help_text =  "The similarities/differences in the measures are")
+    item19 = ser.ChoiceField(default='', write_only=True, choices=SIM_DIFF_CHOICES, help_text =  "The similarities/differences in the stimuli are")
+    item20 = ser.ChoiceField(default='', write_only=True, choices=SIM_DIFF_CHOICES, help_text =  "The similarities/differences in the procedure are")
+    item21 = ser.ChoiceField(default='', write_only=True, choices=SIM_DIFF_CHOICES, help_text =  "The similarities/differences in the location (e.g., lab vs. online; alone vs. in groups) are")
+    item22 = ser.ChoiceField(default='', write_only=True, choices=SIM_DIFF_CHOICES, help_text =  "The similarities/difference in remuneration are")
+    item23 = ser.ChoiceField(default='', write_only=True, choices=SIM_DIFF_CHOICES, help_text =  "The similarities/differences between participant populations are")
     item24 = ser.CharField(default='', write_only=True, help_text = "What differences between the original study and your study might be expected to influence the size and/or direction of the effect?")
     item25 = ser.CharField(default='', write_only=True, help_text = "I have taken the following steps to test whether the differences listed in #22 will influence the outcome of my replication attempt")
     item26 = ser.CharField(default='', write_only=True, help_text = "My exclusion criteria are (e.g., handling outliers, removing participants from analysis)")
@@ -383,10 +384,10 @@ class ReplicationRecipePreRegistrationWithTokenSerializer(JSONAPISerializer):
         clean_data = process_payload({"item"+str(j): validated_data["item"+str(j)] for j in range(1,29)})
 
         registration = node.register_node(
-            schema = schema,
-            auth = Auth(user),
-            template = template,
-            data = json.dumps({"item"+str(j): clean_data["item"+str(j)] for j in range(1,29)}))
+            schema=schema,
+            auth=Auth(user),
+            template=template,
+            data=json.dumps({"item"+str(j): clean_data["item"+str(j)] for j in range(1,29)}))
         return registration
 
     class Meta:
@@ -468,10 +469,10 @@ class ReplicationRecipePostCompletionWithTokenSerializer(JSONAPISerializer):
         clean_data = process_payload({"item"+str(j): validated_data["item"+str(j)] for j in range(29,38)})
 
         registration = node.register_node(
-            schema = schema,
-            auth = Auth(user),
-            template = template,
-            data = json.dumps({"item"+str(j): clean_data["item"+str(j)] for j in range(29,38)}))
+            schema=schema,
+            auth=Auth(user),
+            template=template,
+            data=json.dumps({"item"+str(j): clean_data["item"+str(j)] for j in range(29,38)}))
         return registration
 
     class Meta:
