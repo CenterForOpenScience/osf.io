@@ -422,6 +422,8 @@ function OBUploaderViewModel(params) {
     self.messageClass = ko.observable('text-info');
     // The target node to upload to to
     self.target = ko.observable(null);
+    //Boolean to track of if upload was successful
+    self.success = false;
     /* Functions */
     self.toggle = function() {
         self.isOpen(!self.isOpen());
@@ -556,6 +558,7 @@ function OBUploaderViewModel(params) {
                 self.uploadCount(oldCount + 1);
 
                 if(self.uploadCount() > dropzone.files.length){ // when finished redirect to project/component page where uploaded.
+                    self.success = true;
                     self.changeMessage('Success!', 'text-success');
                     window.location = self.target().urls.files;
                 }
@@ -579,7 +582,7 @@ function OBUploaderViewModel(params) {
 
         //stop user from leaving if file is staged for upload
         $(window).on('beforeunload', function() {
-            if(!self.enableUpload()) {
+            if(!self.enableUpload() && !self.success) {
                 return 'You have a pending upload. If you leave ' +
                     'the page now, your file will not be stored.';
             }
