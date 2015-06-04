@@ -208,13 +208,17 @@ module.exports = function(context) {
         if (context.accessToken) {
             url += '&token=' + context.accessToken;
         }
-        var mfrRender = new mfr.Render('mfrIframe', url);
-        $(document).on('fileviewpage:reload', function() {
-            mfrRender.reload();
-        });
-        $(document).on('fileviewpage:resize', function() {
-            mfrRender.resize();
-        });
+
+        if (window.mfr !== undefined) {
+            var mfrRender = new mfr.Render('mfrIframe', url);
+            $(document).on('fileviewpage:reload', function() {
+                mfrRender.reload();
+            });
+            $(document).on('fileviewpage:resize', function() {
+                mfrRender.resize();
+            });
+        }
+
     }
 
     return m.component(FileViewPage, context);
