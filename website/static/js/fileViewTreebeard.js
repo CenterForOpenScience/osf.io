@@ -1,5 +1,6 @@
 var Fangorn = require('js/fangorn');
 var m = require('mithril');
+var $osf = require('js/osfHelpers');
 
 function FileViewTreebeard(data) {
 
@@ -33,6 +34,7 @@ function FileViewTreebeard(data) {
                 value: tb.filterText()
             });
         },
+        xhrconfig: $osf.setXHRAuthorization,
         onload: function(tree) {
             var tb = this;
             Fangorn.DefaultOptions.onload.call(tb, tree);
@@ -67,7 +69,9 @@ function FileViewTreebeard(data) {
         ontogglefolder : function (tree) {
             Fangorn.DefaultOptions.ontogglefolder.call(this, tree);
             var containerHeight = this.select('#tb-tbody').height();
-            this.options.showTotal = Math.floor(containerHeight / this.options.rowHeight) + 1;
+            if (!this.options.naturalScrollLimit){
+                this.options.showTotal = Math.floor(containerHeight / this.options.rowHeight) + 1;
+            }
             this.redraw();
         },
         lazyLoadOnLoad: function(tree, event) {

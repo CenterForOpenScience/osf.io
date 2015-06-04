@@ -61,7 +61,7 @@
                     <!-- /ko -->
                     <div class="btn-group">
                         <a
-                        % if user_name and (node['is_public'] or user['is_contributor']) and not node['is_registration']:
+                        % if user_name and (node['is_public'] or user['has_read_permissions']) and not node['is_registration']:
                             data-bind="click: toggleWatch, tooltip: {title: watchButtonAction, placement: 'bottom'}"
                             class="btn btn-default"
                         % else:
@@ -90,7 +90,12 @@
         </div>
         <div id="contributors" class="row" style="line-height:25px">
             <div class="col-sm-12">
-                Contributors:
+                % if user['is_contributor']:
+                    <a class="dotted-underline" href="${node['url']}contributors/">Contributors</a>:
+                % else:
+                    Contributors:
+                % endif
+
                 % if node['anonymous'] and not node['is_public']:
                     <ol>Anonymous Contributors</ol>
                 % else:
@@ -100,6 +105,7 @@
                             "uri": "${node["api_url"]}get_contributors/",
                             "replace": true
                         }'></div>
+
                     </ol>
                 % endif
                 % if node['is_fork']:
@@ -292,7 +298,7 @@
                   }'></div>
             </div><!-- end containment -->
         % else:
-          <p>No components have been added to this project.</p>
+          <p>No components have been added to this ${node['node_type']}.</p>
         % endif
     </div><!-- end addon-widget-body -->
 </div><!-- end components -->
