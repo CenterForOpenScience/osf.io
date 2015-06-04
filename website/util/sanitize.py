@@ -1,4 +1,5 @@
 import bleach
+import json
 
 
 #Thank you Lyndsy
@@ -77,3 +78,14 @@ def safe_unescape_html(s):
     for escape_sequence, character in safe_characters.items():
         s = s.replace(escape_sequence, character)
     return s
+
+def safe_json(s):
+    """
+    Dump a string to JSON in a manner that can be used for JS strings in mako templates.
+
+    Providing additional forward-slash escaping to prevent injection of closing markup in strings. See:
+     http://benalpert.com/2012/08/03/preventing-xss-json.html
+    :param s: The text to convert
+    :return: A JSON string that explicitly escapes forward slashes when needed
+    """
+    return json.dumps(s).replace('</', '<\\/'),  # Fix injection of closing markup in strings
