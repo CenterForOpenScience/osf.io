@@ -406,30 +406,33 @@ def addon_view_file(auth, node, node_addon, guid_file, extras):
     else:
         error = None
 
-    if guid_file._id not in node.wiki_private_uuids:
-        node.wiki_private_uuids[guid_file._id] = uuid.uuid4()
+    if guid_file._id not in node.file_guid_to_share_uuids:
+        node.file_guid_to_share_uuids[guid_file._id] = uuid.uuid4()
         node.save()
 
     if ret['user']['can_edit']:
-        sharejs_uuid = str(node.wiki_private_uuids[guid_file._id])
+        sharejs_uuid = str(node.file_guid_to_share_uuids[guid_file._id])
     else:
         sharejs_uuid = None
 
+    size = getattr(guid_file, 'size', None)
+    if size is None:  # Size could be 0 which is a falsey value
+        size = 9966699  # if we dont know the size assume its to big to edit
+
     ret.update({
-        'error': error,
+        'error': error.replace('\n', '') if error else None,
         'provider': guid_file.provider,
         'file_path': guid_file.waterbutler_path,
         'panels_used': ['edit', 'view'],
         'sharejs_uuid': sharejs_uuid,
         'urls': {
             'files': node.web_url_for('collect_file_trees'),
-            'content': guid_file.download_url,
             'render': guid_file.mfr_render_url,
             'sharejs': wiki_settings.SHAREJS_URL,
             'gravatar': get_gravatar(auth.user, 25),
         },
         # Note: must be called after get_or_start_render. This is really only for github
-        'size': getattr(guid_file, 'size', 0),
+        'size': size,
         'extra': json.dumps(getattr(guid_file, 'extra', {})),
         #NOTE: get_or_start_render must be called first to populate name
         'file_name': getattr(guid_file, 'name', os.path.split(guid_file.waterbutler_path)[1]),

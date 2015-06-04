@@ -310,6 +310,8 @@ class NodePointerDetail(generics.RetrieveDestroyAPIView, NodeMixin):
     def get_object(self):
         pointer_lookup_url_kwarg = 'pointer_id'
         pointer = get_object_or_404(Pointer, self.kwargs[pointer_lookup_url_kwarg])
+        # May raise a permission denied
+        self.check_object_permissions(self.request, pointer)
         return pointer
 
     # overrides DestroyAPIView
