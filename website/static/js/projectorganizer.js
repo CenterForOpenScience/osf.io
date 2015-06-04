@@ -501,13 +501,12 @@ function deleteMultiplePointersFromFolder(pointerIds, folderToDeleteFrom) {
         });
         deleteAction.done(function () {
             tb.updateFolder(null, folderToDeleteFrom);
+            tb.clearMultiselect();
         });
         deleteAction.fail(function (jqxhr, textStatus, errorThrown) {
             $osf.growl('Error:', textStatus + '. ' + errorThrown);
         });
     }
-    _dismissToolbar.call(tb);
-
 }
 
 /**
