@@ -361,9 +361,9 @@ ko.bindingHandlers.anchorScroll = {
  * Adds class returned from iconmap to the element. The value accessor should be the 
  * category of the node.
  * Example:
- * <span data-bind="getTheIcon: 'analysis'"></span>
+ * <span data-bind="getIcon: 'analysis'"></span>
  */
-ko.bindingHandlers.getTheIcon = {
+ko.bindingHandlers.getIcon = {
     init: function(elem, valueAccessor) {
         var icon;
         var category = valueAccessor();
@@ -389,7 +389,7 @@ ko.bindingHandlers.getTheIcon = {
 };
 
 /**
- * Required in render_node.mako to call getTheIcon. As a result of modularity there 
+ * Required in render_node.mako to call getIcon. As a result of modularity there 
  * are overlapping scopes. To temporarily escape the parent scope and allow other binding
  * stopBinding can be used. Only other option was to redo the structure of the scopes.
  * Example:
