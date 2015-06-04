@@ -6,11 +6,6 @@ A report is included below:
 
 <% import json %>
 
-% for addon in results:
-<% result = results[addon] %>
-${addon}: 
-  - ${result['status']}
-   % for err in result.get('errors', []):
-     ${json.dumps(err)}
-   % endfor
+% for error in results:
+${error}
 % endfor
