@@ -44,12 +44,9 @@ function WikiMenu(data) {
         uploads : false,         // Turns dropzone on/off.
         hideColumnTitles: true,
         resolveIcon : resolveIcon,
-        ontogglefolder : function (item){
-            var containerHeight = this.select('#tb-tbody').height();
-            this.options.showTotal = Math.floor(containerHeight / this.options.rowHeight) + 1;
-            this.redraw();
-        },
         resolveRows : function (item){
+            console.log(item);
+
             var columns = [];
 
             if(item.data.kind === 'heading') {
