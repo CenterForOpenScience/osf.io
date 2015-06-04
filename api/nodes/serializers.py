@@ -148,6 +148,7 @@ class RegistrationOpenEndedSerializer(JSONAPISerializer):
         token = hashlib.md5()
         token.update(node._id)
         token.update(user._id)
+        token.update(data['summary'])
         token = token.hexdigest()
         url = absolute_reverse('nodes:node-registration-open-ended-token', kwargs={'pk': node._id, 'token': token})
         raise serializers.ValidationError("Use new URL to confirm project registration for {}: {}".format(node.title, url))
@@ -163,6 +164,8 @@ class RegistrationOpenEndedWithTokenSerializer(JSONAPISerializer):
     token = serializers.ReadOnlyField()
     registered_meta = ser.CharField(read_only=True)
 
+    
+
     def validate(self, data):
         request = self.context['request']
         user = request.user
@@ -173,6 +176,7 @@ class RegistrationOpenEndedWithTokenSerializer(JSONAPISerializer):
         token = hashlib.md5()
         token.update(node._id)
         token.update(user._id)
+        token.update(data['summary'])
         correct_token = token.hexdigest()
 
         if given_token != correct_token:
@@ -217,6 +221,7 @@ class RegistrationPreDataCollectionSerializer(JSONAPISerializer):
         token = hashlib.md5()
         token.update(node._id)
         token.update(user._id)
+        token.update(data['looked'] + data['datacompletion'] + data['comments'])
         token = token.hexdigest()
         url = absolute_reverse('nodes:node-registration-pre-data-collection-token', kwargs={'pk': node._id, 'token': token})
         raise serializers.ValidationError("Use new URL to confirm project registration for {}: {}".format(node.title, url))
@@ -246,6 +251,7 @@ class RegistrationPreDataCollectionWithTokenSerializer(JSONAPISerializer):
         token = hashlib.md5()
         token.update(node._id)
         token.update(user._id)
+        token.update(data['looked'] + data['datacompletion'] + data['comments'])
         correct_token = token.hexdigest()
 
         if given_token != correct_token:
@@ -264,7 +270,7 @@ class RegistrationPreDataCollectionWithTokenSerializer(JSONAPISerializer):
             schema=schema,
             auth=Auth(user),
             template=template,
-            dat=json.dumps({"looked": clean_data["looked"], "datacompletion": clean_data["datacompletion"] , "comments": clean_data["comments"]}))
+            data=json.dumps({"looked": clean_data["looked"], "datacompletion": clean_data["datacompletion"] , "comments": clean_data["comments"]}))
         return registration
 
 
@@ -315,6 +321,10 @@ class ReplicationRecipePreRegistrationSerializer(JSONAPISerializer):
         token = hashlib.md5()
         token.update(node._id)
         token.update(user._id)
+        lis = []
+        for val in data.values():
+            lis.append(val)
+        token.update(''.join(lis))
         token = token.hexdigest()
         url = absolute_reverse('nodes:node-registration-pre-registration-token', kwargs={'pk': node._id, 'token': token})
         raise serializers.ValidationError("Use new URL to confirm project registration for {}: {}".format(node.title, url) )
@@ -368,6 +378,10 @@ class ReplicationRecipePreRegistrationWithTokenSerializer(JSONAPISerializer):
         token = hashlib.md5()
         token.update(node._id)
         token.update(user._id)
+        lis = []
+        for val in data.values():
+         lis.append(val)
+        token.update(''.join(lis))
         correct_token = token.hexdigest()
 
         if given_token != correct_token:
@@ -418,6 +432,10 @@ class ReplicationRecipePostCompletionSerializer(JSONAPISerializer):
         token = hashlib.md5()
         token.update(node._id)
         token.update(user._id)
+        lis = []
+        for val in data.values():
+         lis.append(val)
+        token.update(''.join(lis))
         token = token.hexdigest()
         url = absolute_reverse('nodes:node-registration-post-completion-token', kwargs={'pk': node._id, 'token': token})
         raise serializers.ValidationError("Use new URL to confirm project registration for {}: {}".format(node.title, url) )
@@ -453,6 +471,10 @@ class ReplicationRecipePostCompletionWithTokenSerializer(JSONAPISerializer):
         token = hashlib.md5()
         token.update(node._id)
         token.update(user._id)
+        lis = []
+        for val in data.values():
+         lis.append(val)
+        token.update(''.join(lis))
         correct_token = token.hexdigest()
 
         if given_token != correct_token:
