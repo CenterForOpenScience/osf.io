@@ -7,7 +7,9 @@ from modularodm import Q
 from modularodm.exceptions import ModularOdmException
 
 from framework.auth import Auth
+from framework.auth.core import get_user
 
+from website import util
 from website import security
 from website import settings
 from website.project import new_node
@@ -30,10 +32,10 @@ def get_or_create_user(fullname, address, is_spam):
     :param bool is_spam: User flagged as potential spam
     :return: Tuple of (user, created)
     """
-    try:
-        user = User.find_one(Q('username', 'iexact', address))
+    user = get_user(email=address)
+    if user:
         return user, False
-    except ModularOdmException:
+    else:
         password = str(uuid.uuid4())
         user = User.create_confirmed(address, password, fullname)
         user.verification_key = security.random_string(20)
@@ -97,11 +99,11 @@ def prepare_contributors(admins):
 
 
 def upload_attachment(user, node, attachment):
-    from website.addons.osfstorage import utils as storage_utils
     attachment.seek(0)
-    name = attachment.filename or settings.MISSING_FILE_NAME
+    name = '/' + (attachment.filename or settings.MISSING_FILE_NAME)
     content = attachment.read()
-    upload_url = storage_utils.get_waterbutler_upload_url(user, node, path=name)
+    upload_url = util.waterbutler_url_for('upload', 'osfstorage', name, node, user=user)
+
     requests.put(
         upload_url,
         data=content,

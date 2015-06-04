@@ -1,7 +1,7 @@
 import httplib as http
 
-from website.addons.dataverse.client import connect_from_settings_or_403, \
-    get_dataverse, get_study
+from website.addons.dataverse.client import connect_from_settings_or_401, \
+    get_dataverse, get_dataset
 from website.addons.dataverse.settings import HOST
 from website.project.decorators import must_be_contributor_or_public, \
     must_have_addon
@@ -15,7 +15,7 @@ def dataverse_widget(node_addon, **kwargs):
     widget_url = node.api_url_for('dataverse_get_widget_contents')
 
     ret = {
-        'complete': node_addon.is_fully_configured,
+        'complete': node_addon.complete,
         'widget_url': widget_url,
     }
     ret.update(node_addon.config.to_json())
@@ -31,29 +31,29 @@ def dataverse_get_widget_contents(node_addon, **kwargs):
         'connected': False,
     }
 
-    if not node_addon.is_fully_configured:
+    if not node_addon.complete:
         return {'data': data}, http.OK
 
-    doi = node_addon.study_hdl
+    doi = node_addon.dataset_doi
     alias = node_addon.dataverse_alias
 
-    connection = connect_from_settings_or_403(node_addon.user_settings)
+    connection = connect_from_settings_or_401(node_addon.user_settings)
     dataverse = get_dataverse(connection, alias)
-    study = get_study(dataverse, doi)
+    dataset = get_dataset(dataverse, doi)
 
-    if study is None:
+    if dataset is None:
         return {'data': data}, http.BAD_REQUEST
 
-    dataverse_url = 'http://{0}/dvn/dv/'.format(HOST) + alias
-    study_url = 'http://dx.doi.org/' + doi
+    dataverse_url = 'http://{0}/dataverse/'.format(HOST) + alias
+    dataset_url = 'http://dx.doi.org/' + doi
 
     data.update({
         'connected': True,
         'dataverse': node_addon.dataverse,
         'dataverseUrl': dataverse_url,
-        'study': node_addon.study,
+        'dataset': node_addon.dataset,
         'doi': doi,
-        'studyUrl': study_url,
-        'citation': study.citation,
+        'datasetUrl': dataset_url,
+        'citation': dataset.citation,
     })
     return {'data': data}, http.OK

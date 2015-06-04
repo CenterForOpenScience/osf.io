@@ -1,103 +1,102 @@
 import httplib as http
+
 from dataverse import Connection
+from dataverse.exceptions import ConnectionError, UnauthorizedError, OperationFailedError
 
 from framework.exceptions import HTTPError
 from website.addons.dataverse import settings
 
 
-def connect(username, password, host=settings.HOST):
-    connection = Connection(
-        username=username,
-        password=password,
-        host=host,
-        disable_ssl=not settings.VERIFY_SSL,
-    )
-    return connection if connection.connected else None
+def _connect(token, host=settings.HOST):
+    try:
+        return Connection(host, token)
+    except ConnectionError:
+        return None
 
 
 def connect_from_settings(user_settings):
-    return connect(
-        user_settings.dataverse_username,
-        user_settings.dataverse_password
-    ) if user_settings else None
+    try:
+        return _connect(user_settings.api_token) if user_settings else None
+    except UnauthorizedError:
+        return None
 
 
-def connect_or_403(username, password, host=settings.HOST):
-    connection = Connection(
-        username=username,
-        password=password,
-        host=host,
-        disable_ssl=not settings.VERIFY_SSL,
-    )
-    if connection.status == http.FORBIDDEN:
-        raise HTTPError(http.FORBIDDEN)
-    return connection if connection.connected else None
+def connect_or_401(token):
+    try:
+        return _connect(token)
+    except UnauthorizedError:
+        raise HTTPError(http.UNAUTHORIZED)
 
 
-def connect_from_settings_or_403(user_settings):
-    return connect_or_403(
-        user_settings.dataverse_username,
-        user_settings.dataverse_password
-    ) if user_settings else None
+def connect_from_settings_or_401(user_settings):
+    return connect_or_401(user_settings.api_token) if user_settings else None
 
 
-def delete_file(file):
-    study = file.study
-    study.delete_file(file)
+def get_files(dataset, published=False):
+    version = 'latest-published' if published else 'latest'
+    return dataset.get_files(version)
 
 
-def upload_file(study, filename, content):
-    study.upload_file(filename, content)
+def publish_dataverse(dataverse):
+    try:
+        dataverse.publish()
+    except OperationFailedError:
+        raise HTTPError(http.BAD_REQUEST)
 
 
-def get_file(study, filename, released=False):
-    return study.get_file(filename, released)
+def publish_dataset(dataset):
+    if dataset.get_state() == 'RELEASED':
+        raise HTTPError(http.CONFLICT, data=dict(
+            message_short='Dataset conflict',
+            message_long='This version of the dataset has already been '
+                         'published.'
+        ))
+    if not dataset.dataverse.is_published:
+        raise HTTPError(http.METHOD_NOT_ALLOWED, data=dict(
+            message_short='Method not allowed',
+            message_long='A dataset cannot be published until its parent '
+                         'Dataverse is published.'
+        ))
+
+    try:
+        dataset.publish()
+    except OperationFailedError:
+        raise HTTPError(http.BAD_REQUEST)
 
 
-def get_file_by_id(study, file_id, released=False):
-    return study.get_file_by_id(file_id, released)
-
-
-def get_files(study, released=False):
-    return study.get_files(released)
-
-
-def release_study(study):
-    return study.release()
-
-
-def get_studies(dataverse):
+def get_datasets(dataverse):
     if dataverse is None:
-        return [], []
-    accessible_studies = []
-    bad_studies = []    # Currently none, but we may filter some out
-    for s in dataverse.get_studies():
-        accessible_studies.append(s)
-    return accessible_studies, bad_studies
+        return []
+    return dataverse.get_datasets()
 
 
-def get_study(dataverse, hdl):
+def get_dataset(dataverse, doi):
     if dataverse is None:
         return
-    study = dataverse.get_study_by_doi(hdl)
+    dataset = dataverse.get_dataset_by_doi(doi)
     try:
-        if study.get_state() == 'DEACCESSIONED':
-            raise HTTPError(http.GONE)
-        return study
+        if dataset and dataset.get_state() == 'DEACCESSIONED':
+            raise HTTPError(http.GONE, data=dict(
+                message_short='Dataset deaccessioned',
+                message_long='This dataset has been deaccessioned and can no '
+                             'longer be linked to the OSF.'
+            ))
+        return dataset
     except UnicodeDecodeError:
-        raise HTTPError(http.NOT_ACCEPTABLE)
+        raise HTTPError(http.NOT_ACCEPTABLE, data=dict(
+            message_short='Not acceptable',
+            message_long='This dataset cannot be connected due to forbidden '
+                         'characters in one or more of the file names.'
+        ))
 
 
 def get_dataverses(connection):
     if connection is None:
         return []
-    dataverses = connection.get_dataverses()
-    released_dataverses = [d for d in dataverses if d.is_released]
-    return released_dataverses
+    return connection.get_dataverses()
 
 
 def get_dataverse(connection, alias):
     if connection is None:
         return
-    dataverse = connection.get_dataverse(alias)
-    return dataverse if dataverse and dataverse.is_released else None
+    return connection.get_dataverse(alias)

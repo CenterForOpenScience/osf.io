@@ -7,7 +7,6 @@ factory-boy==2.2.1
 webtest-plus==0.3.3
 mock
 fake-factory
-responses
 # Fork of HTTPretty with pymongo fix
 git+https://github.com/jmcarp/HTTPretty@matcher-priority
 
@@ -19,3 +18,6 @@ livereload==2.3.2
 
 # Scripts
 progressbar==2.3
+
+# Avoid eating cpu with live reloading
+watchdog==0.8.3

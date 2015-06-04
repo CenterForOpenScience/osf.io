@@ -39,7 +39,7 @@ class TestNotificationsModels(OsfTestCase):
         self.user = factories.UserFactory()
         self.consolidate_auth = Auth(user=self.user)
         self.parent = factories.ProjectFactory(creator=self.user)
-        self.node = factories.NodeFactory(creator=self.user, project=self.parent)
+        self.node = factories.NodeFactory(creator=self.user, parent=self.parent)
 
     def test_can_read_children(self):
         non_admin_user = factories.UserFactory()
@@ -47,11 +47,11 @@ class TestNotificationsModels(OsfTestCase):
         parent.add_contributor(contributor=non_admin_user, permissions=['read'])
         parent.save()
 
-        node = factories.NodeFactory(project=parent, category='project')
-        sub_component = factories.NodeFactory(project=node)
+        node = factories.NodeFactory(parent=parent, category='project')
+        sub_component = factories.NodeFactory(parent=node)
         sub_component.add_contributor(contributor=non_admin_user)
         sub_component.save()
-        sub_component2 = factories.NodeFactory(project=node)
+        sub_component2 = factories.NodeFactory(parent=node)
 
         has_permission_on_child_node = node.can_read_children(non_admin_user)
         assert_true(has_permission_on_child_node)
@@ -62,12 +62,12 @@ class TestNotificationsModels(OsfTestCase):
         parent.add_contributor(contributor=non_admin_user, permissions=['read'])
         parent.save()
 
-        node = factories.NodeFactory(project=parent, category='project')
-        sub_component = factories.NodeFactory(project=node)
+        node = factories.NodeFactory(parent=parent, category='project')
+        sub_component = factories.NodeFactory(parent=node)
         sub_component.add_contributor(contributor=non_admin_user)
         sub_component.is_deleted = True
         sub_component.save()
-        sub_component2 = factories.NodeFactory(project=node)
+        sub_component2 = factories.NodeFactory(parent=node)
 
         has_permission_on_child_node = node.can_read_children(non_admin_user)
         assert_false(has_permission_on_child_node)
@@ -77,8 +77,8 @@ class TestNotificationsModels(OsfTestCase):
         parent = factories.ProjectFactory()
         parent.add_contributor(contributor=non_admin_user, permissions=['read'])
         parent.save()
-        node = factories.NodeFactory(project=parent, category='project')
-        sub_component = factories.NodeFactory(project=node)
+        node = factories.NodeFactory(parent=parent, category='project')
+        sub_component = factories.NodeFactory(parent=node)
         has_permission_on_child_node = node.can_read_children(non_admin_user)
         assert_false(has_permission_on_child_node)
 
@@ -87,14 +87,14 @@ class TestNotificationsModels(OsfTestCase):
         parent = factories.ProjectFactory()
         parent.add_contributor(contributor=non_admin_user, permissions=['read'])
         parent.save()
-        node = factories.NodeFactory(project=parent, category='project')
+        node = factories.NodeFactory(parent=parent, category='project')
         has_permission_on_child_node = node.can_read_children(non_admin_user)
         assert_false(has_permission_on_child_node)
 
     def test_check_admin_has_permissions_on_private_component(self):
         parent = factories.ProjectFactory()
-        node = factories.NodeFactory(project=parent, category='project')
-        sub_component = factories.NodeFactory(project=node)
+        node = factories.NodeFactory(parent=parent, category='project')
+        sub_component = factories.NodeFactory(parent=node)
         has_permission_on_child_node = node.can_read_children(parent.creator)
         assert_true(has_permission_on_child_node)
 
@@ -203,7 +203,7 @@ class TestRemoveContributor(OsfTestCase):
         self.subscription.email_transactional.append(self.project.creator)
         self.subscription.save()
 
-        self.node = factories.NodeFactory(project=self.project)
+        self.node = factories.NodeFactory(parent=self.project)
         self.node.add_contributor(contributor=self.project.creator, permissions=['read', 'write', 'admin'])
         self.node.save()
         self.node_subscription = factories.NotificationSubscriptionFactory(
@@ -282,7 +282,7 @@ class TestNotificationUtils(OsfTestCase):
         self.project_subscription.email_transactional.append(self.user)
         self.project_subscription.save()
 
-        self.node = factories.NodeFactory(project=self.project, creator=self.user)
+        self.node = factories.NodeFactory(parent=self.project, creator=self.user)
         self.node_subscription = factories.NotificationSubscriptionFactory(
             _id=self.node._id + '_' + 'comments',
             owner=self.node,
@@ -352,7 +352,7 @@ class TestNotificationUtils(OsfTestCase):
         assert_not_in(project._id, utils.get_configured_projects(self.user))
 
     def test_get_configured_project_ids_excludes_node_with_project_category(self):
-        node = factories.NodeFactory(project=self.project, category='project')
+        node = factories.NodeFactory(parent=self.project, category='project')
         node_subscription = factories.NotificationSubscriptionFactory(
             _id=node._id + '_' + 'comments',
             owner=node,
@@ -365,7 +365,7 @@ class TestNotificationUtils(OsfTestCase):
 
     def test_get_configured_project_ids_includes_top_level_private_projects_if_subscriptions_on_node(self):
         private_project = factories.ProjectFactory()
-        node = factories.NodeFactory(project=private_project)
+        node = factories.NodeFactory(parent=private_project)
         node_subscription = factories.NotificationSubscriptionFactory(
             _id=node._id + '_comments',
             owner=node,
@@ -378,7 +378,7 @@ class TestNotificationUtils(OsfTestCase):
 
     def test_get_configured_project_ids_excludes_private_projects_if_no_subscriptions_on_node(self):
         private_project = factories.ProjectFactory()
-        node = factories.NodeFactory(project=private_project)
+        node = factories.NodeFactory(parent=private_project)
         configured_project_ids = utils.get_configured_projects(node.creator)
         assert_not_in(private_project._id, configured_project_ids)
 
@@ -477,7 +477,7 @@ class TestNotificationUtils(OsfTestCase):
         """ Test private components in which parent project admins are not contributors still appear in their
             notifications settings.
         """
-        node = factories.NodeFactory(project=self.project)
+        node = factories.NodeFactory(parent=self.project)
         data = utils.format_data(self.user, [self.project._id])
         expected = [
             {
@@ -584,7 +584,7 @@ class TestNotificationUtils(OsfTestCase):
 
     def test_format_data_user_subscriptions_includes_private_parent_if_configured_children(self):
         private_project = factories.ProjectFactory()
-        node = factories.NodeFactory(project=private_project)
+        node = factories.NodeFactory(parent=private_project)
         node_subscription = factories.NotificationSubscriptionFactory(
             _id=node._id + '_comments',
             owner=node,
@@ -765,7 +765,7 @@ class TestSendEmails(OsfTestCase):
         self.project_subscription.email_transactional.append(self.project.creator)
         self.project_subscription.save()
 
-        self.node = factories.NodeFactory(project=self.project)
+        self.node = factories.NodeFactory(parent=self.project)
         self.node_subscription = factories.NotificationSubscriptionFactory(
             _id=self.node._id + '_comments',
             owner=self.node,
@@ -903,7 +903,7 @@ class TestSendEmails(OsfTestCase):
         project_subscription.save()
         project_subscription.none.append(project.creator)
         project_subscription.save()
-        node = factories.NodeFactory(project=project)
+        node = factories.NodeFactory(parent=project)
         emails.check_parent(node._id, 'comments', [], self.user, project, datetime.datetime.utcnow())
         assert_false(mock_send.called)
 
@@ -922,7 +922,7 @@ class TestSendEmails(OsfTestCase):
 
         # User has admin read-only access to the component
         # Default is to adopt parent project settings
-        node = factories.NodeFactory(project=project)
+        node = factories.NodeFactory(parent=project)
         node_subscription = factories.NotificationSubscriptionFactory(
             _id=node._id + '_comments',
             owner=node,
@@ -950,7 +950,7 @@ class TestSendEmails(OsfTestCase):
         project_subscription.save()
 
         # User does not have access to the component
-        node = factories.NodeFactory(project=project)
+        node = factories.NodeFactory(parent=project)
         node_subscription = factories.NotificationSubscriptionFactory(
             _id=node._id + '_comments',
             owner=node,
@@ -1027,7 +1027,7 @@ class TestSendEmails(OsfTestCase):
         )
 
     def test_send_email_digest_creates_digest_notification(self):
-        subscribed_users = [factories.UserFactory()]
+        subscribed_users = [factories.UserFactory()._id]
         digest_count_before = NotificationDigest.find().count()
         emails.email_digest(subscribed_users, self.project._id, 'comments',
                             user=self.user,
@@ -1043,7 +1043,7 @@ class TestSendEmails(OsfTestCase):
         assert_equal((digest_count - digest_count_before), 1)
 
     def test_send_email_digest_not_created_for_user_performed_actions(self):
-        subscribed_users = [self.user]
+        subscribed_users = [self.user._id]
         digest_count_before = NotificationDigest.find().count()
         emails.email_digest(subscribed_users, self.project._id, 'comments',
                             user=self.user,

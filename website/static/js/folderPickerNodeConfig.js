@@ -146,7 +146,7 @@ var FolderPickerViewModel = oop.defclass({
 
         /** Whether or not to show the full settings pane. */
         self.showSettings = ko.pureComputed(function() {
-            return self.nodeHasAuth();
+            return self.nodeHasAuth() && self.validCredentials();
         });
 
         /** Whether or not to show the Create Access Token button */
@@ -209,11 +209,16 @@ var FolderPickerViewModel = oop.defclass({
         this.messageClass('text-info');
     },
     /**
+     * Abstract hook called after updateFromData, before the promise is resolved.
+     * - use to validate the VM state after update     
+     **/
+    afterUpdate: function() {},
+    /**
      * Abstract hook where subclasses can capture extra data from the API response
      *
      * @param {Object} settings Settings passed from server response in #updateFromData
      */
-    _updateCustomFields: function(settings){},  
+    _updateCustomFields: function(settings) {},  
     /**
      * Update the view model from data returned from the server or data passed explicitly.
      *
@@ -234,6 +239,7 @@ var FolderPickerViewModel = oop.defclass({
             });
             self.urls(settings.urls);
             self._updateCustomFields(settings);
+            self.afterUpdate();
             ret.resolve();
         };
         if (typeof data === 'undefined'){

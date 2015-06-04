@@ -10,9 +10,10 @@ from modularodm import Q
 from framework.auth.decorators import Auth
 
 from website.util import paths
+from website.util import sanitize
 from website.settings import (
     ALL_MY_PROJECTS_ID, ALL_MY_REGISTRATIONS_ID, ALL_MY_PROJECTS_NAME,
-    ALL_MY_REGISTRATIONS_NAME
+    ALL_MY_REGISTRATIONS_NAME, DISK_SAVING_MODE
 )
 
 
@@ -24,9 +25,8 @@ KIND = 'kind'
 
 DEFAULT_PERMISSIONS = {
     'view': True,
-    'edit': False
+    'edit': False,
 }
-
 
 def format_filesize(size):
     return hurry.filesize.size(size, system=hurry.filesize.alternative)
@@ -93,11 +93,15 @@ def build_addon_root(node_settings, name, permissions=None,
         urls = node_settings.config.urls
     if urls is None:
         urls = default_urls(node_settings.owner.api_url, node_settings.config.short_name)
+
+    forbid_edit = DISK_SAVING_MODE if node_settings.config.short_name == 'osfstorage' else False
     if isinstance(permissions, Auth):
         auth = permissions
         permissions = {
             'view': node_settings.owner.can_view(auth),
-            'edit': node_settings.owner.can_edit(auth) and not node_settings.owner.is_registration
+            'edit': (node_settings.owner.can_edit(auth)
+                     and not node_settings.owner.is_registration
+                     and not forbid_edit),
         }
 
     max_size = node_settings.config.max_file_size
@@ -290,7 +294,6 @@ class NodeProjectCollector(object):
             modified_by = user.family_name or user.given_name
         except AttributeError:
             modified_by = ''
-        # test_children = self._collect_addons(node)
         child_nodes = node.nodes
         readable_children = []
         for child in child_nodes:
@@ -315,15 +318,16 @@ class NodeProjectCollector(object):
 
         if node.is_dashboard:
             to_expand = True
-        elif type_ != 'pointer':
+        elif not is_pointer or parent_is_folder:
             to_expand = expanded
         else:
             to_expand = False
 
         return {
-            #TODO Remove the replace when mako html safe comes around
-            'name': node.title.replace('&amp;', '&') if can_view else u'Private Component',
+            # TODO: Remove safe_unescape_html when mako html safe comes in
+            'name': sanitize.safe_unescape_html(node.title) if can_view else u'Private Component',
             'kind': FOLDER,
+            'category': node.category,
             # Once we get files into the project organizer, files would be kind of FILE
             'permissions': {
                 'edit': can_edit,
@@ -438,8 +442,8 @@ class NodeFileCollector(object):
         else:
             children = []
         return {
-            # #TODO Remove the replace when mako html safe comes around
-            'name': u'{0}: {1}'.format(node.project_or_component.capitalize(), node.title.replace('&amp;', '&'))
+            # TODO: Remove safe_unescape_html when mako html safe comes in
+            'name': u'{0}: {1}'.format(node.project_or_component.capitalize(), sanitize.safe_unescape_html(node.title))
             if can_view
             else u'Private Component',
             'kind': FOLDER,
@@ -454,6 +458,7 @@ class NodeFileCollector(object):
             'children': children,
             'isPointer': not node.primary,
             'isSmartFolder': False,
+            'nodeType': node.project_or_component,
             'nodeID': node.resolve()._id,
         }
 

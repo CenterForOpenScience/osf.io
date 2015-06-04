@@ -2,6 +2,59 @@
 Changelog
 *********
 
+0.37.0 (2015-05-25)
+===================
+
+- Move & Copy files/folders between storage providers and nested folders
+- Rename files and folders
+- Download folders as Zip
+- OSF Storage deleted files/folders are moved to a "trash bin" collection
+- Central Authentication Service (CAS & Federated Authentication)
+- Enhanced logging with direct links to files/folder objects
+
+0.36.0 (2015-05-15)
+===================
+
+- Updated UI for project organizer and file browser: multi-select, action
+toolbar, batch delete.
+- Can merge user accounts by adding a confirmed user's email address as a
+secondary email.
+
+0.35.0 (2015-05-06)
+===================
+
+- All projects, regardless of their category (Hypothesis, Methods and
+		Measures, etc.), can have subprojects within them.
+- Add buttons on Account Settings page to request exporting account data and
+deactivating account.
+
+0.34.0 (2015-04-28)
+===================
+
+- Add ability to create folders to storage addons.
+
+Migrations
+----------
+
+- scripts/osfstorage/migrate_from_oldels.py
+- scripts/osfstorage/finish_oldel_migration.py
+
+0.33.10 (2015-04-27)
+====================
+
+- Add migrations necessary to support OSF Storage folders.
+- Fixes to DISK_SAVING_MODE.
+
+0.33.0 (2015-04-20)
+===================
+
+- Update Dataverse addon for compatibility with Dataverse 4.0.
+
+0.32.0 (2015-04-18)
+===================
+
+- Add file tree to file detail pages.
+
 0.31.0 (2015-04-12)
 ===================
 

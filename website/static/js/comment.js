@@ -482,7 +482,7 @@ var init = function(selector, userName, canComment, hasChildren) {
     if (!$elm.length) {
         throw('No results found for selector');
     }
-    osfHelpers.applyBindings(viewModel, $elm[0]);
+    osfHelpers.applyBindings(viewModel, selector);
     viewModel.initListeners();
 
     return viewModel;

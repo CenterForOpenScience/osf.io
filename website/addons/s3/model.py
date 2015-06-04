@@ -8,8 +8,9 @@ from framework.auth.core import Auth
 
 from website.addons.base import exceptions
 from website.addons.base import AddonUserSettingsBase, AddonNodeSettingsBase, GuidFile
-from website.addons.s3.utils import remove_osf_user
 
+from website.addons.s3.utils import remove_osf_user
+from website.addons.s3 import api
 
 class S3GuidFile(GuidFile):
     __indices__ = [
@@ -55,6 +56,10 @@ class AddonS3UserSettings(AddonUserSettingsBase):
     @property
     def has_auth(self):
         return bool(self.access_key and self.secret_key)
+
+    @property
+    def is_valid(self):
+        return api.has_access(self.access_key, self.secret_key)
 
     def remove_iam_user(self):
         """Remove IAM user from Amazon.
@@ -162,7 +167,7 @@ class AddonS3NodeSettings(AddonNodeSettingsBase):
             params={
                 'project': self.owner.parent_id,
                 'node': self.owner._id,
-                'path': metadata['path'],
+                'path': metadata['materialized'],
                 'bucket': self.bucket,
                 'urls': {
                     'view': url,
@@ -187,6 +192,7 @@ class AddonS3NodeSettings(AddonNodeSettingsBase):
             'owner': None,
             'bucket_list': None,
             'is_registration': self.owner.is_registration,
+            'valid_credentials': user_settings and user_settings.is_valid,
         })
 
         if self.has_auth:
