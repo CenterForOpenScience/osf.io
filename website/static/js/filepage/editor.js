@@ -41,8 +41,6 @@ var FileEditor = {
                 type: 'GET',
                 url: self.url,
                 beforeSend: $osf.setXHRAuthorization,
-                dataType: 'text',
-                mimeType: 'text/plain; charset=x-user-defined'
             }).done(function (parsed, status, response) {
                 m.startComputation();
                 self.loaded = true;
