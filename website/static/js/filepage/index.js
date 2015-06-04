@@ -66,9 +66,9 @@ var FileViewPage = {
             userId: self.context.currentUser.id
         };
 
-        editHeader = function() {
+        self.editHeader = function() {
             return m('.row', [
-                m('.col-md-12', m('span[style=display:block;]', [
+                m('.col-sm-12', m('span[style=display:block;]', [
                     m('i.fa.fa-pencil-square-o'),
                     ' Edit',
                     m('.pull-right', [
@@ -123,7 +123,7 @@ var FileViewPage = {
             if (self.file.size < 1048576 && fileType) { //May return false
                 var editor = EDITORS[fileType.split('/')[0]];
                 if (editor) {
-                    self.editor = new Panel('Edit', editHeader, editor, [self.file.urls.content, self.file.urls.sharejs, self.editorMeta, self.shareJSObservables], false);
+                    self.editor = new Panel('Edit', self.editHeader, editor, [self.file.urls.content, self.file.urls.sharejs, self.editorMeta, self.shareJSObservables], false);
                 }
             }
             m.redraw(true);
@@ -192,7 +192,7 @@ var FileViewPage = {
             m('.row', panels.map(function(pane, index) {
                 ctrl.triggerResize();
                 if (!pane.selected) return m('[style="display:none"]', pane);
-                return m('.col-md-' + Math.floor(12/shown), pane);
+                return m('.col-sm-' + Math.floor(12/shown), pane);
             }))
         ]));
     }
