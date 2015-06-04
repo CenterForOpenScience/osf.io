@@ -44,8 +44,6 @@ class ArchiverTask(celery.Task):
     max_retries = 0
 
     def on_failure(self, exc, task_id, args, kwargs, einfo):
-        import pydevd
-        pydevd.settrace('localhost', port=54735, stdoutToServer=True, stderrToServer=True)
         if not kwargs:
             return
         src = Node.load(kwargs['src_pk'])
@@ -214,16 +212,14 @@ def archive_node(results, src_pk, dst_pk, user_pk):
     if stat_result.disk_usage > settings.MAX_ARCHIVE_SIZE:
         raise ArchiverSizeExceeded(result=stat_result)
     else:
-        celery.chain(
-            archive_addon.si(
+        for result in stat_result.targets.values():
+            archive_addon.delay(
                 addon_short_name=result.target_name,
                 src_pk=src_pk,
                 dst_pk=dst_pk,
                 user_pk=user_pk,
                 stat_result=result,
             )
-            for result in stat_result.targets.values()
-        ).apply_async()
 
 @celery_app.task(bind=True, base=ArchiverTask, name='archiver.archive')
 @logged('archive')
@@ -250,13 +246,14 @@ def archive(self, src_pk, dst_pk, user_pk):
     src = Node.load(src_pk)
     targets = [src.get_addon(name) for name in settings.ADDONS_ARCHIVABLE]
     celery.chord(
-        celery.chain(
+        celery.group(
             stat_addon.si(
                 addon_short_name=addon.config.short_name,
                 src_pk=src_pk,
                 dst_pk=dst_pk,
                 user_pk=user_pk,
             )
-            for addon in targets if (addon and isinstance(addon, StorageAddonBase))
+            for addon in targets
+            if (addon and addon.complete and isinstance(addon, StorageAddonBase))
         )
     )(archive_node.s(src_pk=src_pk, dst_pk=dst_pk, user_pk=user_pk))

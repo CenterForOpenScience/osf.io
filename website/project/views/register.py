@@ -375,6 +375,8 @@ def project_before_register(auth, node, **kwargs):
     }
 
     for addon in node.get_addons():
+        if not addon.complete:
+            continue
         name = addon.config.short_name
         if name in settings.ADDONS_ARCHIVABLE:
             messages[settings.ADDONS_ARCHIVABLE[name]]['addons'].append(addon.config.full_name)
