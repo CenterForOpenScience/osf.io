@@ -88,4 +88,4 @@ def safe_json(s):
     :param s: The text to convert
     :return: A JSON string that explicitly escapes forward slashes when needed
     """
-    return json.dumps(s).replace('</', '<\\/'),  # Fix injection of closing markup in strings
+    return json.dumps(s).replace('</', '<\\/')  # Fix injection of closing markup in strings
