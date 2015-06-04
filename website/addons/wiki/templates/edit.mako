@@ -343,6 +343,7 @@ ${parent.javascript_bottom()}
         usePythonRender: ${json.dumps(use_python_render)},
         versionSettings: ${json.dumps(version_settings) | n},
         panelsUsed: ${json.dumps(panels_used) | n},
+        wikiID: '${wiki_id}',
         urls: {
             draft: '${urls['api']['draft']}',
             content: '${urls['api']['content']}',

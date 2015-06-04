@@ -1,5 +1,5 @@
 'use strict';
-
+var Fangorn = require('js/fangorn');
 var $ = require('jquery');
 var bootbox = require('bootbox');
 var m = require('mithril');
@@ -50,8 +50,13 @@ function WikiMenu(data) {
                 width: '100%'
             }]
         },
+        onload: function(tree) {
+            var tb = this;
+            tb.wikiID = window.contextVars.wiki.wikiID;
+            console.log(window.contextVars.wiki.wikiID);
+        },
         resolveRows : function (item){
-
+            var tb = this;
             var columns = [];
 
             if(item.data.kind === 'heading') {
@@ -64,6 +69,10 @@ function WikiMenu(data) {
                     }
                 )
             } else {
+                if(item.data.page.id === tb.wikiID) {
+                    item.css = 'fangorn-selected';
+                    tb.multiselected([item]);
+                }
                 columns.push(
                     {
                         folderIcons: true,

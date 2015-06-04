@@ -90,7 +90,8 @@ def _get_wiki_pages_current(node):
     return [
         {
             'name': sorted_page.page_name,
-            'url': node.web_url_for('project_wiki_view', wname=sorted_page.page_name, _guid=True)
+            'url': node.web_url_for('project_wiki_view', wname=sorted_page.page_name, _guid=True),
+            'wiki_id': sorted_page._primary_key
         }
         for sorted_page in [
             node.get_wiki_page(sorted_key)
@@ -469,7 +470,8 @@ def format_project_wiki_pages(node):
         page = {
             'page': {
                 'url': wiki_page['url'],
-                'name': wiki_page['name']
+                'name': wiki_page['name'],
+                'id': wiki_page['wiki_id']
             },
             'children': [],
             'kind': 'project'
@@ -488,7 +490,8 @@ def format_component_wiki_pages(node, auth):
                 child = {
                     'page': {
                         'url': component_page['url'],
-                        'name': component_page['name']
+                        'name': component_page['name'],
+                        'id': component_page['wiki_id']
                     },
                     'children': [],
                     'kind': 'inner_component'
@@ -498,7 +501,8 @@ def format_component_wiki_pages(node, auth):
         page = {
             'page': {
                 'url': wiki_page['url'],
-                'name': wiki_page['title']
+                'name': wiki_page['title'],
+                'id': wiki_page['id'],
             },
             'children': children,
             'kind': 'component'
