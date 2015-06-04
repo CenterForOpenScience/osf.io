@@ -105,7 +105,7 @@ var FileViewPage = {
                                 ])
                             ])
                         ])
-                    ])),
+                    ]))
                 ]);
         };
 
@@ -135,6 +135,11 @@ var FileViewPage = {
         self.revisions.selected = true;
         self.revisions.title = 'Revisions';
 
+        // inform the mfr of a change in display size performed via javascript,
+        // otherwise the mfr iframe will not update unless the document windows is changed.
+        self.triggerResize = $osf.throttle(function () {
+            $(document).trigger('fileviewpage:resize');
+        }, 1000);
     },
     view: function(ctrl) {
         //This code was abstracted into a panel toggler at one point
@@ -152,22 +157,22 @@ var FileViewPage = {
         }, 0);
 
         if (shown === 2) {
-            $('#mfrIframeParent').removeClass().addClass('col-lg-5');
-            $('.file-view-panels').removeClass().addClass('file-view-panels').addClass('col-lg-7');
+            $('#mfrIframeParent').removeClass().addClass('col-sm-5');
+            $('.file-view-panels').removeClass().addClass('file-view-panels').addClass('col-sm-7');
         } else if (shown === 1) {
-            $('#mfrIframeParent').removeClass().addClass('col-lg-6');
-            $('.file-view-panels').removeClass().addClass('file-view-panels').addClass('col-lg-6');
+            $('#mfrIframeParent').removeClass().addClass('col-sm-6');
+            $('.file-view-panels').removeClass().addClass('file-view-panels').addClass('col-sm-6');
         } else {
-            $('#mfrIframeParent').removeClass().addClass('col-lg-12');
+            $('#mfrIframeParent').removeClass().addClass('col-sm-12');
             $('.file-view-panels').removeClass().addClass('file-view-panels');
         }
 
         m.render(document.getElementById('toggleBar'), m('.btn-toolbar[style=margin-top:20px]', [
             m('.btn-group', [
-                m('.btn.btn-sm.btn-danger', {onclick: $(document).trigger.bind($(document), 'fileviewpage:delete')}, 'Delete'),
+                m('.btn.btn-sm.btn-danger', {onclick: $(document).trigger.bind($(document), 'fileviewpage:delete')}, 'Delete')
             ]),
             m('.btn-group', [
-                m('.btn.btn-sm.btn-success', {onclick: $(document).trigger.bind($(document), 'fileviewpage:download')}, 'Download'),
+                m('.btn.btn-sm.btn-success', {onclick: $(document).trigger.bind($(document), 'fileviewpage:download')}, 'Download')
             ]),
             m('.btn-group.btn-group-sm', [
                 m('.btn.btn-default.disabled', 'Toggle View: ')
@@ -185,6 +190,7 @@ var FileViewPage = {
 
         return m('.file-view-page', m('.panel-toggler', [
             m('.row', panels.map(function(pane, index) {
+                ctrl.triggerResize();
                 if (!pane.selected) return m('[style="display:none"]', pane);
                 return m('.col-md-' + Math.floor(12/shown), pane);
             }))
@@ -205,6 +211,9 @@ module.exports = function(context) {
         var mfrRender = new mfr.Render('mfrIframe', url);
         $(document).on('fileviewpage:reload', function() {
             mfrRender.reload();
+        });
+        $(document).on('fileviewpage:resize', function() {
+            mfrRender.resize();
         });
     }
 

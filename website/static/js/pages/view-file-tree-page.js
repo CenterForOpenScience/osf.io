@@ -13,25 +13,24 @@ $(document).ready(function() {
         new fileBrowser(data);
     });
 
-    //TODO: Refactor to remove duplication with the wiki menu panel
     var panelToggle = $('.panel-toggle');
     var panelExpand = $('.panel-expand');
+    var panelVisible = panelToggle.find('.osf-panel-hide');
+    var panelHidden = panelToggle.find('.osf-panel-show');
+
     $('.panel-collapse').on('click', function () {
-        var panelHeight = $('.osf-panel.hidden-xs').height();
-        var el = $(this).closest('.panel-toggle');
-        el.children('.osf-panel.hidden-xs').hide();
-        panelToggle.removeClass('col-lg-3').addClass('col-lg-1');
-        panelExpand.removeClass('col-lg-9').addClass('col-lg-11');
-        el.children('.panel-collapsed').show();
-        el.children('.panel-collapsed').css('height', panelHeight);
+        panelToggle.removeClass('col-sm-3').addClass('col-sm-1');
+        panelExpand.removeClass('col-sm-9').addClass('col-sm-11');
+
+        panelVisible.hide();
+        panelHidden.show();
     });
-    $('.panel-collapsed .osf-panel-header').on('click', function () {
-        var el = $(this).parent();
-        var toggle = el.closest('.panel-toggle');
-        toggle.children('.osf-panel').show();
-        el.hide();
-        panelToggle.removeClass('col-lg-1').addClass('col-lg-3');
-        panelExpand.removeClass('col-lg-11').addClass('col-lg-9');
+    $('.osf-panel-show .osf-panel-header').on('click', function () {
+        panelToggle.removeClass('col-sm-1').addClass('col-sm-3');
+        panelExpand.removeClass('col-sm-11').addClass('col-sm-9');
+
+        panelVisible.show();
+        panelHidden.hide();
     });
 
 });
