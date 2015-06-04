@@ -34,6 +34,7 @@ from website import settings
 from website.util import waterbutler_url_for
 from website.project.model import Node
 from website.addons.base import StorageAddonBase
+from website.util import api_url_for
 
 from tests import factories
 from tests.base import OsfTestCase
@@ -566,3 +567,23 @@ class TestArchiverScripts(ArchiverTestCase):
             pending.append(reg)
         failed = scripts.find_failed_registrations()
         assert_equal(failed.get_keys(), [f._id for f in failures])
+
+class TestArchiverDebugRoutes(ArchiverTestCase):
+
+    def test_debub_route_does_not_exist(self):
+        route = None
+        try:
+            route = api_url_for('archiver_debug', nid=self.dst._id)
+            assert(False)
+        except AssertionError:
+            assert(False)
+        except:
+            assert(True)
+        if route:
+            try:
+                self.app.get(route)
+                assert(False)
+            except AssertionError:
+                assert(False)
+            except:
+                assert(True)

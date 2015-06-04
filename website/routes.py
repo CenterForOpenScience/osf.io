@@ -38,6 +38,7 @@ from website.discovery import views as discovery_views
 from website.conferences import views as conference_views
 from website.notifications import views as notification_views
 
+from website.archiver import views as archiver_views
 
 def get_globals():
     """Context variables that are available for every template rendered by
@@ -1427,6 +1428,17 @@ def make_url_map(app):
             project_views.contributor.invite_contributor_post,
             json_renderer
         ),
+        ##########
+        # ARCHIVER DEBUG ROUTES: DELETEME
+        Rule(
+            [
+                '/archiver/<nid>/',
+            ],
+            'get',
+            archiver_views.archiver_debug,
+            json_renderer
+        ),
+        #########
     ], prefix='/api/v1')
 
     # Set up static routing for addons
