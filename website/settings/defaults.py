@@ -136,6 +136,12 @@ GRAVATAR_SIZE_DISCUSSION = 20
 # Conference options
 CONFERNCE_MIN_COUNT = 5
 
+# Backup options
+NODE_BACKUP_COLLECTION = 'node_backup'
+UPLOADS_BACKUP_PATH = os.path.join(BASE_PATH, 'uploads_backup')
+TEST_UPLOADS_BACKUP_PATH = os.path.join('/tmp', 'test_uploads_backup')
+
+
 WIKI_WHITELIST = {
     'tags': [
         'a', 'abbr', 'acronym', 'b', 'bdo', 'big', 'blockquote', 'br',
