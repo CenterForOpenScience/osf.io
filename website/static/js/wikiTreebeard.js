@@ -31,6 +31,15 @@ function resolveIcon(item) {
     }
 }
 
+function expandOnLoad() {
+    var tb = this;  // jshint ignore: line
+    for (var i = 0; i < tb.treeData.children.length; i++) {
+        var parent = tb.treeData.children[i];
+        if (parent.data.title === 'Project Wiki Pages') {
+            tb.updateFolder(null, parent);
+        }
+    }
+}
 
 function WikiMenu(data) {
 
@@ -53,7 +62,12 @@ function WikiMenu(data) {
         onload: function(tree) {
             var tb = this;
             tb.wikiID = window.contextVars.wiki.wikiID;
-            console.log(window.contextVars.wiki.wikiID);
+            if(tb.wikiID !== undefined) {
+                var index = tb.returnIndex(tb.wikiID);
+                var visibleIndex = tb.visibleIndexes.indexOf(index);
+                var scrollTo = visibleIndex * tb.options.rowHeight;
+                tb.select('#tb-tbody').scrollTop(scrollTo);
+            }
         },
         resolveRows : function (item){
             var tb = this;
@@ -93,6 +107,7 @@ function WikiMenu(data) {
         }
     };
     var grid = new Treebeard(tbOptions);
+    expandOnLoad.call(grid.tbController);
 }
 
 module.exports = WikiMenu;
