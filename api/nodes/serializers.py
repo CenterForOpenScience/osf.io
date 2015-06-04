@@ -140,6 +140,7 @@ class RegistrationOpenEndedSerializer(JSONAPISerializer):
     id = ser.CharField(read_only=True, source='_id')
     title = ser.CharField(read_only=True)
     summary = ser.CharField(required=True, allow_blank=False, allow_null=False, write_only=True, help_text="Provide a summary or describe how this differs from prior registrations.")
+    category = ser.CharField(read_only=True, required=False)
 
     def validate(self, data):
         request = self.context['request']
@@ -156,15 +157,15 @@ class RegistrationOpenEndedSerializer(JSONAPISerializer):
     class Meta:
         type_='registrations'
 
-class RegistrationOpenEndedWithTokenSerializer(JSONAPISerializer):
+class RegistrationOpenEndedWithTokenSerializer(NodeSerializer):
 
     id = ser.CharField(read_only=True, source='_id')
     title = ser.CharField(read_only=True)
     summary = ser.CharField(required=True, allow_blank=False, allow_null=False, write_only=True, help_text="Provide a summary or describe how this differs from prior registrations.")
     token = serializers.ReadOnlyField()
     registered_meta = ser.CharField(read_only=True)
-
-    
+    description = ser.CharField(read_only=True)
+    category = ser.CharField(read_only=True)
 
     def validate(self, data):
         request = self.context['request']
@@ -230,12 +231,14 @@ class RegistrationPreDataCollectionSerializer(JSONAPISerializer):
     class Meta:
         type_='registrations'
 
-class RegistrationPreDataCollectionWithTokenSerializer(JSONAPISerializer):
+class RegistrationPreDataCollectionWithTokenSerializer(NodeSerializer):
     TRUE_FALSE_CHOICES = ["Yes", "No"]
 
     id = ser.CharField(read_only=True, source='_id')
     title = ser.CharField(read_only=True)
     registered_meta = ser.CharField(read_only=True)
+    description = ser.CharField(read_only=True)
+    category = ser.CharField(read_only=True)
 
     looked = ser.ChoiceField(choices=TRUE_FALSE_CHOICES, required=True, help_text="Is data collection for this project underway or complete?", write_only=True)
     datacompletion = ser.ChoiceField(choices=TRUE_FALSE_CHOICES, required=True, help_text="Have you looked at the data?", write_only=True)
@@ -331,13 +334,15 @@ class ReplicationRecipePreRegistrationSerializer(JSONAPISerializer):
 
     class Meta:
         type_='registrations'
-class ReplicationRecipePreRegistrationWithTokenSerializer(JSONAPISerializer):
+class ReplicationRecipePreRegistrationWithTokenSerializer(NodeSerializer):
     YES_NO_CHOICES = ["yes", "no"]
     SIM_DIFF_CHOICES = ["Exact", "Close", "Different"]
 
     id = ser.CharField(read_only=True, source='_id')
     title = ser.CharField(read_only=True)
     registered_meta = ser.CharField(read_only=True)
+    description = ser.CharField(read_only=True)
+    category = ser.CharField(read_only=True)
 
     item1 = ser.CharField(default='', write_only=True, help_text = "Verbal description of the effect I am trying to replicate")
     item2 = ser.CharField(default='', write_only=True, help_text = "It is important to replicate this effect because")
@@ -443,13 +448,15 @@ class ReplicationRecipePostCompletionSerializer(JSONAPISerializer):
     class Meta:
         type_='registrations'
 
-class ReplicationRecipePostCompletionWithTokenSerializer(JSONAPISerializer):
+class ReplicationRecipePostCompletionWithTokenSerializer(NodeSerializer):
     EFFECT_SIZE = ["significantly different from the original effect size", "not significantly different from the original effect size"]
     REPLICATION_CONCLUSION = ["success", "informative failure to replicate", "practical failure to replicate", "inconclusive"]
 
     id = ser.CharField(read_only=True, source='_id')
     title = ser.CharField(read_only=True)
     registered_meta = ser.CharField(read_only=True)
+    description = ser.CharField(read_only=True)
+    category = ser.CharField(read_only=True)
 
     item29 = ser.CharField(default='', write_only=True, help_text = "The finalized materials, procedures, analysis plan etc of the replication are registered here")
     item30 = ser.CharField(default='', write_only=True, help_text = "The effect size of the replication is")
