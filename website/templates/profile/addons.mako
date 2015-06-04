@@ -4,7 +4,7 @@
 <% from website import settings %>
 <h2 class="page-header">Configure Add-ons</h2>
 
-<div class="row affix-menu">
+<div class="row affix-menu profile">
 
     <div class="col-sm-3 affix-parent">
         <div class="panel panel-default profile-panel" data-spy="affix" data-offset-top="100" data-offset-bottom="268">

@@ -1,4 +1,4 @@
-require('js/affix-menu.js');
+require('js/affix-menu');
 var profile = require('../profile.js');
 
 var ctx = window.contextVars;

@@ -1,5 +1,5 @@
 'use strict';
-require('js/affix-menu.js');
+require('js/affix-menu');
 
 
 var $ = require('jquery');

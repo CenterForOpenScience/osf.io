@@ -1,5 +1,5 @@
 'use strict';
-require('js/affix-menu.js');
+require('js/affix-menu');
 require('css/user-addon-settings.css');
 
 var $ = require('jquery');
