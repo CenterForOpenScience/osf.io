@@ -168,7 +168,7 @@ var FileViewPage = {
         }
 
         m.render(document.getElementById('toggleBar'), m('.btn-toolbar[style=margin-top:20px]', [
-            m('.btn-group', [
+            m('.btn-group', {style: 'margin-left: 0;'}, [
                 m('.btn.btn-sm.btn-danger', {onclick: $(document).trigger.bind($(document), 'fileviewpage:delete')}, 'Delete')
             ]),
             m('.btn-group', [
