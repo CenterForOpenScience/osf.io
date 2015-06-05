@@ -57,7 +57,7 @@ function ProjectCreatorViewModel(params) {
         );
     };
 
-    self.createSuccess = function(data){
+    self.createSuccess = function(data) {
         window.location = data.projectUrl;
     };
 

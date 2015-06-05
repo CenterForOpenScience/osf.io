@@ -430,7 +430,7 @@ function OBUploaderViewModel(params) {
     //Boolean to track if upload was successful
     self.success = false;
     /* Functions */
-    self.toggle = function () {
+    self.toggle = function() {
         self.isOpen(!self.isOpen());
     };
     self.startUpload = function(selectedProject, selectedComponent, projectInput, componentInput) {
@@ -561,9 +561,9 @@ function OBUploaderViewModel(params) {
             var dropzone = this;
 
             // file add error logic
-            this.on('error', function(file, message) {
+            this.on('error', function(file, message){
                 dropzone.removeFile(file);
-                if (dropzone.files.length === 0) {
+                if (dropzone.files.length === 0){
                     self.enableUpload(true);
                     dropzone.removeAllFiles(true);
                 }
@@ -580,11 +580,11 @@ function OBUploaderViewModel(params) {
                 }
                 self.changeMessage(msg, 'text-danger');
             });
-            this.on('drop',function() { // clear errors on drop or click
+            this.on('drop',function(){ // clear errors on drop or click
                 self.clearMessages();
             });
             // upload and process queue logic
-            this.on('success',function() {
+            this.on('success',function(){
                 self.filename(self.uploadCount() + ' / ' + dropzone.files.length + ' files');
                 dropzone.processQueue(); // this is a bit hackish -- it fails to process full queue but this ensures it runs the process again after each success.
                 var oldCount = self.uploadCount();
@@ -599,10 +599,10 @@ function OBUploaderViewModel(params) {
 
             // add file logic and dropzone to file display swap
             this.on('addedfile', function(file) {
-                if (dropzone.files.length > 1) {
+                if(dropzone.files.length > 1){
                     self.iconSrc('/static/img/upload_icons/multiple_blank.png');
                     self.filename(dropzone.files.length + ' files');
-                } else {
+                }else{
                     var fileName = truncateFilename(dropzone.files[0].name);
                     self.iconSrc(getFiletypeIcon(fileName));
                     self.filename(fileName);
