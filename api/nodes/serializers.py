@@ -13,6 +13,8 @@ import hashlib
 from urlparse import urlparse
 from posixpath import basename, normpath
 from api.base.utils import absolute_reverse
+from api.base.utils import token_creator
+
 
 class NodeSerializer(JSONAPISerializer):
     # TODO: If we have to redo this implementation in any of the other serializers, subclass ChoiceField and make it
@@ -145,11 +147,7 @@ class RegistrationOpenEndedSerializer(JSONAPISerializer):
         request = self.context['request']
         user = request.user
         node = self.context['view'].get_node()
-        token = hashlib.md5()
-        token.update(node._id)
-        token.update(user._id)
-        token.update(data['summary'])
-        token = token.hexdigest()
+        token = token_creator(node._id, user._id, data)
         url = absolute_reverse('nodes:node-registration-open-ended-token', kwargs={'pk': node._id, 'token': token})
         raise serializers.ValidationError(url)
 
@@ -207,7 +205,6 @@ class RegistrationPreDataCollectionSerializer(JSONAPISerializer):
     id = ser.CharField(read_only=True, source='_id')
     title = ser.CharField(read_only=True)
     registered_meta = ser.CharField(read_only=True)
-    token = ser.CharField(read_only=True, default='')
 
     looked = ser.ChoiceField(choices=TRUE_FALSE_CHOICES, default='', required=False, help_text="Is data collection for this project underway or complete?", write_only=True)
     datacompletion = ser.ChoiceField(choices=TRUE_FALSE_CHOICES, default='', required=False, help_text="Have you looked at the data?", write_only=True)
@@ -217,11 +214,7 @@ class RegistrationPreDataCollectionSerializer(JSONAPISerializer):
         request = self.context['request']
         user = request.user
         node = self.context['view'].get_node()
-        token = hashlib.md5()
-        token.update(node._id)
-        token.update(user._id)
-        token.update(data['looked'] + data['datacompletion'] + data['comments'])
-        token = token.hexdigest()
+        token = token_creator(node._id, user._id, data)
         url = absolute_reverse('nodes:node-registration-pre-data-collection-token', kwargs={'pk': node._id, 'token': token})
         raise serializers.ValidationError(url)
 
@@ -318,14 +311,7 @@ class ReplicationRecipePreRegistrationSerializer(JSONAPISerializer):
         request = self.context['request']
         user = request.user
         node = self.context['view'].get_node()
-        token = hashlib.md5()
-        token.update(node._id)
-        token.update(user._id)
-        lis = []
-        for val in data.values():
-            lis.append(val)
-        token.update(''.join(lis))
-        token = token.hexdigest()
+        token = token_creator(node._id, user._id, data)
         url = absolute_reverse('nodes:node-registration-pre-registration-token', kwargs={'pk': node._id, 'token': token})
         raise serializers.ValidationError(url)
 
@@ -430,14 +416,7 @@ class ReplicationRecipePostCompletionSerializer(JSONAPISerializer):
         request = self.context['request']
         user = request.user
         node = self.context['view'].get_node()
-        token = hashlib.md5()
-        token.update(node._id)
-        token.update(user._id)
-        lis = []
-        for val in data.values():
-         lis.append(val)
-        token.update(''.join(lis))
-        token = token.hexdigest()
+        token = token_creator(node._id, user._id, data)
         url = absolute_reverse('nodes:node-registration-post-completion-token', kwargs={'pk': node._id, 'token': token})
         raise serializers.ValidationError(url)
 
@@ -476,7 +455,7 @@ class ReplicationRecipePostCompletionWithTokenSerializer(NodeSerializer):
         token.update(user._id)
         lis = []
         for val in data.values():
-         lis.append(val)
+            lis.append(val)
         token.update(''.join(lis))
         correct_token = token.hexdigest()
 
