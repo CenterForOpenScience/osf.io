@@ -92,7 +92,7 @@ def _get_wiki_pages_current(node):
             'name': sorted_page.page_name,
             'url': node.web_url_for('project_wiki_view', wname=sorted_page.page_name, _guid=True),
             'wiki_id': sorted_page._primary_key,
-            'wiki_content': wiki_page_content(sorted_page.page_name, node=node)['wiki_content']
+            'wiki_content': wiki_page_content(sorted_page.page_name, node=node)
         }
         for sorted_page in [
             node.get_wiki_page(sorted_key)
@@ -129,6 +129,8 @@ def _get_wiki_web_urls(node, key, version=1, additional_urls=None):
 
 
 def _serialize_wiki_toc(project, auth):
+    for node in project.nodes:
+        print node.has_addon('wiki')
     toc = [
         {
             'id': child._primary_key,
@@ -138,7 +140,7 @@ def _serialize_wiki_toc(project, auth):
             'url': child.web_url_for('project_wiki_view', wname='home', _guid=True),
             'is_pointer': not child.primary,
             'link': auth.private_key,
-            'wiki_content': wiki_page_content('home', node=child)['wiki_content']
+            'wiki_content': wiki_page_content('home', node=child)
         }
         for child in project.nodes
         if not child.is_deleted
@@ -473,7 +475,7 @@ def format_project_wiki_pages(node):
                 'url': wiki_page['url'],
                 'name': wiki_page['name'],
                 'id': wiki_page['wiki_id'],
-                'wiki_content': wiki_page['wiki_content']
+                'wiki_content': wiki_page['wiki_content'].get('wiki_content')
             },
             'children': [],
             'kind': 'project'
@@ -494,7 +496,7 @@ def format_component_wiki_pages(node, auth):
                         'url': component_page['url'],
                         'name': component_page['name'],
                         'id': component_page['wiki_id'],
-                        'wiki_content': component_page['wiki_content']
+                        'wiki_content': component_page['wiki_content'].get('wiki_content')
                     },
                     'children': [],
                     'kind': 'inner_component'
@@ -506,7 +508,7 @@ def format_component_wiki_pages(node, auth):
                 'url': wiki_page['url'],
                 'name': wiki_page['title'],
                 'id': wiki_page['id'],
-                'wiki_content': wiki_page['wiki_content']
+                'wiki_content': wiki_page['wiki_content'].get('wiki_content')
             },
             'children': children,
             'kind': 'component'
