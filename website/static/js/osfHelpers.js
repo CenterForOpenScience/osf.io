@@ -25,13 +25,28 @@ var growl = function(title, message, type) {
 
 
 /**
- * Generate OSF absolute URLs, including server, port, and arguments. Assumes access to mako globals for pieces of URL.
- *
+ * Generate OSF absolute URLs, including prefix and arguments. Assumes access to mako globals for pieces of URL.
+ * Can optionally pass in an object with params (name:value) to be appended to URL. Calling as:
+ *   apiV2Url("users/4urxt/applications", {"a":1, "filter[fullname]":"lawrence"}, "https://staging2.osf.io/api/v2/")
+ * would yield the result:
+ *  "https://staging2.osf.io/api/v2/users/4urxt/applications?a=1&filter%5Bfullname%5D=lawrence"
  */
-var apiV2Url = function (pathStr, paramsObj){
-    paramsObj = paramsObj || {};
+var apiV2Url = function (pathStr, paramsObj, apiPrefix){
+    apiPrefix = apiPrefix || window.contextVars.apiV2Prefix;
 
-
+    var apiUrl = apiPrefix + pathStr;
+    // Add parameters to URL (if any). Ensure encoding as necessary
+    if (paramsObj){
+        apiUrl += "?";
+        var paramArr = [];
+        for (var k in paramsObj){
+            if (paramsObj.hasOwnProperty(k)){
+                paramArr.push(encodeURIComponent(k) + "=" + encodeURIComponent(paramsObj[k]))
+            }
+        }
+        apiUrl += paramArr.join('&');
+    }
+    return apiUrl;
 };
 
 
@@ -531,6 +546,7 @@ function humanFileSize(bytes, si) {
 // Also export these to the global namespace so that these can be used in inline
 // JS. This is used on the /goodbye page at the moment.
 module.exports = window.$.osf = {
+    apiV2Url: apiV2Url,
     postJSON: postJSON,
     putJSON: putJSON,
     setXHRAuthorization: setXHRAuthorization,
