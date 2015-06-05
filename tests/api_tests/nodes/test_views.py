@@ -788,6 +788,9 @@ class TestNodeCreateOpenEndedRegistration(ApiTestCase):
     def test_create_open_ended_public_registration_logged_out(self):
         ensure_schemas()
         res = self.app.post(self.public_url, self.payload, expect_errors=True)
+        # This is 403 instead of 401 because basic authentication is only for unit tests and, in order to keep from
+        # presenting a basic authentication dialog box in the front end. We may change this as we understand CAS
+        # a little better
         assert_equal(res.status_code, 403)
 
     def test_create_open_ended_public_registration_logged_in(self):
@@ -804,6 +807,9 @@ class TestNodeCreateOpenEndedRegistration(ApiTestCase):
     def test_create_open_ended_private_registration_logged_out(self):
         ensure_schemas()
         res = self.app.post(self.private_url, self.payload, expect_errors=True)
+        # This is 403 instead of 401 because basic authentication is only for unit tests and, in order to keep from
+        # presenting a basic authentication dialog box in the front end. We may change this as we understand CAS
+        # a little better
         assert_equal(res.status_code, 403)
 
     def test_create_open_ended_private_registration_logged_in_contributor(self):
@@ -852,6 +858,9 @@ class TestNodeCreatePreDataCollectionRegistration(ApiTestCase):
     def test_create_pre_data_collection_public_registration_logged_out(self):
         ensure_schemas()
         res = self.app.post(self.public_url, self.payload, expect_errors=True)
+        # This is 403 instead of 401 because basic authentication is only for unit tests and, in order to keep from
+        # presenting a basic authentication dialog box in the front end. We may change this as we understand CAS
+        # a little better
         assert_equal(res.status_code, 403)
 
     def test_create_pre_data_collection_public_registration_logged_in(self):
@@ -868,6 +877,9 @@ class TestNodeCreatePreDataCollectionRegistration(ApiTestCase):
     def test_create_pre_data_collection_private_registration_logged_out(self):
         ensure_schemas()
         res = self.app.post(self.private_url, self.payload, expect_errors=True)
+        # This is 403 instead of 401 because basic authentication is only for unit tests and, in order to keep from
+        # presenting a basic authentication dialog box in the front end. We may change this as we understand CAS
+        # a little better
         assert_equal(res.status_code, 403)
 
     def test_create_pre_data_collection_private_registration_logged_in_contributor(self):
@@ -909,17 +921,20 @@ class TestNodeCreateReplicationRecipePreRegistration(ApiTestCase):
         self.payload = {'item1': self.item1, 'item2': self.item2, 'item3': self.item3}
 
         self.public_project = ProjectFactory(is_public=True, creator=self.user)
-        self.public_url = '/v2/nodes/{}/registrations/Replication_Recipe_Pre-Registration/'.format(self.public_project._id)
+        self.public_url = '/v2/nodes/{}/register/Replication_Recipe_Pre-Registration/'.format(self.public_project._id)
 
         self.private_project = ProjectFactory(is_public=False, creator=self.user)
-        self.private_url = '/v2/nodes/{}/registrations/Replication_Recipe_Pre-Registration/'.format(self.private_project._id)
+        self.private_url = '/v2/nodes/{}/register/Replication_Recipe_Pre-Registration/'.format(self.private_project._id)
 
     def test_create_replication_recipe_pre_registration_public_registration_logged_out(self):
         ensure_schemas()
         res = self.app.post(self.public_url, self.payload, expect_errors=True)
+        # This is 403 instead of 401 because basic authentication is only for unit tests and, in order to keep from
+        # presenting a basic authentication dialog box in the front end. We may change this as we understand CAS
+        # a little better
         assert_equal(res.status_code, 403)
 
-    def test_create_replication_recipe_pre_registration_logged_in(self):
+    def test_create_replication_recipe_pre_registration_public_registration_logged_in(self):
         ensure_schemas()
         res = self.app.post(self.public_url, self.payload, auth=self.basic_auth, expect_errors=True)
         full_url = res.json['non_field_errors'][0]
@@ -930,12 +945,15 @@ class TestNodeCreateReplicationRecipePreRegistration(ApiTestCase):
         assert_equal(res.status_code, 201)
         assert_equal(res.json['data']['title'], self.public_project.title)
 
-    def test_create_replication_recipe_pre_registration_logged_out(self):
+    def test_create_replication_recipe_pre_registration_private_registration_logged_out(self):
         ensure_schemas()
         res = self.app.post(self.private_url, self.payload, expect_errors=True)
+        # This is 403 instead of 401 because basic authentication is only for unit tests and, in order to keep from
+        # presenting a basic authentication dialog box in the front end. We may change this as we understand CAS
+        # a little better
         assert_equal(res.status_code, 403)
 
-    def test_create_replication_recipe_pre_registration_logged_in_contributor(self):
+    def test_create_replication_recipe_pre_registration_private_registration_logged_in_contributor(self):
         ensure_schemas()
         res = self.app.post(self.private_url, self.payload, auth=self.basic_auth, expect_errors=True)
         full_url = res.json['non_field_errors'][0]
@@ -946,7 +964,7 @@ class TestNodeCreateReplicationRecipePreRegistration(ApiTestCase):
         assert_equal(res.status_code, 201)
         assert_equal(res.json['data']['title'], self.private_project.title)
 
-    def test_create_replication_recipe_pre_registration_logged_in_non_contributor(self):
+    def test_create_replication_recipe_pre_registration_private_registration_logged_in_non_contributor(self):
         ensure_schemas()
         res = self.app.post(self.private_url, self.payload, auth=self.basic_auth_two, expect_errors=True)
         assert_equal(res.status_code, 403)
@@ -973,14 +991,17 @@ class TestNodeCreateReplicationRecipePostCompletion(ApiTestCase):
         self.payload = {'item29': self.item29, 'item30': self.item30, 'item31': self.item31}
 
         self.public_project = ProjectFactory(is_public=True, creator=self.user)
-        self.public_url = '/v2/nodes/{}/registrations/Replication_Recipe_Post-Completion/'.format(self.public_project._id)
+        self.public_url = '/v2/nodes/{}/register/Replication_Recipe_Post-Completion/'.format(self.public_project._id)
 
         self.private_project = ProjectFactory(is_public=False, creator=self.user)
-        self.private_url = '/v2/nodes/{}/registrations/Replication_Recipe_Post-Completion/'.format(self.private_project._id)
+        self.private_url = '/v2/nodes/{}/register/Replication_Recipe_Post-Completion/'.format(self.private_project._id)
 
     def test_create_replication_recipe_post_completion_public_registration_logged_out(self):
         ensure_schemas()
         res = self.app.post(self.public_url, self.payload, expect_errors=True)
+        # This is 403 instead of 401 because basic authentication is only for unit tests and, in order to keep from
+        # presenting a basic authentication dialog box in the front end. We may change this as we understand CAS
+        # a little better
         assert_equal(res.status_code, 403)
 
     def test_create_replication_recipe_post_completion_public_registration_logged_in(self):
@@ -997,6 +1018,9 @@ class TestNodeCreateReplicationRecipePostCompletion(ApiTestCase):
     def test_create_replication_recipe_post_completion_private_registration_logged_out(self):
         ensure_schemas()
         res = self.app.post(self.private_url, self.payload, expect_errors=True)
+        # This is 403 instead of 401 because basic authentication is only for unit tests and, in order to keep from
+        # presenting a basic authentication dialog box in the front end. We may change this as we understand CAS
+        # a little better
         assert_equal(res.status_code, 403)
 
     def test_create_replication_recipe_post_completion_private_registration_logged_in_contributor(self):
