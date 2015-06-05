@@ -19,13 +19,14 @@
     </div>
 </div>
 
-<div class="wiki" id="wikiPageContext">
-  <div class="row wiki-wrapper">
+    <div class="row wiki-wrapper">
     <div class="panel-toggle col-sm-${'3' if 'menu' in panels_used else '1' | n}">
         <!-- Menu with toggle normal -->
         <div class="osf-panel hidden-xs ${'' if 'menu' in panels_used else 'hidden' | n}" data-bind="css: {  'osf-panel-flex': !$root.singleVis(), reset-height : $root.singleVis() }">
             <div class="osf-panel-header" data-bind="css: {  'osf-panel-header-flex': !$root.singleVis()}"> <i class="fa fa-list"> </i>  Menu
-                <div class="pull-right"> <div class="panel-collapse"> <i class="fa fa-angle-left pointer"> </i> </div></div>
+                <div class="pull-right">
+                    <div class="panel-collapse"> <i class="fa fa-angle-left pointer"> </i> </div>
+                </div>
             </div>
             <div class="osf-panel-body" data-bind="css: {  'osf-panel-body-flex': !$root.singleVis()}">
                 <div id="grid">
@@ -57,6 +58,7 @@
         </div>
     </div>
 
+    <div class="wiki" id="wikiPageContext">
     <div class="panel-expand col-sm-${'9' if 'menu' in panels_used else '11' | n}">
       <div class="row">
         % if user['can_edit']:
