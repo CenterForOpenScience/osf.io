@@ -64,7 +64,7 @@ REST_FRAMEWORK = {
         # Custom auth classes
         'api.base.authentication.drf.OSFBasicAuthentication',
         'api.base.authentication.drf.OSFSessionAuthentication',
-        #'api.base.authentication.drf.OSFCASAuthentication'
+        'api.base.authentication.drf.OSFCASAuthentication'
     ),
 }
 
