@@ -1,1 +1,1 @@
-from .import hgrid, auth, config  # noqa
+from .import hgrid, config  # noqa

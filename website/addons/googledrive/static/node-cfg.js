@@ -1,6 +1,7 @@
 'use strict';
 
-var AddonNodeConfig = require('js/addonNodeConfig').AddonNodeConfig;
+var OauthAddonNodeConfig = require('oauthAddonNodeConfig').OauthAddonNodeConfig;
 
 var url = window.contextVars.node.urls.api + 'googledrive/config/';
-new AddonNodeConfig('Google Drive', '#googledriveScope', url, '#googledriveGrid');
+new OauthAddonNodeConfig('Google Drive', '#googledriveScope', url,
+'#googledriveGrid');
