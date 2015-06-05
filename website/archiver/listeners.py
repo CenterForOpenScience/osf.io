@@ -34,15 +34,17 @@ def archive_node(src, dst, user):
     )
 
 def archive_node_finished(node):
-    pending = [value for value in node.archived_providers.values() if value['status'] not in (ARCHIVER_SUCCESS, ARCHIVER_FAILURE)]
-    return False if pending else True
+    return not any([
+        value for value in node.archived_providers.values()
+        if value['status'] not in (ARCHIVER_SUCCESS, ARCHIVER_FAILURE)
+    ])
 
 def archive_tree_finished(node, dir=None):
     if archive_node_finished(node):
         if not dir:
-            up_ = archive_tree_finished(node.parent_node, dir='up') if node.parent_node else True
-            down_ = len([ret for ret in [archive_tree_finished(child, dir='down') for child in node.nodes] if ret]) if len(node.nodes) else True
-            return up_ and down_
+            up_finished = archive_tree_finished(node.parent_node, dir='up') if node.parent_node else True
+            down_finished = len([ret for ret in [archive_tree_finished(child, dir='down') for child in node.nodes] if ret]) if len(node.nodes) else True
+            return up_finished and down_finished
         if dir == 'up':
             return archive_tree_finished(node.parent_node, dir='up') if node.parent_node else True
         elif dir == 'down':
@@ -62,8 +64,6 @@ def archive_callback(dst):
         dst.archiving = False
         dst.save()
     if archive_tree_finished(dst):
-        dst.archiving = False
-        dst.save()
         if ARCHIVER_FAILURE in [value['status'] for value in dst.archived_providers.values()]:
             handle_archive_fail(
                 ARCHIVER_NETWORK_ERROR,
