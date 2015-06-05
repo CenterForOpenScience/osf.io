@@ -138,7 +138,7 @@ class Mendeley(ExternalProvider):
         ])
         citations = {}
         next_page = None
-        while len(document_ids - set((citations or {}).keys())) > 0:
+        while set(document_ids).isdisjoint(citations.keys()):
             page, next_page = self._citations_for_mendeley_user(next_page, size=500)
             citations.update({
                 citation['id']: citation
