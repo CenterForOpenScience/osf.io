@@ -46,8 +46,7 @@ var apiV2Url = function (pathString, paramsObject, apiPrefix){
     // Add parameters to URL (if any). Ensure encoding as necessary
     if (paramsObject){
         apiUrl += "?";
-        var paramString = $.param(paramsObject);
-        apiUrl += paramString;
+        apiUrl += $.param(paramsObject);
     }
     return apiUrl;
 };
