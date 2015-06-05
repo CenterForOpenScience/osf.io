@@ -130,7 +130,6 @@ var ViewModel = function(params) {
                 'fields': fields,
                 'query': self.query(),
                 'analyze_wildcard': true,
-                'auto_generate_phrase_queries': true,
                 'lenient': true,
             }
         };

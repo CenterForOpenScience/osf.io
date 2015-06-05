@@ -57,7 +57,6 @@ def build_query_string(qs):
             'fields': fields,
             'query': qs,
             'analyze_wildcard': True,
-            'auto_generate_phrase_queries': True,
             'lenient': True  # TODO, may not want to do this
         }
     }
