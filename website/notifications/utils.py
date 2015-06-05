@@ -168,13 +168,12 @@ def format_data(user, node_ids):
 
         if can_read:
             node_sub_available = list(constants.NODE_SUBSCRIPTIONS_AVAILABLE.keys())
-            for subscription in get_all_node_subscriptions(user, node):
-                try:
-                    index = node_sub_available.index(getattr(subscription, 'event_name'))
-                    children.append(serialize_event(user, subscription=subscription,
-                                                    node=node, event_description=node_sub_available.pop(index)))
-                except ValueError:
-                    pass  # Currently doesn't handle non-specified subscriptions as in <file>_file_updated
+            subscriptions = [subscription for subscription in get_all_node_subscriptions(user, node)
+                             if getattr(subscription, 'event_name') in node_sub_available]
+            for subscription in subscriptions:
+                index = node_sub_available.index(getattr(subscription, 'event_name'))
+                children.append(serialize_event(user, subscription=subscription,
+                                                node=node, event_description=node_sub_available.pop(index)))
             for node_sub in node_sub_available:
                     children.append(serialize_event(user, node=node, event_description=node_sub))
             children.sort(key=lambda s: s['event']['title'])
@@ -206,10 +205,15 @@ def format_data(user, node_ids):
 
 def format_user_subscriptions(user):
     """ Format user-level subscriptions (e.g. comment replies across the OSF) for user settings page"""
-    return [
-        serialize_event(user, subscription) for subscription in get_all_user_subscriptions(user)
-        if getattr(subscription, 'event_name') in constants.USER_SUBSCRIPTIONS_AVAILABLE
+    user_subs_available = list(constants.USER_SUBSCRIPTIONS_AVAILABLE.keys())
+    subscriptions = [
+        serialize_event(user, subscription,
+                        event_description=user_subs_available.pop(user_subs_available.index(getattr(subscription, 'event_name'))))
+        for subscription in get_all_user_subscriptions(user)
+        if getattr(subscription, 'event_name') in user_subs_available
     ]
+    subscriptions.extend([serialize_event(user, event_description=sub) for sub in user_subs_available])
+    return subscriptions
 
 
 def format_file_subscription(user, node_id, path, provider):
