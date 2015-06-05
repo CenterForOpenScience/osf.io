@@ -46,13 +46,8 @@ var apiV2Url = function (pathString, paramsObject, apiPrefix){
     // Add parameters to URL (if any). Ensure encoding as necessary
     if (paramsObject){
         apiUrl += "?";
-        var paramArr = [];
-        for (var k in paramsObject){
-            if (paramsObject.hasOwnProperty(k)){
-                paramArr.push(encodeURIComponent(k) + "=" + encodeURIComponent(paramsObject[k]))
-            }
-        }
-        apiUrl += paramArr.join('&');
+        var paramString = $.param(paramsObject);
+        apiUrl += paramString;
     }
     return apiUrl;
 };
