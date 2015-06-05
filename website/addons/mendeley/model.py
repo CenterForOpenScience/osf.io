@@ -227,7 +227,6 @@ class Mendeley(ExternalProvider):
             csl['publisher'] = document.json.get('publisher')
 
         if csl_type == 'thesis':
-             #import ipdb; ipdb.set_trace()
             csl['publisher'] = document.json.get('institution')
 
         if document.json.get('revision'):
