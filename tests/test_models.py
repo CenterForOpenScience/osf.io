@@ -2459,6 +2459,50 @@ class TestProject(OsfTestCase):
         assert_false(self.project.is_public)
         assert_equal(self.project.logs[-1].action, NodeLog.MADE_PRIVATE)
 
+    def test_set_privacy_cancels_pending_embargo_for_registration(self):
+        self.project.is_registration = True
+        self.project.save()
+        self.project.embargo_registration(
+            self.user,
+            datetime.datetime.utcnow() + datetime.timedelta(days=10)
+        )
+        assert_false(self.project.embargo_end_date)
+        assert_true(self.project.pending_embargo)
+
+        self.project.set_privacy('public', auth=self.consolidate_auth)
+        self.project.save()
+        assert_false(self.project.embargo_end_date)
+        assert_false(self.project.pending_embargo)
+        assert_equal(self.project.embargo.state, 'cancelled')
+        assert_true(self.project.is_public)
+        assert_equal(self.project.logs[-1].action, NodeLog.MADE_PUBLIC)
+
+    def test_set_privacy_cancels_active_embargo_for_registration(self):
+        self.project.is_registration = True
+        self.project.save()
+        self.project.is_registration = True
+        self.project.save()
+        self.project.embargo_registration(
+            self.user,
+            datetime.datetime.utcnow() + datetime.timedelta(days=10)
+        )
+        self.project.save()
+        assert_false(self.project.embargo_end_date)
+        assert_true(self.project.pending_embargo)
+
+        approval_token = self.project.embargo.approval_state[self.user._id]['approval_token']
+        self.project.embargo.approve_embargo(self.user, approval_token)
+        assert_true(self.project.embargo_end_date)
+        assert_false(self.project.pending_embargo)
+
+        self.project.set_privacy('public', auth=self.consolidate_auth)
+        self.project.save()
+        assert_false(self.project.embargo_end_date)
+        assert_false(self.project.pending_embargo)
+        assert_equal(self.project.embargo.state, 'cancelled')
+        assert_true(self.project.is_public)
+        assert_equal(self.project.logs[-1].action, NodeLog.MADE_PUBLIC)
+
     def test_set_description(self):
         old_desc = self.project.description
         self.project.set_description(

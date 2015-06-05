@@ -492,7 +492,7 @@ class TestProjectViews(OsfTestCase):
     def test_register_template_page(self):
         url = "/api/v1/project/{0}/register/Replication_Recipe_(Brandt_et_al.,_2013):_Post-Completion/".format(
             self.project._primary_key)
-        self.app.post_json(url, {}, auth=self.auth)
+        self.app.post_json(url, {'registrationChoice': 'Make registration public immediately'}, auth=self.auth)
         self.project.reload()
         # A registration was added to the project's registration list
         assert_equal(len(self.project.node__registrations), 1)
@@ -501,6 +501,38 @@ class TestProjectViews(OsfTestCase):
         # Most recent node is a registration
         reg = Node.load(self.project.node__registrations[-1])
         assert_true(reg.is_registration)
+
+    def test_register_template_make_public_creates_public_registration(self):
+        url = "/api/v1/project/{0}/register/Replication_Recipe_(Brandt_et_al.,_2013):_Post-Completion/".format(
+            self.project._primary_key)
+        self.app.post_json(url, {'registrationChoice': 'immediate'}, auth=self.auth)
+        self.project.reload()
+        # Most recent node is a registration
+        reg = Node.load(self.project.node__registrations[-1])
+        assert_true(reg.is_registration)
+        # The registration created is public
+        assert_true(reg.is_public)
+
+    def test_register_template_with_embargo_creates_embargo(self):
+        url = "/api/v1/project/{0}/register/Replication_Recipe_(Brandt_et_al.,_2013):_Post-Completion/".format(
+            self.project._primary_key)
+        self.app.post_json(
+            url,
+            {
+                'registrationChoice': 'embargo',
+                'embargoEndDate': "Fri, 01 Jan {year} 05:00:00 GMT".format(year=str(dt.date.today().year + 1))
+            },
+            auth=self.auth)
+
+        self.project.reload()
+        # Most recent node is a registration
+        reg = Node.load(self.project.node__registrations[-1])
+        assert_true(reg.is_registration)
+        # The registration created is not public
+        assert_false(reg.is_public)
+        # The registration is pending an embargo that has not been approved
+        assert_true(reg.pending_embargo)
+        assert_false(reg.embargo_end_date)
 
     def test_register_template_page_with_invalid_template_name(self):
         url = self.project.web_url_for('node_register_template_page', template='invalid')

@@ -6,6 +6,9 @@ var $osf = require('js/osfHelpers');
 
 var MetaData = require('../metadata_1.js');
 var ctx = window.contextVars;
+
+require('pikaday-css');
+
 /**
     * Unblock UI and display error modal
     */
@@ -65,6 +68,19 @@ $(document).ready(function() {
 
     $('#registration_template form').on('submit', function() {
 
+        // If embargo is requested, verify its end date, and inform user if date is out of range
+        if (registrationViewModel.embargoAddon.requestingEmbargo()) {
+            if (!registrationViewModel.embargoAddon.isEmbargoEndDateValid()) {
+                registrationViewModel.continueText('');
+                $osf.growl(
+                    'Invalid embargo end date',
+                    'Please choose a date more than two days, but less than one year, from today.',
+                    'warning'
+                );
+                $('#endDatePicker').focus();
+                return false;
+            }
+        }
         // Serialize responses
         var serialized = registrationViewModel.serialize(),
             data = serialized.data,
