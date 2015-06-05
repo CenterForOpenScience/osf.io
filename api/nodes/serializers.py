@@ -14,8 +14,6 @@ from urlparse import urlparse
 from posixpath import basename, normpath
 from api.base.utils import absolute_reverse
 
-
-
 class NodeSerializer(JSONAPISerializer):
     # TODO: If we have to redo this implementation in any of the other serializers, subclass ChoiceField and make it
     # handle blank choices properly. Currently DRF ChoiceFields ignore blank options, which is incorrect in this
@@ -154,7 +152,6 @@ class RegistrationOpenEndedSerializer(JSONAPISerializer):
         token = token.hexdigest()
         url = absolute_reverse('nodes:node-registration-open-ended-token', kwargs={'pk': node._id, 'token': token})
         raise serializers.ValidationError(url)
-
 
     class Meta:
         type_='registrations'

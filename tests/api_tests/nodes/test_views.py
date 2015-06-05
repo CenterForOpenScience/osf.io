@@ -780,10 +780,10 @@ class TestNodeCreateOpenEndedRegistration(ApiTestCase):
         self.payload = {"summary": self.summary }
 
         self.public_project = ProjectFactory(is_public=True, creator=self.user)
-        self.public_url = '/v2/nodes/{}/registrations/Open-Ended_Registration/'.format(self.public_project._id)
+        self.public_url = '/v2/nodes/{}/register/Open-Ended_Registration/'.format(self.public_project._id)
 
         self.private_project = ProjectFactory(is_public=False, creator=self.user)
-        self.private_url = '/v2/nodes/{}/registrations/Open-Ended_Registration/'.format(self.private_project._id)
+        self.private_url = '/v2/nodes/{}/register/Open-Ended_Registration/'.format(self.private_project._id)
 
     def test_create_open_ended_public_registration_logged_out(self):
         ensure_schemas()
@@ -844,10 +844,10 @@ class TestNodeCreatePreDataCollectionRegistration(ApiTestCase):
         self.payload = {'looked': self.looked, 'datacompletion': self.datacompletion, 'comments': self.comments}
 
         self.public_project = ProjectFactory(is_public=True, creator=self.user)
-        self.public_url = '/v2/nodes/{}/registrations/OSF-Standard_Pre-Data_Collection_Registration/'.format(self.public_project._id)
+        self.public_url = '/v2/nodes/{}/register/OSF-Standard_Pre-Data_Collection_Registration/'.format(self.public_project._id)
 
         self.private_project = ProjectFactory(is_public=False, creator=self.user)
-        self.private_url = '/v2/nodes/{}/registrations/OSF-Standard_Pre-Data_Collection_Registration/'.format(self.private_project._id)
+        self.private_url = '/v2/nodes/{}/register/OSF-Standard_Pre-Data_Collection_Registration/'.format(self.private_project._id)
 
     def test_create_pre_data_collection_public_registration_logged_out(self):
         ensure_schemas()
