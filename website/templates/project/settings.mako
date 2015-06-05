@@ -69,6 +69,16 @@
                   <span data-bind="if: disabled" class="help-block">
                     A top-level project's category cannot be changed
                   </span>
+
+                    <div>
+                        <b>Title:</b> <span id="nodeTitleEditable" class="overflow">${node['title']}</span>
+                        % if node['description'] or 'write' in user['permissions']:
+                            <br>
+                            <b>Description:</b>
+                            <span id="nodeDescriptionEditable" class="node-description overflow" data-type="textarea">${node['description']}</span>
+                        % endif
+                   </div>
+                    
                 </div>
 
                 % if 'admin' in user['permissions'] and not node['is_registration']:
@@ -237,6 +247,8 @@
     %>
     ${tpl}
 </%def>
+
+<%include file="log_list.mako" args="scripted=True" />
 
 % for name, capabilities in addon_capabilities.iteritems():
     <script id="capabilities-${name}" type="text/html">${capabilities}</script>
