@@ -39,12 +39,7 @@ var AddonFolderPickerViewModel = oop.extend(FolderPickerViewModel, {
             return (userHasAuth && selected) ? selected.type : '';
         });
         self.messages.submitSettingsSuccess =  ko.pureComputed(function() {
-            if(addonName === "Google Drive"){
-                var name = decodeURIComponent($osf.htmlEscape(self.folder().name));
-            }
-            else {
-                var name = $osf.htmlEscape(self.folder().name);
-            }
+            var name = self.options.decodeFolder($osf.htmlEscape(self.folder().name));
             return 'Successfully linked "' + name + '". Go to the <a href="' +
                 self.urls().files + '">Files page</a> to view your content.';
         });
@@ -66,7 +61,6 @@ var AddonFolderPickerViewModel = oop.extend(FolderPickerViewModel, {
             decodeFolder: function(folder_name) {
                 return folder_name;
             }
-
         };
         // Overrides
         self.options = $.extend({}, defaults, opts);
@@ -80,14 +74,18 @@ var AddonFolderPickerViewModel = oop.extend(FolderPickerViewModel, {
                 }.bind(this),
                 resolveLazyloadUrl: function(item) {
                     return item.data.urls.folders;
-                }
+                },
+                decodeFolder: function(item) {
+                    return this.options.decodeFolder.call(this, item);
+                }.bind(this)
+
             }
         );
 
         self.folderName = ko.pureComputed(function () {
             var nodeHasAuth = self.nodeHasAuth();
             var folder = self.folder();
-            var folder_name = self.options.decodeFolder((nodeHasAuth && folder && folder.name) ? folder.name.trim() : '')
+            var folder_name = self.options.decodeFolder((nodeHasAuth && folder && folder.name) ? folder.name.trim() : '');
             return folder_name;
         });
         self.selectedFolderName = ko.pureComputed(function() {
