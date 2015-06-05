@@ -289,6 +289,40 @@ class TestProjectViews(OsfTestCase):
         assert_equal(self.project.get_permissions(self.user1), ['read'])
         assert_equal(self.project.get_permissions(self.user2), ['read', 'write', 'admin'])
 
+    def test_manage_permissions_again(self):
+        url = self.project.api_url + 'contributors/manage/'
+        self.app.post_json(
+            url,
+            {
+                'contributors': [
+                    {'id': self.user1._id, 'permission': 'admin',
+                     'registered': True, 'visible': True},
+                    {'id': self.user2._id, 'permission': 'admin',
+                     'registered': True, 'visible': True},
+                ]
+            },
+            auth=self.auth,
+        )
+
+        self.project.reload()
+        self.app.post_json(
+            url,
+            {
+                'contributors': [
+                    {'id': self.user1._id, 'permission': 'admin',
+                     'registered': True, 'visible': True},
+                    {'id': self.user2._id, 'permission': 'read',
+                     'registered': True, 'visible': True},
+                ]
+            },
+            auth=self.auth,
+        )
+
+        self.project.reload()
+
+        assert_equal(self.project.get_permissions(self.user2), ['read'])
+        assert_equal(self.project.get_permissions(self.user1), ['read', 'write', 'admin'])
+
     def test_contributor_manage_reorder(self):
 
         # Two users are added as a contributor via a POST request
@@ -2485,6 +2519,43 @@ class TestAuthViews(OsfTestCase):
         )
         user = User.find_one(Q('username', 'eq', email))
         assert_equal(user.fullname, name)
+
+    # Regression test for https://github.com/CenterForOpenScience/osf.io/issues/2902
+    def test_register_email_case_insensitive(self):
+        url = api_url_for('register_user')
+        name, email, password = fake.name(), fake.email(), 'underpressure'
+        self.app.post_json(
+            url,
+            {
+                'fullName': name,
+                'email1': email,
+                'email2': str(email).upper(),
+                'password': password,
+            }
+        )
+        user = User.find_one(Q('username', 'eq', email))
+        assert_equal(user.fullname, name)
+
+    def test_register_scrubs_username(self):
+        """Usernames are scrubbed of malicious HTML when registering"""
+        url = api_url_for('register_user')
+        name = "<i>Eunice</i> O' \"Cornwallis\"<script type='text/javascript' src='http://www.cornify.com/js/cornify.js'></script><script type='text/javascript'>cornify_add()</script>"
+        email, password = fake.email(), 'underpressure'
+        res = self.app.post_json(
+            url,
+            {
+                'fullName': name,
+                'email1': email,
+                'email2': email,
+                'password': password,
+            }
+        )
+
+        expected_scrub_username = "Eunice O' \"Cornwallis\"cornify_add()"
+        user = User.find_one(Q('username', 'eq', email))
+
+        assert_equal(res.status_code, http.OK)
+        assert_equal(user.fullname, expected_scrub_username)
 
     def test_register_email_mismatch(self):
         url = api_url_for('register_user')
