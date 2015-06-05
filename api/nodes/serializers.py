@@ -138,7 +138,7 @@ class RegistrationOpenEndedSerializer(JSONAPISerializer):
 
     id = ser.CharField(read_only=True, source='_id')
     title = ser.CharField(read_only=True)
-    summary = ser.CharField(required=True, allow_blank=False, allow_null=False, write_only=True, help_text="Provide a summary or describe how this differs from prior registrations.")
+    summary = ser.CharField(required=False, default='', write_only=True, help_text="Provide a summary or describe how this differs from prior registrations.")
     category = ser.CharField(read_only=True, required=False)
 
     def validate(self, data):
@@ -160,7 +160,7 @@ class RegistrationOpenEndedWithTokenSerializer(NodeSerializer):
 
     id = ser.CharField(read_only=True, source='_id')
     title = ser.CharField(read_only=True)
-    summary = ser.CharField(required=True, allow_blank=False, allow_null=False, write_only=True, help_text="Provide a summary or describe how this differs from prior registrations.")
+    summary = ser.CharField(required=False, default='', write_only=True, help_text="Provide a summary or describe how this differs from prior registrations.")
     registered_meta = ser.CharField(read_only=True)
     description = ser.CharField(read_only=True)
     category = ser.CharField(read_only=True)
@@ -209,9 +209,9 @@ class RegistrationPreDataCollectionSerializer(JSONAPISerializer):
     registered_meta = ser.CharField(read_only=True)
     token = ser.CharField(read_only=True, default='')
 
-    looked = ser.ChoiceField(choices=TRUE_FALSE_CHOICES, required=True, help_text="Is data collection for this project underway or complete?", write_only=True)
-    datacompletion = ser.ChoiceField(choices=TRUE_FALSE_CHOICES, required=True, help_text="Have you looked at the data?", write_only=True)
-    comments = ser.CharField(default='', help_text="Other comments", write_only=True)
+    looked = ser.ChoiceField(choices=TRUE_FALSE_CHOICES, default='', required=False, help_text="Is data collection for this project underway or complete?", write_only=True)
+    datacompletion = ser.ChoiceField(choices=TRUE_FALSE_CHOICES, default='', required=False, help_text="Have you looked at the data?", write_only=True)
+    comments = ser.CharField(default='', required=False, help_text="Other comments", write_only=True)
 
     def validate(self, data):
         request = self.context['request']
@@ -238,9 +238,9 @@ class RegistrationPreDataCollectionWithTokenSerializer(NodeSerializer):
     description = ser.CharField(read_only=True)
     category = ser.CharField(read_only=True)
 
-    looked = ser.ChoiceField(choices=TRUE_FALSE_CHOICES, required=True, help_text="Is data collection for this project underway or complete?", write_only=True)
-    datacompletion = ser.ChoiceField(choices=TRUE_FALSE_CHOICES, required=True, help_text="Have you looked at the data?", write_only=True)
-    comments = ser.CharField(default='', help_text="Other comments", write_only=True)
+    looked = ser.ChoiceField(choices=TRUE_FALSE_CHOICES, default='', required=False, help_text="Is data collection for this project underway or complete?", write_only=True)
+    datacompletion = ser.ChoiceField(choices=TRUE_FALSE_CHOICES, default='', required=False, help_text="Have you looked at the data?", write_only=True)
+    comments = ser.CharField(default='', required=False, help_text="Other comments", write_only=True)
 
     def validate(self, data):
         request = self.context['request']
