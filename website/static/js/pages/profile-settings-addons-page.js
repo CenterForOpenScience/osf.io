@@ -1,5 +1,6 @@
 'use strict';
 require('css/user-addon-settings.css');
+
 var $ = require('jquery');
 var ko = require('knockout');
 var bootbox = require('bootbox');
@@ -102,18 +103,7 @@ $('.addon-oauth').each(function(index, elem) {
     viewModel.updateAccounts();
 });
 
-// Reusable function to fix affix widths to columns.
-function fixAffixWidth() {
-    $('.affix, .affix-top, .affix-bottom').each(function (){
-        var el = $(this);
-        var colsize = el.parent('.affix-parent').width();
-        el.outerWidth(colsize);
-    });
-}
+$('document').ready( function(){
+    $osf.initializeResponsiveAffix();
+});
 
-$(document).ready(function () {
-
-    $(window).resize(function (){ fixAffixWidth(); });
-    $('#affix-nav').on('affixed.bs.affix', function(){ fixAffixWidth(); });
-
-  });

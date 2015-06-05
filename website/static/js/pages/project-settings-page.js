@@ -30,15 +30,6 @@ $.ajax({
     });
 });
 
-// Reusable function to fix affix widths to columns.
-function fixAffixWidth() {
-    $('.affix, .affix-top, .affix-bottom').each(function (){
-        var el = $(this);
-        var colsize = el.parent('.affix-parent').width();
-        el.outerWidth(colsize);
-    });
-}
-
 $(document).ready(function() {
 
     // Apply KO bindings for Node Category Settings
@@ -59,8 +50,7 @@ $(document).ready(function() {
     );
     ko.applyBindings(categorySettingsVM, $('#nodeCategorySettings')[0]);
 
-    $(window).resize(function (){ fixAffixWidth(); });
-    $('.scrollspy').on('affixed.bs.affix', function(){ fixAffixWidth(); });
+    $osf.initializeResponsiveAffix();
 
     $('#deleteNode').on('click', function() {
         ProjectSettings.getConfirmationCode(ctx.node.nodeType);

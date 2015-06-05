@@ -506,6 +506,19 @@ ko.bindingHandlers.listing = {
     }
 };
 
+/* Responsive Affix for side nav */
+function fixAffixWidth() {
+    $('.affix, .affix-top, .affix-bottom').each(function (){
+        var el = $(this);
+        var colsize = el.parent('.affix-parent').width();
+        el.outerWidth(colsize);
+    });
+}
+
+var initializeResponsiveAffix = function (){
+    $(window).resize(function (){ fixAffixWidth(); });
+    $('.osf-affix').on('affixed.bs.affix', function(){ fixAffixWidth();});
+};
 
 // Also export these to the global namespace so that these can be used in inline
 // JS. This is used on the /goodbye page at the moment.
@@ -529,5 +542,6 @@ module.exports = window.$.osf = {
     debounce: debounce,
     htmlEscape: htmlEscape,
     htmlDecode: htmlDecode,
-    tableResize: tableResize
+    tableResize: tableResize,
+    initializeResponsiveAffix: initializeResponsiveAffix
 };

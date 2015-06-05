@@ -18,7 +18,7 @@
 <div class="row project-page">
     <div class="col-sm-3 affix-parent scrollspy">
         % if 'write' in user['permissions'] and not node['is_registration']:
-            <div data-spy="affix" data-offset-bottom="268">
+            <div class="osf-affix" data-spy="affix" data-offset-bottom="268">
                 <ul class="nav nav-stacked nav-pills">
                     <li><a href="#configureNodeAnchor">Configure ${node['node_type'].capitalize()}</a></li>
 

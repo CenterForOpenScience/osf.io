@@ -2796,18 +2796,6 @@ span#profileFullname{
 
 
 /* Settings side-nav positions */
-#profileSettings .affix {
-    top: 80px;
-}
-
-#accountSettings .affix {
-    top: 80px;
-}
-
-#addonSettings .affix {
-    top: 80px;
-}
-
-#notificationSettings .affix {
+.osf-affix.profile-affix {
     top: 80px;
 }
