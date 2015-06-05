@@ -470,9 +470,7 @@ class TestProjectViews(OsfTestCase):
         assert_true(self.project.is_public)
 
     def test_add_tag(self):
-        url = "/api/v1/project/{0}/addtag/".format(
-            self.project._primary_key,
-        )
+        url = self.project.api_url_for("project_addtag")
         self.app.post_json(url, {"tag": "foo'ta#@%#%^&g?"}, auth=self.auth)
         self.project.reload()
         assert_in(sanitize.clean_tag("foo'ta#@%#%^&g?"), self.project.tags)
@@ -481,9 +479,7 @@ class TestProjectViews(OsfTestCase):
     def test_remove_tag(self):
         self.project.add_tag("foo'ta#@%#%^&g?", auth=self.consolidate_auth1, save=True)
         assert_in(sanitize.clean_tag("foo'ta#@%#%^&g?"), self.project.tags)
-        url = "/api/v1/project/{0}/removetag/".format(
-            self.project._primary_key,
-        )
+        url = self.project.api_url_for("project_removetag")
         self.app.post_json(url, {"tag": "foo'ta#@%#%^&g?"}, auth=self.auth)
         self.project.reload()
         assert_not_in(sanitize.clean_tag("foo'ta#@%#%^&g?"), self.project.tags)
