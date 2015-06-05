@@ -118,8 +118,8 @@ STATIC_ROOT = os.path.join(BASE_DIR, 'static/vendor')
 API_PATH = ''
 API_BASE = 'v2/'
 
-
-STATIC_URL = '{}/{}static/'.format(API_PATH, API_BASE)
+API_PREFIX = '{}/{}'.format(API_PATH, API_BASE)
+STATIC_URL = '{}static/'.format(API_PREFIX)
 
 STATICFILES_DIRS = (
     ('rest_framework_swagger/css', os.path.join(BASE_DIR, 'static/css')),
