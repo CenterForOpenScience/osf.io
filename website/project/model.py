@@ -2365,6 +2365,14 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         if permissions == 'public' and not self.is_public:
             if self.is_registration and (self.embargo_end_date or self.pending_embargo):
                 self.embargo.state = Embargo.CANCELLED
+                self.registered_from.add_log(
+                    action=NodeLog.EMBARGO_CANCELLED,
+                    params={
+                        'node': self._id,
+                        'embargo_id': self.embargo._id,
+                    },
+                    auth=auth,
+                )
                 self.embargo.save()
             self.is_public = True
         elif permissions == 'private' and self.is_public:
@@ -2618,14 +2626,13 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
             raise NodeStateError('Only public registrations or active embargoes may be retracted.')
 
         retraction = self._initiate_retraction(user, justification, save=True)
-        self.add_log(
+        self.registered_from.add_log(
             action=NodeLog.RETRACTION_INITIATED,
             params={
                 'node': self._id,
                 'retraction_id': retraction._id,
             },
             auth=Auth(user),
-            save=False,
         )
         self.retraction = retraction
 
@@ -2683,7 +2690,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
             raise ValidationValueError('Embargo end date must be more than one day in the future')
 
         embargo = self._initiate_embargo(user, end_date, for_existing_registration=for_existing_registration, save=True)
-        self.add_log(
+        self.registered_from.add_log(
             action=NodeLog.EMBARGO_INITIATED,
             params={
                 'node': self._id,
@@ -2853,7 +2860,7 @@ class Retraction(StoredObject):
 
         self.state = self.CANCELLED
         parent_registration = Node.find_one(Q('retraction', 'eq', self))
-        parent_registration.add_log(
+        parent_registration.registered_from.add_log(
             action=NodeLog.RETRACTION_CANCELLED,
             params={
                 'node': parent_registration._id,
@@ -2876,26 +2883,24 @@ class Retraction(StoredObject):
             self.state = self.RETRACTED
 
             parent_registration = Node.find_one(Q('retraction', 'eq', self))
-            parent_registration.add_log(
+            parent_registration.registered_from.add_log(
                 action=NodeLog.RETRACTION_APPROVED,
                 params={
                     'node': parent_registration._id,
                     'retraction_id': self._id,
                 },
                 auth=Auth(user),
-                save=True,
             )
             # Remove any embargoes associated with the registration
             if parent_registration.embargo_end_date or parent_registration.pending_embargo:
                 parent_registration.embargo.state = self.CANCELLED
-                parent_registration.add_log(
+                parent_registration.registered_from.add_log(
                     action=NodeLog.EMBARGO_CANCELLED,
                     params={
                         'node': parent_registration._id,
                         'embargo_id': parent_registration.embargo._id,
                     },
                     auth=Auth(user),
-                    save=False,
                 )
                 parent_registration.embargo.save()
             # Ensure retracted registration is public
@@ -2977,14 +2982,13 @@ class Embargo(StoredObject):
         # Remove backref to parent project if embargo was for a new registration
         if not self.for_existing_registration:
             parent_registration.registered_from = None
-        parent_registration.add_log(
+        parent_registration.registered_from.add_log(
             action=NodeLog.EMBARGO_CANCELLED,
             params={
                 'node': parent_registration._id,
                 'embargo_id': self._id,
             },
             auth=Auth(user),
-            save=True,
         )
         # Delete parent registration if it was created at the time the embargo was initiated
         if not self.for_existing_registration:
@@ -3003,12 +3007,11 @@ class Embargo(StoredObject):
         if all(val['has_approved'] for val in self.approval_state.values()):
             self.state = Embargo.ACTIVE
             parent_registration = Node.find_one(Q('embargo', 'eq', self))
-            parent_registration.add_log(
+            parent_registration.registered_from.add_log(
                 action=NodeLog.EMBARGO_APPROVED,
                 params={
                     'node': parent_registration._id,
                     'embargo_id': self._id,
                 },
                 auth=Auth(user),
-                save=True,
             )

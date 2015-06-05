@@ -35,14 +35,13 @@ def main(dry_run=True):
             if not dry_run:
                 with TokuTransaction():
                     embargo.state = models.Embargo.ACTIVE
-                    parent_registration.add_log(
+                    parent_registration.registered_from.add_log(
                         action=NodeLog.EMBARGO_APPROVED,
                         params={
                             'node': parent_registration._id,
                             'embargo_id': embargo._id,
                         },
                         auth=Auth(parent_registration.embargo.initiated_by),
-                        save=False,
                     )
                     embargo.save()
 
@@ -60,14 +59,13 @@ def main(dry_run=True):
                 with TokuTransaction():
                     parent_registration.set_privacy('public')
                     embargo.state = models.Embargo.COMPLETED
-                    parent_registration.add_log(
+                    parent_registration.registered_from.add_log(
                         action=NodeLog.EMBARGO_COMPLETED,
                         params={
                             'node': parent_registration._id,
                             'embargo_id': embargo._id,
                         },
                         auth=Auth(parent_registration.embargo.initiated_by),
-                        save=False,
                     )
                     embargo.save()
 

@@ -27,7 +27,7 @@ from website.exceptions import NodeStateError
 from website.profile.utils import serialize_user
 from website.project.model import (
     ApiKey, Comment, Node, NodeLog, Pointer, ensure_schemas, has_anonymous_link,
-    get_pointer_parent,
+    get_pointer_parent, Embargo,
 )
 from website.util.permissions import CREATOR_PERMISSIONS
 from website.util import web_url_for, api_url_for
@@ -2463,48 +2463,44 @@ class TestProject(OsfTestCase):
         assert_equal(self.project.logs[-1].action, NodeLog.MADE_PRIVATE)
 
     def test_set_privacy_cancels_pending_embargo_for_registration(self):
-        self.project.is_registration = True
-        self.project.save()
-        self.project.embargo_registration(
+        registration = RegistrationFactory(project=self.project)
+        registration.embargo_registration(
             self.user,
             datetime.datetime.utcnow() + datetime.timedelta(days=10)
         )
-        assert_false(self.project.embargo_end_date)
-        assert_true(self.project.pending_embargo)
+        assert_false(registration.embargo_end_date)
+        assert_true(registration.pending_embargo)
 
-        self.project.set_privacy('public', auth=self.consolidate_auth)
-        self.project.save()
-        assert_false(self.project.embargo_end_date)
-        assert_false(self.project.pending_embargo)
-        assert_equal(self.project.embargo.state, 'cancelled')
-        assert_true(self.project.is_public)
-        assert_equal(self.project.logs[-1].action, NodeLog.MADE_PUBLIC)
+        registration.set_privacy('public', auth=self.consolidate_auth)
+        registration.save()
+        assert_false(registration.embargo_end_date)
+        assert_false(registration.pending_embargo)
+        assert_equal(registration.embargo.state, Embargo.CANCELLED)
+        assert_true(registration.is_public)
+        assert_equal(self.project.logs[-1].action, NodeLog.EMBARGO_CANCELLED)
 
     def test_set_privacy_cancels_active_embargo_for_registration(self):
-        self.project.is_registration = True
-        self.project.save()
-        self.project.is_registration = True
-        self.project.save()
-        self.project.embargo_registration(
+        registration = RegistrationFactory(project=self.project)
+        registration.embargo_registration(
             self.user,
             datetime.datetime.utcnow() + datetime.timedelta(days=10)
         )
-        self.project.save()
-        assert_false(self.project.embargo_end_date)
-        assert_true(self.project.pending_embargo)
+        registration.save()
+        assert_false(registration.embargo_end_date)
+        assert_true(registration.pending_embargo)
 
-        approval_token = self.project.embargo.approval_state[self.user._id]['approval_token']
-        self.project.embargo.approve_embargo(self.user, approval_token)
-        assert_true(self.project.embargo_end_date)
-        assert_false(self.project.pending_embargo)
+        approval_token = registration.embargo.approval_state[self.user._id]['approval_token']
+        registration.embargo.approve_embargo(self.user, approval_token)
+        assert_true(registration.embargo_end_date)
+        assert_false(registration.pending_embargo)
 
-        self.project.set_privacy('public', auth=self.consolidate_auth)
-        self.project.save()
-        assert_false(self.project.embargo_end_date)
-        assert_false(self.project.pending_embargo)
-        assert_equal(self.project.embargo.state, 'cancelled')
-        assert_true(self.project.is_public)
-        assert_equal(self.project.logs[-1].action, NodeLog.MADE_PUBLIC)
+        registration.set_privacy('public', auth=self.consolidate_auth)
+        registration.save()
+        assert_false(registration.embargo_end_date)
+        assert_false(registration.pending_embargo)
+        assert_equal(registration.embargo.state, Embargo.CANCELLED)
+        assert_true(registration.is_public)
+        assert_equal(self.project.logs[-1].action, NodeLog.EMBARGO_CANCELLED)
 
     def test_set_description(self):
         old_desc = self.project.description

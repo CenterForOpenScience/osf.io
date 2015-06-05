@@ -11,7 +11,6 @@ from tests.factories import (
 )
 
 from framework.exceptions import PermissionsError
-from modularodm import Q
 from modularodm.exceptions import ValidationValueError
 from website.exceptions import (
     InvalidEmbargoDisapprovalToken, InvalidEmbargoApprovalToken, NodeStateError,
@@ -24,7 +23,8 @@ class RegistrationEmbargoModelsTestCase(OsfTestCase):
     def setUp(self):
         super(RegistrationEmbargoModelsTestCase, self).setUp()
         self.user = UserFactory()
-        self.registration = RegistrationFactory(creator=self.user)
+        self.project = ProjectFactory(creator=self.user)
+        self.registration = RegistrationFactory(project=self.project)
         self.embargo = EmbargoFactory(user=self.user)
         self.valid_embargo_end_date = datetime.datetime.utcnow() + datetime.timedelta(days=3)
 
@@ -153,8 +153,8 @@ class RegistrationEmbargoModelsTestCase(OsfTestCase):
         assert_true(self.registration.embargo_end_date)
         assert_false(self.registration.pending_embargo)
 
-    def test_approval_adds_to_parent_registrations_log(self):
-        initial_num_logs = len(self.registration.logs)
+    def test_approval_adds_to_parent_projects_log(self):
+        initial_project_logs = len(self.registration.registered_from.logs)
         self.registration.embargo_registration(
             self.user,
             datetime.datetime.utcnow() + datetime.timedelta(days=10)
@@ -163,7 +163,8 @@ class RegistrationEmbargoModelsTestCase(OsfTestCase):
 
         approval_token = self.registration.embargo.approval_state[self.user._id]['approval_token']
         self.registration.embargo.approve_embargo(self.user, approval_token)
-        assert_equal(len(self.registration.logs), initial_num_logs + 2)
+        # Logs: Created, registered, embargo initiated, embargo approved
+        assert_equal(len(self.registration.registered_from.logs), initial_project_logs + 2)
 
     def test_one_approval_with_two_admins_stays_pending(self):
         admin2 = UserFactory()
@@ -231,8 +232,8 @@ class RegistrationEmbargoModelsTestCase(OsfTestCase):
         assert_false(self.registration.pending_embargo)
         assert_false(self.registration.embargo_end_date)
 
-    def test_disapproval_adds_to_parent_registrations_log(self):
-        initial_num_logs = len(self.registration.logs)
+    def test_disapproval_adds_to_parent_projects_log(self):
+        initial_project_logs = len(self.registration.registered_from.logs)
         self.registration.embargo_registration(
             self.user,
             datetime.datetime.utcnow() + datetime.timedelta(days=10)
@@ -241,7 +242,8 @@ class RegistrationEmbargoModelsTestCase(OsfTestCase):
 
         disapproval_token = self.registration.embargo.approval_state[self.user._id]['disapproval_token']
         self.registration.embargo.disapprove_embargo(self.user, disapproval_token)
-        assert_equal(len(self.registration.logs), initial_num_logs + 2)
+        # Logs: Created, registered, embargo initiated, embargo cancelled
+        assert_equal(len(self.registration.registered_from.logs), initial_project_logs + 2)
 
     def test_cancelling_embargo_deletes_parent_registration(self):
         self.registration.embargo_registration(
@@ -310,7 +312,7 @@ class RegistrationWithChildNodesEmbargoModelTestCase(OsfTestCase):
             title='Subcomponent'
         )
         self.registration = RegistrationFactory(project=self.project)
-        # Reload the registration; else tests won't catch failures to svae
+        # Reload the registration; else tests won't catch failures to save
         self.registration.reload()
 
     def test_approval_embargoes_descendant_nodes(self):
@@ -568,7 +570,7 @@ class RegistrationEmbargoViewsTestCase(OsfTestCase):
         ensure_schemas()
         self.user = AuthUserFactory()
         self.project = ProjectFactory(creator=self.user)
-        self.registration = RegistrationFactory(creator=self.user)
+        self.registration = RegistrationFactory(project=self.project, creator=self.user)
 
         current_month = datetime.datetime.now().strftime("%B")
         current_year = datetime.datetime.now().strftime("%Y")
@@ -642,14 +644,14 @@ class RegistrationEmbargoViewsTestCase(OsfTestCase):
         assert_equal(res.status_code, 400)
 
     @mock.patch('website.archiver.tasks.archive.si')
-    def test_valid_POST_embargo_adds_to_parent_node_log(self, mock_archive):
-        initial_num_logs = len(self.registration.logs)
+    def test_valid_POST_embargo_adds_to_parent_projects_log(self, mock_archive):
+        initial_project_logs = len(self.project.logs)
         res = self.app.post(
             self.project.api_url_for('node_register_template_page_post', template=u'Open-Ended_Registration'),
             self.valid_embargo_payload,
             content_type='application/json',
             auth=self.user.auth
         )
-
-        registration = Node.find().sort('-registered_date')[0]
-        assert_equal(len(registration.logs), initial_num_logs + 1)
+        self.project.reload()
+        # Logs: Created, registered, embargo initiated
+        assert_equal(len(self.project.logs), initial_project_logs + 1)
