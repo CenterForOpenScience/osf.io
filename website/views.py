@@ -25,6 +25,7 @@ from framework.auth.decorators import must_be_logged_in
 from website.models import Guid
 from website.models import Node
 from website.util import rubeus
+from website.util import sanitize
 from website.project import model
 from website.util import web_url_for
 from website.util import permissions
@@ -275,7 +276,7 @@ def serialize_log(node_log, auth=None, anonymous=False):
         'contributors': [node_log._render_log_contributor(c) for c in node_log.params.get("contributors", [])],
         'api_key': node_log.api_key.label if node_log.api_key else '',
         'action': node_log.action,
-        'params': node_log.params,
+        'params': sanitize.safe_unescape_html(node_log.params),
         'date': utils.iso8601format(node_log.date),
         'node': node_log.node.serialize(auth) if node_log.node else None,
         'anonymous': anonymous
