@@ -1,5 +1,5 @@
 'use strict';
-var ko = require('knockout');
+
 var AddonNodeConfig = require('js/addonNodeConfig').AddonNodeConfig;
 
 var url = window.contextVars.node.urls.api + 'googledrive/config/';
