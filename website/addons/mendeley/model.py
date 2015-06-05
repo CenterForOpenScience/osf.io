@@ -136,39 +136,28 @@ class Mendeley(ExternalProvider):
             'id': document.json.get('id')
         }
 
-        csl_type = document.json.get('type')
-        if csl_type == 'book_section':
-            csl_type = 'chapter'
-        elif csl_type == 'case':
-            csl_type = 'legal_case'
-        elif csl_type == 'computer_program':
-            csl_type = 'article'
-        elif csl_type == 'conference_proceedings':
-            csl_type = 'paper-conference'
-        elif csl_type == 'encyclopedia_article':
-            csl_type = 'entry-encyclopedia'
-        elif csl_type == 'film':
-            csl_type = 'motion_picture'
-        elif csl_type == 'generic':
-            csl_type = 'article'
-        elif csl_type == 'hearing':
-            csl_type = 'speech'
-        elif csl_type == 'journal':
-            csl_type = 'article-journal'
-        elif csl_type == 'magazine_article':
-            csl_type = 'article-magazine'
-        elif csl_type == 'newspaper_article':
-            csl_type = 'article-newspaper'
-        elif csl_type == 'statute':
-            csl_type = 'legislation'
-        elif csl_type == 'television_broadcast':
-            csl_type = 'broadcast'
-        elif csl_type == 'web_page':
-            csl_type = 'webpage'
-        elif csl_type == 'working_paper':
-            csl_type = 'report'
+        CSL_TYPE_MAP = {
+            'book_section': 'chapter',
+            'case': 'legal_case',
+            'computer_program': 'article',
+            'conference_proceedings': 'paper-conference',
+            'encyclopedia_article': 'entry-encyclopedia',
+            'film': 'motion_picture',
+            'generic': 'article',
+            'hearing': 'speech',
+            'journal': 'article-journal',
+            'magazine_article': 'article-magazine',
+            'newspaper_article': 'article-newspaper',
+            'statute': 'legislation',
+            'television_broadcast': 'broadcast',
+            'web_page': 'webpage',
+            'working_paper': 'report'
+        }
 
-        csl['type'] = csl_type
+        csl_type = document.json.get('type')
+
+        if csl_type in CSL_TYPE_MAP:
+            csl['type'] = CSL_TYPE_MAP[csl_type]
 
         if document.json.get('abstract'):
             csl['abstract'] = document.json.get('abstract')
