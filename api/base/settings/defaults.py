@@ -13,7 +13,7 @@ https://docs.djangoproject.com/en/1.8/ref/settings/
 import os
 from website import settings as osf_settings
 
-BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/1.8/howto/deployment/checklist/
 
@@ -114,12 +114,12 @@ USE_TZ = True
 
 STATIC_ROOT = os.path.join(BASE_DIR, 'static/vendor')
 
-API_BASE = 'v2/'
-
 # API_PATH is '/api' on staging/production, '' on develop
 API_PATH = ''
+API_BASE = 'v2/'
 
-STATIC_URL = '{}/{}static/'.format(API_PATH, API_BASE)
+API_PREFIX = '{}/{}'.format(API_PATH, API_BASE)
+STATIC_URL = '{}static/'.format(API_PREFIX)
 
 STATICFILES_DIRS = (
     ('rest_framework_swagger/css', os.path.join(BASE_DIR, 'static/css')),
