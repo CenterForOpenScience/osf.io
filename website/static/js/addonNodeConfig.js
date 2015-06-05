@@ -62,7 +62,11 @@ var AddonFolderPickerViewModel = oop.extend(FolderPickerViewModel, {
             },
             connectAccount: function() {
                 window.location.href = this.urls().auth;
+            },
+            decodeFolder: function(folder_name) {
+                return folder_name;
             }
+
         };
         // Overrides
         self.options = $.extend({}, defaults, opts);
@@ -79,6 +83,21 @@ var AddonFolderPickerViewModel = oop.extend(FolderPickerViewModel, {
                 }
             }
         );
+
+        self.folderName = ko.pureComputed(function () {
+            var nodeHasAuth = self.nodeHasAuth();
+            var folder = self.folder();
+            var folder_name = self.options.decodeFolder((nodeHasAuth && folder && folder.name) ? folder.name.trim() : '')
+            return folder_name;
+        });
+        self.selectedFolderName = ko.pureComputed(function() {
+            var userIsOwner = self.userIsOwner();
+            var selected = self.selected();
+            var name = selected.name || 'None';
+            var folder_name = self.options.decodeFolder(userIsOwner ? name : '');
+            return folder_name;
+        });
+
     },
     afterUpdate: function() {
         var self = this;
