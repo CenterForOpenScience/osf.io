@@ -13,7 +13,7 @@ https://docs.djangoproject.com/en/1.8/ref/settings/
 import os
 from website import settings as osf_settings
 
-BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/1.8/howto/deployment/checklist/
 
@@ -114,13 +114,21 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/1.8/howto/static-files/
 
 STATIC_ROOT = os.path.join(BASE_DIR, 'static/vendor')
-STATIC_URL = '/v2/static/'
+
+# API_PATH is '/api' on staging/production, '' on develop
+API_PATH = ''
+API_BASE = 'v2/'
+
+
+STATIC_URL = '{}/{}static/'.format(API_PATH, API_BASE)
+
 STATICFILES_DIRS = (
     ('rest_framework_swagger/css', os.path.join(BASE_DIR, 'static/css')),
     ('rest_framework_swagger/images', os.path.join(BASE_DIR, 'static/images')),
 )
 
 SWAGGER_SETTINGS = {
+    'api_path': API_PATH,
     'info': {
         'description':
         """
@@ -128,8 +136,8 @@ SWAGGER_SETTINGS = {
         projects, components, and files from the <a href="https://osf.io/">Open Science Framework</a>. The Open Science
         Framework is a website that
          integrates with the scientist's daily workflow. OSF helps document and archive study designs, materials, and data.
-         OSF facilitates sharing of materials and data within a laboratory or across laboratories. OSF also facilitates
-         transparency of laboratory research and provides a network design that details and credits individual
+         OSF facilitates sharing of materials and data within a research group or between groups. OSF also facilitates
+         transparency of research and provides a network design that details and credits individual
          contributions for all aspects of the research process.</p>
          <p>NOTE: This API is currently in beta. The beta period should be fairly short, but until then, details about
          the api could change. Once this notice disappears, it will be replaced with a description of how long we will

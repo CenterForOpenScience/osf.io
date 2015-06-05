@@ -200,10 +200,17 @@ def make_url_map(app):
         ),
 
         Rule(
-            '/presentations/',
+            '/meetings/',
             'get',
             conference_views.conference_view,
             OsfWebRenderer('public/pages/meeting_landing.mako'),
+        ),
+
+        Rule(
+            '/presentations/',
+            'get',
+            conference_views.redirect_to_meetings,
+            json_renderer,
         ),
 
         Rule('/news/', 'get', {}, OsfWebRenderer('public/pages/news.mako')),
@@ -1296,15 +1303,6 @@ def make_url_map(app):
             'put',
             addon_views.create_waterbutler_log,
             json_renderer,
-        ),
-        Rule(
-            [
-                '/project/<pid>/files/<provider>/<path:path>/',
-                '/project/<pid>/node/<nid>/files/<provider>/<path:path>/',
-            ],
-            'get',
-            addon_views.addon_render_file,
-            json_renderer
         ),
         Rule(
             '/settings/addons/',

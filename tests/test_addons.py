@@ -447,12 +447,27 @@ class TestAddonFileViews(OsfTestCase):
     def get_mako_return(self):
         ret = serialize_node(self.project, Auth(self.user), primary=True)
         ret.update({
-            'extra': '',
             'provider': '',
-            'rendered': '',
             'file_path': '',
+            'sharejs_uuid': '',
+            'urls': {
+                'web': {
+                    'sharejs': '',
+                    'edit': '',
+                    'view': '',
+                    'gravatar': ''
+                },
+                'api': {
+                    'render': '',
+                }
+            },
             'files_url': '',
+            'rendered': '',
+            'content': '',
+            'extra': '',
             'file_name': '',
+            'is_editable': '',
+            'panels_used': '',
             'render_url': '',
             'materialized_path': '',
         })
