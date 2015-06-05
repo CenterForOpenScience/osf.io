@@ -12,7 +12,9 @@
         <div class="pull-right">
             % if user['can_edit']:
                 <a href="#" class="btn btn-sm btn-success" data-toggle="modal" data-target="#newWiki">New</a>
-                <a href="#" class="btn btn-sm btn-danger" data-toggle="modal" data-target="#deleteWiki">Delete</a>
+                % if wiki_name != 'home':
+                    <a href="#" class="btn btn-sm btn-danger" data-toggle="modal" data-target="#deleteWiki">Delete</a>
+                % endif
             % endif
             <div class="switch" style="display: inline-block"></div>
         </div>
