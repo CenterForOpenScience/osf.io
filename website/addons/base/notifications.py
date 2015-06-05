@@ -6,7 +6,6 @@ from datetime import datetime
 from website.notifications.emails import notify, remove_users_from_subscription
 from website.notifications.utils import move_file_subscription
 from website.models import Node
-from website.notifications.model import NotificationSubscription
 
 
 def file_notify(user, node, event, payload):
