@@ -75,31 +75,31 @@ $(document).ready(function () {
                 ];
             },
             resolveRows : function (item) {
-                    var tb = this;
-                    item.css = '';
-                    if(tb.isMultiselected(item.id)){
-                        item.css = 'fangorn-selected';
-                    }
-                    var defaultColumns = [
-                            {
-                                data: 'name',
-                                folderIcons: true,
-                                filter: true,
-                                custom: Fangorn.DefaultColumns._fangornTitleColumn
-                            }];
-                    if (item.parentID) {
-                        item.data.permissions = item.data.permissions || item.parent().data.permissions;
-                        if (item.data.kind === 'folder') {
-                            item.data.accept = item.data.accept || item.parent().data.accept;
-                        }
-                    }
-                    if(item.data.uploadState && (item.data.uploadState() === 'pending' || item.data.uploadState() === 'uploading')){
-                        return Fangorn.Utils.uploadRowTemplate.call(tb, item);
-                    }
-
-                    var configOption = Fangorn.Utils.resolveconfigOption.call(this, item, 'resolveRows', [item]);
-                    return configOption || defaultColumns;
+                var tb = this;
+                item.css = '';
+                if(tb.isMultiselected(item.id)){
+                    item.css = 'fangorn-selected';
                 }
+                var defaultColumns = [
+                        {
+                            data: 'name',
+                            folderIcons: true,
+                            filter: true,
+                            custom: Fangorn.DefaultColumns._fangornTitleColumn
+                        }];
+                if (item.parentID) {
+                    item.data.permissions = item.data.permissions || item.parent().data.permissions;
+                    if (item.data.kind === 'folder') {
+                        item.data.accept = item.data.accept || item.parent().data.accept;
+                    }
+                }
+                if(item.data.uploadState && (item.data.uploadState() === 'pending' || item.data.uploadState() === 'uploading')){
+                    return Fangorn.Utils.uploadRowTemplate.call(tb, item);
+                }
+
+                var configOption = Fangorn.Utils.resolveconfigOption.call(this, item, 'resolveRows', [item]);
+                return configOption || defaultColumns;
+            }
         };
         var filebrowser = new Fangorn(fangornOpts);
     });
