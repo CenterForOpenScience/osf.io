@@ -30,6 +30,9 @@ var growl = function(title, message, type) {
  *   apiV2Url("users/4urxt/applications", {"a":1, "filter[fullname]":"lawrence"}, "https://staging2.osf.io/api/v2/")
  * would yield the result:
  *  "https://staging2.osf.io/api/v2/users/4urxt/applications?a=1&filter%5Bfullname%5D=lawrence"
+ *  @param {String} pathStr
+ * @param {Object} paramsObj (optional) An object containing parameters to add to the URL. Otherwise pass 'undefined'.
+ * @param {String} apiPrefix (optional) Manually specify the prefix used for API routes (useful for testing)
  */
 var apiV2Url = function (pathStr, paramsObj, apiPrefix){
     apiPrefix = apiPrefix || window.contextVars.apiV2Prefix;
