@@ -22,10 +22,11 @@ var model = {
 
 
 var FileRevisionsTable = {
-    controller: function(file, node, enableEditing) {
+    controller: function(file, node, enableEditing, canEdit) {
         var self = {};
         self.node = node;
         self.file = file;
+        self.canEdit = canEdit;
         self.enableEditing = enableEditing;
 
         model.hasDate = self.file.provider !== 'dataverse';
@@ -65,20 +66,22 @@ var FileRevisionsTable = {
 
                 // model.errorMessage(err);
 
-                // if (self.file.provider === 'figshare') {
-                //     // Hack for Figshare
-                //     // only figshare will error on a revisions request
-                //     // so dont allow downloads and set a fake current version
-                //     $.ajax({
-                //         method: 'GET',
-                //         url: self.urls.metadata,
-                //         beforeSend: $osf.setXHRAuthorization
-                //     }).done(function(resp) {
-                //         self.editable(resp.data.extra.canDelete);
-                //     }).fail(function(xhr) {
-                //         self.editable(false);
-                //     });
-                // }
+                if (self.file.provider === 'figshare') {
+                    // Hack for Figshare
+                    // only figshare will error on a revisions request
+                    // so dont allow downloads and set a fake current version
+                    $.ajax({
+                        method: 'GET',
+                        url: self.file.urls.metadata,
+                        beforeSend: $osf.setXHRAuthorization
+                    }).done(function(resp) {
+                        self.canEdit(self.canEdit() && resp.data.extra.canDelete);
+                        m.redraw();
+                    }).fail(function(xhr) {
+                        self.canEdit(false);
+                        m.redraw();
+                    });
+                }
             });
         };
 
