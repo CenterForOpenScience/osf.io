@@ -81,9 +81,17 @@ class CollectionSerializer(JSONAPISerializer):
         """Update instance with the validated data. Requires
         the request to be in the serializer context.
         """
+        smart_folders = (
+            '~amr',
+            '~amp',
+        )
+
         assert isinstance(instance, Node), 'instance must be a Node'
         if instance.is_dashboard:
             return instance
+        for smart_folder_id in smart_folders:
+            if instance._id == smart_folder_id:
+                return instance
         for attr, value in validated_data.items():
             setattr(instance, attr, value)
         instance.save()
