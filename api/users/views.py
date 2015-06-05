@@ -1,12 +1,12 @@
 from rest_framework import generics, permissions as drf_permissions
 from modularodm import Q
-
 from website.models import User, Node
 from framework.auth.core import Auth
 from api.base.utils import get_object_or_404
 from api.base.filters import ODMFilterMixin
 from api.nodes.serializers import NodeSerializer
 from .serializers import UserSerializer
+from .permissions import ReadOnlyOrCurrentUser
 
 
 class UserMixin(object):
@@ -57,7 +57,7 @@ class UserDetail(generics.RetrieveUpdateAPIView, UserMixin):
     """Details about a specific user.
     """
     permission_classes = (
-        drf_permissions.IsAuthenticatedOrReadOnly,
+        ReadOnlyOrCurrentUser,
     )
     serializer_class = UserSerializer
 
