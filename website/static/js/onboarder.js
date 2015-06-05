@@ -190,7 +190,6 @@ function ProjectSearchViewModel(params) {
 
     /* Computeds */
     self.hasSelectedProject = ko.computed(function() {
-
         return self.selectedProject() !== null;
     });
     self.hasSelectedComponent = ko.computed(function() {
@@ -220,14 +219,11 @@ function ProjectSearchViewModel(params) {
         return self.selectedProject() ? self.selectedProject().urls.children : null;
     });
 
-
-
     /* Functions */
     self.onSubmit = function() {
         var func = params.onSubmit || noop;
         func(self.selectedProject(), self.selectedComponent(), self.projectInput(), self.componentInput());
     };
-
     self.onSelectedProject = function(selected) {
         self.selectedProject(selected);
         self.projectInput(selected.name);
@@ -437,7 +433,7 @@ function OBUploaderViewModel(params) {
     self.toggle = function () {
         self.isOpen(!self.isOpen());
     };
-    self.startUpload = function (selectedProject, selectedComponent, projectInput, componentInput) {
+    self.startUpload = function(selectedProject, selectedComponent, projectInput, componentInput) {
         if (!selectedComponent && componentInput.length) {
             var msg = 'Not a valid component selection. Clear your search or select a component from the dropdown.';
             self.changeMessage(msg, 'text-warning');
@@ -473,19 +469,19 @@ function OBUploaderViewModel(params) {
         self.target(selected);
         self.clearMessages();
         self.showProgress(true);
-        self.dropzone.options.url = function (files) {
+        self.dropzone.options.url = function(files) {
             //Files is always an array but we only support uploading a single file at once
             var file = files[0];
             return waterbutler.buildUploadUrl('/', 'osfstorage', selected.id, file);
         };
         self.dropzone.processQueue(); // Tell Dropzone to process all queued files.
     };
-    self.clearMessages = function () {
+    self.clearMessages = function() {
         self.message('');
         self.messageClass('text-info');
     };
 
-    self.showCreateAndUpload = function () {
+    self.showCreateAndUpload = function() {
         self.clearMessages();
         self.createAndUpload(true);
     }
@@ -495,7 +491,7 @@ function OBUploaderViewModel(params) {
         self.createAndUpload(false);
     };
 
-    self.clearDropzone = function () {
+    self.clearDropzone = function() {
         if (self.dropzone.getUploadingFiles().length) {
             self.changeMessage('Upload canceled.', 'text-info');
         } else {
@@ -510,19 +506,19 @@ function OBUploaderViewModel(params) {
         self.showProgress(false);
         self.uploadCount(1);
     };
-    self.onFetchedComponents = function (components) {
+    self.onFetchedComponents = function(components) {
         if (!components.length) {
             self.disableComponents(true);
         }
     };
     /** Change the flashed message. */
-    self.changeMessage = function (text, css, timeout) {
+    self.changeMessage = function(text, css, timeout) {
         self.message(text);
         var cssClass = css || 'text-info';
         self.messageClass(cssClass);
         if (timeout) {
             // Reset message after timeout period
-            setTimeout(function () {
+            setTimeout(function() {
                 self.clearMessages();
             }, timeout);
         }
@@ -535,7 +531,7 @@ function OBUploaderViewModel(params) {
             xhr = $osf.setXHRAuthorization(xhr);
             //Hack to remove webkitheaders
             var _send = xhr.send;
-            xhr.send = function () {
+            xhr.send = function() {
                 _send.call(xhr, file);
             };
         },
@@ -552,7 +548,7 @@ function OBUploaderViewModel(params) {
         acceptDirectories: false,
 
         method: 'PUT',
-        uploadprogress: function (file, progress) { // progress bar update
+        uploadprogress: function(file, progress) { // progress bar update
             self.progress(progress);
         },
         parallelUploads: 1,
@@ -561,18 +557,18 @@ function OBUploaderViewModel(params) {
         // Custom error messages
         dictFileTooBig: 'File is too big ({{filesize}} MB). Max filesize: {{maxFilesize}} MB.',
         // Set up listeners on initialization
-        init: function () {
+        init: function() {
             var dropzone = this;
 
             // file add error logic
-            this.on('error', function (file, message) {
+            this.on('error', function(file, message) {
                 dropzone.removeFile(file);
                 if (dropzone.files.length === 0) {
                     self.enableUpload(true);
                     dropzone.removeAllFiles(true);
                 }
 
-                if (message.message) {
+                if(message.message) {
                     message = JSON.parse(message.message);
                 }
 
@@ -584,11 +580,11 @@ function OBUploaderViewModel(params) {
                 }
                 self.changeMessage(msg, 'text-danger');
             });
-            this.on('drop', function () { // clear errors on drop or click
+            this.on('drop',function() { // clear errors on drop or click
                 self.clearMessages();
             });
             // upload and process queue logic
-            this.on('success', function () {
+            this.on('success',function() {
                 self.filename(self.uploadCount() + ' / ' + dropzone.files.length + ' files');
                 dropzone.processQueue(); // this is a bit hackish -- it fails to process full queue but this ensures it runs the process again after each success.
                 var oldCount = self.uploadCount();
@@ -602,7 +598,7 @@ function OBUploaderViewModel(params) {
             });
 
             // add file logic and dropzone to file display swap
-            this.on('addedfile', function (file) {
+            this.on('addedfile', function(file) {
                 if (dropzone.files.length > 1) {
                     self.iconSrc('/static/img/upload_icons/multiple_blank.png');
                     self.filename(dropzone.files.length + ' files');
@@ -626,7 +622,7 @@ function OBUploaderViewModel(params) {
     });
 }
 
-    self.submitCreateAndUpload = function () {
+    self.submitCreateAndUpload = function() {
         if (self.newProjectName().trim() === '') {
             self.changeMessage('Project name is required', 'text-danger');
             return false;
@@ -644,14 +640,14 @@ function OBUploaderViewModel(params) {
 
     };
 
-    self.createSuccess = function (response) {
+    self.createSuccess = function(response) {
         var node = serializeNode(response.newNode);
         self.startUpload(node, self.selectedComponent, node.title, '');
         if ((self.dropzone.getUploadingFiles().length) && (!self.dropzone.getQueuedFiles().length))
             window.location = response.projectUrl;
     };
 
-    self.createFailure = function (xhr, textStatus, error) {
+    self.createFailure = function(xhr, textStatus, error) {
          Raven.captureMessage('Could not create a new project.', 'Please try again. If the problem persists, email <a href="mailto:support@osf.io.">support@osf.io</a>',
              {
             textStatus: textStatus,
