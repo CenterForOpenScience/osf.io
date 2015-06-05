@@ -5,6 +5,10 @@ var ko = require('knockout');
 var $osf = require('./osfHelpers');
 
 var NODE_OFFSET = 25;
+
+// TODO: Remove dependency on global scope
+var nodeApiUrl = window.contextVars.node.urls.api;
+
 var PrivateLinkViewModel = function(url) {
     var self = this;
 
@@ -42,8 +46,8 @@ var PrivateLinkViewModel = function(url) {
     });
 
     /**
-        * Fetches the node info from the server and updates the viewmodel.
-        */
+    * Fetches the node info from the server and updates the viewmodel.
+    */
 
     function onFetchSuccess(response) {
         self.title(response.node.title);
