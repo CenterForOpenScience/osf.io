@@ -159,7 +159,6 @@ var FolderPickerViewModel = oop.defclass({
         });
 
         /** Computed functions for the linked and selected folders' display text.*/
-
         self.folderName = ko.pureComputed(function() {
             var nodeHasAuth = self.nodeHasAuth();
             var folder = self.folder();
