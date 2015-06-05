@@ -55,22 +55,6 @@ $(document).ready(function () {
     $.ajax({
         url:  nodeApiUrl + 'files/grid/'
     }).done(function (data) {
-        // console.log(data.data[0]);
-        // var children = data.data[0].children;
-        // var noPrivateData = [];
-        // var privateData = [];
-        // var x;
-        // for (x in data.data[0].children) {
-        //     if (children[x].name !== 'Private Component') {
-        //         noPrivateData.push(children[x]);
-        //     } else {
-        //         privateData.push(children[x]);
-        //     }
-        // }
-        // noPrivateData.push(privateData);
-        // data.data[0].children = noPrivateData;
-        // console.log(data.data);
-
         var fangornOpts = {
             divID: 'treeGrid',
             filesData: data.data,
@@ -91,9 +75,6 @@ $(document).ready(function () {
                 ];
             },
             resolveRows : function (item) {
-                //if (item.data.name != 'Private Component') {
-                //console.log(item.data.name);
-
                     var tb = this;
                     item.css = '';
                     if(tb.isMultiselected(item.id)){
@@ -120,7 +101,6 @@ $(document).ready(function () {
                     return configOption || defaultColumns;
                 }
                 //return defaultColumns;
-           // }
         };
         
         var filebrowser = new Fangorn(fangornOpts);

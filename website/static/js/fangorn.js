@@ -330,7 +330,7 @@ function resolveconfigOption(item, option, args) {
  * @this Treebeard.controller
  */
 var inheritedFields = ['nodeId', 'nodeUrl', 'nodeApiUrl', 'permissions', 'provider', 'accept'];
-function inheritFromParent(item, parent, fields) {   
+function inheritFromParent(item, parent, fields) {
     inheritedFields.concat(fields || []).forEach(function(field) {
         item.data[field] = item.data[field] || parent.data[field];
     });
@@ -1136,7 +1136,7 @@ function _fangornTitleColumn(item, col) {
  * @returns {Array} An array of columns that get iterated through in Treebeard
  * @private
  */
- function _fangornResolveRows(item) {
+function _fangornResolveRows(item) {
     var tb = this;
     var default_columns = [];
     var configOption;
@@ -1189,7 +1189,7 @@ function _fangornTitleColumn(item, col) {
     }
     configOption = resolveconfigOption.call(this, item, 'resolveRows', [item]);
     return configOption || default_columns;
- }
+}
 
 /**
  * Defines Column Titles separately since content and css may be different, allows more flexibility
