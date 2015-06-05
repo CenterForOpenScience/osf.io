@@ -50,7 +50,7 @@ def build_query_string(qs):
         '_all': 1,
     }
 
-    fields = ['{}^{}'.format(k, v) for k,v in field_boosts.iteritems()]
+    fields = ['{}^{}'.format(k, v) for k, v in field_boosts.iteritems()]
     return {
         'query_string': {
             'default_field': '_all',
