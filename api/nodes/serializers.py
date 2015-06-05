@@ -10,10 +10,11 @@ from framework.forms.utils import process_payload
 from rest_framework import serializers
 import json
 import hashlib
-from api.base.utils import absolute_reverse
 from urlparse import urlparse
-from posixpath import basename
+from posixpath import basename, normpath
 from api.base.utils import absolute_reverse
+
+
 
 class NodeSerializer(JSONAPISerializer):
     # TODO: If we have to redo this implementation in any of the other serializers, subclass ChoiceField and make it
@@ -152,7 +153,8 @@ class RegistrationOpenEndedSerializer(JSONAPISerializer):
         token.update(data['summary'])
         token = token.hexdigest()
         url = absolute_reverse('nodes:node-registration-open-ended-token', kwargs={'pk': node._id, 'token': token})
-        raise serializers.ValidationError("Use new URL to confirm project registration for {}: {}".format(node.title, url))
+        raise serializers.ValidationError(url)
+
 
     class Meta:
         type_='registrations'
@@ -162,7 +164,6 @@ class RegistrationOpenEndedWithTokenSerializer(NodeSerializer):
     id = ser.CharField(read_only=True, source='_id')
     title = ser.CharField(read_only=True)
     summary = ser.CharField(required=True, allow_blank=False, allow_null=False, write_only=True, help_text="Provide a summary or describe how this differs from prior registrations.")
-    token = serializers.ReadOnlyField()
     registered_meta = ser.CharField(read_only=True)
     description = ser.CharField(read_only=True)
     category = ser.CharField(read_only=True)
@@ -172,7 +173,7 @@ class RegistrationOpenEndedWithTokenSerializer(NodeSerializer):
         user = request.user
         node = self.context['view'].get_node()
         parse_object = urlparse(request.path)
-        given_token = basename(parse_object.path)
+        given_token = basename(normpath(parse_object.path))
 
         token = hashlib.md5()
         token.update(node._id)
@@ -185,13 +186,13 @@ class RegistrationOpenEndedWithTokenSerializer(NodeSerializer):
         return data
 
     def create(self, validated_data):
-        template = "Open-Ended_Registration"
-        schema =  MetaSchema.find(
+        template = 'Open-Ended_Registration'
+        schema = MetaSchema.find(
             Q('name', 'eq', template)).sort('-schema_version')[0]
         request = self.context['request']
         user = request.user
         node = self.context['view'].get_node()
-        clean_data = process_payload(validated_data);
+        clean_data = process_payload(validated_data)
         registration = node.register_node(
             schema=schema,
             auth=Auth(user),
@@ -225,7 +226,7 @@ class RegistrationPreDataCollectionSerializer(JSONAPISerializer):
         token.update(data['looked'] + data['datacompletion'] + data['comments'])
         token = token.hexdigest()
         url = absolute_reverse('nodes:node-registration-pre-data-collection-token', kwargs={'pk': node._id, 'token': token})
-        raise serializers.ValidationError("Use new URL to confirm project registration for {}: {}".format(node.title, url))
+        raise serializers.ValidationError(url)
 
 
     class Meta:
@@ -249,7 +250,7 @@ class RegistrationPreDataCollectionWithTokenSerializer(NodeSerializer):
         user = request.user
         node = self.context['view'].get_node()
         parse_object = urlparse(request.path)
-        given_token = basename(parse_object.path)
+        given_token = basename(normpath(parse_object.path))
 
         token = hashlib.md5()
         token.update(node._id)
@@ -330,7 +331,7 @@ class ReplicationRecipePreRegistrationSerializer(JSONAPISerializer):
         token.update(''.join(lis))
         token = token.hexdigest()
         url = absolute_reverse('nodes:node-registration-pre-registration-token', kwargs={'pk': node._id, 'token': token})
-        raise serializers.ValidationError("Use new URL to confirm project registration for {}: {}".format(node.title, url) )
+        raise serializers.ValidationError(url)
 
     class Meta:
         type_='registrations'
@@ -378,8 +379,7 @@ class ReplicationRecipePreRegistrationWithTokenSerializer(NodeSerializer):
         user = request.user
         node = self.context['view'].get_node()
         parse_object = urlparse(request.path)
-        given_token = basename(parse_object.path)
-
+        given_token = basename(normpath(parse_object.path))
         token = hashlib.md5()
         token.update(node._id)
         token.update(user._id)
@@ -388,9 +388,8 @@ class ReplicationRecipePreRegistrationWithTokenSerializer(NodeSerializer):
          lis.append(val)
         token.update(''.join(lis))
         correct_token = token.hexdigest()
-
         if given_token != correct_token:
-            raise serializers.ValidationError("Incorrect token.")
+             raise serializers.ValidationError("Incorrect token.")
         return data
 
     def create(self, validated_data):
@@ -443,7 +442,7 @@ class ReplicationRecipePostCompletionSerializer(JSONAPISerializer):
         token.update(''.join(lis))
         token = token.hexdigest()
         url = absolute_reverse('nodes:node-registration-post-completion-token', kwargs={'pk': node._id, 'token': token})
-        raise serializers.ValidationError("Use new URL to confirm project registration for {}: {}".format(node.title, url) )
+        raise serializers.ValidationError(url)
 
     class Meta:
         type_='registrations'
@@ -473,7 +472,7 @@ class ReplicationRecipePostCompletionWithTokenSerializer(NodeSerializer):
         user = request.user
         node = self.context['view'].get_node()
         parse_object = urlparse(request.path)
-        given_token = basename(parse_object.path)
+        given_token = basename(normpath(parse_object.path))
 
         token = hashlib.md5()
         token.update(node._id)
