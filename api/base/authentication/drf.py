@@ -58,14 +58,13 @@ class OSFCASAuthentication(authentication.BaseAuthentication):
 
     def authenticate(self, request):
         client = cas.get_client()  # Returns a CAS server client
-        auth_header_field = request.META.get("HTTP_AUTHORIZATION", "")  # TODO: "Authorization", or "HTTP_AUTHORIZATION"?
         try:
+            auth_header_field = request.META["HTTP_AUTHORIZATION"]
             auth_token = cas.parse_auth_header(auth_header_field)
-        except cas.CasTokenError:
-            raise exceptions.AuthenticationFailed('Must provide bearer token in authorization headers')
+        except (cas.CasTokenError, KeyError):
+            return None  # If no token in header, then this method is not applicable
 
-        # Use the token to get the associated user ID
-
+        # Found a token; query CAS for the associated user id
         try:
             resp = client.profile(auth_token)
         except cas.CasHTTPError:
