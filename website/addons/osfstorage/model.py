@@ -414,12 +414,14 @@ class OsfStorageFileVersion(StoredObject):
 
     def update_metadata(self, metadata):
         self.metadata.update(metadata)
-        self.content_type = self.metadata.get('contentType', None)
-        try:
-            self.size = self.metadata['size']
+        # metadata has no defined structure so only attempt to set attributes
+        # If its are not in this callback it'll be in the next
+        self.size = self.metadata.get('size', self.size)
+        self.content_type = self.metadata.get('contentType', self.content_type)
+        if 'modified' in self.metadata:
+            # TODO handle the timezone here the user that updates the file may see an
+            # Incorrect version
             self.date_modified = parse_date(self.metadata['modified'], ignoretz=True)
-        except KeyError as err:
-            raise errors.MissingFieldError(str(err))
         self.save()
 
 
