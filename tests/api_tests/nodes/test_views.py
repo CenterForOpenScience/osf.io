@@ -785,6 +785,17 @@ class TestNodeCreateOpenEndedRegistration(ApiTestCase):
         self.private_project = ProjectFactory(is_public=False, creator=self.user)
         self.private_url = '/v2/nodes/{}/register/Open-Ended_Registration/'.format(self.private_project._id)
 
+    def test_invalid_token_open_ended_registration(self):
+        ensure_schemas()
+        res = self.app.post(self.private_url, self.payload, auth=self.basic_auth, expect_errors=True)
+        assert_equal(res.status_code, 400)
+        full_url = self.private_url + '12345/'
+
+        res = self.app.post(full_url, self.payload, auth=self.basic_auth, expect_errors = True)
+        assert_equal(res.status_code, 400)
+        assert_equal(res.json['non_field_errors'][0], 'Incorrect token.')
+
+
     def test_create_open_ended_public_registration_logged_out(self):
         ensure_schemas()
         res = self.app.post(self.public_url, self.payload, expect_errors=True)
@@ -854,6 +865,16 @@ class TestNodeCreatePreDataCollectionRegistration(ApiTestCase):
 
         self.private_project = ProjectFactory(is_public=False, creator=self.user)
         self.private_url = '/v2/nodes/{}/register/OSF-Standard_Pre-Data_Collection_Registration/'.format(self.private_project._id)
+
+    def test_invalid_token_pre_data_collection_registration(self):
+        ensure_schemas()
+        res = self.app.post(self.private_url, self.payload, auth=self.basic_auth, expect_errors=True)
+        assert_equal(res.status_code, 400)
+        full_url = self.private_url + '12345/'
+
+        res = self.app.post(full_url, self.payload, auth=self.basic_auth, expect_errors = True)
+        assert_equal(res.status_code, 400)
+        assert_equal(res.json['non_field_errors'][0], 'Incorrect token.')
 
     def test_create_pre_data_collection_public_registration_logged_out(self):
         ensure_schemas()
@@ -926,6 +947,16 @@ class TestNodeCreateReplicationRecipePreRegistration(ApiTestCase):
         self.private_project = ProjectFactory(is_public=False, creator=self.user)
         self.private_url = '/v2/nodes/{}/register/Replication_Recipe_Pre-Registration/'.format(self.private_project._id)
 
+    def test_invalid_token_replication_recipe_pre_registration(self):
+        ensure_schemas()
+        res = self.app.post(self.private_url, self.payload, auth=self.basic_auth, expect_errors=True)
+        assert_equal(res.status_code, 400)
+        full_url = self.private_url + '12345/'
+
+        res = self.app.post(full_url, self.payload, auth=self.basic_auth, expect_errors = True)
+        assert_equal(res.status_code, 400)
+        assert_equal(res.json['non_field_errors'][0], 'Incorrect token.')
+
     def test_create_replication_recipe_pre_registration_public_registration_logged_out(self):
         ensure_schemas()
         res = self.app.post(self.public_url, self.payload, expect_errors=True)
@@ -995,6 +1026,16 @@ class TestNodeCreateReplicationRecipePostCompletion(ApiTestCase):
 
         self.private_project = ProjectFactory(is_public=False, creator=self.user)
         self.private_url = '/v2/nodes/{}/register/Replication_Recipe_Post-Completion/'.format(self.private_project._id)
+
+    def test_invalid_token_post_completion_registration(self):
+        ensure_schemas()
+        res = self.app.post(self.private_url, self.payload, auth=self.basic_auth, expect_errors=True)
+        assert_equal(res.status_code, 400)
+        full_url = self.private_url + '12345/'
+
+        res = self.app.post(full_url, self.payload, auth=self.basic_auth, expect_errors = True)
+        assert_equal(res.status_code, 400)
+        assert_equal(res.json['non_field_errors'][0], 'Incorrect token.')
 
     def test_create_replication_recipe_post_completion_public_registration_logged_out(self):
         ensure_schemas()
