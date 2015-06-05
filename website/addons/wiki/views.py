@@ -91,7 +91,8 @@ def _get_wiki_pages_current(node):
         {
             'name': sorted_page.page_name,
             'url': node.web_url_for('project_wiki_view', wname=sorted_page.page_name, _guid=True),
-            'wiki_id': sorted_page._primary_key
+            'wiki_id': sorted_page._primary_key,
+            'wiki_content': wiki_page_content(sorted_page.page_name, node=node)['wiki_content']
         }
         for sorted_page in [
             node.get_wiki_page(sorted_key)
@@ -136,7 +137,8 @@ def _serialize_wiki_toc(project, auth):
             'pages_current': _get_wiki_pages_current(child),
             'url': child.web_url_for('project_wiki_view', wname='home', _guid=True),
             'is_pointer': not child.primary,
-            'link': auth.private_key
+            'link': auth.private_key,
+            'wiki_content': wiki_page_content(child.title, node=project)['wiki_content']
         }
         for child in project.nodes
         if not child.is_deleted
@@ -471,7 +473,8 @@ def format_project_wiki_pages(node):
             'page': {
                 'url': wiki_page['url'],
                 'name': wiki_page['name'],
-                'id': wiki_page['wiki_id']
+                'id': wiki_page['wiki_id'],
+                'wiki_content': wiki_page['wiki_content']
             },
             'children': [],
             'kind': 'project'
@@ -491,7 +494,8 @@ def format_component_wiki_pages(node, auth):
                     'page': {
                         'url': component_page['url'],
                         'name': component_page['name'],
-                        'id': component_page['wiki_id']
+                        'id': component_page['wiki_id'],
+                        'wiki_content': component_page['wiki_content']
                     },
                     'children': [],
                     'kind': 'inner_component'
@@ -503,6 +507,7 @@ def format_component_wiki_pages(node, auth):
                 'url': wiki_page['url'],
                 'name': wiki_page['title'],
                 'id': wiki_page['id'],
+                'wiki_content': wiki_page['wiki_content']
             },
             'children': children,
             'kind': 'component'
