@@ -323,7 +323,7 @@ function _poToggleCheck(item) {
  * @private
  */
 function _poResolveIcon(item) {
-    var newIcon = Fangorn.Utils.resolveIconHelper(item);
+    var newIcon = Fangorn.Utils.resolveIconView(item);
     if (newIcon === null) {
         return m('span', { 'class' : 'collection'});
     }

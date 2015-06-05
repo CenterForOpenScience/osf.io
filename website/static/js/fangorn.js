@@ -191,7 +191,7 @@ var uploadRowTemplate = function(item){
  * @this Treebeard.controller
  * @returns {Object}  Returns a mithril template with the m() function.
  */
-function resolveIconHelper(item) {
+function resolveIconView(item) {
     var componentIcons = iconmap.componentIcons;
     var projectIcons = iconmap.projectIcons;
     function returnView(type, category) {
@@ -215,7 +215,7 @@ function resolveIconHelper(item) {
     if (item.data.nodeType === 'folder') {
         return returnView('collection');
     }
-    if (item.data.nodeType === 'pointer' && !item.parent().data.nodeType === 'folder') {
+    if (item.data.nodeType === 'pointer' && item.parent().data.nodeType !== 'folder') {
         return returnView('link');
     }
     if (item.data.nodeType === 'project') {
@@ -253,7 +253,7 @@ function _fangornResolveIcon(item) {
         closedFolder = m('i.fa.fa-folder', ' '),
         configOption = item.data.provider ? resolveconfigOption.call(this, item, 'folderIcon', [item]) : undefined,  // jshint ignore:line
         icon;
-    var newIcon = resolveIconHelper(item);
+    var newIcon = resolveIconView(item);
     if ( newIcon === null) {
 
         if (item.kind === 'folder') {
@@ -280,7 +280,7 @@ function _fangornResolveIcon(item) {
             return m('div.file-extension', { 'class': icon });
         }
         return m('i.fa.fa-file-text-o');
-    } 
+    }
     return newIcon;
 }
 
@@ -2156,7 +2156,7 @@ Fangorn.Utils = {
     openParentFolders : _openParentFolders,
     dismissToolbar : _dismissToolbar,
     uploadRowTemplate : uploadRowTemplate,
-    resolveIconHelper: resolveIconHelper
+    resolveIconView: resolveIconView
 };
 
 Fangorn.DefaultOptions = tbOptions;
