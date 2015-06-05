@@ -4,23 +4,28 @@
 <%def name="container_class()">container-xxl</%def>
 
 <%def name="title()">${file_name | h}</%def>
-
-<div>
-  <div>
+<div class="row">
+  <div class="col-sm-6">
     <h2 class="break-word">
       ${file_name | h}
       % if file_revision:
         <small>&nbsp;${file_revision | h}</small>
       % endif
-    </h2><hr>
+    </h2>
   </div>
+  <div class="col-sm-6">
+    <div id="toggleBar" class="pull-right"></div>
+  </div>
+</div>
+<hr>
+<div class="row">
 
-  <div id="file-navigation" class="panel-toggle col-md-3 file-tree">
-    <div class="osf-panel osf-panel-flex hidden-xs reset-height">
+  <div id="file-navigation" class="panel-toggle col-sm-3 file-tree">
+    <div class="osf-panel osf-panel-hide osf-panel-flex reset-height">
       <div class="osf-panel-header osf-panel-header-flex" style="display:none">
         <div id="filesSearch"></div>
         <div id="toggleIcon" class="pull-right">
-          <div class="panel-collapse"> <i class="fa fa-angle-left"></i> </div>
+          <div class="panel-collapse"><i class="fa fa-angle-left"></i></div>
         </div>
       </div>
 
@@ -35,16 +40,23 @@
     </div>
 
     <!-- Menu toggle closed -->
-    <div class="osf-panel panel-collapsed hidden-xs text-center reset-height"  style="display: none">
+    <div class="osf-panel osf-panel-show text-center reset-height"  style="display: none">
       <div class="osf-panel-header">
         <i class="fa fa-file"></i>
         <i class="fa fa-angle-right"></i>
       </div>
     </div>
-
   </div>
 
-  <div class="file-view-panels panel-expand col-md-9" style="margin-top: -75px"></div>
+  <div id="fileViewPanelLeft" class="col-sm-9 panel-expand">
+    <div class="row">
+      <div id="mfrIframeParent" class="col-sm-9">
+        <div id="mfrIframe" class="mfr mfr-file"></div>
+      </div>
+
+      <div class="file-view-panels col-sm-3"></div>
+    </div>
+  </div>
 
 </div>
 
@@ -169,6 +181,9 @@
         }
       });
     </script>
+
+    <link href="${urls['mfr']}/static/css/mfr.css" media="all" rel="stylesheet" />
+    <script src="${urls['mfr']}/static/js/mfr.js"></script>
 
     <script src="//${urls['sharejs']}/text.js"></script>
     <script src="//${urls['sharejs']}/share.js"></script>
