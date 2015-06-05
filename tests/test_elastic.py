@@ -462,7 +462,7 @@ class TestProjectSearchResults(SearchTestCase):
             is_public=True,
         )
 
-        self.project_possesive = ProjectFactory(
+        self.project_possessive = ProjectFactory(
             title=self.possessive,
             creator=self.user,
             is_public=True,
@@ -475,14 +475,26 @@ class TestProjectSearchResults(SearchTestCase):
         )
 
     def test_singular_query(self):
+        """Verify searching for singular term includes singular,
+        possessive and plural versions in results.
+
+        """
         results = query(self.singular)['results']
         assert_equal(len(results), 3)
 
     def test_plural_query(self):
+        """Verify searching for singular term includes singular,
+        possessive and plural versions in results.
+
+        """
         results = query(self.plural)['results']
         assert_equal(len(results), 3)
 
     def test_possessive_query(self):
+        """Verify searching for possessive term includes singular,
+        possessive and plural versions in results.
+
+        """
         results = query(self.possessive)['results']
         assert_equal(len(results), 3)
 
