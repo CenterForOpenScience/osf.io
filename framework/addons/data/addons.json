@@ -123,7 +123,7 @@
         "Dataverse": {
             "Permissions": {
                 "status": "partial",
-                "text": "Making an OSF project public or private is independent of making a Dataverse study public or private, although the OSF can only access public studies on released Dataverses. The OSF allows you to release the latest draft version of a Dataverse study."
+                "text": "Making an OSF project public or private is independent of making a Dataverse study public or private. The OSF allows you to release the latest draft version of a Dataverse dataset."
             },
             "View / download file versions": {
                 "status": "partial",
