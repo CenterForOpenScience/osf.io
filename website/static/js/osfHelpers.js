@@ -30,21 +30,26 @@ var growl = function(title, message, type) {
  *   apiV2Url("users/4urxt/applications", {"a":1, "filter[fullname]":"lawrence"}, "https://staging2.osf.io/api/v2/")
  * would yield the result:
  *  "https://staging2.osf.io/api/v2/users/4urxt/applications?a=1&filter%5Bfullname%5D=lawrence"
- *  @param {String} pathStr
- * @param {Object} paramsObj (optional) An object containing parameters to add to the URL. Otherwise pass 'undefined'.
+ * @param {String} pathString The string to be appended to the absolute base path, eg "users/4urxt"
+ * @param {Object} paramsObject (optional) An object containing parameters to add to the URL. Otherwise pass 'undefined'.
  * @param {String} apiPrefix (optional) Manually specify the prefix used for API routes (useful for testing)
  */
-var apiV2Url = function (pathStr, paramsObj, apiPrefix){
+var apiV2Url = function (pathString, paramsObject, apiPrefix){
     apiPrefix = apiPrefix || window.contextVars.apiV2Prefix;
 
-    var apiUrl = apiPrefix + pathStr;
+    // Don't output double slashes when concatenating two strings with adjoining slashes
+    if (apiPrefix && pathString && apiPrefix.charAt(apiPrefix.length - 1) === "/" && pathString.charAt(0) === "/"){
+        pathString = pathString.substring(1); // Strip off the redundant leading slash
+    }
+
+    var apiUrl = apiPrefix + pathString;
     // Add parameters to URL (if any). Ensure encoding as necessary
-    if (paramsObj){
+    if (paramsObject){
         apiUrl += "?";
         var paramArr = [];
-        for (var k in paramsObj){
-            if (paramsObj.hasOwnProperty(k)){
-                paramArr.push(encodeURIComponent(k) + "=" + encodeURIComponent(paramsObj[k]))
+        for (var k in paramsObject){
+            if (paramsObject.hasOwnProperty(k)){
+                paramArr.push(encodeURIComponent(k) + "=" + encodeURIComponent(paramsObject[k]))
             }
         }
         apiUrl += paramArr.join('&');

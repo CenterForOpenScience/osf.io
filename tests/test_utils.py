@@ -87,7 +87,7 @@ class TestUrlForHelpers(unittest.TestCase):
                               page_size=10)
         assert_equal(full_url, "https://staging2.osf.io/api/v2/nodes/abcd3/contributors/?filter%5Bfullname%5D=bob&page_size=10")
 
-    def test_api_v2_url_for_base_path(self):
+    def test_api_v2_url_base_path(self):
         """Given a blank string, should return the base path (domain + port + prefix) with no extra cruft at end"""
         full_url = api_v2_url('',
                               base_route='http://localhost:8000/',
