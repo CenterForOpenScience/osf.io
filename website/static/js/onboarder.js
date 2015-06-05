@@ -484,7 +484,7 @@ function OBUploaderViewModel(params) {
     self.showCreateAndUpload = function() {
         self.clearMessages();
         self.createAndUpload(true);
-    }
+    };
 
     self.hideCreateAndUpload = function(selected) {
         self.clearMessages();
@@ -620,7 +620,6 @@ function OBUploaderViewModel(params) {
                 'the page now, your file will not be stored.';
         }
     });
-}
 
     self.submitCreateAndUpload = function() {
         if (self.newProjectName().trim() === '') {
