@@ -919,6 +919,8 @@ class StorageAddonBase(object):
         }
         if filenode.get('kind') == 'file':
             return filenode
+        elif 'size' in filenode:
+            return filenode
         kwargs = {}
         if cookie:
             kwargs = {
