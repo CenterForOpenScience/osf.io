@@ -17,8 +17,8 @@ from tests.factories import (
 )
 
 from website.addons.wiki import settings
+from website.addons.wiki import views
 from website.addons.wiki.exceptions import InvalidVersionError
-from website.addons.wiki.views import _serialize_wiki_toc, _get_wiki_web_urls, _get_wiki_api_urls
 from website.addons.wiki.model import NodeWikiPage, render_content
 from website.addons.wiki.utils import (
     get_sharejs_uuid, generate_private_uuid, share_db, delete_share_doc,
@@ -155,10 +155,10 @@ class TestWikiViews(OsfTestCase):
         no_wiki = NodeFactory(parent=project, creator=project.creator)
         project.save()
 
-        serialized = _serialize_wiki_toc(project, auth=auth)
+        serialized = views._serialize_wiki_toc(project, auth=auth)
         assert_equal(len(serialized), 2)
         no_wiki.delete_addon('wiki', auth=auth)
-        serialized = _serialize_wiki_toc(project, auth=auth)
+        serialized = views._serialize_wiki_toc(project, auth=auth)
         assert_equal(len(serialized), 1)
 
     def test_get_wiki_url_pointer_component(self):
@@ -173,7 +173,7 @@ class TestWikiViews(OsfTestCase):
         auth = Auth(user=user)
         project.add_pointer(pointed_node, auth=auth, save=True)
 
-        serialized = _serialize_wiki_toc(project, auth)
+        serialized = views._serialize_wiki_toc(project, auth)
         assert_equal(
             serialized[0]['url'],
             pointed_node.web_url_for('project_wiki_view', wname='home', _guid=True)
@@ -463,14 +463,14 @@ class TestViewHelpers(OsfTestCase):
         self.project.update_node_wiki(self.wname, 'some content', Auth(self.project.creator))
 
     def test_get_wiki_web_urls(self):
-        urls = _get_wiki_web_urls(self.project, self.wname)
+        urls = views._get_wiki_web_urls(self.project, self.wname)
         assert_equal(urls['base'], self.project.web_url_for('project_wiki_home', _guid=True))
         assert_equal(urls['edit'], self.project.web_url_for('project_wiki_view', wname=self.wname, _guid=True))
         assert_equal(urls['home'], self.project.web_url_for('project_wiki_home', _guid=True))
         assert_equal(urls['page'], self.project.web_url_for('project_wiki_view', wname=self.wname, _guid=True))
 
     def test_get_wiki_api_urls(self):
-        urls = _get_wiki_api_urls(self.project, self.wname)
+        urls = views._get_wiki_api_urls(self.project, self.wname)
         assert_equal(urls['base'], self.project.api_url_for('project_wiki_home'))
         assert_equal(urls['delete'], self.project.api_url_for('project_wiki_delete', wname=self.wname))
         assert_equal(urls['rename'], self.project.api_url_for('project_wiki_rename', wname=self.wname))
@@ -1105,4 +1105,119 @@ class TestWikiUtils(OsfTestCase):
             format_wiki_version('preview', 5, False)
         with assert_raises(InvalidVersionError):
             format_wiki_version('nonsense', 5, True)
+
+
+class TestWikiMenu(OsfTestCase):
+
+    def setUp(self):
+        super(TestWikiMenu, self).setUp()
+        self.user = UserFactory()
+        self.api_key = ApiKeyFactory()
+        self.project = ProjectFactory(creator=self.user, is_public=True)
+        self.component = NodeFactory(creator=self.user, parent=self.project, is_public=True)
+        self.consolidate_auth = Auth(user=self.user, api_key=self.api_key)
+
+    def test_format_project_wiki_pages(self):
+        self.project.update_node_wiki('home', 'content here', self.consolidate_auth)
+        page = self.project.get_wiki_page(name='home')
+        data = views.format_project_wiki_pages(self.project)
+        expected = [
+            {
+                'page': {
+                    'url': self.project.web_url_for('project_wiki_view', wname='home', _guid=True),
+                    'name': 'home',
+                    'id': page._primary_key,
+                    'wiki_content': 'content here'
+                },
+                'children': [],
+                'kind': 'project'
+            }
+        ]
+        assert_equal(data, expected)
+
+    def test_format_component_wiki_pages(self):
+        self.component.update_node_wiki('home', 'home content', self.consolidate_auth)
+        component_home_page = self.component.get_wiki_page(name='home')
+        data = views.format_component_wiki_pages(node=self.project, auth=self.consolidate_auth)
+        expected = [
+            {
+                'page': {
+                    'url': self.component.web_url_for('project_wiki_view', wname='home', _guid=True),
+                    'name': 'The meaning of life',
+                    'id': self.component._primary_key,
+                    'wiki_content': 'home content'
+                },
+                'children': [],
+                'kind': 'component'
+            }
+        ]
+        assert_equal(data, expected)
+
+    def test_format_nested_component_wiki_pages(self):
+        self.component.update_node_wiki('home', 'home content', self.consolidate_auth)
+        self.component.update_node_wiki('inner', 'inner content', self.consolidate_auth)
+        component_inner_page = self.component.get_wiki_page(name='inner')
+        data = views.format_component_wiki_pages(node=self.project, auth=self.consolidate_auth)
+        expected = [
+            {
+                'page': {
+                    'url': self.component.web_url_for('project_wiki_view', wname='home', _guid=True),
+                    'name': 'The meaning of life',
+                    'id': self.component._primary_key,
+                    'wiki_content': 'home content'
+                },
+                'children': [
+                    {
+                        'page': {
+                            'url': self.component.web_url_for('project_wiki_view', wname='inner', _guid=True),
+                            'name': 'inner',
+                            'id': component_inner_page._primary_key,
+                            'wiki_content': 'inner content'
+                        },
+                        'children': [],
+                        'kind': 'inner_component'
+                    }
+                ],
+                'kind': 'component'
+            }
+        ]
+        assert_equal(data, expected)
+
+    def test_format_component_wiki_page_no_content(self):
+        data = views.format_component_wiki_pages(node=self.project, auth=self.consolidate_auth)
+        expected = [
+            {
+                'page': {
+                    'url': self.component.web_url_for('project_wiki_view', wname='home', _guid=True),
+                    'name': 'The meaning of life',
+                    'id': self.component._primary_key,
+                    'wiki_content': ''
+                },
+                'children': [],
+                'kind': 'component'
+            }
+        ]
+        assert_equal(data, expected)
+
+    def test_project_wiki_grid_data(self):
+        self.project.update_node_wiki('home', 'project content', self.consolidate_auth)
+        self.component.update_node_wiki('home', 'component content', self.consolidate_auth)
+        project_wiki_page = self.project.get_wiki_page(name='home')
+        component_wiki_page = self.component.get_wiki_page(name='home')
+        data = views.project_wiki_grid_data(auth=self.consolidate_auth, wname='home', node=self.project)
+        expected = [
+            {
+                'title': 'Project Wiki Pages',
+                'kind': 'heading',
+                'children': views.format_project_wiki_pages(node=self.project),
+            },
+            {
+                'title': 'Component Wiki Pages',
+                'kind': 'heading',
+                'children': views.format_component_wiki_pages(node=self.project, auth=self.consolidate_auth)
+            }
+        ]
+        assert_equal(data, expected)
+
+
 
