@@ -444,7 +444,6 @@ class TestProjectSearchResults(SearchTestCase):
     def setUp(self):
         super(TestProjectSearchResults, self).setUp()
         self.user = UserFactory(usename='Doug Bogie')
-        self.consolidate_auth = Auth(user=self.user)
 
         self.singular = 'Spanish Inquisition'
         self.plural = 'Spanish Inquisitions'
