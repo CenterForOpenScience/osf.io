@@ -324,9 +324,6 @@ function _poToggleCheck(item) {
  */
 function _poResolveIcon(item) {
     var newIcon = Fangorn.Utils.resolveIconView(item);
-    if (newIcon === null) {
-        return m('span', { 'class' : 'collection'});
-    }
     return newIcon;
 }
 

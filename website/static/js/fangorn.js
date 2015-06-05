@@ -213,27 +213,30 @@ function resolveIconView(item) {
         var template = m('span', { 'class' : iconType});
         return template;
     }
-    if (item.data.nodeType === 'smartFolder') {
+    if (item.data.isDashboard) {
+        return returnView('collection');
+    }
+    if (item.data.nodeType === 'smartFolder' || item.data.isSmartFolder) {
         return returnView('smartCollection');
     }
-    if (item.data.nodeType === 'pointer' && item.parent().data.nodeType !== 'folder') {
+    if ((item.data.nodeType === 'pointer' && item.parent().data.nodeType !== 'folder') || (item.data.isPointer && !item.parent().data.isFolder)) {
         return returnView('link');
     }
-    if (item.data.nodeType === 'project') {
+    if (item.data.nodeType === 'project' || item.data.isProject) {
         if (item.data.isRegistration) {
             return returnView('registeredProject', item.data.category);
         } else {
             return returnView('project', item.data.category);
         }
     }
-    if (item.data.nodeType === 'component') {
+    if (item.data.nodeType === 'component' || item.data.isComponent) {
         if (item.data.isRegistration) {
             return returnView('registeredComponent', item.data.category);
         }
         return returnView('component', item.data.category);
     }
 
-    if (item.data.nodeType === 'pointer') {
+    if (item.data.nodeType === 'pointer' || item.data.isPointer) {
         return returnView('link');
     }
     return null;
@@ -261,7 +264,6 @@ function _fangornResolveIcon(item) {
                 return m('span', {style: {width:'16px', height:'16px', background:'url(' + item.data.iconUrl+ ')', display:'block'}}, '');
             }
             if (!item.data.permissions.view) {
-                console.log("Private");
                 return privateFolder;
             }
             if (item.data.isPointer) {
