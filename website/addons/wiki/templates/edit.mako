@@ -10,8 +10,12 @@
     </div>
     <div class="col-sm-6">
         <div class="pull-right">
-          <div class="switch"></div>
-          </div>
+            % if user['can_edit']:
+                <a href="#" class="btn btn-sm btn-success" data-toggle="modal" data-target="#newWiki">New</a>
+                <a href="#" class="btn btn-sm btn-danger" data-toggle="modal" data-target="#deleteWiki">Delete</a>
+            % endif
+            <div class="switch" style="display: inline-block"></div>
+        </div>
     </div>
 </div>
 
