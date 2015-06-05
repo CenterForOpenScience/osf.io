@@ -1,6 +1,6 @@
 % if len(nodes):
     <ul class="list-group ${'sortable' if sortable and 'write' in user['permissions'] else ''}">
-      <span id="componentScope">
+      <span id="componentScope" class="scripted">
         % for each in nodes:
             <div mod-meta='{
                     "tpl": "util/render_node.mako",
