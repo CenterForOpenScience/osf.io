@@ -92,7 +92,7 @@ $(document).ready(function () {
             },
             resolveRows : function (item) {
                 //if (item.data.name != 'Private Component') {
-                console.log(item.data.name);
+                //console.log(item.data.name);
 
                     var tb = this;
                     item.css = '';

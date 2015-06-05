@@ -197,7 +197,11 @@ function resolveIconView(item) {
     function returnView(type, category) {
         var iconType = projectIcons[type];
         if (type === 'component' || type === 'registeredComponent') {
-            iconType = componentIcons[category];
+            if (!item.data.permissions.view) {
+                return null;
+            } else {
+                iconType = componentIcons[category];
+            }
         } else if (type === 'project' || type === 'registeredProject') {
             iconType = projectIcons[category];
         }
@@ -211,9 +215,6 @@ function resolveIconView(item) {
     }
     if (item.data.nodeType === 'smartFolder') {
         return returnView('smartCollection');
-    }
-    if (item.data.nodeType === 'folder') {
-        return returnView('collection');
     }
     if (item.data.nodeType === 'pointer' && item.parent().data.nodeType !== 'folder') {
         return returnView('link');
@@ -246,7 +247,6 @@ function resolveIconView(item) {
  * @private
  */
 function _fangornResolveIcon(item) {
-    var projectIcons = iconmap.projectIcons;
     var privateFolder =  m('div.file-extension._folder_delete', ' '),
         pointerFolder = m('i.fa.fa-link', ' '),
         openFolder  = m('i.fa.fa-folder-open', ' '),
@@ -261,6 +261,7 @@ function _fangornResolveIcon(item) {
                 return m('span', {style: {width:'16px', height:'16px', background:'url(' + item.data.iconUrl+ ')', display:'block'}}, '');
             }
             if (!item.data.permissions.view) {
+                console.log("Private");
                 return privateFolder;
             }
             if (item.data.isPointer) {
