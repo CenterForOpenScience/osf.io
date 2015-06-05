@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 import bleach
 
 
@@ -24,6 +25,9 @@ def clean_tag(data):
     #TODO: make this a method of Tag?
     return escape_html(data).replace('"', '&quot;').replace("'", '')
 
+def is_iterable_but_not_string(obj):
+    """Return True if ``obj`` is an iterable object that isn't a string."""
+    return (hasattr(obj, '__iter__') and not hasattr(obj, 'strip'))
 
 def escape_html(data):
     """Escape HTML characters in data.
@@ -38,7 +42,7 @@ def escape_html(data):
             key: escape_html(value)
             for (key, value) in data.iteritems()
         }
-    if isinstance(data, list):
+    if is_iterable_but_not_string(data):
         return [
             escape_html(value)
             for value in data
@@ -61,7 +65,7 @@ def assert_clean(data):
 
 
 # TODO: Remove safe_unescape_html when mako html safe comes in
-def safe_unescape_html(s):
+def safe_unescape_html(value):
     """
     Return data without html escape characters.
 
@@ -74,18 +78,19 @@ def safe_unescape_html(s):
         '&lt;': '<',
         '&gt;': '>',
     }
-    if isinstance(s, dict):
+    if isinstance(value, dict):
         return {
             key: safe_unescape_html(value)
-            for (key, value) in s.iteritems()
+            for (key, value) in value.iteritems()
         }
-    if isinstance(s, list):
+
+    if is_iterable_but_not_string(value):
         return [
-            safe_unescape_html(value)
-            for value in s
+            safe_unescape_html(each)
+            for each in value
         ]
-    if isinstance(s, basestring):
+    if isinstance(value, basestring):
         for escape_sequence, character in safe_characters.items():
-            s = s.replace(escape_sequence, character)
-        return s
-    return s
+            value = value.replace(escape_sequence, character)
+        return value
+    return value
