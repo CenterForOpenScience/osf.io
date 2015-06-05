@@ -1,5 +1,7 @@
 'use strict';
+require('js/affix-menu');
 require('css/user-addon-settings.css');
+
 var $ = require('jquery');
 var ko = require('knockout');
 var bootbox = require('bootbox');
@@ -101,3 +103,4 @@ $('.addon-oauth').each(function(index, elem) {
     ko.applyBindings(viewModel, elem);
     viewModel.updateAccounts();
 });
+

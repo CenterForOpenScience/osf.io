@@ -5,10 +5,9 @@
 <% from website import settings%>
 <h2 class="page-header">Notifications</h2>
 
-<div class="row">
-
-    <div class="col-md-3">
-        <div class="panel panel-default">
+<div class="row affix-menu">
+    <div class="col-sm-3 affix-parent">
+        <div class="panel panel-default profile-panel profile" data-spy="affix" data-offset-top="100" data-offset-bottom="268">
             <ul class="nav nav-stacked nav-pills">
                 <li><a href="${ web_url_for('user_profile') }">Profile Information</a></li>
                 <li><a href="${ web_url_for('user_account') }">Account Settings</a></li>
@@ -17,6 +16,7 @@
             </ul>
         </div><!-- end sidebar -->
     </div>
+
 
     <div class="col-md-6">
         <div class="panel panel-default scripted" id="selectLists">

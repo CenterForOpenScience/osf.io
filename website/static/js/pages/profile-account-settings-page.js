@@ -1,4 +1,5 @@
 'use strict';
+require('js/affix-menu');
 
 var $ = require('jquery');
 var $osf = require('js/osfHelpers.js');

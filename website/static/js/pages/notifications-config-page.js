@@ -1,3 +1,5 @@
+require('js/affix-menu');
+
 var $ = require('jquery');
 
 // initialize view model for configuring mailchimp subscriptions
