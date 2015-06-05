@@ -158,7 +158,7 @@ class NodeRegistrationsList(generics.ListAPIView, NodeMixin):
 
 
 class NodeRegistrationsOpenEnded(generics.CreateAPIView, NodeMixin):
-    """Register the current node using an Open-Ended Registration.
+    """Register the current node.
 
     Registrations are read-only snapshots of a project.
 
@@ -170,7 +170,7 @@ class NodeRegistrationsOpenEnded(generics.CreateAPIView, NodeMixin):
     serializer_class = RegistrationOpenEndedSerializer
 
 class NodeRegistrationsOpenEndedWithToken(generics.CreateAPIView, NodeMixin):
-    """Register the current node using an Open-Ended Registration.
+    """Register the current node.
 
     Registrations are read-only snapshots of a project.
 
@@ -183,7 +183,7 @@ class NodeRegistrationsOpenEndedWithToken(generics.CreateAPIView, NodeMixin):
 
 
 class NodeRegistrationsPreDataCollection(generics.CreateAPIView, NodeMixin):
-    """Register the current node using an OSF-Standard Pre-Data Collection Registration.
+    """Register the current node.
 
     Registrations are read-only snapshots of a project.
 
@@ -195,7 +195,7 @@ class NodeRegistrationsPreDataCollection(generics.CreateAPIView, NodeMixin):
     serializer_class = RegistrationPreDataCollectionSerializer
 
 class NodeRegistrationsPreDataCollectionWithToken(generics.CreateAPIView, NodeMixin):
-    """Register the current node using an OSF-Standard Pre-Data Collection Registration.
+    """Register the current node.
 
     Registrations are read-only snapshots of a project.
 
@@ -208,7 +208,7 @@ class NodeRegistrationsPreDataCollectionWithToken(generics.CreateAPIView, NodeMi
 
 
 class NodeRegistrationsReplicationRecipePreRegistration(generics.CreateAPIView, NodeMixin):
-    """Register the current node using the Replication Recipe Pre-Registration format.
+    """Register the current node.
 
     Registrations are read-only snapshots of a project.
     """
@@ -220,7 +220,7 @@ class NodeRegistrationsReplicationRecipePreRegistration(generics.CreateAPIView, 
 
 
 class NodeRegistrationsReplicationRecipePreRegistrationWithToken(generics.CreateAPIView, NodeMixin):
-    """Register the current node using the Replication Reciple Pre-Registration format.
+    """Register the current node.
 
     Registrations are read-only snapshots of a project.
 
@@ -233,7 +233,7 @@ class NodeRegistrationsReplicationRecipePreRegistrationWithToken(generics.Create
 
 
 class NodeRegistrationsReplicationRecipePostCompletion(generics.CreateAPIView, NodeMixin):
-    """Register the current node using the Replication Recipe Post-Completion format.
+    """Register the current node.
 
     Registrations are read-only snapshots of a project.
 
@@ -246,7 +246,7 @@ class NodeRegistrationsReplicationRecipePostCompletion(generics.CreateAPIView, N
 
 
 class NodeRegistrationsReplicationRecipePostCompletionWithToken(generics.CreateAPIView, NodeMixin):
-    """Register the current node using the Replication Recipe Post-Completion format.
+    """Register the current node.
 
     Registrations are read-only snapshots of a project.
 
