@@ -647,11 +647,10 @@ function OBUploaderViewModel(params) {
     };
 
     self.createFailure = function(xhr, textStatus, error) {
-         Raven.captureMessage('Could not create a new project.', 'Please try again. If the problem persists, email <a href="mailto:support@osf.io.">support@osf.io</a>',
-             {
+         Raven.captureMessage('Could not create a new project.', {
             textStatus: textStatus,
             error: error
-         })
+         });
     };
 }
 ko.components.register('osf-ob-uploader', {
