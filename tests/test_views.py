@@ -32,7 +32,7 @@ from website.project.views.contributor import (
 )
 from website.profile.utils import add_contributor_json, serialize_unregistered
 from website.profile.views import fmt_date_or_none
-from website.util import api_url_for, web_url_for
+from website.util import api_url_for, web_url_for, sanitize
 from website import mails, settings
 from website.util import rubeus
 from website.project.views.node import _view_project, abbrev_authors, _should_show_wiki_widget
@@ -470,24 +470,25 @@ class TestProjectViews(OsfTestCase):
         assert_true(self.project.is_public)
 
     def test_add_tag(self):
-        url = "/api/v1/project/{0}/addtag/{tag}/".format(
+        url = "/api/v1/project/{0}/addtag/".format(
             self.project._primary_key,
-            tag="footag",
         )
-        self.app.post_json(url, {}, auth=self.auth)
+        self.app.post_json(url, {"tag": "foo'ta#@%#%^&g?"}, auth=self.auth)
         self.project.reload()
-        assert_in("footag", self.project.tags)
+        assert_in(sanitize.clean_tag("foo'ta#@%#%^&g?"), self.project.tags)
+        assert_equal("foo'ta#@%#%^&g?", self.project.logs[-1].params['tag'])
 
     def test_remove_tag(self):
-        self.project.add_tag("footag", auth=self.consolidate_auth1, save=True)
-        assert_in("footag", self.project.tags)
-        url = "/api/v1/project/{0}/removetag/{tag}/".format(
+        self.project.add_tag("foo'ta#@%#%^&g?", auth=self.consolidate_auth1, save=True)
+        assert_in(sanitize.clean_tag("foo'ta#@%#%^&g?"), self.project.tags)
+        url = "/api/v1/project/{0}/removetag/".format(
             self.project._primary_key,
-            tag="footag",
         )
-        self.app.post_json(url, {}, auth=self.auth)
+        self.app.post_json(url, {"tag": "foo'ta#@%#%^&g?"}, auth=self.auth)
         self.project.reload()
-        assert_not_in("footag", self.project.tags)
+        assert_not_in(sanitize.clean_tag("foo'ta#@%#%^&g?"), self.project.tags)
+        assert_equal("tag_removed", self.project.logs[-1].action) \
+            and assert_equal("foo'ta#@%#%^&g?", self.project.logs[-1].params['tag'])
 
     def test_register_template_page(self):
         url = "/api/v1/project/{0}/register/Replication_Recipe_(Brandt_et_al.,_2013):_Post-Completion/".format(
