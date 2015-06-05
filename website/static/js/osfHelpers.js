@@ -417,6 +417,14 @@ var htmlEscape = function(text) {
     return $('<div/>').text(text).html();
 };
 
+
+/**
+ * Decode Escaped html characters in a string.
+ */
+var htmlDecode = function(text) {
+    return $('<div/>').html(text).text();
+};
+
 /**
 + * Resize table to match thead and tbody column
 + */
@@ -520,5 +528,6 @@ module.exports = window.$.osf = {
     throttle: throttle,
     debounce: debounce,
     htmlEscape: htmlEscape,
+    htmlDecode: htmlDecode,
     tableResize: tableResize
 };
