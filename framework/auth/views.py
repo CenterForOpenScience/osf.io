@@ -242,7 +242,8 @@ def register_user(**kwargs):
 
     """
     # Verify email address match
-    if str(request.json['email1']).lower() != str(request.json['email2']).lower():
+    json_data = request.get_json()
+    if str(json_data['email1']).lower() != str(json_data['email2']).lower():
         raise HTTPError(
             http.BAD_REQUEST,
             data=dict(message_long='Email addresses must match.')
