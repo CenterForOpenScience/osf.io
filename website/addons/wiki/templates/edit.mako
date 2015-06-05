@@ -22,7 +22,7 @@
     <div class="row wiki-wrapper">
     <div class="panel-toggle col-sm-${'3' if 'menu' in panels_used else '1' | n}">
         <!-- Menu with toggle normal -->
-        <div class="osf-panel reset-height hidden-xs ${'' if 'menu' in panels_used else 'hidden' | n}" data-bind="css: {  'osf-panel-flex': !$root.singleVis() }">
+        <div class="osf-panel reset-height ${'' if 'menu' in panels_used else 'hidden' | n}" data-bind="css: {  'osf-panel-flex': !$root.singleVis() }">
             <div class="osf-panel-header" data-bind="css: {  'osf-panel-header-flex': !$root.singleVis()}"> <i class="fa fa-list"> </i>  Menu
                 <div class="pull-right">
                     <div class="panel-collapse"> <i class="fa fa-angle-left pointer"> </i> </div>
@@ -39,7 +39,7 @@
         </div>
 
         <!-- Menu with toggle collapsed -->
-        <div class="osf-panel panel-collapsed hidden-xs text-center ${'hidden' if 'menu' in panels_used else '' | n}" >
+        <div class="osf-panel panel-collapsed text-center ${'hidden' if 'menu' in panels_used else '' | n}" >
           <div class="osf-panel-header pointer">
             <i class="fa fa-list"> </i>
             <i class="fa fa-angle-right"> </i>
@@ -49,13 +49,6 @@
            </div>
         </div>
 
-        <!-- Menu without toggle in XS size only -->
-        <div class="osf-panel visible-xs">
-            <div class="osf-panel-header"> <i class="fa fa-list"> </i>  Menu </div>
-            <div class="osf-panel-body ">
-                <%include file="wiki/templates/toc.mako"/>
-            </div>
-        </div>
     </div>
 
     <div class="wiki" id="wikiPageContext">
