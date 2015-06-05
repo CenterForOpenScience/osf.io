@@ -138,7 +138,7 @@ def _serialize_wiki_toc(project, auth):
             'url': child.web_url_for('project_wiki_view', wname='home', _guid=True),
             'is_pointer': not child.primary,
             'link': auth.private_key,
-            'wiki_content': wiki_page_content(child.title, node=project)['wiki_content']
+            'wiki_content': wiki_page_content('home', node=child)['wiki_content']
         }
         for child in project.nodes
         if not child.is_deleted
