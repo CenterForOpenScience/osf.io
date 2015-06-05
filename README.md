@@ -1,95 +1,337 @@
 # OSF
 
-
 - `master` Build Status: [![Build Status](https://travis-ci.org/CenterForOpenScience/osf.io.svg?branch=master)](https://travis-ci.org/CenterForOpenScience/osf.io)
 - `develop` Build Status: [![Build Status](https://travis-ci.org/CenterForOpenScience/osf.io.svg?branch=master)](https://travis-ci.org/CenterForOpenScience/osf.io)
 - Public Repo: https://github.com/CenterForOpenScience/osf.io/
 - Issues: https://github.com/CenterForOpenScience/osf.io/issues?state=open
-- Huboard: https://huboard.com/CenterForOpenScience/osf.io#/
-- Docs: http://cosdev.rtfd.org/
+- COS Development Docs: http://cosdev.readthedocs.org/ 
+
+## Table of contents
+- [Help](#help)
+- [Running the OSF](#running-the-osf)
+- [Installation](#installation)
+- [Common Development Tasks](#common-development-tasks)
+
 
 ## Help
+The [COS Development Docs](http://cosdev.readthedocs.org/) provide detailed information about all aspects of OSF development. 
+This includes [detailed installation instructions](http://cosdev.readthedocs.org/en/latest/osf/setup.html), 
+a list of [common setup errors](http://cosdev.readthedocs.org/en/latest/osf/setup.html#common-error-messages), and 
+[other troubleshooting](http://cosdev.readthedocs.org/en/latest/osf/common_problems.html).
 
-Solutions to many common issues may be found at the [OSF Developer Docs](http://cosdev.rtfd.org/).
+The OSF `invoke` script provides several useful commands. For more information, run:
 
-## Quickstart
+`invoke --list`
 
+## Running the OSF
+
+If you have already installed all of the required services and Python packages, and activated your virtual environment, 
+then you can start a working local test server with the following sequence:
+
+```bash
+invoke mongo -d  # Runs mongod as a daemon
+invoke mailserver
+invoke rabbitmq
+invoke celery_worker
+invoke elasticsearch
+invoke assets -dw
+invoke server
+```
+
+Note that some or all of these commands will run attached to a console, and therefore the commands may need to be 
+run in separate terminals. Be sure to activate your virtual environment each time a new terminal is opened. 
+It is normal for the command to keep running!
+
+Once started, you will be able to view the OSF in a web browser- by default, at http://127.0.0.1:5000/
+
+
+### Livereload support
+
+You can run the app server in livereload mode with:
+
+```bash
+$ invoke server --live
+```
+
+This will make your browser automatically refresh whenever a code change is made.
+
+### Optional extras
+
+Some functionality depends on additional services that will not be started using the sequence above. 
+For most development tasks, it is sufficient to run the OSF without these services, except as noted below. 
+No additional installation is needed to use these features.
+
+
+#### Downloading citation styles
+
+To download citation styles, run:
+
+```bash
+$ invoke update_citation_styles
+```
+
+#### Sharejs
+
+ShareJS is used for collaborative editing features, such as the OSF wiki. To run a local ShareJS server:
+
+```bash
+$ invoke sharejs
+```
+
+#### Waterbutler
+
+Waterbutler is used for file storage features. Upload and download features will be disabled if Waterbutler is not 
+installed. Consult the Waterbutler 
+[repository](https://github.com/CenterForOpenScience/waterbutler) and 
+[documentation](https://waterbutler.readthedocs.org/en/latest/) for information on how to set up and run this service.
+
+## Installation
+
+These instructions assume a working knowledge of package managers and the command line.
+For a detailed step-by-step walkthrough suitable for new programmers, consult the 
+[COS Development Docs](http://cosdev.readthedocs.org/en/latest/osf/setup.html).
+
+### Pre-requisites
+
+Before attempting to run OSF setup commands, be sure that your system meets the following minimum requirements.
+ 
+#### Mac OS
+
+The following packages must be installed before running the automatic setup script:
+
+- [XCode](https://developer.apple.com/xcode/downloads/) command line tools (`xcode-select --install`)
+- [Homebrew](http://brew.sh/) package manager (run `brew update` and `brew upgrade --all` before OSF install)
+- Java (if not installed yet, run `brew install Caskroom/cask/java`)
+- Python 2.7
+    - pip
+    - virtualenv (`pip install virtualenv`)
+
+
+### Quickstart
+
+#### Mac OS X
 These instructions should work on Mac OSX >= 10.7
 
-- Create your virtualenv.
+- Clone the OSF repository to your computer. Change to that folder before running the commands below.
+- Create and activate your virtualenv.
 ```
 virtualenv env
 source env/bin/activate
 ```
 
-- Copy `website/settings/local-dist.py` to `website/settings/local.py.`  NOTE: This is your local settings file, which overrides the settings in `website/settings/defaults.py`. It will not be added to source control, so change it as you wish.
+- Copy `website/settings/local-dist.py` to `website/settings/local.py.`  NOTE: This is your local settings file, 
+which overrides the settings in `website/settings/defaults.py`. It will not be added to source control, so change 
+it as you wish.
 
 ```bash
 $ cp website/settings/local-dist.py website/settings/local.py
 ```
 
-- You will need to:
-    - Create local.py files for addons that need them.
-    - Install TokuMX.
-    - Install libxml2 and libxslt (required for installing lxml).
-    - Install elasticsearch.
-    - Install GPG.
-    - Install requirements.
-    - Create a GPG key.
-    - Install npm.
-    - Install node and bower packages.
-    - Build assets.
-
-- To do so, on MacOSX with [homebrew](http://brew.sh/) (click link for homebrew installation instructions), run:
+- On MacOSX with [homebrew](http://brew.sh/), there is a script that should automate much of the install process:
 
 ```bash
 $ pip install invoke
 $ invoke setup
 ```
 
-- On Linux systems, you may have to install python-pip, TokuMX, libxml2, libxslt, elasticsearch, and GPG manually before running the above commands.
+To verify that your installation works, follow the instructions to [start the OSF](#running-the-osf) and 
+[run unit tests](#running-tests).
 
-- If invoke setup hangs when 'Generating GnuPG key' (especially under linux), you may need to install some additonal software to make this work. For apt-getters this looks like:
+##### Additional configuration for Mac OS X
+
+After running the automatic installer, you may find that some actions- such as running unit tests- fail due to an error 
+with Mongo/ TokuMX. This can be resolved by increasing the system limits on number of open files and processes.
+
+Add the following lines to `/etc/launchctl.conf` and/or `/etc/launchd.conf` (creating the files if necessary):
+```
+limit maxfiles 16384 16384
+limit maxproc 2048 2048
+```
+
+Then create or edit either `~./bash_profile` or `/etc/profile` to include the following:
+
+`ulimit -n 2048`
+
+Then reboot.
+
+#### Additional things to install
+
+The automated installer does not install Waterbutler, which may be needed to run some OSF features locally. 
+Consult the [Waterbutler repository](https://github.com/CenterForOpenScience/waterbutler) for setup instructions.
+
+### Manual installation
+[At present](CONTRIBUTING.md), there is no complete automated install process for other platforms. 
+Although the process above should perform most setup steps on Mac OS, users of other platforms will need to perform the 
+steps below manually in a manner appropriate to their system. Some steps of the installer script can be re-used, 
+in which case the appropriate commands are noted below.
+
+On Mac OS, we recommend using Homebrew to install external dependencies.
+ 
+- Create local.py files for addons that need them (`invoke copy_settings --addons`)
+- Install TokuMX
+- Install libxml2 and libxslt (required for installing python lxml)
+- Install Java (if not already installed)
+- Install elasticsearch
+- Install GPG
+- Install python requirements (`invoke requirements --dev --addons`)
+- Create a GPG key (`invoke encryption`)
+- Install npm
+- Install node and bower packages
+- Build assets (`invoke assets --dev`)
+
+- If invoke setup hangs when 'Generating GnuPG key' (especially under linux), you may need to install some 
+additional software to make this work. For apt-getters this looks like:
 
 ```bash
 sudo apt-get install rng-tools
 ```
 
-next edit /etc/default/rng-tools and set:
+Followed by editing `/etc/default/rng-tools` to add the line:
 
 ```
 HRNGDEVICE=/dev/urandom
 ```
 
-last start the rng-tools daemon with:
+And finally starting the rng-tools daemon with:
 
 ```
 sudo /etc/init.d/rng-tools start
 ```
 
-__source: http://www.howtoforge.com/helping-the-random-number-generator-to-gain-enough-entropy-with-rng-tools-debian-lenny __
+**source: http://www.howtoforge.com/helping-the-random-number-generator-to-gain-enough-entropy-with-rng-tools-debian-lenny**
 
-## Starting Up
+### Detailed installation and setup guides
 
-- Run your mongodb process.
+Although some effort is made to provide automatic installation scripts, the following more detailed guides may be 
+helpful if you are setting up the OSF on a machine already used for other development work, or if you wish to 
+perform other advanced tasks. If the OSF is already working based on the instructions above, you can skip this section.
 
-```bash
-$ invoke mongo
-```
+#### Using TokUMX
 
-- Run your local development server.
+TokuMX is an open-source fork of MongoDB that provides support for transactions in single-sharded environments.
+TokuMX supports all MongoDB features as of version 2.4 and adds `beginTransaction`, `rollbackTransaction`, and
+`commitTransaction` commands.
 
-```bash
-$ invoke server
-```
-
-- Run your local sharejs server.
+##### Installing with Mac OS
 
 ```bash
-$ invoke sharejs
+$ brew tap tokutek/tokumx
+$ brew install tokumx-bin
 ```
 
-## Running the shell
+##### Installing on Ubuntu
+
+```bash
+$ apt-key adv --keyserver keyserver.ubuntu.com --recv-key 505A7412
+$ echo "deb [arch=amd64] http://s3.amazonaws.com/tokumx-debs $(lsb_release -cs) main" | sudo tee /etc/apt/sources.list.d/tokumx.list
+$ apt-get update
+$ apt-get install tokumx
+```
+
+##### Migrating from MongoDB
+
+TokuMX and MongoDB use different binary formats. To migrate data from MongoDB to TokuMX:
+
+- Back up the MongoDB data
+    - `invoke mongodump --path dump`
+- Shut down the MongoDB server
+- Uninstall MongoDB
+- Install TokuMX (see instructions above)
+- Restore the data to TokuMX
+    - `invoke mongorestore --path dump/osf20130903 --drop`
+- Verify that the migrated data are available in TokuMX
+
+#### Using Celery
+
+##### Installing Celery + RabbitMQ
+
+- Install RabbitMQ. On MacOSX with homebrew,
+
+```bash
+$ brew update
+$ brew install rabbitmq
+```
+The scripts are installed to `/usr/local/sbin`, so you may need to add `PATH=$PATH:/usr/local/sbin` to your `.bash_profile`.
+
+For instructions for other OS's, see [the official docs](http://www.rabbitmq.com/download.html).
+
+Then start the RabbitMQ server with
+
+```bash
+$ invoke rabbitmq
+```
+
+If you want the rabbitmq server to start every time you start your computer (MacOSX), run
+
+```bash
+$ ln -sfv /usr/local/opt/rabbitmq/*.plist ~/Library/LaunchAgents
+$ launchctl load ~/Library/LaunchAgents/homebrew.mxcl.rabbitmq.plist
+```
+
+##### Starting A Celery Worker
+
+```bash
+invoke celery_worker
+```
+
+#### Search
+
+Install Elasticsearch to use search features.
+
+##### Mac OSX
+
+```bash
+$ brew install elasticsearch
+```
+_note: Oracle JDK 7 must be installed for elasticsearch to run_
+
+##### Ubuntu
+
+```bash
+$ wget https://download.elasticsearch.org/elasticsearch/elasticsearch/elasticsearch-1.2.1.deb
+$ sudo dpkg -i elasticsearch-1.2.1.deb
+```
+
+##### Using Elasticsearch
+- In your `website/settings/local.py` file, set `SEARCH_ENGINE` to 'elastic'.
+
+```python
+SEARCH_ENGINE = 'elastic'
+```
+- Start the Elasticsearch server and migrate the models.
+
+```bash
+$ invoke elasticsearch
+$ invoke migrate_search
+```
+##### Starting a local Elasticsearch server
+
+```bash
+$ invoke elasticsearch
+```
+
+#### NPM
+
+The Node Package Manager (NPM) is required for installing a number of node-based packages.
+
+```bash
+# For MacOSX
+$ brew update && brew install node
+```
+
+Installing Node on Ubuntu is slightly more complicated. Node is installed as `nodejs`, but Bower expects
+the binary to be called `node`. Symlink `nodejs` to `node` to fix, then verify that `node` is properly aliased:
+
+```bash
+# For Ubuntu
+$ sudo apt-get install nodejs
+$ sudo ln -s /usr/bin/nodejs /usr/bin/node
+$ node --version      # v0.10.25
+```
+
+## Common Development Tasks
+
+### Running the shell
 
 To open the interactive Python shell, run:
 
@@ -97,7 +339,7 @@ To open the interactive Python shell, run:
 $ invoke shell
 ```
 
-## Running Tests
+### Running Tests
 
 To run all tests:
 
@@ -129,7 +371,8 @@ Run Javascript tests:
 $ inv karma
 ```
 
-By default, `inv karma` will start a Karma process which will re-run your tests every time a JS file is changed. To do a single run of the JS tests:
+By default, `inv karma` will start a Karma process which will re-run your tests every time a JS file is changed. 
+To do a single run of the JS tests:
 
 
 ```bash
@@ -148,7 +391,7 @@ If you want to run cross browser tests with SauceLabs, use "sauce" parameter:
 $ inv karma --sauce
 ```
 
-### Testing Addons
+#### Testing Addons
 
 Addons tests are not run by default. To execute addons tests, run
 
@@ -156,7 +399,7 @@ Addons tests are not run by default. To execute addons tests, run
 $ invoke test_addons
 ```
 
-### Testing Email
+#### Testing Email
 
 
 First, set `MAIL_SERVER` to `localhost:1025` in you `local.py` file.
@@ -177,142 +420,7 @@ Sent emails will show up in your server logs.
 $ invoke mailserver -p 1025
 ```
 
-## Using TokUMX
-
-TokuMX is an open-source fork of MongoDB that provides support for transactions in single-sharded environments.
-TokuMX supports all MongoDB features as of version 2.4 and adds `beginTransaction`, `rollbackTransaction`, and
-`commitTransaction` commands.
-
-### Installing with Mac OS
-
-```bash
-$ brew tap tokutek/tokumx
-$ brew install tokumx-bin
-```
-
-### Installing on Ubuntu
-
-```bash
-$ apt-key adv --keyserver keyserver.ubuntu.com --recv-key 505A7412
-$ echo "deb [arch=amd64] http://s3.amazonaws.com/tokumx-debs $(lsb_release -cs) main" | sudo tee /etc/apt/sources.list.d/tokumx.list
-$ apt-get update
-$ apt-get install tokumx
-```
-
-### Migrating from MongoDB
-
-TokuMX and MongoDB use different binary formats. To migrate data from MongoDB to TokuMX:
-* Back up the MongoDB data
-    * `invoke mongodump --path dump`
-* Shut down the MongoDB server
-* Uninstall MongoDB
-* Install TokuMX (see instructions above)
-* Restore the data to TokuMX
-    * `invoke mongorestore --path dump/osf20130903 --drop`
-* Verify that the migrated data are available in TokuMX
-
-## Using Celery
-
-### Installing Celery + RabbitMQ
-
-- Install RabbitMQ. On MacOSX with homebrew,
-
-```bash
-$ brew update
-$ brew install rabbitmq
-```
-The scripts are installed to `/usr/local/sbin`, so you may need to add `PATH=$PATH:/usr/local/sbin` to your `.bash_profile`.
-
-For instructions for other OS's, see [the official docs](http://www.rabbitmq.com/download.html).
-
-Then start the RabbitMQ server with
-
-```bash
-$ invoke rabbitmq
-```
-
-If you want the rabbitmq server to start every time you start your computer (MacOSX), run
-
-```bash
-$ ln -sfv /usr/local/opt/rabbitmq/*.plist ~/Library/LaunchAgents
-$ launchctl load ~/Library/LaunchAgents/homebrew.mxcl.rabbitmq.plist
-```
-
-### Starting A Celery Worker
-
-```bash
-invoke celery_worker
-```
-
-## Using Search
-
-### Elasticsearch
-
-- Install Elasticsearch
-
-#### Mac OSX
-
-```bash
-$ brew install elasticsearch
-```
-_note: Oracle JDK 7 must be installed for elasticsearch to run_
-
-#### Ubuntu
-
-```bash
-$ wget https://download.elasticsearch.org/elasticsearch/elasticsearch/elasticsearch-1.2.1.deb
-$ sudo dpkg -i elasticsearch-1.2.1.deb
-```
-
-#### Using Elasticsearch
-- In your `website/settings/local.py` file, set `SEARCH_ENGINE` to 'elastic'.
-
-```python
-SEARCH_ENGINE = 'elastic'
-```
-- Start the Elasticsearch server and migrate the models.
-
-```bash
-$ invoke elasticsearch
-$ invoke migrate_search
-```
-#### Starting a local Elasticsearch server
-
-```bash
-$ invoke elasticsearch
-```
-
-## NPM
-
-The Node Package Manager (NPM) is required for installing a number of node-based packages.
-
-```bash
-# For MacOSX
-$ brew update && brew install node
-```
-
-Installing Node on Ubuntu is slightly more complicated. Node is installed as `nodejs`, but Bower expects
-the binary to be called `node`. Symlink `nodejs` to `node` to fix, then verify that `node` is properly aliased:
-
-```bash
-# For Ubuntu
-$ sudo apt-get install nodejs
-$ sudo ln -s /usr/bin/nodejs /usr/bin/node
-$ node --version      # v0.10.25
-```
-
-
-## Install NPM requirements
-
-To install necessary NPM requiremnts, run:
-
-```bash
-$ npm install
-```
-
-In the OSF root directory. This will install a number libraries for both the front-end and for building the assets (e.g. webpack).
-
-### To build assets with webpack
+### Building assets with webpack
 
 Use the following command to update your requirements and build the asset bundles:
 
@@ -322,50 +430,10 @@ $ inv assets -dw
 
 The -w option puts you in "watch": assets will be built when a file changes.
 
-## Downloading citation styles (optional)
-
-To download citation styles, run:
-
-```bash
-$ invoke update_citation_styles
-```
-
-
-## Setting up addons
-
-To install the python libraries needed to support the enabled addons, run:
-
-```bash
-$ invoke requirements --addons
-```
 
 ### Getting application credentials
 
-Many addons require application credentials (typically an app key and secret) to be able to authenticate through the OSF. These credentials go in each addon's `local.py` settings file (e.g. `website/addons/dropbox/settings/local.py`).
+Many addons require application credentials (typically an app key and secret) to be able to authenticate through the 
+OSF. These credentials go in each addon's `local.py` settings file (e.g. `website/addons/dropbox/settings/local.py`).
 
-For local development, the COS provides test app credentials for a number of services. A listing of these can be found here: https://osf.io/m2hig/wiki/home/ .
-
-## Livereload support
-
-You can run the app server in livereload mode with:
-
-```bash
-$ invoke server --live
-```
-
-This will make your browser automatically refresh whenever a code change is made.
-
-## Summary
-
-If you have all the above services installed, you can start *everything* up with this sequence
-
-```bash
-invoke mongo -d  # Runs mongod as a daemon
-invoke mailserver
-invoke rabbitmq
-invoke celery_worker
-invoke elasticsearch
-invoke assets -dw
-invoke server
-```
-
+For local development, the COS provides [test app credentials](https://osf.io/m2hig/wiki/home/) for a number of services.
