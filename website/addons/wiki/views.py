@@ -461,7 +461,6 @@ def project_wiki_grid_data(auth, wname, **kwargs):
             'children': format_component_wiki_pages(node, auth)
         }
     ]
-    print ret
     return ret
 
 
