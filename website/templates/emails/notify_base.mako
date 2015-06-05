@@ -34,7 +34,11 @@
         </tr>
         <tr>
           <td style="border-collapse: collapse;">
-          ${self.content()}
+            <table id="content" width="600" border="0" cellpadding="25" cellspacing="0" align="center" style="margin: 30px auto 0 auto;background: white;box-shadow: 0 0 2px #ccc;">
+              <tbody>
+                ${self.content()}
+              </tbody>
+            </table>            
           </td>
         </tr>
         <tr>

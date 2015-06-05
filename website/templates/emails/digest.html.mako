@@ -35,18 +35,14 @@
 </%def>
 
 <%def name="conent()">
-<table id="content" width="600" border="0" cellpadding="25" cellspacing="0" align="center" style="margin: 30px auto 0 auto;background: white;box-shadow: 0 0 2px #ccc;">
-  <tbody>
-    <tr>
-      <td style="border-collapse: collapse;">
-        <h3 class="text-center" style="padding: 0;margin: 30px 0 0 0;border: none;list-style: none;font-weight: 300;text-align: center;">Recent Activity</h3>
-      </td>
-    </tr>
-    <tr>
-      <td style="border-collapse: collapse;">
-        ${build_message(message)}
-      </td>
-    </tr>
-  </tbody>
-</table>
+<tr>
+  <td style="border-collapse: collapse;">
+    <h3 class="text-center" style="padding: 0;margin: 30px 0 0 0;border: none;list-style: none;font-weight: 300;text-align: center;">Recent Activity</h3>
+  </td>
+</tr>
+<tr>
+  <td style="border-collapse: collapse;">
+    ${build_message(message)}
+  </td>
+</tr>
 </%def>
