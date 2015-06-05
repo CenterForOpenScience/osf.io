@@ -201,7 +201,7 @@ def osfstorage_download(file_node, payload, node_addon, **kwargs):
     except ValueError:
         raise make_error(httplib.BAD_REQUEST, 'Version must be an int or not specified')
 
-    version = file_node.get_version(version_id)
+    version = file_node.get_version(version_id, required=True)
 
     if request.args.get('mode') not in ('render', ):
         if version_id < 0:
