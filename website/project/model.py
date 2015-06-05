@@ -41,6 +41,7 @@ from website import language
 from website import settings
 from website.util import web_url_for
 from website.util import api_url_for
+from website.util.sanitize import clean_tag
 from website.exceptions import NodeStateError
 from website.citations.utils import datetime_to_csl
 from website.identifiers.model import IdentifierMixin
@@ -1746,9 +1747,10 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
 
     def add_tag(self, tag, auth, save=True):
         if tag not in self.tags:
-            new_tag = Tag.load(tag)
+            cleaned_tag = clean_tag(tag)
+            new_tag = Tag.load(cleaned_tag)
             if not new_tag:
-                new_tag = Tag(_id=tag)
+                new_tag = Tag(_id=cleaned_tag)
             new_tag.save()
             self.tags.append(new_tag)
             self.add_log(
