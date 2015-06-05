@@ -138,7 +138,7 @@ class RegistrationOpenEndedSerializer(JSONAPISerializer):
 
     id = ser.CharField(read_only=True, source='_id')
     title = ser.CharField(read_only=True)
-    summary = ser.CharField(required=False, default='', write_only=True, help_text="Provide a summary or describe how this differs from prior registrations.")
+    summary = ser.CharField(required=False, default='', write_only=True, help_text="Provide a narrative summary of what is contained in this registration, or how it differs from prior registrations.")
     category = ser.CharField(read_only=True, required=False)
 
     def validate(self, data):
@@ -160,7 +160,7 @@ class RegistrationOpenEndedWithTokenSerializer(NodeSerializer):
 
     id = ser.CharField(read_only=True, source='_id')
     title = ser.CharField(read_only=True)
-    summary = ser.CharField(required=False, default='', write_only=True, help_text="Provide a summary or describe how this differs from prior registrations.")
+    summary = ser.CharField(required=False, default='', write_only=True, help_text="Provide a narrative summary of what is contained in this registration, or how it differs from prior registrations.")
     registered_meta = ser.CharField(read_only=True)
     description = ser.CharField(read_only=True)
     category = ser.CharField(read_only=True)
@@ -211,7 +211,7 @@ class RegistrationPreDataCollectionSerializer(JSONAPISerializer):
 
     looked = ser.ChoiceField(choices=TRUE_FALSE_CHOICES, default='', required=False, help_text="Is data collection for this project underway or complete?", write_only=True)
     datacompletion = ser.ChoiceField(choices=TRUE_FALSE_CHOICES, default='', required=False, help_text="Have you looked at the data?", write_only=True)
-    comments = ser.CharField(default='', required=False, help_text="Other comments", write_only=True)
+    comments = ser.CharField(default='', required=False, help_text="Other Comments", write_only=True)
 
     def validate(self, data):
         request = self.context['request']
@@ -224,7 +224,6 @@ class RegistrationPreDataCollectionSerializer(JSONAPISerializer):
         token = token.hexdigest()
         url = absolute_reverse('nodes:node-registration-pre-data-collection-token', kwargs={'pk': node._id, 'token': token})
         raise serializers.ValidationError(url)
-
 
     class Meta:
         type_='registrations'
@@ -240,7 +239,7 @@ class RegistrationPreDataCollectionWithTokenSerializer(NodeSerializer):
 
     looked = ser.ChoiceField(choices=TRUE_FALSE_CHOICES, default='', required=False, help_text="Is data collection for this project underway or complete?", write_only=True)
     datacompletion = ser.ChoiceField(choices=TRUE_FALSE_CHOICES, default='', required=False, help_text="Have you looked at the data?", write_only=True)
-    comments = ser.CharField(default='', required=False, help_text="Other comments", write_only=True)
+    comments = ser.CharField(default='', required=False, help_text="Other Comments", write_only=True)
 
     def validate(self, data):
         request = self.context['request']
@@ -332,6 +331,7 @@ class ReplicationRecipePreRegistrationSerializer(JSONAPISerializer):
 
     class Meta:
         type_='registrations'
+
 class ReplicationRecipePreRegistrationWithTokenSerializer(NodeSerializer):
     YES_NO_CHOICES = ["yes", "no"]
     SIM_DIFF_CHOICES = ["Exact", "Close", "Different"]

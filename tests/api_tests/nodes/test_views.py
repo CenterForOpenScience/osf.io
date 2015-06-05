@@ -777,7 +777,7 @@ class TestNodeCreateOpenEndedRegistration(ApiTestCase):
         self.basic_auth_two = (self.user_two.username, password)
 
         self.summary = "Open-Ended project summary"
-        self.payload = {"summary": self.summary }
+        self.payload = {"summary": self.summary}
 
         self.public_project = ProjectFactory(is_public=True, creator=self.user)
         self.public_url = '/v2/nodes/{}/register/Open-Ended_Registration/'.format(self.public_project._id)
