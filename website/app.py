@@ -3,6 +3,7 @@
 import os
 import importlib
 from collections import OrderedDict
+import json
 
 from modularodm import storage
 from werkzeug.contrib.fixers import ProxyFix
@@ -21,8 +22,11 @@ from framework.transactions import handlers as transaction_handlers
 import website.models
 from website.routes import make_url_map
 from website.addons.base import init_addon
-from website.project.model import ensure_schemas
+from website.project.model import ensure_schemas, Node
 
+def build_js_config_files(settings):
+    with open(os.path.join(settings.STATIC_FOLDER, 'built', 'nodeCategories.json'), 'wb') as fp:
+        json.dump(Node.CATEGORY_MAP, fp)
 
 def init_addons(settings, routes=True):
     """Initialize each addon in settings.ADDONS_REQUESTED.
@@ -33,11 +37,7 @@ def init_addons(settings, routes=True):
     settings.ADDONS_AVAILABLE = getattr(settings, 'ADDONS_AVAILABLE', [])
     settings.ADDONS_AVAILABLE_DICT = getattr(settings, 'ADDONS_AVAILABLE_DICT', OrderedDict())
     for addon_name in settings.ADDONS_REQUESTED:
-        try:
-            addon = init_addon(app, addon_name, routes=routes)
-        except AssertionError as error:
-            logger.exception(error)
-            continue
+        addon = init_addon(app, addon_name, routes=routes)
         if addon:
             if addon not in settings.ADDONS_AVAILABLE:
                 settings.ADDONS_AVAILABLE.append(addon)
@@ -111,6 +111,7 @@ def init_app(settings_module='website.settings', set_backends=True, routes=True,
 
     build_log_templates(settings)
     init_addons(settings, routes)
+    build_js_config_files(settings)
 
     app.debug = settings.DEBUG_MODE
 

@@ -6,8 +6,8 @@
 'use strict';
 
 // CSS
-require('../css/onboarding.css');
-require('../css/typeahead.css');
+require('css/onboarding.css');
+require('css/typeahead.css');
 
 var Dropzone = require('dropzone');
 var Handlebars = require('handlebars');
@@ -17,9 +17,9 @@ var $ = require('jquery');
 require('typeahead.js');
 
 
-require('./projectCreator.js');
-var waterbutler = require('./waterbutler');
-var $osf = require('./osfHelpers');
+require('js/projectCreator.js');
+var waterbutler = require('js/waterbutler');
+var $osf = require('js/osfHelpers');
 
 function noop() {}
 var MAX_RESULTS = 14;
@@ -95,7 +95,7 @@ function initTypeahead(element, nodes, viewModel, params){
 function serializeNode(node) {
     var dateModified = new $osf.FormattableDate(node.date_modified);
     return {
-        name: node.title,
+        name: $osf.htmlDecode(node.title),
         id: node.id,
         dateModified: dateModified,
         urls: {
@@ -422,6 +422,8 @@ function OBUploaderViewModel(params) {
     self.messageClass = ko.observable('text-info');
     // The target node to upload to to
     self.target = ko.observable(null);
+    //Boolean to track if upload was successful
+    self.success = false;
     /* Functions */
     self.toggle = function() {
         self.isOpen(!self.isOpen());
@@ -492,6 +494,8 @@ function OBUploaderViewModel(params) {
     var dropzoneOpts = {
 
         sending: function(file, xhr) {
+            //Inject Bearer token
+            xhr = $osf.setXHRAuthorization(xhr);
             //Hack to remove webkitheaders
             var _send = xhr.send;
             xhr.send = function() {
@@ -554,6 +558,7 @@ function OBUploaderViewModel(params) {
                 self.uploadCount(oldCount + 1);
 
                 if(self.uploadCount() > dropzone.files.length){ // when finished redirect to project/component page where uploaded.
+                    self.success = true;
                     self.changeMessage('Success!', 'text-success');
                     window.location = self.target().urls.files;
                 }
@@ -574,6 +579,14 @@ function OBUploaderViewModel(params) {
         }
     };
     self.dropzone = new Dropzone(self.selector, dropzoneOpts);
+
+    //stop user from leaving if file is staged for upload
+    $(window).on('beforeunload', function() {
+        if(!self.enableUpload() && !self.success) {
+            return 'You have a pending upload. If you leave ' +
+                'the page now, your file will not be stored.';
+        }
+    });
 }
 
 ko.components.register('osf-ob-uploader', {

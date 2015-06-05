@@ -341,6 +341,8 @@ def requirements(addons=False, release=False, dev=False):
         inv requirements --addons
         inv requirements --release
     """
+    if addons:
+        addon_requirements()
     req_file = None
     # "release" takes precedence
     if release:
@@ -350,8 +352,6 @@ def requirements(addons=False, release=False, dev=False):
     else:  # then base requirements
         req_file = os.path.join(HERE, 'requirements.txt')
     run(pip_install(req_file), echo=True)
-    if addons:
-        addon_requirements()
 
 
 @task
@@ -383,9 +383,12 @@ def test_addons():
 
 
 @task
-def test(all=False):
+def test(all=False, syntax=False):
     """Alias of `invoke test_osf`.
     """
+    if syntax:
+        flake()
+
     if all:
         test_all()
     else:
@@ -393,8 +396,8 @@ def test(all=False):
 
 
 @task
-def test_all(flake=False):
-    if flake:
+def test_all(syntax=False):
+    if syntax:
         flake()
     test_osf()
     test_addons()
@@ -555,6 +558,7 @@ def npm_bower():
 def bower_install():
     print('Installing bower-managed packages')
     bower_bin = os.path.join(HERE, 'node_modules', 'bower', 'bin', 'bower')
+    run('{} prune'.format(bower_bin), echo=True)
     run('{} install'.format(bower_bin), echo=True)
 
 
@@ -565,6 +569,10 @@ def setup():
     packages()
     requirements(addons=True, dev=True)
     encryption()
+    from website.app import build_js_config_files
+    from website import settings
+    # Build nodeCategories.json before building assets
+    build_js_config_files(settings)
     assets(dev=True, watch=False)
 
 
@@ -590,7 +598,7 @@ def analytics():
 @task
 def clear_sessions(months=1, dry_run=False):
     from website.app import init_app
-    init_app(routes=False, set_backends=True)
+    init_app(routes=False, set_backends=True, mfr=False)
     from scripts import clear_sessions
     clear_sessions.clear_sessions_relative(months=months, dry_run=dry_run)
 
@@ -632,7 +640,7 @@ def hotfix(name, finish=False, push=False):
 def feature(name, finish=False, push=False):
     """Rename the current branch to a feature branch and optionally finish it."""
     print('Renaming branch...')
-    run('git br -m feature/{}'.format(name), echo=True)
+    run('git branch -m feature/{}'.format(name), echo=True)
     if finish:
         run('git flow feature finish {}'.format(name), echo=True)
     if push:

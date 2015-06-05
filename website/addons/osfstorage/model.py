@@ -6,274 +6,277 @@ import logging
 
 import furl
 
-import pymongo
 from modularodm import fields, Q
-from modularodm import exceptions as modm_errors
-from modularodm.storage.base import KeyExistsException
 from dateutil.parser import parse as parse_date
+from modularodm.exceptions import NoResultsFound
+from modularodm.storage.base import KeyExistsException
 
-from framework.auth import Auth
 from framework.mongo import StoredObject
 from framework.mongo.utils import unique_on
 from framework.analytics import get_basic_counters
 
-from website.models import NodeLog
 from website.addons.base import AddonNodeSettingsBase, GuidFile
 
-from website.addons.osfstorage import logs
+from website.addons.osfstorage import utils
 from website.addons.osfstorage import errors
 from website.addons.osfstorage import settings
 
 
 logger = logging.getLogger(__name__)
 
-oid_primary_key = fields.StringField(
-    primary=True,
-    default=lambda: str(bson.ObjectId())
-)
-
-
-def copy_file_tree(tree, node_settings):
-    """Recursively copy file tree.
-
-    :param OsfStorageFileTree tree: Tree to copy
-    :param node_settings: Root node settings record
-    """
-    children = [copy_files(child, node_settings) for child in tree.children]
-    clone = tree.clone()
-    clone.children = children
-    clone.node_settings = node_settings
-    clone.save()
-    return clone
-
-
-def copy_file_record(record, node_settings):
-    """Copy versions of an `OsfStorageFileRecord`. Versions are copied
-    by primary key and will not be duplicated in the database.
-
-    :param OsfStorageFileRecord record: Record to copy
-    :param node_settings: Root node settings record
-    """
-    clone = record.clone()
-    clone.versions = record.versions
-    clone.node_settings = node_settings
-    clone.save()
-    return clone
-
-
-def copy_files(files, node_settings):
-    if isinstance(files, OsfStorageFileTree):
-        return copy_file_tree(files, node_settings)
-    if isinstance(files, OsfStorageFileRecord):
-        return copy_file_record(files, node_settings)
-    raise TypeError('Input must be `OsfStorageFileTree` or `OsfStorageFileRecord`')
-
 
 class OsfStorageNodeSettings(AddonNodeSettingsBase):
+    complete = True
+    has_auth = True
 
-    file_tree = fields.ForeignField('OsfStorageFileTree')
     root_node = fields.ForeignField('OsfStorageFileNode')
+    file_tree = fields.ForeignField('OsfStorageFileTree')
+
+    # Temporary field to mark that a record has been migrated by the
+    # migrate_from_oldels scripts
+    _migrated_from_old_models = fields.BooleanField(default=False)
 
     def on_add(self):
         if self.root_node:
             return
 
+        # A save is required here to both create and attach the root_node
+        # When on_add is called the model that self refers to does not yet exist
+        # in the database and thus odm cannot attach foreign fields to it
         self.save()
+        # Note: The "root" node will always be "named" empty string
         root = OsfStorageFileNode(name='', kind='folder', node_settings=self)
         root.save()
         self.root_node = root
         self.save()
 
-    @property
-    def has_auth(self):
-        return True
-
-    @property
-    def complete(self):
-        return True
-
     def find_or_create_file_guid(self, path):
-        return OsfStorageGuidFile.get_or_create(node=self.owner, path=path.lstrip('/'))
-
-    def copy_contents_to(self, dest):
-        """Copy file tree and contents to destination. Note: destination must be
-        saved before copying so that copied items can refer to it.
-
-        :param OsfStorageNodeSettings dest: Destination settings object
-        """
-        dest.save()
-        if self.file_tree:
-            dest.file_tree = copy_file_tree(self.file_tree, dest)
-            dest.save()
+        return OsfStorageGuidFile.get_or_create(self.owner, path)
 
     def after_fork(self, node, fork, user, save=True):
-        clone, message = super(OsfStorageNodeSettings, self).after_fork(
-            node=node, fork=fork, user=user, save=False
-        )
-        self.copy_contents_to(clone)
-        return clone, message
+        clone = self.clone()
+        clone.owner = fork
+        clone.save()
+
+        clone.root_node = utils.copy_files(self.root_node, clone)
+        clone.save()
+
+        return clone, None
 
     def after_register(self, node, registration, user, save=True):
         clone = self.clone()
         clone.owner = registration
-        self.copy_contents_to(clone)
-        if save:
-            clone.save()
+        clone.save()
+
+        clone.root_node = utils.copy_files(self.root_node, clone)
+        clone.save()
+
         return clone, None
 
     def serialize_waterbutler_settings(self):
-        ret = {
-            'callback': self.owner.api_url_for(
-                'osf_storage_update_metadata_hook',
+        return dict(settings.WATERBUTLER_SETTINGS, **{
+            'nid': self.owner._id,
+            'rootId': self.root_node._id,
+            'baseUrl': self.owner.api_url_for(
+                'osfstorage_get_metadata',
                 _absolute=True,
                 _offload=True
-            ),
-            'metadata': self.owner.api_url_for(
-                'osf_storage_get_metadata_hook',
-                _absolute=True,
-                _offload=True
-            ),
-            'revisions': self.owner.api_url_for(
-                'osf_storage_get_revisions',
-                _absolute=True,
-                _offload=True
-            ),
-        }
-        ret.update(settings.WATERBUTLER_SETTINGS)
-        return ret
+            )
+        })
 
     def serialize_waterbutler_credentials(self):
         return settings.WATERBUTLER_CREDENTIALS
 
     def create_waterbutler_log(self, auth, action, metadata):
-        pass
+        url = self.owner.web_url_for(
+            'addon_view_or_download_file',
+            path=metadata['path'],
+            provider='osfstorage'
+        )
+
+        self.owner.add_log(
+            'osf_storage_{0}'.format(action),
+            auth=auth,
+            params={
+                'node': self.owner._id,
+                'project': self.owner.parent_id,
+
+                'path': metadata['materialized'],
+
+                'urls': {
+                    'view': url,
+                    'download': url + '?action=download'
+                },
+            },
+        )
 
 
-@unique_on(['path', 'node_settings'])
-class BaseFileObject(StoredObject):
+@unique_on(['name', 'kind', 'parent', 'node_settings'])
+class OsfStorageFileNode(StoredObject):
+    """A node in the file tree of a given project
+    Contains  references to a fileversion and stores information about
+    deletion status and position in the tree
 
-    path = fields.StringField(required=True, index=True)
-    node_settings = fields.ForeignField(
-        'OsfStorageNodeSettings',
-        required=True,
-        index=True,
-    )
+               root
+              / | \
+        child1  |  child3
+                child2
+                /
+            grandchild1
+    """
 
-    _meta = {
-        'abstract': True,
-    }
+    _id = fields.StringField(primary=True, default=lambda: str(bson.ObjectId()))
+
+    is_deleted = fields.BooleanField(default=False)
+    name = fields.StringField(required=True, index=True)
+    kind = fields.StringField(required=True, index=True)
+    parent = fields.ForeignField('OsfStorageFileNode', index=True)
+    versions = fields.ForeignField('OsfStorageFileVersion', list=True)
+    node_settings = fields.ForeignField('OsfStorageNodeSettings', required=True, index=True)
+
+    @classmethod
+    def create_child_by_path(cls, path, node_settings):
+        """Attempts to create a child node from a path formatted as
+        /parentid/child_name
+        or
+        /parentid/child_name/
+        returns created, child_node
+        """
+        try:
+            parent_id, child_name = path.strip('/').split('/')
+            parent = cls.get_folder(parent_id, node_settings)
+        except ValueError:
+            try:
+                parent, (child_name, ) = node_settings.root_node, path.strip('/').split('/')
+            except ValueError:
+                raise errors.InvalidPathError('Path {} is invalid'.format(path))
+
+        try:
+            if path.endswith('/'):
+                return True, parent.append_folder(child_name)
+            else:
+                return True, parent.append_file(child_name)
+        except KeyExistsException:
+            if path.endswith('/'):
+                return False, parent.find_child_by_name(child_name, kind='folder')
+            else:
+                return False, parent.find_child_by_name(child_name, kind='file')
+
+    @classmethod
+    def get(cls, path, node_settings):
+        path = path.strip('/')
+
+        if not path:
+            return node_settings.root_node
+
+        return cls.find_one(
+            Q('_id', 'eq', path) &
+            Q('node_settings', 'eq', node_settings)
+        )
+
+    @classmethod
+    def get_folder(cls, path, node_settings):
+        path = path.strip('/')
+
+        if not path:
+            return node_settings.root_node
+
+        return cls.find_one(
+            Q('_id', 'eq', path) &
+            Q('kind', 'eq', 'folder') &
+            Q('node_settings', 'eq', node_settings)
+        )
+
+    @classmethod
+    def get_file(cls, path, node_settings):
+        return cls.find_one(
+            Q('_id', 'eq', path.strip('/')) &
+            Q('kind', 'eq', 'file') &
+            Q('node_settings', 'eq', node_settings)
+        )
 
     @property
-    def name(self):
-        _, value = os.path.split(self.path)
-        return value
+    @utils.must_be('folder')
+    def children(self):
+        return self.__class__.find(Q('parent', 'eq', self._id))
 
     @property
-    def extension(self):
-        _, value = os.path.splitext(self.path)
-        return value
+    def is_folder(self):
+        return self.kind == 'folder'
+
+    @property
+    def is_file(self):
+        return self.kind == 'file'
+
+    @property
+    def path(self):
+        return '/{}{}'.format(self._id, '/' if self.is_folder else '')
 
     @property
     def node(self):
         return self.node_settings.owner
 
-    @classmethod
-    def parent_class(cls):
-        raise NotImplementedError
-
-    @classmethod
-    def find_by_path(cls, path, node_settings):
-        """Find a record by path and root settings record.
-
-        :param str path: Path to file or directory
-        :param node_settings: Root node settings record
+    def materialized_path(self):
+        """creates the full path to a the given filenode
+        Note: Possibly high complexity/ many database calls
+        USE SPARINGLY
         """
-        try:
-            obj = cls.find_one(
-                Q('path', 'eq', path.rstrip('/')) &
-                Q('node_settings', 'eq', node_settings._id)
-            )
-            return obj
-        except modm_errors.NoResultsFound:
-            return None
+        if not self.parent:
+            return '/'
+        # Note: ODM cache can be abused here
+        # for highly nested folders calling
+        # list(self.__class__.find(Q(nodesetting),Q(folder))
+        # may result in a massive increase in performance
+        def lineage():
+            current = self
+            while current:
+                yield current
+                current = current.parent
 
-    @classmethod
-    def get_or_create(cls, path, node_settings):
-        """Get or create a record by path and root settings record.
+        path = os.path.join(*reversed([x.name for x in lineage()]))
+        if self.is_folder:
+            return '/{}/'.format(path)
+        return '/{}'.format(path)
 
-        :param str path: Path to file or directory
-        :param node_settings: Root node settings record
-        :returns: Tuple of (record, created)
-        """
-        path = path.rstrip('/')
+    @utils.must_be('folder')
+    def find_child_by_name(self, name, kind='file'):
+        return self.__class__.find_one(
+            Q('name', 'eq', name) &
+            Q('kind', 'eq', kind) &
+            Q('parent', 'eq', self)
+        )
 
-        try:
-            obj = cls(path=path, node_settings=node_settings)
-            obj.save()
-        except KeyExistsException:
-            obj = cls.find_by_path(path, node_settings)
-            assert obj is not None
-            return obj, False
+    def append_folder(self, name, save=True):
+        return self._create_child(name, 'folder', save=save)
 
-        # Ensure all intermediate paths
-        if path:
-            parent_path, _ = os.path.split(path)
-            parent_class = cls.parent_class()
-            parent_obj, _ = parent_class.get_or_create(parent_path, node_settings)
-            parent_obj.append_child(obj)
-        else:
-            node_settings.file_tree = obj
-            node_settings.save()
+    def append_file(self, name, save=True):
+        return self._create_child(name, 'file', save=save)
 
-        return obj, True
+    @utils.must_be('folder')
+    def _create_child(self, name, kind, save=True):
+        child = OsfStorageFileNode(
+            name=name,
+            kind=kind,
+            parent=self,
+            node_settings=self.node_settings
+        )
+        if save:
+            child.save()
+        return child
 
     def get_download_count(self, version=None):
-        """Return download count or `None` if this is not a file object (e.g. a
-        folder).
-        """
-        return None
+        if self.is_folder:
+            return None
 
-    def __repr__(self):
-        return '<{}(path={!r}, node_settings={!r})>'.format(
-            self.__class__.__name__,
-            self.path,
-            self.node_settings._id,
-        )
+        parts = ['download', self.node._id, self._id]
+        if version is not None:
+            parts.append(version)
+        page = ':'.join([format(part) for part in parts])
+        _, count = get_basic_counters(page)
 
+        return count or 0
 
-class OsfStorageFileTree(BaseFileObject):
-
-    _id = oid_primary_key
-    children = fields.AbstractForeignField(list=True)
-
-    @classmethod
-    def parent_class(cls):
-        return OsfStorageFileTree
-
-    def append_child(self, child):
-        """Appending children through ODM introduces a race condition such that
-        concurrent requests can overwrite previously added items; use the native
-        `addToSet` operation instead.
-        """
-        collection = self._storage[0].store
-        collection.update(
-            {'_id': self._id},
-            {'$addToSet': {'children': (child._id, child._name)}}
-        )
-        # Updating MongoDB directly means the cache is wrong; reload manually
-        self.reload()
-
-
-class OsfStorageFileRecord(BaseFileObject):
-
-    _id = oid_primary_key
-    is_deleted = fields.BooleanField(default=False)
-    versions = fields.ForeignField('OsfStorageFileVersion', list=True)
-
-    @classmethod
-    def parent_class(cls):
-        return OsfStorageFileTree
-
+    @utils.must_be('file')
     def get_version(self, index=-1, required=False):
         try:
             return self.versions[index]
@@ -282,21 +285,12 @@ class OsfStorageFileRecord(BaseFileObject):
                 raise errors.VersionNotFoundError
             return None
 
-    def get_versions(self, page, size=settings.REVISIONS_PAGE_SIZE):
-        start = len(self.versions) - (page * size)
-        stop = max(0, start - size)
-        indices = range(start, stop, -1)
-        versions = [self.versions[idx - 1] for idx in indices]
-        more = stop > 0
-        return indices, versions, more
-
+    @utils.must_be('file')
     def create_version(self, creator, location, metadata=None):
         latest_version = self.get_version()
         version = OsfStorageFileVersion(creator=creator, location=location)
 
         if latest_version and latest_version.is_duplicate(version):
-            if self.is_deleted:
-                self.undelete(Auth(creator))
             return latest_version
 
         if metadata:
@@ -304,14 +298,11 @@ class OsfStorageFileRecord(BaseFileObject):
 
         version.save()
         self.versions.append(version)
-        self.is_deleted = False
         self.save()
-        self.log(
-            Auth(creator),
-            NodeLog.FILE_UPDATED if len(self.versions) > 1 else NodeLog.FILE_ADDED,
-        )
+
         return version
 
+    @utils.must_be('file')
     def update_version_metadata(self, location, metadata):
         for version in reversed(self.versions):
             if version.location == location:
@@ -319,53 +310,65 @@ class OsfStorageFileRecord(BaseFileObject):
                 return
         raise errors.VersionNotFoundError
 
-    def log(self, auth, action, version=True):
-        node_logger = logs.OsfStorageNodeLogger(
-            auth=auth,
-            node=self.node,
-            path=self.path,
+    def delete(self, recurse=True):
+        trashed = OsfStorageTrashedFileNode()
+        trashed._id = self._id
+        trashed.name = self.name
+        trashed.kind = self.kind
+        trashed.parent = self.parent
+        trashed.versions = self.versions
+        trashed.node_settings = self.node_settings
+
+        trashed.save()
+
+        if self.is_folder and recurse:
+            for child in self.children:
+                child.delete()
+
+        self.__class__.remove_one(self)
+
+    def serialized(self, include_full=False):
+        """Build Treebeard JSON for folder or file.
+        """
+        data = {
+            'id': self._id,
+            'path': self.path,
+            'name': self.name,
+            'kind': self.kind,
+            'size': self.versions[0].size if self.versions else None,
+            'version': len(self.versions),
+            'downloads': self.get_download_count(),
+        }
+        if include_full:
+            data['fullPath'] = self.materialized_path()
+        return data
+
+    def copy_under(self, destination_parent, name=None):
+        return utils.copy_files(self, destination_parent.node_settings, destination_parent, name=name)
+
+    def move_under(self, destination_parent, name=None):
+        self.name = name or self.name
+        self.parent = destination_parent
+        self.node_settings = destination_parent.node_settings
+
+        self.save()
+
+        return self
+
+    def __repr__(self):
+        return '<{}(name={!r}, node_settings={!r})>'.format(
+            self.__class__.__name__,
+            self.name,
+            self.to_storage()['node_settings']
         )
-        extra = {'version': len(self.versions)} if version else None
-        node_logger.log(action, extra=extra, save=True)
-
-    def delete(self, auth, log=True):
-        if self.is_deleted:
-            raise errors.DeleteError
-        self.is_deleted = True
-        self.save()
-        if log:
-            self.log(auth, NodeLog.FILE_REMOVED, version=False)
-
-    def undelete(self, auth, log=True):
-        if not self.is_deleted:
-            raise errors.UndeleteError
-        self.is_deleted = False
-        self.save()
-        if log:
-            self.log(auth, NodeLog.FILE_ADDED)
-
-    def get_download_count(self, version=None):
-        """
-        :param int version: Optional one-based version index
-        """
-        parts = ['download', self.node._id, self.path]
-        if version is not None:
-            parts.append(version)
-        page = ':'.join([format(part) for part in parts])
-        _, count = get_basic_counters(page)
-        return count or 0
-
-
-LOCATION_KEYS = ['service', settings.WATERBUTLER_RESOURCE, 'object']
-def validate_location(value):
-    for key in LOCATION_KEYS:
-        if key not in value:
-            raise modm_errors.ValidationValueError
 
 
 class OsfStorageFileVersion(StoredObject):
+    """A version of an OsfStorageFileNode. contains information
+    about where the file is located, hashes and datetimes
+    """
 
-    _id = oid_primary_key
+    _id = fields.StringField(primary=True, default=lambda: str(bson.ObjectId()))
     creator = fields.ForeignField('user', required=True)
 
     # Date version record was created. This is the date displayed to the user.
@@ -379,7 +382,7 @@ class OsfStorageFileVersion(StoredObject):
     #     'worker_url': '127.0.0.1',
     #     'worker_host': 'upload-service-1',
     # }
-    location = fields.DictionaryField(validate=validate_location)
+    location = fields.DictionaryField(validate=utils.validate_location)
 
     # Dictionary containing raw metadata from upload service response
     # {
@@ -406,41 +409,55 @@ class OsfStorageFileVersion(StoredObject):
 
     def update_metadata(self, metadata):
         self.metadata.update(metadata)
-        self.content_type = self.metadata.get('contentType', None)
-        try:
-            self.size = self.metadata['size']
+        # metadata has no defined structure so only attempt to set attributes
+        # If its are not in this callback it'll be in the next
+        self.size = self.metadata.get('size', self.size)
+        self.content_type = self.metadata.get('contentType', self.content_type)
+        if 'modified' in self.metadata:
+            # TODO handle the timezone here the user that updates the file may see an
+            # Incorrect version
             self.date_modified = parse_date(self.metadata['modified'], ignoretz=True)
-        except KeyError as err:
-            raise errors.MissingFieldError(str(err))
         self.save()
 
 
+@unique_on(['node', 'path'])
 class OsfStorageGuidFile(GuidFile):
-    __indices__ = [
-        {
-            'key_or_list': [
-                ('node', pymongo.ASCENDING),
-                ('path', pymongo.ASCENDING),
-                ('_path', pymongo.ASCENDING),
-            ],
-            'unique': True,
-        }
-    ]
+    """A reference back to a OsfStorageFileNode
+
+    path is the "waterbutler path" as well as the path
+    used to look up a filenode
+
+    GuidFile.path == FileNode.path == '/' + FileNode._id
+    """
+
+    path = fields.StringField(required=True, index=True)
+    provider = 'osfstorage'
+    version_identifier = 'version'
 
     _path = fields.StringField(index=True)
+    premigration_path = fields.StringField(index=True)
     path = fields.StringField(required=True, index=True)
+
+    # Marker for invalid GUIDs that are associated with a node but not
+    # part of a GUID's file tree, e.g. those generated by spiders
+    _has_no_file_tree = fields.BooleanField(default=False)
+
+    @classmethod
+    def get_or_create(cls, node, path):
+        try:
+            return cls.find_one(
+                Q('node', 'eq', node) &
+                Q('path', 'eq', path)
+            ), False
+        except NoResultsFound:
+            # Create new
+            new = cls(node=node, path=path)
+            new.save()
+        return new, True
 
     @property
     def waterbutler_path(self):
-        return '/' + self.path
-
-    @property
-    def provider(self):
-        return 'osfstorage'
-
-    @property
-    def version_identifier(self):
-        return 'version'
+        return self.path
 
     @property
     def unique_identifier(self):
@@ -448,7 +465,7 @@ class OsfStorageGuidFile(GuidFile):
 
     @property
     def file_url(self):
-        return os.path.join('osfstorage', 'files', self.path)
+        return os.path.join('osfstorage', 'files', self.path.lstrip('/'))
 
     def get_download_path(self, version_idx):
         url = furl.furl('/{0}/'.format(self._id))
@@ -459,65 +476,12 @@ class OsfStorageGuidFile(GuidFile):
         })
         return url.url
 
-##### STUBBED MODEL REMOVE UPON MERGE @chrisseto #####
-@unique_on(['name', 'kind', 'parent', 'node_settings'])
-class OsfStorageFileNode(StoredObject):
-    _id = fields.StringField(primary=True, default=lambda: str(bson.ObjectId()))
 
-    is_deleted = fields.BooleanField(default=False)
+class OsfStorageTrashedFileNode(StoredObject):
+    """The graveyard for all deleted OsfStorageFileNodes"""
+    _id = fields.StringField(primary=True)
     name = fields.StringField(required=True, index=True)
     kind = fields.StringField(required=True, index=True)
     parent = fields.ForeignField('OsfStorageFileNode', index=True)
     versions = fields.ForeignField('OsfStorageFileVersion', list=True)
     node_settings = fields.ForeignField('OsfStorageNodeSettings', required=True, index=True)
-
-    def materialized_path(self):
-        def lineage():
-            current = self
-            while current:
-                yield current
-                current = current.parent
-
-        path = os.path.join(*reversed([x.name for x in lineage()]))
-        if self.kind == 'folder':
-            return '/{}/'.format(path)
-        return '/{}'.format(path)
-
-    def append_file(self, name, save=True):
-        assert self.kind == 'folder'
-
-        child = OsfStorageFileNode(
-            name=name,
-            kind='file',
-            parent=self,
-            node_settings=self.node_settings
-        )
-
-        if save:
-            child.save()
-
-        return child
-
-    def find_child_by_name(self, name):
-        assert self.kind == 'folder'
-
-        return self.__class__.find_one(
-            Q('name', 'eq', name) &
-            Q('kind', 'eq', 'file') &
-            Q('parent', 'eq', self)
-        )
-
-    @property
-    def path(self):
-        return '/{}{}'.format(self._id, '/' if self.kind == 'folder' else '')
-
-    def get_download_count(self, version=None):
-        """
-        :param int version: Optional one-based version index
-        """
-        parts = ['download', self.node_settings.owner._id, self._id]
-        if version is not None:
-            parts.append(version)
-        page = ':'.join([format(part) for part in parts])
-        _, count = get_basic_counters(page)
-        return count or 0

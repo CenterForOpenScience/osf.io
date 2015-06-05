@@ -9,7 +9,7 @@
     <header class="subhead" id="overview">
         <div class="row">
             <div class="col-sm-6 col-md-7 cite-container">
-                % if parent_node['id']:
+                % if parent_node['exists']:
                     % if parent_node['can_view'] or parent_node['is_public'] or parent_node['is_contributor']:
                         <h2 class="node-parent-title">
                             <a href="${parent_node['url']}">${parent_node['title']}</a> &nbsp;/
@@ -61,7 +61,7 @@
                     <!-- /ko -->
                     <div class="btn-group">
                         <a
-                        % if user_name and (node['is_public'] or user['is_contributor']) and not node['is_registration']:
+                        % if user_name and (node['is_public'] or user['has_read_permissions']) and not node['is_registration']:
                             data-bind="click: toggleWatch, tooltip: {title: watchButtonAction, placement: 'bottom'}"
                             class="btn btn-default"
                         % else:
@@ -71,10 +71,11 @@
                             <i class="fa fa-eye"></i>
                             <span data-bind="text: watchButtonDisplay" id="watchCount"></span>
                         </a>
-                        <a rel="tooltip" title="Duplicate" data-placement="bottom"
-                            class="btn btn-default${ '' if is_project else ' disabled'}" href="#"
-                            data-toggle="modal" data-target="#duplicateModal">
-                            <span class="glyphicon glyphicon-share"></span>&nbsp; ${ node['templated_count'] + node['fork_count'] + node['points'] }
+                        <a class="btn btn-default"
+                           data-bind="tooltip: {title: 'Duplicate', placement: 'bottom'}"
+                           data-target="#duplicateModal" data-toggle="modal"
+                           href="#">
+                          <span class="glyphicon glyphicon-share"></span>&nbsp; ${ node['templated_count'] + node['fork_count'] + node['points'] }
                         </a>
                     </div>
                     % if 'badges' in addons_enabled and badges and badges['can_award']:
@@ -89,7 +90,12 @@
         </div>
         <div id="contributors" class="row" style="line-height:25px">
             <div class="col-sm-12">
-                Contributors:
+                % if user['is_contributor']:
+                    <a class="dotted-underline" href="${node['url']}contributors/">Contributors</a>:
+                % else:
+                    Contributors:
+                % endif
+
                 % if node['anonymous'] and not node['is_public']:
                     <ol>Anonymous Contributors</ol>
                 % else:
@@ -99,6 +105,7 @@
                             "uri": "${node["api_url"]}get_contributors/",
                             "replace": true
                         }'></div>
+
                     </ol>
                 % endif
                 % if node['is_fork']:
@@ -111,10 +118,16 @@
                         <a href="${node['url']}register/${meta['name_no_ext']}">${meta['name_clean']}</a>
                     % endfor
                 % endif
-                <br />Date Created:
-                <span data-bind="text: dateCreated.local, tooltip: {title: dateCreated.utc}" class="date node-date-created"></span>
-                | Last Updated:
-                <span data-bind="text: dateModified.local, tooltip: {title: dateModified.utc}" class="date node-last-modified-date"></span>
+                % if node['is_registration']:
+                    <br />Date Registered:
+                    <span data-bind="text: dateRegistered.local, tooltip: {title: dateRegistered.utc}" class="date node-date-registered"></span>
+                % endif
+                    <br />Date Created:
+                    <span data-bind="text: dateCreated.local, tooltip: {title: dateCreated.utc}" class="date node-date-created"></span>
+                % if not node['is_registration']:
+                    | Last Updated:
+                    <span data-bind="text: dateModified.local, tooltip: {title: dateModified.utc}" class="date node-last-modified-date"></span>
+                % endif
                 <span data-bind="if: hasIdentifiers()" class="scripted">
                   <br />
                     Identifiers:
@@ -133,9 +146,10 @@
                   <a data-bind="click: askCreateIdentifiers, visible: !idCreationInProgress()">Create DOI / ARK</a>
                   <!-- /ko -->
                 </span>
-                % if parent_node['id']:
-                    <br />Category: <span class="node-category">${node['category']}</span>
-                % elif node['description'] or 'write' in user['permissions']:
+                <br />Category: <span class="node-category">${node['category']}</span>
+                &nbsp;
+                <span data-bind="css: icon"></span>
+                % if node['description'] or 'write' in user['permissions']:
                     <br /><span id="description">Description:</span> <span id="nodeDescriptionEditable" class="node-description overflow" data-type="textarea">${node['description']}</span>
                 % endif
             </div>
@@ -149,9 +163,7 @@
 
 <%include file="project/modal_add_pointer.mako"/>
 
-% if node['node_type'] == 'project':
-    <%include file="project/modal_add_component.mako"/>
-% endif
+<%include file="project/modal_add_component.mako"/>
 
 % if user['can_comment'] or node['has_comments']:
     <%include file="include/comment_template.mako"/>
@@ -178,7 +190,8 @@
             <div class="addon-widget-body">
                 <div id="treeGrid">
                     <div class="fangorn-loading">
-                        <i class="fa fa-spinner fangorn-spin"></i> <p class="m-t-sm fg-load-message"> Loading files...  </p>
+                        <div class="logo-spin text-center"><img src="/static/img/logo_spin.png" alt="loader"> </div> 
+                         <p class="m-t-sm fg-load-message"> Loading files...  </p>
                     </div>
                 </div>
             </div>
@@ -261,36 +274,36 @@
 </div>
 
 <%def name="children()">
-% if node['node_type'] == 'project':
-     <div class="components addon-widget-container">
+% if ('write' in user['permissions'] and not node['is_registration']) or node['children']:
+    <div class="components addon-widget-container">
         <div class="addon-widget-header clearfix">
             <h4>Components </h4>
             <div class="pull-right">
-              % if 'write' in user['permissions'] and not node['is_registration']:
+                % if 'write' in user['permissions'] and not node['is_registration']:
                     <a class="btn btn-sm btn-default" data-toggle="modal" data-target="#newComponent">Add Component</a>
                     <a class="btn btn-sm btn-default" data-toggle="modal" data-target="#addPointer">Add Links</a>
                 % endif
-
             </div>
-        </div>
+        </div><!-- end addon-widget-header -->
         <div class="addon-widget-body">
-              % if node['children']:
-                  <div id="containment">
-                      <div mod-meta='{
-                              "tpl": "util/render_nodes.mako",
-                              "uri": "${node["api_url"]}get_children/",
-                              "replace": true,
-                      "kwargs": {"sortable" : ${'true' if not node['is_registration'] else 'false'}}
-                          }'></div>
-                  </div>
-              % else:
-                <p>No components have been added to this project.</p>
-              % endif
-
-        </div>
-    </div>
-% endif
-
+            % if node['children']:
+                <div id="containment">
+                    <div mod-meta='{
+                        "tpl": "util/render_nodes.mako",
+                        "uri": "${node["api_url"]}get_children/",
+                        "replace": true,
+                        "kwargs": {
+                          "sortable" : ${'true' if not node['is_registration'] else 'false'},
+                          "pluralized_node_type": "components"
+                        }
+                      }'></div>
+                </div><!-- end containment -->
+            % else:
+              <p>No components have been added to this ${node['node_type']}.</p>
+            % endif
+        </div><!-- end addon-widget-body -->
+    </div><!-- end components -->
+%endif
 % for name, capabilities in addon_capabilities.iteritems():
     <script id="capabilities-${name}" type="text/html">${capabilities}</script>
 % endfor

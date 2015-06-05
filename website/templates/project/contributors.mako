@@ -15,7 +15,7 @@
                 <h3> Contributors
                     <!-- ko if: canEdit -->
                         <a href="#addContributors" data-toggle="modal" class="btn btn-success btn-sm" style="margin-left:20px;margin-top: -3px">
-                          <i class="fa fa-plus"> </i>Add
+                          <i class="fa fa-plus"></i> Add
                         </a>
                     <!-- /ko -->
                 </h3>
@@ -55,7 +55,6 @@
                             data: contributors,
                             as: 'contributor',
                             isEnabled: canEdit,
-                            afterRender: setupEditable,
                             options: {
                               containment: '#manageContributors'
                             }
@@ -99,8 +98,12 @@
 
 
     % if 'admin' in user['permissions']:
-        <h3>View-only Links</h3>
-        <div class="text-align">Create a link to share this project so those who have the link can view&mdash;but not edit&mdash;the project</div>
+        <h3>View-only Links
+            <a href="#addPrivateLink" data-toggle="modal" class="btn btn-success btn-sm" style="margin-left:20px;margin-top: -3px">
+              <i class="fa fa-plus"></i> Add
+            </a>
+        </h3>
+        <p>Create a link to share this project so those who have the link can view&mdash;but not edit&mdash;the project.</p>
         <div class="scripted" id="linkScope">
 
             <table id="privateLinkTable" class="table">
@@ -117,17 +120,6 @@
                     </tr>
                 </thead>
 
-                <tbody>
-
-                    <tr>
-                        <td colspan="3">
-                            <a href="#addPrivateLink" data-toggle="modal">
-                                Create a link
-                            </a>
-                        </td>
-                    </tr>
-
-                </tbody>
                 <tbody data-bind="foreach: {data: privateLinks, afterRender: afterRenderLink}">
                     <tr>
                         <td class="col-sm-3">
@@ -192,10 +184,16 @@
                 <a class="no-sort" data-bind="text: contributor.shortname, attr:{href: profileUrl}"></a>
             </span>
         </td>
-        <td>
+        <td class="permissions">
             <!-- ko if: contributor.canEdit() -->
                 <span data-bind="visible: notDeleteStaged">
-                    <a href="#" class="permission-editable no-sort" data-type="select"></a>
+                    <select class="form-control" data-bind="
+                        options: permissionList,
+                        value: curPermission,
+                        optionsText: 'text',
+                        style: { font-weight: change() ? 'normal' : 'bold' }"
+                    >
+                    </select>
                 </span>
                 <span data-bind="visible: deleteStaged">
                     <span data-bind="text: formatPermission"></span>
@@ -207,7 +205,7 @@
         </td>
         <td>
             <input
-                    type="checkbox" class="no-sort"
+                    type="checkbox" class="no-sort biblio"
                     data-bind="checked: visible, enable: $parent.canEdit() && !contributor.isAdmin"
                 />
         </td>
@@ -223,7 +221,7 @@
                     </a>
                 <!-- /ko -->
                 <!-- ko if: deleteStaged -->
-                    Will be removed after Save
+                    Save to Remove
                 <!-- /ko -->
             <!-- /ko -->
 
