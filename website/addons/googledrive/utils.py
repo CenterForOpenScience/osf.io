@@ -126,7 +126,9 @@ def to_hgrid(item, node, path):
     :param item: contents returned from Google Drive API
     :return: results formatted as required for Hgrid display
     """
-    safe_name = quote(item['title'], safe='')
+    # quote fails on unicode objects with unicode characters
+    # covert to str with .encode('utf-8')
+    safe_name = quote(item['title'].encode('utf-8'), safe='')
     path = os.path.join(path, safe_name)
 
     serialized = {
