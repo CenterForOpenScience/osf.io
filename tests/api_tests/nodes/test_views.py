@@ -834,7 +834,6 @@ class TestNodeCreateOpenEndedRegistration(ApiTestCase):
         assert_equal(res.status_code, 403)
 
 class TestNodeCreatePreDataCollectionRegistration(ApiTestCase):
-
     def setUp(self):
         ensure_schemas()
         ApiTestCase.setUp(self)
@@ -909,7 +908,6 @@ class TestNodeCreatePreDataCollectionRegistration(ApiTestCase):
         assert_equal(res.status_code, 403)
 
 class TestNodeCreateReplicationRecipePreRegistration(ApiTestCase):
-
     def setUp(self):
         ensure_schemas()
         ApiTestCase.setUp(self)
@@ -984,7 +982,6 @@ class TestNodeCreateReplicationRecipePreRegistration(ApiTestCase):
         assert_equal(res.status_code, 403)
 
 class TestNodeCreateReplicationRecipePostCompletion(ApiTestCase):
-
     def setUp(self):
         ensure_schemas()
         ApiTestCase.setUp(self)

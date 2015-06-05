@@ -9,7 +9,6 @@ from modularodm import Q
 from framework.forms.utils import process_payload
 from rest_framework import serializers
 import json
-import hashlib
 from urlparse import urlparse
 from posixpath import basename, normpath
 from api.base.utils import absolute_reverse
@@ -169,13 +168,7 @@ class RegistrationOpenEndedWithTokenSerializer(NodeSerializer):
         node = self.context['view'].get_node()
         parse_object = urlparse(request.path)
         given_token = basename(normpath(parse_object.path))
-
-        token = hashlib.md5()
-        token.update(node._id)
-        token.update(user._id)
-        token.update(data['summary'])
-        correct_token = token.hexdigest()
-
+        correct_token = token_creator(node._id, user._id, data)
         if given_token != correct_token:
             raise serializers.ValidationError("Incorrect token.")
         return data
@@ -240,12 +233,7 @@ class RegistrationPreDataCollectionWithTokenSerializer(NodeSerializer):
         node = self.context['view'].get_node()
         parse_object = urlparse(request.path)
         given_token = basename(normpath(parse_object.path))
-
-        token = hashlib.md5()
-        token.update(node._id)
-        token.update(user._id)
-        token.update(data['looked'] + data['datacompletion'] + data['comments'])
-        correct_token = token.hexdigest()
+        correct_token = token_creator(node._id, user._id, data)
 
         if given_token != correct_token:
             raise serializers.ValidationError("Incorrect token.")
@@ -363,14 +351,7 @@ class ReplicationRecipePreRegistrationWithTokenSerializer(NodeSerializer):
         node = self.context['view'].get_node()
         parse_object = urlparse(request.path)
         given_token = basename(normpath(parse_object.path))
-        token = hashlib.md5()
-        token.update(node._id)
-        token.update(user._id)
-        lis = []
-        for val in data.values():
-         lis.append(val)
-        token.update(''.join(lis))
-        correct_token = token.hexdigest()
+        correct_token = token_creator(node._id, user._id, data)
         if given_token != correct_token:
              raise serializers.ValidationError("Incorrect token.")
         return data
@@ -449,16 +430,7 @@ class ReplicationRecipePostCompletionWithTokenSerializer(NodeSerializer):
         node = self.context['view'].get_node()
         parse_object = urlparse(request.path)
         given_token = basename(normpath(parse_object.path))
-
-        token = hashlib.md5()
-        token.update(node._id)
-        token.update(user._id)
-        lis = []
-        for val in data.values():
-            lis.append(val)
-        token.update(''.join(lis))
-        correct_token = token.hexdigest()
-
+        correct_token = token_creator(node._id, user._id, data)
         if given_token != correct_token:
             raise serializers.ValidationError("Incorrect token.")
         return data
