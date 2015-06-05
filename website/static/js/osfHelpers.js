@@ -554,7 +554,6 @@ function humanFileSize(bytes, si) {
 // Also export these to the global namespace so that these can be used in inline
 // JS. This is used on the /goodbye page at the moment.
 module.exports = window.$.osf = {
-    apiV2Url: apiV2Url,
     postJSON: postJSON,
     putJSON: putJSON,
     setXHRAuthorization: setXHRAuthorization,

@@ -41,6 +41,7 @@ var FileEditor = {
             $.ajax({
                 type: 'GET',
                 url: self.url,
+                dataType: 'text',
                 beforeSend: $osf.setXHRAuthorization,
             }).done(function (parsed, status, response) {
                 m.startComputation();
@@ -60,10 +61,7 @@ var FileEditor = {
             });
         };
 
-        //Really crappy hack, panel and m.component blackbox this module
-        //so its not possible, in the alotted time, to bind a function here to
-        //buttons ~2 levels up
-        $(document).on('fileviewpage:save', $osf.throttle(function() {
+        self.saveFile = $osf.throttle(function() {
             if(self.changed()) {
                 var oldstatus = self.observables.status();
                 model.editor.setReadOnly(true);
@@ -95,12 +93,7 @@ var FileEditor = {
             } else {
                 alert('There are no changes to save.');
             }
-        }, 500));
-
-        //See Above comment
-        $(document).on('fileviewpage:revert', function() {
-            self.reloadFile();
-        });
+        }, 500);
 
         self.changed = function() {
             var file1 = self.initialText;
@@ -146,9 +139,9 @@ var FileEditor = {
             m('.osf-panel-footer[style=position:inherit]', [
                 m('.row', m('.col-sm-12', [
                     m('.pull-right', [
-                        m('button#fileEditorRevert.btn.btn-sm.btn-danger', {onclick: function(){$(document).trigger('fileviewpage:revert');}}, 'Revert'),
+                        m('button#fileEditorRevert.btn.btn-sm.btn-danger', {onclick: function(){ctrl.reloadFile();}}, 'Revert'),
                         ' ',
-                        m('button#fileEditorSave.btn.btn-sm.btn-success', {onclick: function() {$(document).trigger('fileviewpage:save');}}, 'Save')
+                        m('button#fileEditorSave.btn.btn-sm.btn-success', {onclick: function() {ctrl.saveFile();}}, 'Save')
                     ])
                 ]))
             ])

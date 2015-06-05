@@ -152,8 +152,7 @@
             % if access_token:
                 accessToken: '${access_token | js_str}',
             % endif
-                cookieName: '${cookie_name}',
-                apiV2Prefix: '${api_v2_base | js_str }'
+                cookieName: '${cookie_name}'
             });
         </script>
 
