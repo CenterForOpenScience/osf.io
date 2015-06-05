@@ -29,7 +29,6 @@ def get_object_or_404(model_cls, query_or_pk):
     except NoResultsFound:
         raise NotFound
 
-
 def waterbutler_url_for(request_type, provider, path, node_id, token, obj_args=None, **query):
     """Reverse URL lookup for WaterButler routes
     :param str request_type: data or metadata

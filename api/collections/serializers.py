@@ -44,14 +44,6 @@ class CollectionSerializer(JSONAPISerializer):
 
     # TODO: See if we can get the count filters into the filter rather than the serializer.
 
-    def get_user_auth(self, request):
-        user = request.user
-        if user.is_anonymous():
-            auth = Auth(None)
-        else:
-            auth = Auth(user)
-        return auth
-
     def get_node_count(self, obj):
         auth = self.get_user_auth(self.context['request'])
         nodes = [node for node in obj.nodes if node.can_view(auth) and node.primary]
@@ -62,6 +54,14 @@ class CollectionSerializer(JSONAPISerializer):
 
     def get_parents_count(self, obj):
         return len(obj.parents)
+
+    def get_user_auth(self, request):
+        user = request.user
+        if user.is_anonymous():
+            auth = Auth(None)
+        else:
+            auth = Auth(user)
+        return auth
 
     @staticmethod
     def get_properties(obj):
