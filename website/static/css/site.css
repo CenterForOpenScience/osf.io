@@ -313,7 +313,6 @@ a.btn-success.disabled {
 
 #addPointer td {
     vertical-align: middle;
-    word-break: break-all;
 }
 
 li.pointer {
@@ -951,13 +950,21 @@ form.form-horizontal.form-horizontal-narrow .control-group {
 
 
 /* Project page */
+#manageContributors td {
+    vertical-align: middle;
+}
+
+#manageContributors .permissions {
+    min-width: 140px;
+}
+
+#manageContributors .biblio {
+    margin: 4px 60% 0 40%;
+}
+
 #addContributors table {
     border-collapse: separate;
     border-spacing: 5px;
-}
-
-#manageContributors td {
-    vertical-align: middle;
 }
 
 #addContributors .error {
@@ -1509,6 +1516,14 @@ tbody.file-version{
     width: 400px;
 }
 
+.dotted-underline{
+    color: #000;
+    border-bottom: 1px dotted;
+    text-decoration: none;
+}
+a.dotted-underline:hover {
+    text-decoration: none;
+}
 /* Contributors list */
 
 #contributors {
