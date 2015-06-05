@@ -41,6 +41,7 @@ var FileEditor = {
             $.ajax({
                 type: 'GET',
                 url: self.url,
+                dataType: 'text',
                 beforeSend: $osf.setXHRAuthorization,
             }).done(function (parsed, status, response) {
                 m.startComputation();
