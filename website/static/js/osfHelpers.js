@@ -374,17 +374,6 @@ ko.bindingHandlers.getIcon = {
             icon = iconmap.projectIcons[category];
         }
         $(elem).addClass(icon);
-    },
-    update: function(elem, valueAccessor) {
-        var icon;
-        var category = valueAccessor();
-        if (Object.keys(iconmap.componentIcons).indexOf(category) >=0 ){
-            icon = iconmap.componentIcons[category];
-        }
-        else {
-            icon = iconmap.projectIcons[category];
-        }
-        $(elem).addClass(icon);
     }
 };
 
