@@ -145,7 +145,7 @@ class CitationsProvider(object):
                     ).serialize_citation(each)
                     for each in citations
                 ]
-                if self.next_is_truthy(next_page):
+                if next_page:
                     self.add_show_more(node_addon, contents, list_id, next_page)
         return {
             'contents': contents
