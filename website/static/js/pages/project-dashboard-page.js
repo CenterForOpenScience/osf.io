@@ -129,11 +129,14 @@ $(document).ready(function () {
             });
         },
         onRemoveTag: function(tag){
-            var url = window.contextVars.node.urls.api + 'removetag/' + tag + '/';
+            var url = window.contextVars.node.urls.api + 'removetag/';
+            var data = JSON.stringify({tag: tag});
             var request = $.ajax({
                 url: url,
-                type: 'POST',
-                contentType: 'application/json'
+                type: 'post',
+                contentType: 'application/json',
+                dataType: 'json',
+                data: data
             });
             request.fail(function(xhr, textStatus, error) {
                 Raven.captureMessage('Failed to remove tag', {

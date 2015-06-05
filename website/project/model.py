@@ -1730,8 +1730,9 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         return registered
 
     def remove_tag(self, tag, auth, save=True):
-        if tag in self.tags:
-            self.tags.remove(tag)
+        cleaned_tag = clean_tag(tag)
+        if cleaned_tag in self.tags:
+            self.tags.remove(cleaned_tag)
             self.add_log(
                 action=NodeLog.TAG_REMOVED,
                 params={
