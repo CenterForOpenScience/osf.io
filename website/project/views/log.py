@@ -30,12 +30,6 @@ def get_log(auth, log_id):
 
     return {'log': serialize_log(log, auth=auth)}
 
-def include_log(log, node, auth):
-    if log.can_view(node, auth):
-        return True
-    else:
-        logger.warn('Log on node {} is None'.format(node._id))
-        return False
 
 def _get_logs(node, count, auth, link=None, page=0):
     """

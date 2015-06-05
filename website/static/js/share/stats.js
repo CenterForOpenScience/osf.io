@@ -30,7 +30,12 @@ function donutGraph (data, vm) {
         },
         data: data.charts.shareDonutGraph,
         donut: {
-            title: get_source_length(data) + ' Providers'
+            title: get_source_length(data) + ' Providers',
+            label: {
+                format: function (value, ratio, id) {
+                    return Math.round(ratio*100) + '%';
+                }
+            }
         },
         legend: {
             show: false

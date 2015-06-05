@@ -42,7 +42,7 @@ body {
 .gs-sidebar .nav a,
 .gs-sidebar .nav a:hover,
 .gs-sidebar .nav a:focus {
-    
+
     text-decoration: none;
     background-color: transparent;
 }
@@ -950,13 +950,21 @@ form.form-horizontal.form-horizontal-narrow .control-group {
 
 
 /* Project page */
+#manageContributors td {
+    vertical-align: middle;
+}
+
+#manageContributors .permissions {
+    min-width: 140px;
+}
+
+#manageContributors .biblio {
+    margin: 4px 60% 0 40%;
+}
+
 #addContributors table {
     border-collapse: separate;
     border-spacing: 5px;
-}
-
-#manageContributors td {
-    vertical-align: middle;
 }
 
 #addContributors .error {
@@ -981,7 +989,7 @@ h1.unavailable {
     padding-top: 100px;
     display: block;
   z-index: -1;
-  position: relative;    
+  position: relative;
 }
 
 .anchor {
@@ -1508,6 +1516,14 @@ tbody.file-version{
     width: 400px;
 }
 
+.dotted-underline{
+    color: #000;
+    border-bottom: 1px dotted;
+    text-decoration: none;
+}
+a.dotted-underline:hover {
+    text-decoration: none;
+}
 /* Contributors list */
 
 #contributors {
@@ -1770,6 +1786,7 @@ div.profile-fullname{
 span#profileFullname{
     position: absolute;
     bottom: 0;
+    margin-bottom: 20px;
 }
 
 .scripted {display: none;}
@@ -1858,15 +1875,16 @@ span#profileFullname{
     background: rgba(187, 187, 187, 0.2);
 }
 .osf-navbar .navbar-nav>li>a {
-    padding-top: 9px;
-    padding-bottom: 6px;
-    line-height: 24px;
+    padding-top: 8px;
+    padding-bottom: 7px;
+    line-height: 27px;
 }
 
 .navbar-brand {
-    height: 42px;
-    line-height: 14px;
-    padding:13px 15px;
+    margin-left: 0 !important;
+    height: 42px !important;
+    line-height: 27px;
+    padding: 8px 15px 7px 15px;
 }
 
 .osf-navbar .navbar-form {
@@ -1885,10 +1903,6 @@ span#profileFullname{
     background-color: white;
 }
 
-.navbar-mid>li>a{
-    padding-bottom: 8px !important;
-}
-
 .icon-lg {
     font-size: 20px;
     line-height: 26px;
@@ -1897,7 +1911,6 @@ span#profileFullname{
 .osf-navbar-logo {
     float: left;
     margin-right: 8px;
-    margin-top: -7px;
 }
 
 .osf-navbar .navbar-nav>li>a.btn {
@@ -2072,6 +2085,22 @@ span#profileFullname{
         text-decoration: none !important;
         padding: 14px;
     }
+
+    .navbar-brand {
+        margin-left: 0 !important;
+        height: 48px !important;
+        line-height: 27px !important;
+        padding: 11px 15px 10px 15px !important;
+    }
+    .osf-navbar-logo {
+        margin-top: 0px !important;
+    }
+
+    span#profileFullname {
+        font-size: 20px;
+        margin-bottom: 30px;
+    }
+
 }
 
 @media (min-width: 768px) {
@@ -2121,15 +2150,26 @@ span#profileFullname{
 @media (min-width: 768px) and (max-width: 991px)  {
     #signInForm input {
         width: 110px;
-    }    
+    }
 }
 @media (min-width: 1600px) {
     #signInForm input {
         width: 220px;
-    }    
+    }
 }
 
 /* Search bar */
+.search-label-placeholder {
+    position:absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    font-size: 20px;
+    color: #738EA2;
+    font-weight: 300;
+    visibility: hidden;
+}
+
 .osf-search {
     padding: 10px 0;
     background: #B8ECC0;
@@ -2236,6 +2276,9 @@ span#profileFullname{
 }
 .break-word {
     word-wrap: break-word;
+}
+.word-break-word {
+    word-break: break-word;
 }
 .table-fixed {
     table-layout: fixed;
@@ -2503,6 +2546,15 @@ span#profileFullname{
   padding-left: 20px;
   padding-right: 20px;
 }
+.unselectable {
+  -webkit-user-select: none;  /* Chrome all / Safari all */
+  -moz-user-select: none;     /* Firefox all */
+  -ms-user-select: none;      /* IE 10+ */
+
+  /* No support for these yet, use at own risk */
+  -o-user-select: none;
+  user-select: none;
+}
 .inline {
     display: inline-block;
 }
@@ -2650,6 +2702,90 @@ span#profileFullname{
 }
 .m-xl {
     margin: 50px;
+}
+
+/* COS logo spin */
+.logo-spin {
+    -webkit-animation: spin 3s infinite linear, opacity 3s infinite linear;
+    animation: spin 3s infinite linear, opacity 3s infinite linear;
+}
+
+@-moz-keyframes spin {
+    from {
+        -moz-transform: rotate(0deg);
+    }
+    to {
+        -moz-transform: rotate(360deg);
+    }
+}
+@-webkit-keyframes spin {
+    from {
+        -webkit-transform: rotate(0deg);
+    }
+    to {
+        -webkit-transform: rotate(360deg);
+    }
+}
+@keyframes spin {
+    from {
+        -webkit-transform: rotate(0deg);
+    }
+    to {
+        -webkit-transform: rotate(360deg);
+    }
+}
+@-moz-keyframes opacity {
+    0% {
+        opacity : 0.1
+    }
+    50% {
+        opacity: 1
+    }
+    100% {
+        opacity: 0.1
+    }
+}
+@-webkit-keyframes opacity {
+    0% {
+        opacity : 0.1
+    }
+    50% {
+        opacity: 1
+    }
+    100% {
+        opacity: 0.1
+    }
+}
+@keyframes opacity {
+    0% {
+        opacity : 0.1
+    }
+    50% {
+        opacity: 1
+    }
+    100% {
+        opacity: 0.1
+    }
+}
+
+/* OSF Font-Awesome Stack Alternative */
+.osf-fa-stack {
+  display: inline-block;
+  width: 15px;
+  height: 13px;
+  position: relative;
+}
+.fangorn-toolbar-icon .osf-fa-stack-top {
+  font-size: 10px;
+  margin-top: 5px;
+  line-height: 11px;
+}
+.fangorn-toolbar-icon .osf-fa-stack-bottom {
+  font-size: 18px;
+  line-height: 20px;
+}
+.text-white {
+    color: #FFF;
 }
 
 @media (max-width: 768px) {
