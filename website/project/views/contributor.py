@@ -78,6 +78,23 @@ def get_node_contributors_abbrev(auth, node, **kwargs):
         'others_count': others_count,
     }
 
+@collect_auth
+@must_be_valid_project
+def tordoff_get(node, **kwargs):
+
+    node = Node.load(node)
+
+    contribsOnNode = {}
+    contribsOnNode[node._id] = utils.serialize_contributors(node.contributors,node=node)
+
+
+    children = node.get_descendants_recursive()
+    for child in children:
+        contribsOnNode[child._id] = utils.serialize_contributors(child.contributors,node=child)
+
+
+    return contribsOnNode
+
 
 @collect_auth
 @must_be_valid_project
@@ -278,6 +295,7 @@ def deserialize_contributors(node, user_dicts, auth):
     # Add the registered contributors
     contribs = []
     for contrib_dict in user_dicts:
+
         fullname = contrib_dict['fullname']
         visible = contrib_dict['visible']
         email = contrib_dict.get('email')
@@ -316,6 +334,30 @@ def finalize_invitation(node, contributor, auth):
     record = contributor.get_unclaimed_record(node._primary_key)
     if record['email']:
         send_claim_email(record['email'], contributor, node, notify=True)
+
+
+@must_be_valid_project
+@must_have_permission(ADMIN)
+@must_not_be_registration
+def project_contributors_remove(auth, node, **kwargs):
+    """ Removes contributors to a node. """
+
+
+    listToRemove = request.json.get('listToRemove')
+    contribs = []
+
+    if listToRemove is None:
+        raise HTTPError(http.BAD_REQUEST)
+
+        # Prepare input data for `Node::add_contributors`
+
+    for node_id in listToRemove:
+        for user_id in listToRemove[node_id]:
+            node = Node.load(node_id)
+            print "\n\n\n\n\n\n\n\n\n\n\n\n\n" + str(user_id + "\n\n\n\n" + node_id)
+            node.contributors.remove(user_id)
+            node.visible_contributor_ids.remove(user_id)
+            node.save()
 
 
 @must_be_valid_project

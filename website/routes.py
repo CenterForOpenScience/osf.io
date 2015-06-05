@@ -1032,6 +1032,11 @@ def make_url_map(app):
         ], 'get', project_views.contributor.get_contributors, json_renderer),
 
         Rule([
+            '/project/<pid>/tordoff_get/',
+            '/project/<pid>/node/<nid>/tordoff_get/',
+        ], 'get', project_views.contributor.tordoff_get, json_renderer),
+
+        Rule([
             '/project/<pid>/get_contributors_from_parent/',
             '/project/<pid>/node/<nid>/get_contributors_from_parent/',
         ], 'get', project_views.contributor.get_contributors_from_parent, json_renderer),
@@ -1159,6 +1164,9 @@ def make_url_map(app):
             '/project/<pid>/removecontributors/',
             '/project/<pid>/node/<nid>/removecontributors/',
         ], 'post', project_views.contributor.project_removecontributor, json_renderer),
+        Rule([
+            '/project/<pid>/projectremovecontributors/',
+        ], 'post', project_views.contributor.project_contributors_remove, json_renderer),
 
         # Forks
         Rule(

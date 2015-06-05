@@ -42,25 +42,35 @@ var RemoveContributorViewModel = oop.extend(Paginator, {
         self.totalPages = ko.observable(0);
         self.nodes = ko.observableArray([]);
         self.nodesToChange = ko.observableArray();
-
-
-        $.getJSON(
-            nodeApiUrl + 'get_contributors/', {},
-            function(result) {
-                self.contributors(result.contributors);
-            }
-        );
-
-
+        self.contributorsOnNodes = ko.observableArray([]);
         $.getJSON(
             nodeApiUrl + 'get_editable_children/', {},
             function(result) {
                 $.each(result.children || [], function(idx, child) {
                     child.margin = NODE_OFFSET + child.indent * NODE_OFFSET + 'px';
                 });
+                result.node.margin = "0px"
+                result.children.unshift(result.node)
                 self.nodes(result.children);
             }
         );
+
+       $.getJSON(
+            nodeApiUrl + 'tordoff_get/', {},
+            function(result) {
+                self.contributorsOnNodes(result);
+            }
+        );
+
+
+        $.getJSON(
+            nodeApiUrl + 'get_contributors/', {},
+                function(result) {
+                    self.contributors(result.contributors);
+                }
+        );
+
+
         self.foundResults = ko.pureComputed(function() {
             return self.query() && self.results().length;
         });
@@ -89,7 +99,19 @@ var RemoveContributorViewModel = oop.extend(Paginator, {
     goToPage: function(page) {
         this.page(page);
     },
+    contribNodes: function(node_id,contrib_id) {
 
+           for(var i = 0;i < this.contributorsOnNodes()[node_id].length; i++){
+              if(this.contributorsOnNodes()[node_id][i]["id"] == contrib_id){
+              return true;
+              }
+
+          }
+
+
+
+            return false;
+    },
     startSearch: function() {
         this.currentPage(0);
         this.fetchResults();
@@ -187,7 +209,31 @@ var RemoveContributorViewModel = oop.extend(Paginator, {
         return this.nodesToChange().length === 0;
     },
     selectNodes: function() {
-        this.nodesToChange($osf.mapByProperty(this.nodes(), 'id'));
+        var self = this;
+
+        ko.utils.arrayMap(self.selection(), function(user) {
+            self.selectNodesForContrib(user);
+            }
+            );
+
+    },
+    selectNodesForContrib: function(contrib) {
+        var self = this;
+
+        $.each(self.nodes(), function(idx,node) {
+                $.each(self.contributorsOnNodes()[node.id], function(inx,contribOnNode) {
+                    if(contrib.id == contribOnNode.id){
+                        self.nodesToChange.push(contrib.id+"|"+node.id);
+                    }
+                });
+            });
+
+
+    },
+    deselectNodesForContrib: function(contrib) {
+         var self = this;
+
+        self.nodesToChange.remove(function(item) { return item.split("|")[0] == contrib.id});
     },
     deselectNodes: function() {
         this.nodesToChange([]);
@@ -201,44 +247,39 @@ var RemoveContributorViewModel = oop.extend(Paginator, {
         }
         return false;
     },
+    listToRemove : function(){
+        var self = this;
+
+        self.ToRemove = {};
+        ko.utils.arrayMap(self.nodes(), function(node) {
+            self.ToRemove[node.id] = [];
+            ko.utils.arrayMap(self.nodesToChange(), function(string) {
+                if(string.split('|')[1] == node.id && self.ToRemove[node.id].indexOf(string.split('|')[0]) == -1){
+                    self.ToRemove[node.id].push(string.split('|')[0]);
+                }
+
+                });
+            });
+
+            alert(ko.toJSON(self.ToRemove, null ,2));
+            return self.ToRemove
+
+    },
+
+
     submit: function(data) {
         var self = this;
 
-        var id = self.id,
-            selection = self.selection;
-        var payload = {
-            nodes: self.nodesToChange,
-            selection: self.selection
-        };
         $osf.postJSON(
-            nodeApiUrl + 'beforeremovecontributors/',
-            payload
-        ).done(function(response) {
-            var prompt = $osf.joinPrompts(response.prompts, 'Remove <strong>' + self.selection().length + '</strong> contributors from components?');
-            bootbox.confirm({
-                title: 'Delete Contributor?',
-                message: prompt,
-                callback: function(result) {
-                    if (result) {
-                        $osf.postJSON(
-                            nodeApiUrl + 'removecontributors/',
-                            payload
-                        ).done(function(response) {
-                            if (response.redirectUrl) {
-                                window.location.href = response.redirectUrl;
-                            } else {
-                                window.location.reload();
-                            }
-                        }).fail(
-                            $osf.handleJSONError
-                        );
-                    }
-                }
-            });
-        }).fail(
-            $osf.handleJSONError
-        );
-        return false;
+            nodeApiUrl + 'projectremovecontributors/',
+                 {listToRemove :self.listToRemove()}
+                    ).done(function() {
+                            window.location.reload();
+
+                    }).fail(function() {
+                        $osf.growl("failed to remove contributors");
+                        $osf.handleJSONError
+                     });
     },
     clear: function() {
         var self = this;
@@ -278,10 +319,6 @@ ContribRemover.prototype.init = function() {
     // or cancel button.
     self.$element.on('hidden.bs.modal', function() {
         self.viewModel.clear();
-    });
-    // Load recently added contributors every time the modal is activated.
-    self.$element.on('shown.bs.modal', function() {
-        self.viewModel.recentlyAdded();
     });
 };
 

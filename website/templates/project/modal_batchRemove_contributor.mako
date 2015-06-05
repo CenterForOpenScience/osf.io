@@ -44,6 +44,7 @@
 
                                 <table>
                                     <thead></thead>
+
                                     <tbody data-bind="foreach:{data : contributors, as: 'contributor', afterRender:addTips}">
                                         <tr data-bind="if:!($root.selected($data))">
                                             <td style="padding-right: 10px;">
@@ -148,18 +149,26 @@
                     </div>
 
                     <div class="row">
-
-                        <div class="col-md-6">
-                            <input type="checkbox" checked disabled />
-                            <span data-bind="text:title"></span> (current component)
-                            <div data-bind="foreach:nodes">
-                                <div data-bind="style:{marginLeft: margin}">
-                                    <input type="checkbox" data-bind="checked:$parent.nodesToChange, value:id" />
-                                    <span data-bind="text:title"></span>
+                        <div data-bind="foreach:selection">
+                            <div class="col-md-6" >
+                                <b><span data-bind="text:fullname"></span></b>
+                                <div>
+                                    <a data-bind="click:$root.selectNodesForContrib, css:{disabled:$root.cantSelectNodes()}"> all</a>
+                                    <a data-bind="click:$root.deselectNodesForContrib, css:{disabled:$root.cantDeselectNodes()}">none</a>
                                 </div>
-                            </div>
-                        </div>
 
+                                <div data-bind="foreach:$parent.nodes">
+                                    <!-- ko if:$root.contribNodes(id,$parent.id) -->
+                                    <div data-bind="style:{marginLeft: margin}">
+                                        <input type="checkbox" data-bind="checked:$root.nodesToChange, value : $parent.id+ '|'+id" />
+                                        <span data-bind="text:title"></span>
+                                    </div>
+                                    <!-- /ko -->
+                                </div>
+
+                            </div>
+
+                        </div>
                         <div class="col-md-6">
                             <div>
                                 <a data-bind="click:selectNodes, css:{disabled:cantSelectNodes()}">Select all</a>
@@ -180,8 +189,8 @@
 
 
                 <span data-bind="if:selection().length && page() == 'whom'">
-                    <a class="btn btn-success" data-bind="visible:nodes().length==0, click:submit">Submit</a>
-                    <a class="btn btn-primary" data-bind="visible:nodes().length, click:selectWhich">Next</a>
+                    <a class="btn btn-success" data-bind="visible:selection().length==0, click:submit">Submit</a>
+                    <a class="btn btn-primary" data-bind="visible:selection().length, click:selectWhich">Next</a>
                 </span>
 
                 <span data-bind="if: page() == 'which'">

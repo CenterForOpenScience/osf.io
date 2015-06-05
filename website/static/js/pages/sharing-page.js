@@ -24,7 +24,7 @@ $('body').on('nodeLoad', function(event, data) {
         new ContribRemover(
             '#batchRemoveContribs',
             data.node.title,
-            data.parent_node.id,
+            data.parent_node._id,
             data.parent_node.title
         );
     }
