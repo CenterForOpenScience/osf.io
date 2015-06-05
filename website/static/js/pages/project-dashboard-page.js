@@ -100,9 +100,7 @@ $(document).ready(function () {
                     var configOption = Fangorn.Utils.resolveconfigOption.call(this, item, 'resolveRows', [item]);
                     return configOption || defaultColumns;
                 }
-                //return defaultColumns;
         };
-        
         var filebrowser = new Fangorn(fangornOpts);
     });
 
