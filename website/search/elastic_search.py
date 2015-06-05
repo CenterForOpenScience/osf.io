@@ -38,6 +38,12 @@ ALIASES = {
     'total': 'Total'
 }
 
+# Prevent tokenizing and stop word removal.
+NOT_ANALYZED_PROPERTY = {'type': 'string', 'index': 'not_analyzed'}
+
+# Perform stemming on the field it's applied to.
+ENGLISH_ANALYZER_PROPERTY = {'type': 'string', 'analyzer': 'english'}
+
 INDEX = settings.ELASTIC_INDEX
 
 try:
@@ -321,17 +327,16 @@ def create_index(index=INDEX):
     '''Creates index with some specified mappings to begin with,
     all of which are applied to all projects, components, and registrations.
     '''
-    english_analyzer = {'type': 'string', 'analyzer': 'english'}
-    not_analyzed_property = {'type': 'string', 'index': 'not_analyzed'}
-
+    document_types = ['project', 'component', 'registration', 'user']
     project_like_types = ['project', 'component', 'registration']
     analyzed_fields = ['title', 'description']
 
     es.indices.create(index, ignore=[400])
-    for type_ in ['project', 'component', 'registration', 'user']:
-        mapping = {'properties': {'tags': not_analyzed_property}}
+    for type_ in document_types:
+        mapping = {'properties': {'tags': NOT_ANALYZED_PROPERTY}}
         if type_ in project_like_types:
-            analyzers = {field: english_analyzer for field in analyzed_fields}
+            analyzers = {field: ENGLISH_ANALYZER_PROPERTY
+                         for field in analyzed_fields}
             mapping['properties'].update(analyzers)
 
         es.indices.put_mapping(index=index, doc_type=type_, body=mapping, ignore=[400, 404])
