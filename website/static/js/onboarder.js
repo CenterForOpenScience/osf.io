@@ -580,13 +580,13 @@ function OBUploaderViewModel(params) {
     };
     self.dropzone = new Dropzone(self.selector, dropzoneOpts);
 
-        //stop user from leaving if file is staged for upload
-        $(window).on('beforeunload', function() {
-            if(!self.enableUpload() && !self.success) {
-                return 'You have a pending upload. If you leave ' +
-                    'the page now, your file will not be stored.';
-            }
-        });
+    //stop user from leaving if file is staged for upload
+    $(window).on('beforeunload', function() {
+        if(!self.enableUpload() && !self.success) {
+            return 'You have a pending upload. If you leave ' +
+                'the page now, your file will not be stored.';
+        }
+    });
 }
 
 ko.components.register('osf-ob-uploader', {
