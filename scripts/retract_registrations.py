@@ -32,14 +32,13 @@ def main(dry_run=True):
             if not dry_run:
                 with TokuTransaction():
                     retraction.state = models.Retraction.RETRACTED
-                    parent_registration.add_log(
+                    parent_registration.registered_from.add_log(
                         action=NodeLog.RETRACTION_APPROVED,
                         params={
                             'node': parent_registration._id,
                             'retraction_id': parent_registration.retraction._id,
                         },
                         auth=Auth(parent_registration.retraction.initiated_by),
-                        save=False,
                     )
                     retraction.save()
 
