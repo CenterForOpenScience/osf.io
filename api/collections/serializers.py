@@ -82,6 +82,8 @@ class CollectionSerializer(JSONAPISerializer):
         the request to be in the serializer context.
         """
         assert isinstance(instance, Node), 'instance must be a Node'
+        if instance.is_dashboard:
+            return instance
         for attr, value in validated_data.items():
             setattr(instance, attr, value)
         instance.save()
