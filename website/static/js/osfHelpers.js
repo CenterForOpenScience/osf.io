@@ -561,6 +561,7 @@ module.exports = window.$.osf = {
     handleEditableError: handleEditableError,
     block: block,
     growl: growl,
+    apiV2Url: apiV2Url,
     unblock: unblock,
     joinPrompts: joinPrompts,
     mapByProperty: mapByProperty,
