@@ -217,6 +217,13 @@ function ProjectSearchViewModel(params) {
     });
 
     /* Functions */
+    self.disableDefaultEnter = function(data, event) {
+        if (event.keyCode === 10 || event.keyCode === 13){
+            event.preventDefault();
+            return false;
+        }
+        return true;
+    };
     self.onSubmit = function() {
         var func = params.onSubmit || noop;
         func(self.selectedProject(), self.selectedComponent(), self.projectInput(), self.componentInput());
