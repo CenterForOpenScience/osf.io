@@ -65,7 +65,12 @@ class OSFCASAuthentication(authentication.BaseAuthentication):
             raise exceptions.AuthenticationFailed('Must provide bearer token in authorization headers')
 
         # Use the token to get the associated user ID
-        resp = client.profile(auth_token)
+
+        try:
+            resp = client.profile(auth_token)
+        except cas.CasHTTPError:
+            raise exceptions.NotAuthenticated('User provided an invalid OAuth2 access token')
+
         if resp.authenticated is False:
             raise exceptions.NotAuthenticated('CAS server failed to authenticate this token')
 
