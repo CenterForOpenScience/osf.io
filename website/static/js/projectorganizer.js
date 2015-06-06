@@ -316,18 +316,6 @@ function _poToggleCheck(item) {
 }
 
 /**
- * Returns custom icons for OSF depending on the type of item
- * @param {Object} item A Treebeard _item object. Node information is inside item.data
- * @this Treebeard.controller
- * @returns {Object}  Returns a mithril template with the m() function.
- * @private
- */
-function _poResolveIcon(item) {
-    var newIcon = Fangorn.Utils.resolveIconView(item);
-    return newIcon;
-}
-
-/**
  * Returns custom folder toggle icons for OSF
  * @param {Object} item A Treebeard _item object. Node information is inside item.data
  * @this Treebeard.controller
@@ -1404,7 +1392,7 @@ var tbOptions = {
         _cleanupMithril();
     },
     onmultiselect : _poMultiselect,
-    resolveIcon : _poResolveIcon,
+    resolveIcon : Fangorn.Utils.resolveIconView,
     resolveToggle : _poResolveToggle,
     resolveLazyloadUrl : _poResolveLazyLoad,
     lazyLoadOnLoad : expandStateLoad,
