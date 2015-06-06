@@ -216,20 +216,20 @@ function resolveIconView(item) {
     if (item.data.isDashboard) {
         return returnView('collection');
     }
-    if (item.data.nodeType === 'smartFolder' || item.data.isSmartFolder) {
+    if (item.data.isSmartFolder) {
         return returnView('smartCollection');
     }
     if ((item.data.nodeType === 'pointer' && item.parent().data.nodeType !== 'folder') || (item.data.isPointer && !item.parent().data.isFolder)) {
         return returnView('link');
     }
-    if (item.data.nodeType === 'project' || item.data.isProject) {
+    if (item.data.nodeType === 'project') {
         if (item.data.isRegistration) {
             return returnView('registeredProject', item.data.category);
         } else {
             return returnView('project', item.data.category);
         }
     }
-    if (item.data.nodeType === 'component' || item.data.isComponent) {
+    if (item.data.nodeType === 'component') {
         if (item.data.isRegistration) {
             return returnView('registeredComponent', item.data.category);
         }
