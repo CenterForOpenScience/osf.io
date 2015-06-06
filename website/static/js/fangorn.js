@@ -197,7 +197,11 @@ function resolveIconView(item) {
     function returnView(type, category) {
         var iconType = projectIcons[type];
         if (type === 'component' || type === 'registeredComponent') {
-            iconType = componentIcons[category];
+            if (!item.data.permissions.view) {
+                return null;
+            } else {
+                iconType = componentIcons[category];
+            }
         } else if (type === 'project' || type === 'registeredProject') {
             iconType = projectIcons[category];
         }
@@ -209,13 +213,13 @@ function resolveIconView(item) {
         var template = m('span', { 'class' : iconType});
         return template;
     }
-    if (item.data.nodeType === 'smartFolder') {
-        return returnView('smartCollection');
-    }
-    if (item.data.nodeType === 'folder') {
+    if (item.data.isDashboard) {
         return returnView('collection');
     }
-    if (item.data.nodeType === 'pointer' && item.parent().data.nodeType !== 'folder') {
+    if (item.data.isSmartFolder) {
+        return returnView('smartCollection');
+    }
+    if ((item.data.nodeType === 'pointer' && item.parent().data.nodeType !== 'folder') || (item.data.isPointer && !item.parent().data.isFolder)) {
         return returnView('link');
     }
     if (item.data.nodeType === 'project') {
@@ -246,7 +250,6 @@ function resolveIconView(item) {
  * @private
  */
 function _fangornResolveIcon(item) {
-    var projectIcons = iconmap.projectIcons;
     var privateFolder =  m('div.file-extension._folder_delete', ' '),
         pointerFolder = m('i.fa.fa-link', ' '),
         openFolder  = m('i.fa.fa-folder-open', ' '),
