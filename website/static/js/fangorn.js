@@ -236,7 +236,7 @@ function resolveIconView(item) {
         return returnView('component', item.data.category);
     }
 
-    if (item.data.nodeType === 'pointer' || item.data.isPointer) {
+    if (item.data.nodeType === 'pointer') {
         return returnView('link');
     }
     return null;
