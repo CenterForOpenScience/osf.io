@@ -1,3 +1,4 @@
+import os
 import http
 import json
 import asyncio
@@ -342,11 +343,14 @@ class GoogleDriveProvider(provider.BaseProvider):
             except (KeyError, IndexError):
                 if parts:
                     raise exceptions.MetadataError('{} not found'.format(str(path)), code=http.client.NOT_FOUND)
-                return ret + [{
-                    'id': None,
-                    'title': current_part,
-                    'mimeType': 'folder' if path.endswith('/') else '',
-                }]
+                name, ext = os.path.splitext(current_part)
+                if ext not in ('.gdoc', '.gsheet'):
+                    return ret + [{
+                        'id': None,
+                        'title': current_part,
+                        'mimeType': 'folder' if path.endswith('/') else '',
+                    }]
+                parts.append(name)
 
             resp = yield from self.make_request(
                 'GET',
