@@ -1583,6 +1583,9 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
 
         original = self.load(self._primary_key)
 
+        if original.is_deleted:
+            raise NodeStateError('Cannot fork deleted node.')
+
         # Note: Cloning a node copies its `wiki_pages_current` and
         # `wiki_pages_versions` fields, but does not clone the underlying
         # database objects to which these dictionaries refer. This means that
@@ -1595,13 +1598,14 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
 
         # Recursively fork child nodes
         for node_contained in original.nodes:
-            forked_node = None
-            try:  # Catch the potential PermissionsError above
-                forked_node = node_contained.fork_node(auth=auth, title='')
-            except PermissionsError:
-                pass  # If this exception is thrown omit the node from the result set
-            if forked_node is not None:
-                forked.nodes.append(forked_node)
+            if not node_contained.is_deleted:
+                forked_node = None
+                try:  # Catch the potential PermissionsError above
+                    forked_node = node_contained.fork_node(auth=auth, title='')
+                except PermissionsError:
+                    pass  # If this exception is thrown omit the node from the result set
+                if forked_node is not None:
+                    forked.nodes.append(forked_node)
 
         forked.title = title + forked.title
         forked.is_fork = True
