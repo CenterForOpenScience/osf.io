@@ -161,8 +161,14 @@ var FileViewPage = {
             $('#mfrIframeParent').removeClass().addClass('col-sm-5');
             $('.file-view-panels').removeClass().addClass('file-view-panels').addClass('col-sm-7');
         } else if (shown === 1) {
-            $('#mfrIframeParent').removeClass().addClass('col-sm-6');
-            $('.file-view-panels').removeClass().addClass('file-view-panels').addClass('col-sm-6');
+            // if only revisions shown display 8/4 layout.
+            if (ctrl.revisions.selected) {
+                $('#mfrIframeParent').removeClass().addClass('col-sm-8');
+                $('.file-view-panels').removeClass().addClass('file-view-panels').addClass('col-sm-4');
+            } else {
+                $('#mfrIframeParent').removeClass().addClass('col-sm-6');
+                $('.file-view-panels').removeClass().addClass('file-view-panels').addClass('col-sm-6');
+            }
         } else {
             $('#mfrIframeParent').removeClass().addClass('col-sm-12');
             $('.file-view-panels').removeClass().addClass('file-view-panels');
