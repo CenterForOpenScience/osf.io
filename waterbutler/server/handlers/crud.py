@@ -59,8 +59,10 @@ class CRUDHandler(core.BaseProviderHandler):
         if isinstance(result, str):
             return self.redirect(result)
 
-        self.set_header('Content-Type', result.content_type)
-        if result.size:
+        if hasattr(result, 'content_type'):
+            self.set_header('Content-Type', result.content_type)
+
+        if hasattr(result, 'size') and result.size is not None:
             self.set_header('Content-Length', str(result.size))
 
         # Build `Content-Disposition` header from `displayName` override,
