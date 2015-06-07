@@ -11,6 +11,7 @@ from framework.exceptions import HTTPError
 from framework.auth.utils import privacy_info_handle
 from framework.flask import redirect
 
+from website.static_snapshot.decorators import gets_static_snapshot
 from website.addons.wiki import settings
 from website.addons.wiki import utils as wiki_utils
 from website.profile.utils import get_gravatar
@@ -353,6 +354,7 @@ def project_wiki_edit_post(auth, wname, **kwargs):
     return ret, http.FOUND, None, redirect_url
 
 
+@gets_static_snapshot('wiki')
 @must_be_valid_project
 @must_have_addon('wiki', 'node')
 def project_wiki_home(**kwargs):

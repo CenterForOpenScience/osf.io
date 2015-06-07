@@ -8,7 +8,10 @@ from flask import request
 from modularodm import Q
 from modularodm.exceptions import ModularOdmException, ValidationValueError
 
+from website.static_snapshot.decorators import cache
 from framework import status
+from website.static_snapshot.decorators import gets_static_snapshot
+from website.static_snapshot.views import get_static_snapshot
 from framework.utils import iso8601format
 from framework.mongo import StoredObject
 from framework.auth.decorators import must_be_logged_in, collect_auth
@@ -16,7 +19,6 @@ from framework.exceptions import HTTPError, PermissionsError
 from framework.mongo.utils import from_mongo, get_or_http_error
 
 from website import language
-
 from website.util import paths
 from website.util import rubeus
 from website.exceptions import NodeStateError
@@ -260,13 +262,13 @@ def node_fork_page(auth, node, **kwargs):
         )
     return fork.url
 
-
+@gets_static_snapshot('registrations')
 @must_be_valid_project
 @must_be_contributor_or_public
 def node_registrations(auth, node, **kwargs):
     return _view_project(node, auth, primary=True)
 
-
+@gets_static_snapshot('forks')
 @must_be_valid_project
 @must_be_contributor_or_public
 def node_forks(auth, node, **kwargs):
@@ -363,21 +365,30 @@ def configure_comments(node, **kwargs):
 # View Project
 ##############################################################################
 
+@gets_static_snapshot('project')
 @must_be_valid_project
 @must_be_contributor_or_public
 def view_project(auth, node, **kwargs):
     primary = '/api/v1' not in request.path
-    ret = _view_project(node, auth, primary=primary)
-    ret['addon_capabilities'] = settings.ADDON_CAPABILITIES
-    # Collect the URIs to the static assets for addons that have widgets
-    ret['addon_widget_js'] = list(collect_addon_js(
-        node,
-        filename='widget-cfg.js',
-        config_entry='widget'
-    ))
-    ret.update(rubeus.collect_addon_assets(node))
-    return ret
+    if request.args.get('_'):
+        """
+        Since this view function is called from all the pages for a public project,
+        Google Bot request handler function is called here.
+        """
+        content = get_static_snapshot(cache)
+        return {'content': content}
 
+    else:
+        ret = _view_project(node, auth, primary=primary)
+        ret['addon_capabilities'] = settings.ADDON_CAPABILITIES
+        # Collect the URIs to the static assets for addons that have widgets
+        ret['addon_widget_js'] = list(collect_addon_js(
+            node,
+            filename='widget-cfg.js',
+            config_entry='widget'
+        ))
+        ret.update(rubeus.collect_addon_assets(node))
+        return ret
 
 # Expand/Collapse
 @must_be_valid_project
@@ -439,7 +450,7 @@ def project_reorder_components(node, **kwargs):
 
 ##############################################################################
 
-
+@gets_static_snapshot('statistics')
 @must_be_valid_project
 @must_be_contributor_or_public
 def project_statistics(auth, node, **kwargs):

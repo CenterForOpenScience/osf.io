@@ -16,3 +16,7 @@ requires_gnupg = unittest.skipIf(
     not settings.USE_GNUPG,
     'gnupg disabled'
 )
+requires_celery = unittest.skipIf(
+    not settings.USE_CELERY,
+    'Celery not running'
+)

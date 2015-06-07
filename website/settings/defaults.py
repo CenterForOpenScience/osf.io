@@ -95,6 +95,7 @@ MAILGUN_API_KEY = None
 UPLOADS_PATH = os.path.join(BASE_PATH, 'uploads')
 MFR_CACHE_PATH = os.path.join(BASE_PATH, 'mfrcache')
 MFR_TEMP_PATH = os.path.join(BASE_PATH, 'mfrtemp')
+SEO_CACHE_PATH = os.path.join(BASE_PATH, 'seocache')
 
 # Use Celery for file rendering
 USE_CELERY = True

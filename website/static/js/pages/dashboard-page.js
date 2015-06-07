@@ -10,6 +10,7 @@ var ko = require('knockout');
 var $ = require('jquery');
 var jstz = require('jstimezonedetect').jstz;
 
+
 // Knockout components for the onboarder
 require('js/onboarder.js');
 var $osf = require('js/osfHelpers');

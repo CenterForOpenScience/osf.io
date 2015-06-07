@@ -245,6 +245,7 @@ def make_url_map(app):
             addon_views.get_addon_user_config,
             json_renderer,
         ),
+
     ], prefix='/api/v1')
 
     # OAuth
@@ -814,6 +815,7 @@ def make_url_map(app):
             OsfWebRenderer('project/files.mako'),
             view_kwargs={'mode': 'page'},
         ),
+
         Rule(
             [
                 '/project/<pid>/files/<provider>/<path:path>/',
@@ -919,6 +921,13 @@ def make_url_map(app):
             '/project/<pid>/',
             '/project/<pid>/node/<nid>/',
         ], 'get', project_views.node.view_project, json_renderer),
+
+
+        Rule([
+            '/snapshot',
+        ], 'get', website_views.homepage_snapshot, json_renderer),
+
+
         Rule([
             '/project/<pid>/expand/',
             '/project/<pid>/node/<nid>/expand/',

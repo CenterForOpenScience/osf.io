@@ -229,7 +229,6 @@ def send_confirm_email(user, email):
         merge_target=merge_target,
     )
 
-
 def register_user(**kwargs):
     """Register new user account.
 

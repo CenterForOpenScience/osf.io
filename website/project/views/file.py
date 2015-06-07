@@ -12,8 +12,10 @@ from website.util import rubeus
 from website.project.decorators import must_be_contributor_or_public
 from website import settings
 from website.project.views.node import _view_project
+from website.static_snapshot.decorators import gets_static_snapshot
 
 
+@gets_static_snapshot('files')
 @must_be_contributor_or_public
 def collect_file_trees(auth, node, **kwargs):
     """Collect file trees for all add-ons implementing HGrid views, then

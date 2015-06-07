@@ -9,7 +9,7 @@ var $osf = require('./osfHelpers');
 
 ko.punches.enableAll();
 
-var ViewModel = function(submitUrl) {
+var ViewModel = function(submitUrl, snapshotUrl) {
 
     var self = this;
 
@@ -57,6 +57,12 @@ var ViewModel = function(submitUrl) {
     self.trim = function(observable) {
         observable($.trim(observable()));
     };
+
+
+    /* Call to get html snapshot of home/index page
+     */
+    $.getJSON(snapshotUrl);
+
 
     /** Change the flashed message. */
     self.changeMessage = function(message, messageClass, text, css, timeout, timeoutClock) {
@@ -128,8 +134,8 @@ var ViewModel = function(submitUrl) {
 
 };
 
-var SignUp = function(selector, submitUrl) {
-    this.viewModel = new ViewModel(submitUrl);
+var SignUp = function(selector, submitUrl, snapshotUrl) {
+    this.viewModel = new ViewModel(submitUrl, snapshotUrl);
     $osf.applyBindings(this.viewModel, selector);
 };
 

@@ -32,6 +32,8 @@ from website.util import web_url_for, paths
 from website.util.sanitize import escape_html
 from website.util.sanitize import strip_html
 from website.views import _render_nodes
+from website.static_snapshot.decorators import gets_static_snapshot, cache
+from website.static_snapshot.views import get_static_snapshot
 
 
 logger = logging.getLogger(__name__)
@@ -243,7 +245,7 @@ def _get_user_created_badges(user):
 def profile_view(auth):
     return _profile_view(auth.user, True)
 
-
+@gets_static_snapshot('profile')
 @collect_auth
 def profile_view_id(uid, auth):
     user = User.load(uid)
@@ -579,6 +581,8 @@ def serialize_social(auth, uid=None, **kwargs):
     target = get_target_user(auth, uid)
     ret = target.social
     append_editable(ret, auth, uid)
+    if request.args.get('_'):
+        get_static_snapshot(cache)
     if ret['editable']:
         ret['addons'] = serialize_social_addons(target)
     return ret

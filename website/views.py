@@ -21,7 +21,9 @@ from framework.auth.forms import ResetPasswordForm
 from framework.auth.forms import ForgotPasswordForm
 from framework.auth.decorators import collect_auth
 from framework.auth.decorators import must_be_logged_in
-
+from website.static_snapshot.decorators import gets_static_snapshot
+from website.static_snapshot.decorators import cache
+from website.static_snapshot.views import get_static_snapshot
 from website.models import Guid
 from website.models import Node
 from website.util import rubeus
@@ -32,6 +34,7 @@ from website.util import permissions
 from website.project import new_dashboard
 from website.settings import ALL_MY_PROJECTS_ID
 from website.settings import ALL_MY_REGISTRATIONS_ID
+
 
 logger = logging.getLogger(__name__)
 
@@ -97,7 +100,7 @@ def _render_nodes(nodes, auth=None, show_path=False):
     }
     return ret
 
-
+@gets_static_snapshot('index')
 @collect_auth
 def index(auth):
     """Redirect to dashboard if user is logged in, else show homepage.
@@ -221,8 +224,19 @@ def get_dashboard_nodes(auth):
     return _render_nodes(response_nodes, auth)
 
 
+def homepage_snapshot():
+    """
+    Placeholder for calling googlebot crawler call for home page
+    :return: None
+    """
+    if request.args.get('_'):
+        get_static_snapshot(cache)
+    return None
+
+
 @must_be_logged_in
 def dashboard(auth):
+
     user = auth.user
     dashboard_folder = find_dashboard(user)
     dashboard_id = dashboard_folder._id
