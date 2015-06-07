@@ -142,9 +142,14 @@ class GoogleDriveProvider(provider.BaseProvider):
             throws=exceptions.DownloadError,
         )
 
-        size = data.get('fileSize')
-        # google docs, not drive files, have no way to get the file size :( # TODO See what else this breaks
-        return streams.ResponseStreamReader(download_resp, size=size, unsizable=size is None)  # Hope the docs have a content length
+        if 'fileSize' in data:
+            return streams.ResponseStreamReader(download_resp, size=data['fileSize'])
+
+        # google docs, not drive files, have no way to get the file size
+        # must buffer the entire file into memory
+        stream = streams.StringStream((yield from download_resp.read()))
+        stream.content_type = download_resp.headers['Content-Type']
+        return stream
 
     @asyncio.coroutine
     def upload(self, stream, path, **kwargs):
