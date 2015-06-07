@@ -2213,6 +2213,10 @@ span#profileFullname{
     margin: 0px 10px;
 }
 
+.progress-bar-width {
+    width: 100%;
+}
+
 .sharejs-info-btn {
     background: none;
     outline : 0 !important;

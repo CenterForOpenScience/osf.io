@@ -30,6 +30,7 @@ var entry = {
     'project-dashboard': staticPath('js/pages/project-dashboard-page.js'),
     'project-base-page': staticPath('js/pages/project-base-page.js'),
     'wiki-edit-page': staticPath('js/pages/wiki-edit-page.js'),
+    'file-edit-page': staticPath('js/pages/file-edit-page.js'),
     'files-page': staticPath('js/pages/files-page.js'),
     'profile-settings-page': staticPath('js/pages/profile-settings-page.js'),
     'profile-account-settings-page': staticPath('js/pages/profile-account-settings-page.js'),
@@ -113,6 +114,7 @@ var resolve = {
         'pagedown-ace-sanitizer': addonsPath('wiki/static/pagedown-ace/Markdown.Sanitizer.js'),
         'pagedown-ace-editor': addonsPath('wiki/static/pagedown-ace/Markdown.Editor.js'),
         'wikiPage': addonsPath('wiki/static/wikiPage.js'),
+        'filePage': staticPath('js/pages/FilePage.js'),
         'highlight-css': nodePath('highlight.js/styles/default.css'),
         // Also alias some internal libraries for easy access
         'addons': path.join(__dirname, 'website', 'addons'),

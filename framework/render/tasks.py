@@ -3,6 +3,7 @@ import os
 import errno
 import codecs
 import logging
+from bs4 import BeautifulSoup
 
 import mfr
 from mfr.core import get_file_extension
@@ -44,6 +45,36 @@ def render_mfr_error(err):
            <p>{msg}</p>
            </div>
         """.format(**locals())
+
+
+@app.task(ignore_result=True, timeout=settings.MFR_TIMEOUT)
+def get_file_contents(download_url, cache_path, temp_path, public_download_url):
+
+    ensure_path(os.path.split(temp_path)[0])
+    ensure_path(os.path.split(cache_path)[0])
+
+    try:
+        save_to_file_or_error(download_url, temp_path)
+    except exceptions.RenderNotPossibleException as e:
+        # Write out unavoidable errors
+        content = e.renderable_error
+    else:
+        encoding = None
+        if get_file_extension(temp_path) in CODE_EXTENSIONS:
+            encoding = 'utf-8'
+        with codecs.open(temp_path, encoding=encoding) as temp_file:
+            try:
+                rendered_html = mfr.render(fp=temp_file, src=public_download_url).content
+                soup = BeautifulSoup(rendered_html)
+                content = str(soup.get_text())
+
+            except MFRError as err:
+                # Rendered MFR error
+                content = render_mfr_error(err)
+
+    # Cleanup when we're done
+    os.remove(temp_path)
+    return content
 
 
 # TODO only allow one task at a time
