@@ -2245,7 +2245,8 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
             self.set_permissions(contrib_to_add, permissions)
             if save:
                 self.save()
-            return True
+
+            return False
         else:
             return False
 
