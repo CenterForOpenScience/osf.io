@@ -58,7 +58,7 @@ def migrate_node(node, conference, staff_user, personal_accounts, dry_run=True):
 
 
 def main(dry_run=True):
-    init_app(set_backend=True, routes=False, mfr=False)
+    init_app(set_backend=True, routes=False)
     staff_user = models.User.find_one(Q('username', 'eq', STAFF_EMAIL))
     for conference in models.Conference.find():
         migrate_conference(conference, staff_user, PERSONAL_ACCOUNTS, dry_run=dry_run)

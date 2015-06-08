@@ -7,6 +7,7 @@ import urlparse
 import furl
 
 from flask import request, url_for
+from django.core.urlresolvers import reverse
 
 from website import settings
 
@@ -36,6 +37,9 @@ def _get_guid_url_for(url):
     guid_url = guid_url_project_pattern.sub('', guid_url, count=1)
     guid_url = guid_url_profile_pattern.sub('', guid_url, count=1)
     return guid_url
+
+def api_v2_url_for(*args, **kwargs):
+    return reverse(prefix='/', *args, **kwargs)
 
 
 def api_url_for(view_name, _absolute=False, _offload=False, _xml=False, *args, **kwargs):
