@@ -64,7 +64,7 @@ class CollectionSerializer(JSONAPISerializer):
         ret = {
             'collection': obj.is_folder,
             'dashboard': obj.is_dashboard,
-            # 'smart_folder': obj.smart_folder
+            # 'smart_folder': obj.properties.smart_folder,
         }
         return ret
 

@@ -71,17 +71,23 @@ class CollectionList(generics.ListCreateAPIView, ListFilterMixin):
 
 
 class DashboardDetail(generics.ListCreateAPIView, ODMFilterMixin):
-    """ Detail for a users Dashboard collection
-    """
-    permission_classes = (
-        ReadOnlyIfRegistration
-    )
+    """Projects and components.
 
+    By default, a GET will return a list of public nodes, sorted by date_modified. You can filter Collection by their
+    title and if they are the dashboard
+    """
+
+
+    permission_classes = (
+        drf_permissions.IsAuthenticatedOrReadOnly,
+    )
     serializer_class = CollectionSerializer
+    ordering = ('-date_modified',)  # default ordering
 
     # overrides ODMFilterMixin
     def get_default_odm_query(self):
         base_query = (
+            Q('is_deleted', 'ne', True) &
             Q('is_dashboard', 'eq', True)
         )
         user = self.request.user
@@ -92,9 +98,10 @@ class DashboardDetail(generics.ListCreateAPIView, ODMFilterMixin):
         query = base_query & permission_query
         return query
 
+
     # overrides ListCreateAPIView
     def get_queryset(self):
-        query = self.get_query_from_request()
+        query = self.get_default_odm_query()
         return Node.find(query)
 
 
@@ -131,7 +138,6 @@ class CollectionDetail(generics.RetrieveUpdateAPIView, generics.RetrieveDestroyA
                     },
                 }
                 return smart_folder_node
-
         return self.get_node()
 
     # overrides RetrieveUpdateAPIView
