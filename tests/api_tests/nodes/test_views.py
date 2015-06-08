@@ -792,7 +792,6 @@ class TestNodeCreateOpenEndedRegistration(ApiTestCase):
         full_url = self.private_url + '12345/'
 
         res = self.app.post(full_url, self.payload, auth=self.basic_auth, expect_errors = True)
-        print res
         assert_equal(res.status_code, 400)
         assert_equal(res.json['non_field_errors'][0], 'Incorrect token.')
 
