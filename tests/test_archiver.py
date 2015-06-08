@@ -164,7 +164,8 @@ class TestArchiverTasks(ArchiverTestCase):
         ))
         assert_equal(res.target_name, 'dropbox')
 
-    def test_archive_node_pass(self):
+    @mock.patch('website.archiver.tasks.archive_addon.delay')
+    def test_archive_node_pass(self, mock_archive_addon):
         settings.MAX_ARCHIVE_SIZE = 1024 ** 3
         src_pk, dst_pk, user_pk = self.pks
         with mock.patch.object(StorageAddonBase, '_get_file_tree') as mock_file_tree:
@@ -194,12 +195,25 @@ class TestArchiverTasks(ArchiverTestCase):
                 pass
         assert_true(isinstance(mock_fail.call_args[0][0], ArchiverSizeExceeded))
 
-    def test_archive_addon(self):
+    @mock.patch('website.archiver.tasks.archive_addon.delay')
+    def test_archive_node_does_not_archive_empty_addons(self, mock_archive_addon):
+        src_pk, dst_pk, user_pk = self.pks
+        with mock.patch.object(StorageAddonBase, '_get_file_tree') as mock_file_tree:
+            mock_file_tree.return_value = {
+                'path': '/',
+                'kind': 'folder',
+                'name': 'Fake',
+                'children': []
+            }
+            results = [stat_addon(addon, src_pk, dst_pk, user_pk) for addon in ['osfstorage', 'dropbox']]
+            archive_node(results, src_pk=src_pk, dst_pk=dst_pk, user_pk=user_pk)
+        mock_archive_addon.assert_not_called()
+
+    @mock.patch('website.archiver.tasks.make_copy_request.delay')
+    def test_archive_addon(self, mock_make_copy_request):
         src_pk, dst_pk, user_pk = self.pks
         result = archiver_utils.aggregate_file_tree_metadata('dropbox', FILE_TREE, self.user),
-        with mock.patch.object(make_copy_request, 'si') as mock_make_copy_request:
-            with mock.patch.object(requests, 'post'):
-                archive_addon('dropbox', src_pk, dst_pk, user_pk, result)
+        archive_addon('dropbox', src_pk, dst_pk, user_pk, result)
         assert_equal(self.dst.archived_providers['dropbox']['status'], ARCHIVER_PENDING)
         cookie = self.user.get_or_create_cookie()
         assert(mock_make_copy_request.called_with(
@@ -271,12 +285,15 @@ class TestArchiverTasks(ArchiverTestCase):
                                body=callback_400,
                                content_type='application/json')
         with mock.patch('website.archiver.utils.update_status') as mock_update:
-            make_copy_request(src_pk, dst_pk, user_pk,
-                              url, {
-                                  'source': {
-                                      'provider': 'dropbox'
-                                  }
-                              })
+            try:
+                make_copy_request(src_pk, dst_pk, user_pk,
+                                  url, {
+                                      'source': {
+                                          'provider': 'dropbox'
+                                      }
+                                  })
+            except HTTPError:
+                pass
         mock_update.assert_called_with(self.dst, 'dropbox', ARCHIVER_FAILURE, meta={'errors': [error]})
 
 class TestArchiverUtils(ArchiverTestCase):
