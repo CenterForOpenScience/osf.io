@@ -159,6 +159,9 @@ class Mendeley(ExternalProvider):
         if csl_type in CSL_TYPE_MAP:
             csl['type'] = CSL_TYPE_MAP[csl_type]
 
+        else:
+            csl['type'] = 'article'
+
         if document.json.get('abstract'):
             csl['abstract'] = document.json.get('abstract')
 
