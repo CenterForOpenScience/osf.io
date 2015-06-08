@@ -220,6 +220,14 @@ describe('osfHelpers', () => {
         });
     });
 
+    describe('htmlDecode', () => {
+        it('should decode html entities', () => {
+            assert.equal($osf.htmlDecode('safe'), 'safe');
+            assert.equal($osf.htmlDecode('b&gt;a&amp;'), 'b>a&');
+            assert.equal($osf.htmlDecode('&lt;script&gt;alert("lol")&lt;/script&gt;'), '<script>alert("lol")</script>');
+        });
+    });
+
     describe('FormattableDate', () => {
         it('should have local and utc time', () => {
             var date = new Date();
