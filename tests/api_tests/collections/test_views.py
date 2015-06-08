@@ -10,27 +10,6 @@ from tests.base import ApiTestCase, fake
 from tests.factories import UserFactory, ProjectFactory, FolderFactory, RegistrationFactory, DashboardFactory, \
     NodeFactory
 
-
-class TestWelcomeToApi(ApiTestCase):
-    def setUp(self):
-        ApiTestCase.setUp(self)
-        self.user = UserFactory.build()
-        self.user.set_password('justapoorboy')
-        self.user.save()
-        self.basic_auth = (self.user.username, 'justapoorboy')
-        self.url = '/v2/'
-
-    def test_returns_200_for_logged_out_user(self):
-        res = self.app.get(self.url)
-        assert_equal(res.status_code, 200)
-        assert_equal(res.json['meta']['current_user'], None)
-
-    def test_returns_current_user_info_when_logged_in(self):
-        res = self.app.get(self.url, auth=self.basic_auth)
-        assert_equal(res.status_code, 200)
-        assert_equal(res.json['meta']['current_user']['data']['given_name'], self.user.given_name)
-
-
 class TestNodeList(ApiTestCase):
     def setUp(self):
         ApiTestCase.setUp(self)

@@ -5,7 +5,7 @@ from datetime import datetime
 from framework.auth.core import Auth
 from website.models import Node, Pointer
 from api.base.utils import get_object_or_404
-from api.base.filters import ODMFilterMixin
+from api.base.filters import ODMFilterMixin, ListFilterMixin
 from .serializers import CollectionSerializer, CollectionPointersSerializer
 from .permissions import ReadOnlyIfRegistration
 
@@ -25,7 +25,7 @@ class CollectionMixin(object):
         return obj
 
 
-class CollectionList(generics.ListCreateAPIView, ODMFilterMixin):
+class CollectionList(generics.ListCreateAPIView, ListFilterMixin):
     """Projects and components.
 
     By default, a GET will return a list of public nodes, sorted by date_modified. You can filter Collection by their
@@ -53,7 +53,7 @@ class CollectionList(generics.ListCreateAPIView, ODMFilterMixin):
 
     # overrides ListCreateAPIView
     def get_queryset(self):
-        query = self.get_query_from_request()
+        query = self.get_default_odm_query()
         return Node.find(query)
 
     # overrides ListCreateAPIView
@@ -68,6 +68,34 @@ class CollectionList(generics.ListCreateAPIView, ODMFilterMixin):
         # On creation, make sure that current user is the creator
         user = self.request.user
         serializer.save(creator=user)
+
+
+class DashboardDetail(generics.ListCreateAPIView, ODMFilterMixin):
+    """ Detail for a users Dashboard collection
+    """
+    permission_classes = (
+        ReadOnlyIfRegistration
+    )
+
+    serializer_class = CollectionSerializer
+
+    # overrides ODMFilterMixin
+    def get_default_odm_query(self):
+        base_query = (
+            Q('is_dashboard', 'eq', True)
+        )
+        user = self.request.user
+        permission_query = Q('is_public', 'eq', True)
+        if not user.is_anonymous():
+            permission_query = (Q('is_public', 'eq', True) | Q('contributors', 'icontains', user._id))
+
+        query = base_query & permission_query
+        return query
+
+    # overrides ListCreateAPIView
+    def get_queryset(self):
+        query = self.get_query_from_request()
+        return Node.find(query)
 
 
 class CollectionDetail(generics.RetrieveUpdateAPIView, generics.RetrieveDestroyAPIView,
@@ -145,23 +173,8 @@ class CollectionChildrenList(generics.ListAPIView, CollectionMixin):
             auth = Auth(None)
         else:
             auth = Auth(user)
-        children = [node for node in nodes if node.can_view(auth) and node.primary]
+        children = [node for node in nodes if node.can_view(auth)]
         return children
-
-
-class CollectionParentsList(generics.ListAPIView, CollectionMixin):
-    """Parents of the current collection
-
-    """
-    permission_classes = (
-        drf_permissions.IsAuthenticatedOrReadOnly,
-    )
-
-    serializer_class = CollectionSerializer
-
-    def get_queryset(self):
-        parents = self.get_node().parents
-        return parents
 
 
 class CollectionPointersList(generics.ListCreateAPIView, CollectionMixin):

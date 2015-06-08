@@ -4,24 +4,23 @@ from api.base.serializers import JSONAPISerializer, LinksField, Link
 from website.models import Node
 from framework.auth.core import Auth
 
+class DashboardSerializer(JSONAPISerializer):
+   pass
 
 class CollectionSerializer(JSONAPISerializer):
-    filterable_fields = frozenset(['title', 'is_dashboard'])
+    filterable_fields = frozenset(['title'])
 
     id = ser.CharField(read_only=True, source='_id')
     title = ser.CharField(required=True)
     date_created = ser.DateTimeField(read_only=True)
     date_modified = ser.DateTimeField(read_only=True)
+    parent_id = ser.CharField(read_only=True)
 
     links = LinksField({
         'html': 'get_absolute_url',
         'children': {
             'related': Link('collections:collection-children', kwargs={'pk': '<pk>'}),
             'count': 'get_node_count',
-        },
-        'parent': {
-            'related': Link('collections:collection-parents', kwargs={'pk': '<pk>'}),
-            'count': 'get_parents_count'
         },
         'pointers': {
             'related': Link('collections:collection-pointers', kwargs={'pk': '<pk>'}),
@@ -52,9 +51,6 @@ class CollectionSerializer(JSONAPISerializer):
     def get_pointers_count(self, obj):
         return len(obj.nodes_pointer)
 
-    def get_parents_count(self, obj):
-        return len(obj.parents)
-
     def get_user_auth(self, request):
         user = request.user
         if user.is_anonymous():
@@ -68,6 +64,7 @@ class CollectionSerializer(JSONAPISerializer):
         ret = {
             'collection': obj.is_folder,
             'dashboard': obj.is_dashboard,
+            # 'smart_folder': obj.smart_folder
         }
         return ret
 
