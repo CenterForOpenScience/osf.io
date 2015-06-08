@@ -354,7 +354,6 @@ def project_contributors_remove(auth, node, **kwargs):
     for node_id in listToRemove:
         for user_id in listToRemove[node_id]:
             node = Node.load(node_id)
-            print "\n\n\n\n\n\n\n\n\n\n\n\n\n" + str(user_id + "\n\n\n\n" + node_id)
             node.contributors.remove(user_id)
             node.visible_contributor_ids.remove(user_id)
             node.save()
