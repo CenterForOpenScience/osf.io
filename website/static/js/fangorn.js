@@ -2049,7 +2049,8 @@ tbOptions = {
         var item = tb.find(row.id);
         _fangornMultiselect.call(tb,null,item);
     },
-    hScroll : 400
+    hScroll : 400,
+    naturalScrollLimit : 0
 };
 
 /**

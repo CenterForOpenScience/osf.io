@@ -480,8 +480,6 @@ def make_url_map(app):
              OsfWebRenderer('profile.mako')),
         Rule('/settings/key_history/<kid>/', 'get', profile_views.user_key_history,
              OsfWebRenderer('profile/key_history.mako')),
-        Rule('/addons/', 'get', profile_views.profile_addons,
-             OsfWebRenderer('profile/addons.mako')),
         Rule(["/user/merge/"], 'get', auth_views.merge_user_get,
              OsfWebRenderer("merge_accounts.mako")),
         Rule(["/user/merge/"], 'post', auth_views.merge_user_post,
