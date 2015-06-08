@@ -553,6 +553,45 @@ class TestArchiverListeners(ArchiverTestCase):
         for node in [reg, rchild, rchild2]:
             assert_false(listeners.archive_tree_finished(node))
 
+    @mock.patch('website.archiver.utils.send_archiver_success_mail')
+    def test_archive_callback_on_tree_sends_only_one_email(self, mock_send_success):
+        proj = factories.NodeFactory()
+        child = factories.NodeFactory(parent=proj)
+        factories.NodeFactory(parent=child)
+        reg = factories.RegistrationFactory(project=proj)
+        rchild = reg.nodes[0]
+        rchild2 = rchild.nodes[0]
+        for node in [reg, rchild, rchild2]:
+            node.archiving = True
+            node.save()
+        rchild.archived_providers = {
+            addon: {
+                'status': ARCHIVER_SUCCESS
+            }
+            for addon in ['box', 'osfstorage']
+        }
+        rchild.save()
+        listeners.archive_callback(rchild)
+        mock_send_success.assert_not_called()
+        reg.archived_providers = {
+            addon: {
+                'status': ARCHIVER_SUCCESS
+            }
+            for addon in ['box', 'osfstorage']
+        }
+        reg.save()
+        listeners.archive_callback(reg)
+        mock_send_success.assert_not_called()
+        rchild2.archived_providers = {
+            addon: {
+                'status': ARCHIVER_SUCCESS
+            }
+            for addon in ['box', 'osfstorage']
+        }
+        rchild2.save()
+        listeners.archive_callback(rchild2)
+        mock_send_success.assert_called_with(rchild2)
+
 class TestArchiverScripts(ArchiverTestCase):
 
     def test_find_failed_registrations(self):
