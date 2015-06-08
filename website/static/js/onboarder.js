@@ -444,20 +444,6 @@ function OBUploaderViewModel(params) {
         }
         if (!self.dropzone.getQueuedFiles().length) {
             self.changeMessage('Please select at least one file to upload.', 'text-danger');
-
-            // Delete node only if a new project is created
-            if(self.newProjectName()) {
-                var request = $.ajax({
-                url: 'project/' + selectedProject.id + '/',
-                type: 'DELETE'
-                });
-                request.fail(function(xhr, textStatus, error) {
-                    Raven.captureMessage('Project created without any upload', {
-                        textStatus: textStatus,
-                        error: error
-                    });
-                });
-            }
             return false;
         }
         var selected = selectedComponent || selectedProject;
@@ -617,11 +603,15 @@ function OBUploaderViewModel(params) {
     });
 
     self.submitCreateAndUpload = function() {
-        if (self.newProjectName().trim() === '') {
-            self.changeMessage('Project name is required', 'text-danger');
+        if (!self.dropzone.getQueuedFiles().length) {
+            self.changeMessage('Please select at least one file to upload.', 'text-danger');
             return false;
         }
-        else {
+        if (self.newProjectName() === null || self.newProjectName().trim() === '') {
+            self.changeMessage('Please select a project.', 'text-danger');
+            return false;
+        }
+        if (self.newProjectName() && self.dropzone.getQueuedFiles().length !== 0) {
             var request = $osf.postJSON(
                 CREATE_URL,
                 {
@@ -631,7 +621,6 @@ function OBUploaderViewModel(params) {
             request.done(self.createSuccess);
             request.fail(self.createFailure);
         }
-
     };
 
     self.createSuccess = function(response) {
