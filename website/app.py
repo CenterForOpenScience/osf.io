@@ -7,9 +7,7 @@ import json
 
 from modularodm import storage
 from werkzeug.contrib.fixers import ProxyFix
-
 import framework
-from framework.render.core import init_mfr
 from framework.flask import app, add_handlers
 from framework.logging import logger
 from framework.mongo import set_up_storage
@@ -95,7 +93,7 @@ def build_log_templates(settings):
         build_addon_log_templates(build_fp, settings)
 
 
-def init_app(settings_module='website.settings', set_backends=True, routes=True, mfr=False,
+def init_app(settings_module='website.settings', set_backends=True, routes=True,
         attach_request_handlers=True):
     """Initializes the OSF. A sort of pseudo-app factory that allows you to
     bind settings, set up routing, and set storage backends, but only acts on
@@ -114,9 +112,6 @@ def init_app(settings_module='website.settings', set_backends=True, routes=True,
     build_js_config_files(settings)
 
     app.debug = settings.DEBUG_MODE
-
-    if mfr:
-        init_mfr(app)
 
     if set_backends:
         logger.debug('Setting storage backends')
@@ -151,4 +146,5 @@ def apply_middlewares(flask_app, settings):
     # https://stackoverflow.com/questions/23347387/x-forwarded-proto-and-flask
     if settings.LOAD_BALANCER:
         flask_app.wsgi_app = ProxyFix(flask_app.wsgi_app)
+
     return flask_app

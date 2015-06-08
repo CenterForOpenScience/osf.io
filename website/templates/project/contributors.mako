@@ -62,7 +62,6 @@
                             data: contributors,
                             as: 'contributor',
                             isEnabled: canEdit,
-                            afterRender: setupEditable,
                             options: {
                               containment: '#manageContributors'
                             }
@@ -192,10 +191,16 @@
                 <a class="no-sort" data-bind="text: contributor.shortname, attr:{href: profileUrl}"></a>
             </span>
         </td>
-        <td>
+        <td class="permissions">
             <!-- ko if: contributor.canEdit() -->
                 <span data-bind="visible: notDeleteStaged">
-                    <a href="#" class="permission-editable no-sort" data-type="select"></a>
+                    <select class="form-control" data-bind="
+                        options: permissionList,
+                        value: curPermission,
+                        optionsText: 'text',
+                        style: { font-weight: change() ? 'normal' : 'bold' }"
+                    >
+                    </select>
                 </span>
                 <span data-bind="visible: deleteStaged">
                     <span data-bind="text: formatPermission"></span>
@@ -207,7 +212,7 @@
         </td>
         <td>
             <input
-                    type="checkbox" class="no-sort"
+                    type="checkbox" class="no-sort biblio"
                     data-bind="checked: visible, enable: $parent.canEdit() && !contributor.isAdmin"
                 />
         </td>
@@ -223,7 +228,11 @@
                     </a>
                 <!-- /ko -->
                 <!-- ko if: deleteStaged -->
+<<<<<<< HEAD
                     <b> Removing</b>
+=======
+                    Save to Remove
+>>>>>>> 90f8ce9d6d69c4db0efe1dbb5b24cfb1e54cb2da
                 <!-- /ko -->
             <!-- /ko -->
 
