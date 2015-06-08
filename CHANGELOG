@@ -2,6 +2,14 @@
 Changelog
 *********
 
+0.38.0 (2015-06-07)
+===================
+
+- API v2 pre-release
+- Modular File Renderer as a service
+- File editing user interface improvements
+- Collaborative file editing for text files
+
 0.37.0 (2015-05-25)
 ===================
 

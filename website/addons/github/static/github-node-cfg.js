@@ -52,8 +52,13 @@ var GithubConfigHelper = (function() {
         });
     };
 
-    $(document).ready(function() {
 
+    var isIE = function (userAgent) {
+        userAgent = userAgent || navigator.userAgent;
+        return userAgent.indexOf("MSIE ") > -1 || userAgent.indexOf("Trident/") > -1;
+    }
+
+    $(document).ready(function() {
         $('#githubSelectRepo').on('change', function() {
             var value = $(this).val();
             if (value) {
@@ -70,7 +75,10 @@ var GithubConfigHelper = (function() {
                 nodeApiUrl + 'github/user_auth/',
                 {}
             ).done(function() {
-                window.location.reload();
+                    if(isIE()){
+                        window.location.hash = "#configureAddonsAnchor";
+                    }
+                    window.location.reload();
             }).fail(
                 $osf.handleJSONError
             );

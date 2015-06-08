@@ -14,6 +14,8 @@ var Treebeard = require('treebeard');
 var $osf = require('js/osfHelpers');
 var waterbutler = require('js/waterbutler');
 
+var iconmap = require('js/iconmap');
+
 // CSS
 require('css/fangorn.css');
 
@@ -133,12 +135,21 @@ function cancelUploads (row) {
 
 var uploadRowTemplate = function(item){
     var tb = this;
+    var padding;
     var progress = item.data.uploadState() === 'pending' ? 0 : Math.floor(item.data.progress);
+    if (tb.filterOn) {
+        padding = 20;
+    } else {
+        padding = (item.depth - 1) * 20;
+    }
     var columns = [{
         data : '',  // Data field name
         css : '',
         custom : function(){ return m('row.text-muted', [
-            m('.col-xs-7', {style: 'padding-left:40px;overflow: hidden;text-overflow: ellipsis;'}, item.data.name),
+            m('.col-xs-7', {style: 'overflow: hidden;text-overflow: ellipsis;'}, [
+                m('span', { style : 'padding-left:' + padding + 'px;'}, tb.options.resolveIcon.call(tb, item)),
+                m('span',{ style : 'margin-left: 9px;'}, item.data.name)
+            ]),
             m('.col-xs-3',
                 m('.progress', [
                     m('.progress-bar.progress-bar-info.progress-bar-striped', {
@@ -175,6 +186,63 @@ var uploadRowTemplate = function(item){
 };
 
 /**
+ * Returns custom icons for OSF depending on the type of item. Used for non-file icons.
+ * @param {Object} item A Treebeard _item object. Node information is inside item.data
+ * @this Treebeard.controller
+ * @returns {Object}  Returns a mithril template with the m() function.
+ */
+function resolveIconView(item) {
+    var componentIcons = iconmap.componentIcons;
+    var projectIcons = iconmap.projectIcons;
+    function returnView(type, category) {
+        var iconType = projectIcons[type];
+        if (type === 'component' || type === 'registeredComponent') {
+            if (!item.data.permissions.view) {
+                return null;
+            } else {
+                iconType = componentIcons[category];
+            }
+        } else if (type === 'project' || type === 'registeredProject') {
+            iconType = projectIcons[category];
+        }
+        if (type === 'registeredComponent' || type === 'registeredProject') {
+            iconType += ' po-icon-registered';
+        } else {
+            iconType += ' po-icon';
+        }
+        var template = m('span', { 'class' : iconType});
+        return template;
+    }
+    if (item.data.isDashboard) {
+        return returnView('collection');
+    }
+    if (item.data.isSmartFolder) {
+        return returnView('smartCollection');
+    }
+    if ((item.data.nodeType === 'pointer' && item.parent().data.nodeType !== 'folder') || (item.data.isPointer && !item.parent().data.isFolder)) {
+        return returnView('link');
+    }
+    if (item.data.nodeType === 'project') {
+        if (item.data.isRegistration) {
+            return returnView('registeredProject', item.data.category);
+        } else {
+            return returnView('project', item.data.category);
+        }
+    }
+    if (item.data.nodeType === 'component') {
+        if (item.data.isRegistration) {
+            return returnView('registeredComponent', item.data.category);
+        }
+        return returnView('component', item.data.category);
+    }
+
+    if (item.data.nodeType === 'pointer') {
+        return returnView('link');
+    }
+    return null;
+}
+
+/**
  * Returns custom icons for OSF depending on the type of item
  * @param {Object} item A Treebeard _item object. Node information is inside item.data
  * @this Treebeard.controller
@@ -188,31 +256,35 @@ function _fangornResolveIcon(item) {
         closedFolder = m('i.fa.fa-folder', ' '),
         configOption = item.data.provider ? resolveconfigOption.call(this, item, 'folderIcon', [item]) : undefined,  // jshint ignore:line
         icon;
+    var newIcon = resolveIconView(item);
+    if ( newIcon === null) {
 
-    if (item.kind === 'folder') {
-        if (item.data.iconUrl) {
-            return m('img', {src: item.data.iconUrl, style: {width: '16px', height: 'auto'}});
+        if (item.kind === 'folder') {
+            if (item.data.iconUrl) {
+                return m('span', {style: {width:'16px', height:'16px', background:'url(' + item.data.iconUrl+ ')', display:'block'}}, '');
+            }
+            if (!item.data.permissions.view) {
+                return privateFolder;
+            }
+            if (item.data.isPointer) {
+                return pointerFolder;
+            }
+            if (item.open) {
+                return configOption || openFolder;
+            }
+            return configOption || closedFolder;
         }
-        if (!item.data.permissions.view) {
-            return privateFolder;
+        if (item.data.icon) {
+            return m('i.fa.' + item.data.icon, ' ');
         }
-        if (item.data.isPointer) {
-            return pointerFolder;
-        }
-        if (item.open) {
-            return configOption || openFolder;
-        }
-        return configOption || closedFolder;
-    }
-    if (item.data.icon) {
-        return m('i.fa.' + item.data.icon, ' ');
-    }
 
-    icon = getExtensionIconClass(item.data.name);
-    if (icon) {
-        return m('div.file-extension', { 'class': icon });
+        icon = getExtensionIconClass(item.data.name);
+        if (icon) {
+            return m('div.file-extension', { 'class': icon });
+        }
+        return m('i.fa.fa-file-text-o');
     }
-    return m('i.fa.fa-file-text-o');
+    return newIcon;
 }
 
 // Addon config registry. this will be populated with add on specific items if any.
@@ -353,11 +425,11 @@ function doItemOp(operation, to, from, rename, conflict) {
         from.move(to.id);
     }
 
-    tb.redraw();
-
     if (to.data.provider === from.provider) {
         tb.pendingFileOps.push(from.id);
     }
+    _fangornOrderFolder.call(tb, from.parent());
+
 
     $.ajax({
         type: 'POST',
@@ -413,8 +485,8 @@ function doItemOp(operation, to, from, rename, conflict) {
             from.open = true;
             from.load = true;
         }
-
-        tb.redraw();
+        // no need to redraw because fangornOrderFolder does it
+        _fangornOrderFolder.call(tb, from.parent());
     }).fail(function(xhr, textStatus) {
         if (to.data.provider === from.provider) {
             tb.pendingFileOps.pop();
@@ -450,7 +522,7 @@ function doItemOp(operation, to, from, rename, conflict) {
             }
         });
 
-        tb.redraw();
+        _fangornOrderFolder.call(tb, from.parent());
     });
 }
 
@@ -1007,7 +1079,7 @@ function _fangornOrderFolder(tree) {
     // Checking if this column does in fact have sorting
     if (this.isSorted[0]) {
         var sortDirection = this.isSorted[0].desc ? 'desc' : 'asc';
-        tree.sortChildren(this, sortDirection, 'text', 0);
+        tree.sortChildren(this, sortDirection, 'text', 0, 1);
         this.redraw();
     }
 }
@@ -1077,7 +1149,7 @@ function _fangornResolveRows(item) {
         return uploadRowTemplate.call(tb, item);
     }
 
-    if(item.data.status) {
+    if (item.data.status) {
         return [{
             data : '',  // Data field name
             css : 't-a-c',
@@ -1100,20 +1172,29 @@ function _fangornResolveRows(item) {
         filter : true,
         custom : _fangornTitleColumn
     });
-    if (item.data.provider === 'osfstorage' && item.data.kind === 'file') {
-        default_columns.push({
-            data : 'downloads',
-            sortInclude : false,
-            filter : false,
-            custom: function() { return item.data.extra ? item.data.extra.downloads.toString() : ''; }
+
+    if (item.data.kind === 'file') {
+        default_columns.push(
+        {
+            data : 'size',  // Data field name
+            filter : true,
+            custom : function() {return item.data.size ? $osf.humanFileSize(item.data.size, true) : '';}
         });
-    } else {
-        default_columns.push({
-            data : 'downloads',
-            sortInclude : false,
-            filter : false,
-            custom : function() { return m(''); }
-        });
+        if (item.data.provider === 'osfstorage') {
+            default_columns.push({
+                data : 'downloads',
+                sortInclude : false,
+                filter : false,
+                custom: function() { return item.data.extra ? item.data.extra.downloads.toString() : ''; }
+            });
+        } else {
+            default_columns.push({
+                data : 'downloads',
+                sortInclude : false,
+                filter : false,
+                custom : function() { return m(''); }
+            });
+        }
     }
     configOption = resolveconfigOption.call(this, item, 'resolveRows', [item]);
     return configOption || default_columns;
@@ -1130,9 +1211,13 @@ function _fangornColumnTitles () {
     columns.push(
     {
         title: 'Name',
-        width : '90%',
+        width : '80%',
         sort : true,
         sortType : 'text'
+    }, {
+        title : 'Size',
+        width : '10%',
+        sort : false
     }, {
         title : 'Downloads',
         width : '10%',
@@ -1406,7 +1491,6 @@ var FGItemButtons = {
                     onclick: function() {
                         mode(toolbarModes.RENAME);
                     },
-                    tooltip: 'Change the name of the item',
                     icon: 'fa fa-font',
                     className : 'text-info'
                 }, 'Rename')
@@ -1498,7 +1582,6 @@ var FGToolbar = {
                     helpTextId : 'renameHelpText',
                     placeholder : null,
                     value : ctrl.tb.inputValue(),
-                    tooltip: 'Change the name of the item here'
                 }, ctrl.helpText())
             ),
             m('.col-xs-3.tb-buttons-col',
@@ -1508,7 +1591,6 @@ var FGToolbar = {
                             onclick: function () {
                                 _renameEvent.call(ctrl.tb);
                             },
-                            tooltip: 'Rename item',
                             icon : 'fa fa-pencil',
                             className : 'text-info'
                         }, 'Rename'),
@@ -1811,13 +1893,21 @@ function getCopyMode(folder, items) {
     var tb = this;
     var canMove = true;
     var mustBeIntra = (folder.data.provider === 'github');
+    var cannotBeFolder = (folder.data.provider === 'figshare' || folder.data.provider === 'dataverse');
 
     if (folder.parentId === 0) return 'forbidden';
     if (folder.data.kind !== 'folder' || !folder.data.permissions.edit) return 'forbidden';
     if (!folder.data.provider || folder.data.status) return 'forbidden';
 
-    if (folder.data.provider === 'figshare') return 'forbidden';
     if (folder.data.provider === 'dataverse') return 'forbidden';
+
+    //Disallow moving INTO a public figshare folder
+    if (
+        folder.data.provider === 'figshare' &&
+        folder.data.extra &&
+        folder.data.extra.status &&
+        folder.data.extra.status === 'public'
+    ) return 'forbidden';
 
     for(var i = 0; i < items.length; i++) {
         var item = items[i];
@@ -1826,13 +1916,21 @@ function getCopyMode(folder, items) {
             item.data.isAddonRoot ||
             item.id === folder.id ||
             item.parentID === folder.id ||
-            item.data.provider === 'figshare' ||
             item.data.provider === 'dataverse' ||
-            (mustBeIntra && item.data.provider !== folder.data.provider)
+            (cannotBeFolder && item.data.kind === 'folder') ||
+            (mustBeIntra && item.data.provider !== folder.data.provider) ||
+            //Disallow moving OUT of a public figshare folder
+            (item.data.provider === 'figshare' && item.data.extra && item.data.status && item.data.status !== 'public')
         ) return 'forbidden';
 
         mustBeIntra = mustBeIntra || item.data.provider === 'github';
-        canMove = canMove && item.data.permissions.edit && (!mustBeIntra || (item.data.provider === folder.data.provider && item.data.nodeId === folder.data.nodeId));
+        canMove = (
+            canMove &&
+            item.data.permissions.edit &&
+            //Can only COPY OUT of figshare
+            item.data.provider !== 'figshare' &&
+            (!mustBeIntra || (item.data.provider === folder.data.provider && item.data.nodeId === folder.data.nodeId))
+        );
     }
     if (folder.data.isPointer) return 'copy';
     if (altKey) return 'copy';
@@ -2014,7 +2112,8 @@ tbOptions = {
         var item = tb.find(row.id);
         _fangornMultiselect.call(tb,null,item);
     },
-    hScroll : 400
+    hScroll : 400,
+    naturalScrollLimit : 0
 };
 
 /**
@@ -2073,7 +2172,8 @@ Fangorn.Utils = {
     scrollToFile: scrollToFile,
     openParentFolders : _openParentFolders,
     dismissToolbar : _dismissToolbar,
-    uploadRowTemplate : uploadRowTemplate
+    uploadRowTemplate : uploadRowTemplate,
+    resolveIconView: resolveIconView
 };
 
 Fangorn.DefaultOptions = tbOptions;

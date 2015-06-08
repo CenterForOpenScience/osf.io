@@ -50,7 +50,7 @@ class DataverseFile(GuidFile):
 
         # Check permissions
         user = _get_current_user()
-        if not self.node.can_edit(user=user):
+        if not user or not self.node.can_edit(user=user):
             try:
                 # Users without edit permission can only see published files
                 if not self._metadata_cache['extra']['hasPublishedVersion']:

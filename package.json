@@ -44,13 +44,14 @@
     "pym.js": "^0.4.1",
     "raven": "^0.7.2",
     "raw-loader": "^0.5.1",
-    "share": "~0.7.3",
+    "share": "0.7.27",
     "style-loader": "^0.8.3",
-    "treebeard": "git://github.com/caneruguz/treebeard.git#fdeb82d4937c4ecd72b85e10c361fadd33079713",
+    "treebeard": "git://github.com/caneruguz/treebeard.git#e3191c19053a1effb9176c70d3f1e3b7d127083f",
     "typeahead.js": "^0.10.5",
     "url-loader": "^0.5.5",
     "webpack": "^1.7.2",
-    "ws": "~0.4.32"
+    "ws": "~0.4.32",
+    "mime-types": "~2.0.12"
   },
   "devDependencies": {
     "chai": "^2.1.1",
