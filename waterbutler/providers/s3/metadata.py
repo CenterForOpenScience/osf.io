@@ -37,6 +37,10 @@ class S3FileMetadataHeaders(S3Metadata, metadata.BaseFileMetadata):
         return self.raw['Last-Modified']
 
     @property
+    def etag(self):
+        return self.raw['ETag'].replace('"', '')
+
+    @property
     def extra(self):
         return {
             'md5': self.raw['ETag'].replace('"', '')
@@ -60,6 +64,10 @@ class S3FileMetadata(S3Metadata, metadata.BaseFileMetadata):
     @property
     def content_type(self):
         return None  # TODO
+
+    @property
+    def etag(self):
+        return self.raw['ETag'].replace('"', '')
 
     @property
     def extra(self):

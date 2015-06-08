@@ -54,6 +54,10 @@ class BoxFileMetadata(BaseBoxMetadata, metadata.BaseFileMetadata):
             'etag': self.raw.get('etag'),
         }
 
+    @property
+    def etag(self):
+        return '{}::{}'.format(self.raw.get('etag', ''), self.raw['id'])
+
 
 class BoxRevision(metadata.BaseFileRevisionMetadata):
 

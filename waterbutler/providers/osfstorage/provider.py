@@ -179,6 +179,9 @@ class OSFStorageProvider(provider.BaseProvider):
 
     @asyncio.coroutine
     def download(self, path, version=None, mode=None, **kwargs):
+        if not path.identifier:
+            raise exceptions.NotFoundError(str(path))
+
         # osf storage metadata will return a virtual path within the provider
         resp = yield from self.make_signed_request(
             'GET',
@@ -286,7 +289,7 @@ class OSFStorageProvider(provider.BaseProvider):
     @asyncio.coroutine
     def delete(self, path, **kwargs):
         if path.identifier is None:
-            raise exceptions.DeleteError('{} not found'.format(str(path)), code=404)
+            raise exceptions.NotFoundError(str(path))
 
         yield from self.make_signed_request(
             'DELETE',

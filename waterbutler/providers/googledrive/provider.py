@@ -1,3 +1,4 @@
+import os
 import http
 import json
 import asyncio
@@ -54,6 +55,13 @@ class GoogleDriveProvider(provider.BaseProvider):
 
     @asyncio.coroutine
     def revalidate_path(self, base, name, folder=None):
+        #TODO Redo the logic here folders names ending in /s
+        # Will probably break
+        if '/' in name.lstrip('/') and '%' not in name:
+            # DAZ and MnC may pass unquoted names which break
+            # if the name contains a / in it
+            name = parse.quote(name.lstrip('/'), safe='')
+
         if not name.endswith('/') and folder:
             name += '/'
 
@@ -142,9 +150,15 @@ class GoogleDriveProvider(provider.BaseProvider):
             throws=exceptions.DownloadError,
         )
 
-        size = data.get('fileSize')
-        # google docs, not drive files, have no way to get the file size :( # TODO See what else this breaks
-        return streams.ResponseStreamReader(download_resp, size=size, unsizeable=size is None)  # Hope the docs have a content length
+        if 'fileSize' in data:
+            return streams.ResponseStreamReader(download_resp, size=data['fileSize'])
+
+        # google docs, not drive files, have no way to get the file size
+        # must buffer the entire file into memory
+        stream = streams.StringStream((yield from download_resp.read()))
+        if download_resp.headers.get('Content-Type'):
+            stream.content_type = download_resp.headers['Content-Type']
+        return stream
 
     @asyncio.coroutine
     def upload(self, stream, path, **kwargs):
@@ -337,11 +351,14 @@ class GoogleDriveProvider(provider.BaseProvider):
             except (KeyError, IndexError):
                 if parts:
                     raise exceptions.MetadataError('{} not found'.format(str(path)), code=http.client.NOT_FOUND)
-                return ret + [{
-                    'id': None,
-                    'title': current_part,
-                    'mimeType': 'folder' if path.endswith('/') else '',
-                }]
+                name, ext = os.path.splitext(current_part)
+                if ext not in ('.gdoc', '.gsheet'):
+                    return ret + [{
+                        'id': None,
+                        'title': current_part,
+                        'mimeType': 'folder' if path.endswith('/') else '',
+                    }]
+                parts.append(name)
 
             resp = yield from self.make_request(
                 'GET',

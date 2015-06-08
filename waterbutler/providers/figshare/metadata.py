@@ -49,6 +49,10 @@ class FigshareFileMetadata(BaseFigshareMetadata, metadata.BaseMetadata):
         )
 
     @property
+    def etag(self):
+        return '{}::{}::{}'.format(self.parent['status'].lower(), self.article_id, self.raw['id'])
+
+    @property
     def extra(self):
         return {
             'fileId': self.raw['id'],
@@ -80,6 +84,10 @@ class FigshareArticleMetadata(BaseFigshareMetadata, metadata.BaseMetadata):
     @property
     def modified(self):
         return None
+
+    @property
+    def etag(self):
+        return '{}::{}::{}'.format(self.raw['status'].lower(), self.raw.get('doi'), self.raw.get('article_id'))
 
     @property
     def extra(self):
