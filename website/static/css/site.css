@@ -86,7 +86,6 @@ body {
 .gs-sidebar.affix-top {
     position: fixed;
     top: 70px;
-    left: 25px;
 }
 .affix-bottom {
     position: relative;
@@ -99,19 +98,6 @@ body {
     margin-left: auto;
     margin-right: auto;
     border: solid 1px #ddd;
-}
-
-/* text */
-#start {
-    margin-left: 40px;
-}
-
-#structure,
-#sharing,
-#addons,
-#metrics {
-    padding-top: 40px;
-    margin-left: 40px;
 }
 
 /* phase number counters */
