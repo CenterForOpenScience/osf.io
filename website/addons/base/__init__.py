@@ -862,7 +862,7 @@ class StorageAddonBase(object):
     @property
     def archive_folder_name(self):
         name = "Archive of {addon}".format(addon=self.config.full_name)
-        folder_name = (getattr(self, 'folder_name') or '').lstrip('/').strip()
+        folder_name = getattr(self, 'folder_name', '').lstrip('/').strip()
         if folder_name:
             name = name + ": {folder}".format(folder=folder_name)
         return name
