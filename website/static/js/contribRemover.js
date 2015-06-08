@@ -56,20 +56,11 @@ var RemoveContributorViewModel = oop.extend(Paginator, {
         );
 
        $.getJSON(
-            nodeApiUrl + 'tordoff_get/', {},
+            nodeApiUrl + 'get_project_contributor_ids/', {},
             function(result) {
                 self.contributorsOnNodes(result);
             }
         );
-
-
-        $.getJSON(
-            nodeApiUrl + 'get_contributors/', {},
-                function(result) {
-                    self.contributors(result.contributors);
-                }
-        );
-
 
         self.foundResults = ko.pureComputed(function() {
             return self.query() && self.results().length;
@@ -90,6 +81,7 @@ var RemoveContributorViewModel = oop.extend(Paginator, {
             return names.join(', ');
         });
     },
+
     selectWhom: function() {
         this.page('whom');
     },
@@ -101,15 +93,12 @@ var RemoveContributorViewModel = oop.extend(Paginator, {
     },
     contribNodes: function(node_id,contrib_id) {
 
-           for(var i = 0;i < this.contributorsOnNodes()[node_id].length; i++){
-              if(this.contributorsOnNodes()[node_id][i]["id"] == contrib_id){
-              return true;
-              }
+           for(var i = 0;i < this.contributorsOnNodes()[node_id].length; i++) {
+               if (this.contributorsOnNodes()[node_id][i]["id"] == contrib_id) {
+                   return true;
+               }
 
-          }
-
-
-
+           }
             return false;
     },
     startSearch: function() {
@@ -124,11 +113,10 @@ var RemoveContributorViewModel = oop.extend(Paginator, {
             return $.getJSON(
                 '/api/v1/user/search/', {
                     query: self.query(),
-                    excludeNode: nodeId,
                     page: self.currentPage
                 },
-                function(contributors) {
-                    self.results(contributors);
+                function(result) {
+                    self.contributors(result.users);
                     self.currentPage(result.page);
                     self.numberOfPages(result.pages);
                     self.addNewPaginators();
@@ -171,6 +159,11 @@ var RemoveContributorViewModel = oop.extend(Paginator, {
             return self.afterRender(elm, data);
         };
     },
+    selectNodesForSearch: function(node){
+        var self = this;
+        self.contributors(self.contributorsOnNodes()[node.id]);
+
+    },
     add: function(data) {
         var self = this;
         // All manually added contributors are visible
@@ -190,39 +183,25 @@ var RemoveContributorViewModel = oop.extend(Paginator, {
     },
     addAll: function() {
         var self = this;
-        $.each(self.results(), function(idx, result) {
-            if (self.selection().indexOf(result) === -1) {
-                self.add(result);
-            }
-        });
+        self.selection(self.contributors());
     },
     removeAll: function() {
         var self = this;
-        $.each(self.selection(), function(idx, selected) {
-            self.remove(selected);
-        });
-    },
-    cantSelectNodes: function() {
-        return this.nodesToChange().length === this.nodes().length;
-    },
-    cantDeselectNodes: function() {
-        return this.nodesToChange().length === 0;
+        self.selection([]);
     },
     selectNodes: function() {
         var self = this;
-
         ko.utils.arrayMap(self.selection(), function(user) {
             self.selectNodesForContrib(user);
             }
             );
-
     },
     selectNodesForContrib: function(contrib) {
         var self = this;
 
         $.each(self.nodes(), function(idx,node) {
                 $.each(self.contributorsOnNodes()[node.id], function(inx,contribOnNode) {
-                    if(contrib.id == contribOnNode.id){
+                    if(contrib.id == contribOnNode.id && self.nodesToChange().indexOf(contrib.id+"|"+node.id) == -1){
                         self.nodesToChange.push(contrib.id+"|"+node.id);
                     }
                 });
@@ -232,8 +211,8 @@ var RemoveContributorViewModel = oop.extend(Paginator, {
     },
     deselectNodesForContrib: function(contrib) {
          var self = this;
-
         self.nodesToChange.remove(function(item) { return item.split("|")[0] == contrib.id});
+
     },
     deselectNodes: function() {
         this.nodesToChange([]);
@@ -261,7 +240,6 @@ var RemoveContributorViewModel = oop.extend(Paginator, {
                 });
             });
 
-            alert(ko.toJSON(self.ToRemove, null ,2));
             return self.ToRemove
 
     },
@@ -287,10 +265,28 @@ var RemoveContributorViewModel = oop.extend(Paginator, {
         self.query('');
         self.results([]);
         self.selection([]);
-        self.nodesToChange([]);
+        $.getJSON(
+            nodeApiUrl + 'get_contributors/', {},
+                function(result) {
+                    self.contributors(result.contributors);
+                }
+        );        self.nodesToChange([]);
         self.notification(false);
+    },
+    contribInProject: function(contrib) {
+        var self = this;
+
+        var ret = $.map(self.nodes(), function (node) {
+            if (self.contribNodes(node.id, contrib.id)) {
+                return false;
+            }
+
+        });
+
+        return ret.length == 0;
     }
-});
+
+    });
 
 ////////////////
 // Public API //

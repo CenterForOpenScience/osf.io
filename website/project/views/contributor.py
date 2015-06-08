@@ -80,7 +80,7 @@ def get_node_contributors_abbrev(auth, node, **kwargs):
 
 @collect_auth
 @must_be_valid_project
-def tordoff_get(node, **kwargs):
+def get_project_contributor_ids(node, **kwargs):
 
     node = Node.load(node)
 

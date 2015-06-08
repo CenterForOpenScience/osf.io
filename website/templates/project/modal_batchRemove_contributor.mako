@@ -2,7 +2,7 @@
     <div class="modal-dialog modal-lg">
         <div class="modal-content">
             <div class="modal-header">
-                <h3>Remove a Contributor from multiple components</h3>
+                <h3>Remove contributors from multiple components</h3>
             </div><!-- end modal-header -->
 
             <div class="modal-body">
@@ -21,36 +21,35 @@
                                     <span class="input-group-btn">
                                         <input type="submit" value="Search" class="btn btn-default">
                                     </span>
+
                                 </div>
                             </div>
                         </div>
                         <div class="row search-contributor-links">
-                            <div class="col-md-12">
-                                <div>
-                                    <!-- ko if:parentId -->
-                                        <a data-bind="click:importFromParent, html:'Import contributors from <i>' + parentTitle + '</i>'"></a>
-                                    <!-- /ko -->
-                                </div>
-                            </div>
                         </div>
                     </form>
                     <hr/>
                     <div class="row">
                         <div class="col-md-6">
-                            <div>
-                                <span class="modal-subheader">Contributors</span>
-                                <a data-bind="click:addAll">Add all</a>
-                            </div>
 
                                 <table>
-                                    <thead></thead>
+                                    <thead>                            <div>
+                                <span class="modal-subheader">Contributors</span>
+                                    <a data-bind="click:addAll">Add all</a>
+                                <div data-bind="foreach:nodes ">
+                                <div data-bind="style:{marginLeft: margin}">
+                                            <a data-bind="click:$root.selectNodesForSearch, text:title"></a>
+                                        </div>
+                                </div>
+                            </div>
+                                </thead>
 
-                                    <tbody data-bind="foreach:{data : contributors, as: 'contributor', afterRender:addTips}">
+                                    <tbody data-bind="foreach:{data : contributors, as: 'contributor', afterRender:addTips}"  >
                                         <tr data-bind="if:!($root.selected($data))">
                                             <td style="padding-right: 10px;">
                                                 <a
                                                         class="btn btn-default contrib-button btn-mini"
-                                                        data-bind="click:$root.add, tooltip: {title: 'Remove contributor'}"
+                                                        data-bind="click:$root.add, css:{disabled: $root.contribInProject(contributor)}, tooltip: {title: 'Remove contributor'}"
                                                     >-</a>
                                             </td>
                                             <td>
@@ -123,52 +122,53 @@
                                 </tbody>
                             </table>
                         </div>
-
-
-
                     </div>
                 </div>
-
-
 
                 <!-- Component selection page -->
                 <div data-bind="if:page()=='which'">
 
                     <div>
-                        Adding contributor(s)
+                        Removing contributor(s)
                         <span data-bind="text:addingSummary()"></span>
-                        to component
+                        from component
                         <span data-bind="text:title"></span>.
                     </div>
 
                     <hr />
 
                     <div style="margin-bottom:10px;">
-                        Would you like to add these contributor(s) to any children of
-                        the current component?
+                        Would you like to remove these contributor(s) from any of
+                        the following components?
                     </div>
 
                     <div class="row">
+
                         <div data-bind="foreach:selection">
                             <div class="col-md-6" >
                                 <b><span data-bind="text:fullname"></span></b>
                                 <div>
-                                    <a data-bind="click:$root.selectNodesForContrib, css:{disabled:$root.cantSelectNodes()}"> all</a>
-                                    <a data-bind="click:$root.deselectNodesForContrib, css:{disabled:$root.cantDeselectNodes()}">none</a>
+                                    <a data-bind="click:$root.selectNodesForContrib"> All</a> |
+                                    <a data-bind="click:$root.deselectNodesForContrib">None</a>
                                 </div>
 
                                 <div data-bind="foreach:$parent.nodes">
                                     <!-- ko if:$root.contribNodes(id,$parent.id) -->
-                                    <div data-bind="style:{marginLeft: margin}">
-                                        <input type="checkbox" data-bind="checked:$root.nodesToChange, value : $parent.id+ '|'+id" />
-                                        <span data-bind="text:title"></span>
-                                    </div>
-                                    <!-- /ko -->
+                                     <div data-bind="style:{marginLeft: margin}">
+                                            <input type="checkbox" data-bind="checked:$root.nodesToChange, value : $parent.id+ '|'+id" />
+                                            <em data-bind="text:title"></em>
+                                        </div>
+                                        <!-- /ko -->
+
+
+
                                 </div>
 
                             </div>
 
                         </div>
+
+
                         <div class="col-md-6">
                             <div>
                                 <a data-bind="click:selectNodes, css:{disabled:cantSelectNodes()}">Select all</a>
@@ -178,6 +178,7 @@
                             </div>
                         </div>
                     </div>
+
                 </div><!-- end component selection page -->
 
             </div><!-- end modal-body -->

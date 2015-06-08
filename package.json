@@ -40,6 +40,7 @@
     "mithril": "^0.2",
     "moment": "^2.9.0",
     "morgan": "^1.5.1",
+    "node-libs-browser": "^0.5.2",
     "object-assign": "^2.0.0",
     "pym.js": "^0.4.1",
     "raven": "^0.7.2",

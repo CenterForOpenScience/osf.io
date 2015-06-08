@@ -1032,9 +1032,8 @@ def make_url_map(app):
         ], 'get', project_views.contributor.get_contributors, json_renderer),
 
         Rule([
-            '/project/<pid>/tordoff_get/',
-            '/project/<pid>/node/<nid>/tordoff_get/',
-        ], 'get', project_views.contributor.tordoff_get, json_renderer),
+            '/project/<pid>/get_project_contributor_ids/',
+        ], 'get', project_views.contributor.get_project_contributor_ids, json_renderer),
 
         Rule([
             '/project/<pid>/get_contributors_from_parent/',
