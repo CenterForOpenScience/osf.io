@@ -9,7 +9,7 @@
                 </div><!-- end modal-header -->
                 <div class="modal-body">
                     <div class="form-group">
-                        <input id="title" placeholder="Component Title" name="title" type="text" class='form-control'>
+                        <input id="title" maxlength="200" placeholder="Component Title" name="title"  type="text" class='form-control'>
                     </div>
                     <div class="form-group">
                         <select id="category" name="category" class="form-control">
