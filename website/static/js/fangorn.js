@@ -14,6 +14,8 @@ var Treebeard = require('treebeard');
 var $osf = require('js/osfHelpers');
 var waterbutler = require('js/waterbutler');
 
+var iconmap = require('js/iconmap');
+
 // CSS
 require('css/fangorn.css');
 
@@ -184,6 +186,63 @@ var uploadRowTemplate = function(item){
 };
 
 /**
+ * Returns custom icons for OSF depending on the type of item. Used for non-file icons.
+ * @param {Object} item A Treebeard _item object. Node information is inside item.data
+ * @this Treebeard.controller
+ * @returns {Object}  Returns a mithril template with the m() function.
+ */
+function resolveIconView(item) {
+    var componentIcons = iconmap.componentIcons;
+    var projectIcons = iconmap.projectIcons;
+    function returnView(type, category) {
+        var iconType = projectIcons[type];
+        if (type === 'component' || type === 'registeredComponent') {
+            if (!item.data.permissions.view) {
+                return null;
+            } else {
+                iconType = componentIcons[category];
+            }
+        } else if (type === 'project' || type === 'registeredProject') {
+            iconType = projectIcons[category];
+        }
+        if (type === 'registeredComponent' || type === 'registeredProject') {
+            iconType += ' po-icon-registered';
+        } else {
+            iconType += ' po-icon';
+        }
+        var template = m('span', { 'class' : iconType});
+        return template;
+    }
+    if (item.data.isDashboard) {
+        return returnView('collection');
+    }
+    if (item.data.isSmartFolder) {
+        return returnView('smartCollection');
+    }
+    if ((item.data.nodeType === 'pointer' && item.parent().data.nodeType !== 'folder') || (item.data.isPointer && !item.parent().data.isFolder)) {
+        return returnView('link');
+    }
+    if (item.data.nodeType === 'project') {
+        if (item.data.isRegistration) {
+            return returnView('registeredProject', item.data.category);
+        } else {
+            return returnView('project', item.data.category);
+        }
+    }
+    if (item.data.nodeType === 'component') {
+        if (item.data.isRegistration) {
+            return returnView('registeredComponent', item.data.category);
+        }
+        return returnView('component', item.data.category);
+    }
+
+    if (item.data.nodeType === 'pointer') {
+        return returnView('link');
+    }
+    return null;
+}
+
+/**
  * Returns custom icons for OSF depending on the type of item
  * @param {Object} item A Treebeard _item object. Node information is inside item.data
  * @this Treebeard.controller
@@ -197,31 +256,35 @@ function _fangornResolveIcon(item) {
         closedFolder = m('i.fa.fa-folder', ' '),
         configOption = item.data.provider ? resolveconfigOption.call(this, item, 'folderIcon', [item]) : undefined,  // jshint ignore:line
         icon;
+    var newIcon = resolveIconView(item);
+    if ( newIcon === null) {
 
-    if (item.kind === 'folder') {
-        if (item.data.iconUrl) {
-            return m('span', {style: {width:'16px', height:'16px', background:'url(' + item.data.iconUrl+ ')', display:'block'}}, '');
+        if (item.kind === 'folder') {
+            if (item.data.iconUrl) {
+                return m('span', {style: {width:'16px', height:'16px', background:'url(' + item.data.iconUrl+ ')', display:'block'}}, '');
+            }
+            if (!item.data.permissions.view) {
+                return privateFolder;
+            }
+            if (item.data.isPointer) {
+                return pointerFolder;
+            }
+            if (item.open) {
+                return configOption || openFolder;
+            }
+            return configOption || closedFolder;
         }
-        if (!item.data.permissions.view) {
-            return privateFolder;
+        if (item.data.icon) {
+            return m('i.fa.' + item.data.icon, ' ');
         }
-        if (item.data.isPointer) {
-            return pointerFolder;
-        }
-        if (item.open) {
-            return configOption || openFolder;
-        }
-        return configOption || closedFolder;
-    }
-    if (item.data.icon) {
-        return m('i.fa.' + item.data.icon, ' ');
-    }
 
-    icon = getExtensionIconClass(item.data.name);
-    if (icon) {
-        return m('div.file-extension', { 'class': icon });
+        icon = getExtensionIconClass(item.data.name);
+        if (icon) {
+            return m('div.file-extension', { 'class': icon });
+        }
+        return m('i.fa.fa-file-text-o');
     }
-    return m('i.fa.fa-file-text-o');
+    return newIcon;
 }
 
 // Addon config registry. this will be populated with add on specific items if any.
@@ -2049,7 +2112,8 @@ tbOptions = {
         var item = tb.find(row.id);
         _fangornMultiselect.call(tb,null,item);
     },
-    hScroll : 400
+    hScroll : 400,
+    naturalScrollLimit : 0
 };
 
 /**
@@ -2108,7 +2172,8 @@ Fangorn.Utils = {
     scrollToFile: scrollToFile,
     openParentFolders : _openParentFolders,
     dismissToolbar : _dismissToolbar,
-    uploadRowTemplate : uploadRowTemplate
+    uploadRowTemplate : uploadRowTemplate,
+    resolveIconView: resolveIconView
 };
 
 Fangorn.DefaultOptions = tbOptions;
