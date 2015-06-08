@@ -20,7 +20,7 @@ from website.project import signals as project_signals
 from website.project import utils as project_utils
 
 @project_signals.after_create_registration.connect
-def archive_node(src, dst, user):
+def after_register(src, dst, user):
     """Blinker listener for registration initiations. Enqueqes an archive task
 
     :param src: Node being registered

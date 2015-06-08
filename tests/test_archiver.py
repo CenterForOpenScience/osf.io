@@ -421,9 +421,9 @@ class TestArchiverUtils(ArchiverTestCase):
 
 class TestArchiverListeners(ArchiverTestCase):
 
-    def test_archive_node(self):
+    def test_after_register(self):
         with mock.patch.object(handlers, 'enqueue_task') as mock_queue:
-            listeners.archive_node(self.src, self.dst, self.user)
+            listeners.after_register(self.src, self.dst, self.user)
         archive_signature = archive.si(self.src._id, self.dst._id, self.user._id)
         assert(mock_queue.called_with(archive_signature))
 
