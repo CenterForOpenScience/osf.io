@@ -421,7 +421,8 @@ class TestArchiverUtils(ArchiverTestCase):
 
 class TestArchiverListeners(ArchiverTestCase):
 
-    def test_after_register(self):
+    @mock.patch('framework.tasks.handlers.celery_teardown_request')
+    def test_after_register(self, mock_teardown):
         with mock.patch.object(handlers, 'enqueue_task') as mock_queue:
             listeners.after_register(self.src, self.dst, self.user)
         archive_signature = archive.si(self.src._id, self.dst._id, self.user._id)
