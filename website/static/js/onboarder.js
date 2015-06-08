@@ -25,7 +25,6 @@ function noop() {}
 var MAX_RESULTS = 14;
 var DEFAULT_FETCH_URL = '/api/v1/dashboard/get_nodes/';
 var CREATE_URL = '/api/v1/project/new/';
-var DELETE_NODE_URL ='/api/v1/project/new/delete';
 
 
 var substringMatcher = function(strs) {
@@ -450,7 +449,7 @@ function OBUploaderViewModel(params) {
             if(self.newProjectName() != null)
             {
                 var request = $.ajax({
-                url: DELETE_NODE_URL + '/' + selectedProject.id + '/',
+                url: 'project/' + selectedProject.id + '/',
                 type: 'DELETE'
                 });
                 request.done(function() {

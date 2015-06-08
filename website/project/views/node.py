@@ -117,16 +117,6 @@ def project_new_post(auth, **kwargs):
 
 
 @must_be_logged_in
-def project_delete_new_post(auth, **kwargs):
-    node_id = kwargs['pid']
-    node = Node.load(node_id)
-    node.remove_node(auth)
-    return {
-        'message': 'Node removed'
-    }
-
-
-@must_be_logged_in
 @must_be_valid_project
 def project_new_from_template(auth, node, **kwargs):
     new_node = node.use_as_template(

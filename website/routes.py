@@ -907,7 +907,6 @@ def make_url_map(app):
 
         # Create project, used by projectCreator.js
         Rule('/project/new/', 'post', project_views.node.project_new_post, json_renderer),
-        Rule('/project/new/delete/<pid>/', 'delete', project_views.node.project_delete_new_post, json_renderer),
 
         Rule([
             '/project/<pid>/contributors_abbrev/',
