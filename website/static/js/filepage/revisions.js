@@ -5,74 +5,83 @@ var waterbutler = require('js/waterbutler');
 
 var util = require('./util.js');
 
-
 // Helper for filtering
 function TRUTHY(item) {
     return !!item; //Force cast to a bool
 }
 
 
+var model = {
+    revisions: [],
+    loaded: m.prop(false),
+    errorMessage: undefined,
+    hasUser: false,
+    hasDate: false,
+    selectedRevision: 0
+};
+
+
 var FileRevisionsTable = {
-    controller: function(file, node, enableEditing) {
+    controller: function(file, node, enableEditing, canEdit) {
         var self = {};
         self.node = node;
         self.file = file;
-        self.revisions = [];
-        self.loaded = m.prop(false);
-        self.errorMessage = undefined;
+        self.canEdit = canEdit;
         self.enableEditing = enableEditing;
 
-        self.hasUser = true;
-        self.hasDate = self.provider !== 'dataverse';
-
-        self.selectedRevision = 0;
+        model.hasDate = self.file.provider !== 'dataverse';
 
         self.reload = function() {
-            self.loaded(false);
+            model.loaded(false);
             m.redraw();
             $.ajax({
                 dataType: 'json',
+                async: true,
                 url: self.file.urls.revisions,
                 beforeSend: $osf.setXHRAuthorization
             }).done(function(response) {
-                // m.startComputation();
+                m.startComputation();
                 var urlParmas = $osf.urlParams();
-                self.revisions = response.data.map(function(rev, index) {
+                model.revisions = response.data.map(function(rev, index) {
                     rev = FileRevisionsTable.postProcessRevision(self.file, self.node, rev, index);
                     if (urlParmas[rev.versionIdentifier] === rev.version) {
-                        self.selectedRevision = index;
+                        model.selectedRevision = index;
                     }
                     return rev;
                 });
-                self.loaded(true);
+                model.loaded(true);
                 // Can only edit the latest version of a file
-                if (self.selectedRevision === 0) {
-                    self.enableEditing(self.selectedRevision === 0);
+                if (model.selectedRevision === 0) {
+                    self.enableEditing();
                 }
-                self.hasUser = self.revisions[0] && self.revisions[0].extra && self.revisions[0].extra.user;
-                // m.endComputation();
+                model.hasUser = model.revisions[0] && model.revisions[0].extra && model.revisions[0].extra.user;
+                m.endComputation();
             }).fail(function(response) {
-                self.loaded(true);
-                self.errorMessage = response.responseJSON ?
+                m.startComputation();
+                model.loaded(true);
+                model.errorMessage = response.responseJSON ?
                     response.responseJSON.message || 'Unable to fetch versions' :
                     'Unable to fetch versions';
+                m.endComputation();
 
-                // self.errorMessage(err);
+                // model.errorMessage(err);
 
-                // if (self.file.provider === 'figshare') {
-                //     // Hack for Figshare
-                //     // only figshare will error on a revisions request
-                //     // so dont allow downloads and set a fake current version
-                //     $.ajax({
-                //         method: 'GET',
-                //         url: self.urls.metadata,
-                //         beforeSend: $osf.setXHRAuthorization
-                //     }).done(function(resp) {
-                //         self.editable(resp.data.extra.canDelete);
-                //     }).fail(function(xhr) {
-                //         self.editable(false);
-                //     });
-                // }
+                if (self.file.provider === 'figshare') {
+                    // Hack for Figshare
+                    // only figshare will error on a revisions request
+                    // so dont allow downloads and set a fake current version
+                    $.ajax({
+                        method: 'GET',
+                        url: self.file.urls.metadata,
+                        beforeSend: $osf.setXHRAuthorization
+                    }).done(function(resp) {
+                        self.canEdit(self.canEdit() && resp.data.extra.canDelete);
+                        m.redraw();
+                    }).fail(function(xhr) {
+                        self.canEdit(false);
+                        m.redraw();
+                    });
+                }
             });
         };
 
@@ -80,23 +89,23 @@ var FileRevisionsTable = {
             return m('thead', [
                 m('tr', [
                     m('th', 'Version ID'),
-                    self.hasDate ? m('th', 'Date') : false,
-                    self.hasUser ? m('th', 'User') : false,
+                    model.hasDate ? m('th', 'Date') : false,
+                    model.hasUser ? m('th', 'User') : false,
                     m('th[colspan=2]', 'Download'),
                 ].filter(TRUTHY))
             ]);
         };
 
         self.makeTableRow = function(revision, index) {
-            var isSelected = index === self.selectedRevision;
+            var isSelected = index === model.selectedRevision;
 
             return m('tr' + (isSelected ? '.active' : ''), [
                 m('td',  isSelected ?
                   revision.displayVersion :
                   m('a', {href: revision.osfViewUrl}, revision.displayVersion)
                 ),
-                self.hasDate ? m('td', revision.displayDate) : false,
-                self.hasUser ?
+                model.hasDate ? m('td', revision.displayDate) : false,
+                model.hasUser ?
                     m('td', revision.extra.user.url ?
                         m('a', {href: revision.extra.user.url}, revision.extra.user.name) :
                         revision.extra.user.name
@@ -114,18 +123,24 @@ var FileRevisionsTable = {
             ].filter(TRUTHY));
         };
 
-        self.reload();
+        if (!model.loaded()) self.reload();
         $(document).on('fileviewpage:reload', self.reload);
         return self;
     },
     view: function(ctrl) {
-        if (!ctrl.loaded()) return util.Spinner;
-        if (ctrl.errorMessage) return m('.alert.alert-warning', {style:{margin: '10px'}}, ctrl.errorMessage);
+        return m('#revisionsPanel', [
+            m('.osf-panel-header', 'Revisions'),
+            m('', (function() {
+                if (!model.loaded()) return util.Spinner;
+                if (model.errorMessage) return m('.alert.alert-warning', {style:{margin: '10px'}}, model.errorMessage);
 
-        return m('table.table', [
-            ctrl.getTableHead(),
-            m('tbody', ctrl.revisions.map(ctrl.makeTableRow))
+                return m('table.table', [
+                    ctrl.getTableHead(),
+                    m('tbody', model.revisions.map(ctrl.makeTableRow))
+                ]);
+            })())
         ]);
+
     },
     postProcessRevision: function(file, node, revision, index) {
         var options = {};

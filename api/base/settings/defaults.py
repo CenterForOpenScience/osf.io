@@ -14,7 +14,7 @@ import os
 from urlparse import urlparse
 from website import settings as osf_settings
 
-BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/1.8/howto/deployment/checklist/
 
@@ -66,6 +66,7 @@ REST_FRAMEWORK = {
         # Custom auth classes
         'api.base.authentication.drf.OSFBasicAuthentication',
         'api.base.authentication.drf.OSFSessionAuthentication',
+        'api.base.authentication.drf.OSFCASAuthentication'
     ),
 }
 
@@ -83,7 +84,7 @@ MIDDLEWARE_CLASSES = (
     # TokuMX transaction support
     # Needs to go before CommonMiddleware, so that transactions are always started,
     # even in the event of a redirect. CommonMiddleware may cause other middlewares'
-    # process_request to be skipped, e.g. whne a trailing slash is omitted
+    # process_request to be skipped, e.g. when a trailing slash is omitted
     'api.base.middleware.TokuTransactionsMiddleware',
 
     # 'django.contrib.sessions.middleware.SessionMiddleware',
@@ -127,12 +128,12 @@ USE_TZ = True
 
 STATIC_ROOT = os.path.join(BASE_DIR, 'static/vendor')
 
-API_BASE = 'v2/'
-
 # API_PATH is '/api' on staging/production, '' on develop
 API_PATH = ''
+API_BASE = 'v2/'
 
-STATIC_URL = '{}/{}static/'.format(API_PATH, API_BASE)
+API_PREFIX = '{}/{}'.format(API_PATH, API_BASE)
+STATIC_URL = '{}static/'.format(API_PREFIX)
 
 STATICFILES_DIRS = (
     ('rest_framework_swagger/css', os.path.join(BASE_DIR, 'static/css')),

@@ -23,6 +23,35 @@ var growl = function(title, message, type) {
     new GrowlBox(title, message, type || 'danger');
 };
 
+
+/**
+ * Generate OSF absolute URLs, including prefix and arguments. Assumes access to mako globals for pieces of URL.
+ * Can optionally pass in an object with params (name:value) to be appended to URL. Calling as:
+ *   apiV2Url("users/4urxt/applications", {"a":1, "filter[fullname]":"lawrence"}, "https://staging2.osf.io/api/v2/")
+ * would yield the result:
+ *  "https://staging2.osf.io/api/v2/users/4urxt/applications?a=1&filter%5Bfullname%5D=lawrence"
+ * @param {String} pathString The string to be appended to the absolute base path, eg "users/4urxt"
+ * @param {Object} paramsObject (optional) An object containing parameters to add to the URL. Otherwise pass 'undefined'.
+ * @param {String} apiPrefix (optional) Manually specify the prefix used for API routes (useful for testing)
+ */
+var apiV2Url = function (pathString, paramsObject, apiPrefix){
+    apiPrefix = apiPrefix || window.contextVars.apiV2Prefix;
+
+    // Don't output double slashes when concatenating two strings with adjoining slashes
+    if (apiPrefix && pathString && apiPrefix.charAt(apiPrefix.length - 1) === "/" && pathString.charAt(0) === "/"){
+        pathString = pathString.substring(1); // Strip off the redundant leading slash
+    }
+
+    var apiUrl = apiPrefix + pathString;
+    // Add parameters to URL (if any). Ensure encoding as necessary
+    if (paramsObject){
+        apiUrl += "?";
+        apiUrl += $.param(paramsObject);
+    }
+    return apiUrl;
+};
+
+
 /**
 * Posts JSON data.
 *
@@ -401,6 +430,10 @@ var LOCAL_DATEFORMAT = 'YYYY-MM-DD hh:mm A';
 var UTC_DATEFORMAT = 'YYYY-MM-DD HH:mm UTC';
 var FormattableDate = function(date) {
     if (typeof date === 'string') {
+        // If Firefox, add 'Z' to the date string (Z is timezone for UTC)
+        if(navigator.userAgent.toLowerCase().indexOf('firefox') > -1 && date.slice(-1) !== 'Z') {
+           date = date + 'Z';
+        }
         // The date as a Date object
         this.date = new Date(date);
     } else {
@@ -415,6 +448,14 @@ var FormattableDate = function(date) {
  */
 var htmlEscape = function(text) {
     return $('<div/>').text(text).html();
+};
+
+
+/**
+ * Decode Escaped html characters in a string.
+ */
+var htmlDecode = function(text) {
+    return $('<div/>').html(text).text();
 };
 
 /**
@@ -526,6 +567,7 @@ module.exports = window.$.osf = {
     handleEditableError: handleEditableError,
     block: block,
     growl: growl,
+    apiV2Url: apiV2Url,
     unblock: unblock,
     joinPrompts: joinPrompts,
     mapByProperty: mapByProperty,
@@ -537,6 +579,7 @@ module.exports = window.$.osf = {
     throttle: throttle,
     debounce: debounce,
     htmlEscape: htmlEscape,
+    htmlDecode: htmlDecode,
     tableResize: tableResize,
     humanFileSize: humanFileSize
 };

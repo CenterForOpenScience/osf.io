@@ -916,7 +916,7 @@ class TestCreateNodePointer(ApiTestCase):
         res = self.app.post(self.public_url, self.public_payload, auth = self.basic_auth_two, expect_errors=True)
         assert_equal(res.status_code, 403)
 
-        res = self.app.post(self.public_url, self.public_payload, auth = self.basic_auth, expect_errors=True)
+        res = self.app.post(self.public_url, self.public_payload, auth = self.basic_auth)
         assert_equal(res.status_code, 201)
         assert_equal(res.json['data']['node_id'], self.public_project._id)
 

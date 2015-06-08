@@ -393,9 +393,12 @@ def test_addons():
 
 
 @task
-def test(all=False):
+def test(all=False, syntax=False):
     """Alias of `invoke test_osf`.
     """
+    if syntax:
+        flake()
+
     if all:
         test_all()
     else:
@@ -403,8 +406,8 @@ def test(all=False):
 
 
 @task
-def test_all(flake=False):
-    if flake:
+def test_all(syntax=False):
+    if syntax:
         flake()
     test_osf()
     test_addons()

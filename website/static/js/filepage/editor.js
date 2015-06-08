@@ -13,26 +13,27 @@ require('imports?Markdown=pagedown-ace-converter!pagedown-ace-editor');
 
 var util = require('./util.js');
 
+var model = {};
+
 var FileEditor = {
     controller: function(contentUrl, shareWSUrl, editorMeta, observables) {
-        var self = this;
+        var self = {};
+
         self.url = contentUrl;
         self.loaded = false;
         self.initialText = '';
-        self.editor = undefined;
         self.editorMeta = editorMeta;
-        self.changed = m.prop(false);
 
         self.observables = observables;
 
+        self.unthrottledStatus = self.observables.status;
         $osf.throttle(self.observables.status, 4000, {leading: false});
 
         self.bindAce = function(element, isInitialized, context) {
             if (isInitialized) return;
-            self.editor = ace.edit(element.id);
-            self.editor.setValue(self.initialText);
-            self.editor.on('change', self.onChanged);
-            new ShareJSDoc(shareWSUrl, self.editorMeta, self.editor, self.observables);
+            model.editor = ace.edit(element.id);
+            model.editor.setValue(self.initialText, -1);
+            new ShareJSDoc(shareWSUrl, self.editorMeta, model.editor, self.observables);
         };
 
         self.reloadFile = function() {
@@ -40,13 +41,14 @@ var FileEditor = {
             $.ajax({
                 type: 'GET',
                 url: self.url,
-                beforeSend: $osf.setXHRAuthorization
-            }).done(function (response) {
+                dataType: 'text',
+                beforeSend: $osf.setXHRAuthorization,
+            }).done(function (parsed, status, response) {
                 m.startComputation();
                 self.loaded = true;
-                self.initialText = response;
-                if (self.editor) {
-                    self.editor.setValue(self.initialText);
+                self.initialText = response.responseText;
+                if (model.editor) {
+                    model.editor.setValue(self.initialText);
                 }
                 m.endComputation();
             }).fail(function (xhr, textStatus, error) {
@@ -59,31 +61,28 @@ var FileEditor = {
             });
         };
 
-        //Really crappy hack, panel and m.component blackbox this module
-        //so its not possible, in the alotted time, to bind a function here to 
-        //buttons ~2 levels up
-        $(document).on('fileviewpage:save', function() {
+        self.saveFile = $osf.throttle(function() {
             if(self.changed()) {
                 var oldstatus = self.observables.status();
-                self.editor.setReadOnly(true);
-                self.observables.status('saving');
+                model.editor.setReadOnly(true);
+                self.unthrottledStatus('saving');
                 m.redraw();
                 var request = $.ajax({
                     type: 'PUT',
                     url: self.url,
-                    data: self.editor.getValue(),
+                    data: model.editor.getValue(),
                     beforeSend: $osf.setXHRAuthorization
                 }).done(function () {
-                    self.editor.setReadOnly(false);
-                    self.observables.status(oldstatus);
+                    model.editor.setReadOnly(false);
+                    self.unthrottledStatus(oldstatus);
                     $(document).trigger('fileviewpage:reload');
-                    self.initialText = self.editor.getValue();
+                    self.initialText = model.editor.getValue();
                     m.redraw();
                 }).fail(function(error) {
-                    self.editor.setReadOnly(false);
-                    self.observables.status(oldstatus);
+                    model.editor.setReadOnly(false);
+                    self.unthrottledStatus(oldstatus);
                     $(document).trigger('fileviewpage:reload');
-                    self.editor.setValue(self.initialText);
+                    model.editor.setValue(self.initialText);
                     $osf.growl('Error', 'The file could not be updated.');
                     Raven.captureMessage('Could not PUT file content.', {
                         error: error,
@@ -94,34 +93,29 @@ var FileEditor = {
             } else {
                 alert('There are no changes to save.');
             }
-        });
+        }, 500);
 
-        //See Above comment
-        $(document).on('fileviewpage:revert', function() {
-            self.editor.setValue(self.initialText);
-        });
-
-        self.onChanged = function(e) {
-            //To avoid extra typing
+        self.changed = function() {
             var file1 = self.initialText;
-            var file2 = !self.editor ? '' : self.editor.getValue();
+            var file2 = !model.editor ? '' : model.editor.getValue();
 
             var clean1 = typeof file1 === 'string' ?
                 file1.replace(/(\r\n|\n|\r)/gm, '\n') : '';
             var clean2 = typeof file2 === 'string' ?
                 file2.replace(/(\r\n|\n|\r)/gm, '\n') : '';
 
-            self.changed(clean1 !== clean2);
+            return clean1 !== clean2;
         };
 
         self.reloadFile();
 
+        return self;
     },
     view: function(ctrl) {
         if (!ctrl.loaded) return util.Spinner;
 
         return m('.editor-pane', [
-            m('.wiki-connected-users', m('.row', m('.col-md-12', [
+            m('.wiki-connected-users', m('.row', m('.col-sm-12', [
                 m('.ul.list-inline', {style: {'margin-top': '10px'}}, [
                     ctrl.observables.activeUsers().map(function(user) {
                         return m('li', m('a', {href: user.url}, [
@@ -141,6 +135,16 @@ var FileEditor = {
             m('', {style: {'padding-top': '10px'}}, [
                 m('.wmd-input.wiki-editor#editor', {config: ctrl.bindAce})
             ]),
+            m('br'),
+            m('.osf-panel-footer[style=position:inherit]', [
+                m('.row', m('.col-sm-12', [
+                    m('.pull-right', [
+                        m('button#fileEditorRevert.btn.btn-sm.btn-danger', {onclick: function(){ctrl.reloadFile();}}, 'Revert'),
+                        ' ',
+                        m('button#fileEditorSave.btn.btn-sm.btn-success', {onclick: function() {ctrl.saveFile();}}, 'Save')
+                    ])
+                ]))
+            ])
         ]);
 
     }
