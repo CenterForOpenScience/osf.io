@@ -241,9 +241,10 @@ class RegistrationEmbargoModelsTestCase(OsfTestCase):
         self.registration.save()
 
         disapproval_token = self.registration.embargo.approval_state[self.user._id]['disapproval_token']
+        registered_from = self.registration.registered_from
         self.registration.embargo.disapprove_embargo(self.user, disapproval_token)
         # Logs: Created, registered, embargo initiated, embargo cancelled
-        assert_equal(len(self.registration.registered_from.logs), initial_project_logs + 2)
+        assert_equal(len(registered_from.logs), initial_project_logs + 2)
 
     def test_cancelling_embargo_deletes_parent_registration(self):
         self.registration.embargo_registration(

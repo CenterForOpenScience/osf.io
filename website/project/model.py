@@ -3000,9 +3000,6 @@ class Embargo(StoredObject):
 
         self.state = Embargo.CANCELLED
         parent_registration = Node.find_one(Q('embargo', 'eq', self))
-        # Remove backref to parent project if embargo was for a new registration
-        if not self.for_existing_registration:
-            parent_registration.registered_from = None
         parent_registration.registered_from.add_log(
             action=NodeLog.EMBARGO_CANCELLED,
             params={
@@ -3011,6 +3008,9 @@ class Embargo(StoredObject):
             },
             auth=Auth(user),
         )
+        # Remove backref to parent project if embargo was for a new registration
+        if not self.for_existing_registration:
+            parent_registration.registered_from = None
         # Delete parent registration if it was created at the time the embargo was initiated
         if not self.for_existing_registration:
             parent_registration.is_deleted = True
