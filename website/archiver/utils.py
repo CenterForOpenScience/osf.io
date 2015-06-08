@@ -7,7 +7,9 @@ from website.archiver import (
     StatResult, AggregateStatResult,
     ARCHIVER_NETWORK_ERROR,
     ARCHIVER_SIZE_EXCEEDED,
+    ARCHIVER_INITIATED
 )
+from website.addons.base import StorageAddonBase
 
 from website import mails
 from website import settings
@@ -167,3 +169,10 @@ def aggregate_file_tree_metadata(addon_short_name, fileobj_metadata, user):
             targets=[aggregate_file_tree_metadata(addon_short_name, child, user) for child in fileobj_metadata.get('children', [])],
             meta=fileobj_metadata,
         )
+
+def before_archive(node):
+    addons = [node.get_addon(name) for name in settings.ADDONS_ARCHIVABLE]
+    for addon in addons:
+        if not (addon and addon.complete and isinstance(addon, StorageAddonBase)):
+            continue
+        update_status(node, addon.config.short_name, ARCHIVER_INITIATED)

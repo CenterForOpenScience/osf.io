@@ -119,8 +119,7 @@ class DropboxNodeSettings(StorageAddonBase, AddonNodeSettingsBase):
 
     @property
     def folder_name(self):
-        return self.folder
-
+        return os.path.split(self.folder)[1]
     @property
     def display_name(self):
         return '{0}: {1}'.format(self.config.full_name, self.folder)

@@ -217,6 +217,8 @@ def archive_node(results, src_pk, dst_pk, user_pk):
         raise ArchiverSizeExceeded(result=stat_result)
     else:
         for result in stat_result.targets.values():
+            if not result.targets:
+                continue
             archive_addon.delay(
                 addon_short_name=result.target_name,
                 src_pk=src_pk,

@@ -6,9 +6,6 @@ from framework.tasks.handlers import enqueue_task
 from website.archiver.tasks import (
     archive,
 )
-from website.archiver.utils import (
-    handle_archive_fail,
-)
 from website.archiver import utils as archiver_utils
 from website.archiver import (
     ARCHIVER_SUCCESS,
@@ -20,13 +17,16 @@ from website.project import signals as project_signals
 from website.project import utils as project_utils
 
 @project_signals.after_create_registration.connect
-def archive_node(src, dst, user):
+def after_register(src, dst, user):
     """Blinker listener for registration initiations. Enqueqes an archive task
 
     :param src: Node being registered
     :param dst: registration Node
     :param user: registration initiator
     """
+    archiver_utils.before_archive(dst)
+    if dst.root != dst:  # if not top-level registration
+        return
     targets = chain([dst], dst.get_descendants_recursive())
     archive_tasks = [archive.si(t.registered_from._id, t._id, user._id) for t in targets]
     enqueue_task(
@@ -34,15 +34,17 @@ def archive_node(src, dst, user):
     )
 
 def archive_node_finished(node):
-    pending = [value for value in node.archived_providers.values() if value['status'] not in (ARCHIVER_SUCCESS, ARCHIVER_FAILURE)]
-    return False if pending else True
+    return not any([
+        value for value in node.archived_providers.values()
+        if value['status'] not in (ARCHIVER_SUCCESS, ARCHIVER_FAILURE)
+    ])
 
 def archive_tree_finished(node, dir=None):
     if archive_node_finished(node):
         if not dir:
-            up_ = archive_tree_finished(node.parent_node, dir='up') if node.parent_node else True
-            down_ = len([ret for ret in [archive_tree_finished(child, dir='down') for child in node.nodes] if ret]) if len(node.nodes) else True
-            return up_ and down_
+            up_finished = archive_tree_finished(node.parent_node, dir='up') if node.parent_node else True
+            down_finished = len([ret for ret in [archive_tree_finished(child, dir='down') for child in node.nodes] if ret]) if len(node.nodes) else True
+            return up_finished and down_finished
         if dir == 'up':
             return archive_tree_finished(node.parent_node, dir='up') if node.parent_node else True
         elif dir == 'down':
@@ -62,10 +64,8 @@ def archive_callback(dst):
         dst.archiving = False
         dst.save()
     if archive_tree_finished(dst):
-        dst.archiving = False
-        dst.save()
         if ARCHIVER_FAILURE in [value['status'] for value in dst.archived_providers.values()]:
-            handle_archive_fail(
+            archiver_utils.handle_archive_fail(
                 ARCHIVER_NETWORK_ERROR,
                 dst.registered_from,
                 dst,
@@ -77,4 +77,4 @@ def archive_callback(dst):
                 for contributor in dst.contributors:
                     project_utils.send_embargo_email(dst, contributor)
             else:
-                archiver_utils.send_archiver_success_mail(dst)
+                archiver_utils.send_archiver_success_mail(dst.root)

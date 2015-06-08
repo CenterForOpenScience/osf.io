@@ -1694,13 +1694,14 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
 
         return forked
 
-    def register_node(self, schema, auth, template, data, top=False):
+    def register_node(self, schema, auth, template, data, parent=None):
         """Make a frozen copy of a node.
 
         :param schema: Schema object
         :param auth: All the auth information including user, API key.
-        :template: Template name
-        :data: Form data
+        :param template: Template name
+        :param data: Form data
+        :param parent Node: parent registration of regitstration to be created
         """
         # NOTE: Admins can register child nodes even if they don't have write access them
         if not self.can_edit(auth=auth) and not self.is_admin_parent(user=auth.user):
@@ -1746,6 +1747,9 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
 
         registered.save()
 
+        if parent:
+            registered.parent_node = parent
+
         # After register callback
         for addon in original.get_addons():
             _, message = addon.after_register(original, registered, auth.user)
@@ -1755,11 +1759,9 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
 
         for node_contained in original.nodes:
             if not node_contained.is_deleted:
-                registered_node = node_contained.register_node(
-                    schema, auth, template, data,
+                node_contained.register_node(
+                    schema, auth, template, data, parent=registered
                 )
-                if registered_node is not None:
-                    registered.nodes.append(registered_node)
 
         original.add_log(
             action=NodeLog.PROJECT_REGISTERED,
@@ -1778,8 +1780,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         for node in registered.nodes:
             node.update_search()
 
-        if top:
-            project_signals.after_create_registration.send(self, dst=registered, user=auth.user)
+        project_signals.after_create_registration.send(self, dst=registered, user=auth.user)
 
         return registered
 
@@ -1954,6 +1955,11 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         except IndexError:
             pass
         return None
+
+    @parent_node.setter
+    def parent_node(self, parent):
+        parent.nodes.append(self)
+        parent.save()
 
     @property
     def root(self):
@@ -3000,9 +3006,6 @@ class Embargo(StoredObject):
 
         self.state = Embargo.CANCELLED
         parent_registration = Node.find_one(Q('embargo', 'eq', self))
-        # Remove backref to parent project if embargo was for a new registration
-        if not self.for_existing_registration:
-            parent_registration.registered_from = None
         parent_registration.registered_from.add_log(
             action=NodeLog.EMBARGO_CANCELLED,
             params={
@@ -3011,6 +3014,9 @@ class Embargo(StoredObject):
             },
             auth=Auth(user),
         )
+        # Remove backref to parent project if embargo was for a new registration
+        if not self.for_existing_registration:
+            parent_registration.registered_from = None
         # Delete parent registration if it was created at the time the embargo was initiated
         if not self.for_existing_registration:
             parent_registration.is_deleted = True
