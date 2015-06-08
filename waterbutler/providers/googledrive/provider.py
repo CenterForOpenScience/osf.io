@@ -156,7 +156,8 @@ class GoogleDriveProvider(provider.BaseProvider):
         # google docs, not drive files, have no way to get the file size
         # must buffer the entire file into memory
         stream = streams.StringStream((yield from download_resp.read()))
-        stream.content_type = download_resp.headers['Content-Type']
+        if download_resp.headers.get('Content-Type'):
+            stream.content_type = download_resp.headers['Content-Type']
         return stream
 
     @asyncio.coroutine
