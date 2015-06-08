@@ -446,8 +446,7 @@ function OBUploaderViewModel(params) {
             self.changeMessage('Please select at least one file to upload.', 'text-danger');
 
             // Delete node only if a new project is created
-            if(self.newProjectName() != null)
-            {
+            if(self.newProjectName()) {
                 var request = $.ajax({
                 url: 'project/' + selectedProject.id + '/',
                 type: 'DELETE'
