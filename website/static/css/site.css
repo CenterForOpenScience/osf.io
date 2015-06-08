@@ -313,7 +313,6 @@ a.btn-success.disabled {
 
 #addPointer td {
     vertical-align: middle;
-    word-break: break-all;
 }
 
 li.pointer {
@@ -2214,6 +2213,10 @@ span#profileFullname{
     margin: 0px 10px;
 }
 
+.progress-bar-width {
+    width: 100%;
+}
+
 .sharejs-info-btn {
     background: none;
     outline : 0 !important;
@@ -2790,4 +2793,9 @@ span#profileFullname{
     .affix {
         position: relative;
     }
+}
+
+#viewPanel > .osf-panel-body,
+.mfr-file {
+  height: 100%;
 }

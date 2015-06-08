@@ -11,6 +11,7 @@ import warnings
 
 import pytz
 from flask import request
+from django.core.urlresolvers import reverse
 from HTMLParser import HTMLParser
 
 from modularodm import Q
@@ -19,6 +20,7 @@ from modularodm.validators import MaxLengthValidator
 from modularodm.exceptions import ValidationTypeError
 from modularodm.exceptions import ValidationValueError
 
+from api.base.utils import absolute_reverse
 from framework import status
 from framework.mongo import ObjectId
 from framework.mongo import StoredObject
@@ -627,6 +629,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
     # Dictionary field mapping node wiki page to sharejs private uuid.
     # {<page_name>: <sharejs_id>}
     wiki_private_uuids = fields.DictionaryField()
+    file_guid_to_share_uuids = fields.DictionaryField()
 
     creator = fields.ForeignField('user', backref='created')
     contributors = fields.ForeignField('user', list=True, backref='contributed')
@@ -674,6 +677,11 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
     def __repr__(self):
         return ('<Node(title={self.title!r}, category={self.category!r}) '
                 'with _id {self._id!r}>').format(self=self)
+
+    # For Django compatibility
+    @property
+    def pk(self):
+        return self._id
 
     @property
     def category_display(self):
@@ -1150,6 +1158,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         new.wiki_pages_current = {}
         new.wiki_pages_versions = {}
         new.wiki_private_uuids = {}
+        new.file_guid_to_share_uuids = {}
 
         # set attributes which may be overridden by `changes`
         new.is_public = False
@@ -1856,6 +1865,18 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
             return re.sub(r'https?:', '', url).strip('/')
 
     @property
+    def api_v2_url(self):
+        return reverse('nodes:node-detail', kwargs={'pk': self._id})
+
+    @property
+    def absolute_api_v2_url(self):
+        return absolute_reverse('nodes:node-detail', kwargs={'pk': self._id})
+
+    # used by django and DRF
+    def get_absolute_url(self):
+        return self.absolute_api_v2_url
+
+    @property
     def api_url(self):
         if not self.url:
             logger.error('Node {0} has a parent that is not a project'.format(self._id))
@@ -2365,6 +2386,14 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         if permissions == 'public' and not self.is_public:
             if self.is_registration and (self.embargo_end_date or self.pending_embargo):
                 self.embargo.state = Embargo.CANCELLED
+                self.registered_from.add_log(
+                    action=NodeLog.EMBARGO_CANCELLED,
+                    params={
+                        'node': self._id,
+                        'embargo_id': self.embargo._id,
+                    },
+                    auth=auth,
+                )
                 self.embargo.save()
             self.is_public = True
         elif permissions == 'private' and self.is_public:
@@ -2618,14 +2647,13 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
             raise NodeStateError('Only public registrations or active embargoes may be retracted.')
 
         retraction = self._initiate_retraction(user, justification, save=True)
-        self.add_log(
+        self.registered_from.add_log(
             action=NodeLog.RETRACTION_INITIATED,
             params={
                 'node': self._id,
                 'retraction_id': retraction._id,
             },
             auth=Auth(user),
-            save=False,
         )
         self.retraction = retraction
 
@@ -2683,7 +2711,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
             raise ValidationValueError('Embargo end date must be more than one day in the future')
 
         embargo = self._initiate_embargo(user, end_date, for_existing_registration=for_existing_registration, save=True)
-        self.add_log(
+        self.registered_from.add_log(
             action=NodeLog.EMBARGO_INITIATED,
             params={
                 'node': self._id,
@@ -2853,7 +2881,7 @@ class Retraction(StoredObject):
 
         self.state = self.CANCELLED
         parent_registration = Node.find_one(Q('retraction', 'eq', self))
-        parent_registration.add_log(
+        parent_registration.registered_from.add_log(
             action=NodeLog.RETRACTION_CANCELLED,
             params={
                 'node': parent_registration._id,
@@ -2876,26 +2904,24 @@ class Retraction(StoredObject):
             self.state = self.RETRACTED
 
             parent_registration = Node.find_one(Q('retraction', 'eq', self))
-            parent_registration.add_log(
+            parent_registration.registered_from.add_log(
                 action=NodeLog.RETRACTION_APPROVED,
                 params={
                     'node': parent_registration._id,
                     'retraction_id': self._id,
                 },
                 auth=Auth(user),
-                save=True,
             )
             # Remove any embargoes associated with the registration
             if parent_registration.embargo_end_date or parent_registration.pending_embargo:
                 parent_registration.embargo.state = self.CANCELLED
-                parent_registration.add_log(
+                parent_registration.registered_from.add_log(
                     action=NodeLog.EMBARGO_CANCELLED,
                     params={
                         'node': parent_registration._id,
                         'embargo_id': parent_registration.embargo._id,
                     },
                     auth=Auth(user),
-                    save=False,
                 )
                 parent_registration.embargo.save()
             # Ensure retracted registration is public
@@ -2977,14 +3003,13 @@ class Embargo(StoredObject):
         # Remove backref to parent project if embargo was for a new registration
         if not self.for_existing_registration:
             parent_registration.registered_from = None
-        parent_registration.add_log(
+        parent_registration.registered_from.add_log(
             action=NodeLog.EMBARGO_CANCELLED,
             params={
                 'node': parent_registration._id,
                 'embargo_id': self._id,
             },
             auth=Auth(user),
-            save=True,
         )
         # Delete parent registration if it was created at the time the embargo was initiated
         if not self.for_existing_registration:
@@ -3003,12 +3028,11 @@ class Embargo(StoredObject):
         if all(val['has_approved'] for val in self.approval_state.values()):
             self.state = Embargo.ACTIVE
             parent_registration = Node.find_one(Q('embargo', 'eq', self))
-            parent_registration.add_log(
+            parent_registration.registered_from.add_log(
                 action=NodeLog.EMBARGO_APPROVED,
                 params={
                     'node': parent_registration._id,
                     'embargo_id': self._id,
                 },
                 auth=Auth(user),
-                save=True,
             )

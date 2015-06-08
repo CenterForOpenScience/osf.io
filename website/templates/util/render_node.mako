@@ -53,6 +53,13 @@
             </div>
             % endif
         </h4>
+
+        % if summary['show_path'] and summary['node_type'] == 'component':
+            <div style="padding-bottom: 10px">
+                ${summary['parent_title'] if summary['parent_is_public'] else "<em>-- private project --</em>"} / <b>${summary['title']}</b>
+            </div>
+        % endif
+
         <div class="list-group-item-text"></div>
 
         % if not summary['anonymous']:
