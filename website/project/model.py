@@ -2626,13 +2626,6 @@ class PrivateLink(StoredObject):
             offset = 20 if node.parent_node is not None else 0
             return offset + self.node_scale(node.parent_node)
 
-    def node_icon(self, node):
-        if node.category == 'project':
-            node_type = "reg-project" if node.is_registration else "project"
-        else:
-            node_type = "reg-component" if node.is_registration else "component"
-        return "/static/img/hgrid/{0}.png".format(node_type)
-
     def to_json(self):
         return {
             "id": self._id,
@@ -2640,7 +2633,7 @@ class PrivateLink(StoredObject):
             "key": self.key,
             "name": self.name,
             "creator": {'fullname': self.creator.fullname, 'url': self.creator.profile_url},
-            "nodes": [{'title': x.title, 'url': x.url, 'scale': str(self.node_scale(x)) + 'px', 'imgUrl': self.node_icon(x), 'category': x.category}
+            "nodes": [{'title': x.title, 'url': x.url, 'scale': str(self.node_scale(x)) + 'px', 'category': x.category}
                       for x in self.nodes if not x.is_deleted],
             "anonymous": self.anonymous
         }
