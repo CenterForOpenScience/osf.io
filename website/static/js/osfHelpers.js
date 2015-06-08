@@ -552,8 +552,6 @@ ko.bindingHandlers.listing = {
     }
 };
 
-<<<<<<< HEAD
-=======
 // Thanks to https://stackoverflow.com/questions/10420352/converting-file-size-in-bytes-to-human-readable
 function humanFileSize(bytes, si) {
     var thresh = si ? 1000 : 1024;
@@ -571,8 +569,6 @@ function humanFileSize(bytes, si) {
     return bytes.toFixed(1) + ' ' + units[u];
 }
 
-
->>>>>>> 419c2d0beb3482ba05ad8af36f57f4898319ff19
 // Also export these to the global namespace so that these can be used in inline
 // JS. This is used on the /goodbye page at the moment.
 module.exports = window.$.osf = {
