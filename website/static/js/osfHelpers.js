@@ -550,11 +550,7 @@ module.exports = window.$.osf = {
     throttle: throttle,
     debounce: debounce,
     htmlEscape: htmlEscape,
-<<<<<<< HEAD
     htmlDecode: htmlDecode,
-    tableResize: tableResize
-=======
     tableResize: tableResize,
     humanFileSize: humanFileSize
->>>>>>> release/0.38.0
 };
