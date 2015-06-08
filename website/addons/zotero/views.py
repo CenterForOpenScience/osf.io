@@ -27,7 +27,6 @@ def zotero_get_config(auth, node_addon, **kwargs):
     """Serialize node addon settings and relevant urls
     (see serialize_settings/serialize_urls)
     """
-
     provider = ZoteroCitationsProvider()
     return {
         'result': provider.serializer(

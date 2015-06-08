@@ -1402,7 +1402,7 @@ class TestNode(OsfTestCase):
             NodeLog.ADDON_REMOVED
         )
 
-    @mock.patch('website.addons.github.model.AddonGitHubNodeSettings.config')
+    @mock.patch('website.addons.github.model.GitHubNodeSettings.config')
     def test_delete_mandatory_addon(self, mock_config):
         mock_config.added_mandatory = ['node']
         self.node.add_addon('github', self.consolidate_auth)

@@ -20,7 +20,7 @@ def github_download_starball(node_addon, **kwargs):
     archive = kwargs.get('archive', 'tar')
     ref = request.args.get('sha', 'master')
 
-    connection = GitHub.from_settings(node_addon.user_settings)
+    connection = GitHub.from_settings(node_addon.api.account)
     headers, data = connection.starball(
         node_addon.user, node_addon.repo, archive, ref
     )

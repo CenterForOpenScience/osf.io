@@ -1,7 +1,4 @@
-'use strict';
+var githubNodeConfig = require('./githubNodeConfig').githubNodeConfig;
 
-var $ = require('jquery');
-require('./github-node-cfg.js');
-var AddonHelper = require('js/addonHelper');
-
-$(window.contextVars.githubSettingsSelector).on('submit', AddonHelper.onSubmitSettings);
+var url = window.contextVars.node.urls.api + 'github/settings/';
+new githubNodeConfig('#githubScope', url);

@@ -574,13 +574,14 @@ def serialize_social_addons(user):
     return ret
 
 
+# This method is currently inactive.
 @collect_auth
 def serialize_social(auth, uid=None, **kwargs):
     target = get_target_user(auth, uid)
     ret = target.social
     append_editable(ret, auth, uid)
     if ret['editable']:
-        ret['addons'] = serialize_social_addons(target)
+        ret['addons'] = {}
     return ret
 
 

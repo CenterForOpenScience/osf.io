@@ -2,6 +2,7 @@ import hmac
 import uuid
 import urllib
 import hashlib
+import itertools
 import httplib as http
 from github3.repos.branch import Branch
 
@@ -23,6 +24,8 @@ def make_hook_secret():
 
 
 HOOK_SIGNATURE_KEY = 'X-Hub-Signature'
+
+
 def verify_hook_signature(node_settings, data, headers):
     """Verify hook signature.
     :param AddonGithubNodeSettings node_settings:
@@ -59,7 +62,7 @@ def get_refs(addon, branch=None, sha=None, connection=None):
     :param GitHub connection: GitHub API object. If None, one will be created
         from the addon's user settings.
     """
-    connection = connection or GitHub.from_settings(addon.user_settings)
+    connection = connection or GitHub.from_settings(addon.api.account)
 
     if sha and not branch:
         raise HTTPError(http.BAD_REQUEST)
@@ -131,3 +134,24 @@ def check_permissions(node_settings, auth, connection, branch, sha=None, repo=No
     )
 
     return can_edit
+
+
+def get_repo_dropdown(user, node_addon):
+    user_settings = node_addon.user_settings
+    # If authorized, only owner can change settings
+    if user_settings and user_settings.owner != user:
+        raise HTTPError(http.BAD_REQUEST)
+
+    connection = GitHub.from_settings(node_addon.api.account)
+    repos = itertools.chain.from_iterable((connection.repos(), connection.my_org_repos()))
+
+    repo_names = []
+    user_names = []
+    for repo in repos:
+        user_names.append(repo.owner.login),
+        repo_names.append(repo.name)
+
+    return {
+        'repo_names': repo_names,
+        'user_names': user_names
+    }

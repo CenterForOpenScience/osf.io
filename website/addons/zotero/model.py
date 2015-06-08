@@ -31,7 +31,6 @@ class Zotero(ExternalProvider):
     _client = None
 
     def handle_callback(self, response):
-
         return {
             'display_name': response['username'],
             'provider_id': response['userID'],

@@ -38,7 +38,6 @@ from website.util import rubeus
 from website.project.views.node import _view_project, abbrev_authors, _should_show_wiki_widget
 from website.project.views.comment import serialize_comment
 from website.project.decorators import check_can_access
-from website.addons.github.model import AddonGitHubOauthSettings
 
 from tests.base import (
     OsfTestCase,
@@ -997,69 +996,6 @@ class TestUserProfile(OsfTestCase):
         )
         assert_equal(res.status_code, 400)
         assert_equal(res.json['message_long'], 'Invalid personal URL.')
-
-    def test_serialize_social_editable(self):
-        self.user.social['twitter'] = 'howtopizza'
-        self.user.save()
-        url = api_url_for('serialize_social')
-        res = self.app.get(
-            url,
-            auth=self.user.auth,
-        )
-        assert_equal(res.json.get('twitter'), 'howtopizza')
-        assert_true(res.json.get('github') is None)
-        assert_true(res.json['editable'])
-
-    def test_serialize_social_not_editable(self):
-        user2 = AuthUserFactory()
-        self.user.social['twitter'] = 'howtopizza'
-        self.user.save()
-        url = api_url_for('serialize_social', uid=self.user._id)
-        res = self.app.get(
-            url,
-            auth=user2.auth,
-        )
-        assert_equal(res.json.get('twitter'), 'howtopizza')
-        assert_true(res.json.get('github') is None)
-        assert_false(res.json['editable'])
-
-    def test_serialize_social_addons_editable(self):
-        self.user.add_addon('github')
-        user_github = self.user.get_addon('github')
-        oauth_settings = AddonGitHubOauthSettings()
-        oauth_settings.github_user_id = 'testuser'
-        oauth_settings.save()
-        user_github.oauth_settings = oauth_settings
-        user_github.save()
-        user_github.github_user_name = 'howtogithub'
-        oauth_settings.save()
-        url = api_url_for('serialize_social')
-        res = self.app.get(
-            url,
-            auth=self.user.auth,
-        )
-        assert_equal(
-            res.json['addons']['github'],
-            'howtogithub'
-        )
-
-    def test_serialize_social_addons_not_editable(self):
-        user2 = AuthUserFactory()
-        self.user.add_addon('github')
-        user_github = self.user.get_addon('github')
-        oauth_settings = AddonGitHubOauthSettings()
-        oauth_settings.github_user_id = 'testuser'
-        oauth_settings.save()
-        user_github.oauth_settings = oauth_settings
-        user_github.save()
-        user_github.github_user_name = 'howtogithub'
-        oauth_settings.save()
-        url = api_url_for('serialize_social', uid=self.user._id)
-        res = self.app.get(
-            url,
-            auth=user2.auth,
-        )
-        assert_not_in('addons', res.json)
 
     def test_unserialize_and_serialize_jobs(self):
         jobs = [{

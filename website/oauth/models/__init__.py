@@ -171,7 +171,6 @@ class ExternalProvider(object):
             }
 
             url = oauth.authorization_url(self.auth_url_base)
-
         return url
 
     @abc.abstractproperty
@@ -333,7 +332,6 @@ class ExternalProvider(object):
                 values['expires_at'] = datetime.datetime.fromtimestamp(
                     float(expires_at)
                 )
-
             return values
 
     @abc.abstractmethod
