@@ -44,7 +44,7 @@ def remove_key(d, k):
 def count(query, index='share'):
     # Get rid of fields not allowed in count queries
     for field in ['from', 'size', 'aggs', 'aggregations']:
-        if query.get(field):
+        if query.get(field) is not None:
             del query[field]
 
     count = share_es.count(index=index, body=query)
