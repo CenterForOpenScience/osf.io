@@ -27,11 +27,9 @@ from framework.status import push_status_message
 from website import mails
 from website import mailchimp_utils
 from website import settings
-from website.models import (User,
-                            ApiKey,
-                            OAuth2App)
+from website.models import ApiKey, OAuth2App, User
 from website.profile import utils as profile_utils
-from website.util import web_url_for, paths
+from website.util import api_v2_url, web_url_for, paths
 from website.util.sanitize import escape_html
 from website.util.sanitize import strip_html
 from website.views import _render_nodes
@@ -364,8 +362,7 @@ def oauth_application_config(auth, **kwargs):
     """Return app creation page with list of known apps"""
     # TODO: Hardcoded URL
 
-    url_string = "v2/users/{}/applications/".format(auth.user._id)
-    app_list_url = urljoin(settings.API_DOMAIN, url_string)
+    app_list_url = api_v2_url("users/{}/applications/".format(auth.user._id))
     return {
         "app_list_url": json.dumps(app_list_url)
     }
@@ -373,24 +370,21 @@ def oauth_application_config(auth, **kwargs):
 @must_be_logged_in
 def oauth_application_register(auth, **kwargs):
     """Register an API application: blank form view"""
-    url_string = "v2/users/{}/applications/".format(auth.user._id)  # POST request to this url
-    submit_url = urljoin(settings.API_DOMAIN, url_string)  # TODO: hardcoded url
+    submit_url = api_v2_url("users/{}/applications/".format(auth.user._id))  # POST request to this url
     return {"submit_url": json.dumps(submit_url),
             "detail_url": json.dumps(None)}
 
 @must_be_logged_in
 def oauth_application_detail(auth, **kwargs):
     """Show detail for a single OAuth application"""
-    client_id = kwargs.get('cid')
+    client_id = kwargs.get('client_id')
 
-    # TODO: This method requires 2 database hits (page load + API call) instead of 1. Is there a more concise way?
     try:
         OAuth2App.find_one(Q('client_id', 'eq', client_id))
     except:
         raise HTTPError(http.NOT_FOUND)
 
-    url_string = "v2/users/{}/applications/{}/".format(auth.user._id, client_id)  # Send request to this URL
-    detail_url = urljoin(settings.API_DOMAIN, url_string)  # TODO: hardcoded url
+    detail_url = api_v2_url("users/{}/applications/{}/".format(auth.user._id, client_id))  # Send request to this URL
     return {"submit_url": json.dumps(None),
             "detail_url": json.dumps(detail_url)}
 

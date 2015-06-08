@@ -69,10 +69,6 @@ class ContributorSerializer(UserSerializer):
 
     bibliographic = ser.BooleanField(help_text='Whether the user will be included in citations for this node or not')
 
-    def get_bibliographic(self, obj):
-        node = self.context['view'].get_node()
-        return obj._id in node.visible_contributor_ids
-
 
 class OAuth2AppSerializer(JSONAPISerializer):
     """Serialize data about a registered OAuth2 application"""
@@ -94,8 +90,8 @@ class OAuth2AppSerializer(JSONAPISerializer):
                                 required=False,
                                 allow_blank=True)
 
-    reg_date = ser.DateTimeField(help_text="The date this application was generated (automatically filled in)",
-                                 read_only=True)
+    create_date = ser.DateTimeField(help_text="The date this application was generated (automatically filled in)",
+                                    read_only=True)
 
     home_url = ser.CharField(help_text="The full URL to this application's homepage.",
                              required=True,

@@ -26,7 +26,7 @@ var ApplicationData = function (data){
     var self = this;
     self.clientId = ko.observable();
     self.clientSecret = ko.observable();
-    self.reg_date = ko.observable();
+    self.create_date = ko.observable();
 
     self.owner = ko.observable();
     self.name = ko.observable();
@@ -64,7 +64,7 @@ ApplicationData.prototype.fromJSON = function (data) {
     data = data || {};
     self.clientId(data.client_id);
     self.clientSecret(data.client_secret);
-    self.reg_date(data.reg_date);
+    self.create_date(data.create_date);
 
     self.owner(data.owner);
     self.name(data.name);

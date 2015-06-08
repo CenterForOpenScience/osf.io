@@ -1,5 +1,6 @@
 from rest_framework import generics, permissions as drf_permissions
 from rest_framework.exceptions import PermissionDenied
+from rest_framework import renderers
 from modularodm import Q
 
 from website.models import User, Node, OAuth2App
@@ -101,6 +102,8 @@ class ApplicationList(generics.ListCreateAPIView, ODMFilterMixin):
 
     serializer_class = OAuth2AppSerializer
 
+    renderer_classes = [renderers.JSONRenderer]  # Hide from web-browsable API tool
+
     # Revisit whether this is the best way to enforce user = logged in user
     def get_default_odm_query(self):
 
@@ -133,11 +136,13 @@ class ApplicationDetail(generics.RetrieveUpdateDestroyAPIView):
 
     serializer_class = OAuth2AppSerializer
 
+    renderer_classes = [renderers.JSONRenderer]  # Hide from web-browsable API tool
+
     # overrides RetrieveAPIView
     def get_object(self):
         id_url_kwarg = 'client_id'
-        query = Q('client_id', 'eq', self.kwargs[id_url_kwarg])
-        obj = get_object_or_404(OAuth2App, query)
+        obj = get_object_or_404(OAuth2App,
+                                Q('client_id', 'eq', self.kwargs[id_url_kwarg]))
 
         # TODO: Write test for case where user is not logged in, or wrong user requests resource
         if obj.owner._id != self.request.user._id:
@@ -156,11 +161,13 @@ class ApplicationDetail(generics.RetrieveUpdateDestroyAPIView):
             raise PermissionDenied
 
         obj.active = False
+
+        # TODO FIXME : Should we revoke all access tokens when application inactivated? Seems likely.
         obj.save()
 
     def perform_update(self, serializer):
         """Necessary to prevent owner field from being blanked on updates"""
-        #serializer.validated_data['owner'] = self.request.user
+        serializer.validated_data['owner'] = self.request.user
         # TODO: Write code to transfer ownership
         serializer.save(owner=self.request.user)
 

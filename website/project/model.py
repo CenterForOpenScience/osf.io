@@ -308,7 +308,7 @@ class OAuth2App(StoredObject):
     name = fields.StringField(index=True, required=True)
     description = fields.StringField(required=False)
 
-    reg_date = fields.DateTimeField(default=datetime.datetime.utcnow, required=True)
+    create_date = fields.DateTimeField(default=datetime.datetime.utcnow, required=True)
 
     home_url = fields.StringField(required=True)
     callback_url = fields.StringField(required=True)
@@ -321,6 +321,7 @@ class OAuth2App(StoredObject):
     def absolute_url(self):
         return urlparse.urljoin(settings.DOMAIN, self.url)
 
+    # Properties used by Django and DRF "Links: self" field
     @property
     def absolute_api_v2_url(self):
         return absolute_reverse('users:application-detail', kwargs={'pk': self.owner._id, 'client_id': self.client_id})
