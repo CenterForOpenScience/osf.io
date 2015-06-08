@@ -12,10 +12,6 @@ from .serializers import NodeSerializer, NodePointersSerializer, NodeFilesSerial
 from .serializers import RegistrationOpenEndedWithTokenSerializer, RegistrationPreDataCollectionWithTokenSerializer, ReplicationRecipePreRegistrationWithTokenSerializer, ReplicationRecipePostCompletionWithTokenSerializer
 from api.users.serializers import ContributorSerializer
 from .permissions import ContributorOrPublic, ReadOnlyIfRegistration, ContributorOrPublicForPointers
-# from urlparse import urlparse
-# from posixpath import basename, normpath
-
-
 
 class NodeMixin(object):
     """Mixin with convenience methods for retrieving the current node based on the
@@ -158,40 +154,6 @@ class NodeRegistrationsList(generics.ListAPIView, NodeMixin):
             auth = Auth(user)
         registrations = [node for node in nodes if node.can_view(auth)]
         return registrations
-
-# Condenses eight registration views into one, having it check route and choose corresponding serializer class
-# Pending workaround to Swagger documentation
-
-# class NodeCreateRegistrations(generics.CreateAPIView, NodeMixin):
-#     """Register the current node.
-#
-#     Registrations are read-only snapshots of a project.
-#
-#     """
-#     permission_classes = (
-#         ContributorOrPublic,
-#         drf_permissions.IsAuthenticatedOrReadOnly,
-#     )
-#
-#     def get_serializer_class(self):
-#         parse_object = urlparse(self.request.path)
-#         if "Open-Ended_Registration" in parse_object.path:
-#             if "Open-Ended_Registration" in basename(normpath(parse_object.path)):
-#                 return RegistrationOpenEndedSerializer
-#             return RegistrationOpenEndedWithTokenSerializer
-#         elif "Pre-Data_Collection_Registration" in parse_object.path:
-#             if "Pre-Data_Collection_Registration" in basename(normpath(parse_object.path)):
-#                 return RegistrationPreDataCollectionSerializer
-#             return RegistrationPreDataCollectionWithTokenSerializer
-#         elif "Replication_Recipe_Pre-Registration" in parse_object.path:
-#             if "Replication_Recipe_Pre-Registration" in basename(normpath(parse_object.path)):
-#                 return ReplicationRecipePreRegistrationSerializer
-#             return ReplicationRecipePreRegistrationWithTokenSerializer
-#         elif "Replication_Recipe_Post-Completion" in parse_object.path:
-#             if "Replication_Recipe_Post-Completion" in basename(normpath(parse_object.path)):
-#                 return ReplicationRecipePostCompletionSerializer
-#             return ReplicationRecipePostCompletionWithTokenSerializer
-
 
 class NodeRegistrationsOpenEnded(generics.CreateAPIView, NodeMixin):
     """Register the current node.
