@@ -626,10 +626,6 @@ function OBUploaderViewModel(params) {
     self.createSuccess = function(response) {
         var node = serializeNode(response.newNode);
         self.startUpload(node, self.selectedComponent, node.title, '');
-        if ((self.dropzone.getUploadingFiles().length) && (!self.dropzone.getQueuedFiles().length) && self.uploadCount() > self.dropzone.files.length) {
-            self.success = true;
-            window.location = response.projectUrl;
-        }
     };
 
     self.createFailure = function(xhr, textStatus, error) {
