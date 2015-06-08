@@ -14,6 +14,7 @@ from modularodm.validators import URLValidator
 from modularodm.exceptions import NoResultsFound
 from modularodm.exceptions import ValidationError, ValidationValueError
 
+from api.base.utils import absolute_reverse
 import framework
 from framework import analytics
 from framework.sessions import session
@@ -390,6 +391,34 @@ class User(GuidStoredObject, AddonModelMixin):
 
     def __repr__(self):
         return '<User({0!r}) with id {1!r}>'.format(self.username, self._id)
+
+    def __str__(self):
+        return self.fullname
+
+    __unicode__ = __str__
+
+    # For compatibility with Django auth
+    @property
+    def pk(self):
+        return self._id
+
+    @property
+    def email(self):
+        return self.username
+
+    def is_authenticated(self):  # Needed for django compat
+        return True
+
+    def is_anonymous(self):
+        return False
+
+    @property
+    def absolute_api_v2_url(self):
+        return absolute_reverse('users:user-detail', kwargs={'pk': self.pk})
+
+    # used by django and DRF
+    def get_absolute_url(self):
+        return self.absolute_api_v2_url
 
     @classmethod
     def create_unregistered(cls, fullname, email=None):
