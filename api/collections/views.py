@@ -132,7 +132,7 @@ class CollectionDetail(generics.RetrieveUpdateAPIView, generics.RetrieveDestroyA
                     'date_created': node.date_created,
                     'date_modified': node.date_modified,
                     'properties': {
-                        'is_smart_folder': True,
+                        'smart_folder': True,
                         'dashboard': node.is_dashboard,
                         'collection': node.is_folder,
                     },
