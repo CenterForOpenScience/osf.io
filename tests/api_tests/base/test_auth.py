@@ -10,6 +10,8 @@ from framework.auth import cas
 from tests.base import ApiTestCase
 from tests.factories import ProjectFactory, UserFactory
 
+from api.base.settings import API_BASE
+
 
 class TestOAuthValidation(ApiTestCase):
     """Test that OAuth2 requests can be validated"""
@@ -22,8 +24,8 @@ class TestOAuthValidation(ApiTestCase):
         self.reachable_project = ProjectFactory(title="Private Project User 1", is_public=False, creator=self.user1)
         self.unreachable_project = ProjectFactory(title="Private Project User 2", is_public=False, creator=self.user2)
 
-        self.reachable_url = "/v2/nodes/{}/".format(self.reachable_project._id)
-        self.unreachable_url = "/v2/nodes/{}/".format(self.unreachable_project._id)
+        self.reachable_url = "/{}nodes/{}/".format(API_BASE, self.reachable_project._id)
+        self.unreachable_url = "/{}nodes/{}/".format(API_BASE, self.unreachable_project._id)
 
     def _make_request(self, url, access_token=None):
         """Helper function to make a request with auth headers"""
@@ -36,8 +38,7 @@ class TestOAuthValidation(ApiTestCase):
         return res
 
     def test_missing_token_fails(self):
-        url = "/v2/nodes/{}/".format(self.reachable_project._id)
-        res = self._make_request(url, access_token=None)
+        res = self._make_request(self.reachable_url, access_token=None)
 
         assert_equal(res.status_code, 403)
         assert_equal(res.json.get("detail"),
