@@ -8,6 +8,7 @@ from website.archiver.tasks import (
 )
 from website.archiver.utils import (
     handle_archive_fail,
+    before_archive
 )
 from website.archiver import utils as archiver_utils
 from website.archiver import (
@@ -27,6 +28,9 @@ def after_register(src, dst, user):
     :param dst: registration Node
     :param user: registration initiator
     """
+    before_archive(dst)
+    if dst.root != dst:  # if not top-level registration
+        return
     targets = chain([dst], dst.get_descendants_recursive())
     archive_tasks = [archive.si(t.registered_from._id, t._id, user._id) for t in targets]
     enqueue_task(
@@ -77,4 +81,4 @@ def archive_callback(dst):
                 for contributor in dst.contributors:
                     project_utils.send_embargo_email(dst, contributor)
             else:
-                archiver_utils.send_archiver_success_mail(dst)
+                archiver_utils.send_archiver_success_mail(dst.root)
