@@ -72,7 +72,7 @@ function initTypeahead(element, nodes, viewModel, params){
         },
         templates: {
             suggestion: function(data) {
-                return '<p>hi' + data.value.name + '</p> ' +
+                return '<p>' + data.value.name + '</p> ' +
                         '<p><small class="ob-suggestion-date text-muted">' +
                         'modified ' + data.value.dateModified.local + '</small></p>';
             }
