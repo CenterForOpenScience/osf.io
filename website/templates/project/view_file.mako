@@ -181,6 +181,7 @@
             provider: '${provider | js_str}',
             safeName: '${file_name | h,js_str}',
             materializedPath: '${materialized_path | js_str}',
+            file_guid: '${file_guid | js_str}',
           urls: {
               external: '${(urls['external'] or '') | js_str}',
         %if error is None:
