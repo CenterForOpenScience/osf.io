@@ -1699,8 +1699,9 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
 
         :param schema: Schema object
         :param auth: All the auth information including user, API key.
-        :template: Template name
-        :data: Form data
+        :param template: Template name
+        :param data: Form data
+        :param parent Node: parent registration of regitstration to be created
         """
         # NOTE: Admins can register child nodes even if they don't have write access them
         if not self.can_edit(auth=auth) and not self.is_admin_parent(user=auth.user):
