@@ -421,12 +421,32 @@ class TestArchiverUtils(ArchiverTestCase):
 
 class TestArchiverListeners(ArchiverTestCase):
 
-    @mock.patch('framework.tasks.handlers.celery_teardown_request')
-    def test_after_register(self, mock_teardown):
-        with mock.patch.object(handlers, 'enqueue_task') as mock_queue:
-            listeners.after_register(self.src, self.dst, self.user)
+    @mock.patch('celery.chain')
+    @mock.patch('website.archiver.utils.before_archive')
+    def test_after_register(self, mock_before_archive, mock_chain):
+        mock_chain.return_value = []
+        listeners.after_register(self.src, self.dst, self.user)
+        mock_before_archive.assert_called_with(self.dst)
         archive_signature = archive.si(self.src._id, self.dst._id, self.user._id)
-        assert(mock_queue.called_with(archive_signature))
+        mock_chain.assert_called_with(archive_signature)
+
+    @mock.patch('celery.chain')
+    def test_after_register_archive_runs_only_for_root(self, mock_chain):
+        proj = factories.ProjectFactory()
+        c1 = factories.ProjectFactory(parent=proj)
+        c2 = factories.ProjectFactory(parent=c1)
+        reg = factories.RegistrationFactory(project=proj)
+        rc1 = reg.nodes[0]
+        rc2 = rc1.nodes[0]
+        listeners.after_register(c1, rc1, self.user)
+        mock_chain.assert_not_called()
+        listeners.after_register(c2, rc2, self.user)
+        mock_chain.assert_not_called()
+        listeners.after_register(proj, reg, self.user)
+        archive_sigs = [archive.si(*args) for args in [(proj._id, reg._id, self.user._id),
+                                                       (c1._id, rc1._id, self.user._id),
+                                                       (c2._id, rc2._id, self.user._id)]]
+        mock_chain.assert_called_with(*archive_sigs)
 
     def test_archive_callback_pending(self):
         self.dst.archived_providers = {
@@ -591,7 +611,7 @@ class TestArchiverListeners(ArchiverTestCase):
         }
         rchild2.save()
         listeners.archive_callback(rchild2)
-        mock_send_success.assert_called_with(rchild2)
+        mock_send_success.assert_called_with(reg)
 
 class TestArchiverScripts(ArchiverTestCase):
 

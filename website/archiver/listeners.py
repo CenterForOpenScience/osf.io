@@ -6,10 +6,6 @@ from framework.tasks.handlers import enqueue_task
 from website.archiver.tasks import (
     archive,
 )
-from website.archiver.utils import (
-    handle_archive_fail,
-    before_archive
-)
 from website.archiver import utils as archiver_utils
 from website.archiver import (
     ARCHIVER_SUCCESS,
@@ -28,7 +24,7 @@ def after_register(src, dst, user):
     :param dst: registration Node
     :param user: registration initiator
     """
-    before_archive(dst)
+    archiver_utils.before_archive(dst)
     if dst.root != dst:  # if not top-level registration
         return
     targets = chain([dst], dst.get_descendants_recursive())
@@ -69,7 +65,7 @@ def archive_callback(dst):
         dst.save()
     if archive_tree_finished(dst):
         if ARCHIVER_FAILURE in [value['status'] for value in dst.archived_providers.values()]:
-            handle_archive_fail(
+            archiver_utils.handle_archive_fail(
                 ARCHIVER_NETWORK_ERROR,
                 dst.registered_from,
                 dst,
