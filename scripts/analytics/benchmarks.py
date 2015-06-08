@@ -139,27 +139,36 @@ def get_log_counts(users):
     return rows
 
 
-def main():
-
-    number_users = User.find().count()
-
+def get_projects():
     projects = Node.find(
         Q('category', 'eq', 'project') &
         Q('is_deleted', 'eq', False) &
         Q('is_folder', 'ne', True)
     )
+
+def get_projects_forked():
     projects_forked = list(Node.find(
         Q('category', 'eq', 'project') &
         Q('is_deleted', 'eq', False) &
         Q('is_folder', 'ne', True) &
         Q('is_fork', 'eq', True)
     ))
+
+def get_projects_registered():
     projects_registered = Node.find(
         Q('category', 'eq', 'project') &
         Q('is_deleted', 'eq', False) &
         Q('is_folder', 'ne', True) &
         Q('is_registration', 'eq', True)
     )
+
+
+def main():
+
+    number_users = User.find().count()
+    projects = get_projects()
+    projects_forked = get_projects_forked()
+    projects_registered = get_projects_registered()
 
     pf = []
     for p in projects_forked:
