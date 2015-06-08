@@ -12,8 +12,8 @@ from .serializers import NodeSerializer, NodePointersSerializer, NodeFilesSerial
 from .serializers import RegistrationOpenEndedWithTokenSerializer, RegistrationPreDataCollectionWithTokenSerializer, ReplicationRecipePreRegistrationWithTokenSerializer, ReplicationRecipePostCompletionWithTokenSerializer
 from api.users.serializers import ContributorSerializer
 from .permissions import ContributorOrPublic, ReadOnlyIfRegistration, ContributorOrPublicForPointers
-from urlparse import urlparse
-from posixpath import basename, normpath
+# from urlparse import urlparse
+# from posixpath import basename, normpath
 
 
 

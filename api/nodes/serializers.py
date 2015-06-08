@@ -9,8 +9,6 @@ from modularodm import Q
 from framework.forms.utils import process_payload
 from rest_framework import serializers
 import json
-from urlparse import urlparse
-from posixpath import basename, normpath
 from api.base.utils import absolute_reverse
 from api.base.utils import token_creator
 
@@ -166,10 +164,8 @@ class RegistrationOpenEndedWithTokenSerializer(NodeSerializer):
         request = self.context['request']
         user = request.user
         node = self.context['view'].get_node()
-        parse_object = urlparse(request.path)
-        given_token = basename(normpath(parse_object.path))
         correct_token = token_creator(node._id, user._id, data)
-        if given_token != correct_token:
+        if correct_token not in request.path:
             raise serializers.ValidationError("Incorrect token.")
         return data
 
@@ -231,11 +227,8 @@ class RegistrationPreDataCollectionWithTokenSerializer(NodeSerializer):
         request = self.context['request']
         user = request.user
         node = self.context['view'].get_node()
-        parse_object = urlparse(request.path)
-        given_token = basename(normpath(parse_object.path))
         correct_token = token_creator(node._id, user._id, data)
-
-        if given_token != correct_token:
+        if correct_token not in request.path:
             raise serializers.ValidationError("Incorrect token.")
         return data
 
@@ -349,10 +342,8 @@ class ReplicationRecipePreRegistrationWithTokenSerializer(NodeSerializer):
         request = self.context['request']
         user = request.user
         node = self.context['view'].get_node()
-        parse_object = urlparse(request.path)
-        given_token = basename(normpath(parse_object.path))
         correct_token = token_creator(node._id, user._id, data)
-        if given_token != correct_token:
+        if correct_token not in request.path:
              raise serializers.ValidationError("Incorrect token.")
         return data
 
@@ -428,10 +419,8 @@ class ReplicationRecipePostCompletionWithTokenSerializer(NodeSerializer):
         request = self.context['request']
         user = request.user
         node = self.context['view'].get_node()
-        parse_object = urlparse(request.path)
-        given_token = basename(normpath(parse_object.path))
         correct_token = token_creator(node._id, user._id, data)
-        if given_token != correct_token:
+        if correct_token not in request.path:
             raise serializers.ValidationError("Incorrect token.")
         return data
 
