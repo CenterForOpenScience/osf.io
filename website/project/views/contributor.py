@@ -85,13 +85,12 @@ def get_project_contributor_ids(node, **kwargs):
     node = Node.load(node)
 
     contribsOnNode = {}
-    contribsOnNode[node._id] = utils.serialize_contributors(node.contributors,node=node)
-
-
+    contribsOnNode[node._id] = utils.serialize_contributors(node.contributors,
+                                                            node=node)
     children = node.get_descendants_recursive()
     for child in children:
-        contribsOnNode[child._id] = utils.serialize_contributors(child.contributors,node=child)
-
+        contribsOnNode[child._id] = utils.serialize_contributors(child.contributors,
+                                                                 node=child)
 
     return contribsOnNode
 
@@ -342,9 +341,7 @@ def finalize_invitation(node, contributor, auth):
 def project_contributors_remove(auth, node, **kwargs):
     """ Removes contributors to a node. """
 
-
     listToRemove = request.json.get('listToRemove')
-    contribs = []
 
     if listToRemove is None:
         raise HTTPError(http.BAD_REQUEST)
