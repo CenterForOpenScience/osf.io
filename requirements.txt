@@ -20,7 +20,7 @@ mailchimp==2.0.9
 nameparser==0.3.3
 py-bcrypt==0.4
 pymongo==2.5.1
-python-dateutil==2.2
+python-dateutil==2.4.2
 python-gnupg==0.3.6
 pytz==2014.9
 bleach==1.4.1
@@ -40,3 +40,8 @@ requests==2.5.3
 requests-oauthlib==0.5.0
 raven==5.1.1
 webcolors==1.4
+
+# API requirements
+Django==1.8
+djangorestframework==3.1.1
+django-rest-swagger==0.2.9

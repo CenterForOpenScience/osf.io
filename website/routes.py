@@ -1303,15 +1303,6 @@ def make_url_map(app):
             json_renderer,
         ),
         Rule(
-            [
-                '/project/<pid>/files/<provider>/<path:path>/',
-                '/project/<pid>/node/<nid>/files/<provider>/<path:path>/',
-            ],
-            'get',
-            addon_views.addon_render_file,
-            json_renderer
-        ),
-        Rule(
             '/settings/addons/',
             'post',
             profile_views.user_choose_addons,
