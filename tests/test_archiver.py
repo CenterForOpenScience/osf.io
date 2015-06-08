@@ -589,7 +589,7 @@ class TestArchiverScripts(ArchiverTestCase):
 
 class TestArchiverDebugRoutes(ArchiverTestCase):
 
-    def test_debub_route_does_not_exist(self):
+    def test_debug_route_does_not_exist(self):
         route = None
         try:
             route = api_url_for('archiver_debug', nid=self.dst._id)

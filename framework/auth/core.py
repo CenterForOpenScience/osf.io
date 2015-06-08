@@ -393,7 +393,7 @@ class User(GuidStoredObject, AddonModelMixin):
         return '<User({0!r}) with id {1!r}>'.format(self.username, self._id)
 
     def __str__(self):
-        return self.fullname
+        return self.fullname.encode('ascii', errors='ignore')
 
     __unicode__ = __str__
 
