@@ -1,11 +1,8 @@
 from rest_framework import serializers as ser
-
+import json
 from api.base.serializers import JSONAPISerializer, LinksField, Link
 from website.models import Node
 from framework.auth.core import Auth
-
-class DashboardSerializer(JSONAPISerializer):
-   pass
 
 class CollectionSerializer(JSONAPISerializer):
     filterable_fields = frozenset(['title'])
@@ -14,7 +11,6 @@ class CollectionSerializer(JSONAPISerializer):
     title = ser.CharField(required=True)
     date_created = ser.DateTimeField(read_only=True)
     date_modified = ser.DateTimeField(read_only=True)
-    parent_id = ser.CharField(read_only=True)
 
     links = LinksField({
         'html': 'get_absolute_url',
@@ -64,7 +60,7 @@ class CollectionSerializer(JSONAPISerializer):
         ret = {
             'collection': obj.is_folder,
             'dashboard': obj.is_dashboard,
-            # 'smart_folder': obj.properties.smart_folder,
+            'smart_folder': obj.smart_folder,
         }
         return ret
 
@@ -78,17 +74,11 @@ class CollectionSerializer(JSONAPISerializer):
         """Update instance with the validated data. Requires
         the request to be in the serializer context.
         """
-        smart_folders = (
-            '~amr',
-            '~amp',
-        )
 
         assert isinstance(instance, Node), 'instance must be a Node'
-        if instance.is_dashboard:
+        if instance.is_dashboard or instance.smart_folder:
             return instance
-        for smart_folder_id in smart_folders:
-            if instance._id == smart_folder_id:
-                return instance
+
         for attr, value in validated_data.items():
             setattr(instance, attr, value)
         instance.save()

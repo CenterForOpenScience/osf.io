@@ -54,7 +54,12 @@ class CollectionList(generics.ListCreateAPIView, ListFilterMixin):
     # overrides ListCreateAPIView
     def get_queryset(self):
         query = self.get_default_odm_query()
-        return Node.find(query)
+        nodes = Node.find(query)
+
+        for node in nodes:
+            node.smart_folder = False
+
+        return nodes
 
     # overrides ListCreateAPIView
     def perform_create(self, serializer):
@@ -77,7 +82,6 @@ class DashboardDetail(generics.ListCreateAPIView, ODMFilterMixin):
     title and if they are the dashboard
     """
 
-
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
     )
@@ -97,7 +101,6 @@ class DashboardDetail(generics.ListCreateAPIView, ODMFilterMixin):
 
         query = base_query & permission_query
         return query
-
 
     # overrides ListCreateAPIView
     def get_queryset(self):
@@ -126,6 +129,7 @@ class CollectionDetail(generics.RetrieveUpdateAPIView, generics.RetrieveDestroyA
         for folder_id in smart_folders:
             if node_id == folder_id:
                 node = Node.find(node_id)
+                node.smart_folder = True
                 smart_folder_node = {
                     'id': node_id,
                     'title': node.title,
@@ -138,7 +142,10 @@ class CollectionDetail(generics.RetrieveUpdateAPIView, generics.RetrieveDestroyA
                     },
                 }
                 return smart_folder_node
-        return self.get_node()
+
+        node = self.get_node()
+        node.smart_folder = False
+        return node
 
     # overrides RetrieveUpdateAPIView
     def get_serializer_context(self):
