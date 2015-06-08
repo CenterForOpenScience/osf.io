@@ -3138,7 +3138,8 @@ class TestNodeLog(OsfTestCase):
         iso_formatted = self.log.formatted_date  # The string version in iso format
         # Reparse the date
         parsed = parser.parse(iso_formatted)
-        assert_equal(parsed, self.log.tz_date)
+        unparsed = self.log.tz_date
+        assert_equal(parsed, unparsed)
 
     def test_resolve_node_same_as_self_node(self):
         project = ProjectFactory()
