@@ -1694,7 +1694,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
 
         return forked
 
-    def register_node(self, schema, auth, template, data, top=False):
+    def register_node(self, schema, auth, template, data, parent=None):
         """Make a frozen copy of a node.
 
         :param schema: Schema object
@@ -1746,6 +1746,9 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
 
         registered.save()
 
+        if parent:
+            registered.parent_node = parent
+
         # After register callback
         for addon in original.get_addons():
             _, message = addon.after_register(original, registered, auth.user)
@@ -1755,11 +1758,9 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
 
         for node_contained in original.nodes:
             if not node_contained.is_deleted:
-                registered_node = node_contained.register_node(
-                    schema, auth, template, data,
+                node_contained.register_node(
+                    schema, auth, template, data, parent=registered
                 )
-                if registered_node is not None:
-                    registered.nodes.append(registered_node)
 
         original.add_log(
             action=NodeLog.PROJECT_REGISTERED,
@@ -1778,8 +1779,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         for node in registered.nodes:
             node.update_search()
 
-        if top:
-            project_signals.after_create_registration.send(self, dst=registered, user=auth.user)
+        project_signals.after_create_registration.send(self, dst=registered, user=auth.user)
 
         return registered
 
@@ -1954,6 +1954,11 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         except IndexError:
             pass
         return None
+
+    @parent_node.setter
+    def parent_node(self, parent):
+        parent.nodes.append(self)
+        parent.save()
 
     @property
     def root(self):

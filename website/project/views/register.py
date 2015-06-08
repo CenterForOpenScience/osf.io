@@ -425,7 +425,6 @@ def node_register_template_page_post(auth, node, **kwargs):
     # Create the registration
     register = node.register_node(
         schema, auth, template, json.dumps(clean_data),
-        top=True
     )
     project_signals.after_create_registration.send(node, dst=register, user=auth.user)
 
