@@ -36,6 +36,7 @@
                                     <thead>                            <div>
                                 <span class="modal-subheader">Contributors</span>
                                     <a data-bind="click:addAll">Add all</a>
+                                <br><b >Select Components</b>
                                 <div data-bind="foreach:nodes ">
                                 <div data-bind="style:{marginLeft: margin}">
                                             <a data-bind="click:$root.selectNodesForSearch, text:title"></a>
@@ -171,10 +172,10 @@
 
                         <div class="col-md-6">
                             <div>
-                                <a data-bind="click:selectNodes, css:{disabled:cantSelectNodes()}">Select all</a>
+                                <a data-bind="click:selectNodes">Select all</a>
                             </div>
                             <div>
-                                <a data-bind="click:deselectNodes, css:{disabled:cantDeselectNodes()}">De-select all</a>
+                                <a data-bind="click:deselectNodes">De-select all</a>
                             </div>
                         </div>
                     </div>
