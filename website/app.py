@@ -92,6 +92,13 @@ def build_log_templates(settings):
         build_fp.write('\n')
         build_addon_log_templates(build_fp, settings)
 
+def do_set_backends(settings):
+    logger.debug('Setting storage backends')
+    set_up_storage(
+        website.models.MODELS,
+        storage.MongoStorage,
+        addons=settings.ADDONS_AVAILABLE,
+    )
 
 def init_app(settings_module='website.settings', set_backends=True, routes=True,
         attach_request_handlers=True):
@@ -114,12 +121,7 @@ def init_app(settings_module='website.settings', set_backends=True, routes=True,
     app.debug = settings.DEBUG_MODE
 
     if set_backends:
-        logger.debug('Setting storage backends')
-        set_up_storage(
-            website.models.MODELS,
-            storage.MongoStorage,
-            addons=settings.ADDONS_AVAILABLE,
-        )
+        do_set_backends(settings)
     if routes:
         try:
             make_url_map(app)
@@ -138,6 +140,7 @@ def init_app(settings_module='website.settings', set_backends=True, routes=True,
     if set_backends:
         ensure_schemas()
     apply_middlewares(app, settings)
+
     return app
 
 
@@ -148,3 +151,5 @@ def apply_middlewares(flask_app, settings):
         flask_app.wsgi_app = ProxyFix(flask_app.wsgi_app)
 
     return flask_app
+
+from website.archiver import listeners  # noqa

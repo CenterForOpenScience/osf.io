@@ -59,8 +59,15 @@ describe('osfHelpers', () => {
     });
 
     describe('block', () => {
+        var stub;
+        beforeEach(() => {
+            stub = new sinon.stub($, 'blockUI');
+        });
+        afterEach(() => {
+            $.blockUI.restore();
+        });
+
         it('calls $.blockUI with correct arguments', () => {
-            var stub = new sinon.stub($, 'blockUI');
             $osf.block();
             assert.calledOnce(stub);
             assert.calledWith(stub, {
@@ -74,6 +81,23 @@ describe('osfHelpers', () => {
                     color: '#fff'
                 },
                 message: 'Please wait'
+            });
+        });
+        it('calls $.blockUI with the passed message if provided', () => {
+            var msg = 'Some custom message';
+            $osf.block(msg);
+            assert.calledOnce(stub);
+            assert.calledWith(stub, {
+                css: {
+                    border: 'none',
+                    padding: '15px',
+                    backgroundColor: '#000',
+                    '-webkit-border-radius': '10px',
+                    '-moz-border-radius': '10px',
+                    opacity: 0.5,
+                    color: '#fff'
+                },
+                message: msg
             });
         });
     });
@@ -188,6 +212,14 @@ describe('osfHelpers', () => {
             assert.equal($osf.htmlEscape('safe'), 'safe');
             assert.equal($osf.htmlEscape('<b>'), '&lt;b&gt;');
             assert.equal($osf.htmlEscape('<script>alert("lol")</script>'), '&lt;script&gt;alert("lol")&lt;/script&gt;');
+        });
+    });
+
+    describe('htmlDecode', () => {
+        it('should decode html entities', () => {
+            assert.equal($osf.htmlDecode('safe'), 'safe');
+            assert.equal($osf.htmlDecode('b&gt;a&amp;'), 'b>a&');
+            assert.equal($osf.htmlDecode('&lt;script&gt;alert("lol")&lt;/script&gt;'), '<script>alert("lol")</script>');
         });
     });
 

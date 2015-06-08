@@ -202,6 +202,7 @@ class NodeProjectCollector(object):
         all_my_registrations = contributed.find(
             Q('category', 'eq', 'project') &
             Q('is_deleted', 'eq', False) &
+            Q('archiving', 'eq', False) &
             Q('is_registration', 'eq', True) &
             Q('is_folder', 'eq', False) &
             # parent is not in the nodes list
@@ -214,6 +215,7 @@ class NodeProjectCollector(object):
             Q('__backrefs.parent.node.nodes', 'nin', all_my_registrations.get_keys()) &
             # exclude deleted nodes
             Q('is_deleted', 'eq', False) &
+            Q('archiving', 'eq', False) &
             # exclude registrations
             Q('is_registration', 'eq', True)
         )
@@ -365,6 +367,7 @@ class NodeProjectCollector(object):
             'description': node.description,
             'registeredMeta': node.registered_meta,
             'childrenCount': children_count,
+            'nodeType': node.project_or_component,
         }
 
     def _collect_addons(self, node):
@@ -446,6 +449,7 @@ class NodeFileCollector(object):
             'name': u'{0}: {1}'.format(node.project_or_component.capitalize(), sanitize.safe_unescape_html(node.title))
             if can_view
             else u'Private Component',
+            'category': node.category,
             'kind': FOLDER,
             'permissions': {
                 'edit': node.can_edit(self.auth) and not node.is_registration,

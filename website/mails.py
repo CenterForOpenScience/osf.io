@@ -154,6 +154,23 @@ CONFERENCE_FAILED = Mail(
 DIGEST = Mail('digest', subject='OSF Email Digest')
 TRANSACTIONAL = Mail('transactional', subject='OSF: ${subject}')
 
+PENDING_RETRACTION_ADMIN = Mail(
+    'pending_retraction_admin',
+    subject='Retraction pending for one of your projects.'
+)
+PENDING_RETRACTION_NON_ADMIN = Mail(
+    'pending_retraction_non_admin',
+    subject='Retraction pending for one of your projects.'
+)
+
+PENDING_EMBARGO_ADMIN = Mail(
+    'pending_embargo_admin',
+    subject='Registration pending for one of your projects.'
+)
+PENDING_EMBARGO_NON_ADMIN = Mail(
+    'pending_embargo_non_admin',
+    subject='Registration pending for one of your projects.'
+)
 FILE_OPERATION_SUCCESS = Mail(
     'file_operation_success',
     subject='Your ${action} has finished',
@@ -162,4 +179,36 @@ FILE_OPERATION_SUCCESS = Mail(
 FILE_OPERATION_FAILED = Mail(
     'file_operation_failed',
     subject='Your ${action} has failed',
+)
+
+ARCHIVE_SIZE_EXCEEDED_DESK = Mail(
+    'archive_size_exceeded_desk',
+    subject="Problem registering ${src.title}"
+)
+ARCHIVE_SIZE_EXCEEDED_USER = Mail(
+    'archive_size_exceeded_user',
+    subject="Problem registering ${src.title}"
+)
+
+ARCHIVE_COPY_ERROR_DESK = Mail(
+    'archive_copy_error_desk',
+    subject="Problem registering ${src.title}"
+)
+ARCHIVE_COPY_ERROR_USER = Mail(
+    'archive_copy_error_user',
+    subject="Problem registering ${src.title}"
+)
+
+ARCHIVE_UNCAUGHT_ERROR_DESK = Mail(
+    'archive_uncaught_error_desk',
+    subject="Problem registering ${src.title}"
+)
+ARCHIVE_UNCAUGHT_ERROR_USER = Mail(
+    'archive_uncaught_error_user',
+    subject="Problem registering ${src.title}"
+)
+
+ARCHIVE_SUCCESS = Mail(
+    'archive_success',
+    subject="Registration of ${src.title} complete"
 )

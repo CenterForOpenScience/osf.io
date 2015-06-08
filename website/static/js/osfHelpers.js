@@ -134,7 +134,7 @@ var handleEditableError = function(response) {
     return 'Unexpected error: ' + response.statusText;
 };
 
-var block = function() {
+var block = function(message) {
     $.blockUI({
         css: {
             border: 'none',
@@ -145,7 +145,7 @@ var block = function() {
             opacity: 0.5,
             color: '#fff'
         },
-        message: 'Please wait'
+        message: message || 'Please wait'
     });
 };
 
@@ -401,6 +401,11 @@ var LOCAL_DATEFORMAT = 'YYYY-MM-DD hh:mm A';
 var UTC_DATEFORMAT = 'YYYY-MM-DD HH:mm UTC';
 var FormattableDate = function(date) {
     if (typeof date === 'string') {
+        // If Firefox, add 'Z' to the date string (Z is timezone for UTC)
+        if(navigator.userAgent.toLowerCase().indexOf('firefox') > -1)
+        {
+           date = date + "Z";
+        }
         // The date as a Date object
         this.date = new Date(date);
     } else {
@@ -415,6 +420,14 @@ var FormattableDate = function(date) {
  */
 var htmlEscape = function(text) {
     return $('<div/>').text(text).html();
+};
+
+
+/**
+ * Decode Escaped html characters in a string.
+ */
+var htmlDecode = function(text) {
+    return $('<div/>').html(text).text();
 };
 
 /**
@@ -537,6 +550,7 @@ module.exports = window.$.osf = {
     throttle: throttle,
     debounce: debounce,
     htmlEscape: htmlEscape,
+    htmlDecode: htmlDecode,
     tableResize: tableResize,
     humanFileSize: humanFileSize
 };
