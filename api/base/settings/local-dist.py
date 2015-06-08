@@ -2,4 +2,5 @@
 API_PATH = ''
 API_BASE = 'v2/'
 
-STATIC_URL = '{}/{}static/'.format(API_PATH, API_BASE)
+API_PREFIX = '{}/{}'.format(API_PATH, API_BASE)
+STATIC_URL = '{}static/'.format(API_PREFIX)
