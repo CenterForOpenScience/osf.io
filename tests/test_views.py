@@ -289,6 +289,40 @@ class TestProjectViews(OsfTestCase):
         assert_equal(self.project.get_permissions(self.user1), ['read'])
         assert_equal(self.project.get_permissions(self.user2), ['read', 'write', 'admin'])
 
+    def test_manage_permissions_again(self):
+        url = self.project.api_url + 'contributors/manage/'
+        self.app.post_json(
+            url,
+            {
+                'contributors': [
+                    {'id': self.user1._id, 'permission': 'admin',
+                     'registered': True, 'visible': True},
+                    {'id': self.user2._id, 'permission': 'admin',
+                     'registered': True, 'visible': True},
+                ]
+            },
+            auth=self.auth,
+        )
+
+        self.project.reload()
+        self.app.post_json(
+            url,
+            {
+                'contributors': [
+                    {'id': self.user1._id, 'permission': 'admin',
+                     'registered': True, 'visible': True},
+                    {'id': self.user2._id, 'permission': 'read',
+                     'registered': True, 'visible': True},
+                ]
+            },
+            auth=self.auth,
+        )
+
+        self.project.reload()
+
+        assert_equal(self.project.get_permissions(self.user2), ['read'])
+        assert_equal(self.project.get_permissions(self.user1), ['read', 'write', 'admin'])
+
     def test_contributor_manage_reorder(self):
 
         # Two users are added as a contributor via a POST request

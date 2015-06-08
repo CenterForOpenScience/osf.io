@@ -313,6 +313,7 @@ a.btn-success.disabled {
 
 #addPointer td {
     vertical-align: middle;
+    word-break: break-all;
 }
 
 li.pointer {
@@ -950,13 +951,21 @@ form.form-horizontal.form-horizontal-narrow .control-group {
 
 
 /* Project page */
+#manageContributors td {
+    vertical-align: middle;
+}
+
+#manageContributors .permissions {
+    min-width: 140px;
+}
+
+#manageContributors .biblio {
+    margin: 4px 60% 0 40%;
+}
+
 #addContributors table {
     border-collapse: separate;
     border-spacing: 5px;
-}
-
-#manageContributors td {
-    vertical-align: middle;
 }
 
 #addContributors .error {
@@ -1778,6 +1787,7 @@ div.profile-fullname{
 span#profileFullname{
     position: absolute;
     bottom: 0;
+    margin-bottom: 20px;
 }
 
 .scripted {display: none;}
@@ -1866,15 +1876,16 @@ span#profileFullname{
     background: rgba(187, 187, 187, 0.2);
 }
 .osf-navbar .navbar-nav>li>a {
-    padding-top: 9px;
-    padding-bottom: 6px;
-    line-height: 24px;
+    padding-top: 8px;
+    padding-bottom: 7px;
+    line-height: 27px;
 }
 
 .navbar-brand {
-    height: 42px;
-    line-height: 14px;
-    padding:13px 15px;
+    margin-left: 0 !important;
+    height: 42px !important;
+    line-height: 27px;
+    padding: 8px 15px 7px 15px;
 }
 
 .osf-navbar .navbar-form {
@@ -1893,10 +1904,6 @@ span#profileFullname{
     background-color: white;
 }
 
-.navbar-mid>li>a{
-    padding-bottom: 8px !important;
-}
-
 .icon-lg {
     font-size: 20px;
     line-height: 26px;
@@ -1905,7 +1912,6 @@ span#profileFullname{
 .osf-navbar-logo {
     float: left;
     margin-right: 8px;
-    margin-top: -7px;
 }
 
 .osf-navbar .navbar-nav>li>a.btn {
@@ -2080,6 +2086,22 @@ span#profileFullname{
         text-decoration: none !important;
         padding: 14px;
     }
+
+    .navbar-brand {
+        margin-left: 0 !important;
+        height: 48px !important;
+        line-height: 27px !important;
+        padding: 11px 15px 10px 15px !important;
+    }
+    .osf-navbar-logo {
+        margin-top: 0px !important;
+    }
+
+    span#profileFullname {
+        font-size: 20px;
+        margin-bottom: 30px;
+    }
+
 }
 
 @media (min-width: 768px) {
@@ -2138,6 +2160,17 @@ span#profileFullname{
 }
 
 /* Search bar */
+.search-label-placeholder {
+    position:absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    font-size: 20px;
+    color: #738EA2;
+    font-weight: 300;
+    visibility: hidden;
+}
+
 .osf-search {
     padding: 10px 0;
     background: #B8ECC0;
@@ -2179,6 +2212,10 @@ span#profileFullname{
 
 .progress-bar-content {
     margin: 0px 10px;
+}
+
+.progress-bar-width {
+    width: 100%;
 }
 
 .sharejs-info-btn {
@@ -2760,4 +2797,9 @@ span#profileFullname{
     .affix {
         position: relative;
     }
+}
+
+#viewPanel > .osf-panel-body,
+.mfr-file {
+  height: 100%;
 }
