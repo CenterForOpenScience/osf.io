@@ -451,9 +451,6 @@ function OBUploaderViewModel(params) {
                 url: 'project/' + selectedProject.id + '/',
                 type: 'DELETE'
                 });
-                request.done(function() {
-                    return false;
-                });
                 request.fail(function(xhr, textStatus, error) {
                     Raven.captureMessage('Project created without any upload', {
                         textStatus: textStatus,
