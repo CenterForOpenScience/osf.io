@@ -70,27 +70,6 @@ class TestDataverseFile(DataverseAddonTestCase):
 
         assert_equal(dvf.name, 'Morty.foo')
 
-    @mock.patch('website.addons.dataverse.model._get_current_user')
-    @mock.patch('website.addons.base.requests.get')
-    def test_mfr_temp_path(self, mock_get, mock_get_user):
-        mock_get_user.return_value = self.user
-        mock_response = mock.Mock(ok=True, status_code=200)
-        mock_get.return_value = mock_response
-        mock_response.json.return_value = {
-            'data': {
-                'name': 'Morty.foo',
-                'path': '/12345',
-            },
-        }
-
-        dvf, created = self.node_settings.find_or_create_file_guid('12345')
-        dvf.enrich()
-
-        # Included fields ensure uniqueness
-        assert_in(self.project._id, dvf.mfr_temp_path)
-        assert_in(dvf.provider, dvf.mfr_temp_path)
-        assert_in(dvf.unique_identifier, dvf.mfr_temp_path)
-
 
 class TestDataverseUserSettings(DataverseAddonTestCase):
 

@@ -340,7 +340,7 @@ class OsfStorageFileNode(StoredObject):
             'path': self.path,
             'name': self.name,
             'kind': self.kind,
-            'size': self.versions[0].size if self.versions else None,
+            'size': self.versions[-1].size if self.versions else None,
             'version': len(self.versions),
             'downloads': self.get_download_count(),
         }

@@ -47,14 +47,6 @@ class TestFileGuid(OsfTestCase):
         assert_true(guid.path)
         assert_true(guid.waterbutler_path)
 
-    def test_correct_path_article(self):
-        guid = model.FigShareGuidFile(file_id=2, article_id=4, node=self.project)
-        guid._metadata_cache = {'name': 'shigfare.io'}
-        tpath = guid.mfr_temp_path
-        cpath = guid.mfr_cache_path
-
-        assert_not_equal(tpath, cpath)
-
     def test_mfr_test_path(self):
         self.node_addon.figshare_type = 'fileset'
         self.node_addon.save()
