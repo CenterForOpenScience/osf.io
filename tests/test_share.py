@@ -1,7 +1,7 @@
 import xml
 
 from mock import patch
-from nose.tools import *  # PEP8 asserts
+from nose.tools import *  # flake8: noqa (PEP8 asserts)
 from tests.base import OsfTestCase
 
 from website.search import util
@@ -125,7 +125,7 @@ class TestShareSearch(OsfTestCase):
                 },
             'size': 10
         })
-        assert cleaned_query.keys() == ['query']
+        assert_equals(cleaned_query.keys(), ['query'])
 
 
     @patch.object(share_search.share_es, 'search')
