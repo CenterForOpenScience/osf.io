@@ -145,6 +145,7 @@ def get_projects():
         Q('is_deleted', 'eq', False) &
         Q('is_folder', 'ne', True)
     )
+    return projects
 
 def get_projects_forked():
     projects_forked = list(Node.find(
@@ -153,6 +154,7 @@ def get_projects_forked():
         Q('is_folder', 'ne', True) &
         Q('is_fork', 'eq', True)
     ))
+    return projects_forked
 
 def get_projects_registered():
     projects_registered = Node.find(
@@ -161,46 +163,22 @@ def get_projects_registered():
         Q('is_folder', 'ne', True) &
         Q('is_registration', 'eq', True)
     )
+    return projects_registered
 
-
-def main():
-
-    number_users = User.find().count()
-    projects = get_projects()
-    projects_forked = get_projects_forked()
-    projects_registered = get_projects_registered()
-
-    pf = []
-    for p in projects_forked:
-        if not p.contributors[0]:
-            continue
-        name = p.contributors[0].fullname
-        if unicode(name) not in [u'Jeffres R. Spies', 'Brian A. Nosek']:
-            pf.append(p)
-
-    pr = []
-    for p in projects_registered:
-        name = p.contributors[0].fullname
-        if not p.contributors[0]:
-            continue
-        if not unicode(name)==u'Jeffrey R. Spies' and not unicode(name)==u'Brian A. Nosek':
-            pr.append(p)
-
-    number_projects = len(projects)
-    number_projects_public = Node.find(
+def get_projects_public():
+    projects_public = Node.find(
         Q('category', 'eq', 'project') &
         Q('is_deleted', 'eq', False) &
         Q('is_folder', 'ne', True) &
         Q('is_public', 'eq', True)
-    ).count()
-    number_projects_forked = len(pf)
+    )
+    return projects_public
 
-    number_projects_registered = len(pr)
-
-    ##############
-
+def get_number_downloads_total(projects=None):
     number_downloads_total = 0
-    number_downloads_unique = 0
+
+    if projects is None:
+        projects = get_projects()
 
     contributors_per_project = []
 
@@ -226,15 +204,72 @@ def main():
                 page = ':'.join(['download', project._id, filenode._id, str(idx)])
                 unique, total = get_basic_counters(page)
                 number_downloads_total += total or 0
-                number_downloads_unique += unique or 0
 
         for filenode in OsfStorageTrashedFileNode.find(Q('node_settings', 'eq', addon) & Q('kind', 'eq', 'file')):
             for idx, version in enumerate(filenode.versions):
                 page = ':'.join(['download', project._id, filenode._id, str(idx)])
                 unique, total = get_basic_counters(page)
                 number_downloads_total += total or 0
-                number_downloads_unique += unique or 0
 
+    return number_downloads_total
+
+def get_number_downloads_unique(projects=None):
+    number_downloads_unique = 0
+
+    if projects is None:
+        projects = get_projects()
+
+    contributors_per_project = []
+
+    contrib = {}
+
+    for project in projects:
+        contributors_per_project.append(len(project.contributors))
+        for person in project.contributors:
+            if not person:
+                continue
+            if person._id not in contrib:
+                contrib[person._id] = []
+            for neighbor in project.contributors:
+                if not neighbor:
+                    continue
+                if neighbor._id not in contrib[person._id]:
+                    contrib[person._id].append(neighbor._id)
+
+        addon = project.get_addon('osfstorage')
+
+        for filenode in OsfStorageFileNode.find(Q('node_settings', 'eq', addon) & Q('kind', 'eq', 'file')):
+            for idx, version in enumerate(filenode.versions):
+                page = ':'.join(['download', project._id, filenode._id, str(idx)])
+                unique, total = get_basic_counters(page)
+                number_downloads_unique += total or 0
+
+        for filenode in OsfStorageTrashedFileNode.find(Q('node_settings', 'eq', addon) & Q('kind', 'eq', 'file')):
+            for idx, version in enumerate(filenode.versions):
+                page = ':'.join(['download', project._id, filenode._id, str(idx)])
+                unique, total = get_basic_counters(page)
+                number_downloads_unique += total or 0
+
+    return number_downloads_unique
+
+
+def main():
+
+    number_users = User.find().count()
+    projects = get_projects()
+    projects_forked = get_projects_forked()
+    projects_registered = get_projects_registered()
+
+    number_projects = len(projects)
+
+    projects_public = get_projects_public()
+    number_projects_public = projects_public.count()
+    number_projects_forked = len(projects_forked)
+
+    number_projects_registered = len(projects_registered)
+
+    number_downloads_total = get_number_downloads_total()
+    number_downloads_unique = get_number_downloads_unique()
 
     active_users = get_active_users()
     active_users_invited = get_active_users(Q('is_invited', 'eq', True))
