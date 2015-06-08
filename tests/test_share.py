@@ -98,6 +98,36 @@ class TestShareSearch(OsfTestCase):
         })
         assert_is(mock_count.called, True)
 
+    def test_share_count_cleans_query(self):
+        cleaned_query = share_search.clean_count_query({
+            'aggs': {
+                'sourceAgg': {
+                    'terms': {
+                        'field': '_type',
+                        'min_doc_count': 0,
+                        'size': 0
+                    }
+                }
+            },
+            'aggregations': {
+                'sourceAgg': {
+                    'terms': {
+                        'field': '_type',
+                        'min_doc_count': 0,
+                        'size': 0
+                    }
+                }
+            },
+            'from': 0,
+            'query':
+                {
+                    'match_all': {}
+                },
+            'size': 10
+        })
+        assert cleaned_query.keys() == ['query']
+
+
     @patch.object(share_search.share_es, 'search')
     def test_share_providers(self, mock_search):
         mock_search.return_value = {
