@@ -69,7 +69,7 @@ function ProjectCreatorViewModel(params) {
     self.serialize = function() {
         var category = self.category();
         return {
-            title: $osf.htmlDecode(self.title()),
+            title: self.title(),
             category: category,
             description: self.description(),
             template: $('#createNodeTemplates').val()
@@ -164,7 +164,7 @@ function ProjectCreatorViewModel(params) {
         return ko.utils.arrayMap(nodes, function(node) {
             return {
                 'id': node.id,
-                'text': node.title
+                'text': $osf.htmlDecode(node.title)
             };
         });
     };
