@@ -2,6 +2,7 @@ from rest_framework import serializers as ser
 from api.base.serializers import JSONAPISerializer, LinksField, Link
 from website.models import Node
 from framework.auth.core import Auth
+from api.base.utils import absolute_reverse
 
 class CollectionSerializer(JSONAPISerializer):
     filterable_fields = frozenset(['title'])
@@ -10,7 +11,7 @@ class CollectionSerializer(JSONAPISerializer):
     title = ser.CharField(required=True)
     date_created = ser.DateTimeField(read_only=True)
     date_modified = ser.DateTimeField(read_only=True)
-
+    modified_by = ser.CharField(read_only=True, source='get_modified_by')
     links = LinksField({
         'children': {
             'related': Link('collections:collection-children', kwargs={'pk': '<pk>'}),
@@ -33,7 +34,7 @@ class CollectionSerializer(JSONAPISerializer):
         type_ = 'collections'
 
     def get_absolute_url(self, obj):
-        return obj.absolute_url
+        return absolute_reverse('collections:collection-detail', kwargs={'pk': 'pk'})
 
     # TODO: See if we can get the count filters into the filter rather than the serializer.
 
@@ -55,10 +56,15 @@ class CollectionSerializer(JSONAPISerializer):
 
     @staticmethod
     def get_properties(obj):
+
+        user = obj.logs[-1].user
+        modified_by = user.family_name or user.given_name
+
         ret = {
             'collection': obj.is_folder,
             'dashboard': obj.is_dashboard,
             'smart_folder': obj.smart_folder,
+            'modified_by': modified_by,
         }
         return ret
 

@@ -29,7 +29,7 @@ class CollectionList(generics.ListCreateAPIView, ListFilterMixin, ODMFilterMixin
     """Projects and components.
 
     By default, a GET will return a list of public nodes, sorted by date_modified. You can filter Collection by their
-    title and if they are the dashboard
+    title
     """
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
