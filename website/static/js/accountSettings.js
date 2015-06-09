@@ -91,17 +91,16 @@ var UserProfileClient = oop.defclass({
         return ret.promise();
     },
     update: function (profile, email) {
-        var self = this;
-        var url = self.urls.update;
+        var url = this.urls.update;
         if(email) {
-            url = self.urls.resend;
+            url = this.urls.resend;
         }
         var ret = $.Deferred();
         var request = $osf.putJSON(
             url,
-            self.serialize(profile, email)
+            this.serialize(profile, email)
         ).done(function (data) {
-            ret.resolve(self.unserialize(data, profile));
+            ret.resolve(this.unserialize(data, profile));
         }.bind(this)).fail(function(xhr, status, error) {
             $osf.growl('Error', 'User profile not updated. Please refresh the page and try ' +
                 'again or contact <a href="mailto: support@cos.io">support@cos.io</a> ' +
@@ -210,7 +209,7 @@ var UserProfileViewModel = oop.extend(ChangeMessageMixin, {
             this.changeMessage('Email cannot be empty.', 'text-danger');
         }
     },
-    reSendConfirm: function(email){
+    reSendConfirmation: function(email){
         var self = this;
         self.changeMessage('', 'text-info');
         bootbox.confirm({
