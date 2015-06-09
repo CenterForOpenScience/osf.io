@@ -393,7 +393,7 @@ class User(GuidStoredObject, AddonModelMixin):
         return '<User({0!r}) with id {1!r}>'.format(self.username, self._id)
 
     def __str__(self):
-        return self.fullname
+        return self.fullname.encode('ascii', 'replace')
 
     __unicode__ = __str__
 
@@ -659,6 +659,8 @@ class User(GuidStoredObject, AddonModelMixin):
             issues.append('Passwords cannot be blank')
         elif len(raw_new_password) < 6:
             issues.append('Password should be at least six characters')
+        elif len(raw_new_password) > 256:
+            issues.append('Password should not be longer than 256 characters')
 
         if raw_new_password != raw_confirm_password:
             issues.append('Password does not match the confirmation')

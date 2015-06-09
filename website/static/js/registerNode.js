@@ -14,7 +14,7 @@ var preRegisterMessage =  function(title, parentTitle, parentUrl, category) {
             ' its parent, <b>' + parentTitle + '</b>.' +
             ' If you want to register the parent, please go <a href="' +
             parentUrl + '">here.</a>' +
-            '<hr /><b>Important Note:</b> Effective <u>June 8, 2015</u>, registrations ' +
+            '<hr /><b>Important Note:</b> As early as <u>June 8, 2015</u>, registrations ' +
             'will be made public immediately or can be embargoed for up to one year. ' +
             'There will no longer be the option of creating a permanently private ' +
             'registration. If you register before June 8, 2015 and leave your ' +
@@ -26,7 +26,8 @@ var preRegisterMessage =  function(title, parentTitle, parentUrl, category) {
             'time-stamped, uneditable version of the project. If you would prefer to ' +
             'register a particular component, please navigate to that component and then ' +
             'initiate registration. '+
-            '<hr /><b>Important Note:</b> Effective <u>June 8, 2015</u>, registrations ' +
+            // TODO(hrybacki): Remove once Retraction/Embargoes goes is merged into production
+            '<hr /><b>Important Note:</b> As early as <u>June 8, 2015</u>, registrations ' +
             'will be made public immediately or can be embargoed for up to one year. ' +
             'There will no longer be the option of creating a permanently private ' +
             'registration. If you register before June 8, 2015 and leave your ' +
