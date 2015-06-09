@@ -1534,6 +1534,12 @@ class TestNode(OsfTestCase):
         with assert_raises(ValueError):
             self.node.fork_pointer(pointer, auth=self.consolidate_auth)
 
+    def test_cannot_fork_deleted_node(self):
+        self.node.is_deleted = True
+        self.node.save()
+        fork = self.parent.fork_node(auth=self.consolidate_auth)
+        assert_false(fork.nodes)
+
     def _fork_pointer(self, content):
         pointer = self.node.add_pointer(content, auth=self.consolidate_auth)
         forked = self.node.fork_pointer(pointer, auth=self.consolidate_auth)
@@ -3138,7 +3144,8 @@ class TestNodeLog(OsfTestCase):
         iso_formatted = self.log.formatted_date  # The string version in iso format
         # Reparse the date
         parsed = parser.parse(iso_formatted)
-        assert_equal(parsed, self.log.tz_date)
+        unparsed = self.log.tz_date
+        assert_equal(parsed, unparsed)
 
     def test_resolve_node_same_as_self_node(self):
         project = ProjectFactory()
@@ -3301,7 +3308,6 @@ class TestPointer(OsfTestCase):
         self._assert_clone(self.pointer, registered)
 
     def test_register_with_pointer_to_registration(self):
-        """Check for regression"""
         pointee = RegistrationFactory()
         project = ProjectFactory()
         auth = Auth(user=project.creator)

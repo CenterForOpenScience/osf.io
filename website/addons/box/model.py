@@ -1,5 +1,4 @@
 # -*- coding: utf-8 -*-
-import os
 import time
 import logging
 from datetime import datetime
@@ -56,15 +55,6 @@ class BoxFile(GuidFile):
     @property
     def unique_identifier(self):
         return self._metadata_cache['extra'].get('etag') or self._metadata_cache['version']
-
-    @property
-    def extra(self):
-        if not self._metadata_cache:
-            return {}
-
-        return {
-            'fullPath': self._metadata_cache['extra']['fullPath'],
-        }
 
 
 class BoxOAuthSettings(StoredObject):
@@ -325,7 +315,7 @@ class BoxNodeSettings(AddonNodeSettingsBase):
         try:
             return {'token': self.user_settings.fetch_access_token()}
         except BoxClientException as error:
-            return HTTPError(error.status_code)
+            raise HTTPError(error.status_code, data={'message_long': error.message})
 
     def serialize_waterbutler_settings(self):
         if self.folder_id is None:
@@ -333,25 +323,18 @@ class BoxNodeSettings(AddonNodeSettingsBase):
         return {'folder': self.folder_id}
 
     def create_waterbutler_log(self, auth, action, metadata):
-        path = metadata['path']
-        try:
-            full_path = metadata['extra']['fullPath']
-        except KeyError:
-            full_path = None
         self.owner.add_log(
             'box_{0}'.format(action),
             auth=auth,
             params={
+                'path': metadata['materialized'],
                 'project': self.owner.parent_id,
                 'node': self.owner._id,
-                'path': os.path.join(self.folder_id, path),
-                'name': os.path.split(metadata['path'])[-1],
                 'folder': self.folder_id,
                 'urls': {
-                    'view': self.owner.web_url_for('addon_view_or_download_file', provider='box', action='view', path=path),
-                    'download': self.owner.web_url_for('addon_view_or_download_file', provider='box', action='download', path=path),
+                    'view': self.owner.web_url_for('addon_view_or_download_file', provider='box', action='view', path=metadata['path']),
+                    'download': self.owner.web_url_for('addon_view_or_download_file', provider='box', action='download', path=metadata['path']),
                 },
-                'fullPath': full_path
             },
         )
 

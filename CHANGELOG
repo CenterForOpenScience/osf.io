@@ -2,6 +2,24 @@
 Changelog
 *********
 
+0.38.0 (2015-06-07)
+===================
+
+- API v2 pre-release
+- Modular File Renderer as a service
+- File editing user interface improvements
+- Collaborative file editing for text files
+
+0.37.0 (2015-05-25)
+===================
+
+- Move & Copy files/folders between storage providers and nested folders
+- Rename files and folders
+- Download folders as Zip
+- OSF Storage deleted files/folders are moved to a "trash bin" collection
+- Central Authentication Service (CAS & Federated Authentication)
+- Enhanced logging with direct links to files/folder objects
+
 0.36.0 (2015-05-15)
 ===================
 

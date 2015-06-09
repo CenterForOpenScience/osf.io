@@ -11,7 +11,6 @@ require('css/typeahead.css');
 require('css/fangorn.css');
 require('css/projectorganizer.css');
 
-var Handlebars = require('handlebars');
 var $ = require('jquery');
 var m = require('mithril');
 var Fangorn = require('js/fangorn');
@@ -316,63 +315,6 @@ function _poToggleCheck(item) {
 }
 
 /**
- * Returns custom icons for OSF depending on the type of item
- * @param {Object} item A Treebeard _item object. Node information is inside item.data
- * @this Treebeard.controller
- * @returns {Object}  Returns a mithril template with the m() function.
- * @private
- */
-function _poResolveIcon(item) {
-    var icons = iconmap.projectIcons;
-    var componentIcons = iconmap.componentIcons;
-    var projectIcons = iconmap.projectIcons;
-    var viewLink = item.data.urls.fetch;
-    function returnView(type, category) {
-        var iconType = icons[type];
-        if (type === 'component' || type === 'registeredComponent') {
-            iconType = componentIcons[category];
-        } else if (type === 'project' || type === 'registeredProject') {
-            iconType = projectIcons[category];
-        }
-        if (type === 'registeredComponent' || type === 'registeredProject') {
-            iconType += ' po-icon-registered';
-        } else {
-            iconType += ' po-icon';
-        }
-        var template = m('span', { 'class' : iconType});
-        return template;
-    }
-    if (item.data.isSmartFolder) {
-        return returnView('smartCollection');
-    }
-    if (item.data.isFolder) {
-        return returnView('collection');
-    }
-    if (item.data.isPointer && !item.parent().data.isFolder) {
-        return returnView('link');
-    }
-    if (item.data.isProject) {
-        if (item.data.isRegistration) {
-            return returnView('registeredProject', item.data.category);
-        } else {
-            return returnView('project', item.data.category);
-        }
-    }
-
-    if (item.data.isComponent) {
-        if (item.data.isRegistration) {
-            return returnView('registeredComponent', item.data.category);
-        }
-        return returnView('component', item.data.category);
-    }
-
-    if (item.data.isPointer) {
-        return returnView('link');
-    }
-    return returnView('collection');
-}
-
-/**
  * Returns custom folder toggle icons for OSF
  * @param {Object} item A Treebeard _item object. Node information is inside item.data
  * @this Treebeard.controller
@@ -501,13 +443,12 @@ function deleteMultiplePointersFromFolder(pointerIds, folderToDeleteFrom) {
         });
         deleteAction.done(function () {
             tb.updateFolder(null, folderToDeleteFrom);
+            tb.clearMultiselect();
         });
         deleteAction.fail(function (jqxhr, textStatus, errorThrown) {
             $osf.growl('Error:', textStatus + '. ' + errorThrown);
         });
     }
-    _dismissToolbar.call(tb);
-
 }
 
 /**
@@ -855,7 +796,7 @@ function _addFolderEvent() {
     var tb = this;
     var val = $.trim($('#addNewFolder').val());
     if (tb.multiselected().length !== 1 || val.length < 1) {
-        tb.toolbarMode('bar');
+        tb.toolbarMode(Fangorn.Components.toolbarModes.DEFAULT);
         return;
     }
     var item = tb.multiselected()[0];
@@ -874,14 +815,14 @@ function _addFolderEvent() {
         }).fail($osf.handleJSONError);
 
     });
-    tb.toolbarMode('bar');
+    tb.toolbarMode(Fangorn.Components.toolbarModes.DEFAULT);
 }
 
 function _renameEvent() {
     var tb = this;
     var val = $.trim($('#renameInput').val());
     if (tb.multiselected().length !== 1 || val.length < 1) {
-        tb.toolbarMode('bar');
+        tb.toolbarMode(Fangorn.Components.toolbarModes.DEFAULT);
         return;
     }
     var item = tb.multiselected()[0];
@@ -897,7 +838,7 @@ function _renameEvent() {
         tb.updateFolder(null, tb.find(1));
         // Also update every
     }).fail($osf.handleJSONError);
-    tb.toolbarMode('bar');
+    tb.toolbarMode(Fangorn.Components.toolbarModes.DEFAULT);
 }
 
 function applyTypeahead() {
@@ -1025,7 +966,7 @@ function addProjectEvent() {
         });
     });
     triggerClickOnItem.call(tb, item);
-    tb.toolbarMode('bar');
+    tb.toolbarMode(Fangorn.Components.toolbarModes.DEFAULT);
     tb.select('.tb-header-row .twitter-typeahead').remove();
 }
 
@@ -1093,14 +1034,14 @@ var POItemButtons = {
             buttons.push(
                 m.component(Fangorn.Components.button, {
                     onclick: function (event) {
-                        tb.toolbarMode('addFolder');
+                        tb.toolbarMode(Fangorn.Components.toolbarModes.ADDFOLDER);
                     },
                     icon: 'fa fa-cubes',
                     className: 'text-primary'
                 }, 'Add Collection'),
                 m.component(Fangorn.Components.button, {
                     onclick: function (event) {
-                        tb.toolbarMode('addProject');
+                        tb.toolbarMode(Fangorn.Components.toolbarModes.ADDPROJECT);
                     },
                     icon: 'fa fa-cube',
                     className: 'text-primary'
@@ -1139,7 +1080,7 @@ var POItemButtons = {
             buttons.push(
                 m.component(Fangorn.Components.button, {
                     onclick: function (event) {
-                        tb.toolbarMode('rename');
+                        tb.toolbarMode(Fangorn.Components.toolbarModes.RENAME);
                     },
                     icon: 'fa fa-font',
                     className: 'text-primary'
@@ -1450,7 +1391,7 @@ var tbOptions = {
         _cleanupMithril();
     },
     onmultiselect : _poMultiselect,
-    resolveIcon : _poResolveIcon,
+    resolveIcon : Fangorn.Utils.resolveIconView,
     resolveToggle : _poResolveToggle,
     resolveLazyloadUrl : _poResolveLazyLoad,
     lazyLoadOnLoad : expandStateLoad,

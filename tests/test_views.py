@@ -86,10 +86,10 @@ class TestViewingProjectWithPrivateLink(OsfTestCase):
         res = self.app.get(self.project_url, {'view_only': None})
         assert_is_redirect(res)
         res = res.follow(expect_errors=True)
-        assert_equal(res.status_code, 401)
+        assert_equal(res.status_code, 301)
         assert_equal(
             res.request.path,
-            web_url_for('auth_login')
+            '/login'
         )
 
     def test_logged_in_no_private_key(self):
@@ -288,6 +288,40 @@ class TestProjectViews(OsfTestCase):
 
         assert_equal(self.project.get_permissions(self.user1), ['read'])
         assert_equal(self.project.get_permissions(self.user2), ['read', 'write', 'admin'])
+
+    def test_manage_permissions_again(self):
+        url = self.project.api_url + 'contributors/manage/'
+        self.app.post_json(
+            url,
+            {
+                'contributors': [
+                    {'id': self.user1._id, 'permission': 'admin',
+                     'registered': True, 'visible': True},
+                    {'id': self.user2._id, 'permission': 'admin',
+                     'registered': True, 'visible': True},
+                ]
+            },
+            auth=self.auth,
+        )
+
+        self.project.reload()
+        self.app.post_json(
+            url,
+            {
+                'contributors': [
+                    {'id': self.user1._id, 'permission': 'admin',
+                     'registered': True, 'visible': True},
+                    {'id': self.user2._id, 'permission': 'read',
+                     'registered': True, 'visible': True},
+                ]
+            },
+            auth=self.auth,
+        )
+
+        self.project.reload()
+
+        assert_equal(self.project.get_permissions(self.user2), ['read'])
+        assert_equal(self.project.get_permissions(self.user1), ['read', 'write', 'admin'])
 
     def test_contributor_manage_reorder(self):
 
@@ -1818,7 +1852,7 @@ class TestClaimViews(OsfTestCase):
         url = '/user/{uid}/{pid}/claim/?token=badtoken'.format(**locals())
         res = self.app.get(url, expect_errors=True).maybe_follow()
         assert_equal(res.status_code, 200)
-        assert_equal(res.request.path, '/account/')
+        assert_equal(res.request.path, web_url_for('auth_login'))
 
     def test_posting_to_claim_form_with_valid_data(self):
         url = self.user.get_claim_url(self.project._primary_key)
@@ -2424,7 +2458,7 @@ class TestPublicViews(OsfTestCase):
         assert_equal(res.status_code, 200)
 
     def test_forgot_password_get(self):
-        res = self.app.get(web_url_for('_forgot_password'))
+        res = self.app.get(web_url_for('forgot_password_get'))
         assert_equal(res.status_code, 200)
         assert_in('Forgot Password', res.body)
 
@@ -2485,6 +2519,43 @@ class TestAuthViews(OsfTestCase):
         )
         user = User.find_one(Q('username', 'eq', email))
         assert_equal(user.fullname, name)
+
+    # Regression test for https://github.com/CenterForOpenScience/osf.io/issues/2902
+    def test_register_email_case_insensitive(self):
+        url = api_url_for('register_user')
+        name, email, password = fake.name(), fake.email(), 'underpressure'
+        self.app.post_json(
+            url,
+            {
+                'fullName': name,
+                'email1': email,
+                'email2': str(email).upper(),
+                'password': password,
+            }
+        )
+        user = User.find_one(Q('username', 'eq', email))
+        assert_equal(user.fullname, name)
+
+    def test_register_scrubs_username(self):
+        """Usernames are scrubbed of malicious HTML when registering"""
+        url = api_url_for('register_user')
+        name = "<i>Eunice</i> O' \"Cornwallis\"<script type='text/javascript' src='http://www.cornify.com/js/cornify.js'></script><script type='text/javascript'>cornify_add()</script>"
+        email, password = fake.email(), 'underpressure'
+        res = self.app.post_json(
+            url,
+            {
+                'fullName': name,
+                'email1': email,
+                'email2': email,
+                'password': password,
+            }
+        )
+
+        expected_scrub_username = "Eunice O' \"Cornwallis\"cornify_add()"
+        user = User.find_one(Q('username', 'eq', email))
+
+        assert_equal(res.status_code, http.OK)
+        assert_equal(user.fullname, expected_scrub_username)
 
     def test_register_email_mismatch(self):
         url = api_url_for('register_user')
@@ -2965,7 +3036,6 @@ class TestComments(OsfTestCase):
         assert_equal(len(self.project.commented), 1)
         assert_equal(res_comment, serialized_comment)
 
-
     def test_add_comment_private_non_contributor(self):
 
         self._configure_project(self.project, 'private')
@@ -2976,12 +3046,11 @@ class TestComments(OsfTestCase):
         assert_equal(res.status_code, http.FORBIDDEN)
 
     def test_add_comment_logged_out(self):
-
         self._configure_project(self.project, 'public')
         res = self._add_comment(self.project)
 
         assert_equal(res.status_code, 302)
-        assert_in('next=', res.headers.get('location'))
+        assert_in('login', res.headers.get('location'))
 
     def test_add_comment_off(self):
 
@@ -3936,8 +4005,8 @@ class TestProjectCreation(OsfTestCase):
         res = self.app.post(url, auth=None)
         assert_equal(res.status_code, 302)
         res2 = res.follow(expect_errors=True)
-        assert_equal(res2.status_code, 401)
-        assert_in("Sign In", res2.body)
+        assert_equal(res2.status_code, 301)
+        assert_equal(res2.request.path, '/login')
 
     def test_project_new_from_template_public_non_contributor(self):
         non_contributor = AuthUserFactory()

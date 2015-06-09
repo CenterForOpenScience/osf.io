@@ -24,6 +24,35 @@ describe('osfHelpers', () => {
         });
     });
 
+
+    describe('apiV2Url', () => {
+        it('returns correctly formatted URLs for described inputs', () => {
+            var fullUrl = $osf.apiV2Url('/nodes/abcd3/contributors/',
+                                         undefined,
+                                         'http://localhost:8000/v2/');
+            assert.equal(fullUrl, "http://localhost:8000/v2/nodes/abcd3/contributors/");
+
+            // No double slashes when apiPrefix and pathString have adjoining slashes
+            fullUrl = $osf.apiV2Url('nodes/abcd3/contributors/', undefined, 'http://localhost:8000/v2/');
+            assert.equal(fullUrl, "http://localhost:8000/v2/nodes/abcd3/contributors/");
+
+            // User is still responsible for the trailing slash. If they omit it, it doesn't appear at end of URL
+            fullUrl = $osf.apiV2Url('/nodes/abcd3/contributors', undefined, 'http://localhost:8000/v2/');
+            assert.notEqual(fullUrl, "http://localhost:8000/v2/nodes/abcd3/contributors/");
+
+            // Correctly handles- and encodes- URLs with parameters
+            fullUrl = $osf.apiV2Url('/nodes/abcd3/contributors/',
+                                  {'filter[fullname]': 'bob', 'page_size':10},
+                                  'https://staging2.osf.io/api/v2/');
+            assert.equal(fullUrl, "https://staging2.osf.io/api/v2/nodes/abcd3/contributors/?filter%5Bfullname%5D=bob&page_size=10");
+
+            // Given a blank string, should return the base path (domain + port + prefix) with no extra cruft at end
+            fullUrl = $osf.apiV2Url('', undefined, 'http://localhost:8000/v2/');
+            assert.equal(fullUrl, "http://localhost:8000/v2/");
+        });
+    });
+
+
     describe('handleJSONError', () => {
 
         var growlStub;
@@ -188,6 +217,14 @@ describe('osfHelpers', () => {
             assert.equal($osf.htmlEscape('safe'), 'safe');
             assert.equal($osf.htmlEscape('<b>'), '&lt;b&gt;');
             assert.equal($osf.htmlEscape('<script>alert("lol")</script>'), '&lt;script&gt;alert("lol")&lt;/script&gt;');
+        });
+    });
+
+    describe('htmlDecode', () => {
+        it('should decode html entities', () => {
+            assert.equal($osf.htmlDecode('safe'), 'safe');
+            assert.equal($osf.htmlDecode('b&gt;a&amp;'), 'b>a&');
+            assert.equal($osf.htmlDecode('&lt;script&gt;alert("lol")&lt;/script&gt;'), '<script>alert("lol")</script>');
         });
     });
 
