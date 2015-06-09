@@ -2525,6 +2525,31 @@ class TestProject(OsfTestCase):
             contrib.unclaimed_records.keys()
         )
 
+    def test_permission_update_on_readded_contributor(self):
+        # A user is added as a contributor
+        user1 = UserFactory()
+        user2 = UserFactory()
+        self.project.add_contributor(contributor=user2, auth=self.consolidate_auth)
+        self.project.save()
+        # The user is removed
+        self.project.remove_contributor(
+            auth=self.consolidate_auth,
+            contributor=user2
+        )
+
+        self.project.reload()
+
+        self.project.add_contributors(
+            [
+                {'user': user1, 'permissions': ['read', 'write', 'admin'], 'visible': True},
+                {'user': user2, 'permissions': ['read', 'write', 'admin'], 'visible': False}
+            ],
+            auth=self.consolidate_auth
+        )
+        self.project.save()
+
+        assert(self.project.has_permission(user2, 'admin'))
+
 
 class TestTemplateNode(OsfTestCase):
 
