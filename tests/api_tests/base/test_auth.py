@@ -27,19 +27,8 @@ class TestOAuthValidation(ApiTestCase):
         self.reachable_url = "/{}nodes/{}/".format(API_BASE, self.reachable_project._id)
         self.unreachable_url = "/{}nodes/{}/".format(API_BASE, self.unreachable_project._id)
 
-    def _make_request(self, url, access_token=None):
-        """Helper function to make a request with auth headers"""
-        if access_token:
-            headers = {'Authorization': 'Bearer {}'.format(access_token)}
-        else:
-            headers = None
-
-        res = self.app.get(url, expect_errors=True, headers=headers)
-        return res
-
     def test_missing_token_fails(self):
-        res = self._make_request(self.reachable_url, access_token=None)
-
+        res = self.app.get(self.reachable_url, auth=None, auth_type='jwt', expect_errors=True)
         assert_equal(res.status_code, 403)
         assert_equal(res.json.get("detail"),
                      'Authentication credentials were not provided.')
@@ -48,29 +37,27 @@ class TestOAuthValidation(ApiTestCase):
     def test_invalid_token_fails(self, mock_user_info):
         mock_user_info.return_value = cas.CasResponse(authenticated=False, user=None)
 
-        res = self._make_request(self.reachable_url, access_token="invalid_token")
-
+        res = self.app.get(self.reachable_url, auth='invalid_token', auth_type='jwt', expect_errors=True)
         assert_equal(res.status_code, 403, msg=res.json)
 
     @mock.patch('framework.auth.cas.CasClient.profile')
     def test_valid_token_returns_unknown_user_thus_fails(self, mock_user_info):
         mock_user_info.return_value = cas.CasResponse(authenticated=True, user='fail')
 
-        res = self._make_request(self.reachable_url, access_token="some_valid_token")
-
+        res = self.app.get(self.reachable_url, auth='some_valid_token', auth_type='jwt', expect_errors=True)
         assert_equal(res.status_code, 403, msg=res.json)
 
     @mock.patch('framework.auth.cas.CasClient.profile')
     def test_valid_token_authenticates_and_has_permissions(self, mock_user_info):
         mock_user_info.return_value = cas.CasResponse(authenticated=True, user=self.user1._id)
 
-        res = self._make_request(self.reachable_url, access_token="some_valid_token")
-
+        res = self.app.get(self.reachable_url, auth='some_valid_token', auth_type='jwt')
         assert_equal(res.status_code, 200, msg=res.json)
 
     @mock.patch('framework.auth.cas.CasClient.profile')
     def test_valid_token_authenticates_but_user_lacks_permissions(self, mock_user_info):
         mock_user_info.return_value = cas.CasResponse(authenticated=True, user=self.user1._id)
 
-        res = self._make_request(self.unreachable_url, access_token="some_valid_token")
+        res = self.app.get(self.unreachable_url, auth='some_valid_token', auth_type='jwt', expect_errors=True)
         assert_equal(res.status_code, 403, msg=res.json)
+
