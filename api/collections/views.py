@@ -25,7 +25,7 @@ class CollectionMixin(object):
         return obj
 
 
-class CollectionList(generics.ListCreateAPIView, ListFilterMixin):
+class CollectionList(generics.ListCreateAPIView, ListFilterMixin, ODMFilterMixin):
     """Projects and components.
 
     By default, a GET will return a list of public nodes, sorted by date_modified. You can filter Collection by their
@@ -53,7 +53,7 @@ class CollectionList(generics.ListCreateAPIView, ListFilterMixin):
 
     # overrides ListCreateAPIView
     def get_queryset(self):
-        query = self.get_default_odm_query()
+        query = self.get_query_from_request()
         nodes = Node.find(query)
 
         for node in nodes:

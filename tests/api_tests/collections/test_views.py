@@ -73,7 +73,7 @@ class TestCollectionFiltering(ApiTestCase):
         self.user_two.save()
         self.basic_auth_two = (self.user_two.username, 'justapoorboy')
         self.project_one = ProjectFactory(title="Project One", is_public=True, is_folder=True)
-        self.project_two = ProjectFactory(title="Project Two", description="One Three", is_folder=True, is_public=True)
+        self.project_two = ProjectFactory(title="Project Two", is_folder=True, is_public=True)
         self.project_three = ProjectFactory(title="Three", is_public=True, is_folder=True)
         self.private_project_user_one = ProjectFactory(title="Private Project User One", is_public=False,
                                                        is_folder=True, creator=self.user_one)
@@ -81,6 +81,8 @@ class TestCollectionFiltering(ApiTestCase):
                                                        is_folder=True, creator=self.user_two)
         self.folder = FolderFactory()
         self.dashboard = DashboardFactory()
+
+        self.url = "/v2/collections/"
 
     def tearDown(self):
         ApiTestCase.tearDown(self)
@@ -201,36 +203,6 @@ class TestCollectionFiltering(ApiTestCase):
         assert_not_in(self.folder._id, ids)
         assert_not_in(self.dashboard._id, ids)
 
-    def test_alternate_filtering_field_logged_in(self):
-        url = "/v2/collections/?filter[description]=Three"
-
-        res = self.app.get(url, auth=self.basic_auth_one)
-        node_json = res.json['data']
-
-        ids = [each['id'] for each in node_json]
-        assert_not_in(self.project_one._id, ids)
-        assert_in(self.project_two._id, ids)
-        assert_not_in(self.project_three._id, ids)
-        assert_not_in(self.private_project_user_one._id, ids)
-        assert_not_in(self.private_project_user_two._id, ids)
-        assert_not_in(self.folder._id, ids)
-        assert_not_in(self.dashboard._id, ids)
-
-    def test_alternate_filtering_field_not_logged_in(self):
-        url = "/v2/collections/?filter[description]=Three"
-
-        res = self.app.get(url)
-        node_json = res.json['data']
-
-        ids = [each['id'] for each in node_json]
-        assert_not_in(self.project_one._id, ids)
-        assert_in(self.project_two._id, ids)
-        assert_not_in(self.project_three._id, ids)
-        assert_not_in(self.private_project_user_one._id, ids)
-        assert_not_in(self.private_project_user_two._id, ids)
-        assert_not_in(self.folder._id, ids)
-        assert_not_in(self.dashboard._id, ids)
-
     def test_incorrect_filtering_field_logged_in(self):
         # TODO Change to check for error when the functionality changes. Currently acts as though it doesn't exist
         url = "/v2/collections/?filter[notafield]=bogus"
@@ -276,7 +248,6 @@ class TestCollectionCreate(ApiTestCase):
         self.url = '/v2/collections/'
 
         self.title = 'Cool Project'
-        self.description = 'A Properly Cool Project'
         self.category = 'data'
 
         self.user_two = UserFactory.build()
