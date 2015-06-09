@@ -4,6 +4,7 @@ var $ = require('jquery');
 require('jquery-blockui');
 var Raven = require('raven-js');
 var moment = require('moment');
+var URI = require('URIjs');
 
 // TODO: For some reason, this require is necessary for custom ko validators to work
 // Why?!
@@ -37,18 +38,12 @@ var growl = function(title, message, type) {
 var apiV2Url = function (pathString, paramsObject, apiPrefix){
     apiPrefix = apiPrefix || window.contextVars.apiV2Prefix;
 
-    // Don't output double slashes when concatenating two strings with adjoining slashes
-    if (apiPrefix && pathString && apiPrefix.charAt(apiPrefix.length - 1) === "/" && pathString.charAt(0) === "/"){
-        pathString = pathString.substring(1); // Strip off the redundant leading slash
-    }
+    var apiUrl = URI(apiPrefix);
+    var pathSegments = URI(pathString).segment();
+    pathSegments.forEach(function(el){apiUrl.segment(el)});  // Hack to prevent double slashes when joining base + path
+    apiUrl.query(paramsObject);
 
-    var apiUrl = apiPrefix + pathString;
-    // Add parameters to URL (if any). Ensure encoding as necessary
-    if (paramsObject){
-        apiUrl += "?";
-        apiUrl += $.param(paramsObject);
-    }
-    return apiUrl;
+    return apiUrl.toString();
 };
 
 
