@@ -37,7 +37,7 @@ var MESSAGES = {
                         'but will have no impact on external sites, including Google\'s cache. ' +
                         'Would you like to continue?',
     // TODO(hrybacki): Remove once Retraction/Embargoes goes is merged into production
-    makeRegistrationPublicWarning: '<b>Important Note:</b> Effective <u>June 8, 2015</u>, new registrations ' +
+    makeRegistrationPublicWarning: '<b>Important Note:</b> As early as <u>June 8, 2015</u>, new registrations ' +
                         'will be made public immediately or can be embargoed for up to one year. There ' +
                         'will no longer be the option of creating a permanently private registration. This ' +
                         'registration occurred before June 8, 2015, so you do retain the option of keeping it ' +
