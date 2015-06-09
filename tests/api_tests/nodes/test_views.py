@@ -10,6 +10,9 @@ from tests.base import ApiTestCase, fake
 from tests.factories import UserFactory, ProjectFactory, FolderFactory, RegistrationFactory, DashboardFactory, NodeFactory
 from urlparse import urlparse
 from website.project.model import ensure_schemas
+from django.utils import translation
+from django.utils.translation import ugettext_lazy as _
+
 
 class TestWelcomeToApi(ApiTestCase):
     def setUp(self):
@@ -781,19 +784,28 @@ class TestNodeCreateOpenEndedRegistration(ApiTestCase):
         self.payload = {"summary": self.summary}
 
         self.public_project = ProjectFactory(is_public=True, creator=self.user)
-        self.public_url = '/v2/nodes/{}/register/Open-Ended_Registration/'.format(self.public_project._id)
+        self.public_url = "/v2/nodes/{}/register/Open-Ended_Registration/".format(self.public_project._id)
 
         self.private_project = ProjectFactory(is_public=False, creator=self.user)
-        self.private_url = '/v2/nodes/{}/register/Open-Ended_Registration/'.format(self.private_project._id)
+        self.private_url = "/v2/nodes/{}/register/Open-Ended_Registration/".format(self.private_project._id)
+
+    def test_translation_create_registration(self):
+        with translation.override('fr'):
+            print(_("hello"))
+            res = self.app.post(self.public_url, self.payload, auth=self.basic_auth, expect_errors=True)
+            full_url = res.json["non_field_errors"][0]
+            print res
+            assert_equal(full_url, 1)
+
 
     def test_invalid_token_open_ended_registration(self):
         res = self.app.post(self.private_url, self.payload, auth=self.basic_auth, expect_errors=True)
         assert_equal(res.status_code, 400)
-        full_url = self.private_url + '12345/'
+        full_url = self.private_url + "12345/"
 
         res = self.app.post(full_url, self.payload, auth=self.basic_auth, expect_errors = True)
         assert_equal(res.status_code, 400)
-        assert_equal(res.json['non_field_errors'][0], 'Incorrect token.')
+        assert_equal(res.json["non_field_errors"][0], "Incorrect token.")
 
     def test_create_open_ended_public_registration_logged_out(self):
         res = self.app.post(self.public_url, self.payload, expect_errors=True)
@@ -804,13 +816,13 @@ class TestNodeCreateOpenEndedRegistration(ApiTestCase):
 
     def test_create_open_ended_public_registration_logged_in(self):
         res = self.app.post(self.public_url, self.payload, auth=self.basic_auth, expect_errors=True)
-        full_url = res.json['non_field_errors'][1]
+        full_url = res.json["non_field_errors"][1]
         path = urlparse(full_url).path
         assert_equal(res.status_code, 400)
 
         res = self.app.post(path, self.payload, auth=self.basic_auth, expect_errors = True)
         assert_equal(res.status_code, 201)
-        assert_equal(res.json['data']['title'], self.public_project.title)
+        assert_equal(res.json["data"]["title"], self.public_project.title)
 
     def test_create_open_ended_private_registration_logged_out(self):
         res = self.app.post(self.private_url, self.payload, expect_errors=True)
@@ -821,14 +833,14 @@ class TestNodeCreateOpenEndedRegistration(ApiTestCase):
 
     def test_create_open_ended_private_registration_logged_in_contributor(self):
         res = self.app.post(self.private_url, self.payload, auth=self.basic_auth, expect_errors=True)
-        full_url = res.json['non_field_errors'][1]
+        full_url = res.json["non_field_errors"][1]
         path = urlparse(full_url).path
         assert_equal(res.status_code, 400)
 
         res = self.app.post(path, self.payload, auth=self.basic_auth, expect_errors = True)
         print res
         assert_equal(res.status_code, 201)
-        assert_equal(res.json['data']['title'], self.private_project.title)
+        assert_equal(res.json["data"]["title"], self.private_project.title)
 
     def test_create_open_ended_private_registration_logged_in_non_contributor(self):
         res = self.app.post(self.private_url, self.payload, auth=self.basic_auth_two, expect_errors=True)
