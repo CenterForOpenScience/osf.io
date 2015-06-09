@@ -142,6 +142,9 @@ STATICFILES_DIRS = (
 
 SWAGGER_SETTINGS = {
     'api_path': API_PATH,
+    'exclude_namespaces': [
+        'users.internal_apis',
+        'internal_apis'],  # TODO: Revisit url exclusion; it does not seem to work at present
     'info': {
         'description':
         """
