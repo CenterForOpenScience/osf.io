@@ -12,6 +12,8 @@ import json
 from api.base.utils import absolute_reverse
 from api.base.utils import token_creator
 from website.language import REGISTER_WARNING
+from django.utils.translation import ugettext_lazy as _
+
 
 class NodeSerializer(JSONAPISerializer):
     # TODO: If we have to redo this implementation in any of the other serializers, subclass ChoiceField and make it
@@ -146,7 +148,7 @@ class RegistrationOpenEndedSerializer(JSONAPISerializer):
         node = self.context['view'].get_node()
         token = token_creator(node._id, user._id, data)
         url = absolute_reverse('nodes:node-registration-open-ended-token', kwargs={'pk': node._id, 'token': token})
-        registration_warning = REGISTER_WARNING.format(node.title)
+        registration_warning = REGISTER_WARNING.format(_(node.title))
 
         raise serializers.ValidationError([registration_warning, url])
 
@@ -209,7 +211,7 @@ class RegistrationPreDataCollectionSerializer(JSONAPISerializer):
         node = self.context['view'].get_node()
         token = token_creator(node._id, user._id, data)
         url = absolute_reverse('nodes:node-registration-pre-data-collection-token', kwargs={'pk': node._id, 'token': token})
-        registration_warning = REGISTER_WARNING.format(node.title)
+        registration_warning = REGISTER_WARNING.format(_(node.title))
         raise serializers.ValidationError([registration_warning, url])
 
     class Meta:
@@ -301,7 +303,7 @@ class ReplicationRecipePreRegistrationSerializer(JSONAPISerializer):
         node = self.context['view'].get_node()
         token = token_creator(node._id, user._id, data)
         url = absolute_reverse('nodes:node-registration-pre-registration-token', kwargs={'pk': node._id, 'token': token})
-        registration_warning = REGISTER_WARNING.format(node.title)
+        registration_warning = REGISTER_WARNING.format(_(node.title))
         raise serializers.ValidationError([registration_warning, url])
 
     class Meta:
@@ -400,7 +402,7 @@ class ReplicationRecipePostCompletionSerializer(JSONAPISerializer):
         node = self.context['view'].get_node()
         token = token_creator(node._id, user._id, data)
         url = absolute_reverse('nodes:node-registration-post-completion-token', kwargs={'pk': node._id, 'token': token})
-        registration_warning = REGISTER_WARNING.format(node.title)
+        registration_warning = REGISTER_WARNING.format(_(node.title))
         raise serializers.ValidationError([registration_warning, url])
 
     class Meta:
