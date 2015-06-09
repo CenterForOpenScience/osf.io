@@ -219,7 +219,7 @@ var UserProfileViewModel = oop.extend(ChangeMessageMixin, {
             callback: function (confirmed) {
                 if (confirmed) {
                     self.client.update(self.profile(), email).done(function () {
-                        $osf.growl('Email confirmation resends to ', '<em>' + email.address() + '<em>', 'success');
+                        $osf.growl('Email confirmation resent to ', '<em>' + email.address() + '<em>', 'success');
                     });
                 }
             }
