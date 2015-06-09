@@ -21,10 +21,11 @@ var FileViewPage = {
     controller: function(context) {
         var self = this;
         self.context = context;
-        self.canEdit = m.prop(false);
         self.file = self.context.file;
         self.node = self.context.node;
         self.editorMeta = self.context.editor;
+        //Force canEdit into a bool
+        self.canEdit = m.prop(!!self.context.currentUser.canEdit);
 
         $.extend(self.file.urls, {
             delete: waterbutler.buildDeleteUrl(self.file.path, self.file.provider, self.node.id),
@@ -114,7 +115,7 @@ var FileViewPage = {
         // until we know this is the current file revsion
         self.enableEditing = function() {
             // Sometimes we can get here twice, check just in case
-            if (self.editor || !self.context.currentUser.canEdit) {
+            if (self.editor || !self.canEdit()) {
                 m.redraw(true);
                 return;
             }
@@ -131,7 +132,7 @@ var FileViewPage = {
 
         //Hack to polyfill the Panel interface
         //Ran into problems with mithrils caching messing up with multiple "Panels"
-        self.revisions = m.component(FileRevisionsTable, self.file, self.node, self.enableEditing);
+        self.revisions = m.component(FileRevisionsTable, self.file, self.node, self.enableEditing, self.canEdit);
         self.revisions.selected = true;
         self.revisions.title = 'Revisions';
 
@@ -160,19 +161,25 @@ var FileViewPage = {
             $('#mfrIframeParent').removeClass().addClass('col-sm-5');
             $('.file-view-panels').removeClass().addClass('file-view-panels').addClass('col-sm-7');
         } else if (shown === 1) {
-            $('#mfrIframeParent').removeClass().addClass('col-sm-6');
-            $('.file-view-panels').removeClass().addClass('file-view-panels').addClass('col-sm-6');
+            // if only revisions shown display 8/4 layout.
+            if (ctrl.revisions.selected) {
+                $('#mfrIframeParent').removeClass().addClass('col-sm-8');
+                $('.file-view-panels').removeClass().addClass('file-view-panels').addClass('col-sm-4');
+            } else {
+                $('#mfrIframeParent').removeClass().addClass('col-sm-6');
+                $('.file-view-panels').removeClass().addClass('file-view-panels').addClass('col-sm-6');
+            }
         } else {
             $('#mfrIframeParent').removeClass().addClass('col-sm-12');
             $('.file-view-panels').removeClass().addClass('file-view-panels');
         }
 
         m.render(document.getElementById('toggleBar'), m('.btn-toolbar[style=margin-top:20px]', [
-            m('.btn-group', {style: 'margin-left: 0;'}, [
-                m('.btn.btn-sm.btn-danger', {onclick: $(document).trigger.bind($(document), 'fileviewpage:delete')}, 'Delete')
-            ]),
+            ctrl.canEdit() ? m('.btn-group', {style: 'margin-left: 0;'}, [
+                m('.btn.btn-sm.btn-danger.file-delete', {onclick: $(document).trigger.bind($(document), 'fileviewpage:delete')}, 'Delete')
+            ]) : '',
             m('.btn-group', [
-                m('.btn.btn-sm.btn-success', {onclick: $(document).trigger.bind($(document), 'fileviewpage:download')}, 'Download')
+                m('.btn.btn-sm.btn-success.file-download', {onclick: $(document).trigger.bind($(document), 'fileviewpage:download')}, 'Download')
             ]),
             m('.btn-group.btn-group-sm', [
                 m('.btn.btn-default.disabled', 'Toggle View: ')

@@ -8,8 +8,8 @@ import furl
 
 from flask import request, url_for
 
-from website import settings as osf_settings
-from api.base import settings as drf_settings
+from website import settings as website_settings
+from api.base import settings as api_settings
 
 # Keep me: Makes rubeus importable from website.util
 from . import rubeus  # noqa
@@ -51,15 +51,15 @@ def api_url_for(view_name, _absolute=False, _offload=False, _xml=False, *args, *
     if _absolute:
         # We do NOT use the url_for's _external kwarg because app.config['SERVER_NAME'] alters
         # behavior in an unknown way (currently breaks tests). /sloria /jspies
-        domain = osf_settings.OFFLOAD_DOMAIN if _offload else osf_settings.DOMAIN
+        domain = website_settings.OFFLOAD_DOMAIN if _offload else website_settings.DOMAIN
         return urlparse.urljoin(domain, url)
     return url
 
 
 def api_v2_url(path_str,
                params=None,
-               base_route=osf_settings.API_DOMAIN,
-               base_prefix=drf_settings.API_PREFIX,
+               base_route=website_settings.API_DOMAIN,
+               base_prefix=api_settings.API_PREFIX,
                **kwargs):
     """
     Convenience function for APIv2 usage: Concatenates parts of the absolute API url based on arguments provided
@@ -95,7 +95,7 @@ def web_url_for(view_name, _absolute=False, _offload=False, _guid=False, *args, 
     if _absolute:
         # We do NOT use the url_for's _external kwarg because app.config['SERVER_NAME'] alters
         # behavior in an unknown way (currently breaks tests). /sloria /jspies
-        domain = osf_settings.OFFLOAD_DOMAIN if _offload else osf_settings.DOMAIN
+        domain = website_settings.OFFLOAD_DOMAIN if _offload else website_settings.DOMAIN
         return urlparse.urljoin(domain, url)
     return url
 
@@ -115,7 +115,7 @@ def waterbutler_url_for(route, provider, path, node, user=None, **query):
     :param User user: The user whos cookie will be used or None
     :param dict **query: Addition query parameters to be appended
     """
-    url = furl.furl(osf_settings.WATERBUTLER_URL)
+    url = furl.furl(website_settings.WATERBUTLER_URL)
     url.path.segments.append(waterbutler_action_map[route])
 
     url.args.update({
@@ -126,8 +126,8 @@ def waterbutler_url_for(route, provider, path, node, user=None, **query):
 
     if user:
         url.args['cookie'] = user.get_or_create_cookie()
-    elif osf_settings.COOKIE_NAME in request.cookies:
-        url.args['cookie'] = request.cookies[osf_settings.COOKIE_NAME]
+    elif website_settings.COOKIE_NAME in request.cookies:
+        url.args['cookie'] = request.cookies[website_settings.COOKIE_NAME]
 
     if 'view_only' in request.args:
         url.args['view_only'] = request.args['view_only']

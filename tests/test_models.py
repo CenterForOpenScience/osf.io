@@ -1534,6 +1534,12 @@ class TestNode(OsfTestCase):
         with assert_raises(ValueError):
             self.node.fork_pointer(pointer, auth=self.consolidate_auth)
 
+    def test_cannot_fork_deleted_node(self):
+        self.node.is_deleted = True
+        self.node.save()
+        fork = self.parent.fork_node(auth=self.consolidate_auth)
+        assert_false(fork.nodes)
+
     def _fork_pointer(self, content):
         pointer = self.node.add_pointer(content, auth=self.consolidate_auth)
         forked = self.node.fork_pointer(pointer, auth=self.consolidate_auth)
