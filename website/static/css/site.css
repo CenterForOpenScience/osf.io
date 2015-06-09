@@ -1972,7 +1972,11 @@ span#profileFullname{
 
 .absolute-bottom {
     position: absolute;
-    bottom: 0px;
+    bottom: 0;
+    padding-left: 3.5em;
+    padding-right: 2.4em;
+    text-align: center;
+
 }
 
 /* Project Dashboard */
