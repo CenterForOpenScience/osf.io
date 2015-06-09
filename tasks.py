@@ -44,7 +44,8 @@ else:
 def server(host=None, port=5000, debug=True, live=False):
     """Run the app server."""
     from website.app import init_app
-    app = init_app(set_backends=True, routes=True, mfr=True)
+    app = init_app(set_backends=True, routes=True)
+    settings.API_SERVER_PORT = port
 
     if live:
         from livereload import Server
@@ -392,9 +393,12 @@ def test_addons():
 
 
 @task
-def test(all=False):
+def test(all=False, syntax=False):
     """Alias of `invoke test_osf`.
     """
+    if syntax:
+        flake()
+
     if all:
         test_all()
     else:
@@ -402,8 +406,8 @@ def test(all=False):
 
 
 @task
-def test_all(flake=False):
-    if flake:
+def test_all(syntax=False):
+    if syntax:
         flake()
     test_osf()
     test_addons()
@@ -564,6 +568,7 @@ def npm_bower():
 def bower_install():
     print('Installing bower-managed packages')
     bower_bin = os.path.join(HERE, 'node_modules', 'bower', 'bin', 'bower')
+    run('{} prune'.format(bower_bin), echo=True)
     run('{} install'.format(bower_bin), echo=True)
 
 
@@ -574,6 +579,10 @@ def setup():
     packages()
     requirements(addons=True, dev=True)
     encryption()
+    from website.app import build_js_config_files
+    from website import settings
+    # Build nodeCategories.json before building assets
+    build_js_config_files(settings)
     assets(dev=True, watch=False)
 
 
@@ -599,15 +608,9 @@ def analytics():
 @task
 def clear_sessions(months=1, dry_run=False):
     from website.app import init_app
-    init_app(routes=False, set_backends=True, mfr=False)
+    init_app(routes=False, set_backends=True)
     from scripts import clear_sessions
     clear_sessions.clear_sessions_relative(months=months, dry_run=dry_run)
-
-
-@task
-def clear_mfr_cache():
-    run('rm -rf {0}/*'.format(settings.MFR_TEMP_PATH), echo=True)
-    run('rm -rf {0}/*'.format(settings.MFR_CACHE_PATH), echo=True)
 
 
 # Release tasks
@@ -641,7 +644,7 @@ def hotfix(name, finish=False, push=False):
 def feature(name, finish=False, push=False):
     """Rename the current branch to a feature branch and optionally finish it."""
     print('Renaming branch...')
-    run('git br -m feature/{}'.format(name), echo=True)
+    run('git branch -m feature/{}'.format(name), echo=True)
     if finish:
         run('git flow feature finish {}'.format(name), echo=True)
     if push:
@@ -749,9 +752,7 @@ def clean_assets():
     """Remove built JS files."""
     public_path = os.path.join(HERE, 'website', 'static', 'public')
     js_path = os.path.join(public_path, 'js')
-    mfr_path = os.path.join(public_path, 'mfr')
     run('rm -rf {0}'.format(js_path), echo=True)
-    run('rm -rf {0}'.format(mfr_path), echo=True)
 
 
 @task(aliases=['pack'])

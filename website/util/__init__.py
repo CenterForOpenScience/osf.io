@@ -7,9 +7,9 @@ import urlparse
 import furl
 
 from flask import request, url_for
-from django.core.urlresolvers import reverse
 
-from website import settings
+from website import settings as website_settings
+from api.base import settings as api_settings
 
 # Keep me: Makes rubeus importable from website.util
 from . import rubeus  # noqa
@@ -38,10 +38,6 @@ def _get_guid_url_for(url):
     guid_url = guid_url_profile_pattern.sub('', guid_url, count=1)
     return guid_url
 
-def api_v2_url_for(*args, **kwargs):
-    return reverse(prefix='/api/v2/', *args, **kwargs)
-
-
 def api_url_for(view_name, _absolute=False, _offload=False, _xml=False, *args, **kwargs):
     """Reverse URL lookup for API routes (that use the JSONRenderer or XMLRenderer).
     Takes the same arguments as Flask's url_for, with the addition of
@@ -55,9 +51,35 @@ def api_url_for(view_name, _absolute=False, _offload=False, _xml=False, *args, *
     if _absolute:
         # We do NOT use the url_for's _external kwarg because app.config['SERVER_NAME'] alters
         # behavior in an unknown way (currently breaks tests). /sloria /jspies
-        domain = settings.OFFLOAD_DOMAIN if _offload else settings.DOMAIN
+        domain = website_settings.OFFLOAD_DOMAIN if _offload else website_settings.DOMAIN
         return urlparse.urljoin(domain, url)
     return url
+
+
+def api_v2_url(path_str,
+               params=None,
+               base_route=website_settings.API_DOMAIN,
+               base_prefix=api_settings.API_PREFIX,
+               **kwargs):
+    """
+    Convenience function for APIv2 usage: Concatenates parts of the absolute API url based on arguments provided
+
+    For example: given path_str = '/nodes/abcd3/contributors/' and params {'filter[fullname]': 'bob'},
+        this function would return the following on the local staging environment:
+        'http://localhost:8000/nodes/abcd3/contributors/?filter%5Bfullname%5D=bob'
+
+    This is NOT a full lookup function. It does not verify that a route actually exists to match the path_str given.
+    """
+    params = params or {}  # Optional params dict for special-character param names, eg filter[fullname]
+
+    base_url = furl.furl(base_route + base_prefix)
+    sub_url = furl.furl(path_str)
+
+    base_url.path.add(sub_url.path.segments)
+
+    base_url.args.update(params)
+    base_url.args.update(kwargs)
+    return str(base_url)
 
 
 def web_url_for(view_name, _absolute=False, _offload=False, _guid=False, *args, **kwargs):
@@ -73,7 +95,7 @@ def web_url_for(view_name, _absolute=False, _offload=False, _guid=False, *args, 
     if _absolute:
         # We do NOT use the url_for's _external kwarg because app.config['SERVER_NAME'] alters
         # behavior in an unknown way (currently breaks tests). /sloria /jspies
-        domain = settings.OFFLOAD_DOMAIN if _offload else settings.DOMAIN
+        domain = website_settings.OFFLOAD_DOMAIN if _offload else website_settings.DOMAIN
         return urlparse.urljoin(domain, url)
     return url
 
@@ -93,7 +115,7 @@ def waterbutler_url_for(route, provider, path, node, user=None, **query):
     :param User user: The user whos cookie will be used or None
     :param dict **query: Addition query parameters to be appended
     """
-    url = furl.furl(settings.WATERBUTLER_URL)
+    url = furl.furl(website_settings.WATERBUTLER_URL)
     url.path.segments.append(waterbutler_action_map[route])
 
     url.args.update({
@@ -104,8 +126,8 @@ def waterbutler_url_for(route, provider, path, node, user=None, **query):
 
     if user:
         url.args['cookie'] = user.get_or_create_cookie()
-    elif settings.COOKIE_NAME in request.cookies:
-        url.args['cookie'] = request.cookies[settings.COOKIE_NAME]
+    elif website_settings.COOKIE_NAME in request.cookies:
+        url.args['cookie'] = request.cookies[website_settings.COOKIE_NAME]
 
     if 'view_only' in request.args:
         url.args['view_only'] = request.args['view_only']

@@ -12,6 +12,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="description" content="${self.description()}">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="fragment" content="!">
 
     % if sentry_dsn_js:
     <script src="/static/vendor/bower_components/raven-js/dist/raven.min.js"></script>
@@ -148,7 +149,11 @@
             // Mako variables accessible globally
             window.contextVars = $.extend(true, {}, window.contextVars, {
                 waterbutlerURL: '${waterbutler_url if waterbutler_url.endswith('/') else waterbutler_url + '/' | js_str}',
-                cookieName: '${cookie_name}'
+            % if access_token:
+                accessToken: '${access_token | js_str}',
+            % endif
+                cookieName: '${cookie_name}',
+                apiV2Prefix: '${api_v2_base | js_str }'
             });
         </script>
 

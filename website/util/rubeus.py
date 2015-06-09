@@ -10,6 +10,7 @@ from modularodm import Q
 from framework.auth.decorators import Auth
 
 from website.util import paths
+from website.util import sanitize
 from website.settings import (
     ALL_MY_PROJECTS_ID, ALL_MY_REGISTRATIONS_ID, ALL_MY_PROJECTS_NAME,
     ALL_MY_REGISTRATIONS_NAME, DISK_SAVING_MODE
@@ -26,7 +27,6 @@ DEFAULT_PERMISSIONS = {
     'view': True,
     'edit': False,
 }
-
 
 def format_filesize(size):
     return hurry.filesize.size(size, system=hurry.filesize.alternative)
@@ -324,8 +324,8 @@ class NodeProjectCollector(object):
             to_expand = False
 
         return {
-            #TODO Remove the replace when mako html safe comes around
-            'name': node.title.replace('&amp;', '&') if can_view else u'Private Component',
+            # TODO: Remove safe_unescape_html when mako html safe comes in
+            'name': sanitize.safe_unescape_html(node.title) if can_view else u'Private Component',
             'kind': FOLDER,
             'category': node.category,
             # Once we get files into the project organizer, files would be kind of FILE
@@ -365,6 +365,7 @@ class NodeProjectCollector(object):
             'description': node.description,
             'registeredMeta': node.registered_meta,
             'childrenCount': children_count,
+            'nodeType': node.project_or_component,
         }
 
     def _collect_addons(self, node):
@@ -442,10 +443,11 @@ class NodeFileCollector(object):
         else:
             children = []
         return {
-            # #TODO Remove the replace when mako html safe comes around
-            'name': u'{0}: {1}'.format(node.project_or_component.capitalize(), node.title.replace('&amp;', '&'))
+            # TODO: Remove safe_unescape_html when mako html safe comes in
+            'name': u'{0}: {1}'.format(node.project_or_component.capitalize(), sanitize.safe_unescape_html(node.title))
             if can_view
             else u'Private Component',
+            'category': node.category,
             'kind': FOLDER,
             'permissions': {
                 'edit': node.can_edit(self.auth) and not node.is_registration,
@@ -458,6 +460,7 @@ class NodeFileCollector(object):
             'children': children,
             'isPointer': not node.primary,
             'isSmartFolder': False,
+            'nodeType': node.project_or_component,
             'nodeID': node.resolve()._id,
         }
 

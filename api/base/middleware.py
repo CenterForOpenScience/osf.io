@@ -25,6 +25,7 @@ class TokuTransactionsMiddleware(object):
             message = utils.get_error_message(err)
             if messages.NO_TRANSACTION_ERROR not in message:
                 raise
+        commands.disconnect()
         return None
 
     def process_response(self, request, response):
@@ -44,4 +45,5 @@ class TokuTransactionsMiddleware(object):
                 pass
             else:
                 raise err
+        commands.disconnect()
         return response

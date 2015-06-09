@@ -174,7 +174,6 @@ CELERY_IMPORTS = (
     'framework.tasks',
     'framework.tasks.signals',
     'framework.email.tasks',
-    'framework.render.tasks',
     'framework.analytics.tasks',
     'website.mailchimp_utils',
     'scripts.send_digest'
@@ -251,3 +250,6 @@ EZID_FORMAT = '{namespace}osf.io/{guid}'
 
 SHARE_REGISTRATION_URL = ''
 SHARE_API_DOCS_URL = ''
+
+CAS_SERVER_URL = 'http://localhost:8080'
+MFR_SERVER_URL = 'http://localhost:7778'

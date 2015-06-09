@@ -263,6 +263,7 @@ class User(GuidStoredObject, AddonModelMixin):
     #       'referrer_id': <user ID of referrer>,
     #       'token': <token used for verification urls>,
     #       'email': <email the referrer provided or None>,
+    #       'claimer_email': <email the claimer entered or None>,
     #       'last_sent': <timestamp of last email sent to referrer or None>
     #   }
     #   ...
@@ -392,7 +393,7 @@ class User(GuidStoredObject, AddonModelMixin):
         return '<User({0!r}) with id {1!r}>'.format(self.username, self._id)
 
     def __str__(self):
-        return self.fullname
+        return self.fullname.encode('ascii', 'replace')
 
     __unicode__ = __str__
 
@@ -1172,6 +1173,15 @@ class User(GuidStoredObject, AddonModelMixin):
             self.api_keys.append(api_key)
         user.api_keys = []
 
+        # - addons
+        # Note: This must occur before the merged user is removed as a
+        #       contributor on the nodes, as an event hook is otherwise fired
+        #       which removes the credentials.
+        for addon in user.get_addons():
+            user_settings = self.get_or_add_addon(addon.config.short_name)
+            user_settings.merge(addon)
+            user_settings.save()
+
         # - projects where the user was a contributor
         for node in user.node__contributed:
             # Skip dashboard node
@@ -1199,12 +1209,6 @@ class User(GuidStoredObject, AddonModelMixin):
         for node in user.node__created:
             node.creator = self
             node.save()
-
-        # - addons
-        for addon in user.get_addons():
-            user_settings = self.get_or_add_addon(addon.config.short_name)
-            user_settings.merge(addon)
-            user_settings.save()
 
         # finalize the merge
 

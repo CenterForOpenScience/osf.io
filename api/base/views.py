@@ -6,7 +6,6 @@ from api.users.serializers import UserSerializer
 
 @api_view(('GET',))
 def root(request, format=None):
-
     if request.user and not request.user.is_anonymous():
         user = request.user
         current_user = UserSerializer(user).data

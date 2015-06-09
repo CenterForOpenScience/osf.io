@@ -1,7 +1,7 @@
 import xml
 
 from mock import patch
-from nose.tools import *  # PEP8 asserts
+from nose.tools import *  # flake8: noqa (PEP8 asserts)
 from tests.base import OsfTestCase
 
 from website.search import util
@@ -97,6 +97,36 @@ class TestShareSearch(OsfTestCase):
             'v': '1'
         })
         assert_is(mock_count.called, True)
+
+    def test_share_count_cleans_query(self):
+        cleaned_query = share_search.clean_count_query({
+            'aggs': {
+                'sourceAgg': {
+                    'terms': {
+                        'field': '_type',
+                        'min_doc_count': 0,
+                        'size': 0
+                    }
+                }
+            },
+            'aggregations': {
+                'sourceAgg': {
+                    'terms': {
+                        'field': '_type',
+                        'min_doc_count': 0,
+                        'size': 0
+                    }
+                }
+            },
+            'from': 0,
+            'query':
+                {
+                    'match_all': {}
+                },
+            'size': 10
+        })
+        assert_equals(cleaned_query.keys(), ['query'])
+
 
     @patch.object(share_search.share_es, 'search')
     def test_share_providers(self, mock_search):

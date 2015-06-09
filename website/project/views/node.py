@@ -553,8 +553,10 @@ def togglewatch_post(auth, node, **kwargs):
 
 @must_be_valid_project
 @must_not_be_registration
-@must_have_permission(ADMIN)
+@must_have_permission(WRITE)
 def update_node(auth, node, **kwargs):
+    # in node.update() method there is a key list node.WRITABLE_WHITELIST only allow user to modify
+    # category, title, and discription which can be edited by write permission contributor
     try:
         return {
             'updated_fields': {
@@ -631,7 +633,7 @@ def delete_folder(auth, node, **kwargs):
 
 
 @must_be_valid_project
-@must_have_permission("admin")
+@must_have_permission(ADMIN)
 def remove_private_link(*args, **kwargs):
     link_id = request.json['private_link_id']
 
@@ -732,7 +734,7 @@ def _view_project(node, auth, primary=False):
             'forked_from_id': node.forked_from._primary_key if node.is_fork else '',
             'forked_from_display_absolute_url': node.forked_from.display_absolute_url if node.is_fork else '',
             'forked_date': iso8601format(node.forked_date) if node.is_fork else '',
-            'fork_count': len(node.node__forked.find(Q('is_deleted', 'eq', False))),
+            'fork_count': len(node.forks),
             'templated_count': len(node.templated_list),
             'watched_count': len(node.watchconfig__watched),
             'private_links': [x.to_json() for x in node.private_links_active],
@@ -881,7 +883,7 @@ def get_recent_logs(node, **kwargs):
     return {'logs': logs}
 
 
-def _get_summary(node, auth, rescale_ratio, primary=True, link_id=None):
+def _get_summary(node, auth, rescale_ratio, primary=True, link_id=None, show_path=False):
     # TODO(sloria): Refactor this or remove (lots of duplication with _view_project)
     summary = {
         'id': link_id if link_id else node._id,
@@ -911,7 +913,10 @@ def _get_summary(node, auth, rescale_ratio, primary=True, link_id=None):
             'ua': None,
             'non_ua': None,
             'addons_enabled': node.get_addon_names(),
-            'is_public': node.is_public
+            'is_public': node.is_public,
+            'parent_title': node.parent_node.title if node.parent_node else None,
+            'parent_is_public': node.parent_node.is_public if node.parent_node else False,
+            'show_path': show_path
         })
         if rescale_ratio:
             ua_count, ua, non_ua = _get_user_activity(node, auth, rescale_ratio)
@@ -941,9 +946,10 @@ def get_summary(auth, node, **kwargs):
             raise HTTPError(http.BAD_REQUEST)
     primary = kwargs.get('primary')
     link_id = kwargs.get('link_id')
+    show_path = kwargs.get('show_path', False)
 
     return _get_summary(
-        node, auth, rescale_ratio, primary=primary, link_id=link_id
+        node, auth, rescale_ratio, primary=primary, link_id=link_id, show_path=show_path
     )
 
 
@@ -980,11 +986,7 @@ def get_folder_pointers(auth, node, **kwargs):
 
 @must_be_contributor_or_public
 def get_forks(auth, node, **kwargs):
-    forks = node.node__forked.find(
-        Q('is_deleted', 'eq', False) &
-        Q('is_registration', 'eq', False)
-    )
-    return _render_nodes(forks, auth)
+    return _render_nodes(nodes=node.forks, auth=auth)
 
 
 @must_be_contributor_or_public

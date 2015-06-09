@@ -114,7 +114,6 @@ var _dataverseItemButtons = {
                     onclick: function (event) {
                         _uploadEvent.call(tb, event, item);
                     },
-                    tooltip: 'Upload files from your computer.',
                     icon: 'fa fa-upload',
                     className: 'text-success'
                 }, 'Upload'),
@@ -122,7 +121,6 @@ var _dataverseItemButtons = {
                     onclick: function (event) {
                         dataversePublish.call(tb, event, item);
                     },
-                    tooltip: 'Publish files.',
                     icon: 'fa fa-globe',
                     className: 'text-success'
                 }, 'Publish')
@@ -133,7 +131,6 @@ var _dataverseItemButtons = {
                     onclick: function (event) {
                         _uploadEvent.call(tb, event, item);
                     },
-                    tooltip: 'Upload files from your computer.',
                     icon: 'fa fa-upload',
                     className: 'text-success'
                 }, 'Upload')
@@ -144,7 +141,6 @@ var _dataverseItemButtons = {
                     onclick: function (event) {
                         _downloadEvent.call(tb, event, item);
                     },
-                    tooltip: 'Download file to your computer.',
                     icon: 'fa fa-download',
                     className: 'text-info'
                 }, 'Download')
@@ -155,16 +151,36 @@ var _dataverseItemButtons = {
                         onclick: function (event) {
                             Fangorn.ButtonEvents._removeEvent.call(tb, event, [item]);
                         },
-                        tooltip: 'Delete file.',
                         icon: 'fa fa-trash',
                         className: 'text-danger'
                     }, 'Delete')
                 );
             }
+            if (item.data.permissions && item.data.permissions.view) {
+                buttons.push(
+                    m.component(Fangorn.Components.button, {
+                        onclick: function(event) {
+                            gotoFile(item);
+                        },
+                        icon: 'fa fa-external-link',
+                        className : 'text-info'
+                    }, 'View'));
+
+            }
         }
         return m('span', buttons);
     }
 };
+
+function gotoFile (item) {
+    var redir = new URI(item.data.nodeUrl);
+    window.location = redir
+        .segment('files')
+        .segment(item.data.provider)
+        .segment(item.data.extra.fileId)
+        .query({version: item.data.extra.datasetVersion})
+        .toString();
+}
 
 function _fangornDataverseTitle(item, col) {
     var tb = this;
@@ -185,6 +201,7 @@ function _fangornDataverseTitle(item, col) {
                     m('span', [
                         m('select', {
                             class: 'dataverse-state-select',
+                            style: { color : '#000000'},
                             onchange: function (e) {
                                 changeState(tb, item, e.target.value);
                             }
@@ -205,14 +222,8 @@ function _fangornDataverseTitle(item, col) {
     } else {
         return m('span', [
             m('dataverse-name.fg-file-links', {
-                ondblclick: function () {
-                    var redir = new URI(item.data.nodeUrl);
-                    window.location = redir
-                        .segment('files')
-                        .segment(item.data.provider)
-                        .segment(item.data.extra.fileId)
-                        .query({version: item.data.extra.datasetVersion})
-                        .toString();
+                onclick: function () {
+                    gotoFile(item);
                 },
                 'data-toggle': 'tooltip',
                 title: 'View file',
@@ -227,7 +238,8 @@ function _fangornColumns(item) {
     var tb = this;
     var selectClass = '';
     if (item.data.kind === 'file' && tb.currentFileID === item.id) {
-        selectClass = 'fangorn-hover';
+        item.css = 'fangorn-selected';
+        tb.multiselected([item]);
     }
     var columns = [];
     columns.push({
