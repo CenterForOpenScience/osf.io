@@ -1,5 +1,4 @@
 from rest_framework import serializers as ser
-import json
 from api.base.serializers import JSONAPISerializer, LinksField, Link
 from website.models import Node
 from framework.auth.core import Auth
@@ -13,7 +12,6 @@ class CollectionSerializer(JSONAPISerializer):
     date_modified = ser.DateTimeField(read_only=True)
 
     links = LinksField({
-        'html': 'get_absolute_url',
         'children': {
             'related': Link('collections:collection-children', kwargs={'pk': '<pk>'}),
             'count': 'get_node_count',
