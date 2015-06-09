@@ -324,7 +324,7 @@ class OAuth2App(StoredObject):
     # Properties used by Django and DRF "Links: self" field
     @property
     def absolute_api_v2_url(self):
-        return absolute_reverse('users:application-detail', kwargs={'pk': self.owner._id, 'client_id': self.client_id})
+        return absolute_reverse('users:application-detail', kwargs={'user_id': self.owner._id, 'client_id': self.client_id})
 
     # used by django and DRF
     def get_absolute_url(self):

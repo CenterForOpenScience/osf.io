@@ -9,6 +9,7 @@ from api.base.utils import get_object_or_404
 from api.base.filters import ODMFilterMixin
 from api.nodes.serializers import NodeSerializer
 from .serializers import OAuth2AppSerializer, UserSerializer
+from .permissions import OwnerOnly
 
 class UserMixin(object):
     """Mixin with convenience methods for retrieving the current node based on the
@@ -98,17 +99,18 @@ class ApplicationList(generics.ListCreateAPIView, ODMFilterMixin):
     """
     permission_classes = (
         drf_permissions.IsAuthenticated,
+        OwnerOnly
     )
 
     serializer_class = OAuth2AppSerializer
 
     renderer_classes = [renderers.JSONRenderer]  # Hide from web-browsable API tool
 
-    # Revisit whether this is the best way to enforce user = logged in user
     def get_default_odm_query(self):
 
+        user_id = self.kwargs['user_id']
         return (
-            Q('owner', 'eq', self.request.user) &
+            Q('owner', 'eq', user_id) &
             Q('active', 'eq', True)
         )
 
@@ -132,6 +134,7 @@ class ApplicationDetail(generics.RetrieveUpdateDestroyAPIView):
 
     permission_classes = (
         drf_permissions.IsAuthenticated,
+        OwnerOnly
     )
 
     serializer_class = OAuth2AppSerializer
@@ -140,28 +143,17 @@ class ApplicationDetail(generics.RetrieveUpdateDestroyAPIView):
 
     # overrides RetrieveAPIView
     def get_object(self):
-        id_url_kwarg = 'client_id'
         obj = get_object_or_404(OAuth2App,
-                                Q('client_id', 'eq', self.kwargs[id_url_kwarg]))
-
-        # TODO: Write test for case where user is not logged in, or wrong user requests resource
-        if obj.owner._id != self.request.user._id:
-            raise PermissionDenied
+                                Q('client_id', 'eq', self.kwargs['client_id']))
 
         self.check_object_permissions(self.request, obj)  # TODO: Write tests for this
-
         return obj
 
     # overrides DestroyAPIView
     def perform_destroy(self, instance):
-        """Node is not actually deleted- just flagged as inactive, which hides it from list views"""
+        """Node is not actually deleted from DB- just flagged as inactive, which hides it from list views"""
         obj = self.get_object()
-
-        if obj.owner._id != self.request.user._id:  # TODO: This check may be redundant with check in self.get_object
-            raise PermissionDenied
-
         obj.active = False
-
         # TODO FIXME : Should we revoke all access tokens when application inactivated? Seems likely.
         obj.save()
 
