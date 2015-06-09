@@ -879,7 +879,7 @@ class TestNodeCreatePreDataCollectionRegistration(ApiTestCase):
 
     def test_create_pre_data_collection_public_registration_logged_in(self):
         res = self.app.post(self.public_url, self.payload, auth=self.basic_auth, expect_errors=True)
-        full_url = res.json['non_field_errors'][0]
+        full_url = res.json['non_field_errors'][1]
         path = urlparse(full_url).path
         assert_equal(res.status_code, 400)
 
@@ -896,7 +896,7 @@ class TestNodeCreatePreDataCollectionRegistration(ApiTestCase):
 
     def test_create_pre_data_collection_private_registration_logged_in_contributor(self):
         res = self.app.post(self.private_url, self.payload, auth=self.basic_auth, expect_errors=True)
-        full_url = res.json['non_field_errors'][0]
+        full_url = res.json['non_field_errors'][1]
         path = urlparse(full_url).path
         assert_equal(res.status_code, 400)
 
@@ -953,7 +953,7 @@ class TestNodeCreateReplicationRecipePreRegistration(ApiTestCase):
 
     def test_create_replication_recipe_pre_registration_public_registration_logged_in(self):
         res = self.app.post(self.public_url, self.payload, auth=self.basic_auth, expect_errors=True)
-        full_url = res.json['non_field_errors'][0]
+        full_url = res.json['non_field_errors'][1]
         path = urlparse(full_url).path
         assert_equal(res.status_code, 400)
 
@@ -970,7 +970,7 @@ class TestNodeCreateReplicationRecipePreRegistration(ApiTestCase):
 
     def test_create_replication_recipe_pre_registration_private_registration_logged_in_contributor(self):
         res = self.app.post(self.private_url, self.payload, auth=self.basic_auth, expect_errors=True)
-        full_url = res.json['non_field_errors'][0]
+        full_url = res.json['non_field_errors'][1]
         path = urlparse(full_url).path
         assert_equal(res.status_code, 400)
 
@@ -1027,7 +1027,7 @@ class TestNodeCreateReplicationRecipePostCompletion(ApiTestCase):
 
     def test_create_replication_recipe_post_completion_public_registration_logged_in(self):
         res = self.app.post(self.public_url, self.payload, auth=self.basic_auth, expect_errors=True)
-        full_url = res.json['non_field_errors'][0]
+        full_url = res.json['non_field_errors'][1]
         path = urlparse(full_url).path
         assert_equal(res.status_code, 400)
 
@@ -1044,7 +1044,7 @@ class TestNodeCreateReplicationRecipePostCompletion(ApiTestCase):
 
     def test_create_replication_recipe_post_completion_private_registration_logged_in_contributor(self):
         res = self.app.post(self.private_url, self.payload, auth=self.basic_auth, expect_errors=True)
-        full_url = res.json['non_field_errors'][0]
+        full_url = res.json['non_field_errors'][1]
         path = urlparse(full_url).path
         assert_equal(res.status_code, 400)
 
