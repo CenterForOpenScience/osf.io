@@ -804,7 +804,7 @@ class TestNodeCreateOpenEndedRegistration(ApiTestCase):
 
     def test_create_open_ended_public_registration_logged_in(self):
         res = self.app.post(self.public_url, self.payload, auth=self.basic_auth, expect_errors=True)
-        full_url = res.json['non_field_errors'][0]
+        full_url = res.json['non_field_errors'][1]
         path = urlparse(full_url).path
         assert_equal(res.status_code, 400)
 
@@ -821,7 +821,7 @@ class TestNodeCreateOpenEndedRegistration(ApiTestCase):
 
     def test_create_open_ended_private_registration_logged_in_contributor(self):
         res = self.app.post(self.private_url, self.payload, auth=self.basic_auth, expect_errors=True)
-        full_url = res.json['non_field_errors'][0]
+        full_url = res.json['non_field_errors'][1]
         path = urlparse(full_url).path
         assert_equal(res.status_code, 400)
 
