@@ -8,9 +8,7 @@ from website.archiver import (
     ARCHIVER_NETWORK_ERROR,
     ARCHIVER_SIZE_EXCEEDED,
 )
-from website.archiver.model import ArchiveLog
-
-from website.addons.base import StorageAddonBase
+from website.archiver.model import ArchiveJob
 
 from website import mails
 from website import settings
@@ -163,15 +161,9 @@ def aggregate_file_tree_metadata(addon_short_name, fileobj_metadata, user):
 
 def before_archive(node, user):
     link_archive_provider(node, user)
-    node.archive_log = ArchiveLog(
-        node,
-        node.registered_from,
-        user
+    job = ArchiveJob(
+        src_node=node.registered_from,
+        dst_node=node,
+        initiator=user
     )
-    targets = [
-        addon.config.short_name for addon in
-        [node.get_addon(name) for name in settings.ADDONS_ARCHIVABLE]
-        if (addon and addon.complete and isinstance(addon, StorageAddonBase))
-    ]
-    node.archive_log.set_targets(targets)
-    node.save()
+    job.set_targets()

@@ -425,7 +425,6 @@ def node_register_template_page_post(auth, node, **kwargs):
     register = node.register_node(
         schema, auth, template, json.dumps(clean_data),
     )
-    project_signals.after_create_registration.send(node, dst=register, user=auth.user)
 
     if data['registrationChoice'] == 'embargo':
         embargo_end_date = parse_date(data['embargoEndDate'], ignoretz=True)
@@ -546,7 +545,7 @@ def registration_callbacks(node, payload, *args, **kwargs):
     errors = payload.get('errors')
     src_provider = payload['source']['provider']
     if errors:
-        node.archive_log.update_target(
+        node.archive_job.update_target(
             src_provider,
             ARCHIVER_FAILURE,
             meta={
@@ -554,7 +553,7 @@ def registration_callbacks(node, payload, *args, **kwargs):
             }
         )
     else:
-        node.archive_log.update_target(
+        node.archive_job.update_target(
             src_provider,
             ARCHIVER_SUCCESS,
         )

@@ -26,7 +26,6 @@ def find_failed_registrations():
     expired_if_before = datetime.now() - ARCHIVE_TIMEOUT_TIMEDELTA
     query = (
         Q('is_deleted', 'eq', False) &
-        Q('archiving', 'eq', True) &
         Q('is_registration', 'eq', True) &
         Q('registered_date', 'lt', expired_if_before) &
         pending

@@ -1,4 +1,5 @@
 from copy import deepcopy
+import datetime
 
 from modularodm import (
     fields,
@@ -14,17 +15,24 @@ from website.archiver import (
     ARCHIVER_FAILURE_STATUSES
 )
 
-class ArchiveLog(StoredObject):
+from website.addons.base import StorageAddonBase
+from website import settings
 
-    _id = fields.StringField(default=lambda: str(ObjectId()))
+class ArchiveJob(StoredObject):
+
+    _id = fields.StringField(
+        primary=True,
+        default=lambda: str(ObjectId())
+    )
 
     done = fields.BooleanField(default=False)
+    sent = fields.BooleanField(default=False)
     status = fields.StringField()
-    datetime_initiated = fields.DateTimeField(auto_add_now=True)
+    datetime_initiated = fields.DateTimeField(default=datetime.datetime.utcnow)
 
-    src_node = fields.ForeignField('node', backref='archived_from')
-    dst_node = fields.ForeignField('node', backref='archived_to')
-    initator = fields.ForeignField('user', backref='archive_initiator')
+    dst_node = fields.ForeignField('node', backref='active')
+    src_node = fields.ForeignField('node')
+    initiator = fields.ForeignField('user')
 
     # Dictonary mapping addon short name to archive status
     # {
@@ -37,24 +45,19 @@ class ArchiveLog(StoredObject):
 
     @property
     def children(self):
-        return [node.archive_log for node in self.dst_node.nodes]
+        return [node.archive_job for node in self.dst_node.nodes]
 
     @property
     def parent(self):
-        parent_node = self.dst_node.parent
-        return parent_node.archive_log if parent_node else None
+        parent_node = self.dst_node.parent_node
+        return parent_node.archive_job if parent_node else None
 
     @property
     def success(self):
         return self.status == ARCHIVER_SUCCESS
-    
-    def __init__(self, src, dst, user, *args, **kwargs):
-        super(ArchiveLog, self).__init__(*args, **kwargs)
-        self.src_node = src
-        self.dst_node = dst
-        self.initator = user
-        self.status = ARCHIVER_INITIATED
-        self.save()
+
+    def info(self):
+        return self.src_node, self.dst_node, self.initiator
 
     def _archive_node_finished(self):
         return not any([
@@ -62,48 +65,38 @@ class ArchiveLog(StoredObject):
             if value['status'] not in (ARCHIVER_SUCCESS, ARCHIVER_FAILURE)
         ])
 
-    def _archive_tree_finished(self, dir=None):
-        if not self._archive_node_finished():
-            return
-        if not dir:
-            up_finished = self.parent.archive_tree_finished(
-                dir='up'
-            ) if self.parent else True
-            down_finished = len(
-                [
-                    ret for ret in [
-                        child.archive_tree_finished(
-                            dir='down'
-                        ) for child in self.children
-                    ] if ret]
-            ) if len(self.children) else True
-            return up_finished and down_finished
-        if dir == 'up':
-            return self.parent.archive_tree_finished(dir='up') if self.parent else True
-        elif dir == 'down':
+    def archive_tree_finished(self):
+        if self._archive_node_finished():
             return len(
                 [
                     ret for ret in [
-                        child.archive_tree_finished(dir='down')
+                        child.archive_tree_finished()
                         for child in self.children
-                    ]
-                ]
+                    ] if ret]
             ) if len(self.children) else True
         return False
 
     def _post_update_target(self):
-        if self.archive_tree_finished():
+        if self._archive_node_finished():
             self.done = True
+        if self.archive_tree_finished():
             if not ARCHIVER_FAILURE_STATUSES.isdisjoint(
                     [value['status'] for value in self.target_addons.values()]
             ):
                 self.status = ARCHIVER_FAILURE
-            self.save()
+            else:
+                self.status = ARCHIVER_SUCCESS
+        self.save()
 
-
-    def set_targets(self, addons):
+    def set_targets(self):
+        self.status = ARCHIVER_INITIATED
+        addons = [
+            addon.config.short_name for addon in
+            [self.dst_node.get_addon(name) for name in settings.ADDONS_ARCHIVABLE]
+            if (addon and addon.complete and isinstance(addon, StorageAddonBase))
+        ]
         for addon in addons:
-            self.target_addons[addon.config.short_name] = {
+            self.target_addons[addon] = {
                 'status': ARCHIVER_INITIATED,
             }
         self.save()

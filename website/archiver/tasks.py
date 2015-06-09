@@ -6,12 +6,10 @@ from celery.utils.log import get_task_logger
 
 from framework.tasks import app as celery_app
 from framework.tasks.utils import logged
-from framework.auth.core import User
 from framework.exceptions import HTTPError
 
 
 from website.archiver import (
-    ARCHIVER_INITIATED,
     ARCHIVER_PENDING,
     ARCHIVER_CHECKING,
     ARCHIVER_SUCCESS,
@@ -24,13 +22,11 @@ from website.archiver import (
     AggregateStatResult,
 )
 from website.archiver import utils
-from website.archiver.model import ArchiveLog
+from website.archiver.model import ArchiveJob
 
-from website.project.model import Node
 from website.project import signals as project_signals
 from website import settings
 from website.app import init_addons, do_set_backends
-from website.addons.base import StorageAddonBase
 
 def create_app_context():
     try:
@@ -48,9 +44,8 @@ class ArchiverTask(celery.Task):
     def on_failure(self, exc, task_id, args, kwargs, einfo):
         if not kwargs:
             return
-        src = Node.load(kwargs['src_pk'])
-        dst = Node.load(kwargs['dst_pk'])
-        user = User.load(kwargs['user_pk'])
+        job = ArchiveJob.load(kwargs['job_pk'])
+        src, dst, user = job.info()
         if isinstance(exc, ArchiverSizeExceeded):
             dst.archive_status = ARCHIVER_SIZE_EXCEEDED
             dst.save()
@@ -85,7 +80,7 @@ class ArchiverSizeExceeded(Exception):
 
 @celery_app.task(base=ArchiverTask, name="archiver.stat_addon")
 @logged('stat_addon')
-def stat_addon(addon_short_name, src_pk, dst_pk, user_pk):
+def stat_addon(addon_short_name, job_pk):
     """Collect metadata about the file tree of a given addon
 
     :param addon_short_name: AddonConfig.short_name of the addon to be examined
@@ -95,15 +90,14 @@ def stat_addon(addon_short_name, src_pk, dst_pk, user_pk):
     :return: AggregateStatResult containing file tree metadata
     """
     create_app_context()
-    src = Node.load(src_pk)
-    dst = Node.load(dst_pk)
-    dst.archive_log.update_target(addon_short_name, ARCHIVER_CHECKING)
+    job = ArchiveJob.load(job_pk)
+    src, dst, user = job.info()
+    dst.archive_job.update_target(addon_short_name, ARCHIVER_CHECKING)
     src_addon = src.get_addon(addon_short_name)
-    user = User.load(user_pk)
     try:
         file_tree = src_addon._get_file_tree(user=user)
     except HTTPError as e:
-        dst.archive_log.update_target(
+        dst.archive_job.update_target(
             addon_short_name,
             ARCHIVER_NETWORK_ERROR,
             meta={
@@ -120,7 +114,7 @@ def stat_addon(addon_short_name, src_pk, dst_pk, user_pk):
 
 @celery_app.task(base=ArchiverTask, name="archiver.make_copy_request")
 @logged('make_copy_request')
-def make_copy_request(src_pk, dst_pk, user_pk, url, data):
+def make_copy_request(job_pk, url, data):
     """Make the copy request to the WaterBulter API and handle
     successful and failed responses
 
@@ -130,15 +124,16 @@ def make_copy_request(src_pk, dst_pk, user_pk, url, data):
     :return: None
     """
     create_app_context()
-    dst = Node.load(dst_pk)
+    job = ArchiveJob.load(job_pk)
+    src, dst, user = job.info()
     provider = data['source']['provider']
-    dst.archive_log.update_target(provider, ARCHIVER_SENDING)
-    logger.info("Sending copy request for addon: {0} on node: {1}".format(provider, dst_pk))
+    dst.archive_job.update_target(provider, ARCHIVER_SENDING)
+    logger.info("Sending copy request for addon: {0} on node: {1}".format(provider, dst._id))
     res = requests.post(url, data=json.dumps(data))
-    logger.info("Copy request responded with {0} for addon: {1} on node: {2}".format(res.status_code, provider, dst_pk))
-    dst.archive_log.update_target(provider, ARCHIVER_SENT)
+    logger.info("Copy request responded with {0} for addon: {1} on node: {2}".format(res.status_code, provider, dst._id))
+    dst.archive_job.update_target(provider, ARCHIVER_SENT)
     if not res.ok:
-        dst.archive_log.update_target(
+        dst.archive_job.update_target(
             provider,
             ARCHIVER_FAILURE,
             meta={
@@ -147,12 +142,12 @@ def make_copy_request(src_pk, dst_pk, user_pk, url, data):
         )
         raise HTTPError(res.status_code)
     elif res.status_code in (200, 201):
-        dst.archive_log.update_target(provider, ARCHIVER_SUCCESS)
+        dst.archive_job.update_target(provider, ARCHIVER_SUCCESS)
     project_signals.archive_callback.send(dst)
 
 @celery_app.task(base=ArchiverTask, name="archiver.archive_addon")
 @logged('archive_addon')
-def archive_addon(addon_short_name, src_pk, dst_pk, user_pk, stat_result):
+def archive_addon(addon_short_name, job_pk, stat_result):
     """Archive the contents of an addon by making a copy request to the
     WaterBulter API
 
@@ -162,18 +157,17 @@ def archive_addon(addon_short_name, src_pk, dst_pk, user_pk, stat_result):
     :param user_pk: primary key of registration initatior
     :return: None
     """
-    logger.info("Archiving addon: {0} on node: {1}".format(addon_short_name, src_pk))
     create_app_context()
-    src = Node.load(src_pk)
-    dst = Node.load(dst_pk)
-    dst.archive_log.update_target(
+    job = ArchiveJob.load(job_pk)
+    src, dst, user = job.info()
+    logger.info("Archiving addon: {0} on node: {1}".format(addon_short_name, src._id))
+    dst.archive_job.update_target(
         addon_short_name,
         ARCHIVER_PENDING,
         meta={
             'stat_result': str(stat_result),
         }
     )
-    user = User.load(user_pk)
     src_provider = src.get_addon(addon_short_name)
     folder_name = src_provider.archive_folder_name
     provider = src_provider.config.short_name
@@ -181,25 +175,25 @@ def archive_addon(addon_short_name, src_pk, dst_pk, user_pk, stat_result):
     data = {
         'source': {
             'cookie': cookie,
-            'nid': src_pk,
+            'nid': src._id,
             'provider': provider,
             'path': '/',
         },
         'destination': {
             'cookie': cookie,
-            'nid': dst_pk,
+            'nid': dst._id,
             'provider': settings.ARCHIVE_PROVIDER,
             'path': '/',
         },
         'rename': folder_name,
     }
     copy_url = settings.WATERBUTLER_URL + '/ops/copy'
-    make_copy_request.delay(src_pk=src_pk, dst_pk=dst_pk, user_pk=user_pk, url=copy_url, data=data)
+    make_copy_request.delay(job_pk=job_pk, url=copy_url, data=data)
 
 
 @celery_app.task(base=ArchiverTask, name="archiver.archive_node")
 @logged('archive_node')
-def archive_node(results, src_pk, dst_pk, user_pk):
+def archive_node(results, job_pk):
     """First use the results of #stat_node to check disk usage of the
     initated registration, then either fail the registration or
     create a celery.group group of subtasks to archive addons
@@ -210,14 +204,14 @@ def archive_node(results, src_pk, dst_pk, user_pk):
     :param user_pk: primary key of registration initatior
     :return: None
     """
-    logger.info("Archiving node: {0}".format(src_pk))
     create_app_context()
-    src = Node.load(src_pk)
-    dst = Node.load(dst_pk)
+    job = ArchiveJob.load(job_pk)
+    src, dst, user = job.info()
+    logger.info("Archiving node: {0}".format(src._id))
     dst.archive_status = ARCHIVER_PENDING
     dst.save()
     stat_result = AggregateStatResult(
-        src_pk,
+        src._id,
         src.title,
         targets=results,
     )
@@ -229,15 +223,13 @@ def archive_node(results, src_pk, dst_pk, user_pk):
                 continue
             archive_addon.delay(
                 addon_short_name=result.target_name,
-                src_pk=src_pk,
-                dst_pk=dst_pk,
-                user_pk=user_pk,
+                job_pk=job_pk,
                 stat_result=result,
             )
 
 @celery_app.task(bind=True, base=ArchiverTask, name='archiver.archive')
 @logged('archive')
-def archive(self, src_pk, dst_pk, user_pk):
+def archive(self, job_pk):
     """Saves the celery task id, and start a celery.chord
     that runs stat_addon for each addon attached to the Node,
     then runs archive node with the result
@@ -247,21 +239,20 @@ def archive(self, src_pk, dst_pk, user_pk):
     :param user_pk: primary key of registration initatior
     :return: None
     """
-    logger = get_task_logger(__name__)
-    logger.info("Received archive task for Node: {0} into Node: {1}".format(src_pk, dst_pk))
     create_app_context()
-    dst = Node.load(dst_pk)
+    job = ArchiveJob.load(job_pk)
+    src, dst, user = job.info()
+    logger = get_task_logger(__name__)
+    logger.info("Received archive task for Node: {0} into Node: {1}".format(src._id, dst._id))
     celery.chord(
         celery.group(
             stat_addon.si(
                 addon_short_name=addon.config.short_name,
-                src_pk=src_pk,
-                dst_pk=dst_pk,
-                user_pk=user_pk,
+                job_pk=job_pk,
             )
             for addon in [
                 dst.get_addon(name)
-                for name in dst.archive_log.target_addons.keys()
+                for name in dst.archive_job.target_addons.keys()
             ]
         )
-    )(archive_node.s(src_pk=src_pk, dst_pk=dst_pk, user_pk=user_pk))
+    )(archive_node.s(job_pk))

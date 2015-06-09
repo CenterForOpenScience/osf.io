@@ -1,14 +1,14 @@
 import celery
 from itertools import chain
 
-from framework.tasks.handlers import enqueue_task
+from framework.tasks import handlers
 
 from website.archiver.tasks import (
     archive,
 )
 from website.archiver import utils as archiver_utils
 from website.archiver import (
-    ARCHIVER_UNCAUGHT_ERROR
+    ARCHIVER_UNCAUGHT_ERROR,
 )
 
 from website.project import signals as project_signals
@@ -26,8 +26,8 @@ def after_register(src, dst, user):
     if dst.root != dst:  # if not top-level registration
         return
     targets = chain([dst], dst.get_descendants_recursive())
-    archive_tasks = [archive.si(t.registered_from._id, t._id, user._id) for t in targets]
-    enqueue_task(
+    archive_tasks = [archive.si(t.archive_job._id) for t in targets]
+    handlers.enqueue_task(
         celery.chain(*archive_tasks)
     )
 
@@ -38,9 +38,12 @@ def archive_callback(dst):
 
     :param dst: registration Node
     """
-    if not dst.archive_log.done:
+    root_job = dst.root.archive_job
+    if root_job.sent or not root_job.archive_tree_finished():
         return
-    if dst.archive_log.success:
+    root_job.sent = True
+    root_job.save()
+    if dst.archive_job.success:
         if dst.pending_embargo:
             for contributor in dst.contributors:
                 project_utils.send_embargo_email(dst, contributor)
@@ -51,6 +54,6 @@ def archive_callback(dst):
             ARCHIVER_UNCAUGHT_ERROR,
             dst.registered_from,
             dst,
-            dst.owner,
-            dst.archive_log.target_addons,
+            dst.registered_user,
+            dst.archive_job.target_addons,
         )

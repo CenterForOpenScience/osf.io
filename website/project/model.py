@@ -640,8 +640,6 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
     forked_from = fields.ForeignField('node', backref='forked', index=True)
     registered_from = fields.ForeignField('node', backref='registrations', index=True)
 
-    archive_log = fields.ForeignField('archive_log', backref='node_archived')
-
     # The node (if any) used as a template for this node's creation
     template_node = fields.ForeignField('node', backref='template_node', index=True)
 
@@ -1967,7 +1965,12 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
 
     @property
     def archiving(self):
-        return self.archive_log.done
+        job = self.archive_job
+        return job and not job.done
+
+    @property
+    def archive_job(self):
+        return self.archivejob__active[0] if self.archivejob__active else None
 
     @property
     def registrations(self):
