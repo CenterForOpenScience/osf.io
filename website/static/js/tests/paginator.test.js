@@ -20,7 +20,6 @@ var TestPaginator = oop.extend(Paginator, {
 
 
 describe('Paginator', () => {
-    
     var paginator;
     var numberOfPages;
     var currentPage;
@@ -34,7 +33,6 @@ describe('Paginator', () => {
         numberOfPages = 0;
         currentPage = 0;
     });
-
     it('previousPage', () => {
         numberOfPages = 18;
         currentPage = 18;
