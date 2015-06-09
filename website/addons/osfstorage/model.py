@@ -71,10 +71,8 @@ class OsfStorageNodeSettings(StorageAddonBase, AddonNodeSettingsBase):
     def after_register(self, node, registration, user, save=True):
         clone = self.clone()
         clone.owner = registration
+        clone.on_add()
         clone.save()
-
-        # handler in Archiver-- clone.root_node = utils.copy_files(self.root_node, clone)
-        # clone.save()
 
         return clone, None
 
