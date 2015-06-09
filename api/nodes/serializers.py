@@ -145,7 +145,19 @@ class RegistrationOpenEndedSerializer(JSONAPISerializer):
         node = self.context['view'].get_node()
         token = token_creator(node._id, user._id, data)
         url = absolute_reverse('nodes:node-registration-open-ended-token', kwargs={'pk': node._id, 'token': token})
-        raise serializers.ValidationError(url)
+        registration_warning = 'You are about to register {} '\
+                    'and everything that is inside it. Registration creates a permanent, '\
+                    'time-stamped, uneditable version of the project. If you would prefer to '\
+                    'register a particular component, please navigate to that component and then '\
+                    'initiate registration. '\
+                    'Important Note: Effective June 8, 2015, registrations '\
+                    'will be made public immediately or can be embargoed for up to one year. '\
+                    'There will no longer be the option of creating a permanently private '\
+                    'registration. If you register before June 8, 2015 and leave your '\
+                    'registration private, then the registration can remain private. After June 8, 2015, '\
+                    'if you ever make it public, you will not be able to return it to private.  Please post to new URL to continue.'.format(node.title)
+
+        raise serializers.ValidationError([registration_warning, url])
 
     class Meta:
         type_='registrations'
@@ -206,7 +218,18 @@ class RegistrationPreDataCollectionSerializer(JSONAPISerializer):
         node = self.context['view'].get_node()
         token = token_creator(node._id, user._id, data)
         url = absolute_reverse('nodes:node-registration-pre-data-collection-token', kwargs={'pk': node._id, 'token': token})
-        raise serializers.ValidationError(url)
+        registration_warning = 'You are about to register {} '\
+                    'and everything that is inside it. Registration creates a permanent, '\
+                    'time-stamped, uneditable version of the project. If you would prefer to '\
+                    'register a particular component, please navigate to that component and then '\
+                    'initiate registration. '\
+                    'Important Note: Effective June 8, 2015, registrations '\
+                    'will be made public immediately or can be embargoed for up to one year. '\
+                    'There will no longer be the option of creating a permanently private '\
+                    'registration. If you register before June 8, 2015 and leave your '\
+                    'registration private, then the registration can remain private. After June 8, 2015, '\
+                    'if you ever make it public, you will not be able to return it to private.  Please post to new URL to continue.'.format(node.title)
+        raise serializers.ValidationError([registration_warning, url])
 
     class Meta:
         type_='registrations'
@@ -297,7 +320,18 @@ class ReplicationRecipePreRegistrationSerializer(JSONAPISerializer):
         node = self.context['view'].get_node()
         token = token_creator(node._id, user._id, data)
         url = absolute_reverse('nodes:node-registration-pre-registration-token', kwargs={'pk': node._id, 'token': token})
-        raise serializers.ValidationError(url)
+        registration_warning = 'You are about to register {} '\
+                    'and everything that is inside it. Registration creates a permanent, '\
+                    'time-stamped, uneditable version of the project. If you would prefer to '\
+                    'register a particular component, please navigate to that component and then '\
+                    'initiate registration. '\
+                    'Important Note: Effective June 8, 2015, registrations '\
+                    'will be made public immediately or can be embargoed for up to one year. '\
+                    'There will no longer be the option of creating a permanently private '\
+                    'registration. If you register before June 8, 2015 and leave your '\
+                    'registration private, then the registration can remain private. After June 8, 2015, '\
+                    'if you ever make it public, you will not be able to return it to private.  Please post to new URL to continue.'.format(node.title)
+        raise serializers.ValidationError([registration_warning, url])
 
     class Meta:
         type_='registrations'
@@ -395,7 +429,18 @@ class ReplicationRecipePostCompletionSerializer(JSONAPISerializer):
         node = self.context['view'].get_node()
         token = token_creator(node._id, user._id, data)
         url = absolute_reverse('nodes:node-registration-post-completion-token', kwargs={'pk': node._id, 'token': token})
-        raise serializers.ValidationError(url)
+        registration_warning = 'You are about to register {} '\
+                    'and everything that is inside it. Registration creates a permanent, '\
+                    'time-stamped, uneditable version of the project. If you would prefer to '\
+                    'register a particular component, please navigate to that component and then '\
+                    'initiate registration. '\
+                    'Important Note: Effective June 8, 2015, registrations '\
+                    'will be made public immediately or can be embargoed for up to one year. '\
+                    'There will no longer be the option of creating a permanently private '\
+                    'registration. If you register before June 8, 2015 and leave your '\
+                    'registration private, then the registration can remain private. After June 8, 2015, '\
+                    'if you ever make it public, you will not be able to return it to private.  Please post to new URL to continue.'.format(node.title)
+        raise serializers.ValidationError([registration_warning, url])
 
     class Meta:
         type_='registrations'
