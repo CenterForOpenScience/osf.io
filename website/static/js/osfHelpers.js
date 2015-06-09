@@ -4,6 +4,7 @@ var $ = require('jquery');
 require('jquery-blockui');
 var Raven = require('raven-js');
 var moment = require('moment');
+var iconmap = require('js/iconmap');
 
 // TODO: For some reason, this require is necessary for custom ko validators to work
 // Why?!
@@ -22,6 +23,35 @@ var GrowlBox = require('js/growlBox');
 var growl = function(title, message, type) {
     new GrowlBox(title, message, type || 'danger');
 };
+
+
+/**
+ * Generate OSF absolute URLs, including prefix and arguments. Assumes access to mako globals for pieces of URL.
+ * Can optionally pass in an object with params (name:value) to be appended to URL. Calling as:
+ *   apiV2Url("users/4urxt/applications", {"a":1, "filter[fullname]":"lawrence"}, "https://staging2.osf.io/api/v2/")
+ * would yield the result:
+ *  "https://staging2.osf.io/api/v2/users/4urxt/applications?a=1&filter%5Bfullname%5D=lawrence"
+ * @param {String} pathString The string to be appended to the absolute base path, eg "users/4urxt"
+ * @param {Object} paramsObject (optional) An object containing parameters to add to the URL. Otherwise pass 'undefined'.
+ * @param {String} apiPrefix (optional) Manually specify the prefix used for API routes (useful for testing)
+ */
+var apiV2Url = function (pathString, paramsObject, apiPrefix){
+    apiPrefix = apiPrefix || window.contextVars.apiV2Prefix;
+
+    // Don't output double slashes when concatenating two strings with adjoining slashes
+    if (apiPrefix && pathString && apiPrefix.charAt(apiPrefix.length - 1) === "/" && pathString.charAt(0) === "/"){
+        pathString = pathString.substring(1); // Strip off the redundant leading slash
+    }
+
+    var apiUrl = apiPrefix + pathString;
+    // Add parameters to URL (if any). Ensure encoding as necessary
+    if (paramsObject){
+        apiUrl += "?";
+        apiUrl += $.param(paramsObject);
+    }
+    return apiUrl;
+};
+
 
 /**
 * Posts JSON data.
@@ -357,6 +387,46 @@ ko.bindingHandlers.anchorScroll = {
 };
 
 /**
+ * Adds class returned from iconmap to the element. The value accessor should be the
+ * category of the node.
+ * Example:
+ * <span data-bind="getIcon: 'analysis'"></span>
+ */
+ko.bindingHandlers.getIcon = {
+    init: function(elem, valueAccessor) {
+        var icon;
+        var category = valueAccessor();
+        if (Object.keys(iconmap.componentIcons).indexOf(category) >=0 ){
+            icon = iconmap.componentIcons[category];
+        }
+        else {
+            icon = iconmap.projectIcons[category];
+        }
+        $(elem).addClass(icon);
+    }
+};
+
+/**
+ * Required in render_node.mako to call getIcon. As a result of modularity there
+ * are overlapping scopes. To temporarily escape the parent scope and allow other binding
+ * stopBinding can be used. Only other option was to redo the structure of the scopes.
+ * Example:
+ * <span data-bind="stopBinding: true"></span>
+ */
+ko.bindingHandlers.stopBinding = {
+    init: function() {
+        return { controlsDescendantBindings: true };
+    }
+};
+
+/**
+ * Allows data-bind to be called without a div so the layout of the page is not effected.
+ * Example:
+ * <!-- ko stopBinding: true -->
+ */
+ko.virtualElements.allowedBindings.stopBinding = true;
+
+/**
   * A thin wrapper around ko.applyBindings that ensures that a view model
   * is bound to the expected element. Also shows the element (and child elements) if it was
   * previously hidden by applying the 'scripted' CSS class.
@@ -527,7 +597,6 @@ function humanFileSize(bytes, si) {
     return bytes.toFixed(1) + ' ' + units[u];
 }
 
-
 // Also export these to the global namespace so that these can be used in inline
 // JS. This is used on the /goodbye page at the moment.
 module.exports = window.$.osf = {
@@ -538,6 +607,7 @@ module.exports = window.$.osf = {
     handleEditableError: handleEditableError,
     block: block,
     growl: growl,
+    apiV2Url: apiV2Url,
     unblock: unblock,
     joinPrompts: joinPrompts,
     mapByProperty: mapByProperty,

@@ -316,7 +316,7 @@ class BoxNodeSettings(StorageAddonBase, AddonNodeSettingsBase):
         try:
             return {'token': self.user_settings.fetch_access_token()}
         except BoxClientException as error:
-            return HTTPError(error.status_code)
+            raise HTTPError(error.status_code, data={'message_long': error.message})
 
     def serialize_waterbutler_settings(self):
         if self.folder_id is None:
