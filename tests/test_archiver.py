@@ -3,7 +3,7 @@ import celery
 from faker import Faker
 import datetime
 from modularodm import Q
-import requests
+import functools
 
 import mock  # noqa
 from mock import call
@@ -21,13 +21,13 @@ from website.archiver import (
     ARCHIVER_SUCCESS,
     ARCHIVER_FAILURE,
     ARCHIVER_NETWORK_ERROR,
-    ARCHIVER_SIZE_EXCEEDED,
-)
+    ARCHIVER_SIZE_EXCEEDED,)
 from website.archiver import utils as archiver_utils
 from website.app import *  # noqa
 from website import archiver
 from website.archiver import listeners
 from website.archiver.tasks import *   # noqa
+from website.archiver.model import ArchiveJob
 
 from website import mails
 from website import settings
@@ -68,17 +68,54 @@ FILE_TREE = {
     ],
 }
 
+class MockAddon(mock.MagicMock, StorageAddonBase):
+
+    complete = True
+
+    def _get_file_tree(self, user):
+        return FILE_TREE
+
+    def after_register(self, *args):
+        return None, None
+
+    def archive_folder_name(self):
+        return 'Some Archive'
+
+mock_osfstorage = MockAddon()
+mock_osfstorage.config.short_name = 'osfstorage'
+mock_dropbox = MockAddon()
+mock_dropbox.config.short_name = 'dropbox'
+
+def _mock_get_addon(name):
+    if name == 'dropbox':
+        return mock_dropbox
+    if name == 'osfstorage':
+        return mock_osfstorage
+
+def use_fake_addons(func):
+    @functools.wraps(func)
+    def wrapper(*args, **kwargs):
+        with mock.patch('framework.addons.AddonModelMixin.get_addon') as mock_get_addon:
+            mock_get_addon.side_effect = _mock_get_addon
+            return func(*args, **kwargs)
+    return wrapper
+
 class ArchiverTestCase(OsfTestCase):
+
     def setUp(self):
         super(ArchiverTestCase, self).setUp()
+
+        self._mock_get_addon = _mock_get_addon
+
         handlers.celery_before_request()
         self.user = factories.UserFactory()
         self.auth = Auth(user=self.user)
         self.src = factories.NodeFactory(creator=self.user)
-        self.src.add_addon('dropbox', auth=self.auth)
-        self.dst = factories.RegistrationFactory(user=self.user, project=self.src, send_signals=False)
-        self.stat_result = archiver_utils.aggregate_file_tree_metadata('dropbox', FILE_TREE, self.user)
-        self.pks = (self.src._id, self.dst._id, self.user._id)
+        with mock.patch('framework.addons.AddonModelMixin.get_addon') as mock_get_addon:
+            mock_get_addon.side_effect = _mock_get_addon
+            self.dst = factories.RegistrationFactory(user=self.user, project=self.src, send_signals=False)
+
+            self.archive_job = self.dst.archive_job
 
 class TestStorageAddonBase(ArchiverTestCase):
 
@@ -117,6 +154,7 @@ class TestStorageAddonBase(ArchiverTestCase):
             'kind': 'folder',
         }
         file_tree = addon._get_file_tree(root, self.user)
+        file_tree.complete.return_value = True
         assert_equal(FILE_TREE, file_tree)
         assert_equal(requests_made, ['/', '/qwerty'])  # no requests made for files
 
@@ -124,113 +162,100 @@ class TestStorageAddonBase(ArchiverTestCase):
         self._test__get_file_tree(addon_short_name)
 
     def test_addons(self):
-        #  Test that each addon in settings.ADDONS_ARCHIVABLE if addon not in ['osfstorage', 'wiki'] implements the StorageAddonBase interface
-        for addon in [a for a in settings.ADDONS_ARCHIVABLE if a not in ['osfstorage', 'wiki']]:
+        #  Test that each addon in settings.ADDONS_ARCHIVABLE other than wiki implementes the StorageAddonBase interface
+        for addon in [a for a in settings.ADDONS_ARCHIVABLE if a not in ['wiki']]:
             self._test_addon(addon)
 
 class TestArchiverTasks(ArchiverTestCase):
 
+    @mock.patch('framework.tasks.handlers.enqueue_task')
     @mock.patch('celery.chord')
     @mock.patch('website.archiver.tasks.stat_addon.si')
     @mock.patch('website.archiver.tasks.archive_node.s')
-    def test_archive(self, mock_archive, mock_stat, mock_chord):
-        src_pk, dst_pk, user_pk = self.pks
-        archive(src_pk, dst_pk, user_pk)
+    def test_archive(self, mock_archive, mock_stat, mock_chord, mock_enqueue):
+        archive(job_pk=self.archive_job._id)
         targets = [self.src.get_addon(name) for name in settings.ADDONS_ARCHIVABLE]
         chain_sig = celery.group(
             stat_addon.si(
                 addon_short_name=addon.config.short_name,
-                src_pk=src_pk,
-                dst_pk=dst_pk,
-                user_pk=user_pk,
+                job_pk=self.archive_job._id,
             )
             for addon in targets if (addon and addon.complete and isinstance(addon, StorageAddonBase))
         )
         assert_true(self.dst.archiving)
         mock_chord.assert_called_with(chain_sig)
 
+    @use_fake_addons
     def test_stat_addon(self):
-        src_pk, dst_pk, user_pk = self.pks
-        with mock.patch.object(StorageAddonBase, '_get_file_tree') as mock_file_tree:
-            with mock.patch.object(archiver, 'AggregateStatResult') as MockStat:
-                mock_file_tree.return_value = FILE_TREE
-                res = stat_addon('dropbox', src_pk,  dst_pk, user_pk)
-        assert_equal(self.dst.archived_providers['dropbox']['status'], ARCHIVER_CHECKING)
-        src_dropbox = self.src.get_addon('dropbox')
-        assert(MockStat.called_with(
-            src_dropbox._id,
-            'dropbox',
-            targets=[archiver_utils.aggregate_file_tree_metadata(src_dropbox, FILE_TREE, self.user)]
-        ))
+        res = stat_addon('dropbox', self.archive_job._id)
+        assert_equal(self.dst.archive_job.target_addons['dropbox']['status'], ARCHIVER_CHECKING)
         assert_equal(res.target_name, 'dropbox')
+        assert_equal(res.disk_usage, 128 + 256)
 
+    @use_fake_addons
     @mock.patch('website.archiver.tasks.archive_addon.delay')
     def test_archive_node_pass(self, mock_archive_addon):
         settings.MAX_ARCHIVE_SIZE = 1024 ** 3
-        src_pk, dst_pk, user_pk = self.pks
         with mock.patch.object(StorageAddonBase, '_get_file_tree') as mock_file_tree:
             mock_file_tree.return_value = FILE_TREE
-            results = [stat_addon(addon, src_pk, dst_pk, user_pk) for addon in ['osfstorage', 'dropbox']]
+            results = [stat_addon(addon, self.archive_job._id) for addon in ['osfstorage', 'dropbox']]
         with mock.patch.object(celery, 'group') as mock_group:
-            archive_node(results, src_pk, dst_pk, user_pk)
+            archive_node(results, self.archive_job._id)
         archive_dropbox_signature = archive_addon.si(
             'dropbox',
-            src_pk,
-            dst_pk,
-            user_pk,
+            self.archive_job._id,
             results
         )
         assert(mock_group.called_with(archive_dropbox_signature))
 
+    @use_fake_addons
     def test_archive_node_fail(self):
         settings.MAX_ARCHIVE_SIZE = 100
-        src_pk, dst_pk, user_pk = self.pks
-        with mock.patch.object(StorageAddonBase, '_get_file_tree') as mock_file_tree:
-            mock_file_tree.return_value = FILE_TREE
-            results = [stat_addon(addon, src_pk, dst_pk, user_pk) for addon in ['osfstorage', 'dropbox']]
+        results = [stat_addon(addon, self.archive_job._id) for addon in ['osfstorage', 'dropbox']]
         with mock.patch('website.archiver.tasks.ArchiverTask.on_failure') as mock_fail:
             try:
-                archive_node.apply(args=(results, src_pk, dst_pk, user_pk))
+                archive_node.apply(args=(results, self.archive_job._id))
             except:
                 pass
         assert_true(isinstance(mock_fail.call_args[0][0], ArchiverSizeExceeded))
 
     @mock.patch('website.archiver.tasks.archive_addon.delay')
     def test_archive_node_does_not_archive_empty_addons(self, mock_archive_addon):
-        src_pk, dst_pk, user_pk = self.pks
-        with mock.patch.object(StorageAddonBase, '_get_file_tree') as mock_file_tree:
-            mock_file_tree.return_value = {
-                'path': '/',
-                'kind': 'folder',
-                'name': 'Fake',
-                'children': []
-            }
-            results = [stat_addon(addon, src_pk, dst_pk, user_pk) for addon in ['osfstorage', 'dropbox']]
-            archive_node(results, src_pk=src_pk, dst_pk=dst_pk, user_pk=user_pk)
+        with mock.patch.object(self.src, 'get_addon') as mock_get_addon:
+            mock_addon = MockAddon()
+            def empty_file_tree(user):
+                return {
+                    'path': '/',
+                    'kind': 'folder',
+                    'name': 'Fake',
+                    'children': []
+                }
+            setattr(mock_addon, '_get_file_tree', empty_file_tree)
+            mock_get_addon.return_value = mock_addon
+            results = [stat_addon(addon, self.archive_job._id) for addon in ['osfstorage']]
+            archive_node(results, job_pk=self.archive_job._id)
         mock_archive_addon.assert_not_called()
 
+    @use_fake_addons
     @mock.patch('website.archiver.tasks.make_copy_request.delay')
     def test_archive_addon(self, mock_make_copy_request):
-        src_pk, dst_pk, user_pk = self.pks
         result = archiver_utils.aggregate_file_tree_metadata('dropbox', FILE_TREE, self.user),
-        archive_addon('dropbox', src_pk, dst_pk, user_pk, result)
-        assert_equal(self.dst.archived_providers['dropbox']['status'], ARCHIVER_PENDING)
+        archive_addon('dropbox', self.archive_job._id, result)
+        assert_equal(self.archive_job.target_addons['dropbox']['status'], ARCHIVER_PENDING)
         cookie = self.user.get_or_create_cookie()
         assert(mock_make_copy_request.called_with(
-            src_pk,
-            dst_pk,
-            user_pk,
+            self.archive_job._id,
             settings.WATERBUTLER_URL + '/ops/copy',
             data=dict(
                 source=dict(
                     cookie=cookie,
-                    nid=src_pk,
+                    nid=self.src._id,
                     provider='dropbox',
                     path='/',
                 ),
                 destination=dict(
                     cookie=cookie,
-                    nid=dst_pk,
+                    nid=self.dst._id,
                     provider=settings.ARCHIVE_PROVIDER,
                     path='/',
                 ),
@@ -240,15 +265,14 @@ class TestArchiverTasks(ArchiverTestCase):
 
     @httpretty.activate
     def test_make_copy_request_20X(self):
-        src_pk, dst_pk, user_pk = self.pks
         def callback_OK(request, uri, headers):
             return (200, headers, json.dumps({}))
 
-        self.dst.archived_providers = {
+        self.dst.archive_job.target_addons.update({
             'dropbox': {
                 'status': ARCHIVER_PENDING
             }
-        }
+        })
         self.dst.save()
         url = 'http://' + fake.ipv4()
         httpretty.register_uri(httpretty.POST,
@@ -256,27 +280,26 @@ class TestArchiverTasks(ArchiverTestCase):
                                body=callback_OK,
                                content_type='application/json')
         with mock.patch.object(project_signals, 'archive_callback') as mock_callback:
-            make_copy_request(src_pk, dst_pk, user_pk,
+            make_copy_request(self.archive_job._id,
                               url, {
                                   'source': {
                                       'provider': 'dropbox'
                                   }
                               })
-        assert_equal(self.dst.archived_providers['dropbox']['status'], ARCHIVER_SUCCESS)
+        assert_equal(self.dst.archive_job.target_addons['dropbox']['status'], ARCHIVER_SUCCESS)
         assert(mock_callback.called_with(self.dst))
 
     @httpretty.activate
     def test_make_copy_request_error(self):
         error = {'errors': ['BAD REQUEST']}
-        src_pk, dst_pk, user_pk = self.pks
         def callback_400(request, uri, headers):
             return (400, headers, json.dumps(error))
 
-        self.dst.archived_providers = {
+        self.dst.archive_job.target_addons.update({
             'dropbox': {
                 'status': ARCHIVER_PENDING
             }
-        }
+        })
         self.dst.save()
 
         url = 'http://' + fake.ipv4()
@@ -284,9 +307,9 @@ class TestArchiverTasks(ArchiverTestCase):
                                url,
                                body=callback_400,
                                content_type='application/json')
-        with mock.patch('website.archiver.utils.update_status') as mock_update:
+        with mock.patch('website.archiver.model.ArchiveJob.update_target') as mock_update:
             try:
-                make_copy_request(src_pk, dst_pk, user_pk,
+                make_copy_request(self.archive_job._id,
                                   url, {
                                       'source': {
                                           'provider': 'dropbox'
@@ -294,7 +317,7 @@ class TestArchiverTasks(ArchiverTestCase):
                                   })
             except HTTPError:
                 pass
-        mock_update.assert_called_with(self.dst, 'dropbox', ARCHIVER_FAILURE, meta={'errors': [error]})
+        mock_update.assert_called_with('dropbox', ARCHIVER_FAILURE, meta={'errors': [error]})
 
 class TestArchiverUtils(ArchiverTestCase):
 
@@ -369,15 +392,6 @@ class TestArchiverUtils(ArchiverTestCase):
             call(**args_desk),
         ], any_order=True)
 
-    def test_update_status(self):
-        self.dst.archived_providers['test'] = {
-            'status': 'OK',
-        }
-        self.dst.save()
-        archiver_utils.update_status(self.dst, 'test', 'BAD', meta={'meta': 'DATA'})
-        assert_equal(self.dst.archived_providers['test']['status'], 'BAD')
-        assert_equal(self.dst.archived_providers['test']['meta'], 'DATA')
-
     def test_aggregate_file_tree_metadata(self):
         a_stat_result = archiver_utils.aggregate_file_tree_metadata('dropbox', FILE_TREE, self.user)
         assert_equal(a_stat_result.disk_usage, 128 + 256)
@@ -426,8 +440,8 @@ class TestArchiverListeners(ArchiverTestCase):
     def test_after_register(self, mock_before_archive, mock_chain):
         mock_chain.return_value = []
         listeners.after_register(self.src, self.dst, self.user)
-        mock_before_archive.assert_called_with(self.dst)
-        archive_signature = archive.si(self.src._id, self.dst._id, self.user._id)
+        mock_before_archive.assert_called_with(self.dst, self.user)
+        archive_signature = archive.si(self.archive_job._id)
         mock_chain.assert_called_with(archive_signature)
 
     @mock.patch('celery.chain')
@@ -443,21 +457,19 @@ class TestArchiverListeners(ArchiverTestCase):
         listeners.after_register(c2, rc2, self.user)
         mock_chain.assert_not_called()
         listeners.after_register(proj, reg, self.user)
-        archive_sigs = [archive.si(*args) for args in [(proj._id, reg._id, self.user._id),
-                                                       (c1._id, rc1._id, self.user._id),
-                                                       (c2._id, rc2._id, self.user._id)]]
+        archive_sigs = [archive.si(*args) for args in [(n.archive_job._id,) for n in [reg, rc1, rc2]]]
         mock_chain.assert_called_with(*archive_sigs)
 
     def test_archive_callback_pending(self):
-        self.dst.archived_providers = {
+        self.archive_job.target_addons = {
             addon: {
                 'status': ARCHIVER_PENDING
-            } for addon in settings.ADDONS_ARCHIVABLE if addon not in ['osfstorage', 'wiki']
+            } for addon in settings.ADDONS_ARCHIVABLE if addon not in ['wiki']
         }
-        self.dst.archived_providers['osfstorage'] = {
+        self.dst.archive_job.target_addons['osfstorage'] = {
             'status': ARCHIVER_SUCCESS
         }
-        self.dst.save()
+        self.dst.archive_job.save()
         with mock.patch('website.archiver.utils.send_archiver_success_mail') as mock_send:
             with mock.patch('website.archiver.utils.handle_archive_fail') as mock_fail:
                 listeners.archive_callback(self.dst)
@@ -466,68 +478,50 @@ class TestArchiverListeners(ArchiverTestCase):
 
     @mock.patch('website.archiver.utils.send_archiver_success_mail')
     def test_archive_callback_done_success(self, mock_send):
-        self.dst.archiving = True
-        for addon in self.dst.archived_providers:
-            self.dst.archived_providers[addon]['status'] = ARCHIVER_SUCCESS
-        self.dst.save()
+        for addon in self.dst.archive_job.target_addons:
+            self.dst.archive_job.update_target(addon, ARCHIVER_SUCCESS)
+        self.dst.archive_job.save()
         listeners.archive_callback(self.dst)
         mock_send.assert_called_with(self.dst)
 
     @mock.patch('website.project.utils.send_embargo_email')
     def test_archive_callback_done_embargoed(self, mock_send):
-        self.dst.archiving = True
         end_date = datetime.datetime.now() + datetime.timedelta(days=30)
         self.dst.embargo_registration(self.user, end_date)
-        for addon in self.dst.archived_providers:
-            self.dst.archived_providers[addon]['status'] = ARCHIVER_SUCCESS
+        for addon in self.dst.archive_job.target_addons:
+            self.dst.archive_job.update_target(addon, ARCHIVER_SUCCESS)
         self.dst.save()
         listeners.archive_callback(self.dst)
         mock_send.assert_called_with(self.dst, self.user)
 
     def test_archive_callback_done_errors(self):
-        self.dst.archived_providers = {
+        self.dst.archive_job.target_addons = {
             addon: {
                 'status': ARCHIVER_SUCCESS
             } for addon in settings.ADDONS_ARCHIVABLE if addon not in ['osfstorage', 'wiki']
         }
-        self.dst.archived_providers['box']['status'] = ARCHIVER_FAILURE
-        self.dst.save()
+        self.dst.archive_job.update_target('box', ARCHIVER_FAILURE)
+        self.dst.archive_job.save()
         with mock.patch('website.archiver.utils.handle_archive_fail') as mock_fail:
             listeners.archive_callback(self.dst)
-        assert(mock_fail.called_with(ARCHIVER_NETWORK_ERROR, self.src, self.dst, self.user, self.dst.archived_providers))
+        assert(mock_fail.called_with(ARCHIVER_NETWORK_ERROR, self.src, self.dst, self.user, self.dst.archive_job.target_addons))
 
-    def test_archive_callback_updates_achiving_state_when_done(self):
+    def test_archive_callback_updates_archiving_state_when_done(self):
         proj = factories.NodeFactory()
         factories.NodeFactory(parent=proj)
         reg = factories.RegistrationFactory(project=proj)
-        reg.archiving = True
-        reg.archived_providers = {
-            addon: {
-                'status': ARCHIVER_PENDING,
-            }
-            for addon in ['box', 'osfstorage']
-        }
+        reg.archive_job.update_target('osfstorage', ARCHIVER_PENDING)
         child = reg.nodes[0]
-        child.archiving = True
-        child.archived_providers = {
-            addon: {
-                'status': ARCHIVER_SUCCESS,
-            }
-            for addon in ['box', 'osfstorage']
-        }
+        child.archive_job.update_target('osfstorage', ARCHIVER_SUCCESS)
         child.save()
         listeners.archive_callback(child)
         assert_false(child.archiving)
 
     def test_archive_tree_finished_d1(self):
-        self.dst.archived_providers = {
-            addon: {
-                'status': ARCHIVER_SUCCESS
-            }
-            for addon in ['box', 'osfstorage']
-        }
+        for addon in self.dst.archive_job.target_addons:
+            self.dst.archive_job.update_target(addon, ARCHIVER_SUCCESS)
         self.dst.save()
-        assert_true(listeners.archive_tree_finished)
+        assert_true(self.dst.archive_job.archive_tree_finished())
 
     def test_archive_tree_finished_d3(self):
         proj = factories.NodeFactory()
@@ -537,16 +531,12 @@ class TestArchiverListeners(ArchiverTestCase):
         rchild = reg.nodes[0]
         rchild2 = rchild.nodes[0]
         for node in [reg, rchild, rchild2]:
-            node.archived_providers = {
-                addon: {
-                    'status': ARCHIVER_SUCCESS
-                }
-                for addon in ['box', 'osfstorage']
-            }
+            for addon in node.archive_job.target_addons:
+                node.archive_job.update_target(addon, ARCHIVER_SUCCESS)
             node.save()
             node.reload()
         for node in [reg, rchild, rchild2]:
-            assert_true(listeners.archive_tree_finished(node))
+            assert_true(node.archive_job.archive_tree_finished())
 
     def test_archive_tree_finished_false(self):
         proj = factories.NodeFactory()
@@ -555,24 +545,18 @@ class TestArchiverListeners(ArchiverTestCase):
         reg = factories.RegistrationFactory(project=proj)
         rchild = reg.nodes[0]
         rchild2 = rchild.nodes[0]
-        for node in [reg, rchild, rchild2]:
-            node.archived_providers = {
-                addon: {
-                    'status': ARCHIVER_SUCCESS
-                }
-                for addon in ['box', 'osfstorage']
-            }
+        for node in [reg, rchild]:
+            for addon in ['dropbox', 'osfstorage']:
+                node.archive_job.target_addons[addon] = {}
+                node.archive_job.update_target(addon, ARCHIVER_SUCCESS)
             node.save()
             node.reload()
-        rchild.archived_providers.update({
-            'box': {
-                'status': ARCHIVER_CHECKING,
-            },
-        })
-        rchild.save()
-        rchild.reload()
+        for addon in ['dropbox', 'osfstorage']:
+            rchild2.archive_job.target_addons[addon] = {}
+            rchild2.archive_job.update_target(addon, ARCHIVER_CHECKING)
+        rchild2.save()
         for node in [reg, rchild, rchild2]:
-            assert_false(listeners.archive_tree_finished(node))
+            assert_false(node.archive_job.archive_tree_finished())
 
     @mock.patch('website.archiver.utils.send_archiver_success_mail')
     def test_archive_callback_on_tree_sends_only_one_email(self, mock_send_success):
@@ -583,32 +567,22 @@ class TestArchiverListeners(ArchiverTestCase):
         rchild = reg.nodes[0]
         rchild2 = rchild.nodes[0]
         for node in [reg, rchild, rchild2]:
-            node.archiving = True
-            node.save()
-        rchild.archived_providers = {
-            addon: {
-                'status': ARCHIVER_SUCCESS
-            }
-            for addon in ['box', 'osfstorage']
-        }
+            for addon in ['dropbox', 'osfstorage']:
+                node.archive_job.target_addons[addon] = {
+                    'status': ARCHIVER_CHECKING,
+                }
+        for addon in ['dropbox', 'osfstorage']:
+            rchild.archive_job.update_target(addon, ARCHIVER_SUCCESS)
         rchild.save()
         listeners.archive_callback(rchild)
         mock_send_success.assert_not_called()
-        reg.archived_providers = {
-            addon: {
-                'status': ARCHIVER_SUCCESS
-            }
-            for addon in ['box', 'osfstorage']
-        }
+        for addon in ['dropbox', 'osfstorage']:
+            reg.archive_job.update_target(addon, ARCHIVER_SUCCESS)
         reg.save()
         listeners.archive_callback(reg)
         mock_send_success.assert_not_called()
-        rchild2.archived_providers = {
-            addon: {
-                'status': ARCHIVER_SUCCESS
-            }
-            for addon in ['box', 'osfstorage']
-        }
+        for addon in ['dropbox', 'osfstorage']:
+            rchild2.archive_job.update_target(addon, ARCHIVER_SUCCESS)
         rchild2.save()
         listeners.archive_callback(rchild2)
         mock_send_success.assert_called_with(reg)
@@ -625,24 +599,22 @@ class TestArchiverScripts(ArchiverTestCase):
                 datetime.datetime.now() - delta,
                 safe=True
             )
-            reg.archived_providers = {
+            reg.archive_job.target_addons = {
                 addon: {
                     'status': ARCHIVER_PENDING
                 } for addon in settings.ADDONS_ARCHIVABLE if not addon == 'wiki'
             }
-            reg.archiving = True
-            reg.save()
+            reg.archive_job.save()
             failures.append(reg)
         pending = []
         for i in range(5):
             reg = factories.RegistrationFactory()
-            reg.archived_providers = {
+            reg.archive_job.target_addons = {
                 addon: {
                     'status': ARCHIVER_PENDING
                 } for addon in settings.ADDONS_ARCHIVABLE if not addon == 'wiki'
             }
-            reg.archiving = True
-            reg.save()
+            reg.archive_job.save()
             pending.append(reg)
         failed = scripts.find_failed_registrations()
         assert_equal(failed.get_keys(), [f._id for f in failures])
