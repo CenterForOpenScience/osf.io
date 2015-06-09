@@ -2435,9 +2435,6 @@ span#profileFullname{
     margin-top:20px;
     margin-bottom: 0;
 }
-.wiki-sidenav .wiki-menu {
-    margin-top: 5px;
-}
 .osf-sidenav.wiki-sidenav ul>li a:hover {
     background: transparent;
 }

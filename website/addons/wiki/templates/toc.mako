@@ -27,7 +27,7 @@
                 <div class="row">
                     ## NOTE: Do NOT use web_url_for here because we want to use the GUID urls for these links
                     <a href="${urls['web']['home']}">
-                        <div class="col-xs-8">Home</div>
+                        <div class="col-xs-12">Home</div>
                     </a>
                 </div>
             </li>

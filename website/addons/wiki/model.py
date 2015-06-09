@@ -55,12 +55,9 @@ def subscribe_on_write_permissions_revoked(node):
         wiki_utils.migrate_uuid(node, wiki_name)
 
 
-def wiki_updates(node, user, **context):
+def wiki_updates(node, user, path, **context):
     w_url = furl(node.absolute_url)
-    try:
-        w_url.path = context.pop('path')
-    except KeyError:
-        print "Please return path."
+    w_url.path = path
     w_url.add(context.pop('add', dict()))
     context['gravatar_url'] = user.gravatar_url
     context['url'] = w_url.url
