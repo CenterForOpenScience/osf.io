@@ -71,7 +71,7 @@ describe('nodeControl', () => {
                 assert.equal(vm.arkUrl(), 'http://ezid.cdlib.org/id/ark:/24601');
             });
             it('creates new identifiers', (done) => {
-                vm.createIdentifiers( => {
+                vm.createIdentifiers()always( => {
                     assert.equal(vm.doi(), '24601');
                     assert.equal(vm.ark(), '24601');
                     done();
