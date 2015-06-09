@@ -402,9 +402,8 @@ var UTC_DATEFORMAT = 'YYYY-MM-DD HH:mm UTC';
 var FormattableDate = function(date) {
     if (typeof date === 'string') {
         // If Firefox, add 'Z' to the date string (Z is timezone for UTC)
-        if(navigator.userAgent.toLowerCase().indexOf('firefox') > -1)
-        {
-           date = date + "Z";
+        if(navigator.userAgent.toLowerCase().indexOf('firefox') > -1 && date.slice(-1) !== 'Z') {
+           date = date + 'Z';
         }
         // The date as a Date object
         this.date = new Date(date);
