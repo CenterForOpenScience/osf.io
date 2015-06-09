@@ -42,7 +42,7 @@ def main(dry_run=True):
 
 if __name__ == '__main__':
     dry_run = 'dry' in sys.argv
-    init_app(set_backends=True, routes=False, mfr=False)
+    init_app(set_backends=True, routes=False)
     if not dry_run:
         scripts_utils.add_file_logger(logger, __file__)
     main(dry_run=dry_run)
