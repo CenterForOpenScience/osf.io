@@ -11,7 +11,6 @@ require('css/typeahead.css');
 require('css/fangorn.css');
 require('css/projectorganizer.css');
 
-var Handlebars = require('handlebars');
 var $ = require('jquery');
 var m = require('mithril');
 var Fangorn = require('js/fangorn');
