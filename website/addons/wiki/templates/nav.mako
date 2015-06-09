@@ -11,13 +11,6 @@
                         </span>
                     </a>
                 </li>
-                <li data-toggle="tooltip" title="Settings" data-placement="right" data-container="body">
-                    <a id="wikiSettings" href="#" data-toggle="modal" data-target="#settings">
-                        <span class="wiki-nav-closed">
-                            <i class="fa fa-cog"></i>
-                        </span>
-                    </a>
-                </li>
                 % if wiki_id and wiki_name != 'home':
                     <li data-toggle="tooltip" title="Delete" data-placement="right" data-container="body">
                         <a href="#" data-toggle="modal" data-target="#deleteWiki">

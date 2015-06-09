@@ -198,60 +198,6 @@ function ViewModel(options){
     self.editorMetadata = options.metadata;
     self.canEdit = options.canEdit;
 
-    // Subscriptions
-    self.subList = [
-        {value: 'email_transactional', text: 'Emails'},
-        {value: 'email_digest', text: 'Email Digest'},
-        {value: 'adopt_parent', text: 'Adopt from Project'},
-        {value: 'none', text: 'None'}
-    ];
-    self.getSub = function(sub) {
-        for(var i=0; i < self.subList.length; i++) {
-            if(sub === self.subList[i].value) {
-                return self.subList[i]
-            }
-        }
-        return self.subList[3];
-    };
-    self.subscription = ko.observable(self.getSub('adopt_parent'));
-    self.subText1 = ko.observable();
-    self.subText2 = ko.observable("");
-    self.subSuccess = ko.observable(null);
-    self.subsVisible = ko.observable(false);
-    self.clickGear = ko.computed(function () {
-        var hidden = self.subsVisible();
-        self.subText1("Subscription:");
-        self.subText2("");
-        return hidden;
-    });
-    self.message = ko.observable(true);
-    self.clickSub = function (value) {
-        self.subscription(value);
-        var subscription = self.subscription().text;
-        self.subText1("Subscription set to: ");
-        self.subText2(subscription);
-        self.message(false);
-        self.subSuccess(true);
-        setTimeout(function(){
-            self.subsVisible(false);
-            setTimeout(function() {
-                self.message(true);
-                self.subSuccess(null);
-            }, 600);
-        }, 2500);
-    };
-
-    self.subSuccessStatus = ko.pureComputed(function() {
-        var success = self.subSuccess();
-        if(success === true) {
-            return "option-success";
-        } else if(success === false) {
-            return "option-fail";
-        } else {
-            return "";
-        }
-    });
-
     self.viewText = ko.observable('');
     self.renderedView = ko.observable('');
     self.renderedCompare = ko.observable('');
@@ -361,35 +307,6 @@ function ViewModel(options){
         self.menuVis(menuVisible);
     });
 }
-
-ko.bindingHandlers.slideVisible = {
-    init: function(element, valueAccessor) {
-        // Initially set the element to be instantly visible/hidden depending on the value
-        var value = valueAccessor();
-        $(element).toggle(ko.utils.unwrapObservable(value)); // Use "unwrapObservable" so we can handle values that may or may not be observable
-    },
-    update: function(element, valueAccessor) {
-        // Whenever the value subsequently changes, slowly fade the element in or out
-        var value = valueAccessor();
-        // $(element).slideToggle(); //
-        ko.utils.unwrapObservable(value) ? $(element).slideDown() : $(element).slideUp(600);
-    }
-};
-/**
- * http://tech.pro/blog/1863/10-knockout-binding-handlers-i-don-t-want-to-live-without
- *  * @type {{init: Function}}
- */
-ko.bindingHandlers.toggle = {
-    init: function (element, valueAccessor) {
-        var value = valueAccessor();
-        ko.applyBindingsToNode(element, {
-            click: function () {
-                value(!value());
-            }
-        });
-    }
-};
-
 
 var WikiPage = function(selector, options) {
     var self = this;
