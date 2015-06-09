@@ -51,11 +51,11 @@ def edit_node(auth, node, **kwargs):
     value = strip_html(post_data.get('value', ''))
     if edited_field == 'title':
         try:
-            node.set_title(value, auth=auth)
-        except ValidationValueError:
+            node.set_title(value, auth=auth, save=True)
+        except ValidationValueError as e:
             raise HTTPError(
                 http.BAD_REQUEST,
-                data=dict(message_long='Title cannot be blank.')
+                data=dict(message_long=e.message)
             )
     elif edited_field == 'description':
         node.set_description(value, auth=auth)
@@ -83,9 +83,6 @@ def project_new_post(auth, **kwargs):
     category = data.get('category', 'project')
     template = data.get('template')
     description = strip_html(data.get('description'))
-
-    if not title or len(title) > 200:
-        raise HTTPError(http.BAD_REQUEST)
 
     if template:
         original_node = Node.load(template)
@@ -143,9 +140,6 @@ def folder_new_post(auth, node, **kwargs):
 
     title = request.json.get('title')
 
-    if not title or len(title) > 200:
-        raise HTTPError(http.BAD_REQUEST)
-
     if not node.is_folder:
         raise HTTPError(http.BAD_REQUEST)
     folder = new_folder(strip_html(title), user)
@@ -185,7 +179,6 @@ def add_folder(auth, **kwargs):
 # New Node
 ##############################################################################
 
-
 @must_be_valid_project
 @must_have_permission(WRITE)
 @must_not_be_registration
@@ -199,6 +192,7 @@ def project_new_node(auth, node, **kwargs):
             category=form.category.data,
             parent=node,
         )
+
         message = (
             'Your component was created successfully. You can keep working on the component page below, '
             'or return to the <u><a href="{url}">Project Page</a></u>.'
@@ -366,7 +360,7 @@ def configure_comments(node, **kwargs):
 @must_be_valid_project
 @must_be_contributor_or_public
 def view_project(auth, node, **kwargs):
-    primary = '/api/v1' not in request.path
+    primary = '/api/v1' not in request.path #What if it's V2?
     ret = _view_project(node, auth, primary=primary)
     ret['addon_capabilities'] = settings.ADDON_CAPABILITIES
     # Collect the URIs to the static assets for addons that have widgets

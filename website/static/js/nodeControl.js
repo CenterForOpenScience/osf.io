@@ -185,16 +185,20 @@ var ProjectViewModel = function(data) {
 
         // TODO: Remove hardcoded selectors.
         $.fn.editable.defaults.mode = 'inline';
-        $('#nodeTitleEditable').editable($.extend({}, editableOptions, {
+        $('#nodeTitleEditable').editable($.extend({},editableOptions, {
             name: 'title',
             title: 'Edit Title',
+            tpl: "<input type='text' maxlength='200'>",
             validate: function (value) {
                 if ($.trim(value) === '') {
                     return 'Title cannot be blank.';
                 }
+                else if(value.length > 200){
+                    return 'Titles cannot be longer than 200 characters.';
+                }
             }
         }));
-        $('#nodeDescriptionEditable').editable($.extend({}, editableOptions, {
+        $('#nodeDescriptionEditable').editable($.extend({},editableOptions, {
             name: 'description',
             title: 'Edit Description',
             emptytext: 'No description',

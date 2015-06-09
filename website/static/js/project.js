@@ -128,7 +128,7 @@ $(function() {
 
         if ($.trim($('#title').val()) === '') {
 
-            $('#alert').text('The new component title cannot be empty');
+            $('#alert').text('The new component title cannot be empty.');
 
             $('#add-component-submit')
                 .removeAttr('disabled', 'disabled')
@@ -136,7 +136,7 @@ $(function() {
 
             e.preventDefault();
         } else if ($(e.target).find('#title').val().length > 200) {
-            $('#alert').text('The new component title cannot be more than 200 characters.');
+            $('#alert').text('The new component title cannot be more than 200 characters.'); //This alert never appears...
 
             $('#add-component-submit')
                 .removeAttr('disabled', 'disabled')
