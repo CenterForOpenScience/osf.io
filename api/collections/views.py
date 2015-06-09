@@ -7,7 +7,7 @@ from website.models import Node, Pointer
 from api.base.utils import get_object_or_404
 from api.base.filters import ODMFilterMixin, ListFilterMixin
 from .serializers import CollectionSerializer, CollectionPointersSerializer
-from .permissions import ReadOnlyIfRegistration
+from .permissions import ReadOnlyIfRegistration, ContributorOrPublic
 
 
 class CollectionMixin(object):
@@ -114,6 +114,7 @@ class CollectionDetail(generics.RetrieveUpdateAPIView, generics.RetrieveDestroyA
 
     """
     permission_classes = (
+        ContributorOrPublic,
         ReadOnlyIfRegistration,
     )
     serializer_class = CollectionSerializer
@@ -173,6 +174,7 @@ class CollectionChildrenList(generics.ListAPIView, CollectionMixin):
     is finalized.
     """
     permission_classes = (
+        ContributorOrPublic,
         drf_permissions.IsAuthenticatedOrReadOnly,
     )
 
@@ -196,6 +198,7 @@ class CollectionPointersList(generics.ListCreateAPIView, CollectionMixin):
     Pointers are essentially aliases or symlinks: All they do is point to another node.
     """
     permission_classes = (
+        ContributorOrPublic,
         drf_permissions.IsAuthenticatedOrReadOnly,
     )
 
@@ -212,6 +215,7 @@ class CollectionPointerDetail(generics.RetrieveDestroyAPIView, CollectionMixin):
     Pointers are essentially aliases or symlinks: All they do is point to another node.
     """
     permission_classes = (
+        ContributorOrPublic,
         drf_permissions.IsAuthenticatedOrReadOnly,
     )
 
@@ -221,6 +225,7 @@ class CollectionPointerDetail(generics.RetrieveDestroyAPIView, CollectionMixin):
     def get_object(self):
         pointer_lookup_url_kwarg = 'pointer_id'
         pointer = get_object_or_404(Pointer, self.kwargs[pointer_lookup_url_kwarg])
+        self.check_object_permissions(self.request, pointer)
         return pointer
 
     # overrides DestroyAPIView

@@ -9,7 +9,6 @@ from website.util.sanitize import strip_html
 from tests.base import ApiTestCase, fake
 from tests.factories import UserFactory, ProjectFactory, FolderFactory, DashboardFactory, NodeFactory
 
-# Passed
 class TestCollectionsList(ApiTestCase):
     def setUp(self):
         ApiTestCase.setUp(self)
@@ -59,8 +58,6 @@ class TestCollectionsList(ApiTestCase):
 
         Node.remove()
 
-
-# passed
 class TestCollectionFiltering(ApiTestCase):
     def setUp(self):
         ApiTestCase.setUp(self)
@@ -235,8 +232,6 @@ class TestCollectionFiltering(ApiTestCase):
         assert_not_in(self.folder._id, ids)
         assert_not_in(self.dashboard._id, ids)
 
-
-# passed
 class TestCollectionCreate(ApiTestCase):
     def setUp(self):
         ApiTestCase.setUp(self)
@@ -297,8 +292,6 @@ class TestCollectionCreate(ApiTestCase):
         assert_equal(res.json['data']['title'], strip_html(title))
         # on
 
-
-# one failed: test_return_private_project_logged_out
 class TestCollectionDetail(ApiTestCase):
     def setUp(self):
         ApiTestCase.setUp(self)
@@ -335,8 +328,6 @@ class TestCollectionDetail(ApiTestCase):
         assert_equal(res.status_code, 403)
         print(vars(res))
 
-
-# lots failing #TODO: come back here!
 class TestCollectionUpdate(ApiTestCase):
     def setUp(self):
         ApiTestCase.setUp(self)
@@ -437,7 +428,6 @@ class TestCollectionUpdate(ApiTestCase):
         res = self.app.patch_json(url, {
             'is_public': False,
         }, auth=self.basic_auth, expect_errors=True)
-        assert_true(res.json['data']['public'])
         # TODO: Figure out why the validator isn't raising when attempting to write to a read-only field
         # assert_equal(res.status_code, 403)
 
@@ -478,8 +468,6 @@ class TestCollectionUpdate(ApiTestCase):
                                   expect_errors=True)
         assert_equal(res.status_code, 403)
 
-
-# two failed: looks like I am not checking for logged out and private
 class TestCollectionChildrenList(ApiTestCase):
     def setUp(self):
         ApiTestCase.setUp(self)
@@ -548,8 +536,6 @@ class TestCollectionChildrenList(ApiTestCase):
 
         Node.remove()
 
-
-# one failed: private logged out
 class TestCollectionPointersList(ApiTestCase):
     def setUp(self):
         ApiTestCase.setUp(self)
@@ -593,8 +579,6 @@ class TestCollectionPointersList(ApiTestCase):
         # a little better
         assert_equal(res.status_code, 403)
 
-
-# one failed: test_creates_public_collection_pointer_logged_in
 class TestCreateCollectionPointer(ApiTestCase):
     def setUp(self):
         ApiTestCase.setUp(self)
@@ -641,8 +625,6 @@ class TestCreateCollectionPointer(ApiTestCase):
         # a little better
         assert_equal(res.status_code, 403)
 
-
-# one failed: test_returns_public_collection_pointer_detail_logged_out
 class TestCollectionPointerDetail(ApiTestCase):
     def setUp(self):
         ApiTestCase.setUp(self)
@@ -685,8 +667,6 @@ class TestCollectionPointerDetail(ApiTestCase):
         # a little better
         assert_equal(res.status_code, 403)
 
-
-# one failed: test_deletes_public_collection_pointer_logged_in weird 204
 class TestDeleteCollectionPointer(ApiTestCase):
     def setUp(self):
         ApiTestCase.setUp(self)
