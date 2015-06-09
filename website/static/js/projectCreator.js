@@ -69,7 +69,7 @@ function ProjectCreatorViewModel(params) {
     self.serialize = function() {
         var category = self.category();
         return {
-            title: self.title(),
+            title: $osf.htmlDecode(self.title()),
             category: category,
             description: self.description(),
             template: $('#createNodeTemplates').val()
