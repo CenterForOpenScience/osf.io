@@ -10,7 +10,7 @@ from tests.base import ApiTestCase, fake
 from tests.factories import UserFactory, ProjectFactory, FolderFactory, RegistrationFactory, DashboardFactory, \
     NodeFactory
 
-class TestNodeList(ApiTestCase):
+class TestCollectionsList(ApiTestCase):
     def setUp(self):
         ApiTestCase.setUp(self)
         self.user = UserFactory.build()
