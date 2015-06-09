@@ -10,9 +10,6 @@ from tests.base import ApiTestCase, fake
 from tests.factories import UserFactory, ProjectFactory, FolderFactory, RegistrationFactory, DashboardFactory, NodeFactory
 from urlparse import urlparse
 from website.project.model import ensure_schemas
-from django.utils import translation
-from django.utils.translation import ugettext_lazy as _
-
 
 class TestWelcomeToApi(ApiTestCase):
     def setUp(self):
@@ -788,15 +785,6 @@ class TestNodeCreateOpenEndedRegistration(ApiTestCase):
 
         self.private_project = ProjectFactory(is_public=False, creator=self.user)
         self.private_url = "/v2/nodes/{}/register/Open-Ended_Registration/".format(self.private_project._id)
-
-    def test_translation_create_registration(self):
-        with translation.override('fr'):
-            print(_("hello"))
-            res = self.app.post(self.public_url, self.payload, auth=self.basic_auth, expect_errors=True)
-            full_url = res.json["non_field_errors"][0]
-            print res
-            assert_equal(full_url, 1)
-
 
     def test_invalid_token_open_ended_registration(self):
         res = self.app.post(self.private_url, self.payload, auth=self.basic_auth, expect_errors=True)
