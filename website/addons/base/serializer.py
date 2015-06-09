@@ -106,13 +106,7 @@ class OAuthAddonSerializer(AddonSerializer):
             'urls': urls,
         }
 
-class CitationsAddonSerializer(OAuthAddonSerializer):
-
     REQUIRED_URLS = ['importAuth', 'config', 'folders', 'deauthorize', 'accounts']
-
-    @abc.abstractmethod
-    def serialize_folder(self, folder):
-        pass
 
     def serialize_citation(self, citation):
         return {
@@ -165,3 +159,11 @@ class CitationsAddonSerializer(OAuthAddonSerializer):
     @property
     def serialized_node_settings(self):
         return super(OAuthAddonSerializer, self).serialized_node_settings
+
+class CitationsAddonSerializer(OAuthAddonSerializer):
+
+    @abc.abstractmethod
+    def serialize_folder(self, folder):
+        pass
+
+
