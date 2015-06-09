@@ -598,15 +598,6 @@ function humanFileSize(bytes, si) {
     return bytes.toFixed(1) + ' ' + units[u];
 }
 
-
-/**
- * Determines if an object is a function
-  * @param {object} obj
- */
-var isFunction = function (obj) {
-    return (typeof(obj) === 'function' && typeof(obj.call) === 'function' && typeof(obj.apply) === 'function');
-};
-
 /**
 *  returns a random name from this list to use as a confirmation string
 */
@@ -673,20 +664,7 @@ var confirmDangerousAction = function (options) {
     //       sustained attention and will prevent the user from copy/pasting a
     //       random string.
 
-    if (typeof(options) === 'undefined') {
-        options = {};
-    }
-
-    // set default values
-    if (!options.title) { options.title = 'Confirm Action'; }
-    if (!options.message) { options.message = ''; }
-    if (!options.confirmText) { options.confirmText = _confirmationString(); }
-
-    // build end of message, that tells the user to enter text.
-    options.message += '<p>Type the following to continue: <strong>';
-    options.message += options.confirmText;
-    options.message += '</strong></p>';
-    options.message += '<input id="bbConfirmText" class="form-control">';
+    var confirmationString = _confirmationString();
 
     // keep the users' callback for re-use; we'll pass ours to bootbox
     var callback = options.callback;
@@ -694,7 +672,7 @@ var confirmDangerousAction = function (options) {
 
     // this is our callback
     var handleConfirmAttempt = function () {
-        var verified = ($('#bbConfirmText').val() === options.confirmText);
+        var verified = ($('#bbConfirmText').val() === confirmationString);
 
         if (verified) {
             callback();
@@ -703,19 +681,33 @@ var confirmDangerousAction = function (options) {
         }
     };
 
-    options.buttons = {
-        cancel: {
-            label: 'Cancel',
-            className: 'btn-default'
+    var defaults = {
+        title: 'Confirm action',
+        confirmText: confirmationString,
+        buttons: {
+            cancel: {
+                label: 'Cancel',
+                className: 'btn-default'
+            },
+            success: {
+                label: 'Confirm',
+                className: 'btn-success',
+                callback: handleConfirmAttempt
+            }
         },
-        success: {
-            label: 'Confirm',
-            className: 'btn-success',
-            callback: handleConfirmAttempt
-        }
+        message: ''
     };
 
-    bootbox.dialog(options);
+    var bootboxOptions = $.extend({}, defaults, options);
+
+    bootboxOptions.message += [
+        '<p>Type the following to continue: <strong>',
+        confirmationString,
+        '</strong></p>',
+        '<input id="bbConfirmText" class="form-control">'
+    ].join('');
+
+    bootbox.dialog(bootboxOptions);
 };
 
 // Also export these to the global namespace so that these can be used in inline
