@@ -59,6 +59,14 @@ class HTTPError(FrameworkError):
         except RuntimeError:
             self.referrer = None
 
+    def __repr__(self):
+        class_name = self.__class__.__name__
+        return '{ClassName}(code={code}, data={data})'.format(
+            ClassName=class_name,
+            code=self.code,
+            data=self.to_data(),
+        )
+
     def to_data(self):
 
         data = copy.deepcopy(self.data)
