@@ -80,6 +80,7 @@ permission_map = {
     'delete': 'write',
     'copy': 'write',
     'move': 'write',
+    'rename': 'write',
     'copyto': 'write',
     'moveto': 'write',
     'copyfrom': 'read',
@@ -178,6 +179,7 @@ def get_auth(**kwargs):
 LOG_ACTION_MAP = {
     'move': NodeLog.FILE_MOVED,
     'copy': NodeLog.FILE_COPIED,
+    'rename': NodeLog.FILE_RENAMED,
     'create': NodeLog.FILE_ADDED,
     'update': NodeLog.FILE_UPDATED,
     'delete': NodeLog.FILE_REMOVED,
@@ -192,6 +194,8 @@ def create_waterbutler_log(payload, **kwargs):
     try:
         auth = payload['auth']
         action = LOG_ACTION_MAP[payload['action']]
+        dest = payload['destination']
+        src = payload['source']
     except KeyError:
         raise HTTPError(httplib.BAD_REQUEST)
 
@@ -201,8 +205,10 @@ def create_waterbutler_log(payload, **kwargs):
 
     auth = Auth(user=user)
     node = kwargs['node'] or kwargs['project']
-
-    if action in (NodeLog.FILE_MOVED, NodeLog.FILE_COPIED):
+    if os.path.split(dest['materialized'])[0] == os.path.split(src['materialized'])[0]:
+        if dest['provider'] == src['provider']:
+            action = LOG_ACTION_MAP['rename']
+    if action in (NodeLog.FILE_MOVED, NodeLog.FILE_COPIED, NodeLog.FILE_RENAMED):
         for bundle in ('source', 'destination'):
             for key in ('provider', 'materialized', 'name', 'nid'):
                 if key not in payload[bundle]:
