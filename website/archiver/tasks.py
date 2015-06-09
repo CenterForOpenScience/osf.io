@@ -24,6 +24,7 @@ from website.archiver import (
     AggregateStatResult,
 )
 from website.archiver import utils
+from website.archiver.model import ArchiveLog
 
 from website.project.model import Node
 from website.project import signals as project_signals
@@ -96,15 +97,19 @@ def stat_addon(addon_short_name, src_pk, dst_pk, user_pk):
     create_app_context()
     src = Node.load(src_pk)
     dst = Node.load(dst_pk)
-    utils.update_status(dst, addon_short_name, ARCHIVER_CHECKING)
+    dst.archive_log.update_target(addon_short_name, ARCHIVER_CHECKING)
     src_addon = src.get_addon(addon_short_name)
     user = User.load(user_pk)
     try:
         file_tree = src_addon._get_file_tree(user=user)
     except HTTPError as e:
-        utils.update_status(dst, addon_short_name, ARCHIVER_NETWORK_ERROR, meta={
-            'errors': [e.data['error']],
-        })
+        dst.archive_log.update_target(
+            addon_short_name,
+            ARCHIVER_NETWORK_ERROR,
+            meta={
+                'errors': [e.data['error']],
+            }
+        )
         raise
     result = AggregateStatResult(
         src_addon._id,
@@ -127,14 +132,13 @@ def make_copy_request(src_pk, dst_pk, user_pk, url, data):
     create_app_context()
     dst = Node.load(dst_pk)
     provider = data['source']['provider']
-    utils.update_status(dst, provider, ARCHIVER_SENDING)
+    dst.archive_log.update_target(provider, ARCHIVER_SENDING)
     logger.info("Sending copy request for addon: {0} on node: {1}".format(provider, dst_pk))
     res = requests.post(url, data=json.dumps(data))
     logger.info("Copy request responded with {0} for addon: {1} on node: {2}".format(res.status_code, provider, dst_pk))
-    utils.update_status(dst, provider, ARCHIVER_SENT)
+    dst.archive_log.update_target(provider, ARCHIVER_SENT)
     if not res.ok:
-        utils.update_status(
-            dst,
+        dst.archive_log.update_target(
             provider,
             ARCHIVER_FAILURE,
             meta={
@@ -143,7 +147,7 @@ def make_copy_request(src_pk, dst_pk, user_pk, url, data):
         )
         raise HTTPError(res.status_code)
     elif res.status_code in (200, 201):
-        utils.update_status(dst, provider, ARCHIVER_SUCCESS)
+        dst.archive_log.update_target(provider, ARCHIVER_SUCCESS)
     project_signals.archive_callback.send(dst)
 
 @celery_app.task(base=ArchiverTask, name="archiver.archive_addon")
@@ -162,9 +166,13 @@ def archive_addon(addon_short_name, src_pk, dst_pk, user_pk, stat_result):
     create_app_context()
     src = Node.load(src_pk)
     dst = Node.load(dst_pk)
-    utils.update_status(dst, addon_short_name, ARCHIVER_PENDING, meta={
-        'stat_result': str(stat_result),
-    })
+    dst.archive_log.update_target(
+        addon_short_name,
+        ARCHIVER_PENDING,
+        meta={
+            'stat_result': str(stat_result),
+        }
+    )
     user = User.load(user_pk)
     src_provider = src.get_addon(addon_short_name)
     folder_name = src_provider.archive_folder_name
@@ -243,14 +251,6 @@ def archive(self, src_pk, dst_pk, user_pk):
     logger.info("Received archive task for Node: {0} into Node: {1}".format(src_pk, dst_pk))
     create_app_context()
     dst = Node.load(dst_pk)
-    user = User.load(user_pk)
-    utils.link_archive_provider(dst, user)
-    dst.archiving = True
-    dst.archive_task_id = self.request.id
-    dst.archive_status = ARCHIVER_INITIATED
-    dst.save()
-    src = Node.load(src_pk)
-    targets = [src.get_addon(name) for name in settings.ADDONS_ARCHIVABLE]
     celery.chord(
         celery.group(
             stat_addon.si(
@@ -259,7 +259,9 @@ def archive(self, src_pk, dst_pk, user_pk):
                 dst_pk=dst_pk,
                 user_pk=user_pk,
             )
-            for addon in targets
-            if (addon and addon.complete and isinstance(addon, StorageAddonBase))
+            for addon in [
+                dst.get_addon(name)
+                for name in dst.archive_log.target_addons.keys()
+            ]
         )
     )(archive_node.s(src_pk=src_pk, dst_pk=dst_pk, user_pk=user_pk))

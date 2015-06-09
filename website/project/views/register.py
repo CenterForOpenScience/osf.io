@@ -15,7 +15,6 @@ from framework.mongo.utils import to_mongo
 from framework.forms.utils import process_payload, unprocess_payload
 from framework.auth.decorators import must_be_signed
 
-from website.archiver.utils import update_status
 from website.archiver import ARCHIVER_SUCCESS, ARCHIVER_FAILURE
 
 from website import settings
@@ -544,12 +543,10 @@ def get_referent_by_identifier(category, value):
 @must_be_signed
 @must_be_registration
 def registration_callbacks(node, payload, *args, **kwargs):
-    registration = node
     errors = payload.get('errors')
     src_provider = payload['source']['provider']
     if errors:
-        update_status(
-            registration,
+        node.archive_log.update_target(
             src_provider,
             ARCHIVER_FAILURE,
             meta={
@@ -557,8 +554,7 @@ def registration_callbacks(node, payload, *args, **kwargs):
             }
         )
     else:
-        update_status(
-            registration,
+        node.archive_log.update_target(
             src_provider,
             ARCHIVER_SUCCESS,
         )

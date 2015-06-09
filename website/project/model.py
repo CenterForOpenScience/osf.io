@@ -608,11 +608,6 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
     retraction = fields.ForeignField('retraction')
     embargo = fields.ForeignField('embargo')
 
-    archiving = fields.BooleanField(default=False)
-    archive_task_id = fields.StringField()
-    archive_status = fields.StringField()
-    archived_providers = fields.DictionaryField()
-
     is_fork = fields.BooleanField(default=False, index=True)
     forked_date = fields.DateTimeField(index=True)
 
@@ -644,6 +639,8 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
     nodes = fields.AbstractForeignField(list=True, backref='parent')
     forked_from = fields.ForeignField('node', backref='forked', index=True)
     registered_from = fields.ForeignField('node', backref='registrations', index=True)
+
+    archive_log = fields.ForeignField('archive_log', backref='node_archived')
 
     # The node (if any) used as a template for this node's creation
     template_node = fields.ForeignField('node', backref='template_node', index=True)
@@ -1967,6 +1964,10 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
             return self.parent_node.root
         else:
             return self
+
+    @property
+    def archiving(self):
+        return self.archive_log.done
 
     @property
     def registrations(self):
