@@ -60,7 +60,6 @@ class TestUrlForHelpers(unittest.TestCase):
             assert api_url_for('dummy_view', pid='123') == '/api/v1/123/'
 
     def test_api_v2_url_with_port(self):
-        """Handles URLs with port correctly"""
         full_url = api_v2_url('/nodes/abcd3/contributors/',
                               base_route='http://localhost:8000/',
                               base_prefix='v2/')
