@@ -12,7 +12,6 @@ import json
 from api.base.utils import absolute_reverse
 from api.base.utils import token_creator
 
-
 class NodeSerializer(JSONAPISerializer):
     # TODO: If we have to redo this implementation in any of the other serializers, subclass ChoiceField and make it
     # handle blank choices properly. Currently DRF ChoiceFields ignore blank options, which is incorrect in this
@@ -163,9 +162,11 @@ class RegistrationOpenEndedWithTokenSerializer(NodeSerializer):
     def validate(self, data):
         request = self.context['request']
         user = request.user
-        node = self.context['view'].get_node()
+        view = self.context['view']
+        node = view.get_node()
+        given_token = view.kwargs['token']
         correct_token = token_creator(node._id, user._id, data)
-        if correct_token not in request.path:
+        if correct_token != given_token:
             raise serializers.ValidationError("Incorrect token.")
         return data
 
@@ -226,9 +227,11 @@ class RegistrationPreDataCollectionWithTokenSerializer(NodeSerializer):
     def validate(self, data):
         request = self.context['request']
         user = request.user
-        node = self.context['view'].get_node()
+        view = self.context['view']
+        node = view.get_node()
+        given_token = view.kwargs['token']
         correct_token = token_creator(node._id, user._id, data)
-        if correct_token not in request.path:
+        if correct_token != given_token:
             raise serializers.ValidationError("Incorrect token.")
         return data
 
@@ -341,9 +344,11 @@ class ReplicationRecipePreRegistrationWithTokenSerializer(NodeSerializer):
     def validate(self, data):
         request = self.context['request']
         user = request.user
-        node = self.context['view'].get_node()
+        view = self.context['view']
+        node = view.get_node()
+        given_token = view.kwargs['token']
         correct_token = token_creator(node._id, user._id, data)
-        if correct_token not in request.path:
+        if correct_token != given_token:
              raise serializers.ValidationError("Incorrect token.")
         return data
 
@@ -418,9 +423,11 @@ class ReplicationRecipePostCompletionWithTokenSerializer(NodeSerializer):
     def validate(self, data):
         request = self.context['request']
         user = request.user
-        node = self.context['view'].get_node()
+        view = self.context['view']
+        node = view.get_node()
+        given_token = view.kwargs['token']
         correct_token = token_creator(node._id, user._id, data)
-        if correct_token not in request.path:
+        if correct_token != given_token:
             raise serializers.ValidationError("Incorrect token.")
         return data
 

@@ -155,106 +155,78 @@ class NodeRegistrationsList(generics.ListAPIView, NodeMixin):
         registrations = [node for node in nodes if node.can_view(auth)]
         return registrations
 
-class NodeRegistrationsOpenEnded(generics.CreateAPIView, NodeMixin):
+class NodeCreateRegistration(generics.CreateAPIView, NodeMixin):
+    permission_classes = (
+        ContributorOrPublic,
+        drf_permissions.IsAuthenticatedOrReadOnly,
+      )
+
+class NodeRegistrationsOpenEnded(NodeCreateRegistration):
     """Register the current node.
 
     Registrations are read-only snapshots of a project.
 
     """
-    permission_classes = (
-        ContributorOrPublic,
-        drf_permissions.IsAuthenticatedOrReadOnly,
-    )
-
     serializer_class = RegistrationOpenEndedSerializer
 
-
-
-class NodeRegistrationsOpenEndedWithToken(generics.CreateAPIView, NodeMixin):
+class NodeRegistrationsOpenEndedWithToken(NodeCreateRegistration):
     """Register the current node.
 
     Registrations are read-only snapshots of a project.
 
     """
-    permission_classes = (
-        ContributorOrPublic,
-        drf_permissions.IsAuthenticatedOrReadOnly,
-    )
     serializer_class = RegistrationOpenEndedWithTokenSerializer
 
-class NodeRegistrationsPreDataCollection(generics.CreateAPIView, NodeMixin):
+class NodeRegistrationsPreDataCollection(NodeCreateRegistration):
     """Register the current node.
 
     Registrations are read-only snapshots of a project.
 
     """
-    permission_classes = (
-        ContributorOrPublic,
-        drf_permissions.IsAuthenticatedOrReadOnly,
-    )
     serializer_class = RegistrationPreDataCollectionSerializer
 
-class NodeRegistrationsPreDataCollectionWithToken(generics.CreateAPIView, NodeMixin):
+class NodeRegistrationsPreDataCollectionWithToken(NodeCreateRegistration):
     """Register the current node.
 
     Registrations are read-only snapshots of a project.
 
     """
-    permission_classes = (
-        ContributorOrPublic,
-        drf_permissions.IsAuthenticatedOrReadOnly,
-    )
     serializer_class = RegistrationPreDataCollectionWithTokenSerializer
 
 
-class NodeRegistrationsReplicationRecipePreRegistration(generics.CreateAPIView, NodeMixin):
+class NodeRegistrationsReplicationRecipePreRegistration(NodeCreateRegistration):
     """Register the current node.
 
     Registrations are read-only snapshots of a project.
     """
-    permission_classes = (
-        ContributorOrPublic,
-        drf_permissions.IsAuthenticatedOrReadOnly,
-    )
+
     serializer_class = ReplicationRecipePreRegistrationSerializer
 
 
-class NodeRegistrationsReplicationRecipePreRegistrationWithToken(generics.CreateAPIView, NodeMixin):
+class NodeRegistrationsReplicationRecipePreRegistrationWithToken(NodeCreateRegistration):
     """Register the current node.
 
     Registrations are read-only snapshots of a project.
 
     """
-    permission_classes = (
-        ContributorOrPublic,
-        drf_permissions.IsAuthenticatedOrReadOnly,
-    )
     serializer_class = ReplicationRecipePreRegistrationWithTokenSerializer
 
 
-class NodeRegistrationsReplicationRecipePostCompletion(generics.CreateAPIView, NodeMixin):
+class NodeRegistrationsReplicationRecipePostCompletion(NodeCreateRegistration):
     """Register the current node.
 
     Registrations are read-only snapshots of a project.
 
     """
-    permission_classes = (
-        ContributorOrPublic,
-        drf_permissions.IsAuthenticatedOrReadOnly,
-    )
     serializer_class = ReplicationRecipePostCompletionSerializer
 
 
-class NodeRegistrationsReplicationRecipePostCompletionWithToken(generics.CreateAPIView, NodeMixin):
+class NodeRegistrationsReplicationRecipePostCompletionWithToken(NodeCreateRegistration):
     """Register the current node.
 
     Registrations are read-only snapshots of a project.
 
     """
-    permission_classes = (
-        ContributorOrPublic,
-        drf_permissions.IsAuthenticatedOrReadOnly,
-    )
     serializer_class = ReplicationRecipePostCompletionWithTokenSerializer
 
 class NodeChildrenList(generics.ListAPIView, NodeMixin):
