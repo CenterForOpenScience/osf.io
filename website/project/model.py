@@ -608,11 +608,6 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
     retraction = fields.ForeignField('retraction')
     embargo = fields.ForeignField('embargo')
 
-    archiving = fields.BooleanField(default=False)
-    archive_task_id = fields.StringField()
-    archive_status = fields.StringField()
-    archived_providers = fields.DictionaryField()
-
     is_fork = fields.BooleanField(default=False, index=True)
     forked_date = fields.DateTimeField(index=True)
 
@@ -1698,7 +1693,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
 
         return forked
 
-    def register_node(self, schema, auth, template, data, parent=None):
+    def register_node(self, schema, auth, template, data):
         """Make a frozen copy of a node.
 
         :param schema: Schema object
@@ -1751,9 +1746,6 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
 
         registered.save()
 
-        if parent:
-            registered.parent_node = parent
-
         # After register callback
         for addon in original.get_addons():
             _, message = addon.after_register(original, registered, auth.user)
@@ -1763,8 +1755,16 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
 
         for node_contained in original.nodes:
             if not node_contained.is_deleted:
+                registered_node = node_contained.register_node(
+                    schema, auth, template, data
+                )
+                if registered_node is not None:
+                    registered.nodes.append(registered_node)
+
+        for node_contained in original.nodes:
+            if not node_contained.is_deleted:
                 node_contained.register_node(
-                    schema, auth, template, data, parent=registered
+                    schema, auth, template, data,
                 )
 
         original.add_log(
@@ -1971,6 +1971,15 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
             return self.parent_node.root
         else:
             return self
+
+    @property
+    def archiving(self):
+        job = self.archive_job
+        return job and not job.done
+
+    @property
+    def archive_job(self):
+        return self.archivejob__active[0] if self.archivejob__active else None
 
     @property
     def registrations(self):

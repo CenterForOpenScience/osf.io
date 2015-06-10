@@ -7,9 +7,8 @@ from website.archiver import (
     StatResult, AggregateStatResult,
     ARCHIVER_NETWORK_ERROR,
     ARCHIVER_SIZE_EXCEEDED,
-    ARCHIVER_INITIATED
 )
-from website.addons.base import StorageAddonBase
+from website.archiver.model import ArchiveJob
 
 from website import mails
 from website import settings
@@ -116,16 +115,6 @@ def link_archive_provider(node, user):
     addon.on_add()
     node.save()
 
-def update_status(node, addon, status, meta={}):
-    temp = node.archived_providers.get(addon, {})
-    up = {
-        'status': status,
-    }
-    up.update(meta)
-    temp.update(up)
-    node.archived_providers[addon] = temp
-    node.save()
-
 def delete_registration_tree(node):
     node.is_deleted = True
     try:
@@ -170,9 +159,11 @@ def aggregate_file_tree_metadata(addon_short_name, fileobj_metadata, user):
             meta=fileobj_metadata,
         )
 
-def before_archive(node):
-    addons = [node.get_addon(name) for name in settings.ADDONS_ARCHIVABLE]
-    for addon in addons:
-        if not (addon and addon.complete and isinstance(addon, StorageAddonBase)):
-            continue
-        update_status(node, addon.config.short_name, ARCHIVER_INITIATED)
+def before_archive(node, user):
+    link_archive_provider(node, user)
+    job = ArchiveJob(
+        src_node=node.registered_from,
+        dst_node=node,
+        initiator=user
+    )
+    job.set_targets()

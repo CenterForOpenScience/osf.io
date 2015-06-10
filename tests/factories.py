@@ -201,7 +201,7 @@ class RegistrationFactory(AbstractNodeFactory):
         if archive:
             return register()
         else:
-            with patch('website.archiver.tasks.archive.si'):
+            with patch('framework.tasks.handlers.enqueue_task'):
                 return register()
 
 
