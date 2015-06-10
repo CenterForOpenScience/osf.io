@@ -4,11 +4,11 @@
  */
 'use strict';
 // CSS used on every page
-require('../../../../node_modules/osf-style/css/base.css');
 require('../../vendor/bootstrap-editable-custom/css/bootstrap-editable.css');
 require('../../vendor/bower_components/jquery-ui/themes/base/minified/jquery.ui.resizable.min.css');
 require('../../css/bootstrap-xl.css');
 require('../../css/animate.css');
+require('../../../../node_modules/osf-style/css/base.css');
 require('../../css/style.css');
 require('font-awesome-webpack');
 
@@ -72,7 +72,7 @@ var SlideInViewModel = function (){
 };
 
 $(document).on('click', '.project-toggle', function() {
-    var widget = $(this).closest('.addon-widget-container');
+    var widget = $(this).closest('.panel');
     var up = $(this).find('.fa fa-angle-up');
     var down = $(this).find('.fa fa-angle-down');
     if(up.length > 0) {
@@ -82,7 +82,7 @@ $(document).on('click', '.project-toggle', function() {
         down.removeClass('fa fa-angle-down').addClass('fa fa-angle-up');
     }
 
-    widget.find('.addon-widget-body').slideToggle();
+    widget.find('.panel-body').slideToggle();
     return false;
 });
 
