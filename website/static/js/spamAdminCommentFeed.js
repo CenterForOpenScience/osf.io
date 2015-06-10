@@ -131,8 +131,9 @@ SpamAdminCommentViewModel.prototype.get_comments = function(amount) {
             return new SpamAdminComment(data);
         });
 
+        //todo: figure out how to extend array all at once
         //it is better to extend an array at once rather then manually add multiple times because each addition
-        //forces knockout to reload. DO THAT. apply is just pushing foreach new comment.
+        //forces knockout to reload. apply is just pushing for each new comment.
         self.spamAdminComments.removeAll();
         self.spamAdminComments.push.apply(self.spamAdminComments, newComments);
 

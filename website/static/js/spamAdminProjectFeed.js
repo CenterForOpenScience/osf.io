@@ -135,7 +135,8 @@ SpamAdminProjectViewModel.prototype.get_projects = function(amount) {
 
         self.spamAdminProjects.removeAll();
         //it is better to extend an array at once rather then manually add multiple times because each addition
-        //forces knockout to reload. DO THAT. apply is just pushing foreach new project. SLOW. FIX. TODO: make fast.
+        //forces knockout to reload. DO THAT. apply is just pushing foreach new project. SLOW. FIX.
+        // TODO: make fast.
         self.spamAdminProjects.push.apply(self.spamAdminProjects, newProjects);
 
 
