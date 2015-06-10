@@ -28,6 +28,7 @@ from website import archiver
 from website.archiver import listeners
 from website.archiver.tasks import *   # noqa
 from website.archiver.model import ArchiveJob
+from website.archiver.decorators import fail_archive_on_error
 
 from website import mails
 from website import settings
@@ -638,3 +639,21 @@ class TestArchiverDebugRoutes(ArchiverTestCase):
                 assert(False)
             except:
                 assert(True)
+
+class TestArchiverDecorators(ArchiverTestCase):
+
+    @mock.patch('website.archiver.utils.handle_archive_fail')
+    def test_fail_archive_on_error(self, mock_fail):
+        e = HTTPError(418)
+        def error(*args, **kwargs):
+            raise e
+
+        func = fail_archive_on_error(error)
+        func(node=self.dst)
+        mock_fail.assert_called_with(
+            ARCHIVER_UNCAUGHT_ERROR,
+            self.src,
+            self.dst,
+            self.user,
+            str(e)
+        )
