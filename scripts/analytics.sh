@@ -1,6 +1,7 @@
 #!/bin/bash
 
-export HOME="/home"
+export HOME=$(mktemp)
 cd /opt/apps/osf
-source /opt/data/envs/mathenv/bin/activate
+source /opt/data/envs/osf/bin/activate
+
 invoke analytics >> /var/log/osf/analytics.log 2>&1
