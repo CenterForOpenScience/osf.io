@@ -24,7 +24,6 @@ span#profileFullname{
 
 .pointer {cursor: pointer;}
 
-
 table.table.table-plain th, table.table.table-plain td {
   text-align: left;
   border-top: 0px solid #ddd;
@@ -36,9 +35,6 @@ table.table.table-plain th, table.table.table-plain td {
 
 /* Profile gravatar
 -------------------------------------------------- */
-.profile-avatar{
-    margin-right:.5em;
-}
 #profile-gravatar{
     width:70px;
     height:70px;

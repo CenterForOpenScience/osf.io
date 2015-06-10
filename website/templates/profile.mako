@@ -18,7 +18,7 @@
 
 <div class="page-header">
     <div class="profile-fullname">
-        <span class="profile-avatar">
+        <span class="m-r-sm">
         % if user['is_profile']:
             <a href="#changeAvatarModal" data-toggle="modal"><img id='profile-gravatar' src="${profile['gravatar_url']}"
                     rel="tooltip" title="Click to change avatar"/></a>
