@@ -54,7 +54,7 @@
 <template id="osf-ob-register">
 <div class="m-b-sm p-md ob-list-item osf-box box-round">
     <div data-bind="click: toggle" class="m-b-md pointer">
-        <h3 class="ob-heading">Register a project</h3>
+        <h3 class="m-xs ob-heading">Register a project</h3>
         <i data-bind="css: {' fa-plus': !isOpen(), ' fa-minus': isOpen()}"
             class="pointer ob-expand-icon fa-lg pull-right fa">
         </i>
@@ -78,7 +78,7 @@
 <template id="osf-ob-uploader">
 <div class="m-b-sm p-md ob-list-item osf-box box-round">
     <div data-bind="click: toggle" class="m-b-md pointer">
-        <h3 class="ob-heading">Upload file(s)</h3>
+        <h3 class="m-xs ob-heading">Upload file(s)</h3>
         <i data-bind="css: {' fa-plus': !isOpen(), ' fa-minus': isOpen()}"
             class="pointer ob-expand-icon fa-lg pull-right fa">
         </i>
@@ -168,7 +168,7 @@
 <template id="osf-ob-goto">
 <div class="m-b-sm p-md ob-list-item osf-box box-round">
     <div data-bind="click: toggle" class="m-b-md pointer">
-        <h3 class="ob-heading">Go to my project</h3>
+        <h3 class="m-xs ob-heading">Go to my project</h3>
         <i data-bind="css: {' fa-plus': !isOpen(), ' fa-minus': isOpen()}"
             class="pointer ob-expand-icon fa-lg pull-right fa">
         </i>
