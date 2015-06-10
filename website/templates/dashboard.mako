@@ -44,7 +44,7 @@
                                     class="pointer ob-expand-icon fa-lg pull-right fa">
                                 </i>
                                 <h3
-                                    class="ob-heading list-group-item-heading">
+                                    class="ob-heading">
                                     Create a project
                                 </h3>
                             </div><!-- end ob-header -->
