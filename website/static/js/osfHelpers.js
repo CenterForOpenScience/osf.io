@@ -53,26 +53,32 @@ var apiV2Url = function (pathString, paramsObject, apiPrefix){
 };
 
 /*
- * Perform an ajax call (cross-origin if necessary). Deliberately excludes success/error arguments to encourage use of promises
+ * Perform an ajax request (cross-origin if necessary) that sends and receives JSON
  */
-var ajaxWrapper = function(method, url, data, isCors, extraOpts) {
-    isCors = isCors || false;
+var ajaxJSON = function(method, url, options) {
+    var defaults = {
+        data: {},  // Request body (required for PUT, PATCH, POST, etc)
+        isCors: false,  // Is this sending an authenticated cross-domain request?
+        fields: {}  // Additional fields (settings) for the JQuery AJAX call; overrides any defaults set by function
+    };
+    var opts = $.extend({}, defaults, options);
 
-    var ajaxOpts = {
+    var ajaxFields = {
         url: url,
         type: method,
-        data: JSON.stringify(data),
+        data: JSON.stringify(opts.data),
         contentType: 'application/json',
         dataType: 'json'
     };
-    if(isCors) {
-        ajaxOpts.crossOrigin = true;
-        ajaxOpts.xhrFields =  {
+    if(opts.isCors) {
+        ajaxFields.crossOrigin = true;
+        ajaxFields.xhrFields =  {
             withCredentials: true
         }
     }
-    for (var attrname in extraOpts) {ajaxOpts[attrname] = extraOpts[attrname]; }
-    return $.ajax(ajaxOpts);
+    $.extend(true, ajaxFields, opts.fields);
+
+    return $.ajax(ajaxFields);
 };
 
 
@@ -97,7 +103,7 @@ var ajaxWrapper = function(method, url, data, isCors, extraOpts) {
 * @return {jQuery xhr}
 */
 var postJSON = function(url, data, success, error) {
-    var ajaxOpts = {};
+    var ajaxOpts = {data: data};
     // For backwards compatibility. Prefer the Promise interface to these callbacks.
     if (typeof success === 'function') {
         ajaxOpts.success = success;
@@ -105,7 +111,7 @@ var postJSON = function(url, data, success, error) {
     if (typeof error === 'function') {
         ajaxOpts.error = error;
     }
-    return ajaxWrapper("POST", url, data, false, ajaxOpts);
+    return ajaxJSON("POST", url, ajaxOpts);
 };
 
 /**
@@ -122,15 +128,18 @@ var postJSON = function(url, data, success, error) {
   * @return {jQuery xhr}
   */
 var putJSON = function(url, data, success, error) {
-    var ajaxOpts = {};
+    var ajaxOpts = {
+        data: data,
+        fields: {}
+    };
     // For backwards compatibility. Prefer the Promise interface to these callbacks.
     if (typeof success === 'function') {
-        ajaxOpts.success = success;
+        ajaxOpts.fields.success = success;
     }
     if (typeof error === 'function') {
-        ajaxOpts.error = error;
+        ajaxOpts.fields.error = error;
     }
-    return ajaxWrapper("PUT", url, data, false, ajaxOpts);
+    return ajaxJSON("PUT", url, ajaxOpts);
 };
 
 /**
@@ -617,7 +626,7 @@ function humanFileSize(bytes, si) {
 module.exports = window.$.osf = {
     postJSON: postJSON,
     putJSON: putJSON,
-    ajaxWrapper: ajaxWrapper,
+    ajaxJSON: ajaxJSON,
     setXHRAuthorization: setXHRAuthorization,
     handleJSONError: handleJSONError,
     handleEditableError: handleEditableError,

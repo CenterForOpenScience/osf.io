@@ -98,7 +98,7 @@ var ApplicationViewModel = function (urls) {
 
 ApplicationViewModel.prototype.fetch = function (url) { // TODO: duplicated in ApplicationListViewModel
     var self = this;
-    var request = $osf.ajaxWrapper("GET", url, true);
+    var request = $osf.ajaxJSON("GET", url, {isCors:true});
 
     request.done(function (data) {
         var result;
@@ -134,7 +134,7 @@ ApplicationViewModel.prototype.updateApplication = function () {
 
     var payload = self.content().serialize();
 
-    var request = $osf.ajaxWrapper("PATCH", url, payload, true);
+    var request = $osf.ajaxJSON("PATCH", url, {isCors: true, data: payload});
 
     request.done(function (data) {
         self.content().fromJSON(data.data);  // Update the data with what request returns- reflect server side cleaning
@@ -164,7 +164,7 @@ ApplicationViewModel.prototype.createApplication = function () {
 
     var url = self.submitUrl;
 
-    var request = $osf.ajaxWrapper('POST', url, payload, true);
+    var request = $osf.ajaxJSON('POST', url, {isCors: true, data: payload});
 
     request.done(function (data) {
         self.content().fromJSON(data.data);  // Update the data with what request returns- reflect server side cleaning
@@ -224,7 +224,7 @@ var ApplicationsListViewModel= function (urls) {
 ApplicationsListViewModel.prototype.fetch = function (url) {
     var self = this;
 
-    var request = $osf.ajaxWrapper("GET", url, null, true);
+    var request = $osf.ajaxJSON("GET", url, {isCors: true});
 
     request.done(function (data) {
         var dataArray;
@@ -263,7 +263,7 @@ ApplicationsListViewModel.prototype.deleteApplication = function (appData) {
         message: 'Are you sure you want to de-register this application and revoke all access tokens? This cannot be reversed.',
         callback: function (confirmed) {
             if (confirmed) {
-                var request = $osf.ajaxWrapper("DELETE", url, null, true);
+                var request = $osf.ajaxJSON("DELETE", url, {isCors: true});
 
                 request.done(function (data) {
                         self.content.destroy(appData);
