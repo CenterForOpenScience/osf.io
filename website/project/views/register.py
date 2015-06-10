@@ -548,9 +548,7 @@ def registration_callbacks(node, payload, *args, **kwargs):
         node.archive_job.update_target(
             src_provider,
             ARCHIVER_FAILURE,
-            meta={
-                'errors': errors
-            }
+            errors=errors,
         )
     else:
         node.archive_job.update_target(
