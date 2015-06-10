@@ -180,14 +180,14 @@
         }'></div>
         %endif
 
-        <div class="addon-widget-container">
-            <div class="addon-widget-header clearfix">
-                <h4>Files</h4>
+        <div class="panel panel-default">
+            <div class="panel-heading clearfix">
+                <div class="panel-title">Files</div>
                 <div class="pull-right">
                    <a href="${node['url']}files/" class="btn"> <i class="fa fa-external-link"></i> </a>
                 </div>
             </div>
-            <div class="addon-widget-body">
+            <div class="panel-body">
                 <div id="treeGrid">
                     <div class="fangorn-loading">
                         <div class="logo-spin text-center"><img src="/static/img/logo_spin.png" alt="loader"> </div> 
@@ -221,14 +221,14 @@
         <!-- Citations -->
         % if not node['anonymous']:
 
-         <div class="citations addon-widget-container">
-            <div class="addon-widget-header clearfix">
-                <h4>Citation</h4>
+         <div class="citations panel panel-default">
+            <div class="panel-heading clearfix">
+                <div class="panel-title">Citation</div>
                 <div class="pull-right">
                     <span class="permalink">${node['display_absolute_url']}</span><a href="#" class="btn project-toggle"><i class="fa fa-angle-down"></i></a>
                 </div>
             </div>
-            <div class="addon-widget-body" style="display:none">
+            <div class="panel-body" style="display:none">
                 <dl id="citationList" class="citation-list">
                     <dt>APA</dt>
                         <dd class="citation-text" data-bind="text: apa"></dd>
@@ -259,7 +259,7 @@
                 <div class="pull-right">
                 </div>
             </div>
-            <div class="addon-widget-body">
+            <div class="panel-body">
                 <input name="node-tags" id="node-tags" value="${','.join([tag for tag in node['tags']]) if node['tags'] else ''}" />
             </div>
         </div>
@@ -275,9 +275,9 @@
 
 <%def name="children()">
 % if ('write' in user['permissions'] and not node['is_registration']) or node['children']:
-    <div class="components addon-widget-container">
-        <div class="addon-widget-header clearfix">
-            <h4>Components </h4>
+    <div class="components panel panel-default">
+        <div class="panel-heading clearfix">
+            <div class="panel-title">Components </div>
             <div class="pull-right">
                 % if 'write' in user['permissions'] and not node['is_registration']:
                     <a class="btn btn-sm btn-default" data-toggle="modal" data-target="#newComponent">Add Component</a>
@@ -285,7 +285,7 @@
                 % endif
             </div>
         </div><!-- end addon-widget-header -->
-        <div class="addon-widget-body">
+        <div class="panel-body">
             % if node['children']:
                 <div id="containment">
                     <div mod-meta='{
