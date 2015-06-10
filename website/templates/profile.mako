@@ -39,35 +39,24 @@
 
     <div class="col-sm-6">
 
-
-        <div>
-            <table class="table table-plain">
+        <table class="table table-plain">
+            % if profile.get('date_registered'):
                 <tr>
-                  <td>Name</td>
-                  <td class="fullname overflow-block" width="300px">${profile["fullname"]}</td>
+                    <td>Member&nbsp;Since</td>
+                    <td>${profile['date_registered']}</td>
                 </tr>
-                % if profile.get('date_registered'):
-                    <tr>
-                        <td>Member&nbsp;Since</td>
-                        <td>${profile['date_registered']}</td>
-                    </tr>
-                % endif
-                % if profile.get('url') and profile.get('display_absolute_url'):
-                    <tr>
-                        <td>Public&nbsp;Profile</td>
-                        <td><a href="${profile['url']}">${profile['display_absolute_url']}</a></td>
-                    </tr>
-                % endif
-            </table>
-        </div>
-        <div>
-            <h2>
-               ${profile['activity_points'] or "No"} activity point${'s' if profile['activity_points'] != 1 else ''}<br />
-               ${profile["number_projects"]} project${'s' if profile["number_projects"] != 1  else ''}, ${profile["number_public_projects"]} public
-            </h2>
-        </div>
-
-
+            % endif
+            % if profile.get('url') and profile.get('display_absolute_url'):
+                <tr>
+                    <td>Public&nbsp;Profile</td>
+                    <td><a href="${profile['url']}">${profile['display_absolute_url']}</a></td>
+                </tr>
+            % endif
+        </table>
+        <h2>
+           ${profile['activity_points'] or "No"} activity point${'s' if profile['activity_points'] != 1 else ''}<br />
+           ${profile["number_projects"]} project${'s' if profile["number_projects"] != 1  else ''}, ${profile["number_public_projects"]} public
+        </h2>
     </div>
 
     <div class="col-sm-6">

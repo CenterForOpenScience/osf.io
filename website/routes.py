@@ -65,6 +65,8 @@ def get_globals():
         'language': language,
         'web_url_for': util.web_url_for,
         'api_url_for': util.api_url_for,
+        'api_v2_url': util.api_v2_url,  # URL function for templates
+        'api_v2_base': util.api_v2_url(''),  # Base url used by JS api helper
         'sanitize': sanitize,
         'js_str': lambda x: x.replace("'", r"\'").replace('"', r'\"'),
         'webpack_asset': paths.webpack_asset,
@@ -200,10 +202,17 @@ def make_url_map(app):
         ),
 
         Rule(
-            '/presentations/',
+            '/meetings/',
             'get',
             conference_views.conference_view,
             OsfWebRenderer('public/pages/meeting_landing.mako'),
+        ),
+
+        Rule(
+            '/presentations/',
+            'get',
+            conference_views.redirect_to_meetings,
+            json_renderer,
         ),
 
         Rule('/news/', 'get', {}, OsfWebRenderer('public/pages/news.mako')),
@@ -539,8 +548,6 @@ def make_url_map(app):
              OsfWebRenderer('profile.mako')),
         Rule('/settings/key_history/<kid>/', 'get', profile_views.user_key_history,
              OsfWebRenderer('profile/key_history.mako')),
-        Rule('/addons/', 'get', profile_views.profile_addons,
-             OsfWebRenderer('profile/addons.mako')),
         Rule(["/user/merge/"], 'get', auth_views.merge_user_get,
              OsfWebRenderer("merge_accounts.mako")),
         Rule(["/user/merge/"], 'post', auth_views.merge_user_post,
@@ -1362,15 +1369,6 @@ def make_url_map(app):
             'put',
             addon_views.create_waterbutler_log,
             json_renderer,
-        ),
-        Rule(
-            [
-                '/project/<pid>/files/<provider>/<path:path>/',
-                '/project/<pid>/node/<nid>/files/<provider>/<path:path>/',
-            ],
-            'get',
-            addon_views.addon_render_file,
-            json_renderer
         ),
         Rule(
             '/settings/addons/',
