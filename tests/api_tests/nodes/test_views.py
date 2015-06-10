@@ -936,6 +936,34 @@ class TestCreateNodePointer(ApiTestCase):
         res = self.app.post(self.private_url, self.private_payload, auth=self.basic_auth_two, expect_errors=True)
         assert_equal(res.status_code, 403)
 
+    def test_create_fake_pointer_logged_out(self):
+        res = self.app.post(self.public_url, self.fake_payload, expect_errors = True)
+        # This is 403 instead of 401 because basic authentication is only for unit tests and, in order to keep from
+        # presenting a basic authentication dialog box in the front end. We may change this as we understand CAS
+        # a little better
+        assert_equal(res.status_code, 403)
+
+    def test_create_fake_pointer_logged_in_non_contrib(self):
+        res = self.app.post(self.public_url, self.fake_payload, auth=self.basic_auth_two, expect_errors = True)
+        # This is 403 instead of 401 because basic authentication is only for unit tests and, in order to keep from
+        # presenting a basic authentication dialog box in the front end. We may change this as we understand CAS
+        # a little better
+        assert_equal(res.status_code, 403)
+
+    def test_create_fake_pointer_logged_in_contrib(self):
+        res = self.app.post(self.public_url, self.fake_payload, auth=self.basic_auth, expect_errors = True)
+        # This is 403 instead of 401 because basic authentication is only for unit tests and, in order to keep from
+        # presenting a basic authentication dialog box in the front end. We may change this as we understand CAS
+        # a little better
+        assert_equal(res.status_code, 405) # getting 500 error
+
+    def test_create_pointer_to_itself(self):
+        res = self.app.post(self.public_url, self.fake_payload, auth=self.basic_auth, expect_errors = True)
+        # This is 403 instead of 401 because basic authentication is only for unit tests and, in order to keep from
+        # presenting a basic authentication dialog box in the front end. We may change this as we understand CAS
+        # a little better
+        assert_equal(res.status_code, 405) # getting 500 error
+
 
 
 
