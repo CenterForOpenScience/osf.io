@@ -34,7 +34,7 @@
                                     <!-- ko if: count === $parent.tagMaxCount() && count > $parent.tagMaxCount()/2  -->
                                     <span class="cloud-tag tag-big pointer tag-container"
                                           data-bind="click: $root.clickTag.bind($parentContext, name, 'add')">
-                                        <span>
+                                        <span class="cloud-text">
                                             {{name}}
                                         </span>
                                         <i class="fa fa-times-circle remove-tag big"
@@ -44,7 +44,7 @@
                                     <!-- ko if: count < $parent.tagMaxCount() && count > $parent.tagMaxCount()/2 -->
                                     <span class="cloud-tag tag-med pointer tag-container"
                                           data-bind="click: $root.clickTag.bind($parentContext, name, 'add')">
-                                        <span>
+                                        <span class="cloud-text">
                                             {{name}}
                                         </span>
                                         <i class="fa fa-times-circle remove-tag med"
@@ -54,7 +54,7 @@
                                     <!-- ko if: count <= $parent.tagMaxCount()/2-->
                                     <span class="cloud-tag tag-sm pointer tag-container"
                                           data-bind="click: $root.clickTag.bind($parentContext, name, 'add')">
-                                        <span>
+                                        <span class="cloud-text">
                                             {{name}}
                                         </span>
                                         <i class="fa fa-times-circle remove-tag"
@@ -259,7 +259,7 @@
             <span class="tag-cloud" data-bind="foreach: tags">
                 <span class="cloud-tag tag-sm pointer tag-container"
                       data-bind="click: $root.clickTag.bind($parentContext, $data, 'add')">
-                    <span data-bind="text: $data"></span>
+                    <span class="cloud-text" data-bind="text: $data"></span>
                     <i class="fa fa-times-circle remove-tag"
                        data-bind="click: $root.clickTag.bind($parentContext, $data, 'remove')"></i>
                 </span>
