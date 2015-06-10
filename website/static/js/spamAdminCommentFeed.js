@@ -2,18 +2,14 @@
  * Renders a log feed.
  **/
 'use strict';
-
 var ko = require('knockout');
-
 var $osf = require('js/osfHelpers');
-
 
 /**
 * Log model.
 */
 var SpamAdminComment = function(data) {
     var self = this;
-
     self.cid=data.cid;
     self.author = ko.observable(data.author.name);
     self.author_url = ko.observable(data.author.url);
@@ -22,7 +18,6 @@ var SpamAdminComment = function(data) {
     self.content = ko.observable(data.content);
     self.project = ko.observable(data.project);
     self.project_url=ko.observable(data.project_url);
-
 };
 
 SpamAdminComment.prototype.markSpam = function(){
@@ -38,7 +33,6 @@ SpamAdminComment.prototype.markSpam = function(){
 
 SpamAdminComment.prototype.markHam = function(){
     var self=this;
-
     var worked = $osf.postJSON(
             "/api/v1/spam_admin/mark_comment_as_ham/",
             {
@@ -53,7 +47,6 @@ SpamAdminComment.prototype.markHam = function(){
 * @param {Log[]} logs An array of Log model objects to render.
 */
 var SpamAdminCommentViewModel = function(spamAdminComments) {
-
     var self = this;
     self.spamAdminComments = ko.observableArray([]);
     self.total = ko.observable(0);
@@ -62,10 +55,8 @@ var SpamAdminCommentViewModel = function(spamAdminComments) {
 
 SpamAdminCommentViewModel.prototype.markHam = function(spamAdminComment){
     var self = this;
-
     var markHamRequest = spamAdminComment.markHam();
     markHamRequest.done(function(response) {
-
         //self.spamAdminComments.remove(spamAdminComment);
         $osf.growl('Comment Marked as Ham',"", 'success');
         self.fill_comment_list();
@@ -77,7 +68,6 @@ SpamAdminCommentViewModel.prototype.markHam = function(spamAdminComment){
 
 SpamAdminCommentViewModel.prototype.markSpam = function(spamAdminComment){
     var self = this;
-
     var markHamRequest = spamAdminComment.markSpam();
     markHamRequest.done(function(response) {
         self.spamAdminComments.remove(spamAdminComment);

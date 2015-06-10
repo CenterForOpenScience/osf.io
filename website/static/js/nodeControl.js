@@ -97,9 +97,9 @@ function setPermissions(permissions, nodeType) {
         bootbox.alert({
             title: 'Warning',
             message: message,
-            //callback: function(result) {
-            //    //do nothing
-            //}
+            callback: function(result) {
+                //do nothing
+            }
         });
     };
 
@@ -112,12 +112,14 @@ function setPermissions(permissions, nodeType) {
                 if (data.is_spam){
                     spamModel(MESSAGES['possibleSpamWarning']);
                 }
-                var addonMessages = data.prompts;
-                    for(var i=0; i<addonMessages.length; i++) {
+                else {
+                    var addonMessages = data.prompts;
+                    for (var i = 0; i < addonMessages.length; i++) {
                         alerts += '<div class="alert alert-warning">' +
-                                    addonMessages[i] + '</div>';
+                            addonMessages[i] + '</div>';
                     }
-                confirmModal(alerts + message);
+                    confirmModal(alerts + message);
+                }
             }
         );
     } else {
