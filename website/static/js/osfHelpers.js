@@ -29,20 +29,26 @@ var growl = function(title, message, type) {
 /**
  * Generate OSF absolute URLs, including prefix and arguments. Assumes access to mako globals for pieces of URL.
  * Can optionally pass in an object with params (name:value) to be appended to URL. Calling as:
- *   apiV2Url("users/4urxt/applications", {"a":1, "filter[fullname]":"lawrence"}, "https://staging2.osf.io/api/v2/")
+ *   apiV2Url("users/4urxt/applications",
+ *      {query:
+ *          {"a":1, "filter[fullname]": "lawrence"},
+ *       prefix: "https://staging2.osf.io/api/v2/"})
  * would yield the result:
  *  "https://staging2.osf.io/api/v2/users/4urxt/applications?a=1&filter%5Bfullname%5D=lawrence"
- * @param {String} pathString The string to be appended to the absolute base path, eg "users/4urxt"
- * @param {Object} paramsObject (optional) An object containing parameters to add to the URL. Otherwise pass 'undefined'.
- * @param {String} apiPrefix (optional) Manually specify the prefix used for API routes (useful for testing)
+ * @param {String} path The string to be appended to the absolute base path, eg "users/4urxt"
+ * @param {Object} options (optional)
  */
-var apiV2Url = function (pathString, paramsObject, apiPrefix){
-    apiPrefix = apiPrefix || window.contextVars.apiV2Prefix;
+var apiV2Url = function (path, options){
+    var defaults = {
+        prefix: window.contextVars.apiV2Prefix, // Manually specify the prefix for API routes (useful for testing)
+        query: {}  // Optional query parameters to be appended to URL
+    };
+    var opts = $.extend({}, defaults, options);
 
-    var apiUrl = URI(apiPrefix);
-    var pathSegments = URI(pathString).segment();
+    var apiUrl = URI(opts.prefix);
+    var pathSegments = URI(path).segment();
     pathSegments.forEach(function(el){apiUrl.segment(el)});  // Hack to prevent double slashes when joining base + path
-    apiUrl.query(paramsObject);
+    apiUrl.query(opts.query);
 
     return apiUrl.toString();
 };
