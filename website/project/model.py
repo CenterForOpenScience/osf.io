@@ -1689,7 +1689,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
 
         return forked
 
-    def register_node(self, schema, auth, template, data, parent=None):
+    def register_node(self, schema, auth, template, data):
         """Make a frozen copy of a node.
 
         :param schema: Schema object
@@ -1742,9 +1742,6 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
 
         registered.save()
 
-        if parent:
-            registered.parent_node = parent
-
         # After register callback
         for addon in original.get_addons():
             _, message = addon.after_register(original, registered, auth.user)
@@ -1754,8 +1751,16 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
 
         for node_contained in original.nodes:
             if not node_contained.is_deleted:
+                registered_node = node_contained.register_node(
+                    schema, auth, template, data
+                )
+                if registered_node is not None:
+                    registered.nodes.append(registered_node)
+
+        for node_contained in original.nodes:
+            if not node_contained.is_deleted:
                 node_contained.register_node(
-                    schema, auth, template, data, parent=registered
+                    schema, auth, template, data,
                 )
 
         original.add_log(
