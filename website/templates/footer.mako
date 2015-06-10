@@ -7,7 +7,6 @@
                     <li><a href="/4znzp/wiki/home">About</a></li>
                     <li><a href="/explore/activity/">Explore</a></li>
                     <li><script type="text/javascript">document.write("<n uers=\"znvygb:pbagnpg@bfs.vb\" ery=\"absbyybj\">Pbagnpg</n>".replace(/[a-zA-Z]/g,function(e){return String.fromCharCode((e<="Z"?90:122)>=(e=e.charCodeAt(0)+13)?e:e-26)}));</script><noscript>Contact OSF: <span class="obfuscated-email-noscript"><strong><u>cont<span style="display:none;">null</span>act@<span style="display:none;">null</span>osf.<span style="display:none;">null</span>io</u></strong></span></noscript></li>
-                    <li><a href="https://www.givinglibrary.org/organizations/center-for-open-science">Donate</a></li>
                 </ul>
             </div>
             <div class="col-sm-4">
@@ -16,7 +15,8 @@
                     <li><a href="http://cos.io">Home</a></li>
                     <li><a href="/ezcuj/wiki/home/">Reproducibility Project: Psychology</a></li>
                     <li><a href="/e81xl/wiki/home/">Reproducibility Project: Cancer Biology</a></li>
-                </ul>
+                     <li><a href="https://www.givinglibrary.org/organizations/center-for-open-science">Donate</a></li>
+               </ul>
             </div>
             <div class="col-sm-3 col-md-2">
                 <h4>Help</h4>
