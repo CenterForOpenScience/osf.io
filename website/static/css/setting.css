@@ -1,4 +1,42 @@
-#accountSettings .panel-title {
+#accountSettings .panel-title, 
+#selectAddons .panel-title, 
+#selectLists .panel-title,
+#selectNotificationRefTab .panel-title,
+#configureAddons .panel-title{
   display: inline-block;
   float: none;
 }
+
+/* Minimal Treebeard for Configure Notifications in project and user settings */
+.osf-treebeard-minimal #tb-tbody {
+    border: none;
+    max-height: 500px;
+    height: inherit;
+    margin-top: 10px;
+}
+.osf-treebeard-minimal .tb-row {
+    padding-left: 10px;
+}
+
+.osf-treebeard-minimal .tb-row-titles {
+    border: none;
+}
+.osf-treebeard-minimal .tb-td {
+    padding-top: 4px;
+}
+.osf-treebeard-minimal .title-text {
+    line-height: 25px;
+}
+.osf-treebeard-minimal .tb-head {
+    display: none;
+}
+
+.osf-treebeard-minimal .form-control {
+    height: 26px;
+    padding: 0px;
+}
+
+.tb-no-icon .tb-expand-icon-holder {
+    width : 0;
+}
+

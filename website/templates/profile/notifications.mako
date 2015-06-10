@@ -46,7 +46,7 @@
                     <div data-bind="html: message, attr: {class: messageClass}"></div>
             </div><!--view model scope ends -->
         </div>
-        <div class="panel panel-default">
+        <div class="panel panel-default" id="selectNotificationRefTab">
             <div class="panel-heading"><h3 class="panel-title">Configure Notification Preferences</h3></div>
                 <form id="selectNotifications" class="osf-treebeard-minimal">
                     <div id="grid">

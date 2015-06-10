@@ -1,5 +1,7 @@
 'use strict';
 require('css/user-addon-settings.css');
+require('../../css/setting.css');
+
 var $ = require('jquery');
 var ko = require('knockout');
 var bootbox = require('bootbox');
