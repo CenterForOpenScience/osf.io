@@ -147,6 +147,34 @@ class RegistrationWithTokenMixin(JSONAPISerializer):
             raise serializers.ValidationError("Incorrect token.")
         return data
 
+    def create(self, validated_data):
+        request = self.context['request']
+        if "Open-Ended" in request.path:
+            template = "Open-Ended_Registration"
+            formatted_data = {'summary': validated_data['summary']}
+        elif "Pre-Data_Collection" in request.path:
+            template = "OSF-Standard_Pre-Data_Collection_Registration"
+            formatted_data = {"looked": validated_data["looked"], "datacompletion": validated_data["datacompletion"] , "comments": validated_data["comments"]}
+        elif "Pre-Registration" in request.path:
+            template = "Replication_Recipe_(Brandt_et_al.,_2013):_Pre-Registration"
+            formatted_data = {"item"+str(j): validated_data["item"+str(j)] for j in range(1,29)}
+        elif "Post-Completion" in request.path:
+            template = "Replication_Recipe_(Brandt_et_al.,_2013):_Post-Completion"
+            formatted_data = {"item"+str(j): validated_data["item"+str(j)] for j in range(29,38)}
+
+        schema = MetaSchema.find(
+            Q('name', 'eq', template)).sort('-schema_version')[0]
+
+        user = request.user
+        node = self.context['view'].get_node()
+        registration = node.register_node(
+            schema=schema,
+            auth=Auth(user),
+            template=template,
+            data=json.dumps(process_payload(formatted_data))
+        )
+        return registration
+
 class RegistrationOpenEndedSerializer(NodeSerializer):
     id = ser.CharField(read_only=True, source='_id')
     title = ser.CharField(read_only=True)
@@ -168,22 +196,7 @@ class RegistrationOpenEndedSerializer(NodeSerializer):
         type_='registrations'
 
 class RegistrationOpenEndedWithTokenSerializer(RegistrationWithTokenMixin, RegistrationOpenEndedSerializer):
-
-    def create(self, validated_data):
-        template = 'Open-Ended_Registration'
-        schema = MetaSchema.find(
-            Q('name', 'eq', template)).sort('-schema_version')[0]
-        request = self.context['request']
-        user = request.user
-        node = self.context['view'].get_node()
-        clean_data = process_payload(validated_data)
-        registration = node.register_node(
-            schema=schema,
-            auth=Auth(user),
-            template=template,
-            data=json.dumps({"summary": clean_data["summary"]})
-        )
-        return registration
+    pass
 
 class RegistrationPreDataCollectionSerializer(NodeSerializer):
     TRUE_FALSE_CHOICES = ["Yes", "No"]
@@ -211,20 +224,7 @@ class RegistrationPreDataCollectionSerializer(NodeSerializer):
         type_='registrations'
 
 class RegistrationPreDataCollectionWithTokenSerializer(RegistrationWithTokenMixin, RegistrationPreDataCollectionSerializer):
-    def create(self, validated_data):
-        template = "OSF-Standard_Pre-Data_Collection_Registration"
-        schema =  MetaSchema.find(
-            Q('name', 'eq', template)).sort('-schema_version')[0]
-        request = self.context['request']
-        user = request.user
-        node = self.context['view'].get_node()
-        clean_data = process_payload({"looked": validated_data['looked'], "datacompletion": validated_data['datacompletion'], "comments": validated_data['comments']})
-        registration = node.register_node(
-            schema=schema,
-            auth=Auth(user),
-            template=template,
-            data=json.dumps({"looked": clean_data["looked"], "datacompletion": clean_data["datacompletion"] , "comments": clean_data["comments"]}))
-        return registration
+    pass
 
 class ReplicationRecipePreRegistrationSerializer(NodeSerializer):
     YES_NO_CHOICES = ["yes", "no"]
@@ -278,22 +278,7 @@ class ReplicationRecipePreRegistrationSerializer(NodeSerializer):
         type_='registrations'
 
 class ReplicationRecipePreRegistrationWithTokenSerializer(RegistrationWithTokenMixin, ReplicationRecipePreRegistrationSerializer):
-    def create(self, validated_data):
-        template = "Replication_Recipe_(Brandt_et_al.,_2013):_Pre-Registration"
-        schema = MetaSchema.find(
-            Q('name', 'eq', template)).sort('-schema_version')[0]
-        request = self.context['request']
-        user = request.user
-        node = self.context['view'].get_node()
-        clean_data = process_payload({"item"+str(j): validated_data["item"+str(j)] for j in range(1,29)})
-
-        registration = node.register_node(
-            schema=schema,
-            auth=Auth(user),
-            template=template,
-            data=json.dumps({"item"+str(j): clean_data["item"+str(j)] for j in range(1,29)}))
-        return registration
-
+    pass
 class ReplicationRecipePostCompletionSerializer(NodeSerializer):
     EFFECT_SIZE = ["significantly different from the original effect size", "not significantly different from the original effect size"]
     REPLICATION_CONCLUSION = ["success", "informative failure to replicate", "practical failure to replicate", "inconclusive"]
@@ -327,21 +312,8 @@ class ReplicationRecipePostCompletionSerializer(NodeSerializer):
         type_='registrations'
 
 class ReplicationRecipePostCompletionWithTokenSerializer(RegistrationWithTokenMixin, ReplicationRecipePostCompletionSerializer):
-    def create(self, validated_data):
-        template = 'Replication_Recipe_(Brandt_et_al.,_2013):_Post-Completion'
-        schema =  MetaSchema.find(
-            Q('name', 'eq', template)).sort('-schema_version')[0]
-        request = self.context['request']
-        user = request.user
-        node = self.context['view'].get_node()
-        clean_data = process_payload({"item"+str(j): validated_data["item"+str(j)] for j in range(29,38)})
+    pass
 
-        registration = node.register_node(
-            schema=schema,
-            auth=Auth(user),
-            template=template,
-            data=json.dumps({"item"+str(j): clean_data["item"+str(j)] for j in range(29,38)}))
-        return registration
 
 class NodePointersSerializer(JSONAPISerializer):
 
