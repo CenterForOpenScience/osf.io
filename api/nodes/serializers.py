@@ -232,20 +232,20 @@ class ReplicationRecipePreRegistrationSerializer(NodeSerializer):
     item7 = ser.CharField(default='', write_only=True, help_text="What country/region was the original study conducted in?")
     item8 = ser.CharField(default='', write_only=True, help_text="What kind of sample did the original study use? (e.g., student, Mturk, representative)")
     item9 = ser.CharField(default='', write_only=True, help_text="Was the original study conducted with paper-and-pencil surveys, on a computer, or something else?")
-    item10= ser.ChoiceField(default='', write_only=True, choices=YES_NO_CHOICES, help_text="Are the original materials for the study available from the author?")
+    item10 = ser.ChoiceField(default='', write_only=True, choices=YES_NO_CHOICES, help_text="Are the original materials for the study available from the author?")
     item11 = ser.CharField(default='', write_only=True, help_text="I know that assumptions (e.g., about the meaning of the stimuli) in the original study will also hold in my replication because")
     item12 = ser.CharField(default='', write_only=True, help_text="Location of the experimenter during data collection")
     item13 = ser.CharField(default='', write_only=True, help_text="Experimenter knowledge of participant experimental condition")
     item14 = ser.CharField(default='', write_only=True, help_text="Experimenter knowledge of overall hypotheses")
     item15 = ser.CharField(default='', write_only=True, help_text="My target sample size is")
     item16 = ser.CharField(default='', write_only=True, help_text="The rationale for my sample size is")
-    item17= ser.ChoiceField(default='', write_only=True, choices=SIM_DIFF_CHOICES, help_text="The similarities/differences in the instructions are")
-    item18= ser.ChoiceField(default='', write_only=True, choices=SIM_DIFF_CHOICES, help_text="The similarities/differences in the measures are")
-    item19= ser.ChoiceField(default='', write_only=True, choices=SIM_DIFF_CHOICES, help_text="The similarities/differences in the stimuli are")
-    item20= ser.ChoiceField(default='', write_only=True, choices=SIM_DIFF_CHOICES, help_text="The similarities/differences in the procedure are")
-    item21= ser.ChoiceField(default='', write_only=True, choices=SIM_DIFF_CHOICES, help_text="The similarities/differences in the location (e.g., lab vs. online; alone vs. in groups) are")
-    item22= ser.ChoiceField(default='', write_only=True, choices=SIM_DIFF_CHOICES, help_text="The similarities/difference in remuneration are")
-    item23= ser.ChoiceField(default='', write_only=True, choices=SIM_DIFF_CHOICES, help_text="The similarities/differences between participant populations are")
+    item17 = ser.ChoiceField(default='', write_only=True, choices=SIM_DIFF_CHOICES, help_text="The similarities/differences in the instructions are")
+    item18 = ser.ChoiceField(default='', write_only=True, choices=SIM_DIFF_CHOICES, help_text="The similarities/differences in the measures are")
+    item19 = ser.ChoiceField(default='', write_only=True, choices=SIM_DIFF_CHOICES, help_text="The similarities/differences in the stimuli are")
+    item20 = ser.ChoiceField(default='', write_only=True, choices=SIM_DIFF_CHOICES, help_text="The similarities/differences in the procedure are")
+    item21 = ser.ChoiceField(default='', write_only=True, choices=SIM_DIFF_CHOICES, help_text="The similarities/differences in the location (e.g., lab vs. online; alone vs. in groups) are")
+    item22 = ser.ChoiceField(default='', write_only=True, choices=SIM_DIFF_CHOICES, help_text="The similarities/difference in remuneration are")
+    item23 = ser.ChoiceField(default='', write_only=True, choices=SIM_DIFF_CHOICES, help_text="The similarities/differences between participant populations are")
     item24 = ser.CharField(default='', write_only=True, help_text="What differences between the original study and your study might be expected to influence the size and/or direction of the effect?")
     item25 = ser.CharField(default='', write_only=True, help_text="I have taken the following steps to test whether the differences listed in #22 will influence the outcome of my replication attempt")
     item26 = ser.CharField(default='', write_only=True, help_text="My exclusion criteria are (e.g., handling outliers, removing participants from analysis)")
@@ -266,7 +266,7 @@ class ReplicationRecipePreRegistrationSerializer(NodeSerializer):
 
 class ReplicationRecipePreRegistrationWithTokenSerializer(RegistrationWithTokenMixin, ReplicationRecipePreRegistrationSerializer):
     template = "Replication_Recipe_(Brandt_et_al.,_2013):_Pre-Registration"
-    data_keys = ["item"+str(j) for j in range(1,29)]
+    data_keys = ["item" + str(j) for j in range(1, 29)]
 
 class ReplicationRecipePostCompletionSerializer(NodeSerializer):
     EFFECT_SIZE = ["significantly different from the original effect size", "not significantly different from the original effect size"]
@@ -302,7 +302,7 @@ class ReplicationRecipePostCompletionSerializer(NodeSerializer):
 
 class ReplicationRecipePostCompletionWithTokenSerializer(RegistrationWithTokenMixin, ReplicationRecipePostCompletionSerializer):
     template = "Replication_Recipe_(Brandt_et_al.,_2013):_Post-Completion"
-    data_keys = ["item"+str(j) for j in range(29,38)]
+    data_keys = ["item" + str(j) for j in range(29, 38)]
 
 class NodePointersSerializer(JSONAPISerializer):
 
