@@ -96,7 +96,7 @@
                 <!-- File queue display -->
                 <div data-bind="visible: !enableUpload()" class="ob-dropzone-selected ob-dropzone-box osf-box box-round box-lt pull-left">
                     <img data-bind="attr: {src: iconSrc()}" class="ob-dropzone-icon" alt="File icon">
-                    <div data-bind="text: filename" class="ob-dropzone-filename"></div>
+                    <div data-bind="text: filename" class="m-t-sm"></div>
                     <progress
                         data-bind="attr: {value: progress()}, visible: showProgress()"
                             class="ob-upload-progress" max="100"></progress>

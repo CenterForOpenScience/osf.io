@@ -71,11 +71,6 @@ ul.ob-widget-list {
 	display: block !important;
 }
 
-div.ob-dropzone-filename{
-	margin-top:10px;
-	font-family: "Lucida Console", Monaco, monospace;
-}
-
 .ob-dropzone{
 	background-image: url("/static/img/upload.png");
 	background-repeat:no-repeat;
