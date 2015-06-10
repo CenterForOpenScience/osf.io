@@ -1,6 +1,6 @@
 #!/bin/bash
 
-export HOME=$(mktemp)
+export HOME=$(mktemp -d)
 cd /opt/apps/osf
 source /opt/data/envs/osf/bin/activate
 
