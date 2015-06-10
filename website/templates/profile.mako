@@ -18,7 +18,7 @@
 
 <div class="page-header">
     <div class="profile-fullname">
-        <div class="avatar_div">
+        <div class="avatar-div">
             % if user['is_profile']:
                 <a href="#changeAvatarModal" data-toggle="modal"><img id='profile-gravatar' src="${profile['gravatar_url']}"
                         rel="tooltip" title="Click to change avatar"/></a>
@@ -26,7 +26,7 @@
                 <img id='profile-gravatar' src="${profile['gravatar_url']}"/>
             % endif
         </div>
-        <div class="h1 overflow name_div">
+        <div class="h1 overflow name-div">
             ${profile["fullname"]}
         </div>
     </div>

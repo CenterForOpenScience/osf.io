@@ -1762,12 +1762,12 @@ div.profile-fullname{
     bottom: 0;
 }
 
-.avatar_div {
+.avatar-div {
     display: table-cell;
     vertical-align: middle;
 }
 
-.name_div {
+.name-div {
     display: table-cell;
     vertical-align: middle;
     padding-left: 10px;
@@ -2082,7 +2082,7 @@ div.profile-fullname{
         margin-top: 0px !important;
     }
 
-    .name_div {
+    .name-div {
         font-size: 20px;
     }
 
