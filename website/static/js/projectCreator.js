@@ -21,7 +21,7 @@ var CREATE_URL = '/api/v1/project/new/';
     * Params:
     *  - data: Data to populate the template selection input
     */
-function ProjectCreatorViewModel(params) {   
+function ProjectCreatorViewModel(params) {
     var self = this;
     self.params = params || {};
     self.minSearchLength = 2;
@@ -164,7 +164,8 @@ function ProjectCreatorViewModel(params) {
         return ko.utils.arrayMap(nodes, function(node) {
             return {
                 'id': node.id,
-                'text': node.title
+                // TODO: Remove htmlDecode when pre-sanitized strings are no longer stored
+                'text': $osf.htmlDecode(node.title)
             };
         });
     };
