@@ -506,12 +506,14 @@ def validate_category(value):
 
 
 def validate_title(value):
-    """Validator for Node#title. Makes sure that the value exists. #GRUMBLE
+    """Validator for Node#title. Makes sure that the value exists and is not
+    above 200 characters.
     """
     if value is None or not value.strip():
         raise ValidationValueError('Title cannot be blank.')
     elif len(value) > 200:
-            raise ValidationValueError('Titles cannot be longer than 200 characters.')
+            raise ValidationValueError('Titles cannot be longer than 200 ' +
+                                       'characters.')
     return True
 
 def validate_user(value):
@@ -1451,6 +1453,9 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         :param str title: The new title.
         :param auth: All the auth information including user, API key.
         """
+        #Preferably validation would happen automatically without having to save.
+        validate_title(title)
+
         original_title = self.title
         self.title = title
         self.add_log(

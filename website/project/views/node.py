@@ -51,7 +51,7 @@ def edit_node(auth, node, **kwargs):
     value = strip_html(post_data.get('value', ''))
     if edited_field == 'title':
         try:
-            node.set_title(value, auth=auth, save=True)
+            node.set_title(value, auth=auth)
         except ValidationValueError as e:
             raise HTTPError(
                 http.BAD_REQUEST,
@@ -360,7 +360,7 @@ def configure_comments(node, **kwargs):
 @must_be_valid_project
 @must_be_contributor_or_public
 def view_project(auth, node, **kwargs):
-    primary = '/api/v1' not in request.path #What if it's V2?
+    primary = '/api/v1' not in request.path
     ret = _view_project(node, auth, primary=primary)
     ret['addon_capabilities'] = settings.ADDON_CAPABILITIES
     # Collect the URIs to the static assets for addons that have widgets
