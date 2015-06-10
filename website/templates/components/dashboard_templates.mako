@@ -91,10 +91,10 @@
                 <h4>1. Drop file (or click below)</h4>
 
                 <!-- Dropzone -->
-                <div data-bind="click: clearMessages(), visible: enableUpload()" id="obDropzone" class="ob-dropzone ob-dropzone-box pull-left"></div>
+                <div data-bind="click: clearMessages(), visible: enableUpload()" id="obDropzone" class="ob-dropzone ob-dropzone-box osf-box box-round box-lt pull-left"></div>
 
                 <!-- File queue display -->
-                <div data-bind="visible: !enableUpload()" class="ob-dropzone-selected ob-dropzone-box pull-left">
+                <div data-bind="visible: !enableUpload()" class="ob-dropzone-selected ob-dropzone-box osf-box box-round box-lt pull-left">
                     <img data-bind="attr: {src: iconSrc()}" class="ob-dropzone-icon" alt="File icon">
                     <div data-bind="text: filename" class="ob-dropzone-filename"></div>
                     <progress

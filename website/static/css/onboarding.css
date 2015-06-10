@@ -26,14 +26,12 @@ ul.ob-widget-list {
 }
 
 .ob-dropzone-box {
-	border-radius:8px;
 	position:relative;
-	float:left;
 	height: 150px;
 	width: 100%;
 	font-size: 12px;
 	text-align: center;
-	border: solid 2px #ccc;
+	cursor: pointer;
 }
 
 .ob-clear-button{
