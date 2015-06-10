@@ -15,7 +15,7 @@ from tests.factories import (
 from framework.exceptions import HTTPError
 from website.spam_admin.spam_admin_settings import SPAM_ASSASSIN_URL,SPAM_ASSASSIN_TEACHING_URL
 import httpretty
-from website.spam_admin.utils import train_spam, _project_is_spam
+from website.spam_admin.utils import train_spam, project_is_spam
 from website.project.model import Node
 from website.project.views.node import project_before_set_public
 import json
@@ -485,7 +485,7 @@ class TestProjectSpamAdmin(OsfTestCase):
         website.settings.SPAM_ASSASSIN = True
         self._spamify_project(self.project)
 
-        assert_true(_project_is_spam(self.project))
+        assert_true(project_is_spam(self.project))
 
         resp = project_before_set_public(
             project=self.project,
@@ -498,7 +498,7 @@ class TestProjectSpamAdmin(OsfTestCase):
         website.settings.SPAM_ASSASSIN = False
         self._spamify_project(self.project)
 
-        assert_false(_project_is_spam(self.project))
+        assert_false(project_is_spam(self.project))
 
         resp = project_before_set_public(
             project=self.project,
@@ -509,7 +509,7 @@ class TestProjectSpamAdmin(OsfTestCase):
     @httpretty.activate
     def test_project_is_ham_with_spamassassin_active(self):
         website.settings.SPAM_ASSASSIN = True
-        assert_false(_project_is_spam(self.project))
+        assert_false(project_is_spam(self.project))
         resp = project_before_set_public(
             project=self.project,
             user=self.project.creator
@@ -519,7 +519,7 @@ class TestProjectSpamAdmin(OsfTestCase):
     @httpretty.activate
     def test_project_is_ham_with_spamassassin_inactive(self):
         website.settings.SPAM_ASSASSIN = False
-        assert_false(_project_is_spam(self.project))
+        assert_false(project_is_spam(self.project))
         resp = project_before_set_public(
             project=self.project,
             user=self.project.creator
@@ -546,7 +546,7 @@ class TestProjectSpamAdmin(OsfTestCase):
             user=self.project.creator
             )
         # project is spam. It should have been marked as possible spam.
-        assert_true(_project_is_spam(self.project))
+        assert_true(project_is_spam(self.project))
         assert_equal(self.project.spam_status, Node.POSSIBLE_SPAM)
         # self.project.mark_as_possible_spam(save=True) # todo: remove this.
 
@@ -587,7 +587,7 @@ class TestProjectSpamAdmin(OsfTestCase):
 
         #spammer puts spam materials into spam project
         self._spamify_project(self.project)
-        assert_false(_project_is_spam(self.project))
+        assert_false(project_is_spam(self.project))
 
         #spammer tries to make spam project public
         project_before_set_public(
@@ -595,7 +595,7 @@ class TestProjectSpamAdmin(OsfTestCase):
             user=self.project.creator
             )
         # project is not considered spam. It should not have been marked as possible spam.
-        assert_false(_project_is_spam(self.project))
+        assert_false(project_is_spam(self.project))
         assert_equal(self.project.spam_status, Node.UNKNOWN)
 
         #spam_admin should not see project since it is not possible spam

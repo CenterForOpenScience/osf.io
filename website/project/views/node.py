@@ -38,7 +38,7 @@ from website.views import _render_nodes, find_dashboard
 from website.profile import utils
 from website.project import new_folder
 from website.util.sanitize import strip_html
-from website.spam_admin.utils import _project_is_spam
+from website.spam_admin.utils import project_is_spam
 logger = logging.getLogger(__name__)
 
 
@@ -458,7 +458,7 @@ def project_statistics(auth, node, **kwargs):
 def project_before_set_public(node, **kwargs):
     prompt = node.callback('before_make_public')
 
-    if (not node.spam_status == node.HAM) and _project_is_spam(node):
+    if (not node.spam_status == node.HAM) and project_is_spam(node):
         node.mark_as_possible_spam(save=True)
         is_spam = True
     else:

@@ -69,10 +69,7 @@ var SpamAdminProjectViewModel = function(spamAdminProjects) {
 
     self.fill_project_list();
 
-
-
 };
-
 
 SpamAdminProjectViewModel.prototype.markHam = function(spamAdminProject){
     var self = this;
@@ -90,8 +87,6 @@ SpamAdminProjectViewModel.prototype.markHam = function(spamAdminProject){
         console.log('inside markHam done but failed');
     });
 
-
-
 };
 
 SpamAdminProjectViewModel.prototype.markSpam = function(spamAdminProject){
@@ -107,12 +102,7 @@ SpamAdminProjectViewModel.prototype.markSpam = function(spamAdminProject){
     markHamRequest.fail(function(response) {
         console.log('inside markSpam done but failed');
     });
-
-
 };
-
-
-
 
 SpamAdminProjectViewModel.prototype.fill_project_list = function(){
   var self = this;
@@ -120,7 +110,6 @@ SpamAdminProjectViewModel.prototype.fill_project_list = function(){
 };
 
 SpamAdminProjectViewModel.prototype.get_projects = function(amount) {
-
 
     var self=this;
 
@@ -162,16 +151,9 @@ SpamAdminProjectViewModel.prototype.fetch = function(amount){
 };
 
 
-
-
-
-
-
-
 ////////////////
 // Public API //
 ////////////////
-
 
 
 function SpamAdminProjectFeed(selector, options) {
@@ -181,25 +163,13 @@ function SpamAdminProjectFeed(selector, options) {
 
     self.init();
 
-
-
 };
-
-
-
-
-
-
 
 //// Apply ViewModel bindings
 SpamAdminProjectFeed.prototype.init = function() {
 
     var self = this;
-
-
     $osf.applyBindings(new SpamAdminProjectViewModel(self.spamAdminProjects), self.selector);
-
-
 
 };
 
