@@ -55,7 +55,6 @@
                             data: contributors,
                             as: 'contributor',
                             isEnabled: canEdit,
-                            afterRender: setupEditable,
                             options: {
                               containment: '#manageContributors'
                             }
@@ -138,7 +137,8 @@
                         <td class="col-sm-4">
                            <ul class="narrow-list list-overflow" data-bind="foreach: nodesList">
                                <li data-bind="style:{marginLeft: $data.scale}">
-                                  <img data-bind="attr:{src: imgUrl}" /><a data-bind="text:$data.title, attr: {href: $data.url}"></a>
+                                  <span data-bind="getIcon: $data.category"></span>
+                                  <a data-bind="text:$data.title, attr: {href: $data.url}"></a>
                                </li>
                            </ul>
                            <button class="btn btn-default btn-mini more-link-node" data-bind="text:hasMoreText, visible: moreNode, click: displayAllNodes"></button>
@@ -185,10 +185,16 @@
                 <a class="no-sort" data-bind="text: contributor.shortname, attr:{href: profileUrl}"></a>
             </span>
         </td>
-        <td>
+        <td class="permissions">
             <!-- ko if: contributor.canEdit() -->
                 <span data-bind="visible: notDeleteStaged">
-                    <a href="#" class="permission-editable no-sort" data-type="select"></a>
+                    <select class="form-control" data-bind="
+                        options: permissionList,
+                        value: curPermission,
+                        optionsText: 'text',
+                        style: { font-weight: change() ? 'normal' : 'bold' }"
+                    >
+                    </select>
                 </span>
                 <span data-bind="visible: deleteStaged">
                     <span data-bind="text: formatPermission"></span>
@@ -200,7 +206,7 @@
         </td>
         <td>
             <input
-                    type="checkbox" class="no-sort"
+                    type="checkbox" class="no-sort biblio"
                     data-bind="checked: visible, enable: $parent.canEdit() && !contributor.isAdmin"
                 />
         </td>
@@ -216,7 +222,7 @@
                     </a>
                 <!-- /ko -->
                 <!-- ko if: deleteStaged -->
-                    Will be removed after Save
+                    Save to Remove
                 <!-- /ko -->
             <!-- /ko -->
 

@@ -19,6 +19,13 @@
                 </a>
             </span>
 
+            <!-- Loading Import Text -->
+            <span data-bind="if: showLoading">
+                <p class="text-muted pull-right addon-auth">
+                    Loading ...
+                </p>
+            </span>
+
             <!-- Oauth Start Button -->
             <span data-bind="if: showTokenCreateButton">
                 <a data-bind="click: connectAccount" class="text-primary pull-right addon-auth">

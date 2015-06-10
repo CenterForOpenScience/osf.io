@@ -1,0 +1,25 @@
+{% extends 'rest_framework_swagger/base.html' %}
+{% load staticfiles %}
+
+{% block style %}
+    <link href="//fonts.googleapis.com/css?family=Droid+Sans:400,700" rel="stylesheet" type="text/css"/>
+    <link href="{% static 'rest_framework_swagger/css/highlight.default.css' %}" media="screen" rel="stylesheet" type="text/css"/>
+    <link href="{% static 'rest_framework_swagger/css/atelier-dune.light.css' %}" media="screen" rel="stylesheet" type="text/css"/>
+    <link href="{% static 'rest_framework_swagger/css/osf_rest_framework_swagger.css' %}" media="screen" rel="stylesheet" type="text/css"/>
+    <link href="{% static 'rest_framework_swagger/css/osf_screen.css' %}" media="screen" rel="stylesheet" type="text/css"/>
+{% endblock %}
+
+{% block branding %}
+    <a id="logo" href="http://osf.io">
+        <img class="osf-logo" src="{% static 'rest_framework_swagger/images/cos-white2.png' %}" width="27">
+        OSF
+    </a>
+{% endblock %}
+{% block api_selector %}
+    <form id="api_selector">
+        <div class="input"><input placeholder="http://example.com/api" id="input_baseUrl" name="baseUrl" type="text"/></div>
+        <div class="input"><input placeholder="api_key" id="input_apiKey" name="apiKey" type="text"/></div>
+        <div class="input"><a id="explore" href="#">Explore</a></div>
+    </form>
+{% endblock %}
+
