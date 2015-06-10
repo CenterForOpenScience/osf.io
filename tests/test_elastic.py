@@ -416,7 +416,6 @@ class TestAddContributor(SearchTestCase):
         contribs = search.search_contributor(self.name2.split(' ')[0][:-1])
         assert_equal(len(contribs['users']), 0)
 
-
     def test_search_fullname_special_character(self):
         # Searching for a fullname with a special character yields
         # exactly one result.
@@ -443,6 +442,58 @@ class TestAddContributor(SearchTestCase):
 
         contribs = search.search_contributor(self.name4.split(' ')[0][:-1])
         assert_equal(len(contribs['users']), 0)
+
+@requires_search
+class TestProjectSearchResults(SearchTestCase):
+    def setUp(self):
+        super(TestProjectSearchResults, self).setUp()
+        self.user = UserFactory(usename='Doug Bogie')
+
+        self.singular = 'Spanish Inquisition'
+        self.plural = 'Spanish Inquisitions'
+        self.possessive = 'Spanish\'s Inquisition'
+
+        self.project_singular = ProjectFactory(
+            title=self.singular,
+            creator=self.user,
+            is_public=True,
+        )
+
+        self.project_plural = ProjectFactory(
+            title=self.plural,
+            creator=self.user,
+            is_public=True,
+        )
+
+        self.project_possessive = ProjectFactory(
+            title=self.possessive,
+            creator=self.user,
+            is_public=True,
+        )
+
+        self.project_unrelated = ProjectFactory(
+            title='Cardinal Richelieu',
+            creator=self.user,
+            is_public=True,
+        )
+
+    def test_singular_query(self):
+        # Verify searching for singular term includes singular,
+        # possessive and plural versions in results.
+        results = query(self.singular)['results']
+        assert_equal(len(results), 3)
+
+    def test_plural_query(self):
+        # Verify searching for singular term includes singular,
+        # possessive and plural versions in results.
+        results = query(self.plural)['results']
+        assert_equal(len(results), 3)
+
+    def test_possessive_query(self):
+        # Verify searching for possessive term includes singular,
+        # possessive and plural versions in results.
+        results = query(self.possessive)['results']
+        assert_equal(len(results), 3)
 
 
 class TestSearchExceptions(OsfTestCase):
