@@ -20,7 +20,7 @@
     ## Knockout componenet templates
     <%include file="components/dashboard_templates.mako"/>
     <div class="col-sm-5">
-        <div class="ob-tab-head" id="obTabHead">
+        <div class="p-b-xs m-t-lg m-b-xs" id="obTabHead">
             <ul class="nav nav-tabs" role="tablist">
             <li class="active"><a href="#quicktasks" role="tab" data-toggle="tab">Quick Tasks</a></li>
             <li><a href="#watchlist" role="tab" data-toggle="tab">Watchlist</a></li>

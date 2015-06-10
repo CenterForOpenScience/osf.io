@@ -88,11 +88,6 @@ ul.ob-widget-list {
 	display: block !important;
 }
 
-.ob-tab-head {
-    padding-bottom: 5px;
-    margin: 25px 0 5px;
-}
-
 ul.nav.nav-tabs {
     border-bottom:1px solid #eee
 }
