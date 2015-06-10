@@ -8,6 +8,7 @@ import datetime
 from modularodm import Q
 from dateutil.relativedelta import relativedelta
 
+from website.app import init_app
 from website.addons.box import model
 
 
@@ -34,6 +35,7 @@ def main(delta, dry_run):
 
 
 if __name__ == '__main__':
+    init_app(set_backends=True, routes=False)
     dry_run = 'dry' in sys.argv
     try:
         days = int(sys.argv[2])
