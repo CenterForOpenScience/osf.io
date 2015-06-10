@@ -11,6 +11,7 @@ from box.client import BoxAuthenticationException
 
 from website.app import init_app
 from website.addons.box import model
+from scripts import utils as scripts_utils
 
 
 logger = logging.getLogger(__name__)
@@ -23,7 +24,7 @@ def get_targets(delta):
     )
 
 
-def main(delta, dry_run):
+def main(delta, dry):
     for record in get_targets(delta):
         logger.info(
             'Refreshing tokens on record {0}; expires at {1}'.format(
@@ -31,19 +32,21 @@ def main(delta, dry_run):
                 record.expires_at.strftime('%c')
             )
         )
-        if not dry_run:
+        if not dry:
             try:
                 record.refresh_access_token(force=True)
             except BoxAuthenticationException as ex:
-                print(ex.message)
+                logger.info(ex.message)
 
 
 if __name__ == '__main__':
     init_app(set_backends=True, routes=False)
-    dry_run = 'dry' in sys.argv
+    dry = 'dry' in sys.argv
     try:
         days = int(sys.argv[2])
     except (IndexError, ValueError, TypeError):
         days = 60 - 7  # refresh tokens are good for 60 days
     delta = relativedelta(days=days)
-    main(delta, dry_run=dry_run)
+    if not dry:
+        scripts_utils.add_file_logger(logger, __file__)
+    main(delta, dry=dry)
