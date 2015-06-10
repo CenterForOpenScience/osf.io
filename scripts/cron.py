@@ -90,10 +90,13 @@ def main(dry_run=True):
     cron = crontab.CronTab(user=settings.CRON_USER)
 
     analytics = ensure_item(cron, 'bash {}'.format(app_prefix('scripts/analytics.sh')))
-    analytics.hour.on(2)    # 2 a.m.
+    analytics.hour.on(2)  # 2 a.m.
 
     digests = ensure_item(cron, 'bash {}'.format(app_prefix('scripts/send_digests.sh')))
-    digests.hour.on(2)      # 2 a.m.
+    digests.hour.on(2)  # 2 a.m.
+
+    box = ensure_item(cron, cd_app(tasks.bin_prefix('python -m scripts.refresh_box_tokens')))
+    box.hour.on(2)  # 2 a.m.
 
     retractions = ensure_item(cron, 'bash {}'.format(app_prefix('scripts/retract_registrations.sh')))
     retractions.hour.on(0)  # 12 a.m.
