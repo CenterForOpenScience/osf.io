@@ -32,7 +32,7 @@
                             <label data-bind="text: list"></label>
                             <p class="text-muted" style="padding-left: 15px">Receive general notifications about the OSF every 2-3 weeks.</p>
                         </div>
-                        <div class="padded">
+                        <div class="p-t-lg p-b-lg">
                         <button
                             type="submit"
                             class="btn btn-success"
