@@ -1,6 +1,6 @@
 <div class="panel panel-default" name="${short_name}">
 
-            <div class="panel-header clearfix">
+            <div class="panel-heading clearfix">
                 <h4 class="panel-title">${full_name}</h4>
                 <div class="pull-right">
                     % if has_page:

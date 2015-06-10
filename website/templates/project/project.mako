@@ -253,9 +253,9 @@
 
 
         %if node['tags'] or 'write' in user['permissions']:
-         <div class="tags addon-widget-container">
-            <div class="addon-widget-header clearfix">
-                <h4>Tags </h4>
+         <div class="tags panel panel-default">
+            <div class="panel-heading clearfix">
+                <div class="panel-title">Tags </div>
                 <div class="pull-right">
                 </div>
             </div>
