@@ -1,10 +1,4 @@
 /* class css */
-
-ul.ob-widget-list li.ob-list-item {
-	margin-bottom: 10px;
-	border-style: dashed;
-}
-
 .ob-heading {
 	display:inline;
 	margin: 5px;

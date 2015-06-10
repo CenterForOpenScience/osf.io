@@ -52,9 +52,9 @@
 
 ## The onboarding "register" widget
 <template id="osf-ob-register">
-<li class="ob-list-item list-group-item">
+<div class="m-b-sm p-md ob-list-item osf-box box-round">
     <div data-bind="click: toggle" class="ob-header pointer">
-        <h3 class="ob-heading list-group-item-heading">Register a project</h3>
+        <h3 class="ob-heading">Register a project</h3>
         <i data-bind="css: {' fa-plus': !isOpen(), ' fa-minus': isOpen()}"
             class="pointer ob-expand-icon fa-lg pull-right fa">
         </i>
@@ -72,13 +72,13 @@
             </div><!-- end col-md -->
         </div><!-- end row -->
     </div>
-</li> <!-- end .ob-list -->
+</div> <!-- end .ob-list -->
 </template>
 
 <template id="osf-ob-uploader">
-<li class="ob-list-item list-group-item">
+<div class="m-b-sm p-md ob-list-item osf-box box-round">
     <div data-bind="click: toggle" class="ob-header pointer">
-        <h3 class="ob-heading list-group-item-heading">Upload file(s)</h3>
+        <h3 class="ob-heading">Upload file(s)</h3>
         <i data-bind="css: {' fa-plus': !isOpen(), ' fa-minus': isOpen()}"
             class="pointer ob-expand-icon fa-lg pull-right fa">
         </i>
@@ -120,7 +120,7 @@
         </div><!-- end row -->
         <div data-bind="html: message(), attr: {class: messageClass()}" ></div>
     </div>
-</li> <!-- end .ob-list -->
+</div> <!-- end .ob-list -->
 </template>
 
 <template id="osf-project-create-form">
@@ -166,9 +166,9 @@
 </template>
 
 <template id="osf-ob-goto">
-<li class="ob-list-item list-group-item">
+<div class="m-b-sm p-md ob-list-item osf-box box-round">
     <div data-bind="click: toggle" class="ob-header pointer">
-        <h3 class="ob-heading list-group-item-heading">Go to my project</h3>
+        <h3 class="ob-heading">Go to my project</h3>
         <i data-bind="css: {' fa-plus': !isOpen(), ' fa-minus': isOpen()}"
             class="pointer ob-expand-icon fa-lg pull-right fa">
         </i>
@@ -193,5 +193,5 @@
             </div><!-- end col-md -->
         </div>
     </div><!-- end row -->
-</li> <!-- end .ob-list -->
+</div> <!-- end .ob-list -->
 </template>
