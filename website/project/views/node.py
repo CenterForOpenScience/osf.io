@@ -41,7 +41,6 @@ from website.util.sanitize import strip_html
 
 logger = logging.getLogger(__name__)
 
-
 @must_be_valid_project
 @must_have_permission(WRITE)
 @must_not_be_registration
@@ -103,8 +102,13 @@ def project_new_post(auth, **kwargs):
         )
 
     else:
-        project = new_node(category, title, user, description)
-
+        try:
+            project = new_node(category, title, user, description)
+        except ValidationValueError as e:
+            raise HTTPError(
+                http.BAD_REQUEST, #422
+                data=dict(message_long=e.message)
+            )
     return {
         'projectUrl': project.url
     }, http.CREATED
@@ -186,12 +190,18 @@ def project_new_node(auth, node, **kwargs):
     form = NewNodeForm(request.form)
     user = auth.user
     if form.validate():
-        node = new_node(
-            title=strip_html(form.title.data),
-            user=user,
-            category=form.category.data,
-            parent=node,
-        )
+        try:
+            node = new_node(
+                title=strip_html(form.title.data),
+                user=user,
+                category=form.category.data,
+                parent=node,
+            )
+        except ValidationValueError as e:
+            raise HTTPError(
+                http.BAD_REQUEST,
+                data=dict(message_long=e.message)
+            )
 
         message = (
             'Your component was created successfully. You can keep working on the component page below, '

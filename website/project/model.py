@@ -1453,7 +1453,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         :param str title: The new title.
         :param auth: All the auth information including user, API key.
         """
-        #Preferably validation would happen automatically without having to save.
+        #Called so validation does not have to wait until save.
         validate_title(title)
 
         original_title = self.title
