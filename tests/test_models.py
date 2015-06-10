@@ -2532,13 +2532,11 @@ class TestProject(OsfTestCase):
 
         # A user is added as with read permission
         user = UserFactory()
-
-        self.project.add_contributor(user, permissions=['read'])
         self.child_node.add_contributor(user, permissions=['read'])
 
         # user is readded with permission admin
         self.child_node.add_contributor(user, permissions=['read','write','admin'])
-        self.project.save()
+        self.child_node.save()
 
         assert(self.child_node.has_permission(user, 'admin'))
 
