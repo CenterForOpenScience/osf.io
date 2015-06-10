@@ -158,8 +158,7 @@ class NodeRegistrationsList(generics.ListAPIView, NodeMixin):
 class NodeCreateRegistration(generics.CreateAPIView, NodeMixin):
     permission_classes = (
         ContributorOrPublic,
-        drf_permissions.IsAuthenticatedOrReadOnly,
-      )
+        drf_permissions.IsAuthenticatedOrReadOnly)
 
 class NodeRegistrationsOpenEnded(NodeCreateRegistration):
     """Register the current node.

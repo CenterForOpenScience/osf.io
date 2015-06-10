@@ -1,6 +1,4 @@
-from collections import OrderedDict
 from rest_framework import serializers as ser
-
 from api.base.serializers import JSONAPISerializer, LinksField, Link, WaterbutlerLink
 from website.models import Node
 from framework.auth.core import Auth
@@ -180,7 +178,7 @@ class RegistrationOpenEndedSerializer(NodeSerializer):
         raise serializers.ValidationError([registration_warning, url])
 
     class Meta:
-        type_='registrations'
+        type_ = 'registrations'
 
 class RegistrationOpenEndedWithTokenSerializer(RegistrationWithTokenMixin, RegistrationOpenEndedSerializer):
     template = "Open-Ended_Registration"
@@ -209,7 +207,7 @@ class RegistrationPreDataCollectionSerializer(NodeSerializer):
         raise serializers.ValidationError([registration_warning, url])
 
     class Meta:
-        type_='registrations'
+        type_ = 'registrations'
 
 class RegistrationPreDataCollectionWithTokenSerializer(RegistrationWithTokenMixin, RegistrationPreDataCollectionSerializer):
     template = "OSF-Standard_Pre-Data_Collection_Registration"
@@ -225,34 +223,34 @@ class ReplicationRecipePreRegistrationSerializer(NodeSerializer):
     description = ser.CharField(read_only=True)
     category = ser.CharField(read_only=True)
 
-    item1 = ser.CharField(default='', write_only=True, help_text = "Verbal description of the effect I am trying to replicate")
-    item2 = ser.CharField(default='', write_only=True, help_text = "It is important to replicate this effect because")
-    item3 = ser.CharField(default='', write_only=True, help_text = "The effect size of the effect I am trying to replicate is")
-    item4 = ser.CharField(default='', write_only=True, help_text = "The confidence interval of the original effect is")
-    item5 = ser.CharField(default='', write_only=True, help_text = "The sample size of the original effect is")
-    item6 = ser.CharField(default='', write_only=True, help_text = "Where was the original study conducted? (e.g., lab, in the field, online)")
-    item7 = ser.CharField(default='', write_only=True, help_text = "What country/region was the original study conducted in?")
-    item8 = ser.CharField(default='', write_only=True, help_text = "What kind of sample did the original study use? (e.g., student, Mturk, representative)")
-    item9 = ser.CharField(default='', write_only=True, help_text = "Was the original study conducted with paper-and-pencil surveys, on a computer, or something else?")
-    item10= ser.ChoiceField(default='', write_only=True, choices=YES_NO_CHOICES, help_text =  "Are the original materials for the study available from the author?")
-    item11 = ser.CharField(default='', write_only=True, help_text = "I know that assumptions (e.g., about the meaning of the stimuli) in the original study will also hold in my replication because")
-    item12 = ser.CharField(default='', write_only=True, help_text = "Location of the experimenter during data collection")
-    item13 = ser.CharField(default='', write_only=True, help_text = "Experimenter knowledge of participant experimental condition")
-    item14 = ser.CharField(default='', write_only=True, help_text = "Experimenter knowledge of overall hypotheses")
-    item15 = ser.CharField(default='', write_only=True, help_text = "My target sample size is")
-    item16 = ser.CharField(default='', write_only=True, help_text = "The rationale for my sample size is")
-    item17= ser.ChoiceField(default='', write_only=True, choices=SIM_DIFF_CHOICES, help_text =  "The similarities/differences in the instructions are")
-    item18= ser.ChoiceField(default='', write_only=True, choices=SIM_DIFF_CHOICES, help_text =  "The similarities/differences in the measures are")
-    item19= ser.ChoiceField(default='', write_only=True, choices=SIM_DIFF_CHOICES, help_text =  "The similarities/differences in the stimuli are")
-    item20= ser.ChoiceField(default='', write_only=True, choices=SIM_DIFF_CHOICES, help_text =  "The similarities/differences in the procedure are")
-    item21= ser.ChoiceField(default='', write_only=True, choices=SIM_DIFF_CHOICES, help_text =  "The similarities/differences in the location (e.g., lab vs. online; alone vs. in groups) are")
-    item22= ser.ChoiceField(default='', write_only=True, choices=SIM_DIFF_CHOICES, help_text =  "The similarities/difference in remuneration are")
-    item23= ser.ChoiceField(default='', write_only=True, choices=SIM_DIFF_CHOICES, help_text =  "The similarities/differences between participant populations are")
-    item24 = ser.CharField(default='', write_only=True, help_text = "What differences between the original study and your study might be expected to influence the size and/or direction of the effect?")
-    item25 = ser.CharField(default='', write_only=True, help_text = "I have taken the following steps to test whether the differences listed in #22 will influence the outcome of my replication attempt")
-    item26 = ser.CharField(default='', write_only=True, help_text = "My exclusion criteria are (e.g., handling outliers, removing participants from analysis)")
-    item27 = ser.CharField(default='', write_only=True, help_text = "My analysis plan is (justify differences from the original)")
-    item28 = ser.CharField(default='', write_only=True, help_text = "A successful replication is defined as")
+    item1 = ser.CharField(default='', write_only=True, help_text="Verbal description of the effect I am trying to replicate")
+    item2 = ser.CharField(default='', write_only=True, help_text="It is important to replicate this effect because")
+    item3 = ser.CharField(default='', write_only=True, help_text="The effect size of the effect I am trying to replicate is")
+    item4 = ser.CharField(default='', write_only=True, help_text="The confidence interval of the original effect is")
+    item5 = ser.CharField(default='', write_only=True, help_text="The sample size of the original effect is")
+    item6 = ser.CharField(default='', write_only=True, help_text="Where was the original study conducted? (e.g., lab, in the field, online)")
+    item7 = ser.CharField(default='', write_only=True, help_text="What country/region was the original study conducted in?")
+    item8 = ser.CharField(default='', write_only=True, help_text="What kind of sample did the original study use? (e.g., student, Mturk, representative)")
+    item9 = ser.CharField(default='', write_only=True, help_text="Was the original study conducted with paper-and-pencil surveys, on a computer, or something else?")
+    item10= ser.ChoiceField(default='', write_only=True, choices=YES_NO_CHOICES, help_text="Are the original materials for the study available from the author?")
+    item11 = ser.CharField(default='', write_only=True, help_text="I know that assumptions (e.g., about the meaning of the stimuli) in the original study will also hold in my replication because")
+    item12 = ser.CharField(default='', write_only=True, help_text="Location of the experimenter during data collection")
+    item13 = ser.CharField(default='', write_only=True, help_text="Experimenter knowledge of participant experimental condition")
+    item14 = ser.CharField(default='', write_only=True, help_text="Experimenter knowledge of overall hypotheses")
+    item15 = ser.CharField(default='', write_only=True, help_text="My target sample size is")
+    item16 = ser.CharField(default='', write_only=True, help_text="The rationale for my sample size is")
+    item17= ser.ChoiceField(default='', write_only=True, choices=SIM_DIFF_CHOICES, help_text="The similarities/differences in the instructions are")
+    item18= ser.ChoiceField(default='', write_only=True, choices=SIM_DIFF_CHOICES, help_text="The similarities/differences in the measures are")
+    item19= ser.ChoiceField(default='', write_only=True, choices=SIM_DIFF_CHOICES, help_text="The similarities/differences in the stimuli are")
+    item20= ser.ChoiceField(default='', write_only=True, choices=SIM_DIFF_CHOICES, help_text="The similarities/differences in the procedure are")
+    item21= ser.ChoiceField(default='', write_only=True, choices=SIM_DIFF_CHOICES, help_text="The similarities/differences in the location (e.g., lab vs. online; alone vs. in groups) are")
+    item22= ser.ChoiceField(default='', write_only=True, choices=SIM_DIFF_CHOICES, help_text="The similarities/difference in remuneration are")
+    item23= ser.ChoiceField(default='', write_only=True, choices=SIM_DIFF_CHOICES, help_text="The similarities/differences between participant populations are")
+    item24 = ser.CharField(default='', write_only=True, help_text="What differences between the original study and your study might be expected to influence the size and/or direction of the effect?")
+    item25 = ser.CharField(default='', write_only=True, help_text="I have taken the following steps to test whether the differences listed in #22 will influence the outcome of my replication attempt")
+    item26 = ser.CharField(default='', write_only=True, help_text="My exclusion criteria are (e.g., handling outliers, removing participants from analysis)")
+    item27 = ser.CharField(default='', write_only=True, help_text="My analysis plan is (justify differences from the original)")
+    item28 = ser.CharField(default='', write_only=True, help_text="A successful replication is defined as")
 
     def validate(self, data):
         request = self.context['request']
@@ -264,7 +262,7 @@ class ReplicationRecipePreRegistrationSerializer(NodeSerializer):
         raise serializers.ValidationError([registration_warning, url])
 
     class Meta:
-        type_='registrations'
+        type_ = 'registrations'
 
 class ReplicationRecipePreRegistrationWithTokenSerializer(RegistrationWithTokenMixin, ReplicationRecipePreRegistrationSerializer):
     template = "Replication_Recipe_(Brandt_et_al.,_2013):_Pre-Registration"
@@ -280,15 +278,15 @@ class ReplicationRecipePostCompletionSerializer(NodeSerializer):
     description = ser.CharField(read_only=True)
     category = ser.CharField(read_only=True)
 
-    item29 = ser.CharField(default='', write_only=True, help_text = "The finalized materials, procedures, analysis plan etc of the replication are registered here")
-    item30 = ser.CharField(default='', write_only=True, help_text = "The effect size of the replication is")
-    item31 = ser.CharField(default='', write_only=True, help_text = "The confidence interval of the replication effect size is")
-    item32 = ser.ChoiceField(default='', choices=EFFECT_SIZE, write_only=True, help_text = "The replication effect size is")
-    item33 = ser.ChoiceField(default='', choices=REPLICATION_CONCLUSION, write_only=True, help_text = "I judge the replication to be a(n)")
-    item34 = ser.CharField(default='', write_only=True, help_text = "I judge it so because")
-    item35 = ser.CharField(default='', write_only=True, help_text = "Interested experts can obtain my data and syntax here")
-    item36 = ser.CharField(default='', write_only=True, help_text = "All of the analyses were reported in the report or are available here")
-    item37 = ser.CharField(default='', write_only=True, help_text = "The limitations of my replication study are")
+    item29 = ser.CharField(default='', write_only=True, help_text="The finalized materials, procedures, analysis plan etc of the replication are registered here")
+    item30 = ser.CharField(default='', write_only=True, help_text="The effect size of the replication is")
+    item31 = ser.CharField(default='', write_only=True, help_text="The confidence interval of the replication effect size is")
+    item32 = ser.ChoiceField(default='', choices=EFFECT_SIZE, write_only=True, help_text="The replication effect size is")
+    item33 = ser.ChoiceField(default='', choices=REPLICATION_CONCLUSION, write_only=True, help_text="I judge the replication to be a(n)")
+    item34 = ser.CharField(default='', write_only=True, help_text="I judge it so because")
+    item35 = ser.CharField(default='', write_only=True, help_text="Interested experts can obtain my data and syntax here")
+    item36 = ser.CharField(default='', write_only=True, help_text="All of the analyses were reported in the report or are available here")
+    item37 = ser.CharField(default='', write_only=True, help_text="The limitations of my replication study are")
 
     def validate(self, data):
         request = self.context['request']
@@ -300,7 +298,7 @@ class ReplicationRecipePostCompletionSerializer(NodeSerializer):
         raise serializers.ValidationError([registration_warning, url])
 
     class Meta:
-        type_='registrations'
+        type_ = 'registrations'
 
 class ReplicationRecipePostCompletionWithTokenSerializer(RegistrationWithTokenMixin, ReplicationRecipePostCompletionSerializer):
     template = "Replication_Recipe_(Brandt_et_al.,_2013):_Post-Completion"
