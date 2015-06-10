@@ -100,9 +100,7 @@ def stat_addon(addon_short_name, job_pk):
         dst.archive_job.update_target(
             addon_short_name,
             ARCHIVER_NETWORK_ERROR,
-            meta={
-                'errors': [e.data['error']],
-            }
+            errors=[e.data['error']],
         )
         raise
     result = AggregateStatResult(
@@ -136,9 +134,7 @@ def make_copy_request(job_pk, url, data):
         dst.archive_job.update_target(
             provider,
             ARCHIVER_FAILURE,
-            meta={
-                'errors': [res.json()]
-            }
+            errors=[res.json()],
         )
         raise HTTPError(res.status_code)
     elif res.status_code in (200, 201):
@@ -164,9 +160,7 @@ def archive_addon(addon_short_name, job_pk, stat_result):
     dst.archive_job.update_target(
         addon_short_name,
         ARCHIVER_PENDING,
-        meta={
-            'stat_result': str(stat_result),
-        }
+        stat_result=stat_result,
     )
     src_provider = src.get_addon(addon_short_name)
     folder_name = src_provider.archive_folder_name
@@ -208,7 +202,6 @@ def archive_node(results, job_pk):
     job = ArchiveJob.load(job_pk)
     src, dst, user = job.info()
     logger.info("Archiving node: {0}".format(src._id))
-    dst.archive_status = ARCHIVER_PENDING
     dst.save()
     stat_result = AggregateStatResult(
         src._id,
@@ -251,8 +244,8 @@ def archive(self, job_pk):
                 job_pk=job_pk,
             )
             for addon in [
-                dst.get_addon(name)
-                for name in dst.archive_job.target_addons.keys()
+                src.get_addon(target.name)
+                for target in dst.archive_job.target_addons
             ]
         )
     )(archive_node.s(job_pk))

@@ -1,8 +1,8 @@
-from copy import deepcopy
 import datetime
 
 from modularodm import (
     fields,
+    Q,
 )
 
 from framework.mongo import ObjectId
@@ -17,6 +17,19 @@ from website.archiver import (
 
 from website.addons.base import StorageAddonBase
 from website import settings
+
+class ArchiveTarget(StoredObject):
+
+    _id = fields.StringField(
+        primary=True,
+        default=lambda: str(ObjectId())
+    )
+
+    name = fields.StringField()
+
+    status = fields.StringField(default=ARCHIVER_INITIATED)
+    stat_result = fields.DictionaryField()
+    errors = fields.StringField(list=True)
 
 class ArchiveJob(StoredObject):
 
@@ -41,7 +54,7 @@ class ArchiveJob(StoredObject):
     #     'errrors': []
     #   }
     # }
-    target_addons = fields.DictionaryField(default={})
+    target_addons = fields.ForeignField('archivetarget', list=True)
 
     @property
     def children(self):
@@ -61,8 +74,8 @@ class ArchiveJob(StoredObject):
 
     def _archive_node_finished(self):
         return not any([
-            value for value in self.target_addons.values()
-            if value['status'] not in (ARCHIVER_SUCCESS, ARCHIVER_FAILURE)
+            target for target in self.target_addons
+            if target.status not in (ARCHIVER_SUCCESS, ARCHIVER_FAILURE)
         ])
 
     def archive_tree_finished(self):
@@ -81,7 +94,7 @@ class ArchiveJob(StoredObject):
             self.done = True
         if self.archive_tree_finished():
             if not ARCHIVER_FAILURE_STATUSES.isdisjoint(
-                    [value['status'] for value in self.target_addons.values()]
+                [target.status for target in self.target_addons]
             ):
                 self.status = ARCHIVER_FAILURE
             else:
@@ -92,21 +105,22 @@ class ArchiveJob(StoredObject):
         self.status = ARCHIVER_INITIATED
         addons = [
             addon.config.short_name for addon in
-            [self.dst_node.get_addon(name) for name in settings.ADDONS_ARCHIVABLE]
+            [self.src_node.get_addon(name) for name in settings.ADDONS_ARCHIVABLE]
             if (addon and addon.complete and isinstance(addon, StorageAddonBase))
         ]
         for addon in addons:
-            self.target_addons[addon] = {
-                'status': ARCHIVER_INITIATED,
-            }
+            target = ArchiveTarget(name=addon)
+            target.save()
+            self.target_addons.append(target)
         self.save()
 
-    def update_target(self, addon_short_name, status, meta={}):
-        copy = deepcopy(self.target_addons[addon_short_name])
-        copy['status'] = status
-        copy.update(meta)
-        self.target_addons.update({
-            addon_short_name: copy
-        })
-        self.save()
+    def update_target(self, addon_short_name, status, stat_result=None, errors=None):
+        stat_result = stat_result._to_dict() if stat_result else {}
+        errors = errors or []
+
+        target = self.target_addons.find(Q('name', 'eq', addon_short_name))[0]
+        target.status = status
+        target.errors = errors
+        target.stat_result = stat_result
+        target.save()
         self._post_update_target()

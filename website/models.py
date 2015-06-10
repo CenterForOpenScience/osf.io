@@ -18,7 +18,7 @@ from website.citations.models import CitationStyle
 from website.conferences.model import Conference, MailRecord
 from website.notifications.model import NotificationDigest
 from website.notifications.model import NotificationSubscription
-from website.archiver.model import ArchiveJob
+from website.archiver.model import ArchiveJob, ArchiveTarget
 
 # All models
 MODELS = (
@@ -27,7 +27,7 @@ MODELS = (
     MailRecord, Comment, PrivateLink, MetaData, Conference,
     NotificationSubscription, NotificationDigest, CitationStyle,
     CitationStyle, ExternalAccount, Identifier, Retraction,
-    Embargo, ArchiveJob
+    Embargo, ArchiveJob, ArchiveTarget
 )
 
 GUID_MODELS = (User, Node, Comment, MetaData)
