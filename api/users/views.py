@@ -144,18 +144,16 @@ class ApplicationDetail(generics.RetrieveUpdateDestroyAPIView):
     # overrides RetrieveAPIView
     def get_object(self):
         obj = get_object_or_404(OAuth2App,
-                                Q('client_id', 'eq', self.kwargs['client_id']))
+                                Q('client_id', 'eq', self.kwargs['client_id']))  # TODO: Should this display data for an application that has been deleted? (currently it will do so)
 
-        self.check_object_permissions(self.request, obj)  # TODO: Write tests for this
+        self.check_object_permissions(self.request, obj)
         return obj
 
     # overrides DestroyAPIView
     def perform_destroy(self, instance):
         """Node is not actually deleted from DB- just flagged as inactive, which hides it from list views"""
         obj = self.get_object()
-        obj.active = False
-        # TODO FIXME : Should we revoke all access tokens when application inactivated? Seems likely.
-        obj.save()
+        obj.deactivate()  # TODO: Handle exception if save/revocation fails
 
     def perform_update(self, serializer):
         """Necessary to prevent owner field from being blanked on updates"""

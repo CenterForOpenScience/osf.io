@@ -43,7 +43,7 @@ from website.addons.wiki.exceptions import (
 
 from tests.base import OsfTestCase, Guid, fake
 from tests.factories import (
-    UserFactory, ApiKeyFactory, NodeFactory, PointerFactory,
+    UserFactory, ApiKeyFactory, OAuth2AppFactory, NodeFactory, PointerFactory,
     ProjectFactory, NodeLogFactory, WatchConfigFactory,
     NodeWikiFactory, RegistrationFactory, UnregUserFactory,
     ProjectWithAddonFactory, UnconfirmedUserFactory, CommentFactory, PrivateLinkFactory,
@@ -953,6 +953,49 @@ class TestApiKey(OsfTestCase):
         assert_equal(len(user.api_keys), 1)
         assert_equal(ApiKey.find().count(), 1)
 
+
+class TestOAuth2App(OsfTestCase):
+    def setUp(self):
+        super(TestOAuth2App, self).setUp()
+        self.app = OAuth2AppFactory()
+
+    def test_client_id_auto_populates(self):
+        assert_greater(len(self.app.client_id), 0)
+
+    def test_client_secret_auto_populates(self):
+        assert_greater(len(self.app.client_secret), 0)
+
+    def test_new_app_is_not_flagged_as_deleted(self):
+        assert_true(self.app.active)
+
+    def test_user_backref_updates_when_app_created(self):
+        u = UserFactory()
+        app = OAuth2AppFactory(owner=u)
+        app.save()
+
+        backrefs = u.oauth2app__created
+        assert_greater(len(backrefs), 0)
+
+    def test_cant_edit_creation_date(self):
+        with assert_raises(AttributeError):
+            self.app.create_date = datetime.datetime.utcnow()
+
+    def test_invalid_home_url_raises_exception(self):
+        with assert_raises(ValidationError):
+            app = OAuth2AppFactory(home_url="Totally not a URL")
+            app.save()
+
+    def test_invalid_callback_url_raises_exception(self):
+        with assert_raises(ValidationError):
+            app = OAuth2AppFactory(callback_url="itms://itunes.apple.com/us/app/apple-store/id375380948?mt=8")
+            app.save()
+
+    def test_deletion_sets_inactive(self):
+        app = OAuth2AppFactory()
+        app.deactivate()
+        assert_false(app.active)
+
+    # TODO: Write tests for token revocation? (relying on mocks to check response/call)
 
 class TestNodeWikiPage(OsfTestCase):
 

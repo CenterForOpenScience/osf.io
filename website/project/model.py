@@ -18,7 +18,7 @@ from HTMLParser import HTMLParser
 
 from modularodm import Q
 from modularodm import fields
-from modularodm.validators import MaxLengthValidator
+from modularodm.validators import MaxLengthValidator, URLValidator
 from modularodm.exceptions import ValidationTypeError
 from modularodm.exceptions import ValidationValueError
 
@@ -295,27 +295,45 @@ class OAuth2App(StoredObject):
         default=lambda: str(ObjectId())
     )
 
-    # Client ID and secret
-    client_id = fields.StringField(default=lambda: uuid.uuid4().hex)
+    # Client ID and secret  # TODO: index=True?
+    client_id = fields.StringField(default=lambda: uuid.uuid4().hex,
+                                   index=True)
     client_secret = fields.StringField(default=lambda: base64.b64encode(uuid.uuid4().hex))
 
-    # TODO: Rename to is_active and update serializers + michael CAS code
-    active = fields.BooleanField(default=True)  # Set to False if application is deactivated for users
+    active = fields.BooleanField(default=True, # Set to False if application is deactivated for users
+                                 index=True)
 
-    owner = fields.ForeignField('user', backref='created')
+    owner = fields.ForeignField('User',
+                                backref='created',
+                                index=True)
 
     # User-specified application descriptors
     name = fields.StringField(index=True, required=True)
     description = fields.StringField(required=False)
 
-    create_date = fields.DateTimeField(default=datetime.datetime.utcnow, required=True)
+    create_date = fields.DateTimeField(auto_now_add=datetime.datetime.utcnow,
+                                       editable=False)
 
-    home_url = fields.StringField(required=True)
-    callback_url = fields.StringField(required=True)
+    home_url = fields.StringField(required=True,
+                                  validate=URLValidator())
+    callback_url = fields.StringField(required=True,
+                                      validate=URLValidator())
+
+    def deactivate(self):
+        """
+        Deactivate an OAuth2App
+
+        Does not delete the database record, but revokes all tokens and sets a flag that hides this instance from API
+        """
+        # TODO FIXME : Should we revoke all access tokens when application inactivated? Seems likely.
+        # If so, add an exception handler and change all users of this function
+        self.active = False
+        self.save()
+        return True
 
     @property
     def url(self):
-        return '/settings/applications/{}/'.format(self.client_id)  # TODO: Change if routes change
+        return '/settings/applications/{}/'.format(self.client_id)
 
     @property
     def absolute_url(self):

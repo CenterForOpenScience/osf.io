@@ -24,7 +24,7 @@ from website.addons import base as addons_base
 from website.oauth.models import ExternalAccount
 from website.oauth.models import ExternalProvider
 from website.project.model import (
-    ApiKey, Node, NodeLog, WatchConfig, Tag, Pointer, Comment, PrivateLink,
+    ApiKey, Comment, Node, NodeLog,  OAuth2App, Pointer, PrivateLink, Tag, WatchConfig,
 )
 from website.notifications.model import NotificationSubscription, NotificationDigest
 
@@ -127,6 +127,17 @@ class TagFactory(ModularOdmFactory):
 
 class ApiKeyFactory(ModularOdmFactory):
     FACTORY_FOR = ApiKey
+
+
+class OAuth2AppFactory(ModularOdmFactory):
+    FACTORY_FOR = OAuth2App
+
+    owner = SubFactory(UserFactory)
+
+    name = 'An example OAuth2 Application'
+
+    home_url = 'ftp://ftp.ncbi.nlm.nih.gov/'
+    callback_url = 'http://example.com'
 
 
 class PrivateLinkFactory(ModularOdmFactory):
