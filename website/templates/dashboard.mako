@@ -37,14 +37,14 @@
                         <osf-ob-goto params="data: nodes"></osf-ob-goto>
                     </div>
                     <div id="projectCreate">
-                        <li id="obNewProject" class="ob-list-item list-group-item">
+                        <div id="obNewProject" class="m-b-sm p-md ob-list-item osf-box box-round">
 
-                            <div data-bind="click: toggle" class="ob-header pointer">
+                            <div data-bind="click: toggle" class="m-b-md pointer">
                                  <i data-bind="css: {' fa-plus': !isOpen(), ' fa-minus': isOpen()}"
                                     class="pointer ob-expand-icon fa-lg pull-right fa">
                                 </i>
                                 <h3
-                                    class="ob-heading list-group-item-heading">
+                                    class="m-xs ob-heading">
                                     Create a project
                                 </h3>
                             </div><!-- end ob-header -->
@@ -53,7 +53,7 @@
                                     params="data: nodes, hasFocus: focus">
                                 </osf-project-create-form>
                             </div>
-                        </li> <!-- end ob-list-item -->
+                        </div> <!-- end ob-list-item -->
                     </div>
                     % if not disk_saving_mode:
                     <div id="obRegisterProject">

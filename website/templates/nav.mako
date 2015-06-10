@@ -1,5 +1,5 @@
 <div class="osf-nav-wrapper">
-<nav class="navbar osf-navbar navbar-fixed-top" id="navbarScope" role="navigation">
+<nav class="navbar osf-navbar navbar-fixed-top navbar-default" id="navbarScope" role="navigation">
     <div class="container">
         <div class="navbar-header">
             <button type="button" class="navbar-toggle" data-toggle="collapse" data-target=".navbar-ex1-collapse">

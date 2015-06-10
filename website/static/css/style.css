@@ -15,6 +15,34 @@ body {
     padding: 8px 0px 7px;
 }
 
+
+/* Footer
+-------------------------------------------------- */
+.footer {
+  text-shadow: 0 1px 0 #fff;
+  border-top: 1px solid #e5e5e5;
+  border-bottom: 1px solid #e5e5e5;
+  width: 100%;
+  color: #555;
+}
+
+
+.footer ul, .footer li {
+    padding: 0;
+    margin: 0;
+    list-style-type: none;
+}
+
+
+/* Copyright
+-------------------------------------------------- */
+.copyright{
+    text-align: center;
+    background: #fff;
+    width: 100%;
+
+}
+
 /* Make images responsive */
 .panel img {
     vertical-align: middle;
