@@ -111,7 +111,7 @@
         </div>
 
 
-        <div  id="structure" class="row col-sm-12 col-md-12" style="padding-top: 40px;">
+        <div  id="structure" class="row col-sm-12 col-md-12" style="padding-top: 40px">
             <h2 class="text-center">Structuring Your Work</h2>
             <div class="row col-sm-12 col-md-12">
                 <%include file="/public/pages/help/organizer.mako"/>
@@ -127,7 +127,7 @@
             </div>
         </div>
 
-        <div id="sharing" class="row col-sm-12 col-md-12" style="padding-top: 40px;">
+        <div id="sharing" class="row col-sm-12 col-md-12" style="padding-top: 40px">
             <h2 class="text-center anchor">Sharing Your Work</h2>
             <div class="row col-sm-12 col-md-12">
                 <%include file="/public/pages/help/contributors.mako"/>
@@ -138,14 +138,14 @@
             </div>
         </div>
 
-        <div id="addons" class="row col-sm-12 col-md-12" style="padding-top: 40px;">
+        <div id="addons" class="row col-sm-12 col-md-12" style="padding-top: 40px">
             <h2 class="text-center anchor">OSF Add-ons</h2>
             <div class="row col-sm-12 col-md-12">
                 <%include file="/public/pages/help/addons.mako"/>
             </div>
         </div>
 
-        <div id="metrics" class="row col-sm-12 col-md-12" style="padding-top: 40px;">
+        <div id="metrics" class="row col-sm-12 col-md-12" style="padding-top: 40px">
             <h2 class="text-center">Metrics</h2>
             <div class="row col-sm-12 col-md-12">
                 <%include file="/public/pages/help/statistics.mako"/>
