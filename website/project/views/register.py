@@ -426,7 +426,7 @@ def node_register_template_page_post(auth, node, **kwargs):
         schema, auth, template, json.dumps(clean_data),
     )
 
-    if data['registrationChoice'] == 'embargo':
+    if data.get('registrationChoice', 'immediate') == 'embargo':
         embargo_end_date = parse_date(data['embargoEndDate'], ignoretz=True)
 
         # Initiate embargo
