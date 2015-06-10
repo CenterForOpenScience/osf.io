@@ -76,7 +76,10 @@ ApplicationData.prototype.fromJSON = function (data) {
     self.apiUrl(data.links.self);
 };
 
-// TODO: Having one view that CREATES or UPDATES in the same model is a bit of a kludge: they use different URLs etc
+
+/*
+ * Create (or update) the data for a single application. On creation, page should switch to the update behaviors.
+ */
 var ApplicationViewModel = function (urls) {
     // Read and update operations
 
@@ -95,65 +98,53 @@ var ApplicationViewModel = function (urls) {
 
 ApplicationViewModel.prototype.fetch = function (url) { // TODO: duplicated in ApplicationListViewModel
     var self = this;
-    $.ajax({
-        type: 'GET',
-        url: url,
-        dataType: 'json',
-        // Enable CORS
-        crossOrigin: true,
-        xhrFields: {
-            withCredentials: true
-        },
-        success: function (data) {
-            var result;
-            // Check return type to handle both list and detail views
-            if (Array.isArray(data.data)){  // ES5 dependent
-                result = $.map(data.data, function (item) {
-                    return new ApplicationData(item)
-                });
-            } else if (data.data){
-                result = new ApplicationData(data.data);
-            }
+    var request = $osf.ajaxWrapper("GET", url, true);
 
-            self.content(result);
-        },
-        error: function (xhr, status, err) {
-            $osf.growl('Error', 'Data not loaded. Please refresh the page and try ' +
+    request.done(function (data) {
+        var result;
+        // Check return type to handle both list and detail views
+        if (Array.isArray(data.data)) {  // ES5 dependent
+            result = $.map(data.data, function (item) {
+                return new ApplicationData(item)
+            });
+        } else if (data.data) {
+            result = new ApplicationData(data.data);
+        }
+        self.content(result);
+    });
+
+    request.fail(function (xhr, status, err) {
+        $osf.growl('Error', 'Data not loaded. Please refresh the page and try ' +
             'again or contact <a href="mailto: support@cos.io">support@cos.io</a> ' +
             'if the problem persists.', 'danger');
 
-            Raven.captureMessage('Error fetching application data', {
-                url: url,
-                status: status,
-                error: err
-            });
-        }
-    })
+        Raven.captureMessage('Error fetching application data', {
+            url: url,
+            status: status,
+            error: err
+        })
+    });
 };
 
 ApplicationViewModel.prototype.updateApplication = function () {
     // Update an existing application (has a known dataUrl) via PATCH request
     var self = this;
+
+    var url = self.dataUrl;
+
     var payload = self.content().serialize();
 
-    $.ajax({
-        type: 'PATCH',
-        url: self.dataUrl, // TODO: Inconsistent nomenclature for dataUrl (viewmodel vs datamodel)
-        data: payload,
-        dataType: 'json',
-        // Enable CORS
-        crossOrigin: true,
-        xhrFields: {
-            withCredentials: true
-        },
-        success: function (data) {
-            self.content().fromJSON(data.data);  // Update the data with what request returns- reflect server side cleaning
-            self.changeMessage(
-                "Application data submitted",
-                "text-success",
-                5000);
-        },
-        error: function (xhr, status, err) {
+    var request = $osf.ajaxWrapper("PATCH", url, payload, true);
+
+    request.done(function (data) {
+        self.content().fromJSON(data.data);  // Update the data with what request returns- reflect server side cleaning
+        self.changeMessage(
+            "Application data submitted",
+            "text-success",
+            5000);
+    });
+
+    request.fail(function (xhr, status, err) {
             $osf.growl('Error', 'Could not send request. Please refresh the page and try ' +
             'again or contact <a href="mailto: support@cos.io">support@cos.io</a> ' +
             'if the problem persists.', 'danger');
@@ -163,7 +154,6 @@ ApplicationViewModel.prototype.updateApplication = function () {
                 status: status,
                 error: err
             });
-        }
     });
 };
 
@@ -172,39 +162,33 @@ ApplicationViewModel.prototype.createApplication = function () {
     var self = this;
     var payload = self.content().serialize();
 
-    $.ajax({
-        type: 'POST',
-        url: self.submitUrl,
-        data: payload,
-        dataType: 'json',
-        // Enable CORS
-        crossOrigin: true,
-        xhrFields: {
-            withCredentials: true
-        },
-        success: function (data) {
-            self.content().fromJSON(data.data);  // Update the data with what request returns- reflect server side cleaning
-            self.changeMessage(
-                "Application data submitted",
-                "text-success",
-                5000);
+    var url = self.submitUrl;
 
-            // Update behaviors: after creation, this should look & act like a detail view for existing application
-            window.location = data.data.links.html; // Update address bar to show new detail page
-            self.dataUrl = data.data.links.self;
-        },
-        error: function (xhr, status, err) {
-            //  TODO: change error messages
-            $osf.growl('Error', 'Could not send request. Please refresh the page and try ' +
-            'again or contact <a href="mailto: support@cos.io">support@cos.io</a> ' +
-            'if the problem persists.', 'danger');
+    var request = $osf.ajaxWrapper('POST', url, payload, true);
 
-            Raven.captureMessage('Error updating instance', {
-                url: url,
-                status: status,
-                error: err
-            });
-        }
+    request.done(function (data) {
+        self.content().fromJSON(data.data);  // Update the data with what request returns- reflect server side cleaning
+        self.changeMessage(
+            "Application data submitted",
+            "text-success",
+            5000);
+
+        // Update behaviors: after creation, this should look & act like a detail view for existing application
+        window.location = data.data.links.html; // Update address bar to show new detail page
+        self.dataUrl = data.data.links.self;
+    });
+
+    request.fail(function (xhr, status, err) {
+        //  TODO: change error messages
+        $osf.growl('Error', 'Could not send request. Please refresh the page and try ' +
+        'again or contact <a href="mailto: support@cos.io">support@cos.io</a> ' +
+        'if the problem persists.', 'danger');
+
+        Raven.captureMessage('Error updating instance', {
+            url: url,
+            status: status,
+            error: err
+        });
     });
 };
 
@@ -239,71 +223,61 @@ var ApplicationsListViewModel= function (urls) {
 
 ApplicationsListViewModel.prototype.fetch = function (url) {
     var self = this;
-    $.ajax({
-        type: 'GET',
-        url: url,
-        dataType: 'json',
-        // Enable CORS
-        crossOrigin: true,
-        xhrFields: {
-            withCredentials: true
-        },
-        success: function (data) {
-            var dataArray;
-            // Check return type to handle both list and detail views
-            if (Array.isArray(data.data)){  // ES5 dependent
-                dataArray = $.map(data.data, function (item) {
-                    return new ApplicationData(item)
-                });
-            } else if (data.data){
-                dataArray = new ApplicationData(data.data);
-            }
 
-            self.content(dataArray);
-        },
-        error: function (xhr, status, err) {
-            $osf.growl('Error', 'Data not loaded. Please refresh the page and try ' +
-            'again or contact <a href="mailto: support@cos.io">support@cos.io</a> ' +
-            'if the problem persists.', 'danger');
+    var request = $osf.ajaxWrapper("GET", url, null, true);
 
-            Raven.captureMessage('Error fetching application data', {
-                url: url,
-                status: status,
-                error: err
+    request.done(function (data) {
+        var dataArray;
+        // Check return type to handle both list and detail views
+        if (Array.isArray(data.data)){  // ES5 dependent
+            dataArray = $.map(data.data, function (item) {
+                return new ApplicationData(item)
             });
+        } else if (data.data){
+            dataArray = new ApplicationData(data.data);
         }
-    })
+
+        self.content(dataArray);
+    });
+
+    request.fail(function (xhr, status, err) {
+        $osf.growl('Error', 'Data not loaded. Please refresh the page and try ' +
+        'again or contact <a href="mailto: support@cos.io">support@cos.io</a> ' +
+        'if the problem persists.', 'danger');
+
+        Raven.captureMessage('Error fetching application data', {
+            url: url,
+            status: status,
+            error: err
+        });
+    });
 };
 
 ApplicationsListViewModel.prototype.deleteApplication = function (appData) {
     // Delete a single application
     var self = this;
+    var url = appData.apiUrl();
+
     bootbox.confirm({
         title: 'De-register application?',
         message: 'Are you sure you want to de-register this application and revoke all access tokens? This cannot be reversed.',
         callback: function (confirmed) {
             if (confirmed) {
-                $.ajax({
-                    type: 'DELETE',
-                    url: appData.apiUrl(),
-                    dataType: 'json',
-                    // Enable CORS
-                    crossOrigin: true,
-                    xhrFields: {
-                        withCredentials: true
-                    },
-                    success: function (data) {
+                var request = $osf.ajaxWrapper("DELETE", url, null, true);
+
+                request.done(function (data) {
                         self.content.destroy(appData);
                         $osf.growl('Deletion', appData.name() + ' has been deleted', 'success');
-                    },
-                    error: function () {
+                    });
+
+                request.fail(function () {
                         $osf.growl('Error', 'Could not delete application. Please refresh the page and try ' +
                                    'again or contact <a href="mailto: support@cos.io">support@cos.io</a> ' +
                                    'if the problem persists.', 'danger');
-                    }
-                });
-                }
-            }})
+                    });
+            }
+        }
+    })
 };
 
 

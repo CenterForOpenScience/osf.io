@@ -52,6 +52,29 @@ var apiV2Url = function (pathString, paramsObject, apiPrefix){
     return apiUrl;
 };
 
+/*
+ * Perform an ajax call (cross-origin if necessary). Deliberately excludes success/error arguments to encourage use of promises
+ */
+var ajaxWrapper = function(method, url, data, isCors, extraOpts) {
+    isCors = isCors || false;
+
+    var ajaxOpts = {
+        url: url,
+        type: method,
+        data: JSON.stringify(data),
+        contentType: 'application/json',
+        dataType: 'json'
+    };
+    if(isCors) {
+        ajaxOpts.crossOrigin = true;
+        ajaxOpts.xhrFields =  {
+            withCredentials: true
+        }
+    }
+    for (var attrname in extraOpts) {ajaxOpts[attrname] = extraOpts[attrname]; }
+    return $.ajax(ajaxOpts);
+};
+
 
 /**
 * Posts JSON data.
@@ -74,11 +97,7 @@ var apiV2Url = function (pathString, paramsObject, apiPrefix){
 * @return {jQuery xhr}
 */
 var postJSON = function(url, data, success, error) {
-    var ajaxOpts = {
-        url: url, type: 'post',
-        data: JSON.stringify(data),
-        contentType: 'application/json', dataType: 'json'
-    };
+    var ajaxOpts = {};
     // For backwards compatibility. Prefer the Promise interface to these callbacks.
     if (typeof success === 'function') {
         ajaxOpts.success = success;
@@ -86,7 +105,7 @@ var postJSON = function(url, data, success, error) {
     if (typeof error === 'function') {
         ajaxOpts.error = error;
     }
-    return $.ajax(ajaxOpts);
+    return ajaxWrapper("POST", url, data, false, ajaxOpts);
 };
 
 /**
@@ -103,11 +122,7 @@ var postJSON = function(url, data, success, error) {
   * @return {jQuery xhr}
   */
 var putJSON = function(url, data, success, error) {
-    var ajaxOpts = {
-        url: url, type: 'put',
-        data: JSON.stringify(data),
-        contentType: 'application/json', dataType: 'json'
-    };
+    var ajaxOpts = {};
     // For backwards compatibility. Prefer the Promise interface to these callbacks.
     if (typeof success === 'function') {
         ajaxOpts.success = success;
@@ -115,7 +130,7 @@ var putJSON = function(url, data, success, error) {
     if (typeof error === 'function') {
         ajaxOpts.error = error;
     }
-    return $.ajax(ajaxOpts);
+    return ajaxWrapper("PUT", url, data, false, ajaxOpts);
 };
 
 /**
@@ -602,6 +617,7 @@ function humanFileSize(bytes, si) {
 module.exports = window.$.osf = {
     postJSON: postJSON,
     putJSON: putJSON,
+    ajaxWrapper: ajaxWrapper,
     setXHRAuthorization: setXHRAuthorization,
     handleJSONError: handleJSONError,
     handleEditableError: handleEditableError,
