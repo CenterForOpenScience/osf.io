@@ -174,11 +174,12 @@ def get_projects_public():
     )
     return projects_public
 
-def get_number_downloads_total(projects=None):
+
+def get_number_downloads_unique_and_total():
+    number_downloads_unique = 0
     number_downloads_total = 0
 
-    if projects is None:
-        projects = get_projects()
+    projects = get_projects()
 
     contributors_per_project = []
 
@@ -203,6 +204,7 @@ def get_number_downloads_total(projects=None):
             for idx, version in enumerate(filenode.versions):
                 page = ':'.join(['download', project._id, filenode._id, str(idx)])
                 unique, total = get_basic_counters(page)
+                number_downloads_unique += unique or 0
                 number_downloads_total += total or 0
 
         for filenode in OsfStorageTrashedFileNode.find(Q('node_settings', 'eq', addon) & Q('kind', 'eq', 'file')):
@@ -210,47 +212,9 @@ def get_number_downloads_total(projects=None):
                 page = ':'.join(['download', project._id, filenode._id, str(idx)])
                 unique, total = get_basic_counters(page)
                 number_downloads_total += total or 0
+                number_downloads_unique += unique or 0
 
-    return number_downloads_total
-
-def get_number_downloads_unique(projects=None):
-    number_downloads_unique = 0
-
-    if projects is None:
-        projects = get_projects()
-
-    contributors_per_project = []
-
-    contrib = {}
-
-    for project in projects:
-        contributors_per_project.append(len(project.contributors))
-        for person in project.contributors:
-            if not person:
-                continue
-            if person._id not in contrib:
-                contrib[person._id] = []
-            for neighbor in project.contributors:
-                if not neighbor:
-                    continue
-                if neighbor._id not in contrib[person._id]:
-                    contrib[person._id].append(neighbor._id)
-
-        addon = project.get_addon('osfstorage')
-
-        for filenode in OsfStorageFileNode.find(Q('node_settings', 'eq', addon) & Q('kind', 'eq', 'file')):
-            for idx, version in enumerate(filenode.versions):
-                page = ':'.join(['download', project._id, filenode._id, str(idx)])
-                unique, total = get_basic_counters(page)
-                number_downloads_unique += total or 0
-
-        for filenode in OsfStorageTrashedFileNode.find(Q('node_settings', 'eq', addon) & Q('kind', 'eq', 'file')):
-            for idx, version in enumerate(filenode.versions):
-                page = ':'.join(['download', project._id, filenode._id, str(idx)])
-                unique, total = get_basic_counters(page)
-                number_downloads_unique += total or 0
-
-    return number_downloads_unique
+    return number_downloads_unique, number_downloads_total
 
 
 def main():
@@ -268,8 +232,7 @@ def main():
 
     number_projects_registered = len(projects_registered)
 
-    number_downloads_total = get_number_downloads_total()
-    number_downloads_unique = get_number_downloads_unique()
+    number_downloads_unique, number_downloads_total = get_number_downloads_unique_and_total()
 
     active_users = get_active_users()
     active_users_invited = get_active_users(Q('is_invited', 'eq', True))
@@ -291,8 +254,6 @@ def main():
         ['number_projects_registered', number_projects_registered],
         ['number_downloads_total', number_downloads_total],
         ['number_downloads_unique', number_downloads_unique],
-
-
         ['active-users', active_users.count()],
         ['active-users-invited', active_users_invited.count()],
         ['dropbox-users-enabled', len(dropbox_metrics['enabled'])],
