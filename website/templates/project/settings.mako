@@ -46,7 +46,7 @@
             <div class="panel panel-default">
                 <span id="configureNodeAnchor" class="anchor"></span>
 
-                <div class="panel-heading">
+                <div class="panel-heading clearfix">
                     <h3 id="configureNode" class="panel-title">Configure ${node['node_type'].capitalize()}</h3>
                 </div>
                 <div id="nodeCategorySettings" class="panel-body">
@@ -90,7 +90,7 @@
             <div class="panel panel-default">
                 <span id="configureCommentingAnchor" class="anchor"></span>
 
-                <div class="panel-heading">
+                <div class="panel-heading clearfix">
                     <h3 class="panel-title">Configure Commenting</h3>
                 </div>
 
@@ -129,7 +129,7 @@
         % if 'write' in user['permissions']:
         <div class="panel panel-default">
             <span id="selectAddonsAnchor" class="anchor"></span>
-             <div class="panel-heading">
+             <div class="panel-heading clearfix">
                  <h3 class="panel-title">Select Add-ons</h3>
              </div>
                 <div class="panel-body">
@@ -185,7 +185,7 @@
 
                 <div id="configureAddons" class="panel panel-default">
 
-                    <div class="panel-heading">
+                    <div class="panel-heading clearfix">
                         <h3 class="panel-title">Configure Add-ons</h3>
                     </div>
 
@@ -210,7 +210,7 @@
             <div class="panel panel-default">
                 <span id="configureNotificationsAnchor" class="anchor"></span>
 
-                <div class="panel-heading">
+                <div class="panel-heading clearfix">
                     <h3 class="panel-title">Configure Notifications</h3>
                 </div>
                 <div class="help-block" style="padding-left: 15px">
