@@ -19,30 +19,31 @@
   <div class="row wiki-wrapper">
     <div class="panel-toggle col-sm-${'3' if 'menu' in panels_used else '1' | n}">
         <!-- Menu with toggle normal -->
-        <div class="osf-panel hidden-xs ${'' if 'menu' in panels_used else 'hidden' | n}" data-bind="css: {  'osf-panel-flex': !$root.singleVis(), reset-height : $root.singleVis() }">
-            <div class="osf-panel-header" data-bind="css: {  'osf-panel-header-flex': !$root.singleVis()}"> <i class="fa fa-list"> </i>  Menu
+        <div class="osf-panel panel panel-default panel-default hidden-xs ${'' if 'menu' in panels_used else 'hidden' | n}" data-bind="css: {  'osf-panel-flex': !$root.singleVis(), reset-height : $root.singleVis() }">
+            <div class="panel-heading clearfix" data-bind="css: {  'osf-panel-heading-flex': !$root.singleVis()}">
+                <div class="panel-title"> <i class="fa fa-list"> </i>  Menu </div>
                 <div class="pull-right"> <div class="panel-collapse"> <i class="fa fa-angle-left pointer"> </i> </div></div>
             </div>
-            <div class="osf-panel-body" data-bind="css: {  'osf-panel-body-flex': !$root.singleVis()}">
+            <div class="panel-body" data-bind="css: {  'osf-panel-body-flex': !$root.singleVis()}">
                 <%include file="wiki/templates/toc.mako"/>
             </div>
         </div>
 
         <!-- Menu with toggle collapsed -->
-        <div class="osf-panel panel-collapsed hidden-xs text-center ${'hidden' if 'menu' in panels_used else '' | n}" >
-          <div class="osf-panel-header pointer">
+        <div class="osf-panel panel panel-default panel-collapsed hidden-xs text-center ${'hidden' if 'menu' in panels_used else '' | n}" >
+          <div class="panel-heading pointer">
             <i class="fa fa-list"> </i>
             <i class="fa fa-angle-right"> </i>
           </div>
-          <div class="osf-panel-body">
+          <div class="panel-body">
               <%include file="wiki/templates/nav.mako"/>
            </div>
         </div>
 
         <!-- Menu without toggle in XS size only -->
-        <div class="osf-panel visible-xs">
-            <div class="osf-panel-header"> <i class="fa fa-list"> </i>  Menu </div>
-            <div class="osf-panel-body ">
+        <div class="osf-panel panel panel-default visible-xs">
+            <div class="panel-heading"> <i class="fa fa-list"> </i>  Menu </div>
+            <div class="panel-body ">
                 <%include file="wiki/templates/toc.mako"/>
             </div>
         </div>
@@ -55,11 +56,12 @@
                  data-osf-panel="Edit"
                  class="${'col-sm-{0}'.format(12 / num_columns) | n}"
                  style="${'' if 'edit' in panels_used else 'display: none' | n}">
-                <div class="osf-panel" data-bind="css: { 'no-border': $root.singleVis() === 'edit' }">
-                  <div class="osf-panel-header" data-bind="css : { 'bordered': $root.singleVis() === 'edit' }">
+              <form id="wiki-form" action="${urls['web']['edit']}" method="POST">
+                <div class="osf-panel panel panel-default" data-bind="css: { 'no-border': $root.singleVis() === 'edit' }">
+                  <div class="panel-heading clearfix" data-bind="css : { 'bordered': $root.singleVis() === 'edit' }">
                     <div class="row">
                       <div class="col-md-6">
-                           <span class="wiki-panel-title" > <i class="fa fa-pencil-square-o"> </i>   Edit </span>
+                           <span class="panel-title" > <i class="fa fa-pencil-square-o"> </i>   Edit </span>
                       </div>
                         <div class="col-md-6">
                           <div class="pull-right">
@@ -79,8 +81,7 @@
                         </div>
                     </div>
                   </div>
-                  <form id="wiki-form" action="${urls['web']['edit']}" method="POST">
-                  <div class="osf-panel-body">
+                  <div class="panel-body">
                         <div class="row">
                         <div class="col-xs-12">
                           <div class="form-group wmd-panel">
@@ -98,9 +99,9 @@
                                    data-bind="ace: currentText">Loading. . .</div>
                           </div>
                         </div>
-                      </div>                    
+                      </div>
                   </div>
-                  <div class="osf-panel-footer">
+                  <div class="panel-footer">
                       <div class="row">
                         <div class="col-xs-12">
                            <div class="pull-right">
@@ -119,16 +120,17 @@
                         <textarea name="content" style="display: none;"
                                   data-bind="value: currentText"></textarea>
                   </div>
-                </form>
                 </div>
+                </form>
+
             </div>
           % endif
 
           <div data-osf-panel="View"
                class="${'col-sm-{0}'.format(12 / num_columns) | n}"
                style="${'' if 'view' in panels_used else 'display: none' | n}">
-              <div class="osf-panel no-border" data-bind="css: { 'no-border reset-height': $root.singleVis() === 'view', 'osf-panel-flex': $root.singleVis() !== 'view' }">
-                <div class="osf-panel-header bordered" data-bind="css: { 'osf-panel-header-flex': $root.singleVis() !== 'view', 'bordered': $root.singleVis() === 'view' }">
+              <div class="osf-panel panel panel-default no-border" data-bind="css: { 'no-border reset-height': $root.singleVis() === 'view', 'osf-panel-flex': $root.singleVis() !== 'view' }">
+                <div class="panel-heading bordered" data-bind="css: { 'osf-panel-heading-flex': $root.singleVis() !== 'view', 'bordered': $root.singleVis() === 'view' }">
                     <div class="row">
                         <div class="col-sm-6">
                             <span class="wiki-panel-title" > <i class="fa fa-eye"> </i>  View</span>
@@ -136,7 +138,7 @@
                         <div class="col-sm-6">
 
                             <div class="pull-right">
-                                <!-- Version Picker -->                            
+                                <!-- Version Picker -->
                                 <select data-bind="value:viewVersion" id="viewVersionSelect">
                                     % if user['can_edit']:
                                         <option value="preview" ${'selected' if version_settings['view'] == 'preview' else ''}>Preview</option>
@@ -150,13 +152,13 @@
                                     % endfor
                                 </select>
 
-                            </div> 
+                            </div>
 
                         </div>
                     </div>
                 </div>
 
-                <div id="wikiViewPanel"  class="osf-panel-body" data-bind="css: { 'osf-panel-body-flex': $root.singleVis() !== 'view' }">
+                <div id="wikiViewPanel"  class="panel-body" data-bind="css: { 'osf-panel-body-flex': $root.singleVis() !== 'view' }">
                   <div id="wikiViewRender" data-bind="html: renderedView, mathjaxify: renderedView, anchorScroll : { buffer: 50, elem : '#wikiViewPanel'}" class=" markdown-it-view">
                       % if wiki_content:
                           ${wiki_content | n}
@@ -170,8 +172,8 @@
           <div data-osf-panel="Compare"
                class="${'col-sm-{0}'.format(12 / num_columns) | n}"
                style="${'' if 'compare' in panels_used else 'display: none' | n}">
-            <div class="osf-panel osf-panel-flex" data-bind="css: { 'no-border reset-height': $root.singleVis() === 'compare', 'osf-panel-flex': $root.singleVis() !== 'compare' }">
-              <div class="osf-panel-header osf-panel-header-flex" data-bind="css: {  'osf-panel-header-flex': $root.singleVis() !== 'compare', 'bordered': $root.singleVis() === 'compare'}">
+            <div class="osf-panel panel panel-default osf-panel-flex" data-bind="css: { 'no-border reset-height': $root.singleVis() === 'compare', 'osf-panel-flex': $root.singleVis() !== 'compare' }">
+              <div class="panel-heading osf-panel-heading-flex" data-bind="css: {  'osf-panel-heading-flex': $root.singleVis() !== 'compare', 'bordered': $root.singleVis() === 'compare'}">
                   <div class="row">
                       <div class="col-xs-12">
                           <span class="wiki-panel-title"> <i class="fa fa-exchange"> </i>   Compare </span>                        
@@ -193,7 +195,7 @@
                       </div>
                   </div>
               </div>
-              <div data-bind="html: renderedCompare, css: { 'osf-panel-body-flex': $root.singleVis() !== 'compare' }" class="osf-panel-body wiki-compare-view">
+              <div data-bind="html: renderedCompare, css: { 'osf-panel-body-flex': $root.singleVis() !== 'compare' }" class="panel-body wiki-compare-view">
               </div>
             </div>
           </div>

@@ -15,3 +15,9 @@ body {
     padding: 8px 0px 7px;
 }
 
+/* Make images responsive */
+.panel img {
+    vertical-align: middle;
+    max-width: 100%;
+    height: auto;
+}
