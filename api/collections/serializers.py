@@ -2,7 +2,6 @@ from rest_framework import serializers as ser
 from api.base.serializers import JSONAPISerializer, CollectionLinksField, Link, LinksField
 from website.models import Node
 from framework.auth.core import Auth
-from api.base.utils import absolute_reverse
 
 class CollectionSerializer(JSONAPISerializer):
     filterable_fields = frozenset(['title'])
