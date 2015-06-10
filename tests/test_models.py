@@ -2536,12 +2536,6 @@ class TestProject(OsfTestCase):
         self.project.add_contributor(user, permissions=['read'])
         self.child_node.add_contributor(user, permissions=['read'])
 
-        # The user is removed
-        self.project.remove_contributor(
-            auth=self.consolidate_auth,
-            contributor=user
-        )
-
         # user is readded with permission admin
         self.child_node.add_contributor(user, permissions=['read','write','admin'])
         self.project.save()
