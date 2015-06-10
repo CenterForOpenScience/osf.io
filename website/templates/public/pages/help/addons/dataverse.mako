@@ -2,7 +2,7 @@
     <span id="dataverse" class="anchor"></span>
     <h4>Dataverse</h4>
     <p><a href="https://osf.io/w75g2/">Dataverse</a> is a an open source web application to share, preserve, cite, explore,
-        and analyze research data. Enabling Dataverse for your project will allow contibutors to view, download,
+        and analyze research data. Enabling Dataverse for your project will allow contributors to view, download,
         and upload files to and from a Dataverse dataset. All from your project's "Files" page.</p>
     <p>Currently, the OSF only supports linking Dataverse datasets that are a part of the 
         <a href="http://thedata.harvard.edu/dvn/">Harvard Dataverse Network</a>.</p>
