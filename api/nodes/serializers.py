@@ -1,8 +1,18 @@
+from collections import OrderedDict
 from rest_framework import serializers as ser
 
 from api.base.serializers import JSONAPISerializer, LinksField, Link, WaterbutlerLink
 from website.models import Node
 from framework.auth.core import Auth
+from website.project.model import MetaSchema
+from modularodm import Q
+from framework.forms.utils import process_payload
+from rest_framework import serializers
+import json
+from api.base.utils import absolute_reverse
+from api.base.utils import token_creator
+from website.language import REGISTER_WARNING
+from django.utils.translation import ugettext_lazy as _
 
 
 class NodeSerializer(JSONAPISerializer):
@@ -125,6 +135,176 @@ class NodeSerializer(JSONAPISerializer):
         instance.save()
         return instance
 
+class RegistrationWithTokenMixin(JSONAPISerializer):
+    def validate(self, data):
+        request = self.context['request']
+        user = request.user
+        view = self.context['view']
+        node = view.get_node()
+        given_token = view.kwargs['token']
+        correct_token = token_creator(node._id, user._id, data)
+        if correct_token != given_token:
+            raise serializers.ValidationError("Incorrect token.")
+        return data
+
+    def create(self, validated_data):
+        request = self.context['request']
+        schema = MetaSchema.find(
+            Q('name', 'eq', self.template)).sort('-schema_version')[0]
+        user = request.user
+        node = self.context['view'].get_node()
+        formatted_data = {j: validated_data[j] for j in self.data_keys}
+        registration = node.register_node(
+            schema=schema,
+            auth=Auth(user),
+            template=self.template,
+            data=json.dumps(process_payload(formatted_data))
+        )
+        return registration
+
+class RegistrationOpenEndedSerializer(NodeSerializer):
+    id = ser.CharField(read_only=True, source='_id')
+    title = ser.CharField(read_only=True)
+    summary = ser.CharField(required=False, default='', write_only=True, help_text="Provide a narrative summary of what is contained in this registration, or how it differs from prior registrations.")
+    registered_meta = ser.CharField(read_only=True)
+    description = ser.CharField(read_only=True)
+    category = ser.CharField(read_only=True)
+
+    def validate(self, data):
+        request = self.context['request']
+        user = request.user
+        node = self.context['view'].get_node()
+        token = token_creator(node._id, user._id, data)
+        url = absolute_reverse('nodes:node-registration-open-ended-token', kwargs={'pk': node._id, 'token': token})
+        registration_warning = REGISTER_WARNING.format(_(node.title))
+        raise serializers.ValidationError([registration_warning, url])
+
+    class Meta:
+        type_='registrations'
+
+class RegistrationOpenEndedWithTokenSerializer(RegistrationWithTokenMixin, RegistrationOpenEndedSerializer):
+    template = "Open-Ended_Registration"
+    data_keys = ['summary']
+
+class RegistrationPreDataCollectionSerializer(NodeSerializer):
+    TRUE_FALSE_CHOICES = ["Yes", "No"]
+
+    id = ser.CharField(read_only=True, source='_id')
+    title = ser.CharField(read_only=True)
+    registered_meta = ser.CharField(read_only=True)
+    description = ser.CharField(read_only=True)
+    category = ser.CharField(read_only=True)
+
+    looked = ser.ChoiceField(choices=TRUE_FALSE_CHOICES, default='', required=False, help_text="Is data collection for this project underway or complete?", write_only=True)
+    datacompletion = ser.ChoiceField(choices=TRUE_FALSE_CHOICES, default='', required=False, help_text="Have you looked at the data?", write_only=True)
+    comments = ser.CharField(default='', required=False, help_text="Other Comments", write_only=True)
+
+    def validate(self, data):
+        request = self.context['request']
+        user = request.user
+        node = self.context['view'].get_node()
+        token = token_creator(node._id, user._id, data)
+        url = absolute_reverse('nodes:node-registration-pre-data-collection-token', kwargs={'pk': node._id, 'token': token})
+        registration_warning = REGISTER_WARNING.format(_(node.title))
+        raise serializers.ValidationError([registration_warning, url])
+
+    class Meta:
+        type_='registrations'
+
+class RegistrationPreDataCollectionWithTokenSerializer(RegistrationWithTokenMixin, RegistrationPreDataCollectionSerializer):
+    template = "OSF-Standard_Pre-Data_Collection_Registration"
+    data_keys = ['looked', 'datacompletion', 'comments']
+
+class ReplicationRecipePreRegistrationSerializer(NodeSerializer):
+    YES_NO_CHOICES = ["yes", "no"]
+    SIM_DIFF_CHOICES = ["Exact", "Close", "Different"]
+
+    id = ser.CharField(read_only=True, source='_id')
+    title = ser.CharField(read_only=True)
+    registered_meta = ser.CharField(read_only=True)
+    description = ser.CharField(read_only=True)
+    category = ser.CharField(read_only=True)
+
+    item1 = ser.CharField(default='', write_only=True, help_text = "Verbal description of the effect I am trying to replicate")
+    item2 = ser.CharField(default='', write_only=True, help_text = "It is important to replicate this effect because")
+    item3 = ser.CharField(default='', write_only=True, help_text = "The effect size of the effect I am trying to replicate is")
+    item4 = ser.CharField(default='', write_only=True, help_text = "The confidence interval of the original effect is")
+    item5 = ser.CharField(default='', write_only=True, help_text = "The sample size of the original effect is")
+    item6 = ser.CharField(default='', write_only=True, help_text = "Where was the original study conducted? (e.g., lab, in the field, online)")
+    item7 = ser.CharField(default='', write_only=True, help_text = "What country/region was the original study conducted in?")
+    item8 = ser.CharField(default='', write_only=True, help_text = "What kind of sample did the original study use? (e.g., student, Mturk, representative)")
+    item9 = ser.CharField(default='', write_only=True, help_text = "Was the original study conducted with paper-and-pencil surveys, on a computer, or something else?")
+    item10= ser.ChoiceField(default='', write_only=True, choices=YES_NO_CHOICES, help_text =  "Are the original materials for the study available from the author?")
+    item11 = ser.CharField(default='', write_only=True, help_text = "I know that assumptions (e.g., about the meaning of the stimuli) in the original study will also hold in my replication because")
+    item12 = ser.CharField(default='', write_only=True, help_text = "Location of the experimenter during data collection")
+    item13 = ser.CharField(default='', write_only=True, help_text = "Experimenter knowledge of participant experimental condition")
+    item14 = ser.CharField(default='', write_only=True, help_text = "Experimenter knowledge of overall hypotheses")
+    item15 = ser.CharField(default='', write_only=True, help_text = "My target sample size is")
+    item16 = ser.CharField(default='', write_only=True, help_text = "The rationale for my sample size is")
+    item17= ser.ChoiceField(default='', write_only=True, choices=SIM_DIFF_CHOICES, help_text =  "The similarities/differences in the instructions are")
+    item18= ser.ChoiceField(default='', write_only=True, choices=SIM_DIFF_CHOICES, help_text =  "The similarities/differences in the measures are")
+    item19= ser.ChoiceField(default='', write_only=True, choices=SIM_DIFF_CHOICES, help_text =  "The similarities/differences in the stimuli are")
+    item20= ser.ChoiceField(default='', write_only=True, choices=SIM_DIFF_CHOICES, help_text =  "The similarities/differences in the procedure are")
+    item21= ser.ChoiceField(default='', write_only=True, choices=SIM_DIFF_CHOICES, help_text =  "The similarities/differences in the location (e.g., lab vs. online; alone vs. in groups) are")
+    item22= ser.ChoiceField(default='', write_only=True, choices=SIM_DIFF_CHOICES, help_text =  "The similarities/difference in remuneration are")
+    item23= ser.ChoiceField(default='', write_only=True, choices=SIM_DIFF_CHOICES, help_text =  "The similarities/differences between participant populations are")
+    item24 = ser.CharField(default='', write_only=True, help_text = "What differences between the original study and your study might be expected to influence the size and/or direction of the effect?")
+    item25 = ser.CharField(default='', write_only=True, help_text = "I have taken the following steps to test whether the differences listed in #22 will influence the outcome of my replication attempt")
+    item26 = ser.CharField(default='', write_only=True, help_text = "My exclusion criteria are (e.g., handling outliers, removing participants from analysis)")
+    item27 = ser.CharField(default='', write_only=True, help_text = "My analysis plan is (justify differences from the original)")
+    item28 = ser.CharField(default='', write_only=True, help_text = "A successful replication is defined as")
+
+    def validate(self, data):
+        request = self.context['request']
+        user = request.user
+        node = self.context['view'].get_node()
+        token = token_creator(node._id, user._id, data)
+        url = absolute_reverse('nodes:node-registration-pre-registration-token', kwargs={'pk': node._id, 'token': token})
+        registration_warning = REGISTER_WARNING.format(_(node.title))
+        raise serializers.ValidationError([registration_warning, url])
+
+    class Meta:
+        type_='registrations'
+
+class ReplicationRecipePreRegistrationWithTokenSerializer(RegistrationWithTokenMixin, ReplicationRecipePreRegistrationSerializer):
+    template = "Replication_Recipe_(Brandt_et_al.,_2013):_Pre-Registration"
+    data_keys = ["item"+str(j) for j in range(1,29)]
+
+class ReplicationRecipePostCompletionSerializer(NodeSerializer):
+    EFFECT_SIZE = ["significantly different from the original effect size", "not significantly different from the original effect size"]
+    REPLICATION_CONCLUSION = ["success", "informative failure to replicate", "practical failure to replicate", "inconclusive"]
+
+    id = ser.CharField(read_only=True, source='_id')
+    title = ser.CharField(read_only=True)
+    registered_meta = ser.CharField(read_only=True)
+    description = ser.CharField(read_only=True)
+    category = ser.CharField(read_only=True)
+
+    item29 = ser.CharField(default='', write_only=True, help_text = "The finalized materials, procedures, analysis plan etc of the replication are registered here")
+    item30 = ser.CharField(default='', write_only=True, help_text = "The effect size of the replication is")
+    item31 = ser.CharField(default='', write_only=True, help_text = "The confidence interval of the replication effect size is")
+    item32 = ser.ChoiceField(default='', choices=EFFECT_SIZE, write_only=True, help_text = "The replication effect size is")
+    item33 = ser.ChoiceField(default='', choices=REPLICATION_CONCLUSION, write_only=True, help_text = "I judge the replication to be a(n)")
+    item34 = ser.CharField(default='', write_only=True, help_text = "I judge it so because")
+    item35 = ser.CharField(default='', write_only=True, help_text = "Interested experts can obtain my data and syntax here")
+    item36 = ser.CharField(default='', write_only=True, help_text = "All of the analyses were reported in the report or are available here")
+    item37 = ser.CharField(default='', write_only=True, help_text = "The limitations of my replication study are")
+
+    def validate(self, data):
+        request = self.context['request']
+        user = request.user
+        node = self.context['view'].get_node()
+        token = token_creator(node._id, user._id, data)
+        url = absolute_reverse('nodes:node-registration-post-completion-token', kwargs={'pk': node._id, 'token': token})
+        registration_warning = REGISTER_WARNING.format(_(node.title))
+        raise serializers.ValidationError([registration_warning, url])
+
+    class Meta:
+        type_='registrations'
+
+class ReplicationRecipePostCompletionWithTokenSerializer(RegistrationWithTokenMixin, ReplicationRecipePostCompletionSerializer):
+    template = "Replication_Recipe_(Brandt_et_al.,_2013):_Post-Completion"
+    data_keys = ["item"+str(j) for j in range(29,38)]
 
 class NodePointersSerializer(JSONAPISerializer):
 
@@ -155,7 +335,6 @@ class NodePointersSerializer(JSONAPISerializer):
 
     def update(self, instance, validated_data):
         pass
-
 
 class NodeFilesSerializer(JSONAPISerializer):
 
