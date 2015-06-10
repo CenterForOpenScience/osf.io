@@ -50,7 +50,7 @@ def download_from_cloudfiles(version):
         logger.exception(err)
         logger.error('Version info:')
         logger.error(version.to_storage())
-    return path
+    return
 
 
 def delete_temp_file(version):
@@ -67,11 +67,11 @@ def ensure_glacier(version, dry_run):
     logger.warn('Glacier archive for version {0} not found'.format(version._id))
     if dry_run:
         return
-    download_from_cloudfiles(version)
-    file_path = os.path.join(storage_settings.AUDIT_TEMP_PATH, version.location['object'])
-    glacier_id = vault.upload_archive(file_path, description=version.location['object'])
-    version.metadata['archive'] = glacier_id
-    version.save()
+    file_path = download_from_cloudfiles(version)
+    if file_path:
+        glacier_id = vault.upload_archive(file_path, description=version.location['object'])
+        version.metadata['archive'] = glacier_id
+        version.save()
 
 
 def check_parity_files(version):
@@ -87,12 +87,13 @@ def ensure_parity(version, dry_run):
     if dry_run:
         return
     file_path = download_from_cloudfiles(version)
-    parity_paths = storage_utils.create_parity_files(file_path)
-    for parity_path in parity_paths:
-        container_parity.create(parity_path)
-        os.remove(parity_path)
-    if not check_parity_files(version):
-        logger.error('Parity files for version {0} not found after update'.format(version._id))
+    if file_path:
+        parity_paths = storage_utils.create_parity_files(file_path)
+        for parity_path in parity_paths:
+            container_parity.create(parity_path)
+            os.remove(parity_path)
+        if not check_parity_files(version):
+            logger.error('Parity files for version {0} not found after update'.format(version._id))
 
 
 def ensure_backups(version, dry_run):
@@ -112,13 +113,15 @@ def get_targets():
 
 def main(nworkers, worker_id, dry_run):
     targets = get_targets()
-    progress_bar = progressbar.ProgressBar(maxval=math.ceil(targets.count() / nworkers)).start()
+    maxval = math.ceil(targets.count() / nworkers)
+    progress_bar = progressbar.ProgressBar(maxval=maxval).start()
     idx = 0
     for version in targets:
         if hash(version._id) % nworkers == worker_id:
             ensure_backups(version, dry_run)
             idx += 1
-            progress_bar.update(idx)
+            if idx < maxval:
+                progress_bar.update(idx)
     progress_bar.finish()
 
 
