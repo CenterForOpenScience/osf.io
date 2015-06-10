@@ -40,8 +40,11 @@ var growl = function(title, message, type) {
  * @param {Object} options (optional)
  */
 var apiV2Url = function (path, options){
+    var contextVars = window.contextVars || {};
+    var defaultPrefix = contextVars.apiV2Prefix || '';
+
     var defaults = {
-        prefix: window.contextVars.apiV2Prefix, // Manually specify the prefix for API routes (useful for testing)
+        prefix: defaultPrefix, // Manually specify the prefix for API routes (useful for testing)
         query: {}  // Optional query parameters to be appended to URL
     };
     var opts = $.extend({}, defaults, options);
