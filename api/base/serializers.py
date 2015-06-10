@@ -29,6 +29,23 @@ def _url_val(val, obj, serializer, **kwargs):
         return val
 
 
+class CollectionLinksField(ser.Field):
+
+    def __init__(self, links, *args, **kwargs):
+        ser.Field.__init__(self, read_only=True, *args, **kwargs)
+        self.links = links
+
+    def get_attribute(self, obj):
+        # We pass the object instance onto `to_representation`,
+        # not just the field attribute.
+        return obj
+
+    def to_representation(self, obj):
+        ret = _rapply(self.links, _url_val, obj=obj, serializer=self.parent)
+        ret['self'] = absolute_reverse('collections:collection-detail', kwargs={'pk': obj._id})
+        return ret
+
+
 class LinksField(ser.Field):
     """Links field that resolves to a links object. Used in conjunction with `Link`.
     If the object to be serialized implements `get_absolute_url`, then the return value
