@@ -141,6 +141,8 @@ var FileViewPage = {
         self.triggerResize = $osf.throttle(function () {
             $(document).trigger('fileviewpage:resize');
         }, 1000);
+
+        self.mfrIframeParent = $('#mfrIframeParent');
     },
     view: function(ctrl) {
         //This code was abstracted into a panel toggler at one point
@@ -157,22 +159,43 @@ var FileViewPage = {
             return accu + (panel.selected ? 1 : 0);
         }, 0);
 
-        if (shown === 2) {
-            $('#mfrIframeParent').removeClass().addClass('col-sm-5');
-            $('.file-view-panels').removeClass().addClass('file-view-panels').addClass('col-sm-7');
-        } else if (shown === 1) {
-            // if only revisions shown display 8/4 layout.
-            if (ctrl.revisions.selected) {
-                $('#mfrIframeParent').removeClass().addClass('col-sm-8');
-                $('.file-view-panels').removeClass().addClass('file-view-panels').addClass('col-sm-4');
+        var panelsShown = shown + (ctrl.mfrIframeParent.is(':visible') ? 1 : 0);
+        var mfrIframeParentLayout;
+        var fileViewPanelsLayout;
+
+        if (panelsShown === 3) {
+            // view | edit | revisions
+            mfrIframeParentLayout = 'col-sm-4';
+            fileViewPanelsLayout = 'col-sm-8';
+        } else if (panelsShown === 2) {
+            if (ctrl.mfrIframeParent.is(':visible')) {
+                if (ctrl.revisions.selected) {
+                    // view | revisions
+                    mfrIframeParentLayout = 'col-sm-8';
+                    fileViewPanelsLayout = 'col-sm-4';
+                } else {
+                    // view | edit
+                    mfrIframeParentLayout = 'col-sm-6';
+                    fileViewPanelsLayout = 'col-sm-6';
+                }
             } else {
-                $('#mfrIframeParent').removeClass().addClass('col-sm-6');
-                $('.file-view-panels').removeClass().addClass('file-view-panels').addClass('col-sm-6');
+                // edit | revisions
+                mfrIframeParentLayout = '';
+                fileViewPanelsLayout = 'col-sm-12';
             }
         } else {
-            $('#mfrIframeParent').removeClass().addClass('col-sm-12');
-            $('.file-view-panels').removeClass().addClass('file-view-panels');
+            // view
+            if (ctrl.mfrIframeParent.is(':visible')) {
+                mfrIframeParentLayout = 'col-sm-12';
+                fileViewPanelsLayout = '';
+            } else {
+                // edit or revisions
+                mfrIframeParentLayout = '';
+                fileViewPanelsLayout = 'col-sm-12';
+            }
         }
+        $('#mfrIframeParent').removeClass().addClass(mfrIframeParentLayout);
+        $('.file-view-panels').removeClass().addClass('file-view-panels').addClass(fileViewPanelsLayout);
 
         m.render(document.getElementById('toggleBar'), m('.btn-toolbar[style=margin-top:20px]', [
             ctrl.canEdit() ? m('.btn-group', {style: 'margin-left: 0;'}, [
@@ -182,13 +205,26 @@ var FileViewPage = {
                 m('.btn.btn-sm.btn-success.file-download', {onclick: $(document).trigger.bind($(document), 'fileviewpage:download')}, 'Download')
             ]),
             m('.btn-group.btn-group-sm', [
-                m('.btn.btn-default.disabled', 'Toggle View: ')
+                m('.btn.btn-default.disabled', 'Toggle view: ')
             ].concat(
+                m('.btn' + (ctrl.mfrIframeParent.is(':visible') ? '.btn-primary' : '.btn-default'), {
+                    onclick: function (e) {
+                        e.preventDefault();
+                        // atleast one button must remain enabled.
+                        if (!ctrl.mfrIframeParent.is(':visible') || panelsShown > 1) {
+                            ctrl.mfrIframeParent.toggle();
+                        }
+                    }
+                }, 'View')
+            ).concat(
                 panels.map(function(panel) {
                     return m('.btn' + (panel.selected ? '.btn-primary' : '.btn-default'), {
                         onclick: function(e) {
                             e.preventDefault();
-                            panel.selected = !panel.selected;
+                            // atleast one button must remain enabled.
+                            if (!panel.selected || panelsShown > 1) {
+                                panel.selected = !panel.selected;
+                            }
                         }
                     }, panel.title);
                 })

@@ -28,14 +28,16 @@
             % endif
             % if summary['archiving']:
                 <span class="label label-info"><strong>Archiving</strong></span> |
-            % endif  
+            % endif
 
+            <span data-bind="getIcon: '${summary['category']}'"></span>
             % if not summary['archiving']:
                 <a href="${summary['url']}">${summary['title']}</a>
             % endif
             % if summary['archiving']:
                 <span>${summary['title']}</span>
             % endif
+
 
             % if summary['is_registration']:
                 | Registered: ${summary['registered_date']}
@@ -92,6 +94,7 @@
         <div class="body hide" id="body-${summary['id']}" style="overflow:hidden;">
             <hr />
             Recent Activity
+            <!-- ko stopBinding: true -->
             <div id="logs-${summary['id']}" class="log-container" data-uri="${summary['api_url']}log/">
                 <dl class="dl-horizontal activity-log" data-bind="foreach: {data: logs, as: 'log'}">
                     <dt><span class="date log-date" data-bind="text: log.date.local, tooltip: {title: log.date.utc}"></span></dt>
@@ -107,6 +110,7 @@
                         </dd>
                 </dl><!-- end foreach logs -->
             </div>
+            <!-- /ko -->
          </div>
         % endif
     </li>
