@@ -39,7 +39,7 @@
                     <div id="projectCreate">
                         <div id="obNewProject" class="m-b-sm p-md ob-list-item osf-box box-round">
 
-                            <div data-bind="click: toggle" class="ob-header pointer">
+                            <div data-bind="click: toggle" class="m-b-md pointer">
                                  <i data-bind="css: {' fa-plus': !isOpen(), ' fa-minus': isOpen()}"
                                     class="pointer ob-expand-icon fa-lg pull-right fa">
                                 </i>
