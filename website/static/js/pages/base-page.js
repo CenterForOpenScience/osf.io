@@ -9,7 +9,7 @@ require('../../vendor/bootstrap-editable-custom/css/bootstrap-editable.css');
 require('../../vendor/bower_components/jquery-ui/themes/base/minified/jquery.ui.resizable.min.css');
 require('../../css/bootstrap-xl.css');
 require('../../css/animate.css');
-require('../../css/site.css');
+require('../../css/style.css');
 require('font-awesome-webpack');
 
 var $ = require('jquery');
