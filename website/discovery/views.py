@@ -8,6 +8,8 @@ from modularodm.query.querydialect import DefaultQueryDialect as Q
 from framework.analytics.piwik import PiwikClient
 
 
+
+
 def activity():
 
     popular_public_projects = []
@@ -25,6 +27,10 @@ def activity():
             period='week',
             date=target_date.strftime('%Y-%m-%d'),
         )
+
+        print '############ Piwik Test ############'
+        print client.api_call('Actions.get', period='day', date='last5')
+        print '############ Piwik Test ############'
 
         popular_project_ids = [
             x for x in client.custom_variables if x.label == 'Project ID'

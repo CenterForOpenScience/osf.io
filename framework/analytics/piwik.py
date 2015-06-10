@@ -228,6 +228,17 @@ class PiwikClient(object):
 
         return requests.get(self.url, params=params).json()
 
+    def api_call(self, method, **kwargs):
+        params = {
+            'token_auth': self.auth_token,
+            'idSite': self.site_id,
+            'module': 'API',
+            'method': method,
+            'format': 'json',
+        }
+        params.update(kwargs)
+
+        return requests.get(self.url, params=params).json()
 
 class CustomVariableField(object):
     __values = None

@@ -800,6 +800,12 @@ def make_url_map(app):
         ], 'get', project_views.node.project_statistics,
             OsfWebRenderer('project/statistics.mako')),
 
+        Rule([
+            '/project/<pid>/piwikStats/',
+            '/project/<pid>/node/<nid>/piwikStats/',
+        ], 'get', project_views.node.piwik_stats,
+            OsfWebRenderer('project/piwik_stats.mako')),
+
         ### Files ###
 
         # Note: Web endpoint for files view must pass `mode` = `page` to

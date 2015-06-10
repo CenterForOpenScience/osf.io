@@ -14,6 +14,7 @@ from framework.mongo import StoredObject
 from framework.auth.decorators import must_be_logged_in, collect_auth
 from framework.exceptions import HTTPError, PermissionsError
 from framework.mongo.utils import from_mongo, get_or_http_error
+from framework.analytics.piwik import PiwikClient
 
 from website import language
 
@@ -446,6 +447,34 @@ def project_statistics(auth, node, **kwargs):
     if not (node.can_edit(auth) or node.is_public):
         raise HTTPError(http.FORBIDDEN)
     return _view_project(node, auth, primary=True)
+
+@must_be_valid_project
+@must_be_contributor_or_public
+def piwik_stats(auth, node, **kwargs):
+    if not (node.can_edit(auth) or node.is_public):
+        raise  HTTPError(http.FORBIDDEN)
+
+    data = _view_project(node, auth, primary=True)
+    print data.get('node').get('piwik_site_id')
+
+    client = PiwikClient(
+            url=settings.PIWIK_HOST,
+            auth_token=settings.PIWIK_ADMIN_TOKEN,
+            site_id=data.get('node').get('piwik_site_id'),
+            period='day',
+            date='today',
+    )
+
+    stats = client.api_call('Actions.get', period='day', date='today')
+
+    data['piwikStats'] = stats
+
+    print data.get('piwikStats')
+
+    return data
+
+
+
 
 
 ###############################################################################
