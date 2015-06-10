@@ -480,7 +480,7 @@ class TestProjectViews(OsfTestCase):
         self.project.add_tag("foo'ta#@%#%^&g?", auth=self.consolidate_auth1, save=True)
         assert_in(sanitize.clean_tag("foo'ta#@%#%^&g?"), self.project.tags)
         url = self.project.api_url_for("project_removetag")
-        self.app.post_json(url, {"tag": "foo'ta#@%#%^&g?"}, auth=self.auth)
+        self.app.delete_json(url, {"tag": "foo'ta#@%#%^&g?"}, auth=self.auth)
         self.project.reload()
         assert_not_in(sanitize.clean_tag("foo'ta#@%#%^&g?"), self.project.tags)
         assert_equal("tag_removed", self.project.logs[-1].action) \
