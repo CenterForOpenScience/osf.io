@@ -151,7 +151,6 @@ class RegistrationWithTokenMixin(JSONAPISerializer):
         request = self.context['request']
         schema = MetaSchema.find(
             Q('name', 'eq', self.template)).sort('-schema_version')[0]
-
         user = request.user
         node = self.context['view'].get_node()
         formatted_data = {j: validated_data[j] for j in self.data_keys}
