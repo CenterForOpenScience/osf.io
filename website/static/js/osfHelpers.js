@@ -4,6 +4,8 @@ var $ = require('jquery');
 require('jquery-blockui');
 var Raven = require('raven-js');
 var moment = require('moment');
+var URI = require('URIjs');
+var bootbox = require('bootbox');
 var iconmap = require('js/iconmap');
 
 // TODO: For some reason, this require is necessary for custom ko validators to work
@@ -28,28 +30,31 @@ var growl = function(title, message, type) {
 /**
  * Generate OSF absolute URLs, including prefix and arguments. Assumes access to mako globals for pieces of URL.
  * Can optionally pass in an object with params (name:value) to be appended to URL. Calling as:
- *   apiV2Url("users/4urxt/applications", {"a":1, "filter[fullname]":"lawrence"}, "https://staging2.osf.io/api/v2/")
+ *   apiV2Url("users/4urxt/applications",
+ *      {query:
+ *          {"a":1, "filter[fullname]": "lawrence"},
+ *       prefix: "https://staging2.osf.io/api/v2/"})
  * would yield the result:
  *  "https://staging2.osf.io/api/v2/users/4urxt/applications?a=1&filter%5Bfullname%5D=lawrence"
- * @param {String} pathString The string to be appended to the absolute base path, eg "users/4urxt"
- * @param {Object} paramsObject (optional) An object containing parameters to add to the URL. Otherwise pass 'undefined'.
- * @param {String} apiPrefix (optional) Manually specify the prefix used for API routes (useful for testing)
+ * @param {String} path The string to be appended to the absolute base path, eg "users/4urxt"
+ * @param {Object} options (optional)
  */
-var apiV2Url = function (pathString, paramsObject, apiPrefix){
-    apiPrefix = apiPrefix || window.contextVars.apiV2Prefix;
+var apiV2Url = function (path, options){
+    var contextVars = window.contextVars || {};
+    var defaultPrefix = contextVars.apiV2Prefix || '';
 
-    // Don't output double slashes when concatenating two strings with adjoining slashes
-    if (apiPrefix && pathString && apiPrefix.charAt(apiPrefix.length - 1) === "/" && pathString.charAt(0) === "/"){
-        pathString = pathString.substring(1); // Strip off the redundant leading slash
-    }
+    var defaults = {
+        prefix: defaultPrefix, // Manually specify the prefix for API routes (useful for testing)
+        query: {}  // Optional query parameters to be appended to URL
+    };
+    var opts = $.extend({}, defaults, options);
 
-    var apiUrl = apiPrefix + pathString;
-    // Add parameters to URL (if any). Ensure encoding as necessary
-    if (paramsObject){
-        apiUrl += "?";
-        apiUrl += $.param(paramsObject);
-    }
-    return apiUrl;
+    var apiUrl = URI(opts.prefix);
+    var pathSegments = URI(path).segment();
+    pathSegments.forEach(function(el){apiUrl.segment(el)});  // Hack to prevent double slashes when joining base + path
+    apiUrl.query(opts.query);
+
+    return apiUrl.toString();
 };
 
 /*
@@ -621,6 +626,118 @@ function humanFileSize(bytes, si) {
     return bytes.toFixed(1) + ' ' + units[u];
 }
 
+/**
+*  returns a random name from this list to use as a confirmation string
+*/
+var _confirmationString = function() {
+    // TODO: Generate a random string here instead of using pre-set values
+    //       per Jeff, use ~10 characters
+    var scientists = [
+        'Anning',
+        'Banneker',
+        'Cannon',
+        'Carver',
+        'Chappelle',
+        'Curie',
+        'Divine',
+        'Emeagwali',
+        'Fahlberg',
+        'Forssmann',
+        'Franklin',
+        'Herschel',
+        'Hodgkin',
+        'Hopper',
+        'Horowitz',
+        'Jemison',
+        'Julian',
+        'Kovalevsky',
+        'Lamarr',
+        'Lavoisier',
+        'Lovelace',
+        'Massie',
+        'McClintock',
+        'Meitner',
+        'Mitchell',
+        'Morgan',
+        'Odum',
+        'Pasteur',
+        'Pauling',
+        'Payne',
+        'Pearce',
+        'Pollack',
+        'Rillieux',
+        'Sanger',
+        'Somerville',
+        'Tesla',
+        'Tyson',
+        'Turing'
+    ];
+
+    return scientists[Math.floor(Math.random() * scientists.length)];
+};
+
+/**
+  * Confirm a dangerous action by requiring the user to enter specific text
+  *
+  * This is an abstraction over bootbox, and passes most options through to
+  * bootbox.dailog(). The exception to this is `callback`, which is called only
+  * if the user correctly confirms the action.
+  *
+  * @param  {Object} options
+  */
+var confirmDangerousAction = function (options) {
+    // TODO: Refactor this to be more interactive - use a ten-key-like interface
+    //       and display one character at a time for the user to enter. Once
+    //       they enter that character, display another. This will require more
+    //       sustained attention and will prevent the user from copy/pasting a
+    //       random string.
+
+    var confirmationString = _confirmationString();
+
+    // keep the users' callback for re-use; we'll pass ours to bootbox
+    var callback = options.callback;
+    delete options.callback;
+
+    // this is our callback
+    var handleConfirmAttempt = function () {
+        var verified = ($('#bbConfirmText').val() === confirmationString);
+
+        if (verified) {
+            callback();
+        } else {
+            growl('Verification failed', 'Strings did not match');
+        }
+    };
+
+    var defaults = {
+        title: 'Confirm action',
+        confirmText: confirmationString,
+        buttons: {
+            cancel: {
+                label: 'Cancel',
+                className: 'btn-default'
+            },
+            success: {
+                label: 'Confirm',
+                className: 'btn-success',
+                callback: handleConfirmAttempt
+            }
+        },
+        message: ''
+    };
+
+    var bootboxOptions = $.extend({}, defaults, options);
+
+    bootboxOptions.message += [
+        '<p>Type the following to continue: <strong>',
+        confirmationString,
+        '</strong></p>',
+        '<input id="bbConfirmText" class="form-control">'
+    ].join('');
+
+    bootbox.dialog(bootboxOptions);
+};
+
 // Also export these to the global namespace so that these can be used in inline
 // JS. This is used on the /goodbye page at the moment.
 module.exports = window.$.osf = {
@@ -646,5 +763,6 @@ module.exports = window.$.osf = {
     htmlEscape: htmlEscape,
     htmlDecode: htmlDecode,
     tableResize: tableResize,
-    humanFileSize: humanFileSize
+    humanFileSize: humanFileSize,
+    confirmDangerousAction: confirmDangerousAction
 };

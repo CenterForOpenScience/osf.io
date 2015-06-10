@@ -1,0 +1,7 @@
+# encoding: utf-8
+
+TABULATE_EMAILS_NODE_ID = '...'
+TABULATE_EMAILS_USER_ID = '...'
+
+TABULATE_LOGS_NODE_ID = '...'
+TABULATE_LOGS_USER_ID = '...'
