@@ -2525,30 +2525,28 @@ class TestProject(OsfTestCase):
             contrib.unclaimed_records.keys()
         )
 
-    def test_permission_update_on_readded_contributor(self):
-        # A user is added as a contributor
-        user1 = UserFactory()
-        user2 = UserFactory()
-        self.project.add_contributor(contributor=user2, auth=self.consolidate_auth)
-        self.project.save()
+    def test_permission_override_on_readded_contributor(self):
+
+        # A child node created
+        self.child_node = NodeFactory(parent=self.project, creator=self.consolidate_auth)
+
+        # A user is added as with read permission
+        user = UserFactory()
+
+        self.project.add_contributor(user, permissions=['read'])
+        self.child_node.add_contributor(user, permissions=['read'])
+
         # The user is removed
         self.project.remove_contributor(
             auth=self.consolidate_auth,
-            contributor=user2
+            contributor=user
         )
 
-        self.project.reload()
-
-        self.project.add_contributors(
-            [
-                {'user': user1, 'permissions': ['read', 'write', 'admin'], 'visible': True},
-                {'user': user2, 'permissions': ['read', 'write', 'admin'], 'visible': False}
-            ],
-            auth=self.consolidate_auth
-        )
+        # user is readded with permission admin
+        self.child_node.add_contributor(user, permissions=['read','write','admin'])
         self.project.save()
 
-        assert(self.project.has_permission(user2, 'admin'))
+        assert(self.child_node.has_permission(user, 'admin'))
 
 
 class TestTemplateNode(OsfTestCase):
