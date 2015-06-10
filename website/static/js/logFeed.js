@@ -85,14 +85,7 @@ var Log = function(params) {
 
     //helper function to strip the slash for file or folder in log template
     self.stripSlash = function(path, name){
-        //check if the it's a file or a folder
-        if (path.match(/\/$/)){
-            //strip the ending and leading slash from folder
-            return name ? name.replace(/(^\/)|(\/$)/g, ''): path.replace(/(^\/)|(\/$)/g, '');
-        } else {
-            //strip only the leading slash from the file
-            return name ? name.replace(/^\//, ''): path.replace(/^\//, '');
-        }
+        return name ? name.replace(/(^\/)|(\/$)/g, ''): path.replace(/(^\/)|(\/$)/g, '');
     };
 
     //helper funtion to determine the type for removing in log template
