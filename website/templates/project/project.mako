@@ -91,7 +91,7 @@
         <div id="contributors" class="row" style="line-height:25px">
             <div class="col-sm-12">
                 % if user['is_contributor']:
-                    <a class="dotted-underline" href="${node['url']}contributors/">Contributors</a>:
+                    <a class="link-dashed" href="${node['url']}contributors/">Contributors</a>:
                 % else:
                     Contributors:
                 % endif
@@ -174,7 +174,7 @@
     <div class="col-sm-6 osf-dash-col">
 
         %if user['show_wiki_widget']:
-            <div id="addonWikiWidget" class="addon-widget-container" mod-meta='{
+            <div id="addonWikiWidget" class="" mod-meta='{
             "tpl": "../addons/wiki/templates/wiki_widget.mako",
             "uri": "${node['api_url']}wiki/widget/"
         }'></div>
