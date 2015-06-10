@@ -66,10 +66,6 @@ ul.ob-widget-list {
 	cursor: pointer;
 }
 
-.projectSearchAddFile{
-	width:100%;
-}
-
 /*this exists to force sizing properly as typeahead tries desperately to overwrite it...*/
 .twitter-typeahead{
 	display: block !important;
