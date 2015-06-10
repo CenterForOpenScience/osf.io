@@ -954,7 +954,7 @@ class TestCreateNodePointer(ApiTestCase):
         res = self.app.post(self.public_url, self.fake_payload, auth=self.basic_auth, expect_errors = True)
         # This is 403 instead of 401 because basic authentication is only for unit tests and, in order to keep from
         # presenting a basic authentication dialog box in the front end. We may change this as we understand CAS
-        # a little better
+        # a little bettergit stat
         assert_equal(res.status_code, 405) # getting 500 error
 
     def test_create_pointer_to_itself(self):
