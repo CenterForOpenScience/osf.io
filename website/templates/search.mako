@@ -209,17 +209,7 @@
             </span>
         </p>
         <!-- /ko -->
-        <p data-bind="visible: tags.length"><strong>Tags:</strong>
-            <span class="tag-cloud" data-bind="foreach: tags">
-                <span class="cloud-tag tag-sm pointer tag-container"
-                      data-bind="click: $root.clickTag.bind($parentContext, $data, 'add')">
-                    <span data-bind="text: $data">
-                    </span>
-                    <i class="fa fa-times-circle remove-tag"
-                       data-bind="click: $root.clickTag.bind($parentContext, $data, 'remove')"></i>
-                </span>
-            </span>
-        </p>
+        <div data-bind="template: 'tags'"></div>
         <p><strong>Jump to:</strong>
             <a data-bind="attr.href: wikiUrl">Wiki</a> -
             <a data-bind="attr.href: filesUrl">Files</a>
@@ -245,17 +235,7 @@
         </p>
         <!-- /ko -->
         <!-- ko if: tags.length > 0 -->
-        <p data-bind="visible: tags.length"><strong>Tags:</strong>
-            <span class="tag-cloud" data-bind="foreach: tags">
-                <span class="cloud-tag tag-sm pointer tag-container"
-                      data-bind="click: $root.clickTag.bind($parentContext, $data, 'add')">
-                    <span data-bind="text: $data">
-                    </span>
-                    <i class="fa fa-times-circle remove-tag"
-                       data-bind="click: $root.clickTag.bind($parentContext, $data, 'remove')"></i>
-                </span>
-            </span>
-        </p>
+        <div data-bind="template: 'tags'"></div>
         <!-- /ko -->
     </script>
     <script type="text/html" id="component">
@@ -282,17 +262,7 @@
         </p>
         <!-- /ko -->
         <!-- ko if: tags.length > 0 -->
-        <p data-bind="visible: tags.length"><strong>Tags:</strong>
-            <span class="tag-cloud" data-bind="foreach: tags">
-                <span class="cloud-tag tag-sm pointer tag-container"
-                      data-bind="click: $root.clickTag.bind($parentContext, $data, 'add')">
-                    <span data-bind="text: $data">
-                    </span>
-                    <i class="fa fa-times-circle remove-tag"
-                       data-bind="click: $root.clickTag.bind($parentContext, $data, 'remove')"></i>
-                </span>
-            </span>
-        </p>
+        <div data-bind="template: 'tags'"></div>
         <p><strong>Jump to:</strong>
             <a data-bind="attr.href: wikiUrl">Wiki</a> -
             <a data-bind="attr.href: filesUrl">Files</a>
@@ -319,17 +289,7 @@
         </p>
         <!-- /ko -->
         <!-- ko if: tags.length > 0 -->
-        <p data-bind="visible: tags.length"><strong>Tags:</strong>
-            <span class="tag-cloud" data-bind="foreach: tags">
-                <span class="cloud-tag tag-sm pointer tag-container"
-                      data-bind="click: $root.clickTag.bind($parentContext, $data, 'add')">
-                    <span data-bind="text: $data">
-                    </span>
-                    <i class="fa fa-times-circle remove-tag"
-                       data-bind="click: $root.clickTag.bind($parentContext, $data, 'remove')"></i>
-                </span>
-            </span>
-        </p>
+        <div data-bind="template: 'tags'"></div>
         <p><strong>Jump to:</strong>
             <a data-bind="attr.href: wikiUrl">Wiki</a> -
             <a data-bind="attr.href: filesUrl">Files</a>
@@ -337,6 +297,19 @@
         <!-- /ko -->
     </script>
 </%def>
+
+<script id="tags" type="text/html">
+    <p data-bind="visible: tags.length"><strong>Tags:</strong>
+        <span class="tag-cloud" data-bind="foreach: tags">
+            <span class="cloud-tag tag-sm pointer tag-container"
+                  data-bind="click: $root.clickTag.bind($parentContext, $data, 'add')">
+                <span data-bind="text: $data"></span>
+                <i class="fa fa-times-circle remove-tag"
+                   data-bind="click: $root.clickTag.bind($parentContext, $data, 'remove')"></i>
+            </span>
+        </span>
+    </p>
+</script>
 
 <%def name="javascript_bottom()">
     <script type="text/javascript">
