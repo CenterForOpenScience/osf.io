@@ -1,4 +1,4 @@
-<footer class="footer">
+<footer class="footer m-t-lg m-b-lg p-lg bg-color-light">
     <div class="container">
         <div class="row">
             <div class="col-sm-2 col-md-2 col-md-offset-1">
@@ -36,7 +36,7 @@
         </div>
     </div>
 </footer><!-- end footer -->
-<div class="container copyright">
+<div class="container copyright p-t-sm">
     <div class="row">
         <div class="col-md-12">
             <p>Copyright &copy; 2011-2015 <a href="http://centerforopenscience.org">Center for Open Science</a> |
