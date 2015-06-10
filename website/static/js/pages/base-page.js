@@ -12,6 +12,12 @@ require('../../../../node_modules/osf-style/css/base.css');
 require('../../css/style.css');
 require('font-awesome-webpack');
 
+// for explore tab
+require('../../css/explore.css');
+
+// for help tab
+require('../../css/getstart.css');
+
 var $ = require('jquery');
 require('jquery.cookie');
 
