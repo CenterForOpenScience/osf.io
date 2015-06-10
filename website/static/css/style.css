@@ -1,8 +1,3 @@
-/*
-* style.css is to include css classes that apply to the whole website
-*/
-
-
 /* Global Styles are in base.css */
 
 html, body {
@@ -11,6 +6,13 @@ html, body {
 body {
     padding-top: 50px; /* body padding for fixed top nav */
     position: relative; /* for bootstrap affix */
+}
+
+.navbar-brand {
+    margin-left: 0 !important;
+    height: 42px !important;
+    line-height: 27px;
+    padding: 8px 0px 7px;
 }
 
 /* Footer
@@ -39,5 +41,3 @@ body {
     width: 100%;
 
 }
-
-
