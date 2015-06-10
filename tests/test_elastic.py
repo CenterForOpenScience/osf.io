@@ -408,9 +408,7 @@ class TestAddContributor(SearchTestCase):
 
 
     def test_search_fullname(self):
-        """Verify that searching for full name yields exactly one result.
-
-        """
+        # Verify that searching for full name yields exactly one result.
         contribs = search.search_contributor(self.name1)
         assert_equal(len(contribs['users']), 1)
 
@@ -418,9 +416,7 @@ class TestAddContributor(SearchTestCase):
         assert_equal(len(contribs['users']), 0)
 
     def test_search_firstname(self):
-        """Verify that searching for first name yields exactly one result.
-
-        """
+        # Verify that searching for first name yields exactly one result.
         contribs = search.search_contributor(self.name1.split(' ')[0])
         assert_equal(len(contribs['users']), 1)
 
@@ -428,10 +424,7 @@ class TestAddContributor(SearchTestCase):
         assert_equal(len(contribs['users']), 0)
 
     def test_search_partial(self):
-        """Verify that searching for part of first name yields exactly one
-        result.
-
-        """
+        # Verify that searching for part of first name yields exactly one
         contribs = search.search_contributor(self.name1.split(' ')[0][:-1])
         assert_equal(len(contribs['users']), 1)
 
@@ -474,26 +467,20 @@ class TestProjectSearchResults(SearchTestCase):
         )
 
     def test_singular_query(self):
-        """Verify searching for singular term includes singular,
-        possessive and plural versions in results.
-
-        """
+        # Verify searching for singular term includes singular,
+        # possessive and plural versions in results.
         results = query(self.singular)['results']
         assert_equal(len(results), 3)
 
     def test_plural_query(self):
-        """Verify searching for singular term includes singular,
-        possessive and plural versions in results.
-
-        """
+        # Verify searching for singular term includes singular,
+        # possessive and plural versions in results.
         results = query(self.plural)['results']
         assert_equal(len(results), 3)
 
     def test_possessive_query(self):
-        """Verify searching for possessive term includes singular,
-        possessive and plural versions in results.
-
-        """
+        # Verify searching for possessive term includes singular,
+        # possessive and plural versions in results.
         results = query(self.possessive)['results']
         assert_equal(len(results), 3)
 

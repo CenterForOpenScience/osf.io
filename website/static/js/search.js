@@ -130,7 +130,7 @@ var ViewModel = function(params) {
                 'fields': fields,
                 'query': self.query(),
                 'analyze_wildcard': true,
-                'lenient': true,
+                'lenient': true
             }
         };
     });
