@@ -71,10 +71,6 @@ ul.ob-widget-list {
 	display: block !important;
 }
 
-ul.nav.nav-tabs {
-    border-bottom:1px solid #eee
-}
-
 div.ob-dropzone-filename{
 	margin-top:10px;
 	font-family: "Lucida Console", Monaco, monospace;
