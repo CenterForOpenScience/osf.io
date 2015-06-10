@@ -351,9 +351,8 @@ def requirements(addons=False, release=False, dev=False):
         inv requirements --addons
         inv requirements --release
     """
-    if addons:
+    if release or addons:
         addon_requirements()
-    req_file = None
     # "release" takes precedence
     if release:
         req_file = os.path.join(HERE, 'requirements', 'release.txt')
