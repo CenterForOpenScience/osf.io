@@ -170,6 +170,9 @@ function ProjectCreatorViewModel(params) {
     };
 
     self.templates = self.loadNodes(params.data);
+
+    // IE won't select template with id correctly. so we replace #createNodeTemplates with .createNodeTemplates
+    // More explanation -- https://github.com/CenterForOpenScience/osf.io/pull/2858
     $('.createNodeTemplates').select2({
         allowClear: true,
         placeholder: 'Select a project to use as a template',
