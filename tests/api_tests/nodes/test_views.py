@@ -890,15 +890,15 @@ class TestCreateNodePointer(ApiTestCase):
         self.basic_auth = (self.user.username, 'password')
         self.project = ProjectFactory(is_public=False, creator=self.user)
         self.pointer_project = ProjectFactory(is_public=False, creator=self.user)
-        self.project.add_pointer(self.pointer_project, auth=Auth(self.user))
         self.private_url = '/v2/nodes/{}/pointers/'.format(self.project._id)
-        self.private_payload = {'node_id': self.project._id}
+        self.private_payload = {'node_id': self.pointer_project._id}
 
         self.public_project = ProjectFactory(is_public=True, creator=self.user)
         self.public_pointer_project = ProjectFactory(is_public=True, creator=self.user)
-        self.public_project.add_pointer(self.public_pointer_project, auth=Auth(self.user))
         self.public_url = '/v2/nodes/{}/pointers/'.format(self.public_project._id)
-        self.public_payload = {'node_id': self.public_project._id}
+        self.public_payload = {'node_id': self.public_pointer_project._id}
+        self.fake_payload = {'node_id': 'fdxlq'}
+        self.point_to_itself_payload = {'node_id': self.public_project._id }
 
         self.user_two = UserFactory.build()
         self.user_two.set_password('password')
@@ -918,7 +918,7 @@ class TestCreateNodePointer(ApiTestCase):
 
         res = self.app.post(self.public_url, self.public_payload, auth = self.basic_auth)
         assert_equal(res.status_code, 201)
-        assert_equal(res.json['data']['node_id'], self.public_project._id)
+        assert_equal(res.json['data']['node_id'], self.public_pointer_project._id)
 
     def test_creates_private_node_pointer_logged_out(self):
         res = self.app.post(self.private_url, self.private_payload, expect_errors=True)
@@ -930,11 +930,13 @@ class TestCreateNodePointer(ApiTestCase):
     def test_creates_private_node_pointer_logged_in_contributor(self):
         res = self.app.post(self.private_url, self.private_payload, auth=self.basic_auth)
         assert_equal(res.status_code, 201)
-        assert_equal(res.json['data']['node_id'], self.project._id)
+        assert_equal(res.json['data']['node_id'], self.pointer_project._id)
 
     def test_creates_private_node_pointer_logged_in_non_contributor(self):
         res = self.app.post(self.private_url, self.private_payload, auth=self.basic_auth_two, expect_errors=True)
         assert_equal(res.status_code, 403)
+
+
 
 
 class TestNodeFilesList(ApiTestCase):
