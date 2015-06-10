@@ -7,6 +7,7 @@ import datetime
 
 from modularodm import Q
 from dateutil.relativedelta import relativedelta
+from box.client import BoxAuthenticationException
 
 from website.app import init_app
 from website.addons.box import model
@@ -18,7 +19,7 @@ logging.basicConfig(level=logging.INFO)
 
 def get_targets(delta):
     return model.BoxOAuthSettings.find(
-        Q('expires_at', 'lt', datetime.datetime.utcnow() + delta)
+        Q('expires_at', 'lt', datetime.datetime.utcnow() - delta)
     )
 
 
@@ -31,7 +32,10 @@ def main(delta, dry_run):
             )
         )
         if not dry_run:
-            record.refresh_access_token(force=True)
+            try:
+                record.refresh_access_token(force=True)
+            except BoxAuthenticationException as ex:
+                print(ex.message)
 
 
 if __name__ == '__main__':
@@ -40,6 +44,6 @@ if __name__ == '__main__':
     try:
         days = int(sys.argv[2])
     except (IndexError, ValueError, TypeError):
-        days = 7
+        days = 60 - 7  # refresh tokens are good for 60 days
     delta = relativedelta(days=days)
     main(delta, dry_run=dry_run)
