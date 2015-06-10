@@ -11,11 +11,14 @@ from tests.factories import RegistrationFactory
 from tests.test_addons import assert_urls_equal
 
 import furl
+import lxml.etree
 from modularodm.storage.base import KeyExistsException
 
 from website import settings
 from website.identifiers.utils import to_anvl
 from website.identifiers.model import Identifier
+from website.identifiers.metadata import datacite_metadata_for_node
+from website.identifiers import metadata
 
 
 class IdentifierFactory(ModularOdmFactory):
@@ -24,6 +27,52 @@ class IdentifierFactory(ModularOdmFactory):
     referent = SubFactory(RegistrationFactory)
     category = 'carpid'
     value = 'carp:/24601'
+
+
+class TestMetadataGeneration(OsfTestCase):
+
+    def setUp(self):
+        OsfTestCase.setUp(self)
+        self.visible_contrib = AuthUserFactory()
+        visible_contrib2 = AuthUserFactory(given_name=u'ヽ༼ ಠ益ಠ ༽ﾉ', family_name=u'ლ(´◉❥◉｀ლ)')
+        self.invisible_contrib = AuthUserFactory()
+        self.node = RegistrationFactory(is_public=True)
+        self.identifier = Identifier(referent=self.node, category='catid', value='cat:7')
+        self.node.add_contributor(self.visible_contrib, visible=True)
+        self.node.add_contributor(self.invisible_contrib, visible=False)
+        self.node.add_contributor(visible_contrib2, visible=True)
+        self.node.save()
+
+    def test_metadata_for_node_only_includes_visible_contribs(self):
+        metadata_xml = datacite_metadata_for_node(self.node, doi=self.identifier.value)
+        # includes visible contrib name
+        assert_in(u'{}, {}'.format(
+            self.visible_contrib.family_name, self.visible_contrib.given_name),
+            metadata_xml)
+        # doesn't include invisible contrib name
+        assert_not_in(self.invisible_contrib.family_name, metadata_xml)
+
+        assert_in(self.identifier.value, metadata_xml)
+
+    def test_metadata_for_node_has_correct_structure(self):
+        metadata_xml = datacite_metadata_for_node(self.node, doi=self.identifier.value)
+        root = lxml.etree.fromstring(metadata_xml)
+        xsi_location = '{http://www.w3.org/2001/XMLSchema-instance}schemaLocation'
+        expected_location = 'http://datacite.org/schema/kernel-3 http://schema.datacite.org/meta/kernel-3/metadata.xsd'
+        assert_equal(root.attrib[xsi_location], expected_location)
+
+        identifier = root.find('{%s}identifier' % metadata.NAMESPACE)
+        assert_equal(identifier.attrib['identifierType'], 'DOI')
+        assert_equal(identifier.text, self.identifier.value)
+
+        creators = root.find('{%s}creators' % metadata.NAMESPACE)
+        assert_equal(len(creators.getchildren()), len(self.node.visible_contributors))
+
+        publisher = root.find('{%s}publisher' % metadata.NAMESPACE)
+        assert_equal(publisher.text, 'Open Science Framework')
+
+        pub_year = root.find('{%s}publicationYear' % metadata.NAMESPACE)
+        assert_equal(pub_year.text, str(self.node.registered_date.year))
 
 
 class TestIdentifierModel(OsfTestCase):
@@ -84,15 +133,17 @@ class TestIdentifierViews(OsfTestCase):
         assert_equal(res.json['doi'], 'FK424601')
         assert_equal(res.json['ark'], 'fk224601')
 
+    @httpretty.activate
     def test_create_identifiers_not_exists(self):
         identifier = self.node._id
         url = furl.furl('https://ezid.cdlib.org/id')
-        url.path.segments.append('{0}{1}'.format(settings.DOI_NAMESPACE, identifier))
+        doi = settings.EZID_FORMAT.format(namespace=settings.DOI_NAMESPACE, guid=identifier)
+        url.path.segments.append(doi)
         httpretty.register_uri(
             httpretty.PUT,
             url.url,
             body=to_anvl({
-                'success': '{doi}{ident} | {ark}{ident}'.format(
+                'success': '{doi}osf.io/{ident} | {ark}osf.io/{ident}'.format(
                     doi=settings.DOI_NAMESPACE,
                     ark=settings.ARK_NAMESPACE,
                     ident=identifier,
@@ -116,10 +167,13 @@ class TestIdentifierViews(OsfTestCase):
         )
         assert_equal(res.status_code, 201)
 
+
+    @httpretty.activate
     def test_create_identifiers_exists(self):
         identifier = self.node._id
+        doi = settings.EZID_FORMAT.format(namespace=settings.DOI_NAMESPACE, guid=identifier)
         url = furl.furl('https://ezid.cdlib.org/id')
-        url.path.segments.append('{0}{1}'.format(settings.DOI_NAMESPACE, identifier))
+        url.path.segments.append(doi)
         httpretty.register_uri(
             httpretty.PUT,
             url.url,
@@ -130,7 +184,7 @@ class TestIdentifierViews(OsfTestCase):
             httpretty.GET,
             url.url,
             body=to_anvl({
-                'success': '{0}{1}'.format(settings.DOI_NAMESPACE, identifier),
+                'success': doi,
             }),
             status=200,
         )

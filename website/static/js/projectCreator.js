@@ -8,7 +8,8 @@ require('select2');
 var ko = require('knockout');
 var bootbox = require('bootbox');
 
-var $osf = require('./osfHelpers');
+var $osf = require('js/osfHelpers');
+var nodeCategories = require('json!built/nodeCategories.json');
 
 var CREATE_URL = '/api/v1/project/new/';
 
@@ -26,9 +27,16 @@ function ProjectCreatorViewModel(params) {
     self.minSearchLength = 2;
     self.title = ko.observable('');
     self.description = ko.observable();
+
+    self.category = ko.observable('project');
+    self.categoryMap = nodeCategories;
+    self.categories = Object.keys(nodeCategories);
+
     self.errorMessage = ko.observable('');
 
     self.hasFocus = params.hasFocus;
+
+    self.usingTemplate = ko.observable(false);
 
     self.submitForm = function () {
         if (self.title().trim() === '') {
@@ -59,10 +67,12 @@ function ProjectCreatorViewModel(params) {
     };
 
     self.serialize = function() {
+        var category = self.category();
         return {
             title: self.title(),
+            category: category,
             description: self.description(),
-            template: $('#templates').val()
+            template: $('#createNodeTemplates').val()
         };
     };
     /**
@@ -154,13 +164,14 @@ function ProjectCreatorViewModel(params) {
         return ko.utils.arrayMap(nodes, function(node) {
             return {
                 'id': node.id,
-                'text': node.title
+                // TODO: Remove htmlDecode when pre-sanitized strings are no longer stored
+                'text': $osf.htmlDecode(node.title)
             };
         });
     };
 
     self.templates = self.loadNodes(params.data);
-    $('#templates').select2({
+    $('#createNodeTemplates').select2({
         allowClear: true,
         placeholder: 'Select a project to use as a template',
         query: self.query

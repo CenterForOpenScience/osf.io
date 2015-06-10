@@ -190,33 +190,14 @@
         </div>
 
     </script>
-    <script type="text/html" id="project">
-        <h4><a data-bind="attr.href: url">{{ title }}</a></h4>
-        <p data-bind="visible: description"><strong>Description:</strong> {{ description | fit:500 }}</p>
-
-        <!-- ko if: contributors.length > 0 -->
-        <p>
-            <strong>Contributors:</strong> <span data-bind="foreach: contributors">
-                <!-- ko if: url -->
-                    <a data-bind="attr.href: url">{{ fullname }}</a>
-                <!-- /ko-->
-                <!-- ko ifnot: url -->
-                    {{ fullname }}
-                <!-- /ko -->
-
-
-            <!-- ko if: ($index()+1) < ($parent.contributors.length) -->&nbsp;- <!-- /ko -->
-            </span>
-        </p>
+    <script type="text/html" id="node">
+      <!-- ko if: parent_url -->
+      <h4><a data-bind="attr.href: parent_url">{{ parent_title}}</a> / <a data-bind="attr.href: url">{{title }}</a></h4>
         <!-- /ko -->
-        <div data-bind="template: 'tags'"></div>
-        <p><strong>Jump to:</strong>
-            <a data-bind="attr.href: wikiUrl">Wiki</a> -
-            <a data-bind="attr.href: filesUrl">Files</a>
-        </p>
-    </script>
-    <script type="text/html" id="app">
-        <h4><a data-bind="attr.href: url">{{ title }}</a></h4>
+        <!-- ko if: !parent_url -->        
+        <h4><span data-bind="if: parent_title">{{ parent_title }} /</span> <a data-bind="attr.href: url">{{title }}</a></h4>
+        <!-- /ko -->
+
         <p data-bind="visible: description"><strong>Description:</strong> {{ description | fit:500 }}</p>
 
         <!-- ko if: contributors.length > 0 -->
@@ -228,46 +209,23 @@
                 <!-- ko ifnot: url -->
                     {{ fullname }}
                 <!-- /ko -->
-
-
             <!-- ko if: ($index()+1) < ($parent.contributors.length) -->&nbsp;- <!-- /ko -->
             </span>
         </p>
         <!-- /ko -->
         <!-- ko if: tags.length > 0 -->
-        <div data-bind="template: 'tags'"></div>
+        <div data-bind="template: 'tag-cloud'"></div>
+        <p><strong>Jump to:</strong>
+            <a data-bind="attr.href: wikiUrl">Wiki</a> -
+            <a data-bind="attr.href: filesUrl">Files</a>
+        </p>
         <!-- /ko -->
+    </script>
+    <script type="text/html" id="project">
+      <div data-bind="template: {name: 'node', data: $data}"></div>
     </script>
     <script type="text/html" id="component">
-        <!-- ko if: parent_url -->
-            <h4><a data-bind="attr.href: parent_url">{{ parent_title}}</a> / <a data-bind="attr.href: url">{{title }}</a></h4>
-        <!-- /ko -->
-        <!-- ko if: !parent_url -->
-            <h4>{{ parent_title}} / <a data-bind="attr.href: url">{{title }}</a></h4>
-        <!-- /ko -->
-
-        <p data-bind="visible: description"><strong>Description:</strong> {{ description | fit:500 }}</p>
-
-        <!-- ko if: contributors.length > 0 -->
-        <p>
-            <strong>Contributors:</strong> <span data-bind="foreach: contributors">
-                <!-- ko if: url -->
-                    <a data-bind="attr.href: url">{{ fullname }}</a>
-                <!-- /ko-->
-                <!-- ko ifnot: url -->
-                    {{ fullname }}
-                <!-- /ko -->
-            <!-- ko if: ($index()+1) < ($parent.contributors.length) -->&nbsp;- <!-- /ko -->
-            </span>
-        </p>
-        <!-- /ko -->
-        <!-- ko if: tags.length > 0 -->
-        <div data-bind="template: 'tags'"></div>
-        <p><strong>Jump to:</strong>
-            <a data-bind="attr.href: wikiUrl">Wiki</a> -
-            <a data-bind="attr.href: filesUrl">Files</a>
-        </p>
-        <!-- /ko -->
+      <div data-bind="template: {name: 'node', data: $data}"></div>
     </script>
     <script type="text/html" id="registration">
         <h4><a data-bind="attr.href: url">{{ title }}</a>  (Registration)</h4>
@@ -289,27 +247,26 @@
         </p>
         <!-- /ko -->
         <!-- ko if: tags.length > 0 -->
-        <div data-bind="template: 'tags'"></div>
+        <div data-bind="template: 'tag-cloud'"></div>
         <p><strong>Jump to:</strong>
             <a data-bind="attr.href: wikiUrl">Wiki</a> -
             <a data-bind="attr.href: filesUrl">Files</a>
         </p>
         <!-- /ko -->
     </script>
-</%def>
-
-<script id="tags" type="text/html">
-    <p data-bind="visible: tags.length"><strong>Tags:</strong>
-        <span class="tag-cloud" data-bind="foreach: tags">
-            <span class="cloud-tag tag-sm pointer tag-container"
-                  data-bind="click: $root.clickTag.bind($parentContext, $data, 'add')">
-                <span data-bind="text: $data"></span>
-                <i class="fa fa-times-circle remove-tag"
-                   data-bind="click: $root.clickTag.bind($parentContext, $data, 'remove')"></i>
+    <script id="tag-cloud" type="text/html">
+        <p data-bind="visible: tags.length"><strong>Tags:</strong>
+            <span class="tag-cloud" data-bind="foreach: tags">
+                <span class="cloud-tag tag-sm pointer tag-container"
+                      data-bind="click: $root.clickTag.bind($parentContext, $data, 'add')">
+                    <span data-bind="text: $data"></span>
+                    <i class="fa fa-times-circle remove-tag"
+                       data-bind="click: $root.clickTag.bind($parentContext, $data, 'remove')"></i>
+                </span>
             </span>
-        </span>
-    </p>
-</script>
+        </p>
+    </script>
+</%def>
 
 <%def name="javascript_bottom()">
     <script type="text/javascript">

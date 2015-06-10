@@ -12,6 +12,8 @@ from framework.analytics import get_basic_counters
 from website import models
 from website import settings
 from website.app import init_app
+from website.addons.osfstorage.model import OsfStorageFileNode
+from website.addons.osfstorage.model import OsfStorageTrashedFileNode
 
 
 def main():
@@ -83,11 +85,19 @@ def main():
                     continue
                 if neighbor._id not in contrib[person._id]:
                     contrib[person._id].append(neighbor._id)
+
         addon = project.get_addon('osfstorage')
-        records = addon.file_tree.children if addon.file_tree else []
-        for record in records:
-            for idx, version in enumerate(record.versions):
-                page = ':'.join(['download', project._id, record.path, str(idx + 1)])
+
+        for filenode in OsfStorageFileNode.find(Q('node_settings', 'eq', addon) & Q('kind', 'eq', 'file')):
+            for idx, version in enumerate(filenode.versions):
+                page = ':'.join(['download', project._id, filenode._id, str(idx)])
+                unique, total = get_basic_counters(page)
+                number_downloads_total += total or 0
+                number_downloads_unique += unique or 0
+
+        for filenode in OsfStorageTrashedFileNode.find(Q('node_settings', 'eq', addon) & Q('kind', 'eq', 'file')):
+            for idx, version in enumerate(filenode.versions):
+                page = ':'.join(['download', project._id, filenode._id, str(idx)])
                 unique, total = get_basic_counters(page)
                 number_downloads_total += total or 0
                 number_downloads_unique += unique or 0

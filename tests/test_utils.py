@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 import os
+import mock
 import unittest
 from flask import Flask
 from nose.tools import *  # noqa (PEP8 asserts)
@@ -7,9 +8,10 @@ from nose.tools import *  # noqa (PEP8 asserts)
 from framework.routing import Rule, json_renderer
 from framework.utils import secure_filename
 from website.routes import process_rules, OsfWebRenderer
+from website import settings
 from website.util import paths
 from website.util.mimetype import get_mimetype
-from website.util import web_url_for, api_url_for, is_json_request
+from website.util import web_url_for, api_url_for, api_v2_url, is_json_request, waterbutler_url_for
 
 
 try:
@@ -56,6 +58,40 @@ class TestUrlForHelpers(unittest.TestCase):
     def test_api_url_for(self):
         with self.app.test_request_context():
             assert api_url_for('dummy_view', pid='123') == '/api/v1/123/'
+
+    def test_api_v2_url_with_port(self):
+        full_url = api_v2_url('/nodes/abcd3/contributors/',
+                              base_route='http://localhost:8000/',
+                              base_prefix='v2/')
+        assert_equal(full_url, "http://localhost:8000/v2/nodes/abcd3/contributors/")
+
+        # Handles URL the same way whether or not user enters a leading slash
+        full_url = api_v2_url('nodes/abcd3/contributors/',
+                              base_route='http://localhost:8000/',
+                              base_prefix='v2/')
+        assert_equal(full_url, "http://localhost:8000/v2/nodes/abcd3/contributors/")
+
+        # User is still responsible for the trailing slash. If they omit it, it doesn't appear at end of URL
+        full_url = api_v2_url('/nodes/abcd3/contributors',
+                              base_route='http://localhost:8000/',
+                              base_prefix='v2/')
+        assert_not_equal(full_url, "http://localhost:8000/v2/nodes/abcd3/contributors/")
+
+    def test_api_v2_url_with_params(self):
+        """Handles- and encodes- URLs with parameters (dict and kwarg) correctly"""
+        full_url = api_v2_url('/nodes/abcd3/contributors/',
+                              params={'filter[fullname]': 'bob'},
+                              base_route='https://staging2.osf.io/',
+                              base_prefix='api/v2/',
+                              page_size=10)
+        assert_equal(full_url, "https://staging2.osf.io/api/v2/nodes/abcd3/contributors/?filter%5Bfullname%5D=bob&page_size=10")
+
+    def test_api_v2_url_base_path(self):
+        """Given a blank string, should return the base path (domain + port + prefix) with no extra cruft at end"""
+        full_url = api_v2_url('',
+                              base_route='http://localhost:8000/',
+                              base_prefix='v2/')
+        assert_equal(full_url, "http://localhost:8000/v2/")
 
     def test_web_url_for(self):
         with self.app.test_request_context():
@@ -140,6 +176,37 @@ class TestUrlForHelpers(unittest.TestCase):
             assert_false(is_json_request())
         with self.app.test_request_context(content_type='application/json;charset=UTF-8'):
             assert_true(is_json_request())
+
+    def test_waterbutler_url_for(self):
+        with self.app.test_request_context():
+            url = waterbutler_url_for('upload', 'provider', 'path', mock.Mock(_id='_id'))
+
+        assert_in('nid=_id', url)
+        assert_in('/file?', url)
+        assert_in('path=path', url)
+        assert_in('provider=provider', url)
+
+    def test_waterbutler_url_for_implicit_cookie(self):
+        with self.app.test_request_context() as context:
+            context.request.cookies = {settings.COOKIE_NAME: 'cookie'}
+            url = waterbutler_url_for('upload', 'provider', 'path', mock.Mock(_id='_id'))
+
+        assert_in('nid=_id', url)
+        assert_in('/file?', url)
+        assert_in('path=path', url)
+        assert_in('cookie=cookie', url)
+        assert_in('provider=provider', url)
+
+    def test_waterbutler_url_for_cookie_not_required(self):
+        with self.app.test_request_context():
+            url = waterbutler_url_for('upload', 'provider', 'path', mock.Mock(_id='_id'))
+
+        assert_not_in('cookie', url)
+
+        assert_in('nid=_id', url)
+        assert_in('/file?', url)
+        assert_in('path=path', url)
+        assert_in('provider=provider', url)
 
 
 class TestGetMimeTypes(unittest.TestCase):

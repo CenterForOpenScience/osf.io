@@ -39,7 +39,8 @@ var AddonFolderPickerViewModel = oop.extend(FolderPickerViewModel, {
             return (userHasAuth && selected) ? selected.type : '';
         });
         self.messages.submitSettingsSuccess =  ko.pureComputed(function() {
-            return 'Successfully linked "' + $osf.htmlEscape(self.folder().name) + '". Go to the <a href="' +
+            var name = self.options.decodeFolder($osf.htmlEscape(self.folder().name));
+            return 'Successfully linked "' + name + '". Go to the <a href="' +
                 self.urls().files + '">Files page</a> to view your content.';
         });
         // Overrides
@@ -56,6 +57,9 @@ var AddonFolderPickerViewModel = oop.extend(FolderPickerViewModel, {
             },
             connectAccount: function() {
                 window.location.href = this.urls().auth;
+            },
+            decodeFolder: function(folder_name) {
+                return folder_name;
             }
         };
         // Overrides
@@ -70,12 +74,45 @@ var AddonFolderPickerViewModel = oop.extend(FolderPickerViewModel, {
                 }.bind(this),
                 resolveLazyloadUrl: function(item) {
                     return item.data.urls.folders;
-                }
+                },
+                decodeFolder: function(item) {
+                    return this.options.decodeFolder.call(this, item);
+                }.bind(this)
+
             }
         );
+
+        self.folderName = ko.pureComputed(function () {
+            var nodeHasAuth = self.nodeHasAuth();
+            var folder = self.folder();
+            var folder_name = self.options.decodeFolder((nodeHasAuth && folder && folder.name) ? folder.name.trim() : '');
+            return folder_name;
+        });
+        self.selectedFolderName = ko.pureComputed(function() {
+            var userIsOwner = self.userIsOwner();
+            var selected = self.selected();
+            var name = selected.name || 'None';
+            var folder_name = self.options.decodeFolder(userIsOwner ? name : '');
+            return folder_name;
+        });
+
+    },
+    afterUpdate: function() {
+        var self = this;
+        if (self.nodeHasAuth() && !self.validCredentials()) {
+            var message;
+            if (self.userIsOwner()) {
+                message = self.messages.invalidCredOwner();
+            }
+            else {
+                message = self.messages.invalidCredNotOwner();
+            }
+            self.changeMessage(message, 'text-danger');
+        }
     },
     _updateCustomFields: function(settings){
-        this.validCredentials(settings.validCredentials);
+        var self = this;
+        self.validCredentials(settings.validCredentials);
     },
     /**
      * Allows a user to create an access token from the nodeSettings page

@@ -6,7 +6,10 @@
 </div>
 
 <div id="treeGrid">
-	<div class="fangorn-loading"> <i class="fa fa-spinner fangorn-spin"></i> <p class="m-t-sm fg-load-message"> Loading files...  </p> </div>
+	<div class="fangorn-loading"> 
+		<div class="logo-spin text-center"><img src="/static/img/logo_spin.png" alt="loader"> </div> 
+		<p class="m-t-sm fg-load-message"> Loading files...  </p> 
+	</div>
 </div>
 
 
@@ -29,8 +32,9 @@ ${parent.javascript_bottom()}
 <script src=${"/static/public/js/files-page.js" | webpack_asset}></script>
 <script type="text/javascript">
     window.contextVars = window.contextVars || {};
-    % if 'write' in user['permissions'] and not node['is_registration'] and not disk_saving_mode:
-        window.contextVars.uploadInstruction = true
+    <% import json %>
+    % if 'write' in user['permissions'] and not node['is_registration']:
+        window.contextVars.diskSavingMode = !${json.dumps(disk_saving_mode)};
     % endif
 </script>
 </%def>

@@ -11,17 +11,64 @@ from website.addons.dataverse.tests.utils import DataverseAddonTestCase
 
 class TestDataverseFile(DataverseAddonTestCase):
 
-    def test_dataverse_file_url(self):
+    def test_constants(self):
+        dvf = DataverseFile()
+        assert_equal('dataverse', dvf.provider)
+        assert_equal('version', dvf.version_identifier)
 
-        # Create some dataverse file
-        dvf = DataverseFile(
-            node=self.project,
-            file_id='12345',
-        )
-        dvf.save()
+    def test_path_doesnt_crash_without_addon(self):
+        dvf = DataverseFile(node=self.project, file_id='12345')
+        self.project.delete_addon('dataverse', Auth(self.user))
 
-        # Assert url is correct
-        assert_equal('dataverse/file/12345', dvf.file_url)
+        assert_is(self.project.get_addon('dataverse'), None)
+
+        assert_true(dvf.file_id)
+        assert_true(dvf.waterbutler_path)
+
+    def test_waterbutler_path(self):
+        dvf = DataverseFile(node=self.project, file_id='12345')
+
+        assert_equals(dvf.file_id, '12345')
+        assert_equals(dvf.waterbutler_path, '/12345')
+
+    def test_unique_identifier(self):
+        dvf = DataverseFile(node=self.project, file_id='12345')
+
+        assert_true(dvf.file_id, '12345')
+        assert_equals(dvf.unique_identifier, '12345')
+
+    def test_node_addon_get_or_create(self):
+        dvf, created = self.node_settings.find_or_create_file_guid('12345')
+
+        assert_true(created)
+        assert_equal(dvf.file_id, '12345')
+        assert_equal(dvf.waterbutler_path, '/12345')
+
+    def test_node_addon_get_or_create_finds(self):
+        dvf1, created1 = self.node_settings.find_or_create_file_guid('12345')
+        dvf2, created2 = self.node_settings.find_or_create_file_guid('12345')
+
+        assert_true(created1)
+        assert_false(created2)
+        assert_equals(dvf1, dvf2)
+
+    @mock.patch('website.addons.dataverse.model._get_current_user')
+    @mock.patch('website.addons.base.requests.get')
+    def test_name(self, mock_get, mock_get_user):
+        mock_get_user.return_value = self.user
+        mock_response = mock.Mock(ok=True, status_code=200)
+        mock_get.return_value = mock_response
+        mock_response.json.return_value = {
+            'data': {
+                'name': 'Morty.foo',
+                'path': '/12345',
+            },
+        }
+
+        dvf, created = self.node_settings.find_or_create_file_guid('12345')
+        dvf.enrich()
+
+        assert_equal(dvf.name, 'Morty.foo')
 
 
 class TestDataverseUserSettings(DataverseAddonTestCase):
@@ -33,8 +80,7 @@ class TestDataverseUserSettings(DataverseAddonTestCase):
         assert_false(dataverse.has_auth)
 
         # With valid credentials, dataverse is authorized
-        dataverse.dataverse_username = 'snowman'
-        dataverse.dataverse_password = 'frosty'
+        dataverse.api_token = 'snowman-frosty'
         assert_true(dataverse.has_auth)
 
     def test_clear(self):
@@ -42,15 +88,15 @@ class TestDataverseUserSettings(DataverseAddonTestCase):
         self.user_settings.clear()
 
         # Fields were cleared, but settings were not deleted
-        assert_false(self.user_settings.dataverse_username)
-        assert_false(self.user_settings.dataverse_password)
+        assert_false(self.user_settings.api_token)
         assert_false(self.user_settings.deleted)
 
         # Authorized node settings were deauthorized
         assert_false(self.node_settings.dataverse_alias)
         assert_false(self.node_settings.dataverse)
-        assert_false(self.node_settings.study_hdl)
-        assert_false(self.node_settings.study)
+        assert_false(self.node_settings.dataset_doi)
+        assert_false(self.node_settings._dataset_id)  # Getter makes request
+        assert_false(self.node_settings.dataset)
         assert_false(self.node_settings.user_settings)
 
         # Authorized node settings were not deleted
@@ -74,16 +120,16 @@ class TestDataverseNodeSettings(DataverseAddonTestCase):
         assert_equal(node_settings.user_settings.owner, self.user)
         assert_true(hasattr(node_settings, 'dataverse'))
         assert_true(hasattr(node_settings, 'dataverse_alias'))
-        assert_true(hasattr(node_settings, 'study'))
-        assert_true(hasattr(node_settings, 'study_hdl'))
+        assert_true(hasattr(node_settings, 'dataset'))
+        assert_true(hasattr(node_settings, 'dataset_doi'))
 
     def test_defaults(self):
         node_settings = AddonDataverseNodeSettings(user_settings=self.user_settings)
         node_settings.save()
         assert_is_none(node_settings.dataverse)
         assert_is_none(node_settings.dataverse_alias)
-        assert_is_none(node_settings.study)
-        assert_is_none(node_settings.study_hdl)
+        assert_is_none(node_settings.dataset)
+        assert_is_none(node_settings.dataset_doi)
 
     def test_has_auth(self):
         node_settings = AddonDataverseNodeSettings()
@@ -96,8 +142,7 @@ class TestDataverseNodeSettings(DataverseAddonTestCase):
         node_settings.save()
         assert_false(node_settings.has_auth)
 
-        user_settings.dataverse_username = 'foo'
-        user_settings.dataverse_password = 'bar'
+        user_settings.api_token = 'foo-bar'
         user_settings.save()
         assert_true(node_settings.has_auth)
 
@@ -141,8 +186,8 @@ class TestDataverseNodeSettings(DataverseAddonTestCase):
 
         assert_false(self.node_settings.dataverse_alias)
         assert_false(self.node_settings.dataverse)
-        assert_false(self.node_settings.study_hdl)
-        assert_false(self.node_settings.study)
+        assert_false(self.node_settings.dataset_doi)
+        assert_false(self.node_settings.dataset)
         assert_false(self.node_settings.user_settings)
 
 
@@ -200,8 +245,8 @@ class TestNodeSettingsCallbacks(DataverseAddonTestCase):
         assert_true(self.node_settings.user_settings is None)
         assert_true(self.node_settings.dataverse_alias is None)
         assert_true(self.node_settings.dataverse is None)
-        assert_true(self.node_settings.study_hdl is None)
-        assert_true(self.node_settings.study is None)
+        assert_true(self.node_settings.dataset_doi is None)
+        assert_true(self.node_settings.dataset is None)
 
     def test_does_not_get_copied_to_registrations(self):
         registration = self.project.register_node(

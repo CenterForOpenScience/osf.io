@@ -30,10 +30,25 @@ function donutGraph (data, vm) {
         },
         data: data.charts.shareDonutGraph,
         donut: {
-            title: get_source_length(data) + ' Providers'
+            title: get_source_length(data) + ' Providers',
+            label: {
+                format: function (value, ratio, id) {
+                    return Math.round(ratio*100) + '%';
+                }
+            }
         },
         legend: {
             show: false
+        },
+        tooltip: {
+            format: {
+                name: function (name, ratio, id, index) {
+                    if (name === 'pubmed') {
+                        name = 'pubmed central';
+                    }
+                    return name; 
+                }
+            }
         }
     });
 }
@@ -64,7 +79,15 @@ function timeGraph (data) {
             show: false
         },
         tooltip: {
-          grouped: false
+            grouped: false,
+            format: {
+              name: function (name, ratio, id, index) {
+                  if (name === 'pubmed') {
+                      name = 'pubmed central';
+                  }
+                  return name; 
+              }
+            }
         }
     });
 }

@@ -166,7 +166,11 @@
                                         </td>
 
                                         <td>
-                                            <a href="#" class="permission-editable" data-type="select"></a>
+                                            <select class="form-control" data-bind="
+                                                options: $root.permissionList,
+                                                value: permission,
+                                                optionsText: 'text'">
+                                            </select>
                                         </td>
                                     </tr>
                                 </tbody>

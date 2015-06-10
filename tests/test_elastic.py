@@ -1,6 +1,15 @@
-
+# -*- coding: utf-8 -*-
 import unittest
-from nose.tools import *  # PEP8 asserts
+import logging
+
+from nose.tools import *  # flake8: noqa (PEP8 asserts)
+
+from framework.auth.core import Auth
+from website import settings
+import website.search.search as search
+from website.search import elastic_search
+from website.search.util import build_query
+from website.search_migration.migrate import migrate
 
 from tests.base import OsfTestCase
 from tests.test_features import requires_search
@@ -9,14 +18,6 @@ from tests.factories import (
     UnregUserFactory, UnconfirmedUserFactory
 )
 
-from framework.auth.core import Auth
-
-from website import settings
-import website.search.search as search
-from website.search import elastic_search
-from website.search.util import build_query
-from website.search_migration.migrate import migrate
-
 @requires_search
 class SearchTestCase(OsfTestCase):
 
@@ -24,9 +25,9 @@ class SearchTestCase(OsfTestCase):
         super(SearchTestCase, self).tearDown()
         search.delete_index(elastic_search.INDEX)
         search.create_index(elastic_search.INDEX)
-
     def setUp(self):
         super(SearchTestCase, self).setUp()
+        search.delete_index(elastic_search.INDEX)
         search.create_index(elastic_search.INDEX)
 
 
@@ -65,10 +66,8 @@ class TestUserUpdate(SearchTestCase):
         assert_equal(len(docs), 1)
 
     def test_change_name(self):
-        """Add a user, change her name, and verify that only the new name is
-        found in search.
-
-        """
+        # Add a user, change her name, and verify that only the new name is
+        # found in search.
         user = UserFactory(fullname='Barry Mitchell')
         fullname_original = user.fullname
         user.fullname = user.fullname[::-1]
@@ -81,7 +80,7 @@ class TestUserUpdate(SearchTestCase):
         assert_equal(len(docs_current), 1)
 
     def test_disabled_user(self):
-        """Test that disabled users are not in search index"""
+        # Test that disabled users are not in search index
 
         user = UserFactory(fullname='Bettie Page')
         user.save()
@@ -166,15 +165,13 @@ class TestProject(SearchTestCase):
         self.project = ProjectFactory(title='Red Special', creator=self.user)
 
     def test_new_project_private(self):
-        """Verify that a private project is not present in Elastic Search.
-        """
+        # Verify that a private project is not present in Elastic Search.
         docs = query(self.project.title)['results']
         assert_equal(len(docs), 0)
 
     def test_make_public(self):
-        """Make project public, and verify that it is present in Elastic
-        Search.
-        """
+        # Make project public, and verify that it is present in Elastic
+        # Search.
         self.project.set_privacy('public')
         docs = query(self.project.title)['results']
         assert_equal(len(docs), 1)
@@ -194,7 +191,7 @@ class TestPublicNodes(SearchTestCase):
             is_public=True,
         )
         self.component = NodeFactory(
-            project=self.project,
+            parent=self.project,
             title=self.title,
             creator=self.user,
             is_public=True
@@ -207,9 +204,8 @@ class TestPublicNodes(SearchTestCase):
         )
 
     def test_make_private(self):
-        """Make project public, then private, and verify that it is not present
-        in search.
-        """
+        # Make project public, then private, and verify that it is not present
+        # in search.
         self.project.set_privacy('private')
         docs = query('category:project AND ' + self.title)['results']
         assert_equal(len(docs), 0)
@@ -217,13 +213,12 @@ class TestPublicNodes(SearchTestCase):
         self.component.set_privacy('private')
         docs = query('category:component AND ' + self.title)['results']
         assert_equal(len(docs), 0)
-
         self.registration.set_privacy('private')
         docs = query('category:registration AND ' + self.title)['results']
         assert_equal(len(docs), 0)
 
     def test_public_parent_title(self):
-        self.project.set_title('hello &amp; world',self.consolidate_auth)
+        self.project.set_title('hello &amp; world', self.consolidate_auth)
         self.project.save()
         docs = query('category:component AND ' + self.title)['results']
         assert_equal(len(docs), 1)
@@ -231,9 +226,8 @@ class TestPublicNodes(SearchTestCase):
         assert_true(docs[0]['parent_url'])
 
     def test_make_parent_private(self):
-        """Make parent of component, public, then private, and verify that the
-        component still appears but doesn't link to the parent in search.
-        """
+        # Make parent of component, public, then private, and verify that the
+        # component still appears but doesn't link to the parent in search.
         self.project.set_privacy('private')
         docs = query('category:component AND ' + self.title)['results']
         assert_equal(len(docs), 1)
@@ -241,9 +235,6 @@ class TestPublicNodes(SearchTestCase):
         assert_false(docs[0]['parent_url'])
 
     def test_delete_project(self):
-        """
-
-        """
         self.component.remove_node(self.consolidate_auth)
         docs = query('category:component AND ' + self.title)['results']
         assert_equal(len(docs), 0)
@@ -253,9 +244,6 @@ class TestPublicNodes(SearchTestCase):
         assert_equal(len(docs), 0)
 
     def test_change_title(self):
-        """
-
-        """
         title_original = self.project.title
         self.project.set_title(
             'Blue Ordinary', self.consolidate_auth, save=True)
@@ -308,10 +296,8 @@ class TestPublicNodes(SearchTestCase):
             assert_equal(len(docs), 1)
 
     def test_clear_wiki(self):
-        """Add wiki text to page, then delete, then verify that project is not
-        found when searching for wiki text.
-
-        """
+        # Add wiki text to page, then delete, then verify that project is not
+        # found when searching for wiki text.
         wiki_content = 'Hammer to fall'
         self.project.update_node_wiki(
             'home', wiki_content, self.consolidate_auth,
@@ -322,10 +308,8 @@ class TestPublicNodes(SearchTestCase):
         assert_equal(len(docs), 0)
 
     def test_add_contributor(self):
-        """Add a contributor, then verify that project is found when searching
-        for contributor.
-
-        """
+        # Add a contributor, then verify that project is found when searching
+        # for contributor.
         user2 = UserFactory(fullname='Adam Lambert')
 
         docs = query('category:project AND "{}"'.format(user2.fullname))['results']
@@ -337,10 +321,8 @@ class TestPublicNodes(SearchTestCase):
         assert_equal(len(docs), 1)
 
     def test_remove_contributor(self):
-        """Add and remove a contributor, then verify that project is not found
-        when searching for contributor.
-
-        """
+        # Add and remove a contributor, then verify that project is not found
+        # when searching for contributor.
         user2 = UserFactory(fullname='Brian May')
 
         self.project.add_contributor(user2, save=True)
@@ -378,26 +360,19 @@ class TestPublicNodes(SearchTestCase):
         for doc in docs:
             assert doc['key'] in tags
 
-    def test_count_aggregation(self):
-        docs = query("*")['counts']
-        assert_equal(docs['total'], 4)
-        assert_equal(docs['project'], 1)
-        assert_equal(docs['component'], 1)
-        assert_equal(docs['registration'], 1)
-
-
 
 @requires_search
 class TestAddContributor(SearchTestCase):
-    """Tests of the search.search_contributor method
-
-    """
+    # Tests of the search.search_contributor method
 
     def setUp(self):
         super(TestAddContributor, self).setUp()
         self.name1 = 'Roger1 Taylor1'
         self.name2 = 'John2 Deacon2'
+        self.name3 = u'j\xc3\xb3ebert3 Smith3'
+        self.name4 = u'B\xc3\xb3bbert4 Jones4'
         self.user = UserFactory(fullname=self.name1)
+        self.user3 = UserFactory(fullname=self.name3)
 
     def test_unreg_users_dont_show_in_search(self):
         unreg = UnregUserFactory()
@@ -417,9 +392,7 @@ class TestAddContributor(SearchTestCase):
 
 
     def test_search_fullname(self):
-        """Verify that searching for full name yields exactly one result.
-
-        """
+        # Searching for full name yields exactly one result.
         contribs = search.search_contributor(self.name1)
         assert_equal(len(contribs['users']), 1)
 
@@ -427,9 +400,7 @@ class TestAddContributor(SearchTestCase):
         assert_equal(len(contribs['users']), 0)
 
     def test_search_firstname(self):
-        """Verify that searching for first name yields exactly one result.
-
-        """
+        # Searching for first name yields exactly one result.
         contribs = search.search_contributor(self.name1.split(' ')[0])
         assert_equal(len(contribs['users']), 1)
 
@@ -437,10 +408,8 @@ class TestAddContributor(SearchTestCase):
         assert_equal(len(contribs['users']), 0)
 
     def test_search_partial(self):
-        """Verify that searching for part of first name yields exactly one
-        result.
-
-        """
+        # Searching for part of first name yields exactly one
+        # result.
         contribs = search.search_contributor(self.name1.split(' ')[0][:-1])
         assert_equal(len(contribs['users']), 1)
 
@@ -448,13 +417,40 @@ class TestAddContributor(SearchTestCase):
         assert_equal(len(contribs['users']), 0)
 
 
+    def test_search_fullname_special_character(self):
+        # Searching for a fullname with a special character yields
+        # exactly one result.
+        contribs = search.search_contributor(self.name3)
+        assert_equal(len(contribs['users']), 1)
+
+        contribs = search.search_contributor(self.name4)
+        assert_equal(len(contribs['users']), 0)
+
+    def test_search_firstname_special_charcter(self):
+        # Searching for a first name with a special character yields
+        # exactly one result.
+        contribs = search.search_contributor(self.name3.split(' ')[0])
+        assert_equal(len(contribs['users']), 1)
+
+        contribs = search.search_contributor(self.name4.split(' ')[0])
+        assert_equal(len(contribs['users']), 0)
+
+    def test_search_partial_special_character(self):
+        # Searching for a partial name with a special character yields
+        # exctly one result.
+        contribs = search.search_contributor(self.name3.split(' ')[0][:-1])
+        assert_equal(len(contribs['users']), 1)
+
+        contribs = search.search_contributor(self.name4.split(' ')[0][:-1])
+        assert_equal(len(contribs['users']), 0)
+
+
 class TestSearchExceptions(OsfTestCase):
-    """
-    Verify that the correct exception is thrown when the connection is lost
-    """
+    # Verify that the correct exception is thrown when the connection is lost
 
     @classmethod
     def setUpClass(cls):
+        logging.getLogger('website.project.model').setLevel(logging.CRITICAL)
         super(TestSearchExceptions, cls).setUpClass()
         if settings.SEARCH_ENGINE == 'elastic':
             cls._es = search.search_engine.es
@@ -466,11 +462,8 @@ class TestSearchExceptions(OsfTestCase):
         if settings.SEARCH_ENGINE == 'elastic':
             search.search_engine.es = cls._es
 
-
     def test_connection_error(self):
-        """
-        Ensures that saving projects/users doesn't break as a result of connection errors
-        """
+        # Ensures that saving projects/users doesn't break as a result of connection errors
         self.user = UserFactory(usename='Doug Bogie')
         self.project = ProjectFactory(
             title="Tom Sawyer",
@@ -482,9 +475,7 @@ class TestSearchExceptions(OsfTestCase):
 
 
 class TestSearchMigration(SearchTestCase):
-    """
-    Verify that the correct indices are created/deleted during migration
-    """
+    # Verify that the correct indices are created/deleted during migration
 
     @classmethod
     def tearDownClass(cls):
@@ -504,28 +495,28 @@ class TestSearchMigration(SearchTestCase):
         )
 
     def test_first_migration_no_delete(self):
-        migrate(delete=False, index=settings.ELASTIC_INDEX)
+        migrate(delete=False, index=settings.ELASTIC_INDEX, app=self.app.app)
         var = self.es.indices.get_aliases()
         assert_equal(var[settings.ELASTIC_INDEX + '_v1']['aliases'].keys()[0], settings.ELASTIC_INDEX)
 
     def test_multiple_migrations_no_delete(self):
         for n in xrange(1, 21):
-            migrate(delete=False, index=settings.ELASTIC_INDEX)
+            migrate(delete=False, index=settings.ELASTIC_INDEX, app=self.app.app)
             var = self.es.indices.get_aliases()
             assert_equal(var[settings.ELASTIC_INDEX + '_v{}'.format(n)]['aliases'].keys()[0], settings.ELASTIC_INDEX)
 
     def test_first_migration_with_delete(self):
-        migrate(delete=True, index=settings.ELASTIC_INDEX)
+        migrate(delete=True, index=settings.ELASTIC_INDEX, app=self.app.app)
         var = self.es.indices.get_aliases()
         assert_equal(var[settings.ELASTIC_INDEX + '_v1']['aliases'].keys()[0], settings.ELASTIC_INDEX)
 
     def test_multiple_migrations_with_delete(self):
         for n in xrange(1, 21, 2):
-            migrate(delete=True, index=settings.ELASTIC_INDEX)
+            migrate(delete=True, index=settings.ELASTIC_INDEX, app=self.app.app)
             var = self.es.indices.get_aliases()
             assert_equal(var[settings.ELASTIC_INDEX + '_v{}'.format(n)]['aliases'].keys()[0], settings.ELASTIC_INDEX)
 
-            migrate(delete=True, index=settings.ELASTIC_INDEX)
+            migrate(delete=True, index=settings.ELASTIC_INDEX, app=self.app.app)
             var = self.es.indices.get_aliases()
             assert_equal(var[settings.ELASTIC_INDEX + '_v{}'.format(n + 1)]['aliases'].keys()[0], settings.ELASTIC_INDEX)
             assert not var.get(settings.ELASTIC_INDEX + '_v{}'.format(n))

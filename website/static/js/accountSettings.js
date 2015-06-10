@@ -2,6 +2,7 @@
 
 var $ = require('jquery');
 var $osf = require('js/osfHelpers');
+var bootbox = require('bootbox');
 var ko = require('knockout');
 var oop = require('js/oop');
 var Raven = require('raven-js');
@@ -96,7 +97,9 @@ var UserProfileClient = oop.defclass({
         ).done(function (data) {
             ret.resolve(this.unserialize(data, profile));
         }.bind(this)).fail(function(xhr, status, error) {
-            $osf.growl('Error', 'User profile not updated.', 'danger');
+            $osf.growl('Error', 'User profile not updated. Please refresh the page and try ' +
+                'again or contact <a href="mailto: support@cos.io">support@cos.io</a> ' +
+                'if the problem persists.', 'danger');
             Raven.captureMessage('Error fetching user profile', {
                 url: this.urls.update,
                 status: status,
@@ -147,6 +150,7 @@ var UserProfileViewModel = oop.extend(ChangeMessageMixin, {
         this.client = new UserProfileClient();
         this.profile = ko.observable(new UserProfile());
         this.emailInput = ko.observable();
+
     },
     init: function () {
         this.client.fetch().done(
@@ -190,22 +194,124 @@ var UserProfileViewModel = oop.extend(ChangeMessageMixin, {
         }
     },
     removeEmail: function (email) {
-        this.changeMessage('', 'text-info');
-        this.profile().emails.remove(email);
-        this.client.update(this.profile()).done(function() {
-            $osf.growl('Email Removed', '<em>' + email.address()  + '<em>', 'success');
-        });
+        var self = this;
+        self.changeMessage('', 'text-info');
+        if (self.profile().emails().indexOf(email) !== -1) {
+            bootbox.confirm({
+                title: 'Remove Email?',
+                message: 'Are you sure that you want to remove ' + '<em><b>' + email.address() + '</b></em>' + ' from your email list?',
+                callback: function (confirmed) {
+                    if (confirmed) {
+                        self.profile().emails.remove(email);
+                        self.client.update(self.profile()).done(function () {
+                            $osf.growl('Email Removed', '<em>' + email.address() + '<em>', 'success');
+                        });
+                    }
+                }
+            });
+        } else {
+            $osf.growl('Error', 'Please refresh the page and try again.', 'danger');
+        }
     },
     makeEmailPrimary: function (email) {
         this.changeMessage('', 'text-info');
-        this.profile().primaryEmail().isPrimary(false);
-        email.isPrimary(true);
-        this.client.update(this.profile()).done(function () {
-            $osf.growl('Made Primary', '<em>' + email.address()  + '<em>', 'success');
+        if (this.profile().emails().indexOf(email) !== -1) {
+            this.profile().primaryEmail().isPrimary(false);
+            email.isPrimary(true);
+            this.client.update(this.profile()).done(function () {
+                $osf.growl('Made Primary', '<em>' + email.address() + '<em>', 'success');
+            });
+        } else {
+            $osf.growl('Error', 'Please refresh the page and try again.', 'danger');
+        }
+    }
+});
+
+
+var DeactivateAccountViewModel = oop.defclass({
+    constructor: function () {
+        this.success = ko.observable(false);
+    },
+    urls: {
+        'update': '/api/v1/profile/deactivate/'
+    },
+    _requestDeactivation: function() {
+        var request = $osf.postJSON(this.urls.update, {});
+        request.done(function() {
+            $osf.growl('Success', 'An OSF administrator will contact you shortly to confirm your deactivation request.', 'success');
+            this.success(true);
+        }.bind(this));
+        request.fail(function(xhr, status, error) {
+            $osf.growl('Error',
+                'Deactivation request failed. Please contact <a href="mailto: support@cos.io">support@cos.io</a> if the problem persists.',
+                'danger'
+            );
+            Raven.captureMessage('Error requesting account deactivation', {
+                url: this.urls.update,
+                status: status,
+                error: error
+            });
+        }.bind(this));
+        return request;
+    },
+    submit: function () {
+        var self = this;
+        bootbox.confirm({
+            title: 'Request account deactivation?',
+            message: 'Are you sure you want to request account deactivation? An OSF administrator will review your request. If accepted, you ' +
+                     'will <strong>NOT</strong> be able to reactivate your account.',
+            callback: function(confirmed) {
+                if (confirmed) {
+                    return self._requestDeactivation();
+                }
+            }
+        });
+    }
+});
+
+
+var ExportAccountViewModel = oop.defclass({
+    constructor: function () {
+        this.success = ko.observable(false);
+    },
+    urls: {
+        'update': '/api/v1/profile/export/'
+    },
+    _requestExport: function() {
+        var request = $osf.postJSON(this.urls.update, {});
+        request.done(function() {
+            $osf.growl('Success', 'An OSF administrator will contact you shortly to confirm your export request.', 'success');
+            this.success(true);
+        }.bind(this));
+        request.fail(function(xhr, status, error) {
+            $osf.growl('Error',
+                'Export request failed. Please contact <a href="mailto: support@cos.io">support@cos.io</a> if the problem persists.',
+                'danger'
+            );
+            Raven.captureMessage('Error requesting account export', {
+                url: this.urls.update,
+                status: status,
+                error: error
+            });
+        }.bind(this));
+        return request;
+    },
+    submit: function () {
+        var self = this;
+        bootbox.confirm({
+            title: 'Request account export?',
+            message: 'Are you sure you want to request account export?',
+            callback: function(confirmed) {
+                if (confirmed) {
+                    return self._requestExport();
+                }
+            }
         });
     }
 });
 
 module.exports = {
-    UserProfileViewModel: UserProfileViewModel
+    UserProfileViewModel: UserProfileViewModel,
+    DeactivateAccountViewModel: DeactivateAccountViewModel,
+    ExportAccountViewModel: ExportAccountViewModel
 };

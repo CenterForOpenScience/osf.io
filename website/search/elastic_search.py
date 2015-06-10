@@ -24,6 +24,7 @@ from website.filters import gravatar
 from website.models import User, Node
 from website.search import exceptions
 from website.search.util import build_query
+from website.util import sanitize
 
 logger = logging.getLogger(__name__)
 
@@ -164,11 +165,11 @@ def format_result(result, parent_id=None):
     formatted_result = {
         'contributors': result['contributors'],
         'wiki_link': result['url'] + 'wiki/',
-        # TODO: Remove when html safe comes in
-        'title': result['title'].replace('&amp;', '&'),
+        # TODO: Remove safe_unescape_html when mako html safe comes in
+        'title': sanitize.safe_unescape_html(result['title']),
         'url': result['url'],
         'is_component': False if parent_info is None else True,
-        'parent_title': parent_info.get('title').replace('&amp;', '&') if parent_info else None,
+        'parent_title': sanitize.safe_unescape_html(parent_info.get('title')) if parent_info else None,
         'parent_url': parent_info.get('url') if parent_info is not None else None,
         'tags': result['tags'],
         'is_registration': (result['is_registration'] if parent_info is None
@@ -204,7 +205,7 @@ def load_parent(parent_id):
 def update_node(node, index=INDEX):
     from website.addons.wiki.model import NodeWikiPage
 
-    component_categories = ['', 'hypothesis', 'methods and measures', 'procedure', 'instrumentation', 'data', 'analysis', 'communication', 'other']
+    component_categories = [k for k in Node.CATEGORY_MAP.keys() if not k == 'project']
     category = 'component' if node.category in component_categories else node.category
 
     if category == 'project':
@@ -333,8 +334,8 @@ def create_index(index=INDEX):
 
 
 @requires_search
-def delete_doc(elastic_document_id, node, index=INDEX):
-    category = 'registration' if node.is_registration else node.project_or_component
+def delete_doc(elastic_document_id, node, index=INDEX, category=None):
+    category = category or 'registration' if node.is_registration else node.project_or_component
     es.delete(index=index, doc_type=category, id=elastic_document_id, refresh=True, ignore=[404])
 
 
@@ -355,6 +356,17 @@ def search_contributor(query, page=0, size=10, exclude=[], current_user=None):
     """
     start = (page * size)
     items = re.split(r'[\s-]+', query)
+
+    normalized_items = []
+    for item in items:
+        try:
+            normalized_item = six.u(item)
+        except TypeError:
+            normalized_item = item
+        normalized_item = unicodedata.normalize('NFKD', normalized_item).encode('ascii', 'ignore')
+        normalized_items.append(normalized_item)
+    items = normalized_items
+
     query = ''
 
     query = "  AND ".join('{}*~'.format(re.escape(item)) for item in items) + \

@@ -14,10 +14,11 @@ import requests
 from modularodm import Q
 from modularodm.storage.base import KeyExistsException
 
-from framework.exceptions import PermissionsError
+from framework.sessions import session
 from framework.mongo import StoredObject
 from framework.routing import process_rules
 from framework.guid.model import GuidStoredObject
+from framework.exceptions import PermissionsError
 
 from website import settings
 from website.addons.base import exceptions
@@ -232,14 +233,6 @@ class GuidFile(GuidStoredObject):
         raise NotImplementedError
 
     @property
-    def version_identifier(self):
-        raise NotImplementedError
-
-    @property
-    def unique_identifier(self):
-        raise NotImplementedError
-
-    @property
     def waterbutler_path(self):
         '''The waterbutler formatted path of the specified file.
         Must being with a /
@@ -259,10 +252,19 @@ class GuidFile(GuidStoredObject):
             raise AttributeError('No attribute name')
 
     @property
-    def file_name(self):
-        if self.revision:
-            return '{0}_{1}.html'.format(self._id, self.revision)
-        return '{0}_{1}.html'.format(self._id, self.unique_identifier)
+    def size(self):
+        try:
+            return self._metadata_cache['size']
+        except (TypeError, KeyError):
+            raise AttributeError('No attribute size')
+
+    @property
+    def materialized(self):
+        try:
+            return self._metadata_cache['materialized']
+        except (TypeError, KeyError):
+            # If materialized is not in _metadata_cache or metadata_cache is None
+            raise AttributeError('No attribute materialized')
 
     @property
     def joinable_path(self):
@@ -275,8 +277,10 @@ class GuidFile(GuidStoredObject):
             'nid': self.node._id,
             'provider': self.provider,
             'path': self.waterbutler_path,
-            'cookie': request.cookies.get(settings.COOKIE_NAME)
         })
+
+        if session and 'auth_user_access_token' in session.data:
+            url.args.add('token', session.data.get('auth_user_access_token'))
 
         if request.args.get('view_only'):
             url.args['view_only'] = request.args['view_only']
@@ -303,6 +307,16 @@ class GuidFile(GuidStoredObject):
         if self.revision:
             url.args[self.version_identifier] = self.revision
 
+        if request.args.get('view_only'):
+            url.args['view_only'] = request.args['view_only']
+
+        return url.url
+
+    @property
+    def mfr_render_url(self):
+        url = furl.furl(settings.MFR_SERVER_URL)
+        url.path.add('render')
+        url.args['url'] = self.public_download_url
         return url.url
 
     @property
@@ -316,6 +330,9 @@ class GuidFile(GuidStoredObject):
         if self.revision:
             url.args[self.version_identifier] = self.revision
 
+        if request.args.get('view_only'):
+            url.args['view_only'] = request.args['view_only']
+
         return url.url
 
     @property
@@ -324,25 +341,6 @@ class GuidFile(GuidStoredObject):
         url.path.add('data')
 
         return url.url
-
-    @property
-    def mfr_cache_path(self):
-        return os.path.join(
-            settings.MFR_CACHE_PATH,
-            self.node._id,
-            self.provider,
-            self.file_name,
-        )
-
-    @property
-    def mfr_temp_path(self):
-        return os.path.join(
-            settings.MFR_TEMP_PATH,
-            self.node._id,
-            self.provider,
-            # Attempt to keep the original extension of the file for MFR detection
-            self.file_name + os.path.splitext(self.name)[1]
-        )
 
     @property
     def deep_url(self):
@@ -472,8 +470,12 @@ class AddonUserSettingsBase(AddonSettingsBase):
         return [
             node_addon.owner
             for node_addon in getattr(self, nodes_backref)
-            if not node_addon.owner.is_deleted
+            if node_addon.owner and not node_addon.owner.is_deleted
         ]
+
+    @property
+    def can_be_merged(self):
+        return hasattr(self, 'merge')
 
     def to_json(self, user):
         ret = super(AddonUserSettingsBase, self).to_json(user)
@@ -620,6 +622,42 @@ class AddonOAuthUserSettingsBase(AddonUserSettingsBase):
 
             if node_settings.external_account == external_account:
                 yield node
+
+    def merge(self, user_settings):
+        """Merge `user_settings` into this instance"""
+        if user_settings.__class__ is not self.__class__:
+            raise TypeError('Cannot merge different addons')
+
+        for node_id, data in user_settings.oauth_grants.iteritems():
+            if node_id not in self.oauth_grants:
+                self.oauth_grants[node_id] = data
+            else:
+                node_grants = user_settings.oauth_grants[node_id].iteritems()
+                for ext_acct, meta in node_grants:
+                    if ext_acct not in self.oauth_grants[node_id]:
+                        self.oauth_grants[node_id][ext_acct] = meta
+                    else:
+                        for k, v in meta:
+                            if k not in self.oauth_grants[node_id][ext_acct]:
+                                self.oauth_grants[node_id][ext_acct][k] = v
+
+        user_settings.oauth_grants = {}
+        user_settings.save()
+
+        try:
+            config = settings.ADDONS_AVAILABLE_DICT[
+                self.oauth_provider.short_name
+            ]
+            Model = config.settings_models['node']
+        except KeyError:
+            pass
+        else:
+            connected = Model.find(Q('user_settings', 'eq', user_settings))
+            for node_settings in connected:
+                node_settings.user_settings = self
+                node_settings.save()
+
+        self.save()
 
     def to_json(self, user):
         ret = super(AddonOAuthUserSettingsBase, self).to_json(user)

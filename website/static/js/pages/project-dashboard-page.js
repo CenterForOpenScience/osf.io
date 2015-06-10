@@ -11,6 +11,7 @@ var Fangorn = require('js/fangorn');
 var Raven = require('raven-js');
 require('truncate');
 
+var $osf = require('js/osfHelpers');
 var LogFeed = require('js/logFeed');
 var pointers = require('js/pointers');
 var Comment = require('js/comment');
@@ -32,6 +33,15 @@ $('body').on('nodeLoad', function(event, data) {
     new LogFeed('#logScope', nodeApiUrl + 'log/');
     // Initialize nodeControl
     new NodeControl.NodeControl('#projectScope', data);
+
+    if (data.node.children) {
+        // model for components, due to simplicity did not create a new file
+        var ComponentControl = {};
+
+        // binds to component scope in render_nodes.mako
+        $osf.applyBindings(ComponentControl, '#componentScope');
+
+    }
 });
 
 // Initialize comment pane w/ it's viewmodel
@@ -49,12 +59,11 @@ if (!ctx.node.anonymous) {
     new CitationWidget('#citationStyleInput', '#citationText');
 }
 
-$(document).ready(function() {
+$(document).ready(function () {
     // Treebeard Files view
     $.ajax({
         url:  nodeApiUrl + 'files/grid/'
-    })
-    .done(function( data ) {
+    }).done(function (data) {
         var fangornOpts = {
             divID: 'treeGrid',
             filesData: data.data,
@@ -63,40 +72,38 @@ $(document).ready(function() {
             placement: 'dashboard',
             title : undefined,
             filterFullWidth : true, // Make the filter span the entire row for this view
-            columnTitles : function(){
+            xhrconfig: $osf.setXHRAuthorization,
+            columnTitles : function () {
                 return [
                     {
-                    title: 'Name',
-                    width : '100%',
-                    sort : true,
-                    sortType : 'text'
+                        title: 'Name',
+                        width : '90%',
+                        sort : true,
+                        sortType : 'text'
                     }
                 ];
             },
-            resolveRows : function(item){
-                var defaultColumns = [{
-                    data: 'name',
-                    folderIcons: true,
-                    filter: true,
-                    custom: Fangorn.DefaultColumns._fangornTitleColumn
-                }];
-
+            resolveRows : function (item) {
+                var tb = this;
+                item.css = '';
+                if(tb.isMultiselected(item.id)){
+                    item.css = 'fangorn-selected';
+                }
+                var defaultColumns = [
+                        {
+                            data: 'name',
+                            folderIcons: true,
+                            filter: true,
+                            custom: Fangorn.DefaultColumns._fangornTitleColumn
+                        }];
                 if (item.parentID) {
                     item.data.permissions = item.data.permissions || item.parent().data.permissions;
                     if (item.data.kind === 'folder') {
                         item.data.accept = item.data.accept || item.parent().data.accept;
                     }
                 }
-
-                if(item.data.tmpID){
-                    defaultColumns = [
-                        {
-                            data : 'name',  // Data field name
-                            folderIcons : true,
-                            filter : true,
-                            custom : function(){ return m('span.text-muted', 'Uploading ' + item.data.name + '...'); }
-                        }
-                    ];
+                if(item.data.uploadState && (item.data.uploadState() === 'pending' || item.data.uploadState() === 'uploading')){
+                    return Fangorn.Utils.uploadRowTemplate.call(tb, item);
                 }
 
                 var configOption = Fangorn.Utils.resolveconfigOption.call(this, item, 'resolveRows', [item]);

@@ -4,6 +4,7 @@ var assert = require('chai').assert;
 var $ = require('jquery');
 var moment = require('moment');
 var Raven = require('raven-js');
+var bootbox = require('bootbox');
 
 var $osf = require('../osfHelpers');
 
@@ -11,6 +12,7 @@ var $osf = require('../osfHelpers');
 sinon.assert.expose(assert, {prefix: ''});
 
 describe('osfHelpers', () => {
+
     describe('growl', () => {
         it('calls $.growl with correct arguments', () => {
             var stub = new sinon.stub($, 'growl');
@@ -23,27 +25,66 @@ describe('osfHelpers', () => {
         });
     });
 
+
+    describe('apiV2Url', () => {
+        it('returns correctly formatted URLs for described inputs', () => {
+            var fullUrl = $osf.apiV2Url('/nodes/abcd3/contributors/',
+                                         undefined,
+                                         'http://localhost:8000/v2/');
+            assert.equal(fullUrl, "http://localhost:8000/v2/nodes/abcd3/contributors/");
+
+            // No double slashes when apiPrefix and pathString have adjoining slashes
+            fullUrl = $osf.apiV2Url('nodes/abcd3/contributors/', undefined, 'http://localhost:8000/v2/');
+            assert.equal(fullUrl, "http://localhost:8000/v2/nodes/abcd3/contributors/");
+
+            // User is still responsible for the trailing slash. If they omit it, it doesn't appear at end of URL
+            fullUrl = $osf.apiV2Url('/nodes/abcd3/contributors', undefined, 'http://localhost:8000/v2/');
+            assert.notEqual(fullUrl, "http://localhost:8000/v2/nodes/abcd3/contributors/");
+
+            // Correctly handles- and encodes- URLs with parameters
+            fullUrl = $osf.apiV2Url('/nodes/abcd3/contributors/',
+                                  {'filter[fullname]': 'bob', 'page_size':10},
+                                  'https://staging2.osf.io/api/v2/');
+            assert.equal(fullUrl, "https://staging2.osf.io/api/v2/nodes/abcd3/contributors/?filter%5Bfullname%5D=bob&page_size=10");
+
+            // Given a blank string, should return the base path (domain + port + prefix) with no extra cruft at end
+            fullUrl = $osf.apiV2Url('', undefined, 'http://localhost:8000/v2/');
+            assert.equal(fullUrl, "http://localhost:8000/v2/");
+        });
+    });
+
+
     describe('handleJSONError', () => {
+
+        var growlStub;
+        var ravenStub;
+        beforeEach(() => {
+            growlStub = new sinon.stub($osf, 'growl');
+            ravenStub = new sinon.stub(Raven, 'captureMessage');
+        });
+
+        afterEach(() => {
+            growlStub.restore();
+            ravenStub.restore();
+        });
         var response = {
-            {message_short: 'Oh no!', message_long: 'Something went wrong'}
+            responseJSON: {
+                message_short: 'Oh no!',
+                message_long: 'Something went wrong'
+            }
         };
         it('uses the response body if available', () => {
-            var stub = new sinon.stub($osf, 'growl');
             $osf.handleJSONError(response);
-            assert.called(stub);
-            assert.calledWith(stub,
-                              response.message_short,
-                              response.message_long);
-            stub.restore();
+            assert.called(growlStub);
+            assert.calledWith(growlStub,
+                              response.responseJSON.message_short,
+                              response.responseJSON.message_long);
         });
 
         it('logs error with Raven', () => {
-            var growlStub = new sinon.stub($osf, 'growl');
-            var stub = new sinon.stub(Raven, 'captureMessage');
             $osf.handleJSONError(response);
-            assert.called(stub);
-            stub.restore();
-            growlStub.restore();
+            assert.called(growlStub);
+            assert.called(ravenStub);
         });
     });
 
@@ -180,6 +221,14 @@ describe('osfHelpers', () => {
         });
     });
 
+    describe('htmlDecode', () => {
+        it('should decode html entities', () => {
+            assert.equal($osf.htmlDecode('safe'), 'safe');
+            assert.equal($osf.htmlDecode('b&gt;a&amp;'), 'b>a&');
+            assert.equal($osf.htmlDecode('&lt;script&gt;alert("lol")&lt;/script&gt;'), '<script>alert("lol")</script>');
+        });
+    });
+
     describe('FormattableDate', () => {
         it('should have local and utc time', () => {
             var date = new Date();
@@ -188,6 +237,21 @@ describe('osfHelpers', () => {
             assert.equal(fd.local, expectedLocal);
             var expectedUTC = moment.utc(date).format('YYYY-MM-DD HH:mm UTC');
             assert.equal(fd.utc, expectedUTC);
+        });
+    });
+
+    describe('confirmDangerousAction', () => {
+        var bootboxStub, callbackStub;
+        beforeEach(() => {
+            bootboxStub = new sinon.stub(bootbox, 'dialog');
+            callbackStub = new sinon.spy();
+        });
+        afterEach(() => {
+            bootboxStub.restore();
+        });
+        it('should trigger bootbox', () => {
+            $osf.confirmDangerousAction({callback: callbackStub});
+            assert.calledOnce(bootboxStub);
         });
     });
 });

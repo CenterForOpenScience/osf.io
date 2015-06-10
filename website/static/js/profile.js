@@ -368,7 +368,7 @@ var NameViewModel = function(urls, modes, preventUnsaved, fetchCallback) {
     });
 
     self.impute = function(callback) {
-        callback = callback || noop;
+        var cb = callback || noop;
         if (! self.hasFirst()) {
             return;
         }
@@ -379,7 +379,7 @@ var NameViewModel = function(urls, modes, preventUnsaved, fetchCallback) {
                 name: self.full()
             },
             dataType: 'json',
-            success: [self.unserialize.bind(self), callback.bind(self)],
+            success: [self.unserialize.bind(self), cb],
             error: self.handleError.bind(self, 'Could not fetch names')
         });
     };

@@ -17,7 +17,7 @@ from framework.sessions.model import Session
 from framework.mongo import set_up_storage
 
 from website import settings
-from website.util import api_url_for
+from website.util import api_url_for, rubeus
 from website.addons.base import exceptions, GuidFile
 from website.project import new_private_link
 from website.project.utils import serialize_node
@@ -25,6 +25,7 @@ from website.addons.base import AddonConfig, AddonNodeSettingsBase, views
 from website.addons.github.model import AddonGitHubOauthSettings
 from tests.base import OsfTestCase
 from tests.factories import AuthUserFactory, ProjectFactory
+from website.addons.github.exceptions import ApiError
 
 
 class DummyGuidFile(GuidFile):
@@ -147,7 +148,7 @@ class TestAddonAuth(OsfTestCase):
     def test_auth_missing_args(self):
         url = self.build_url(cookie=None)
         res = self.test_app.get(url, expect_errors=True)
-        assert_equal(res.status_code, 400)
+        assert_equal(res.status_code, 401)
 
     def test_auth_bad_cookie(self):
         url = self.build_url(cookie=self.cookie[::-1])
@@ -329,61 +330,6 @@ class OsfFileTestCase(OsfTestCase):
 
 class TestAddonFileViewHelpers(OsfFileTestCase):
 
-    @mock.patch('website.addons.base.views.codecs.open')
-    @mock.patch('website.addons.base.views.build_rendered_html')
-    def test_get_or_start_starts(self, mock_render, mock_open):
-        file_guid = DummyGuidFile(node=ProjectFactory())
-        file_guid.save()
-        mock_open.side_effect = IOError
-
-        views.get_or_start_render(file_guid)
-        mock_render.assert_called_once_with(
-            file_guid.mfr_download_url,
-            file_guid.mfr_cache_path,
-            file_guid.mfr_temp_path,
-            file_guid.public_download_url
-        )
-
-    # TODO: Use DummyGuidFile for the below tests instead of Mock
-    @mock.patch('website.addons.base.views.codecs.open')
-    @mock.patch('website.addons.base.views.build_rendered_html')
-    def test_get_or_start_respects_start_render(self, mock_render, mock_open):
-        file_guid = mock.Mock()
-        mock_open.side_effect = IOError
-
-        views.get_or_start_render(file_guid, start_render=False)
-
-        assert_false(mock_render.called)
-
-    @mock.patch('website.addons.base.views.codecs.open')
-    @mock.patch('website.addons.base.views.build_rendered_html')
-    def test_get_or_start_returns_found(self, mock_render, mock_open):
-        file_guid = mock.Mock()
-        mock_file = mock.Mock()
-
-        mock_file.read.return_value = 'Look at me, I\'m mr meseeks'
-        mock_open.return_value = mock_file
-
-        assert_equal(
-            'Look at me, I\'m mr meseeks',
-            views.get_or_start_render(file_guid)
-        )
-
-        assert_false(mock_render.called)
-
-    def test_get_or_start_returns_error(self):
-        class MyException(exceptions.AddonEnrichmentError):
-
-            def as_html(self):
-                return 'wubalubadubdub'
-
-        file_guid = mock.Mock()
-        file_guid.enrich.side_effect = MyException()
-        assert_equal(
-            'wubalubadubdub',
-            views.get_or_start_render(file_guid)
-        )
-
     def test_key_error_raises_attr_error_for_name(self):
         class TestGuidFile(GuidFile):
             pass
@@ -416,6 +362,7 @@ def assert_urls_equal(url1, url2):
     assert_equal(furl1, furl2)
 
 
+@mock.patch('website.addons.github.model.GitHub.repo', mock.Mock(side_effect=ApiError))
 class TestAddonFileViews(OsfTestCase):
 
     def setUp(self):
@@ -439,6 +386,8 @@ class TestAddonFileViews(OsfTestCase):
         self.user_addon.save()
 
         self.node_addon.user_settings = self.user_addon
+        self.node_addon.repo = 'Truth'
+        self.node_addon.user = 'E'
         self.node_addon.save()
 
         # self.node_addon.user_settings = 'Truthy'
@@ -447,14 +396,23 @@ class TestAddonFileViews(OsfTestCase):
     def get_mako_return(self):
         ret = serialize_node(self.project, Auth(self.user), primary=True)
         ret.update({
-            'extra': '',
+            'error': '',
             'provider': '',
-            'rendered': '',
             'file_path': '',
-            'files_url': '',
+            'sharejs_uuid': '',
+            'urls': {
+                'files': '',
+                'render': '',
+                'sharejs': '',
+                'mfr': '',
+                'gravatar': '',
+            },
+            'size': '',
+            'extra': '',
             'file_name': '',
-            'render_url': '',
+            'materialized_path': '',
         })
+        ret.update(rubeus.collect_addon_assets(self.project))
         return ret
 
     def test_redirects_to_guid(self):
@@ -481,6 +439,18 @@ class TestAddonFileViews(OsfTestCase):
 
         assert_equals(resp.status_code, 302)
         assert_equals(resp.headers['Location'], guid.download_url + '&action=download')
+
+    @mock.patch('website.addons.base.request')
+    def test_public_download_url_includes_view_only(self, mock_request):
+        view_only = 'justworkplease'
+        mock_request.args = {
+            'view_only': view_only
+        }
+
+        path = 'cloudfiles'
+        guid, _ = self.node_addon.find_or_create_file_guid('/' + path)
+
+        assert_in('view_only={}'.format(view_only), guid.public_download_url)
 
     @mock.patch('website.addons.base.views.addon_view_file')
     def test_action_view_calls_view_file(self, mock_view_file):
@@ -553,7 +523,7 @@ class TestAddonFileViews(OsfTestCase):
             expect_errors=True
         )
 
-        assert_equals(resp.status_code, 403)
+        assert_equals(resp.status_code, 401)
 
     def test_head_returns_url(self):
         path = 'the little engine that couldnt'
@@ -572,8 +542,8 @@ class TestAddonFileViews(OsfTestCase):
         self.project.save()
 
         resp = self.app.get(
-            self.project.api_url_for(
-                'addon_render_file',
+            self.project.web_url_for(
+                'addon_view_or_download_file',
                 path=path,
                 provider='github',
                 action='download'
@@ -590,8 +560,8 @@ class TestAddonFileViews(OsfTestCase):
         self.node_addon.save()
 
         resp = self.app.get(
-            self.project.api_url_for(
-                'addon_render_file',
+            self.project.web_url_for(
+                'addon_view_or_download_file',
                 path=path,
                 provider='github',
                 action='download'
@@ -602,25 +572,6 @@ class TestAddonFileViews(OsfTestCase):
 
         assert_equals(resp.status_code, 401)
 
-    def test_unconfigured_addons_raise(self):
-        path = 'cloudfiles'
-        self.node_addon.repo = None
-        self.node_addon.save()
-
-        resp = self.app.get(
-            self.project.api_url_for(
-                'addon_render_file',
-                path=path,
-                provider='github',
-                action='download'
-            ),
-            auth=self.user.auth,
-            expect_errors=True
-        )
-
-        assert_equals(resp.status_code, 400)
-
-
 class TestLegacyViews(OsfTestCase):
 
     def setUp(self):
@@ -628,6 +579,11 @@ class TestLegacyViews(OsfTestCase):
         self.path = 'mercury.png'
         self.user = AuthUserFactory()
         self.project = ProjectFactory(creator=self.user)
+        self.node_addon = self.project.get_addon('osfstorage')
+        file_record = self.node_addon.root_node.append_file(self.path)
+        self.expected_path = file_record._id
+        self.node_addon.save()
+        file_record.save()
 
     def test_view_file_redirect(self):
         url = '/{0}/osffiles/{1}/'.format(self.project._id, self.path)
@@ -636,7 +592,7 @@ class TestLegacyViews(OsfTestCase):
         expected_url = self.project.web_url_for(
             'addon_view_or_download_file',
             action='view',
-            path=self.path,
+            path=self.expected_path,
             provider='osfstorage',
         )
         assert_urls_equal(res.location, expected_url)
@@ -647,7 +603,7 @@ class TestLegacyViews(OsfTestCase):
         assert_equal(res.status_code, 301)
         expected_url = self.project.web_url_for(
             'addon_view_or_download_file',
-            path=self.path,
+            path=self.expected_path,
             action='download',
             provider='osfstorage',
         )
@@ -663,7 +619,7 @@ class TestLegacyViews(OsfTestCase):
         expected_url = self.project.web_url_for(
             'addon_view_or_download_file',
             version=3,
-            path=self.path,
+            path=self.expected_path,
             action='download',
             provider='osfstorage',
         )
@@ -675,7 +631,7 @@ class TestLegacyViews(OsfTestCase):
         assert_equal(res.status_code, 301)
         expected_url = self.project.web_url_for(
             'addon_view_or_download_file',
-            path=self.path,
+            path=self.expected_path,
             action='download',
             provider='osfstorage',
         )
@@ -691,7 +647,7 @@ class TestLegacyViews(OsfTestCase):
         expected_url = self.project.web_url_for(
             'addon_view_or_download_file',
             version=3,
-            path=self.path,
+            path=self.expected_path,
             action='download',
             provider='osfstorage',
         )
@@ -707,7 +663,7 @@ class TestLegacyViews(OsfTestCase):
         expected_url = self.project.web_url_for(
             'addon_view_or_download_file',
             action='view',
-            path=self.path,
+            path=self.expected_path,
             provider='osfstorage',
         )
         assert_urls_equal(res.location, expected_url)
@@ -721,7 +677,7 @@ class TestLegacyViews(OsfTestCase):
         assert_equal(res.status_code, 301)
         expected_url = self.project.web_url_for(
             'addon_view_or_download_file',
-            path=self.path,
+            path=self.expected_path,
             action='download',
             provider='osfstorage',
         )

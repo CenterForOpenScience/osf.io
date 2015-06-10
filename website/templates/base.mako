@@ -12,6 +12,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="description" content="${self.description()}">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="fragment" content="!">
 
     % if sentry_dsn_js:
     <script src="/static/vendor/bower_components/raven-js/dist/raven.min.js"></script>
@@ -81,14 +82,15 @@
     <div class="container">
         <div class="row">
             <div class='col-sm-2 hidden-xs'>
-                <img class="logo" src="/static/img/circle_logo.png"></img>
+                <img class="logo" src="/static/img/circle_logo.png">
             </div>
             <div class='col-sm-10 col-xs-12'>
                 <a data-bind="click: dismiss" class="close" href="#">&times;</a>
                 <h1>Start managing your projects on the OSF today.</h1>
                 <p>Free and easy to use, the Open Science Framework supports the entire research lifecycle: planning, execution, reporting, archiving, and discovery.</p>
                 <div>
-                    <a data-bind="click: trackClick.bind($data, 'Create Account')" class="btn btn-primary" href="/login/">Create an Account</a>
+                    <a data-bind="click: trackClick.bind($data, 'Create Account')" class="btn btn-primary" href="${web_url_for('index')}#signUp">Create an Account</a>
+
                     <a data-bind="click: trackClick.bind($data, 'Learn More')" class="btn btn-primary" href="/getting-started/">Learn More</a>
                     <a data-bind="click: dismiss">Hide this message</a>
                 </div>
@@ -147,10 +149,13 @@
             // Mako variables accessible globally
             window.contextVars = $.extend(true, {}, window.contextVars, {
                 waterbutlerURL: '${waterbutler_url if waterbutler_url.endswith('/') else waterbutler_url + '/' | js_str}',
-                cookieName: '${cookie_name}'
+            % if access_token:
+                accessToken: '${access_token | js_str}',
+            % endif
+                cookieName: '${cookie_name}',
+                apiV2Prefix: '${api_v2_base | js_str }'
             });
         </script>
-
 
         % if piwik_host:
             <% is_public = node.get('is_public', 'ERROR') if node else True %>

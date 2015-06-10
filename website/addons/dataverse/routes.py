@@ -5,7 +5,7 @@
 from framework.routing import Rule, json_renderer
 from website.addons.dataverse.views.widget import dataverse_get_widget_contents, \
     dataverse_widget
-from website.routes import OsfWebRenderer, notemplate
+from website.routes import OsfWebRenderer
 
 from . import views
 
@@ -21,7 +21,7 @@ settings_routes = {
         Rule([
             '/project/<pid>/dataverse/set/',
             '/project/<pid>/node/<nid>/dataverse/set/',
-        ], 'post', views.config.set_dataverse_and_study, json_renderer),
+        ], 'post', views.config.set_dataverse_and_dataset, json_renderer),
         Rule([
             '/project/<pid>/dataverse/deauthorize/',
             '/project/<pid>/node/<nid>/dataverse/deauthorize/',
@@ -48,52 +48,17 @@ settings_routes = {
             views.auth.dataverse_delete_user,
             json_renderer,
         ),
-
-        # Files
-        Rule([
-            '/project/<pid>/dataverse/file/',
-            '/project/<pid>/dataverse/file/<path:path>/',
-            '/project/<pid>/node/<nid>/dataverse/file/',
-            '/project/<pid>/node/<nid>/dataverse/file/<path:path>/',
-        ], 'put', views.crud.dataverse_upload_file, json_renderer),
-        Rule([
-            '/project/<pid>/dataverse/file/<path:path>/',
-            '/project/<pid>/node/<nid>/dataverse/file/<path:path>/',
-        ], 'delete', views.crud.dataverse_delete_file, json_renderer),
     ],
     'prefix': '/api/v1',
-}
-
-page_routes = {
-    'rules': [
-        Rule(
-            [
-                '/project/<pid>/dataverse/file/<path:path>/',
-                '/project/<pid>/node/<nid>/dataverse/file/<path:path>/',
-            ],
-            'get',
-            views.crud.dataverse_view_file,
-            OsfWebRenderer('../addons/dataverse/templates/dataverse_view_file.mako')
-        ),
-        Rule(
-            [
-                '/project/<pid>/dataverse/file/<path:path>/download/',
-                '/project/<pid>/node/<nid>/dataverse/file/<path:path>/download/',
-            ],
-            'get',
-            views.crud.dataverse_download_file,
-            notemplate,
-        ),
-    ],
 }
 
 api_routes = {
     'rules': [
         Rule(
-            ['/project/<pid>/dataverse/config/get-studies/',
-            '/project/<pid>/node/<nid>/dataverse/config/get-studies/'],
+            ['/project/<pid>/dataverse/config/get-datasets/',
+            '/project/<pid>/node/<nid>/dataverse/config/get-datasets/'],
             'post',
-            views.config.dataverse_get_studies,
+            views.config.dataverse_get_datasets,
             json_renderer
         ),
         Rule(
@@ -102,17 +67,6 @@ api_routes = {
             'put',
             views.config.dataverse_import_user_auth,
             json_renderer
-        ),
-        Rule(
-            [
-                '/project/<pid>/dataverse/hgrid/',
-                '/project/<pid>/node/<nid>/dataverse/hgrid/',
-                '/project/<pid>/dataverse/hgrid/<path:path>/',
-                '/project/<pid>/node/<nid>/dataverse/hgrid/<path:path>/',
-            ],
-            'get',
-            views.hgrid.dataverse_hgrid_data_contents,
-            json_renderer,
         ),
         Rule(
             [
@@ -125,29 +79,20 @@ api_routes = {
         ),
         Rule(
             [
-                '/project/<pid>/dataverse/file/<path:path>/render/',
-                '/project/<pid>/node/<nid>/dataverse/file/<path:path>/render/',
-            ],
-            'get',
-            views.crud.dataverse_get_rendered_file,
-            json_renderer,
-        ),
-        Rule(
-            [
-                '/project/<pid>/dataverse/file/<path:path>/proxy/',
-                '/project/<pid>/node/<nid>/dataverse/file/<path:path>/proxy/',
-            ],
-            'get',
-            views.crud.dataverse_download_file_proxy,
-            json_renderer,
-        ),
-        Rule(
-            [
-                '/project/<pid>/dataverse/release/',
-                '/project/<pid>/node/<nid>/dataverse/release/',
+                '/project/<pid>/dataverse/publish/',
+                '/project/<pid>/node/<nid>/dataverse/publish/',
             ],
             'put',
-            views.crud.dataverse_release_study,
+            views.crud.dataverse_publish_dataset,
+            json_renderer,
+        ),
+        Rule(
+            [
+                '/project/<pid>/dataverse/publish-both/',
+                '/project/<pid>/node/<nid>/dataverse/publish-both/',
+            ],
+            'put',
+            views.crud.dataverse_publish_both,
             json_renderer,
         ),
         Rule(
@@ -166,15 +111,6 @@ api_routes = {
             ],
             'get',
             dataverse_get_widget_contents,
-            json_renderer,
-        ),
-        Rule(
-            [
-                '/project/<pid>/dataverse/files/<path:path>/info/',
-                '/project/<pid>/node/<nid>/dataverse/files/<path:path>/info/',
-            ],
-            'get',
-            views.crud.dataverse_get_file_info,
             json_renderer,
         ),
     ],
