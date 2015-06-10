@@ -70,15 +70,15 @@
 
         <div class="tab-content" id="containDrag">
 
-            <div class="tab-pane active" id="social">
+            <div class="m-t-md tab-pane active" id="social">
                 <div data-bind="template: {name: 'profileSocial'}"></div>
             </div>
 
-            <div class="tab-pane" id="jobs">
+            <div class="m-t-md tab-pane" id="jobs">
                 <div data-bind="template: {name: 'profileJobs'}"></div>
             </div>
 
-            <div class="tab-pane" id="schools">
+            <div class="m-t-md tab-pane" id="schools">
                 <div data-bind="template: {name: 'profileSchools'}"></div>
             </div>
 
