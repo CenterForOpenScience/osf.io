@@ -113,7 +113,7 @@ $(document).ready(function () {
         interactive: window.contextVars.currentUser.canEdit,
         maxChars: 128,
         onAddTag: function(tag){
-            var url = window.contextVars.node.urls.api + 'addtag/';
+            var url = nodeApiUrl + 'addtag/';
             var data = JSON.stringify({tag: tag});
             var request = $.ajax({
                 url: url,
@@ -129,7 +129,7 @@ $(document).ready(function () {
             });
         },
         onRemoveTag: function(tag){
-            var url = window.contextVars.node.urls.api + 'removetag/';
+            var url = nodeApiUrl + 'removetag/';
             var data = JSON.stringify({tag: tag});
             var request = $.ajax({
                 url: url,
