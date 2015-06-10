@@ -17,6 +17,8 @@
             % if not summary['is_public']:
                 <span class="fa fa-lock" data-toggle="tooltip" title="This project is private"></span>
             % endif
+            
+            <span data-bind="getIcon: '${summary['category']}'"></span>
             <a href="${summary['url']}">${summary['title']}</a>
 
             % if summary['is_registration']:
@@ -70,6 +72,7 @@
         <div class="body hide" id="body-${summary['id']}" style="overflow:hidden;">
             <hr />
             Recent Activity
+            <!-- ko stopBinding: true -->
             <div id="logs-${summary['id']}" class="log-container" data-uri="${summary['api_url']}log/">
                 <dl class="dl-horizontal activity-log" data-bind="foreach: {data: logs, as: 'log'}">
                     <dt><span class="date log-date" data-bind="text: log.date.local, tooltip: {title: log.date.utc}"></span></dt>
@@ -85,6 +88,7 @@
                         </dd>
                 </dl><!-- end foreach logs -->
             </div>
+            <!-- /ko -->
          </div>
 
     </li>

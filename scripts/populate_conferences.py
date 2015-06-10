@@ -269,6 +269,22 @@ MEETING_DATA = {
         'admins': [],
         'public_projects': True,
     },
+    'JSSP2015': {
+        'name': 'Japanese Society of Social Psychology 2015',
+        'info_url': 'http://www.socialpsychology.jp/conf2015/index.html',
+        'logo_url': None,
+        'active': True,
+        'admins': [],
+        'public_projects': True,
+    },
+    '4S2015': {
+        'name': 'Society for Social Studies of Science 2015',
+        'info_url': 'http://www.4sonline.org/meeting',
+        'logo_url': 'http://www.4sonline.org/ee/denver-skyline.jpg',
+        'active': True,
+        'admins': [],
+        'public_projects': True,
+    },
 }
 
 
@@ -297,6 +313,8 @@ def populate_conferences():
             changed_fields = conf.save()
             if changed_fields:
                 print('Changed: {}'.format(changed_fields))
+        else:
+            print('Added new Conference: {}'.format(meeting))
 
 
 if __name__ == '__main__':

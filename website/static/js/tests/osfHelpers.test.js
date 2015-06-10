@@ -4,6 +4,7 @@ var assert = require('chai').assert;
 var $ = require('jquery');
 var moment = require('moment');
 var Raven = require('raven-js');
+var bootbox = require('bootbox');
 
 var $osf = require('../osfHelpers');
 
@@ -236,6 +237,21 @@ describe('osfHelpers', () => {
             assert.equal(fd.local, expectedLocal);
             var expectedUTC = moment.utc(date).format('YYYY-MM-DD HH:mm UTC');
             assert.equal(fd.utc, expectedUTC);
+        });
+    });
+
+    describe('confirmDangerousAction', () => {
+        var bootboxStub, callbackStub;
+        beforeEach(() => {
+            bootboxStub = new sinon.stub(bootbox, 'dialog');
+            callbackStub = new sinon.spy();
+        });
+        afterEach(() => {
+            bootboxStub.restore();
+        });
+        it('should trigger bootbox', () => {
+            $osf.confirmDangerousAction({callback: callbackStub});
+            assert.calledOnce(bootboxStub);
         });
     });
 });
