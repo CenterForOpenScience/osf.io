@@ -4,6 +4,8 @@ var $ = require('jquery');
 var Raven = require('raven-js');
 require('bootstrap-editable');
 require('osf-panel');
+require('../../css/wiki-page.css');
+
 var WikiPage = require('wikiPage');
 
 require('ace-noconflict');
@@ -127,7 +129,7 @@ $(document).ready(function () {
 
         bodyElement.trigger('toggleMenu', [false]);
     });
-    $('.panel-collapsed .osf-panel-header').on('click', function () {
+    $('.panel-collapsed .panel-heading').on('click', function () {
         var el = $(this).parent();
         var toggle = el.closest('.panel-toggle');
         toggle.children('.osf-panel').removeClass('hidden');
