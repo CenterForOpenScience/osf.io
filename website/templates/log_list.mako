@@ -13,15 +13,15 @@
     %endif
         id="logScope">
 
-    <div class="logs addon-widget-container">
+    <div class="logs m-t-lg">
 
-        <div class="components">
-            <div class="addon-widget-header clearfix"> 
-                <h4>Recent Activity </h4>
+        <div class="components panel panel-default">
+            <div class="panel-heading clearfix">
+                <div class="panel-title">Recent Activity </div>
                 <div class="pull-right">
                 </div>
             </div>
-            <div class="addon-widget-body">
+            <div class="panel-body">
                 <p class="help-block" data-bind="if: tzname">
                     All times displayed at
                     <span data-bind="text: tzname"></span>
