@@ -167,6 +167,10 @@ def _format_spam_node_data(node):
     }
     return data
 
+
+
+
+# todo: make this function not anonymous
 def _project_is_spam(node):
     if not settings.SPAM_ASSASSIN:
             return False
