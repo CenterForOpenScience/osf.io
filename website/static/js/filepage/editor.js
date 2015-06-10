@@ -78,14 +78,20 @@ var FileEditor = {
                     $(document).trigger('fileviewpage:reload');
                     self.initialText = model.editor.getValue();
                     m.redraw();
-                }).fail(function(error) {
+                }).fail(function(xhr, textStatus, err) {
+                    var message;
+                    if (xhr.status === 507) {
+                        message = 'Could not update file. Insufficient storage space in your Dropbox.';
+                    } else {
+                        message = 'The file could not be updated.';
+                    }
                     model.editor.setReadOnly(false);
                     self.unthrottledStatus(oldstatus);
                     $(document).trigger('fileviewpage:reload');
                     model.editor.setValue(self.initialText);
-                    $osf.growl('Error', 'The file could not be updated.');
+                    $osf.growl('Error', message);
                     Raven.captureMessage('Could not PUT file content.', {
-                        error: error,
+                        textStatus: textStatus,
                         url: self.url
                     });
                     m.redraw();
