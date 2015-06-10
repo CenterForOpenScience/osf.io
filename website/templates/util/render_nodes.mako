@@ -1,5 +1,6 @@
 % if len(nodes):
     <ul class="list-group ${'sortable' if sortable and 'write' in user['permissions'] else ''}">
+      <span id="componentScope" class="scripted">
         % for each in nodes:
             <div mod-meta='{
                     "tpl": "util/render_node.mako",
@@ -8,11 +9,13 @@
                         "rescale_ratio": ${rescale_ratio},
                         "primary": ${int(each['primary'])},
                         "link_id": "${each['id']}",
-                        "uid": "${user_id}"
+                        "uid": "${user_id}",
+                        "show_path": ${"true" if show_path else "false"}
                     },
                     "replace": true
                 }'></div>
         % endfor
+      </span>
     ## TODO: make sure these templates are only included once on a page.
     <%include file='_log_templates.mako'/>
     </ul>

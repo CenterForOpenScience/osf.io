@@ -313,7 +313,6 @@ a.btn-success.disabled {
 
 #addPointer td {
     vertical-align: middle;
-    word-break: break-all;
 }
 
 li.pointer {
@@ -444,8 +443,14 @@ img.hg-addon-icon {
     display: block;
 }
 
+/* TODO: Remove this - it's far too broad */
 h4 {
     padding-bottom: 10px;
+}
+
+/* TODO: Remove this hack, due to the h4 rule immediately prior */
+.bootbox h4 {
+    padding-bottom: 0;
 }
 
 .social-icons img {
@@ -1810,18 +1815,6 @@ span#profileFullname{
     white-space: pre;
 }
 
-.bootbox-node-deletion-modal {
-    font-weight: normal;
-    font-size: medium;
-    line-height: normal;
-    padding-top: 10px;
-}
-
-.bootbox-node-deletion-modal ol {
-    padding-left: 40px;
-    list-style-type: disc;
-}
-
 /* Footer slide-in */
 
 #footerSlideIn {
@@ -2212,6 +2205,10 @@ span#profileFullname{
 
 .progress-bar-content {
     margin: 0px 10px;
+}
+
+.progress-bar-width {
+    width: 100%;
 }
 
 .sharejs-info-btn {
@@ -2793,4 +2790,9 @@ span#profileFullname{
     .affix {
         position: relative;
     }
+}
+
+#viewPanel > .osf-panel-body,
+.mfr-file {
+  height: 100%;
 }
