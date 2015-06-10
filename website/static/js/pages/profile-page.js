@@ -7,6 +7,7 @@
 var profile = require('../profile.js'); // Social, Job, Education classes
 require('../project.js'); // Needed for nodelists to work
 require('../logFeed.js'); // Needed for nodelists to work
+require('../../css/profile.css');
 
 var ctx = window.contextVars;
 // Instantiate all the profile modules
