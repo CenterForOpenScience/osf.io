@@ -155,7 +155,6 @@ class TestStorageAddonBase(ArchiverTestCase):
             'kind': 'folder',
         }
         file_tree = addon._get_file_tree(root, self.user)
-        file_tree.complete.return_value = True
         assert_equal(FILE_TREE, file_tree)
         assert_equal(requests_made, ['/', '/qwerty'])  # no requests made for files
 
@@ -169,6 +168,7 @@ class TestStorageAddonBase(ArchiverTestCase):
 
 class TestArchiverTasks(ArchiverTestCase):
 
+    @use_fake_addons
     @mock.patch('framework.tasks.handlers.enqueue_task')
     @mock.patch('celery.chord')
     @mock.patch('website.archiver.tasks.stat_addon.si')
@@ -240,7 +240,7 @@ class TestArchiverTasks(ArchiverTestCase):
     @use_fake_addons
     @mock.patch('website.archiver.tasks.make_copy_request.delay')
     def test_archive_addon(self, mock_make_copy_request):
-        result = archiver_utils.aggregate_file_tree_metadata('dropbox', FILE_TREE, self.user),
+        result = archiver_utils.aggregate_file_tree_metadata('dropbox', FILE_TREE, self.user)
         archive_addon('dropbox', self.archive_job._id, result)
         assert_equal(self.archive_job.get_target('dropbox').status, ARCHIVER_PENDING)
         cookie = self.user.get_or_create_cookie()
