@@ -44,13 +44,14 @@ def download_from_cloudfiles(version):
     try:
         obj = container_primary.get_object(version.location['object'])
         obj.download(storage_settings.AUDIT_TEMP_PATH)
+        return path
     except NoSuchObject as err:
         logger.error('*** FILE NOT FOUND ***')
         logger.error('Exception:')
         logger.exception(err)
         logger.error('Version info:')
         logger.error(version.to_storage())
-    return
+        return None
 
 
 def delete_temp_file(version):
