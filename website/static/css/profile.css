@@ -1,0 +1,41 @@
+.overflow {
+    word-wrap: break-word;
+    max-width: 100%;
+}
+
+span.edit-profile-settings {
+    display: block;
+    position: absolute;
+    bottom: 0;
+    right: 0;
+}
+
+div.profile-fullname{
+    display: block;
+    position: relative;
+    bottom: 0;
+}
+
+span#profileFullname{
+    position: absolute;
+    bottom: 0;
+    margin-bottom: 20px;
+}
+
+.pointer {cursor: pointer;}
+
+table.table.table-plain th, table.table.table-plain td {
+  text-align: left;
+  border-top: 0px solid #ddd;
+}
+
+.page-header {
+    overflow: hidden;
+}
+
+/* Profile gravatar
+-------------------------------------------------- */
+#profile-gravatar{
+    width:70px;
+    height:70px;
+}

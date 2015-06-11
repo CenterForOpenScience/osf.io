@@ -20,7 +20,7 @@
     ## Knockout componenet templates
     <%include file="components/dashboard_templates.mako"/>
     <div class="col-sm-5">
-        <div class="ob-tab-head" id="obTabHead">
+        <div class="p-b-xs m-t-lg m-b-xs" id="obTabHead">
             <ul class="nav nav-tabs" role="tablist">
             <li class="active"><a href="#quicktasks" role="tab" data-toggle="tab">Quick Tasks</a></li>
             <li><a href="#watchlist" role="tab" data-toggle="tab">Watchlist</a></li>
@@ -31,7 +31,7 @@
 
         </div><!-- end #obTabHead -->
         <div class="tab-content" >
-            <div class="tab-pane active" id="quicktasks">
+            <div class="m-t-md tab-pane active" id="quicktasks">
                 <ul class="ob-widget-list"> <!-- start onboarding -->
                     <div id="obGoToProject">
                         <osf-ob-goto params="data: nodes"></osf-ob-goto>
@@ -64,10 +64,10 @@
                     </div>
                     % endif
                 </ul> <!-- end onboarding -->
-            </div><!-- end .tab-pane -->
-            <div class="tab-pane" id="watchlist">
+            </div>
+            <div class="m-t-md tab-pane" id="watchlist">
                 <%include file="log_list.mako" args="scripted=False"/>
-            </div><!-- end tab-pane -->
+            </div>
             ## %if 'badges' in addons_enabled:
                 ## <%include file="dashboard_badges.mako"/>
             ## %endif

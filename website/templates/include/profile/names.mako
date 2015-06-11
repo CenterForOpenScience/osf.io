@@ -60,7 +60,7 @@
             </tbody>
         </table>
 
-        <div class="padded">
+        <div class="p-t-lg p-b-lg">
 
             <button
                     type="button"

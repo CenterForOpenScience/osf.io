@@ -20,7 +20,7 @@
             </div>
             <div class="col-md-6">
                 <div id="connectedEmails" class="panel panel-default scripted">
-                    <div class="panel-heading"><h3 class="panel-title">Connected Emails</h3></div>
+                    <div class="panel-heading clearfix"><h3 class="panel-title">Connected Emails</h3></div>
                     <div class="panel-body">
                         <table class="table">
                             <thead>
@@ -83,7 +83,7 @@
                     </div>
                 </div>
                 <div id="changePassword" class="panel panel-default">
-                    <div class="panel-heading"><h3 class="panel-title">Change Password</h3></div>
+                    <div class="panel-heading clearfix"><h3 class="panel-title">Change Password</h3></div>
                     <div class="panel-body">
                         <form id="changePasswordForm" role="form" action="${ web_url_for('user_account_password') }" method="post">
                             <div class="form-group">
@@ -103,14 +103,14 @@
                     </div>
                 </div>
                 <div id="exportAccount" class="panel panel-default">
-                    <div class="panel-heading"><h3 class="panel-title">Export Account Data</h3></div>
+                    <div class="panel-heading clearfix"><h3 class="panel-title">Export Account Data</h3></div>
                     <div class="panel-body">
                         <p>Exporting your account data allows you to keep a permanent copy of the current state of your account. Keeping a copy of your account data can provide peace of mind or assist in transferring your information to another provider.</p>
                         <a class="btn btn-default" data-bind="click: submit, css: success() === true ? 'disabled' : ''">Request Export</a>
                     </div>
                 </div>
                 <div id="deactivateAccount" class="panel panel-default">
-                    <div class="panel-heading"><h3 class="panel-title">Deactivate Account</h3></div>
+                    <div class="panel-heading clearfix"><h3 class="panel-title">Deactivate Account</h3></div>
                     <div class="panel-body">
                         <p class="alert alert-warning"><strong>Warning:</strong> This action is irreversible.</p>
                         <p>Deactivating your account will remove you from all public projects to which you are a contributor. Your account will no longer be associated with OSF projects, and your work on the OSF will be inaccessible.</p>

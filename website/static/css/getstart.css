@@ -1,0 +1,69 @@
+/* Getting Started */
+
+/* links */
+.gs-sidebar .nav a,
+.gs-sidebar .nav a:hover,
+.gs-sidebar .nav a:focus {
+
+    text-decoration: none;
+    background-color: transparent;
+}
+/* nested links */
+.gs-sidebar .nav .nav>li>a {
+    font-size: 12px;
+    padding: 4px 0 4px 15px;
+    opacity: 0.8;
+    font-weight: bold;
+}/* nested navs */
+.gs-sidebar .nav .nav {
+    display: none;
+}
+/* nested active navs */
+.gs-sidebar .nav .active .nav {
+    display: block;
+}
+/* nested link icons */
+.gs-sidebar .nav .nav>li>a i {
+    display: none;
+}
+/* nested active link icons */
+.gs-sidebar .nav .nav>.active>a i {
+    display: inline-block;
+}
+/* active & hover links */
+.gs-sidebar .nav>.active>a,
+.gs-sidebar .nav>li>a:hover,
+.gs-sidebar .nav>li>a:focus {
+    font-weight: bold;
+}
+/* nested active links */
+.gs-sidebar .nav .nav>.active>a,
+.gs-sidebar .nav .nav>.active:hover>a,
+.gs-sidebar .nav .nav>.active:focus>a {
+    font-weight: bold;
+}
+/* affixed sidebar */
+.gs-sidebar,
+.gs-sidebar.affix,
+.gs-sidebar.affix-top {
+    position: fixed;
+    top: 70px;
+}
+.affix-bottom {
+    position: relative;
+}
+
+/* embedded video */
+.gs-video {
+    margin-top: 25px;
+    margin-bottom: 25px;
+    margin-left: auto;
+    margin-right: auto;
+    border: solid 1px #ddd;
+}
+
+/* phase number counters */
+.gs-count {
+    margin-bottom: 20px;
+    margin-top: 50px;
+}
