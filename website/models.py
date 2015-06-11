@@ -3,7 +3,7 @@
 """
 
 from framework.auth.core import User
-from framework.guid.model import Guid
+from framework.guid.model import Guid, BlacklistGuid
 from framework.sessions.model import Session
 
 from website.project.model import (
@@ -27,7 +27,7 @@ MODELS = (
     MailRecord, Comment, PrivateLink, MetaData, Conference,
     NotificationSubscription, NotificationDigest, CitationStyle,
     CitationStyle, ExternalAccount, Identifier, Retraction,
-    Embargo, ArchiveJob, ArchiveTarget
+    Embargo, ArchiveJob, ArchiveTarget, BlacklistGuid
 )
 
 GUID_MODELS = (User, Node, Comment, MetaData)
