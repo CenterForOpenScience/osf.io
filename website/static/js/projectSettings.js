@@ -52,7 +52,7 @@ var NodeCategoryTitleDescriptionSettings = oop.extend(
             self.dirtyDescription = ko.observable(false);
         },
 
-            /*success handlers*/
+        /*success handlers*/
         updateCategorySuccess: function(newcategory) {
             var self = this;
             self.changeMessage(self.UPDATE_SUCCESS_MESSAGE, self.MESSAGE_SUCCESS_CLASS);
@@ -66,6 +66,7 @@ var NodeCategoryTitleDescriptionSettings = oop.extend(
         updateDescriptionSuccess: function() {
             window.location.reload();
         },
+
         /*error handlers*/
         updateCategoryError: function(xhr, status, error) {
             var self = this;
@@ -82,8 +83,8 @@ var NodeCategoryTitleDescriptionSettings = oop.extend(
         },
         updateDescriptionError: function() {
             document.getElementById('title-input-message').style.color = "#ff0000";
-            document.getElementById('title-input-message').innerHTML = 'Error updating description, please try again. If the problem persists, email ' +
-                '<a href="mailto:support@osf.io">support@osf.io</a>.';
+            document.getElementById('title-input-message').innerHTML = 'Error updating description, please try again.'+ 
+            ' If the problem persists, email <a href="mailto:support@osf.io">support@osf.io</a>.';
         },
 
         /*update handlers*/

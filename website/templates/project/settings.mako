@@ -82,7 +82,7 @@
                             class="btn btn-default">Cancel</button>
                             <br>
                             <span id="title-input-message"></span>
-                            <br>
+                        
 
                         % if node['description'] or 'write' in user['permissions']:
                             <br>
