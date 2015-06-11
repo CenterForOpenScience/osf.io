@@ -750,13 +750,15 @@ function _fangornDropzoneSuccess(treebeard, file, response) {
  */
 var DEFAULT_ERROR_MESSAGE = 'Could not upload file. The file may be invalid ' +
     'or the file folder has been deleted.';
-function _fangornDropzoneError(treebeard, file, message) {
+function _fangornDropzoneError(treebeard, file, message, xhr) {
     var tb = treebeard;
     // File may either be a webkit Entry or a file object, depending on the browser
     // On Chrome we can check if a directory is being uploaded
     var msgText;
     if (file.isDirectory) {
         msgText = 'Cannot upload directories, applications, or packages.';
+    } else if (xhr.status === 507) {
+        msgText = 'Cannot upload file due to insufficient storage.';
     } else {
         msgText = DEFAULT_ERROR_MESSAGE;
     }
@@ -1172,20 +1174,29 @@ function _fangornResolveRows(item) {
         filter : true,
         custom : _fangornTitleColumn
     });
-    if (item.data.provider === 'osfstorage' && item.data.kind === 'file') {
-        default_columns.push({
-            data : 'downloads',
-            sortInclude : false,
-            filter : false,
-            custom: function() { return item.data.extra ? item.data.extra.downloads.toString() : ''; }
+
+    if (item.data.kind === 'file') {
+        default_columns.push(
+        {
+            data : 'size',  // Data field name
+            filter : true,
+            custom : function() {return item.data.size ? $osf.humanFileSize(item.data.size, true) : '';}
         });
-    } else {
-        default_columns.push({
-            data : 'downloads',
-            sortInclude : false,
-            filter : false,
-            custom : function() { return m(''); }
-        });
+        if (item.data.provider === 'osfstorage') {
+            default_columns.push({
+                data : 'downloads',
+                sortInclude : false,
+                filter : false,
+                custom: function() { return item.data.extra ? item.data.extra.downloads.toString() : ''; }
+            });
+        } else {
+            default_columns.push({
+                data : 'downloads',
+                sortInclude : false,
+                filter : false,
+                custom : function() { return m(''); }
+            });
+        }
     }
     configOption = resolveconfigOption.call(this, item, 'resolveRows', [item]);
     return configOption || default_columns;
@@ -1202,9 +1213,13 @@ function _fangornColumnTitles () {
     columns.push(
     {
         title: 'Name',
-        width : '90%',
+        width : '80%',
         sort : true,
         sortType : 'text'
+    }, {
+        title : 'Size',
+        width : '10%',
+        sort : false
     }, {
         title : 'Downloads',
         width : '10%',

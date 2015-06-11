@@ -28,6 +28,7 @@ from website.addons.github.tests.factories import (
 
 from tests.base import OsfTestCase
 from tests.factories import AuthUserFactory, ProjectFactory
+from website.addons.github.exceptions import ApiError
 
 class DummyGuidFile(GuidFile):
 
@@ -326,61 +327,6 @@ class OsfFileTestCase(OsfTestCase):
 
 class TestAddonFileViewHelpers(OsfFileTestCase):
 
-    @mock.patch('website.addons.base.views.codecs.open')
-    @mock.patch('website.addons.base.views.build_rendered_html')
-    def test_get_or_start_starts(self, mock_render, mock_open):
-        file_guid = DummyGuidFile(node=ProjectFactory())
-        file_guid.save()
-        mock_open.side_effect = IOError
-
-        views.get_or_start_render(file_guid)
-        mock_render.assert_called_once_with(
-            file_guid.mfr_download_url,
-            file_guid.mfr_cache_path,
-            file_guid.mfr_temp_path,
-            file_guid.public_download_url
-        )
-
-    # TODO: Use DummyGuidFile for the below tests instead of Mock
-    @mock.patch('website.addons.base.views.codecs.open')
-    @mock.patch('website.addons.base.views.build_rendered_html')
-    def test_get_or_start_respects_start_render(self, mock_render, mock_open):
-        file_guid = mock.Mock()
-        mock_open.side_effect = IOError
-
-        views.get_or_start_render(file_guid, start_render=False)
-
-        assert_false(mock_render.called)
-
-    @mock.patch('website.addons.base.views.codecs.open')
-    @mock.patch('website.addons.base.views.build_rendered_html')
-    def test_get_or_start_returns_found(self, mock_render, mock_open):
-        file_guid = mock.Mock()
-        mock_file = mock.Mock()
-
-        mock_file.read.return_value = 'Look at me, I\'m mr meseeks'
-        mock_open.return_value = mock_file
-
-        assert_equal(
-            'Look at me, I\'m mr meseeks',
-            views.get_or_start_render(file_guid)
-        )
-
-        assert_false(mock_render.called)
-
-    def test_get_or_start_returns_error(self):
-        class MyException(exceptions.AddonEnrichmentError):
-
-            def as_html(self):
-                return 'wubalubadubdub'
-
-        file_guid = mock.Mock()
-        file_guid.enrich.side_effect = MyException()
-        assert_equal(
-            'wubalubadubdub',
-            views.get_or_start_render(file_guid)
-        )
-
     def test_key_error_raises_attr_error_for_name(self):
         class TestGuidFile(GuidFile):
             pass
@@ -413,6 +359,7 @@ def assert_urls_equal(url1, url2):
     assert_equal(furl1, furl2)
 
 
+@mock.patch('website.addons.github.model.GitHub.repo', mock.Mock(side_effect=ApiError))
 class TestAddonFileViews(OsfTestCase):
 
     def setUp(self):
@@ -426,10 +373,26 @@ class TestAddonFileViews(OsfTestCase):
         self.project.add_addon('github', Auth(self.user))
 
         self.node_addon = self.project.get_addon('github')
+'''<<<<<<< HEAD
         self.node_addon.user_settings = self.user_settings
         self.node_addon.set_auth(external_account=self.account, user=self.user)
         self.node_addon.user = 'Queen'
         self.node_addon.repo = 'Sheer-Heart-Attack'
+=======
+        self.oauth = AddonGitHubOauthSettings(
+            github_user_id='denbarell',
+            oauth_access_token='Truthy'
+        )
+
+        self.oauth.save()
+
+        self.user_addon.oauth_settings = self.oauth
+        self.user_addon.save()
+
+        self.node_addon.user_settings = self.user_addon
+        self.node_addon.repo = 'Truth'
+        self.node_addon.user = 'E'
+>>>>>>> 141e14bbbe2bf077dc026d5ba969e654181fcfcf
         self.node_addon.save()
         self.user_settings.save()
 
@@ -442,13 +405,20 @@ class TestAddonFileViews(OsfTestCase):
     def get_mako_return(self):
         ret = serialize_node(self.project, Auth(self.user), primary=True)
         ret.update({
-            'extra': '',
+            'error': '',
             'provider': '',
-            'rendered': '',
             'file_path': '',
-            'files_url': '',
+            'sharejs_uuid': '',
+            'urls': {
+                'files': '',
+                'render': '',
+                'sharejs': '',
+                'mfr': '',
+                'gravatar': '',
+            },
+            'size': '',
+            'extra': '',
             'file_name': '',
-            'render_url': '',
             'materialized_path': '',
         })
         ret.update(rubeus.collect_addon_assets(self.project))
@@ -564,7 +534,7 @@ class TestAddonFileViews(OsfTestCase):
             expect_errors=True
         )
 
-        assert_equals(resp.status_code, 403)
+        assert_equals(resp.status_code, 401)
 
     def test_head_returns_url(self):
         path = 'the little engine that couldnt'
@@ -583,8 +553,8 @@ class TestAddonFileViews(OsfTestCase):
         self.project.save()
 
         resp = self.app.get(
-            self.project.api_url_for(
-                'addon_render_file',
+            self.project.web_url_for(
+                'addon_view_or_download_file',
                 path=path,
                 provider='github',
                 action='download'
@@ -601,8 +571,8 @@ class TestAddonFileViews(OsfTestCase):
         self.node_addon.save()
 
         resp = self.app.get(
-            self.project.api_url_for(
-                'addon_render_file',
+            self.project.web_url_for(
+                'addon_view_or_download_file',
                 path=path,
                 provider='github',
                 action='download'
@@ -613,6 +583,7 @@ class TestAddonFileViews(OsfTestCase):
 
         assert_equals(resp.status_code, 401)
 
+<<<<<<< HEAD
     def test_unconfigured_addons_raise(self):
         path = 'cloudfiles'
         self.node_addon.owner = "fakeowner"
@@ -632,6 +603,9 @@ class TestAddonFileViews(OsfTestCase):
         assert_equals(resp.status_code, 400)
 
 
+=======
+>>>>>>> 141e14bbbe2bf077dc026d5ba969e654181fcfcf
+'''
 class TestLegacyViews(OsfTestCase):
 
     def setUp(self):

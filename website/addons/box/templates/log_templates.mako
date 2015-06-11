@@ -1,14 +1,14 @@
 <script type="text/html" id="box_file_added">
 added file
 <a class="overflow log-file-link" data-bind="click: NodeActions.addonFileRedirect">
-    {{ stripLeadingSlash(params.fullPath || params.path) }}</a> to
+    {{ stripSlash(params.fullPath || params.path) }}</a> to
 Box in
 <a class="log-node-title-link overflow" data-bind="attr: {href: nodeUrl}">{{ nodeTitle }}</a>
 </script>
 
 <script type="text/html" id="box_folder_created">
 created folder
-<span class="overflow log-folder">{{ stripLeadingSlash(params.fullPath || params.path) }}</span> in
+<span class="overflow log-folder">{{ stripSlash(params.fullPath || params.path) }}</span> in
 Box in
 <a class="log-node-title-link overflow" data-bind="attr: {href: nodeUrl}">{{ nodeTitle }}</a>
 </script>
@@ -16,7 +16,7 @@ Box in
 <script type="text/html" id="box_file_updated">
 updated file
 <a class="overflow log-file-link" data-bind="click: NodeActions.addonFileRedirect">
-    {{ stripLeadingSlash(params.fullPath || params.path) }}</a> to
+    {{ stripSlash(params.fullPath || params.path) }}</a> to
 Box in
 <a class="log-node-title-link overflow" data-bind="attr: {href: nodeUrl}">{{ nodeTitle }}</a>
 </script>
@@ -24,7 +24,7 @@ Box in
 
 <script type="text/html" id="box_file_removed">
 removed {{ pathType(params.path) }} <span class="overflow">
-    {{ stripLeadingSlash(params.fullPath || params.name) }}</span> from
+    {{ stripSlash(params.fullPath || params.name) }}</span> from
 Box in
 <a class="log-node-title-link overflow" data-bind="attr: {href: nodeUrl}">{{ nodeTitle }}</a>
 </script>
