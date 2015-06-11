@@ -54,7 +54,7 @@ def send_digest(grouped_digests):
         digest_notification_ids = [message['_id'] for message in info]
         sorted_messages = group_messages_by_node(info)
 
-        if sorted_messages:
+        if sorted_messages['children']:
             logger.info('Sending email digest to user {0!r}'.format(user))
             mails.send_mail(
                 to_addr=user.username,
@@ -77,7 +77,8 @@ def remove_sent_digest_notifications(digest_notification_ids=None):
 def group_messages_by_node(notifications):
     d = NotificationsDict()
     for notification in notifications:
-        d.add_message(notification['node_lineage'], notification['message'])
+        if notification['message']:
+            d.add_message(notification['node_lineage'], notification['message'])
     return d
 
 
