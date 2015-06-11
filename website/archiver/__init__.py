@@ -26,11 +26,10 @@ class StatResult(object):
     """
     num_files = 1
 
-    def __init__(self, target_id, target_name, disk_usage=0, meta=None):
+    def __init__(self, target_id, target_name, disk_usage=0):
         self.target_id = target_id
         self.target_name = target_name
         self.disk_usage = float(disk_usage)
-        self.meta = meta
 
     def __str__(self):
         return json.dumps(self._to_dict())
@@ -40,7 +39,6 @@ class StatResult(object):
             'target_id': self.target_id,
             'target_name': self.target_name,
             'disk_usage': self.disk_usage,
-            'meta': self.meta,
         }
 
 
@@ -48,15 +46,14 @@ class AggregateStatResult(object):
     """
     Helper class to collect metadata about aribitrary depth file/addon/node file trees
     """
-    def __init__(self, target_id, target_name, targets=None, meta=None):
+    def __init__(self, target_id, target_name, targets=None):
         self.target_id = target_id
         self.target_name = target_name
         self.targets = {
-            "{0}".format(item.target_id): item
+            item.target_id: item
             for item in targets or []
             if item
         }
-        self.meta = meta
 
     def __str__(self):
         return json.dumps(self._to_dict())
@@ -71,7 +68,6 @@ class AggregateStatResult(object):
             ],
             'num_files': self.num_files,
             'disk_usage': self.disk_usage,
-            'meta': self.meta,
         }
 
     @property
