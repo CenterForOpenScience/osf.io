@@ -181,20 +181,7 @@ def get_number_downloads_unique_and_total():
 
     projects = get_projects()
 
-    contrib = {}
-
     for project in projects:
-        for person in project.contributors:
-            if not person:
-                continue
-            if person._id not in contrib:
-                contrib[person._id] = []
-            for neighbor in project.contributors:
-                if not neighbor:
-                    continue
-                if neighbor._id not in contrib[person._id]:
-                    contrib[person._id].append(neighbor._id)
-
         addon = project.get_addon('osfstorage')
 
         for filenode in OsfStorageFileNode.find(Q('node_settings', 'eq', addon) & Q('kind', 'eq', 'file')):
