@@ -27,22 +27,31 @@ def main(dry_run=True):
     cron = crontab.CronTab(user=settings.CRON_USER)
 
     analytics = ensure_item(cron, 'bash {}'.format(app_prefix('scripts/analytics.sh')))
-    analytics.hour.on(2)  # 2 a.m.
+    analytics.hour.on(2)
+    analytics.minute.on(0)  # Daily 2:00 a.m.
 
     digest = ensure_item(cron, 'bash {}'.format(app_prefix('scripts/send_digest.sh')))
-    digest.hour.on(2)  # 2 a.m.
+    digest.hour.on(2)
+    digest.minute.on(0)  # Daily 2:00 a.m.
 
     box = ensure_item(cron, 'bash {}'.format(app_prefix('scripts/refresh_box_tokens.sh')))
-    box.hour.on(2)  # 2 a.m.
+    box.hour.on(2)
+    box.minute.on(0)  # Daily 2:00 a.m.
 
     files_audit = ensure_item(cron, 'bash {}'.format(app_prefix('scripts/osfstorage/files_audit.sh')))
-    files_audit.hour.on(2)  # 2 a.m.
+    files_audit.day_of_week.on(0)
+    files_audit.hour.on(2)
+    files_audit.minute.on(0)  # Sunday 2:00 a.m.
 
     glacier_inventory = ensure_item(cron, 'bash {}'.format(app_prefix('scripts/osfstorage/glacier_inventory.sh')))
-    glacier_inventory.hour.on(0)  # 12 a.m.
+    glacier_inventory.day_of_week.on(0)
+    glacier_inventory.hour.on(0)
+    glacier_inventory.minute.on(0)  # Sunday 12:00 a.m.
 
     glacier_audit = ensure_item(cron, 'bash {}'.format(app_prefix('scripts/osfstorage/glacier_audit.sh')))
-    glacier_audit.hour.on(6)  # 6 a.m.
+    glacier_audit.day_of_week.on(0)
+    glacier_audit.hour.on(6)
+    glacier_audit.minute.on(0)  # Sunday 6:00 a.m.
 
     logger.info('Updating crontab file:')
     logger.info(cron.render())
