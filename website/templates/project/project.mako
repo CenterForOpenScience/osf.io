@@ -21,7 +21,7 @@
                     % endif
                 % endif
                 <h2 class="node-title">
-                    <span class="overflow">${node['title']}</span>
+                    <span id="nodeTitleEditable" class="overflow">${node['title']}</span>
                 </h2>
             </div>
             <div class="col-sm-6 col-md-5">
@@ -150,7 +150,7 @@
                 &nbsp;
                 <span data-bind="css: icon"></span>
                 % if node['description'] or 'write' in user['permissions']:
-                    <br /><span id="description">Description:</span> <span class="node-description overflow" data-type="textarea">${node['description']}</span>
+                    <br /><span id="description">Description:</span> <span id="nodeDescriptionEditable" class="node-description overflow" data-type="textarea">${node['description']}</span>
                 % endif
             </div>
         </div>

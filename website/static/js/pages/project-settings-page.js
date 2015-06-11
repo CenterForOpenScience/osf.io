@@ -3,26 +3,16 @@
 var $ = require('jquery');
 require('bootstrap-editable');
 
-var LogFeed = require('js/logFeed');
 var bootbox = require('bootbox');
 var Raven = require('raven-js');
 var ko = require('knockout');
 
 var ProjectSettings = require('js/projectSettings.js');
-var NodeControl = require('js/nodeControl');
 
 var $osf = require('js/osfHelpers');
 require('css/addonsettings.css');
 
 var ctx = window.contextVars;
-var nodeApiUrl = ctx.node.urls.api;
-
-// Listen for the nodeLoad event (prevents multiple requests for data)
-$('body').on('nodeLoad', function(event, data) {
-    new LogFeed('#logScope', nodeApiUrl + 'log/');
-    // Initialize nodeControl
-    new NodeControl.NodeControl('#projectScope', data);
-});
 
 // Initialize treebeard grid
 var ProjectNotifications = require('js/notificationsTreebeard.js');
@@ -63,13 +53,13 @@ $(document).ready(function() {
         });
     }
     var disableCategory = !window.contextVars.node.parentExists;
-    var categorySettingsVM = new ProjectSettings.NodeCategorySettings(
+    var categorySettingsVM = new ProjectSettings.NodeCategoryTitleDescriptionSettings(
         window.contextVars.node.category,
         categories,
         window.contextVars.node.urls.update,
         disableCategory
     );
-    ko.applyBindings(categorySettingsVM, $('#nodeCategorySettings')[0]);
+    ko.applyBindings(categorySettingsVM, $('#nodeCategoryTitleDescriptionSettings')[0]);
 
     $(window).resize(function (){ fixAffixWidth(); });
     $('.project-page .panel').on('affixed.bs.affix', function(){ fixAffixWidth(); });

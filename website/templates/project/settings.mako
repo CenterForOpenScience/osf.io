@@ -49,7 +49,7 @@
                 <div class="panel-heading">
                     <h3 id="configureNode" class="panel-title">Configure ${node['node_type'].capitalize()}</h3>
                 </div>
-                <div id="nodeCategorySettings" class="panel-body">
+                <div id="nodeCategoryTitleDescriptionSettings" class="panel-body">
                   <h5>
                     Category: <select data-bind="attr.disabled: disabled,
                                                  options: categories,
@@ -68,17 +68,38 @@
                   <span data-bind="css: messageClass, html: message"></span>
                   <span data-bind="if: disabled" class="help-block">
                     A top-level project's category cannot be changed
-                  </span>
+                  </span>               
+                  </p>
+                   
+                        <label for="title">Title</label>
+                        <input class="form-control" type="text" maxlength="200" data-bind="value: title, 
+                                                                                event: { keyup: dirtyTitle }">
+                        <button data-bind="css: {disabled: !dirtyTitle()},
+                                           click: updateTitle"
+                            class="btn btn-primary">Save Changes</button>
+                        <button data-bind="css: {disabled: !dirtyTitle()},
+                                           click: cancelUpdateTitle"
+                            class="btn btn-default">Cancel</button>
+                            <br>
+                            <span id="title-input-message"></span>
+                            <br>
 
-                    <div>
-                        <b>Title:</b> <span id="nodeTitleEditable" class="overflow">${node['title']}</span>
                         % if node['description'] or 'write' in user['permissions']:
                             <br>
-                            <b>Description:</b>
-                            <span id="nodeDescriptionEditable" class="node-description overflow" data-type="textarea">${node['description']}</span>
+                            <label for="description">Description</label>
+                            <textarea data-bind="textInput: description, 
+                                                event: { keyup: dirtyDescription }", 
+                            class="form-control resize-vertical"></textarea>
                         % endif
-                   </div>
-                    
+                
+                        <button data-bind="css: {disabled: !dirtyDescription()},
+                                            click: updateDescription"
+                            class="btn btn-primary">Save Changes</button>
+                        <button data-bind="css: {disabled: !dirtyDescription()},
+                                            click: cancelUpdateDescription"
+                            class="btn btn-default">Cancel</button>
+                            <br>
+                            <span id="description-input-message"></span>
                 </div>
 
                 % if 'admin' in user['permissions'] and not node['is_registration']:
@@ -248,8 +269,6 @@
     ${tpl}
 </%def>
 
-<%include file="log_list.mako" args="scripted=True" />
-
 % for name, capabilities in addon_capabilities.iteritems():
     <script id="capabilities-${name}" type="text/html">${capabilities}</script>
 % endfor
@@ -260,6 +279,8 @@
     <script>
       window.contextVars = window.contextVars || {};
       window.contextVars.node = window.contextVars.node || {};
+      window.contextVars.node.description = '${node['description']}';
+      window.contextVars.node.api_url = '${node['api_url']}';
       window.contextVars.node.nodeType = '${node['node_type']}';
       window.contextVars.nodeCategories = ${json.dumps(categories)};
     </script>
