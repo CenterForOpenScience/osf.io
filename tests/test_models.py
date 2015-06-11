@@ -959,6 +959,11 @@ class TestOAuth2App(OsfTestCase):
         super(TestOAuth2App, self).setUp()
         self.app = OAuth2AppFactory()
 
+    def test_must_have_owner(self):
+        with assert_raises(ValidationError):
+            app = OAuth2AppFactory(owner=None)
+            app.save()
+
     def test_client_id_auto_populates(self):
         assert_greater(len(self.app.client_id), 0)
 

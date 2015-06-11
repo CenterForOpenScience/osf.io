@@ -305,7 +305,8 @@ class OAuth2App(StoredObject):
 
     owner = fields.ForeignField('User',
                                 backref='created',
-                                index=True)
+                                index=True,
+                                required=True)
 
     # User-specified application descriptors
     name = fields.StringField(index=True, required=True)

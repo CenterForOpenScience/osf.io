@@ -79,7 +79,7 @@ class OAuth2AppSerializer(JSONAPISerializer):
                                   read_only=True)  # TODO: May change this later
 
     owner = ser.CharField(help_text="The id of the user who owns this application",
-                          read_only=True,  # TODO: The serializer does not control creating/changing this field directly; what does validation on a readonly field even mean?!
+                          read_only=True,  # Don't let user register an application in someone else's name
                           source='owner._id',
                           validators=[user_validator])
 

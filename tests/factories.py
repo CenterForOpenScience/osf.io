@@ -134,7 +134,7 @@ class OAuth2AppFactory(ModularOdmFactory):
 
     owner = SubFactory(UserFactory)
 
-    name = 'An example OAuth2 Application'
+    name = Sequence(lambda n: 'Example OAuth2 Application #{}'.format(n))
 
     home_url = 'ftp://ftp.ncbi.nlm.nih.gov/'
     callback_url = 'http://example.com'

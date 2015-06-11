@@ -144,7 +144,8 @@ class ApplicationDetail(generics.RetrieveUpdateDestroyAPIView):
     # overrides RetrieveAPIView
     def get_object(self):
         obj = get_object_or_404(OAuth2App,
-                                Q('client_id', 'eq', self.kwargs['client_id']))  # TODO: Should this display data for an application that has been deleted? (currently it will do so)
+                                Q('client_id', 'eq', self.kwargs['client_id']) &
+                                Q('active', 'eq', True))
 
         self.check_object_permissions(self.request, obj)
         return obj
