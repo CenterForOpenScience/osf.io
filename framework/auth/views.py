@@ -18,7 +18,7 @@ from framework.sessions import set_previous_url
 from framework.auth import (logout, get_user, DuplicateEmailError)
 from framework.auth.decorators import collect_auth, must_be_logged_in
 from framework.auth.forms import (MergeAccountForm, RegistrationForm,
-        ResetPasswordForm, ForgotPasswordForm, ResendConfirmationForm)
+        ResetPasswordForm, ForgotPasswordForm)
 
 from website import settings
 from website import mails
@@ -242,7 +242,8 @@ def register_user(**kwargs):
 
     """
     # Verify email address match
-    if request.json['email1'] != request.json['email2']:
+    json_data = request.get_json()
+    if str(json_data['email1']).lower() != str(json_data['email2']).lower():
         raise HTTPError(
             http.BAD_REQUEST,
             data=dict(message_long='Email addresses must match.')
@@ -306,31 +307,6 @@ def auth_register_post():
     else:
         forms.push_errors_to_status(form.errors)
         return auth_login()
-
-
-def resend_confirmation():
-    """View for resending an email confirmation email.
-    """
-    form = ResendConfirmationForm(request.form)
-    if request.method == 'POST':
-        if form.validate():
-            clean_email = form.email.data
-            user = get_user(email=clean_email)
-            if not user:
-                return {'form': form}
-            try:
-                send_confirm_email(user, clean_email)
-            except KeyError:  # already confirmed, redirect to dashboard
-                status_message = 'Email has already been confirmed.'
-                type_ = 'warning'
-            else:
-                status_message = 'Resent email to <em>{0}</em>'.format(clean_email)
-                type_ = 'success'
-            status.push_status_message(status_message, type_)
-        else:
-            forms.push_errors_to_status(form.errors)
-    # Don't go anywhere
-    return {'form': form}
 
 
 def merge_user_get(**kwargs):

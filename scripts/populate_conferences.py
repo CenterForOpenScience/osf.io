@@ -313,6 +313,8 @@ def populate_conferences():
             changed_fields = conf.save()
             if changed_fields:
                 print('Changed: {}'.format(changed_fields))
+        else:
+            print('Added new Conference: {}'.format(meeting))
 
 
 if __name__ == '__main__':

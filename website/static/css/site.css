@@ -313,7 +313,6 @@ a.btn-success.disabled {
 
 #addPointer td {
     vertical-align: middle;
-    word-break: break-all;
 }
 
 li.pointer {
@@ -444,8 +443,14 @@ img.hg-addon-icon {
     display: block;
 }
 
+/* TODO: Remove this - it's far too broad */
 h4 {
     padding-bottom: 10px;
+}
+
+/* TODO: Remove this hack, due to the h4 rule immediately prior */
+.bootbox h4 {
+    padding-bottom: 0;
 }
 
 .social-icons img {
@@ -1000,10 +1005,6 @@ h1.unavailable {
 }
 
 /* Search */
-.page-header
-    {
-        overflow: hidden;
-    }
 .add-query
     {
         width: 190px;
@@ -1773,9 +1774,7 @@ div.pydocx-center{
 
 span.edit-profile-settings {
     display: block;
-    position: absolute;
-    bottom: 0;
-    right: 0;
+    text-align: right;
 }
 
 div.profile-fullname{
@@ -1784,10 +1783,17 @@ div.profile-fullname{
     bottom: 0;
 }
 
-span#profileFullname{
-    position: absolute;
-    bottom: 0;
-    margin-bottom: 20px;
+.avatar-div {
+    display: table-cell;
+    vertical-align: middle;
+}
+
+.name-div {
+    display: table-cell;
+    vertical-align: middle;
+    padding-left: 10px;
+    margin-bottom: 10px;
+    word-break: break-all;
 }
 
 .scripted {display: none;}
@@ -1808,18 +1814,6 @@ span#profileFullname{
 .search-term-label,
 .tag {
     white-space: pre;
-}
-
-.bootbox-node-deletion-modal {
-    font-weight: normal;
-    font-size: medium;
-    line-height: normal;
-    padding-top: 10px;
-}
-
-.bootbox-node-deletion-modal ol {
-    padding-left: 40px;
-    list-style-type: disc;
 }
 
 /* Footer slide-in */
@@ -1994,6 +1988,10 @@ span#profileFullname{
 /* Project Dashboard */
 
 
+.csl-entry {
+    display: inline;
+}
+
 .addon-widget-container {
     border:1px solid #ddd;
     margin-bottom: 20px;
@@ -2097,9 +2095,8 @@ span#profileFullname{
         margin-top: 0px !important;
     }
 
-    span#profileFullname {
+    .name-div {
         font-size: 20px;
-        margin-bottom: 30px;
     }
 
 }

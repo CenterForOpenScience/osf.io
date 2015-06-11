@@ -37,7 +37,7 @@ var _figshareItemButtons = {
         // Files can be deleted if private or if parent contains more than one child
         var privateOrSiblings = (item.data.extra && item.data.extra.status !== 'public') ||
             item.parent().children.length > 1;
-        if (item.kind === 'file' && privateOrSiblings) {
+        if (item.kind === 'file' && privateOrSiblings && item.data.permissions && item.data.permissions.edit) {
             buttons.push(
                 m.component(Fangorn.Components.button, {
                     onclick: function (event) {

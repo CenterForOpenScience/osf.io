@@ -19,6 +19,7 @@ from framework import auth
 from framework.exceptions import HTTPError
 from framework.auth import User, Auth
 from framework.auth.utils import impute_names_model
+from framework.auth.exceptions import InvalidTokenError
 
 from website import mailchimp_utils
 from website.views import _rescale_ratio
@@ -2520,6 +2521,22 @@ class TestAuthViews(OsfTestCase):
         user = User.find_one(Q('username', 'eq', email))
         assert_equal(user.fullname, name)
 
+    # Regression test for https://github.com/CenterForOpenScience/osf.io/issues/2902
+    def test_register_email_case_insensitive(self):
+        url = api_url_for('register_user')
+        name, email, password = fake.name(), fake.email(), 'underpressure'
+        self.app.post_json(
+            url,
+            {
+                'fullName': name,
+                'email1': email,
+                'email2': str(email).upper(),
+                'password': password,
+            }
+        )
+        user = User.find_one(Q('username', 'eq', email))
+        assert_equal(user.fullname, name)
+
     def test_register_scrubs_username(self):
         """Usernames are scrubbed of malicious HTML when registering"""
         url = api_url_for('register_user')
@@ -2632,9 +2649,51 @@ class TestAuthViews(OsfTestCase):
             })
         assert_equal(mock_signals.signals_sent(), set([auth.signals.user_registered]))
 
-    def test_resend_confirmation_get(self):
-        res = self.app.get('/resend/')
-        assert_equal(res.status_code, 200)
+    @mock.patch('framework.auth.views.mails.send_mail')
+    def test_resend_confirmation(self, send_mail):
+        email = 'test@example.com'
+        token = self.user.add_unconfirmed_email(email)
+        self.user.save()
+        url = api_url_for('resend_confirmation')
+        header = {'address': email, 'primary': False, 'confirmed': False}
+        self.app.put_json(url, {'id': self.user._id, 'email': header}, auth=self.user.auth)
+        assert_true(send_mail.called)
+        assert_true(send_mail.called_with(
+            to_addr=email
+        ))
+        self.user.reload()
+        assert_not_equal(token, self.user.get_confirmation_token(email))
+        with assert_raises(InvalidTokenError):
+            self.user._get_unconfirmed_email_for_token(token)
+
+    def test_resend_confirmation_without_user_id(self):
+        email = 'test@example.com'
+        url = api_url_for('resend_confirmation')
+        header = {'address': email, 'primary': False, 'confirmed': False}
+        res = self.app.put_json(url, {'email': header}, auth=self.user.auth, expect_errors=True)
+        assert_equal(res.status_code, 400)
+        assert_equal(res.json['message_long'], '"id" is required')
+
+    def test_resend_confirmation_without_email(self):
+        url = api_url_for('resend_confirmation')
+        res = self.app.put_json(url, {'id': self.user._id}, auth=self.user.auth, expect_errors=True)
+        assert_equal(res.status_code, 400)
+
+    def test_resend_confirmation_not_work_for_primary_email(self):
+        email = 'test@example.com'
+        url = api_url_for('resend_confirmation')
+        header = {'address': email, 'primary': True, 'confirmed': False}
+        res = self.app.put_json(url, {'id': self.user._id, 'email': header}, auth=self.user.auth, expect_errors=True)
+        assert_equal(res.status_code, 400)
+        assert_equal(res.json['message_long'], 'Cannnot resend confirmation for confirmed emails')
+
+    def test_resend_confirmation_not_work_for_confirmed_email(self):
+        email = 'test@example.com'
+        url = api_url_for('resend_confirmation')
+        header = {'address': email, 'primary': False, 'confirmed': True}
+        res = self.app.put_json(url, {'id': self.user._id, 'email': header}, auth=self.user.auth, expect_errors=True)
+        assert_equal(res.status_code, 400)
+        assert_equal(res.json['message_long'], 'Cannnot resend confirmation for confirmed emails')
 
     def test_confirm_email_clears_unclaimed_records_and_revokes_token(self):
         unclaimed_user = UnconfirmedUserFactory()
@@ -2657,41 +2716,6 @@ class TestAuthViews(OsfTestCase):
         unclaimed_user.reload()
         assert_equal(unclaimed_user.unclaimed_records, {})
         assert_equal(len(unclaimed_user.email_verifications.keys()), 0)
-
-    @mock.patch('framework.auth.views.mails.send_mail')
-    def test_resend_confirmation_post_sends_confirm_email(self, send_mail):
-        # Make sure user has a confirmation token for their primary email
-        u = UnconfirmedUserFactory()
-        u.add_unconfirmed_email(u.username)
-        u.save()
-        self.app.post('/resend/', {'email': u.username})
-        assert_true(send_mail.called)
-        assert_true(send_mail.called_with(
-            to_addr=u.username
-        ))
-
-    # see: https://github.com/CenterForOpenScience/osf.io/issues/1492
-    @mock.patch('website.security.random_string')
-    @mock.patch('framework.auth.views.mails.send_mail')
-    def test_resend_confirmation_post_regenerates_token(self, send_mail, random_string):
-        expiration = dt.datetime.utcnow() - dt.timedelta(seconds=1)
-        random_string.return_value = '12345'
-        u = UnconfirmedUserFactory()
-        u.add_unconfirmed_email(u.username, expiration=expiration)
-        u.save()
-
-        self.app.post('/resend/', {'email': u.username})
-        confirm_url = u.get_confirmation_url(u.username, force=True)
-        assert_true(send_mail.called)
-        assert_true(send_mail.called_with(
-            to_addr=u.username,
-            confirmation_url=confirm_url
-        ))
-
-    @mock.patch('framework.auth.views.mails.send_mail')
-    def test_resend_confirmation_post_if_user_not_in_database(self, send_mail):
-        self.app.post('/resend/', {'email': 'norecord@norecord.no'})
-        assert_false(send_mail.called)
 
     def test_confirmation_link_registers_user(self):
         user = User.create_unconfirmed('brian@queen.com', 'bicycle123', 'Brian May')

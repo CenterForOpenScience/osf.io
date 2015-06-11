@@ -393,7 +393,7 @@ class User(GuidStoredObject, AddonModelMixin):
         return '<User({0!r}) with id {1!r}>'.format(self.username, self._id)
 
     def __str__(self):
-        return self.fullname
+        return self.fullname.encode('ascii', 'replace')
 
     __unicode__ = __str__
 
@@ -659,6 +659,8 @@ class User(GuidStoredObject, AddonModelMixin):
             issues.append('Passwords cannot be blank')
         elif len(raw_new_password) < 6:
             issues.append('Password should be at least six characters')
+        elif len(raw_new_password) > 256:
+            issues.append('Password should not be longer than 256 characters')
 
         if raw_new_password != raw_confirm_password:
             issues.append('Password does not match the confirmation')
@@ -681,7 +683,6 @@ class User(GuidStoredObject, AddonModelMixin):
 
     def add_unconfirmed_email(self, email, expiration=None):
         """Add an email verification token for a given email."""
-        # TODO: If the unconfirmed email is already present, refresh the token
 
         # TODO: This is technically not compliant with RFC 822, which requires
         #       that case be preserved in the "local-part" of an address. From
@@ -695,6 +696,10 @@ class User(GuidStoredObject, AddonModelMixin):
 
         validate_email(email)
 
+        # If the unconfirmed email is already present, refresh the token
+        if email in self.unconfirmed_emails:
+            self.remove_unconfirmed_email(email)
+
         token = generate_confirm_token()
 
         # handle when email_verifications is None
@@ -707,8 +712,6 @@ class User(GuidStoredObject, AddonModelMixin):
 
     def remove_unconfirmed_email(self, email):
         """Remove an unconfirmed email addresses and their tokens."""
-        if email == self.username:
-            raise PermissionsError("Can't remove primary email")
         for token, value in self.email_verifications.iteritems():
             if value.get('email') == email:
                 del self.email_verifications[token]
