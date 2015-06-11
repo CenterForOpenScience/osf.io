@@ -62,6 +62,7 @@
                                 <!-- ko foreach: profile().unconfirmedEmails() -->
                                 <tr>
                                     <td style="width:100%">{{ $data.address }}</td>
+                                    <td><a data-bind="click: $parent.resendConfirmation">resend&nbsp;confirmation</a></td>
                                     <td><a data-bind="click: $parent.removeEmail"><i class="fa fa-times text-danger"></i></a></td>
                                 </tr>
                                 <!-- /ko -->
