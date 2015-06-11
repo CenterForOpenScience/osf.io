@@ -20,7 +20,7 @@
 
     <div class="col-md-6">
         <div class="panel panel-default scripted" id="selectLists">
-            <div class="panel-heading"><h3 class="panel-title">Configure Email Preferences</h3></div>
+            <div class="panel-heading clearfix"><h3 class="panel-title">Configure Email Preferences</h3></div>
             <div class="panel-body">
                  <h3>Emails</h3>
                     </br>
@@ -46,8 +46,8 @@
                     <div data-bind="html: message, attr: {class: messageClass}"></div>
             </div><!--view model scope ends -->
         </div>
-        <div class="panel panel-default" id="selectNotificationRefTab">
-            <div class="panel-heading"><h3 class="panel-title">Configure Notification Preferences</h3></div>
+        <div class="panel panel-default">
+            <div class="panel-heading clearfix"><h3 class="panel-title">Configure Notification Preferences</h3></div>
                 <form id="selectNotifications" class="osf-treebeard-minimal">
                     <div id="grid">
                             <div class="notifications-loading"> <i class="fa fa-spinner notifications-spin"></i> <p class="m-t-sm fg-load-message"> Loading notification settings...  </p> </div>

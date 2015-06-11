@@ -1,12 +1,3 @@
-#accountSettings .panel-title, 
-#selectAddons .panel-title, 
-#selectLists .panel-title,
-#selectNotificationRefTab .panel-title,
-#configureAddons .panel-title{
-  display: inline-block;
-  float: none;
-}
-
 /* Minimal Treebeard for Configure Notifications in project and user settings */
 .osf-treebeard-minimal #tb-tbody {
     border: none;
