@@ -11,7 +11,7 @@ import itsdangerous
 from werkzeug.local import LocalProxy
 from weakref import WeakKeyDictionary
 from flask import request, make_response, jsonify
-from framework.flask import app, redirect
+from framework.flask import redirect
 
 from website import settings
 
@@ -77,47 +77,6 @@ def prepare_private_key():
     if key and not session:
         new_url = add_key_to_url(request.url, scheme, key)
         return redirect(new_url, code=http.TEMPORARY_REDIRECT)
-
-
-# todo 2-back page view queue
-# todo actively_editing date
-
-def set_previous_url(url=None):
-    """Add current URL to session history if not in excluded list; cap history
-    at set length.
-    Does nothing if a user is not logged in
-
-    """
-    if not session:
-        return
-
-    url = url or request.path
-    if any([rule(url) for rule in settings.SESSION_HISTORY_IGNORE_RULES]):
-        return
-
-    # Do nothing if this is a duplicate of the last visited URL
-    if len(session.data['history']) and url == session.data['history'][-1]:
-        return
-
-    session.data['history'].append(url)
-    while len(session.data['history']) > settings.SESSION_HISTORY_LENGTH:
-        session.data['history'].pop(0)
-    if session.persist:
-        session.save()
-
-
-def goback(n=1):
-    next_url = request.args.get('next') or request.form.get('next_url')
-    if next_url:
-        return redirect(next_url)
-    if session._get_current_object() is None:
-        return redirect('/')
-    try:
-        for _ in range(n):
-            url = session.data['history'].pop()
-    except IndexError:
-        url = '/dashboard/'
-    return redirect(url)
 
 
 def get_session():
@@ -230,9 +189,3 @@ def before_request():
             return
         except:
             pass
-
-@app.after_request
-def after_request(response):
-    # Save if session exists and not authenticated by API
-    set_previous_url()
-    return response
