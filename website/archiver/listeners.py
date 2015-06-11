@@ -5,6 +5,7 @@ from framework.tasks import handlers
 
 from website.archiver.tasks import (
     archive,
+    create_app_context,
 )
 from website.archiver import utils as archiver_utils
 from website.archiver import (
@@ -38,6 +39,7 @@ def archive_callback(dst):
 
     :param dst: registration Node
     """
+    create_app_context()
     root_job = dst.root.archive_job
     if root_job.sent or not root_job.archive_tree_finished():
         return

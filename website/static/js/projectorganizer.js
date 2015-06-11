@@ -105,7 +105,9 @@ projectOrganizer.myProjects = new Bloodhound({
 function _poTitleColumn(item) {
     var tb = this;
     var css = item.data.isSmartFolder ? 'project-smart-folder smart-folder' : '';
-    if(item.data.urls.fetch){
+    if(item.data.archiving) {
+        return  m('span', {'class': 'registration-archiving'}, item.data.name + ' [Archiving]');
+    } else if(item.data.urls.fetch){
         return m('a.fg-file-links', { 'class' : css, href : item.data.urls.fetch}, item.data.name);
     } else {
         return  m('span', { 'class' : css}, item.data.name);

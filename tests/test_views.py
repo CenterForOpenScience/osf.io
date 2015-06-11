@@ -3773,6 +3773,16 @@ class TestDashboardViews(OsfTestCase):
 
         assert_equal(len(res.json['data']), 1)
 
+    def test_archiving_nodes_appear_in_all_my_registrations(self):
+        project = ProjectFactory(creator=self.creator, public=False)
+        reg = RegistrationFactory(project=project, user=self.creator)
+
+        # Get the All My Registrations smart folder from the dashboard
+        url = api_url_for('get_dashboard', nid=ALL_MY_REGISTRATIONS_ID)
+        res = self.app.get(url, auth=self.creator.auth)
+
+        assert_equal(res.json['data'][0]['node_id'], reg._id)
+
     def test_untouched_node_is_collapsed(self):
         found_item = False
         folder = FolderFactory(creator=self.creator, public=True)

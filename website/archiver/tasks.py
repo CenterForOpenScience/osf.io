@@ -35,6 +35,7 @@ def create_app_context():
     except AssertionError:  # ignore AssertionErrors
         pass
 
+
 logger = get_task_logger(__name__)
 
 class ArchiverTask(celery.Task):
@@ -232,6 +233,7 @@ def archive(self, job_pk):
     :param user_pk: primary key of registration initatior
     :return: None
     """
+    import time; time.sleep(30)
     create_app_context()
     job = ArchiveJob.load(job_pk)
     src, dst, user = job.info()
