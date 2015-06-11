@@ -3,6 +3,7 @@ from rest_framework import serializers as ser
 from api.base.serializers import JSONAPISerializer, LinksField, Link, WaterbutlerLink
 from website.models import Node
 from framework.auth.core import Auth
+from rest_framework import serializers
 
 
 class NodeSerializer(JSONAPISerializer):
@@ -150,6 +151,8 @@ class NodePointersSerializer(JSONAPISerializer):
         auth = Auth(user)
         node = self.context['view'].get_node()
         pointer_node = Node.load(validated_data['node']['_id'])
+        if node._id == pointer_node._id:
+            return serializers.MethodNotAllowed()
         pointer = node.add_pointer(pointer_node, auth, save=True)
         return pointer
 
