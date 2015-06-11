@@ -209,7 +209,7 @@ var UserProfileViewModel = oop.extend(ChangeMessageMixin, {
             this.changeMessage('Email cannot be empty.', 'text-danger');
         }
     },
-    reSendConfirmation: function(email){
+    resendConfirmation: function(email){
         var self = this;
         self.changeMessage('', 'text-info');
         bootbox.confirm({
@@ -218,7 +218,10 @@ var UserProfileViewModel = oop.extend(ChangeMessageMixin, {
             callback: function (confirmed) {
                 if (confirmed) {
                     self.client.update(self.profile(), email).done(function () {
-                        $osf.growl('Email confirmation resent to ', '<em>' + email.address() + '<em>', 'success');
+                        $osf.growl(
+                            'Email confirmation resent to <em>' + email.address() + '<em>',
+                            'You will receive a new confirmation email at <em>' + email.address()  + '<em>. Please check your email and confirm.',
+                            'success');
                     });
                 }
             }
