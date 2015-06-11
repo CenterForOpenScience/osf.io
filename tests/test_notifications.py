@@ -1204,6 +1204,7 @@ class TestSendDigest(OsfTestCase):
 
     @mock.patch('website.mails.send_mail')
     def test_send_digest_does_not_send_empty_digest(self, mock_send_mail):
+        NotificationDigest.remove()
         d = factories.NotificationDigestFactory(
             user_id=factories.UserFactory()._id,
             timestamp=datetime.datetime.utcnow(),
