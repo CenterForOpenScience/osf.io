@@ -49,3 +49,7 @@ body {
     max-width: 100%;
     height: auto;
 }
+
+.scripted {display: none;}
+
+.pointer {cursor: pointer;}
