@@ -19,11 +19,11 @@ body {
 /* Footer
 -------------------------------------------------- */
 .footer {
-  text-shadow: 0 1px 0 #fff;
-  border-top: 1px solid #e5e5e5;
-  border-bottom: 1px solid #e5e5e5;
-  width: 100%;
-  color: #555;
+    text-shadow: 0 1px 0 #fff;
+    border-top: 1px solid #e5e5e5;
+    border-bottom: 1px solid #e5e5e5;
+    width: 100%;
+    color: #555;
 }
 
 
@@ -48,6 +48,21 @@ body {
     vertical-align: middle;
     max-width: 100%;
     height: auto;
+}
+
+/* Project page has project navigation bar, which is fixed and therefore increases the offset the anchors need */
+.project-page .anchor {
+    margin-top: -100px;
+    padding-top: 100px;
+    display: block;
+    z-index: -1;
+    position: relative;
+}
+
+.anchor {
+    margin-top: -60px;
+    padding-top: 60px;
+    display: block;
 }
 
 .scripted {display: none;}
