@@ -683,7 +683,6 @@ class User(GuidStoredObject, AddonModelMixin):
 
     def add_unconfirmed_email(self, email, expiration=None):
         """Add an email verification token for a given email."""
-        # TODO: If the unconfirmed email is already present, refresh the token
 
         # TODO: This is technically not compliant with RFC 822, which requires
         #       that case be preserved in the "local-part" of an address. From
@@ -697,6 +696,10 @@ class User(GuidStoredObject, AddonModelMixin):
 
         validate_email(email)
 
+        # If the unconfirmed email is already present, refresh the token
+        if email in self.unconfirmed_emails:
+            self.remove_unconfirmed_email(email)
+
         token = generate_confirm_token()
 
         # handle when email_verifications is None
@@ -709,8 +712,6 @@ class User(GuidStoredObject, AddonModelMixin):
 
     def remove_unconfirmed_email(self, email):
         """Remove an unconfirmed email addresses and their tokens."""
-        if email == self.username:
-            raise PermissionsError("Can't remove primary email")
         for token, value in self.email_verifications.iteritems():
             if value.get('email') == email:
                 del self.email_verifications[token]
