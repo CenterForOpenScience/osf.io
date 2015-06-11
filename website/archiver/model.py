@@ -54,7 +54,7 @@ class ArchiveJob(StoredObject):
 
     @property
     def children(self):
-        return [node.archive_job for node in self.dst_node.nodes]
+        return [node.archive_job for node in self.dst_node.nodes if node.primary]
 
     @property
     def parent(self):

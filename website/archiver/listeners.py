@@ -11,6 +11,7 @@ from website.archiver import utils as archiver_utils
 from website.archiver import (
     ARCHIVER_UNCAUGHT_ERROR,
 )
+from website.archiver.decorators import fail_archive_on_error
 
 from website.project import signals as project_signals
 from website.project import utils as project_utils
@@ -33,6 +34,7 @@ def after_register(src, dst, user):
     )
 
 @project_signals.archive_callback.connect
+@fail_archive_on_error
 def archive_callback(dst):
     """Blinker listener for updates to the archive task. When no tasks are
     pending, either fail the registration or send a success email

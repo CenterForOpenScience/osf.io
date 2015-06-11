@@ -1,5 +1,3 @@
-import json
-
 ARCHIVER_INITIATED = 'INITIATED'
 ARCHIVER_FAILURE = 'FAILURE'
 ARCHIVER_SUCCESS = 'SUCCESS'
@@ -32,7 +30,7 @@ class StatResult(object):
         self.disk_usage = float(disk_usage)
 
     def __str__(self):
-        return json.dumps(self._to_dict())
+        return str(self._to_dict())
 
     def _to_dict(self):
         return {
@@ -49,21 +47,17 @@ class AggregateStatResult(object):
     def __init__(self, target_id, target_name, targets=None):
         self.target_id = target_id
         self.target_name = target_name
-        self.targets = {
-            item.target_id: item
-            for item in targets or []
-            if item
-        }
+        self.targets = [target for target in targets if target]
 
     def __str__(self):
-        return json.dumps(self._to_dict())
+        return str(self._to_dict())
 
     def _to_dict(self):
         return {
             'target_id': self.target_id,
             'target_name': self.target_name,
             'targets': [
-                target.__str__()
+                target._to_dict()
                 for target in self.targets
             ],
             'num_files': self.num_files,
@@ -72,8 +66,8 @@ class AggregateStatResult(object):
 
     @property
     def num_files(self):
-        return sum([value.num_files for value in self.targets.values()])
+        return sum([value.num_files for value in self.targets])
 
     @property
     def disk_usage(self):
-        return sum([value.disk_usage for value in self.targets.values()])
+        return sum([value.disk_usage for value in self.targets])
