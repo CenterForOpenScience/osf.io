@@ -19,10 +19,10 @@ class UserSerializer(JSONAPISerializer):
     family_name = ser.CharField(required=False, help_text='For bibliographic citations')
     suffix = ser.CharField(required=False, help_text='For bibliographic citations')
     date_registered = ser.DateTimeField(read_only=True)
-    gravatar_url = ser.CharField(required=False, help_text='URL for the icon used to identify the user. Relies on http://gravatar.com ')
-    employment_institutions = ser.ListField(required=False, source='jobs', help_text='An array of dictionaries representing the '
+    gravatar_url = ser.CharField(read_only=True, required=False, help_text='URL for the icon used to identify the user. Relies on http://gravatar.com ')
+    employment_institutions = ser.ListField(required=False, help_text='An array of dictionaries representing the '
                                                                      'places the user has worked')
-    educational_institutions = ser.ListField(required=False, source='schools', help_text='An array of dictionaries representing the '
+    educational_institutions = ser.ListField(required=False, help_text='An array of dictionaries representing the '
                                                                          'places the user has attended school')
     social_accounts = ser.DictField(required=False, source='social', help_text='A dictionary of various social media account '
                                                                'identifiers including an array of user-defined URLs')
