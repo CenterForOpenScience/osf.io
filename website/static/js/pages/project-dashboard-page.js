@@ -33,7 +33,6 @@ $('body').on('nodeLoad', function(event, data) {
     new LogFeed('#logScope', nodeApiUrl + 'log/');
     // Initialize nodeControl
     new NodeControl.NodeControl('#projectScope', data);
-
 });
 
 // Initialize comment pane w/ it's viewmodel
