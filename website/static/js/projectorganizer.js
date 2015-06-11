@@ -1161,7 +1161,6 @@ var POToolbar = {
                     id : 'addNewFolder',
                     helpTextId : 'addFolderHelp',
                     placeholder : 'New collection name',
-                    tooltip: 'Name your new collection'
                 }, ctrl.helpText())
                 ),
             m('.col-xs-3.tb-buttons-col',
