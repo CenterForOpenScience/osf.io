@@ -12,8 +12,3 @@ class Session(StoredObject):
     date_created = fields.DateTimeField(auto_now_add=True)
     date_modified = fields.DateTimeField(auto_now=True)
     data = fields.DictionaryField()
-
-    @property
-    def persist(self):
-        """True if the object exists in the DB"""
-        return bool(self._stored_key)
