@@ -207,6 +207,8 @@ def create_waterbutler_log(payload, **kwargs):
     try:
         dest = payload['destination']
         src = payload['source']
+        print(dest)
+        print(src)
         if src is not None and dest is not None:
             dest_path = dest['materialized']
             src_path = src['materialized']
@@ -215,7 +217,13 @@ def create_waterbutler_log(payload, **kwargs):
                 src_path = os.path.dirname(src_path)
             if os.path.split(dest_path)[0] == os.path.split(src_path)[0]:
                 if dest['provider'] == src['provider']:
-                    action = LOG_ACTION_MAP['rename']
+                    if dest['name'] == src['name']:
+                        if dest['nid'] == src['nid']:
+                            return {'status': 'success'}
+                        else:
+                            pass
+                    else:
+                        action = LOG_ACTION_MAP['rename']
     except KeyError:
         pass
 
