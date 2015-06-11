@@ -148,7 +148,6 @@ def aggregate_file_tree_metadata(addon_short_name, fileobj_metadata, user):
             target_name=fileobj_metadata['name'],
             target_id=fileobj_metadata['path'].lstrip('/'),
             disk_usage=disk_usage or 0,
-            meta=fileobj_metadata,
         )
         return result
     else:
@@ -156,7 +155,6 @@ def aggregate_file_tree_metadata(addon_short_name, fileobj_metadata, user):
             target_id=fileobj_metadata['path'].lstrip('/'),
             target_name=fileobj_metadata['name'],
             targets=[aggregate_file_tree_metadata(addon_short_name, child, user) for child in fileobj_metadata.get('children', [])],
-            meta=fileobj_metadata,
         )
 
 def before_archive(node, user):
