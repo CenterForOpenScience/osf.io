@@ -1988,6 +1988,10 @@ div.profile-fullname{
 /* Project Dashboard */
 
 
+.csl-entry {
+    display: inline;
+}
+
 .addon-widget-container {
     border:1px solid #ddd;
     margin-bottom: 20px;
