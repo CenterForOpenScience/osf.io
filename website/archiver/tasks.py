@@ -212,7 +212,7 @@ def archive_node(results, job_pk):
     if stat_result.disk_usage > settings.MAX_ARCHIVE_SIZE:
         raise ArchiverSizeExceeded(result=stat_result)
     else:
-        for result in stat_result.targets.values():
+        for result in stat_result.targets:
             if not result.targets:
                 continue
             archive_addon.delay(

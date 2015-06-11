@@ -47,11 +47,7 @@ class AggregateStatResult(object):
     def __init__(self, target_id, target_name, targets=None):
         self.target_id = target_id
         self.target_name = target_name
-        self.targets = {
-            item.target_id: item
-            for item in targets or []
-            if item
-        }
+        self.targets = [target for target in targets if target]
 
     def __str__(self):
         return str(self._to_dict())
@@ -61,7 +57,7 @@ class AggregateStatResult(object):
             'target_id': self.target_id,
             'target_name': self.target_name,
             'targets': [
-                target.__str__()
+                target._to_dict()
                 for target in self.targets
             ],
             'num_files': self.num_files,
