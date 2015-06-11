@@ -46,29 +46,6 @@
     color: #738EA2;
 }
 
-.progress-no-margin {
-    margin-bottom: 0;
-}
-
-.progress-bar-content {
-    margin: 0px 10px;
-}
-
-.progress-bar-width {
-    width: 100%;
-}
-
-.sharejs-info-btn {
-    background: none;
-    outline : 0 !important;
-    box-shadow: none;
-    color: #FFFFFF;
-}
-
-.sharejs-info-btn:hover {
-    color: #D3D3D3;
-    text-decoration: none;
-}
 
 #searchPageFullBar::-webkit-input-placeholder {
    color: #738EA2;
@@ -84,52 +61,4 @@
 
 #searchPageFullBar:-ms-input-placeholder {
    color: #738EA2;
-}
-#searchControls>.row {
-    padding-top: 60px;
-}
-
-.editableControl {
-    background-color: #eee;
-    color: #999898;
-}
-.dker {
-    background-color: #DDD;
-}
-
-.osf-project-navbar .project-nav .icon {
-    font-size: 18px;
-}
-
-.osf-project-navbar .project-nav .icon.rotate-180 {
-    display: block;
-}
-
-.node-parent-title {
-    font-weight: 300;
-    margin-top: 0;
-    font-size: 22px;
-}
-.rotate-180 {
-    -ms-transform: rotate(180deg);
-    -webkit-transform: rotate(180deg);
-    transform: rotate(180deg);
-}
-.icon-dark-lg {
-    font-size: 18px;
-    color: #555;
-}
-.break-word {
-    word-wrap: break-word;
-}
-.word-break-word {
-    word-break: break-word;
-}
-.table-fixed {
-    table-layout: fixed;
-    width: 100%;
-    word-wrap: break-word;
-}
-.modal-backdrop {
-    position: fixed;
 }
