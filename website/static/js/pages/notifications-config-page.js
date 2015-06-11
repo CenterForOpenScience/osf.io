@@ -1,4 +1,3 @@
-var osfHelpers = require('js/osfHelpers');
 var $ = require('jquery');
 
 // initialize view model for configuring mailchimp subscriptions
@@ -18,8 +17,4 @@ $.ajax({
 }).fail( function() {
     $notificationsMsg.addClass('text-danger');
     $notificationsMsg.text('Could not retrieve notification settings.');
-});
-
-$(document).ready( function(){
-    osfHelpers.initializeResponsiveAffix();
 });

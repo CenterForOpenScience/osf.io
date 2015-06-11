@@ -3,7 +3,7 @@
 <%def name="content()">
     <div class="row"  href="#start">
         <div class="col-sm-3 affix-parent scrollspy">
-            <div data-spy="affix" class="osf-affix gs-sidebar hidden-print hidden-xs" role="complementary">
+            <div data-spy="affix" data-offset-top="0" class="osf-affix gs-sidebar hidden-print hidden-xs" role="complementary">
                 <ul class="nav nav-stacked nav-pills gs-sidenav">
                     <li>
                         <a  class="active" href="#start">Getting Started</a>

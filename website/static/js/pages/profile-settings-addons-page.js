@@ -103,7 +103,3 @@ $('.addon-oauth').each(function(index, elem) {
     viewModel.updateAccounts();
 });
 
-$('document').ready( function(){
-    $osf.initializeResponsiveAffix();
-});
-

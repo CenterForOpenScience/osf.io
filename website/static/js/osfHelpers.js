@@ -511,17 +511,22 @@ ko.bindingHandlers.listing = {
 };
 
 /* Responsive Affix for side nav */
-function fixAffixWidth() {
+var fixAffixWidth = debounce(function() {
+    console.log('fix affix');
     $('.affix, .affix-top, .affix-bottom').each(function (){
         var el = $(this);
         var colsize = el.parent('.affix-parent').width();
         el.outerWidth(colsize);
-    });
-}
+        });
+    }, 80, true);
 
 var initializeResponsiveAffix = function (){
-    $(window).resize(function (){ fixAffixWidth(); });
-    $('.osf-affix').on('affixed.bs.affix', function(){ fixAffixWidth();});
+    $(window).resize(function() {
+        fixAffixWidth();
+    });
+    $('.osf-affix').one('affix.bs.affix', function() {
+        fixAffixWidth();
+    });
 };
 
 // Thanks to https://stackoverflow.com/questions/10420352/converting-file-size-in-bytes-to-human-readable

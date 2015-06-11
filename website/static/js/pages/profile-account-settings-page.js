@@ -19,7 +19,3 @@ $(function() {
         '#exportAccount'
     );
 });
-
-$(document).ready( function(){
-    $osf.initializeResponsiveAffix();
-})

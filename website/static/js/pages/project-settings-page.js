@@ -50,8 +50,6 @@ $(document).ready(function() {
     );
     ko.applyBindings(categorySettingsVM, $('#nodeCategorySettings')[0]);
 
-    $osf.initializeResponsiveAffix();
-
     $('#deleteNode').on('click', function() {
         ProjectSettings.getConfirmationCode(ctx.node.nodeType);
     });
