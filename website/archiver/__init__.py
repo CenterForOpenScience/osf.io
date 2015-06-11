@@ -1,5 +1,3 @@
-import json
-
 ARCHIVER_INITIATED = 'INITIATED'
 ARCHIVER_FAILURE = 'FAILURE'
 ARCHIVER_SUCCESS = 'SUCCESS'
@@ -32,7 +30,7 @@ class StatResult(object):
         self.disk_usage = float(disk_usage)
 
     def __str__(self):
-        return json.dumps(self._to_dict())
+        return str(self._to_dict())
 
     def _to_dict(self):
         return {
@@ -56,7 +54,7 @@ class AggregateStatResult(object):
         }
 
     def __str__(self):
-        return json.dumps(self._to_dict())
+        return str(self._to_dict())
 
     def _to_dict(self):
         return {
