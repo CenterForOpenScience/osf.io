@@ -63,7 +63,7 @@ def email_digest(recipient_ids, uid, event, user, node, timestamp, **context):
         context['localized_timestamp'] = localize_timestamp(timestamp, recipient)
         message = mails.render_message(template, **context)
 
-        if user._id != recipient._id:
+        if message and user._id != recipient._id:
             digest = NotificationDigest(
                 timestamp=timestamp,
                 event=event,
