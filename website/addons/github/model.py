@@ -91,8 +91,8 @@ class GitHubProvider(ExternalProvider):
     name = "GitHub"
     short_name = "github"
 
-    client_id = github_settings.GITHUB_CLIENT_ID
-    client_secret = github_settings.GITHUB_CLIENT_SECRET
+    client_id = github_settings.CLIENT_ID
+    client_secret = github_settings.CLIENT_SECRET
 
     auth_url_base = 'https://github.com/login/oauth/authorize'
     callback_url = 'https://github.com/login/oauth/access_token'
