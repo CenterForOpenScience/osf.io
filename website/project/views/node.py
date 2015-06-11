@@ -71,7 +71,6 @@ def edit_node(auth, node, **kwargs):
 def project_new(**kwargs):
     return {}
 
-
 @must_be_logged_in
 def project_new_post(auth, **kwargs):
     user = auth.user
@@ -106,7 +105,7 @@ def project_new_post(auth, **kwargs):
             project = new_node(category, title, user, description)
         except ValidationValueError as e:
             raise HTTPError(
-                http.BAD_REQUEST, #422
+                http.BAD_REQUEST,
                 data=dict(message_long=e.message)
             )
     return {

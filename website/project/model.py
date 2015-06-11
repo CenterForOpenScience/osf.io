@@ -2267,6 +2267,14 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
 
             contributor_added.send(self, contributor=contributor, auth=auth)
             return True
+
+        #Permissions must be overridden if changed when contributor is added to parent he/she is already on a child of.
+        elif contrib_to_add in self.contributors and permissions is not None:
+            self.set_permissions(contrib_to_add, permissions)
+            if save:
+                self.save()
+
+            return False
         else:
             return False
 
