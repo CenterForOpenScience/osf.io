@@ -1534,6 +1534,12 @@ class TestNode(OsfTestCase):
         with assert_raises(ValueError):
             self.node.fork_pointer(pointer, auth=self.consolidate_auth)
 
+    def test_cannot_fork_deleted_node(self):
+        self.node.is_deleted = True
+        self.node.save()
+        fork = self.parent.fork_node(auth=self.consolidate_auth)
+        assert_false(fork.nodes)
+
     def _fork_pointer(self, content):
         pointer = self.node.add_pointer(content, auth=self.consolidate_auth)
         forked = self.node.fork_pointer(pointer, auth=self.consolidate_auth)
@@ -2524,6 +2530,21 @@ class TestProject(OsfTestCase):
             self.project._primary_key,
             contrib.unclaimed_records.keys()
         )
+
+    def test_permission_override_on_readded_contributor(self):
+
+        # A child node created
+        self.child_node = NodeFactory(parent=self.project, creator=self.consolidate_auth)
+
+        # A user is added as with read permission
+        user = UserFactory()
+        self.child_node.add_contributor(user, permissions=['read'])
+
+        # user is readded with permission admin
+        self.child_node.add_contributor(user, permissions=['read','write','admin'])
+        self.child_node.save()
+
+        assert(self.child_node.has_permission(user, 'admin'))
 
 
 class TestTemplateNode(OsfTestCase):
