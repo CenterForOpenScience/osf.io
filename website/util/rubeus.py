@@ -202,7 +202,6 @@ class NodeProjectCollector(object):
         all_my_registrations = contributed.find(
             Q('category', 'eq', 'project') &
             Q('is_deleted', 'eq', False) &
-            Q('archiving', 'eq', False) &
             Q('is_registration', 'eq', True) &
             Q('is_folder', 'eq', False) &
             # parent is not in the nodes list
@@ -215,7 +214,6 @@ class NodeProjectCollector(object):
             Q('__backrefs.parent.node.nodes', 'nin', all_my_registrations.get_keys()) &
             # exclude deleted nodes
             Q('is_deleted', 'eq', False) &
-            Q('archiving', 'eq', False) &
             # exclude registrations
             Q('is_registration', 'eq', True)
         )
@@ -368,6 +366,7 @@ class NodeProjectCollector(object):
             'registeredMeta': node.registered_meta,
             'childrenCount': children_count,
             'nodeType': node.project_or_component,
+            'archiving': node.archive_job and not node.archive_job.done,
         }
 
     def _collect_addons(self, node):

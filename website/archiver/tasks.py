@@ -35,6 +35,7 @@ def create_app_context():
     except AssertionError:  # ignore AssertionErrors
         pass
 
+
 logger = get_task_logger(__name__)
 
 class ArchiverTask(celery.Task):

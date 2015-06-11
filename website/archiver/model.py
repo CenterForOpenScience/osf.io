@@ -31,6 +31,9 @@ class ArchiveTarget(StoredObject):
     stat_result = fields.DictionaryField()
     errors = fields.StringField(list=True)
 
+    def __repr__(self):
+        return "{0}: {1}".format(self.name, self.status)
+
 class ArchiveJob(StoredObject):
 
     _id = fields.StringField(
@@ -47,13 +50,6 @@ class ArchiveJob(StoredObject):
     src_node = fields.ForeignField('node')
     initiator = fields.ForeignField('user')
 
-    # Dictonary mapping addon short name to archive status
-    # {
-    #   [addon_short_name]: {
-    #     'status': [STATUS_CONSTANT],
-    #     'errrors': []
-    #   }
-    # }
     target_addons = fields.ForeignField('archivetarget', list=True)
 
     @property
@@ -101,6 +97,19 @@ class ArchiveJob(StoredObject):
                 self.status = ARCHIVER_SUCCESS
         self.save()
 
+    def get_target(self, addon_short_name):
+        try:
+            return self.target_addons.find(Q('name', 'eq', addon_short_name))[0]
+        except IndexError:
+            return None
+
+    def _set_target(self, addon_short_name):
+        if self.get_target(addon_short_name):
+            return
+        target = ArchiveTarget(name=addon_short_name)
+        target.save()
+        self.target_addons.append(target)
+
     def set_targets(self):
         self.status = ARCHIVER_INITIATED
         addons = [
@@ -109,16 +118,14 @@ class ArchiveJob(StoredObject):
             if (addon and addon.complete and isinstance(addon, StorageAddonBase))
         ]
         for addon in addons:
-            target = ArchiveTarget(name=addon)
-            target.save()
-            self.target_addons.append(target)
+            self._set_target(addon)
         self.save()
 
     def update_target(self, addon_short_name, status, stat_result=None, errors=None):
         stat_result = stat_result._to_dict() if stat_result else {}
         errors = errors or []
 
-        target = self.target_addons.find(Q('name', 'eq', addon_short_name))[0]
+        target = self.get_target(addon_short_name)
         target.status = status
         target.errors = errors
         target.stat_result = stat_result
