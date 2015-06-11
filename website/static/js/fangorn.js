@@ -223,7 +223,7 @@ function resolveIconView(item) {
         return returnView('link');
     }
     if (item.data.nodeType === 'project') {
-        if (item.data.parentIsFolder && item.data.isFolder && item.data.isPointer) {
+        if (item.data.parentIsFolder && item.data.isFolder) {
             return returnView('collection');
         }
         if (item.data.isRegistration) {
