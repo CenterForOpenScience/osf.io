@@ -57,7 +57,7 @@
         <!--Stacked bar to visualize user activity level against total activity level of a project -->
         <!--Length of the stacked bar is normalized over all projects -->
         % if not summary['anonymous']:
-            <div class="progress progress-user-activity">
+            <div class="progress progress-bar-sm progress-user-activity">
                 % if summary['ua']:
                     <div class="progress-bar progress-bar-success ${'last' if not summary['non_ua'] else ''}" style="width: ${summary['ua']}%"  data-toggle="tooltip" title="${user_full_name} made ${summary['ua_count']} contributions"></div>
                 % endif
