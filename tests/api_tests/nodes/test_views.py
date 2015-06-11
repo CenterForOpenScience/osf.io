@@ -956,7 +956,6 @@ class TestCreateNodePointer(ApiTestCase):
         assert_equal(res.status_code, 403)
 
     def test_create_pointer_contributing_node_to_fake_node(self):
-        # expect 405, but getting 500 b/c 'NoneType' object has no attribute '_id'
         res = self.app.post(self.private_url, self.fake_payload, auth=self.basic_auth, expect_errors=True)
         assert_equal(res.status_code, 404)
 
@@ -976,7 +975,6 @@ class TestCreateNodePointer(ApiTestCase):
         assert_equal(res.json['data']['node_id'], self.public_project._id)
 
     def test_create_node_pointer_already_connected(self):
-        # expect 405, but getting 500, Pointer to node ncydk already in list
         res = self.app.post(self.public_url, self.public_payload, auth=self.basic_auth)
         assert_equal(res.status_code, 201)
         assert_equal(res.json['data']['node_id'], self.public_pointer_project._id)
