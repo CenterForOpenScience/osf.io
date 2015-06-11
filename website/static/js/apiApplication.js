@@ -77,26 +77,7 @@ ApplicationData.prototype.fromJSON = function (data) {
 };
 
 
-/*
- * Create (or update) the data for a single application. On creation, page should switch to the update behaviors.
- */
-var ApplicationViewModel = function (urls) {
-    // Read and update operations
-
-    var self = this;
-    self.content = ko.observable(new ApplicationData);
-    self.message = ko.observable();
-    self.messageClass = ko.observable();
-
-    self.dataUrl = urls.dataUrl; // Use for editing existing instances
-    self.submitUrl = urls.submitUrl; // Use for creating new instances
-
-    if (self.dataUrl){ // Support detail views
-        self.fetch(self.dataUrl);
-    }
-};
-
-ApplicationViewModel.prototype.fetch = function (url) { // TODO: duplicated in ApplicationListViewModel
+var applicationFetch = function (url) { // Function shared by list and detail ViewModels
     var self = this;
     var request = $osf.ajaxJSON("GET", url, {isCors:true});
 
@@ -126,6 +107,29 @@ ApplicationViewModel.prototype.fetch = function (url) { // TODO: duplicated in A
     });
 };
 
+
+/*
+ * Create (or update) the data for a single application. On creation, page seamlessly transitions to acting
+ * like an update page.
+ */
+var ApplicationViewModel = function (urls) {
+    // Read and update operations
+
+    var self = this;
+    self.content = ko.observable(new ApplicationData);
+    self.message = ko.observable();
+    self.messageClass = ko.observable();
+
+    self.dataUrl = urls.dataUrl; // Use for editing existing instances
+    self.submitUrl = urls.submitUrl; // Use for creating new instances
+
+    if (self.dataUrl){ // Support detail views
+        self.fetch(self.dataUrl);
+    }
+};
+
+ApplicationViewModel.prototype.fetch = applicationFetch;
+
 ApplicationViewModel.prototype.updateApplication = function () {
     // Update an existing application (has a known dataUrl) via PATCH request
     var self = this;
@@ -139,7 +143,7 @@ ApplicationViewModel.prototype.updateApplication = function () {
     request.done(function (data) {
         self.content().fromJSON(data.data);  // Update the data with what request returns- reflect server side cleaning
         self.changeMessage(
-            "Application data submitted",
+            "Application data submitted",  // TODO: Some pages (eg profile) show a one-line message for updates; others use a growl box. Current best practices?
             "text-success",
             5000);
     });
@@ -168,10 +172,11 @@ ApplicationViewModel.prototype.createApplication = function () {
 
     request.done(function (data) {
         self.content().fromJSON(data.data);  // Update the data with what request returns- reflect server side cleaning
-        self.changeMessage(
-            "Application data submitted",
-            "text-success",
-            5000);
+
+        // TODO: Window.location refreshes anyway, rendering some of this KO.js code possibly unnecessary. Either reload seamlessly in-page, or refresh; doing both is architecturally awkward.
+        // pushState is an alternative (and used in OSF search page), but not supported uniformly in older browsers
+        $osf.growl('Application created', 'Application created!', 'success');
+
 
         // Update behaviors: after creation, this should look & act like a detail view for existing application
         window.location = data.data.links.html; // Update address bar to show new detail page
@@ -179,7 +184,6 @@ ApplicationViewModel.prototype.createApplication = function () {
     });
 
     request.fail(function (xhr, status, err) {
-        //  TODO: change error messages
         $osf.growl('Error', 'Could not send request. Please refresh the page and try ' +
         'again or contact <a href="mailto: support@cos.io">support@cos.io</a> ' +
         'if the problem persists.', 'danger');
@@ -193,7 +197,7 @@ ApplicationViewModel.prototype.createApplication = function () {
 };
 
 ApplicationViewModel.prototype.changeMessage = function (text, css, timeout) {
-    // TODO: duplicated from profile.js; clean up and consolidate
+    // TODO: Some of this overlaps heavily with profile.js
     var self = this;
     self.message(text);
     var cssClass = css || 'text-info';
@@ -221,37 +225,7 @@ var ApplicationsListViewModel= function (urls) {
     self.fetch(self.listUrl);
 };
 
-ApplicationsListViewModel.prototype.fetch = function (url) {
-    var self = this;
-
-    var request = $osf.ajaxJSON("GET", url, {isCors: true});
-
-    request.done(function (data) {
-        var dataArray;
-        // Check return type to handle both list and detail views
-        if (Array.isArray(data.data)){  // ES5 dependent
-            dataArray = $.map(data.data, function (item) {
-                return new ApplicationData(item)
-            });
-        } else if (data.data){
-            dataArray = new ApplicationData(data.data);
-        }
-
-        self.content(dataArray);
-    });
-
-    request.fail(function (xhr, status, err) {
-        $osf.growl('Error', 'Data not loaded. Please refresh the page and try ' +
-        'again or contact <a href="mailto: support@cos.io">support@cos.io</a> ' +
-        'if the problem persists.', 'danger');
-
-        Raven.captureMessage('Error fetching application data', {
-            url: url,
-            status: status,
-            error: err
-        });
-    });
-};
+ApplicationsListViewModel.prototype.fetch = applicationFetch;
 
 ApplicationsListViewModel.prototype.deleteApplication = function (appData) {
     // Delete a single application
@@ -265,7 +239,7 @@ ApplicationsListViewModel.prototype.deleteApplication = function (appData) {
             if (confirmed) {
                 var request = $osf.ajaxJSON("DELETE", url, {isCors: true});
 
-                request.done(function (data) {
+                request.done(function () {
                         self.content.destroy(appData);
                         $osf.growl('Deletion', appData.name() + ' has been deleted', 'success');
                     });

@@ -3,7 +3,7 @@ import copy
 
 from nose.tools import *  # flake8: noqa
 
-from website.models import Node
+from website.models import Node, OAuth2App, User
 from website.util import api_v2_url
 
 from tests.base import ApiTestCase
@@ -22,14 +22,14 @@ def _get_application_list_url(user):
 class TestUsers(ApiTestCase):
 
     def setUp(self):
-        ApiTestCase.setUp(self)
+        super(TestUsers, self).setUp()
         self.user_one = UserFactory.build()
         self.user_one.save()
         self.user_two = UserFactory.build()
         self.user_two.save()
 
     def tearDown(self):
-        ApiTestCase.tearDown(self)
+        super(TestUsers, self).tearDown()
         Node.remove()
 
     def test_returns_200(self):
@@ -86,7 +86,7 @@ class TestUsers(ApiTestCase):
 class TestUserDetail(ApiTestCase):
 
     def setUp(self):
-        ApiTestCase.setUp(self)
+        super(TestUserDetail, self).setUp()
         self.user_one = UserFactory.build()
         self.user_one.set_password('justapoorboy')
         self.user_one.social['twitter'] = 'howtopizza'
@@ -98,7 +98,7 @@ class TestUserDetail(ApiTestCase):
         self.auth_two = (self.user_two.username, 'justapoorboy')
 
     def tearDown(self):
-        ApiTestCase.tearDown(self)
+        super(TestUserDetail, self).tearDown()
         Node.remove()
 
     def test_gets_200(self):
@@ -130,7 +130,7 @@ class TestUserDetail(ApiTestCase):
 class TestUserNodes(ApiTestCase):
 
     def setUp(self):
-        ApiTestCase.setUp(self)
+        super(TestUserNodes, self).setUp()
         self.user_one = UserFactory.build()
         self.user_one.set_password('justapoorboy')
         self.user_one.social['twitter'] = 'howtopizza'
@@ -156,7 +156,7 @@ class TestUserNodes(ApiTestCase):
         self.dashboard = DashboardFactory()
 
     def tearDown(self):
-        ApiTestCase.tearDown(self)
+        super(TestUserNodes, self).tearDown()
         Node.remove()
 
     def test_authorized_in_gets_200(self):
@@ -291,6 +291,11 @@ class TestApplicationList(ApiTestCase):
         res = self.app.get(self.user1_list_url, expect_errors=True)
         assert_equal(res.status_code, 403)
 
+    # def tearDown(self):
+    #     super(TestApplicationList, self).tearDown()
+    #     User.remove()
+    #     OAuth2App.remove()
+
 
 class TestApplicationDetail(ApiTestCase):
     def setUp(self):
@@ -356,7 +361,25 @@ class TestApplicationDetail(ApiTestCase):
                                      },
                                     res.json['data'])
 
+    def test_updating_an_instance_does_not_change_the_number_of_instances(self):
+        new_name = "The instance formerly known as Prince"
+        res = self.app.patch(self.user1_app_url,
+                             {"name": new_name},
+                             auth=self.basic_auth1)
+        assert_equal(res.status_code, 200)
+
+        list_url = _get_application_list_url(self.user1)
+        res = self.app.get(list_url, auth=self.basic_auth1)
+        assert_equal(res.status_code, 200)
+        assert_equal(len(res.json['data']),
+                     1)
+
     def test_deleting_application_flags_instance_inactive(self):
         res = self.app.delete(self.user1_app_url, auth=self.basic_auth1)
         # TODO: Will DB instance always be updated with newest result from API modification
         assert_false(self.user1_app.active)
+
+    # def tearDown(self):
+    #     super(TestApplicationDetail, self).tearDown()
+    #     User.remove()
+    #     OAuth2App.remove()

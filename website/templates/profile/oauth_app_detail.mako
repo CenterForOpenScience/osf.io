@@ -1,6 +1,18 @@
 <%inherit file="base.mako"/>
 <%def name="title()">Application Detail</%def>
 <%def name="content()">
+<style type="text/css">
+    .border-box {
+        padding: 15px 10px;
+        border-radius: 4px;
+        border: solid #DDD;
+        border-width: 1px 0;
+        line-height: 1.1;
+        display: block;
+        margin-bottom: 1em;
+    }
+</style>
+
 <h2 class="page-header">OAuth Application Settings</h2>
 
 <div class="row">
@@ -19,17 +31,15 @@
 
     <div class="col-sm-9 col-md-7">
 
-        <div id="app-detail"> <!-- TODO: Style this to stand apart from page -->
-
-            <div id="app-keys" class=""
+        <div id="app-detail">
+            <div id="app-keys" class="border-box text-right text-muted"
                  data-bind="visible: dataUrl">
-                <span class="text-muted">Client ID:</span> <span data-bind="text: content().clientId"></span><br>
-                <span class="text-muted">Client secret:</span> <span data-bind="text: content().clientSecret"></span>
+                <p><span><strong>Client ID</strong>:</span> <br><span data-bind="text: content().clientId"></span></p>
+                <p><span><strong>Client secret</strong>:</span> <br><span data-bind="text: content().clientSecret"></span></p>
             </div>
             <div id="app-fields">
                 <!-- TODO: Add revoke/ reset buttons -->
                 <form role="form">
-                    <!-- TODO: Write AJAX or KO endpoint for submission -->
                     <div class="form-group">
                         <label>Application name</label>
                         <input class="form-control" type="text" data-bind="value: content().name">

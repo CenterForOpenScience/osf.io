@@ -108,13 +108,16 @@ var ajaxJSON = function(method, url, options) {
 * @return {jQuery xhr}
 */
 var postJSON = function(url, data, success, error) {
-    var ajaxOpts = {data: data};
+    var ajaxOpts = {
+        data: data,
+        fields: {}
+    };
     // For backwards compatibility. Prefer the Promise interface to these callbacks.
     if (typeof success === 'function') {
-        ajaxOpts.success = success;
+        ajaxOpts.fields.success = success;
     }
     if (typeof error === 'function') {
-        ajaxOpts.error = error;
+        ajaxOpts.fields.error = error;
     }
     return ajaxJSON("POST", url, ajaxOpts);
 };

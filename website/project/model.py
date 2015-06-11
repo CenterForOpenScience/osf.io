@@ -300,7 +300,7 @@ class OAuth2App(StoredObject):
                                    index=True)
     client_secret = fields.StringField(default=lambda: base64.b64encode(uuid.uuid4().hex))
 
-    active = fields.BooleanField(default=True, # Set to False if application is deactivated for users
+    active = fields.BooleanField(default=True,  # Set to False if application is deactivated
                                  index=True)
 
     owner = fields.ForeignField('User',

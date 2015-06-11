@@ -105,8 +105,8 @@ class OAuth2AppSerializer(JSONAPISerializer):
         type_ = 'applications'
 
     links = LinksField({
-        'html': 'absolute_url',
-        })
+        'html': 'absolute_url'
+    })
 
     def absolute_url(self, obj):
         return obj.absolute_url

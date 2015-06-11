@@ -1,5 +1,4 @@
 from rest_framework import generics, permissions as drf_permissions
-from rest_framework.exceptions import PermissionDenied
 from rest_framework import renderers
 from modularodm import Q
 
@@ -161,4 +160,3 @@ class ApplicationDetail(generics.RetrieveUpdateDestroyAPIView):
         serializer.validated_data['owner'] = self.request.user
         # TODO: Write code to transfer ownership
         serializer.save(owner=self.request.user)
-

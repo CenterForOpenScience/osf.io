@@ -6,7 +6,6 @@ import httplib
 import httplib as http  # TODO: Inconsistent usage of aliased import
 import json
 import os
-from urlparse import urljoin
 
 from dateutil.parser import parse as parse_date
 

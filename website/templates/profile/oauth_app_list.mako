@@ -19,9 +19,6 @@
 
     <div class="col-sm-9 col-md-7">
         <a href="${web_url_for('oauth_application_register')}" role="button" class="btn btn-default pull-right"><i class="fa fa-plus"></i> Register new application</a>
-
-
-        <!-- TODO: Set initial state so divs don't flash while performing request (empty list to Full) -->
         <div id="app-list">
 
             <p data-bind="visible: (content().length == 0)">You have not registered any applications that can connect to the OSF.</p>
@@ -67,7 +64,7 @@
     ## modules. Not sure if this is a good idea.
     window.contextVars = window.contextVars || {};
     window.contextVars.urls = {
-        dataUrl: ${app_list_url}  // TODO: Hardcoded URL
+        dataUrl: ${app_list_url}
     };
 </script>
 <script src=${"/static/public/js/profile-settings-applications-list-page.js" | webpack_asset}></script>
