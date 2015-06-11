@@ -33,15 +33,6 @@ $('body').on('nodeLoad', function(event, data) {
     new LogFeed('#logScope', nodeApiUrl + 'log/');
     // Initialize nodeControl
     new NodeControl.NodeControl('#projectScope', data);
-
-    if (data.node.children) {
-        // model for components, due to simplicity did not create a new file
-        var ComponentControl = {};
-
-        // binds to component scope in render_nodes.mako
-        $osf.applyBindings(ComponentControl, '#componentScope');
-
-    }
 });
 
 // Initialize comment pane w/ it's viewmodel
