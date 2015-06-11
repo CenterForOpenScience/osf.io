@@ -4,7 +4,7 @@ var $ = require('jquery');
 var pointers = require('js/pointers');
 var AccountClaimer = require('js/accountClaimer.js');
 var $osf = require('js/osfHelpers');
-require('../../css/project-page.css');
+require('../../css/pages/project-page.css');
 
 // NodeActions is needed for rendering recent logs in nodelists (e.g. regsitrations and forks
 // pages

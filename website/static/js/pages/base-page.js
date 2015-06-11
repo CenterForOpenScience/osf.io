@@ -13,11 +13,11 @@ require('../../css/style.css');
 require('../../css/search-bar.css');
 require('font-awesome-webpack');
 
-// for explore tab
-require('../../css/explore.css');
+// for public activity page under explore nav-tag
+require('../../css/pages/public-activity-page.css');
 
 // for help tab
-require('../../css/getstart.css');
+require('../../css/pages/getting-start-page.css');
 
 var $ = require('jquery');
 require('jquery.cookie');

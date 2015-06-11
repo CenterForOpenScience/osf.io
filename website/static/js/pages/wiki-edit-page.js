@@ -4,7 +4,7 @@ var $ = require('jquery');
 var Raven = require('raven-js');
 require('bootstrap-editable');
 require('osf-panel');
-require('../../css/wiki-page.css');
+require('../../css/page/wiki-page.css');
 
 var WikiPage = require('wikiPage');
 
