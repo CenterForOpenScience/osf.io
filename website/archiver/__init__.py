@@ -52,7 +52,7 @@ class AggregateStatResult(object):
         self.target_id = target_id
         self.target_name = target_name
         self.targets = {
-            "{0}".format(item.target_id): item
+            item.target_id: item
             for item in targets or []
             if item
         }
