@@ -1201,3 +1201,16 @@ class TestSendDigest(OsfTestCase):
         remove_sent_digest_notifications(digest_notification_ids=[digest_id])
         with assert_raises(NoResultsFound):
             NotificationDigest.find_one(Q('_id', 'eq', digest_id))
+
+    @mock.patch('website.mails.send_mail')
+    def test_send_digest_does_not_send_empty_digest(self, mock_send_mail):
+        d = factories.NotificationDigestFactory(
+            user_id=factories.UserFactory()._id,
+            timestamp=datetime.datetime.utcnow(),
+            message='',
+            node_lineage=[factories.ProjectFactory()._id]
+        )
+        d.save()
+        user_groups = group_digest_notifications_by_user()
+        send_digest(user_groups)
+        assert_false(mock_send_mail.called)
