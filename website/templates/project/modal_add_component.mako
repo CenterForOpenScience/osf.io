@@ -10,6 +10,7 @@
                 <div class="modal-body">
                     <div class="form-group">
                         <input id="title" maxlength="200" placeholder="Component Title" name="title"  type="text" class='form-control'>
+                        <div id="alert"></div>
                     </div>
                     <div class="form-group">
                         <select id="category" name="category" class="form-control">

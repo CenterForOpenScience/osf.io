@@ -194,7 +194,7 @@ var ProjectViewModel = function(data) {
                     return 'Title cannot be blank.';
                 }
                 else if(value.length > 200){
-                    return 'Titles cannot be longer than 200 characters.';
+                    return 'Title cannot exceed 200 characters.';
                 }
             }
         }));
