@@ -10,6 +10,7 @@ require('../../css/bootstrap-xl.css');
 require('../../css/animate.css');
 require('../../../../node_modules/osf-style/css/base.css');
 require('../../css/style.css');
+require('../../css/search-bar.css');
 require('font-awesome-webpack');
 
 // for explore tab
