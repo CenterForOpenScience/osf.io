@@ -64,3 +64,7 @@ body {
     padding-top: 60px;
     display: block;
 }
+
+.scripted {display: none;}
+
+.pointer {cursor: pointer;}
