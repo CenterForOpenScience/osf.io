@@ -181,12 +181,9 @@ def get_number_downloads_unique_and_total():
 
     projects = get_projects()
 
-    contributors_per_project = []
-
     contrib = {}
 
     for project in projects:
-        contributors_per_project.append(len(project.contributors))
         for person in project.contributors:
             if not person:
                 continue
