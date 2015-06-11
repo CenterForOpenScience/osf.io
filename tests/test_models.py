@@ -3350,7 +3350,8 @@ class TestPointer(OsfTestCase):
         registered = self.pointer.fork_node()
         self._assert_clone(self.pointer, registered)
 
-    def test_register_with_pointer_to_registration(self):
+    @mock.patch('website.archiver.tasks.archive.si')
+    def test_register_with_pointer_to_registration(self, mock_archive):
         pointee = RegistrationFactory()
         project = ProjectFactory()
         auth = Auth(user=project.creator)
