@@ -969,7 +969,6 @@ class TestCreateNodePointer(ApiTestCase):
         res = self.app.post(self.fake_url, self.private_payload, auth=self.basic_auth_two, expect_errors=True)
         assert_equal(res.status_code, 404)
 
-
     def test_create_node_pointer_to_itself(self):
         res = self.app.post(self.public_url, self.point_to_itself_payload, auth=self.basic_auth_two, expect_errors=True)
         assert_equal(res.status_code, 403)
