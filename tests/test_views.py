@@ -3758,8 +3758,7 @@ class TestDashboardViews(OsfTestCase):
         res = self.app.get(url, auth=self.creator.auth, expect_errors=True)
         assert_equal(res.status_code, 400)
 
-    @mock.patch('website.archiver.tasks.archive.si')
-    def test_registered_components_with_are_accessible_from_dashboard(self, mock_archive):
+    def test_registered_components_with_are_accessible_from_dashboard(self):
         project = ProjectFactory(creator=self.creator, public=False)
         component = NodeFactory(creator=self.creator, parent=project)
         component.add_contributor(self.contrib, auth=Auth(self.creator))
@@ -3767,6 +3766,7 @@ class TestDashboardViews(OsfTestCase):
         project.register_node(
             None, Auth(self.creator), '', '',
         )
+
         # Get the All My Registrations smart folder from the dashboard
         url = api_url_for('get_dashboard', nid=ALL_MY_REGISTRATIONS_ID)
         res = self.app.get(url, auth=self.contrib.auth)
