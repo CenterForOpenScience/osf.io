@@ -1,15 +1,15 @@
 # encoding: utf-8
 
-USERNAME = '...'
-API_KEY = '...'
-REGION = '...'
+USERNAME = None
+API_KEY = None
+REGION = None
 
-PRIMARY_CONTAINER_NAME = '...'
-PARITY_CONTAINER_NAME = '...'
+PRIMARY_CONTAINER_NAME = None
+PARITY_CONTAINER_NAME = None
 
-GLACIER_VAULT = '...'
-AWS_ACCESS_KEY = '...'
-AWS_SECRET_KEY = '...'
-AWS_SNS_ARN = '...'
+GLACIER_VAULT = None
+AWS_ACCESS_KEY = None
+AWS_SECRET_KEY = None
+AWS_SNS_ARN = None
 
-AUDIT_TEMP_PATH = '/opt/data/files_audit'
+AUDIT_TEMP_PATH = None
