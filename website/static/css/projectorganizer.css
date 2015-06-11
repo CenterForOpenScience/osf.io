@@ -408,3 +408,7 @@ h3.category {
 .smaller {
     font-size: 75%;
 }
+
+.registration-archiving {
+    cursor: default;
+}

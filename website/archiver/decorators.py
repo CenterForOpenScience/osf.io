@@ -4,7 +4,7 @@ from framework.exceptions import HTTPError
 
 from website.project.decorators import _inject_nodes
 from website.archiver import ARCHIVER_UNCAUGHT_ERROR
-from website.archiver.utils import handle_archive_fail
+from website.archiver import utils
 
 def fail_archive_on_error(func):
 
@@ -15,11 +15,11 @@ def fail_archive_on_error(func):
         except HTTPError as e:
             _inject_nodes(kwargs)
             registration = kwargs['node']
-            handle_archive_fail(
+            utils.handle_archive_fail(
                 ARCHIVER_UNCAUGHT_ERROR,
                 registration.registered_from,
                 registration,
-                registration.owner,
+                registration.registered_user,
                 str(e)
             )
     return wrapped

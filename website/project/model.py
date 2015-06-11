@@ -1754,8 +1754,8 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
             _, message = addon.after_register(original, registered, auth.user)
             if message:
                 status.push_status_message(message)
-        registered.nodes = []
 
+        registered.nodes = []
         for node_contained in original.nodes:
             if not node_contained.is_deleted:
                 registered_node = node_contained.register_node(
@@ -1763,12 +1763,6 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
                 )
                 if registered_node is not None:
                     registered.nodes.append(registered_node)
-
-        for node_contained in original.nodes:
-            if not node_contained.is_deleted:
-                node_contained.register_node(
-                    schema, auth, template, data,
-                )
 
         original.add_log(
             action=NodeLog.PROJECT_REGISTERED,
