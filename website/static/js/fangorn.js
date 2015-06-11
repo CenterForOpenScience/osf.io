@@ -224,7 +224,7 @@ function resolveIconView(item) {
     }
     if (item.data.nodeType === 'project') {
         if (item.data.parentIsFolder && item.data.isFolder && item.data.isPointer) {
-            return returnView('collection', item.data.category);
+            return returnView('collection');
         }
         if (item.data.isRegistration) {
             return returnView('registeredProject', item.data.category);
