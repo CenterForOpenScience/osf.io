@@ -897,13 +897,19 @@ class TestCreateNodePointer(ApiTestCase):
         self.public_pointer_project = ProjectFactory(is_public=True, creator=self.user)
         self.public_url = '/v2/nodes/{}/pointers/'.format(self.public_project._id)
         self.public_payload = {'node_id': self.public_pointer_project._id}
+        self.fake_url = '/v2/nodes/{}/pointers/'.format('fdxlq')
         self.fake_payload = {'node_id': 'fdxlq'}
         self.point_to_itself_payload = {'node_id': self.public_project._id }
+
 
         self.user_two = UserFactory.build()
         self.user_two.set_password('password')
         self.user_two.save()
         self.basic_auth_two = (self.user_two.username, 'password')
+
+        self.user_two_project = ProjectFactory(is_public=True, creator=self.user_two)
+        self.user_two_url = '/v2/nodes/{}/pointers/'.format(self.user_two_project._id)
+        self.user_two_payload = {'node_id': self.user_two_project._id}
 
     def test_creates_public_node_pointer_logged_out(self):
         res = self.app.post(self.public_url, self.public_payload, expect_errors = True)
@@ -936,36 +942,50 @@ class TestCreateNodePointer(ApiTestCase):
         res = self.app.post(self.private_url, self.private_payload, auth=self.basic_auth_two, expect_errors=True)
         assert_equal(res.status_code, 403)
 
-    def test_create_fake_pointer_logged_out(self):
-        res = self.app.post(self.public_url, self.fake_payload, expect_errors = True)
-        # This is 403 instead of 401 because basic authentication is only for unit tests and, in order to keep from
-        # presenting a basic authentication dialog box in the front end. We may change this as we understand CAS
-        # a little better
+    # ===========================================================
+
+    def test_create_node_pointer_non_contributing_node_to_contributing_node(self):
+        res = self.app.post(self.private_url, self.user_two_payload, auth=self.basic_auth_two, expect_errors=True)
         assert_equal(res.status_code, 403)
 
-    def test_create_fake_pointer_logged_in_non_contrib(self):
-        res = self.app.post(self.public_url, self.fake_payload, auth=self.basic_auth_two, expect_errors = True)
-        # This is 403 instead of 401 because basic authentication is only for unit tests and, in order to keep from
-        # presenting a basic authentication dialog box in the front end. We may change this as we understand CAS
-        # a little better
+    def test_create_node_pointer_contributing_node_to_non_contributing_node(self):
+        res = self.app.post(self.private_url, self.user_two_payload, auth=self.basic_auth)
+        assert_equal(res.status_code, 201)
+        assert_equal(res.json['data']['node_id'], self.user_two_project._id)
+
+    def test_create_pointer_non_contributing_node_to_fake_node(self):
+        res = self.app.post(self.private_url, self.fake_payload, auth=self.basic_auth_two, expect_errors=True)
         assert_equal(res.status_code, 403)
 
-    def test_create_fake_pointer_logged_in_contrib(self):
-        res = self.app.post(self.public_url, self.fake_payload, auth=self.basic_auth, expect_errors = True)
-        # This is 403 instead of 401 because basic authentication is only for unit tests and, in order to keep from
-        # presenting a basic authentication dialog box in the front end. We may change this as we understand CAS
-        # a little bettergit stat
-        assert_equal(res.status_code, 405) # getting 500 error
+    def test_create_pointer_contributing_node_to_fake_node(self):
+        # expect 405, but getting 500 b/c 'NoneType' object has no attribute '_id'
+        res = self.app.post(self.private_url, self.fake_payload, auth=self.basic_auth, expect_errors=True)
+        assert_equal(res.status_code, 405)
 
-    def test_create_pointer_to_itself(self):
-        res = self.app.post(self.public_url, self.fake_payload, auth=self.basic_auth, expect_errors = True)
-        # This is 403 instead of 401 because basic authentication is only for unit tests and, in order to keep from
-        # presenting a basic authentication dialog box in the front end. We may change this as we understand CAS
-        # a little better
-        assert_equal(res.status_code, 405) # getting 500 error
+    def test_create_fake_node_pointing_to_contributing_node(self):
+        res = self.app.post(self.fake_url, self.private_payload, auth=self.basic_auth, expect_errors=True)
+        assert_equal(res.status_code, 404)
+
+        res = self.app.post(self.fake_url, self.private_payload, auth=self.basic_auth_two, expect_errors=True)
+        assert_equal(res.status_code, 404)
 
 
+    def test_create_node_pointer_to_itself(self):
+        res = self.app.post(self.public_url, self.point_to_itself_payload, auth=self.basic_auth_two, expect_errors=True)
+        assert_equal(res.status_code, 403)
 
+        res = self.app.post(self.public_url, self.point_to_itself_payload, auth=self.basic_auth)
+        assert_equal(res.status_code, 201)
+        assert_equal(res.json['data']['node_id'], self.public_project._id)
+
+    def test_create_node_pointer_already_connected(self):
+        # expect 405, but getting 500, Pointer to node ncydk already in list
+        res = self.app.post(self.public_url, self.public_payload, auth=self.basic_auth)
+        assert_equal(res.status_code, 201)
+        assert_equal(res.json['data']['node_id'], self.public_pointer_project._id)
+
+        res = self.app.post(self.public_url, self.public_payload, auth=self.basic_auth, expect_errors=True)
+        assert_equal(res.status_code, 405)
 
 class TestNodeFilesList(ApiTestCase):
 
@@ -1181,8 +1201,3 @@ class TestDeleteNodePointer(ApiTestCase):
 
         res = self.app.delete(url, auth=self.basic_auth_two, expect_errors=True)
         assert_equal(res.status_code, 405)
-
-
-
-
-
