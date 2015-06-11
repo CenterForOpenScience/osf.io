@@ -2,7 +2,7 @@
 
 import os
 import json
-import codecs
+import uuid
 import httplib
 import functools
 
@@ -16,7 +16,6 @@ from framework.auth import Auth
 from framework.sessions import session
 from framework.sentry import log_exception
 from framework.exceptions import HTTPError
-from framework.render.tasks import build_rendered_html
 from framework.auth.decorators import must_be_logged_in, must_be_signed
 
 from website import mails
@@ -25,6 +24,7 @@ from website.project import decorators
 from website.addons.base import exceptions
 from website.models import User, Node, NodeLog
 from website.util import rubeus
+from website.profile.utils import get_gravatar
 from website.project.utils import serialize_node
 from website.project.decorators import must_be_valid_project, must_be_contributor_or_public
 
@@ -286,26 +286,6 @@ def create_waterbutler_log(payload, **kwargs):
     return {'status': 'success'}
 
 
-def get_or_start_render(file_guid, start_render=True):
-    try:
-        file_guid.enrich()
-    except exceptions.AddonEnrichmentError as error:
-        return error.as_html()
-
-    try:
-        return codecs.open(file_guid.mfr_cache_path, 'r', 'utf-8').read()
-    except IOError:
-        if start_render:
-            # Start rendering job if requested
-            build_rendered_html(
-                file_guid.mfr_download_url,
-                file_guid.mfr_cache_path,
-                file_guid.mfr_temp_path,
-                file_guid.public_download_url
-            )
-    return None
-
-
 @must_be_valid_project
 def addon_view_or_download_file_legacy(**kwargs):
     query_params = request.args.to_dict()
@@ -361,85 +341,13 @@ def addon_view_or_download_file(auth, path, provider, **kwargs):
 
     node_addon = node.get_addon(provider)
 
-    if not path or not node_addon:
-        raise HTTPError(httplib.BAD_REQUEST)
-
-    if not node_addon.has_auth:
-        raise HTTPError(httplib.FORBIDDEN)
-
-    if not path.startswith('/'):
-        path = '/' + path
-
-    file_guid, created = node_addon.find_or_create_file_guid(path)
-
-    if file_guid.guid_url != request.path:
-        guid_url = furl.furl(file_guid.guid_url)
-        guid_url.args.update(extras)
-        return redirect(guid_url)
-
-    file_guid.maybe_set_version(**extras)
-
-    if request.method == 'HEAD':
-        download_url = furl.furl(file_guid.download_url)
-        download_url.args.update(extras)
-        download_url.args['accept_url'] = 'false'
-        return make_response(('', 200, {'Location': download_url.url}))
-
-    if action == 'download':
-        download_url = furl.furl(file_guid.download_url)
-        download_url.args.update(extras)
-
-        return redirect(download_url.url)
-
-    return addon_view_file(auth, node, node_addon, file_guid, extras)
-
-
-def addon_view_file(auth, node, node_addon, file_guid, extras):
-    render_url = node.api_url_for(
-        'addon_render_file',
-        path=file_guid.waterbutler_path.lstrip('/'),
-        provider=file_guid.provider,
-        render=True,
-        **extras
-    )
-
-    ret = serialize_node(node, auth, primary=True)
-
-    # Disable OSF Storage file deletion in DISK_SAVING_MODE
-    if settings.DISK_SAVING_MODE and node_addon.config.short_name == 'osfstorage':
-        ret['user']['can_edit'] = False
-
-    ret.update({
-        'provider': file_guid.provider,
-        'render_url': render_url,
-        'file_path': file_guid.waterbutler_path,
-        'files_url': node.web_url_for('collect_file_trees'),
-        'rendered': get_or_start_render(file_guid),
-        # Note: must be called after get_or_start_render. This is really only for github
-        'extra': json.dumps(getattr(file_guid, 'extra', {})),
-        #NOTE: get_or_start_render must be called first to populate name
-        'file_name': getattr(file_guid, 'name', os.path.split(file_guid.waterbutler_path)[1]),
-        'materialized_path': getattr(file_guid, 'materialized', file_guid.waterbutler_path),
-    })
-
-    ret.update(rubeus.collect_addon_assets(node))
-    return ret
-
-
-@must_be_valid_project
-@must_be_contributor_or_public
-def addon_render_file(auth, path, provider, **kwargs):
-    node = kwargs.get('node') or kwargs['project']
-
-    node_addon = node.get_addon(provider)
-
     if not path:
         raise HTTPError(httplib.BAD_REQUEST)
 
     if not node_addon:
         raise HTTPError(httplib.BAD_REQUEST, {
             'message_short': 'Bad Request',
-            'message_long': 'The add-on containing this file is no longer attached to the {}.'.format(node.project_or_component)
+            'message_long': 'The add-on containing this file is no longer connected to the {}.'.format(node.project_or_component)
         })
 
     if not node_addon.has_auth:
@@ -457,8 +365,80 @@ def addon_render_file(auth, path, provider, **kwargs):
     if not path.startswith('/'):
         path = '/' + path
 
-    file_guid, created = node_addon.find_or_create_file_guid(path)
+    guid_file, created = node_addon.find_or_create_file_guid(path)
 
-    file_guid.maybe_set_version(**request.args.to_dict())
+    if guid_file.guid_url != request.path:
+        guid_url = furl.furl(guid_file.guid_url)
+        guid_url.args.update(extras)
+        return redirect(guid_url)
 
-    return get_or_start_render(file_guid)
+    guid_file.maybe_set_version(**extras)
+
+    if request.method == 'HEAD':
+        download_url = furl.furl(guid_file.download_url)
+        download_url.args.update(extras)
+        download_url.args['accept_url'] = 'false'
+        return make_response(('', 200, {'Location': download_url.url}))
+
+    if action == 'download':
+        download_url = furl.furl(guid_file.download_url)
+        download_url.args.update(extras)
+
+        return redirect(download_url.url)
+
+    return addon_view_file(auth, node, node_addon, guid_file, extras)
+
+
+def addon_view_file(auth, node, node_addon, guid_file, extras):
+    # TODO: resolve circular import issue
+    from website.addons.wiki import settings as wiki_settings
+
+    ret = serialize_node(node, auth, primary=True)
+
+    # Disable OSF Storage file deletion in DISK_SAVING_MODE
+    if settings.DISK_SAVING_MODE and node_addon.config.short_name == 'osfstorage':
+        ret['user']['can_edit'] = False
+
+    try:
+        guid_file.enrich()
+    except exceptions.AddonEnrichmentError as e:
+        error = e.as_html()
+    else:
+        error = None
+
+    if guid_file._id not in node.file_guid_to_share_uuids:
+        node.file_guid_to_share_uuids[guid_file._id] = uuid.uuid4()
+        node.save()
+
+    if ret['user']['can_edit']:
+        sharejs_uuid = str(node.file_guid_to_share_uuids[guid_file._id])
+    else:
+        sharejs_uuid = None
+
+    size = getattr(guid_file, 'size', None)
+    if size is None:  # Size could be 0 which is a falsey value
+        size = 9966699  # if we dont know the size assume its to big to edit
+
+    ret.update({
+        'error': error.replace('\n', '') if error else None,
+        'provider': guid_file.provider,
+        'file_path': guid_file.waterbutler_path,
+        'panels_used': ['edit', 'view'],
+        'sharejs_uuid': sharejs_uuid,
+        'urls': {
+            'files': node.web_url_for('collect_file_trees'),
+            'render': guid_file.mfr_render_url,
+            'sharejs': wiki_settings.SHAREJS_URL,
+            'mfr': settings.MFR_SERVER_URL,
+            'gravatar': get_gravatar(auth.user, 25),
+        },
+        # Note: must be called after get_or_start_render. This is really only for github
+        'size': size,
+        'extra': json.dumps(getattr(guid_file, 'extra', {})),
+        #NOTE: get_or_start_render must be called first to populate name
+        'file_name': getattr(guid_file, 'name', os.path.split(guid_file.waterbutler_path)[1]),
+        'materialized_path': getattr(guid_file, 'materialized', guid_file.waterbutler_path),
+    })
+
+    ret.update(rubeus.collect_addon_assets(node))
+    return ret

@@ -38,6 +38,12 @@ ALIASES = {
     'total': 'Total'
 }
 
+# Prevent tokenizing and stop word removal.
+NOT_ANALYZED_PROPERTY = {'type': 'string', 'index': 'not_analyzed'}
+
+# Perform stemming on the field it's applied to.
+ENGLISH_ANALYZER_PROPERTY = {'type': 'string', 'analyzer': 'english'}
+
 INDEX = settings.ELASTIC_INDEX
 
 try:
@@ -319,17 +325,20 @@ def delete_index(index):
 @requires_search
 def create_index(index=INDEX):
     '''Creates index with some specified mappings to begin with,
-    all of which are applied to all projects, components, and registrations'''
-    mapping = {
-        'properties': {
-            'tags': {
-                'type': 'string',
-                'index': 'not_analyzed',
-            },
-        }
-    }
+    all of which are applied to all projects, components, and registrations.
+    '''
+    document_types = ['project', 'component', 'registration', 'user']
+    project_like_types = ['project', 'component', 'registration']
+    analyzed_fields = ['title', 'description']
+
     es.indices.create(index, ignore=[400])
-    for type_ in ['project', 'component', 'registration', 'user']:
+    for type_ in document_types:
+        mapping = {'properties': {'tags': NOT_ANALYZED_PROPERTY}}
+        if type_ in project_like_types:
+            analyzers = {field: ENGLISH_ANALYZER_PROPERTY
+                         for field in analyzed_fields}
+            mapping['properties'].update(analyzers)
+
         es.indices.put_mapping(index=index, doc_type=type_, body=mapping, ignore=[400, 404])
 
 
@@ -356,6 +365,17 @@ def search_contributor(query, page=0, size=10, exclude=[], current_user=None):
     """
     start = (page * size)
     items = re.split(r'[\s-]+', query)
+
+    normalized_items = []
+    for item in items:
+        try:
+            normalized_item = six.u(item)
+        except TypeError:
+            normalized_item = item
+        normalized_item = unicodedata.normalize('NFKD', normalized_item).encode('ascii', 'ignore')
+        normalized_items.append(normalized_item)
+    items = normalized_items
+
     query = ''
 
     query = "  AND ".join('{}*~'.format(re.escape(item)) for item in items) + \

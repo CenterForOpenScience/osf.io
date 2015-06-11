@@ -24,6 +24,7 @@ function FileViewTreebeard(data) {
         title: undefined,
         hideColumnTitles: true,
         multiselect : false,
+        toolbarComponent : null,
         placement : 'fileview',
         allowMove : false,
         filterTemplate: function () {
@@ -47,13 +48,8 @@ function FileViewTreebeard(data) {
             var path = '';
             tb.fangornFolderIndex = 0;
             tb.fangornFolderArray = [''];
-            if (window.contextVars.file.path && window.contextVars.file.provider !== 'figshare') {
-                if (window.contextVars.file.provider === 'osfstorage' || window.contextVars.file.provider === 'box') {
-                    path = decodeURIComponent(window.contextVars.file.extra.fullPath);
-                } else {
-                    path = decodeURIComponent(window.contextVars.file.path);
-                }
-                tb.fangornFolderArray = path.split('/');
+            if (window.contextVars.file.path) {
+                tb.fangornFolderArray = window.contextVars.file.materializedPath.split('/');
                 if (tb.fangornFolderArray.length > 1) {
                     tb.fangornFolderArray.splice(0, 1);
                 }

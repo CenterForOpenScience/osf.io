@@ -197,7 +197,11 @@ function resolveIconView(item) {
     function returnView(type, category) {
         var iconType = projectIcons[type];
         if (type === 'component' || type === 'registeredComponent') {
-            iconType = componentIcons[category];
+            if (!item.data.permissions.view) {
+                return null;
+            } else {
+                iconType = componentIcons[category];
+            }
         } else if (type === 'project' || type === 'registeredProject') {
             iconType = projectIcons[category];
         }
@@ -209,16 +213,19 @@ function resolveIconView(item) {
         var template = m('span', { 'class' : iconType});
         return template;
     }
-    if (item.data.nodeType === 'smartFolder') {
-        return returnView('smartCollection');
-    }
-    if (item.data.nodeType === 'folder') {
+    if (item.data.isDashboard) {
         return returnView('collection');
     }
-    if (item.data.nodeType === 'pointer' && item.parent().data.nodeType !== 'folder') {
+    if (item.data.isSmartFolder) {
+        return returnView('smartCollection');
+    }
+    if ((item.data.nodeType === 'pointer' && item.parent().data.nodeType !== 'folder') || (item.data.isPointer && !item.parent().data.isFolder)) {
         return returnView('link');
     }
     if (item.data.nodeType === 'project') {
+        if (item.data.parentIsFolder && item.data.isFolder) {
+            return returnView('collection');
+        }
         if (item.data.isRegistration) {
             return returnView('registeredProject', item.data.category);
         } else {
@@ -246,7 +253,6 @@ function resolveIconView(item) {
  * @private
  */
 function _fangornResolveIcon(item) {
-    var projectIcons = iconmap.projectIcons;
     var privateFolder =  m('div.file-extension._folder_delete', ' '),
         pointerFolder = m('i.fa.fa-link', ' '),
         openFolder  = m('i.fa.fa-folder-open', ' '),
@@ -747,13 +753,15 @@ function _fangornDropzoneSuccess(treebeard, file, response) {
  */
 var DEFAULT_ERROR_MESSAGE = 'Could not upload file. The file may be invalid ' +
     'or the file folder has been deleted.';
-function _fangornDropzoneError(treebeard, file, message) {
+function _fangornDropzoneError(treebeard, file, message, xhr) {
     var tb = treebeard;
     // File may either be a webkit Entry or a file object, depending on the browser
     // On Chrome we can check if a directory is being uploaded
     var msgText;
     if (file.isDirectory) {
         msgText = 'Cannot upload directories, applications, or packages.';
+    } else if (xhr.status === 507) {
+        msgText = 'Cannot upload file due to insufficient storage.';
     } else {
         msgText = DEFAULT_ERROR_MESSAGE;
     }
@@ -1169,20 +1177,29 @@ function _fangornResolveRows(item) {
         filter : true,
         custom : _fangornTitleColumn
     });
-    if (item.data.provider === 'osfstorage' && item.data.kind === 'file') {
-        default_columns.push({
-            data : 'downloads',
-            sortInclude : false,
-            filter : false,
-            custom: function() { return item.data.extra ? item.data.extra.downloads.toString() : ''; }
+
+    if (item.data.kind === 'file') {
+        default_columns.push(
+        {
+            data : 'size',  // Data field name
+            filter : true,
+            custom : function() {return item.data.size ? $osf.humanFileSize(item.data.size, true) : '';}
         });
-    } else {
-        default_columns.push({
-            data : 'downloads',
-            sortInclude : false,
-            filter : false,
-            custom : function() { return m(''); }
-        });
+        if (item.data.provider === 'osfstorage') {
+            default_columns.push({
+                data : 'downloads',
+                sortInclude : false,
+                filter : false,
+                custom: function() { return item.data.extra ? item.data.extra.downloads.toString() : ''; }
+            });
+        } else {
+            default_columns.push({
+                data : 'downloads',
+                sortInclude : false,
+                filter : false,
+                custom : function() { return m(''); }
+            });
+        }
     }
     configOption = resolveconfigOption.call(this, item, 'resolveRows', [item]);
     return configOption || default_columns;
@@ -1199,9 +1216,13 @@ function _fangornColumnTitles () {
     columns.push(
     {
         title: 'Name',
-        width : '90%',
+        width : '80%',
         sort : true,
         sortType : 'text'
+    }, {
+        title : 'Size',
+        width : '10%',
+        sort : false
     }, {
         title : 'Downloads',
         width : '10%',
@@ -1460,7 +1481,7 @@ var FGItemButtons = {
                     }, 'Delete'));
 
             }
-        } else if(item.data.provider) {
+        } else if(item.data.provider && item.children.length !== 0) {
             rowButtons.push(
                 m.component(FGButton, {
                     onclick: function(event) { _downloadZipEvent.call(tb, event, item); },
