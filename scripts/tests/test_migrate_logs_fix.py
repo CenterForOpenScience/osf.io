@@ -19,9 +19,9 @@ class TestMigrateLogs(OsfTestCase):
             log.save()
         project1.save()
 
-        list = get_targets()
-        assert list is not None
-        assert len(list) is 1
+        targets = get_targets()
+        assert targets is not None
+        assert len(targets) is 1
 
     def test_do_migration(self):
         project = ProjectFactory()
@@ -36,8 +36,8 @@ class TestMigrateLogs(OsfTestCase):
                 project.logs.append(log)
         project.save()
 
-        list = get_targets()
-        do_migration(list)
+        targets = get_targets()
+        do_migration(targets)
 
         logs = [each for each in project.logs if each.action == 'contributor_added']
         assert len(logs) is 0

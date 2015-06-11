@@ -17,12 +17,16 @@ def do_migration(records, dry=False):
         count = 0
         if not dry:
             log.should_hide = False
-            for node in log.logged:
+            for node in log.node__logged:
                 if node != log.node:
                     node.logs.remove(log)
                     count += 1
-                    node.save()
-                    log.was_connected_to.append(node)
+                    try:
+                        node.save()
+                    except Exception as err:  # Allow script to continue if error occurs
+                        logger.exception(err)
+                    else:
+                        log.was_connected_to.append(node)
 
             log.save()
 
