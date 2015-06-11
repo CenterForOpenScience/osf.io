@@ -66,8 +66,8 @@ class AggregateStatResult(object):
 
     @property
     def num_files(self):
-        return sum([value.num_files for value in self.targets.values()])
+        return sum([value.num_files for value in self.targets])
 
     @property
     def disk_usage(self):
-        return sum([value.disk_usage for value in self.targets.values()])
+        return sum([value.disk_usage for value in self.targets])
