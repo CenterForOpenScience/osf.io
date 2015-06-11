@@ -1196,3 +1196,4 @@ class TestDeleteNodePointer(ApiTestCase):
 
         res = self.app.delete(url, auth=self.basic_auth_two, expect_errors=True)
         assert_equal(res.status_code, 405)
+        
