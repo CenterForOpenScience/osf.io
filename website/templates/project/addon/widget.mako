@@ -1,7 +1,7 @@
 <div class="panel panel-default" name="${short_name}">
 
             <div class="panel-heading clearfix">
-                <div class="panel-title">${full_name}</div>
+                <h3 class="panel-title">${full_name}</h3>
                 <div class="pull-right">
                     % if has_page:
                        <a href="${node['url']}${short_name}/" class="btn">  <i class="fa fa-external-link"></i> </a>

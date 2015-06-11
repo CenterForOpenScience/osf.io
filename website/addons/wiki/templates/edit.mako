@@ -21,7 +21,7 @@
         <!-- Menu with toggle normal -->
         <div class="osf-panel panel panel-default panel-default hidden-xs ${'' if 'menu' in panels_used else 'hidden' | n}" data-bind="css: {  'osf-panel-flex': !$root.singleVis(), reset-height : $root.singleVis() }">
             <div class="panel-heading clearfix" data-bind="css: {  'osf-panel-heading-flex': !$root.singleVis()}">
-                <div class="panel-title"> <i class="fa fa-list"> </i>  Menu </div>
+                <h3 class="panel-title"> <i class="fa fa-list"> </i>  Menu </h3>
                 <div class="pull-right"> <div class="panel-collapse"> <i class="fa fa-angle-left pointer"> </i> </div></div>
             </div>
             <div class="panel-body" data-bind="css: {  'osf-panel-body-flex': !$root.singleVis()}">
@@ -61,7 +61,7 @@
                   <div class="panel-heading clearfix" data-bind="css : { 'bordered': $root.singleVis() === 'edit' }">
                     <div class="row">
                       <div class="col-md-6">
-                           <span class="panel-title" > <i class="fa fa-pencil-square-o"> </i>   Edit </span>
+                           <h3 class="panel-title" > <i class="fa fa-pencil-square-o"> </i>   Edit </h3>
                       </div>
                         <div class="col-md-6">
                           <div class="pull-right">

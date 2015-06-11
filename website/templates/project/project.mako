@@ -182,7 +182,7 @@
 
         <div class="panel panel-default">
             <div class="panel-heading clearfix">
-                <div class="panel-title">Files</div>
+                <h3 class="panel-title">Files</h3>
                 <div class="pull-right">
                    <a href="${node['url']}files/" class="btn"> <i class="fa fa-external-link"></i> </a>
                 </div>
@@ -223,7 +223,7 @@
 
          <div class="citations panel panel-default">
             <div class="panel-heading clearfix">
-                <div class="panel-title">Citation</div>
+                <h3 class="panel-title">Citation</h3>
                 <div class="pull-right">
                     <span class="permalink">${node['display_absolute_url']}</span><a href="#" class="btn project-toggle"><i class="fa fa-angle-down"></i></a>
                 </div>
@@ -255,7 +255,7 @@
         %if node['tags'] or 'write' in user['permissions']:
          <div class="tags panel panel-default">
             <div class="panel-heading clearfix">
-                <div class="panel-title">Tags </div>
+                <h3 class="panel-title">Tags </h3>
                 <div class="pull-right">
                 </div>
             </div>
@@ -277,7 +277,7 @@
 % if ('write' in user['permissions'] and not node['is_registration']) or node['children']:
     <div class="components panel panel-default">
         <div class="panel-heading clearfix">
-            <div class="panel-title">Components </div>
+            <h3 class="panel-title">Components </h3>
             <div class="pull-right">
                 % if 'write' in user['permissions'] and not node['is_registration']:
                     <a class="btn btn-sm btn-default" data-toggle="modal" data-target="#newComponent">Add Component</a>

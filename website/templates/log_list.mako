@@ -17,7 +17,7 @@
 
         <div class="components panel panel-default">
             <div class="panel-heading clearfix">
-                <div class="panel-title">Recent Activity </div>
+                <h3 class="panel-title">Recent Activity </h3>
                 <div class="pull-right">
                 </div>
             </div>
