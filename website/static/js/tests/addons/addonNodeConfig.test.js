@@ -23,8 +23,10 @@ describe('AddonNodeConfig', () => {
     describe('AddonFolderPickerViewModel', () => {
         var settingsUrl = '/api/v1/12345/addon/config/';
         var onPickFolderSpy = sinon.spy();
+        var decodeFolderSpy = sinon.spy();
         var opts = {
-            onPickFolder: onPickFolderSpy
+            onPickFolder: onPickFolderSpy,
+            decodeFolder: decodeFolderSpy
         };
         var vm = new AddonNodeConfigVM('Fake Addon', settingsUrl, '#fakeAddonScope', '#fakeAddonPicker', opts);
         
@@ -32,6 +34,8 @@ describe('AddonNodeConfig', () => {
             it('applies overrides from the opts param if supplied', () => {
                 vm.treebeardOptions.onPickFolder();
                 assert.calledOnce(opts.onPickFolder);
+                vm.treebeardOptions.decodeFolder();
+                assert.calledOnce(opts.decodeFolder);
             });
         });
     });

@@ -4,6 +4,7 @@ var assert = require('chai').assert;
 var $ = require('jquery');
 var moment = require('moment');
 var Raven = require('raven-js');
+var bootbox = require('bootbox');
 
 var $osf = require('../osfHelpers');
 
@@ -23,6 +24,38 @@ describe('osfHelpers', () => {
             stub.restore();
         });
     });
+
+
+    describe('apiV2Url', () => {
+        it('returns correctly formatted URLs for described inputs', () => {
+            var fullUrl = $osf.apiV2Url('/nodes/abcd3/contributors/',
+                {prefix: 'http://localhost:8000/v2/'});
+            assert.equal(fullUrl, "http://localhost:8000/v2/nodes/abcd3/contributors/");
+
+            // No double slashes when apiPrefix and pathString have adjoining slashes
+            fullUrl = $osf.apiV2Url('nodes/abcd3/contributors/',
+                {prefix: 'http://localhost:8000/v2/'});
+            assert.equal(fullUrl, "http://localhost:8000/v2/nodes/abcd3/contributors/");
+
+            // User is still responsible for the trailing slash. If they omit it, it doesn't appear at end of URL
+            fullUrl = $osf.apiV2Url('/nodes/abcd3/contributors',
+                {prefix: 'http://localhost:8000/v2/'});
+            assert.notEqual(fullUrl, "http://localhost:8000/v2/nodes/abcd3/contributors/");
+
+            // Correctly handles- and encodes- URLs with parameters
+            fullUrl = $osf.apiV2Url('/nodes/abcd3/contributors/',
+                {query:
+                    {'filter[fullname]': 'bob', 'page_size':10},
+                prefix: 'https://staging2.osf.io/api/v2/'});
+            assert.equal(fullUrl, "https://staging2.osf.io/api/v2/nodes/abcd3/contributors/?filter%5Bfullname%5D=bob&page_size=10");
+
+            // Given a blank string, should return the base path (domain + port + prefix) with no extra cruft at end
+            fullUrl = $osf.apiV2Url('',
+                {prefix: 'http://localhost:8000/v2/'});
+            assert.equal(fullUrl, "http://localhost:8000/v2/");
+        });
+    });
+
 
     describe('handleJSONError', () => {
 
@@ -207,6 +240,21 @@ describe('osfHelpers', () => {
             assert.equal(fd.local, expectedLocal);
             var expectedUTC = moment.utc(date).format('YYYY-MM-DD HH:mm UTC');
             assert.equal(fd.utc, expectedUTC);
+        });
+    });
+
+    describe('confirmDangerousAction', () => {
+        var bootboxStub, callbackStub;
+        beforeEach(() => {
+            bootboxStub = new sinon.stub(bootbox, 'dialog');
+            callbackStub = new sinon.spy();
+        });
+        afterEach(() => {
+            bootboxStub.restore();
+        });
+        it('should trigger bootbox', () => {
+            $osf.confirmDangerousAction({callback: callbackStub});
+            assert.calledOnce(bootboxStub);
         });
     });
 });

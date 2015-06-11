@@ -4,6 +4,9 @@ var $ = require('jquery');
 require('jquery-blockui');
 var Raven = require('raven-js');
 var moment = require('moment');
+var URI = require('URIjs');
+var bootbox = require('bootbox');
+var iconmap = require('js/iconmap');
 
 // TODO: For some reason, this require is necessary for custom ko validators to work
 // Why?!
@@ -22,6 +25,38 @@ var GrowlBox = require('js/growlBox');
 var growl = function(title, message, type) {
     new GrowlBox(title, message, type || 'danger');
 };
+
+
+/**
+ * Generate OSF absolute URLs, including prefix and arguments. Assumes access to mako globals for pieces of URL.
+ * Can optionally pass in an object with params (name:value) to be appended to URL. Calling as:
+ *   apiV2Url("users/4urxt/applications",
+ *      {query:
+ *          {"a":1, "filter[fullname]": "lawrence"},
+ *       prefix: "https://staging2.osf.io/api/v2/"})
+ * would yield the result:
+ *  "https://staging2.osf.io/api/v2/users/4urxt/applications?a=1&filter%5Bfullname%5D=lawrence"
+ * @param {String} path The string to be appended to the absolute base path, eg "users/4urxt"
+ * @param {Object} options (optional)
+ */
+var apiV2Url = function (path, options){
+    var contextVars = window.contextVars || {};
+    var defaultPrefix = contextVars.apiV2Prefix || '';
+
+    var defaults = {
+        prefix: defaultPrefix, // Manually specify the prefix for API routes (useful for testing)
+        query: {}  // Optional query parameters to be appended to URL
+    };
+    var opts = $.extend({}, defaults, options);
+
+    var apiUrl = URI(opts.prefix);
+    var pathSegments = URI(path).segment();
+    pathSegments.forEach(function(el){apiUrl.segment(el)});  // Hack to prevent double slashes when joining base + path
+    apiUrl.query(opts.query);
+
+    return apiUrl.toString();
+};
+
 
 /**
 * Posts JSON data.
@@ -357,6 +392,46 @@ ko.bindingHandlers.anchorScroll = {
 };
 
 /**
+ * Adds class returned from iconmap to the element. The value accessor should be the
+ * category of the node.
+ * Example:
+ * <span data-bind="getIcon: 'analysis'"></span>
+ */
+ko.bindingHandlers.getIcon = {
+    init: function(elem, valueAccessor) {
+        var icon;
+        var category = valueAccessor();
+        if (Object.keys(iconmap.componentIcons).indexOf(category) >=0 ){
+            icon = iconmap.componentIcons[category];
+        }
+        else {
+            icon = iconmap.projectIcons[category];
+        }
+        $(elem).addClass(icon);
+    }
+};
+
+/**
+ * Required in render_node.mako to call getIcon. As a result of modularity there
+ * are overlapping scopes. To temporarily escape the parent scope and allow other binding
+ * stopBinding can be used. Only other option was to redo the structure of the scopes.
+ * Example:
+ * <span data-bind="stopBinding: true"></span>
+ */
+ko.bindingHandlers.stopBinding = {
+    init: function() {
+        return { controlsDescendantBindings: true };
+    }
+};
+
+/**
+ * Allows data-bind to be called without a div so the layout of the page is not effected.
+ * Example:
+ * <!-- ko stopBinding: true -->
+ */
+ko.virtualElements.allowedBindings.stopBinding = true;
+
+/**
   * A thin wrapper around ko.applyBindings that ensures that a view model
   * is bound to the expected element. Also shows the element (and child elements) if it was
   * previously hidden by applying the 'scripted' CSS class.
@@ -401,6 +476,10 @@ var LOCAL_DATEFORMAT = 'YYYY-MM-DD hh:mm A';
 var UTC_DATEFORMAT = 'YYYY-MM-DD HH:mm UTC';
 var FormattableDate = function(date) {
     if (typeof date === 'string') {
+        // If Firefox, add 'Z' to the date string (Z is timezone for UTC)
+        if(navigator.userAgent.toLowerCase().indexOf('firefox') > -1 && date.slice(-1) !== 'Z') {
+           date = date + 'Z';
+        }
         // The date as a Date object
         this.date = new Date(date);
     } else {
@@ -506,6 +585,134 @@ ko.bindingHandlers.listing = {
     }
 };
 
+// Thanks to https://stackoverflow.com/questions/10420352/converting-file-size-in-bytes-to-human-readable
+function humanFileSize(bytes, si) {
+    var thresh = si ? 1000 : 1024;
+    if(Math.abs(bytes) < thresh) {
+        return bytes + ' B';
+    }
+    var units = si ?
+        ['kB','MB','GB','TB','PB','EB','ZB','YB'] :
+        ['KiB','MiB','GiB','TiB','PiB','EiB','ZiB','YiB'];
+    var u = -1;
+    do {
+        bytes /= thresh;
+        ++u;
+    } while(Math.abs(bytes) >= thresh && u < units.length - 1);
+    return bytes.toFixed(1) + ' ' + units[u];
+}
+
+/**
+*  returns a random name from this list to use as a confirmation string
+*/
+var _confirmationString = function() {
+    // TODO: Generate a random string here instead of using pre-set values
+    //       per Jeff, use ~10 characters
+    var scientists = [
+        'Anning',
+        'Banneker',
+        'Cannon',
+        'Carver',
+        'Chappelle',
+        'Curie',
+        'Divine',
+        'Emeagwali',
+        'Fahlberg',
+        'Forssmann',
+        'Franklin',
+        'Herschel',
+        'Hodgkin',
+        'Hopper',
+        'Horowitz',
+        'Jemison',
+        'Julian',
+        'Kovalevsky',
+        'Lamarr',
+        'Lavoisier',
+        'Lovelace',
+        'Massie',
+        'McClintock',
+        'Meitner',
+        'Mitchell',
+        'Morgan',
+        'Odum',
+        'Pasteur',
+        'Pauling',
+        'Payne',
+        'Pearce',
+        'Pollack',
+        'Rillieux',
+        'Sanger',
+        'Somerville',
+        'Tesla',
+        'Tyson',
+        'Turing'
+    ];
+
+    return scientists[Math.floor(Math.random() * scientists.length)];
+};
+
+/**
+  * Confirm a dangerous action by requiring the user to enter specific text
+  *
+  * This is an abstraction over bootbox, and passes most options through to
+  * bootbox.dailog(). The exception to this is `callback`, which is called only
+  * if the user correctly confirms the action.
+  *
+  * @param  {Object} options
+  */
+var confirmDangerousAction = function (options) {
+    // TODO: Refactor this to be more interactive - use a ten-key-like interface
+    //       and display one character at a time for the user to enter. Once
+    //       they enter that character, display another. This will require more
+    //       sustained attention and will prevent the user from copy/pasting a
+    //       random string.
+
+    var confirmationString = _confirmationString();
+
+    // keep the users' callback for re-use; we'll pass ours to bootbox
+    var callback = options.callback;
+    delete options.callback;
+
+    // this is our callback
+    var handleConfirmAttempt = function () {
+        var verified = ($('#bbConfirmText').val() === confirmationString);
+
+        if (verified) {
+            callback();
+        } else {
+            growl('Verification failed', 'Strings did not match');
+        }
+    };
+
+    var defaults = {
+        title: 'Confirm action',
+        confirmText: confirmationString,
+        buttons: {
+            cancel: {
+                label: 'Cancel',
+                className: 'btn-default'
+            },
+            success: {
+                label: 'Confirm',
+                className: 'btn-success',
+                callback: handleConfirmAttempt
+            }
+        },
+        message: ''
+    };
+
+    var bootboxOptions = $.extend({}, defaults, options);
+
+    bootboxOptions.message += [
+        '<p>Type the following to continue: <strong>',
+        confirmationString,
+        '</strong></p>',
+        '<input id="bbConfirmText" class="form-control">'
+    ].join('');
+
+    bootbox.dialog(bootboxOptions);
+};
 
 // Also export these to the global namespace so that these can be used in inline
 // JS. This is used on the /goodbye page at the moment.
@@ -517,6 +724,7 @@ module.exports = window.$.osf = {
     handleEditableError: handleEditableError,
     block: block,
     growl: growl,
+    apiV2Url: apiV2Url,
     unblock: unblock,
     joinPrompts: joinPrompts,
     mapByProperty: mapByProperty,
@@ -529,5 +737,7 @@ module.exports = window.$.osf = {
     debounce: debounce,
     htmlEscape: htmlEscape,
     htmlDecode: htmlDecode,
-    tableResize: tableResize
+    tableResize: tableResize,
+    humanFileSize: humanFileSize,
+    confirmDangerousAction: confirmDangerousAction
 };
