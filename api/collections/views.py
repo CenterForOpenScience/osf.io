@@ -28,28 +28,25 @@ class CollectionMixin(object):
 class CollectionList(generics.ListCreateAPIView, ListFilterMixin, ODMFilterMixin):
     """Projects and components.
 
-    By default, a GET will return a list of public nodes, sorted by date_modified. You can filter Collection by their
-    title
+    By default, a GET will return a list of collections, sorted by date_modified. You can filter Collection by their
+    title. Note that you must be logged in to access it
     """
     permission_classes = (
-        drf_permissions.IsAuthenticatedOrReadOnly,
+        drf_permissions.IsAuthenticated,
     )
     serializer_class = CollectionSerializer
     ordering = ('-date_modified',)  # default ordering
 
     # overrides ODMFilterMixin
     def get_default_odm_query(self):
+        user = self.request.user
         base_query = (
             Q('is_deleted', 'ne', True) &
-            Q('is_folder', 'eq', True)
+            Q('is_folder', 'eq', True) &
+            Q('contributors', 'icontains', user._id)
         )
-        user = self.request.user
-        permission_query = Q('is_public', 'eq', True)
-        if not user.is_anonymous():
-            permission_query = (Q('is_public', 'eq', True) | Q('contributors', 'icontains', user._id))
 
-        query = base_query & permission_query
-        return query
+        return base_query
 
     # overrides ListCreateAPIView
     def get_queryset(self):
@@ -78,12 +75,11 @@ class CollectionList(generics.ListCreateAPIView, ListFilterMixin, ODMFilterMixin
 class DashboardDetail(generics.ListCreateAPIView, ODMFilterMixin):
     """Projects and components.
 
-    By default, a GET will return a list of public nodes, sorted by date_modified. You can filter Collection by their
-    title and if they are the dashboard
+    By default, a GET will return a user's dashboard. Note that you must be logged in to access it
     """
 
     permission_classes = (
-        drf_permissions.IsAuthenticatedOrReadOnly,
+        drf_permissions.IsAuthenticated,
     )
     serializer_class = CollectionSerializer
     ordering = ('-date_modified',)  # default ordering
@@ -94,18 +90,31 @@ class DashboardDetail(generics.ListCreateAPIView, ODMFilterMixin):
             Q('is_deleted', 'ne', True) &
             Q('is_dashboard', 'eq', True)
         )
-        user = self.request.user
-        permission_query = Q('is_public', 'eq', True)
-        if not user.is_anonymous():
-            permission_query = (Q('is_public', 'eq', True) | Q('contributors', 'icontains', user._id))
 
-        query = base_query & permission_query
-        return query
+        return base_query
 
     # overrides ListCreateAPIView
     def get_queryset(self):
-        query = self.get_default_odm_query()
-        return Node.find(query)
+        query = self.get_query_from_request()
+        nodes = Node.find(query)
+
+        for node in nodes:
+            node.smart_folder = False
+
+        return nodes
+
+    # overrides ListCreateAPIView
+    def perform_create(self, serializer):
+        """
+        Create a node.
+        """
+        """
+        :param serializer:
+        :return:
+        """
+        # On creation, make sure that current user is the creator
+        user = self.request.user
+        serializer.save(creator=user)
 
 
 class CollectionDetail(generics.RetrieveUpdateAPIView, generics.RetrieveDestroyAPIView,
@@ -114,8 +123,7 @@ class CollectionDetail(generics.RetrieveUpdateAPIView, generics.RetrieveDestroyA
 
     """
     permission_classes = (
-        ContributorOrPublic,
-        ReadOnlyIfRegistration,
+        drf_permissions.IsAuthenticated,
     )
     serializer_class = CollectionSerializer
 
@@ -174,8 +182,8 @@ class CollectionChildrenList(generics.ListAPIView, CollectionMixin):
     is finalized.
     """
     permission_classes = (
-        ContributorOrPublic,
-        drf_permissions.IsAuthenticatedOrReadOnly,
+        drf_permissions.IsAuthenticated,
+        ContributorOrPublic
     )
 
     serializer_class = CollectionSerializer
@@ -198,8 +206,8 @@ class CollectionPointersList(generics.ListCreateAPIView, CollectionMixin):
     Pointers are essentially aliases or symlinks: All they do is point to another node.
     """
     permission_classes = (
+        drf_permissions.IsAuthenticated,
         ContributorOrPublic,
-        drf_permissions.IsAuthenticatedOrReadOnly,
     )
 
     serializer_class = CollectionPointersSerializer
@@ -215,8 +223,8 @@ class CollectionPointerDetail(generics.RetrieveDestroyAPIView, CollectionMixin):
     Pointers are essentially aliases or symlinks: All they do is point to another node.
     """
     permission_classes = (
+        drf_permissions.IsAuthenticated,
         ContributorOrPublic,
-        drf_permissions.IsAuthenticatedOrReadOnly,
     )
 
     serializer_class = CollectionPointersSerializer
