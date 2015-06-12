@@ -777,6 +777,12 @@ def make_url_map(app):
             '/project/<pid>/node/<nid>/register/',
         ], 'get', project_views.register.node_register_page,
             OsfWebRenderer('project/register.mako')),
+        # TODO: Make sure this works
+        Rule([
+            '/project/<pid>/register/',
+            '/project/<pid>/node/<nid>/register/',
+        ], 'put', project_views.register.node_register_page,
+            OsfWebRenderer('project/register.mako')),
 
         Rule([
             '/project/<pid>/register/<template>/',
