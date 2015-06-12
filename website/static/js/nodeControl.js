@@ -311,7 +311,7 @@ var ProjectViewModel = function(data) {
             self.doi(resp.doi);
             self.ark(resp.ark);
             //updates page with any instances of DOI and ARK by refreshing page
-            window.top.location = window.top.location;
+            self.windowReload();
         }).fail(function(xhr) {
             var message = 'We could not create the identifier at this time. ' +
                 'The DOI/ARK acquisition service may be down right now. ' +
@@ -324,6 +324,11 @@ var ProjectViewModel = function(data) {
             self.idCreationInProgress(false); // hide loading indicator
         });
     };
+
+    self.windowReload = function() {
+        window.location.reload();
+    }
+
 };
 
 ////////////////
