@@ -1,24 +1,24 @@
-import urlparse
+# -*- coding: utf-8 -*-
+
 import furl
-from modularodm.exceptions import NoResultsFound
-from modularodm import Q
+
 from rest_framework.exceptions import NotFound
 from rest_framework.reverse import reverse
-from django.utils.http import urlencode
+from modularodm.exceptions import NoResultsFound
+from modularodm import Q
 
+from api.base import settings as api_settings
 from website import settings as website_settings
-from website import util as website_util # noqa
+from website import util as website_util  # noqa
 
 
 def absolute_reverse(view_name, query_kwargs=None, args=None, kwargs=None):
     """Like django's `reverse`, except returns an absolute URL. Also add query parameters."""
     relative_url = reverse(view_name, kwargs=kwargs)
 
-    if query_kwargs:
-        relative_url = '{}?{}'.format(relative_url, urlencode(query_kwargs))
-
-    domain = website_settings.API_DOMAIN
-    return urlparse.urljoin(domain, relative_url)
+    url = website_util.api_v2_url(relative_url, params=query_kwargs,
+                                  base_prefix=api_settings.API_PATH)
+    return url
 
 
 def get_object_or_404(model_cls, query_or_pk):
