@@ -5,7 +5,6 @@ from framework.tasks import handlers
 
 from website.archiver.tasks import (
     archive,
-    create_app_context,
 )
 from website.archiver import utils as archiver_utils
 from website.archiver import (
@@ -15,6 +14,7 @@ from website.archiver.decorators import fail_archive_on_error
 
 from website.project import signals as project_signals
 from website.project import utils as project_utils
+
 
 @project_signals.after_create_registration.connect
 def after_register(src, dst, user):
@@ -27,6 +27,9 @@ def after_register(src, dst, user):
     archiver_utils.before_archive(dst, user)
     if dst.root != dst:  # if not top-level registration
         return
+    if dst.pending_embargo:
+        dst.archive_job.meta['embargo_urls'] = project_utils._get_embargo_urls(dst, user)
+        dst.archive_job.save()
     targets = itertools.chain([dst], dst.get_descendants_recursive())
     archive_tasks = [archive.si(t.archive_job._id) for t in targets if t.primary]
     handlers.enqueue_task(
@@ -41,7 +44,6 @@ def archive_callback(dst):
 
     :param dst: registration Node
     """
-    create_app_context()
     root_job = dst.root.archive_job
     if root_job.sent or not root_job.archive_tree_finished():
         return
@@ -50,7 +52,11 @@ def archive_callback(dst):
     if dst.archive_job.success:
         if dst.pending_embargo:
             for contributor in dst.contributors:
-                project_utils.send_embargo_email(dst.root, contributor)
+                project_utils.send_embargo_email(
+                    dst.root,
+                    contributor,
+                    urls=dst.archive_job.meta.get('embargo_urls')
+                )
         else:
             archiver_utils.send_archiver_success_mail(dst.root)
     else:

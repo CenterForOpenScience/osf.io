@@ -1,3 +1,4 @@
+
 import requests
 import json
 
@@ -61,7 +62,7 @@ class ArchiverTask(celery.Task):
             utils.handle_archive_fail(
                 ARCHIVER_NETWORK_ERROR,
                 src, dst, user,
-                dst.archived_providers
+                dst.archive_job.target_info()
             )
         else:
             dst.archive_status = ARCHIVER_UNCAUGHT_ERROR

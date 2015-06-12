@@ -1,35 +1,49 @@
 # -*- coding: utf-8 -*-
 """Various node-related utilities."""
-from website.project.views import node
+from website.project.views import node as node_views
 
 from website import mails
 from website import settings
 
-# Alias the project serializer
-serialize_node = node._view_project
+from website.util.permissions import ADMIN
 
-def send_embargo_email(node, user):
+# Alias the project serializer
+serialize_node = node_views._view_project
+
+def _get_embargo_urls(node, user):
+    approval_token, disapproval_token = None, None
+    if node.has_permission(user, ADMIN):
+        approval_token = node.embargo.approval_state[user._id]['approval_token']
+        disapproval_token = node.embargo.approval_state[user._id]['disapproval_token']
+
+    return {
+        'view': node.web_url_for('view_project', _absolute=True),
+        'approve': node.web_url_for(
+            'node_registration_embargo_approve',
+            token=approval_token,
+            _absolute=True
+        ),
+        'disapprove': node.web_url_for(
+            'node_registration_embargo_disapprove',
+            token=disapproval_token,
+            _absolute=True
+        )
+    }
+
+def send_embargo_email(node, user, urls=None):
     """ Sends pending embargo announcement email to contributors. Project
     admins will also receive approval/disapproval information.
     :param node: Node being embargoed
     :param user: User to be emailed
     """
+    urls = urls or _get_embargo_urls(node, user)
 
     embargo_end_date = node.embargo.end_date
-    registration_link = node.web_url_for('view_project', _absolute=True)
+    registration_link = urls['view']
     initiators_fullname = node.embargo.initiated_by.fullname
-
-    if node.has_permission(user, 'admin'):
-        approval_token = node.embargo.approval_state[user._id]['approval_token']
-        disapproval_token = node.embargo.approval_state[user._id]['disapproval_token']
-        approval_link = node.web_url_for(
-            'node_registration_embargo_approve',
-            token=approval_token,
-            _absolute=True)
-        disapproval_link = node.web_url_for(
-            'node_registration_embargo_disapprove',
-            token=disapproval_token,
-            _absolute=True)
+    if node.has_permission(user, ADMIN):
+        approval_link = urls['approve']
+        disapproval_link = urls['disapprove']
         approval_time_span = settings.EMBARGO_PENDING_TIME.days * 24
 
         mails.send_mail(
