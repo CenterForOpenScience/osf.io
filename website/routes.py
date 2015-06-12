@@ -69,7 +69,7 @@ def get_globals():
         'api_v2_base': util.api_v2_url(''),  # Base url used by JS api helper
         'sanitize': sanitize,
         'js_str': lambda x: x.replace("'", r"\'").replace('"', r'\"'),
-        'json': lambda s: sanitize.safe_json(s),
+        'sjson': lambda s: sanitize.safe_json(s),
         'webpack_asset': paths.webpack_asset,
         'waterbutler_url': settings.WATERBUTLER_URL,
         'login_url': cas.get_login_url(request.url, auto=True),
