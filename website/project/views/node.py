@@ -453,26 +453,25 @@ def project_statistics(auth, node, **kwargs):
 def piwik_stats(auth, node, **kwargs):
     if not (node.can_edit(auth) or node.is_public):
         raise  HTTPError(http.FORBIDDEN)
+    return _view_project(node, auth, primary=True)
 
-    data = _view_project(node, auth, primary=True)
-    print data.get('node').get('piwik_site_id')
+@must_be_valid_project
+@must_be_contributor_or_public
+def get_piwik_stats(auth, node, **kwargs):
+    if not (node.can_edit(auth) or node.is_public):
+        raise HTTPError(http.FORBIDDEN)
+
+    project_data = _view_project(node, auth, primary=True)
 
     client = PiwikClient(
             url=settings.PIWIK_HOST,
             auth_token=settings.PIWIK_ADMIN_TOKEN,
-            site_id=data.get('node').get('piwik_site_id'),
+            site_id=project_data.get('node').get('piwik_site_id'),
             period='day',
             date='today',
     )
 
-    stats = client.api_call('Actions.get', period='day', date='today')
-
-    data['piwikStats'] = stats
-
-    print data.get('piwikStats')
-
-    return data
-
+    return client.api_call('Actions.get', period='day', date='last10')
 
 
 
