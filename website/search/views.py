@@ -205,7 +205,7 @@ def search_share():
     count = request.args.get('count') is not None
     raw = request.args.get('raw') is not None
     version = request.args.get('v')
-    index = 'share_v{}'.format(version) if version else 'share'
+    index = 'share_v{}'.format(version) if version else 'share_v2'
 
     if request.method == 'POST':
         query = request.get_json()
