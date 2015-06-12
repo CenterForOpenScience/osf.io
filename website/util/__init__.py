@@ -30,6 +30,7 @@ waterbutler_action_map = {
 }
 
 def conjunct(words, conj='and'):
+    words = list(words)
     num_words = len(words)
     if num_words == 0:
         return ''
