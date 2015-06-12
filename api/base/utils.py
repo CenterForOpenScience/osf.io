@@ -6,7 +6,9 @@ from rest_framework.exceptions import NotFound
 from rest_framework.reverse import reverse
 from django.utils.http import urlencode
 
-from website import settings
+from website import settings as website_settings
+from website import util as website_util # noqa
+
 
 def absolute_reverse(view_name, query_kwargs=None, args=None, kwargs=None):
     """Like django's `reverse`, except returns an absolute URL. Also add query parameters."""
@@ -15,7 +17,7 @@ def absolute_reverse(view_name, query_kwargs=None, args=None, kwargs=None):
     if query_kwargs:
         relative_url = '{}?{}'.format(relative_url, urlencode(query_kwargs))
 
-    domain = settings.API_DOMAIN
+    domain = website_settings.API_DOMAIN
     return urlparse.urljoin(domain, relative_url)
 
 
@@ -39,7 +41,7 @@ def waterbutler_url_for(request_type, provider, path, node_id, token, obj_args=N
     :param str token: The cookie to be used or None
     :param dict **query: Addition query parameters to be appended
     """
-    url = furl.furl(settings.WATERBUTLER_URL)
+    url = furl.furl(website_settings.WATERBUTLER_URL)
     url.path.segments.append(request_type)
 
     url.args.update({
