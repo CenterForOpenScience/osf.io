@@ -15,7 +15,7 @@ var preRegisterMessage =  function(title, parentTitle, parentUrl, category) {
             ' If you want to register the parent, please go <a href="' +
             parentUrl + '">here.</a>' +
             '<hr /><b>Important Note:</b> As early as <u>June 8, 2015</u>, registrations ' +
-            'will be made public immediately or can be embargoed for up to one year. ' +
+            'will be made public immediately or can be embargoed for up to four years. ' +
             'There will no longer be the option of creating a permanently private ' +
             'registration. If you register before June 8, 2015 and leave your ' +
             'registration private, then the registration can remain private. After June 8, 2015, ' +
@@ -28,7 +28,7 @@ var preRegisterMessage =  function(title, parentTitle, parentUrl, category) {
             'initiate registration. '+
             // TODO(hrybacki): Remove once Retraction/Embargoes goes is merged into production
             '<hr /><b>Important Note:</b> As early as <u>June 8, 2015</u>, registrations ' +
-            'will be made public immediately or can be embargoed for up to one year. ' +
+            'will be made public immediately or can be embargoed for up to four years. ' +
             'There will no longer be the option of creating a permanently private ' +
             'registration. If you register before June 8, 2015 and leave your ' +
             'registration private, then the registration can remain private. After June 8, 2015, ' +
