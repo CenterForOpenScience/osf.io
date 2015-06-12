@@ -80,7 +80,7 @@ $(document).ready(function() {
                 registrationViewModel.continueText('');
                 $osf.growl(
                     'Invalid embargo end date',
-                    'Please choose a date more than two days, but less than one year, from today.',
+                    'Please choose a date more than two days, but less than four years, from today.',
                     'warning'
                 );
                 $('#endDatePicker').focus();

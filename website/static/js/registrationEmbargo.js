@@ -13,8 +13,9 @@ var RegistrationEmbargoViewModel = function() {
         message: 'Enter registration into embargo'
     };
     var today = new Date();
+    // TODO(hrybacki): Import min/max dates from website.settings
     var TWO_DAYS_FROM_TODAY_TIMESTAMP = new Date().getTime() + (2 * 24 * 60 * 60 * 1000);
-    var ONE_YEAR_FROM_TODAY_TIMESTAMP = new Date().getTime() + (365 * 24 * 60 * 60 * 1000);
+    var FOUR_YEARS_FROM_TODAY_TIMESTAMP = new Date().getTime() + (1460 * 24 * 60 * 60 * 1000);
 
     self.registrationOptions = [
         MAKE_PUBLIC,
@@ -41,7 +42,7 @@ var RegistrationEmbargoViewModel = function() {
     });
     self.isEmbargoEndDateValid = ko.computed(function() {
         var endEmbargoDateTimestamp = self.embargoEndDate().getTime();
-        return (endEmbargoDateTimestamp < ONE_YEAR_FROM_TODAY_TIMESTAMP && endEmbargoDateTimestamp > TWO_DAYS_FROM_TODAY_TIMESTAMP);
+        return (endEmbargoDateTimestamp < FOUR_YEARS_FROM_TODAY_TIMESTAMP && endEmbargoDateTimestamp > TWO_DAYS_FROM_TODAY_TIMESTAMP);
     });
     self.requestingEmbargo = ko.pureComputed(function() {
         var choice = self.registrationChoice();
