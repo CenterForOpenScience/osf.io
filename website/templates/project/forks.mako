@@ -15,7 +15,7 @@
 	            "replace": true
 	        }'></div>
 	% else:
-	    <div>There have been no forks of this project.</div>
+	    <div class="m-xl">There have been no forks of this project.</div>
 	% endif
 
 
