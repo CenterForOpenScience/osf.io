@@ -68,6 +68,17 @@ class ArchiveJob(StoredObject):
     def info(self):
         return self.src_node, self.dst_node, self.initiator
 
+    def target_info(self):
+        return [
+            {
+                'name': target.name,
+                'status': target.status,
+                'stat_result': target.stat_result,
+                'errors': target.errors
+            }
+            for target in self.target_addons
+        ]
+
     def _archive_node_finished(self):
         return not any([
             target for target in self.target_addons
