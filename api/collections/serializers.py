@@ -10,7 +10,7 @@ class CollectionSerializer(JSONAPISerializer):
     title = ser.CharField(required=True)
     date_created = ser.DateTimeField(read_only=True)
     date_modified = ser.DateTimeField(read_only=True)
-    modified_by = ser.CharField(read_only=True, source='get_modified_by')
+    modified_by = ser.SerializerMethodField(read_only=True, source='get_modified_by')
     links = CollectionLinksField({
         'children': {
             'related': Link('collections:collection-children', kwargs={'pk': '<pk>'}),
@@ -34,11 +34,16 @@ class CollectionSerializer(JSONAPISerializer):
 
     def get_node_count(self, obj):
         auth = self.get_user_auth(self.context['request'])
-        nodes = [node for node in obj.nodes if node.can_view(auth) and node.primary]
+        nodes = [node for node in obj.nodes if node.can_view(auth)]
         return len(nodes)
 
     def get_pointers_count(self, obj):
         return len(obj.nodes_pointer)
+
+    def get_modified_by(self, obj):
+        user = obj.logs[-1].user
+        modified_by = user.family_name or user.given_name
+        return modified_by
 
     def get_user_auth(self, request):
         user = request.user
@@ -51,14 +56,10 @@ class CollectionSerializer(JSONAPISerializer):
     @staticmethod
     def get_properties(obj):
 
-        user = obj.logs[-1].user
-        modified_by = user.family_name or user.given_name
-
         ret = {
             'collection': obj.is_folder,
             'dashboard': obj.is_dashboard,
             'smart_folder': obj.smart_folder,
-            'modified_by': modified_by,
         }
         return ret
 

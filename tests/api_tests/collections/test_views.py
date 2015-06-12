@@ -223,6 +223,7 @@ class TestCollectionDetail(ApiTestCase):
         self.nonuser_folder = FolderFactory(title="Project Two", is_public=False)
         self.public_url = '/{}collections/{}/'.format(API_BASE, self.public_folder._id)
         self.private_url = '/{}collections/{}/'.format(API_BASE, self.nonuser_folder._id)
+        self.smart_folder_url = '/{}collections/{}/'.format(API_BASE, '~amr')
 
         self.smart_folder = FolderFactory(_id='~amr')
 
@@ -234,6 +235,13 @@ class TestCollectionDetail(ApiTestCase):
         res = self.app.get(self.public_url, auth=self.basic_auth)
         assert_equal(res.status_code, 200)
         assert_equal(res.json['data']['title'], self.public_folder.title)
+
+    def test_return_smart_folder(self):
+        res = self.app.get(self.smart_folder_url, auth=self.basic_auth)
+        node_json = res.json['data']
+
+        assert_equal(res.status_code, 200)
+        assert_equal(res.json['data']['smart_folder'], True)
 
 
 class TestDashboardDetail(ApiTestCase):
@@ -482,6 +490,8 @@ class TestCreateCollectionPointer(ApiTestCase):
         self.user_two.save()
         self.basic_auth_two = (self.user_two.username, 'password')
 
+
+
     def test_creates_public_collection_pointer_logged_out(self):
         res = self.app.post(self.public_url, self.public_payload, expect_errors=True)
         # This is 403 instead of 401 because basic authentication is only for unit tests and, in order to keep from
@@ -528,6 +538,9 @@ class TestCollectionPointerDetail(ApiTestCase):
                                                                  save=True)
         self.public_url = '/v2/collections/{}/pointers/{}'.format(self.public_collection._id, self.public_pointer._id)
 
+        self.collection_one = FolderFactory(creator=self.user)
+        self.collection_two = FolderFactory(creator=self.user)
+
     def test_returns_public_collection_pointer_detail_logged_out(self):
         res = self.app.get(self.public_url, expect_errors=True)
         assert_equal(res.status_code, 403)
@@ -544,6 +557,14 @@ class TestCollectionPointerDetail(ApiTestCase):
         # presenting a basic authentication dialog box in the front end. We may change this as we understand CAS
         # a little better
         assert_equal(res.status_code, 403)
+
+    def test_api_get_folder_pointers_from_non_folder(self):
+
+        url = '/{}collections/{}/pointers/'.format(API_BASE, self.collection_one._id)
+        self.collection_one.add_pointer(self.collection_two, auth=self.basic_auth)
+        res = self.app.get(url, auth=self.basic_auth)
+        pointers = res.json
+        assert_equal(len(pointers), 0)
 
 
 class TestDeleteCollectionPointer(ApiTestCase):
@@ -567,7 +588,8 @@ class TestDeleteCollectionPointer(ApiTestCase):
         self.public_pointer_collection = FolderFactory(is_public=True, creator=self.user)
         self.public_pointer = self.public_collection.add_pointer(self.public_pointer_collection, auth=Auth(self.user),
                                                                  save=True)
-        self.public_url = '/{}collections/{}/pointers/{}'.format(API_BASE, self.public_collection._id, self.public_pointer._id)
+        self.public_url = '/{}collections/{}/pointers/{}'.format(API_BASE, self.public_collection._id,
+                                                                 self.public_pointer._id)
 
     def test_deletes_public_collection_pointer_logged_out(self):
         res = self.app.delete(self.public_url, expect_errors=True)

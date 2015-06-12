@@ -8,6 +8,7 @@ from api.base.utils import get_object_or_404
 from api.base.filters import ODMFilterMixin, ListFilterMixin
 from .serializers import CollectionSerializer, CollectionPointersSerializer
 from .permissions import ReadOnlyIfRegistration, ContributorOrPublic
+from website.views import _render_nodes, find_dashboard
 
 
 class CollectionMixin(object):
@@ -19,7 +20,11 @@ class CollectionMixin(object):
     node_lookup_url_kwarg = 'pk'
 
     def get_node(self):
-        obj = get_object_or_404(Node, self.kwargs[self.node_lookup_url_kwarg])
+        key = self.kwargs[self.node_lookup_url_kwarg]
+        if key == 'dashboard':
+            return find_dashboard(self.request.user)
+
+        obj = get_object_or_404(Node, key)
         # May raise a permission denied
         self.check_object_permissions(self.request, obj)
         return obj
@@ -122,39 +127,16 @@ class CollectionDetail(generics.RetrieveUpdateAPIView, generics.RetrieveDestroyA
     """Collection detail
 
     """
+
+    def get_object(self):
+        node = self.get_node()
+        node.smart_folder = False
+        return node
+
     permission_classes = (
         drf_permissions.IsAuthenticated,
     )
     serializer_class = CollectionSerializer
-
-    # overrides RetrieveUpdateAPIView
-    def get_object(self):
-        smart_folders = (
-            '~amr',
-            '~amp',
-        )
-
-        node_id = self.kwargs[self.node_lookup_url_kwarg]
-        for folder_id in smart_folders:
-            if node_id == folder_id:
-                node = Node.find(node_id)
-                node.smart_folder = True
-                smart_folder_node = {
-                    'id': node_id,
-                    'title': node.title,
-                    'date_created': node.date_created,
-                    'date_modified': node.date_modified,
-                    'properties': {
-                        'smart_folder': True,
-                        'dashboard': node.is_dashboard,
-                        'collection': node.is_folder,
-                    },
-                }
-                return smart_folder_node
-
-        node = self.get_node()
-        node.smart_folder = False
-        return node
 
     # overrides RetrieveUpdateAPIView
     def get_serializer_context(self):
@@ -190,7 +172,29 @@ class CollectionChildrenList(generics.ListAPIView, CollectionMixin):
 
     # overrides ListAPIView
     def get_queryset(self):
+
+        smart_folders = (
+            '~amr',
+            '~amp',
+        )
         nodes = self.get_node().nodes
+        smart_folder_nodes = []
+        for node in nodes:
+            node_id = self.kwargs[self.node_lookup_url_kwarg]
+            for folder_id in smart_folders:
+                if node_id == folder_id:
+                    spoof_node = Node.find(node_id)
+                    smart_folder_node = {
+                        'id': spoof_node._id,
+                        'title': spoof_node.title,
+                        'date_created': spoof_node.date_created,
+                        'date_modified': spoof_node.date_modified,
+                        'properties': {
+                            'smart_folder': True,
+                        },
+                    }
+                    smart_folder_nodes.append(smart_folder_node)
+
         user = self.request.user
         if user.is_anonymous():
             auth = Auth(None)
