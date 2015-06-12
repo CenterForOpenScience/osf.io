@@ -87,7 +87,7 @@
                         % if node['description'] or 'write' in user['permissions']:
                             <br>
                             <label for="description">Description</label>
-                            <textarea data-bind="textInput: description, 
+                            <textarea data-bind="value: description, 
                                                 event: { keyup: dirtyDescription }", 
                             class="form-control resize-vertical"></textarea>
                         % endif

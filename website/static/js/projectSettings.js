@@ -112,8 +112,8 @@ var NodeCategoryTitleDescriptionSettings = oop.extend(
             return $osf.putJSON(self.titleDescriptionEditUrl, {
                     description: self.description(),
                 })
-                .done(self.updateTitleSuccess.bind(self))
-                .fail(self.updateTitleError.bind(self));
+                .done(self.updateDescriptionSuccess.bind(self))
+                .fail(self.updateDescriptionError.bind(self));
         },
         
         /*cancel handlers*/
