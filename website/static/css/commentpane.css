@@ -34,7 +34,6 @@
     height: 100%;
     margin-top: -50px;
     margin-left: 5px; /* Note: Should be the same as .cp-bar:width */
-    background-color: #ddd;
     padding: 10px;
     overflow-y: auto;
 }

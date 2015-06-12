@@ -6,7 +6,7 @@
     </div>
     <div class="cp-bar"></div>
 
-    <div id="comments" class="cp-sidebar">
+    <div id="comments" class="cp-sidebar bg-color-light">
         <h4>
             <span>${node['title']} Discussion</span>
             <span data-bind="foreach: {data: discussion, afterAdd: setupToolTips}" class="pull-right">
