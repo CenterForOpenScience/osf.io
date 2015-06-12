@@ -7,10 +7,9 @@ A report is included below:
 <% import json %>
 
 % for addon in results:
-<% result = results[addon] %>
-${addon}: 
-  - ${result['status']}
-   % for err in result.get('errors', []):
+${addon['name']}:
+  - ${addon['status']}
+   % for err in addon['errors']:
      ${json.dumps(err)}
    % endfor
 % endfor
