@@ -217,13 +217,13 @@ def create_waterbutler_log(payload, **kwargs):
                 src_path = os.path.dirname(src_path)
             if os.path.split(dest_path)[0] == os.path.split(src_path)[0]:
                 if dest['provider'] == src['provider']:
-                    if dest['name'] == src['name']:
-                        if dest['nid'] == src['nid']:
+                    if dest['nid'] == src['nid']:
+                        if dest['name'] == src['name']:
                             return {'status': 'success'}
                         else:
-                            pass
+                            action = LOG_ACTION_MAP['rename']
                     else:
-                        action = LOG_ACTION_MAP['rename']
+                        pass
     except KeyError:
         pass
 
