@@ -82,7 +82,9 @@ before_script:
     - flake8 .
 
 # Run Python tests (core and addon) and JS tests
-script: invoke test --all
+script:
+    - invoke test --all
+    - invoke jshint
 
 before_cache:
   - rm -Rf $HOME/.cache/pip/http

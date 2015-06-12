@@ -375,6 +375,14 @@ def test_module(module=None, verbosity=2):
 
 
 @task
+def jshint():
+    """Run the jshint."""
+    for dirpath, dirnames, filenames in os.walk("."):
+        for filename in [f for f in filenames if f.endswith(".js")]:
+            run("jshint "+ os.path.join(dirpath, filename))
+
+
+@task
 def test_osf():
     """Run the OSF test suite."""
     test_module(module="tests/")
