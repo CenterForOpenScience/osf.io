@@ -51,3 +51,4 @@
 % else:
     <div class="help-block">No ${pluralized_node_type} to display.</div>
 % endif
+<script src=${"/static/public/js/render-nodes.js" | webpack_asset}> </script>

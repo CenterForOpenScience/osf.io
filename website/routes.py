@@ -427,13 +427,6 @@ def make_url_map(app):
         ),
 
         Rule(
-            '/resend/',
-            ['get', 'post'],
-            auth_views.resend_confirmation,
-            OsfWebRenderer('resend.mako', render_mako_string)
-        ),
-
-        Rule(
             '/resetpassword/<verification_key>/',
             ['get', 'post'],
             auth_views.reset_password,
@@ -538,6 +531,7 @@ def make_url_map(app):
 
         Rule('/profile/', 'get', profile_views.profile_view, json_renderer),
         Rule('/profile/', 'put', profile_views.update_user, json_renderer),
+        Rule('/resend/', 'put', profile_views.resend_confirmation, json_renderer),
         Rule('/profile/<uid>/', 'get', profile_views.profile_view_id, json_renderer),
 
         # Used by profile.html

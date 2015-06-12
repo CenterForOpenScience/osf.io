@@ -223,6 +223,9 @@ function resolveIconView(item) {
         return returnView('link');
     }
     if (item.data.nodeType === 'project') {
+        if (item.data.parentIsFolder && item.data.isFolder) {
+            return returnView('collection');
+        }
         if (item.data.isRegistration) {
             return returnView('registeredProject', item.data.category);
         } else {
@@ -1477,7 +1480,7 @@ var FGItemButtons = {
                     }, 'Delete'));
 
             }
-        } else if(item.data.provider) {
+        } else if(item.data.provider && item.children.length !== 0) {
             rowButtons.push(
                 m.component(FGButton, {
                     onclick: function(event) { _downloadZipEvent.call(tb, event, item); },
