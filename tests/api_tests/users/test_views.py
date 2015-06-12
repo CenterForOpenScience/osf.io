@@ -4,6 +4,7 @@ from nose.tools import *  # flake8: noqa
 from framework.auth.core import Auth
 from website.models import Node
 from tests.base import ApiTestCase, fake
+from api.base.settings.defaults import API_PREFIX
 from tests.factories import UserFactory, ProjectFactory, FolderFactory, DashboardFactory
 
 
@@ -21,11 +22,11 @@ class TestUsers(ApiTestCase):
         Node.remove()
 
     def test_returns_200(self):
-        res = self.app.get('/v2/users/')
+        res = self.app.get(API_PREFIX + 'users/')
         assert_equal(res.status_code, 200)
 
     def test_find_user_in_users(self):
-        url = "/v2/users/"
+        url = API_PREFIX + "users/"
 
         res = self.app.get(url)
         user_son = res.json['data']
@@ -34,7 +35,7 @@ class TestUsers(ApiTestCase):
         assert_in(self.user_two._id, ids)
 
     def test_all_users_in_users(self):
-        url = "/v2/users/"
+        url = API_PREFIX + "users/"
 
         res = self.app.get(url)
         user_son = res.json['data']
@@ -44,7 +45,7 @@ class TestUsers(ApiTestCase):
         assert_in(self.user_two._id, ids)
 
     def test_find_multiple_in_users(self):
-        url = "/v2/users/?filter[fullname]=fred"
+        url = API_PREFIX + "users/?filter[fullname]=fred"
 
         res = self.app.get(url)
         user_json = res.json['data']
@@ -53,7 +54,7 @@ class TestUsers(ApiTestCase):
         assert_in(self.user_two._id, ids)
 
     def test_find_single_user_in_users(self):
-        url = "/v2/users/?filter[fullname]=my"
+        url = API_PREFIX + "users/?filter[fullname]=my"
         self.user_one.fullname = 'My Mom'
         self.user_one.save()
         res = self.app.get(url)
@@ -63,7 +64,7 @@ class TestUsers(ApiTestCase):
         assert_not_in(self.user_two._id, ids)
 
     def test_find_no_user_in_users(self):
-        url = "/v2/users/?filter[fullname]=NotMyMom"
+        url = API_PREFIX + "users/?filter[fullname]=NotMyMom"
         res = self.app.get(url)
         user_json = res.json['data']
         ids = [each['id'] for each in user_json]
@@ -90,25 +91,25 @@ class TestUserDetail(ApiTestCase):
         Node.remove()
 
     def test_gets_200(self):
-        url = "/v2/users/{}/".format(self.user_one._id)
+        url = API_PREFIX + "users/{}/".format(self.user_one._id)
         res = self.app.get(url)
         assert_equal(res.status_code, 200)
 
     def test_get_correct_pk_user(self):
-        url = "/v2/users/{}/".format(self.user_one._id)
+        url = API_PREFIX + "users/{}/".format(self.user_one._id)
         res = self.app.get(url)
         user_json = res.json['data']
         assert_equal(user_json['fullname'], self.user_one.fullname)
         assert_equal(user_json['social_accounts']['twitter'], 'howtopizza')
 
     def test_get_incorrect_pk_user_logged_in(self):
-        url = "/v2/users/{}/".format(self.user_two._id)
+        url = API_PREFIX + "users/{}/".format(self.user_two._id)
         res = self.app.get(url)
         user_json = res.json['data']
         assert_not_equal(user_json['fullname'], self.user_one.fullname)
 
     def test_get_incorrect_pk_user_not_logged_in(self):
-        url = "/v2/users/{}/".format(self.user_two._id)
+        url = API_PREFIX + "users/{}/".format(self.user_two._id)
         res = self.app.get(url, auth=self.auth_one)
         user_json = res.json['data']
         assert_not_equal(user_json['fullname'], self.user_one.fullname)
@@ -142,17 +143,17 @@ class TestUserNodes(ApiTestCase):
         Node.remove()
 
     def test_authorized_in_gets_200(self):
-        url = "/v2/users/{}/nodes/".format(self.user_one._id)
+        url = API_PREFIX + "users/{}/nodes/".format(self.user_one._id)
         res = self.app.get(url, auth=self.auth_one)
         assert_equal(res.status_code, 200)
 
     def test_anonymous_gets_200(self):
-        url = "/v2/users/{}/nodes/".format(self.user_one._id)
+        url = API_PREFIX + "users/{}/nodes/".format(self.user_one._id)
         res = self.app.get(url)
         assert_equal(res.status_code, 200)
 
     def test_get_projects_logged_in(self):
-        url = "/v2/users/{}/nodes/".format(self.user_one._id)
+        url = API_PREFIX + "users/{}/nodes/".format(self.user_one._id)
         res = self.app.get(url, auth=self.auth_one)
         node_json = res.json['data']
 
@@ -166,7 +167,7 @@ class TestUserNodes(ApiTestCase):
         assert_not_in(self.deleted_project_user_one._id, ids)
 
     def test_get_projects_not_logged_in(self):
-        url = "/v2/users/{}/nodes/".format(self.user_one._id)
+        url = API_PREFIX + "users/{}/nodes/".format(self.user_one._id)
         res = self.app.get(url)
         node_json = res.json['data']
 
@@ -179,7 +180,7 @@ class TestUserNodes(ApiTestCase):
         assert_not_in(self.deleted_project_user_one._id, ids)
 
     def test_get_projects_logged_in_as_different_user(self):
-        url = "/v2/users/{}/nodes/".format(self.user_two._id)
+        url = API_PREFIX + "users/{}/nodes/".format(self.user_two._id)
         res = self.app.get(url, auth=self.auth_one)
         node_json = res.json['data']
 
