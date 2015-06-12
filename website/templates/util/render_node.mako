@@ -9,7 +9,7 @@
         ">
 
         <h4 class="list-group-item-heading">
-            <span class="component-overflow">
+            <span class="component-overflow" style="line-height: 1.5;">
             % if not summary['primary']:
               <i class="fa fa-link" data-toggle="tooltip" title="Linked ${summary['node_type']}"></i>
             % endif
@@ -17,19 +17,20 @@
             % if not summary['is_public']:
                 <span class="fa fa-lock" data-toggle="tooltip" title="This project is private"></span>
             % endif
-            % if summary['is_retracted']:
-                <span class="label label-danger"><strong>Retracted</strong></span> |
-            % elif summary['pending_retraction']:
-                <span class="label label-info"><strong>Pending Retraction</strong></span> |
-            % elif summary['embargo_end_date']:
-                <span class="label label-info"><strong>Embargoed</strong></span> |
-            % elif summary['pending_embargo']:
-                <span class="label label-info"><strong>Pending Embargo</strong></span> |
-            % endif
-            % if summary['archiving']:
-                <span class="label label-info"><strong>Archiving</strong></span> |
-            % endif
-
+                <span class="project-statuses-lg">
+                  % if summary['is_retracted']:
+                  <span class="label label-danger"><strong>Retracted</strong></span> |
+                  % elif summary['pending_retraction']:
+                  <span class="label label-info"><strong>Pending Retraction</strong></span> |
+                  % elif summary['embargo_end_date']:
+                  <span class="label label-info"><strong>Embargoed</strong></span> |
+                  % elif summary['pending_embargo']:
+                  <span class="label label-info"><strong>Pending Embargo</strong></span> |
+                  % endif
+                  % if summary['archiving']:
+                  <span class="label label-primary"><strong>Archiving</strong></span> |
+                  % endif
+                </span>
             <span data-bind="getIcon: '${summary['category']}'"></span>
             % if not summary['archiving']:
                 <a href="${summary['url']}">${summary['title']}</a>
