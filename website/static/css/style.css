@@ -127,3 +127,25 @@ body {
 .tb-no-icon .tb-expand-icon-holder {
     width : 0;
 }
+
+/* Wrapper for Spinner  -- Applied for citation and file*/
+.spinner-loading-wrapper {
+    text-align: center;
+    font-size: 16px;
+    font-weight: 200;
+    background: white;
+    padding: 20px;
+    border-radius: 4px;
+}
+
+/* Change width for sign in input element on header */
+@media (min-width: 768px) and (max-width: 991px)  {
+    #signInForm input {
+        width: 110px;
+    }
+}
+@media (min-width: 1600px) {
+    #signInForm input {
+        width: 220px;
+    }
+}
