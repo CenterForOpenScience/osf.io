@@ -50,7 +50,10 @@
             <div class="panel-heading clearfix"><h3 class="panel-title">Configure Notification Preferences</h3></div>
                 <form id="selectNotifications" class="osf-treebeard-minimal">
                     <div id="grid">
-                            <div class="notifications-loading"> <i class="fa fa-spinner notifications-spin"></i> <p class="m-t-sm fg-load-message"> Loading notification settings...  </p> </div>
+                        <div class="fangorn-loading">
+		                    <div class="logo-spin text-center"><img src="/static/img/logo_spin.png" alt="loader"> </div>
+		                    <p class="m-t-sm fg-load-message"> Loading notification settings... </p>
+	                    </div>
                     </div>
                     <div class="help-block" style="padding-left: 15px">
                             <p id="configureNotificationsMessage"></p>
