@@ -957,7 +957,7 @@ class TestCreateNodePointer(ApiTestCase):
 
     def test_create_pointer_contributing_node_to_fake_node(self):
         res = self.app.post(self.private_url, self.fake_payload, auth=self.basic_auth, expect_errors=True)
-        assert_equal(res.status_code, 404)
+        assert_equal(res.status_code, 400)
 
     def test_create_fake_node_pointing_to_contributing_node(self):
         res = self.app.post(self.fake_url, self.private_payload, auth=self.basic_auth, expect_errors=True)
@@ -980,7 +980,7 @@ class TestCreateNodePointer(ApiTestCase):
         assert_equal(res.json['data']['node_id'], self.public_pointer_project._id)
 
         res = self.app.post(self.public_url, self.public_payload, auth=self.basic_auth, expect_errors=True)
-        assert_equal(res.status_code, 404)
+        assert_equal(res.status_code, 400)
 
 class TestNodeFilesList(ApiTestCase):
 
