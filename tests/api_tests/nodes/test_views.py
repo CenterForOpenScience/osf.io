@@ -1199,4 +1199,3 @@ class TestDeleteNodePointer(ApiTestCase):
 
 
 
-        
