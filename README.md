@@ -44,6 +44,11 @@ It is normal for the command to keep running!
 
 Once started, you will be able to view the OSF in a web browser- by default, at http://127.0.0.1:5000/
 
+In order to log in on your local server, you will also need to run the authentication server.
+
+- For daily use, run fakeCAS. Consult the [repository](https://github.com/CenterForOpenScience/fakeCAS) for information on how to set up this service.
+- For developing authentication-related featutures, run CAS. Consult the [repository](https://github.com/CenterForOpenScience/cas-overlay) for information on how to set up this service.
+
 
 ### Livereload support
 
