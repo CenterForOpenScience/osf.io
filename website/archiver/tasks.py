@@ -214,7 +214,8 @@ def archive_node(results, job_pk):
         raise ArchiverSizeExceeded(result=stat_result)
     else:
         for result in stat_result.targets:
-            if not result.targets:
+            if not result.num_files:
+                job.update_target(result.target_name, ARCHIVER_SUCCESS)
                 continue
             archive_addon.delay(
                 addon_short_name=result.target_name,

@@ -490,7 +490,7 @@ class TestArchiverListeners(ArchiverTestCase):
             self.dst.archive_job.update_target(addon, ARCHIVER_SUCCESS)
         self.dst.save()
         listeners.archive_callback(self.dst)
-        mock_send.assert_called_with(self.dst, self.user)
+        mock_send.assert_called_with(self.dst, self.user, urls=None)
 
     def test_archive_callback_done_errors(self):
         self.dst.archive_job.update_target('dropbox', ARCHIVER_SUCCESS)
