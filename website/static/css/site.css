@@ -86,6 +86,7 @@ body {
 .gs-sidebar.affix-top {
     position: fixed;
     top: 70px;
+    left: 25px;
 }
 .affix-bottom {
     position: relative;

@@ -4,7 +4,7 @@
     <div class="row"  href="#start">
         <div class="col-sm-3 nav-list-spy">
             <div data-spy="affix" class="gs-sidebar hidden-print hidden-xs panel panel-default" role="complementary">
-                <ul class="nav nav-stacked nav-pills gs-sidenav" style="min-width: 210px">
+                <ul class="nav nav-stacked nav-pills gs-sidenav" style=" min-width: 210px">
                     <li>
                         <a  class="active" href="#start">Getting Started</a>
                         <ul class="nav">
@@ -66,7 +66,7 @@
         </div>
     <div class="col-sm-9">
 
-        <div  id="start"  class="col-sm-12">
+        <div  id="start"  class="col-sm-12" style="margin-left: 40px">
             <h1 class="text-center">Getting Started with the OSF</h1>
 
             <p>The OSF has many tools to help you organize your research and communicate efficiently with your collaborators.
@@ -111,7 +111,7 @@
         </div>
 
 
-        <div  id="structure" class="row col-sm-12 col-md-12" style="padding-top: 40px;">
+        <div  id="structure" class="row col-sm-12 col-md-12" style="padding-top: 40px; margin-left: 40px">
             <h2 class="text-center">Structuring Your Work</h2>
             <div class="row col-sm-12 col-md-12">
                 <%include file="/public/pages/help/organizer.mako"/>
@@ -127,7 +127,7 @@
             </div>
         </div>
 
-        <div id="sharing" class="row col-sm-12 col-md-12" style="padding-top: 40px;">
+        <div id="sharing" class="row col-sm-12 col-md-12" style="padding-top: 40px; margin-left: 40px">
             <h2 class="text-center anchor">Sharing Your Work</h2>
             <div class="row col-sm-12 col-md-12">
                 <%include file="/public/pages/help/contributors.mako"/>
@@ -138,14 +138,14 @@
             </div>
         </div>
 
-        <div id="addons" class="row col-sm-12 col-md-12" style="padding-top: 40px;">
+        <div id="addons" class="row col-sm-12 col-md-12" style="padding-top: 40px; margin-left: 40px">
             <h2 class="text-center anchor">OSF Add-ons</h2>
             <div class="row col-sm-12 col-md-12">
                 <%include file="/public/pages/help/addons.mako"/>
             </div>
         </div>
 
-        <div id="metrics" class="row col-sm-12 col-md-12" style="padding-top: 40px;">
+        <div id="metrics" class="row col-sm-12 col-md-12" style="padding-top: 40px; margin-left: 40px">
             <h2 class="text-center">Metrics</h2>
             <div class="row col-sm-12 col-md-12">
                 <%include file="/public/pages/help/statistics.mako"/>
