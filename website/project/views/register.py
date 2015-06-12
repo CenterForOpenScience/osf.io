@@ -33,7 +33,8 @@ from website.project.decorators import (
 from website.identifiers.model import Identifier
 from website.identifiers.metadata import datacite_metadata_for_node
 from website.project.metadata.schemas import OSF_META_SCHEMAS
-from website.project.utils import serialize_node
+from website.project.views.node import _view_project as serialize_node
+from website.project import utils as project_utils
 from website.util.permissions import ADMIN
 from website.models import MetaSchema, NodeLog
 from website import language, mails
@@ -434,6 +435,9 @@ def node_register_template_page_post(auth, node, **kwargs):
         try:
             register.embargo_registration(auth.user, embargo_end_date)
             register.save()
+            register.archive_job.meta['embargo_urls'] = project_utils._get_embargo_urls(register, auth.user)
+            register.archive_job.save()
+
         except ValidationValueError as err:
             raise HTTPError(http.BAD_REQUEST, data=dict(message_long=err.message))
     else:

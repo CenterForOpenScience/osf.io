@@ -53,6 +53,7 @@ from website.util.permissions import CREATOR_PERMISSIONS
 from website.project.metadata.schemas import OSF_META_SCHEMAS
 from website.util.permissions import DEFAULT_CONTRIBUTOR_PERMISSIONS
 from website.project import signals as project_signals
+from website.project import utils as project_utils
 
 html_parser = HTMLParser()
 
@@ -2735,6 +2736,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
             raise ValidationValueError('Embargo end date must be more than one day in the future')
 
         embargo = self._initiate_embargo(user, end_date, for_existing_registration=for_existing_registration, save=True)
+
         self.registered_from.add_log(
             action=NodeLog.EMBARGO_INITIATED,
             params={

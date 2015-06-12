@@ -1,14 +1,9 @@
 # -*- coding: utf-8 -*-
 """Various node-related utilities."""
-from website.project.views import node as node_views
-
 from website import mails
 from website import settings
 
 from website.util.permissions import ADMIN
-
-# Alias the project serializer
-serialize_node = node_views._view_project
 
 def _get_embargo_urls(node, user):
     approval_token, disapproval_token = None, None
