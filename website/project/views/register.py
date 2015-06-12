@@ -2,6 +2,7 @@
 import json
 import httplib as http
 from dateutil.parser import parse as parse_date
+import itertools
 
 from flask import request
 from modularodm import Q
@@ -374,8 +375,8 @@ def project_before_register(auth, node, **kwargs):
             'message': 'The contents of <strong>{0}</strong> cannot be registered at this time,  and will not be included as part of this registration.',
         },
     }
-
-    for addon in node.get_addons():
+    addon_set = [n.get_addons() for n in itertools.chain([node], node.get_descendants_recursive())]
+    for addon in itertools.chain(*addon_set):
         if not addon.complete:
             continue
         name = addon.config.short_name
