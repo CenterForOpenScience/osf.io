@@ -12,6 +12,7 @@ from website.addons.mendeley import serializer
 from website.addons.mendeley import settings
 from website.addons.mendeley.api import APISession
 from website.oauth.models import ExternalProvider
+from website.oauth.decorators import api_call
 from website.util import web_url_for
 
 
@@ -27,6 +28,10 @@ class Mendeley(ExternalProvider):
     default_scopes = ['all']
 
     _client = None
+
+    @property
+    def api_error_classes(self):
+        return (mendeley.exception.MendeleyApiException,)
 
     def handle_callback(self, response):
         client = self._get_client(response)
@@ -53,6 +58,7 @@ class Mendeley(ExternalProvider):
 
         return self._client
 
+    @api_call
     def _get_folders(self):
         """Get a list of a user's folders"""
 
@@ -72,6 +78,7 @@ class Mendeley(ExternalProvider):
             })
         return self._client
 
+    @api_call
     def citation_lists(self, extract_folder):
         """List of CitationList objects, derived from Mendeley folders"""
 
@@ -88,6 +95,7 @@ class Mendeley(ExternalProvider):
         ]
         return [all_documents] + serialized_folders
 
+    @api_call
     def get_list(self, list_id='ROOT'):
         """Get a single CitationList
         :param str list_id: ID for a Mendeley folder. Optional.
@@ -102,10 +110,12 @@ class Mendeley(ExternalProvider):
             return self._citations_for_mendeley_folder(folder)
         return self._citations_for_mendeley_user()
 
+    @api_call
     def _folder_metadata(self, folder_id):
         folder = self.client.folders.get(folder_id)
         return folder
 
+    @api_call
     def _citations_for_mendeley_folder(self, folder):
 
         document_ids = [
@@ -118,6 +128,7 @@ class Mendeley(ExternalProvider):
         }
         return map(lambda id: citations[id], document_ids)
 
+    @api_call
     def _citations_for_mendeley_user(self):
 
         documents = self.client.documents.iter(page_size=500)
@@ -126,6 +137,7 @@ class Mendeley(ExternalProvider):
             for document in documents
         ]
 
+    @api_call
     def _citation_for_mendeley_document(self, document):
         """Mendeley document to ``website.citations.models.Citation``
         :param BaseDocument document:
@@ -273,6 +285,7 @@ class MendeleyNodeSettings(AddonOAuthNodeSettingsBase):
     serializer = serializer.MendeleySerializer
 
     mendeley_list_id = fields.StringField()
+    mendeley_list_name = fields.StringField()
 
     _api = None
 
@@ -299,8 +312,7 @@ class MendeleyNodeSettings(AddonOAuthNodeSettingsBase):
         elif self.mendeley_list_id == 'ROOT':
             return 'All Documents'
         else:
-            folder = self.api._folder_metadata(self.mendeley_list_id)
-            return folder.name
+            return self.mendeley_list_name
 
     @property
     def root_folder(self):
@@ -342,6 +354,7 @@ class MendeleyNodeSettings(AddonOAuthNodeSettingsBase):
 
         # update this instance
         self.mendeley_list_id = mendeley_list_id
+        self.mendeley_folder_list_name = mendeley_list_name
         self.save()
 
         self.owner.add_log(

@@ -44,6 +44,10 @@ class MockOAuth1Provider(ExternalProvider):
     request_token_url = "http://mock1a.com/request"
     callback_url = "http://mock1a.com/callback"
 
+    @property
+    def api_error_classes(self):
+        return (Exception,)
+
     def handle_callback(self, response):
         return {
             'provider_id': 'mock_provider_id'

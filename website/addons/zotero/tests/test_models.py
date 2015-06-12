@@ -12,8 +12,11 @@ from website.addons.zotero.tests.factories import (
     ZoteroAccountFactory,
     ZoteroUserSettingsFactory,
     ExternalAccountFactory,
+    ZoteroNodeSettingsFactory
 )
 from website.addons.zotero.provider import ZoteroCitationsProvider
+
+import datetime
 
 from website.addons.zotero import model
 
@@ -240,22 +243,6 @@ class ZoteroNodeSettingsTestCase(OsfTestCase):
             self.node_settings.selected_folder_name,
             ''
         )
-
-    @mock.patch('website.addons.zotero.model.Zotero._folder_metadata')
-    def test_selected_folder_name(self, mock_folder_metadata):
-        # Mock the return from api call to get the folder's name
-        mock_folder = {'data': {'name': 'Fake Folder'}}
-
-        # Add the mocked return object to the mocked api client
-        mock_folder_metadata.return_value = mock_folder
-
-        self.node_settings.zotero_list_id = 'fake-list-id'
-
-        assert_equal(
-            self.node_settings.selected_folder_name,
-            'Fake Folder'
-        )
-
 
 class ZoteroUserSettingsTestCase(OsfTestCase):
 

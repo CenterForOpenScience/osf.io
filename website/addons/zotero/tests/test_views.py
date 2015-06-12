@@ -17,6 +17,7 @@ from website.addons.zotero.tests.factories import (
     ZoteroNodeSettingsFactory
 )
 
+from website.util import api_url_for
 from website.addons.zotero import views
 from website.addons.zotero.serializer import ZoteroSerializer
 
@@ -53,7 +54,6 @@ class ZoteroViewsTestCase(OsfTestCase):
         self.project = ProjectFactory(creator=self.user)
         self.node_addon = ZoteroNodeSettingsFactory(owner=self.project)
         self.node_addon.set_auth(external_account=self.account, user=self.user)
-        #self.user_addon.grant_oauth_access(self.node_addon, self.account, metadata={'lists': 'list'})
         self.node = MockNode()
         self.node.addon = self.node_addon
         self.id_patcher = mock.patch('website.addons.zotero.model.Zotero.client_id')

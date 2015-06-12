@@ -429,6 +429,10 @@ class MockOAuth2Provider(ExternalProvider):
     auth_url_base = "https://mock2.com/auth"
     callback_url = "https://mock2.com/callback"
 
+    @property
+    def api_error_classes(self):
+        return (Exception,)
+
     def handle_callback(self, response):
         return {
             'provider_id': 'mock_provider_id'

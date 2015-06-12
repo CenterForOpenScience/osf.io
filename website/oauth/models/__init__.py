@@ -30,7 +30,6 @@ logger = logging.getLogger(__name__)
 OAUTH1 = 1
 OAUTH2 = 2
 
-
 @unique_on(['provider', 'provider_id'])
 class ExternalAccount(StoredObject):
     """An account on an external service.
@@ -117,6 +116,10 @@ class ExternalProvider(object):
             name=self.__class__.__name__,
             status=self.account.provider_id if self.account else 'anonymous'
         )
+
+    @abc.abstractproperty
+    def api_error_classes(self):
+        pass
 
     @abc.abstractproperty
     def auth_url_base(self):

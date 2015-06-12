@@ -279,9 +279,21 @@ CitationGrid.prototype.initTreebeard = function() {
             resolveRows: function() {
                 return self.resolveRowAux.call(self, arguments);
             },
-            ondataloaderror: function(err) {
+            ondataloaderror: function(xhr) {
+                $(self.gridSelector).html(errorPage);
+                Raven.captureMessage('Error fetching citations', {
+                    url: self.apiUrl,
+                    status: xhr.responseText,
+                    error: xhr.status
+                });
+                this.errors = true;
+                return '{}';
+            },
+        onload: function(){
+            if(this.options.errors){
                 $(self.gridSelector).html(errorPage);
             }
+        }
         },
         treebeardOptions
     );

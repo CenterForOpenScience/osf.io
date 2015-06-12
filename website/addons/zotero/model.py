@@ -2,6 +2,7 @@
 
 from modularodm import fields
 from pyzotero import zotero
+from pyzotero.zotero_errors import PyZoteroError
 
 from website.addons.base import AddonOAuthNodeSettingsBase
 from website.addons.base import AddonOAuthUserSettingsBase
@@ -9,6 +10,7 @@ from website.addons.citations.utils import serialize_folder
 from website.addons.zotero import serializer
 from website.addons.zotero import settings
 from website.oauth.models import ExternalProvider
+from website.oauth.decorators import api_call
 
 # TODO: Don't cap at 200 responses. We can only fetch 100 citations at a time. With lots
 # of citations, requesting the citations may take longer than the UWSGI harakiri time.
@@ -30,6 +32,10 @@ class Zotero(ExternalProvider):
 
     _client = None
 
+    @property
+    def api_error_classes(self):
+        return (PyZoteroError,)
+
     def handle_callback(self, response):
 
         return {
@@ -47,6 +53,7 @@ class Zotero(ExternalProvider):
             self._client = zotero.Zotero(self.account.provider_id, 'user', self.account.oauth_key)
         return self._client
 
+    @api_call
     def citation_lists(self, extract_folder):
         """List of CitationList objects, derived from Zotero collections"""
         client = self.client
@@ -66,10 +73,12 @@ class Zotero(ExternalProvider):
 
         return [all_documents] + serialized_folders
 
+    @api_call
     def _folder_metadata(self, folder_id):
         collection = self.client.collection(folder_id)
         return collection
 
+    @api_call
     def get_list(self, list_id=None):
         """Get a single CitationList
 
@@ -94,6 +103,7 @@ class Zotero(ExternalProvider):
         else:
             return self._citations_for_zotero_user()
 
+    @api_call
     def _citations_for_zotero_collection(self, collection):
         """Get all the citations in a specified collection
 
@@ -102,6 +112,7 @@ class Zotero(ExternalProvider):
         """
         return collection
 
+    @api_call
     def _citations_for_zotero_user(self):
         """Get all the citations from the user """
         citations = []
@@ -127,6 +138,7 @@ class ZoteroNodeSettings(AddonOAuthNodeSettingsBase):
     serializer = serializer.ZoteroSerializer
 
     zotero_list_id = fields.StringField()
+    zotero_list_name = fields.StringField()
 
     _api = None
 
@@ -151,8 +163,7 @@ class ZoteroNodeSettings(AddonOAuthNodeSettingsBase):
         if self.zotero_list_id is None:
             return ''
         elif self.zotero_list_id != 'ROOT':
-            folder = self.api._folder_metadata(self.zotero_list_id)
-            return folder['data'].get('name')
+            return self.zotero_list_name
         else:
             return 'All Documents'
 
@@ -196,6 +207,7 @@ class ZoteroNodeSettings(AddonOAuthNodeSettingsBase):
 
         # update this instance
         self.zotero_list_id = zotero_list_id
+        self.zotero_lisr_name = zotero_list_name
         self.save()
 
         self.owner.add_log(

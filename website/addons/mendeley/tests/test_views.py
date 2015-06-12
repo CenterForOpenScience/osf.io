@@ -57,7 +57,6 @@ class MendeleyViewsTestCase(OsfTestCase):
         self.project = ProjectFactory(creator=self.user)
         self.node_addon = MendeleyNodeSettingsFactory(owner=self.project)
         self.node_addon.set_auth(external_account=self.account, user=self.user)
-        #self.user_addon.grant_oauth_access(self.node_addon, self.account, metadata={'lists': 'list'})
         self.node = MockNode()
         self.node.addon = self.node_addon
         self.id_patcher = mock.patch('website.addons.mendeley.model.Mendeley.client_id')
