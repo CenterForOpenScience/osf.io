@@ -1973,10 +1973,10 @@ span#profileFullname{
 .absolute-bottom {
     position: absolute;
     bottom: 0;
-    padding-left: 3.5em;
-    padding-right: 2.4em;
+    width: 90%;
     text-align: center;
-
+    padding-left: 1.5em;
+    padding-right: 1.5em;
 }
 
 /* Project Dashboard */

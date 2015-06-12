@@ -4,8 +4,8 @@
 'use strict';
 var ko = require('knockout');
 var oop = require('js/oop');
-var MAX_PAGES_ON_PAGINATOR = 16;
-var MAX_PAGES_ON_PAGINATOR_SIDE = 16;
+var MAX_PAGES_ON_PAGINATOR = 17; // total page boxes available
+var MAX_PAGES_ON_PAGINATOR_SIDE = 15; // Amount of pages before first ...
 
 var Paginator = oop.defclass({
     constructor: function() {
@@ -62,7 +62,7 @@ var Paginator = oop.defclass({
                     style: 'disabled',
                     text: '...',
                     handler: function() {}
-                });
+                }); // 19 - 15 = 4
                 for (var i = self.numberOfPages() - MAX_PAGES_ON_PAGINATOR_SIDE; i < self.numberOfPages() - 1; i++) {
                     self.paginators.push({
                         style: (self.currentPage() === i) ? 'active' : '',

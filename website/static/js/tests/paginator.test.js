@@ -35,8 +35,8 @@ describe('Paginator', () => {
     });
 
     it('previousPage', () => {
-        numberOfPages = 16;
-        currentPage = 16;
+        numberOfPages = 15;
+        currentPage = 14;
         paginator.configure(function(p){
             p.numberOfPages(numberOfPages);
             p.currentPage(currentPage);
@@ -47,9 +47,9 @@ describe('Paginator', () => {
     });
 
     it('nextPage', () => {
-        numberOfPages = 16;
+        numberOfPages = 15;
         paginator.configure(function(p){
-            p.num`erOfPages(numberOfPages);
+            p.numberOfPages(numberOfPages);
         });
         paginator.nextPage();
         assert.calledOnce(paginator.fetchResults);
@@ -62,7 +62,8 @@ describe('Paginator', () => {
     });
 
     describe('addNewPaginator', () => {
-        var maxPaginatorNumber = 16;
+        var maxPaginatorNumber = 19;
+        var twoEllipsismaxPaginator = 9;
 
         it('one page no paginator', () => {
             numberOfPages = 1;
@@ -74,7 +75,7 @@ describe('Paginator', () => {
         });
 
         it('less than 7 pages', () => {
-            numberOfPages = 6;
+            numberOfPages = 5;
             paginator.configure(function(p){
                 p.numberOfPages(numberOfPages);
             });
@@ -93,8 +94,8 @@ describe('Paginator', () => {
         });
 
         it('more than 7 pages, currentPage less than 4, one ellipse at the end', () => {
-            numberOfPages = 16;
-            currentPage = 12;
+            numberOfPages = 19;
+            currentPage = 13;
             paginator.configure(function(p){
                 p.numberOfPages(numberOfPages);
                 p.currentPage(currentPage);
@@ -109,8 +110,8 @@ describe('Paginator', () => {
 
         it('more than 7 pages, currentPage more than numbersOfPages - 5, one ellipse at the beginning',
             () => {
-            numberOfPages = 16;
-            currentPage = 12;
+            numberOfPages = 19;
+            currentPage = 15;
             paginator.configure(function(p){
                 p.numberOfPages(numberOfPages);
                 p.currentPage(currentPage);
@@ -125,22 +126,22 @@ describe('Paginator', () => {
 
         });
 
-        it('more than 7 pages, currentPage more than 5 and numbersOfPages - 5, two ellipses',
+        it('more than 41 pages, currentPage more than 20 and numbersOfPages - 20, two ellipses',
             () => {
-            numberOfPages = 16;
-            currentPage = 9;
+            numberOfPages = 41;
+            currentPage = 20;
             paginator.configure(function(p){
                 p.numberOfPages(numberOfPages);
                 p.currentPage(currentPage);
             });
             paginator.addNewPaginators();
-            assert.equal(paginator.paginators().length, maxPaginatorNumber);
+            assert.equal(paginator.paginators().length, twoEllipsismaxPaginator);
             assert.equal(paginator.paginators()[0].text, '&lt;');
             assert.equal(paginator.paginators()[1].text, 1);
             assert.equal(paginator.paginators()[2].text, '...');
-            assert.equal(paginator.paginators()[maxPaginatorNumber - 1].text, '&gt;');
-            assert.equal(paginator.paginators()[maxPaginatorNumber - 2].text, numberOfPages);
-            assert.equal(paginator.paginators()[maxPaginatorNumber - 3].text, '...')
+            assert.equal(paginator.paginators()[twoEllipsismaxPaginator - 1].text, '&gt;');
+            assert.equal(paginator.paginators()[twoEllipsismaxPaginator - 2].text, numberOfPages);
+            assert.equal(paginator.paginators()[twoEllipsismaxPaginator - 3].text, '...')
 
         });
 
