@@ -1982,7 +1982,11 @@ div.profile-fullname{
 
 .absolute-bottom {
     position: absolute;
-    bottom: 0px;
+    bottom: 0;
+    padding-left: 3.5em;
+    padding-right: 2.4em;
+    text-align: center;
+
 }
 
 /* Project Dashboard */
@@ -2010,7 +2014,6 @@ div.profile-fullname{
     display: inline-block;
     float: left;
     margin-bottom: 0;
-
 }
 .osf-dash-col .logs .addon-widget-body{
     min-height: 485px;
@@ -2038,7 +2041,6 @@ div.profile-fullname{
 .text-300 {
     font-weight: 300;
 }
-
 
 #projectSubnav .navbar-collapse {
     padding-left: 0;
