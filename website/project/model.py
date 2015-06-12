@@ -1760,9 +1760,11 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
 
         for node_contained in original.nodes:
             if not node_contained.is_deleted:
-                node_contained.register_node(
+                child_registration = node_contained.register_node(
                     schema, auth, template, data, parent=registered
                 )
+                if child_registration and not child_registration.primary:
+                    registered.nodes.append(child_registration)
 
         original.add_log(
             action=NodeLog.PROJECT_REGISTERED,
