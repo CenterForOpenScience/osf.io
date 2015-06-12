@@ -93,7 +93,7 @@ describe('Paginator', () => {
             );
         });
 
-        it('more than 7 pages, currentPage less than 4, one ellipse at the end', () => {
+        it('more than 17 pages, currentPage less than 13, one ellipse at the end', () => {
             numberOfPages = 19;
             currentPage = 13;
             paginator.configure(function(p){
@@ -108,7 +108,7 @@ describe('Paginator', () => {
             assert.equal(paginator.paginators()[maxPaginatorNumber - 3].text, '...')
         });
 
-        it('more than 7 pages, currentPage more than numbersOfPages - 5, one ellipse at the beginning',
+        it('more than 17 pages, currentPage more than numbersOfPages - 15, one ellipse at the beginning',
             () => {
             numberOfPages = 19;
             currentPage = 15;
@@ -126,7 +126,7 @@ describe('Paginator', () => {
 
         });
 
-        it('more than 41 pages, currentPage more than 20 and numbersOfPages - 20, two ellipses',
+        it('more than 17 pages, currentPage more than 15 and numbersOfPages - 15, two ellipses',
             () => {
             numberOfPages = 41;
             currentPage = 20;
