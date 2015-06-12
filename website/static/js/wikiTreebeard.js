@@ -92,7 +92,9 @@ function WikiMenu(data) {
                             if(item.data.page.wiki_content === '' && !tb.canEdit) {
                                 return [
                                     m('h', item.data.page.name),
-                                    m('span', {class: 'text-danger', style: 'padding-left: 10px'}, 'No wiki content')
+                                    m('span',
+                                        [m('i', {class: 'text-muted', style: 'padding-left: 10px'}, 'No wiki content')]
+                                    )
                                 ]
                             }
                             return m('a', {href: item.data.page.url}, item.data.page.name);
