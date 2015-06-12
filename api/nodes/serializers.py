@@ -152,7 +152,7 @@ class NodePointersSerializer(JSONAPISerializer):
         node = self.context['view'].get_node()
         pointer_node = Node.load(validated_data['node']['_id'])
         if not pointer_node:
-            raise exceptions.ParseError('Node not found.')
+            raise exceptions.NotFound('Node not found.')
         try:
             pointer = node.add_pointer(pointer_node, auth, save=True)
             return pointer
