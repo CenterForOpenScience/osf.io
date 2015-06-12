@@ -5,6 +5,9 @@ from website import settings
 
 from website.util.permissions import ADMIN
 
+from website.project.views.node import _view_project
+serialize_node = _view_project
+
 def get_embargo_urls(node, user):
     approval_token, disapproval_token = None, None
     if node.has_permission(user, ADMIN):

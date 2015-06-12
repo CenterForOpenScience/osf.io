@@ -33,7 +33,7 @@ from website.project.decorators import (
 from website.identifiers.model import Identifier
 from website.identifiers.metadata import datacite_metadata_for_node
 from website.project.metadata.schemas import OSF_META_SCHEMAS
-from website.project.views.node import _view_project as serialize_node
+from website.project.utils import serialize_node
 from website.project import utils as project_utils
 from website.util.permissions import ADMIN
 from website.models import MetaSchema, NodeLog

@@ -25,8 +25,8 @@ from website.addons.base import exceptions
 from website.models import User, Node, NodeLog
 from website.util import rubeus
 from website.profile.utils import get_gravatar
-from website.project.views.node import _view_project as serialize_node
 from website.project.decorators import must_be_valid_project, must_be_contributor_or_public
+from website.project.utils import serialize_node
 
 
 @decorators.must_have_permission('write')
