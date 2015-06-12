@@ -34,7 +34,7 @@ RETRACTION_PENDING_TIME = datetime.timedelta(days=2)
 EMBARGO_PENDING_TIME = datetime.timedelta(days=2)
 # Date range for embargo periods
 EMBARGO_END_DATE_MIN = datetime.timedelta(days=2)
-EMBARGO_END_DATE_MAX = datetime.timedelta(days=365)
+EMBARGO_END_DATE_MAX = datetime.timedelta(days=1460)  # Four years
 
 LOAD_BALANCER = False
 PROXY_ADDRS = []

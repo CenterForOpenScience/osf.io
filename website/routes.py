@@ -432,6 +432,14 @@ def make_url_map(app):
             OsfWebRenderer('public/resetpassword.mako', render_mako_string)
         ),
 
+        # Resend confirmation URL linked to in CAS login page
+        Rule(
+            '/resend/',
+            ['get', 'post'],
+            auth_views.resend_confirmation,
+            OsfWebRenderer('resend.mako', render_mako_string)
+        ),
+
         # TODO: Remove `auth_register_post`
         Rule('/register/', 'post', auth_views.auth_register_post,
              OsfWebRenderer('public/login.mako')),

@@ -120,7 +120,7 @@ time stamps will always be linked to the original.</p>
 '''
 REGISTRATION_EMBARGO_INFO = '''
 <p>You can choose whether to make your registration public immediately or
-embargo it for up to 1 year. At the end of the embargo period the registration
+embargo it for up to four years. At the end of the embargo period the registration
 is automatically made public. After becoming public, the only way to remove a
 registration is to retract it. Retractions show only the registration title,
 contributors, and description to indicate that a registration was made and

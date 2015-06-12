@@ -50,9 +50,9 @@ describe('registrationEmbargo', () => {
                 vm.pikaday(invalidPastDate);
                 assert.isFalse(vm.isEmbargoEndDateValid());
             });
-            it('returns false for date more than 365 days in the future', () => {
+            it('returns false for date more than 4 years in the future', () => {
                 var invalidFutureDate = new Date();
-                invalidFutureDate.setDate(invalidFutureDate.getDate() + 366);
+                invalidFutureDate.setDate(invalidFutureDate.getDate() + 1460);
                 vm.pikaday(invalidFutureDate);
                 assert.isFalse(vm.isEmbargoEndDateValid());
             });
