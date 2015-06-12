@@ -129,6 +129,8 @@ class MetaData(GuidStoredObject):
     date_created = fields.DateTimeField(auto_now_add=datetime.datetime.utcnow)
     date_modified = fields.DateTimeField(auto_now=datetime.datetime.utcnow)
 
+    schema = fields.ForeignField('metaschema')
+
 
 def validate_comment_reports(value, *args, **kwargs):
     for key, val in value.iteritems():
@@ -600,7 +602,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
     registered_date = fields.DateTimeField(index=True)
     registered_user = fields.ForeignField('user', backref='registered')
     registered_schema = fields.ForeignField('metaschema', backref='registered')
-    registered_meta = fields.DictionaryField()
+    registered_meta = fields.ForeignField('metadata', backref='referrent')
 
     is_fork = fields.BooleanField(default=False, index=True)
     forked_date = fields.DateTimeField(index=True)
