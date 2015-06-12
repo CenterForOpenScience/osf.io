@@ -143,6 +143,10 @@ class SignInForm(Form):
     password = password_field
 
 
+class ResendConfirmationForm(Form):
+    email = email_field
+
+
 class PasswordForm(Form):
     password = password_field
 
