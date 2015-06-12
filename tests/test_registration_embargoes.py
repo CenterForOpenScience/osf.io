@@ -615,6 +615,38 @@ class RegistrationEmbargoViewsTestCase(OsfTestCase):
         assert_true(registration.is_public)
 
     @mock.patch('website.archiver.tasks.archive.si')
+    def test_POST_register_make_public_immediately_makes_children_public(self, mock_archive):
+        component = NodeFactory(
+            creator=self.user,
+            parent=self.project,
+            title='Component'
+        )
+        subproject = ProjectFactory(
+            creator=self.user,
+            parent=self.project,
+            title='Subproject'
+        )
+        subproject_component = NodeFactory(
+            creator=self.user,
+            parent=subproject,
+            title='Subcomponent'
+        )
+
+        res = self.app.post(
+            self.project.api_url_for('node_register_template_page_post', template=u'Open-Ended_Registration'),
+            self.valid_make_public_payload,
+            content_type='application/json',
+            auth=self.user.auth
+        )
+        self.project.reload()
+        # Last node directly registered from self.project
+        registration = Node.load(self.project.node__registrations[-1])
+        assert_true(registration.is_public)
+        for node in registration.get_descendants_recursive():
+            assert_true(node.is_registration)
+            assert_true(node.is_public)
+
+    @mock.patch('website.archiver.tasks.archive.si')
     def test_POST_register_embargo_is_not_public(self, mock_archive):
         res = self.app.post(
             self.project.api_url_for('node_register_template_page_post', template=u'Open-Ended_Registration'),
