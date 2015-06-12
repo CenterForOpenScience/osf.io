@@ -31,6 +31,7 @@ from scripts.osfstorage import settings as storage_settings
 container_primary = None
 container_parity = None
 vault = None
+audit_temp_path = None
 
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO)
@@ -38,12 +39,12 @@ logging.getLogger('boto').setLevel(logging.CRITICAL)
 
 
 def download_from_cloudfiles(version):
-    path = os.path.join(storage_settings.AUDIT_TEMP_PATH, version.location['object'])
+    path = os.path.join(audit_temp_path, version.location['object'])
     if os.path.exists(path):
         return path
     try:
         obj = container_primary.get_object(version.location['object'])
-        obj.download(storage_settings.AUDIT_TEMP_PATH)
+        obj.download(audit_temp_path)
         return path
     except NoSuchObject as err:
         logger.error('*** FILE NOT FOUND ***')
@@ -55,7 +56,7 @@ def download_from_cloudfiles(version):
 
 
 def delete_temp_file(version):
-    path = os.path.join(storage_settings.AUDIT_TEMP_PATH, version.location['object'])
+    path = os.path.join(audit_temp_path, version.location['object'])
     try:
         os.remove(path)
     except OSError:
@@ -156,6 +157,11 @@ if __name__ == '__main__':
         # Log to file
         if not dry_run:
             scripts_utils.add_file_logger(logger, __file__, suffix=worker_id)
+            audit_temp_path = os.path.join(storage_settings.AUDIT_TEMP_PATH, str(worker_id))
+            try:
+                os.makedirs(audit_temp_path)
+            except OSError:
+                pass
             main(nworkers, worker_id, dry_run=dry_run)
     except Exception as err:
         logger.error('=== Unexpected Error ===')
