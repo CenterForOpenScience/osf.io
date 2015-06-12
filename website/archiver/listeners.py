@@ -2,10 +2,10 @@ import celery
 import itertools
 
 from framework.tasks import handlers
+from framework.flask import app
 
 from website.archiver.tasks import (
     archive,
-    create_app_context,
 )
 from website.archiver import utils as archiver_utils
 from website.archiver import (
@@ -15,6 +15,7 @@ from website.archiver.decorators import fail_archive_on_error
 
 from website.project import signals as project_signals
 from website.project import utils as project_utils
+
 
 @project_signals.after_create_registration.connect
 def after_register(src, dst, user):
@@ -41,7 +42,6 @@ def archive_callback(dst):
 
     :param dst: registration Node
     """
-    create_app_context()
     root_job = dst.root.archive_job
     if root_job.sent or not root_job.archive_tree_finished():
         return
@@ -50,7 +50,12 @@ def archive_callback(dst):
     if dst.archive_job.success:
         if dst.pending_embargo:
             for contributor in dst.contributors:
-                project_utils.send_embargo_email(dst.root, contributor)
+                with app.app_context():
+                    project_utils.send_embargo_email(
+                        dst.root,
+                        contributor,
+                        urls=project_utils._get_embargo_urls(dst.root, contributor)
+                    )
         else:
             archiver_utils.send_archiver_success_mail(dst.root)
     else:
