@@ -2,7 +2,7 @@
 
     <div class="cp-handle" data-bind="click:removeCount">
         <p data-bind="text: displayCount" class="unread-comments-count"></p>
-        <i class="fa fa-comments-o fa-inverse fa-2x comment-handle-icon" style=""></i>
+        <i class="fa fa-comments-o fa-inverse fa-2x comment-handle-icon m-t-xs" style=""></i>
     </div>
     <div class="cp-bar"></div>
 
