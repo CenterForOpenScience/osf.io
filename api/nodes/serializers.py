@@ -26,23 +26,23 @@ class NodeSerializer(JSONAPISerializer):
     links = LinksField({
         'html': 'get_absolute_url',
         'children': {
-            'related': Link('nodes:node-children', kwargs={'pk': '<pk>'}),
+            'related': Link('nodes:node-children', kwargs={'node_id': '<node_id>'}),
             'count': 'get_node_count',
         },
         'contributors': {
-            'related': Link('nodes:node-contributors', kwargs={'pk': '<pk>'}),
+            'related': Link('nodes:node-contributors', kwargs={'node_id': '<node_id>'}),
             'count': 'get_contrib_count',
         },
         'pointers': {
-            'related': Link('nodes:node-pointers', kwargs={'pk': '<pk>'}),
+            'related': Link('nodes:node-pointers', kwargs={'node_id': '<node_id>'}),
             'count': 'get_pointers_count',
         },
         'registrations': {
-            'related': Link('nodes:node-registrations', kwargs={'pk': '<pk>'}),
+            'related': Link('nodes:node-registrations', kwargs={'node_id': '<node_id>'}),
             'count': 'get_registration_count',
         },
         'files': {
-            'related': Link('nodes:node-files', kwargs={'pk': '<pk>'})
+            'related': Link('nodes:node-files', kwargs={'node_id': '<node_id>'})
         },
     })
     properties = ser.SerializerMethodField(help_text='A dictionary of read-only booleans: registration, collection,'
@@ -172,7 +172,7 @@ class NodeFilesSerializer(JSONAPISerializer):
     links = LinksField({
         'self': WaterbutlerLink(kwargs={'node_id': '<node_id>'}),
         'self_methods': 'valid_self_link_methods',
-        'related': Link('nodes:node-files', kwargs={'pk': '<node_id>'},
+        'related': Link('nodes:node-files', kwargs={'node_id': '<node_id>'},
                         query_kwargs={'path': '<path>', 'provider': '<provider>'}),
     })
 

@@ -3,6 +3,10 @@ from rest_framework import serializers as ser
 from api.base.serializers import JSONAPISerializer, LinksField, Link
 
 
+class PrimaryKeySerializer(JSONAPISerializer):
+    pass
+
+
 class UserSerializer(JSONAPISerializer):
     filterable_fields = frozenset([
         'fullname',
@@ -29,7 +33,7 @@ class UserSerializer(JSONAPISerializer):
     links = LinksField({
         'html': 'absolute_url',
         'nodes': {
-            'relation': Link('users:user-nodes', kwargs={'pk': '<pk>'})
+            'relation': Link('users:user-nodes', kwargs={'user_id': '<user_id>'})
         }
     })
 
