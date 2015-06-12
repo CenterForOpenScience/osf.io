@@ -11,7 +11,6 @@ require('css/typeahead.css');
 require('css/fangorn.css');
 require('css/projectorganizer.css');
 
-var Handlebars = require('handlebars');
 var $ = require('jquery');
 var m = require('mithril');
 var Fangorn = require('js/fangorn');
@@ -313,63 +312,6 @@ function _poToggleCheck(item) {
     }
     item.notify.update('Not allowed: Private folder', 'warning', 1, undefined);
     return false;
-}
-
-/**
- * Returns custom icons for OSF depending on the type of item
- * @param {Object} item A Treebeard _item object. Node information is inside item.data
- * @this Treebeard.controller
- * @returns {Object}  Returns a mithril template with the m() function.
- * @private
- */
-function _poResolveIcon(item) {
-    var icons = iconmap.projectIcons;
-    var componentIcons = iconmap.componentIcons;
-    var projectIcons = iconmap.projectIcons;
-    var viewLink = item.data.urls.fetch;
-    function returnView(type, category) {
-        var iconType = icons[type];
-        if (type === 'component' || type === 'registeredComponent') {
-            iconType = componentIcons[category];
-        } else if (type === 'project' || type === 'registeredProject') {
-            iconType = projectIcons[category];
-        }
-        if (type === 'registeredComponent' || type === 'registeredProject') {
-            iconType += ' po-icon-registered';
-        } else {
-            iconType += ' po-icon';
-        }
-        var template = m('span', { 'class' : iconType});
-        return template;
-    }
-    if (item.data.isSmartFolder) {
-        return returnView('smartCollection');
-    }
-    if (item.data.isFolder) {
-        return returnView('collection');
-    }
-    if (item.data.isPointer && !item.parent().data.isFolder) {
-        return returnView('link');
-    }
-    if (item.data.isProject) {
-        if (item.data.isRegistration) {
-            return returnView('registeredProject', item.data.category);
-        } else {
-            return returnView('project', item.data.category);
-        }
-    }
-
-    if (item.data.isComponent) {
-        if (item.data.isRegistration) {
-            return returnView('registeredComponent', item.data.category);
-        }
-        return returnView('component', item.data.category);
-    }
-
-    if (item.data.isPointer) {
-        return returnView('link');
-    }
-    return returnView('collection');
 }
 
 /**
@@ -1217,7 +1159,6 @@ var POToolbar = {
                     id : 'addNewFolder',
                     helpTextId : 'addFolderHelp',
                     placeholder : 'New collection name',
-                    tooltip: 'Name your new collection'
                 }, ctrl.helpText())
                 ),
             m('.col-xs-3.tb-buttons-col',
@@ -1449,7 +1390,7 @@ var tbOptions = {
         _cleanupMithril();
     },
     onmultiselect : _poMultiselect,
-    resolveIcon : _poResolveIcon,
+    resolveIcon : Fangorn.Utils.resolveIconView,
     resolveToggle : _poResolveToggle,
     resolveLazyloadUrl : _poResolveLazyLoad,
     lazyLoadOnLoad : expandStateLoad,

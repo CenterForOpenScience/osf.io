@@ -44,7 +44,8 @@ else:
 def server(host=None, port=5000, debug=True, live=False):
     """Run the app server."""
     from website.app import init_app
-    app = init_app(set_backends=True, routes=True, mfr=True)
+    app = init_app(set_backends=True, routes=True)
+    settings.API_SERVER_PORT = port
 
     if live:
         from livereload import Server
@@ -53,6 +54,15 @@ def server(host=None, port=5000, debug=True, live=False):
         server.serve(port=port)
     else:
         app.run(host=host, port=port, debug=debug, extra_files=[settings.ASSET_HASH_PATH])
+
+
+@task
+def apiserver(port=8000, live=False):
+    """Run the API server."""
+    cmd = 'python manage.py runserver {}'.format(port)
+    if live:
+        cmd += ' livereload'
+    run(cmd, echo=True)
 
 
 SHELL_BANNER = """
@@ -341,9 +351,8 @@ def requirements(addons=False, release=False, dev=False):
         inv requirements --addons
         inv requirements --release
     """
-    if addons:
+    if release or addons:
         addon_requirements()
-    req_file = None
     # "release" takes precedence
     if release:
         req_file = os.path.join(HERE, 'requirements', 'release.txt')
@@ -383,9 +392,12 @@ def test_addons():
 
 
 @task
-def test(all=False):
+def test(all=False, syntax=False):
     """Alias of `invoke test_osf`.
     """
+    if syntax:
+        flake()
+
     if all:
         test_all()
     else:
@@ -393,8 +405,8 @@ def test(all=False):
 
 
 @task
-def test_all(flake=False):
-    if flake:
+def test_all(syntax=False):
+    if syntax:
         flake()
     test_osf()
     test_addons()
@@ -595,15 +607,9 @@ def analytics():
 @task
 def clear_sessions(months=1, dry_run=False):
     from website.app import init_app
-    init_app(routes=False, set_backends=True, mfr=False)
+    init_app(routes=False, set_backends=True)
     from scripts import clear_sessions
     clear_sessions.clear_sessions_relative(months=months, dry_run=dry_run)
-
-
-@task
-def clear_mfr_cache():
-    run('rm -rf {0}/*'.format(settings.MFR_TEMP_PATH), echo=True)
-    run('rm -rf {0}/*'.format(settings.MFR_CACHE_PATH), echo=True)
 
 
 # Release tasks
@@ -745,9 +751,7 @@ def clean_assets():
     """Remove built JS files."""
     public_path = os.path.join(HERE, 'website', 'static', 'public')
     js_path = os.path.join(public_path, 'js')
-    mfr_path = os.path.join(public_path, 'mfr')
     run('rm -rf {0}'.format(js_path), echo=True)
-    run('rm -rf {0}'.format(mfr_path), echo=True)
 
 
 @task(aliases=['pack'])

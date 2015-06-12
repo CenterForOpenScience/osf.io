@@ -128,7 +128,10 @@ def _must_be_contributor_factory(include_public):
                 if key not in node.private_link_keys_active:
                     if not check_can_access(node=node, user=user, key=key):
                         redirect_url = check_key_expired(key=key, node=node, url=request.url)
-                        response = redirect(cas.get_login_url(redirect_url))
+                        if request.headers.get('Content-Type') == 'application/json':
+                            raise HTTPError(http.UNAUTHORIZED)
+                        else:
+                            response = redirect(cas.get_login_url(redirect_url))
 
             return response or func(*args, **kwargs)
 

@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 import unittest
 import logging
 
@@ -65,10 +66,8 @@ class TestUserUpdate(SearchTestCase):
         assert_equal(len(docs), 1)
 
     def test_change_name(self):
-        """Add a user, change her name, and verify that only the new name is
-        found in search.
-
-        """
+        # Add a user, change her name, and verify that only the new name is
+        # found in search.
         user = UserFactory(fullname='Barry Mitchell')
         fullname_original = user.fullname
         user.fullname = user.fullname[::-1]
@@ -81,7 +80,7 @@ class TestUserUpdate(SearchTestCase):
         assert_equal(len(docs_current), 1)
 
     def test_disabled_user(self):
-        """Test that disabled users are not in search index"""
+        # Test that disabled users are not in search index
 
         user = UserFactory(fullname='Bettie Page')
         user.save()
@@ -166,15 +165,13 @@ class TestProject(SearchTestCase):
         self.project = ProjectFactory(title='Red Special', creator=self.user)
 
     def test_new_project_private(self):
-        """Verify that a private project is not present in Elastic Search.
-        """
+        # Verify that a private project is not present in Elastic Search.
         docs = query(self.project.title)['results']
         assert_equal(len(docs), 0)
 
     def test_make_public(self):
-        """Make project public, and verify that it is present in Elastic
-        Search.
-        """
+        # Make project public, and verify that it is present in Elastic
+        # Search.
         self.project.set_privacy('public')
         docs = query(self.project.title)['results']
         assert_equal(len(docs), 1)
@@ -207,9 +204,8 @@ class TestPublicNodes(SearchTestCase):
         )
 
     def test_make_private(self):
-        """Make project public, then private, and verify that it is not present
-        in search.
-        """
+        # Make project public, then private, and verify that it is not present
+        # in search.
         self.project.set_privacy('private')
         docs = query('category:project AND ' + self.title)['results']
         assert_equal(len(docs), 0)
@@ -230,9 +226,8 @@ class TestPublicNodes(SearchTestCase):
         assert_true(docs[0]['parent_url'])
 
     def test_make_parent_private(self):
-        """Make parent of component, public, then private, and verify that the
-        component still appears but doesn't link to the parent in search.
-        """
+        # Make parent of component, public, then private, and verify that the
+        # component still appears but doesn't link to the parent in search.
         self.project.set_privacy('private')
         docs = query('category:component AND ' + self.title)['results']
         assert_equal(len(docs), 1)
@@ -240,9 +235,6 @@ class TestPublicNodes(SearchTestCase):
         assert_false(docs[0]['parent_url'])
 
     def test_delete_project(self):
-        """
-
-        """
         self.component.remove_node(self.consolidate_auth)
         docs = query('category:component AND ' + self.title)['results']
         assert_equal(len(docs), 0)
@@ -252,9 +244,6 @@ class TestPublicNodes(SearchTestCase):
         assert_equal(len(docs), 0)
 
     def test_change_title(self):
-        """
-
-        """
         title_original = self.project.title
         self.project.set_title(
             'Blue Ordinary', self.consolidate_auth, save=True)
@@ -307,10 +296,8 @@ class TestPublicNodes(SearchTestCase):
             assert_equal(len(docs), 1)
 
     def test_clear_wiki(self):
-        """Add wiki text to page, then delete, then verify that project is not
-        found when searching for wiki text.
-
-        """
+        # Add wiki text to page, then delete, then verify that project is not
+        # found when searching for wiki text.
         wiki_content = 'Hammer to fall'
         self.project.update_node_wiki(
             'home', wiki_content, self.consolidate_auth,
@@ -321,10 +308,8 @@ class TestPublicNodes(SearchTestCase):
         assert_equal(len(docs), 0)
 
     def test_add_contributor(self):
-        """Add a contributor, then verify that project is found when searching
-        for contributor.
-
-        """
+        # Add a contributor, then verify that project is found when searching
+        # for contributor.
         user2 = UserFactory(fullname='Adam Lambert')
 
         docs = query('category:project AND "{}"'.format(user2.fullname))['results']
@@ -336,10 +321,8 @@ class TestPublicNodes(SearchTestCase):
         assert_equal(len(docs), 1)
 
     def test_remove_contributor(self):
-        """Add and remove a contributor, then verify that project is not found
-        when searching for contributor.
-
-        """
+        # Add and remove a contributor, then verify that project is not found
+        # when searching for contributor.
         user2 = UserFactory(fullname='Brian May')
 
         self.project.add_contributor(user2, save=True)
@@ -380,15 +363,16 @@ class TestPublicNodes(SearchTestCase):
 
 @requires_search
 class TestAddContributor(SearchTestCase):
-    """Tests of the search.search_contributor method
-
-    """
+    # Tests of the search.search_contributor method
 
     def setUp(self):
         super(TestAddContributor, self).setUp()
         self.name1 = 'Roger1 Taylor1'
         self.name2 = 'John2 Deacon2'
+        self.name3 = u'j\xc3\xb3ebert3 Smith3'
+        self.name4 = u'B\xc3\xb3bbert4 Jones4'
         self.user = UserFactory(fullname=self.name1)
+        self.user3 = UserFactory(fullname=self.name3)
 
     def test_unreg_users_dont_show_in_search(self):
         unreg = UnregUserFactory()
@@ -408,9 +392,7 @@ class TestAddContributor(SearchTestCase):
 
 
     def test_search_fullname(self):
-        """Verify that searching for full name yields exactly one result.
-
-        """
+        # Searching for full name yields exactly one result.
         contribs = search.search_contributor(self.name1)
         assert_equal(len(contribs['users']), 1)
 
@@ -418,9 +400,7 @@ class TestAddContributor(SearchTestCase):
         assert_equal(len(contribs['users']), 0)
 
     def test_search_firstname(self):
-        """Verify that searching for first name yields exactly one result.
-
-        """
+        # Searching for first name yields exactly one result.
         contribs = search.search_contributor(self.name1.split(' ')[0])
         assert_equal(len(contribs['users']), 1)
 
@@ -428,21 +408,96 @@ class TestAddContributor(SearchTestCase):
         assert_equal(len(contribs['users']), 0)
 
     def test_search_partial(self):
-        """Verify that searching for part of first name yields exactly one
-        result.
-
-        """
+        # Searching for part of first name yields exactly one
+        # result.
         contribs = search.search_contributor(self.name1.split(' ')[0][:-1])
         assert_equal(len(contribs['users']), 1)
 
         contribs = search.search_contributor(self.name2.split(' ')[0][:-1])
         assert_equal(len(contribs['users']), 0)
 
+    def test_search_fullname_special_character(self):
+        # Searching for a fullname with a special character yields
+        # exactly one result.
+        contribs = search.search_contributor(self.name3)
+        assert_equal(len(contribs['users']), 1)
+
+        contribs = search.search_contributor(self.name4)
+        assert_equal(len(contribs['users']), 0)
+
+    def test_search_firstname_special_charcter(self):
+        # Searching for a first name with a special character yields
+        # exactly one result.
+        contribs = search.search_contributor(self.name3.split(' ')[0])
+        assert_equal(len(contribs['users']), 1)
+
+        contribs = search.search_contributor(self.name4.split(' ')[0])
+        assert_equal(len(contribs['users']), 0)
+
+    def test_search_partial_special_character(self):
+        # Searching for a partial name with a special character yields
+        # exctly one result.
+        contribs = search.search_contributor(self.name3.split(' ')[0][:-1])
+        assert_equal(len(contribs['users']), 1)
+
+        contribs = search.search_contributor(self.name4.split(' ')[0][:-1])
+        assert_equal(len(contribs['users']), 0)
+
+@requires_search
+class TestProjectSearchResults(SearchTestCase):
+    def setUp(self):
+        super(TestProjectSearchResults, self).setUp()
+        self.user = UserFactory(usename='Doug Bogie')
+
+        self.singular = 'Spanish Inquisition'
+        self.plural = 'Spanish Inquisitions'
+        self.possessive = 'Spanish\'s Inquisition'
+
+        self.project_singular = ProjectFactory(
+            title=self.singular,
+            creator=self.user,
+            is_public=True,
+        )
+
+        self.project_plural = ProjectFactory(
+            title=self.plural,
+            creator=self.user,
+            is_public=True,
+        )
+
+        self.project_possessive = ProjectFactory(
+            title=self.possessive,
+            creator=self.user,
+            is_public=True,
+        )
+
+        self.project_unrelated = ProjectFactory(
+            title='Cardinal Richelieu',
+            creator=self.user,
+            is_public=True,
+        )
+
+    def test_singular_query(self):
+        # Verify searching for singular term includes singular,
+        # possessive and plural versions in results.
+        results = query(self.singular)['results']
+        assert_equal(len(results), 3)
+
+    def test_plural_query(self):
+        # Verify searching for singular term includes singular,
+        # possessive and plural versions in results.
+        results = query(self.plural)['results']
+        assert_equal(len(results), 3)
+
+    def test_possessive_query(self):
+        # Verify searching for possessive term includes singular,
+        # possessive and plural versions in results.
+        results = query(self.possessive)['results']
+        assert_equal(len(results), 3)
+
 
 class TestSearchExceptions(OsfTestCase):
-    """
-    Verify that the correct exception is thrown when the connection is lost
-    """
+    # Verify that the correct exception is thrown when the connection is lost
 
     @classmethod
     def setUpClass(cls):
