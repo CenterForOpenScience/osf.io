@@ -5,6 +5,7 @@ from website import settings
 
 from website.util.permissions import ADMIN
 
+# Alias the project serializer
 from website.project.views.node import _view_project
 serialize_node = _view_project
 
