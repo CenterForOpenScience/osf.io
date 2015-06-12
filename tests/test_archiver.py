@@ -457,6 +457,20 @@ class TestArchiverListeners(ArchiverTestCase):
         archive_sigs = [archive.si(*args) for args in [(n.archive_job._id,) for n in [reg, rc1, rc2]]]
         mock_chain.assert_called_with(*archive_sigs)
 
+    @mock.patch('celery.chain')
+    def test_after_register_does_not_archive_pointers(self, mock_chain):
+        proj = factories.ProjectFactory(creator=self.user)
+        c1 = factories.ProjectFactory(creator=self.user, parent=proj)
+        other = factories.ProjectFactory(creator=self.user)
+        reg = factories.RegistrationFactory(project=proj)
+        r1 = reg.nodes[0]
+        proj.add_pointer(other, auth=Auth(self.user))
+        listeners.after_register(c1, r1, self.user)
+        listeners.after_register(proj, reg, self.user)
+
+        archive_sigs = [archive.si(*args) for args in [(n.archive_job._id,) for n in [reg, r1]]]
+        mock_chain.assert_called_with(*archive_sigs)
+
     def test_archive_callback_pending(self):
         for addon in ['osfstorage', 'dropbox']:
             self.archive_job.update_target(
