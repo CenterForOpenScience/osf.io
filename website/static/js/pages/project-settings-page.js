@@ -51,13 +51,13 @@ $(document).ready(function() {
         });
     }
     var disableCategory = !window.contextVars.node.parentExists;
-    var categorySettingsVM = new ProjectSettings.NodeCategorySettings(
+    var categorySettingsVM = new ProjectSettings.NodeCategoryTitleDescriptionSettings(
         window.contextVars.node.category,
         categories,
         window.contextVars.node.urls.update,
         disableCategory
     );
-    ko.applyBindings(categorySettingsVM, $('#nodeCategorySettings')[0]);
+    ko.applyBindings(categorySettingsVM, $('#nodeCategoryTitleDescriptionSettings')[0]);
 
     $(window).resize(function (){ fixAffixWidth(); });
     $('.project-page .panel').on('affixed.bs.affix', function(){ fixAffixWidth(); });
