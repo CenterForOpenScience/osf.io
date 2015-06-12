@@ -154,11 +154,20 @@ font-weight: bold;
   border-top: 1px solid #D9E8F4;
 }
 
-
-/*End Johanna's CSS*/
-
 /* Knockout Validation Styles */
 
 .customMessage { color: #ed9c28; }
 
 .spaced-buttons { margin-top: 10px; }
+
+/* Change width for sign in input element on header */
+@media (min-width: 768px) and (max-width: 991px)  {
+    #signInForm input {
+        width: 110px;
+    }
+}
+@media (min-width: 1600px) {
+    #signInForm input {
+        width: 220px;
+    }
+}

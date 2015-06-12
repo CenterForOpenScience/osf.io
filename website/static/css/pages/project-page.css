@@ -43,3 +43,46 @@
     margin-top: .3em;
     font-size: 36px;
 }
+
+/* */
+@media (max-width: 767px) {
+    .osf-project-navbar li>a {
+        padding-left: 30px;
+        padding-right: 30px;
+    }
+    .osf-project-navbar a.project-title {
+    }
+    .project-nav {
+        overflow: hidden;
+    }
+}
+
+@media (min-width: 768px) {
+   .osf-project-navbar li>a {
+        padding-left: 7px;
+        padding-right: 7px;
+    }
+    .osf-project-navbar a.project-title {
+        max-width: 190px;
+    }
+}
+
+@media (min-width: 992px) {
+   .osf-project-navbar li>a {
+        padding-left: 10px;
+        padding-right: 10px;
+    }
+    .osf-project-navbar a.project-title {
+        max-width: 300px;
+    }
+}
+@media (min-width: 1200px) {
+    .osf-project-navbar li>a {
+        padding-left: 15px;
+        padding-right: 15px;
+    }
+
+    .osf-project-navbar a.project-title {
+        max-width: 400px;
+    }
+}
