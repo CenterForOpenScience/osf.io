@@ -1750,7 +1750,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         registered.save()
 
         if parent:
-            parent.nodes.append(registered)
+            registered.parent_node = parent
 
         # After register callback
         for addon in original.get_addons():
