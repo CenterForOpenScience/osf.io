@@ -157,5 +157,4 @@
 </div>
 
 <script type="text/javascript" src="/static/vendor/youtube/youtube-loader.js"></script>
-<script type="text/javascript" src=${"/static/public/js/gettingstarted-page.js" | webpack_asset}></script>
 </%def>
