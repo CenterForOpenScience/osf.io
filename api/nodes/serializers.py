@@ -157,7 +157,7 @@ class NodePointersSerializer(JSONAPISerializer):
             pointer = node.add_pointer(pointer_node, auth, save=True)
             return pointer
         except ValueError:
-            raise exceptions.ParseError('Pointer to node {} already in list'.format(pointer_node._id))
+            raise exceptions.ValidationError('Pointer to node {} already in list'.format(pointer_node._id))
 
     def update(self, instance, validated_data):
         pass
