@@ -7,6 +7,8 @@ import httplib as http
 import mock
 import time
 
+from datetime import datetime
+
 from nose.tools import *  # noqa
 from modularodm.exceptions import ValidationValueError
 
@@ -16,10 +18,15 @@ from tests.factories import (
     AuthUserFactory, NodeWikiFactory,
 )
 
+from website.notifications import emails
+
 from website.addons.wiki import settings
 from website.addons.wiki.exceptions import InvalidVersionError
 from website.addons.wiki.views import _serialize_wiki_toc, _get_wiki_web_urls, _get_wiki_api_urls
-from website.addons.wiki.model import NodeWikiPage, render_content
+from website.addons.wiki.model import (
+    NodeWikiPage, render_content, subscribe_wiki_changed,
+    subscribe_wiki_deleted, subscribe_wiki_renamed, wiki_updates
+)
 from website.addons.wiki.utils import (
     get_sharejs_uuid, generate_private_uuid, share_db, delete_share_doc,
     migrate_uuid, format_wiki_version,
@@ -140,7 +147,6 @@ class TestWikiViews(OsfTestCase):
         res = self.app.get(url, auth=self.user.auth)
         assert_equal(content, res.json['wiki_content'])
         assert_equal('', res.json['wiki_rendered'])
-
 
     def test_wiki_url_for_component_returns_200(self):
         component = NodeFactory(project=self.project, is_public=True)
@@ -453,6 +459,25 @@ class TestWikiViews(OsfTestCase):
         assert_equal(res.status_code, 200)
         assert_in('data-osf-panel="Edit"', res.text)
 
+    @mock.patch('website.addons.wiki.model.wiki_updates')
+    def test_subscribed_wiki_changed_updates_called(self, mock_wiki_updates):
+        time_now = datetime.utcnow()
+        subscribe_wiki_changed(self.project, 'other', self.user, version=2, timestamp=time_now)
+        path = '/project/' + self.project._id + '/wiki/other/'
+        mock_wiki_updates.assert_called_with(node=self.project, timestamp=time_now, add={'compare': '1', 'view': '2'},
+                                             user=self.user, path=path,
+                                             message=u'updated <strong>"other"</strong>; it is now version 2.')
+
+    @mock.patch('website.addons.wiki.model.notify')
+    def test_wiki_updates_notify_called(self, mock_notify):
+        time_now = datetime.utcnow()
+        path = 'blarg/'
+        wiki_updates(self.project, self.user, path=self.project._id + '/' + path, message='the end', timestamp=time_now)
+        mock_notify.assert_called_with(node=self.project, uid=self.project._id,
+                                       url=self.project.absolute_url + path, timestamp=time_now,
+                                       gravatar_url=self.user.gravatar_url, user=self.user,
+                                       message='the end', event="wiki_updated", )
+
 
 class TestViewHelpers(OsfTestCase):
 
@@ -525,6 +550,16 @@ class TestWikiDelete(OsfTestCase):
         )
         self.project.reload()
         assert_not_in(to_mongo_key(SPECIAL_CHARACTERS_ALLOWED), self.project.wiki_pages_current)
+
+    @mock.patch('website.addons.wiki.model.wiki_updates')
+    def test_subscribed_wiki_deleted_updates_called(self, mock_wiki_updates):
+        time_now = datetime.utcnow()
+        user = AuthUserFactory()
+        subscribe_wiki_deleted(self.project, 'other', user, timestamp=time_now)
+        path = '/project/' + self.project._id + '/wiki/home/'
+        mock_wiki_updates.assert_called_with(node=self.project, timestamp=time_now,
+                                             user=user, path=path,
+                                             message=u'deleted <strong>"other"</strong>.')
 
 
 class TestWikiRename(OsfTestCase):
@@ -677,6 +712,16 @@ class TestWikiRename(OsfTestCase):
 
     def test_rename_wiki_page_with_invalid_special_character_title(self):
         self.test_rename_wiki_page_invalid(new_name=SPECIAL_CHARACTERS_ALL)
+
+    @mock.patch('website.addons.wiki.model.wiki_updates')
+    def test_subscribed_wiki_renamed_updates_called(self, mock_wiki_updates):
+        time_now = datetime.utcnow()
+        user = AuthUserFactory()
+        subscribe_wiki_renamed(self.project, 'other', user, new_name='other2', timestamp=time_now)
+        path = '/project/' + self.project._id + '/wiki/other2/'
+        mock_wiki_updates.assert_called_with(node=self.project, timestamp=time_now,
+                                             user=user, path=path,
+                                             message='renamed <strong>"other"</strong> to <strong>"other2"</strong>')
 
 
 class TestWikiLinks(OsfTestCase):

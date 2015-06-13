@@ -9,12 +9,6 @@ from website.notifications.model import NotificationDigest
 from website.notifications.model import NotificationSubscription
 from website.util import web_url_for
 
-LOCALTIME_FORMAT = '%H:%M on %A, %B %d %Z'
-EMAIL_SUBJECT_MAP = {
-    'comments': '${user.fullname} commented on "${title}".',
-    'comment_replies': '${user.fullname} replied to your comment on "${title}".'
-}
-
 
 def email_transactional(recipient_ids, uid, event, user, node, timestamp, **context):
     """
@@ -28,7 +22,7 @@ def email_transactional(recipient_ids, uid, event, user, node, timestamp, **cont
     template = event + '.html.mako'
     context['title'] = node.title
     context['user'] = user
-    subject = Template(EMAIL_SUBJECT_MAP[event]).render(**context)
+    subject = Template(constants.EMAIL_SUBJECT_MAP[event]).render(**context)
 
     for user_id in recipient_ids:
         recipient = website_models.User.load(user_id)

@@ -308,8 +308,6 @@ function ViewModel(options){
     });
 }
 
-
-
 var WikiPage = function(selector, options) {
     var self = this;
     self.options = $.extend({}, defaultOptions, options);

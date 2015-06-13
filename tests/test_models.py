@@ -28,7 +28,7 @@ from website.exceptions import NodeStateError
 from website.profile.utils import serialize_user
 from website.project.model import (
     ApiKey, Comment, Node, NodeLog, Pointer, ensure_schemas, has_anonymous_link,
-    get_pointer_parent,
+    get_pointer_parent, wiki_changed, wiki_renamed, wiki_deleted
 )
 from website.util.permissions import CREATOR_PERMISSIONS
 from website.util import web_url_for, api_url_for
@@ -40,8 +40,7 @@ from website.addons.wiki.exceptions import (
     PageConflictError,
     PageNotFoundError,
 )
-
-from tests.base import OsfTestCase, Guid, fake
+from tests.base import OsfTestCase, Guid, fake, capture_signals
 from tests.factories import (
     UserFactory, ApiKeyFactory, NodeFactory, PointerFactory,
     ProjectFactory, NodeLogFactory, WatchConfigFactory,
@@ -1032,6 +1031,11 @@ class TestUpdateNodeWiki(OsfTestCase):
         assert_equal('wiki_updated', log.action)
         assert_equal(page._primary_key, log.params['page_id'])
 
+    def test_update_signal(self):
+        with capture_signals() as mock_signals:
+            self.project.update_node_wiki('home', 'Hello world', self.consolidate_auth)
+        assert_equal(mock_signals.signals_sent(), set([wiki_changed]))
+
     def test_wiki_versions(self):
         # Number of versions is correct
         assert_equal(len(self.versions['home']), 1)
@@ -1175,6 +1179,14 @@ class TestRenameNodeWiki(OsfTestCase):
         assert_equal('wiki_renamed', log.action)
         assert_equal(page._primary_key, log.params['page_id'])
 
+    def test_rename_signal(self):
+        old_name = 'new page'
+        new_name = 'New pAGE'
+        self.project.update_node_wiki(old_name, 'new content', self.consolidate_auth)
+        with capture_signals() as mock_signals:
+            self.project.rename_node_wiki(old_name, new_name, self.consolidate_auth)
+        assert_equal(mock_signals.signals_sent(), set([wiki_renamed]))
+
 
 class TestDeleteNodeWiki(OsfTestCase):
 
@@ -1236,6 +1248,13 @@ class TestDeleteNodeWiki(OsfTestCase):
         # Check versions
         assert_equal(self.project.get_wiki_page('home',2).content, 'Hola mundo')
         assert_equal(self.project.get_wiki_page('home', 1).content, 'Hello world')
+
+    def test_delete_signal(self):
+        name = 'new page'
+        self.project.update_node_wiki(name, 'new content', self.consolidate_auth)
+        with capture_signals() as mock_signals:
+            self.project.delete_node_wiki(name, self.consolidate_auth)
+        assert_equal(mock_signals.signals_sent(), set([wiki_deleted]))
 
 
 class TestNode(OsfTestCase):

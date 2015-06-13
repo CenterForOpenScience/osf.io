@@ -79,6 +79,9 @@ signals = blinker.Namespace()
 contributor_added = signals.signal('contributor-added')
 unreg_contributor_added = signals.signal('unreg-contributor-added')
 write_permissions_revoked = signals.signal('write-permissions-revoked')
+wiki_changed = signals.signal('wiki-changed')
+wiki_renamed = signals.signal('wiki-renamed')
+wiki_deleted = signals.signal('wiki-deleted')
 
 
 class MetaSchema(StoredObject):
@@ -2398,7 +2401,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
     def update_node_wiki(self, name, content, auth):
         """Update the node's wiki page with new content.
 
-        :param page: A string, the page's name, e.g. ``"home"``.
+        :param name: A string, the page's name, e.g. ``"home"``.
         :param content: A string, the posted content.
         :param auth: All the auth information including user, API key.
         """
@@ -2427,6 +2430,13 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
             content=content
         )
         new_page.save()
+
+        wiki_changed.send(
+            self,
+            name=name,
+            user=auth.user,
+            version=version
+        )
 
         # check if the wiki page already exists in versions (existed once and is now deleted)
         if key not in self.wiki_pages_versions:
@@ -2497,6 +2507,13 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
                 self.wiki_private_uuids[new_key] = self.wiki_private_uuids[key]
                 del self.wiki_private_uuids[key]
 
+        wiki_renamed.send(
+            self,
+            name=name,
+            user=auth.user,
+            new_name=new_name
+        )
+
         self.add_log(
             action=NodeLog.WIKI_RENAMED,
             params={
@@ -2518,6 +2535,12 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         page = self.get_wiki_page(key)
 
         del self.wiki_pages_current[key]
+
+        wiki_deleted.send(
+            self,
+            name=name,
+            user=auth.user
+        )
 
         self.add_log(
             action=NodeLog.WIKI_DELETED,

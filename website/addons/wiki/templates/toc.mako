@@ -29,23 +29,23 @@
                     <a href="${urls['web']['home']}">
                         <div class="col-xs-12">Home</div>
                     </a>
-                </div> 
+                </div>
             </li>
             % for page in pages_current:
                 %if page['name'] != 'home':
                     <li ${'class="active"' if page['name'] == wiki_name else '' | n}>
-                            <div class="row">
-                                %if page['name'] == wiki_name and user['can_edit']:
-                                    <a href="${page['url']}"><div class="col-xs-10">${page['name']}</div></a>
-                                    <div class="col-xs-2">
-                                        <a href="#" data-toggle="modal" data-target="#deleteWiki">
-                                            <i class="fa fa-trash-o text-danger pointer fa-lg" data-toggle="tooltip" title="Delete" data-placement="left"> </i>
-                                        </a>
-                                    </div>
-                                % else:
-                                    <a href="${page['url']}"><div class="col-xs-12">${page['name']}</div></a>
-                                % endif
-                            </div>
+                        <div class="row">
+                            %if page['name'] == wiki_name and user['can_edit']:
+                                <a href="${page['url']}"><div class="col-xs-10">${page['name']}</div></a>
+                                <div class="col-xs-2">
+                                    <a href="#" data-toggle="modal" data-target="#deleteWiki">
+                                        <i class="fa fa-trash-o text-danger pointer fa-lg" data-toggle="tooltip" title="Delete" data-placement="left"> </i>
+                                    </a>
+                                </div>
+                            % else:
+                                <a href="${page['url']}"><div class="col-xs-12">${page['name']}</div></a>
+                            %endif
+                        </div>
                     </li>
                 % endif
             %endfor

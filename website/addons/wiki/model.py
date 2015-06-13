@@ -1,8 +1,11 @@
 # -*- coding: utf-8 -*-
 
-import datetime
+from __future__ import unicode_literals
+from datetime import datetime
 import functools
 import logging
+import pytz
+from furl import furl
 
 from bleach import linkify
 from bleach.callbacks import nofollow
@@ -18,7 +21,8 @@ from website import settings
 from website.addons.base import AddonNodeSettingsBase
 from website.addons.wiki import utils as wiki_utils
 from website.addons.wiki.settings import WIKI_CHANGE_DATE
-from website.project.model import write_permissions_revoked
+from website.project.model import write_permissions_revoked, wiki_deleted, wiki_changed, wiki_renamed
+from website.notifications.emails import notify
 
 from .exceptions import (
     NameEmptyError,
@@ -51,7 +55,55 @@ def subscribe_on_write_permissions_revoked(node):
         wiki_utils.migrate_uuid(node, wiki_name)
 
 
-def build_wiki_url(node, label, base, end):
+def wiki_updates(node, user, path, **context):
+    w_url = furl(node.absolute_url)
+    w_url.path = path
+    w_url.add(context.pop('add', dict()))
+    context['gravatar_url'] = user.gravatar_url
+    context['url'] = w_url.url
+    # timestamp set for testing purposes, can be passed in.
+    timestamp = context.pop('timestamp', datetime.utcnow().replace(tzinfo=pytz.utc))
+    notify(
+        uid=node._id,
+        event="wiki_updated",
+        user=user,
+        node=node,
+        timestamp=timestamp,
+        **context
+    )
+
+
+@wiki_deleted.connect
+def subscribe_wiki_deleted(node, name, user, **kwargs):
+    message = 'deleted <strong>"{}"</strong>.'.format(name)
+    path = build_wiki_url(node, 'home')  # the wiki home
+    wiki_updates(node=node, user=user, path=path, message=message, **kwargs)
+
+
+@wiki_changed.connect
+def subscribe_wiki_changed(node, name, user, version=-1, **kwargs):
+    path = build_wiki_url(node, name)
+    add = dict()
+    message = "None"
+    if version == 1:
+        message = 'added <strong>"{}"</strong>.'.format(name)
+    elif version != 1:
+        # Sends link with compare
+        add = {'view': str(version), 'compare': str(version - 1)}
+        message = 'updated <strong>"{}"</strong>; it is now version {}.' \
+            .format(name, version)
+    wiki_updates(node=node, user=user, path=path, add=add, message=message, **kwargs)
+
+
+@wiki_renamed.connect
+def subscribe_wiki_renamed(node, name, user, new_name="wiki-error", **kwargs):
+    message = 'renamed <strong>"{}"</strong> to <strong>"{}"</strong>' \
+        .format(name, new_name)
+    path = build_wiki_url(node, new_name)  # new wiki link
+    wiki_updates(node=node, user=user, path=path, message=message, **kwargs)
+
+
+def build_wiki_url(node, label, base=None, end=None):
     return node.web_url_for('project_wiki_view', wname=label)
 
 
@@ -97,7 +149,7 @@ class NodeWikiPage(GuidStoredObject):
 
     page_name = fields.StringField(validate=validate_page_name)
     version = fields.IntegerField()
-    date = fields.DateTimeField(auto_now_add=datetime.datetime.utcnow)
+    date = fields.DateTimeField(auto_now_add=datetime.utcnow)
     is_current = fields.BooleanField()
     content = fields.StringField(default='')
 
@@ -147,7 +199,7 @@ class NodeWikiPage(GuidStoredObject):
             sharejs_version = doc_item['_v']
             sharejs_timestamp = doc_item['_m']['mtime']
             sharejs_timestamp /= 1000   # Convert to appropriate units
-            sharejs_date = datetime.datetime.utcfromtimestamp(sharejs_timestamp)
+            sharejs_date = datetime.utcfromtimestamp(sharejs_timestamp)
 
             if sharejs_version > 1 and sharejs_date > self.date:
                 return doc_item['_data']
