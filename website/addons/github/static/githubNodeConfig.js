@@ -263,7 +263,7 @@ ViewModel.prototype.openCreateRepo = function() {
         if (!repoName) {
             return;
         } else if (isConvertRepo.exec(repoName) == null) {
-            var newName = repoName.replace(/[^a-z0-9A-Z\d.-\d._]+/g, '-');
+            var newName = repoName.replace(/[^a-zA-Z0-9\d.-\d._]+/g, '-');
             bootbox.dialog({
                 title: 'Repo name will be converted',
                 message: 'That name will be converted to <i>' + newName + '</i>. You can try another ' +
