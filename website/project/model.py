@@ -1696,7 +1696,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
 
         return forked
 
-    def register_node(self, schema, auth, template, data):
+    def register_node(self, schema, auth, template, data, parent=None):
         """Make a frozen copy of a node.
 
         :param schema: Schema object
@@ -1749,20 +1749,22 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
 
         registered.save()
 
+        if parent:
+            registered.parent_node = parent
+
         # After register callback
         for addon in original.get_addons():
             _, message = addon.after_register(original, registered, auth.user)
             if message:
                 status.push_status_message(message)
 
-        registered.nodes = []
         for node_contained in original.nodes:
             if not node_contained.is_deleted:
-                registered_node = node_contained.register_node(
-                    schema, auth, template, data
+                child_registration = node_contained.register_node(
+                    schema, auth, template, data, parent=registered
                 )
-                if registered_node is not None:
-                    registered.nodes.append(registered_node)
+                if child_registration and not child_registration.primary:
+                    registered.nodes.append(child_registration)
 
         original.add_log(
             action=NodeLog.PROJECT_REGISTERED,
@@ -1972,7 +1974,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
     @property
     def archiving(self):
         job = self.archive_job
-        return job and not job.done
+        return job and not job.done and not job.archive_tree_finished()
 
     @property
     def archive_job(self):
@@ -2735,6 +2737,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
             raise ValidationValueError('Embargo end date must be more than one day in the future')
 
         embargo = self._initiate_embargo(user, end_date, for_existing_registration=for_existing_registration, save=True)
+
         self.registered_from.add_log(
             action=NodeLog.EMBARGO_INITIATED,
             params={

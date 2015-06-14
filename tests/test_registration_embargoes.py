@@ -599,8 +599,8 @@ class RegistrationEmbargoViewsTestCase(OsfTestCase):
             u'summary': unicode(fake.sentence())
         })
 
-    @mock.patch('website.archiver.tasks.archive.si')
-    def test_POST_register_make_public_immediately_creates_public_registration(self, mock_archive):
+    @mock.patch('framework.tasks.handlers.enqueue_task')
+    def test_POST_register_make_public_immediately_creates_public_registration(self, mock_enqueue):
         res = self.app.post(
             self.project.api_url_for('node_register_template_page_post', template=u'Open-Ended_Registration'),
             self.valid_make_public_payload,
@@ -614,8 +614,8 @@ class RegistrationEmbargoViewsTestCase(OsfTestCase):
         assert_true(registration.is_registration)
         assert_true(registration.is_public)
 
-    @mock.patch('website.archiver.tasks.archive.si')
-    def test_POST_register_make_public_immediately_makes_children_public(self, mock_archive):
+    @mock.patch('framework.tasks.handlers.enqueue_task')
+    def test_POST_register_make_public_immediately_makes_children_public(self, mock_enqueue):
         component = NodeFactory(
             creator=self.user,
             parent=self.project,
@@ -646,8 +646,8 @@ class RegistrationEmbargoViewsTestCase(OsfTestCase):
             assert_true(node.is_registration)
             assert_true(node.is_public)
 
-    @mock.patch('website.archiver.tasks.archive.si')
-    def test_POST_register_embargo_is_not_public(self, mock_archive):
+    @mock.patch('framework.tasks.handlers.enqueue_task')
+    def test_POST_register_embargo_is_not_public(self, mock_enqueue):
         res = self.app.post(
             self.project.api_url_for('node_register_template_page_post', template=u'Open-Ended_Registration'),
             self.valid_embargo_payload,
@@ -664,8 +664,8 @@ class RegistrationEmbargoViewsTestCase(OsfTestCase):
         assert_true(registration.pending_registration)
         assert_is_not_none(registration.embargo)
 
-    @mock.patch('website.archiver.tasks.archive.si')
-    def test_POST_invalid_embargo_end_date_returns_HTTPBad_Request(self, mock_archive):
+    @mock.patch('framework.tasks.handlers.enqueue_task')
+    def test_POST_invalid_embargo_end_date_returns_HTTPBad_Request(self, mock_enqueue):
         res = self.app.post(
             self.project.api_url_for('node_register_template_page_post', template=u'Open-Ended_Registration'),
             self.invalid_embargo_date_payload,
@@ -676,8 +676,8 @@ class RegistrationEmbargoViewsTestCase(OsfTestCase):
 
         assert_equal(res.status_code, 400)
 
-    @mock.patch('website.archiver.tasks.archive.si')
-    def test_valid_POST_embargo_adds_to_parent_projects_log(self, mock_archive):
+    @mock.patch('framework.tasks.handlers.enqueue_task')
+    def test_valid_POST_embargo_adds_to_parent_projects_log(self, mock_enquque):
         initial_project_logs = len(self.project.logs)
         res = self.app.post(
             self.project.api_url_for('node_register_template_page_post', template=u'Open-Ended_Registration'),

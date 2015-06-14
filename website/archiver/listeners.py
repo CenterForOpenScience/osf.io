@@ -27,9 +27,6 @@ def after_register(src, dst, user):
     archiver_utils.before_archive(dst, user)
     if dst.root != dst:  # if not top-level registration
         return
-    if dst.pending_embargo:
-        dst.archive_job.meta['embargo_urls'] = project_utils._get_embargo_urls(dst, user)
-        dst.archive_job.save()
     targets = itertools.chain([dst], dst.get_descendants_recursive())
     archive_tasks = [archive.si(t.archive_job._id) for t in targets if t.primary]
     handlers.enqueue_task(
@@ -55,7 +52,7 @@ def archive_callback(dst):
                 project_utils.send_embargo_email(
                     dst.root,
                     contributor,
-                    urls=dst.archive_job.meta.get('embargo_urls')
+                    urls=root_job.meta.get('embargo_urls')
                 )
         else:
             archiver_utils.send_archiver_success_mail(dst.root)

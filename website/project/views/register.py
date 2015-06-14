@@ -34,6 +34,7 @@ from website.identifiers.model import Identifier
 from website.identifiers.metadata import datacite_metadata_for_node
 from website.project.metadata.schemas import OSF_META_SCHEMAS
 from website.project.utils import serialize_node
+from website.project import utils as project_utils
 from website.util.permissions import ADMIN
 from website.models import MetaSchema, NodeLog
 from website import language, mails
@@ -363,15 +364,15 @@ def project_before_register(auth, node, **kwargs):
 
     messages = {
         'full': {
-            'addons': [],
+            'addons': set(),
             'message': 'The content and version history of <strong>{0}</strong> will be copied to the registration.',
         },
         'partial': {
-            'addons': [],
+            'addons': set(),
             'message': 'The current version of the content in <strong>{0}</strong> will be copied to the registration, but version history will be lost.'
         },
         'none': {
-            'addons': [],
+            'addons': set(),
             'message': 'The contents of <strong>{0}</strong> cannot be registered at this time,  and will not be included as part of this registration.',
         },
     }
@@ -381,9 +382,9 @@ def project_before_register(auth, node, **kwargs):
             continue
         name = addon.config.short_name
         if name in settings.ADDONS_ARCHIVABLE:
-            messages[settings.ADDONS_ARCHIVABLE[name]]['addons'].append(addon.config.full_name)
+            messages[settings.ADDONS_ARCHIVABLE[name]]['addons'].add(addon.config.full_name)
         else:
-            messages['none']['addons'].append(addon.config.full_name)
+            messages['none']['addons'].add(addon.config.full_name)
     prompts = [
         m['message'].format(util.conjunct(m['addons']))
         for m in messages.values() if m['addons']
@@ -434,6 +435,9 @@ def node_register_template_page_post(auth, node, **kwargs):
         try:
             register.embargo_registration(auth.user, embargo_end_date)
             register.save()
+            register.archive_job.meta['embargo_urls'] = project_utils.get_embargo_urls(register, auth.user)
+            register.archive_job.save()
+
         except ValidationValueError as err:
             raise HTTPError(http.BAD_REQUEST, data=dict(message_long=err.message))
     else:

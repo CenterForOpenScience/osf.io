@@ -1,16 +1,15 @@
 # -*- coding: utf-8 -*-
 """Various node-related utilities."""
-from website.project.views import node as node_views
-
 from website import mails
 from website import settings
 
 from website.util.permissions import ADMIN
 
 # Alias the project serializer
-serialize_node = node_views._view_project
+from website.project.views.node import _view_project
+serialize_node = _view_project
 
-def _get_embargo_urls(node, user):
+def get_embargo_urls(node, user):
     approval_token, disapproval_token = None, None
     if node.has_permission(user, ADMIN):
         approval_token = node.embargo.approval_state[user._id]['approval_token']
@@ -36,7 +35,7 @@ def send_embargo_email(node, user, urls=None):
     :param node: Node being embargoed
     :param user: User to be emailed
     """
-    urls = urls or _get_embargo_urls(node, user)
+    urls = urls or get_embargo_urls(node, user)
 
     embargo_end_date = node.embargo.end_date
     registration_link = urls['view']
