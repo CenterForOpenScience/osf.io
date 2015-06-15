@@ -2636,7 +2636,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
             retraction.justification = justification
         retraction.state = Retraction.PENDING
 
-        admins = [contrib for contrib in self.contributors if self.has_permission(contrib, 'admin')]
+        admins = [contrib for contrib in self.contributors if self.has_permission(contrib, 'admin') and contrib.is_active]
 
         approval_state = {}
         # Create approve/disapprove tokens
@@ -2691,9 +2691,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         # Convert Date to Datetime
         embargo.end_date = datetime.datetime.combine(end_date, datetime.datetime.min.time())
 
-        # Collect list of admins for registration
-        admins = [contrib for contrib in self.contributors if self.has_permission(contrib, 'admin')]
-
+        admins = [contrib for contrib in self.contributors if self.has_permission(contrib, 'admin') and contrib.is_active]
         approval_state = {}
         # Create approve/disapprove keys
         for admin in admins:

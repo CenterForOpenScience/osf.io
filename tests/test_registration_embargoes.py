@@ -7,7 +7,7 @@ from nose.tools import *  #noqa
 from tests.base import fake, OsfTestCase
 from tests.factories import (
     AuthUserFactory, EmbargoFactory, NodeFactory, ProjectFactory,
-    RegistrationFactory, UserFactory,
+    RegistrationFactory, UserFactory, UnconfirmedUserFactory
 )
 
 from framework.exceptions import PermissionsError
@@ -43,6 +43,20 @@ class RegistrationEmbargoModelsTestCase(OsfTestCase):
             for_existing_registration=True
         )
         self.assertEqual(Embargo.find().count(), initial_count)
+
+    def test__initiate_embargo_does_not_create_tokens_for_unregistered_admin(self):
+        unconfirmed_user = UnconfirmedUserFactory()
+        self.registration.contributors.append(unconfirmed_user)
+        self.registration.add_permission(unconfirmed_user, 'admin', save=True)
+        assert_true(self.registration.has_permission(unconfirmed_user, 'admin'))
+
+        embargo = self.registration._initiate_embargo(
+            self.user,
+            self.valid_embargo_end_date,
+            for_existing_registration=True
+        )
+        assert_true(self.user._id in embargo.approval_state)
+        assert_false(unconfirmed_user._id in embargo.approval_state)
 
     def test__initiate_embargo_with_save_does_save_embargo(self):
         initial_count = Embargo.find().count()
