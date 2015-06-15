@@ -2,11 +2,18 @@ import datetime
 
 from website import settings
 from website.project import Node
+from website.project.utils import recent_public_registrations
 
 from modularodm.query.querydialect import DefaultQueryDialect as Q
 
 from framework.analytics.piwik import PiwikClient
 
+
+recent_query = (
+    Q('category', 'eq', 'project') &
+    Q('is_public', 'eq', True) &
+    Q('is_deleted', 'eq', False)
+)
 
 def activity():
 
@@ -65,18 +72,9 @@ def activity():
         '-date_created'
     ).limit(10)
 
-    # Registrations
-    recent_public_registrations = Node.find(
-        recent_query &
-        Q('is_registration', 'eq', True) &
-        Q('is_retracted', 'eq', False)
-    ).sort(
-        '-registered_date'
-    ).limit(10)
-
     return {
         'recent_public_projects': recent_public_projects,
-        'recent_public_registrations': recent_public_registrations,
+        'recent_public_registrations': recent_public_registrations(),
         'popular_public_projects': popular_public_projects,
         'popular_public_registrations': popular_public_registrations,
         'hits': hits,
