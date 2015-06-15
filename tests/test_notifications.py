@@ -413,7 +413,7 @@ class TestNotificationUtils(OsfTestCase):
                 'nodeType': 'project',
                 'category': 'project',
                 'permissions': {
-                    'view': can_read,
+                    'view': True,
                 },
                 'children': [
                     {
@@ -438,7 +438,7 @@ class TestNotificationUtils(OsfTestCase):
                         'nodeType': 'component',
                         'category': 'hypothesis',
                         'permissions': {
-                            'view': can_read,
+                            'view': True,
                         },
                         'children': [
                             {
@@ -470,7 +470,7 @@ class TestNotificationUtils(OsfTestCase):
             'nodeType': 'component',
             'category': 'hypothesis',
             'permissions': {
-                'view': can_read,
+                'view': True,
             },
             'children': [
                 {
@@ -505,7 +505,7 @@ class TestNotificationUtils(OsfTestCase):
                 'nodeType': 'project',
                 'category': 'project',
                 'permissions': {
-                    'view': can_read,
+                    'view': True,
                 },
                 'children': [
                     {
@@ -529,7 +529,7 @@ class TestNotificationUtils(OsfTestCase):
                         'nodeType': 'component',
                         'category': 'hypothesis',
                         'permissions': {
-                            'view': can_read,
+                            'view': True,
                         },
                         'children': [
                             {
@@ -555,7 +555,7 @@ class TestNotificationUtils(OsfTestCase):
                         'nodeType': 'component',
                         'category': 'hypothesis',
                         'permissions': {
-                            'view': can_read,
+                            'view': True,
                         },
                         'children': [
                             {
@@ -600,7 +600,7 @@ class TestNotificationUtils(OsfTestCase):
             'nodeType': 'project',
             'category': 'project',
             'permissions': {
-                'view': can_read,
+                'view': True,
             },
             'children': [
                 {
@@ -640,7 +640,7 @@ class TestNotificationUtils(OsfTestCase):
                 'nodeType': 'project',
                 'category': 'project',
                 'permissions': {
-                    'view': can_read,
+                    'view': True,
                 },
                 'children': [
                     {
@@ -654,7 +654,7 @@ class TestNotificationUtils(OsfTestCase):
                         'nodeType': 'component',
                         'category': 'hypothesis',
                         'permissions': {
-                            'view': can_read,
+                            'view': True,
                         },
                         'children': [
                             {
