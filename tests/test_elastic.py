@@ -18,6 +18,11 @@ from tests.factories import (
     UnregUserFactory, UnconfirmedUserFactory
 )
 
+TEST_INDEX = 'test'
+elastic_search.INDEX = TEST_INDEX
+settings.ELASTIC_INDEX = TEST_INDEX
+
+
 @requires_search
 class SearchTestCase(OsfTestCase):
 
