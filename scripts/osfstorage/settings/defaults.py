@@ -1,28 +1,15 @@
-#!/usr/bin/env python
 # encoding: utf-8
-
-import hashlib
-
-from cloudstorm.backend import contrib
-
-
-STORAGE_CLIENT_CLASS = contrib.cloudfiles.CloudFilesClient
-STORAGE_CLIENT_OPTIONS = {
-    'username': None,
-    'api_key': None,
-    'region': None,
-}
-STORAGE_CONTAINER_NAME = None
-
-UPLOAD_PRIMARY_HASH = hashlib.sha256
-
-SPECIAL_CASES = {}
 
 USERNAME = 'changeme'
 API_KEY = 'changeme'
 REGION = 'changeme'
 
+PRIMARY_CONTAINER_NAME = 'primary_container'
+PARITY_CONTAINER_NAME = 'parity_container'
+
+GLACIER_VAULT = 'glacier_vault'
 AWS_ACCESS_KEY = 'changeme'
 AWS_SECRET_KEY = 'changeme'
-AWS_SNS_ARN = 'changeme'
-AUDIT_TEMP_PATH = 'audit'
+AWS_SNS_ARN = 'sns_notification_id'
+
+AUDIT_TEMP_PATH = '/opt/data/files_audit'
