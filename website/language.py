@@ -101,12 +101,12 @@ BEFORE_FORK_HAS_POINTERS = (
 REGISTRATION_INFO = '''
 
 <p>Registration creates a frozen version of the project that can never be
-edited or deleted, but can be retracted. You can register your project by
+edited or deleted but can be retracted. You can register your project by
 selecting a registration form, entering information about your project, and
 then confirming. You will be able to continue editing the original project,
-however, and the frozen version with time stamps will always be linked to
+however, and the frozen version with timestamps will always be linked to
 the original. Retracting a registration will leave behind metadata about
-when the registration was created and retracted, but removes the contents
+when the registration was created and retracted but removes the contents
 of the registration.</p>
 
 <ul>
