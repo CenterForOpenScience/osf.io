@@ -2403,11 +2403,12 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         self.save()
         return contributor
 
-    def set_privacy(self, permissions, auth=None, logging=True):
+    def set_privacy(self, permissions, auth=None, log=True):
         """Set the permissions for this node.
 
         :param permissions: A string, either 'public' or 'private'
         :param auth: All the auth information including user, API key.
+        :param bool log: Whether to add a NodeLog for the privacy change.
         """
         if permissions == 'public' and not self.is_public:
             if self.is_registration and (self.embargo_end_date or self.pending_embargo):
@@ -2436,7 +2437,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
             if message:
                 status.push_status_message(message)
 
-        if logging:
+        if log:
             action = NodeLog.MADE_PUBLIC if permissions == 'public' else NodeLog.MADE_PRIVATE
             self.add_log(
                 action=action,
