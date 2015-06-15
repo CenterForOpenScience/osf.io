@@ -117,16 +117,6 @@ def link_archive_provider(node, user):
 
 def delete_registration_tree(node):
     node.is_deleted = True
-    try:
-        NodeLog.remove_one(
-            (
-                Q('action', 'eq', NodeLog.PROJECT_REGISTERED) &
-                Q('params.node', 'eq', node.registered_from._id) &
-                Q('params.registration', 'eq', node._id)
-            )
-        )
-    except NoResultsFound:
-        pass
     if not getattr(node.embargo, 'for_existing_registration', False):
         node.registered_from = None
     node.save()
@@ -165,3 +155,24 @@ def before_archive(node, user):
         initiator=user
     )
     job.set_targets()
+
+
+def add_archive_success_logs(node, user):
+    src = node.registered_from
+    src.add_log(
+        action=NodeLog.PROJECT_REGISTERED,
+        params={
+            'parent_node': src.parent_id,
+            'node': src._primary_key,
+            'registration': node._primary_key,
+        },
+        auth=Auth(user),
+        log_date=node.registered_date,
+        save=False
+    )
+    src.save()
+
+def archive_success(node, user):
+    add_archive_success_logs(node, user)
+    for child in node.get_descendants_recursive():
+        add_archive_success_logs(child, user)

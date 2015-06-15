@@ -212,15 +212,19 @@ def archive_node(results, job_pk):
     if stat_result.disk_usage > settings.MAX_ARCHIVE_SIZE:
         raise ArchiverSizeExceeded(result=stat_result)
     else:
+        addons_archived = 0
         for result in stat_result.targets:
             if not result.num_files:
                 job.update_target(result.target_name, ARCHIVER_SUCCESS)
                 continue
+            addons_archived = addons_archived + 1
             archive_addon.delay(
                 addon_short_name=result.target_name,
                 job_pk=job_pk,
                 stat_result=result,
             )
+        if not addons_archived:
+            project_signals.archive_callback.send(dst)
 
 @celery_app.task(bind=True, base=ArchiverTask, name='archiver.archive')
 @logged('archive')

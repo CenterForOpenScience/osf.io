@@ -1766,19 +1766,6 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
                 if child_registration and not child_registration.primary:
                     registered.nodes.append(child_registration)
 
-        original.add_log(
-            action=NodeLog.PROJECT_REGISTERED,
-            params={
-                'parent_node': original.parent_id,
-                'node': original._primary_key,
-                'registration': registered._primary_key,
-            },
-            auth=auth,
-            log_date=when,
-            save=False,
-        )
-        original.save()
-
         registered.save()
         for node in registered.nodes:
             node.update_search()
