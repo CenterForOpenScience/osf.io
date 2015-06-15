@@ -11,6 +11,7 @@ from website.archiver import (
     ARCHIVER_UNCAUGHT_ERROR,
 )
 from website.archiver.decorators import fail_archive_on_error
+from website.archiver import signals as archiver_signals
 
 from website.project import signals as project_signals
 from website.project import utils as project_utils
@@ -44,11 +45,11 @@ def archive_callback(dst):
     root_job = dst.root.archive_job
     if not root_job.archive_tree_finished():
         return
+    if root_job.sent:
+        return
+    root_job.sent = True
+    root_job.save()
     if dst.archive_job.success:
-        if root_job.sent:
-            return
-        root_job.sent = True
-        root_job.save()
         archiver_utils.archive_success(dst, dst.registered_user)
         if dst.pending_embargo:
             for contributor in dst.contributors:
@@ -62,8 +63,23 @@ def archive_callback(dst):
     else:
         archiver_utils.handle_archive_fail(
             ARCHIVER_UNCAUGHT_ERROR,
-            dst.registered_from,
-            dst,
-            dst.registered_user,
+            dst.root.registered_from,
+            dst.root,
+            dst.root.registered_user,
             dst.archive_job.target_addons,
         )
+
+@archiver_signals.archive_fail.connect
+def archive_fail(dst, reason, errors):
+    root_job = dst.root.archive_job
+    if root_job.sent:
+        return
+    root_job.sent = True
+    root_job.save()
+    archiver_utils.handle_archive_fail(
+        reason,
+        dst.root.registered_from,
+        dst.root,
+        dst.root.registerd_user,
+        errors
+    )

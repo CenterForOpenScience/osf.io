@@ -99,6 +99,12 @@ class ArchiveJob(StoredObject):
             ) if len(self.children) else True
         return False
 
+    def _fail_above(self):
+        parent = self.parent
+        if parent:
+            parent.status = ARCHIVER_FAILURE
+            parent.save()
+
     def _post_update_target(self):
         if self._archive_node_finished():
             self.done = True
@@ -107,6 +113,7 @@ class ArchiveJob(StoredObject):
                 [target.status for target in self.target_addons]
             ):
                 self.status = ARCHIVER_FAILURE
+                self._fail_above()
             else:
                 self.status = ARCHIVER_SUCCESS
         self.save()
