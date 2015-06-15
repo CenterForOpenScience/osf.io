@@ -2658,7 +2658,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         and associate it with the respective registration.
         """
 
-        if not self.is_registration or (not self.is_public and not self.embargo_end_date):
+        if not self.is_registration or (not self.is_public and not (self.embargo_end_date or self.pending_embargo)):
             raise NodeStateError('Only public registrations or active embargoes may be retracted.')
 
         retraction = self._initiate_retraction(user, justification, save=True)
