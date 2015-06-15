@@ -1,7 +1,7 @@
 Hello ${user.fullname},
 
 
-I just wanted to let you know, ${initiated_by} has initiated a retraction for the following registration: ${registration_link}
+We just wanted to let you know that ${initiated_by} has initiated a retraction for the following registration: ${registration_link}
 
 To approve this action click the following link: ${approval_link}
 
@@ -12,4 +12,4 @@ the retraction within ${approval_time_span} hours of midnight tonight (EDT) the 
 
 Sincerely yours,
 
-The OSF Robot
+The OSF Robots
