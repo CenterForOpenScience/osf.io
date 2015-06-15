@@ -3,6 +3,16 @@ from rest_framework import serializers as ser
 from api.base.serializers import JSONAPISerializer, LinksField, Link
 from website.models import User
 
+# class SocialFieldsSerializer(ser.Serializer):
+#     github = ser.CharField()
+#     scholar = ser.CharField()
+#     personal = ser.CharField()
+#     twitter = ser.CharField()
+#     linkedIn = ser.CharField()
+#     impactStory = ser.CharField()
+#     orcid = ser.CharField()
+#     researcherId = ser.CharField()
+
 
 class UserSerializer(JSONAPISerializer):
     filterable_fields = frozenset([
@@ -12,6 +22,7 @@ class UserSerializer(JSONAPISerializer):
         'family_name',
         'id'
     ])
+
     id = ser.CharField(read_only=True, source='_id')
     fullname = ser.CharField(help_text='Display name used in the general user interface')
     given_name = ser.CharField(required=False, help_text='For bibliographic citations')
@@ -19,13 +30,14 @@ class UserSerializer(JSONAPISerializer):
     family_name = ser.CharField(required=False, help_text='For bibliographic citations')
     suffix = ser.CharField(required=False, help_text='For bibliographic citations')
     date_registered = ser.DateTimeField(read_only=True)
-    gravatar_url = ser.CharField(read_only=True, required=False, help_text='URL for the icon used to identify the user. Relies on http://gravatar.com ')
-    employment_institutions = ser.ListField(required=False, help_text='An array of dictionaries representing the '
+    gravatar_url = ser.CharField(required=False, help_text='URL for the icon used to identify the user. Relies on http://gravatar.com ')
+    employment_institutions = ser.ListField(required=False, allow_null=True, source='jobs', help_text='An array of dictionaries representing the '
                                                                      'places the user has worked')
-    educational_institutions = ser.ListField(required=False, help_text='An array of dictionaries representing the '
+    educational_institutions = ser.ListField(required=False, allow_null=True, source='schools', help_text='An array of dictionaries representing the '
                                                                          'places the user has attended school')
-    social_accounts = ser.DictField(required=False, source='social', help_text='A dictionary of various social media account '
+    social_accounts = ser.DictField(child=ser.CharField(), required=False, source='social', help_text='A dictionary of various social media account '
                                                                'identifiers including an array of user-defined URLs')
+    # social_accounts = SocialFieldsSerializer
 
     links = LinksField({
         'html': 'absolute_url',
