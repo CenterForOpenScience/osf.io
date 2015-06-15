@@ -101,6 +101,17 @@ class RegistrationEmbargoModelsTestCase(OsfTestCase):
         self.registration.save()
         assert_true(self.registration.pending_embargo)
 
+    def test_embargo_public_project_makes_private_pending_embargo(self):
+        self.registration.is_public = True
+        assert_true(self.registration.is_public)
+        self.registration.embargo_registration(
+            self.user,
+            datetime.datetime.utcnow() + datetime.timedelta(days=10)
+        )
+        self.registration.save()
+        assert_true(self.registration.pending_embargo)
+        assert_false(self.registration.is_public)
+
     def test_embargo_non_registration_raises_NodeStateError(self):
         self.registration.is_registration = False
         self.registration.save()

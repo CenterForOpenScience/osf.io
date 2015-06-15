@@ -2423,7 +2423,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
                 self.embargo.save()
             self.is_public = True
         elif permissions == 'private' and self.is_public:
-            if self.is_registration:
+            if self.is_registration and not self.pending_embargo:
                 raise NodeStateError("Public registrations must be retracted, not made private.")
             else:
                 self.is_public = False
@@ -2749,6 +2749,8 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         )
         # Embargo record needs to be saved to ensure the forward reference Node->Embargo
         self.embargo = embargo
+        if self.is_public:
+            self.set_privacy('private', Auth(user))
 
 
 @Node.subscribe('before_save')
