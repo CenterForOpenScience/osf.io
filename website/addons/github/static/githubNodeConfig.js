@@ -270,13 +270,13 @@ ViewModel.prototype.openCreateRepo = function() {
                 'name, or accept <i>' + newName + '</i> as your repo name.',
                 buttons:  {
                     accept: {
-                        label: "Try different name",
+                        label: "Try Different Name",
                         callback: function() {
                             self.openCreateRepo();
                         }
                     },
                     newName: {
-                        label: "Keep name",
+                        label: "Keep Name",
                         callback: function() {
                             self.createRepo(repoName);
                         }

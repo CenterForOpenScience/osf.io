@@ -373,12 +373,10 @@ class TestAddonFileViews(OsfTestCase):
         self.project.add_addon('github', Auth(self.user))
 
         self.node_addon = self.project.get_addon('github')
-'''<<<<<<< HEAD
         self.node_addon.user_settings = self.user_settings
         self.node_addon.set_auth(external_account=self.account, user=self.user)
         self.node_addon.user = 'Queen'
-        self.node_addon.repo = 'Sheer-Heart-Attack'
-=======
+        self.node_addon.repo = 'Sheer-Heart-Attack']
         self.oauth = AddonGitHubOauthSettings(
             github_user_id='denbarell',
             oauth_access_token='Truthy'
@@ -387,12 +385,8 @@ class TestAddonFileViews(OsfTestCase):
         self.oauth.save()
 
         self.user_addon.oauth_settings = self.oauth
-        self.user_addon.save()
 
-        self.node_addon.user_settings = self.user_addon
-        self.node_addon.repo = 'Truth'
-        self.node_addon.user = 'E'
->>>>>>> 141e14bbbe2bf077dc026d5ba969e654181fcfcf
+        self.user_addon.save()
         self.node_addon.save()
         self.user_settings.save()
 
@@ -536,6 +530,7 @@ class TestAddonFileViews(OsfTestCase):
 
         assert_equals(resp.status_code, 401)
 
+
     def test_head_returns_url(self):
         path = 'the little engine that couldnt'
         guid, _ = self.node_addon.find_or_create_file_guid('/' + path)
@@ -565,25 +560,6 @@ class TestAddonFileViews(OsfTestCase):
 
         assert_equals(resp.status_code, 400)
 
-    def test_unauth_addons_raise(self):
-        path = 'cloudfiles'
-        self.node_addon.user_settings = None
-        self.node_addon.save()
-
-        resp = self.app.get(
-            self.project.web_url_for(
-                'addon_view_or_download_file',
-                path=path,
-                provider='github',
-                action='download'
-            ),
-            auth=self.user.auth,
-            expect_errors=True
-        )
-
-        assert_equals(resp.status_code, 401)
-
-<<<<<<< HEAD
     def test_unconfigured_addons_raise(self):
         path = 'cloudfiles'
         self.node_addon.owner = "fakeowner"
@@ -602,10 +578,6 @@ class TestAddonFileViews(OsfTestCase):
 
         assert_equals(resp.status_code, 400)
 
-
-=======
->>>>>>> 141e14bbbe2bf077dc026d5ba969e654181fcfcf
-'''
 class TestLegacyViews(OsfTestCase):
 
     def setUp(self):
