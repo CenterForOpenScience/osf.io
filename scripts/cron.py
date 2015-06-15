@@ -39,17 +39,17 @@ def main(dry_run=True):
     box.minute.on(0)  # Daily 2:00 a.m.
 
     files_audit = ensure_item(cron, 'bash {}'.format(app_prefix('scripts/osfstorage/files_audit.sh')))
-    files_audit.day_of_week.on(0)
+    files_audit.dow.on(0)
     files_audit.hour.on(2)
     files_audit.minute.on(0)  # Sunday 2:00 a.m.
 
     glacier_inventory = ensure_item(cron, 'bash {}'.format(app_prefix('scripts/osfstorage/glacier_inventory.sh')))
-    glacier_inventory.day_of_week.on(0)
+    glacier_inventory.dow.on(0)
     glacier_inventory.hour.on(0)
     glacier_inventory.minute.on(0)  # Sunday 12:00 a.m.
 
     glacier_audit = ensure_item(cron, 'bash {}'.format(app_prefix('scripts/osfstorage/glacier_audit.sh')))
-    glacier_audit.day_of_week.on(0)
+    glacier_audit.dow.on(0)
     glacier_audit.hour.on(6)
     glacier_audit.minute.on(0)  # Sunday 6:00 a.m.
 
