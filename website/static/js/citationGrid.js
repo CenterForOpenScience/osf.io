@@ -117,7 +117,7 @@ var makeButtons = function(item, col, buttons) {
                         class: button.css,
                         'data-toggle': 'tooltip',
                         'data-placement': 'bottom',
-                        'data-clipboard-text': button.clipboard,
+                        'data-clipboard-target': item.data.csl ? item.data.csl.id : button.clipboard,
                         config: mergeConfigs(button.config, tooltipConfig),
                         onclick: button.onclick ?
                             function(event) {
@@ -355,7 +355,7 @@ CitationGrid.prototype.makeBibliography = function(folder) {
             return child.data.csl;
         })
     );
-    var citeproc = citations.makeCiteproc(this.styleXml, data, 'text');
+    var citeproc = citations.makeCiteproc(this.styleXml, data, 'html');
     var bibliography = citeproc.makeBibliography();
     if (bibliography[0].entry_ids) {
         return utils.reduce(
@@ -400,7 +400,9 @@ CitationGrid.prototype.resolveRowAux = function(item) {
                 return item.data.name;
             }
             else {
-                return self.getCitation(item);
+                return m("span", {id: item.data.csl.id}, [
+                    m.trust(self.getCitation(item))
+                        ]);
             }
         }
     }, {

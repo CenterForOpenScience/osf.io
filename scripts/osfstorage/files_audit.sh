@@ -1,5 +1,13 @@
 #!/bin/bash
 
+# stop background processes if the shell is terminated
+trap 'killall' INT
+killall() {
+    trap '' INT TERM     # ignore INT and TERM while shutting down
+    kill -TERM 0         # fixed order, send TERM not INT
+    wait
+}
+
 TEMPDIR=`mktemp -d`
 trap "rm -rf $TEMPDIR" EXIT
 

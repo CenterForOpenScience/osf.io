@@ -444,7 +444,7 @@ class TestAddonFileViews(OsfTestCase):
         assert_equals(resp.headers['Location'], guid.download_url + '&action=download')
 
     @mock.patch('website.addons.base.request')
-    def test_public_download_url_includes_view_only(self, mock_request):
+    def test_mfr_public_download_url_includes_view_only(self, mock_request):
         view_only = 'justworkplease'
         mock_request.args = {
             'view_only': view_only
@@ -453,7 +453,21 @@ class TestAddonFileViews(OsfTestCase):
         path = 'cloudfiles'
         guid, _ = self.node_addon.find_or_create_file_guid('/' + path)
 
-        assert_in('view_only={}'.format(view_only), guid.public_download_url)
+        assert_in('view_only={}'.format(view_only), guid.mfr_public_download_url)
+        assert_in('accept_url=false', guid.mfr_public_download_url)
+
+    @mock.patch('website.addons.base.request')
+    def test_mfr_render_url(self, mock_request):
+        view_only = 'justworkplease'
+        mock_request.args = {
+            'view_only': view_only
+        }
+
+        path = 'cloudfiles'
+        guid, _ = self.node_addon.find_or_create_file_guid('/' + path)
+
+        assert_in(settings.MFR_SERVER_URL + '/render', guid.mfr_render_url)
+        assert_in('?url=', guid.mfr_render_url)
 
     @mock.patch('website.addons.base.views.addon_view_file')
     @mock.patch('website.addons.github.api.GitHub.repo')
