@@ -8,10 +8,10 @@ from framework.auth.core import Auth
 from website.models import Node, Pointer
 from api.base.utils import get_object_or_404, waterbutler_url_for
 from api.base.filters import ODMFilterMixin, ListFilterMixin
-from .serializers import NodeSerializer, NodePointersSerializer, NodeFilesSerializer
+from .serializers import NodeSerializer, NodePointersSerializer, NodeFilesSerializer, RegistrationOpenEndedSerializer, RegistrationPreDataCollectionSerializer, ReplicationRecipePreRegistrationSerializer, ReplicationRecipePostCompletionSerializer
+from .serializers import RegistrationOpenEndedWithTokenSerializer, RegistrationPreDataCollectionWithTokenSerializer, ReplicationRecipePreRegistrationWithTokenSerializer, ReplicationRecipePostCompletionWithTokenSerializer
 from api.users.serializers import ContributorSerializer
 from .permissions import ContributorOrPublic, ReadOnlyIfRegistration, ContributorOrPublicForPointers
-
 
 class NodeMixin(object):
     """Mixin with convenience methods for retrieving the current node based on the
@@ -26,7 +26,6 @@ class NodeMixin(object):
         # May raise a permission denied
         self.check_object_permissions(self.request, obj)
         return obj
-
 
 class NodeList(generics.ListCreateAPIView, ODMFilterMixin):
     """Projects and components.
@@ -143,7 +142,6 @@ class NodeRegistrationsList(generics.ListAPIView, NodeMixin):
         ContributorOrPublic,
         drf_permissions.IsAuthenticatedOrReadOnly,
     )
-
     serializer_class = NodeSerializer
 
     # overrides ListAPIView
@@ -157,6 +155,78 @@ class NodeRegistrationsList(generics.ListAPIView, NodeMixin):
         registrations = [node for node in nodes if node.can_view(auth)]
         return registrations
 
+class NodeCreateRegistration(generics.CreateAPIView, NodeMixin):
+    permission_classes = (
+        ContributorOrPublic,
+        drf_permissions.IsAuthenticatedOrReadOnly)
+
+class NodeRegistrationsOpenEnded(NodeCreateRegistration):
+    """Register the current node.
+
+    Registrations are read-only snapshots of a project.
+
+    """
+    serializer_class = RegistrationOpenEndedSerializer
+
+class NodeRegistrationsOpenEndedWithToken(NodeCreateRegistration):
+    """Register the current node.
+
+    Registrations are read-only snapshots of a project.
+
+    """
+    serializer_class = RegistrationOpenEndedWithTokenSerializer
+
+class NodeRegistrationsPreDataCollection(NodeCreateRegistration):
+    """Register the current node.
+
+    Registrations are read-only snapshots of a project.
+
+    """
+    serializer_class = RegistrationPreDataCollectionSerializer
+
+class NodeRegistrationsPreDataCollectionWithToken(NodeCreateRegistration):
+    """Register the current node.
+
+    Registrations are read-only snapshots of a project.
+
+    """
+    serializer_class = RegistrationPreDataCollectionWithTokenSerializer
+
+
+class NodeRegistrationsReplicationRecipePreRegistration(NodeCreateRegistration):
+    """Register the current node.
+
+    Registrations are read-only snapshots of a project.
+    """
+
+    serializer_class = ReplicationRecipePreRegistrationSerializer
+
+
+class NodeRegistrationsReplicationRecipePreRegistrationWithToken(NodeCreateRegistration):
+    """Register the current node.
+
+    Registrations are read-only snapshots of a project.
+
+    """
+    serializer_class = ReplicationRecipePreRegistrationWithTokenSerializer
+
+
+class NodeRegistrationsReplicationRecipePostCompletion(NodeCreateRegistration):
+    """Register the current node.
+
+    Registrations are read-only snapshots of a project.
+
+    """
+    serializer_class = ReplicationRecipePostCompletionSerializer
+
+
+class NodeRegistrationsReplicationRecipePostCompletionWithToken(NodeCreateRegistration):
+    """Register the current node.
+
+    Registrations are read-only snapshots of a project.
+
+    """
+    serializer_class = ReplicationRecipePostCompletionWithTokenSerializer
 
 class NodeChildrenList(generics.ListAPIView, NodeMixin):
     """Children of the current node.

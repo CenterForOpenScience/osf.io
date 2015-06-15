@@ -5,9 +5,11 @@ from nose.tools import *  # flake8: noqa
 from framework.auth.core import Auth
 from website.models import Node
 from website.util.sanitize import strip_html
-
+import unittest
 from tests.base import ApiTestCase, fake
 from tests.factories import UserFactory, ProjectFactory, FolderFactory, RegistrationFactory, DashboardFactory, NodeFactory
+from urlparse import urlparse
+from website.project.model import ensure_schemas
 
 class TestWelcomeToApi(ApiTestCase):
     def setUp(self):
@@ -759,6 +761,301 @@ class TestNodeRegistrationList(ApiTestCase):
         res = self.app.get(self.private_url, auth=self.basic_auth_two, expect_errors=True)
         assert_equal(res.status_code, 403)
 
+class TestNodeCreateOpenEndedRegistration(ApiTestCase):
+    def setUp(self):
+        ApiTestCase.setUp(self)
+        ensure_schemas()
+        self.user = UserFactory.build()
+        password = fake.password()
+        self.password = password
+        self.user.set_password(password)
+        self.user.save()
+        self.basic_auth = (self.user.username, password)
+
+        self.user_two = UserFactory.build()
+        self.user_two.set_password(password)
+        self.user_two.save()
+        self.basic_auth_two = (self.user_two.username, password)
+
+        self.summary = "Open-Ended project summary"
+        self.payload = {"summary": self.summary}
+
+        self.public_project = ProjectFactory(is_public=True, creator=self.user)
+        self.public_url = "/v2/nodes/{}/register/Open-Ended_Registration/".format(self.public_project._id)
+
+        self.private_project = ProjectFactory(is_public=False, creator=self.user)
+        self.private_url = "/v2/nodes/{}/register/Open-Ended_Registration/".format(self.private_project._id)
+
+    def test_invalid_token_open_ended_registration(self):
+        res = self.app.post(self.private_url, self.payload, auth=self.basic_auth, expect_errors=True)
+        assert_equal(res.status_code, 400)
+        full_url = self.private_url + "12345/"
+
+        res = self.app.post(full_url, self.payload, auth=self.basic_auth, expect_errors = True)
+        assert_equal(res.status_code, 400)
+        assert_equal(res.json["non_field_errors"][0], "Incorrect token.")
+
+    def test_create_open_ended_public_registration_logged_out(self):
+        res = self.app.post(self.public_url, self.payload, expect_errors=True)
+        # This is 403 instead of 401 because basic authentication is only for unit tests and, in order to keep from
+        # presenting a basic authentication dialog box in the front end. We may change this as we understand CAS
+        # a little better
+        assert_equal(res.status_code, 403)
+
+    def test_create_open_ended_public_registration_logged_in(self):
+        res = self.app.post(self.public_url, self.payload, auth=self.basic_auth, expect_errors=True)
+        full_url = res.json["non_field_errors"][1]
+        path = urlparse(full_url).path
+        assert_equal(res.status_code, 400)
+
+        res = self.app.post(path, self.payload, auth=self.basic_auth, expect_errors = True)
+        assert_equal(res.status_code, 201)
+        assert_equal(res.json["data"]["title"], self.public_project.title)
+
+    def test_create_open_ended_private_registration_logged_out(self):
+        res = self.app.post(self.private_url, self.payload, expect_errors=True)
+        # This is 403 instead of 401 because basic authentication is only for unit tests and, in order to keep from
+        # presenting a basic authentication dialog box in the front end. We may change this as we understand CAS
+        # a little better
+        assert_equal(res.status_code, 403)
+
+    def test_create_open_ended_private_registration_logged_in_contributor(self):
+        res = self.app.post(self.private_url, self.payload, auth=self.basic_auth, expect_errors=True)
+        full_url = res.json["non_field_errors"][1]
+        path = urlparse(full_url).path
+        assert_equal(res.status_code, 400)
+
+        res = self.app.post(path, self.payload, auth=self.basic_auth, expect_errors = True)
+        print res
+        assert_equal(res.status_code, 201)
+        assert_equal(res.json["data"]["title"], self.private_project.title)
+
+    def test_create_open_ended_private_registration_logged_in_non_contributor(self):
+        res = self.app.post(self.private_url, self.payload, auth=self.basic_auth_two, expect_errors=True)
+        assert_equal(res.status_code, 403)
+
+class TestNodeCreatePreDataCollectionRegistration(ApiTestCase):
+    def setUp(self):
+        ensure_schemas()
+        ApiTestCase.setUp(self)
+        self.user = UserFactory.build()
+        password = fake.password()
+        self.password = password
+        self.user.set_password(password)
+        self.user.save()
+        self.basic_auth = (self.user.username, password)
+
+        self.user_two = UserFactory.build()
+        self.user_two.set_password(password)
+        self.user_two.save()
+        self.basic_auth_two = (self.user_two.username, password)
+
+        self.looked = "Yes"
+        self.datacompletion = 'No'
+        self.comments = 'First registration of project'
+        self.payload = {'looked': self.looked, 'datacompletion': self.datacompletion, 'comments': self.comments}
+
+        self.public_project = ProjectFactory(is_public=True, creator=self.user)
+        self.public_url = '/v2/nodes/{}/register/OSF-Standard_Pre-Data_Collection_Registration/'.format(self.public_project._id)
+
+        self.private_project = ProjectFactory(is_public=False, creator=self.user)
+        self.private_url = '/v2/nodes/{}/register/OSF-Standard_Pre-Data_Collection_Registration/'.format(self.private_project._id)
+
+    def test_invalid_token_pre_data_collection_registration(self):
+        res = self.app.post(self.private_url, self.payload, auth=self.basic_auth, expect_errors=True)
+        assert_equal(res.status_code, 400)
+        full_url = self.private_url + '12345/'
+
+        res = self.app.post(full_url, self.payload, auth=self.basic_auth, expect_errors = True)
+        assert_equal(res.status_code, 400)
+        assert_equal(res.json['non_field_errors'][0], 'Incorrect token.')
+
+    def test_create_pre_data_collection_public_registration_logged_out(self):
+        res = self.app.post(self.public_url, self.payload, expect_errors=True)
+        # This is 403 instead of 401 because basic authentication is only for unit tests and, in order to keep from
+        # presenting a basic authentication dialog box in the front end. We may change this as we understand CAS
+        # a little better
+        assert_equal(res.status_code, 403)
+
+    def test_create_pre_data_collection_public_registration_logged_in(self):
+        res = self.app.post(self.public_url, self.payload, auth=self.basic_auth, expect_errors=True)
+        full_url = res.json['non_field_errors'][1]
+        path = urlparse(full_url).path
+        assert_equal(res.status_code, 400)
+
+        res = self.app.post(path, self.payload, auth=self.basic_auth, expect_errors = True)
+        assert_equal(res.status_code, 201)
+        assert_equal(res.json['data']['title'], self.public_project.title)
+
+    def test_create_pre_data_collection_private_registration_logged_out(self):
+        res = self.app.post(self.private_url, self.payload, expect_errors=True)
+        # This is 403 instead of 401 because basic authentication is only for unit tests and, in order to keep from
+        # presenting a basic authentication dialog box in the front end. We may change this as we understand CAS
+        # a little better
+        assert_equal(res.status_code, 403)
+
+    def test_create_pre_data_collection_private_registration_logged_in_contributor(self):
+        res = self.app.post(self.private_url, self.payload, auth=self.basic_auth, expect_errors=True)
+        full_url = res.json['non_field_errors'][1]
+        path = urlparse(full_url).path
+        assert_equal(res.status_code, 400)
+
+        res = self.app.post(path, self.payload, auth=self.basic_auth, expect_errors = True)
+        assert_equal(res.status_code, 201)
+        assert_equal(res.json['data']['title'], self.private_project.title)
+
+    def test_create_pre_data_collection_private_registration_logged_in_non_contributor(self):
+        res = self.app.post(self.private_url, self.payload, auth=self.basic_auth_two, expect_errors=True)
+        assert_equal(res.status_code, 403)
+
+class TestNodeCreateReplicationRecipePreRegistration(ApiTestCase):
+    def setUp(self):
+        ensure_schemas()
+        ApiTestCase.setUp(self)
+        self.user = UserFactory.build()
+        password = fake.password()
+        self.password = password
+        self.user.set_password(password)
+        self.user.save()
+        self.basic_auth = (self.user.username, password)
+
+        self.user_two = UserFactory.build()
+        self.user_two.set_password(password)
+        self.user_two.save()
+        self.basic_auth_two = (self.user_two.username, password)
+
+        self.item1 = "This is the effect I'm trying to replicate"
+        self.item2 = 'This is why it is important to replicate'
+        self.item3 = 'This is the effect size I am trying to replicate'
+        self.payload = {'item1': self.item1, 'item2': self.item2, 'item3': self.item3}
+
+        self.public_project = ProjectFactory(is_public=True, creator=self.user)
+        self.public_url = '/v2/nodes/{}/register/Replication_Recipe_Pre-Registration/'.format(self.public_project._id)
+
+        self.private_project = ProjectFactory(is_public=False, creator=self.user)
+        self.private_url = '/v2/nodes/{}/register/Replication_Recipe_Pre-Registration/'.format(self.private_project._id)
+
+    def test_invalid_token_replication_recipe_pre_registration(self):
+        res = self.app.post(self.private_url, self.payload, auth=self.basic_auth, expect_errors=True)
+        assert_equal(res.status_code, 400)
+        full_url = self.private_url + '12345/'
+
+        res = self.app.post(full_url, self.payload, auth=self.basic_auth, expect_errors = True)
+        assert_equal(res.status_code, 400)
+        assert_equal(res.json['non_field_errors'][0], 'Incorrect token.')
+
+    def test_create_replication_recipe_pre_registration_public_registration_logged_out(self):
+        res = self.app.post(self.public_url, self.payload, expect_errors=True)
+        # This is 403 instead of 401 because basic authentication is only for unit tests and, in order to keep from
+        # presenting a basic authentication dialog box in the front end. We may change this as we understand CAS
+        # a little better
+        assert_equal(res.status_code, 403)
+
+    def test_create_replication_recipe_pre_registration_public_registration_logged_in(self):
+        res = self.app.post(self.public_url, self.payload, auth=self.basic_auth, expect_errors=True)
+        full_url = res.json['non_field_errors'][1]
+        path = urlparse(full_url).path
+        assert_equal(res.status_code, 400)
+
+        res = self.app.post(path, self.payload, auth=self.basic_auth, expect_errors = True)
+        assert_equal(res.status_code, 201)
+        assert_equal(res.json['data']['title'], self.public_project.title)
+
+    def test_create_replication_recipe_pre_registration_private_registration_logged_out(self):
+        res = self.app.post(self.private_url, self.payload, expect_errors=True)
+        # This is 403 instead of 401 because basic authentication is only for unit tests and, in order to keep from
+        # presenting a basic authentication dialog box in the front end. We may change this as we understand CAS
+        # a little better
+        assert_equal(res.status_code, 403)
+
+    def test_create_replication_recipe_pre_registration_private_registration_logged_in_contributor(self):
+        res = self.app.post(self.private_url, self.payload, auth=self.basic_auth, expect_errors=True)
+        full_url = res.json['non_field_errors'][1]
+        path = urlparse(full_url).path
+        assert_equal(res.status_code, 400)
+
+        res = self.app.post(path, self.payload, auth=self.basic_auth, expect_errors = True)
+        assert_equal(res.status_code, 201)
+        assert_equal(res.json['data']['title'], self.private_project.title)
+
+    def test_create_replication_recipe_pre_registration_private_registration_logged_in_non_contributor(self):
+        res = self.app.post(self.private_url, self.payload, auth=self.basic_auth_two, expect_errors=True)
+        assert_equal(res.status_code, 403)
+
+class TestNodeCreateReplicationRecipePostCompletion(ApiTestCase):
+    def setUp(self):
+        ensure_schemas()
+        ApiTestCase.setUp(self)
+        self.user = UserFactory.build()
+        password = fake.password()
+        self.password = password
+        self.user.set_password(password)
+        self.user.save()
+        self.basic_auth = (self.user.username, password)
+
+        self.user_two = UserFactory.build()
+        self.user_two.set_password(password)
+        self.user_two.save()
+        self.basic_auth_two = (self.user_two.username, password)
+
+        self.item29 = "Here's where my finalized materials are registered"
+        self.item30 = 'This was the effect size of my replication'
+        self.item31 = 'This was my confidence interval'
+        self.payload = {'item29': self.item29, 'item30': self.item30, 'item31': self.item31}
+
+        self.public_project = ProjectFactory(is_public=True, creator=self.user)
+        self.public_url = '/v2/nodes/{}/register/Replication_Recipe_Post-Completion/'.format(self.public_project._id)
+
+        self.private_project = ProjectFactory(is_public=False, creator=self.user)
+        self.private_url = '/v2/nodes/{}/register/Replication_Recipe_Post-Completion/'.format(self.private_project._id)
+
+    def test_invalid_token_post_completion_registration(self):
+        res = self.app.post(self.private_url, self.payload, auth=self.basic_auth, expect_errors=True)
+        assert_equal(res.status_code, 400)
+        full_url = self.private_url + '12345/'
+
+        res = self.app.post(full_url, self.payload, auth=self.basic_auth, expect_errors = True)
+        assert_equal(res.status_code, 400)
+        assert_equal(res.json['non_field_errors'][0], 'Incorrect token.')
+
+    def test_create_replication_recipe_post_completion_public_registration_logged_out(self):
+        res = self.app.post(self.public_url, self.payload, expect_errors=True)
+        # This is 403 instead of 401 because basic authentication is only for unit tests and, in order to keep from
+        # presenting a basic authentication dialog box in the front end. We may change this as we understand CAS
+        # a little better
+        assert_equal(res.status_code, 403)
+
+    def test_create_replication_recipe_post_completion_public_registration_logged_in(self):
+        res = self.app.post(self.public_url, self.payload, auth=self.basic_auth, expect_errors=True)
+        full_url = res.json['non_field_errors'][1]
+        path = urlparse(full_url).path
+        assert_equal(res.status_code, 400)
+
+        res = self.app.post(path, self.payload, auth=self.basic_auth, expect_errors = True)
+        assert_equal(res.status_code, 201)
+        assert_equal(res.json['data']['title'], self.public_project.title)
+
+    def test_create_replication_recipe_post_completion_private_registration_logged_out(self):
+        res = self.app.post(self.private_url, self.payload, expect_errors=True)
+        # This is 403 instead of 401 because basic authentication is only for unit tests and, in order to keep from
+        # presenting a basic authentication dialog box in the front end. We may change this as we understand CAS
+        # a little better
+        assert_equal(res.status_code, 403)
+
+    def test_create_replication_recipe_post_completion_private_registration_logged_in_contributor(self):
+        res = self.app.post(self.private_url, self.payload, auth=self.basic_auth, expect_errors=True)
+        full_url = res.json['non_field_errors'][1]
+        path = urlparse(full_url).path
+        assert_equal(res.status_code, 400)
+
+        res = self.app.post(path, self.payload, auth=self.basic_auth, expect_errors = True)
+        assert_equal(res.status_code, 201)
+        assert_equal(res.json['data']['title'], self.private_project.title)
+
+    def test_create_replication_recipe_post_completion_private_registration_logged_in_non_contributor(self):
+        res = self.app.post(self.private_url, self.payload, auth=self.basic_auth_two, expect_errors=True)
+        assert_equal(res.status_code, 403)
+
 class TestNodeChildrenList(ApiTestCase):
     def setUp(self):
         ApiTestCase.setUp(self)
@@ -1151,8 +1448,4 @@ class TestDeleteNodePointer(ApiTestCase):
 
         res = self.app.delete(url, auth=self.basic_auth_two, expect_errors=True)
         assert_equal(res.status_code, 405)
-
-
-
-
 
