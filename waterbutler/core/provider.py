@@ -1,7 +1,7 @@
-import os
 import abc
 import asyncio
 import itertools
+from urllib import parse
 
 import furl
 import aiohttp
@@ -12,14 +12,18 @@ from waterbutler.core import exceptions
 
 def build_url(base, *segments, **query):
     url = furl.furl(base)
-    segments = filter(
+    # Filters return generators
+    # Cast to list to force "spin" it
+    url.path.segments = list(filter(
         lambda segment: segment,
         map(
-            lambda segment: segment.strip('/'),
+            # Furl requires everything to be quoted or not, no mixtures allowed
+            # prequote everything so %signs don't break everything
+            lambda segment: parse.quote(segment.strip('/')),
+            # Include any segments of the original url, effectively list+list but returns a generator
             itertools.chain(url.path.segments, segments)
         )
-    )
-    url.path = os.path.join(*segments)
+    ))
     url.args = query
     return url.url
 
