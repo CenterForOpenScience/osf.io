@@ -508,6 +508,12 @@ class TestArchiverListeners(ArchiverTestCase):
     @mock.patch('website.project.utils.send_embargo_email')
     def test_archive_callback_done_embargoed(self, mock_send):
         end_date = datetime.datetime.now() + datetime.timedelta(days=30)
+        self.dst.archive_job.meta = {
+            'embargo_urls': {
+                contrib._id: None
+                for contrib in self.dst.contributors
+            }
+        }
         self.dst.embargo_registration(self.user, end_date)
         for addon in ['osfstorage', 'dropbox']:
             self.dst.archive_job.update_target(addon, ARCHIVER_SUCCESS)
