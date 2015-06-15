@@ -867,6 +867,7 @@ class StorageAddonBase(object):
             **kwargs
         )
         res = requests.get(metadata_url)
+        # TODO: better throttling?
         sleep(1.0 / 5.0)
         if res.status_code != 200:
             raise HTTPError(res.status_code, data={
