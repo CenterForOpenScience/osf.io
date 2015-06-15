@@ -85,6 +85,96 @@ var FileRevisionsTable = {
             });
         };
 
+        // Start of Subscriptions
+        self.subscription = m.prop('adopt_parent');
+        self.getSub = function() {
+            var notificationsURL = self.node.urls.api + 'file_subscriptions/';
+            var path = self.file.path;
+            var payload = {
+                node_id: self.node.id,
+                path: path,
+                provider: self.file.provider
+            };
+            // Get current subscription
+            $.ajax({
+                url: notificationsURL,
+                type: 'GET',
+                dataType: 'json',
+                data: payload
+            }).done(function(response) {
+                if(response.event.notificationType === 'null') {
+                    self.subscription('adopt_parent');
+                } else {
+                    self.subscription(response.event.notificationType);
+                }
+            }).fail(function(xhr, status, error) {
+                console.log(error);
+            });
+        };
+
+        self.setSub = function(sub) {
+            if(sub === self.subscription()) {
+                return null;
+            }
+            var payload = {
+                id: self.node.id,
+                event: "file_updated",
+                notification_type: sub,
+                path: self.file.path,
+                provider: self.file.provider
+            };
+            $osf.postJSON(
+                '/api/v1/subscriptions/',
+                payload
+            ).done(function() {
+                self.subscription(sub);
+                m.redraw();
+            }).fail(function(xhr, status, error) {
+                console.log(error);
+            });
+        };
+
+        self.getSub();
+
+        self.bell = function() {
+            if(self.subscription() === 'email_transactional') {
+                return m('span', [m('i.fa.fa-bell-o'), m('i.fa.fa-plus')]);
+            } else if(self.subscription() === 'email_digest') {
+                return m('i.fa.fa-bell-o.m-l-xs.m-r-xs');
+            } else if (self.subscription() === 'adopt_parent') {
+                return m('span', [m('i.fa.fa-bell-o'), m('i.fa.fa-arrow-up')]);
+            } else {
+                return m('i.fa.fa-bell-slash-o.m-l-xs.m-r-xs');
+            }
+        };
+
+        self.subscriptions = function() {
+            var subscriptions = [
+                {text: 'Emails', value: 'email_transactional'},
+                {text: 'Email Digest', value: 'email_digest'},
+                {text: 'Adopt from Project', value: 'adopt_parent'},
+                {text: 'None', value: 'none'}
+            ];
+            //+ (ctrl.subscription === 'email_transactional' ? '.active' : ''),{onclick: ctrl.setSub.bind('email_transactional')},
+            return m('.btn-group.btn-group.row.m-xs', [
+                m('.btn.btn-default.disabled', {style: {width: '51px'}}, [self.bell()]),
+                m('.btn.btn-default.dropdown-toggle[data-toggle=dropdown] [aria-expanded=false]', 'Subscription'),
+                m('ul.dropdown-menu[role=menu]', [
+                    m('li.dropdown-header', 'Notifications sent when file is updated'),
+                    subscriptions.map(function(sub) {
+                        return m('li.list-group-item.pointer' +
+                            (self.subscription() === sub.value ? '.active' : ''),
+                            {onclick: function(e) {
+                                e.preventDefault();
+                                self.setSub(sub.value)}
+                            },
+                            sub.text)
+                    })
+                ])
+            ])
+        };
+        // End of Subscriptions
+
         self.getTableHead = function() {
             return m('thead', [
                 m('tr', [
@@ -129,6 +219,7 @@ var FileRevisionsTable = {
     },
     view: function(ctrl) {
         return m('#revisionsPanel', [
+            ctrl.subscriptions(),
             m('.osf-panel-header', 'Revisions'),
             m('', (function() {
                 if (!model.loaded()) return util.Spinner;

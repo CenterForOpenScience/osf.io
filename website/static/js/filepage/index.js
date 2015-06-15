@@ -112,7 +112,7 @@ var FileViewPage = {
 
 
         // Hack to delay creation of the editor
-        // until we know this is the current file revsion
+        // until we know this is the current file revision
         self.enableEditing = function() {
             // Sometimes we can get here twice, check just in case
             if (self.editor || !self.canEdit()) {
@@ -205,7 +205,7 @@ var FileViewPage = {
                 m('.btn.btn-sm.btn-success.file-download', {onclick: $(document).trigger.bind($(document), 'fileviewpage:download')}, 'Download')
             ]),
             m('.btn-group.btn-group-sm', [
-                m('.btn.btn-default.disabled', 'Toggle view: ')
+                m('.btn.btn-default.disabled', 'Show: ')
             ].concat(
                 m('.btn' + (ctrl.mfrIframeParent.is(':visible') ? '.btn-primary' : '.btn-default'), {
                     onclick: function (e) {
