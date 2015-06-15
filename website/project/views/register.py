@@ -47,6 +47,24 @@ def node_register_page(auth, node, **kwargs):
     ret.update(_view_project(node, auth, primary=True))
     return ret
 
+@must_be_valid_project
+@must_have_permission(ADMIN)
+def node_register_edit_page(auth, node, **kwargs):
+    new_values = request.json.get('value', '')
+    private_register_id = request.json.get('pk', '')
+
+    ret = {
+        'template_name': template_name,
+        'schema': json.dumps(schema),
+        'metadata_version': meta_schema.metadata_version,
+        'schema_version': meta_schema.schema_version,
+        'registered': registered,
+        'payload': payload,
+        'children_ids': node.nodes._to_primary_keys(),
+    }
+    ret.update(_view_project(node, auth, primary=True))
+    return ret
+
 
 @must_be_valid_project
 @must_be_contributor_or_public
