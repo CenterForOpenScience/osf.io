@@ -40,6 +40,7 @@ from website.project.views.node import _view_project, abbrev_authors, _should_sh
 from website.project.views.comment import serialize_comment
 from website.project.decorators import check_can_access
 from website.addons.github.model import AddonGitHubOauthSettings
+from website.archiver import utils as archiver_utils
 
 from tests.base import (
     OsfTestCase,
@@ -496,6 +497,7 @@ class TestProjectViews(OsfTestCase):
             self.project._primary_key)
         self.app.post_json(url, {'registrationChoice': 'Make registration public immediately'}, auth=self.auth)
         self.project.reload()
+        archiver_utils.archive_success(self.project.node__registrations[0], self.project.creator)
         # A registration was added to the project's registration list
         assert_equal(len(self.project.node__registrations), 1)
         # A log event was saved

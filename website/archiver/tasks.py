@@ -23,6 +23,7 @@ from website.archiver import (
 )
 from website.archiver import utils
 from website.archiver.model import ArchiveJob
+from website.archiver import signals as archiver_signals
 
 from website.project import signals as project_signals
 from website import settings
@@ -47,30 +48,24 @@ class ArchiverTask(celery.Task):
             return
         job = ArchiveJob.load(kwargs['job_pk'])
         src, dst, user = job.info()
+        reason = None
+        errors = []
         if isinstance(exc, ArchiverSizeExceeded):
             dst.archive_status = ARCHIVER_SIZE_EXCEEDED
             dst.save()
-            utils.handle_archive_fail(
-                ARCHIVER_SIZE_EXCEEDED,
-                src, dst, user,
-                exc.result
-            )
+            reason = ARCHIVER_SIZE_EXCEEDED
+            errors = exc.result
         elif isinstance(exc, HTTPError):
             dst.archive_status = ARCHIVER_NETWORK_ERROR
             dst.save()
-            utils.handle_archive_fail(
-                ARCHIVER_NETWORK_ERROR,
-                src, dst, user,
-                dst.archive_job.target_info()
-            )
+            reason = ARCHIVER_NETWORK_ERROR
+            errors = dst.archive_job.target_info()
         else:
             dst.archive_status = ARCHIVER_UNCAUGHT_ERROR
             dst.save()
-            utils.handle_archive_fail(
-                ARCHIVER_UNCAUGHT_ERROR,
-                src, dst, user,
-                [einfo]
-            )
+            reason = ARCHIVER_UNCAUGHT_ERROR
+            errors = [einfo]
+        archiver_signals.archive_fail.send(dst, reason=reason, errors=errors)
         raise exc
 
 class ArchiverSizeExceeded(Exception):
