@@ -101,10 +101,22 @@ class TestUser(base.OsfTestCase):
             self.user.remove_email(self.user.username)
         assert_equal(e.exception.message, "Can't remove primary email")
 
-    def test_cannot_remove_primary_email_from_unconfirmed_list(self):
-        with assert_raises(PermissionsError) as e:
-            self.user.remove_unconfirmed_email(self.user.username)
-        assert_equal(e.exception.message, "Can't remove primary email")
+    def test_add_same_unconfirmed_email_twice(self):
+        email = "test@example.com"
+        token1 = self.user.add_unconfirmed_email(email)
+        self.user.save()
+        self.user.reload()
+        assert_equal(token1, self.user.get_confirmation_token(email))
+        assert_equal(email, self.user._get_unconfirmed_email_for_token(token1))
+
+        token2 = self.user.add_unconfirmed_email(email)
+        self.user.save()
+        self.user.reload()
+        assert_not_equal(token1, self.user.get_confirmation_token(email))
+        assert_equal(token2, self.user.get_confirmation_token(email))
+        assert_equal(email, self.user._get_unconfirmed_email_for_token(token2))
+        with assert_raises(exceptions.InvalidTokenError):
+            self.user._get_unconfirmed_email_for_token(token1)
 
 
 class TestUserMerging(base.OsfTestCase):
@@ -413,3 +425,4 @@ class TestUserMerging(base.OsfTestCase):
         assert_true(self.user.is_invited)
 
         assert_in(self.user, self.project_with_unreg_contrib.contributors)
+

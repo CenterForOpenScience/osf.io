@@ -138,13 +138,13 @@ class RegistrationForm(Form):
     password2 = confirm_password_field
 
 
-class ResendConfirmationForm(Form):
-    email = email_field
-
-
 class SignInForm(Form):
     username = email_field
     password = password_field
+
+
+class ResendConfirmationForm(Form):
+    email = email_field
 
 
 class PasswordForm(Form):

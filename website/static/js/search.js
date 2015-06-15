@@ -116,7 +116,7 @@ var ViewModel = function(params) {
     });
 
     self.queryObject = ko.pureComputed(function(){
-        var TITLE_BOOST = '2';
+        var TITLE_BOOST = '4';
         var DESCRIPTION_BOOST = '1.2';
 
         var fields = [
