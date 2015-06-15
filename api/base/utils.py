@@ -10,9 +10,7 @@ from modularodm import Q
 from api.base import settings as api_settings
 from website import settings as website_settings
 from website import util as website_util  # noqa
-from website import settings
 import hashlib
-
 
 def absolute_reverse(view_name, query_kwargs=None, args=None, kwargs=None):
     """Like django's `reverse`, except returns an absolute URL. Also add query parameters."""
