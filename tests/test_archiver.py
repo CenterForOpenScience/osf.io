@@ -33,7 +33,7 @@ from website.archiver.decorators import fail_archive_on_error
 from website import mails
 from website import settings
 from website.util import waterbutler_url_for
-from website.project.model import Node
+from website.project.model import Node, NodeLog
 from website.addons.base import StorageAddonBase
 from website.util import api_url_for
 
@@ -317,6 +317,15 @@ class TestArchiverTasks(ArchiverTestCase):
         mock_update.assert_called_with('dropbox', ARCHIVER_FAILURE, errors=[error])
 
 class TestArchiverUtils(ArchiverTestCase):
+
+    @mock.patch('framework.tasks.handlers.enqueue_task')
+    def test_archive_success_adds_registered_logs(self, mock_enqueue):
+        proj = factories.ProjectFactory()
+        len_logs = len(proj.logs)
+        reg = factories.RegistrationFactory(project=proj, archive=True)
+        archiver_utils.archive_success(reg, proj.creator)
+        assert_equal(len(proj.logs), len_logs + 1)
+        assert_equal([p for p in proj.logs][-1].action, NodeLog.PROJECT_REGISTERED)
 
     @mock.patch('website.mails.send_mail')
     def test_handle_archive_fail(self, mock_send_mail):
