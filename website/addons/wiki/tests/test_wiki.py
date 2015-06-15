@@ -1130,7 +1130,7 @@ class TestWikiMenu(OsfTestCase):
                     'wiki_content': 'content here'
                 },
                 'children': [],
-                'kind': 'project'
+                'kind': 'folder'
             }
         ]
         assert_equal(data, expected)
@@ -1148,7 +1148,7 @@ class TestWikiMenu(OsfTestCase):
                     'wiki_content': 'home content'
                 },
                 'children': [],
-                'kind': 'component'
+                'kind': 'folder'
             }
         ]
         assert_equal(data, expected)
@@ -1175,10 +1175,9 @@ class TestWikiMenu(OsfTestCase):
                             'wiki_content': 'inner content'
                         },
                         'children': [],
-                        'kind': 'inner_component'
                     }
                 ],
-                'kind': 'component'
+                'kind': 'folder'
             }
         ]
         assert_equal(data, expected)
@@ -1194,7 +1193,7 @@ class TestWikiMenu(OsfTestCase):
                     'wiki_content': ''
                 },
                 'children': [],
-                'kind': 'component'
+                'kind': 'folder'
             }
         ]
         assert_equal(data, expected)
@@ -1208,12 +1207,14 @@ class TestWikiMenu(OsfTestCase):
         expected = [
             {
                 'title': 'Project Wiki Pages',
-                'kind': 'heading',
+                'kind': 'folder',
+                'type': 'heading',
                 'children': views.format_project_wiki_pages(node=self.project),
             },
             {
                 'title': 'Component Wiki Pages',
-                'kind': 'heading',
+                'kind': 'folder',
+                'type': 'heading',
                 'children': views.format_component_wiki_pages(node=self.project, auth=self.consolidate_auth)
             }
         ]

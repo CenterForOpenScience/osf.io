@@ -7,27 +7,12 @@ var Treebeard = require('treebeard');
 var $osf = require('js/osfHelpers');
 require('../css/fangorn.css');
 
-
-function resolveToggle(item) {
-    var toggleMinus = m('i.fa.fa-minus', ' '),
-        togglePlus = m('i.fa.fa-plus', ' ');
-
-    if (item.children.length > 0) {
-        if (item.open) {
-            return toggleMinus;
-        }
-        return togglePlus;
-    }
-    item.open = true;
-    return '';
-}
-
 function resolveIcon(item) {
     if (item.children.length > 0) {
         if (item.open) {
-            return m('i.fa.fa-folder-open', ' ');
+            return m('i.fa.fa-folder-open-o', ' ');
         }
-        return m('i.fa.fa-folder', ' ');
+        return m('i.fa.fa-folder-o', ' ');
     }
 }
 
@@ -47,7 +32,6 @@ function WikiMenu(data) {
     var tbOptions = {
         divID: 'grid',
         filesData: data,
-        resolveToggle: resolveToggle,
         paginate : false,       // Whether the applet starts with pagination or not.
         paginateToggle : false, // Show the buttons that allow users to switch between scroll and paginate.
         uploads : false,         // Turns dropzone on/off.
@@ -59,16 +43,16 @@ function WikiMenu(data) {
                 width: '100%'
             }]
         },
-        onload: function(tree) {
-            var tb = this;
-            tb.wikiID = window.contextVars.wiki.wikiID;
-            tb.canEdit = window.contextVars.wiki.canEdit;
-        },
         resolveRows : function (item){
             var tb = this;
             var columns = [];
 
-            if(item.data.kind === 'heading') {
+            tb.wiki = {
+                id: window.contextVars.wiki.wikiID,
+                canEdit: window.contextVars.wiki.canEdit
+            };
+
+            if(item.data.type === 'heading') {
                 columns.push(
                     {
                         folderIcons: true,
@@ -78,7 +62,7 @@ function WikiMenu(data) {
                     }
                 )
             } else {
-                if(item.data.page.id === tb.wikiID) {
+                if(item.data.page.id === tb.wiki.id) {
                     item.css = 'fangorn-selected';
                     tb.multiselected([item]);
                 }
@@ -89,7 +73,7 @@ function WikiMenu(data) {
                             if(item.data.page.name === 'home') {
                                 return m('a', {href: item.data.page.url}, 'Home');
                             }
-                            if(item.data.page.wiki_content === '' && !tb.canEdit) {
+                            if(item.data.page.wiki_content === '' && !tb.wiki.canEdit) {
                                 return [
                                     m('h', item.data.page.name),
                                     m('span',

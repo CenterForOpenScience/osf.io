@@ -454,12 +454,14 @@ def project_wiki_grid_data(auth, wname, **kwargs):
     ret = [
         {
             'title': 'Project Wiki Pages',
-            'kind': 'heading',
+            'kind': 'folder',
+            'type': 'heading',
             'children': format_project_wiki_pages(node)
         },
         {
             'title': 'Component Wiki Pages',
-            'kind': 'heading',
+            'kind': 'folder',
+            'type': 'heading',
             'children': format_component_wiki_pages(node, auth)
         }
     ]
@@ -478,7 +480,6 @@ def format_project_wiki_pages(node):
                 'wiki_content': wiki_page['wiki_content'].get('wiki_content')
             },
             'children': [],
-            'kind': 'project'
         }
         pages.append(page)
     return pages
@@ -499,7 +500,6 @@ def format_component_wiki_pages(node, auth):
                         'wiki_content': component_page['wiki_content'].get('wiki_content')
                     },
                     'children': [],
-                    'kind': 'inner_component'
                 }
                 children.append(child)
 
@@ -511,7 +511,7 @@ def format_component_wiki_pages(node, auth):
                 'wiki_content': wiki_page['wiki_content'].get('wiki_content')
             },
             'children': children,
-            'kind': 'component'
+            'kind': 'folder'
         }
         pages.append(page)
     return pages
