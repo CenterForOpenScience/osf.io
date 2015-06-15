@@ -65,7 +65,7 @@ class ArchiverTask(celery.Task):
             dst.save()
             reason = ARCHIVER_UNCAUGHT_ERROR
             errors = [einfo]
-        archiver_signals.send(dst, reason=reason, errors=errors)
+        archiver_signals.archive_fail.send(dst, reason=reason, errors=errors)
         raise exc
 
 class ArchiverSizeExceeded(Exception):
