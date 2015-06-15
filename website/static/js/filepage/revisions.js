@@ -140,11 +140,11 @@ var FileRevisionsTable = {
             if(self.subscription() === 'email_transactional') {
                 return m('span', [m('i.fa.fa-bell-o'), m('i.fa.fa-plus')]);
             } else if(self.subscription() === 'email_digest') {
-                return m('i.fa.fa-bell-o.m-l-xs.m-r-xs');
+                return m('i.fa.fa-bell-o');
             } else if (self.subscription() === 'adopt_parent') {
                 return m('span', [m('i.fa.fa-bell-o'), m('i.fa.fa-arrow-up')]);
             } else {
-                return m('i.fa.fa-bell-slash-o.m-l-xs.m-r-xs');
+                return m('i.fa.fa-bell-slash-o');
             }
         };
 
@@ -155,21 +155,25 @@ var FileRevisionsTable = {
                 {text: 'Adopt from Project', value: 'adopt_parent'},
                 {text: 'None', value: 'none'}
             ];
-            //+ (ctrl.subscription === 'email_transactional' ? '.active' : ''),{onclick: ctrl.setSub.bind('email_transactional')},
-            return m('.btn-group.btn-group.row.m-xs', [
+            return m('.btn-group.btn-group.m-l-xs.m-b-sm', [
                 m('.btn.btn-default.disabled', {style: {width: '51px'}}, [self.bell()]),
                 m('.btn.btn-default.dropdown-toggle[data-toggle=dropdown] [aria-expanded=false]', 'Subscription'),
                 m('ul.dropdown-menu[role=menu]', [
-                    m('li.dropdown-header', 'Notifications sent when file is updated'),
+                    m('li.dropdown-header',
+                        'Notifications sent when file is updated'),
                     subscriptions.map(function(sub) {
-                        return m('li.list-group-item.pointer' +
-                            (self.subscription() === sub.value ? '.active' : ''),
-                            {onclick: function(e) {
-                                e.preventDefault();
-                                self.setSub(sub.value)}
-                            },
-                            sub.text)
-                    })
+                        return [m('li.divider'),
+                            m('li' + (self.subscription() === sub.value ? '.active' : ''), [
+                                m('a',
+                                    {onclick: function(e) {
+                                        e.preventDefault();
+                                        self.setSub(sub.value)}
+                                    },
+                                    sub.text)
+                            ])
+                        ]
+                    }),
+                    m('.m-t-xs')
                 ])
             ])
         };
