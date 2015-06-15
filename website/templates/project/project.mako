@@ -184,7 +184,7 @@
             <div class="panel-heading clearfix">
                 <h3 class="panel-title">Files</h3>
                 <div class="pull-right">
-                   <a href="${node['url']}files/" class="btn"> <i class="fa fa-external-link"></i> </a>
+                   <a href="${node['url']}files/"> <i class="fa fa-external-link"></i> </a>
                 </div>
             </div>
             <div class="panel-body">
@@ -225,7 +225,7 @@
             <div class="panel-heading clearfix">
                 <h3 class="panel-title">Citation</h3>
                 <div class="pull-right">
-                    <span class="permalink">${node['display_absolute_url']}</span><a href="#" class="btn project-toggle"><i class="fa fa-angle-down"></i></a>
+                    <span class="permalink">${node['display_absolute_url']}</span><a href="#" class="m-sm project-toggle"><i class="fa fa-angle-down"></i></a>
                 </div>
             </div>
             <div class="panel-body" style="display:none">

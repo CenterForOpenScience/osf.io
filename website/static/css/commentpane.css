@@ -14,7 +14,7 @@
     /* Note: Must be the same as #commentPane:padding-bottom */
     margin-top: 88px;
     width: 50px;
-    height: 50px;
+    height: 40px;
     background-color:#3C87C8;
     margin-left: -50px;
     text-align: center;
@@ -34,7 +34,6 @@
     height: 100%;
     margin-top: -50px;
     margin-left: 5px; /* Note: Should be the same as .cp-bar:width */
-    background-color: #ddd;
     padding: 10px;
     overflow-y: auto;
 }

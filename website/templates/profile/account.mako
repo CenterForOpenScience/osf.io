@@ -70,7 +70,7 @@
                                             <div class="form-group">
                                               <input placeholder="Email address" data-bind="value: emailInput" class="form-control">
                                             </div>
-                                            <input type="submit" value="Add Email" class="btn btn-default">
+                                            <input type="submit" value="Add Email" class="btn btn-primary">
                                         </form>
                                         <div class="help-block">
                                             <p data-bind="html: message, attr: {class: messageClass}"></p>
@@ -98,7 +98,7 @@
                                 <label for="confirm_password">Confirm new password</label>
                                 <input type="password" class="form-control" name="confirm_password">
                             </div>
-                            <button type="submit" class="btn btn-default">Update password</button>
+                            <button type="submit" class="btn btn-primary">Update password</button>
                         </form>
                     </div>
                 </div>
@@ -106,7 +106,7 @@
                     <div class="panel-heading clearfix"><h3 class="panel-title">Export Account Data</h3></div>
                     <div class="panel-body">
                         <p>Exporting your account data allows you to keep a permanent copy of the current state of your account. Keeping a copy of your account data can provide peace of mind or assist in transferring your information to another provider.</p>
-                        <a class="btn btn-default" data-bind="click: submit, css: success() === true ? 'disabled' : ''">Request Export</a>
+                        <a class="btn btn-primary" data-bind="click: submit, css: success() === true ? 'disabled' : ''">Request Export</a>
                     </div>
                 </div>
                 <div id="deactivateAccount" class="panel panel-default">

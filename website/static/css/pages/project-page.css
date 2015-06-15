@@ -1,0 +1,88 @@
+/* Contributor List */
+#contributors {
+    margin-bottom:10px;
+}
+
+#contributors #description {
+    vertical-align: top;
+}
+
+#contributors ol {
+    margin:0;
+    padding:0;
+    display:inline;
+}
+
+#contributors ol li {
+    list-style-type:none;
+    display:inline;
+    white-space: nowrap;
+}
+
+#contributors ol li:after {
+    content: ",";
+}
+
+#contributors ol li:last-child:after {
+    content: "";
+}
+
+.contributor-name {
+    margin-right: -4px;
+}
+
+/* Project Navigation */
+#projectSubnav .navbar-collapse {
+    padding-left: 0;
+    padding-right: 0;
+}
+
+.node-title {
+    line-height: 44px;
+    border-bottom: none;
+    margin-top: .3em;
+    font-size: 36px;
+}
+
+/* */
+@media (max-width: 767px) {
+    .osf-project-navbar li>a {
+        padding-left: 30px;
+        padding-right: 30px;
+    }
+    .osf-project-navbar a.project-title {
+    }
+    .project-nav {
+        overflow: hidden;
+    }
+}
+
+@media (min-width: 768px) {
+   .osf-project-navbar li>a {
+        padding-left: 7px;
+        padding-right: 7px;
+    }
+    .osf-project-navbar a.project-title {
+        max-width: 190px;
+    }
+}
+
+@media (min-width: 992px) {
+   .osf-project-navbar li>a {
+        padding-left: 10px;
+        padding-right: 10px;
+    }
+    .osf-project-navbar a.project-title {
+        max-width: 300px;
+    }
+}
+@media (min-width: 1200px) {
+    .osf-project-navbar li>a {
+        padding-left: 15px;
+        padding-right: 15px;
+    }
+
+    .osf-project-navbar a.project-title {
+        max-width: 400px;
+    }
+}

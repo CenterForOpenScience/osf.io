@@ -1,6 +1,6 @@
 var $ = require('jquery');
 
-require('../../css/setting.css');
+require('../../css/pages/account-setting-page.css');
 
 // initialize view model for configuring mailchimp subscriptions
 var NotificationsConfig =  require('../notificationsConfig.js');

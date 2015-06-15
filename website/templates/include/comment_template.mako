@@ -2,11 +2,11 @@
 
     <div class="cp-handle" data-bind="click:removeCount">
         <p data-bind="text: displayCount" class="unread-comments-count"></p>
-        <i class="fa fa-comments-o fa-inverse fa-2x comment-handle-icon" style=""></i>
+        <i class="fa fa-comments-o fa-inverse fa-2x comment-handle-icon m-t-xs" style=""></i>
     </div>
     <div class="cp-bar"></div>
 
-    <div id="comments" class="cp-sidebar">
+    <div id="comments" class="cp-sidebar bg-color-light">
         <h4>
             <span>${node['title']} Discussion</span>
             <span data-bind="foreach: {data: discussion, afterAdd: setupToolTips}" class="pull-right">
@@ -39,8 +39,7 @@
 <script type="text/html" id="commentTemplate">
     <div class="comment-container" data-bind="if: shouldShow">
 
-        <div class="comment-body">
-
+        <div class="comment-body m-b-sm p-sm osf-box">
             <div data-bind="if: isDeleted">
                 <div>
                     <span data-bind="if: hasChildren">

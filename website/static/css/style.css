@@ -33,6 +33,32 @@ body {
     list-style-type: none;
 }
 
+/* Footer slide-in */
+#footerSlideIn {
+    position:fixed;
+    bottom:0;
+    width:100%;
+    padding-top:20px;
+    padding-bottom:20px;
+    z-index:1;
+    background-color:white;
+    border-top:2px solid black;
+    display:none;
+}
+
+#footerSlideIn h1 {
+    margin-top:0;
+}
+
+#footerSlideIn img {
+    width:100%;
+}
+
+#footerSlideIn div > a {
+    margin-right: 5px;
+    white-space: nowrap;
+}
+
 
 /* Copyright
 -------------------------------------------------- */
@@ -68,3 +94,127 @@ body {
 .scripted {display: none;}
 
 .pointer {cursor: pointer;}
+
+/* Minimal Treebeard for Configure Notifications in project and user settings */
+.osf-treebeard-minimal #tb-tbody {
+    border: none;
+    max-height: 500px;
+    height: inherit;
+    margin-top: 10px;
+}
+.osf-treebeard-minimal .tb-row {
+    padding-left: 10px;
+}
+
+.osf-treebeard-minimal .tb-row-titles {
+    border: none;
+}
+.osf-treebeard-minimal .tb-td {
+    padding-top: 4px;
+}
+.osf-treebeard-minimal .title-text {
+    line-height: 25px;
+}
+.osf-treebeard-minimal .tb-head {
+    display: none;
+}
+
+.osf-treebeard-minimal .form-control {
+    height: 26px;
+    padding: 0px;
+}
+
+.tb-no-icon .tb-expand-icon-holder {
+    width : 0;
+}
+
+/* For menu icon */
+.navbar-toggle {
+    margin-top: 5px;
+    margin-bottom: 3px;
+}
+
+/* Wrapper for Spinner  -- Applied for citation and file*/
+.spinner-loading-wrapper {
+    text-align: center;
+    font-size: 16px;
+    font-weight: 200;
+    background: white;
+    padding: 20px;
+    border-radius: 4px;
+}
+
+
+/* Allow search-bar and nav-bar to support mutiple size of screen */
+@media (max-width: 767px) {
+    .navbar .search-query {
+        width: 100%;
+    }
+    .navbar-nav .open .dropdown-menu>li>a {
+        color: #FFF;
+    }
+
+    .osf-search {
+        z-index: 1028;
+    }
+    #searchControls > .osf-search {
+        z-index: 99;
+    }
+    .osf-xs-search {
+        text-decoration: none !important;
+        padding: 14px;
+    }
+
+    .navbar-brand {
+        margin-left: 0 !important;
+        height: 48px !important;
+        line-height: 27px !important;
+        padding: 11px 15px 10px 15px !important;
+    }
+    .osf-navbar-logo {
+        margin-top: 0px !important;
+    }
+
+    .name-div {
+        font-size: 20px;
+    }
+
+}
+
+@media (min-width: 768px) {
+    .osf-navbar .navbar-nav>li>a {
+        padding-left: 7px;
+        padding-right: 7px;
+    }
+    .navbar .search-query {
+        width: 190px;
+    }
+    .navbar-brand {
+        margin-left: 0 !important;
+        padding-left: 0;
+    }
+    .osf-search {
+        z-index: 1028; /* should be less than 1030 to not cover navbar */
+    }
+}
+
+@media (min-width: 992px) {
+    .osf-navbar .navbar-nav>li>a {
+        padding-left: 10px;
+        padding-right: 10px;
+    }
+    .navbar .search-query {
+        width: 360px;
+    }
+
+}
+@media (min-width: 1200px) {
+    .osf-navbar .navbar-nav>li>a {
+        padding-left: 15px;
+        padding-right: 15px;
+    }
+    .navbar .search-query {
+        width: 270px;
+    }
+
+}
