@@ -1,6 +1,6 @@
 <div class="col-md-12 col-sm-12">
     <span id="links" class="anchor"></span>
-    <h4>Links</h4>
+    <h4 class="m-t-lg f-w-lg">Links</h4>
     <p>Links are an alternative to building a component within a project. Adding a link means that
         instead of making a new component or project inside the project, the component already exists separately and
         is only being pointed to from the present project.</p>

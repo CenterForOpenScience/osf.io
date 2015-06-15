@@ -1,6 +1,6 @@
 <div class="col-md-12 col-sm-12">
     <span id="mendeley" class="anchor"></span>
-    <h4>Mendeley</h4>
+    <h4 class="m-t-lg f-w-lg">Mendeley</h4>
     <p><a href="http://mendeley.com/">Mendeley</a> is a free reference and PDF manager. By Adding Mendeley to your OSF
         projects you can view, copy, and download your citations.</p>
 

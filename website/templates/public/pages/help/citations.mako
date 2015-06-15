@@ -1,7 +1,7 @@
 <div class="col-md-12 col-sm-12">
     <span id="citations" class="anchor"></span>
         <div class="row col-md-12">
-            <h4>Citations</h4>
+            <h4 class="m-t-lg f-w-lg">Citations</h4>
         <p>Every project, component, file, and user has a unique URL on the OSF. This means that anything you upload
             and make public on the OSF can be cited, giving you credit for your work.</p>
         <p>To find a pre-formatted citation for a project, look directly below the grey navigation bar on the project's

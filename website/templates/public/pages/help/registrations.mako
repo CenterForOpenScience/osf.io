@@ -1,6 +1,6 @@
 <div class="col-md-12 col-sm-12">
     <span id="registrations" class="anchor"></span>
-    <h4>Registrations</h4>
+    <h4 class="m-t-lg f-w-lg">Registrations</h4>
     <p>Registrations are permanent, read only copies of a project. Registration saves the state of
         a project at a particular point in time&mdash;such as right before data collection, or right when a manuscript
         is submitted.</p>

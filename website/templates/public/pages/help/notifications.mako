@@ -1,6 +1,6 @@
 <div class="col-md-12 col-sm-12">
     <span id="notifications" class="anchor"></span>
-    <h4>Notifications</h4>
+    <h4 class="m-t-lg f-w-lg">Notifications</h4>
     <p>Notifications can be enabled for any OSF project or component. To be notified via email when a new comment
         is added to a project or component, visit the settings page on the project. You can choose to receive an
         email every time a comment is added or in a daily digest. You can also choose to receive email

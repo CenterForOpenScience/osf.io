@@ -1,6 +1,6 @@
 <div class="col-md-12 col-sm-12">
     <span id="files" class="anchor"></span>
-    <h4>Files</h4>
+    <h4 class="m-t-lg f-w-lg">Files</h4>
     <p>Each project and component can have its own set of files. This allows you to organize your files into meaningful
         groups like datasets or background research.</p>
     <p>Each file is given a unique URL, meaning that it can be cited or linked to individually.</p>

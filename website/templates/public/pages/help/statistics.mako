@@ -1,6 +1,6 @@
 <div class="col-md-12 col-sm-12">
     <span id="statistics" class="anchor"></span>
-    <h4>Statistics</h4>
+    <h4 class="m-t-lg f-w-lg">Statistics</h4>
     <p>Every project comes with a statistics page where you can view information on how often people are visiting
         your project and where they are being referred from.</p>
     <p>The information displayed on the statistics page can be changed. From the statistics page of your project

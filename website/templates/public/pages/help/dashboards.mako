@@ -1,7 +1,6 @@
 <div class="col-md-12 col-sm-12">
     <span id="dashboards" class="anchor"></span>
-
-    <h4>Dashboards</h4>
+    <h4 class="m-t-lg f-w-lg">Dashboards</h4>
     <p>The Dashboard displays all of your projects and their components in the Project Organizer, and is
         linked in the black navigation bar at the top of the page. From the Project Organizer, you can
         open any of your projects or components by clicking on the "open" icon to the right of the project's name.

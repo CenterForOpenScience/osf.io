@@ -1,6 +1,6 @@
 <div class="col-md-12 col-sm-12">
     <span id="comments" class="anchor"></span>
-    <h4>Comments</h4>
+    <h4 class="m-t-lg f-w-lg">Comments</h4>
     <p>Commenting can be enabled for any OSF project. To leave a comment on a project, if the administrators have
         allowed chat, you will see blue speech bubbles in the top right corner of your screen. Click on those
         speech bubbles and add your comment in the text box.</p>

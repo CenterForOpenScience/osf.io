@@ -1,6 +1,6 @@
 <div class="col-md-12 col-sm-12">
     <span id="twofactor" class="anchor"></span>
-    <h4>Two-Factor Authentication</h4>
+    <h4 class="m-t-lg f-w-lg">Two-Factor Authentication</h4>
     <p>Two factor authentication protects your account with both your password and your mobile phone. Make sure nobody can
         log into your account even if they have access to your password or your email.</p>
     <p>You will need a mobile phone with an app like Google Authenticator, navigate to "Configure Add-Ons" in your account
