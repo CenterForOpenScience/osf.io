@@ -81,9 +81,9 @@ def _tpl(val):
 
 #todo probably needs refactoring
 def _get_attr_from_tpl(attr_tpl, obj):
-    try:
+    if hasattr(obj, 'pk'):
         return obj.pk
-    except AttributeError:
+    else:
         attr_name = _tpl(str(attr_tpl))
         if attr_name:
             attribute_value = getattr(obj, attr_name, ser.empty)
