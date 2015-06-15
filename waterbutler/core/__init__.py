@@ -1,7 +1,7 @@
-# from waterbutler.core.utils import async_retry
-# from waterbutler.core.utils import make_provider
-
-# __all__ = [
-#     'async_retry',
-#     'make_provider',
-# ]
+# A list of file extension to override the content-type header for
+# Fixes the issue with safari renaming files when they just return
+# text/plain as their content type
+mime_types = {
+    '.csv': 'text/csv',
+    '.md': 'text/x-markdown',
+}
