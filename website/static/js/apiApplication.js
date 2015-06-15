@@ -28,16 +28,18 @@ var ApplicationData = function (data){
     self.clientSecret = ko.observable();
 
     self.owner = ko.observable();
-    self.name = ko.observable().extend({required:{message:"Please enter a name for your application"}});
+    self.name = ko.observable().extend({required: true});
     self.description = ko.observable();
-    self.homeUrl = ko.observable();//.extend({
-        //required:true,
-        //url:true,
-        //ensureHttp:true});
-    self.callbackUrl = ko.observable();//.extend({
-        //required:true,
-        //url:true,
-        //ensureHttp:true});
+    self.homeUrl = ko.observable().extend({
+        url:true,
+        ensureHttp:true,
+        required:true
+        });
+    self.callbackUrl = ko.observable().extend({
+        url:true,
+        ensureHttp:true,
+        required:true
+    });
 
     // Unchanging properties
     self.clientId = null;
@@ -53,10 +55,7 @@ var ApplicationData = function (data){
     // Enable value validation in form
     var validated = ko.validatedObservable(self);
     self.isValid = ko.computed(function(){
-        //console.log(self.owner());
-        var s = validated.isValid();
-        //console.log("Is this valid?", s);
-        return s;
+        return validated.isValid();
     })
 
 };
@@ -153,6 +152,11 @@ ApplicationViewModel.prototype.updateApplication = function () {
     // Update an existing application (has a known dataUrl) via PATCH request
     var self = this;
 
+    if (!self.content().isValid()){
+        self.showMessages(true);
+        return;
+    }
+
     var url = self.dataUrl;
 
     var payload = self.content().toJSON();
@@ -186,7 +190,6 @@ ApplicationViewModel.prototype.createApplication = function () {
 
     if (!self.content().isValid()){
         self.showMessages(true);
-        console.log("Form fields not valid");
         return;
     }
 

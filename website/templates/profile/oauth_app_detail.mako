@@ -39,25 +39,37 @@
             </div>
             <div id="app-fields">
                 <!-- TODO: Add revoke/ reset buttons -->
-                <form role="form">
+                <form role="form" data-bind="validationOptions: {insertMessages: false, messagesOnModified: false}">
                     <div class="form-group">
                         <label>Application name</label>
                         <input class="form-control" type="text" data-bind="value: name" placeholder="Required">
+                        <div data-bind="visible: $root.showMessages, css:'text-danger'">
+                            <p data-bind="validationMessage: name"></p>
+                        </div>
                     </div>
 
                     <div class="form-group">
                         <label>Project homepage URL</label>
                         <input class="form-control" type="text" data-bind="value: homeUrl" placeholder="Required">
+                        <div data-bind="visible: $root.showMessages, css:'text-danger'">
+                            <p data-bind="validationMessage: homeUrl"></p>
+                        </div>
                     </div>
 
                     <div class="form-group">
                         <label>Application description</label>
                         <textarea class="form-control" placeholder="Application description is optional" data-bind="value: description"></textarea>
+                        <div data-bind="visible: $root.showMessages, css:'text-danger'">
+                            <p data-bind="validationMessage: description"></p>
+                        </div>
                     </div>
 
                     <div class="form-group">
                         <label>Authorization callback URL</label>
                         <input type="text" class="form-control" data-bind="value: callbackUrl" placeholder="Required">
+                        <div data-bind="visible: $root.showMessages, css:'text-danger'">
+                            <p data-bind="validationMessage: callbackUrl"></p>
+                        </div>
                     </div>
 
                     <!-- Flashed Messages -->
