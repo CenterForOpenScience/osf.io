@@ -149,6 +149,10 @@ class WaterButlerPath:
         return self._parts[-1].identifier
 
     @property
+    def ext(self):
+        return self._parts[-1].ext
+
+    @property
     def path(self):
         if len(self.parts) == 1:
             return ''

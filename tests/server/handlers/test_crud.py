@@ -50,6 +50,45 @@ class TestCrudHandler(utils.HandlerTestCase):
         assert kwargs.get('action') == 'download'
 
     @testing.gen_test
+    def test_download_content_type_switches(self):
+        """waterbutler.core.mime_types contains content type
+        overrides.
+        """
+        data = b'freddie brian john roger'
+        stream = streams.StringStream(data)
+        stream.content_type = 'application/octet-stream'
+        self.mock_provider.download = utils.MockCoroutine(return_value=stream)
+
+        resp = yield self.http_client.fetch(
+            self.get_url('/file?provider=queenhub&path=/freddie.md'),
+        )
+        assert resp.body == data
+        assert resp.headers['Content-Type'] == 'text/x-markdown'
+        calls = self.mock_provider.download.call_args_list
+        assert len(calls) == 1
+        args, kwargs = calls[0]
+        assert kwargs.get('action') == 'download'
+
+    @testing.gen_test
+    def test_download_content_type_does_not_switch(self):
+        """mime_types should not override file extension not in the dict
+        """
+        data = b'freddie brian john roger'
+        stream = streams.StringStream(data)
+        stream.content_type = 'application/octet-stream'
+        self.mock_provider.download = utils.MockCoroutine(return_value=stream)
+
+        resp = yield self.http_client.fetch(
+            self.get_url('/file?provider=queenhub&path=/freddie.png'),
+        )
+        assert resp.body == data
+        assert resp.headers['Content-Type'] == 'application/octet-stream'
+        calls = self.mock_provider.download.call_args_list
+        assert len(calls) == 1
+        args, kwargs = calls[0]
+        assert kwargs.get('action') == 'download'
+
+    @testing.gen_test
     def test_download_accept_url_false(self):
         data = b'freddie brian john roger'
         stream = streams.StringStream(data)
