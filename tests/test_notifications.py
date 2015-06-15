@@ -640,7 +640,7 @@ class TestNotificationUtils(OsfTestCase):
                 'nodeType': 'project',
                 'category': 'project',
                 'permissions': {
-                    'view': True,
+                    'view': False,
                 },
                 'children': [
                     {
@@ -654,7 +654,7 @@ class TestNotificationUtils(OsfTestCase):
                         'nodeType': 'component',
                         'category': 'hypothesis',
                         'permissions': {
-                            'view': False,
+                            'view': True,
                         },
                         'children': [
                             {
