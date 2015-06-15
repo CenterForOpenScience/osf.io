@@ -55,7 +55,7 @@ def archive_callback(dst):
                 project_utils.send_embargo_email(
                     dst.root,
                     contributor,
-                    urls=root_job.meta.get('embargo_urls')
+                    urls=root_job.meta['embargo_urls'].get(contributor._id),
                 )
         else:
             archiver_utils.send_archiver_success_mail(dst.root)
