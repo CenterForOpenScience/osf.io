@@ -1,4 +1,8 @@
 # Requirements to be installed on server deployments
 -r ../requirements.txt
 -r metrics.txt
+
+# scripts osfstorage
 pyrax==1.9.4
+# multipart uploads (https://github.com/boto/boto/issues/2603)
+boto==2.31.1
