@@ -3,7 +3,7 @@ from modularodm import Q
 
 from website.models import User, Node
 from framework.auth.core import Auth
-from api.base.utils import get_object_or_404, reverse
+from api.base.utils import get_object_or_404
 from api.base.filters import ODMFilterMixin
 from api.nodes.serializers import NodeSerializer
 from .serializers import UserSerializer
