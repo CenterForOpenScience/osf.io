@@ -41,7 +41,8 @@ def file_info(node, path, provider):
 
 def file_created(node, f_url, payload):
     file_guid, event_sub, f_url.path = file_info(node, path=payload['metadata']['path'], provider=payload['provider'])
-    message = 'added file "<b>{}</b>".'.format(payload['metadata']['materialized'])
+    file_name = payload['metadata']['materialized'].strip("/")
+    message = 'added file "<b>{}</b>".'.format(file_name)
     return event_sub, f_url, message
 
 
@@ -54,14 +55,16 @@ def file_updated(node, f_url, payload):
 def file_deleted(node, f_url, payload):
     event_sub = "file_updated"
     f_url.path = node.web_url_for('collect_file_trees')
-    message = 'removed file "<b>{}</b>".'.format(payload['metadata']['materialized'])
+    file_name = payload['metadata']['materialized'].strip("/")
+    message = 'removed file "<b>{}</b>".'.format(file_name)
     return event_sub, f_url, message
 
 
 def folder_added(node, f_url, payload):
     event_sub = "file_updated"
     f_url.path = node.web_url_for('collect_file_trees')
-    message = 'created folder "<b>{}</b>".'.format(payload['metadata']['materialized'])
+    folder_name = payload['metadata']['materialized'].strip("/")
+    message = 'created folder "<b>{}</b>".'.format(folder_name)
     return event_sub, f_url, message
 
 
