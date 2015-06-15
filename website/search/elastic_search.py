@@ -207,6 +207,14 @@ def load_parent(parent_id):
     return parent_info
 
 
+def get_files(project_id):
+    base = 'localhost:8000/v2/'
+    base += 'node/'
+    base += project_id
+    base += '%2F&provider=osfstorage'
+    pass
+
+
 @requires_search
 def update_node(node, index=INDEX):
     from website.addons.wiki.model import NodeWikiPage
