@@ -5,7 +5,7 @@ from nose.tools import *  # flake8: noqa
 from framework.auth.core import Auth
 from website.models import Node
 from website.util.sanitize import strip_html
-from api.base.settings.defaults import API_PREFIX
+from api.base.settings.defaults import API_BASE
 
 from tests.base import ApiTestCase, fake
 from tests.factories import UserFactory, ProjectFactory, FolderFactory, RegistrationFactory, DashboardFactory, NodeFactory
@@ -891,14 +891,14 @@ class TestCreateNodePointer(ApiTestCase):
         self.basic_auth = (self.user.username, 'password')
         self.project = ProjectFactory(is_public=False, creator=self.user)
         self.pointer_project = ProjectFactory(is_public=False, creator=self.user)
-        self.private_url = '{}nodes/{}/pointers/'.format(API_PREFIX, self.project._id)
+        self.private_url = '/{}nodes/{}/pointers/'.format(API_BASE, self.project._id)
         self.private_payload = {'node_id': self.pointer_project._id}
 
         self.public_project = ProjectFactory(is_public=True, creator=self.user)
         self.public_pointer_project = ProjectFactory(is_public=True, creator=self.user)
-        self.public_url = '{}nodes/{}/pointers/'.format(API_PREFIX, self.public_project._id)
+        self.public_url = '/{}nodes/{}/pointers/'.format(API_BASE, self.public_project._id)
         self.public_payload = {'node_id': self.public_pointer_project._id}
-        self.fake_url = '{}nodes/{}/pointers/'.format(API_PREFIX, 'fdxlq')
+        self.fake_url = '/{}nodes/{}/pointers/'.format(API_BASE, 'fdxlq')
         self.fake_payload = {'node_id': 'fdxlq'}
         self.point_to_itself_payload = {'node_id': self.public_project._id }
 
@@ -909,7 +909,7 @@ class TestCreateNodePointer(ApiTestCase):
         self.basic_auth_two = (self.user_two.username, 'password')
 
         self.user_two_project = ProjectFactory(is_public=True, creator=self.user_two)
-        self.user_two_url = '{}nodes/{}/pointers/'.format(API_PREFIX, self.user_two_project._id)
+        self.user_two_url = '/{}nodes/{}/pointers/'.format(API_BASE, self.user_two_project._id)
         self.user_two_payload = {'node_id': self.user_two_project._id}
 
     def test_creates_public_node_pointer_logged_out(self):
