@@ -1130,7 +1130,6 @@ class TestWikiMenu(OsfTestCase):
                     'wiki_content': 'content here'
                 },
                 'children': [],
-                'kind': 'folder'
             }
         ]
         assert_equal(data, expected)
