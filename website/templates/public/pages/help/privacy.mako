@@ -1,6 +1,6 @@
 <div class="col-md-12 col-sm-12">
     <span id="privacy" class="anchor"></span>
-    <h4>Privacy</h4>
+    <h4 class="m-t-lg f-w-lg">Privacy</h4>
     <p>All projects are private by default. However, you can choose to make your project's contents available for
         anyone to view. Once you make a project public, you can gain more feedback about the impact of your work by
         tracking how many people are visiting your project and downloading or forking your research materials.</p>

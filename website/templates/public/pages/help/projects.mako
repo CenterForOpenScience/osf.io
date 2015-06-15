@@ -1,7 +1,6 @@
 <div class="col-md-12 col-sm-12">
     <span id="projects" class="anchor"></span>
-
-    <h4>Projects</h4>
+    <h4 class="m-t-lg f-w-lg">Projects</h4>
     <p>Projects are the largest form of categorization that the OSF supports. A project could be an experiment,
         a lab group, or a paper&mdash;anything that has contributing members and files or explanatory texts/images.</p>
     <p>When you click on a project to open it, you are taken to the Project Overview page. This page provides access

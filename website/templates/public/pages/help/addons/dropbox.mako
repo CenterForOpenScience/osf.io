@@ -1,6 +1,6 @@
 <div class="col-md-12 col-sm-12">
     <span id="dropbox" class="anchor"></span>
-    <h4>Dropbox</h4>
+    <h4 class="m-t-lg f-w-lg">Dropbox</h4>
     <p><a href ="https://www.dropbox.com/">Dropbox</a> is a popular online file storage program. After linking your OSF
         project to Dropbox, you can add files to your Dropbox folder and those files can be accessed via the OSF.
         Likewise, files added to the Dropbox folder in your OSF account will update your Dropbox account with that file.</p>

@@ -1,6 +1,6 @@
 <div class="col-md-12 col-sm-12">
     <span id="components" class="anchor"></span>
-    <h4>Components</h4>
+    <h4 class="m-t-lg f-w-lg">Components</h4>
     <p>Components are like sub-projects that help you organize different parts of your research. Components have their own privacy settings, contributors, wiki, add-ons, and files.</p>
     <div class="col-md-8 col-md-offset-2 col-sm-12">
         <div class="gs-video embed-responsive embed-responsive-16by9">

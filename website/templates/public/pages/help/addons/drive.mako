@@ -1,6 +1,6 @@
 <div class="col-md-12 col-sm-12">
     <span id="drive" class="anchor"></span>
-    <h4>Google Drive</h4>
+    <h4 class="m-t-lg f-w-lg">Google Drive</h4>
     <p><a href="http://drive.google.com/">Google Drive</a> is a popular file storage and collaboration tool. After linking
         your OSF project to Google Drive, you will be able to access and import your Google Drive folders. Likewise, files
         added to the Google Drive folder in your OSF account will update the folder in Google Drive. </p>

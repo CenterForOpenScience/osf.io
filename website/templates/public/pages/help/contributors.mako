@@ -1,6 +1,6 @@
 <div class="col-md-12 col-sm-12">
     <span id="contributors" class="anchor"></span>
-    <h4>Contributors</h4>
+    <h4 class="m-t-lg f-w-lg">Contributors</h4>
     <p>Adding contributors to a project allows credit to be given to those who have worked on the project, and
         allows them to make changes to the project.</p>
     <p>There are several levels of permissions that a contributor can have. Admins on a project can add contributors
