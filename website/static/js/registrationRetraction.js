@@ -25,12 +25,24 @@ var RegistrationRetractionViewModel = oop.extend(
 
             self.submitUrl = submitUrl;
             self.registrationTitle = registrationTitle;
+            // Truncate title to around 50 chars
+            var parts = registrationTitle.slice(0, 50).split(' ');
+            if (parts.length > 1) {
+                self.truncatedTitle = parts.slice(0, -1).join(' ');
+            }
+            else {
+                self.truncatedTitle = parts[0];
+            }
+
             self.justification = ko.observable('').extend({
                 maxLength: 2048
             });
             self.confirmationText = ko.observable().extend({
                 required: true,
-                mustEqual: self.registrationTitle
+                mustEqual: self.truncatedTitle
+            });
+            self.valid = ko.pureComputed(function(){
+                return self.confirmationText.isValid();
             });
         },
         SUBMIT_ERROR_MESSAGE: 'Error submitting your retraction request, please try again. If the problem ' +

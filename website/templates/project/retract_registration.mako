@@ -29,7 +29,7 @@
 
             <div class="form-group">
                 <label style="font-weight:normal" class="control-label">
-                    Type <span data-bind="text: registrationTitle" style="font-weight:bold"></span> and click Retract Registration if you are sure you want to continue.
+                    Type <span data-bind="text: truncatedTitle" style="font-weight:bold"></span> and click Retract Registration if you are sure you want to continue.
                 </label>
                 <input  type="text"
                         class="form-control"
@@ -37,7 +37,7 @@
                 />
 
             </div>
-            <button type="submit" class="btn btn-danger" data-bind="click: submit, visible: true">Retract Registration</button>
+            <button type="submit" class="btn btn-danger" data-bind="click: submit, css: {disabled: !valid()}">Retract Registration</button>
             <div class="m-t-md" data-bind="css: messageClass, html: message"></div>
         </form>
     </div>
