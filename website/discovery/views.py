@@ -8,13 +8,6 @@ from modularodm.query.querydialect import DefaultQueryDialect as Q
 
 from framework.analytics.piwik import PiwikClient
 
-
-recent_query = (
-    Q('category', 'eq', 'project') &
-    Q('is_public', 'eq', True) &
-    Q('is_deleted', 'eq', False)
-)
-
 def activity():
 
     popular_public_projects = []
