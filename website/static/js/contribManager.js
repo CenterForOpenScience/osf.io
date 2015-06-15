@@ -113,7 +113,7 @@ var ContributorModel = function(contributor, currentUserCanEdit, pageOwner, isRe
             name: self.fullname
         };
         $osf.postJSON(
-            nodeApiUrl + 'beforeremovecontributors/',
+            nodeApiUrl + 'beforeremovecontributors/', // jshint ignore:line
             payload
         ).done(function(response) {
             var prompt = $osf.joinPrompts(response.prompts, 'Remove <strong>' + name + '</strong> from contributor list?');
@@ -123,7 +123,7 @@ var ContributorModel = function(contributor, currentUserCanEdit, pageOwner, isRe
                 callback: function(result) {
                     if (result) {
                         $osf.postJSON(
-                            nodeApiUrl + 'removecontributors/',
+                            nodeApiUrl + 'removecontributors/',  // jshint ignore:line
                             payload
                         ).done(function(response) {
                             if (response.redirectUrl) {
@@ -342,7 +342,7 @@ var ContributorsViewModel = function(contributors, adminContributors, user, isRe
             callback: function(result) {
                 if (result) {
                     $osf.postJSON(
-                        nodeApiUrl + 'contributors/manage/',
+                        nodeApiUrl + 'contributors/manage/',  // jshint ignore:line
                         {contributors: self.serialize()}
                     ).done(function(response) {
                         // TODO: Don't reload the page here; instead use code below

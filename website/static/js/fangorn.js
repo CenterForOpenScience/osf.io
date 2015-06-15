@@ -387,7 +387,7 @@ function checkConflicts(tb, item, folder, cb) {
                 m('p', 'Do you want to replace it?')
             ]), m('', [
                 m('span.tb-modal-btn.text-default', {onclick: cb.bind(tb, 'keep')}, 'Keep Both'),
-                m('span.tb-modal-btn.text-default', {onclick: function() {tb.modal.dismiss();}}, 'Cancel'),
+                m('span.tb-modal-btn.text-default', {onclick: function() {tb.modal.dismiss();}}, 'Cancel'), //jshint ignore:line
                 m('span.tb-modal-btn.text-defualt', {onclick: cb.bind(tb, 'replace')},'Replace'),
             ]));
             return;
@@ -406,7 +406,7 @@ function checkConflictsRename(tb, item, name, cb) {
                 m('p', 'Do you want to replace it?')
             ]), m('', [
                 m('span.tb-modal-btn.text-default', {onclick: cb.bind(tb, 'keep')}, 'Keep Both'),
-                m('span.tb-modal-btn.text-default', {onclick: function() {tb.modal.dismiss();}}, 'Cancel'),
+                m('span.tb-modal-btn.text-default', {onclick: function() {tb.modal.dismiss();}}, 'Cancel'), // jshint ignore:line
                 m('span.tb-modal-btn.text-defualt', {onclick: cb.bind(tb, 'replace')},'Replace'),
             ]));
             return;
@@ -419,7 +419,9 @@ function doItemOp(operation, to, from, rename, conflict) {
     var tb = this;
     tb.modal.dismiss();
     var ogParent = from.parentID;
-    if (to.id === ogParent && (!rename || rename === from.data.name)) return;
+    if (to.id === ogParent && (!rename || rename === from.data.name)){
+      return;
+    }
 
     if (operation === OPERATIONS.COPY) {
         from = tb.createItem($.extend(true, {status: operation.status}, from.data), to.id);
@@ -765,7 +767,7 @@ function _fangornDropzoneError(treebeard, file, message, xhr) {
     } else {
         msgText = DEFAULT_ERROR_MESSAGE;
     }
-    var parent = file.treebeardParent || treebeardParent.dropzoneItemCache;
+    var parent = file.treebeardParent || treebeardParent.dropzoneItemCache; // jshint ignore:line
     // Parent may be undefined, e.g. in Chrome, where file is an entry object
     var item;
     var child;
@@ -1335,7 +1337,9 @@ function _renameEvent () {
     var val = $.trim($('#renameInput').val());
     var folder = item.parent();
     //TODO Error message?
-    if  (val === item.name) return;
+    if  (val === item.name) {
+        return;
+    }
     checkConflictsRename(tb, item, val, doItemOp.bind(tb, OPERATIONS.RENAME, folder, item, val));
     tb.toolbarMode(toolbarModes.DEFAULT);
 }
@@ -1847,9 +1851,15 @@ function _fangornOver(event, ui) {
 function _dropLogic(event, items, folder) {
     var tb = this;
 
-    if (items.length < 1) { return; }
-    if (items.indexOf(folder) > -1) { return; }
-    if (copyMode === 'forbidden') return;
+    if (items.length < 1) {
+        return;
+    }
+    if (items.indexOf(folder) > -1) {
+        return;
+    }
+    if (copyMode === 'forbidden') {
+        return;
+    }
 
     // if (items[0].data.kind === 'folder' && ['github', 'figshare', 'dataverse'].indexOf(folder.data.provider) !== -1) { return; }
 
@@ -1900,11 +1910,19 @@ function getCopyMode(folder, items) {
     var mustBeIntra = (folder.data.provider === 'github');
     var cannotBeFolder = (folder.data.provider === 'figshare' || folder.data.provider === 'dataverse');
 
-    if (folder.parentId === 0) return 'forbidden';
-    if (folder.data.kind !== 'folder' || !folder.data.permissions.edit) return 'forbidden';
-    if (!folder.data.provider || folder.data.status) return 'forbidden';
+    if (folder.parentId === 0) {
+        return 'forbidden';
+    }
+    if (folder.data.kind !== 'folder' || !folder.data.permissions.edit) {
+        return 'forbidden';
+    }
+    if (!folder.data.provider || folder.data.status) {
+        return 'forbidden';
+    }
 
-    if (folder.data.provider === 'dataverse') return 'forbidden';
+    if (folder.data.provider === 'dataverse') {
+        return 'forbidden';
+    }
 
     //Disallow moving INTO a public figshare folder
     if (
@@ -1912,7 +1930,9 @@ function getCopyMode(folder, items) {
         folder.data.extra &&
         folder.data.extra.status &&
         folder.data.extra.status === 'public'
-    ) return 'forbidden';
+    ) {
+        return 'forbidden';
+    }
 
     for(var i = 0; i < items.length; i++) {
         var item = items[i];
@@ -1926,7 +1946,9 @@ function getCopyMode(folder, items) {
             (mustBeIntra && item.data.provider !== folder.data.provider) ||
             //Disallow moving OUT of a public figshare folder
             (item.data.provider === 'figshare' && item.data.extra && item.data.status && item.data.status !== 'public')
-        ) return 'forbidden';
+        ) {
+            return 'forbidden';
+        }
 
         mustBeIntra = mustBeIntra || item.data.provider === 'github';
         canMove = (
@@ -1937,9 +1959,15 @@ function getCopyMode(folder, items) {
             (!mustBeIntra || (item.data.provider === folder.data.provider && item.data.nodeId === folder.data.nodeId))
         );
     }
-    if (folder.data.isPointer) return 'copy';
-    if (altKey) return 'copy';
-    if (!canMove) return 'copy';
+    if (folder.data.isPointer) {
+        return 'copy';
+    }
+    if (altKey) {
+        return 'copy';
+    }
+    if (!canMove) {
+        return 'copy';
+    }
     return 'move';
 }
 /* END MOVE */
