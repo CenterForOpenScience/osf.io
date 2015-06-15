@@ -99,25 +99,31 @@ BEFORE_FORK_HAS_POINTERS = (
 )
 
 REGISTRATION_INFO = '''
-<p>Registration creates a frozen version of the project that can never be edited
-or deleted. You can register your project by selecting a registration form,  entering
-information about your project, and then confirming. You will be
-able to continue editing the original project, however, and the frozen version with
-time stamps will always be linked to the original.</p>
+
+<p>Registration creates a frozen version of the project that can never be
+edited or deleted, but can be retracted. You can register your project by
+selecting a registration form, entering information about your project, and
+then confirming. You will be able to continue editing the original project,
+however, and the frozen version with time stamps will always be linked to
+the original. Retracting a registration will leave behind metadata about
+when the registration was created and retracted, but removes the contents
+of the registration.</p>
 
 <ul>
+    <li>A registration can be made public immediately or entered into
+    an embargo period of up to 4 years. At the end of the embargo period,
+    the registration will automatically become public.</li>
 
-    <li>A registration takes the same privacy settings as the project, e.g. a public project results in a public registration.</li>
+    <li>Before initiating a registration, make sure that the project is
+    in the state that you wish to freeze. Consider turning links into
+    forks.</li>
 
-    <li>Before initiating a registration, make sure that the project is in the
-    state that you wish to freeze. Consider turning links into forks.</li>
-
-    <li>Start by selecting a registration form from the list below. You can
-    hit your browser's back button if the selected form is not
-    appropriate for your use.</li>
-
+    <li>Start by selecting a registration form from the list below. You can hit
+    your browser's back button if the selected form is not appropriate for
+    your use.</li>
 </ul>
 '''
+
 REGISTRATION_EMBARGO_INFO = '''
 <p>You can choose whether to make your registration public immediately or
 embargo it for up to four years. At the end of the embargo period the registration
