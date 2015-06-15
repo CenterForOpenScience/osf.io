@@ -435,8 +435,12 @@ def node_register_template_page_post(auth, node, **kwargs):
         try:
             register.embargo_registration(auth.user, embargo_end_date)
             register.save()
-            for contrib in register.contributors:
-                register.archive_job.meta['embargo_urls'][contrib._id] = project_utils.get_embargo_urls(register, contrib)
+            register.archive_job.meta = {
+                'embargo_urls': {
+                    contrib._id: project_utils.get_embargo_urls(register, contrib)
+                    for contrib in register.contributors
+                }
+            }
             register.archive_job.save()
 
         except ValidationValueError as err:

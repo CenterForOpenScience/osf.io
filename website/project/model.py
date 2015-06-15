@@ -2732,7 +2732,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
                 'embargo_id': embargo._id,
             },
             auth=Auth(user),
-            save=False,
+            save=True,
         )
         # Embargo record needs to be saved to ensure the forward reference Node->Embargo
         self.embargo = embargo
