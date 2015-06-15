@@ -447,8 +447,8 @@ def node_register_template_page_post(auth, node, **kwargs):
             raise HTTPError(http.BAD_REQUEST, data=dict(message_long=err.message))
     else:
         register.set_privacy('public', auth, log=False)
-        for node in register.get_descendants_recursive():
-            node.set_privacy('public', auth, log=False)
+        for child in register.get_descendants_recursive():
+            child.set_privacy('public', auth, log=False)
 
     return {
         'status': 'initiated',
