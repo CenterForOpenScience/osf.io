@@ -52,11 +52,12 @@ def archive_callback(dst):
         archiver_utils.archive_success(dst, dst.registered_user)
         if dst.pending_embargo:
             for contributor in dst.contributors:
-                project_utils.send_embargo_email(
-                    dst.root,
-                    contributor,
-                    urls=root_job.meta['embargo_urls'].get(contributor._id),
-                )
+                if contributor.is_active:
+                    project_utils.send_embargo_email(
+                        dst.root,
+                        contributor,
+                        urls=root_job.meta['embargo_urls'].get(contributor._id),
+                    )
         else:
             archiver_utils.send_archiver_success_mail(dst.root)
     else:
