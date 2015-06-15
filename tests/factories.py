@@ -30,6 +30,7 @@ from website.project.model import (
     Retraction, Embargo,
 )
 from website.notifications.model import NotificationSubscription, NotificationDigest
+from website.archiver import utils as archiver_utils
 
 from website.addons.wiki.model import NodeWikiPage
 from tests.base import fake
@@ -202,8 +203,12 @@ class RegistrationFactory(AbstractNodeFactory):
             return register()
         else:
             with patch('framework.tasks.handlers.enqueue_task'):
-                return register()
-
+                reg = register()
+                archiver_utils.archive_success(
+                    reg,
+                    reg.registered_user
+                )
+                return reg
 
 class PointerFactory(ModularOdmFactory):
     FACTORY_FOR = Pointer

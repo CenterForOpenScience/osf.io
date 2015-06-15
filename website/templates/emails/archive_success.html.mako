@@ -9,7 +9,7 @@
 <tr>
   <td style="border-collapse: collapse;">
     <% from website import settings %>
-    The registration of ${src.title} just finished! You can view the registration <a href="${settings.DOMAIN.rstrip('/') + src.url}">here.</a>
+    You can view the registration <a href="${settings.DOMAIN.rstrip('/') + src.url}">here.</a>
   </td>
 </tr>
 </%def>

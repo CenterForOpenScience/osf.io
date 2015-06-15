@@ -42,17 +42,20 @@ def archive_callback(dst):
     :param dst: registration Node
     """
     root_job = dst.root.archive_job
-    if root_job.sent or not root_job.archive_tree_finished():
+    if not root_job.archive_tree_finished():
         return
-    root_job.sent = True
-    root_job.save()
     if dst.archive_job.success:
+        if root_job.sent:
+            return
+        root_job.sent = True
+        root_job.save()
+        archiver_utils.archive_success(dst, dst.registered_user)
         if dst.pending_embargo:
             for contributor in dst.contributors:
                 project_utils.send_embargo_email(
                     dst.root,
                     contributor,
-                    urls=root_job.meta.get('embargo_urls')
+                    urls=root_job.meta['embargo_urls'].get(contributor._id),
                 )
         else:
             archiver_utils.send_archiver_success_mail(dst.root)

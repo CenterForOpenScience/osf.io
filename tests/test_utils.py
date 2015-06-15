@@ -4,6 +4,10 @@ import mock
 import unittest
 from flask import Flask
 from nose.tools import *  # noqa (PEP8 asserts)
+import datetime
+
+from tests.base import OsfTestCase
+from tests.factories import RegistrationFactory
 
 from framework.routing import Rule, json_renderer
 from framework.utils import secure_filename
@@ -12,7 +16,7 @@ from website import settings
 from website.util import paths
 from website.util.mimetype import get_mimetype
 from website.util import web_url_for, api_url_for, is_json_request, waterbutler_url_for, conjunct, api_v2_url
-
+from website.project import utils as project_utils
 
 try:
     import magic  # noqa
@@ -299,3 +303,36 @@ class TestWebsiteUtils(unittest.TestCase):
         words = ['a', 'b', 'c']
         assert_equal(conjunct(words), 'a, b, and c')
         assert_equal(conjunct(words, conj='or'), 'a, b, or c')
+
+
+class TestProjectUtils(OsfTestCase):
+
+    def set_registered_date(self, reg, date):
+        reg._fields['registered_date'].__set__(
+            reg,
+            date,
+            safe=True
+        )
+        reg.save()
+
+    def test_get_recent_public_registrations(self):
+
+        count = 0
+        for i in range(5):
+            reg = RegistrationFactory()
+            reg.is_public = True
+            count = count + 1
+            tdiff = datetime.datetime.now() - datetime.timedelta(days=count)
+            self.set_registered_date(reg, tdiff)
+        regs = [r for r in project_utils.recent_public_registrations()]
+        assert_equal(len(regs), 5)
+        for i in range(4):
+            assert_true(regs[i].registered_date > regs[i + 1].registered_date)
+        for i in range(5):
+            reg = RegistrationFactory()
+            reg.is_public = True
+            count = count + 1
+            tdiff = datetime.datetime.now() - datetime.timedelta(days=count)
+            self.set_registered_date(reg, tdiff)
+        regs = [r for r in project_utils.recent_public_registrations(7)]
+        assert_equal(len(regs), 7)
