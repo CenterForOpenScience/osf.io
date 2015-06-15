@@ -434,6 +434,14 @@ def make_url_map(app):
             OsfWebRenderer('public/resetpassword.mako', render_mako_string)
         ),
 
+        # Resend confirmation URL linked to in CAS login page
+        Rule(
+            '/resend/',
+            ['get', 'post'],
+            auth_views.resend_confirmation,
+            OsfWebRenderer('resend.mako', render_mako_string)
+        ),
+
         # TODO: Remove `auth_register_post`
         Rule('/register/', 'post', auth_views.auth_register_post,
              OsfWebRenderer('public/login.mako')),
@@ -739,9 +747,6 @@ def make_url_map(app):
 
         # # TODO: Add API endpoint for tags
         # Rule('/tags/<tag>/', 'get', project_views.tag.project_tag, OsfWebRenderer('tags.mako')),
-
-        Rule('/folder/<nid>', 'get', project_views.node.folder_new,
-             OsfWebRenderer('project/new_folder.mako')),
         Rule('/api/v1/folder/<nid>', 'post', project_views.node.folder_new_post, json_renderer),
         Rule('/project/new/<pid>/beforeTemplate/', 'get',
              project_views.node.project_before_template, json_renderer),
