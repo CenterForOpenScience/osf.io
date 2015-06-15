@@ -654,7 +654,7 @@ class TestNotificationUtils(OsfTestCase):
                         'nodeType': 'component',
                         'category': 'hypothesis',
                         'permissions': {
-                            'view': True,
+                            'view': False,
                         },
                         'children': [
                             {
