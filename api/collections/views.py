@@ -7,8 +7,9 @@ from website.models import Node, Pointer
 from api.base.utils import get_object_or_404
 from api.base.filters import ODMFilterMixin, ListFilterMixin
 from .serializers import CollectionSerializer, CollectionPointersSerializer
-from .permissions import ReadOnlyIfRegistration, ContributorOrPublic
-from website.views import _render_nodes, find_dashboard
+from .permissions import ContributorOrPublic
+from website.views import find_dashboard
+from tests.factories import FolderFactory
 
 
 class CollectionMixin(object):
@@ -168,32 +169,16 @@ class CollectionChildrenList(generics.ListAPIView, CollectionMixin):
         ContributorOrPublic
     )
 
-    serializer_class = CollectionSerializer
+    serializer_class = CollectionSerializer  # overrides ListAPIView
 
-    # overrides ListAPIView
     def get_queryset(self):
 
         smart_folders = (
             '~amr',
             '~amp',
         )
-        nodes = self.get_node().nodes
-        smart_folder_nodes = []
-        for node in nodes:
-            node_id = self.kwargs[self.node_lookup_url_kwarg]
-            for folder_id in smart_folders:
-                if node_id == folder_id:
-                    spoof_node = Node.find(node_id)
-                    smart_folder_node = {
-                        'id': spoof_node._id,
-                        'title': spoof_node.title,
-                        'date_created': spoof_node.date_created,
-                        'date_modified': spoof_node.date_modified,
-                        'properties': {
-                            'smart_folder': True,
-                        },
-                    }
-                    smart_folder_nodes.append(smart_folder_node)
+        current_node = self.get_node()
+        nodes = current_node.nodes
 
         user = self.request.user
         if user.is_anonymous():
@@ -201,6 +186,20 @@ class CollectionChildrenList(generics.ListAPIView, CollectionMixin):
         else:
             auth = Auth(user)
         children = [node for node in nodes if node.can_view(auth)]
+
+        if current_node.is_dashboard:
+            for node in nodes:
+                for folder_id in smart_folders:
+                    smart_folder_node = {
+                        'id': '{}'.format(folder_id),
+                        'title': "Smart Folder {}".format(folder_id),
+                        'properties': {
+                            'smart_folder': True,
+                        },
+                    }
+                    if smart_folder_node not in children:
+                        children.append(smart_folder_node)
+
         return children
 
 

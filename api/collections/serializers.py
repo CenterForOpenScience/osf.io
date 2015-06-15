@@ -3,6 +3,7 @@ from api.base.serializers import JSONAPISerializer, CollectionLinksField, Link, 
 from website.models import Node
 from framework.auth.core import Auth
 
+
 class CollectionSerializer(JSONAPISerializer):
     filterable_fields = frozenset(['title'])
 
@@ -27,20 +28,26 @@ class CollectionSerializer(JSONAPISerializer):
                                                      'A dashboard is a collection node that serves as the root of '
                                                      'Project Organizer collections. Every user will always have '
                                                      'one Dashboard')
-    # TODO: finish me
 
     class Meta:
         type_ = 'collections'
 
     def get_node_count(self, obj):
-        auth = self.get_user_auth(self.context['request'])
-        nodes = [node for node in obj.nodes if node.can_view(auth)]
-        return len(nodes)
+        if isinstance(obj, dict):
+            return ''
+        else:
+            auth = self.get_user_auth(self.context['request'])
+            nodes = [node for node in obj.nodes if node.can_view(auth)]
+            return len(nodes)
 
     def get_pointers_count(self, obj):
+        if isinstance(obj, dict):
+            return ''
         return len(obj.nodes_pointer)
 
     def get_modified_by(self, obj):
+        if isinstance(obj, dict):
+            return 'Admin'
         user = obj.logs[-1].user
         modified_by = user.family_name or user.given_name
         return modified_by
@@ -55,13 +62,18 @@ class CollectionSerializer(JSONAPISerializer):
 
     @staticmethod
     def get_properties(obj):
-
-        ret = {
-            'collection': obj.is_folder,
-            'dashboard': obj.is_dashboard,
-            'smart_folder': obj.smart_folder,
-        }
-        return ret
+        if isinstance(obj, dict):
+            ret = {
+                'smart_folder': True
+            }
+            return ret
+        else:
+            ret = {
+                'collection': obj.is_folder,
+                'dashboard': obj.is_dashboard,
+                'smart_folder': obj.smart_folder,
+            }
+            return ret
 
     def create(self, validated_data):
         node = Node(**validated_data)

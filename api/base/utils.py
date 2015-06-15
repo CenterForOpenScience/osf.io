@@ -14,6 +14,9 @@ from website import util as website_util  # noqa
 
 def absolute_reverse(view_name, query_kwargs=None, args=None, kwargs=None):
     """Like django's `reverse`, except returns an absolute URL. Also add query parameters."""
+    if kwargs['pk'] == '':
+        return ''
+
     relative_url = reverse(view_name, kwargs=kwargs)
 
     url = website_util.api_v2_url(relative_url, params=query_kwargs,
@@ -30,6 +33,7 @@ def get_object_or_404(model_cls, query_or_pk):
         return model_cls.find_one(query)
     except NoResultsFound:
         raise NotFound
+
 
 def waterbutler_url_for(request_type, provider, path, node_id, token, obj_args=None, **query):
     """Reverse URL lookup for WaterButler routes

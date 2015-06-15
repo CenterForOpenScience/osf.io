@@ -41,9 +41,12 @@ class CollectionLinksField(ser.Field):
         return obj
 
     def to_representation(self, obj):
-        ret = _rapply(self.links, _url_val, obj=obj, serializer=self.parent)
-        ret['self'] = absolute_reverse('collections:collection-detail', kwargs={'pk': obj._id})
-        return ret
+        if isinstance(obj, dict):
+            return ''
+        else:
+            ret = _rapply(self.links, _url_val, obj=obj, serializer=self.parent)
+            ret['self'] = absolute_reverse('collections:collection-detail', kwargs={'pk': obj._id})
+            return ret
 
 
 class LinksField(ser.Field):
@@ -97,21 +100,27 @@ def _tpl(val):
 
 
 def _get_attr_from_tpl(attr_tpl, obj):
-    attr_name = _tpl(str(attr_tpl))
-    if attr_name:
-        attribute_value = getattr(obj, attr_name, ser.empty)
-        if attribute_value is not ser.empty:
-            return attribute_value
-        elif attr_name in obj:
-            return obj[attr_name]
+    if isinstance(obj, dict):
+        return ''
+    try:
+        return obj.pk
+    except AttributeError:
+
+        attr_name = _tpl(str(attr_tpl))
+        if attr_name:
+            attribute_value = getattr(obj, attr_name, ser.empty)
+            if attribute_value is not ser.empty:
+                return attribute_value
+            elif attr_name in obj:
+                return obj[attr_name]
+            else:
+                raise AttributeError(
+                    '{attr_name!r} is not a valid '
+                    'attribute of {obj!r}'.format(
+                        attr_name=attr_name, obj=obj,
+                    ))
         else:
-            raise AttributeError(
-                '{attr_name!r} is not a valid '
-                'attribute of {obj!r}'.format(
-                    attr_name=attr_name, obj=obj,
-                ))
-    else:
-        return attr_tpl
+            return attr_tpl
 
 
 # TODO: Make this a Field that is usable on its own?

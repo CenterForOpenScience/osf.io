@@ -223,9 +223,7 @@ class TestCollectionDetail(ApiTestCase):
         self.nonuser_folder = FolderFactory(title="Project Two", is_public=False)
         self.public_url = '/{}collections/{}/'.format(API_BASE, self.public_folder._id)
         self.private_url = '/{}collections/{}/'.format(API_BASE, self.nonuser_folder._id)
-        self.smart_folder_url = '/{}collections/{}/'.format(API_BASE, '~amr')
 
-        self.smart_folder = FolderFactory(_id='~amr')
 
     def test_return_403_collection_details_logged_out(self):
         res = self.app.get(self.public_url, expect_errors=True)
@@ -235,13 +233,6 @@ class TestCollectionDetail(ApiTestCase):
         res = self.app.get(self.public_url, auth=self.basic_auth)
         assert_equal(res.status_code, 200)
         assert_equal(res.json['data']['title'], self.public_folder.title)
-
-    def test_return_smart_folder(self):
-        res = self.app.get(self.smart_folder_url, auth=self.basic_auth)
-        node_json = res.json['data']
-
-        assert_equal(res.status_code, 200)
-        assert_equal(res.json['data']['smart_folder'], True)
 
 
 class TestDashboardDetail(ApiTestCase):
@@ -395,6 +386,11 @@ class TestCollectionChildrenList(ApiTestCase):
         self.user_two.save()
         self.basic_auth_two = (self.user_two.username, password)
 
+        self.dashboard_folder = DashboardFactory(creator=self.user)
+        self.dashboard_children_url = '/{}collections/{}/children/'.format(API_BASE, self.dashboard_folder._id)
+        self.dash_child = FolderFactory(parent=self.dashboard_folder, creator=self.user)
+        self.dash_child2 = FolderFactory(parent=self.dashboard_folder, creator=self.user)
+
     def test_collection_children_list_does_not_include_pointers(self):
         res = self.app.get(self.private_collection_url, auth=self.basic_auth)
         assert_equal(len(res.json['data']), 1)
@@ -421,6 +417,15 @@ class TestCollectionChildrenList(ApiTestCase):
         assert_equal(res.status_code, 200)
         assert_equal(len(res.json['data']), 1)
         assert_equal(res.json['data'][0]['id'], self.component._id)
+
+    def test_smart_folders_in_dashboard_children(self):
+        res = self.app.get(self.dashboard_children_url, auth=self.basic_auth)
+        res_json = res.json['data']
+
+        titles = [node['title'] for node in res_json]
+        assert_equal(res.status_code, 200)
+        assert_in('Smart Folder ~amr', titles)
+        assert_in('Smart Folder ~amp', titles)
 
         Node.remove()
 
@@ -491,7 +496,6 @@ class TestCreateCollectionPointer(ApiTestCase):
         self.basic_auth_two = (self.user_two.username, 'password')
 
 
-
     def test_creates_public_collection_pointer_logged_out(self):
         res = self.app.post(self.public_url, self.public_payload, expect_errors=True)
         # This is 403 instead of 401 because basic authentication is only for unit tests and, in order to keep from
@@ -540,6 +544,9 @@ class TestCollectionPointerDetail(ApiTestCase):
 
         self.collection_one = FolderFactory(creator=self.user)
         self.collection_two = FolderFactory(creator=self.user)
+        self.collection_three = FolderFactory()
+
+        self.non_folder_url = '/{}collections/{}/pointers/'.format(API_BASE, self.collection_one._id)
 
     def test_returns_public_collection_pointer_detail_logged_out(self):
         res = self.app.get(self.public_url, expect_errors=True)
@@ -560,11 +567,11 @@ class TestCollectionPointerDetail(ApiTestCase):
 
     def test_api_get_folder_pointers_from_non_folder(self):
 
-        url = '/{}collections/{}/pointers/'.format(API_BASE, self.collection_one._id)
-        self.collection_one.add_pointer(self.collection_two, auth=self.basic_auth)
-        res = self.app.get(url, auth=self.basic_auth)
-        pointers = res.json
-        assert_equal(len(pointers), 0)
+        self.collection_three.add_pointer(self.collection_two, auth=Auth(self.user))
+        res = self.app.get(self.non_folder_url, expect_errors=True)
+        assert_equal(res.status_code, 403)
+        # pointers = res.json
+        # assert_equal(len(pointers), 0)
 
 
 class TestDeleteCollectionPointer(ApiTestCase):
