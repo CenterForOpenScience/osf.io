@@ -287,7 +287,7 @@ def make_url_map(app):
             'get', website_views.get_dashboard, json_renderer),
     ], prefix='/api/v1')
 
-    ### Meta-data ###
+    ### Metadata ###
 
     process_rules(app, [
 

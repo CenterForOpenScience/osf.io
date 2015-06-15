@@ -446,9 +446,9 @@ def node_register_template_page_post(auth, node, **kwargs):
         except ValidationValueError as err:
             raise HTTPError(http.BAD_REQUEST, data=dict(message_long=err.message))
     else:
-        register.set_privacy('public', auth)
+        register.set_privacy('public', auth, log=False)
         for child in register.get_descendants_recursive():
-            child.set_privacy('public', auth)
+            child.set_privacy('public', auth, log=False)
 
     return {
         'status': 'initiated',
