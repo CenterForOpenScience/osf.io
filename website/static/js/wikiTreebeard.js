@@ -16,16 +16,6 @@ function resolveIcon(item) {
     }
 }
 
-function expandOnLoad() {
-    var tb = this;  // jshint ignore: line
-    for (var i = 0; i < tb.treeData.children.length; i++) {
-        var parent = tb.treeData.children[i];
-        if (parent.data.title === 'Project Wiki Pages') {
-            tb.updateFolder(null, parent);
-        }
-    }
-}
-
 function WikiMenu(data) {
 
     //  Treebeard version
@@ -42,6 +32,15 @@ function WikiMenu(data) {
                 title: 'Name',
                 width: '100%'
             }]
+        },
+        onload: function() {
+            var tb = this;  // jshint ignore: line
+            for (var i = 0; i < tb.treeData.children.length; i++) {
+                var parent = tb.treeData.children[i];
+                if (parent.data.title === 'Project Wiki Pages') {
+                    tb.updateFolder(null, parent);
+                }
+            }
         },
         resolveRows : function (item){
             var tb = this;
@@ -97,7 +96,6 @@ function WikiMenu(data) {
         }
     };
     var grid = new Treebeard(tbOptions);
-    expandOnLoad.call(grid.tbController);
 }
 
 module.exports = WikiMenu;
