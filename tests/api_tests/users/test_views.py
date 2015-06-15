@@ -291,10 +291,10 @@ class TestApplicationList(ApiTestCase):
         res = self.app.get(self.user1_list_url, expect_errors=True)
         assert_equal(res.status_code, 403)
 
-    # def tearDown(self):
-    #     super(TestApplicationList, self).tearDown()
-    #     User.remove()
-    #     OAuth2App.remove()
+    def tearDown(self):
+        super(TestApplicationList, self).tearDown()
+        OAuth2App.remove()
+        User.remove()
 
 
 class TestApplicationDetail(ApiTestCase):
@@ -379,7 +379,7 @@ class TestApplicationDetail(ApiTestCase):
         # TODO: Will DB instance always be updated with newest result from API modification
         assert_false(self.user1_app.active)
 
-    # def tearDown(self):
-    #     super(TestApplicationDetail, self).tearDown()
-    #     User.remove()
-    #     OAuth2App.remove()
+    def tearDown(self):
+        super(TestApplicationDetail, self).tearDown()
+        OAuth2App.remove()
+        User.remove()
