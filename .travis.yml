@@ -80,8 +80,8 @@ install:
     - travis_retry invoke assets --dev
 
 before_script:
-    - flake8
-    - jshint website/static/js .
+    - flake8 .
+    - jshint website/static/js
 
 # Run Python tests (core and addon) and JS tests
 script:
