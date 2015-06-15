@@ -126,7 +126,7 @@ def make_copy_request(job_pk, url, data):
     res = requests.post(url, data=json.dumps(data))
     logger.info("Copy request responded with {0} for addon: {1} on node: {2}".format(res.status_code, provider, dst._id))
     dst.archive_job.update_target(provider, ARCHIVER_SENT)
-    if not res.ok:
+    if res.status_code not in (200, 201, 202):
         dst.archive_job.update_target(
             provider,
             ARCHIVER_FAILURE,
