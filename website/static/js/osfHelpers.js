@@ -119,7 +119,7 @@ var postJSON = function(url, data, success, error) {
     if (typeof error === 'function') {
         ajaxOpts.fields.error = error;
     }
-    return ajaxJSON("POST", url, ajaxOpts);
+    return ajaxJSON("post", url, ajaxOpts);
 };
 
 /**
@@ -147,7 +147,7 @@ var putJSON = function(url, data, success, error) {
     if (typeof error === 'function') {
         ajaxOpts.fields.error = error;
     }
-    return ajaxJSON("PUT", url, ajaxOpts);
+    return ajaxJSON("put", url, ajaxOpts);
 };
 
 /**

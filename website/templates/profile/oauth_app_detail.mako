@@ -31,47 +31,47 @@
 
     <div class="col-sm-9 col-md-7">
 
-        <div id="app-detail">
+        <div id="app-detail" data-bind="with: content()">
             <div id="app-keys" class="border-box text-right text-muted"
-                 data-bind="visible: dataUrl">
-                <p><span><strong>Client ID</strong>:</span> <br><span data-bind="text: content().clientId"></span></p>
-                <p><span><strong>Client secret</strong>:</span> <br><span data-bind="text: content().clientSecret"></span></p>
+                 data-bind="visible: $root.dataUrl">
+                <p><span><strong>Client ID</strong>:</span> <br><span data-bind="text: clientId"></span></p>
+                <p><span><strong>Client secret</strong>:</span> <br><span data-bind="text: clientSecret"></span></p>
             </div>
             <div id="app-fields">
                 <!-- TODO: Add revoke/ reset buttons -->
                 <form role="form">
                     <div class="form-group">
                         <label>Application name</label>
-                        <input class="form-control" type="text" data-bind="value: content().name">
+                        <input class="form-control" type="text" data-bind="value: name">
                     </div>
 
                     <div class="form-group">
                         <label>Project homepage URL</label>
-                        <input class="form-control" type="text" data-bind="value: content().homeUrl">
+                        <input class="form-control" type="text" data-bind="value: homeUrl">
                     </div>
 
                     <div class="form-group">
                         <label>Application description</label>
-                        <textarea class="form-control" placeholder="Application description is optional" data-bind="value: content().description"></textarea>
+                        <textarea class="form-control" placeholder="Application description is optional" data-bind="value: description"></textarea>
                     </div>
 
                     <div class="form-group">
                         <label>Authorization callback URL</label>
-                        <input type="text" class="form-control" data-bind="value: content().callbackUrl">
+                        <input type="text" class="form-control" data-bind="value: callbackUrl">
                     </div>
 
                     <div class="padded">
                         <button type="submit" class="btn btn-primary"
-                                data-bind="visible: !dataUrl, click: $root.createApplication">Create</button>
+                                data-bind="visible: !$root.dataUrl, click: $root.createApplication">Create</button>
 
                         <button type="submit" class="btn btn-primary"
-                                data-bind="visible: dataUrl, click: $root.updateApplication">Update</button>
+                                data-bind="visible: $root.dataUrl, click: $root.updateApplication">Update</button>
                     </div>
                 </form>
 
                 <!-- Flashed Messages -->
                 <div class="help-block">
-                    <p data-bind="html: message, attr.class: messageClass"></p>
+                    <p data-bind="html: $root.message, attr.class: $root.messageClass"></p>
                 </div>
             </div>
         </div> <!-- End app-detail section -->
