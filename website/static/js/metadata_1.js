@@ -1,5 +1,5 @@
 /**
- * Knockout models for controlling meta-data; bound to HTML in
+ * Knockout models for controlling metadata; bound to HTML in
  * website/templates/metadata/metadata_*.mako
  */
 var ko = require('knockout');

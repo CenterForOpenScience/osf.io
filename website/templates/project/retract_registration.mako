@@ -6,7 +6,7 @@
     <div id="registrationRetraction" class="col-md-6 col-md-offset-3">
         <div class="panel panel-default">
             <div class="panel-body">
-                Retracting a registration will remove its content from the OSF, but leave basic meta-data behind.
+                Retracting a registration will remove its content from the OSF, but leave basic metadata behind.
                 The title of a retracted registration and its contributor list will remain, as will justification or
                 explanation of the retraction, should you wish to provide it. Retracted registrations will be marked
                 with a "retracted" tag. <strong>This action is irreversible.</strong>

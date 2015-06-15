@@ -12,6 +12,6 @@
       end of the embargo period, the registration will automatically become public.</p>
 
     <p>To register a project, click on the <em>Registrations</em> button in the grey navigation bar. Click on "New Registration", select a
-        meta-data template, fill it out, and then confirm the registration. The registration will be at a separate,
+        metadata template, fill it out, and then confirm the registration. The registration will be at a separate,
         permanent URL that is linked to the project. Then, you can continue editing and revising the project itself.</p>
 </div>
