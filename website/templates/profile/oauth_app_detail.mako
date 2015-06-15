@@ -42,12 +42,12 @@
                 <form role="form">
                     <div class="form-group">
                         <label>Application name</label>
-                        <input class="form-control" type="text" data-bind="value: name">
+                        <input class="form-control" type="text" data-bind="value: name" placeholder="Required">
                     </div>
 
                     <div class="form-group">
                         <label>Project homepage URL</label>
-                        <input class="form-control" type="text" data-bind="value: homeUrl">
+                        <input class="form-control" type="text" data-bind="value: homeUrl" placeholder="Required">
                     </div>
 
                     <div class="form-group">
@@ -57,7 +57,12 @@
 
                     <div class="form-group">
                         <label>Authorization callback URL</label>
-                        <input type="text" class="form-control" data-bind="value: callbackUrl">
+                        <input type="text" class="form-control" data-bind="value: callbackUrl" placeholder="Required">
+                    </div>
+
+                    <!-- Flashed Messages -->
+                    <div class="help-block">
+                        <p data-bind="html: $root.message, attr.class: $root.messageClass"></p>
                     </div>
 
                     <div class="padded">
@@ -68,11 +73,6 @@
                                 data-bind="visible: $root.dataUrl, click: $root.updateApplication">Update</button>
                     </div>
                 </form>
-
-                <!-- Flashed Messages -->
-                <div class="help-block">
-                    <p data-bind="html: $root.message, attr.class: $root.messageClass"></p>
-                </div>
             </div>
         </div> <!-- End app-detail section -->
     </div>

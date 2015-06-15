@@ -24,31 +24,48 @@ require('js/objectCreateShim');
  */
 var ApplicationData = function (data){
     var self = this;
-    self.clientId = ko.observable();
+
     self.clientSecret = ko.observable();
-    self.create_date = ko.observable();
 
     self.owner = ko.observable();
-    self.name = ko.observable();
+    self.name = ko.observable().extend({required:{message:"Please enter a name for your application"}});
     self.description = ko.observable();
-    self.homeUrl = ko.observable();
-    self.callbackUrl = ko.observable();
+    self.homeUrl = ko.observable();//.extend({
+        //required:true,
+        //url:true,
+        //ensureHttp:true});
+    self.callbackUrl = ko.observable();//.extend({
+        //required:true,
+        //url:true,
+        //ensureHttp:true});
 
     // Unchanging properties
-    self.detailUrl = ko.observable();
-    self.apiUrl = ko.observable();
+    self.clientId = null;
+    self.create_date = null;
+    self.detailUrl = null;
+    self.apiUrl = null;
 
     // Load in data
     if (data){
         self.fromJSON(data)
     }
+
+    // Enable value validation in form
+    var validated = ko.validatedObservable(self);
+    self.isValid = ko.computed(function(){
+        //console.log(self.owner());
+        var s = validated.isValid();
+        //console.log("Is this valid?", s);
+        return s;
+    })
+
 };
 
 // Serialize data for POST request
 ApplicationData.prototype.toJSON = function () {
     var self = this;
     return {
-        client_id: self.clientId(),
+        client_id: self.clientId,
         client_secret: self.clientSecret(),
         owner: self.owner(),
         name: self.name(),
@@ -62,9 +79,9 @@ ApplicationData.prototype.toJSON = function () {
 ApplicationData.prototype.fromJSON = function (data) {
     var self = this;
     data = data || {};
-    self.clientId(data.client_id);
+    self.clientId = data.client_id;
     self.clientSecret(data.client_secret);
-    self.create_date(data.create_date);
+    self.create_date = data.create_date;
 
     self.owner(data.owner);
     self.name(data.name);
@@ -72,8 +89,8 @@ ApplicationData.prototype.fromJSON = function (data) {
     self.homeUrl(data.home_url);
     self.callbackUrl(data.callback_url);
 
-    self.detailUrl(data.links.html);
-    self.apiUrl(data.links.self);
+    self.detailUrl = data.links.html;
+    self.apiUrl = data.links.self;
 };
 
 
@@ -120,6 +137,8 @@ var ApplicationViewModel = function (urls) {
     self.message = ko.observable();
     self.messageClass = ko.observable();
 
+    self.showMessages = ko.observable(false);
+
     self.dataUrl = urls.dataUrl; // Use for editing existing instances
     self.submitUrl = urls.submitUrl; // Use for creating new instances
 
@@ -164,6 +183,13 @@ ApplicationViewModel.prototype.updateApplication = function () {
 ApplicationViewModel.prototype.createApplication = function () {
     // Create a new application instance via POST request (when model has submitUrl, but no dataUrl)
     var self = this;
+
+    if (!self.content().isValid()){
+        self.showMessages(true);
+        console.log("Form fields not valid");
+        return;
+    }
+
     var payload = self.content().toJSON();
 
     var url = self.submitUrl;
@@ -230,7 +256,7 @@ ApplicationsListViewModel.prototype.fetch = applicationFetch;
 ApplicationsListViewModel.prototype.deleteApplication = function (appData) {
     // Delete a single application
     var self = this;
-    var url = appData.apiUrl();
+    var url = appData.apiUrl;
 
     bootbox.confirm({
         title: 'De-register application?',
@@ -241,7 +267,7 @@ ApplicationsListViewModel.prototype.deleteApplication = function (appData) {
 
                 request.done(function () {
                         self.content.destroy(appData);
-                        $osf.growl('Deletion', appData.name() + ' has been deleted', 'success');
+                        $osf.growl('Deletion', '"' + appData.name() + '" has been deleted', 'success');
                     });
 
                 request.fail(function () {
