@@ -2390,11 +2390,12 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         self.save()
         return contributor
 
-    def set_privacy(self, permissions, auth=None):
+    def set_privacy(self, permissions, auth=None, log=True):
         """Set the permissions for this node.
 
         :param permissions: A string, either 'public' or 'private'
         :param auth: All the auth information including user, API key.
+        :param bool log: Whether to add a NodeLog for the privacy change.
         """
         if permissions == 'public' and not self.is_public:
             if self.is_registration and (self.embargo_end_date or self.pending_embargo):
@@ -2410,7 +2411,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
                 self.embargo.save()
             self.is_public = True
         elif permissions == 'private' and self.is_public:
-            if self.is_registration:
+            if self.is_registration and not self.pending_embargo:
                 raise NodeStateError("Public registrations must be retracted, not made private.")
             else:
                 self.is_public = False
@@ -2423,16 +2424,17 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
             if message:
                 status.push_status_message(message)
 
-        action = NodeLog.MADE_PUBLIC if permissions == 'public' else NodeLog.MADE_PRIVATE
-        self.add_log(
-            action=action,
-            params={
-                'project': self.parent_id,
-                'node': self._primary_key,
-            },
-            auth=auth,
-            save=False,
-        )
+        if log:
+            action = NodeLog.MADE_PUBLIC if permissions == 'public' else NodeLog.MADE_PRIVATE
+            self.add_log(
+                action=action,
+                params={
+                    'project': self.parent_id,
+                    'node': self._primary_key,
+                },
+                auth=auth,
+                save=False,
+            )
         self.save()
         return True
 
@@ -2736,6 +2738,8 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         )
         # Embargo record needs to be saved to ensure the forward reference Node->Embargo
         self.embargo = embargo
+        if self.is_public:
+            self.set_privacy('private', Auth(user))
 
 
 @Node.subscribe('before_save')
