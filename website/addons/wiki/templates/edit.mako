@@ -26,7 +26,7 @@
         <!-- Menu with toggle normal -->
         <div class="osf-panel reset-height ${'' if 'menu' in panels_used else 'hidden' | n}" data-bind="css: {  'osf-panel-flex': !$root.singleVis() }">
             <div class="osf-panel-header" data-bind="css: {  'osf-panel-header-flex': !$root.singleVis()}"> <i class="fa fa-list"> </i>  Menu
-                <div class="pull-right">
+                <div class="pull-right hidden-xs">
                     <div class="panel-collapse"> <i class="fa fa-angle-left pointer"> </i> </div>
                 </div>
             </div>
