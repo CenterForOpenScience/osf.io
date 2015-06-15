@@ -867,12 +867,12 @@ class StorageAddonBase(object):
             **kwargs
         )
         res = requests.get(metadata_url)
-        # TODO: better throttling?
-        sleep(1.0 / 5.0)
         if res.status_code != 200:
             raise HTTPError(res.status_code, data={
                 'error': res.json(),
             })
+        # TODO: better throttling?
+        sleep(1.0 / 5.0)
         return res.json().get('data', [])
 
     def _get_file_tree(self, filenode=None, user=None, cookie=None):

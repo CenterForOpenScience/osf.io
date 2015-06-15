@@ -12,6 +12,7 @@ from framework import status
 from framework.exceptions import HTTPError, PermissionsError
 from framework.flask import redirect  # VOL-aware redirect
 
+from framework.status import push_status_message
 from framework.mongo.utils import to_mongo
 from framework.forms.utils import process_payload, unprocess_payload
 from framework.auth.decorators import must_be_signed
@@ -449,6 +450,8 @@ def node_register_template_page_post(auth, node, **kwargs):
         register.set_privacy('public', auth, log=False)
         for child in register.get_descendants_recursive():
             child.set_privacy('public', auth, log=False)
+
+    push_status_message('Files are being copied to the newly created registration, and you will receive an email notification containing a link to the registration when the copying is finished.')
 
     return {
         'status': 'initiated',
