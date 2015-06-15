@@ -442,11 +442,14 @@ def node_register_template_page_post(auth, node, **kwargs):
             raise HTTPError(http.BAD_REQUEST, data=dict(message_long=err.message))
     else:
         register.set_privacy('public', auth)
-        for node in register.get_descendants_recursive():
-            node.set_privacy('public', auth)
+        for child in register.get_descendants_recursive():
+            child.set_privacy('public', auth)
 
     return {
         'status': 'initiated',
+        'urls': {
+            'registrations': node.web_url_for('node_registrations')
+        }
     }, http.CREATED
 
 
