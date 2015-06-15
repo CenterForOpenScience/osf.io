@@ -78,8 +78,7 @@ class NodeList(generics.ListCreateAPIView, ODMFilterMixin):
         user = self.request.user
         serializer.save(creator=user)
 
-
-class NodeDetail(generics.RetrieveUpdateAPIView, NodeMixin):
+class NodeDetail(generics.RetrieveUpdateDestroyAPIView, NodeMixin):
     """Projects and component details.
 
     On the front end, nodes are considered 'projects' or 'components'. The difference between a project and a component
@@ -103,6 +102,12 @@ class NodeDetail(generics.RetrieveUpdateAPIView, NodeMixin):
         # Serializer needs the request in order to make an update to privacy
         return {'request': self.request}
 
+    def perform_destroy(self, instance):
+        user = self.request.user
+        auth = Auth(user)
+        node = self.get_node()
+        node.remove_node(auth=auth)
+        node.save()
 
 class NodeContributorsList(generics.ListAPIView, ListFilterMixin, NodeMixin):
     """Contributors (users) for a node.
