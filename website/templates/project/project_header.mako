@@ -105,7 +105,7 @@
         % endif
 
         % if  node['pending_embargo']:
-            <div class="alert alert-info">This ${node['node_type']} is currently pending entering into an embargoed state.</div>
+            <div class="alert alert-info">This ${node['node_type']} is currently pending, awaiting approval from project administrators. This registration will be final and enter the embargo period when all project administrators approve the registration or 48 hours pass, whichever comes first. The embargo will keep the registration private until ${ node['embargo_end_date'] }.</div>
         % endif
 
         % if  node['embargo_end_date']:
