@@ -45,7 +45,7 @@ var ApplicationData = function (data){
 };
 
 // Serialize data for POST request
-ApplicationData.prototype.serialize = function () {
+ApplicationData.prototype.toJSON = function () {
     var self = this;
     return {
         client_id: self.clientId(),
@@ -136,7 +136,7 @@ ApplicationViewModel.prototype.updateApplication = function () {
 
     var url = self.dataUrl;
 
-    var payload = self.content().serialize();
+    var payload = self.content().toJSON();
 
     var request = $osf.ajaxJSON("PATCH", url, {isCors: true, data: payload});
 
@@ -164,7 +164,7 @@ ApplicationViewModel.prototype.updateApplication = function () {
 ApplicationViewModel.prototype.createApplication = function () {
     // Create a new application instance via POST request (when model has submitUrl, but no dataUrl)
     var self = this;
-    var payload = self.content().serialize();
+    var payload = self.content().toJSON();
 
     var url = self.submitUrl;
 
