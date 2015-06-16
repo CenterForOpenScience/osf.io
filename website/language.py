@@ -2,7 +2,6 @@
 # -*- coding: utf-8 -*-
 """Various text used throughout the website, e.g. status messages, errors, etc.
 """
-from django.utils.translation import ugettext_lazy as _
 
 # Status Messages
 #################
@@ -162,5 +161,3 @@ BLANK_OR_CORRUPT_TABLE_ERROR = 'Is this a valid instance of this file type?<p>{0
 
 #disk saving mode
 DISK_SAVING_MODE = 'Forks, registrations, and uploads to OSF Storage uploads are temporarily disabled while we are undergoing a server upgrade. These features will return shortly.'
-
-BEFORE_DELETE = _('Are you sure you want to delete {}? It will no longer be available to other contributors on the project. Submit to new url to continue.')
