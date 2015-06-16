@@ -297,35 +297,20 @@ class GuidFile(GuidStoredObject):
         return url.url
 
     @property
-    def mfr_download_url(self):
-        url = self._base_butler_url
-        url.path.add('file')
-
-        url.args['mode'] = 'render'
-        url.args['action'] = 'download'
-
-        if self.revision:
-            url.args[self.version_identifier] = self.revision
-
-        if request.args.get('view_only'):
-            url.args['view_only'] = request.args['view_only']
-
-        return url.url
-
-    @property
     def mfr_render_url(self):
         url = furl.furl(settings.MFR_SERVER_URL)
         url.path.add('render')
-        url.args['url'] = self.public_download_url
+        url.args['url'] = self.mfr_public_download_url
         return url.url
 
     @property
-    def public_download_url(self):
+    def mfr_public_download_url(self):
         url = furl.furl(settings.DOMAIN)
 
         url.path.add(self._id + '/')
         url.args['mode'] = 'render'
         url.args['action'] = 'download'
+        url.args['accept_url'] = 'false'
 
         if self.revision:
             url.args[self.version_identifier] = self.revision

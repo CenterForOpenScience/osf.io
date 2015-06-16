@@ -295,6 +295,8 @@ class NodeLog(StoredObject):
     params = fields.DictionaryField()
     should_hide = fields.BooleanField(default=False)
 
+    was_connected_to = fields.ForeignField('node', list=True)
+
     user = fields.ForeignField('user', backref='created')
     api_key = fields.ForeignField('apikey', backref='created')
     foreign_user = fields.StringField()
@@ -425,6 +427,7 @@ class NodeLog(StoredObject):
             'fullname': privacy_info_handle(fullname, anonymous, name=True),
             'registered': user.is_registered,
         }
+
 
 class Tag(StoredObject):
 
@@ -1316,7 +1319,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         ids = [self._id] + [n._id
                             for n in self.get_descendants_recursive()
                             if n.can_view(auth)]
-        query = Q('__backrefs.logged.node.logs', 'in', ids) & Q('should_hide', 'ne', True)
+        query = Q('__backrefs.logged.node.logs', 'in', ids)
         return NodeLog.find(query).sort('-_id')
 
     @property
@@ -1802,13 +1805,12 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
     def url(self):
         return '/{}/'.format(self._primary_key)
 
-    def web_url_for(self, view_name, _absolute=False, _offload=False, _guid=False, *args, **kwargs):
-        return web_url_for(view_name, pid=self._primary_key, _absolute=_absolute,
-                           _offload=_offload, _guid=_guid, *args, **kwargs)
+    def web_url_for(self, view_name, _absolute=False, _guid=False, *args, **kwargs):
+        return web_url_for(view_name, pid=self._primary_key, _absolute=_absolute, _guid=_guid, *args, **kwargs)
 
-    def api_url_for(self, view_name, _absolute=False, _offload=False, *args, **kwargs):
-        return api_url_for(view_name, pid=self._primary_key, _absolute=_absolute,
-                           _offload=_offload, *args, **kwargs)
+    def api_url_for(self, view_name, _absolute=False, *args, **kwargs):
+        return api_url_for(view_name, pid=self._primary_key, _absolute=_absolute, *args, **kwargs)
+
     @property
     def absolute_url(self):
         if not self.url:
@@ -2264,6 +2266,14 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
 
             contributor_added.send(self, contributor=contributor, auth=auth)
             return True
+
+        #Permissions must be overridden if changed when contributor is added to parent he/she is already on a child of.
+        elif contrib_to_add in self.contributors and permissions is not None:
+            self.set_permissions(contrib_to_add, permissions)
+            if save:
+                self.save()
+
+            return False
         else:
             return False
 

@@ -1272,20 +1272,8 @@ class TestNode(OsfTestCase):
         )
 
     def test_web_url_for_absolute(self):
-        orig_offload_domain = settings.OFFLOAD_DOMAIN
-        settings.OFFLOAD_DOMAIN = 'http://localhost:5001/'
         result = self.parent.web_url_for('view_project', _absolute=True)
         assert_in(settings.DOMAIN, result)
-        assert_not_in(settings.OFFLOAD_DOMAIN, result)
-        settings.OFFLOAD_DOMAIN = orig_offload_domain
-
-    def test_web_url_for_absolute_offload(self):
-        orig_offload_domain = settings.OFFLOAD_DOMAIN
-        settings.OFFLOAD_DOMAIN = 'http://localhost:5001/'
-        result = self.parent.web_url_for('view_project', _absolute=True, _offload=True)
-        assert_in(settings.OFFLOAD_DOMAIN, result)
-        assert_not_in(settings.DOMAIN, result)
-        settings.OFFLOAD_DOMAIN = orig_offload_domain
 
     def test_category_display(self):
         node = NodeFactory(category='hypothesis')
@@ -1313,20 +1301,8 @@ class TestNode(OsfTestCase):
         )
 
     def test_api_url_for_absolute(self):
-        orig_offload_domain = settings.OFFLOAD_DOMAIN
-        settings.OFFLOAD_DOMAIN = 'http://localhost:5001/'
         result = self.parent.api_url_for('view_project', _absolute=True)
         assert_in(settings.DOMAIN, result)
-        assert_not_in(settings.OFFLOAD_DOMAIN, result)
-        settings.OFFLOAD_DOMAIN = orig_offload_domain
-
-    def test_api_url_for_absolute_offload(self):
-        orig_offload_domain = settings.OFFLOAD_DOMAIN
-        settings.OFFLOAD_DOMAIN = 'http://localhost:5001/'
-        result = self.parent.api_url_for('view_project', _absolute=True, _offload=True)
-        assert_in(settings.OFFLOAD_DOMAIN, result)
-        assert_not_in(settings.DOMAIN, result)
-        settings.OFFLOAD_DOMAIN = orig_offload_domain
 
     def test_node_factory(self):
         node = NodeFactory()
@@ -2530,6 +2506,21 @@ class TestProject(OsfTestCase):
             self.project._primary_key,
             contrib.unclaimed_records.keys()
         )
+
+    def test_permission_override_on_readded_contributor(self):
+
+        # A child node created
+        self.child_node = NodeFactory(parent=self.project, creator=self.consolidate_auth)
+
+        # A user is added as with read permission
+        user = UserFactory()
+        self.child_node.add_contributor(user, permissions=['read'])
+
+        # user is readded with permission admin
+        self.child_node.add_contributor(user, permissions=['read','write','admin'])
+        self.child_node.save()
+
+        assert(self.child_node.has_permission(user, 'admin'))
 
 
 class TestTemplateNode(OsfTestCase):
