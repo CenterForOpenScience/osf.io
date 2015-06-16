@@ -32,6 +32,7 @@ class NodeMixin(object):
         self.check_object_permissions(self.request, obj)
         return obj
 
+
 class NodeList(generics.ListCreateAPIView, ODMFilterMixin):
     """Projects and components.
 
@@ -82,6 +83,7 @@ class NodeList(generics.ListCreateAPIView, ODMFilterMixin):
         user = self.request.user
         serializer.save(creator=user)
 
+
 class NodeDetail(generics.RetrieveUpdateDestroyAPIView, NodeMixin):
     """Projects and component details.
 
@@ -116,6 +118,7 @@ class NodeDetail(generics.RetrieveUpdateDestroyAPIView, NodeMixin):
         delete_warning = BEFORE_DELETE.format(_(node.title))
         raise serializers.ValidationError([delete_warning, url])
 
+
 class NodeDeleteConfirm(generics.DestroyAPIView, NodeMixin):
     """Projects and component details.
 
@@ -144,6 +147,7 @@ class NodeDeleteConfirm(generics.DestroyAPIView, NodeMixin):
         node.remove_node(auth=Auth(user))
         node.save()
 
+        
 class NodeContributorsList(generics.ListAPIView, ListFilterMixin, NodeMixin):
     """Contributors (users) for a node.
 
