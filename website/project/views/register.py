@@ -436,16 +436,15 @@ def node_register_template_page_post(auth, node, **kwargs):
         try:
             register.embargo_registration(auth.user, embargo_end_date)
             register.save()
-            register.archive_job.meta = {
-                'embargo_urls': {
-                    contrib._id: project_utils.get_embargo_urls(register, contrib)
-                    for contrib in register.contributors
-                }
-            }
-            register.archive_job.save()
-
         except ValidationValueError as err:
             raise HTTPError(http.BAD_REQUEST, data=dict(message_long=err.message))
+        register.archive_job.meta = {
+            'embargo_urls': {
+                contrib._id: project_utils.get_embargo_urls(register, contrib)
+                for contrib in [contrib for contrib in node.contributors if node.has_permission(contrib, 'admin') and contrib.is_active]
+            }
+        }
+        register.archive_job.save()
     else:
         register.set_privacy('public', auth, log=False)
         for child in register.get_descendants_recursive():
