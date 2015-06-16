@@ -32,7 +32,6 @@ class NodeMixin(object):
         self.check_object_permissions(self.request, obj)
         return obj
 
-
 class NodeList(generics.ListCreateAPIView, ODMFilterMixin):
     """Projects and components.
 
@@ -118,6 +117,7 @@ class NodeDetail(generics.RetrieveUpdateDestroyAPIView, NodeMixin):
         raise serializers.ValidationError([delete_warning, url])
 
 class NodeDeleteConfirm(generics.DestroyAPIView, NodeMixin):
+    """Delete a node"""
     permission_classes = (
         ContributorOrPublic,
         ReadOnlyIfRegistration,
