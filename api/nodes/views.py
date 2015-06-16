@@ -129,7 +129,7 @@ class NodeDeleteConfirm(generics.DestroyAPIView, NodeMixin):
 
     def perform_destroy(self, instance):
         user = self.request.user
-        node = self.get_node()
+        node = self.get_object()
         correct_token = token_creator(node._id, user._id)
         given_token = self.kwargs['token']
         if correct_token != given_token:
