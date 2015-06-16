@@ -19,6 +19,7 @@ describe('registrationRetraction', () => {
         describe('RegistrationRetractionViewModel', () => {
             var vm;
             var registrationTitle = 'This is a fake registration';
+            var truncatedTitle = registrationTitle.slice(0, 50).split(' ').slice(0, -1).join(' ');
             var invalidJustification = faker.lorem.paragraphs(50);
             var invalidConfirmationText = 'abcd';
             var submitUrl = '/project/abcdef/retraction/';
@@ -58,7 +59,7 @@ describe('registrationRetraction', () => {
             });
 
             it('matching registration title is valid', () => {
-                 vm.confirmationText(registrationTitle);
+                 vm.confirmationText(truncatedTitle);
                 assert.isTrue(vm.confirmationText.isValid());
             });
 
@@ -92,7 +93,7 @@ describe('registrationRetraction', () => {
                 it('submits successfully with valid confirmation text', (done) => {
                     var onSubmitSuccessStub = new sinon.stub(vm, 'onSubmitSuccess');
 
-                    vm.confirmationText(registrationTitle);
+                    vm.confirmationText(truncatedTitle);
                     vm.submit().always(() => {
                         assert.equal(response.redirectUrl, redirectUrl);
                         assert.called(onSubmitSuccessStub);
@@ -108,7 +109,7 @@ describe('registrationRetraction', () => {
                     var onSubmitErrorSpy = new sinon.spy(vm, 'onSubmitError');
                     var ravenStub = new sinon.stub(Raven, 'captureMessage');
 
-                    vm.confirmationText(registrationTitle);
+                    vm.confirmationText(truncatedTitle);
                     vm.submit().always((xhr) => {
                         assert.equal(xhr.status, 500);
                         assert.equal(response.redirectUrl, redirectUrl);
