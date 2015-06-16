@@ -1320,20 +1320,8 @@ class TestNode(OsfTestCase):
         )
 
     def test_web_url_for_absolute(self):
-        orig_offload_domain = settings.OFFLOAD_DOMAIN
-        settings.OFFLOAD_DOMAIN = 'http://localhost:5001/'
         result = self.parent.web_url_for('view_project', _absolute=True)
         assert_in(settings.DOMAIN, result)
-        assert_not_in(settings.OFFLOAD_DOMAIN, result)
-        settings.OFFLOAD_DOMAIN = orig_offload_domain
-
-    def test_web_url_for_absolute_offload(self):
-        orig_offload_domain = settings.OFFLOAD_DOMAIN
-        settings.OFFLOAD_DOMAIN = 'http://localhost:5001/'
-        result = self.parent.web_url_for('view_project', _absolute=True, _offload=True)
-        assert_in(settings.OFFLOAD_DOMAIN, result)
-        assert_not_in(settings.DOMAIN, result)
-        settings.OFFLOAD_DOMAIN = orig_offload_domain
 
     def test_category_display(self):
         node = NodeFactory(category='hypothesis')
@@ -1361,20 +1349,8 @@ class TestNode(OsfTestCase):
         )
 
     def test_api_url_for_absolute(self):
-        orig_offload_domain = settings.OFFLOAD_DOMAIN
-        settings.OFFLOAD_DOMAIN = 'http://localhost:5001/'
         result = self.parent.api_url_for('view_project', _absolute=True)
         assert_in(settings.DOMAIN, result)
-        assert_not_in(settings.OFFLOAD_DOMAIN, result)
-        settings.OFFLOAD_DOMAIN = orig_offload_domain
-
-    def test_api_url_for_absolute_offload(self):
-        orig_offload_domain = settings.OFFLOAD_DOMAIN
-        settings.OFFLOAD_DOMAIN = 'http://localhost:5001/'
-        result = self.parent.api_url_for('view_project', _absolute=True, _offload=True)
-        assert_in(settings.OFFLOAD_DOMAIN, result)
-        assert_not_in(settings.DOMAIN, result)
-        settings.OFFLOAD_DOMAIN = orig_offload_domain
 
     def test_node_factory(self):
         node = NodeFactory()
