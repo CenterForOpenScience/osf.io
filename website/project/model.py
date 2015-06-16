@@ -2398,18 +2398,24 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         :param bool log: Whether to add a NodeLog for the privacy change.
         """
         if permissions == 'public' and not self.is_public:
-            if self.is_registration and (self.embargo_end_date or self.pending_embargo):
-                self.embargo.state = Embargo.CANCELLED
-                self.registered_from.add_log(
-                    action=NodeLog.EMBARGO_CANCELLED,
-                    params={
-                        'node': self._id,
-                        'embargo_id': self.embargo._id,
-                    },
-                    auth=auth,
-                )
-                self.embargo.save()
-            self.is_public = True
+            if self.is_registration:
+                def r_set_public(node):
+                    node.is_public = True
+                    node.save()
+                    for child in node.nodes_primary:
+                        r_set_public(child)
+                if (self.embargo_end_date or self.pending_embargo):
+                    self.embargo.state = Embargo.CANCELLED
+                    self.registered_from.add_log(
+                        action=NodeLog.EMBARGO_CANCELLED,
+                        params={
+                            'node': self._id,
+                            'embargo_id': self.embargo._id,
+                        },
+                        auth=auth,
+                    )
+                    self.embargo.save()
+                r_set_public(self)
         elif permissions == 'private' and self.is_public:
             if self.is_registration and not self.pending_embargo:
                 raise NodeStateError("Public registrations must be retracted, not made private.")

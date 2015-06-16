@@ -2508,6 +2508,23 @@ class TestProject(OsfTestCase):
         assert_true(registration.is_public)
         assert_equal(self.project.logs[-1].action, NodeLog.EMBARGO_CANCELLED)
 
+    def test_set_privacy_makes_child_registrations_public(self):
+        proj = ProjectFactory()
+        c1 = ProjectFactory(parent=proj)
+        c2a = ProjectFactory(parent=c1)
+        c2b = ProjectFactory(parent=c1)
+        reg = RegistrationFactory(project=proj)
+        r1 = reg.nodes[0]
+        r2a = r1.nodes[0]
+        r2b = r1.nodes[1]
+        for node in [reg, r1, r2a, r2b]:
+            node.is_public = False
+            node.save()
+            assert_false(node.is_public)
+        reg.set_privacy('public')
+        for node in [reg, r1, r2a, r2b]:
+            assert_true(node.is_public)
+        
     def test_set_description(self):
         old_desc = self.project.description
         self.project.set_description(
