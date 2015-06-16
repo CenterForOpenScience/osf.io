@@ -8,6 +8,8 @@ require('knockout-sortable');
 
 var $osf = require('./osfHelpers');
 
+var nodeApiUrl = window.contextVars.node.urls.api;
+
 var contribsEqual = function(a, b) {
     return a.id === b.id &&
         a.visible === b.visible &&
@@ -113,7 +115,7 @@ var ContributorModel = function(contributor, currentUserCanEdit, pageOwner, isRe
             name: self.fullname
         };
         $osf.postJSON(
-            nodeApiUrl + 'beforeremovecontributors/', // jshint ignore:line
+            nodeApiUrl + 'beforeremovecontributors/',
             payload
         ).done(function(response) {
             var prompt = $osf.joinPrompts(response.prompts, 'Remove <strong>' + name + '</strong> from contributor list?');
@@ -123,7 +125,7 @@ var ContributorModel = function(contributor, currentUserCanEdit, pageOwner, isRe
                 callback: function(result) {
                     if (result) {
                         $osf.postJSON(
-                            nodeApiUrl + 'removecontributors/',  // jshint ignore:line
+                            nodeApiUrl + 'removecontributors/',
                             payload
                         ).done(function(response) {
                             if (response.redirectUrl) {
@@ -342,7 +344,7 @@ var ContributorsViewModel = function(contributors, adminContributors, user, isRe
             callback: function(result) {
                 if (result) {
                     $osf.postJSON(
-                        nodeApiUrl + 'contributors/manage/',  // jshint ignore:line
+                        nodeApiUrl + 'contributors/manage/',
                         {contributors: self.serialize()}
                     ).done(function(response) {
                         // TODO: Don't reload the page here; instead use code below
