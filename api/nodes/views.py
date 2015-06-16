@@ -110,6 +110,12 @@ class NodeDetail(generics.RetrieveUpdateDestroyAPIView, NodeMixin):
         node.save()
 
 class NodeDelete(generics.DestroyAPIView):
+
+    permission_classes = (
+        ContributorOrPublic,
+        ReadOnlyIfRegistration,
+    )
+    serializer_class = NodeSerializer
     def perform_destroy(self, instance):
         user = self.request.user
         auth = Auth(user)
