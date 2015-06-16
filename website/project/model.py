@@ -1806,13 +1806,12 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
     def url(self):
         return '/{}/'.format(self._primary_key)
 
-    def web_url_for(self, view_name, _absolute=False, _offload=False, _guid=False, *args, **kwargs):
-        return web_url_for(view_name, pid=self._primary_key, _absolute=_absolute,
-                           _offload=_offload, _guid=_guid, *args, **kwargs)
+    def web_url_for(self, view_name, _absolute=False, _guid=False, *args, **kwargs):
+        return web_url_for(view_name, pid=self._primary_key, _absolute=_absolute, _guid=_guid, *args, **kwargs)
 
-    def api_url_for(self, view_name, _absolute=False, _offload=False, *args, **kwargs):
-        return api_url_for(view_name, pid=self._primary_key, _absolute=_absolute,
-                           _offload=_offload, *args, **kwargs)
+    def api_url_for(self, view_name, _absolute=False, *args, **kwargs):
+        return api_url_for(view_name, pid=self._primary_key, _absolute=_absolute, *args, **kwargs)
+
     @property
     def absolute_url(self):
         if not self.url:

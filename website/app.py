@@ -26,6 +26,7 @@ def build_js_config_files(settings):
     with open(os.path.join(settings.STATIC_FOLDER, 'built', 'nodeCategories.json'), 'wb') as fp:
         json.dump(Node.CATEGORY_MAP, fp)
 
+
 def init_addons(settings, routes=True):
     """Initialize each addon in settings.ADDONS_REQUESTED.
 
@@ -42,9 +43,6 @@ def init_addons(settings, routes=True):
             settings.ADDONS_AVAILABLE_DICT[addon.short_name] = addon
     settings.ADDON_CAPABILITIES = render_addon_capabilities(settings.ADDONS_AVAILABLE)
 
-def add_cors_headers(response):
-    response.headers['Access-Control-Allow-Origin'] = '*'
-    return response
 
 def attach_handlers(app, settings):
     """Add callback handlers to ``app`` in the correct order."""
@@ -61,11 +59,6 @@ def attach_handlers(app, settings):
     # framework.session's before_request handler must go after
     # prepare_private_key, else view-only links won't work
     add_handlers(app, {'before_request': framework.sessions.before_request})
-
-    # Needed to allow the offload server and main server to properly interact
-    # without cors issues. See @jmcarp, @chrisseto, or @icereval for more detail
-    if settings.DEBUG_MODE:
-        add_handlers(app, {'after_request': add_cors_headers})
 
     return app
 
