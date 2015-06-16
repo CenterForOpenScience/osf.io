@@ -56,6 +56,10 @@ class BoxFile(GuidFile):
     def unique_identifier(self):
         return self._metadata_cache['extra'].get('etag') or self._metadata_cache['version']
 
+    @property
+    def source_url(self):
+        return self._metadata_cache['extra']['source_url']
+
 
 class BoxOAuthSettings(StoredObject):
     """

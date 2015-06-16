@@ -61,6 +61,10 @@ class FigShareGuidFile(GuidFile):
     def unique_identifier(self):
         return '{}{}'.format(self.article_id, self.file_id)
 
+    @property
+    def source_url(self):
+        return self._metadata_cache['extra']['source_url']
+
 
 class AddonFigShareUserSettings(AddonUserSettingsBase):
 

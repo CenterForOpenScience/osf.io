@@ -65,6 +65,10 @@ class DropboxFile(GuidFile):
     def unique_identifier(self):
         return self._metadata_cache['extra']['revisionId']
 
+    @property
+    def source_url(self):
+        return self._metadata_cache['extra']['source_url']
+
 
 class DropboxUserSettings(AddonUserSettingsBase):
     """Stores user-specific dropbox information, including the Oauth access
