@@ -135,7 +135,6 @@ def check_permissions(node_settings, auth, connection, branch, sha=None, repo=No
 
     return can_edit
 
-
 def get_repo_dropdown(user, node_addon):
     user_settings = node_addon.user_settings
     # If authorized, only owner can change settings

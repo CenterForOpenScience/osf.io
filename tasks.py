@@ -53,7 +53,7 @@ def server(host=None, port=5000, debug=True, live=False):
         server.watch(os.path.join(HERE, 'website', 'static', 'public'))
         server.serve(port=port)
     else:
-        app.run(host=host, port=port, debug=debug, extra_files=[settings.ASSET_HASH_PATH])
+        app.run(host=host, port=port, debug=debug, threaded=debug, extra_files=[settings.ASSET_HASH_PATH])
 
 
 @task
@@ -372,7 +372,6 @@ def test_module(module=None, verbosity=2):
     args = " --verbosity={0} -s {1}".format(verbosity, module_fmt)
     # Use pty so the process buffers "correctly"
     run(bin_prefix(TEST_CMD) + args, pty=True)
-
 
 @task
 def test_osf():

@@ -400,7 +400,7 @@ CitationGrid.prototype.resolveRowAux = function(item) {
                 return item.data.name;
             }
             else {
-                return m("span", {id: item.data.csl.id}, [
+                return m('span', {id: item.data.csl.id}, [
                     m.trust(self.getCitation(item))
                         ]);
             }

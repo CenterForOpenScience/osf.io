@@ -116,7 +116,7 @@ def get_tags(query, index):
 
 
 @requires_search
-def search(query, index=INDEX, doc_type='_all'):
+def search(query, index=None, doc_type='_all'):
     """Search for a query
 
     :param query: The substring of the username/project name/tag to search for
@@ -129,6 +129,7 @@ def search(query, index=INDEX, doc_type='_all'):
         tags: A list of tags that are returned by the search query
         typeAliases: the doc_types that exist in the search database
     """
+    index = index or INDEX
     tag_query = copy.deepcopy(query)
     count_query = copy.deepcopy(query)
 
@@ -208,7 +209,8 @@ def load_parent(parent_id):
 
 
 @requires_search
-def update_node(node, index=INDEX):
+def update_node(node, index=None):
+    index = index or INDEX
     from website.addons.wiki.model import NodeWikiPage
 
     component_categories = [k for k in Node.CATEGORY_MAP.keys() if not k == 'project']
@@ -269,7 +271,8 @@ def update_node(node, index=INDEX):
 
 
 @requires_search
-def update_user(user, index=INDEX):
+def update_user(user, index=None):
+    index = index or INDEX
     if not user.is_active:
         try:
             es.delete(index=index, doc_type='user', id=user._id, refresh=True, ignore=[404])
@@ -323,10 +326,11 @@ def delete_index(index):
 
 
 @requires_search
-def create_index(index=INDEX):
+def create_index(index=None):
     '''Creates index with some specified mappings to begin with,
     all of which are applied to all projects, components, and registrations.
     '''
+    index = index or INDEX
     document_types = ['project', 'component', 'registration', 'user']
     project_like_types = ['project', 'component', 'registration']
     analyzed_fields = ['title', 'description']
@@ -343,7 +347,8 @@ def create_index(index=INDEX):
 
 
 @requires_search
-def delete_doc(elastic_document_id, node, index=INDEX, category=None):
+def delete_doc(elastic_document_id, node, index=None, category=None):
+    index = index or INDEX
     category = category or 'registration' if node.is_registration else node.project_or_component
     es.delete(index=index, doc_type=category, id=elastic_document_id, refresh=True, ignore=[404])
 

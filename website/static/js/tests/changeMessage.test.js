@@ -8,7 +8,7 @@ var ChangeMessageMixin = require('js/changeMessage');
 describe('ChangeMessageMixin', () => {
     var changeable = new ChangeMessageMixin();
     describe('#resetMessage', () => {
-        it("sets the View Model's message to an empty string and sets the messageClass to 'text-info'", () => {
+        it('sets the View Model\'s message to an empty string and sets the messageClass to "text-info"', () => {
             changeable.message('Some message');
             changeable.messageClass('some-class');
             changeable.resetMessage();
