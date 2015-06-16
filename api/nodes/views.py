@@ -109,6 +109,15 @@ class NodeDetail(generics.RetrieveUpdateDestroyAPIView, NodeMixin):
         node.remove_node(auth=auth)
         node.save()
 
+class NodeDelete(generics.DestroyAPIView):
+    def perform_destroy(self, instance):
+        user = self.request.user
+        auth = Auth(user)
+        node = self.get_node()
+        node.remove_node(auth=auth)
+        node.save()
+
+
 class NodeContributorsList(generics.ListAPIView, ListFilterMixin, NodeMixin):
     """Contributors (users) for a node.
 
