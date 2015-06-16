@@ -53,7 +53,7 @@ def server(host=None, port=5000, debug=True, live=False):
         server.watch(os.path.join(HERE, 'website', 'static', 'public'))
         server.serve(port=port)
     else:
-        app.run(host=host, port=port, debug=debug, extra_files=[settings.ASSET_HASH_PATH])
+        app.run(host=host, port=port, debug=debug, threaded=debug, extra_files=[settings.ASSET_HASH_PATH])
 
 
 @task
