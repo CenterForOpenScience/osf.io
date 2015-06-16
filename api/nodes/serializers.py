@@ -170,9 +170,9 @@ class NodeFilesSerializer(JSONAPISerializer):
         type_ = 'files'
 
     links = LinksField({
-        'self': WaterbutlerLink(kwargs={'node_id': '<pk>'}),
+        'self': WaterbutlerLink(kwargs={'node_id': '<node_id>'}),
         'self_methods': 'valid_self_link_methods',
-        'related': Link('nodes:node-files', kwargs={'node_id': '<pk>'},
+        'related': Link('nodes:node-files', kwargs={'node_id': '<node_id>'},
                         query_kwargs={'path': '<path>', 'provider': '<provider>'}),
     })
 
