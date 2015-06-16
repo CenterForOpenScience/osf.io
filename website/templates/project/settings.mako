@@ -279,7 +279,7 @@
                         <span id="retractRegistrationAnchor" class="anchor"></span>
 
                         <div class="panel-heading">
-                            <h3 class="panel-title">Retract Retraction</h3>
+                            <h3 class="panel-title">Retract Registration</h3>
                         </div>
 
                         <div class="panel-body">
