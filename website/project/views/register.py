@@ -127,6 +127,69 @@ def node_register_template_page(auth, node, **kwargs):
     ret.update(_view_project(node, auth, primary=True))
     return ret
 
+# TODO
+@must_be_valid_project
+@must_be_contributor_or_public
+def node_draft_template_page(auth, node, **kwargs):
+
+    template_name = kwargs['template'].replace(' ', '_')
+    # Error to raise if template can't be found
+    not_found_error = HTTPError(
+        http.NOT_FOUND,
+        data=dict(
+            message_short='Template not found.',
+            message_long='The registration template you entered '
+                         'in the URL is not valid.'
+        )
+    )
+
+    if node.is_registration and node.registered_meta:
+        registered = True
+        payload = node.registered_meta.get(to_mongo(template_name))
+        payload = json.loads(payload)
+        payload = unprocess_payload(payload)
+
+        if node.registered_schema:
+            meta_schema = node.registered_schema
+        else:
+            try:
+                meta_schema = MetaSchema.find_one(
+                    Q('name', 'eq', template_name) &
+                    Q('schema_version', 'eq', 1)
+                )
+            except NoResultsFound:
+                raise not_found_error
+    else:
+        # Anyone with view access can see this page if the current node is
+        # registered, but only admins can view the registration page if not
+        # TODO: Test me @jmcarp
+        if not node.has_permission(auth.user, ADMIN):
+            raise HTTPError(http.FORBIDDEN)
+        registered = False
+        payload = None
+        metaschema_query = MetaSchema.find(
+            Q('name', 'eq', template_name)
+        ).sort('-schema_version')
+        if metaschema_query:
+            meta_schema = metaschema_query[0]
+        else:
+            raise not_found_error
+    schema = meta_schema.schema
+
+    # TODO: Notify if some components will not be registered
+
+    ret = {
+        'template_name': template_name,
+        'schema': json.dumps(schema),
+        'metadata_version': meta_schema.metadata_version,
+        'schema_version': meta_schema.schema_version,
+        'registered': registered,
+        'payload': payload,
+        'children_ids': node.nodes._to_primary_keys(),
+    }
+    ret.update(_view_project(node, auth, primary=True))
+    return ret
+
 
 @must_be_valid_project  # returns project
 @must_have_permission(ADMIN)
@@ -135,6 +198,23 @@ def project_before_register(auth, node, **kwargs):
     user = auth.user
 
     prompts = node.callback('before_register', user=user)
+
+    if node.has_pointers_recursive:
+        prompts.append(
+            language.BEFORE_REGISTER_HAS_POINTERS.format(
+                category=node.project_or_component
+            )
+        )
+
+    return {'prompts': prompts}
+
+@must_be_valid_project  # returns project TODO
+@must_have_permission(ADMIN)
+@must_not_be_registration
+def project_before_draft(auth, node, **kwargs):
+    user = auth.user
+
+    prompts = node.callback('before_draft', user=user)
 
     if node.has_pointers_recursive:
         prompts.append(
@@ -176,7 +256,6 @@ def node_register_template_page_post(auth, node, **kwargs):
         'status': 'success',
         'result': register.url,
     }, http.CREATED
-
 
 def _build_ezid_metadata(node):
     """Build metadata for submission to EZID using the DataCite profile. See
