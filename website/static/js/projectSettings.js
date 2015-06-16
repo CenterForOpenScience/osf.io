@@ -74,11 +74,11 @@ var NodeCategoryTitleDescriptionSettings = oop.extend(
             });
         },
         updateTitleError: function() {
-            document.getElementById('title-input-message').style.color = "#BD362F";
+            document.getElementById('title-input-message').style.color = '#BD362F';
             document.getElementById('title-input-message').innerHTML = 'Title cannot be blank.';
         },
         updateDescriptionError: function() {
-            document.getElementById('description-input-message').style.color = "#BD362F";
+            document.getElementById('description-input-message').style.color = '#BD362F';
             document.getElementById('description-input-message').innerHTML = 'Error updating description, please try again.'+ 
             ' If the problem persists, email <a href="mailto:support@osf.io">support@osf.io</a>.';
         },
