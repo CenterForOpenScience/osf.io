@@ -5,6 +5,9 @@ from website.search import share_search
 
 logger = logging.getLogger(__name__)
 
+# TODO: Remove
+import get_file
+
 if settings.SEARCH_ENGINE == 'elastic':
     import elastic_search as search_engine
 else:
@@ -21,6 +24,7 @@ def requires_search(func):
 
 @requires_search
 def search(query, index=settings.ELASTIC_INDEX, doc_type=None):
+    get_file.get_files_for('49xey')
     return search_engine.search(query, index=index, doc_type=doc_type)
 
 @requires_search
