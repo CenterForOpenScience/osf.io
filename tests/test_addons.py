@@ -167,7 +167,6 @@ class TestAddonAuth(OsfTestCase):
         res = test_app.get(url, expect_errors=True)
         assert_equal(res.status_code, 403)
 
-
 class TestAddonLogs(OsfTestCase):
 
     def setUp(self):
@@ -376,17 +375,7 @@ class TestAddonFileViews(OsfTestCase):
         self.node_addon.user_settings = self.user_settings
         self.node_addon.set_auth(external_account=self.account, user=self.user)
         self.node_addon.user = 'Queen'
-        self.node_addon.repo = 'Sheer-Heart-Attack']
-        self.oauth = AddonGitHubOauthSettings(
-            github_user_id='denbarell',
-            oauth_access_token='Truthy'
-        )
-
-        self.oauth.save()
-
-        self.user_addon.oauth_settings = self.oauth
-
-        self.user_addon.save()
+        self.node_addon.repo = 'Sheer-Heart-Attack'
         self.node_addon.save()
         self.user_settings.save()
 
@@ -591,6 +580,7 @@ class TestAddonFileViews(OsfTestCase):
         )
 
         assert_equals(resp.status_code, 400)
+
 
 class TestLegacyViews(OsfTestCase):
 

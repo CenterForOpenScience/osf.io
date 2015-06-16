@@ -92,6 +92,7 @@ var OAuthAddonSettingsViewModel = oop.defclass({
             callback: function(confirm) {
                 if (confirm) {
                     self.disconnectAccount(account);
+                    window.location.reload();
                 }
             }
         });
