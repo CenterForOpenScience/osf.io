@@ -373,7 +373,6 @@ def test_module(module=None, verbosity=2):
     # Use pty so the process buffers "correctly"
     run(bin_prefix(TEST_CMD) + args, pty=True)
 
-
 @task
 def test_osf():
     """Run the OSF test suite."""
