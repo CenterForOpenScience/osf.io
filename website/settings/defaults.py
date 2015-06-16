@@ -43,7 +43,6 @@ BUILT_TEMPLATES = os.path.join(BASE_PATH, 'templates/_log_templates.mako')
 
 DOMAIN = 'http://localhost:5000/'
 API_DOMAIN = 'http://localhost:8000/'
-OFFLOAD_DOMAIN = 'http://localhost:5001/'
 GNUPG_HOME = os.path.join(BASE_PATH, 'gpg')
 GNUPG_BINARY = 'gpg'
 

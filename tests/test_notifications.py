@@ -23,6 +23,7 @@ from website.notifications.model import NotificationDigest
 from website.notifications.model import NotificationSubscription
 from website.notifications import emails
 from website.notifications import utils
+from website.project.model import Node
 from website import mails
 from website.util import api_url_for
 from website.util import web_url_for
@@ -318,7 +319,12 @@ def subscription_schema(project, structure, level=0):
             'title': Use(type(project.title), error="node_title{}".format(level)),
             'url': Use(type(project.url), error="node_{}".format(level))
         },
-        'kind': And(str, Use(lambda s: s in ('node', 'folder'), error="kind didn't match node or folder{}".format(level))),
+        'kind': And(str, Use(lambda s: s in ('node', 'folder'), error="kind didn't match node or folder {}".format(level))),
+        'nodeType': Use(lambda s: s in ('project', 'component'), error='nodeType not project or component'),
+        'category': Use(lambda s: s in Node.CATEGORY_MAP, error='category not in Node.CATEGORY_MAP'),
+        'permissions': {
+            'view': Use(lambda s: s in (True, False), error='view permissions is not True/False')
+        },
         'children': sub_list
     }
     if level == 0:

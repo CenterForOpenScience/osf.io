@@ -14,7 +14,6 @@ from modularodm.validators import URLValidator
 from modularodm.exceptions import NoResultsFound
 from modularodm.exceptions import ValidationError, ValidationValueError
 
-from api.base.utils import absolute_reverse
 import framework
 from framework import analytics
 from framework.sessions import session
@@ -414,6 +413,7 @@ class User(GuidStoredObject, AddonModelMixin):
 
     @property
     def absolute_api_v2_url(self):
+        from api.base.utils import absolute_reverse  # Avoid circular dependency
         return absolute_reverse('users:user-detail', kwargs={'pk': self.pk})
 
     # used by django and DRF
