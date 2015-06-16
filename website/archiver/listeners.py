@@ -40,7 +40,8 @@ def archive_callback(dst):
 
     :param dst: registration Node
     """
-    root_job = dst.root.archive_job
+    root = dst.root
+    root_job = root.archive_job
     if not root_job.archive_tree_finished():
         return
     if root_job.sent:
@@ -48,23 +49,25 @@ def archive_callback(dst):
     root_job.sent = True
     root_job.save()
     if root_job.success:
-        archiver_utils.archive_success(dst, dst.registered_user)
+        archiver_utils.archive_success(root, root.registered_user)
         if dst.pending_embargo:
-            for contributor in dst.contributors:
+            for contributor in root.contributors:
                 if contributor.is_active:
                     project_utils.send_embargo_email(
-                        dst.root,
+                        root,
                         contributor,
                         urls=root_job.meta['embargo_urls'].get(contributor._id),
                     )
         else:
-            archiver_utils.send_archiver_success_mail(dst.root)
+            archiver_utils.send_archiver_success_mail(root)
+        for node in itertools.chain([root], root.get_descendants_recursive(lambda n: n.primary)):
+            node.save()  # update search if public
     else:
         archiver_utils.handle_archive_fail(
             ARCHIVER_UNCAUGHT_ERROR,
-            dst.root.registered_from,
-            dst.root,
-            dst.root.registered_user,
+            root.registered_from,
+            root,
+            root.registered_user,
             dst.archive_job.target_addons,
         )
 

@@ -675,3 +675,11 @@ class TestArchiverDecorators(ArchiverTestCase):
             self.user,
             [e.message]
         )
+
+class TestArchiverBehavior(self):
+
+    def test_archiving_registrations_not_added_to_search(self):
+        assert(false)
+
+    def test_archiving_nodes_added_to_search_on_success_if_public(self):
+        assert(false)

@@ -3178,7 +3178,6 @@ class TestRegisterNode(OsfTestCase):
     def test_registration_list(self):
         assert_in(self.registration._id, self.project.node__registrations)
 
-
 class TestNodeLog(OsfTestCase):
 
     def setUp(self):
