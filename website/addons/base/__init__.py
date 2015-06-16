@@ -208,6 +208,7 @@ class GuidFile(GuidStoredObject):
     _metadata_cache = None
     _id = fields.StringField(primary=True)
     node = fields.ForeignField('node', required=True, index=True)
+    source_url = None
 
     _meta = {
         'abstract': True,
@@ -343,6 +344,11 @@ class GuidFile(GuidStoredObject):
             return url
         else:
             return url + '/'
+
+    @property
+    def source_url(self):
+        extra = self._metadata_cache['extra']
+        return extra.get('source_url')
 
     @property
     def revision(self):

@@ -88,9 +88,6 @@ class GoogleDriveGuidFile(GuidFile):
     def unique_identifier(self):
         return self._metadata_cache['extra']['revisionId']
 
-    @property
-    def source_url(self):
-        return self._metadata_cache['extra']['source_url']
 
     @classmethod
     def get_or_create(cls, node, path):

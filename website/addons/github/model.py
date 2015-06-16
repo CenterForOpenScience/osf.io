@@ -68,10 +68,6 @@ class GithubGuidFile(GuidFile):
         return os.path.split(self.path)[1]
 
     @property
-    def source_url(self):
-        return self._metadata_cache['extra']['source_url']
-
-    @property
     def extra(self):
         if not self._metadata_cache:
             return {}
