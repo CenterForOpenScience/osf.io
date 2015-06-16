@@ -26,6 +26,7 @@ var FileViewPage = {
         self.editorMeta = self.context.editor;
         //Force canEdit into a bool
         self.canEdit = m.prop(!!self.context.currentUser.canEdit);
+        self.sourceUrl = self.context.file.sourceUrl;
 
         $.extend(self.file.urls, {
             delete: waterbutler.buildDeleteUrl(self.file.path, self.file.provider, self.node.id),
@@ -198,12 +199,17 @@ var FileViewPage = {
         $('.file-view-panels').removeClass().addClass('file-view-panels').addClass(fileViewPanelsLayout);
 
         m.render(document.getElementById('toggleBar'), m('.btn-toolbar[style=margin-top:20px]', [
-            ctrl.canEdit() ? m('.btn-group', {style: 'margin-left: 0;'}, [
-                m('.btn.btn-sm.btn-danger.file-delete', {onclick: $(document).trigger.bind($(document), 'fileviewpage:delete')}, 'Delete')
+            ctrl.sourceUrl !== 'None' ? m('.btn-group', {}, [
+                m('a', {href: ctrl.sourceUrl, target: '_blank', class: 'btn btn-sm btn-success'}, 'View ', [
+                  m('i', {class: 'fa fa-external-link'})
+                ])
             ]) : '',
             m('.btn-group', [
                 m('.btn.btn-sm.btn-success.file-download', {onclick: $(document).trigger.bind($(document), 'fileviewpage:download')}, 'Download')
             ]),
+            ctrl.canEdit() ? m('.btn-group', [
+                m('.btn.btn-sm.btn-danger.file-delete', {onclick: $(document).trigger.bind($(document), 'fileviewpage:delete')}, 'Delete')
+            ]) : '',
             m('.btn-group.btn-group-sm', [
                 m('.btn.btn-default.disabled', 'Toggle view: ')
             ].concat(
