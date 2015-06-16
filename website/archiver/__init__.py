@@ -30,9 +30,9 @@ class StatResult(object):
         self.disk_usage = float(disk_usage)
 
     def __str__(self):
-        return str(self._to_dict())
+        return str(dict(self))
 
-    def _to_dict(self):
+    def __dict__(self):
         return {
             'target_id': self.target_id,
             'target_name': self.target_name,
@@ -50,14 +50,14 @@ class AggregateStatResult(object):
         self.targets = [target for target in targets if target]
 
     def __str__(self):
-        return str(self._to_dict())
+        return str(dict(self))
 
-    def _to_dict(self):
+    def __dict__(self):
         return {
             'target_id': self.target_id,
             'target_name': self.target_name,
             'targets': [
-                target._to_dict()
+                dict(target)
                 for target in self.targets
             ],
             'num_files': self.num_files,

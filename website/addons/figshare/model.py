@@ -106,7 +106,7 @@ class AddonFigShareNodeSettings(StorageAddonBase, AddonNodeSettingsBase):
 
     @property
     def folder_name(self):
-        return self.Figshare_title
+        return self.figshare_title
 
     def find_or_create_file_guid(self, path):
         # path should be /aid/fid

@@ -32,9 +32,8 @@ logger = logging.getLogger(__name__)
 
 class AddonWikiNodeSettings(AddonNodeSettingsBase):
 
-    @property
-    def complete(self):
-        return True
+    complete = True
+    has_auth = True
 
     def after_register(self, node, registration, user, save=True):
         """Copy wiki settings to registrations."""

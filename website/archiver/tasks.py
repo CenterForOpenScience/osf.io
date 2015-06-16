@@ -163,7 +163,7 @@ def archive_addon(addon_short_name, job_pk, stat_result):
     dst.archive_job.update_target(
         addon_short_name,
         ARCHIVER_PENDING,
-        stat_result=stat_result,
+        stat_result=dict(stat_result),
     )
     src_provider = src.get_addon(addon_short_name)
     folder_name = src_provider.archive_folder_name
