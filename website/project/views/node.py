@@ -474,7 +474,13 @@ def project_set_privacy(auth, node, **kwargs):
     if permissions is None:
         raise HTTPError(http.BAD_REQUEST)
 
-    node.set_privacy(permissions, auth)
+    try:
+        node.set_privacy(permissions, auth)
+    except NodeStateError as e:
+        raise HTTPError(http.BAD_REQUEST, data=dict(
+            message_short="Can't change privacy",
+            message_long=e.message
+        ))
 
     return {
         'status': 'success',

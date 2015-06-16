@@ -2390,7 +2390,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         self.save()
         return contributor
 
-    def set_privacy(self, permissions, auth=None, log=True):
+    def set_privacy(self, permissions, auth=None, log=True, save=True):
         """Set the permissions for this node.
 
         :param permissions: A string, either 'public' or 'private'
@@ -2399,12 +2399,9 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         """
         if permissions == 'public' and not self.is_public:
             if self.is_registration:
-                def r_set_public(node):
-                    node.is_public = True
-                    node.save()
-                    for child in node.nodes_primary:
-                        r_set_public(child)
-                if (self.embargo_end_date or self.pending_embargo):
+                if self.pending_embargo:
+                    raise NodeStateError("A registration with an unapproved embargo cannot be made public")
+                if self.embargo_end_date and not self.pending_embargo:
                     self.embargo.state = Embargo.CANCELLED
                     self.registered_from.add_log(
                         action=NodeLog.EMBARGO_CANCELLED,
@@ -2415,7 +2412,9 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
                         auth=auth,
                     )
                     self.embargo.save()
-                r_set_public(self)
+                self.is_public = True
+                for child in self.nodes_primary:
+                    child.set_privacy(permissions, auth, log, save)
         elif permissions == 'private' and self.is_public:
             if self.is_registration and not self.pending_embargo:
                 raise NodeStateError("Public registrations must be retracted, not made private.")
@@ -2441,7 +2440,8 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
                 auth=auth,
                 save=False,
             )
-        self.save()
+        if save:
+            self.save()
         return True
 
     # TODO: Move to wiki add-on
