@@ -14,8 +14,10 @@ from website import util as website_util  # noqa
 
 def absolute_reverse(view_name, query_kwargs=None, args=None, kwargs=None):
     """Like django's `reverse`, except returns an absolute URL. Also add query parameters."""
-    if not kwargs == None:
-        if kwargs['pk'] == '':
+
+    # this facilitates spoofing smart_folders
+    if kwargs is not None:
+        if kwargs['pk'] == '' and kwargs['smart_folder'] is True:
             return ''
 
     relative_url = reverse(view_name, kwargs=kwargs)
