@@ -19,8 +19,6 @@ from tests.factories import (
 )
 
 TEST_INDEX = 'test'
-elastic_search.INDEX = TEST_INDEX
-settings.ELASTIC_INDEX = TEST_INDEX
 
 
 @requires_search
@@ -32,6 +30,8 @@ class SearchTestCase(OsfTestCase):
         search.create_index(elastic_search.INDEX)
     def setUp(self):
         super(SearchTestCase, self).setUp()
+        elastic_search.INDEX = TEST_INDEX
+        settings.ELASTIC_INDEX = TEST_INDEX
         search.delete_index(elastic_search.INDEX)
         search.create_index(elastic_search.INDEX)
 
