@@ -388,7 +388,7 @@ function checkConflicts(tb, item, folder, cb) {
             ]), m('', [
                 m('span.tb-modal-btn.text-default', {onclick: cb.bind(tb, 'keep')}, 'Keep Both'),
                 m('span.tb-modal-btn.text-default', {onclick: function() {tb.modal.dismiss();}}, 'Cancel'), //jshint ignore:line
-                m('span.tb-modal-btn.text-defualt', {onclick: cb.bind(tb, 'replace')},'Replace'),
+                m('span.tb-modal-btn.text-default', {onclick: cb.bind(tb, 'replace')},'Replace'),
             ]));
             return;
         }
@@ -407,7 +407,7 @@ function checkConflictsRename(tb, item, name, cb) {
             ]), m('', [
                 m('span.tb-modal-btn.text-default', {onclick: cb.bind(tb, 'keep')}, 'Keep Both'),
                 m('span.tb-modal-btn.text-default', {onclick: function() {tb.modal.dismiss();}}, 'Cancel'), // jshint ignore:line
-                m('span.tb-modal-btn.text-defualt', {onclick: cb.bind(tb, 'replace')},'Replace'),
+                m('span.tb-modal-btn.text-default', {onclick: cb.bind(tb, 'replace')},'Replace'),
             ]));
             return;
         }
@@ -1851,13 +1851,10 @@ function _fangornOver(event, ui) {
 function _dropLogic(event, items, folder) {
     var tb = this;
 
-    if (items.length < 1) {
-        return;
-    }
-    if (items.indexOf(folder) > -1) {
-        return;
-    }
-    if (copyMode === 'forbidden') {
+    if (items.length < 1 ||
+        items.indoexOf(folder) > -1 ||
+        copyMode === 'forbidden'
+    ) {
         return;
     }
 
@@ -1910,17 +1907,13 @@ function getCopyMode(folder, items) {
     var mustBeIntra = (folder.data.provider === 'github');
     var cannotBeFolder = (folder.data.provider === 'figshare' || folder.data.provider === 'dataverse');
 
-    if (folder.parentId === 0) {
-        return 'forbidden';
-    }
-    if (folder.data.kind !== 'folder' || !folder.data.permissions.edit) {
-        return 'forbidden';
-    }
-    if (!folder.data.provider || folder.data.status) {
-        return 'forbidden';
-    }
-
-    if (folder.data.provider === 'dataverse') {
+    if (folder.parentId === 0 ||
+        folder.data.kind !== 'folder' ||
+        !folder.data.permissions.edit ||
+        !folder.data.provider ||
+        folder.data.status ||
+        folder.data.provider === 'dataverse'
+    ) {
         return 'forbidden';
     }
 
@@ -1959,13 +1952,10 @@ function getCopyMode(folder, items) {
             (!mustBeIntra || (item.data.provider === folder.data.provider && item.data.nodeId === folder.data.nodeId))
         );
     }
-    if (folder.data.isPointer) {
-        return 'copy';
-    }
-    if (altKey) {
-        return 'copy';
-    }
-    if (!canMove) {
+    if (folder.data.isPointer ||
+        altKey ||
+        !canMove
+    ) {
         return 'copy';
     }
     return 'move';

@@ -135,6 +135,6 @@ var Paginator = oop.defclass({
         throw new Error('Paginator subclass must define a "fetchResults" method.');
     }
 });
-/* jshint ignore:end */
 
-module.exports = Paginator; //jshint ignore:line
+
+module.exports = Paginator;
