@@ -13,6 +13,7 @@ from framework.auth.decorators import collect_auth
 from framework.mongo.utils import get_or_http_error
 
 from website.models import Node
+from website import settings
 
 _load_node_or_fail = lambda pk: get_or_http_error(Node, pk)
 
@@ -261,3 +262,15 @@ def must_have_permission(permission):
 
     # Return decorator
     return wrapper
+
+
+def dev_only(func):
+    """Attempting to access this view in production will yield 404 error"""
+    @functools.wraps(func)
+    def wrapped(*args, **kwargs):
+        if settings.DEV_MODE is True:
+            return func(*args, **kwargs)
+        else:
+            raise HTTPError(http.NOT_FOUND)
+
+    return wrapped

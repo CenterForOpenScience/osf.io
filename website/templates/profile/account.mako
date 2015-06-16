@@ -15,7 +15,10 @@
                         <li><a href="#">Account Settings</a></li>
                         <li><a href="${ web_url_for('user_addons') }">Configure Add-ons</a></li>
                         <li><a href="${ web_url_for('user_notifications') }">Notifications</a></li>
-                        <li><a href="${ web_url_for('oauth_application_config') }">Developer apps</a> </li>
+
+                        % if dev_mode:
+                            <li><a href="${ web_url_for('oauth_application_config') }">Developer apps</a> </li>
+                        %endif
                     </ul>
                 </div>
             </div>

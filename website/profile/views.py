@@ -28,6 +28,7 @@ from website import mailchimp_utils
 from website import settings
 from website.models import ApiKey, OAuth2App, User
 from website.profile import utils as profile_utils
+from website.project.decorators import dev_only
 from website.util import api_v2_url, web_url_for, paths
 from website.util.sanitize import escape_html
 from website.util.sanitize import strip_html
@@ -382,6 +383,7 @@ def user_notifications(auth, **kwargs):
         'mailing_lists': auth.user.mailing_lists
     }
 
+@dev_only
 @must_be_logged_in
 def oauth_application_config(auth, **kwargs):
     """Return app creation page with list of known apps"""
@@ -392,6 +394,7 @@ def oauth_application_config(auth, **kwargs):
         "app_list_url": json.dumps(app_list_url)
     }
 
+@dev_only
 @must_be_logged_in
 def oauth_application_register(auth, **kwargs):
     """Register an API application: blank form view"""
@@ -399,6 +402,7 @@ def oauth_application_register(auth, **kwargs):
     return {"submit_url": json.dumps(submit_url),
             "detail_url": json.dumps(None)}
 
+@dev_only
 @must_be_logged_in
 def oauth_application_detail(auth, **kwargs):
     """Show detail for a single OAuth application"""
