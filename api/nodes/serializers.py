@@ -3,6 +3,7 @@ from rest_framework import serializers as ser
 from api.base.serializers import JSONAPISerializer, LinksField, Link, WaterbutlerLink
 from website.models import Node
 from framework.auth.core import Auth
+from rest_framework import exceptions
 
 
 class NodeSerializer(JSONAPISerializer):
@@ -150,12 +151,16 @@ class NodePointersSerializer(JSONAPISerializer):
         auth = Auth(user)
         node = self.context['view'].get_node()
         pointer_node = Node.load(validated_data['node']['_id'])
-        pointer = node.add_pointer(pointer_node, auth, save=True)
-        return pointer
+        if not pointer_node:
+            raise exceptions.NotFound('Node not found.')
+        try:
+            pointer = node.add_pointer(pointer_node, auth, save=True)
+            return pointer
+        except ValueError:
+            raise exceptions.ValidationError('Pointer to node {} already in list'.format(pointer_node._id))
 
     def update(self, instance, validated_data):
         pass
-
 
 class NodeFilesSerializer(JSONAPISerializer):
 
