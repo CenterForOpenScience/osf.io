@@ -12,12 +12,12 @@ from website.views import find_dashboard
 
 smart_folders = {
     '~amp': Q('category', 'eq', 'project') & Q('is_deleted', 'eq', False) &
-            Q('is_registration', 'eq', False) & Q('is_folder', 'eq', True) &
-            Q('__backrefs.parent.node.nodes', 'eq', None),
+    Q('is_registration', 'eq', False) & Q('is_folder', 'eq', True) &
+    Q('__backrefs.parent.node.nodes', 'eq', None),
 
     '~amr': Q('category', 'eq', 'project') & Q('is_deleted', 'eq', False) &
-            Q('is_registration', 'eq', True) & Q('is_folder', 'eq', True) &
-            Q('__backrefs.parent.node.nodes', 'eq', None),
+    Q('is_registration', 'eq', True) & Q('is_folder', 'eq', True) &
+    Q('__backrefs.parent.node.nodes', 'eq', None),
 }
 
 
@@ -200,16 +200,7 @@ class CollectionChildrenList(generics.ListAPIView, CollectionMixin):
             all_my_projects = contributed.find(
                 smart_folders.get('~amp')
             )
-            comps = contributed.find(
-                # components only
-                Q('category', 'ne', 'project') &
-                # parent is not in the nodes list
-                Q('__backrefs.parent.node.nodes', 'nin', all_my_projects.get_keys()) &
-                # exclude deleted nodes
-                Q('is_deleted', 'eq', False) &
-                # exclude registrations
-                Q('is_registration', 'eq', False)
-            )
+
             return all_my_projects
 
         elif key == 'amr':
@@ -217,17 +208,7 @@ class CollectionChildrenList(generics.ListAPIView, CollectionMixin):
             all_my_registrations = contributed.find(
                 smart_folders.get('~amr')
             )
-            comps = contributed.find(
-                # components only
-                Q('category', 'ne', 'project') &
-                # parent is not in the nodes list
-                Q('__backrefs.parent.node.nodes', 'nin', all_my_registrations.get_keys()) &
-                # exclude deleted nodes
-                Q('is_deleted', 'eq', False) &
-                # exclude registrations
-                Q('is_registration', 'eq', True)
-            )
-            return all_my_registrations & comps
+            return all_my_registrations
 
         current_node = self.get_node()
         nodes = current_node.nodes

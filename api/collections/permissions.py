@@ -2,6 +2,7 @@ from website.models import Node, Pointer
 from rest_framework import permissions
 from framework.auth import Auth
 
+
 def get_user_auth(request):
     user = request.user
     if user.is_anonymous():
@@ -9,6 +10,7 @@ def get_user_auth(request):
     else:
         auth = Auth(user)
     return auth
+
 
 class ReadOnlyIfRegistration(permissions.BasePermission):
     """Makes PUT and POST forbidden for registrations."""
@@ -19,8 +21,8 @@ class ReadOnlyIfRegistration(permissions.BasePermission):
             return request.method in permissions.SAFE_METHODS
         return True
 
-class ContributorOrPublic(permissions.BasePermission):
 
+class ContributorOrPublic(permissions.BasePermission):
     def has_object_permission(self, request, view, obj):
         assert isinstance(obj, (Node, Pointer)), 'obj must be a Node or Pointer, got {}'.format(obj)
         auth = get_user_auth(request)
