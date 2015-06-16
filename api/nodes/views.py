@@ -11,12 +11,10 @@ from api.base.filters import ODMFilterMixin, ListFilterMixin
 from .serializers import NodeSerializer, NodePointersSerializer, NodeFilesSerializer
 from api.users.serializers import ContributorSerializer
 from .permissions import ContributorOrPublic, ReadOnlyIfRegistration, ContributorOrPublicForPointers
-from api.base.utils import token_creator, absolute_reverse
+from api.base.utils import node_token_creator, absolute_reverse
 from website.language import BEFORE_DELETE
 from rest_framework import serializers
 from django.utils.translation import ugettext_lazy as _
-
-
 
 class NodeMixin(object):
     """Mixin with convenience methods for retrieving the current node based on the
@@ -111,13 +109,20 @@ class NodeDetail(generics.RetrieveUpdateDestroyAPIView, NodeMixin):
     def perform_destroy(self, instance):
         user = self.request.user
         node = self.get_node()
-        token = token_creator(node._id, user._id)
+        token = node_token_creator(node._id, user._id)
         url = absolute_reverse('nodes:node-delete-confirm', kwargs={'pk': node._id, 'token': token})
         delete_warning = BEFORE_DELETE.format(_(node.title))
         raise serializers.ValidationError([delete_warning, url])
 
 class NodeDeleteConfirm(generics.DestroyAPIView, NodeMixin):
-    """Delete a node"""
+    """Projects and component details.
+
+    On the front end, nodes are considered 'projects' or 'components'. The difference between a project and a component
+    is that a project is the top-level node, and components are children of the project. There is also a category field
+    that includes the option of project. The categorization essentially determines which icon is displayed by the
+    Node in the front-end UI and helps with search organization. Top-level Nodes may have a category other than
+    project, and children nodes may have a category of project.
+    """
     permission_classes = (
         ContributorOrPublic,
         ReadOnlyIfRegistration,
@@ -130,7 +135,7 @@ class NodeDeleteConfirm(generics.DestroyAPIView, NodeMixin):
     def perform_destroy(self, instance):
         user = self.request.user
         node = self.get_object()
-        correct_token = token_creator(node._id, user._id)
+        correct_token = node_token_creator(node._id, user._id)
         given_token = self.kwargs['token']
         if correct_token != given_token:
             raise serializers.ValidationError(_("Incorrect token."))
