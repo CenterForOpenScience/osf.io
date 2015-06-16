@@ -39,7 +39,7 @@
                         </th>
                     </tr>
                     </thead>
-                    <tbody data-bind="foreach: content">
+                    <tbody data-bind="foreach: sortByName">
                         <tr>
                             <td>
                                 <a href="#" data-bind="attr: {href: detailUrl  }"><span data-bind="text: name"></span></a>

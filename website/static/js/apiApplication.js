@@ -259,6 +259,14 @@ var ApplicationsListViewModel= function (urls) {
     self.listUrl = urls.dataUrl;
     self.content = ko.observableArray();
 
+    self.sortByName = ko.computed(function(){
+
+        return self.content().sort(function(a,b){
+            var an = a.name().toLowerCase();
+            var bn = b.name().toLowerCase();
+            return an == bn ? 0 : (an < bn ? -1 : 1)});
+    });
+
     self.fetch(self.listUrl);
 };
 
