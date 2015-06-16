@@ -385,7 +385,7 @@ def user_notifications(auth, **kwargs):
 
 @dev_only
 @must_be_logged_in
-def oauth_application_config(auth, **kwargs):
+def oauth_application_list(auth, **kwargs):
     """Return app creation page with list of known apps"""
     # TODO: Hardcoded URL
 

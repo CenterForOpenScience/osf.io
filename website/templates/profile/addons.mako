@@ -15,7 +15,7 @@
                 <li><a href="#">Configure Add-ons</a></li>
                 <li><a href="${ web_url_for('user_notifications') }">Notifications</a></li>
                 % if dev_mode:
-                    <li><a href="${ web_url_for('oauth_application_config') }">Developer apps</a> </li>
+                    <li><a href="${ web_url_for('oauth_application_list') }">Developer apps</a> </li>
                 %endif
             </ul>
         </div><!-- end sidebar -->

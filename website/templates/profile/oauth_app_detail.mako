@@ -25,7 +25,7 @@
                 <li><a href="${ web_url_for('user_addons') }">Configure Add-ons</a></li>
                 <li><a href="${ web_url_for('user_notifications') }">Notifications</a></li>
                 % if dev_mode:
-                    <li><a href="${ web_url_for('oauth_application_config') }">Developer apps</a> </li>
+                    <li><a href="${ web_url_for('oauth_application_list') }">Developer apps</a> </li>
                 %endif
             </ul>
         </div><!-- end sidebar -->
@@ -80,11 +80,13 @@
                     </div>
 
                     <div class="padded">
+
+                        <button type="reset" class="btn btn-default" data-bind="click: $root.cancelChange">Cancel</button>
                         <button type="submit" class="btn btn-primary"
                                 data-bind="visible: !$root.dataUrl, click: $root.createApplication">Create</button>
 
                         <button type="submit" class="btn btn-primary"
-                                data-bind="visible: $root.dataUrl, click: $root.updateApplication">Update</button>
+                                data-bind="visible: $root.dataUrl, click: $root.updateApplication">Save</button>
                     </div>
                 </form>
             </div>
@@ -100,7 +102,8 @@
    window.contextVars = window.contextVars || {};
    window.contextVars.urls = {
        dataUrl: ${detail_url},
-       submitUrl: ${submit_url}
+       submitUrl: ${submit_url},
+       listPageUrl: "${ web_url_for('oauth_application_list') }"
    };
 </script>
 <script src=${"/static/public/js/profile-settings-applications-detail-page.js" | webpack_asset}></script>

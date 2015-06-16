@@ -535,7 +535,7 @@ def make_url_map(app):
         Rule(
             '/settings/applications/',
             'get',
-            profile_views.oauth_application_config,
+            profile_views.oauth_application_list,
             OsfWebRenderer('profile/oauth_app_list.mako')
         ),
 

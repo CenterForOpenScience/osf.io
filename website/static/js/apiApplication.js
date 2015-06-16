@@ -140,6 +140,7 @@ var ApplicationViewModel = function (urls) {
 
     self.dataUrl = urls.dataUrl; // Use for editing existing instances
     self.submitUrl = urls.submitUrl; // Use for creating new instances
+    self.listPageUrl = urls.listPageUrl;
 
     if (self.dataUrl){ // Support detail views
         self.fetch(self.dataUrl);
@@ -224,6 +225,13 @@ ApplicationViewModel.prototype.createApplication = function () {
         });
     });
 };
+
+ApplicationViewModel.prototype.cancelChange = function(){
+    var self = this;
+    // TODO: Add change tracking features/ confirm to exit dialog a la profile.js (hinging on refactoring profile.js behaviors into common base file that works with apiv2 return vals)
+    window.location = self.listPageUrl;
+};
+
 
 ApplicationViewModel.prototype.changeMessage = function (text, css, timeout) {
     // TODO: Some of this overlaps heavily with profile.js
