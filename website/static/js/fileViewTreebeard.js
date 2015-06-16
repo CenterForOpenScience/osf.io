@@ -73,14 +73,18 @@ function FileViewTreebeard(data) {
             if(!event) {
                 Fangorn.Utils.scrollToFile.call(tb, tb.currentFileID);
             }
+            // if any of the children is the selected add a certain class.
+            for (var i = 0; i < tree.children.length; i++){
+                var item = tree.children[i];
+                if (item.data.kind === 'file' && tb.currentFileID === item.id) {
+                    item.css = 'fangorn-selected';
+                    tb.multiselected([item]);
+                }
+            }
         },
         resolveRows: function (item) {
             var tb = this;
             var node = item.parent().parent();
-            if (item.data.kind === 'file' && tb.currentFileID === item.id) {
-                item.css = 'fangorn-selected';
-                tb.multiselected([item]);
-            }
 
             var defaultColumns = [
                 {

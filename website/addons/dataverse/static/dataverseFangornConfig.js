@@ -239,10 +239,6 @@ function _fangornDataverseTitle(item, col) {
 function _fangornColumns(item) {
     var tb = this;
     var selectClass = '';
-    if (item.data.kind === 'file' && tb.currentFileID === item.id) {
-        item.css = 'fangorn-selected';
-        tb.multiselected([item]);
-    }
     var columns = [];
     columns.push({
         data : 'name',
