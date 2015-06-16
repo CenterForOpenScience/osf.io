@@ -34,9 +34,11 @@
 
     <!-- Menu toggle closed -->
     <div class="osf-panel osf-panel-show text-center reset-height"  style="display: none">
-      <div class="osf-panel-header">
+      <div class="row tb-header-row">
         <i class="fa fa-file"></i>
+      <div class="fangorn-toolbar-icon">
         <i class="fa fa-angle-right"></i>
+      </div>
       </div>
     </div>
   </div>

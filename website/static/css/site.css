@@ -2525,15 +2525,17 @@ div.profile-fullname{
     border: none;
 }
 
+#file-navigation .tb-header-row {
+    margin: 0px 0px 0px 0px;
+}
+
 #file-navigation .tb-table[style] {
     width: auto !important;
 }
 
-#filesSearch {
-    width: 95%;
-}
-#toggleIcon {
-    margin-top: 5px;
+#file-navigation .fa-file {
+    padding-right: 5px;
+    padding-left: 5px;
 }
 
 /* scroll fix for wherever treebeard is used */
