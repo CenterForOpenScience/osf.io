@@ -73,33 +73,22 @@
                    
                     <label for="title">Title</label>
                     <input class="form-control" type="text" maxlength="200" data-bind="value: title, 
-                                                                            event: { keyup: dirtyTitle }">
-                    <button data-bind="css: {disabled: !dirtyTitle()},
+                                                                            event: { keyup: dirtyTitleDescription }">
+                    <span id="title-input-message"></span>        
+                    <br>
+                    <label for="description">Description</label>
+                    <textarea data-bind="value: description, 
+                                        event: { keyup: dirtyTitleDescription }", 
+                    class="form-control resize-vertical"></textarea>
+                    <br>
+                    <button data-bind="css: {disabled: !dirtyTitleDescription()},
                                        click: updateTitle"
                         class="btn btn-primary">Save Changes</button>
-                    <button data-bind="css: {disabled: !dirtyTitle()},
-                                       click: cancelUpdateTitle"
+                    <button data-bind="css: {disabled: !dirtyTitleDescription()},
+                                       click: function() { cancelUpdateTitle(); cancelUpdateDescription() }"
                         class="btn btn-default">Cancel</button>
-                        <br>
-                        <span id="title-input-message"></span>
-                    
-
-                    % if node['description'] or 'write' in user['permissions']:
-                        <br>
-                        <label for="description">Description</label>
-                        <textarea data-bind="value: description, 
-                                            event: { keyup: dirtyDescription }", 
-                        class="form-control resize-vertical"></textarea>
-                    % endif
-            
-                    <button data-bind="css: {disabled: !dirtyDescription()},
-                                        click: updateDescription"
-                        class="btn btn-primary">Save Changes</button>
-                    <button data-bind="css: {disabled: !dirtyDescription()},
-                                        click: cancelUpdateDescription"
-                        class="btn btn-default">Cancel</button>
-                        <br>
-                        <span id="description-input-message"></span>
+                    <br>
+                    <span id="description-input-message"></span>        
                 </div>
 
                 % if 'admin' in user['permissions'] and not node['is_registration']:

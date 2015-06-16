@@ -48,8 +48,7 @@ var NodeCategoryTitleDescriptionSettings = oop.extend(
                 }
             });
 
-            self.dirtyTitle = ko.observable(false);
-            self.dirtyDescription = ko.observable(false);
+            self.dirtyTitleDescription = ko.observable(false);
         },
 
         /*success handlers*/
@@ -59,12 +58,9 @@ var NodeCategoryTitleDescriptionSettings = oop.extend(
             self.category(newcategory);
             self.dirty(false);
         },
-        //TODO - refactor title/description success handlers 
-        updateTitleSuccess: function() {
-            window.location.reload();
-        },
-        updateDescriptionSuccess: function() {
-            window.location.reload();
+        //TODO - refactor title/description success handler to display success message 
+        updateTitleDescriptionSuccess: function() {
+            window.location.reload();   
         },
 
         /*error handlers*/
@@ -78,12 +74,12 @@ var NodeCategoryTitleDescriptionSettings = oop.extend(
             });
         },
         updateTitleError: function() {
-            document.getElementById('title-input-message').style.color = "#ff0000";
+            document.getElementById('title-input-message').style.color = "#BD362F";
             document.getElementById('title-input-message').innerHTML = 'Title cannot be blank.';
         },
         updateDescriptionError: function() {
-            document.getElementById('title-input-message').style.color = "#ff0000";
-            document.getElementById('title-input-message').innerHTML = 'Error updating description, please try again.'+ 
+            document.getElementById('description-input-message').style.color = "#BD362F";
+            document.getElementById('description-input-message').innerHTML = 'Error updating description, please try again.'+ 
             ' If the problem persists, email <a href="mailto:support@osf.io">support@osf.io</a>.';
         },
 
@@ -104,7 +100,7 @@ var NodeCategoryTitleDescriptionSettings = oop.extend(
             return $osf.putJSON(self.titleDescriptionEditUrl, {
                     title: self.title(),
                 })
-                .done(self.updateTitleSuccess.bind(self))
+                .done(self.updateDescription.bind(self))
                 .fail(self.updateTitleError.bind(self));
         },
         updateDescription: function() {
@@ -112,10 +108,10 @@ var NodeCategoryTitleDescriptionSettings = oop.extend(
             return $osf.putJSON(self.titleDescriptionEditUrl, {
                     description: self.description(),
                 })
-                .done(self.updateDescriptionSuccess.bind(self))
+                .done(self.updateTitleDescriptionSuccess.bind(self))
                 .fail(self.updateDescriptionError.bind(self));
         },
-        
+
         /*cancel handlers*/
         cancelUpdateCategory: function() {
             var self = this;
@@ -126,12 +122,11 @@ var NodeCategoryTitleDescriptionSettings = oop.extend(
         cancelUpdateTitle: function() {
             var self = this;
             self.title(self.currentNode.title);
-            self.dirtyTitle(false);
+            self.dirtyTitleDescription(false);
         },
         cancelUpdateDescription: function() {
             var self = this;
             self.description(self.currentNode.description);
-            self.dirtyDescription(false);
         }
     });
 
