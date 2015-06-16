@@ -108,7 +108,7 @@ var _dataverseItemButtons = {
                 });
             }
         }
-        if (item.kind === 'folder' && item.data.addonFullname && item.data.version === 'latest' && item.data.permissions.edit) {
+        if (item.kind === 'folder' && item.data.addonFullname && item.data.version === 'latest' && item.data.permissions.edit && tb.options.placement !== 'fileview') {
             buttons.push(
                 m.component(Fangorn.Components.button, {
                     onclick: function (event) {
@@ -125,7 +125,7 @@ var _dataverseItemButtons = {
                     className: 'text-success'
                 }, 'Publish')
             );
-        } else if (item.kind === 'folder' && !item.data.addonFullname) {
+        } else if (item.kind === 'folder' && !item.data.addonFullname && tb.options.placement !== 'fileview') {
             buttons.push(
                 m.component(Fangorn.Components.button, {
                     onclick: function (event) {
@@ -135,7 +135,7 @@ var _dataverseItemButtons = {
                     className: 'text-success'
                 }, 'Upload')
             );
-        } else if (item.kind === 'file') {
+        } else if (item.kind === 'file' && tb.options.placement !== 'fileview') {
             buttons.push(
                 m.component(Fangorn.Components.button, {
                     onclick: function (event) {

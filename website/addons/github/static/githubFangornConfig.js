@@ -143,7 +143,7 @@ var _githubItemButtons = {
                 }
             }
             // If File and FileRead are not defined dropzone is not supported and neither is uploads
-            if (window.File && window.FileReader && item.data.permissions && item.data.permissions.edit) {
+            if (window.File && window.FileReader && item.data.permissions && item.data.permissions.edit && tb.options.placement !== 'fileview') {
                 buttons.push(
                     m.component(Fangorn.Components.button, {
                         onclick: function (event) {
@@ -161,7 +161,7 @@ var _githubItemButtons = {
                     }, 'Create Folder')
                 );
             }
-            if (item.data.addonFullname) {
+            if (item.data.addonFullname && tb.options.placement !== 'fileview') {
                 buttons.push(
                     m.component(Fangorn.Components.button, {
                         onclick: function (event) {
@@ -176,7 +176,11 @@ var _githubItemButtons = {
                         },
                         icon: 'fa fa-external-link',
                         className: 'text-info'
-                    }, 'Open'),
+                    }, 'Open')
+                );
+            }
+            if (item.data.addonFullname) {
+                buttons.push(
                     m.component(Fangorn.Components.dropdown, {
                         'label': 'Branch: ',
                         onchange: function (event) {
@@ -187,7 +191,7 @@ var _githubItemButtons = {
                     }, branchArray)
                 );
             }
-        } else if (item.kind === 'file') {
+        } else if (item.kind === 'file' && tb.options.placement !== 'fileview') {
             buttons.push(
                 m.component(Fangorn.Components.button, {
                     onclick: function (event) {
@@ -221,7 +225,7 @@ var _githubItemButtons = {
             }
         }
 
-        if(item.data.provider && !item.data.isAddonRoot && item.data.permissions && item.data.permissions.edit) {
+        if(item.data.provider && !item.data.isAddonRoot && item.data.permissions && item.data.permissions.edit && tb.options.placement !== 'fileview') {
             buttons.push(
                 m.component(Fangorn.Components.button, {
                     onclick: function() {
