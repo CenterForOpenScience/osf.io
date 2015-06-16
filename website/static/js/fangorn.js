@@ -1368,7 +1368,7 @@ var FGButton = {
         }
         return m('div', opts, [
             m('i', {className: iconCSS}),
-            m('span', children)
+            (children? m('span', children): m(''))
         ]);
     }
 };
