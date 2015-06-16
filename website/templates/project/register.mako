@@ -19,25 +19,13 @@
             <div class='span8 col-md-12 columns eight large-8'>
                       <h2 id="title">Select an option above</h2>
                       <nav>
-                        <ul class="pagination">
-                          <li>
-                            <a id="prev" href="#" aria-label="Previous">
-                              <span aria-hidden="true">&laquo;</span>
-                            </a>
-                          </li>
-                          <li><a id="project_info_button" href="#">Project Info</a></li>
-                          <li><a id="your_info_button" href="#">Your Info</a></li>
-                          <li><a id="interesting_button" href="#">Interesting Questions</a></li>
-                          <li>
-                            <a id="next" href="#" aria-label="Next">
-                              <span aria-hidden="true">&raquo;</span>
-                            </a>
-                          </li>
+                        <ul id="myNavBar" class="pagination">
+     
                         </ul>
                       </nav>
 
                       <div id='editor'></div>
-                      <button id="save" type="button" class="btn btn-primary">Save</button>
+                      <button id="save" type="button" class="btn btn-success">Save</button>
             </div>
           </div>
         </div>

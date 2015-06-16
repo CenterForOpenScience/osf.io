@@ -11,8 +11,6 @@ var ctx = window.contextVars;
     * Unblock UI and display error modal
     */
 
-console.log("loaded");
-
 function registration_failed() {
     $osf.unblock();
     bootbox.alert('Registration failed');
@@ -49,9 +47,11 @@ function draftNode(data) {
 (function() {
     var $editor = document.getElementById('editor');
 
-    var proj_info, your_info, interesting, init_proj_info, init_your_info, init_interesting; 
+    var proj_info, your_info, interesting, init_proj_info, init_your_info, init_interesting, open_ended; 
     var init_array = [];
     var init_schemas = [];
+    var prereg = [];
+    var prereg_data = [];
     var editor;
 
     init_proj_info = [
@@ -78,10 +78,164 @@ function draftNode(data) {
         }
     ];
 
+     prereg_data = [
+        {
+            item1: "an answer",
+            item2: "an answer",
+            item3: "an answer",
+            item4: "an answer",
+            item5: "an answer",
+            item6: "an answer",
+            item7: "an answer",
+            item8: "an answer",
+            item9: "an answer",
+        },
+        {
+            item10: "yes",
+            item11: "an answer",
+            item12: "an answer",
+            item13: "an answer",
+            item14: "an answer",
+            item15: "an answer",
+            item16: "an answer",
+        },
+        {
+
+            item17: "Exact",
+            item18: "Exact",
+            item19: "Exact",
+            item20: "Exact",
+            item21: "Exact",
+            item22: "Exact",
+            item23: "Exact",
+            item24: "an answer",
+            item25: "an answer",
+        },
+        {
+            item26: "an answer",
+            item27: "an answer",
+            item28: "an answer",
+        }
+    ];
+
     // initial data
     init_array.push(init_proj_info);
     init_array.push(init_your_info);
     init_array.push(init_interesting);
+
+    init_array = prereg_data;
+
+    prereg = [
+        {
+            title: "The Nature of the Effect",
+            type: "object",
+            properties: {
+                item1: {
+                   type: "string", title: "Verbal description of the effect I am trying to replicate" 
+                },
+                item2: {
+                    type: "string", title: "It is important to replicate this effect because"
+                },
+                item3: {
+                    type: "string", title: "The effect size of the effect I am trying to replicate is"
+                },
+                item4: {
+                    type: "string", title: "The confidence interval of the original effect is"
+                },
+                item5: {
+                    type: "string", title: "The sample size of the original effect is"
+                },
+                item6: {
+                    type: "string", title: "Where was the original study conducted? (e.g., lab, in the field, online)"
+                },
+                item7: {
+                    type: "string", title: "What country/region was the original study conducted in?"
+                },
+                item8: {
+                    type: "string", title: "What kind of sample did the original study use? (e.g., student, Mturk, representative)"
+                },
+                item9: {
+                    type: "string", title: "Was the original study conducted with paper-and-pencil surveys, on a computer, or something else?"
+                }
+            }
+        },
+        {
+            title: "Designing the Replication Study",
+            type: "object",
+            properties: {
+                item10: {
+                    type: "string", title: "Are the original materials for the study available from the author?", enum: ["yes", "no"], description: "Choose..."
+                },
+                item11: {
+                    type: "string", title: "I know that assumptions (e.g., about the meaning of the stimuli) in the original study will also hold in my replication because"
+                },
+                item12: {
+                    type: "string", title: "Location of the experimenter during data collection"
+                },
+                item13: {
+                    type: "string", title: "Experimenter knowledge of participant experimental condition"
+                },
+                item14: {
+                    type: "string", title: "Experimenter knowledge of overall hypotheses"
+                },
+                item15: {
+                    type: "string", title: "My target sample size is"
+                },
+                item16: {
+                    type: "string", title: "The rationale for my sample size is"
+                }
+            }
+        },
+        {
+            title: "Documenting Differences between the Original and Replication Study",
+            type: "object",
+            properties: {
+                item17: {
+                    type: "select", title: "The similarities/differences in the instructions are", enum: ["Exact", "Close", "Different"], description: "Choose..."
+                },
+                item18: {
+                    type: "select", title: "The similarities/differences in the measures are", enum: ["Exact", "Close", "Different"], description: "Choose..."
+                },
+                item19: {
+                    type: "select", title: "The similarities/differences in the stimuli are", enum: ["Exact", "Close", "Different"], description: "Choose..."
+                },
+                item20: {
+                    type: "select", title: "The similarities/differences in the procedure are", enum: ["Exact", "Close", "Different"], description: "Choose..."
+                },
+                item21: {
+                    type: "select", title: "The similarities/differences in the location (e.g., lab vs. online; alone vs. in groups) are", enum: ["Exact", "Close", "Different"], description: "Choose..."
+                },
+                item22: {
+                    type: "select", title: "The similarities/difference in remuneration are", enum: ["Exact", "Close", "Different"], description: "Choose..."
+                },
+                item23: {
+                    type: "select", title: "The similarities/differences between participant populations are", enum: ["Exact", "Close", "Different"], description: "Choose..."
+                },
+                item24: {
+                    type: "string", title: "What differences between the original study and your study might be expected to influence the size and/or direction of the effect?"
+                },
+                item25: {
+                    type: "string", title: "I have taken the following steps to test whether the differences listed in the previous question will influence the outcome of my replication attempt"
+                }
+            }
+        },
+        {
+            title: "Analysis and Replication Evaluation",
+            type: "object",
+            properties: {
+                item26: {
+                    type: "string", title: "My exclusion criteria are (e.g., handling outliers, removing participants from analysis)"
+                },
+                item27: {
+                    type: "string", title: "My analysis plan is (justify differences from the original)"
+                },
+                item28: {
+                    type: "string", title: "A successful replication is defined as"
+                }
+            }
+        }
+    ];
+    
 
     proj_info = {
         title: "Project Info",
@@ -164,6 +318,8 @@ function draftNode(data) {
     init_schemas.push(your_info);
     init_schemas.push(interesting);
 
+    init_schemas = prereg;
+
     var loadData = function(schemas, arrays) {
         // incorrect data input
         if (schemas.length !== arrays.length) {
@@ -174,6 +330,17 @@ function draftNode(data) {
             return;
         }
 
+        // load nav bar
+        var tabs = '<li><a id="prev" href="#" aria-label="Previous"><span aria-hidden="true">&laquo;</span></a></li>';
+        var pages;
+        for (pages in init_schemas) {
+            tabs = tabs + '<li><a id="tab' + pages + '" href="#">' + init_schemas[pages].title + '</a></li>';
+        }
+
+        tabs = tabs + '<li><a id="next" href="#" aria-label="Next"><span aria-hidden="true">&raquo;</span></a></li>';
+
+        document.getElementById("myNavBar").innerHTML = tabs;
+
         // load the data for the first schema and display
         if(editor) editor.destroy();
         editor = new JSONEditor($editor,{
@@ -183,7 +350,7 @@ function draftNode(data) {
             disable_edit_json: true,
             disable_properties: true
         });
-        editor.setValue(arrays[0][0]);
+        editor.setValue(arrays[0]);
         window.editor = editor;
     };
 
@@ -198,7 +365,7 @@ function draftNode(data) {
             disable_edit_json: true,
             disable_properties: true
         });
-        editor.setValue(arrays[num][0]);
+        editor.setValue(arrays[num]);
         window.editor = editor;
     };
 
@@ -223,27 +390,13 @@ function draftNode(data) {
         }
     };
 
-    editor.on('change',function() {
-        for (schema in init_schemas) {
-          if (init_schemas[schema].title === editor.options.schema.title) {
-            init_array[schema][0] = editor.getValue();
-          }
-        }    
+    $(document.body).on('click', 'a', function() {
+        var id = this.id.split("tab");
+        reload(init_schemas, init_array, id[1]);
     });
 
-    document.getElementById('project_info_button').onclick = function () {
-        reload(init_schemas, init_array, 0);
-    };
-
-    document.getElementById('your_info_button').onclick = function () {
-        reload(init_schemas, init_array, 1);
-    };
-
-    document.getElementById('interesting_button').onclick = function () {
-        reload(init_schemas, init_array, 2);
-    };
-
     document.getElementById('next').onclick = function () {
+        var schema;
         console.log(editor);
         for (schema in init_schemas) {
             if (init_schemas[schema].title === editor.options.schema.title) {
@@ -263,10 +416,11 @@ function draftNode(data) {
     };
 
     document.getElementById('save').onclick = function () {
-        //console.log(editor.getValue());
+        console.log(editor.options.schema.title);
+        var schema;
         for (schema in init_schemas) {
             if (init_schemas[schema].title === editor.options.schema.title) {
-                init_array[schema][0] = editor.getValue();
+                init_array[schema] = editor.getValue();
             }
         } 
     };
@@ -275,26 +429,24 @@ function draftNode(data) {
 
 $(document).ready(function() {
 
-    console.log("Test");
-
-    $.ajax({
-        url: ctx.node.urls.api + 'beforerdraft/',
-        contentType: 'application/json',
-        success: function(response) {
-            if (response.prompts && response.prompts.length) {
-                bootbox.confirm(
-                    $osf.joinPrompts(response.prompts, 'Are you sure you want to create a draft of this project?'),
-                    function(result) {
-                        if (result) {
-                            draftNode(data);
-                        }
-                    }
-                );
-            } else {
-                draftNode(data);
-            }
-        }
-    });
+    // $.ajax({
+    //     url: ctx.node.urls.api + 'beforedraft/',
+    //     contentType: 'application/json',
+    //     success: function(response) {
+    //         if (response.prompts && response.prompts.length) {
+    //             bootbox.confirm(
+    //                 $osf.joinPrompts(response.prompts, 'Are you sure you want to create a draft of this project?'),
+    //                 function(result) {
+    //                     if (result) {
+    //                         draftNode(data);
+    //                     }
+    //                 }
+    //             );
+    //         } else {
+    //             draftNode(data);
+    //         }
+    //     }
+    // });
 
 
     // Don't submit form on enter; must use $.delegate rather than $.on
