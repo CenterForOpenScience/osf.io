@@ -56,9 +56,10 @@ class ArchiverTask(celery.Task):
     max_retries = 0
 
     def on_failure(self, exc, task_id, args, kwargs, einfo):
-        if not getattr(self, 'root', False):
-            raise exc
         job = ArchiveJob.load(kwargs.get('job_pk'))
+        if job.status == ARCHIVER_FAILURE:
+            # already captured
+            return
         if not job:
             raise ArchiverStateError({
                 'exception': exc,
@@ -239,7 +240,6 @@ def archive(self, job_pk):
     :param user_pk: primary key of registration initatior
     :return: None
     """
-    self.root = True
     create_app_context()
     job = ArchiveJob.load(job_pk)
     src, dst, user = job.info()
