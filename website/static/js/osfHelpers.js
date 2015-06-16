@@ -303,7 +303,12 @@ var trackPiwik = function(host, siteId, cvars, useCookies) {
         if (!useCookies) {
             piwikTracker.disableCookies();
         }
+
         piwikTracker.trackPageView();
+        piwikTracker.setDownloadClasses("download");
+        _paq.push(['setDownloadClasses', "download"]);
+        _paq.push(['setLinkTrackingTimer', 750]);
+        piwikTracker.setLinkTrackingTimer(750);
 
     } catch(err) { return false; }
     return true;

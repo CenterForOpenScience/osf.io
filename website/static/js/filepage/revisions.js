@@ -112,7 +112,7 @@ var FileRevisionsTable = {
                     ) : false,
                 m('td', revision.extra.downloads > -1 ? m('.badge', revision.extra.downloads) : ''),
                 m('td',
-                  m('a.btn.btn-primary.btn-sm.file-download', {
+                  m('a.btn.btn-primary.btn-sm.file-download.piwik_download', {
                         href: revision.osfDownloadUrl,
                         onclick: function() {
                             window.location = revision.waterbutlerDownloadUrl;

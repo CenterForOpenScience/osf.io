@@ -179,7 +179,7 @@ var FileViewPage = {
                 m('.btn.btn-sm.btn-danger.file-delete', {onclick: $(document).trigger.bind($(document), 'fileviewpage:delete')}, 'Delete')
             ]) : '',
             m('.btn-group', [
-                m('.btn.btn-sm.btn-success.file-download', {onclick: $(document).trigger.bind($(document), 'fileviewpage:download')}, 'Download')
+                m('.btn.btn-sm.btn-success.file-download.piwik_download', {onclick: $(document).trigger.bind($(document), 'fileviewpage:download')}, 'Download')
             ]),
             m('.btn-group.btn-group-sm', [
                 m('.btn.btn-default.disabled', 'Toggle View: ')

@@ -1464,7 +1464,7 @@ var FGItemButtons = {
                 m.component(FGButton, {
                     onclick: function(event) { _downloadEvent.call(tb, event, item); },
                     icon: 'fa fa-download',
-                    className : 'text-success'
+                    className : 'text-success download'
                 }, 'Download')
             );
             if (item.data.permissions && item.data.permissions.edit) {
