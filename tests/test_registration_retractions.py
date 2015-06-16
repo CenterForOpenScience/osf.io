@@ -442,7 +442,7 @@ class RegistrationWithChildNodesRetractionModelTestCase(OsfTestCase):
         self.registration.save()
         assert_true(self.registration.pending_retraction)
 
-        # Ensure descendant nodes are not pending embargo
+        # Ensure descendant nodes are pending embargo
         descendants = self.registration.get_descendants_recursive()
         for node in descendants:
             assert_true(node.pending_retraction)
