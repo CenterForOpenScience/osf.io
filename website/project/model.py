@@ -2412,9 +2412,9 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
                         auth=auth,
                     )
                     self.embargo.save()
-                self.is_public = True
                 for child in self.nodes_primary:
                     child.set_privacy(permissions, auth, log, save)
+            self.is_public = True
         elif permissions == 'private' and self.is_public:
             if self.is_registration and not self.pending_embargo:
                 raise NodeStateError("Public registrations must be retracted, not made private.")
