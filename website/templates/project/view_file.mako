@@ -22,13 +22,6 @@
 
   <div id="file-navigation" class="panel-toggle col-sm-3 file-tree">
     <div class="osf-panel osf-panel-hide osf-panel-flex reset-height">
-##      <div class="osf-panel-header osf-panel-header-flex" style="display:none">
-##        <div id="filesSearch"></div>
-##        <div id="toggleIcon" class="pull-right">
-##          <div class="panel-collapse"><i class="fa fa-angle-left"></i></div>
-##        </div>
-##      </div>
-
       <div class="osf-panel-body osf-panel-body-flex file-page reset-height">
         <div id="grid">
           <div class="fangorn-loading">
