@@ -81,24 +81,21 @@ def _tpl(val):
 
 #todo probably needs refactoring
 def _get_attr_from_tpl(attr_tpl, obj):
-    if hasattr(obj, 'pk'):
-        return obj.pk
-    else:
-        attr_name = _tpl(str(attr_tpl))
-        if attr_name:
-            attribute_value = getattr(obj, attr_name, ser.empty)
-            if attribute_value is not ser.empty:
-                return attribute_value
-            elif attr_name in obj:
-                return obj[attr_name]
-            else:
-                raise AttributeError(
-                    '{attr_name!r} is not a valid '
-                    'attribute of {obj!r}'.format(
-                        attr_name=attr_name, obj=obj,
-                    ))
+    attr_name = _tpl(str(attr_tpl))
+    if attr_name:
+        attribute_value = getattr(obj, attr_name, ser.empty)
+        if attribute_value is not ser.empty:
+            return attribute_value
+        elif attr_name in obj:
+            return obj[attr_name]
         else:
-            return attr_tpl
+            raise AttributeError(
+                '{attr_name!r} is not a valid '
+                'attribute of {obj!r}'.format(
+                    attr_name=attr_name, obj=obj,
+                ))
+    else:
+        return attr_tpl
 
 
 # TODO: Make this a Field that is usable on its own?
