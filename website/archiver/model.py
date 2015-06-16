@@ -103,9 +103,10 @@ class ArchiveJob(StoredObject):
             parent.save()
 
     def _post_update_target(self):
+        if self.status == ARCHIVER_FAILURE:
+            return
         if self._archive_node_finished():
             self.done = True
-        if self.archive_tree_finished():
             if not ARCHIVER_FAILURE_STATUSES.isdisjoint(
                 [target.status for target in self.target_addons]
             ):
@@ -113,7 +114,7 @@ class ArchiveJob(StoredObject):
                 self._fail_above()
             else:
                 self.status = ARCHIVER_SUCCESS
-        self.save()
+            self.save()
 
     def get_target(self, addon_short_name):
         try:

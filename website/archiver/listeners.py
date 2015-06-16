@@ -26,8 +26,8 @@ def after_register(src, dst, user):
     archiver_utils.before_archive(dst, user)
     if dst.root != dst:  # if not top-level registration
         return
-    targets = itertools.chain([dst], dst.get_descendants_recursive())
-    archive_tasks = [archive.si(job_pk=t.archive_job._id) for t in targets if t.primary]
+    targets = itertools.chain([dst], dst.get_descendants_recursive(lambda n: n.primary))
+    archive_tasks = [archive.si(job_pk=t.archive_job._id) for t in targets]
     handlers.enqueue_task(
         celery.chain(*archive_tasks)
     )
@@ -47,7 +47,7 @@ def archive_callback(dst):
         return
     root_job.sent = True
     root_job.save()
-    if dst.archive_job.success:
+    if root_job.success:
         archiver_utils.archive_success(dst, dst.registered_user)
         if dst.pending_embargo:
             for contributor in dst.contributors:

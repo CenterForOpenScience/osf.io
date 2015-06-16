@@ -377,7 +377,7 @@ def project_before_register(auth, node, **kwargs):
             'message': 'The contents of <strong>{0}</strong> cannot be registered at this time,  and will not be included as part of this registration.',
         },
     }
-    addon_set = [n.get_addons() for n in itertools.chain([node], node.get_descendants_recursive())]
+    addon_set = [n.get_addons() for n in itertools.chain([node], node.get_descendants_recursive(lambda n: n.primary))]
     for addon in itertools.chain(*addon_set):
         if not addon.complete:
             continue
@@ -441,7 +441,7 @@ def node_register_template_page_post(auth, node, **kwargs):
         register.archive_job.meta = {
             'embargo_urls': {
                 contrib._id: project_utils.get_embargo_urls(register, contrib)
-                for contrib in [contrib for contrib in node.contributors if node.has_permission(contrib, 'admin') and contrib.is_active]
+                for contrib in node.contributors
             }
         }
         register.archive_job.save()
