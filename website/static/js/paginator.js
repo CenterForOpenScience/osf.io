@@ -9,8 +9,7 @@ var MAX_PAGES_ON_PAGINATOR_SIDE = 5;
 
 
 
-/* jshint ignore:start */
-/* functions defined inside loop */
+
 var Paginator = oop.defclass({
     constructor: function() {
         this.numberOfPages = ko.observable(0);
@@ -26,7 +25,9 @@ var Paginator = oop.defclass({
                 style: (self.currentPage() === 0) ? 'disabled' : '',
                 handler: self.previousPage.bind(self),
                 text: '&lt;'
-            });
+            }); /* jshint ignore:line */
+                /* functions defined inside loop */
+
             self.paginators.push({
                 style: (self.currentPage() === 0) ? 'active' : '',
                 text: '1',
@@ -44,7 +45,8 @@ var Paginator = oop.defclass({
                             self.currentPage(parseInt(this.text) - 1);
                             self.fetchResults();
                         }
-                    });
+                    });/* jshint ignore:line */
+                    // function defined inside loop
                 }
             } else if (self.currentPage() < MAX_PAGES_ON_PAGINATOR_SIDE - 1) { // One ellipse at the end
                 for (i = 1; i < MAX_PAGES_ON_PAGINATOR_SIDE; i++) {
@@ -55,7 +57,9 @@ var Paginator = oop.defclass({
                             self.currentPage(parseInt(this.text) - 1);
                             self.fetchResults();
                         }
-                    });
+                    });/* jshint ignore:line */
+                    // functions defined inside loop
+
                 }
                 self.paginators.push({
                     style: 'disabled',
@@ -76,7 +80,9 @@ var Paginator = oop.defclass({
                             self.currentPage(parseInt(this.text) - 1);
                             self.fetchResults();
                         }
-                    });
+                    });/* jshint ignore:line */
+                    // function defined inside loop
+
                 }
             } else { // two ellipses
                 self.paginators.push({
@@ -92,7 +98,9 @@ var Paginator = oop.defclass({
                             self.currentPage(parseInt(this.text) - 1);
                             self.fetchResults();
                         }
-                    });
+                    });/* jshint ignore:line */
+                    // functions defined inside loop
+
                 }
                 self.paginators.push({
                     style: 'disabled',
