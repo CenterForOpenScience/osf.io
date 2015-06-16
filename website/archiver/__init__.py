@@ -32,7 +32,7 @@ class StatResult(object):
     def __str__(self):
         return str(dict(self))
 
-    def __dict__(self):
+    def _to_dict(self):
         return {
             'target_id': self.target_id,
             'target_name': self.target_name,
@@ -50,14 +50,14 @@ class AggregateStatResult(object):
         self.targets = [target for target in targets if target]
 
     def __str__(self):
-        return str(dict(self))
+        return str(self._to_dict())
 
-    def __dict__(self):
+    def _to_dict(self):
         return {
             'target_id': self.target_id,
             'target_name': self.target_name,
             'targets': [
-                dict(target)
+                target._to_dict()
                 for target in self.targets
             ],
             'num_files': self.num_files,

@@ -24,10 +24,8 @@ from website.archiver import (
     ARCHIVER_SIZE_EXCEEDED,)
 from website.archiver import utils as archiver_utils
 from website.app import *  # noqa
-from website import archiver
 from website.archiver import listeners
 from website.archiver.tasks import *   # noqa
-from website.archiver.model import ArchiveJob
 from website.archiver.decorators import fail_archive_on_error
 
 from website import mails
@@ -447,7 +445,7 @@ class TestArchiverListeners(ArchiverTestCase):
         mock_chain.return_value = []
         listeners.after_register(self.src, self.dst, self.user)
         mock_before_archive.assert_called_with(self.dst, self.user)
-        archive_signature = archive.si(self.archive_job._id)
+        archive_signature = archive.si(job_pk=self.archive_job._id)
         mock_chain.assert_called_with(archive_signature)
 
     @mock.patch('celery.chain')
@@ -463,7 +461,7 @@ class TestArchiverListeners(ArchiverTestCase):
         listeners.after_register(c2, rc2, self.user)
         mock_chain.assert_not_called()
         listeners.after_register(proj, reg, self.user)
-        archive_sigs = [archive.si(*args) for args in [(n.archive_job._id,) for n in [reg, rc1, rc2]]]
+        archive_sigs = [archive.si(**kwargs) for kwargs in [dict(job_pk=n.archive_job._id,) for n in [reg, rc1, rc2]]]
         mock_chain.assert_called_with(*archive_sigs)
 
     @mock.patch('celery.chain')
@@ -477,7 +475,7 @@ class TestArchiverListeners(ArchiverTestCase):
         listeners.after_register(c1, r1, self.user)
         listeners.after_register(proj, reg, self.user)
 
-        archive_sigs = [archive.si(*args) for args in [(n.archive_job._id,) for n in [reg, r1]]]
+        archive_sigs = [archive.si(**kwargs) for kwargs in [dict(job_pk=n.archive_job._id,) for n in [reg, r1]]]
         mock_chain.assert_called_with(*archive_sigs)
 
     def test_archive_callback_pending(self):
@@ -671,9 +669,9 @@ class TestArchiverDecorators(ArchiverTestCase):
         func = fail_archive_on_error(error)
         func(node=self.dst)
         mock_fail.assert_called_with(
-            ARCHIVER_UNCAUGHT_ERROR,
+            ARCHIVER_NETWORK_ERROR,
             self.src,
             self.dst,
             self.user,
-            str(e)
+            [e.message]
         )
