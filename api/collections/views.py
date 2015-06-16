@@ -227,7 +227,7 @@ class CollectionChildrenList(generics.ListAPIView, CollectionMixin):
                 # exclude registrations
                 Q('is_registration', 'eq', True)
             )
-            return all_my_registrations
+            return all_my_registrations & comps
 
         current_node = self.get_node()
         nodes = current_node.nodes
