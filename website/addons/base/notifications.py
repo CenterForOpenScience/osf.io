@@ -48,7 +48,8 @@ def file_created(node, f_url, payload):
 
 def file_updated(node, f_url, payload):
     file_guid, event_sub, f_url.path = file_info(node, path=payload['metadata']['path'], provider=payload['provider'])
-    message = 'updated file "<b>{}</b>".'.format(payload['metadata']['materialized'])
+    file_name = payload['metadata']['materialized'].strip("/")
+    message = 'updated file "<b>{}</b>".'.format(file_name)
     return event_sub, f_url, message
 
 

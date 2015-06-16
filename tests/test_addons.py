@@ -217,7 +217,8 @@ class TestAddonLogs(OsfTestCase):
             'signature': signature,
         }
 
-    def test_add_log(self):
+    @mock.patch('website.addons.base.notifications.file_notify')
+    def test_add_log(self, file_notify):
         path = 'pizza'
         url = self.node.api_url_for('create_waterbutler_log')
         payload = self.build_payload(metadata={'path': path})
