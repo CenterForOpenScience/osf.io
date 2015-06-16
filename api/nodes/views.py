@@ -15,6 +15,7 @@ from rest_framework import serializers
 from django.utils.translation import ugettext_lazy as _
 
 from api.base.utils import node_token_creator, absolute_reverse
+from api.language import BEFORE_DELETE_NODE
 
 
 class NodeMixin(object):
@@ -114,8 +115,7 @@ class NodeDetail(generics.RetrieveUpdateDestroyAPIView, NodeMixin):
         node = self.get_node()
         token = node_token_creator(node._id, user._id)
         url = absolute_reverse('nodes:node-delete-confirm', kwargs={'pk': node._id, 'token': token})
-        delete_warning = _('Are you sure you want to delete {}? It will no longer be available to other '
-                           'contributors on the project. Submit to new url to continue.').format(_(node.title))
+        delete_warning = BEFORE_DELETE_NODE.format(_(node.title))
         raise serializers.ValidationError([delete_warning, url])
 
 
