@@ -75,8 +75,6 @@ REST_FRAMEWORK = {
 CORS_ORIGIN_ALLOW_ALL = False
 CORS_ORIGIN_WHITELIST = (urlparse(osf_settings.DOMAIN).netloc,
                          osf_settings.DOMAIN,
-                         urlparse(osf_settings.OFFLOAD_DOMAIN).netloc,
-                         osf_settings.OFFLOAD_DOMAIN
                          )
 CORS_ALLOW_CREDENTIALS = True
 
