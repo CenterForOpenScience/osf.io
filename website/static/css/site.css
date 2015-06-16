@@ -2524,6 +2524,11 @@ div.profile-fullname{
 .file-page #tb-tbody {
     border: none;
 }
+
+#file-navigation .tb-table[style] {
+    width: auto !important;
+}
+
 #filesSearch {
     width: 95%;
 }

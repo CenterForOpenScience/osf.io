@@ -23,8 +23,7 @@ function FileViewTreebeard(data) {
         showFilter: false,
         title: undefined,
         hideColumnTitles: true,
-        multiselect : false,
-        toolbarComponent : null,
+        multiselect : true,
         placement : 'fileview',
         allowMove : false,
         filterTemplate: function () {
@@ -40,8 +39,6 @@ function FileViewTreebeard(data) {
             var tb = this;
             Fangorn.DefaultOptions.onload.call(tb, tree);
             $('.osf-panel-header.osf-panel-header-flex').show();
-            tb.select('.tb-header-row').hide();
-
         },
         ondataload: function () {
             var tb = this;
@@ -54,7 +51,6 @@ function FileViewTreebeard(data) {
                     tb.fangornFolderArray.splice(0, 1);
                 }
             }
-            m.render($('#filesSearch').get(0), tb.options.filterTemplate.call(tb));
         },
         columnTitles: function () {
             return [{
