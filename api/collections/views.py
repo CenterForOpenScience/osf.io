@@ -9,7 +9,16 @@ from api.base.filters import ODMFilterMixin, ListFilterMixin
 from .serializers import CollectionSerializer, CollectionPointersSerializer
 from .permissions import ContributorOrPublic
 from website.views import find_dashboard
-from tests.factories import FolderFactory
+
+smart_folders = {
+    '~amp': Q('category', 'eq', 'project') & Q('is_deleted', 'eq', False) &
+            Q('is_registration', 'eq', False) & Q('is_folder', 'eq', True) &
+            Q('__backrefs.parent.node.nodes', 'eq', None),
+
+    '~amr': Q('category', 'eq', 'project') & Q('is_deleted', 'eq', False) &
+            Q('is_registration', 'eq', True) & Q('is_folder', 'eq', True) &
+            Q('__backrefs.parent.node.nodes', 'eq', None),
+}
 
 
 class CollectionMixin(object):
@@ -24,6 +33,17 @@ class CollectionMixin(object):
         key = self.kwargs[self.node_lookup_url_kwarg]
         if key == 'dashboard':
             return find_dashboard(self.request.user)
+
+        if key == 'amr' or key == 'amp':
+            ret = {
+                'id': '{}'.format(key),
+                'pk': key,
+                'title': "Smart Folder {}".format(key),
+                'properties': {
+                    'smart_folder': True,
+                },
+            }
+            return ret
 
         obj = get_object_or_404(Node, key)
         # May raise a permission denied
@@ -131,7 +151,8 @@ class CollectionDetail(generics.RetrieveUpdateAPIView, generics.RetrieveDestroyA
 
     def get_object(self):
         node = self.get_node()
-        node.smart_folder = False
+        if not isinstance(node, dict):
+            node.smart_folder = False
         return node
 
     permission_classes = (
@@ -173,10 +194,41 @@ class CollectionChildrenList(generics.ListAPIView, CollectionMixin):
 
     def get_queryset(self):
 
-        smart_folders = (
-            '~amr',
-            '~amp',
-        )
+        key = self.kwargs[self.node_lookup_url_kwarg]
+        if key == 'amp':
+            contributed = self.request.user.node__contributed
+            all_my_projects = contributed.find(
+                smart_folders.get('~amp')
+            )
+            comps = contributed.find(
+                # components only
+                Q('category', 'ne', 'project') &
+                # parent is not in the nodes list
+                Q('__backrefs.parent.node.nodes', 'nin', all_my_projects.get_keys()) &
+                # exclude deleted nodes
+                Q('is_deleted', 'eq', False) &
+                # exclude registrations
+                Q('is_registration', 'eq', False)
+            )
+            return all_my_projects
+
+        elif key == 'amr':
+            contributed = self.request.user.node__contributed
+            all_my_registrations = contributed.find(
+                smart_folders.get('~amr')
+            )
+            comps = contributed.find(
+                # components only
+                Q('category', 'ne', 'project') &
+                # parent is not in the nodes list
+                Q('__backrefs.parent.node.nodes', 'nin', all_my_registrations.get_keys()) &
+                # exclude deleted nodes
+                Q('is_deleted', 'eq', False) &
+                # exclude registrations
+                Q('is_registration', 'eq', True)
+            )
+            return all_my_registrations
+
         current_node = self.get_node()
         nodes = current_node.nodes
 
@@ -192,6 +244,7 @@ class CollectionChildrenList(generics.ListAPIView, CollectionMixin):
                 for folder_id in smart_folders:
                     smart_folder_node = {
                         'id': '{}'.format(folder_id),
+                        'pk': folder_id,
                         'title': "Smart Folder {}".format(folder_id),
                         'properties': {
                             'smart_folder': True,
