@@ -16,6 +16,8 @@ from website.addons.base import StorageAddonBase
 from website import settings
 
 class ArchiveTarget(StoredObject):
+    """Stores the results of archiving a single addon
+    """
 
     _id = fields.StringField(
         primary=True,
@@ -97,12 +99,17 @@ class ArchiveJob(StoredObject):
         return False
 
     def _fail_above(self):
+        """Marks all ArchiveJob instances attached to Nodes above this as failed
+        """
         parent = self.parent
         if parent:
             parent.status = ARCHIVER_FAILURE
             parent.save()
 
     def _post_update_target(self):
+        """Checks for success or failure if the ArchiveJob on self.dst_node
+        is finished
+        """
         if self.status == ARCHIVER_FAILURE:
             return
         if self._archive_node_finished():
