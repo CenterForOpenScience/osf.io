@@ -15,7 +15,7 @@ def fail_archive_on_error(func):
         except HTTPError as e:
             _inject_nodes(kwargs)
             registration = kwargs['node']
-            signals.send.archive_fail(
+            signals.archive_fail.send(
                 registration,
                 ARCHIVER_UNCAUGHT_ERROR,
                 [str(e)]
