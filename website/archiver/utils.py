@@ -171,5 +171,5 @@ def add_archive_success_logs(node, user):
 
 def archive_success(node, user):
     add_archive_success_logs(node, user)
-    for child in node.get_descendants_recursive():
+    for child in node.get_descendants_recursive(include=lambda n: n.primary):
         add_archive_success_logs(child, user)
