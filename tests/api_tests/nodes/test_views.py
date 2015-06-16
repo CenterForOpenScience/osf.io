@@ -625,6 +625,8 @@ class TestNodeDelete(ApiTestCase):
         self.public_project = ProjectFactory(is_public=True, creator=self.user)
         self.public_url = '/{}nodes/{}/'.format(API_BASE, self.public_project._id)
 
+        self.fake_url = '/{}nodes/{}/'.format(API_BASE, '12345')
+
     def test_deletes_public_node_logged_out(self):
         res = self.app.delete(self.public_url, expect_errors=True)
         # This is 403 instead of 401 because basic authentication is only for unit tests and, in order to keep from
@@ -646,14 +648,14 @@ class TestNodeDelete(ApiTestCase):
         assert_equal(res.status_code, 204)
         assert_equal(self.public_project.is_deleted, True)
 
-    def test_deletes_private_node_pointer_logged_out(self):
+    def test_deletes_private_node_logged_out(self):
         res = self.app.delete(self.private_url, expect_errors=True)
         # This is 403 instead of 401 because basic authentication is only for unit tests and, in order to keep from
         # presenting a basic authentication dialog box in the front end. We may change this as we understand CAS
         # a little better
         assert_equal(res.status_code, 403)
 
-    def test_deletes_private_node_pointer_logged_in_contributor(self):
+    def test_deletes_private_node_logged_in_contributor(self):
         res = self.app.delete(self.private_url, auth=self.basic_auth, expect_errors=True)
         assert_equal(res.status_code, 400)
         assert_equal(self.project.is_deleted, False)
@@ -663,10 +665,20 @@ class TestNodeDelete(ApiTestCase):
         assert_equal(res.status_code, 204)
         assert_equal(self.project.is_deleted, True)
 
-    def test_deletes_private_node_pointer_logged_in_non_contributor(self):
+    def test_deletes_private_node_logged_in_non_contributor(self):
         res = self.app.delete(self.private_url, auth=self.basic_auth_two, expect_errors=True)
         assert_equal(res.status_code, 403)
         assert_equal(self.project.is_deleted, False)
+
+    def test_deletes_node_incorrect_token(self):
+        res = self.app.delete(self.private_url + '12345', auth=self.basic_auth, expect_errors=True)
+        assert_equal(res.status_code, 400)
+        assert_equal(res.json[0], 'Incorrect token.')
+        assert_equal(self.project.is_deleted, False)
+
+    def test_deletes_invalid_node(self):
+        res = self.app.delete(self.fake_url, auth=self.basic_auth, expect_errors=True)
+        assert_equal(res.status_code, 404)
 
 class TestNodeContributorList(ApiTestCase):
 
