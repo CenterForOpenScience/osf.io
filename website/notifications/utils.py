@@ -176,6 +176,11 @@ def format_data(user, node_ids):
             },
             'children': children,
             'kind': 'folder' if not node.node__parent or not node.parent_node.has_permission(user, 'read') else 'node',
+            'nodeType': node.project_or_component,
+            'category': node.category,
+            'permissions': {
+                'view': can_read,
+            },
         }
 
         items.append(item)
