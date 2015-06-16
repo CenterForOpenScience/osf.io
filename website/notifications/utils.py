@@ -248,7 +248,7 @@ def serialize_event(user, subscription=None, node=None, event_description=None):
     if node and node.node__parent:
         notification_type = 'adopt_parent'
     else:
-        notification_type = 'null'
+        notification_type = 'none'
     if subscription:
         for n_type in constants.NOTIFICATION_TYPES:
             if user in getattr(subscription, n_type):

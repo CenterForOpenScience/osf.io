@@ -389,7 +389,6 @@ class TestNotificationUtils(OsfTestCase):
 
     def test_get_all_user_subscriptions(self):
         user_subscriptions = [x for x in utils.get_all_user_subscriptions(self.user)]
-        print user_subscriptions
         assert_in(self.project_subscription, user_subscriptions)
         assert_in(self.node_subscription, user_subscriptions)
         assert_in(self.user_subscription, user_subscriptions)
@@ -675,7 +674,6 @@ class TestNotificationUtils(OsfTestCase):
         self.node.add_contributor(contributor=user, permissions=['read'])
         self.node.save()
         node_subscriptions = [x for x in utils.get_all_node_subscriptions(user, self.node)]
-        print node_subscriptions
         data = utils.serialize_event(user=user, event_description='comments',
                                      subscription=node_subscriptions, node=self.node)
         expected = {
