@@ -22,7 +22,7 @@ def celery_teardown_request(error=None):
     try:
         tasks = g._celery_tasks
         if tasks:
-            group(iter(tasks)).apply_async()
+            group(tasks).apply_async()
     except AttributeError:
         if not settings.DEBUG_MODE:
             logger.error('Task queue not initialized')
