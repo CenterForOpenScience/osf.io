@@ -164,4 +164,3 @@ BLANK_OR_CORRUPT_TABLE_ERROR = 'Is this a valid instance of this file type?<p>{0
 DISK_SAVING_MODE = 'Forks, registrations, and uploads to OSF Storage uploads are temporarily disabled while we are undergoing a server upgrade. These features will return shortly.'
 
 BEFORE_DELETE = _('Are you sure you want to delete {}? It will no longer be available to other contributors on the project. Submit to new url to continue.')
-
