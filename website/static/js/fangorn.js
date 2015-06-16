@@ -1044,7 +1044,7 @@ function _fangornResolveLazyLoad(item) {
 function _fangornLazyLoadError (item) {
     var configOption = resolveconfigOption.call(this, item, 'lazyLoadError', [item]);
     if (!configOption) {
-        item.notify.update('Files couldn\'t load, please try again later.', 'deleting', undefined, 3000);
+        item.notify.update('Files couldn\'t load. Please try again later.', 'deleting', undefined, 3000);
     }
 }
 
