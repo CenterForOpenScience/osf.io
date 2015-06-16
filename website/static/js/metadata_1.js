@@ -133,7 +133,7 @@ var MetaData = (function() {
                             } else {
                                 ctxValue = ctxValue[key];
                             }
-                        });
+                        });  // jshint ignore:line
                     } else if (ctxSplit[0] === '$svy') {
                         model = self.getKey(ctxSplit[1]);
                         ctxValue = model ? model.value() : '';
@@ -221,25 +221,25 @@ var MetaData = (function() {
 //                        if (_idx != -1) {
 //                            idx.unshift('page:' + _idx);
 //                        }
-                } else if (this.type == 'section' || !child.repeatSection) {
+                } else if (this.type === 'section' || !child.repeatSection) {
                     idx.unshift(ko.utils.unwrapObservable(child.id));
                 }
                 if (child.$parent && child.$parent.observedData) {
                     key = idx.join(SEPARATOR);
-                    if (action == 'add') {
-                        child.$parent['observedData'][key] = this;
-                    } else if (action == 'remove') {
-                        delete child.$parent['observedData'][key];
+                    if (action === 'add') {
+                        child.$parent.observedData[key] = this;
+                    } else if (action === 'remove') {
+                        delete child.$parent.observedData[key];
                     }
                 }
                 child = child.$parent;
             }
 
             key = idx.join(SEPARATOR);
-            if (action == 'add') {
-                this.$root['observedData'][key] = this;
-            } else if (action == 'remove') {
-                delete this.$root['observedData'][key];
+            if (action === 'add') {
+                this.$root.observedData[key] = this;
+            } else if (action === 'remove') {
+                delete this.$root.observedData[key];
             }
 
             if (refresh) {
@@ -283,7 +283,7 @@ var MetaData = (function() {
             );
         });
 
-        if (self.repeatType == 'repeat') {
+        if (self.repeatType === 'repeat') {
             self.initRepeat = self.initRepeat || 1;
             for (var i=0; i<self.initRepeat; i++) {
                 self.addRepeat(null, false);
@@ -301,7 +301,7 @@ var MetaData = (function() {
         var self = this;
         Content.apply(this, arguments);
 
-        if ('options' in self && typeof(self.options) == 'string') {
+        if ('options' in self && typeof(self.options) === 'string') {
             var eachSplit = self.options.split('.');
             self._optionsOriginal = self.options;
             self._optionsObservable = null;
@@ -320,8 +320,8 @@ var MetaData = (function() {
                 }
                 if (self._optionsObservable) {
                     return $.map(self._optionsObservable(), function(option) {
-                        if (option['value']) {
-                            return option['value']();
+                        if (option.value) {
+                            return option.value();
                         }
                         return option;
                     });
@@ -331,7 +331,7 @@ var MetaData = (function() {
         }
 
         // Set up observable on value
-        if (self.multiple || self.type == 'checkbox') {
+        if (self.multiple || self.type === 'checkbox') {
             self.value = ko.observableArray(self.value || []);
         } else {
             self.value = ko.observable(ko.utils.unwrapObservable(self.value) || '');
@@ -373,7 +373,7 @@ var MetaData = (function() {
         },
         unserialize: function(value) {
             this.value(value);
-            return this.value() == value;
+            return this.value() === value;
         }
     });
 
@@ -397,7 +397,7 @@ var MetaData = (function() {
                     function(response) {
                         self.$root.fileDict[selectedNode](response.files);
                     }
-                )
+                );
             } else {
                 return self.$root.fileDict[selectedNode]();
             }
@@ -412,12 +412,12 @@ var MetaData = (function() {
         unserialize: function(value) {
             // Ensure that stored node is included in view model's
             // node list
-            if (value[0] && this.$root.nodes.indexOf(value[0]) == -1) {
+            if (value[0] && this.$root.nodes.indexOf(value[0]) === -1) {
                 this.$root.nodes.unshift(value[0]);
             }
             this.node(value[0]);
             this.value(value[1]);
-            return this.node() == value[0] && this.value() == value[1];
+            return this.node() === value[0] && this.value() === value[1];
         }
     });
 
@@ -432,7 +432,7 @@ var MetaData = (function() {
             'item';
         var klass = contentDelegator[type];
         var args = Array.prototype.concat.apply([null], arguments);
-        return new (Function.prototype.bind.apply(klass, args));
+        return new Function.prototype.bind.apply(klass, args);
     }
 
     function Page(id, title, contents, $root) {
@@ -477,7 +477,7 @@ var MetaData = (function() {
         }
         // Crash if forbidden characters in IDs
         $.each([SEPARATOR, IDX_SEPARATOR], function(idx, char) {
-            if (content.id.indexOf(char) != -1) {
+            if (content.id.indexOf(char) !== -1) {
                 throw 'Forbidden character "' + char + '" in id ' + content.id + '.';
             }
         });
@@ -577,7 +577,7 @@ var MetaData = (function() {
     ViewModel.prototype = {
 
         getTemplate: function(data) {
-            return data['type'] == 'section' ? 'section' : 'item';
+            return data.type === 'section' ? 'section' : 'item';
         },
 
         refresh: function() {
@@ -593,7 +593,7 @@ var MetaData = (function() {
 
         scrollToTop: function() {
             $('html, body').animate({
-                scrollTop: $("#meta-data-container").offset().top
+                scrollTop: $('#meta-data-container').offset().top
             });
         },
 
@@ -670,7 +670,7 @@ var MetaData = (function() {
                     subParts = keyPart.split(IDX_SEPARATOR);
                     current = current.observedData[subParts[0]];
                     if (subParts.length > 1) {
-                        if (current && current.repeatType == 'repeat') {
+                        if (current && current.repeatType === 'repeat') {
                             subIdx = parseInt(subParts[1]);
                             while (current.contents().length < (subIdx + 1)) {
                                 current.addRepeat(null, true);
@@ -691,8 +691,8 @@ var MetaData = (function() {
             if (Object.keys(nextData).length) {
                 // Length of data to be unserialized hasn't changed;
                 // we're stuck!
-                if (Object.keys(nextData).length == Object.keys(data).length) {
-                    throw "Unserialize failed";
+                if (Object.keys(nextData).length === Object.keys(data).length) {
+                    throw 'Unserialize failed';
                 }
                 // Unserialize remaining data
                 self.unserialize(nextData);
