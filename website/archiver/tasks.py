@@ -8,7 +8,6 @@ from framework.tasks import app as celery_app
 from framework.tasks.utils import logged
 from framework.exceptions import HTTPError
 
-
 from website.archiver import (
     ARCHIVER_PENDING,
     ARCHIVER_CHECKING,
@@ -39,40 +38,48 @@ def create_app_context():
 
 logger = get_task_logger(__name__)
 
-class ArchiverTask(celery.Task):
-    abstract = True
-    max_retries = 0
-
-    def on_failure(self, exc, task_id, args, kwargs, einfo):
-        if not kwargs:
-            return
-        job = ArchiveJob.load(kwargs['job_pk'])
-        src, dst, user = job.info()
-        reason = None
-        errors = []
-        if isinstance(exc, ArchiverSizeExceeded):
-            dst.archive_status = ARCHIVER_SIZE_EXCEEDED
-            dst.save()
-            reason = ARCHIVER_SIZE_EXCEEDED
-            errors = exc.result
-        elif isinstance(exc, HTTPError):
-            dst.archive_status = ARCHIVER_NETWORK_ERROR
-            dst.save()
-            reason = ARCHIVER_NETWORK_ERROR
-            errors = dst.archive_job.target_info()
-        else:
-            dst.archive_status = ARCHIVER_UNCAUGHT_ERROR
-            dst.save()
-            reason = ARCHIVER_UNCAUGHT_ERROR
-            errors = [einfo]
-        archiver_signals.archive_fail.send(dst, reason=reason, errors=errors)
-        raise exc
-
 class ArchiverSizeExceeded(Exception):
 
     def __init__(self, result, *args, **kwargs):
         super(ArchiverSizeExceeded, self).__init__(*args, **kwargs)
         self.result = result
+
+
+class ArchiverStateError(Exception):
+
+    def __init__(self, info, *args, **kwargs):
+        super(ArchiverStateError, self).__init__(*args, **kwargs)
+        self.info = info
+
+class ArchiverTask(celery.Task):
+    abstract = True
+    max_retries = 0
+
+    def on_failure(self, exc, task_id, args, kwargs, einfo):
+        if not getattr(self, 'root', False):
+            raise exc
+        job = ArchiveJob.load(kwargs.get('job_pk'))
+        if not job:
+            raise ArchiverStateError({
+                'exception': exc,
+                'args': args,
+                'kwargs': kwargs,
+                'einfo': einfo,
+            })
+        src, dst, user = job.info()
+        errors = []
+        if isinstance(exc, ArchiverSizeExceeded):
+            dst.archive_status = ARCHIVER_SIZE_EXCEEDED
+            errors = exc.result
+        elif isinstance(exc, HTTPError):
+            dst.archive_status = ARCHIVER_NETWORK_ERROR
+            errors = dst.archive_job.target_info()
+        else:
+            dst.archive_status = ARCHIVER_UNCAUGHT_ERROR
+            errors = [einfo]
+        dst.save()
+        archiver_signals.archive_fail.send(dst, errors=errors)
+
 
 @celery_app.task(base=ArchiverTask, name="archiver.stat_addon")
 @logged('stat_addon')
@@ -112,7 +119,7 @@ def make_copy_request(job_pk, url, data):
     """Make the copy request to the WaterBulter API and handle
     successful and failed responses
 
-    :param dst_pk: primary key of registration node
+    :param job_pk: primary key of ArchiveJob
     :param url: URL to send request to
     :param data: <dict> of setting to send in POST to WaterBulter API
     :return: None
@@ -124,7 +131,6 @@ def make_copy_request(job_pk, url, data):
     dst.archive_job.update_target(provider, ARCHIVER_SENDING)
     logger.info("Sending copy request for addon: {0} on node: {1}".format(provider, dst._id))
     res = requests.post(url, data=json.dumps(data))
-    logger.info("Copy request responded with {0} for addon: {1} on node: {2}".format(res.status_code, provider, dst._id))
     dst.archive_job.update_target(provider, ARCHIVER_SENT)
     if res.status_code not in (200, 201, 202):
         dst.archive_job.update_target(
@@ -233,6 +239,7 @@ def archive(self, job_pk):
     :param user_pk: primary key of registration initatior
     :return: None
     """
+    self.root = True
     create_app_context()
     job = ArchiveJob.load(job_pk)
     src, dst, user = job.info()

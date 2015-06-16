@@ -29,7 +29,7 @@ def after_register(src, dst, user):
     if dst.root != dst:  # if not top-level registration
         return
     targets = itertools.chain([dst], dst.get_descendants_recursive())
-    archive_tasks = [archive.si(t.archive_job._id) for t in targets if t.primary]
+    archive_tasks = [archive.si(job_pk=t.archive_job._id) for t in targets if t.primary]
     handlers.enqueue_task(
         celery.chain(*archive_tasks)
     )
@@ -71,7 +71,8 @@ def archive_callback(dst):
         )
 
 @archiver_signals.archive_fail.connect
-def archive_fail(dst, reason, errors):
+def archive_fail(dst, errors):
+    reason = dst.archive_status
     root_job = dst.root.archive_job
     if root_job.sent:
         return
@@ -81,6 +82,6 @@ def archive_fail(dst, reason, errors):
         reason,
         dst.root.registered_from,
         dst.root,
-        dst.root.registerd_user,
+        dst.root.registered_user,
         errors
     )
