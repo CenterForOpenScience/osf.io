@@ -14,8 +14,9 @@ from website import util as website_util  # noqa
 
 def absolute_reverse(view_name, query_kwargs=None, args=None, kwargs=None):
     """Like django's `reverse`, except returns an absolute URL. Also add query parameters."""
-    if kwargs['pk'] == '':
-        return ''
+    if not kwargs == None:
+        if kwargs['pk'] == '':
+            return ''
 
     relative_url = reverse(view_name, kwargs=kwargs)
 
