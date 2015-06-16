@@ -671,7 +671,7 @@ class TestNodeDelete(ApiTestCase):
         assert_equal(self.project.is_deleted, False)
 
     def test_deletes_node_incorrect_token(self):
-        res = self.app.delete(self.private_url + '12345', auth=self.basic_auth, expect_errors=True)
+        res = self.app.delete(self.private_url + 'confirm/12345', auth=self.basic_auth, expect_errors=True)
         assert_equal(res.status_code, 400)
         assert_equal(res.json[0], 'Incorrect token.')
         assert_equal(self.project.is_deleted, False)
