@@ -204,13 +204,13 @@ class TestUserUpdate(ApiTestCase):
         self.user_one.set_password('justapoorboy')
         self.user_one.social_accounts = {
             'github': '',
-            "scholar": "",
+            "scholar": '',
             "personal": 'http://mymom.com',
             "twitter": "billyhunt",
-            "linkedIn": "",
-            "impactStory": "",
-            "orcid": "",
-            "researcherId": ""
+            "linkedIn": '',
+            "impactStory": '',
+            "orcid": '',
+            "researcherId": ''
         }
 
         self.user_one.fullname = 'Martin Luther King Jr.'
@@ -242,14 +242,13 @@ class TestUserUpdate(ApiTestCase):
         self.new_given_name = 'Malcolm'
         self.new_family_name = 'X'
         self.new_suffix = 'Sr.'
-        self.new_gravatar_url = 'https://secure.gravatar.com/avatar/220d886b6c6eb0503839261111679ebb?d=identicon&size=40'
         self.new_employment_institutions = [
             {
                 'startYear': '1982',
                 'title': '',
                 'startMonth': 1,
-                'endMonth': None,
-                'endYear': None,
+                'endMonth': 4,
+                'endYear': 1999,
                 'ongoing': True,
                 'department': 'department of revolution',
                 'institution': 'IHop'
@@ -258,14 +257,14 @@ class TestUserUpdate(ApiTestCase):
 
         self.new_educational_institutions = [
             {
-                "startYear": "1999",
-                "degree": "",
+                "startYear": '',
+                "degree": '',
                 "startMonth": None,
                 "endMonth": None,
-                "endYear": "2000",
+                "endYear": '2000',
                 "ongoing": False,
-                "department": "Mom",
-                "institution": "Heeeyyyyyy"
+                "department": 'Mom',
+                "institution": 'Heeyyyy'
             }
         ]
 
@@ -292,10 +291,8 @@ class TestUserUpdate(ApiTestCase):
     def test_patch_user_logged_in(self):
         # Logged in user updates their user information via patch
         res = self.app.patch_json(self.user_one_url, {
-            'fullname': self.new_fullname,
             'employment_institutions': self.new_employment_institutions,
-
-        }, auth=self.auth_one)
+        }, auth=self.auth_one, expect_errors=True)
         assert_equal(res.status_code, 200)
         assert_equal(res.json['data']['fullname'], self.new_fullname)
 
@@ -310,17 +307,15 @@ class TestUserUpdate(ApiTestCase):
             'suffix': self.new_suffix,
             'employment_institutions': self.new_employment_institutions,
             'educational_institutions': self.new_educational_institutions,
-            'gravatar_url': self.new_gravatar_url
         }, auth=self.auth_one)
         assert_equal(res.status_code, 200)
-        # assert_equal(res.json['data']['fullname'], self.new_fullname)
-        # assert_equal(res.json['data']['social_accounts'], self.new_social_accounts)
-        # assert_equal(res.json['data']['given_name'], self.new_given_name)
-        # assert_equal(res.json['data']['family_name'], self.new_family_name)
-        # assert_equal(res.json['data']['suffix'], self.new_suffix)
+        assert_equal(res.json['data']['fullname'], self.new_fullname)
+        assert_equal(res.json['data']['social_accounts'], self.new_social_accounts)
+        assert_equal(res.json['data']['given_name'], self.new_given_name)
+        assert_equal(res.json['data']['family_name'], self.new_family_name)
+        assert_equal(res.json['data']['suffix'], self.new_suffix)
         # assert_equal(res.json['data']['employment_institutions'], self.new_employment_institutions)
         # assert_equal(res.json['data']['educational_institutions'], self.new_educational_institutions)
-        # assert_equal(res.json['data']['gravatar_url'], self.new_gravatar_url)
 
     def test_put_user_logged_out(self):
         res = self.app.put_json(self.user_one_url, {
