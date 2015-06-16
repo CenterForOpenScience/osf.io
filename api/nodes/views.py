@@ -11,10 +11,12 @@ from api.base.filters import ODMFilterMixin, ListFilterMixin
 from .serializers import NodeSerializer, NodePointersSerializer, NodeFilesSerializer
 from api.users.serializers import ContributorSerializer
 from .permissions import ContributorOrPublic, ReadOnlyIfRegistration, ContributorOrPublicForPointers
-from api.base.utils import node_token_creator, absolute_reverse
-from website.language import BEFORE_DELETE
 from rest_framework import serializers
 from django.utils.translation import ugettext_lazy as _
+
+from api.base.utils import node_token_creator, absolute_reverse
+from website.language import BEFORE_DELETE
+
 
 class NodeMixin(object):
     """Mixin with convenience methods for retrieving the current node based on the
