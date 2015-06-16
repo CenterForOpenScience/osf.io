@@ -57,9 +57,6 @@ class ArchiverTask(celery.Task):
 
     def on_failure(self, exc, task_id, args, kwargs, einfo):
         job = ArchiveJob.load(kwargs.get('job_pk'))
-        if job.status == ARCHIVER_FAILURE:
-            # already captured
-            return
         if not job:
             raise ArchiverStateError({
                 'exception': exc,
@@ -67,6 +64,9 @@ class ArchiverTask(celery.Task):
                 'kwargs': kwargs,
                 'einfo': einfo,
             })
+        if job.status == ARCHIVER_FAILURE:
+            # already captured
+            return
         src, dst, user = job.info()
         errors = []
         if isinstance(exc, ArchiverSizeExceeded):
