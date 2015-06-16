@@ -79,7 +79,6 @@ def _tpl(val):
     return None
 
 
-#todo probably needs refactoring
 def _get_attr_from_tpl(attr_tpl, obj):
     attr_name = _tpl(str(attr_tpl))
     if attr_name:
