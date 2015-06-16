@@ -33,7 +33,7 @@ class CollectionSerializer(JSONAPISerializer):
         type_ = 'collections'
 
     def get_node_count(self, obj):
-        if isinstance(obj, dict) and obj['smart_folder'] is True:
+        if isinstance(obj, dict) and obj['properties']['smart_folder'] is True:
             return ''
         else:
             auth = self.get_user_auth(self.context['request'])
@@ -41,7 +41,7 @@ class CollectionSerializer(JSONAPISerializer):
             return len(nodes)
 
     def get_pointers_count(self, obj):
-        if isinstance(obj, dict) and obj['smart_folder'] is True:
+        if isinstance(obj, dict) and obj['properties']['smart_folder'] is True:
             return ''
         return len(obj.nodes_pointer)
 
