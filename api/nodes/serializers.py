@@ -4,8 +4,7 @@ from api.base.serializers import JSONAPISerializer, LinksField, Link, Waterbutle
 from website.models import Node
 from framework.auth.core import Auth
 from rest_framework import exceptions
-from api.base.utils import token_creator
-from website.language import BEFORE_DELETE
+
 
 class NodeSerializer(JSONAPISerializer):
     # TODO: If we have to redo this implementation in any of the other serializers, subclass ChoiceField and make it
@@ -127,15 +126,6 @@ class NodeSerializer(JSONAPISerializer):
         instance.save()
         return instance
 
-class NodeDeleteSerializer(JSONAPISerializer):
-    def validate(self, data):
-        request = self.context['request']
-        user = request.user
-        node = self.context['view'].get_node()
-        token = token_creator(node._id, user._id)
-        url = absolute_reverse('nodes:node-registration-open-ended-token', kwargs={'pk': node._id, 'token': token})
-        delete_warning = REGISTER_WARNING.format(_(node.title))
-        raise serializers.ValidationError([registration_warning, url])
 
 class NodePointersSerializer(JSONAPISerializer):
 

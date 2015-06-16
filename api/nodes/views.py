@@ -11,6 +11,11 @@ from api.base.filters import ODMFilterMixin, ListFilterMixin
 from .serializers import NodeSerializer, NodePointersSerializer, NodeFilesSerializer
 from api.users.serializers import ContributorSerializer
 from .permissions import ContributorOrPublic, ReadOnlyIfRegistration, ContributorOrPublicForPointers
+from api.base.utils import token_creator, absolute_reverse
+from website.language import BEFORE_DELETE
+from rest_framework import serializers
+from django.utils.translation import ugettext_lazy as _
+
 
 
 class NodeMixin(object):
@@ -91,38 +96,46 @@ class NodeDetail(generics.RetrieveUpdateDestroyAPIView, NodeMixin):
         ContributorOrPublic,
         ReadOnlyIfRegistration,
     )
+
     serializer_class = NodeSerializer
 
-    # overrides RetrieveUpdateAPIView
+    # overrides RetrieveUpdateDestroyAPIView
     def get_object(self):
         return self.get_node()
 
-    # overrides RetrieveUpdateAPIView
+    # overrides RetrieveUpdateDestroyAPIView
     def get_serializer_context(self):
         # Serializer needs the request in order to make an update to privacy
         return {'request': self.request}
 
+    # overrides RetrieveUpdateDestroyAPIView
     def perform_destroy(self, instance):
         user = self.request.user
-        auth = Auth(user)
         node = self.get_node()
-        node.remove_node(auth=auth)
-        node.save()
+        token = token_creator(node._id, user._id)
+        url = absolute_reverse('nodes:node-delete-confirm', kwargs={'pk': node._id, 'token': token})
+        delete_warning = BEFORE_DELETE.format(_(node.title))
+        raise serializers.ValidationError([delete_warning, url])
 
-class NodeDelete(generics.DestroyAPIView):
-
+class NodeDeleteConfirm(generics.DestroyAPIView, NodeMixin):
     permission_classes = (
         ContributorOrPublic,
         ReadOnlyIfRegistration,
     )
     serializer_class = NodeSerializer
+
+    def get_object(self):
+        return self.get_node()
+
     def perform_destroy(self, instance):
         user = self.request.user
-        auth = Auth(user)
         node = self.get_node()
-        node.remove_node(auth=auth)
+        correct_token = token_creator(node._id, user._id)
+        given_token = self.kwargs['token']
+        if correct_token != given_token:
+            raise serializers.ValidationError(_("Incorrect token."))
+        node.remove_node(auth=Auth(user))
         node.save()
-
 
 class NodeContributorsList(generics.ListAPIView, ListFilterMixin, NodeMixin):
     """Contributors (users) for a node.
