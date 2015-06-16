@@ -50,8 +50,7 @@ def node_register_page(auth, node, **kwargs):
 @must_be_valid_project
 @must_have_permission(ADMIN)
 def node_register_edit_page(auth, node, **kwargs):
-    new_values = request.json.get('value', '')
-    private_register_id = request.json.get('pk', '')
+    node.registered_meta = request.json.get('value', '')
 
     ret = {
         'template_name': template_name,

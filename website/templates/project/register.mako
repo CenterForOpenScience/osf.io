@@ -11,6 +11,34 @@
 
         <div class="help-block">${language.REGISTRATION_INFO}</div>
 
+        <div class='container'>
+          <div class='row'>
+            <div class='span8 col-md-12 columns eight large-8'>
+                      <h2>Registration</h2>
+                      <nav>
+                        <ul class="pagination">
+                          <li>
+                            <a id="prev" href="#" aria-label="Previous">
+                              <span aria-hidden="true">&laquo;</span>
+                            </a>
+                          </li>
+                          <li><a id="project_info_button" href="#">Project Info</a></li>
+                          <li><a id="your_info_button" href="#">Your Info</a></li>
+                          <li><a id="interesting_button" href="#">Interesting Questions</a></li>
+                          <li>
+                            <a id="next" href="#" aria-label="Next">
+                              <span aria-hidden="true">&raquo;</span>
+                            </a>
+                          </li>
+                        </ul>
+                      </nav>
+
+                      <div id='editor'></div>
+                      <button id="save" type="button" class="btn btn-primary">Save</button>
+            </div>
+          </div>
+        </div>
+
         <select class="form-control" id="select-registration-template">
             <option value="">Please select a registration form to initiate registration</option>
             % for option in options:
