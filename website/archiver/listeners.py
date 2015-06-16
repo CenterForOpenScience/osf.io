@@ -3,9 +3,7 @@ import itertools
 
 from framework.tasks import handlers
 
-from website.archiver.tasks import (
-    archive,
-)
+from website.archiver.tasks import archive
 from website.archiver import utils as archiver_utils
 from website.archiver import (
     ARCHIVER_UNCAUGHT_ERROR,

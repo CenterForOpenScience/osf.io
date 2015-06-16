@@ -1,9 +1,6 @@
 import datetime
 
-from modularodm import (
-    fields,
-    Q,
-)
+from modularodm import fields
 
 from framework.mongo import ObjectId
 from framework.mongo import StoredObject
@@ -32,7 +29,7 @@ class ArchiveTarget(StoredObject):
     errors = fields.StringField(list=True)
 
     def __repr__(self):
-        return "{0}: {1}".format(self.name, self.status)
+        return "<{0}>({1}:{2})".format(self.__class__.__name__, self.name, self.status)
 
 class ArchiveJob(StoredObject):
 
@@ -43,7 +40,7 @@ class ArchiveJob(StoredObject):
 
     done = fields.BooleanField(default=False)
     sent = fields.BooleanField(default=False)
-    status = fields.StringField()
+    status = fields.StringField(default=ARCHIVER_INITIATED)
     datetime_initiated = fields.DateTimeField(default=datetime.datetime.utcnow)
 
     dst_node = fields.ForeignField('node', backref='active')
@@ -120,7 +117,7 @@ class ArchiveJob(StoredObject):
 
     def get_target(self, addon_short_name):
         try:
-            return self.target_addons.find(Q('name', 'eq', addon_short_name))[0]
+            return [addon for addon in self.target_addons if addon.name == addon_short_name][0]
         except IndexError:
             return None
 
@@ -132,7 +129,6 @@ class ArchiveJob(StoredObject):
         self.target_addons.append(target)
 
     def set_targets(self):
-        self.status = ARCHIVER_INITIATED
         addons = [
             addon.config.short_name for addon in
             [self.src_node.get_addon(name) for name in settings.ADDONS_ARCHIVABLE]
@@ -143,7 +139,7 @@ class ArchiveJob(StoredObject):
         self.save()
 
     def update_target(self, addon_short_name, status, stat_result=None, errors=None):
-        stat_result = stat_result._to_dict() if stat_result else {}
+        stat_result = stat_result or {}
         errors = errors or []
 
         target = self.get_target(addon_short_name)

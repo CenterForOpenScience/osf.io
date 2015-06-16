@@ -30,7 +30,7 @@ class StatResult(object):
         self.disk_usage = float(disk_usage)
 
     def __str__(self):
-        return str(self._to_dict())
+        return str(dict(self))
 
     def _to_dict(self):
         return {

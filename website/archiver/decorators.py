@@ -3,7 +3,7 @@ import functools
 from framework.exceptions import HTTPError
 
 from website.project.decorators import _inject_nodes
-from website.archiver import ARCHIVER_UNCAUGHT_ERROR
+from website.archiver import ARCHIVER_NETWORK_ERROR
 from website.archiver import signals
 
 def fail_archive_on_error(func):
@@ -15,9 +15,10 @@ def fail_archive_on_error(func):
         except HTTPError as e:
             _inject_nodes(kwargs)
             registration = kwargs['node']
-            signals.send.archive_fail(
+            registration.archive_status = ARCHIVER_NETWORK_ERROR
+            registration.save()
+            signals.archive_fail.send(
                 registration,
-                ARCHIVER_UNCAUGHT_ERROR,
-                [str(e)]
+                errors=[e.message]
             )
     return wrapped

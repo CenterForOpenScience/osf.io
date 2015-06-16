@@ -2390,7 +2390,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         self.save()
         return contributor
 
-    def set_privacy(self, permissions, auth=None, log=True):
+    def set_privacy(self, permissions, auth=None, log=True, save=True):
         """Set the permissions for this node.
 
         :param permissions: A string, either 'public' or 'private'
@@ -2398,17 +2398,22 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         :param bool log: Whether to add a NodeLog for the privacy change.
         """
         if permissions == 'public' and not self.is_public:
-            if self.is_registration and (self.embargo_end_date or self.pending_embargo):
-                self.embargo.state = Embargo.CANCELLED
-                self.registered_from.add_log(
-                    action=NodeLog.EMBARGO_CANCELLED,
-                    params={
-                        'node': self._id,
-                        'embargo_id': self.embargo._id,
-                    },
-                    auth=auth,
-                )
-                self.embargo.save()
+            if self.is_registration:
+                if self.pending_embargo:
+                    raise NodeStateError("A registration with an unapproved embargo cannot be made public")
+                if self.embargo_end_date and not self.pending_embargo:
+                    self.embargo.state = Embargo.CANCELLED
+                    self.registered_from.add_log(
+                        action=NodeLog.EMBARGO_CANCELLED,
+                        params={
+                            'node': self._id,
+                            'embargo_id': self.embargo._id,
+                        },
+                        auth=auth,
+                    )
+                    self.embargo.save()
+                for child in self.nodes_primary:
+                    child.set_privacy(permissions, auth, log, save)
             self.is_public = True
         elif permissions == 'private' and self.is_public:
             if self.is_registration and not self.pending_embargo:
@@ -2435,7 +2440,8 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
                 auth=auth,
                 save=False,
             )
-        self.save()
+        if save:
+            self.save()
         return True
 
     # TODO: Move to wiki add-on
