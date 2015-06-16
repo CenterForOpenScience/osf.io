@@ -1254,12 +1254,8 @@ class TestDeleteNodePointer(ApiTestCase):
         assert_equal(len(self.project.nodes_pointer), 0)
 
     def test_deletes_private_node_pointer_logged_in_non_contributor(self):
-        url = '/v2/nodes/{}/pointers/'.format(self.project._id)
-        payload = {'node_id': self.project._id}
-        res = self.app.post(url, payload, auth=self.basic_auth)
-
-        res = self.app.delete(url, auth=self.basic_auth_two, expect_errors=True)
-        assert_equal(res.status_code, 405)
+        res = self.app.delete(self.private_url, auth=self.basic_auth_two, expect_errors=True)
+        assert_equal(res.status_code, 403)
 
 
 
