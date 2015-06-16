@@ -111,7 +111,7 @@ of the registration.</p>
 
 <ul>
     <li>A registration can be made public immediately or entered into
-    an embargo period of up to 4 years. At the end of the embargo period,
+    an embargo period of up to four years. At the end of the embargo period,
     the registration will automatically become public.</li>
 
     <li>Before initiating a registration, make sure that the project is
