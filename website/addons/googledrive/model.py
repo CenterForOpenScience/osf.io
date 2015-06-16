@@ -88,7 +88,6 @@ class GoogleDriveGuidFile(GuidFile):
     def unique_identifier(self):
         return self._metadata_cache['extra']['revisionId']
 
-
     @classmethod
     def get_or_create(cls, node, path):
         """Get or create a new file record. Return a tuple of the form (obj, created)
