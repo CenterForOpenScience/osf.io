@@ -247,7 +247,10 @@ class S3Provider(provider.BaseProvider):
         contents = parsed.get('Contents', [])
         prefixes = parsed.get('CommonPrefixes', [])
 
-        if not contents and not prefixes:
+        if not contents and not prefixes and not path.is_root:
+            # If contents and prefixes are empty then this "folder"
+            # must exist as a key with a / at the end of the name
+            # if the path is root there is no need to test if it exists
             yield from self.make_request(
                 'HEAD',
                 self.bucket.new_key(path.path).generate_url(settings.TEMP_URL_SECS, 'HEAD'),
