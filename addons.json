@@ -17,9 +17,9 @@
     "addons_archivable": {
         "osfstorage": "full",
         "box": "partial",
-        "dataverse": "partial",
+        "dataverse": "none",
         "dropbox": "partial",
-        "figshare": "partial",
+        "figshare": "none",
         "googledrive": "partial",
         "github": "partial",
         "s3": "partial",

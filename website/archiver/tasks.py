@@ -135,8 +135,6 @@ def make_copy_request(job_pk, url, data):
             errors=[res.json()],
         )
         raise HTTPError(res.status_code)
-    elif res.status_code in (200, 201):
-        dst.archive_job.update_target(provider, ARCHIVER_SUCCESS)
     project_signals.archive_callback.send(dst)
 
 @celery_app.task(base=ArchiverTask, name="archiver.archive_addon")

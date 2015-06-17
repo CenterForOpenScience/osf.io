@@ -390,7 +390,6 @@ class TestArchiverUtils(ArchiverTestCase):
             user=self.user,
             src=self.src,
             mail=mails.ARCHIVE_SIZE_EXCEEDED_USER,
-            stat_result={},
             mimetype='html',
         )
         args_desk = dict(
