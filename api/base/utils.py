@@ -60,6 +60,7 @@ def waterbutler_url_for(request_type, provider, path, node_id, token, obj_args=N
     url.args.update(query)
     return url.url
 
+
 def node_token_creator(node_id, user_id):
     """Return a hash generated from node and user ids """
     token = hashlib.md5()

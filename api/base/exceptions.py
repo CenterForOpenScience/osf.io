@@ -4,6 +4,5 @@ from rest_framework import status
 
 
 class Accepted(APIException):
-    """202 response"""
     status_code = status.HTTP_202_ACCEPTED
     default_detail = _('Accepted')

@@ -119,6 +119,7 @@ class NodeDetail(generics.RetrieveUpdateDestroyAPIView, NodeMixin):
         delete_warning = BEFORE_DELETE_NODE.format(_(node.title))
         raise Accepted([delete_warning, url])
 
+
 class NodeDeleteConfirm(generics.DestroyAPIView, NodeMixin):
     """Projects and component details.
 
