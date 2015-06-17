@@ -24,6 +24,7 @@ class ArchiveTarget(StoredObject):
         default=lambda: str(ObjectId())
     )
 
+    # addon_short_name of target addon
     name = fields.StringField()
 
     status = fields.StringField(default=ARCHIVER_INITIATED)
@@ -48,7 +49,9 @@ class ArchiveJob(StoredObject):
         default=lambda: str(ObjectId())
     )
 
+    # whether or not the ArchiveJob is complete (success or fail)
     done = fields.BooleanField(default=False)
+    # whether or not emails have been sent for this ArchiveJob
     sent = fields.BooleanField(default=False)
     status = fields.StringField(default=ARCHIVER_INITIATED)
     datetime_initiated = fields.DateTimeField(default=datetime.datetime.utcnow)
@@ -60,6 +63,11 @@ class ArchiveJob(StoredObject):
     target_addons = fields.ForeignField('archivetarget', list=True)
 
     # This field is used for stashing embargo URLs while still in the app context
+    # Format: {
+    #     'view': <str> url,
+    #     'approve': <str> url,
+    #     'disapprove': <str> url,
+    # }
     meta = fields.DictionaryField()
 
     @property
