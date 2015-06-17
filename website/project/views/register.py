@@ -443,7 +443,7 @@ def node_register_template_page_post(auth, node, **kwargs):
         register.archive_job.meta = {
             'embargo_urls': {
                 contrib._id: project_utils.get_embargo_urls(register, contrib)
-                for contrib in node.contributors
+                for contrib in node.active_contributors()
             }
         }
         register.archive_job.save()

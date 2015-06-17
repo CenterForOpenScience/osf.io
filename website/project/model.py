@@ -764,6 +764,11 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
             or is_api_node
         )
 
+    def active_contributors(self, include=lambda n: True):
+        for contrib in self.contributors:
+            if contrib.is_active and include(contrib):
+                yield contrib
+
     def is_admin_parent(self, user):
         if self.has_permission(user, 'admin', check_parent=False):
             return True
