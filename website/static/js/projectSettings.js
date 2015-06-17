@@ -17,8 +17,8 @@ var NodeCategoryTitleDescriptionSettings = oop.extend(
             var self = this;
             self.currentNode = window.contextVars.node;
             self.titleDescriptionEditUrl = self.currentNode.api_url;
-            self.decodedTitle = $osf.htmlDecode(self.currentNode.title)
-            self.decodedDescription = $osf.htmlDecode(self.currentNode.description)
+            self.decodedTitle = $osf.htmlDecode(self.currentNode.title);
+            self.decodedDescription = $osf.htmlDecode(self.currentNode.description);
             self.title = ko.observable(self.decodedTitle);
             self.description = ko.observable(self.decodedDescription);
 
@@ -50,8 +50,9 @@ var NodeCategoryTitleDescriptionSettings = oop.extend(
                     self.description() !== self.decodedDescription) {
                     return true;
                 }
-                else
+                else {
                     return false;
+                }
                 }, self);
             
             self.selectedCategory.subscribe(function(value) {
