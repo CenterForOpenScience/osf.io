@@ -57,13 +57,12 @@ def archive_callback(dst):
     if root_job.success:
         archiver_utils.archive_success(root, root.registered_user)
         if dst.pending_embargo:
-            for contributor in root.contributors:
-                if contributor.is_active:
-                    project_utils.send_embargo_email(
-                        root,
-                        contributor,
-                        urls=root_job.meta['embargo_urls'].get(contributor._id),
-                    )
+            for contributor in root.active_contributors():
+                project_utils.send_embargo_email(
+                    root,
+                    contributor,
+                    urls=root_job.meta['embargo_urls'].get(contributor._id),
+                )
         else:
             archiver_utils.send_archiver_success_mail(root)
         for node in node_and_visible_descendants(root):
