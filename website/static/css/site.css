@@ -2533,11 +2533,6 @@ div.profile-fullname{
     width: auto !important;
 }
 
-#file-navigation .fa-file {
-    padding-right: 5px;
-    padding-left: 5px;
-}
-
 /* scroll fix for wherever treebeard is used */
 #tb-tbody::-webkit-scrollbar  {
     z-index: 9;
