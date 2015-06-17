@@ -32,6 +32,7 @@ from website.citations import views as citation_views
 from website.search import views as search_views
 from website.oauth import views as oauth_views
 from website.profile import views as profile_views
+from website.blog import views as blog_views
 from website.project import views as project_views
 from website.addons.base import views as addon_views
 from website.discovery import views as discovery_views
@@ -471,6 +472,15 @@ def make_url_map(app):
              landing_page_views.enriched_profile,
              OsfWebRenderer('public/login_landing.mako')),
 
+    ])
+
+    ### Blog ###
+
+    process_rules(app, [
+        Rule('/profile/<uid>/blog/', 'get', blog_views.blog_view_id,
+            OsfWebRenderer('blog.mako')),
+        Rule('/profile/<uid>/blog/post/<path:bid>', 'get', blog_views.post_view_id,
+             OsfWebRenderer('post.mako'))
     ])
 
     ### Profile ###

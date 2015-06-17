@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="en">
+<head>
+	<meta charset="utf-8">
+	<title>{{meta_title}}</title>
+
+    <meta name="description" content="{{meta_description}}" />
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	
+	<link rel="stylesheet" href="//maxcdn.bootstrapcdn.com/font-awesome/4.3.0/css/font-awesome.min.css">
+	<link rel="stylesheet" href="{{asset "css/style.css"}}">
+
+	{{ghost_head}}
+</head>
+<body class="{{body_class}}">
+
+	{{{body}}}
+
+	<footer>
+		<small>
+			&copy; {{date format="YYYY"}} {{@blog.title}} on <a href="https://ghost.org/">Ghost</a> with <a href="https://github.com/ireade/openwriter" target="_blank">OpenWriter</a>
+		</small>
+	</footer>
+
+	{{ghost_foot}}
+
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.2/jquery.min.js"></script>
+    <script src="{{asset "js/script.js"}}"></script>
+</body>
+</html>

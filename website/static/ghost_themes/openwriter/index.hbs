@@ -1,0 +1,23 @@
+{{!< default}}
+
+<header class="regular blogrollpage" 
+	{{#if @blog.cover}}
+	style="background-image: url({{@blog.cover}});"
+	{{else}}
+	style="background-image: url('{{asset "images/cover.jpg"}}');"
+	{{/if}}
+>
+	{{> nav-container}}
+
+	<div class="title-container">
+		<h1 class="blogrollpage-title">Latest Blog Posts</h1>
+	</div>
+</header>
+
+<main>
+	{{#foreach posts}}
+		{{> excerpt}}
+	{{/foreach}}
+
+	{{pagination}}
+</main>

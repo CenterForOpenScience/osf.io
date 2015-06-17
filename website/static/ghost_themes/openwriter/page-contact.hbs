@@ -1,0 +1,43 @@
+{{!< default}}
+{{#post}}
+<header class="regular post" 
+	{{#if image}}
+	style="background-image: url({{image}});"
+	{{else}}
+		{{#if @blog.cover}}
+		style="background-image: url({{@blog.cover}});"
+		{{else}}
+		style="background-image: url('{{asset "images/cover.jpg"}}');"
+		{{/if}}
+	{{/if}}
+>
+	{{> nav-container}}
+
+	<div class="title-container">
+		<h1 class="post-title">{{title}}</h1>
+	</div>
+</header>
+
+<main>
+	<div class="post-content">{{content}}</div>
+	
+	{{#author}}
+	<form action="//formspree.io/{{email}}" method="POST" id="contactform">
+	{{/author}}
+
+		<input type="hidden" name="_subject" value="Contact Form Submission From {{@blog.title}}" />
+		
+		<label for="name">Full Name</label>
+		<input type="text" name="name"></input>
+
+		<label for="_replyto">Email Address</label>
+		<input type="text" name="_replyto"></input>
+
+		<label for="message">Message</label>
+		<textarea name="message" id="" cols="30" rows="3"></textarea>
+
+		<input type="submit" value="Submit" class="button blue"></input>
+	</form>
+
+</main>
+{{/post}}

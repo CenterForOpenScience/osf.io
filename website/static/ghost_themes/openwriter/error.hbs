@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="en">
+<head>
+	<meta charset="utf-8">
+	<title>Oops!</title>
+	
+	<meta name="description" content="{{meta_description}}" />
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+
+	<link rel="stylesheet" href="//maxcdn.bootstrapcdn.com/font-awesome/4.3.0/css/font-awesome.min.css">
+	<link rel="stylesheet" href="{{asset "css/style.css"}}">
+
+	{{ghost_head}}
+</head>
+<body class="{{body_class}}">
+
+<header id="homepage-hero"
+	{{#if @blog.cover}}
+	style="background-image: url({{@blog.cover}});"
+	{{else}}
+	style="background-image: url('{{asset "images/cover.jpg"}}');"
+	{{/if}}
+>
+	<div class="title-container">
+		<h1 class="blog-title">Uh Oh!</h1>
+		<p class="blog-description">There seems to be a problem, we can't find what you are looking for.</p>
+		
+		<ul class="homepage-links">
+			<li><a href="{{@blog.url}}">Go Back Home</a></li>
+		</ul>
+	</div>
+</header>
+	{{ghost_foot}}
+</body>
+</html>

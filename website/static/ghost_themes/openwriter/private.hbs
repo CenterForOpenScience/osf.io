@@ -1,0 +1,25 @@
+{{!< default}}
+
+<header id="homepage-hero" 
+	{{#if @blog.cover}}
+	style="background-image: url({{@blog.cover}});"
+	{{else}}
+	style="background-image: url('{{asset "images/cover.jpg"}}');"
+	{{/if}}
+>
+
+	<div class="title-container">
+		<h1 class="blog-title">{{@blog.title}}</h1>
+		<p class="blog-description">{{@blog.description}}</p>
+		
+		{{#if error}}
+		   <span class="error-message">{{error.message}}</span>
+		{{/if}}
+		<form method="post">
+		  <label for="">Password</label>
+		  {{input_password}}
+		  <input type="submit" />
+		</form>
+	</div>
+
+</header>

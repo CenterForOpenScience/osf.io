@@ -1,0 +1,29 @@
+{{!< default}}
+
+<header id="homepage-hero" 
+	{{#if @blog.cover}}
+	style="background-image: url({{@blog.cover}});"
+	{{else}}
+	style="background-image: url('{{asset "images/cover.jpg"}}');"
+	{{/if}}
+>
+
+	<div class="title-container">
+		<h1 class="blog-title">{{@blog.title}}</h1>
+		<p class="blog-description">{{@blog.description}}</p>
+		
+		<ul class="homepage-links">
+			<li><a href="#home-latest-post" id="blog">Blog</a></li>
+			{{navigation}}
+		</ul>
+	</div>
+
+</header>
+
+<main id="home-latest-post">
+	{{#foreach posts}}
+		{{> excerpt}}
+	{{/foreach}}
+
+	{{pagination}}
+</main>

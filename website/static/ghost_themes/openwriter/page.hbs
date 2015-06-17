@@ -1,0 +1,24 @@
+{{!< default}}
+{{#post}}
+<header class="regular post" 
+	{{#if image}}
+	style="background-image: url({{image}});"
+	{{else}}
+		{{#if @blog.cover}}
+		style="background-image: url({{@blog.cover}});"
+		{{else}}
+		style="background-image: url('{{asset "images/cover.jpg"}}');"
+		{{/if}}
+	{{/if}}
+>
+	{{> nav-container}}
+
+	<div class="title-container">
+		<h1 class="post-title">{{title}}</h1>
+	</div>
+</header>
+
+<main>
+	<div class="post-content">{{content}}</div>
+</main>
+{{/post}}
