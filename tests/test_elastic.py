@@ -3,6 +3,7 @@ import unittest
 import logging
 
 from nose.tools import *  # flake8: noqa (PEP8 asserts)
+import mock
 
 from framework.auth.core import Auth
 from website import settings
@@ -205,6 +206,7 @@ class TestRegistrationRetractions(SearchTestCase):
         docs = query('category:registration AND ' + self.title)['results']
         assert_equal(len(docs), 1)
 
+    @mock.patch('website.project.model.Node.archiving', mock.PropertyMock(return_value=False))
     def test_pending_retraction_wiki_content_is_searchable(self):
         # Add unique string to wiki
         wiki_content = {'home': 'public retraction test'}
@@ -235,6 +237,7 @@ class TestRegistrationRetractions(SearchTestCase):
         docs = query('category:registration AND ' + self.title)['results']
         assert_equal(len(docs), 1)
 
+    @mock.patch('website.project.model.Node.archiving', mock.PropertyMock(return_value=False))
     def test_retraction_wiki_content_is_not_searchable(self):
         # Add unique string to wiki
         wiki_content = {'home': 'public retraction test'}
@@ -257,7 +260,7 @@ class TestRegistrationRetractions(SearchTestCase):
         self.registration.retraction.state = 'retracted'
         self.registration.retraction.save()
         self.registration.save()
-        self.registration.reload()
+        self.registration.update_search()
 
         # Query and ensure unique string in wiki doesn't show up
         docs = query('category:registration AND "{}"'.format(wiki_content['home']))['results']
