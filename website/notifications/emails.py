@@ -68,6 +68,8 @@ def email_digest(recipient_ids, uid, event, user, node, timestamp, **context):
 
 EMAIL_FUNCTION_MAP = {
     'email_transactional': email_transactional,
+    'email_quarter': email_digest,
+    'email_hour': email_digest,
     'email_digest': email_digest,
 }
 
@@ -151,6 +153,15 @@ def send(recipient_ids, notification_type, uid, event, user, node, timestamp, **
     """Dispatch to the handler for the provided notification_type"""
     if notification_type == 'none':
         return
+
+    if notification_type == 'email_quarter':
+        nsecs = timestamp.minute*60 + timestamp.second + timestamp.microsecond*1e-6
+        delta = (nsecs//900)*900+900 - nsecs
+        print "calculate the next quarter hour: {}".format(delta)
+    elif notification_type == 'email_hour':
+        print "calculate the next hour"
+    elif notification_type == 'email_digest':
+        print "calculate the next day"
 
     try:
         EMAIL_FUNCTION_MAP[notification_type](

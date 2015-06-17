@@ -17,6 +17,8 @@ from website.notifications.model import NotificationDigest
 from website.notifications.utils import NotificationsDict
 from website import settings
 
+from pprint import pprint
+
 
 logger = logging.getLogger(__name__)
 # Silence loud internal mail logger
@@ -49,6 +51,8 @@ def send_digest(grouped_digests):
             sentry.log_exception()
             sentry.log_message("A user with this username does not exist.")
             return
+
+        pprint(group)
 
         info = group['info']
         digest_notification_ids = [message['_id'] for message in info]
