@@ -6,4 +6,9 @@ var $osf = require('js/osfHelpers');
 var ComponentControl = {};
 
 // binds to component scope in render_nodes.mako
-$osf.applyBindings(ComponentControl, '#componentScope');
+$(document).ready(function() {
+    $('.componentScope').each(function(i) {
+       $(this).attr('id', 'componentScope' + i);
+       $osf.applyBindings(ComponentControl, this);
+    });
+});

@@ -1,6 +1,6 @@
 % if len(nodes):
     <ul class="list-group ${'sortable' if sortable and 'write' in user['permissions'] else ''}">
-      <span id="componentScope" class="scripted">
+      <span class="componentScope scripted">
         % for each in nodes:
             <div mod-meta='{
                     "tpl": "util/render_node.mako",
@@ -46,7 +46,7 @@
             <a href="https://osf.io/getting-started/#privacy" target="_blank">public</a>.
         </p>
     </div>
-% elif profile is not UNDEFINED:  # On profile page and user has no public projects/components
+% elif profile is not UNDEFINED:  ## On profile page and user has no public projects/components
     <div class="help-block">This user has no public ${pluralized_node_type}.</div>
 % else:
     <div class="help-block">No ${pluralized_node_type} to display.</div>
