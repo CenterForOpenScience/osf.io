@@ -84,7 +84,7 @@ class TestCollectionFiltering(ApiTestCase):
         assert_not_in(self.dashboard._id, ids)
 
     def test_get_one_collection_with_exact_filter_logged_in(self):
-        url = "/v2/collections/?filter[title]=Project%20One"
+        url = "/{}collections/?filter[title]=Project%20One".format(API_BASE)
 
         res = self.app.get(url, auth=self.basic_auth_one)
         node_json = res.json['data']
@@ -99,7 +99,7 @@ class TestCollectionFiltering(ApiTestCase):
         assert_not_in(self.dashboard._id, ids)
 
     def test_get_some_collections_with_substring_logged_in(self):
-        url = "/v2/collections/?filter[title]=Two"
+        url = "/{}collections/?filter[title]=Two".format(API_BASE)
 
         res = self.app.get(url, auth=self.basic_auth_one)
         node_json = res.json['data']
@@ -114,7 +114,7 @@ class TestCollectionFiltering(ApiTestCase):
         assert_not_in(self.dashboard._id, ids)
 
     def test_get_only_public_or_my_collections_with_filter_logged_in(self):
-        url = "/v2/collections/?filter[title]=Project"
+        url = "/{}collections/?filter[title]=Project".format(API_BASE)
 
         res = self.app.get(url, auth=self.basic_auth_one)
         node_json = res.json['data']
@@ -130,7 +130,7 @@ class TestCollectionFiltering(ApiTestCase):
 
     def test_incorrect_filtering_field_logged_in(self):
         # TODO Change to check for error when the functionality changes. Currently acts as though it doesn't exist
-        url = "/v2/collections/?filter[notafield]=bogus"
+        url = "/{}collections/?filter[notafield]=bogus".format(API_BASE)
 
         res = self.app.get(url, auth=self.basic_auth_one)
         node_json = res.json['data']
@@ -327,7 +327,7 @@ class TestCollectionUpdate(ApiTestCase):
         collection = self.collection = FolderFactory(
             title=self.title, is_public=True, creator=self.user)
 
-        url = '/v2/collections/{}/'.format(collection._id)
+        url = '/collections/{}/'.format(API_BASE, collection._id)
         res = self.app.patch_json(url, {
             'title': new_title,
         }, auth=self.basic_auth)
@@ -373,13 +373,13 @@ class TestCollectionChildrenList(ApiTestCase):
         self.component = NodeFactory(parent=self.collection, creator=self.user)
         self.pointer = FolderFactory()
         self.collection.add_pointer(self.pointer, auth=Auth(self.user), save=True)
-        self.private_collection_url = '/v2/collections/{}/children/'.format(self.collection._id)
+        self.private_collection_url = '/{}collections/{}/children/'.format(API_BASE, self.collection._id)
 
         self.public_collection = FolderFactory(is_public=True, creator=self.user)
         self.public_collection.save()
         self.public_component = NodeFactory(parent=self.public_collection, creator=self.user,
                                             is_public=True)
-        self.public_collection_url = '/v2/collections/{}/children/'.format(self.public_collection._id)
+        self.public_collection_url = '/{}collections/{}/children/'.format(API_BASE, self.public_collection._id)
 
         self.user_two = UserFactory.build()
         self.user_two.set_password(password)
@@ -495,7 +495,6 @@ class TestCreateCollectionPointer(ApiTestCase):
         self.user_two.save()
         self.basic_auth_two = (self.user_two.username, 'password')
 
-
     def test_creates_public_collection_pointer_logged_out(self):
         res = self.app.post(self.public_url, self.public_payload, expect_errors=True)
         # This is 403 instead of 401 because basic authentication is only for unit tests and, in order to keep from
@@ -529,7 +528,7 @@ class TestCollectionPointerDetail(ApiTestCase):
         self.private_collection = FolderFactory(creator=self.user, is_public=False)
         self.pointer_collection = FolderFactory(creator=self.user, is_public=False)
         self.pointer = self.private_collection.add_pointer(self.pointer_collection, auth=Auth(self.user), save=True)
-        self.private_url = '/v2/collections/{}/pointers/{}'.format(self.private_collection._id, self.pointer._id)
+        self.private_url = '/{}collections/{}/pointers/{}/'.format(API_BASE, self.private_collection._id, self.pointer._id)
 
         self.user_two = UserFactory.build()
         self.user_two.set_password('password')
@@ -540,7 +539,7 @@ class TestCollectionPointerDetail(ApiTestCase):
         self.public_pointer_collection = FolderFactory(is_public=True)
         self.public_pointer = self.public_collection.add_pointer(self.public_pointer_collection, auth=Auth(self.user),
                                                                  save=True)
-        self.public_url = '/v2/collections/{}/pointers/{}'.format(self.public_collection._id, self.public_pointer._id)
+        self.public_url = '/{}collections/{}/pointers/{}/'.format(API_BASE, self.public_collection._id, self.public_pointer._id)
 
         self.collection_one = FolderFactory(creator=self.user)
         self.collection_two = FolderFactory(creator=self.user)
@@ -584,7 +583,7 @@ class TestDeleteCollectionPointer(ApiTestCase):
         self.collection = FolderFactory(creator=self.user, is_public=False)
         self.pointer_collection = FolderFactory(creator=self.user, is_public=True)
         self.pointer = self.collection.add_pointer(self.pointer_collection, auth=Auth(self.user), save=True)
-        self.private_url = '/{}collections/{}/pointers/{}'.format(API_BASE, self.collection._id, self.pointer._id)
+        self.private_url = '/{}collections/{}/pointers/{}/'.format(API_BASE, self.collection._id, self.pointer._id)
 
         self.user_two = UserFactory.build()
         self.user_two.set_password('password')
@@ -595,7 +594,7 @@ class TestDeleteCollectionPointer(ApiTestCase):
         self.public_pointer_collection = FolderFactory(is_public=True, creator=self.user)
         self.public_pointer = self.public_collection.add_pointer(self.public_pointer_collection, auth=Auth(self.user),
                                                                  save=True)
-        self.public_url = '/{}collections/{}/pointers/{}'.format(API_BASE, self.public_collection._id,
+        self.public_url = '/{}collections/{}/pointers/{}/'.format(API_BASE, self.public_collection._id,
                                                                  self.public_pointer._id)
 
     def test_deletes_public_collection_pointer_logged_out(self):

@@ -10,6 +10,6 @@ urlpatterns = [
     url(r'^[~]?(?P<pk>\w+)/$', views.CollectionDetail.as_view(), name='collection-detail'),
     url(r'^[~]?(?P<pk>\w+)/children/$', views.CollectionChildrenList.as_view(), name='collection-children'),
     url(r'^(?P<pk>\w+)/pointers/$', views.CollectionPointersList.as_view(), name='collection-pointers'),
-    url(r'^(?P<pk>\w+)/pointers/(?P<pointer_id>\w+)', views.CollectionPointerDetail.as_view(),
+    url(r'^(?P<pk>\w+)/pointers/(?P<pointer_id>\w+)/$', views.CollectionPointerDetail.as_view(),
         name='collection-pointer-detail'),
 ]

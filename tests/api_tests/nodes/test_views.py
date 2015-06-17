@@ -1095,7 +1095,7 @@ class TestNodePointerDetail(ApiTestCase):
         self.private_project = ProjectFactory(creator=self.user, is_public=False)
         self.pointer_project = ProjectFactory(creator=self.user, is_public=False)
         self.pointer = self.private_project.add_pointer(self.pointer_project, auth=Auth(self.user), save=True)
-        self.private_url = '/{}nodes/{}/pointers/{}'.format(API_BASE, self.private_project._id, self.pointer._id)
+        self.private_url = '/{}nodes/{}/pointers/{}/'.format(API_BASE, self.private_project._id, self.pointer._id)
 
         self.user_two = UserFactory.build()
         self.user_two.set_password('password')
@@ -1105,7 +1105,7 @@ class TestNodePointerDetail(ApiTestCase):
         self.public_project = ProjectFactory(is_public=True)
         self.public_pointer_project = ProjectFactory(is_public=True)
         self.public_pointer = self.public_project.add_pointer(self.public_pointer_project, auth= Auth(self.user), save=True)
-        self.public_url = '/{}nodes/{}/pointers/{}'.format(API_BASE, self.public_project._id, self.public_pointer._id)
+        self.public_url = '/{}nodes/{}/pointers/{}/'.format(API_BASE, self.public_project._id, self.public_pointer._id)
 
     def test_returns_public_node_pointer_detail_logged_out(self):
         res = self.app.get(self.public_url)
@@ -1147,7 +1147,7 @@ class TestDeleteNodePointer(ApiTestCase):
         self.project = ProjectFactory(creator=self.user, is_public=False)
         self.pointer_project = ProjectFactory(creator=self.user, is_public=True)
         self.pointer = self.project.add_pointer(self.pointer_project, auth=Auth(self.user), save=True)
-        self.private_url = '/{}nodes/{}/pointers/{}'.format(API_BASE, self.project._id, self.pointer._id)
+        self.private_url = '/{}nodes/{}/pointers/{}/'.format(API_BASE, self.project._id, self.pointer._id)
 
         self.user_two = UserFactory.build()
         self.user_two.set_password('password')
@@ -1157,7 +1157,7 @@ class TestDeleteNodePointer(ApiTestCase):
         self.public_project = ProjectFactory(is_public=True, creator=self.user)
         self.public_pointer_project = ProjectFactory(is_public=True, creator=self.user)
         self.public_pointer = self.public_project.add_pointer(self.public_pointer_project, auth= Auth(self.user), save=True)
-        self.public_url = '/{}nodes/{}/pointers/{}'.format(API_BASE, self.public_project._id, self.public_pointer._id)
+        self.public_url = '/{}nodes/{}/pointers/{}/'.format(API_BASE, self.public_project._id, self.public_pointer._id)
 
     def test_deletes_public_node_pointer_logged_out(self):
         res = self.app.delete(self.public_url, expect_errors=True)

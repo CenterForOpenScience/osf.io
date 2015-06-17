@@ -101,7 +101,8 @@ def _tpl(val):
 
 def _get_attr_from_tpl(attr_tpl, obj):
     if isinstance(obj, dict):
-        return ''
+        if 'smart_folder' in obj:
+            return ''
     try:
         return obj.pk
     except AttributeError:
