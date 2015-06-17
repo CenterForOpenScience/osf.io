@@ -467,6 +467,14 @@ var applyBindings = function(viewModel, selector) {
 };
 
 
+var hasTimeComponent = function(dateString) {
+    return dateString.indexOf('T') !== -1;
+};
+
+var forceUTC = function(dateTimeString) {
+    return dateTimeString.slice(-1) === 'Z' ? dateTimeString : dateTimeString + 'Z';
+};
+
 /**
   * A date object with two formats: local time or UTC time.
   * @param {String} date The original date as a string. Should be an standard
@@ -475,15 +483,16 @@ var applyBindings = function(viewModel, selector) {
 var LOCAL_DATEFORMAT = 'YYYY-MM-DD hh:mm A';
 var UTC_DATEFORMAT = 'YYYY-MM-DD HH:mm UTC';
 var FormattableDate = function(date) {
+
     if (typeof date === 'string') {
-        // The date as a Date object
-        this.date = new Date(date);
+        this.date = new Date(hasTimeComponent(date) ? forceUTC(date) : date);
     } else {
         this.date = date;
     }
     this.local = moment(this.date).format(LOCAL_DATEFORMAT);
     this.utc = moment.utc(this.date).format(UTC_DATEFORMAT);
 };
+
 
 /**
  * Escapes html characters in a string.
