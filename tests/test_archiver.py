@@ -1,14 +1,16 @@
-import json
-import celery
-from faker import Faker
+# -*- coding: utf-8 -*-
 import datetime
-from modularodm import Q
 import functools
+import json
+import logging
+import unittest
 
+import celery
 import mock  # noqa
 from mock import call
 from nose.tools import *  # noqa PEP8 asserts
 import httpretty
+from modularodm import Q
 
 from scripts import cleanup_failed_registrations as scripts
 
@@ -32,13 +34,20 @@ from website import mails
 from website import settings
 from website.util import waterbutler_url_for
 from website.project.model import Node, NodeLog
+from website.archiver.model import ArchiveJob, ArchiveTarget
 from website.addons.base import StorageAddonBase
 from website.util import api_url_for
 
 from tests import factories
-from tests.base import OsfTestCase
+from tests.base import OsfTestCase, fake
 
-fake = Faker()
+
+SILENT_LOGGERS = (
+    'framework.tasks.utils',
+    'website.archiver.tasks',
+)
+for each in SILENT_LOGGERS:
+    logging.getLogger(each).setLevel(logging.CRITICAL)
 
 FILE_TREE = {
     'path': '/',
@@ -675,3 +684,50 @@ class TestArchiverDecorators(ArchiverTestCase):
             self.user,
             [e.message]
         )
+
+
+def TestArchiveTarget(OsfTestCase):
+
+    def test_repr(self):
+        target = ArchiveTarget()
+        result = repr(target)
+        assert_in('ArchiveTarget', result)
+        assert_in(str(job._id), result)
+
+
+class TestArchiveJobModel(OsfTestCase):
+
+    def test_repr(self):
+        job = ArchiveJob()
+        result = repr(job)
+        assert_in('ArchiveJob', result)
+        assert_in(str(job.done), result)
+        assert_in(str(job._id), result)
+
+    def test_target_info(self):
+        target = ArchiveTarget(name='neon-archive')
+        target.save()
+        job = ArchiveJob()
+        job.target_addons.append(target)
+
+        result = job.target_info()
+        assert_equal(len(result), 1)
+
+        item = result[0]
+
+        assert_equal(item['name'], target.name)
+        assert_equal(item['status'], target.status)
+        assert_equal(item['stat_result'], target.stat_result)
+        assert_equal(item['errors'], target.errors)
+
+    @unittest.skip('TODO')
+    def test_get_target(self):
+        assert 0, 'todo'
+
+    @unittest.skip('TODO')
+    def test_set_targets(self):
+        assert 0, 'todo'
+
+    @unittest.skip('TODO')
+    def test_archive_tree_finished(self):
+        assert 0, 'todo'

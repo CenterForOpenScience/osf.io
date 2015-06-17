@@ -29,7 +29,12 @@ class ArchiveTarget(StoredObject):
     errors = fields.StringField(list=True)
 
     def __repr__(self):
-        return "<{0}>({1}:{2})".format(self.__class__.__name__, self.name, self.status)
+        return '<{0}(_id={1}, name={2}, status={3})>'.format(
+            self.__class__.__name__,
+            self._id,
+            self.name,
+            self.status
+        )
 
 class ArchiveJob(StoredObject):
 
@@ -51,6 +56,12 @@ class ArchiveJob(StoredObject):
 
     # This field is used for stashing embargo URLs while still in the app context
     meta = fields.DictionaryField()
+
+    def __repr__(self):
+        return (
+            '<{ClassName}(_id={self._id}, done={self.done}, '
+            ' status={self.status}, src_node={self.src_node}, dst_node={self.dst_node})>'
+        ).format(ClassName=self.__class__.__name__, self=self)
 
     @property
     def children(self):
