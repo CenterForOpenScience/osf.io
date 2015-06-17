@@ -410,6 +410,11 @@ class TestNotificationUtils(OsfTestCase):
                     'url': self.project.url,
                 },
                 'kind': 'folder',
+                'nodeType': 'project',
+                'category': 'project',
+                'permissions': {
+                    'view': True,
+                },
                 'children': [
                     {
                         'event': {
@@ -430,6 +435,11 @@ class TestNotificationUtils(OsfTestCase):
                         },
 
                         'kind': 'node',
+                        'nodeType': 'component',
+                        'category': 'hypothesis',
+                        'permissions': {
+                            'view': True,
+                        },
                         'children': [
                             {
                                 'event': {
@@ -457,6 +467,11 @@ class TestNotificationUtils(OsfTestCase):
                 'url': self.node.url,
             },
             'kind': 'node',
+            'nodeType': 'component',
+            'category': 'hypothesis',
+            'permissions': {
+                'view': True,
+            },
             'children': [
                 {
                     'event': {
@@ -487,6 +502,11 @@ class TestNotificationUtils(OsfTestCase):
                     'url': self.project.url,
                 },
                 'kind': 'folder',
+                'nodeType': 'project',
+                'category': 'project',
+                'permissions': {
+                    'view': True,
+                },
                 'children': [
                     {
                         'event': {
@@ -506,6 +526,11 @@ class TestNotificationUtils(OsfTestCase):
                         },
 
                         'kind': 'node',
+                        'nodeType': 'component',
+                        'category': 'hypothesis',
+                        'permissions': {
+                            'view': True,
+                        },
                         'children': [
                             {
                                 'event': {
@@ -527,6 +552,11 @@ class TestNotificationUtils(OsfTestCase):
                         },
 
                         'kind': 'node',
+                        'nodeType': 'component',
+                        'category': 'hypothesis',
+                        'permissions': {
+                            'view': True,
+                        },
                         'children': [
                             {
                                 'event': {
@@ -567,6 +597,11 @@ class TestNotificationUtils(OsfTestCase):
                 'url': project.url,
             },
             'kind': 'folder',
+            'nodeType': 'project',
+            'category': 'project',
+            'permissions': {
+                'view': True,
+            },
             'children': [
                 {
                     'event': {
@@ -602,6 +637,11 @@ class TestNotificationUtils(OsfTestCase):
                     'url': '',
                 },
                 'kind': 'folder',
+                'nodeType': 'project',
+                'category': 'project',
+                'permissions': {
+                    'view': False,
+                },
                 'children': [
                     {
                         'node': {
@@ -611,6 +651,11 @@ class TestNotificationUtils(OsfTestCase):
                         },
 
                         'kind': 'folder',
+                        'nodeType': 'component',
+                        'category': 'hypothesis',
+                        'permissions': {
+                            'view': True,
+                        },
                         'children': [
                             {
                                 'event': {
