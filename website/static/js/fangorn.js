@@ -1370,10 +1370,11 @@ var FGButton = {
             opts['data-placement'] = 'bottom';
             opts.title = args.tooltip;
         }
-        return m('div', opts, [
-            m('i', {className: iconCSS}),
-            (children? m('span', children): m(''))
-        ]);
+        var childOptions = [m('i', {className: iconCSS})];
+        if (children) {
+            childOptions.push(m('span', children));
+        }
+        return m('div', opts, childOptions);
     }
 };
 
