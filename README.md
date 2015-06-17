@@ -9,10 +9,7 @@ Docs can be found [here](https://waterbutler.readthedocs.org/en/latest/)
 
 ### osf startup commands
 
-*(requires two instances of osf in order to render files)*
-
 ```bash
-invoke server --port 5001
 invoke server
 ```
 
