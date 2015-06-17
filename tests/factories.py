@@ -31,6 +31,7 @@ from website.project.model import (
 )
 from website.notifications.model import NotificationSubscription, NotificationDigest
 from website.archiver import utils as archiver_utils
+from website.archiver.model import ArchiveTarget, ArchiveJob
 
 from website.addons.wiki.model import NodeWikiPage
 from tests.base import fake
@@ -477,3 +478,11 @@ class MockOAuthAddonUserSettings(addons_base.AddonOAuthUserSettingsBase):
 
 class MockOAuthAddonNodeSettings(addons_base.AddonOAuthNodeSettingsBase):
     oauth_provider = MockOAuth2Provider
+
+
+class ArchiveTargetFactory(ModularOdmFactory):
+    FACTORY_FOR = ArchiveTarget
+
+
+class ArchiveJobFactory(ModularOdmFactory):
+    FACTORY_FOR = ArchiveJob
