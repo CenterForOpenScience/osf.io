@@ -242,4 +242,4 @@ def archive(self, job_pk):
                 for target in dst.archive_job.target_addons
             ]
         )
-    )(archive_node.s(job_pk))
+    )(archive_node.s(job_pk=job_pk))
