@@ -47,11 +47,12 @@ function draftNode(data) {
 (function() {
     var $editor = document.getElementById('editor');
 
-    var proj_info, your_info, interesting, init_proj_info, init_your_info, init_interesting, open_ended; 
+    var proj_info, your_info, interesting, init_proj_info, init_your_info, init_interesting; 
     var init_array = [];
     var init_schemas = [];
     var prereg = [];
     var prereg_data = [];
+    var titles = [];
     var editor;
 
     init_proj_info = [
@@ -191,25 +192,25 @@ function draftNode(data) {
             type: "object",
             properties: {
                 item17: {
-                    type: "select", title: "The similarities/differences in the instructions are", enum: ["Exact", "Close", "Different"], description: "Choose..."
+                    type: "string", title: "The similarities/differences in the instructions are", enum: ["Exact", "Close", "Different"], description: "Choose..."
                 },
                 item18: {
-                    type: "select", title: "The similarities/differences in the measures are", enum: ["Exact", "Close", "Different"], description: "Choose..."
+                    type: "string", title: "The similarities/differences in the measures are", enum: ["Exact", "Close", "Different"], description: "Choose..."
                 },
                 item19: {
-                    type: "select", title: "The similarities/differences in the stimuli are", enum: ["Exact", "Close", "Different"], description: "Choose..."
+                    type: "string", title: "The similarities/differences in the stimuli are", enum: ["Exact", "Close", "Different"], description: "Choose..."
                 },
                 item20: {
-                    type: "select", title: "The similarities/differences in the procedure are", enum: ["Exact", "Close", "Different"], description: "Choose..."
+                    type: "string", title: "The similarities/differences in the procedure are", enum: ["Exact", "Close", "Different"], description: "Choose..."
                 },
                 item21: {
-                    type: "select", title: "The similarities/differences in the location (e.g., lab vs. online; alone vs. in groups) are", enum: ["Exact", "Close", "Different"], description: "Choose..."
+                    type: "string", title: "The similarities/differences in the location (e.g., lab vs. online; alone vs. in groups) are", enum: ["Exact", "Close", "Different"], description: "Choose..."
                 },
                 item22: {
-                    type: "select", title: "The similarities/difference in remuneration are", enum: ["Exact", "Close", "Different"], description: "Choose..."
+                    type: "string", title: "The similarities/difference in remuneration are", enum: ["Exact", "Close", "Different"], description: "Choose..."
                 },
                 item23: {
-                    type: "select", title: "The similarities/differences between participant populations are", enum: ["Exact", "Close", "Different"], description: "Choose..."
+                    type: "string", title: "The similarities/differences between participant populations are", enum: ["Exact", "Close", "Different"], description: "Choose..."
                 },
                 item24: {
                     type: "string", title: "What differences between the original study and your study might be expected to influence the size and/or direction of the effect?"
@@ -320,6 +321,10 @@ function draftNode(data) {
 
     init_schemas = prereg;
 
+    //var str = JSON.stringify(prereg);
+    //console.log(str);
+    //console.log(JSON.parse(str));
+
     var loadData = function(schemas, arrays) {
         // incorrect data input
         if (schemas.length !== arrays.length) {
@@ -334,6 +339,7 @@ function draftNode(data) {
         var tabs = '<li><a id="prev" href="#" aria-label="Previous"><span aria-hidden="true">&laquo;</span></a></li>';
         var pages;
         for (pages in init_schemas) {
+            titles.push(init_schemas[pages].title);
             tabs = tabs + '<li><a id="tab' + pages + '" href="#">' + init_schemas[pages].title + '</a></li>';
         }
 
@@ -391,29 +397,30 @@ function draftNode(data) {
     };
 
     $(document.body).on('click', 'a', function() {
-        var id = this.id.split("tab");
-        reload(init_schemas, init_array, id[1]);
-    });
-
-    document.getElementById('next').onclick = function () {
-        var schema;
-        console.log(editor);
-        for (schema in init_schemas) {
-            if (init_schemas[schema].title === editor.options.schema.title) {
-
-                if (parseInt(schema) == (init_schemas.length - 1)) {
-                    reload(init_schemas, init_array, schema);
-                } else {
-                    console.log(parseInt(schema) + 1);
-                    reload(init_schemas, init_array, parseInt(schema) + 1);
-                }
+        var index = 0;
+        var clicked = this.id;
+        if (clicked === 'prev') {
+            index = titles.indexOf(editor.options.schema.title);
+            if (index === 0) {
+                reload(init_schemas, init_array, 0);
+            } else {
+                reload(init_schemas, init_array, parseInt(index) - 1); 
             }
-        } 
-    };
-
-    document.getElementById('prev').onclick = function () {
-        reload(init_schemas, init_array, 1);
-    };
+        } else if (clicked === 'next') {
+            index = titles.indexOf(editor.options.schema.title);
+            var max = init_schemas.length - 1;
+            if (index === max) {
+                reload(init_schemas, init_array, max);
+            } else {
+                reload(init_schemas, init_array, parseInt(index) + 1); 
+            }
+            
+        } else {
+            var id = clicked.split("tab");
+            reload(init_schemas, init_array, id[1]);
+        }
+        
+    });
 
     document.getElementById('save').onclick = function () {
         console.log(editor.options.schema.title);
