@@ -67,7 +67,7 @@ def archive_callback(dst):
         else:
             archiver_utils.send_archiver_success_mail(root)
         for node in node_and_visible_descendants(root):
-            node.save()  # update search if public
+            node.update_search()  # update search if public
     else:
         archiver_utils.handle_archive_fail(
             ARCHIVER_UNCAUGHT_ERROR,

@@ -27,6 +27,14 @@ class ArchiveTarget(StoredObject):
     name = fields.StringField()
 
     status = fields.StringField(default=ARCHIVER_INITIATED)
+    # <dict> representation of a website.archiver.AggregateStatResult
+    # Format: {
+    #     'target_id': <str>,
+    #     'target_name': <str>,
+    #     'targets': <list>(StatResult | AggregateStatResult),
+    #     'num_files': <int>,
+    #     'disk_usage': <float>,
+    # }
     stat_result = fields.DictionaryField()
     errors = fields.StringField(list=True)
 

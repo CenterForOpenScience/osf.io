@@ -5,6 +5,7 @@ import datetime
 from modularodm import Q
 import functools
 
+from contextlib import nested
 import mock  # noqa
 from mock import call
 from nose.tools import *  # noqa PEP8 asserts
@@ -676,10 +677,36 @@ class TestArchiverDecorators(ArchiverTestCase):
             [e.message]
         )
 
-class TestArchiverBehavior(self):
+class TestArchiverBehavior(OsfTestCase):
 
-    def test_archiving_registrations_not_added_to_search(self):
-        assert(false)
+    @mock.patch('website.project.model.Node.update_search')
+    def test_archiving_registrations_not_added_to_search(self, mock_update_search):
+        proj = factories.ProjectFactory()
+        reg = factories.RegistrationFactory(project=proj)
+        ArchiveJob(
+            src_node=proj,
+            dst_node=reg,
+            initiator=proj.creator
+        )
+        reg.save()
+        mock_update_search.assert_not_called()
 
-    def test_archiving_nodes_added_to_search_on_success_if_public(self):
-        assert(false)
+
+    @mock.patch('website.project.model.Node.update_search')
+    @mock.patch('website.archiver.utils.send_archiver_success_mail')
+    def test_archiving_nodes_added_to_search_on_success_if_public(self, mock_send, mock_update_search):
+        proj = factories.ProjectFactory()
+        reg = factories.RegistrationFactory(project=proj)
+        job = ArchiveJob(
+            src_node=proj,
+            dst_node=reg,
+            initiator=proj.creator
+        )
+        reg.save()
+        with nested(
+                mock.patch('website.archiver.model.ArchiveJob.archive_tree_finished', mock.Mock(return_value=True)),
+                mock.patch('website.archiver.model.ArchiveJob.sent', mock.PropertyMock(return_value=False)),
+                mock.patch('website.archiver.model.ArchiveJob.success', mock.PropertyMock(return_value=True))
+        ) as (mock_finished, mock_sent, mock_success):
+            listeners.archive_callback(reg)
+        mock_update_search.assert_called_once_with()
