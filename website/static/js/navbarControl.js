@@ -33,7 +33,7 @@ var NavbarViewModel = function() {
             $('#searchPageFullBar').focus();
         }
     };
-    
+
     self.submit = function() {
         $('#searchPageFullBar').blur().focus();
        if(self.query() !== ''){
