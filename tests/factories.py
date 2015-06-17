@@ -24,7 +24,7 @@ from website.addons import base as addons_base
 from website.oauth.models import ExternalAccount
 from website.oauth.models import ExternalProvider
 from website.project.model import (
-    ApiKey, Comment, Node, NodeLog,  OAuth2App, Pointer, PrivateLink, Tag, WatchConfig,
+    ApiKey, Comment, Node, NodeLog,  ApiOAuth2Application, Pointer, PrivateLink, Tag, WatchConfig,
 )
 from website.notifications.model import NotificationSubscription, NotificationDigest
 
@@ -129,8 +129,8 @@ class ApiKeyFactory(ModularOdmFactory):
     FACTORY_FOR = ApiKey
 
 
-class OAuth2AppFactory(ModularOdmFactory):
-    FACTORY_FOR = OAuth2App
+class ApiOAuth2ApplicationFactory(ModularOdmFactory):
+    FACTORY_FOR = ApiOAuth2Application
 
     owner = SubFactory(UserFactory)
 

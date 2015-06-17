@@ -286,7 +286,7 @@ class ApiKey(StoredObject):
         return self.node__keyed[0] if self.node__keyed else None
 
 
-class OAuth2App(StoredObject):
+class ApiOAuth2Application(StoredObject):
     """Registration and key for user-created OAuth API applications"""
 
     # Client ID
@@ -322,7 +322,7 @@ class OAuth2App(StoredObject):
 
     def deactivate(self):
         """
-        Deactivate an OAuth2App
+        Deactivate an ApiOAuth2Application
 
         Does not delete the database record, but revokes all tokens and sets a flag that hides this instance from API
         """

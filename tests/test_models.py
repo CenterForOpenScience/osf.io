@@ -43,7 +43,7 @@ from website.addons.wiki.exceptions import (
 
 from tests.base import OsfTestCase, Guid, fake
 from tests.factories import (
-    UserFactory, ApiKeyFactory, OAuth2AppFactory, NodeFactory, PointerFactory,
+    UserFactory, ApiKeyFactory, ApiOAuth2ApplicationFactory, NodeFactory, PointerFactory,
     ProjectFactory, NodeLogFactory, WatchConfigFactory,
     NodeWikiFactory, RegistrationFactory, UnregUserFactory,
     ProjectWithAddonFactory, UnconfirmedUserFactory, CommentFactory, PrivateLinkFactory,
@@ -954,14 +954,14 @@ class TestApiKey(OsfTestCase):
         assert_equal(ApiKey.find().count(), 1)
 
 
-class TestOAuth2App(OsfTestCase):
+class TestApiOAuth2Application(OsfTestCase):
     def setUp(self):
-        super(TestOAuth2App, self).setUp()
-        self.app = OAuth2AppFactory()
+        super(TestApiOAuth2Application, self).setUp()
+        self.app = ApiOAuth2ApplicationFactory()
 
     def test_must_have_owner(self):
         with assert_raises(ValidationError):
-            app = OAuth2AppFactory(owner=None)
+            app = ApiOAuth2ApplicationFactory(owner=None)
             app.save()
 
     def test_client_id_auto_populates(self):
@@ -975,7 +975,7 @@ class TestOAuth2App(OsfTestCase):
 
     def test_user_backref_updates_when_app_created(self):
         u = UserFactory()
-        app = OAuth2AppFactory(owner=u)
+        app = ApiOAuth2ApplicationFactory(owner=u)
         app.save()
 
         backrefs = u.oauth2app__created
@@ -987,16 +987,16 @@ class TestOAuth2App(OsfTestCase):
 
     def test_invalid_home_url_raises_exception(self):
         with assert_raises(ValidationError):
-            app = OAuth2AppFactory(home_url="Totally not a URL")
+            app = ApiOAuth2ApplicationFactory(home_url="Totally not a URL")
             app.save()
 
     def test_invalid_callback_url_raises_exception(self):
         with assert_raises(ValidationError):
-            app = OAuth2AppFactory(callback_url="itms://itunes.apple.com/us/app/apple-store/id375380948?mt=8")
+            app = ApiOAuth2ApplicationFactory(callback_url="itms://itunes.apple.com/us/app/apple-store/id375380948?mt=8")
             app.save()
 
     def test_deletion_sets_inactive(self):
-        app = OAuth2AppFactory()
+        app = ApiOAuth2ApplicationFactory()
         app.deactivate()
         assert_false(app.active)
 

@@ -3,7 +3,7 @@ from django.core.validators import URLValidator
 
 from api.base.serializers import JSONAPISerializer, LinksField, Link
 
-from website.models import OAuth2App, User
+from website.models import ApiOAuth2Application, User
 from website.util.sanitize import strip_html
 
 def user_validator(user):
@@ -70,7 +70,7 @@ class ContributorSerializer(UserSerializer):
     bibliographic = ser.BooleanField(help_text='Whether the user will be included in citations for this node or not')
 
 
-class OAuth2AppSerializer(JSONAPISerializer):
+class ApiOAuth2ApplicationSerializer(JSONAPISerializer):
     """Serialize data about a registered OAuth2 application"""
     client_id = ser.CharField(help_text="The client ID for this application (automatically generated)",
                               read_only=True)
@@ -113,18 +113,18 @@ class OAuth2AppSerializer(JSONAPISerializer):
 
     def is_valid(self, *args, **kwargs):
         """After validation, scrub HTML from validated_data prior to saving (for create and update views)"""
-        ret = super(OAuth2AppSerializer, self).is_valid(*args, **kwargs)
+        ret = super(ApiOAuth2ApplicationSerializer, self).is_valid(*args, **kwargs)
         for k, v in self.validated_data.iteritems():
             self.validated_data[k] = strip_html(v)
         return ret
 
     def create(self, validated_data):
-        instance = OAuth2App(**validated_data)
+        instance = ApiOAuth2Application(**validated_data)
         instance.save()
         return instance
 
     def update(self, instance, validated_data):
-        assert isinstance(instance, OAuth2App), 'instance must be an OAuth2App'
+        assert isinstance(instance, ApiOAuth2Application), 'instance must be an ApiOAuth2Application'
         for attr, value in validated_data.iteritems():
             setattr(instance, attr, value)
         instance.save()

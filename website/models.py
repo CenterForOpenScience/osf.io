@@ -7,7 +7,7 @@ from framework.guid.model import Guid, BlacklistGuid
 from framework.sessions.model import Session
 
 from website.project.model import (
-    ApiKey, OAuth2App, Node, NodeLog,
+    ApiKey, ApiOAuth2Application, Node, NodeLog,
     Tag, WatchConfig, MetaSchema, Pointer,
     Comment, PrivateLink, MetaData,
 )
@@ -20,7 +20,7 @@ from website.notifications.model import NotificationSubscription
 
 # All models
 MODELS = (
-    User, ApiKey, OAuth2App, Node, NodeLog,
+    User, ApiKey, ApiOAuth2Application, Node, NodeLog,
     Tag, WatchConfig, Session, Guid, MetaSchema, Pointer,
     MailRecord, Comment, PrivateLink, MetaData, Conference,
     NotificationSubscription, NotificationDigest, CitationStyle,

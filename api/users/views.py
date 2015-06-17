@@ -2,12 +2,12 @@ from rest_framework import generics, permissions as drf_permissions
 from rest_framework import renderers
 from modularodm import Q
 
-from website.models import User, Node, OAuth2App
+from website.models import User, Node, ApiOAuth2Application
 from framework.auth.core import Auth
 from api.base.utils import get_object_or_404
 from api.base.filters import ODMFilterMixin
 from api.nodes.serializers import NodeSerializer
-from .serializers import OAuth2AppSerializer, UserSerializer
+from .serializers import ApiOAuth2ApplicationSerializer, UserSerializer
 from .permissions import OwnerOnly
 
 class UserMixin(object):
@@ -101,7 +101,7 @@ class ApplicationList(generics.ListCreateAPIView, ODMFilterMixin):
         OwnerOnly
     )
 
-    serializer_class = OAuth2AppSerializer
+    serializer_class = ApiOAuth2ApplicationSerializer
 
     renderer_classes = [renderers.JSONRenderer]  # Hide from web-browsable API tool
 
@@ -116,7 +116,7 @@ class ApplicationList(generics.ListCreateAPIView, ODMFilterMixin):
     # overrides ListAPIView
     def get_queryset(self):
         query = self.get_query_from_request()
-        return OAuth2App.find(query)
+        return ApiOAuth2Application.find(query)
 
     def perform_create(self, serializer):
         """Add user to the created object"""
@@ -136,13 +136,13 @@ class ApplicationDetail(generics.RetrieveUpdateDestroyAPIView):
         OwnerOnly
     )
 
-    serializer_class = OAuth2AppSerializer
+    serializer_class = ApiOAuth2ApplicationSerializer
 
     renderer_classes = [renderers.JSONRenderer]  # Hide from web-browsable API tool
 
     # overrides RetrieveAPIView
     def get_object(self):
-        obj = get_object_or_404(OAuth2App,
+        obj = get_object_or_404(ApiOAuth2Application,
                                 Q('client_id', 'eq', self.kwargs['client_id']) &
                                 Q('active', 'eq', True))
 

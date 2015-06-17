@@ -3,11 +3,11 @@ import copy
 
 from nose.tools import *  # flake8: noqa
 
-from website.models import Node, OAuth2App, User
+from website.models import Node, ApiOAuth2Application, User
 from website.util import api_v2_url
 
 from tests.base import ApiTestCase
-from tests.factories import DashboardFactory, FolderFactory, OAuth2AppFactory, ProjectFactory, UserFactory
+from tests.factories import DashboardFactory, FolderFactory, ApiOAuth2ApplicationFactory, ProjectFactory, UserFactory
 
 
 def _get_application_detail_route(app):
@@ -225,8 +225,8 @@ class TestApplicationList(ApiTestCase):
         self.user2.save()
         self.basic_auth2 = (self.user2.username, fake_pwd)
 
-        self.user1_apps = [OAuth2AppFactory(owner=self.user1) for i in xrange(3)]
-        self.user2_apps = [OAuth2AppFactory(owner=self.user2) for i in xrange(2)]
+        self.user1_apps = [ApiOAuth2ApplicationFactory(owner=self.user1) for i in xrange(3)]
+        self.user2_apps = [ApiOAuth2ApplicationFactory(owner=self.user2) for i in xrange(2)]
 
         self.user1_list_url = _get_application_list_url(self.user1)
         self.user2_list_url = _get_application_list_url(self.user2)
@@ -293,7 +293,7 @@ class TestApplicationList(ApiTestCase):
 
     def tearDown(self):
         super(TestApplicationList, self).tearDown()
-        OAuth2App.remove()
+        ApiOAuth2Application.remove()
         User.remove()
 
 
@@ -312,7 +312,7 @@ class TestApplicationDetail(ApiTestCase):
         self.user2.save()
         self.basic_auth2 = (self.user2.username, fake_pwd)
 
-        self.user1_app = OAuth2AppFactory(owner=self.user1)
+        self.user1_app = ApiOAuth2ApplicationFactory(owner=self.user1)
         self.user1_app_url = _get_application_detail_route(self.user1_app)
 
     def test_owner_can_view(self):
@@ -381,5 +381,5 @@ class TestApplicationDetail(ApiTestCase):
 
     def tearDown(self):
         super(TestApplicationDetail, self).tearDown()
-        OAuth2App.remove()
+        ApiOAuth2Application.remove()
         User.remove()

@@ -26,7 +26,7 @@ from framework.status import push_status_message
 from website import mails
 from website import mailchimp_utils
 from website import settings
-from website.models import ApiKey, OAuth2App, User
+from website.models import ApiKey, ApiOAuth2Application, User
 from website.profile import utils as profile_utils
 from website.project.decorators import dev_only
 from website.util import api_v2_url, web_url_for, paths
@@ -409,7 +409,7 @@ def oauth_application_detail(auth, **kwargs):
     client_id = kwargs.get('client_id')
 
     try:
-        OAuth2App.find_one(Q('client_id', 'eq', client_id))
+        ApiOAuth2Application.find_one(Q('client_id', 'eq', client_id))
     except:
         raise HTTPError(http.NOT_FOUND)
 
