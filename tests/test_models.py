@@ -2468,7 +2468,7 @@ class TestProject(OsfTestCase):
         assert_false(self.project.is_public)
         assert_equal(self.project.logs[-1].action, NodeLog.MADE_PRIVATE)
 
-    def test_set_privacy_cancels_pending_embargo_for_registration(self):
+    def test_set_privacy_can_not_cancel_pending_embargo_for_registration(self):
         registration = RegistrationFactory(project=self.project)
         registration.embargo_registration(
             self.user,
@@ -2477,13 +2477,17 @@ class TestProject(OsfTestCase):
         assert_false(registration.embargo_end_date)
         assert_true(registration.pending_embargo)
 
-        registration.set_privacy('public', auth=self.consolidate_auth)
+        func = lambda: registration.set_privacy('public', auth=self.consolidate_auth)
+        assert_raises(NodeStateError, func)
+        assert_false(registration.is_public)
+        '''
         registration.save()
         assert_false(registration.embargo_end_date)
         assert_false(registration.pending_embargo)
         assert_equal(registration.embargo.state, Embargo.CANCELLED)
         assert_true(registration.is_public)
         assert_equal(self.project.logs[-1].action, NodeLog.EMBARGO_CANCELLED)
+        '''
 
     def test_set_privacy_cancels_active_embargo_for_registration(self):
         registration = RegistrationFactory(project=self.project)
