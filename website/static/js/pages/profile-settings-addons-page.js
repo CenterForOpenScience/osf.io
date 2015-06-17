@@ -97,28 +97,10 @@ $(window).on('beforeunload',function() {
     var checked = uncheckedOnLoad.filter($('#selectAddonsForm input:checked'));
     //new unchecked items but not updated
     var unchecked = checkedOnLoad.filter($('#selectAddonsForm input:not(:checked)'));
-    var checkedText = "";
-    var uncheckedText = "";
-
-    if(checked.length > 0) {
-        checkedText = $.map(checked, function (el) {
-            return [' [', $(el).closest('label').text().trim(), ']'].join('');
-        }).join('');
-        checkedText = [' -- ', checkedText, "."].join('');
-        checkedText = "Unsaved checked addons:" + checkedText + "\n";
-    }
-    if(unchecked.length > 0) {
-        uncheckedText = $.map(unchecked, function (el) {
-            return [' [', $(el).closest('label').text().trim(), ']'].join('');
-        }).join('');
-        uncheckedText = [' -- ', uncheckedText, '.'].join('');
-        uncheckedText = "Unsaved unchecked addons:" + uncheckedText;
-    }
 
     if(unchecked.length > 0 || checked.length > 0) {
-        return "Are you sure you want to leave without submitting your add-ons setting? \n" + checkedText + uncheckedText;
+        return "The changes on addon setting are not submitted!"
     }
-
 });
 
 /***************
