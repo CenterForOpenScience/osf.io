@@ -17,8 +17,10 @@ var NodeCategoryTitleDescriptionSettings = oop.extend(
             var self = this;
             self.currentNode = window.contextVars.node;
             self.titleDescriptionEditUrl = self.currentNode.api_url;
-            self.description = ko.observable(self.currentNode.description);
-            self.title = ko.observable(self.currentNode.title);
+            self.decodedTitle = $osf.htmlDecode(self.currentNode.title)
+            self.decodedDescription = $osf.htmlDecode(self.currentNode.description)
+            self.title = ko.observable(self.decodedTitle);
+            self.description = ko.observable(self.decodedDescription);
 
             self.disabled = disabled || false;
 
@@ -42,13 +44,21 @@ var NodeCategoryTitleDescriptionSettings = oop.extend(
 
             self.selectedCategory = ko.observable(category);
             self.dirty = ko.observable(false);
+
+            self.dirtyTitleDescription = ko.computed(function(){
+                if (self.title() !== self.decodedTitle || 
+                    self.description() !== self.decodedDescription) {
+                    return true;
+                }
+                else
+                    return false;
+                }, self);
+            
             self.selectedCategory.subscribe(function(value) {
                 if (value !== self.category()) {
                     self.dirty(true);
                 }
-            });
-
-            self.dirtyTitleDescription = ko.observable(false);
+            });    
         },
 
         /*success handlers*/
@@ -74,13 +84,11 @@ var NodeCategoryTitleDescriptionSettings = oop.extend(
             });
         },
         updateTitleError: function() {
-            document.getElementById('title-input-message').style.color = '#BD362F';
-            document.getElementById('title-input-message').innerHTML = 'Title cannot be blank.';
+           $('#title-input-message').html('Title cannot be blank.');
         },
         updateDescriptionError: function() {
-            document.getElementById('description-input-message').style.color = '#BD362F';
-            document.getElementById('description-input-message').innerHTML = 'Error updating description, please try again.'+ 
-            ' If the problem persists, email <a href="mailto:support@osf.io">support@osf.io</a>.';
+            $('#description-input-message').html('Error updating description, please try again.'+ 
+            ' If the problem persists, email <a href="mailto:support@osf.io">support@osf.io</a>.');
         },
 
         /*update handlers*/
@@ -98,7 +106,7 @@ var NodeCategoryTitleDescriptionSettings = oop.extend(
         updateTitle: function() {
             var self = this;
             return $osf.putJSON(self.titleDescriptionEditUrl, {
-                    title: self.title(),
+                    title: $osf.htmlEscape(self.title()),
                 })
                 .done(self.updateDescription.bind(self))
                 .fail(self.updateTitleError.bind(self));
@@ -106,7 +114,7 @@ var NodeCategoryTitleDescriptionSettings = oop.extend(
         updateDescription: function() {
             var self = this;
             return $osf.putJSON(self.titleDescriptionEditUrl, {
-                    description: self.description(),
+                    description: $osf.htmlEscape(self.description()),
                 })
                 .done(self.updateTitleDescriptionSuccess.bind(self))
                 .fail(self.updateDescriptionError.bind(self));
@@ -121,12 +129,11 @@ var NodeCategoryTitleDescriptionSettings = oop.extend(
         },
         cancelUpdateTitle: function() {
             var self = this;
-            self.title(self.currentNode.title);
-            self.dirtyTitleDescription(false);
+            self.title(self.decodedTitle);
         },
         cancelUpdateDescription: function() {
             var self = this;
-            self.description(self.currentNode.description);
+            self.description(self.decodedDescription);
         }
     });
 

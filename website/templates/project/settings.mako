@@ -70,25 +70,26 @@
                     A top-level project's category cannot be changed
                   </span>               
                   </p>
-                   
-                    <label for="title">Title</label>
-                    <input class="form-control" type="text" maxlength="200" data-bind="value: title, 
-                                                                            event: { keyup: dirtyTitleDescription }">
-                    <span id="title-input-message"></span>        
-                    <br>
-                    <label for="description">Description</label>
-                    <textarea data-bind="value: description, 
-                                        event: { keyup: dirtyTitleDescription }", 
-                    class="form-control resize-vertical"></textarea>
-                    <br>
-                    <button data-bind="css: {disabled: !dirtyTitleDescription()},
-                                       click: updateTitle"
-                        class="btn btn-primary">Save Changes</button>
-                    <button data-bind="css: {disabled: !dirtyTitleDescription()},
-                                       click: function() { cancelUpdateTitle(); cancelUpdateDescription() }"
-                        class="btn btn-default">Cancel</button>
-                    <br>
-                    <span id="description-input-message"></span>        
+                 
+                    <div class="form-group">
+                        <label for="title">Title:</label>
+                        <input class="form-control" type="text" maxlength="200" data-bind="value: title,
+                                                                                                      valueUpdate: 'afterkeydown'">
+                        <span class="text-danger" id="title-input-message"></span>        
+                    </div>
+                    <div class="form-group">
+                        <label for="description">Description:</label>
+                        <textarea data-bind="value: description, 
+                                             valueUpdate: 'afterkeydown'", 
+                        class="form-control resize-vertical"></textarea>
+                        <span class="text-danger" id="description-input-message"></span>      
+                    </div>     
+                        <button data-bind="css: {disabled: !dirtyTitleDescription()},
+                                           click: updateTitle"
+                            class="btn btn-primary">Save Changes</button>
+                        <button data-bind="css: {disabled: !dirtyTitleDescription()},
+                                           click: function() { cancelUpdateTitle(); cancelUpdateDescription() }"
+                            class="btn btn-default">Cancel</button>                
                 </div>
 
                 % if 'admin' in user['permissions'] and not node['is_registration']:
