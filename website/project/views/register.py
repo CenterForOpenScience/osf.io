@@ -176,6 +176,8 @@ def node_registration_retraction_approve(auth, node, token, **kwargs):
     try:
         node.retraction.approve_retraction(auth.user, token)
         node.retraction.save()
+        if node.is_retracted:
+            node.update_search()
     except InvalidRetractionApprovalToken as e:
         raise HTTPError(http.BAD_REQUEST, data={
             'message_short': e.message_short,
@@ -441,7 +443,7 @@ def node_register_template_page_post(auth, node, **kwargs):
         register.archive_job.meta = {
             'embargo_urls': {
                 contrib._id: project_utils.get_embargo_urls(register, contrib)
-                for contrib in node.contributors
+                for contrib in node.active_contributors()
             }
         }
         register.archive_job.save()

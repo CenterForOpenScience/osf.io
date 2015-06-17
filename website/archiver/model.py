@@ -16,15 +16,26 @@ from website.addons.base import StorageAddonBase
 from website import settings
 
 class ArchiveTarget(StoredObject):
+    """Stores the results of archiving a single addon
+    """
 
     _id = fields.StringField(
         primary=True,
         default=lambda: str(ObjectId())
     )
 
+    # addon_short_name of target addon
     name = fields.StringField()
 
     status = fields.StringField(default=ARCHIVER_INITIATED)
+    # <dict> representation of a website.archiver.AggregateStatResult
+    # Format: {
+    #     'target_id': <str>,
+    #     'target_name': <str>,
+    #     'targets': <list>(StatResult | AggregateStatResult),
+    #     'num_files': <int>,
+    #     'disk_usage': <float>,
+    # }
     stat_result = fields.DictionaryField()
     errors = fields.StringField(list=True)
 
@@ -43,7 +54,9 @@ class ArchiveJob(StoredObject):
         default=lambda: str(ObjectId())
     )
 
+    # whether or not the ArchiveJob is complete (success or fail)
     done = fields.BooleanField(default=False)
+    # whether or not emails have been sent for this ArchiveJob
     sent = fields.BooleanField(default=False)
     status = fields.StringField(default=ARCHIVER_INITIATED)
     datetime_initiated = fields.DateTimeField(default=datetime.datetime.utcnow)
@@ -55,6 +68,11 @@ class ArchiveJob(StoredObject):
     target_addons = fields.ForeignField('archivetarget', list=True)
 
     # This field is used for stashing embargo URLs while still in the app context
+    # Format: {
+    #     'view': <str> url,
+    #     'approve': <str> url,
+    #     'disapprove': <str> url,
+    # }
     meta = fields.DictionaryField()
 
     def __repr__(self):
@@ -108,12 +126,17 @@ class ArchiveJob(StoredObject):
         return False
 
     def _fail_above(self):
+        """Marks all ArchiveJob instances attached to Nodes above this as failed
+        """
         parent = self.parent
         if parent:
             parent.status = ARCHIVER_FAILURE
             parent.save()
 
     def _post_update_target(self):
+        """Checks for success or failure if the ArchiveJob on self.dst_node
+        is finished
+        """
         if self.status == ARCHIVER_FAILURE:
             return
         if self._archive_node_finished():

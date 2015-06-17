@@ -554,6 +554,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         'is_public',
         'is_deleted',
         'wiki_pages_current',
+        'is_retracted',
     }
 
     # Maps category identifier => Human-readable representation for use in
@@ -762,6 +763,11 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
             (user and self.has_permission(user, 'write'))
             or is_api_node
         )
+
+    def active_contributors(self, include=lambda n: True):
+        for contrib in self.contributors:
+            if contrib.is_active and include(contrib):
+                yield contrib
 
     def is_admin_parent(self, user):
         if self.has_permission(user, 'admin', check_parent=False):
@@ -1112,7 +1118,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         if not self.is_public:
             if first_save or 'is_public' not in saved_fields:
                 need_update = False
-        if self.is_folder:
+        if self.is_folder or self.archiving:
             need_update = False
         if need_update:
             self.update_search()
@@ -2412,8 +2418,6 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
                         auth=auth,
                     )
                     self.embargo.save()
-                for child in self.nodes_primary:
-                    child.set_privacy(permissions, auth, log, save)
             self.is_public = True
         elif permissions == 'private' and self.is_public:
             if self.is_registration and not self.pending_embargo:
@@ -2659,7 +2663,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
             retraction.save()
         return retraction
 
-    def retract_registration(self, user, justification=None):
+    def retract_registration(self, user, justification=None, save=True):
         """Retract public registration. Instantiate new Retraction object
         and associate it with the respective registration.
         """
@@ -2677,6 +2681,8 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
             auth=Auth(user),
         )
         self.retraction = retraction
+        if save:
+            self.save()
 
     def _is_embargo_date_valid(self, end_date):
         today = datetime.datetime.utcnow()

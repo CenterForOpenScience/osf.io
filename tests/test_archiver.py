@@ -34,7 +34,6 @@ from website import mails
 from website import settings
 from website.util import waterbutler_url_for
 from website.project.model import Node, NodeLog
-from website.archiver.model import ArchiveJob, ArchiveTarget
 from website.addons.base import StorageAddonBase
 from website.util import api_url_for
 
@@ -685,6 +684,73 @@ class TestArchiverDecorators(ArchiverTestCase):
             [e.message]
         )
 
+class TestArchiverBehavior(OsfTestCase):
+
+    @mock.patch('website.project.model.Node.update_search')
+    def test_archiving_registrations_not_added_to_search_before_archival(self, mock_update_search):
+        proj = factories.ProjectFactory()
+        reg = factories.RegistrationFactory(project=proj)
+        ArchiveJob(
+            src_node=proj,
+            dst_node=reg,
+            initiator=proj.creator
+        )
+        reg.save()
+        mock_update_search.assert_not_called()
+
+
+    @mock.patch('website.project.model.Node.update_search')
+    @mock.patch('website.archiver.utils.send_archiver_success_mail')
+    def test_archiving_nodes_added_to_search_on_archive_success_if_public(self, mock_send, mock_update_search):
+        proj = factories.ProjectFactory()
+        reg = factories.RegistrationFactory(project=proj)
+        job = ArchiveJob(
+            src_node=proj,
+            dst_node=reg,
+            initiator=proj.creator
+        )
+        reg.save()
+        with nested(
+                mock.patch('website.archiver.model.ArchiveJob.archive_tree_finished', mock.Mock(return_value=True)),
+                mock.patch('website.archiver.model.ArchiveJob.sent', mock.PropertyMock(return_value=False)),
+                mock.patch('website.archiver.model.ArchiveJob.success', mock.PropertyMock(return_value=True))
+        ) as (mock_finished, mock_sent, mock_success):
+            listeners.archive_callback(reg)
+        mock_update_search.assert_called_once()
+
+    @mock.patch('website.project.model.Node.update_search')
+    @mock.patch('website.archiver.utils.send_archiver_success_mail')
+    def test_archiving_nodes_not_added_to_search_on_archive_failure(self, mock_send, mock_update_search):
+        proj = factories.ProjectFactory()
+        reg = factories.RegistrationFactory(project=proj)
+        job = ArchiveJob(
+            src_node=proj,
+            dst_node=reg,
+            initiator=proj.creator
+        )
+        reg.save()
+        with nested(
+                mock.patch('website.archiver.model.ArchiveJob.archive_tree_finished', mock.Mock(return_value=True)),
+                mock.patch('website.archiver.model.ArchiveJob.sent', mock.PropertyMock(return_value=False)),
+                mock.patch('website.archiver.model.ArchiveJob.success', mock.PropertyMock(return_value=False))
+        ) as (mock_finished, mock_sent, mock_success):
+            listeners.archive_callback(reg)
+        mock_update_search.assert_not_called()
+
+    @mock.patch('website.project.model.Node.update_search')
+    @mock.patch('website.archiver.utils.send_archiver_success_mail')
+    def test_archiving_nodes_not_added_to_search_on_archive_incomplete(self, mock_send, mock_update_search):
+        proj = factories.ProjectFactory()
+        reg = factories.RegistrationFactory(project=proj)
+        job = ArchiveJob(
+            src_node=proj,
+            dst_node=reg,
+            initiator=proj.creator
+        )
+        reg.save()
+        with mock.patch('website.archiver.model.ArchiveJob.archive_tree_finished', mock.Mock(return_value=False)):
+            listeners.archive_callback(reg)
+        mock_update_search.assert_not_called()
 
 def TestArchiveTarget(OsfTestCase):
 

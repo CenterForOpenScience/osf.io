@@ -88,9 +88,7 @@ def stat_addon(addon_short_name, job_pk):
     """Collect metadata about the file tree of a given addon
 
     :param addon_short_name: AddonConfig.short_name of the addon to be examined
-    :param src_pk: primary key of node being registered
-    :param dst_pk: primary key of registration node
-    :param user_pk: primary key of registration initatior
+    :param job_pk: primary key of archive_job
     :return: AggregateStatResult containing file tree metadata
     """
     create_app_context()
@@ -151,9 +149,7 @@ def archive_addon(addon_short_name, job_pk, stat_result):
     WaterBulter API
 
     :param addon_short_name: AddonConfig.short_name of the addon to be archived
-    :param src_pk: primary key of node being registered
-    :param dst_pk: primary key of registration node
-    :param user_pk: primary key of registration initatior
+    :param job_pk: primary key of ArchiveJob
     :return: None
     """
     create_app_context()
@@ -196,9 +192,7 @@ def archive_node(results, job_pk):
     create a celery.group group of subtasks to archive addons
 
     :param results: results from the #stat_addon subtasks spawned in #stat_node
-    :param src_pk: primary key of node being registered
-    :param dst_pk: primary key of registration node
-    :param user_pk: primary key of registration initatior
+    :param job_pk: primary key of ArchiveJob
     :return: None
     """
     create_app_context()
@@ -231,13 +225,11 @@ def archive_node(results, job_pk):
 @celery_app.task(bind=True, base=ArchiverTask, name='archiver.archive')
 @logged('archive')
 def archive(self, job_pk):
-    """Saves the celery task id, and start a celery.chord
-    that runs stat_addon for each addon attached to the Node,
-    then runs archive node with the result
+    """Starts a celery.chord that runs stat_addon for each
+    complete addon attached to the Node, then runs
+    #archive_node with the result
 
-    :param src_pk: primary key of node being registered
-    :param dst_pk: primary key of registration node
-    :param user_pk: primary key of registration initatior
+    :param job_pk: primary key of ArchiveJob
     :return: None
     """
     create_app_context()
