@@ -30,12 +30,15 @@ def get_files_for(pid):
     :param pid: project id
     :return: list of unicode strings.
     """
+    print(pid)
     url = build_api_call(pid)
     resp = requests.get(url).json()
     file_contents = []
-    for file_obj in resp['data']:
-        file_link = file_obj['links']['self']
-        file_resp = requests.get(file_link)
-        content = file_resp.text
-        file_contents.append(content)
+    file_objs = resp.get('data')
+    if file_objs:
+        for file_obj in file_objs:
+            file_link = file_obj['links']['self']
+            file_resp = requests.get(file_link)
+            content = file_resp.text
+            file_contents.append(content)
     return file_contents
