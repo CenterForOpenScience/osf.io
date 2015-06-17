@@ -226,14 +226,14 @@ def project_wiki_delete(auth, wname, **kwargs):
 @must_be_valid_project  # returns project
 @must_be_contributor_or_public
 @must_have_addon('wiki', 'node')
-def project_wiki_view(auth, wname, path=None, **kwargs):
+def project_wiki_view(auth, wname, path=None, **kwargs): #GRUMBLE
     node = kwargs['node'] or kwargs['project']
     anonymous = has_anonymous_link(node, auth)
     wiki_name = (wname or '').strip()
     wiki_key = to_mongo_key(wiki_name)
     wiki_page = node.get_wiki_page(wiki_name)
     toc = _serialize_wiki_toc(node, auth=auth)
-    can_edit = node.has_permission(auth.user, 'write') and not node.is_registration
+    can_edit = True #node.has_permission(auth.user, 'write') or True and not node.is_registration #GRUMBLE
     versions = _get_wiki_versions(node, wiki_name, anonymous=anonymous)
 
     # Determine panels used in view
@@ -373,7 +373,7 @@ def project_wiki_id_page(auth, wid, **kwargs):
 
 
 @must_be_valid_project
-@must_have_permission('write')
+@must_have_permission('write') #GRUMBLE
 @must_not_be_registration
 @must_have_addon('wiki', 'node')
 def project_wiki_edit(wname, **kwargs):

@@ -35,6 +35,10 @@ class AddonWikiNodeSettings(AddonNodeSettingsBase):
     complete = True
     has_auth = True
 
+    def change_privacy():
+        freelyEditable = True
+       # add 'freelyEditable': True
+
     def after_register(self, node, registration, user, save=True):
         """Copy wiki settings to registrations."""
         clone = self.clone()

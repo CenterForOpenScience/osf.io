@@ -745,7 +745,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         parents = self.parents
         return {p._id for p in parents}
 
-    def can_edit(self, auth=None, user=None):
+    def can_edit(self, auth=None, user=None): #GRUMBLE where you set if can edit =]
         """Return if a user is authorized to edit this node.
         Must specify one of (`auth`, `user`).
 
@@ -762,6 +762,11 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
             is_api_node = auth.api_node == self
         else:
             is_api_node = False
+        addon = self.get_addon('wiki')
+        if addon and addon.owner:
+            print("THIS IS THE ADDON")
+            print (addon.owner)
+            return True
         return (
             (user and self.has_permission(user, 'write'))
             or is_api_node

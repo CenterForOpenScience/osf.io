@@ -50,6 +50,7 @@
 
     <div class="panel-expand col-sm-${'9' if 'menu' in panels_used else '11' | n}">
       <div class="row">
+          ##GRUMBLE CHANGE HERE
         % if user['can_edit']:
             <div data-bind="with: $root.editVM.wikiEditor.viewModel"
                  data-osf-panel="Edit"
@@ -138,7 +139,7 @@
                             <div class="pull-right">
                                 <!-- Version Picker -->                            
                                 <select data-bind="value:viewVersion" id="viewVersionSelect">
-                                    % if user['can_edit']:
+                                    % if user['can_edit']: ##GRUMBLE CHANGE HERE
                                         <option value="preview" ${'selected' if version_settings['view'] == 'preview' else ''}>Preview</option>
                                     % endif
                                     <option value="current" ${'selected' if version_settings['view'] == 'current' else ''}>Current</option>
@@ -325,7 +326,7 @@
 ${parent.javascript_bottom()}
 <script>
 
-    var canEdit = ${json.dumps(user['can_edit'])};
+    var canEdit = ${json.dumps(user['can_edit'])}; //GRUMBLE CHANGE HERE
 
     var canEditPageName = canEdit && ${json.dumps(
         wiki_id and wiki_name != 'home'
