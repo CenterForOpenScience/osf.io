@@ -5,7 +5,6 @@ import celery
 from celery.utils.log import get_task_logger
 
 from framework.tasks import app as celery_app
-from framework.tasks.utils import logged
 from framework.exceptions import HTTPError
 
 from website.archiver import (
