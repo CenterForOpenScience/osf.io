@@ -124,64 +124,66 @@ var _dataverseItemButtons = {
                 }, options)
             );
         }
-        if (item.kind === 'folder' && item.data.addonFullname && item.data.version === 'latest' && item.data.permissions.edit && tb.options.placement !== 'fileview') {
-            buttons.push(
-                m.component(Fangorn.Components.button, {
-                    onclick: function (event) {
-                        _uploadEvent.call(tb, event, item);
-                    },
-                    icon: 'fa fa-upload',
-                    className: 'text-success'
-                }, 'Upload'),
-                m.component(Fangorn.Components.button, {
-                    onclick: function (event) {
-                        dataversePublish.call(tb, event, item);
-                    },
-                    icon: 'fa fa-globe',
-                    className: 'text-success'
-                }, 'Publish')
-            );
-        } else if (item.kind === 'folder' && !item.data.addonFullname && tb.options.placement !== 'fileview') {
-            buttons.push(
-                m.component(Fangorn.Components.button, {
-                    onclick: function (event) {
-                        _uploadEvent.call(tb, event, item);
-                    },
-                    icon: 'fa fa-upload',
-                    className: 'text-success'
-                }, 'Upload')
-            );
-        } else if (item.kind === 'file' && tb.options.placement !== 'fileview') {
-            buttons.push(
-                m.component(Fangorn.Components.button, {
-                    onclick: function (event) {
-                        _downloadEvent.call(tb, event, item);
-                    },
-                    icon: 'fa fa-download',
-                    className: 'text-info'
-                }, 'Download')
-            );
-            if (item.parent().data.state === 'draft' && item.data.permissions.edit) {
+        if (tb.options.placement !== 'fileview') {
+            if (item.kind === 'folder' && item.data.addonFullname && item.data.version === 'latest' && item.data.permissions.edit) {
                 buttons.push(
                     m.component(Fangorn.Components.button, {
                         onclick: function (event) {
-                            Fangorn.ButtonEvents._removeEvent.call(tb, event, [item]);
+                            _uploadEvent.call(tb, event, item);
                         },
-                        icon: 'fa fa-trash',
-                        className: 'text-danger'
-                    }, 'Delete')
+                        icon: 'fa fa-upload',
+                        className: 'text-success'
+                    }, 'Upload'),
+                    m.component(Fangorn.Components.button, {
+                        onclick: function (event) {
+                            dataversePublish.call(tb, event, item);
+                        },
+                        icon: 'fa fa-globe',
+                        className: 'text-success'
+                    }, 'Publish')
                 );
-            }
-            if (item.data.permissions && item.data.permissions.view) {
+            } else if (item.kind === 'folder' && !item.data.addonFullname) {
                 buttons.push(
                     m.component(Fangorn.Components.button, {
-                        onclick: function(event) {
-                            gotoFile(item);
+                        onclick: function (event) {
+                            _uploadEvent.call(tb, event, item);
                         },
-                        icon: 'fa fa-external-link',
-                        className : 'text-info'
-                    }, 'View'));
+                        icon: 'fa fa-upload',
+                        className: 'text-success'
+                    }, 'Upload')
+                );
+            } else if (item.kind === 'file') {
+                buttons.push(
+                    m.component(Fangorn.Components.button, {
+                        onclick: function (event) {
+                            _downloadEvent.call(tb, event, item);
+                        },
+                        icon: 'fa fa-download',
+                        className: 'text-info'
+                    }, 'Download')
+                );
+                if (item.parent().data.state === 'draft' && item.data.permissions.edit) {
+                    buttons.push(
+                        m.component(Fangorn.Components.button, {
+                            onclick: function (event) {
+                                Fangorn.ButtonEvents._removeEvent.call(tb, event, [item]);
+                            },
+                            icon: 'fa fa-trash',
+                            className: 'text-danger'
+                        }, 'Delete')
+                    );
+                }
+                if (item.data.permissions && item.data.permissions.view) {
+                    buttons.push(
+                        m.component(Fangorn.Components.button, {
+                            onclick: function(event) {
+                                gotoFile(item);
+                            },
+                            icon: 'fa fa-external-link',
+                            className : 'text-info'
+                        }, 'View'));
 
+                }
             }
         }
         return m('span', buttons);

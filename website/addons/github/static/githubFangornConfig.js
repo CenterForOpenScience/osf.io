@@ -142,43 +142,6 @@ var _githubItemButtons = {
                     }, item.data.branches[i]));
                 }
             }
-            // If File and FileRead are not defined dropzone is not supported and neither is uploads
-            if (window.File && window.FileReader && item.data.permissions && item.data.permissions.edit && tb.options.placement !== 'fileview') {
-                buttons.push(
-                    m.component(Fangorn.Components.button, {
-                        onclick: function (event) {
-                            Fangorn.ButtonEvents._uploadEvent.call(tb, event, item);
-                        },
-                        icon: 'fa fa-upload',
-                        className: 'text-success'
-                    }, 'Upload'),
-                    m.component(Fangorn.Components.button, {
-                        onclick: function (event) {
-                            tb.toolbarMode(Fangorn.Components.toolbarModes.ADDFOLDER);
-                        },
-                        icon: 'fa fa-plus',
-                        className: 'text-primary'
-                    }, 'Create Folder')
-                );
-            }
-            if (item.data.addonFullname && tb.options.placement !== 'fileview') {
-                buttons.push(
-                    m.component(Fangorn.Components.button, {
-                        onclick: function (event) {
-                            window.location = item.data.urls.zip;
-                        },
-                        icon: 'fa fa-download',
-                        className: 'text-success'
-                    }, 'Download'),
-                    m.component(Fangorn.Components.button, {
-                        onclick: function (event) {
-                            window.open(item.data.urls.repo, '_blank');
-                        },
-                        icon: 'fa fa-external-link',
-                        className: 'text-info'
-                    }, 'Open')
-                );
-            }
             if (item.data.addonFullname) {
                 buttons.push(
                     m.component(Fangorn.Components.dropdown, {
@@ -190,6 +153,45 @@ var _githubItemButtons = {
                         className: 'text-info'
                     }, branchArray)
                 );
+            }
+            if (tb.options.placement !== 'fileview') {
+                // If File and FileRead are not defined dropzone is not supported and neither is uploads
+                if (window.File && window.FileReader && item.data.permissions && item.data.permissions.edit) {
+                    buttons.push(
+                        m.component(Fangorn.Components.button, {
+                            onclick: function (event) {
+                                Fangorn.ButtonEvents._uploadEvent.call(tb, event, item);
+                            },
+                            icon: 'fa fa-upload',
+                            className: 'text-success'
+                        }, 'Upload'),
+                        m.component(Fangorn.Components.button, {
+                            onclick: function (event) {
+                                tb.toolbarMode(Fangorn.Components.toolbarModes.ADDFOLDER);
+                            },
+                            icon: 'fa fa-plus',
+                            className: 'text-primary'
+                        }, 'Create Folder')
+                    );
+                }
+                if (item.data.addonFullname && tb.options.placement !== 'fileview') {
+                    buttons.push(
+                        m.component(Fangorn.Components.button, {
+                            onclick: function (event) {
+                                window.location = item.data.urls.zip;
+                            },
+                            icon: 'fa fa-download',
+                            className: 'text-success'
+                        }, 'Download'),
+                        m.component(Fangorn.Components.button, {
+                            onclick: function (event) {
+                                window.open(item.data.urls.repo, '_blank');
+                            },
+                            icon: 'fa fa-external-link',
+                            className: 'text-info'
+                        }, 'Open')
+                    );
+                }
             }
         } else if (item.kind === 'file' && tb.options.placement !== 'fileview') {
             buttons.push(
