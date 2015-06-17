@@ -10,7 +10,7 @@ After ${fullname} confirms their account, they will be able to contribute to the
 
 Hello ${fullname},
 
-You have been added by ${referrer.fullname} as a contributor to the project "${node.title}" on the <a href="http://osf.io">Open Science Framework</a>. To claim yourself as a contributor to the project, visit this url:
+You have been added by ${referrer.fullname} as a contributor to the project "${node.title}" on the Open Science Framework. To claim yourself as a contributor to the project, visit this url:
 
 ${claim_url}
 
