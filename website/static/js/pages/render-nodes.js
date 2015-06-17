@@ -1,7 +1,7 @@
 'use strict';
 
 var $osf = require('js/osfHelpers');
-var $ = require(jquery);
+var $ = require('jquery');
 
 // model for components, due to simplicity did not create a new file
 var ComponentControl = {};
