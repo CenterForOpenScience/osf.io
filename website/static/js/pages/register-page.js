@@ -18,6 +18,7 @@ var ctx = window.contextVars;
     var init_array = [];
     var init_schemas = [];
     var prereg = [];
+    var open_ended = [];
     var prereg_data = [];
     var titles = [];
     var editor;
@@ -57,6 +58,7 @@ var ctx = window.contextVars;
             item7: "an answer",
             item8: "an answer",
             item9: "an answer",
+            summary: "a summary",
         },
         {
             item10: "yes",
@@ -92,6 +94,21 @@ var ctx = window.contextVars;
     init_array.push(init_interesting);
 
     init_array = prereg_data;
+
+    open_ended = [
+        {
+            title: "Open Ended Registration",
+            type: "object",
+            properties: {           
+                summary: {
+                    type: "string",
+                    format: "textarea",
+                    title: "Provide a narrative summary of what is contained in this registration, or how it differs from prior registrations."
+                }          
+            }
+        }
+
+    ];
 
     prereg = [
         {
@@ -286,7 +303,9 @@ var ctx = window.contextVars;
     init_schemas.push(your_info);
     init_schemas.push(interesting);
 
-    init_schemas = prereg;
+    //init_schemas = prereg;
+
+    init_schemas = open_ended;
 
     //var str = JSON.stringify(prereg);
     //console.log(str);
@@ -294,7 +313,7 @@ var ctx = window.contextVars;
 
     var loadData = function(schemas, arrays) {
         // incorrect data input
-        if (schemas.length !== arrays.length) {
+        if (schemas.length > arrays.length) {
             alert("The amount of data is inconsistent. Unable to load.");
             return;
         } if (schemas.length <= 0) {
@@ -302,7 +321,7 @@ var ctx = window.contextVars;
             return;
         }
 
-        // load nav bar
+        // load nav bar -- need to account for situations when there is only one page
         var tabs = '<li><a id="prev" href="#" aria-label="Previous"><span aria-hidden="true">&laquo;</span></a></li>';
         var pages;
         for (pages in init_schemas) {
@@ -321,7 +340,8 @@ var ctx = window.contextVars;
             theme: 'bootstrap3',
             disable_collapse: true,
             disable_edit_json: true,
-            disable_properties: true
+            disable_properties: true,
+            no_additional_properties: true
         });
         editor.setValue(arrays[0]);
         window.editor = editor;
@@ -336,7 +356,8 @@ var ctx = window.contextVars;
             theme: 'bootstrap3',
             disable_collapse: true,
             disable_edit_json: true,
-            disable_properties: true
+            disable_properties: true,
+            no_additional_properties: true
         });
         editor.setValue(arrays[num]);
         window.editor = editor;
