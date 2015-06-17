@@ -33,7 +33,9 @@ $('.addon-select').on('change', function() {
     }
 });
 
+
 var checkedOnLoad = $('#selectAddonsForm input:checked');
+var uncheckedOnLoad = $('#selectAddonsForm input:not(:checked)');
 
 // TODO: Refactor into a View Model
 $('#selectAddonsForm').on('submit', function() {
@@ -88,6 +90,36 @@ for (var i=0; i < addonEnabledSettings.length; i++) {
                                       window.contextVars.addonsWithNodes[addonName].fullName);
    }
 }
+
+/* Before closing the page, Check whether the newly checked addon are updated or not */
+$(window).on('beforeunload',function() {
+    //new checked items but not updated
+    var checked = uncheckedOnLoad.filter($('#selectAddonsForm input:checked'));
+    //new unchecked items but not updated
+    var unchecked = checkedOnLoad.filter($('#selectAddonsForm input:not(:checked)'));
+    var checkedText = "";
+    var uncheckedText = "";
+
+    if(checked.length > 0) {
+        checkedText = $.map(checked, function (el) {
+            return [' [', $(el).closest('label').text().trim(), ']'].join('');
+        }).join('');
+        checkedText = [' -- ', checkedText, "."].join('');
+        checkedText = "Unsaved checked addons:" + checkedText + "\n";
+    }
+    if(unchecked.length > 0) {
+        uncheckedText = $.map(unchecked, function (el) {
+            return [' [', $(el).closest('label').text().trim(), ']'].join('');
+        }).join('');
+        uncheckedText = [' -- ', uncheckedText, '.'].join('');
+        uncheckedText = "Unsaved unchecked addons:" + uncheckedText;
+    }
+
+    if(unchecked.length > 0 || checked.length > 0) {
+        return "Are you sure you want to leave without submitting your add-ons setting? \n" + checkedText + uncheckedText;
+    }
+
+});
 
 /***************
 * OAuth addons *
