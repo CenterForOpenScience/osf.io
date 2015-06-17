@@ -5,11 +5,10 @@ from rest_framework.exceptions import PermissionDenied, ValidationError
 from modularodm import Q
 
 from framework.auth.core import Auth
-from website.models import Node, Pointer
+from website.models import Node, Pointer, User
 from api.base.utils import get_object_or_404, waterbutler_url_for
 from api.base.filters import ODMFilterMixin, ListFilterMixin
-from .serializers import NodeSerializer, NodePointersSerializer, NodeFilesSerializer
-from api.users.serializers import ContributorSerializer
+from .serializers import NodeSerializer, NodePointersSerializer, NodeFilesSerializer, ContributorSerializer
 from .permissions import ContributorOrPublic, ReadOnlyIfRegistration, ContributorOrPublicForPointers
 
 
@@ -104,7 +103,7 @@ class NodeDetail(generics.RetrieveUpdateAPIView, NodeMixin):
         return {'request': self.request}
 
 
-class NodeContributorsList(generics.ListAPIView, ListFilterMixin, NodeMixin):
+class NodeContributorsList(generics.ListCreateAPIView, ListFilterMixin, NodeMixin):
     """Contributors (users) for a node.
 
     Contributors are users who can make changes to the node or, in the case of private nodes,
@@ -132,6 +131,15 @@ class NodeContributorsList(generics.ListAPIView, ListFilterMixin, NodeMixin):
     # overrides ListAPIView
     def get_queryset(self):
         return self.get_queryset_from_request()
+
+    # adds contributor to node
+    def perform_create(self, serializer):
+        id = serializer.data['data']['id']
+        user = get_object_or_404(User, id)
+        node = self.get_node()
+        if user not in node.contributors:
+            node.add_contributor(user)
+            node.save()
 
 
 class NodeRegistrationsList(generics.ListAPIView, NodeMixin):

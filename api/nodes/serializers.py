@@ -192,3 +192,49 @@ class NodeFilesSerializer(JSONAPISerializer):
     def update(self, instance, validated_data):
         # TODO
         pass
+
+
+class ContributorSerializer(JSONAPISerializer):
+
+    filterable_fields = frozenset([
+        'fullname',
+        'given_name',
+        'middle_name',
+        'family_name',
+        'id',
+        'bibliographic'
+    ])
+    id = ser.CharField(source='_id')
+    fullname = ser.CharField(read_only=True, help_text='Display name used in the general user interface')
+    given_name = ser.CharField(read_only=True, help_text='For bibliographic citations')
+    middle_name = ser.CharField(read_only=True, source='middle_names', help_text='For bibliographic citations')
+    family_name = ser.CharField(read_only=True, help_text='For bibliographic citations')
+    suffix = ser.CharField(read_only=True, help_text='For bibliographic citations')
+    date_registered = ser.DateTimeField(read_only=True)
+    gravatar_url = ser.CharField(read_only=True, help_text='URL for the icon used to identify the user. Relies on http://gravatar.com ')
+    employment_institutions = ser.ListField(read_only=True, source='jobs', help_text='An array of dictionaries representing the '
+                                                                     'places the user has worked')
+    educational_institutions = ser.ListField(read_only=True, source='schools', help_text='An array of dictionaries representing the '
+                                                                         'places the user has attended school')
+    social_accounts = ser.DictField(read_only=True, source='social', help_text='A dictionary of various social media account '
+                                                               'identifiers including an array of user-defined URLs')
+    bibliographic = ser.BooleanField(help_text='Whether the user will be included in citations for this node or not')
+
+    links = LinksField({
+        'html': 'absolute_url',
+        'nodes': {
+            'relation': Link('users:user-nodes', kwargs={'user_id': '<_id>'})
+        }
+    })
+
+    class Meta:
+        type_ = 'users'
+
+    def absolute_url(self, obj):
+        if type(obj) == dict:
+            return '/v2/nodes/'+obj['_id']
+        return obj.absolute_url
+
+    def update(self, instance, validated_data):
+        # TODO
+        pass
