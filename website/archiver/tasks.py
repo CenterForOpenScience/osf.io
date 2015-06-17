@@ -83,7 +83,6 @@ class ArchiverTask(celery.Task):
 
 
 @celery_app.task(base=ArchiverTask, name="archiver.stat_addon")
-@logged('stat_addon')
 def stat_addon(addon_short_name, job_pk):
     """Collect metadata about the file tree of a given addon
 
@@ -113,7 +112,6 @@ def stat_addon(addon_short_name, job_pk):
     return result
 
 @celery_app.task(base=ArchiverTask, name="archiver.make_copy_request")
-@logged('make_copy_request')
 def make_copy_request(job_pk, url, data):
     """Make the copy request to the WaterBulter API and handle
     successful and failed responses
@@ -143,7 +141,6 @@ def make_copy_request(job_pk, url, data):
     project_signals.archive_callback.send(dst)
 
 @celery_app.task(base=ArchiverTask, name="archiver.archive_addon")
-@logged('archive_addon')
 def archive_addon(addon_short_name, job_pk, stat_result):
     """Archive the contents of an addon by making a copy request to the
     WaterBulter API
@@ -185,7 +182,6 @@ def archive_addon(addon_short_name, job_pk, stat_result):
 
 
 @celery_app.task(base=ArchiverTask, name="archiver.archive_node")
-@logged('archive_node')
 def archive_node(results, job_pk):
     """First use the results of #stat_node to check disk usage of the
     initated registration, then either fail the registration or
@@ -223,7 +219,6 @@ def archive_node(results, job_pk):
             project_signals.archive_callback.send(dst)
 
 @celery_app.task(bind=True, base=ArchiverTask, name='archiver.archive')
-@logged('archive')
 def archive(self, job_pk):
     """Starts a celery.chord that runs stat_addon for each
     complete addon attached to the Node, then runs
