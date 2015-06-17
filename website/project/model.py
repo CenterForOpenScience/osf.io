@@ -2413,8 +2413,6 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
                         auth=auth,
                     )
                     self.embargo.save()
-                for child in self.nodes_primary:
-                    child.set_privacy(permissions, auth, log, save)
             self.is_public = True
         elif permissions == 'private' and self.is_public:
             if self.is_registration and not self.pending_embargo:
@@ -2680,7 +2678,6 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         self.retraction = retraction
         if save:
             self.save()
-        self.update_search()
 
     def _is_embargo_date_valid(self, end_date):
         today = datetime.datetime.utcnow()
