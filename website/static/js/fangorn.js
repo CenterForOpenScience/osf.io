@@ -1665,7 +1665,7 @@ var FGToolbar = {
                 onclick: function(event){
                     var mithrilContent = m('div', [
                         m('h3.break-word.m-b-lg', 'How to Use the File Browser'),
-                        m('p', [ m('b', 'Select rows:'), m('span', ' Click on a row (outside the name) to show further actions in the toolbar.')]),
+                        m('p', [ m('b', 'Select Rows:'), m('span', ' Click on a row (outside the name) to show further actions in the toolbar.')]),
                         m('p', [ m('b', 'Select Multiple Files:'), m('span', ' Use command or shift keys to select multiple files.')]),
                         m('p', [ m('b', 'Open Files:'), m('span', ' Click a file name to go to the file.')]),
                         m('p', [ m('b', 'Open Files in New Tab:'), m('span',  ' Press command (or ctrl in Windows) and  click a file name to open it in a new tab.')]),
