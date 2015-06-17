@@ -7,6 +7,7 @@ import xmltodict
 
 from boto.s3.connection import S3Connection
 from boto.s3.connection import OrdinaryCallingFormat
+from boto.s3.connection import SubdomainCallingFormat
 
 from waterbutler.core import streams
 from waterbutler.core import provider
@@ -38,8 +39,17 @@ class S3Provider(provider.BaseProvider):
         :param dict settings: Dict containing `bucket`
         """
         super().__init__(auth, credentials, settings)
+
+        # If a bucket has capital letters in the name
+        # ordinary calling format MUST be used
+        if settings['bucket'] != settings['bucket'].lower():
+            calling_format = OrdinaryCallingFormat()
+        else:
+            # if a bucket is out of the us Subdomain calling format MUST be used
+            calling_format = SubdomainCallingFormat()
+
         self.connection = S3Connection(credentials['access_key'],
-                credentials['secret_key'], calling_format=OrdinaryCallingFormat())
+                credentials['secret_key'], calling_format=calling_format)
         self.bucket = self.connection.get_bucket(settings['bucket'], validate=False)
 
     @asyncio.coroutine
