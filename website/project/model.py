@@ -554,6 +554,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         'is_public',
         'is_deleted',
         'wiki_pages_current',
+        'is_retracted',
     }
 
     # Maps category identifier => Human-readable representation for use in
@@ -2659,7 +2660,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
             retraction.save()
         return retraction
 
-    def retract_registration(self, user, justification=None):
+    def retract_registration(self, user, justification=None, save=True):
         """Retract public registration. Instantiate new Retraction object
         and associate it with the respective registration.
         """
@@ -2677,6 +2678,9 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
             auth=Auth(user),
         )
         self.retraction = retraction
+        if save:
+            self.save()
+        self.update_search()
 
     def _is_embargo_date_valid(self, end_date):
         today = datetime.datetime.utcnow()

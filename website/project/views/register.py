@@ -176,6 +176,8 @@ def node_registration_retraction_approve(auth, node, token, **kwargs):
     try:
         node.retraction.approve_retraction(auth.user, token)
         node.retraction.save()
+        if node.is_retracted:
+            node.update_search()
     except InvalidRetractionApprovalToken as e:
         raise HTTPError(http.BAD_REQUEST, data={
             'message_short': e.message_short,
