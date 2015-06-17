@@ -17,7 +17,7 @@ class UserMixin(object):
     """
 
     serializer_class = UserSerializer
-    user_lookup_url_kwarg = 'pk'
+    node_lookup_url_kwarg = 'user_id'
 
     def get_user(self):
         obj = get_object_or_404(User, self.kwargs[self.user_lookup_url_kwarg])
