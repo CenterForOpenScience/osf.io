@@ -327,7 +327,7 @@ class TestCollectionUpdate(ApiTestCase):
         collection = self.collection = FolderFactory(
             title=self.title, is_public=True, creator=self.user)
 
-        url = '/collections/{}/'.format(API_BASE, collection._id)
+        url = '/{}collections/{}/'.format(API_BASE, collection._id)
         res = self.app.patch_json(url, {
             'title': new_title,
         }, auth=self.basic_auth)
