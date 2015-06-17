@@ -13,9 +13,11 @@ from api.users.serializers import ContributorSerializer
 from .permissions import ContributorOrPublic, ReadOnlyIfRegistration, ContributorOrPublicForPointers
 from rest_framework import serializers
 from django.utils.translation import ugettext_lazy as _
+from rest_framework import status
+from rest_framework.exceptions import APIException
 
-from api.base.utils import node_token_creator, absolute_reverse
 from api.language import BEFORE_DELETE_NODE
+from api.base.utils import node_token_creator, absolute_reverse
 
 
 class NodeMixin(object):
@@ -83,6 +85,9 @@ class NodeList(generics.ListCreateAPIView, ODMFilterMixin):
         user = self.request.user
         serializer.save(creator=user)
 
+class AllowedError(APIException):
+    status_code = status.HTTP_202_ACCEPTED
+    default_detail = 'Accepted'
 
 class NodeDetail(generics.RetrieveUpdateDestroyAPIView, NodeMixin):
     """Projects and component details.
@@ -116,8 +121,7 @@ class NodeDetail(generics.RetrieveUpdateDestroyAPIView, NodeMixin):
         token = node_token_creator(node._id, user._id)
         url = absolute_reverse('nodes:node-delete-confirm', kwargs={'pk': node._id, 'token': token})
         delete_warning = BEFORE_DELETE_NODE.format(_(node.title))
-        raise serializers.ValidationError([delete_warning, url])
-
+        raise AllowedError([delete_warning, url])
 
 class NodeDeleteConfirm(generics.DestroyAPIView, NodeMixin):
     """Projects and component details.
