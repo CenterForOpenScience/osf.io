@@ -1,6 +1,6 @@
 Hello ${fullname},
 
-You have been added by ${referrer.fullname} as a contributor to the project "${node.title}" on the <a href="http://osf.io/">Open Science Framework</a>. To set a password for your account, visit:
+You have been added by ${referrer.fullname} as a contributor to the project "${node.title}" on the Open Science Framework. To set a password for your account, visit:
 
 ${claim_url}
 
