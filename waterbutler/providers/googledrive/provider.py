@@ -191,6 +191,7 @@ class GoogleDriveProvider(provider.BaseProvider):
         queries = [
             "'{}' in parents".format(folder_id),
             'trashed = false',
+            "mimeType != 'application/vnd.google-apps.form'",
         ]
         if title:
             queries.append("title = '{}'".format(title.replace("'", "\\'")))
