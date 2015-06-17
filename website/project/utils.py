@@ -24,12 +24,12 @@ def get_embargo_urls(node, user):
             'node_registration_embargo_approve',
             token=approval_token,
             _absolute=True
-        ),
+        ) if approval_token else None,
         'disapprove': node.web_url_for(
             'node_registration_embargo_disapprove',
             token=disapproval_token,
             _absolute=True
-        )
+        ) if disapproval_token else None,
     }
 
 def send_embargo_email(node, user, urls=None):

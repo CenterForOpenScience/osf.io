@@ -230,7 +230,7 @@ def update_node(node, index=INDEX):
         except IndexError:
             # Skip orphaned components
             return
-    if node.is_deleted or not node.is_public:
+    if node.is_deleted or not node.is_public or node.archiving:
         delete_doc(elastic_document_id, node)
     else:
         try:

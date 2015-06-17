@@ -14,7 +14,7 @@ from website.archiver import signals as archiver_signals
 from website.project import signals as project_signals
 from website.project import utils as project_utils
 
-def node_and_visible_descendants(node):
+def node_and_primary_descendants(node):
     """Gets an iterator for a node and all of its visible descendants
 
     :param node Node: target Node
@@ -33,7 +33,7 @@ def after_register(src, dst, user):
     archiver_utils.before_archive(dst, user)
     if dst.root != dst:  # if not top-level registration
         return
-    archive_tasks = [archive.si(job_pk=t.archive_job._id) for t in node_and_visible_descendants(dst)]
+    archive_tasks = [archive.si(job_pk=t.archive_job._id) for t in node_and_primary_descendants(dst)]
     handlers.enqueue_task(
         celery.chain(*archive_tasks)
     )
@@ -65,7 +65,7 @@ def archive_callback(dst):
                 )
         else:
             archiver_utils.send_archiver_success_mail(root)
-        for node in node_and_visible_descendants(root):
+        for node in node_and_primary_descendants(root):
             node.update_search()  # update search if public
     else:
         archiver_utils.handle_archive_fail(
