@@ -34,7 +34,6 @@ def send_archiver_size_exceeded_mails(src, user, stat_result):
         mail=mails.ARCHIVE_SIZE_EXCEEDED_USER,
         user=user,
         src=src,
-        stat_result=stat_result,
         mimetype='html',
     )
 
@@ -117,6 +116,7 @@ def delete_registration_tree(node):
     if not getattr(node.embargo, 'for_existing_registration', False):
         node.registered_from = None
     node.save()
+    node.update_search()
     for child in node.nodes:
         delete_registration_tree(child)
 

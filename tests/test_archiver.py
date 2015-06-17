@@ -7,6 +7,7 @@ import unittest
 
 import celery
 import mock  # noqa
+from contextlib import nested
 from mock import call
 from nose.tools import *  # noqa PEP8 asserts
 import httpretty
@@ -28,6 +29,7 @@ from website.archiver import utils as archiver_utils
 from website.app import *  # noqa
 from website.archiver import listeners
 from website.archiver.tasks import *   # noqa
+from website.archiver.model import ArchiveTarget, ArchiveJob
 from website.archiver.decorators import fail_archive_on_error
 
 from website import mails
@@ -93,7 +95,7 @@ mock_osfstorage.config.short_name = 'osfstorage'
 mock_dropbox = MockAddon()
 mock_dropbox.config.short_name = 'dropbox'
 
-def _mock_get_addon(name):
+def _mock_get_addon(name, *args, **kwargs):
     if name == 'dropbox':
         return mock_dropbox
     if name == 'osfstorage':
@@ -752,13 +754,14 @@ class TestArchiverBehavior(OsfTestCase):
             listeners.archive_callback(reg)
         mock_update_search.assert_not_called()
 
-def TestArchiveTarget(OsfTestCase):
+
+class TestArchiveTarget(OsfTestCase):
 
     def test_repr(self):
         target = ArchiveTarget()
         result = repr(target)
         assert_in('ArchiveTarget', result)
-        assert_in(str(job._id), result)
+        assert_in(str(target._id), result)
 
 
 class TestArchiveJobModel(OsfTestCase):
@@ -786,13 +789,26 @@ class TestArchiveJobModel(OsfTestCase):
         assert_equal(item['stat_result'], target.stat_result)
         assert_equal(item['errors'], target.errors)
 
-    @unittest.skip('TODO')
+    @use_fake_addons
     def test_get_target(self):
-        assert 0, 'todo'
+        proj = factories.ProjectFactory()
+        reg = factories.RegistrationFactory(project=proj)
+        settings.ADDONS_ARCHIVABLE = ['osfstorage', 'dropbox']
+        job = ArchiveJob(src_node=proj, dst_node=reg, initiator=proj.creator)
+        job.set_targets()
+        dropbox = job.get_target('dropbox')
+        assert_false(not dropbox)
+        none = job.get_target('fake')
+        assert_false(none)
 
-    @unittest.skip('TODO')
+    @use_fake_addons
     def test_set_targets(self):
-        assert 0, 'todo'
+        proj = factories.ProjectFactory()
+        reg = factories.RegistrationFactory(project=proj)
+        settings.ADDONS_ARCHIVABLE = ['osfstorage', 'dropbox']
+        job = ArchiveJob(src_node=proj, dst_node=reg, initiator=proj.creator)
+        job.set_targets()
+        assert_equal([t.name for t in job.target_addons], ['osfstorage', 'dropbox'])
 
     @unittest.skip('TODO')
     def test_archive_tree_finished(self):

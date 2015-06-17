@@ -5,7 +5,6 @@ import celery
 from celery.utils.log import get_task_logger
 
 from framework.tasks import app as celery_app
-from framework.tasks.utils import logged
 from framework.exceptions import HTTPError
 
 from website.archiver import (
@@ -243,4 +242,4 @@ def archive(self, job_pk):
                 for target in dst.archive_job.target_addons
             ]
         )
-    )(archive_node.s(job_pk))
+    )(archive_node.s(job_pk=job_pk))
