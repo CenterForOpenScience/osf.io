@@ -12,7 +12,6 @@ from .serializers import NodeSerializer, NodePointersSerializer, NodeFilesSerial
 from api.users.serializers import ContributorSerializer
 from .permissions import ContributorOrPublic, ReadOnlyIfRegistration, ContributorOrPublicForPointers
 from django.utils.translation import ugettext_lazy as _
-from rest_framework.exceptions import ValidationError
 
 from api.base.exceptions import Accepted
 from api.language import BEFORE_DELETE_NODE
