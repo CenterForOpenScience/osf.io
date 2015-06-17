@@ -1,11 +1,14 @@
 # -*- coding: utf-8 -*-
 import mock
 from nose.tools import *  # flake8: noqa
+import ast
 
 from framework.auth.core import Auth
 from website.models import Node
 from website.util.sanitize import strip_html
 from api.base.settings.defaults import API_BASE
+
+
 
 from tests.base import ApiTestCase, fake
 from tests.factories import UserFactory, ProjectFactory, FolderFactory, RegistrationFactory, DashboardFactory, NodeFactory
@@ -647,7 +650,8 @@ class TestNodeDelete(ApiTestCase):
         res = self.app.delete(self.public_url, auth=self.basic_auth, expect_errors=True)
         assert_equal(res.status_code, 202)
         assert_equal(self.public_project.is_deleted, False)
-        returned_url = res.json[1]
+        detail = ast.literal_eval(res.json['detail'])
+        returned_url = detail[1]
 
         res = self.app.delete(returned_url, auth=self.basic_auth)
         assert_equal(res.status_code, 204)
@@ -664,7 +668,8 @@ class TestNodeDelete(ApiTestCase):
         res = self.app.delete(self.private_url, auth=self.basic_auth, expect_errors=True)
         assert_equal(res.status_code, 202)
         assert_equal(self.project.is_deleted, False)
-        returned_url = res.json[1]
+        detail = ast.literal_eval(res.json['detail'])
+        returned_url = detail[1]
 
         res = self.app.delete(returned_url, auth=self.basic_auth)
         assert_equal(res.status_code, 204)
@@ -676,7 +681,7 @@ class TestNodeDelete(ApiTestCase):
         assert_equal(self.project.is_deleted, False)
 
     def test_deletes_node_incorrect_token(self):
-        res = self.app.delete(self.private_url + 'confirm/12345', auth=self.basic_auth, expect_errors=True)
+        res = self.app.delete(self.private_url + 'confirm/12345/', auth=self.basic_auth, expect_errors=True)
         assert_equal(res.status_code, 400)
         assert_equal(res.json[0], 'Incorrect token.')
         assert_equal(self.project.is_deleted, False)
