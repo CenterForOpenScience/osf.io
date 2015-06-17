@@ -24,7 +24,7 @@ class NodeMixin(object):
     """
 
     serializer_class = NodeSerializer
-    node_lookup_url_kwarg = 'pk'
+    node_lookup_url_kwarg = 'node_id'
 
     def get_node(self):
         obj = get_object_or_404(Node, self.kwargs[self.node_lookup_url_kwarg])
@@ -379,7 +379,7 @@ class NodeFilesList(generics.ListAPIView, NodeMixin):
                         'metadata': {},
                     })
         else:
-            url = waterbutler_url_for('data', provider, path, self.kwargs['pk'], cookie, obj_args)
+            url = waterbutler_url_for('data', provider, path, self.kwargs['node_id'], cookie, obj_args)
             waterbutler_request = requests.get(url)
             if waterbutler_request.status_code == 401:
                 raise PermissionDenied
