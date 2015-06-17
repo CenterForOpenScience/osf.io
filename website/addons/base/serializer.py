@@ -156,14 +156,8 @@ class OAuthAddonSerializer(AddonSerializer):
     def credentials_owner(self):
         return self.node_settings.user_settings.owner
 
-    @property
-    def serialized_node_settings(self):
-        return super(OAuthAddonSerializer, self).serialized_node_settings
-
 class CitationsAddonSerializer(OAuthAddonSerializer):
 
     @abc.abstractmethod
     def serialize_folder(self, folder):
         pass
-
-

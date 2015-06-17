@@ -67,4 +67,3 @@ class GitHubSerializer(OAuthAddonSerializer):
     @property
     def credentials_owner(self):
         return self.node_settings.user_settings.owner
-    
