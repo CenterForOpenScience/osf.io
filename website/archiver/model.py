@@ -166,7 +166,9 @@ class ArchiveJob(StoredObject):
     def set_targets(self):
         addons = [
             addon.config.short_name for addon in
-            [self.src_node.get_addon(name) for name in settings.ADDONS_ARCHIVABLE]
+            [self.src_node.get_addon(name)
+             for name in settings.ADDONS_ARCHIVABLE
+             if settings.ADDONS_ARCHIVABLE[name] != 'none']
             if (addon and addon.complete and isinstance(addon, StorageAddonBase))
         ]
         for addon in addons:
