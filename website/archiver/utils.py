@@ -34,7 +34,6 @@ def send_archiver_size_exceeded_mails(src, user, stat_result):
         mail=mails.ARCHIVE_SIZE_EXCEEDED_USER,
         user=user,
         src=src,
-        stat_result=stat_result,
         mimetype='html',
     )
 
