@@ -42,7 +42,9 @@ var FileViewPage = {
                         self.file.safeName + '</strong>?' +
                     '</p>',
                 callback: function(confirm) {
-                    if (!confirm) return;
+                    if (!confirm) {
+                        return;
+                    }
                     $.ajax({
                         type: 'DELETE',
                         url: self.file.urls.delete,
@@ -234,7 +236,9 @@ var FileViewPage = {
         return m('.file-view-page', m('.panel-toggler', [
             m('.row', panels.map(function(pane, index) {
                 ctrl.triggerResize();
-                if (!pane.selected) return m('[style="display:none"]', pane);
+                if (!pane.selected) {
+                    return m('[style="display:none"]', pane);
+                }
                 return m('.col-sm-' + Math.floor(12/shown), pane);
             }))
         ]));

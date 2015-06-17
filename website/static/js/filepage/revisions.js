@@ -217,7 +217,9 @@ var FileRevisionsTable = {
             ].filter(TRUTHY));
         };
 
-        if (!model.loaded()) self.reload();
+        if (!model.loaded()) {
+            self.reload();
+        }
         $(document).on('fileviewpage:reload', self.reload);
         return self;
     },
@@ -226,8 +228,12 @@ var FileRevisionsTable = {
             ctrl.subscriptions(),
             m('.osf-panel-header', 'Revisions'),
             m('', (function() {
-                if (!model.loaded()) return util.Spinner;
-                if (model.errorMessage) return m('.alert.alert-warning', {style:{margin: '10px'}}, model.errorMessage);
+                if (!model.loaded()) {
+                    return util.Spinner;
+                }
+                if (model.errorMessage) {
+                    return m('.alert.alert-warning', {style:{margin: '10px'}}, model.errorMessage);
+                }
 
                 return m('table.table', [
                     ctrl.getTableHead(),
