@@ -114,7 +114,7 @@ class NodeDetail(generics.RetrieveUpdateDestroyAPIView, NodeMixin):
         user = self.request.user
         node = self.get_node()
         token = node_token_creator(node._id, user._id)
-        url = absolute_reverse('nodes:node-delete-confirm', kwargs={'pk': node._id, 'token': token})
+        url = absolute_reverse('nodes:node-delete-confirm', kwargs={'node_id': node._id, 'token': token})
         delete_warning = BEFORE_DELETE_NODE.format(_(node.title))
         raise Accepted([delete_warning, url])
 
