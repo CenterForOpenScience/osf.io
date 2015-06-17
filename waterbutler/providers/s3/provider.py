@@ -252,7 +252,7 @@ class S3Provider(provider.BaseProvider):
 
         contents = yield from resp.read_and_close()
 
-        parsed = xmltodict.parse(contents)['ListBucketResult']
+        parsed = xmltodict.parse(contents, strip_whitespace=False)['ListBucketResult']
 
         contents = parsed.get('Contents', [])
         prefixes = parsed.get('CommonPrefixes', [])
