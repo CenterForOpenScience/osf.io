@@ -257,6 +257,27 @@ def node_register_template_page_post(auth, node, **kwargs):
         'result': register.url,
     }, http.CREATED
 
+@must_be_valid_project
+@must_have_permission(ADMIN)
+@must_not_be_registration
+def node_draft_template_page_post(auth, node, **kwargs):
+
+    if settings.DISK_SAVING_MODE:
+        raise HTTPError(
+            http.METHOD_NOT_ALLOWED,
+            redirect_url=node.url
+        )
+
+    # TODO: Using json.dumps because node_to_use.registered_meta's values are
+    # expected to be strings (not dicts). Eventually migrate all these to be
+    # dicts, as this is unnecessary
+    draft = node.register_node(auth)
+
+    return {
+        'status': 'success',
+        'result': draft.url,
+    }, http.CREATED
+
 def _build_ezid_metadata(node):
     """Build metadata for submission to EZID using the DataCite profile. See
     http://ezid.cdlib.org/doc/apidoc.html for details.

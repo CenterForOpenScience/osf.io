@@ -1196,12 +1196,6 @@ def make_url_map(app):
             '/project/<pid>/beforeregister/',
             '/project/<pid>/node/<nid>/beforeregister',
         ], 'get', project_views.register.project_before_register, json_renderer),
-        # TODO
-        Rule([
-            '/project/<pid>/beforedraft/',
-            '/project/<pid>/node/<nid>/beforedraft',
-        ], 'get', project_views.register.project_before_draft, json_renderer),
-
         Rule([
             '/project/<pid>/register/<template>/',
             '/project/<pid>/node/<nid>/register/<template>/',
@@ -1215,6 +1209,11 @@ def make_url_map(app):
             '/project/<pid>/register/<template>/',
             '/project/<pid>/node/<nid>/register/<template>/',
         ], 'post', project_views.register.node_register_template_page_post, json_renderer),
+        # TODO
+        Rule([
+            '/project/<pid>/draft/',
+            '/project/<pid>/node/<nid>/draft/',
+        ], 'post', project_views.register.node_draft_template_page_post, json_renderer),
 
         Rule(
             [

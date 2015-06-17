@@ -11,39 +11,6 @@ var ctx = window.contextVars;
     * Unblock UI and display error modal
     */
 
-function registration_failed() {
-    $osf.unblock();
-    bootbox.alert('Registration failed');
-}
-
-function draftNode(data) {
-
-    // Block UI until request completes
-    $osf.block();
-
-    // POST data
-    $.ajax({
-        url:  ctx.node.urls.api + 'register/' + ctx.regTemplate + '/',
-        type: 'POST',
-        data: JSON.stringify(data),
-        contentType: 'application/json',
-        dataType: 'json'
-    }).done(function(response) {
-        if (response.status === 'success') {
-            window.location.href = response.result;
-        }
-        else if (response.status === 'error') {
-            registration_failed();
-        }
-    }).fail(function() {
-        registration_failed();
-    });
-
-    // Stop event propagation
-    return false;
-
-}
-
 (function() {
     var $editor = document.getElementById('editor');
 
@@ -375,27 +342,8 @@ function draftNode(data) {
         window.editor = editor;
     };
 
-    JSONEditor.defaults.options.upload = function(type, file, cbs) {
-        if (type === 'root.upload_fail') cbs.failure('Upload failed');
-        else {
-            var tick = 0;
-            var tickFunction = function() {
-                tick += 1;
-                console.log('progress: ' + tick);
-                if (tick < 100) {
-                    cbs.updateProgress(tick);
-                    window.setTimeout(tickFunction, 50)
-                } else if (tick == 100) {
-                    cbs.updateProgress();
-                    window.setTimeout(tickFunction, 500)
-                } else {
-                    cbs.success('http://www.example.com/images/' + file.name);
-                }
-            };
-            window.setTimeout(tickFunction)
-        }
-    };
 
+    // need to update so that it doesn't register when the top nav bar is clicked
     $(document.body).on('click', 'a', function() {
         var index = 0;
         var clicked = this.id;
@@ -419,6 +367,9 @@ function draftNode(data) {
             var id = clicked.split("tab");
             reload(init_schemas, init_array, id[1]);
         }
+
+        // this doesn't really work...
+        //window.history.pushState('container', editor.options.schema.title, window.location.href + '?' + editor.options.schema.title);
         
     });
 

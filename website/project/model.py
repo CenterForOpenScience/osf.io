@@ -1746,6 +1746,84 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
 
         return registered
 
+    # TODO
+    def draft_node(self, auth):
+        """Make a frozen copy of a node.
+
+        :param auth: All the auth information including user, API key.
+        """
+        # NOTE: Admins can register child nodes even if they don't have write access them
+        if not self.can_edit(auth=auth) and not self.is_admin_parent(user=auth.user):
+            raise PermissionsError(
+                'User {} does not have permission '
+                'to register this node'.format(auth.user._id)
+            )
+        if self.is_folder:
+            raise NodeStateError("Folders may not be registered")
+
+        when = datetime.datetime.utcnow()
+
+        original = self.load(self._primary_key)
+
+        # Note: Cloning a node copies its `wiki_pages_current` and
+        # `wiki_pages_versions` fields, but does not clone the underlying
+        # database objects to which these dictionaries refer. This means that
+        # the cloned node must pass itself to its wiki objects to build the
+        # correct URLs to that content.
+        if original.is_deleted:
+            raise NodeStateError('Cannot register deleted node.')
+
+        draft = original.clone()
+
+        draft.is_registration = False
+        draft.is_draft = True
+
+        draft.registered_date = when
+        draft.registered_user = auth.user
+        draft.registered_from = original
+
+        draft.contributors = self.contributors
+        draft.forked_from = self.forked_from
+        draft.creator = self.creator
+        draft.logs = self.logs
+        draft.tags = self.tags
+        draft.piwik_site_id = None
+
+        draft.save()
+
+        # After register callback
+        for addon in original.get_addons():
+            _, message = addon.after_register(original, draft, auth.user)
+            if message:
+                status.push_status_message(message)
+
+        draft.nodes = []
+
+        for node_contained in original.nodes:
+            if not node_contained.is_deleted:
+                draft_node = node_contained.draft_node(auth)
+                if draft_node is not None:
+                    draft.nodes.append(draft_node)
+
+        original.add_log(
+            action=NodeLog.PROJECT_DRAFTED,
+            params={
+                'parent_node': original.parent_id,
+                'node': original._primary_key,
+                'draft': draft._primary_key,
+            },
+            auth=auth,
+            log_date=when,
+            save=False,
+        )
+        original.save()
+
+        draft.save()
+        for node in draft.nodes:
+            node.update_search()
+
+        return draft
+
     def remove_tag(self, tag, auth, save=True):
         if tag in self.tags:
             self.tags.remove(tag)
