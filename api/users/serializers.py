@@ -1,17 +1,66 @@
 from rest_framework import serializers as ser
 
-from api.base.serializers import JSONAPISerializer, LinksField, Link
+from api.base.serializers import JSONAPISerializer, JSONAPIListSerializer, LinksField, Link
 from website.models import User
+from django.db import models
+from jsonfield import JSONField
+from django.utils import six, timezone
 
-# class SocialFieldsSerializer(ser.Serializer):
-#     github = ser.CharField()
-#     scholar = ser.CharField()
-#     personal = ser.CharField()
-#     twitter = ser.CharField()
-#     linkedIn = ser.CharField()
-#     impactStory = ser.CharField()
-#     orcid = ser.CharField()
-#     researcherId = ser.CharField()
+
+
+class JobsSerializer(JSONAPISerializer):
+    startYear = ser.CharField(allow_blank=True)
+    title = ser.CharField()
+    startMonth = ser.IntegerField(max_value=12, min_value=1, allow_null=True)
+    endMonth = ser.IntegerField(max_value=12, min_value=1, allow_null=True)
+    endYear = ser.CharField(allow_blank=True)
+    ongoing = ser.BooleanField()
+    department = ser.CharField()
+    institution = ser.CharField()
+
+    class Meta:
+        type_ = 'jobs'
+
+# class SocialSerializer(JSONAPISerializer):
+#     github = ser.CharField(allow_blank=True, source='social.github')
+#     title = ser.CharField()
+#     startMonth = ser.IntegerField(max_value=12, min_value=1, allow_null=True)
+#     endMonth = ser.IntegerField(max_value=12, min_value=1, allow_null=True)
+#     endYear = ser.CharField(allow_blank=True)
+#     ongoing = ser.BooleanField()
+#     department = ser.CharField()
+#     institution = ser.CharField()
+#
+#     class Meta:
+#         type_ = 'social'
+
+
+class empty:
+    """
+    This class is used to represent no data being provided for a given input
+    or output value.
+
+    It is required because `None` may be a valid input or output value.
+    """
+    pass
+
+
+class APIDictField(ser.DictField):
+    def get_value(self, dictionary):
+        content = JSONRenderer().render(serializer.data)
+        return dictionary.get(self.field_name, empty)
+
+    def to_internal_value(self, data):
+        """
+        Dicts of native values <- Dicts of primitive datatypes.
+        """
+        if not isinstance(data, dict):
+            self.fail('not_a_dict', input_type=type(data).__name__)
+        to_internal_value = dict([
+            (six.text_type(key), self.child.run_validation(value))
+            for key, value in data.items()
+        ])
+        return to_internal_value
 
 
 class UserSerializer(JSONAPISerializer):
@@ -31,13 +80,17 @@ class UserSerializer(JSONAPISerializer):
     suffix = ser.CharField(required=False, help_text='For bibliographic citations')
     date_registered = ser.DateTimeField(read_only=True)
     gravatar_url = ser.CharField(required=False, help_text='URL for the icon used to identify the user. Relies on http://gravatar.com ')
-    employment_institutions = ser.ListField(required=False, allow_null=True, source='jobs', help_text='An array of dictionaries representing the '
-                                                                     'places the user has worked')
-    educational_institutions = ser.ListField(required=False, allow_null=True, source='schools', help_text='An array of dictionaries representing the '
-                                                                         'places the user has attended school')
-    social_accounts = ser.DictField(child=ser.CharField(), required=False, source='social', help_text='A dictionary of various social media account '
+    # employment_institutions = ser.ListField(child=JobsSerializer(), required=False, source='jobs', help_text='An array of dictionaries representing the '
+    #                                         'places the user has worked')
+    # employment_institutions = ser.ListField(child=ser.CharField(), required=False, source='jobs', help_text='An array of dictionaries representing the '
+    #                                                                  'places the user has worked')
+    # educational_institutions = ser.ListField(child=ser.CharField(), required=False, source='schools', help_text='An array of dictionaries representing the '
+    #                                                                      'places the user has attended school')
+    social_accounts = APIDictField(allow_null=True, child=ser.CharField(), required=False, source='social', help_text='A dictionary of various social media account '
                                                                'identifiers including an array of user-defined URLs')
-    # social_accounts = SocialFieldsSerializer
+    # github = ser.CharField(required=False, source='social.github', help_text='A dictionary of various social media account '
+    #                                                            'identifiers including an array of user-defined URLs')
+    # social_accounts = SocialSerializer
 
     links = LinksField({
         'html': 'absolute_url',
@@ -48,14 +101,18 @@ class UserSerializer(JSONAPISerializer):
 
     class Meta:
         type_ = 'users'
+        fields = ('id', 'fullname', 'given_name', 'middle_name', 'family_name', 'suffix', 'date_registered', 'gravatar_url', 'employment_institutions', 'social_accounts')
 
     def absolute_url(self, obj):
         return obj.absolute_url
 
     def update(self, instance, validated_data):
+        # jobs_data = validated_data.pop('jobs')
+        # jobs = instance.jobs
         assert isinstance(instance, User), 'instance must be a User'
         for attr, value in validated_data.items():
             setattr(instance, attr, value)
+        # jobs.save()
         instance.save()
         return instance
 

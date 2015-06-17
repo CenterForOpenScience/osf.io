@@ -7,6 +7,8 @@ from api.base.filters import ODMFilterMixin
 from api.nodes.serializers import NodeSerializer
 from .serializers import UserSerializer
 from .permissions import ReadOnlyOrCurrentUser
+from rest_framework import serializers
+from rest_framework_recursive.fields import RecursiveField
 
 
 class UserMixin(object):
