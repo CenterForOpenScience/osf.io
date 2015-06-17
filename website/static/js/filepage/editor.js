@@ -30,7 +30,9 @@ var FileEditor = {
         $osf.throttle(self.observables.status, 4000, {leading: false});
 
         self.bindAce = function(element, isInitialized, context) {
-            if (isInitialized) return;
+            if (isInitialized) {
+                return;
+            }
             model.editor = ace.edit(element.id);
             model.editor.setValue(self.initialText, -1);
             new ShareJSDoc(shareWSUrl, self.editorMeta, model.editor, self.observables);
@@ -118,7 +120,9 @@ var FileEditor = {
         return self;
     },
     view: function(ctrl) {
-        if (!ctrl.loaded) return util.Spinner;
+        if (!ctrl.loaded) {
+            return util.Spinner;
+        }
 
         return m('.editor-pane', [
             m('.wiki-connected-users', m('.row', m('.col-sm-12', [
