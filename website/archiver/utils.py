@@ -117,6 +117,7 @@ def delete_registration_tree(node):
     if not getattr(node.embargo, 'for_existing_registration', False):
         node.registered_from = None
     node.save()
+    node.update_search()
     for child in node.nodes:
         delete_registration_tree(child)
 
