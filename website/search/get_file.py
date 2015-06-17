@@ -1,11 +1,21 @@
 from website.settings import API_DOMAIN
 import requests
-import pprint
+
+"""
+Temporarily provides functions that give access
+to projects files. To be replaced with the standard
+way files are accessed.
+"""
 
 
 def build_api_call(pid):
-    """ Build a call to api v2 for the projects list of files.
+    """ Get a url to a project's files.
+    :param pid: project id
+    :return: url to project's files
+
+    Utilizes api v2.
     """
+
     path = ['v2']
     path.append('nodes')
     path.append(pid)
@@ -21,17 +31,11 @@ def get_files_for(pid):
     :return: list of unicode strings.
     """
     url = build_api_call(pid)
-    print(url)
     resp = requests.get(url).json()
-    print(pprint.pprint(resp))
-
     file_contents = []
-    for file in resp['data']:
-        file_link = file['links']['self']
-        print(file_link)
+    for file_obj in resp['data']:
+        file_link = file_obj['links']['self']
         file_resp = requests.get(file_link)
         content = file_resp.text
         file_contents.append(content)
-    print('FILES: {}'.format(len(file_contents)))
-    if file_contents:
-        print(u'SIZE OF ONE: {}'.format(len(file_contents[0])))
+    return file_contents

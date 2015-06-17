@@ -7,8 +7,10 @@ import copy
 import math
 import logging
 import unicodedata
-
 import six
+
+# TODO: Remove when using standard calls to API
+import get_file
 
 from elasticsearch import (
     Elasticsearch,
@@ -206,13 +208,6 @@ def load_parent(parent_id):
         parent_info['id'] = None
     return parent_info
 
-
-def get_files(project_id):
-    base = 'localhost:8000/v2/'
-    base += 'node/'
-    base += project_id
-    base += '%2F&provider=osfstorage'
-    pass
 
 
 @requires_search
