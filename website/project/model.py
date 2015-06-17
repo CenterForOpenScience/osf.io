@@ -1773,8 +1773,6 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
                     registered.nodes.append(child_registration)
 
         registered.save()
-        for node in registered.nodes:
-            node.update_search()
 
         project_signals.after_create_registration.send(self, dst=registered, user=auth.user)
 
@@ -2704,16 +2702,13 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         embargo.end_date = datetime.datetime.combine(end_date, datetime.datetime.min.time())
 
         admins = [contrib for contrib in self.contributors if self.has_permission(contrib, 'admin') and contrib.is_active]
-        approval_state = {}
-        # Create approve/disapprove keys
-        for admin in admins:
-            approval_state[admin._id] = {
+        embargo.approval_state = {
+            admin._id: {
                 'approval_token': security.random_string(30),
                 'disapproval_token': security.random_string(30),
                 'has_approved': False
-            }
-
-        embargo.approval_state = approval_state
+            } for admin in admins
+        }
         if save:
             embargo.save()
         return embargo
