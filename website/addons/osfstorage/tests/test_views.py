@@ -2,6 +2,7 @@
 from __future__ import unicode_literals
 
 import os
+import datetime
 from nose.tools import *  # noqa
 
 from framework.auth.core import Auth
@@ -310,9 +311,13 @@ class TestUpdateMetadataHook(HookTestCase):
         self.record.versions = [self.version]
         self.record.save()
         self.payload = {
-            'metadata': {'archive': 'glacier', 'size': 123, 'modified': 'Mon, 16 Feb 2015 18:45:34 GMT'},
+            'metadata': {
+                'size': 123,
+                'modified': 'Mon, 16 Feb 2015 18:45:34 GMT',
+                'md5': 'askjasdlk;jsadlkjsadf'
+            },
             'version': self.version._id,
-            'size': 123,
+            'size': 321,  # Just to make sure the field is ignored
         }
 
     def send_metadata_hook(self, payload=None, **kwargs):
@@ -324,11 +329,32 @@ class TestUpdateMetadataHook(HookTestCase):
             **kwargs
         )
 
-    def test_archived(self):
+    def test_callback(self):
+        self.version.date_modified = None
+        self.version.save()
         self.send_metadata_hook()
         self.version.reload()
-        assert_in('archive', self.version.metadata)
-        assert_equal(self.version.metadata['archive'], 'glacier')
+        #Test fields are added
+        assert_equal(self.version.metadata['size'], 123)
+        assert_equal(self.version.metadata['md5'], 'askjasdlk;jsadlkjsadf')
+        assert_equal(self.version.metadata['modified'], 'Mon, 16 Feb 2015 18:45:34 GMT')
+
+        #Test attributes are populated
+        assert_equal(self.version.size, 123)
+        assert_true(isinstance(self.version.date_modified, datetime.datetime))
+
+    def test_archived(self):
+        self.send_metadata_hook({
+            'version': self.version._id,
+            'metadata': {
+                'vault': 'osf_storage_prod',
+                'archive': 'Some really long glacier object id here'
+            }
+        })
+        self.version.reload()
+
+        assert_equal(self.version.metadata['vault'], 'osf_storage_prod')
+        assert_equal(self.version.metadata['archive'], 'Some really long glacier object id here')
 
     def test_archived_record_not_found(self):
         res = self.send_metadata_hook(

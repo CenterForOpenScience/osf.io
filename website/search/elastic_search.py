@@ -24,6 +24,7 @@ from website.filters import gravatar
 from website.models import User, Node
 from website.search import exceptions
 from website.search.util import build_query
+from website.util import sanitize
 
 logger = logging.getLogger(__name__)
 
@@ -36,6 +37,12 @@ ALIASES = {
     'user': 'Users',
     'total': 'Total'
 }
+
+# Prevent tokenizing and stop word removal.
+NOT_ANALYZED_PROPERTY = {'type': 'string', 'index': 'not_analyzed'}
+
+# Perform stemming on the field it's applied to.
+ENGLISH_ANALYZER_PROPERTY = {'type': 'string', 'analyzer': 'english'}
 
 INDEX = settings.ELASTIC_INDEX
 
@@ -164,11 +171,11 @@ def format_result(result, parent_id=None):
     formatted_result = {
         'contributors': result['contributors'],
         'wiki_link': result['url'] + 'wiki/',
-        # TODO: Remove when html safe comes in
-        'title': result['title'].replace('&amp;', '&'),
+        # TODO: Remove safe_unescape_html when mako html safe comes in
+        'title': sanitize.safe_unescape_html(result['title']),
         'url': result['url'],
         'is_component': False if parent_info is None else True,
-        'parent_title': parent_info.get('title').replace('&amp;', '&') if parent_info else None,
+        'parent_title': sanitize.safe_unescape_html(parent_info.get('title')) if parent_info else None,
         'parent_url': parent_info.get('url') if parent_info is not None else None,
         'tags': result['tags'],
         'is_registration': (result['is_registration'] if parent_info is None
@@ -318,17 +325,20 @@ def delete_index(index):
 @requires_search
 def create_index(index=INDEX):
     '''Creates index with some specified mappings to begin with,
-    all of which are applied to all projects, components, and registrations'''
-    mapping = {
-        'properties': {
-            'tags': {
-                'type': 'string',
-                'index': 'not_analyzed',
-            },
-        }
-    }
+    all of which are applied to all projects, components, and registrations.
+    '''
+    document_types = ['project', 'component', 'registration', 'user']
+    project_like_types = ['project', 'component', 'registration']
+    analyzed_fields = ['title', 'description']
+
     es.indices.create(index, ignore=[400])
-    for type_ in ['project', 'component', 'registration', 'user']:
+    for type_ in document_types:
+        mapping = {'properties': {'tags': NOT_ANALYZED_PROPERTY}}
+        if type_ in project_like_types:
+            analyzers = {field: ENGLISH_ANALYZER_PROPERTY
+                         for field in analyzed_fields}
+            mapping['properties'].update(analyzers)
+
         es.indices.put_mapping(index=index, doc_type=type_, body=mapping, ignore=[400, 404])
 
 
@@ -355,6 +365,17 @@ def search_contributor(query, page=0, size=10, exclude=[], current_user=None):
     """
     start = (page * size)
     items = re.split(r'[\s-]+', query)
+
+    normalized_items = []
+    for item in items:
+        try:
+            normalized_item = six.u(item)
+        except TypeError:
+            normalized_item = item
+        normalized_item = unicodedata.normalize('NFKD', normalized_item).encode('ascii', 'ignore')
+        normalized_items.append(normalized_item)
+    items = normalized_items
+
     query = ''
 
     query = "  AND ".join('{}*~'.format(re.escape(item)) for item in items) + \

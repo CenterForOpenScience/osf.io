@@ -2,6 +2,21 @@
 Changelog
 *********
 
+0.39.0 (2015-06-15)
+===================
+
+- Many bug fixes and UI improvements. See
+https://github.com/CenterForOpenScience/osf.io/issues?page=1&q=milestone%3A0.39.0+is%3Aclosed
+for a list of closed PRs.
+
+0.38.0 (2015-06-07)
+===================
+
+- API v2 pre-release
+- Modular File Renderer as a service
+- File editing user interface improvements
+- Collaborative file editing for text files
+
 0.37.0 (2015-05-25)
 ===================
 

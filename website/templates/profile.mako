@@ -18,20 +18,23 @@
 
 <div class="page-header">
     <div class="profile-fullname">
-        <span class="profile-avatar">
-        % if user['is_profile']:
-            <a href="#changeAvatarModal" data-toggle="modal"><img id='profile-gravatar' src="${profile['gravatar_url']}"
-                    rel="tooltip" title="Click to change avatar"/></a>
-        % else:
-            <img id='profile-gravatar' src="${profile['gravatar_url']}"/>
-        % endif
-        </span>
-    <span id="profileFullname" class="h1 overflow ">${profile["fullname"]}</span>
-        <span class="edit-profile-settings">
-        % if user['is_profile']:
-            <a href="/settings/">Edit your profile</a></span>
-        % endif
+        <div class="avatar-div">
+            % if user['is_profile']:
+                <a href="#changeAvatarModal" data-toggle="modal"><img id='profile-gravatar' src="${profile['gravatar_url']}"
+                        rel="tooltip" title="Click to change avatar"/></a>
+            % else:
+                <img id='profile-gravatar' src="${profile['gravatar_url']}"/>
+            % endif
+        </div>
+        <div class="h1 overflow name-div">
+            ${profile["fullname"]}
+        </div>
     </div>
+    <span class="edit-profile-settings">
+        % if user['is_profile']:
+            <a href="/settings/">Edit your profile</a>
+        % endif
+    </span>
 </div><!-- end-page-header -->
 
 
@@ -39,35 +42,24 @@
 
     <div class="col-sm-6">
 
-
-        <div>
-            <table class="table table-plain">
+        <table class="table table-plain">
+            % if profile.get('date_registered'):
                 <tr>
-                  <td>Name</td>
-                  <td class="fullname overflow-block" width="300px">${profile["fullname"]}</td>
+                    <td>Member&nbsp;Since</td>
+                    <td>${profile['date_registered']}</td>
                 </tr>
-                % if profile.get('date_registered'):
-                    <tr>
-                        <td>Member&nbsp;Since</td>
-                        <td>${profile['date_registered']}</td>
-                    </tr>
-                % endif
-                % if profile.get('url') and profile.get('display_absolute_url'):
-                    <tr>
-                        <td>Public&nbsp;Profile</td>
-                        <td><a href="${profile['url']}">${profile['display_absolute_url']}</a></td>
-                    </tr>
-                % endif
-            </table>
-        </div>
-        <div>
-            <h2>
-               ${profile['activity_points'] or "No"} activity point${'s' if profile['activity_points'] != 1 else ''}<br />
-               ${profile["number_projects"]} project${'s' if profile["number_projects"] != 1  else ''}, ${profile["number_public_projects"]} public
-            </h2>
-        </div>
-
-
+            % endif
+            % if profile.get('url') and profile.get('display_absolute_url'):
+                <tr>
+                    <td>Public&nbsp;Profile</td>
+                    <td><a href="${profile['url']}">${profile['display_absolute_url']}</a></td>
+                </tr>
+            % endif
+        </table>
+        <h2>
+           ${profile['activity_points'] or "No"} activity point${'s' if profile['activity_points'] != 1 else ''}<br />
+           ${profile["number_projects"]} project${'s' if profile["number_projects"] != 1  else ''}, ${profile["number_public_projects"]} public
+        </h2>
     </div>
 
     <div class="col-sm-6">

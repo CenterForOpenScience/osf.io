@@ -13,7 +13,7 @@
                 </a>
             </span>
             <!-- /ko -->
-            <a class="navbar-brand visible-lg" href="/"><img src="/static/img/cos-white2.png" class="osf-navbar-logo" width="27" alt="COS logo"/> Open Science Framework <span class="brand-version"> BETA</span></a>
+            <a class="navbar-brand visible-lg" href="/"><img src="/static/img/cos-white2.png" class="osf-navbar-logo" width="27" alt="COS logo"/> Open Science Framework</a>
             <a class="navbar-brand hidden-lg" href="/"><img src="/static/img/cos-white2.png" class="osf-navbar-logo" width="27" alt="COS logo"/> OSF</a>
 
         </div><!-- end navbar-header -->
@@ -27,7 +27,7 @@
                     <a href="#" class="dropdown-toggle" data-toggle="dropdown">Explore <b class="caret"></b></a>
                     <ul class="dropdown-menu">
                         <li><a href="/search/?q=*&filter=registration">Registry</a></li>
-                        <li><a href="/presentations/">Presentations</a></li>
+                        <li><a href="/meetings/">Meetings</a></li>
                         <li><a href="/explore/activity/">Public Activity</a></li>
                     </ul><!-- end dropdown-menu -->
                 </li><!-- end dropdown -->
@@ -81,10 +81,10 @@
                             method="POST"
                         >
                         <div class="form-group">
-                            <input type="email" class="input-sm form-control" data-bind="value: username" name="username" placeholder="Email">
+                            <input type="email" class="input-sm form-control" data-bind="value: username" name="username" placeholder="Email" aria-label="Username">
                         </div>
                         <div class="form-group">
-                            <input type="password" class="input input-sm form-control" data-bind="value: password" name="password" placeholder="Password">
+                            <input type="password" class="input input-sm form-control" data-bind="value: password" name="password" placeholder="Password" aria-label="Password">
                         </div>
                         <button type="submit" class="btn btn-sm btn-success">Sign In</button>
                     </form>
