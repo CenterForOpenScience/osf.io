@@ -153,7 +153,6 @@ def before_archive(node, user):
     )
     job.set_targets()
 
-
 def add_archive_success_logs(node, user):
     src = node.registered_from
     src.add_log(

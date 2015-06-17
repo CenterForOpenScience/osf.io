@@ -440,13 +440,14 @@ def node_register_template_page_post(auth, node, **kwargs):
             register.save()
         except ValidationValueError as err:
             raise HTTPError(http.BAD_REQUEST, data=dict(message_long=err.message))
-        register.archive_job.meta = {
-            'embargo_urls': {
-                contrib._id: project_utils.get_embargo_urls(register, contrib)
-                for contrib in node.active_contributors()
+        if settings.ENABLE_ARCHIVER:
+            register.archive_job.meta = {
+                'embargo_urls': {
+                    contrib._id: project_utils.get_embargo_urls(register, contrib)
+                    for contrib in node.active_contributors()
+                }
             }
-        }
-        register.archive_job.save()
+            register.archive_job.save()
     else:
         register.set_privacy('public', auth, log=False)
         for child in register.get_descendants_recursive():

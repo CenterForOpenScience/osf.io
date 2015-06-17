@@ -1774,7 +1774,8 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
 
         registered.save()
 
-        project_signals.after_create_registration.send(self, dst=registered, user=auth.user)
+        if settings.ENABLE_ARCHIVER:
+            project_signals.after_create_registration.send(self, dst=registered, user=auth.user)
 
         return registered
 
