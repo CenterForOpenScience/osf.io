@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 import mock
 from nose.tools import *  # flake8: noqa
-import json
 
 from framework.auth.core import Auth
 from website.models import Node
