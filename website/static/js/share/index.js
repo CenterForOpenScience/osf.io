@@ -3,6 +3,7 @@
 require('c3/c3.css');
 require('../../css/share-search.css');
 
+var $ = require('jquery');
 var m = require('mithril');
 var $osf = require('js/osfHelpers');
 var Stats = require('./stats');
@@ -28,6 +29,14 @@ ShareApp.ViewModel = function() {
     self.showFooter = (self.query() === '');
     self.requiredFilters = $osf.urlParams().required ? $osf.urlParams().required.split('|') : [];
     self.optionalFilters = $osf.urlParams().optional ? $osf.urlParams().optional.split('|') : [];
+
+    self.sortProviders = function() {
+        return $.map(Object.keys(self.vm.ProviderMap), function(result, index){
+            return self.vm.ProviderMap[result];
+        }).sort(function(a,b){
+                return a.long_name.toUpperCase() > b.long_name.toUpperCase() ? 1: -1;
+        });
+    };
 };
 
 

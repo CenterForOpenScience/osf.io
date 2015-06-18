@@ -81,13 +81,6 @@ SideBar.controller = function(vm) {
 
     };
 
-    self.vm.sortProviders = function() {
-        return $.map(Object.keys(self.vm.ProviderMap), function(result, index){
-            return self.vm.ProviderMap[result];
-        }).sort(function(a,b){
-                return a.long_name.toUpperCase() > b.long_name.toUpperCase() ? 1: -1;
-        });
-    };
 
     self.renderProviders = function () {
         return $.map(self.vm.sortProviders(), self.renderProvider);
