@@ -13,6 +13,8 @@ from website.archiver.utils import handle_archive_fail
 
 from website.project.model import Node
 
+from website.app import init_app
+
 def find_failed_registrations():
     expired_if_before = datetime.now() - ARCHIVE_TIMEOUT_TIMEDELTA
     query = (
@@ -20,10 +22,11 @@ def find_failed_registrations():
         Q('is_registration', 'eq', True) &
         Q('registered_date', 'lt', expired_if_before) &
         Q('__backrefs.active.archivejob', 'exists', True)
-    )    
-    return [node for node in Node.find(query) if node.archive_job.status != ARCHIVER_SUCCESS]
+    )
+    return [node for node in Node.find(query) if not node.archive_job.sent or node.archive_job.status != ARCHIVER_SUCCESS]
 
 def remove_failed_registrations(dry_run=True):
+    init_app(set_backends=True)
     failed = find_failed_registrations()
     if not dry_run:
         for f in failed:
