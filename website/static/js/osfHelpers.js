@@ -441,6 +441,7 @@ ko.virtualElements.allowedBindings.stopBinding = true;
 var applyBindings = function(viewModel, selector) {
     var elem, cssSelector;
     var $elem = $(selector);
+
     if (typeof(selector.nodeName) === 'string') { // dom element
         elem = selector;
         // NOTE: Only works with DOM elements that have an ID
@@ -456,13 +457,14 @@ var applyBindings = function(viewModel, selector) {
         throw "Can't bind ViewModel to multiple elements."; // jshint ignore: line
     }
     // Ensure that the bound element is shown
-    if ($elem.hasClass('scripted')){
+    if ($elem.hasClass('scripted')) {
         $elem.show();
     }
     // Also show any child elements that have the scripted class
     $(cssSelector + ' .scripted').each(function(elm) {
         $(this).show();
     });
+
     ko.applyBindings(viewModel, $elem[0]);
 };
 

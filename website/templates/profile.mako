@@ -142,7 +142,7 @@
                 "tpl" : "util/render_nodes.mako",
                 "uri" : "/api/v1/profile/${profile["id"]}/public_projects/",
                 "replace" : true,
-                "kwargs" : {"sortable" : true, "user": ${json.dumps(user)}, "pluralized_node_type": "projects"}
+                "kwargs" : {"sortable" : true, "user": ${json.dumps(user)}, "pluralized_node_type": "projects", "skipBindings": true}
             }'></div>
     </div>
     <div class="col-sm-6">
