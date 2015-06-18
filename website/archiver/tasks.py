@@ -6,6 +6,7 @@ from celery.utils.log import get_task_logger
 
 from framework.tasks import app as celery_app
 from framework.exceptions import HTTPError
+from framework.sentry import log_message, log_exception
 
 from website.archiver import (
     ARCHIVER_SUCCESS,
@@ -51,6 +52,7 @@ class ArchiverTask(celery.Task):
     max_retries = 0
 
     def on_failure(self, exc, task_id, args, kwargs, einfo):
+        log_message(einfo)
         job = ArchiveJob.load(kwargs.get('job_pk'))
         if not job:
             raise ArchiverStateError({
@@ -127,7 +129,9 @@ def make_copy_request(job_pk, url, data):
             ARCHIVER_FAILURE,
             errors=[res.json()],
         )
-        raise HTTPError(res.status_code)
+        e = HTTPError(res.status_code)
+        log_exception(e)
+        raise e
 
 @celery_app.task(base=ArchiverTask, name="archiver.archive_addon")
 def archive_addon(addon_short_name, job_pk, stat_result):
@@ -186,7 +190,9 @@ def archive_node(results, job_pk):
         targets=results,
     )
     if stat_result.disk_usage > settings.MAX_ARCHIVE_SIZE:
-        raise ArchiverSizeExceeded(result=stat_result)
+        e = ArchiverSizeExceeded(result=stat_result)
+        log_exception(e)
+        raise e
     else:
         for result in stat_result.targets:
             if not result.num_files:
