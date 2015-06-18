@@ -126,12 +126,15 @@ class NodeSerializer(JSONAPISerializer):
         instance.save()
         return instance
 
+
 class NodeDeleteSerializer(JSONAPISerializer):
+    node_id = ser.CharField(read_only=True)
     warning_message = ser.CharField(read_only=True)
     url = ser.CharField(read_only=True, help_text='Use new url to submit DELETE request')
 
     class Meta:
         type_ = 'nodes'
+
 
 class NodePointersSerializer(JSONAPISerializer):
 
@@ -167,6 +170,7 @@ class NodePointersSerializer(JSONAPISerializer):
 
     def update(self, instance, validated_data):
         pass
+
 
 class NodeFilesSerializer(JSONAPISerializer):
 
