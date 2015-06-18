@@ -141,9 +141,7 @@ class ArchiveJob(StoredObject):
             return
         if self._archive_node_finished():
             self.done = True
-            if not ARCHIVER_FAILURE_STATUSES.isdisjoint(
-                [target.status for target in self.target_addons]
-            ):
+            if any([target.status for target in self.target_addons if target.status in ARCHIVER_FAILURE_STATUSES]):
                 self.status = ARCHIVER_FAILURE
                 self._fail_above()
             else:

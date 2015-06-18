@@ -385,14 +385,18 @@ def project_before_register(auth, node, **kwargs):
     for addon in itertools.chain(*addon_set):
         if not addon.complete:
             continue
+        archive_errors = getattr(addon, 'archive_errors', None)
+        error = None
+        if archive_errors:
+            error = archive_errors()
+            if error:
+                errors.append(error)
+                continue
         name = addon.config.short_name
         if name in settings.ADDONS_ARCHIVABLE:
             messages[settings.ADDONS_ARCHIVABLE[name]]['addons'].add(addon.config.full_name)
         else:
             messages['none']['addons'].add(addon.config.full_name)
-        archive_errors = getattr(addon, 'archive_errors', None)
-        if archive_errors:
-            errors.append(archive_errors())
     errors = [e for e in errors if e]
 
     prompts = [

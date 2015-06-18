@@ -27,9 +27,10 @@ def find_failed_registrations():
         Q('registered_date', 'lt', expired_if_before) &
         Q('__backrefs.active.archivejob', 'exists', True)
     )
-    return [node for node in Node.find(query) if node.archive_job.status != ARCHIVER_SUCCESS]
+    return [node for node in Node.find(query) if not node.archive_job.sent or node.archive_job.status != ARCHIVER_SUCCESS]
 
 def remove_failed_registrations(dry_run=True):
+    init_app(set_backends=True)
     failed = find_failed_registrations()
     if not dry_run:
         for f in failed:
@@ -44,7 +45,6 @@ def remove_failed_registrations(dry_run=True):
     logging.info('Cleaned {} registrations'.format(len(failed)))
 
 def main():
-    init_app(set_backends=True, routes=False)
     flags = ['dry_run']
     args = {arg.lstrip('--'): True for arg in sys.argv if arg.lstrip('--') in flags}
     if not args.get('dry', False):
