@@ -20,9 +20,10 @@
  */
 var base = require('js/resources/base');
 var oop = require('js/oop');
+var $ = require('jquery');
 
 /** Node model */
-var Node = oop.defclass({
+var Node = oop.defclass({  // jshint ignore:line
     /** Params is the data from the server. */
     constructor: function(params) {
         this.id = params.id;
