@@ -9,7 +9,8 @@ import pytz
 import datetime
 import urlparse
 import itsdangerous
-import random, string
+import random
+import string
 from dateutil import parser
 
 from modularodm import Q
