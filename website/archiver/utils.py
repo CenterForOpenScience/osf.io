@@ -117,7 +117,7 @@ def delete_registration_tree(node):
         node.registered_from = None
     node.save()
     node.update_search()
-    for child in node.nodes:
+    for child in node.nodes_primary:
         delete_registration_tree(child)
 
 def aggregate_file_tree_metadata(addon_short_name, fileobj_metadata, user):
