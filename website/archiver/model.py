@@ -164,13 +164,15 @@ class ArchiveJob(StoredObject):
         self.target_addons.append(target)
 
     def set_targets(self):
-        addons = [
-            addon.config.short_name for addon in
-            [self.src_node.get_addon(name)
-             for name in settings.ADDONS_ARCHIVABLE
-             if settings.ADDONS_ARCHIVABLE[name] != 'none']
-            if (addon and addon.complete and isinstance(addon, StorageAddonBase))
-        ]
+        addons = []
+        for addon in [self.src_node.get_addon(name)
+                      for name in settings.ADDONS_ARCHIVABLE
+                      if settings.ADDONS_ARCHIVABLE[name] != 'none']:
+            if not addon or not addon.complete or not isinstance(addon, StorageAddonBase):
+                continue
+            archive_errors = getattr(addon, 'archive_errors', None)
+            if not archive_errors or (archive_errors and not archive_errors()):
+                addons.append(addon.config.short_name)
         for addon in addons:
             self._set_target(addon)
         self.save()
