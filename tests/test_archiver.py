@@ -765,6 +765,12 @@ class TestArchiveTarget(OsfTestCase):
 
 class TestArchiveJobModel(OsfTestCase):
 
+    def tearDown(self, *args, **kwargs):
+        super(TestArchiveJobModel, self).tearDown(*args, **kwargs)
+        with open(os.path.join(settings.ROOT, 'addons.json')) as fp:
+            addon_settings = json.load(fp)
+            settings.ADDONS_ARCHIVABLE = addon_settings['addons_archivable']
+
     def test_repr(self):
         job = ArchiveJob()
         result = repr(job)
