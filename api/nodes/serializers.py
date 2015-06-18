@@ -127,7 +127,7 @@ class NodeSerializer(JSONAPISerializer):
         return instance
 
 class NodeDeleteSerializer(JSONAPISerializer):
-    warning_message = ser.CharField(read_only=True, help_text='Are you certain you want to delete this project?')
+    warning_message = ser.CharField(read_only=True)
     url = ser.CharField(read_only=True, help_text='Use new url to submit DELETE request')
 
     class Meta:
