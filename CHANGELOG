@@ -2,15 +2,23 @@
 ChangeLog
 *********
 
+0.7.0 (2015-06-18)
+==================
+
+- Read me updates
+- Various fixes for S3
+- Fixes to Dataverse's copy and move
+- Various fixes for figshare
+
 0.6.0 (2015-06-07)
-=================
+==================
 
 - Various fixes to Google drive
 - Allow response streams to be "unsizable"
 - Return an additional "etag" field with file metadata
 
 0.5.0 (2015-05-25)
-=================
+==================
 
 - Implement moving and expose it via http
 - Implement copying and expose it via http
