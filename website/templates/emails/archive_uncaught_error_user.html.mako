@@ -8,7 +8,7 @@
 </tr>
 <tr>
   <td style="border-collapse: collapse;">
-    We cannot archive ${src.title} at this time because there were errors copying files from some of the linked third-party services. Our development team is investigating this failure. We're sorry for any inconvienence this may have caused.
+    We cannot archive ${src.title} at this time because there were errors copying files to the registration. Our development team is investigating this failure. We're sorry for any inconvienence this may have caused.
   </td>
 </tr>
 </%def>
