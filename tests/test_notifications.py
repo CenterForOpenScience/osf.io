@@ -1118,11 +1118,12 @@ class TestSendEmails(OsfTestCase):
 
     def test_check_node_node_none(self):
         subs = emails.check_node(None, 'comments')
-        assert_equal(subs, {'email_transactional': [], 'email_digest': [], 'none': []})
+        assert_equal(subs, {'email_transactional': [], 'email_digest': [], 'none': [], 'email_hour': []})
 
     def test_check_node_one(self):
         subs = emails.check_node(self.project, 'comments')
-        assert_equal(subs, {'email_transactional': [self.project.creator._id], 'email_digest': [], 'none': []})
+        assert_equal(subs, {'email_transactional': [self.project.creator._id], 'email_digest': [], 'none': [],
+                            'email_hour': []})
 
     @mock.patch('website.project.views.comment.notify')
     def test_check_user_comment_reply_subscription_if_email_not_sent_to_target_user(self, mock_notify):
@@ -1233,8 +1234,9 @@ class TestSendEmails(OsfTestCase):
                             content='',
                             parent_comment='',
                             title=self.project.title,
-                            url=self.project.absolute_url
-        )
+                            url=self.project.absolute_url,
+                            time_to_send=datetime.datetime.utcnow()
+                            )
         digest_count = NotificationDigest.find().count()
         assert_equal((digest_count - digest_count_before), 1)
 
@@ -1309,14 +1311,16 @@ class TestSendDigest(OsfTestCase):
             user_id=user._id,
             timestamp=timestamp,
             message='Hello',
-            node_lineage=[project._id]
+            node_lineage=[project._id],
+            time_to_send=datetime.datetime.utcnow()
         )
         d.save()
         d2 = factories.NotificationDigestFactory(
             user_id=user2._id,
             timestamp=timestamp,
             message='Hello',
-            node_lineage=[project._id]
+            node_lineage=[project._id],
+            time_to_send=datetime.datetime.utcnow()
         )
         d2.save()
         user_groups = group_digest_notifications_by_user()
@@ -1347,7 +1351,8 @@ class TestSendDigest(OsfTestCase):
             user_id=factories.UserFactory()._id,
             timestamp=datetime.datetime.utcnow(),
             message='Hello',
-            node_lineage=[factories.ProjectFactory()._id]
+            node_lineage=[factories.ProjectFactory()._id],
+            time_to_send=datetime.datetime.utcnow()
         )
         d.save()
         user_groups = group_digest_notifications_by_user()
