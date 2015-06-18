@@ -1,5 +1,6 @@
 from babel import dates, core, Locale
 from mako.lookup import Template
+from datetime import timedelta
 
 from website import mails
 from website import models as website_models
@@ -58,6 +59,7 @@ def email_digest(recipient_ids, uid, event, user, node, timestamp, **context):
 
         digest = NotificationDigest(
             timestamp=timestamp,
+            time_to_send=context['time_to_send'],
             event=event,
             user_id=user_id,
             message=message,
@@ -154,14 +156,23 @@ def send(recipient_ids, notification_type, uid, event, user, node, timestamp, **
     if notification_type == 'none':
         return
 
+    print "----------------------------------------------------------------------------------------"
     if notification_type == 'email_quarter':
         nsecs = timestamp.minute*60 + timestamp.second + timestamp.microsecond*1e-6
         delta = (nsecs//900)*900+900 - nsecs
         print "calculate the next quarter hour: {}".format(delta)
+        context['time_to_send'] = timestamp + timedelta(seconds=delta)
     elif notification_type == 'email_hour':
-        print "calculate the next hour"
+        nsecs = timestamp.minute * 60 + timestamp.second + timestamp.microsecond * 1e-6
+        delta = (nsecs // 3600) * 3600 + 3600 - nsecs
+        print "calculate the next hour: {}".format(delta)
+        context['time_to_send'] = timestamp + timedelta(seconds=delta)
     elif notification_type == 'email_digest':
-        print "calculate the next day"
+        nsecs = timestamp.hour*3600 + timestamp.minute * 60 + timestamp.second + timestamp.microsecond * 1e-6
+        delta = (nsecs // 86400) * 86400 + 86400 - nsecs
+        print "calculate the next day: {}".format(delta)
+        context['time_to_send'] = timestamp + timedelta(seconds=delta)
+    print "----------------------------------------------------------------------------------------"
 
     try:
         EMAIL_FUNCTION_MAP[notification_type](

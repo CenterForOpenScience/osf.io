@@ -45,6 +45,10 @@ def send_digest(grouped_digests):
     :param grouped_digests: digest notification messages from the past 24 hours grouped by user
     :return:
     """
+    current_time = datetime.datetime.utcnow()
+    ten_before = current_time - datetime.timedelta(seconds=600)
+    ten_after = current_time + datetime.timedelta(seconds=600)
+
     for group in grouped_digests:
         user = User.load(group['user_id'])
         if not user:
@@ -52,9 +56,8 @@ def send_digest(grouped_digests):
             sentry.log_message("A user with this username does not exist.")
             return
 
-        pprint(group)
-
         info = group['info']
+        print info
         digest_notification_ids = [message['_id'] for message in info]
         sorted_messages = group_messages_by_node(info)
 
