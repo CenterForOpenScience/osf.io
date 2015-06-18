@@ -31,8 +31,8 @@ ShareApp.ViewModel = function() {
     self.optionalFilters = $osf.urlParams().optional ? $osf.urlParams().optional.split('|') : [];
 
     self.sortProviders = function() {
-        return $.map(Object.keys(self.vm.ProviderMap), function(result, index){
-            return self.vm.ProviderMap[result];
+        return $.map(Object.keys(self.ProviderMap), function(result, index){
+            return self.ProviderMap[result];
         }).sort(function(a,b){
                 return a.long_name.toUpperCase() > b.long_name.toUpperCase() ? 1: -1;
         });
