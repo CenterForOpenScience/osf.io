@@ -6,7 +6,7 @@ import logging
 from modularodm import Q
 
 from website.archiver import (
-    ARCHIVER_NETWORK_ERROR,
+    ARCHIVER_UNCAUGHT_ERROR,
     ARCHIVER_SUCCESS,
 )
 from website.settings import ARCHIVE_TIMEOUT_TIMEDELTA
@@ -36,7 +36,7 @@ def remove_failed_registrations(dry_run=True):
         for f in failed:
             logging.info('Cleaning {}'.format(f))
             handle_archive_fail(
-                ARCHIVER_NETWORK_ERROR,
+                ARCHIVER_UNCAUGHT_ERROR,
                 f.registered_from,
                 f,
                 f.creator,
