@@ -193,7 +193,7 @@
                     <hr />
 
                     <div style="margin-bottom:10px;">
-                        Select any other components that you would like to apply these settings to.
+                        Select any other components to which you would like to apply these settings.
                     </div>
 
                     <div class="row">
