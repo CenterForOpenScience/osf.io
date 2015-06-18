@@ -128,7 +128,6 @@ def make_copy_request(job_pk, url, data):
             errors=[res.json()],
         )
         raise HTTPError(res.status_code)
-    project_signals.archive_callback.send(dst)
 
 @celery_app.task(base=ArchiverTask, name="archiver.archive_addon")
 def archive_addon(addon_short_name, job_pk, stat_result):
