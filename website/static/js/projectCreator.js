@@ -68,11 +68,18 @@ function ProjectCreatorViewModel(params) {
 
     self.serialize = function() {
         var category = self.category();
+        var template;
+        if($osf.isIE()){
+            template = $('.createNodeTemplates')[3].value;
+        } else {
+            template = $('.createNodeTemplates')[1].value;
+        }
+        console.log(template);
         return {
             title: self.title(),
             category: category,
             description: self.description(),
-            template: $('#createNodeTemplates').val()
+            template: template
         };
     };
     /**
