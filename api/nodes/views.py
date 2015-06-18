@@ -121,7 +121,7 @@ class NodeDetail(generics.RetrieveUpdateDestroyAPIView, NodeMixin):
         token = node_token_creator(node._id, user._id)
         url = absolute_reverse('nodes:node-delete-confirm', kwargs={'node_id': node._id, 'token': token})
         delete_warning = BEFORE_DELETE_NODE.format(_(node.title))
-        return Response({'data': {'node_id': node._id, 'warning_message': delete_warning}, 'links': {'confirm_delete': url}}, status=status.HTTP_202_ACCEPTED)
+        return Response({'data': {'node_id': node._id, 'warning_message': delete_warning, 'links': {'confirm_delete': url}}}, status=status.HTTP_202_ACCEPTED)
 
 
 class NodeDeleteConfirm(generics.DestroyAPIView, NodeMixin):
