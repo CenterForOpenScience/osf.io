@@ -234,23 +234,31 @@ var ProjectViewModel = function(data) {
     /**
      * Toggle the watch status for this project.
      */
+    var watchUpdateInProgress = false;
+    var noWatchUpdateInProgress = function (){
+        return watchUpdateInProgress === false;
+    };
     self.toggleWatch = function() {
         // Send POST request to node's watch API url and update the watch count
-        if(self.userIsWatching()) {
-            self.watchedCount(self.watchedCount() - 1);
-        } else {
-            self.watchedCount(self.watchedCount() + 1);
+        if(noWatchUpdateInProgress()) {
+            if (self.userIsWatching()) {
+                self.watchedCount(self.watchedCount() - 1);
+            } else {
+                self.watchedCount(self.watchedCount() + 1);
+            }
+            watchUpdateInProgress = true;
+            osfHelpers.postJSON(
+                self.apiUrl + 'togglewatch/',
+                {}
+            ).done(function (data) {
+                    // Update watch count in DOM
+                    watchUpdateInProgress = false;
+                    self.userIsWatching(data.watched);
+                    self.watchedCount(data.watchCount);
+                }).fail(
+                osfHelpers.handleJSONError
+            );
         }
-        osfHelpers.postJSON(
-            self.apiUrl + 'togglewatch/',
-            {}
-        ).done(function(data) {
-            // Update watch count in DOM
-            self.userIsWatching(data.watched);
-            self.watchedCount(data.watchCount);
-        }).fail(
-            osfHelpers.handleJSONError
-        );
     };
 
     self.makePublic = function() {
