@@ -206,6 +206,15 @@ class TestUserRoutes(ApiTestCase):
         self.user_two.set_password('justapoorboy')
         self.user_two.save()
         self.auth_two = (self.user_two.username, 'justapoorboy')
+        self.public_project_user_one = ProjectFactory(title="Public Project User One", is_public=True, creator=self.user_one)
+        self.private_project_user_one = ProjectFactory(title="Private Project User One", is_public=False, creator=self.user_one)
+        self.public_project_user_two = ProjectFactory(title="Public Project User Two", is_public=True, creator=self.user_two)
+        self.private_project_user_two = ProjectFactory(title="Private Project User Two", is_public=False, creator=self.user_two)
+        self.deleted_project_user_one = FolderFactory(title="Deleted Project User One", is_public=False, creator=self.user_one, is_deleted=True)
+        self.folder = FolderFactory()
+        self.deleted_folder = FolderFactory(title="Deleted Folder User One", is_public=False, creator=self.user_one, is_deleted=True)
+        self.dashboard = DashboardFactory()
+
 
     def tearDown(self):
         ApiTestCase.tearDown(self)
@@ -216,40 +225,20 @@ class TestUserRoutes(ApiTestCase):
         res = self.app.get(url, auth=self.auth_one)
         assert_equal(res.status_code, 200)
 
-    def test_get_400_path_Users_User_id_unauthorized(self):#~WORK
-        url = "/{}users/{}/".format(API_BASE, self.user_one._id)
-        res = self.app.get(url, auth=self.auth_two)
-        assert_equal(res.status_code, 400)
-
     def test_get_200_path_Users_Me_authorized(self): #WORK
         url = "/{}users/me/".format(API_BASE, self.user_one._id)
         res = self.app.get(url, auth=self.auth_one)
         assert_equal(res.status_code, 200)
-
-    def test_get_400_path_Users_Me_unauthorized(self): #~WORK
-        url = "/{}users/me/".format(API_BASE, self.user_one._id)
-        res = self.app.get(url, auth=self.auth_two)
-        assert_equal(res.status_code, 400)
 
     def test_get_200_path_Users_Me_Nodes_authorized(self): #WORK
         url = "/{}users/me/nodes/".format(API_BASE, self.user_one._id)
         res = self.app.get(url, auth=self.auth_one)
         assert_equal(res.status_code, 200)
 
-    def test_get_400_path_Users_Me_Nodes_unauthorized(self): #~WORK
-        url = "/{}users/me/nodes/".format(API_BASE, self.user_one._id)
-        res = self.app.get(url, auth=self.auth_two, expect_errors=True)
-        assert_equal(res.status_code, 404)
-
     def test_get_200_path_Users_User_id_Nodes_authorized(self): #WORK
         url = "/{}users/{}/nodes/".format(API_BASE, self.user_one._id)
         res = self.app.get(url, auth=self.auth_one)
         assert_equal(res.status_code, 200)
-
-    def test_get_400_path_Users_User_id_Nodes_unauthorized(self): #~WORK
-        url = "/{}users/{}/nodes/".format(API_BASE, self.user_one._id)
-        res = self.app.get(url, auth=self.auth_two)
-        assert_equal(res.status_code, 400)
 
     def test_get_400_path_Users_User_id_Me_authorized(self): #~WORK
         url = "/{}users/{}/me/".format(API_BASE, self.user_one._id)
@@ -287,9 +276,59 @@ class TestUserRoutes(ApiTestCase):
         res = self.app.get(url, auth=self.auth_one, expect_errors=True)
         assert_equal(res.status_code, 404)
 
-
     def test_get_400_path_Nodes_Me_unauthorized(self):#~WORK
         url = "/{}nodes/me/".format(API_BASE, self.user_one._id)
         res = self.app.get(url, auth=self.auth_two, expect_errors=True)
         assert_equal(res.status_code, 404)
 
+    def test_get_400_path_Users_User_id_Nodes_unauthorized(self): #~WORK
+        url = "/{}users/{}/nodes/".format(API_BASE, self.user_one._id)
+        res = self.app.get(url)
+        node_json = res.json['data']
+
+        ids = [each['id'] for each in node_json]
+        assert_in(self.public_project_user_one._id, ids)
+        assert_not_in(self.private_project_user_one._id, ids)
+        assert_not_in(self.public_project_user_two._id, ids)
+        assert_not_in(self.private_project_user_two._id, ids)
+        assert_not_in(self.folder._id, ids)
+        assert_not_in(self.deleted_project_user_one._id, ids)
+
+
+    def test_get_400_path_Users_Me_unauthorized(self): #~WORK
+        url = "/{}users/me/".format(API_BASE, self.user_two._id)
+        res = self.app.get(url, auth=self.auth_one)
+        user_json = res.json['data']
+        assert_not_equal(user_json['fullname'], self.user_one.fullname)
+        assert_equal(user_json['fullname'], self.user_two.fullname)
+
+
+    def test_get_400_path_Users_User_id_unauthorized(self):#~WORK
+        url = "/{}users/{}/".format(API_BASE, self.user_two._id)
+        res = self.app.get(url, auth=self.auth_one)
+        user_json = res.json['data']
+        assert_not_equal(user_json['fullname'], self.user_one.fullname)
+        assert_equal(user_json['fullname'], self.user_two.fullname)
+
+
+#================================================================================
+
+    def test_get_400_path_Users_Me_Nodes_user_not_logged_in(self): #~WORK
+            url = "/{}users/me/nodes/".format(API_BASE, self.user_one._id)
+            res = self.app.get(url)
+            node_json = res.json['data']
+
+            ids = [each['id'] for each in node_json]
+            assert_in(self.public_project_user_one._id, ids)
+            assert_not_in(self.private_project_user_one._id, ids)
+            assert_not_in(self.public_project_user_two._id, ids)
+            assert_not_in(self.private_project_user_two._id, ids)
+            assert_not_in(self.folder._id, ids)
+            assert_not_in(self.deleted_project_user_one._id, ids)
+
+    def test_get_400_path_Users_Me_unauthorized(self): #~WORK
+        url = "/{}users/me/".format(API_BASE, self.user_two._id)
+        res = self.app.get(url, auth=self.auth_one)
+        user_json = res.json['data']
+        assert_not_equal(user_json['fullname'], self.user_one.fullname)
+        assert_equal(user_json['fullname'], self.user_two.fullname)
