@@ -211,15 +211,16 @@ def load_parent(parent_id):
 
 
 def get_file_contents(node):
-    print("FILE GUID: {}".format(node.file_guid_to_share_uuids))
+    """ Return the contents of a nodes files.
+    :param node:
+    :return: A string of all the nodes files concatanated.
+    """
     contents = ''
     files = get_file.get_files_for(node._id)
     for f in files:
         ext = f.extension
-        print('EXTENSION: {}'.format(ext))
         if f.extension in ['.txt', '.rtf', '.md']:
             contents += f.content
-    print('CHARS FOUND: {}'.format(len(contents)))
     return contents
 
 

@@ -1,5 +1,4 @@
 from website.settings import API_DOMAIN
-from pprint import pprint
 import requests
 
 
@@ -31,7 +30,6 @@ class File(object):
     @property
     def content(self):
         c = requests.get(self.download_link)
-        print("TYPE {}".format(type(c.text)))
         return c.text if c else None
 
     def __repr__(self):
@@ -59,19 +57,8 @@ def get_files_for(pid):
 
     url = build_api_call(pid)
     response = requests.get(url).json()
-
-    # print("RESPONSE:")
-    # pprint(response)
-
     file_dicts = response.get('data', [])
-
-    # print('FILES_DICTS:')
-    # pprint(file_dicts)
-
     files = []
     for fd in file_dicts:
         files.append(File.from_dict(fd, pid))
-
-    # print('FILES:')
-    # pprint(files)
     return files
