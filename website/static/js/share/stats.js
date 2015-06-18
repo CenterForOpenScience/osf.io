@@ -129,7 +129,6 @@ Stats.controller = function(vm) {
     self.vm.graphs = {};
 
     self.vm.totalCount = 0;
-    self.vm.showStats = true;
     self.vm.latestDate = undefined;
     self.vm.statsLoaded = m.prop(false);
 
