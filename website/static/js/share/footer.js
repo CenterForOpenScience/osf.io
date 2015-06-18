@@ -7,7 +7,7 @@ var Footer = {};
 Footer.view = function(ctrl) {
     return m('', [
         m(
-            'ul.provider-footer.col-xs-12.col-lg-10.col-lg-offset-2',
+            'ul.provider-footer.col-xs-12.col-lg-10.col-lg-offset-1',
             {
                 style: {
                     'list-style-type': 'none'
