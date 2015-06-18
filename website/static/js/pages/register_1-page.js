@@ -4,6 +4,8 @@ var ko = require('knockout');
 var bootbox = require('bootbox');
 var $osf = require('js/osfHelpers');
 
+var language = require('js/osfLanguage').registrations;
+
 var MetaData = require('js/metadata_1.js');
 var ctx = window.contextVars;
 
@@ -74,8 +76,8 @@ $(document).ready(function() {
             if (!registrationViewModel.embargoAddon.isEmbargoEndDateValid()) {
                 registrationViewModel.continueText('');
                 $osf.growl(
-                    'Invalid embargo end date',
-                    'Please choose a date more than two days, but less than four years, from today.',
+                    language.invalidEmbargoTitle,
+                    language.invalidEmbargoMessage,
                     'warning'
                 );
                 $('#endDatePicker').focus();
@@ -93,26 +95,48 @@ $(document).ready(function() {
             return false;
         }
 
+        $osf.block();
         $.ajax({
             url: ctx.node.urls.api + 'beforeregister/',
             contentType: 'application/json',
             success: function(response) {
-                if (response.prompts && response.prompts.length) {
+                var preRegisterWarnings = function() {
                     bootbox.confirm(
-                        $osf.joinPrompts(response.prompts, 'Are you sure you want to register this project?'),
+                        $osf.joinPrompts(response.prompts, language.registerConfirm),
                         function(result) {
                             if (result) {
                                 registerNode(data);
                             }
                         }
                     );
-                } else {
+                };
+                var preRegisterErrors = function(confirm, reject) {
+                    bootbox.confirm(
+                        $osf.joinPrompts(
+                            response.errors, 
+                            'Before you continue...'
+                        ) + '<br /><hr /> ' + language.registerSkipAddons,
+                        function(result) {
+                            if(result) {
+                                confirm();
+                            }
+                        }
+                    );
+                };
+
+                if (response.errors && response.errors.length) {
+                    preRegisterErrors(preRegisterWarnings);
+                }
+                else if (response.prompts && response.prompts.length) {
+                    preRegisterWarnings();
+                } 
+                else {
                     registerNode(data);
                 }
             }
+        }).always(function() {
+            $osf.unblock();
         });
-
         return false;
-
     });
 });
