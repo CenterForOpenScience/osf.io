@@ -191,3 +191,105 @@ class TestUserNodes(ApiTestCase):
         assert_not_in(self.private_project_user_two._id, ids)
         assert_not_in(self.folder._id, ids)
         assert_not_in(self.deleted_project_user_one._id, ids)
+
+
+class TestUserRoutes(ApiTestCase):
+
+    def setUp(self):
+        ApiTestCase.setUp(self)
+        self.user_one = UserFactory.build()
+        self.user_one.set_password('justapoorboy')
+        self.user_one.social['twitter'] = 'howtopizza'
+        self.user_one.save()
+        self.auth_one = (self.user_one.username, 'justapoorboy')
+        self.user_two = UserFactory.build()
+        self.user_two.set_password('justapoorboy')
+        self.user_two.save()
+        self.auth_two = (self.user_two.username, 'justapoorboy')
+
+    def tearDown(self):
+        ApiTestCase.tearDown(self)
+        Node.remove()
+
+    def test_get_200_path_Users_User_id_authorized(self): #WORK
+        url = "/{}users/{}/".format(API_BASE, self.user_one._id)
+        res = self.app.get(url, auth=self.auth_one)
+        assert_equal(res.status_code, 200)
+
+    def test_get_400_path_Users_User_id_unauthorized(self):#~WORK
+        url = "/{}users/{}/".format(API_BASE, self.user_one._id)
+        res = self.app.get(url, auth=self.auth_two)
+        assert_equal(res.status_code, 400)
+
+    def test_get_200_path_Users_Me_authorized(self): #WORK
+        url = "/{}users/me/".format(API_BASE, self.user_one._id)
+        res = self.app.get(url, auth=self.auth_one)
+        assert_equal(res.status_code, 200)
+
+    def test_get_400_path_Users_Me_unauthorized(self): #~WORK
+        url = "/{}users/me/".format(API_BASE, self.user_one._id)
+        res = self.app.get(url, auth=self.auth_two)
+        assert_equal(res.status_code, 400)
+
+    def test_get_200_path_Users_Me_Nodes_authorized(self): #WORK
+        url = "/{}users/me/nodes/".format(API_BASE, self.user_one._id)
+        res = self.app.get(url, auth=self.auth_one)
+        assert_equal(res.status_code, 200)
+
+    def test_get_400_path_Users_Me_Nodes_unauthorized(self): #~WORK
+        url = "/{}users/me/nodes/".format(API_BASE, self.user_one._id)
+        res = self.app.get(url, auth=self.auth_two, expect_errors=True)
+        assert_equal(res.status_code, 404)
+
+    def test_get_200_path_Users_User_id_Nodes_authorized(self): #WORK
+        url = "/{}users/{}/nodes/".format(API_BASE, self.user_one._id)
+        res = self.app.get(url, auth=self.auth_one)
+        assert_equal(res.status_code, 200)
+
+    def test_get_400_path_Users_User_id_Nodes_unauthorized(self): #~WORK
+        url = "/{}users/{}/nodes/".format(API_BASE, self.user_one._id)
+        res = self.app.get(url, auth=self.auth_two)
+        assert_equal(res.status_code, 400)
+
+    def test_get_400_path_Users_User_id_Me_authorized(self): #~WORK
+        url = "/{}users/{}/me/".format(API_BASE, self.user_one._id)
+        res = self.app.get(url, auth=self.auth_one, expect_errors=True)
+        assert_equal(res.status_code, 404)
+
+    def test_get_400_path_Users_User_id_Me_unauthorized(self):#~WORK
+        url = "/{}users/{}/me/".format(API_BASE, self.user_one._id)
+        res = self.app.get(url, auth=self.auth_two, expect_errors=True)
+        assert_equal(res.status_code, 404)
+
+    def test_get_400_path_Users_User_id_Nodes_Me_authorized(self): #~WORK
+        url = "/{}users/{}/nodes/me/".format(API_BASE, self.user_one._id)
+        res = self.app.get(url, auth=self.auth_one, expect_errors=True)
+        assert_equal(res.status_code, 404)
+
+    def test_get_400_path_Users_User_id_Nodes_Me_unauthorized(self):#~WORK
+        url = "/{}users/{}/nodes/me/".format(API_BASE, self.user_one._id)
+        res = self.app.get(url, auth=self.auth_two, expect_errors=True)
+        assert_equal(res.status_code, 404)
+
+    def test_get_400_path_Nodes_User_id_authorized(self): #~WORK
+        url = "/{}nodes/{}/".format(API_BASE, self.user_one._id)
+        res = self.app.get(url, auth=self.auth_one, expect_errors=True)
+        assert_equal(res.status_code, 404)
+
+    def test_get_400_path_Nodes_User_id_unauthorized(self):#~WORK
+        url = "/{}nodes/{}/".format(API_BASE, self.user_one._id)
+        res = self.app.get(url, auth=self.auth_two, expect_errors=True)
+        print res
+        assert_equal(res.status_code, 404)
+
+    def test_get_400_path_Nodes_Me_authorized(self): #~WORK
+        url = "/{}nodes/me/".format(API_BASE, self.user_one._id)
+        res = self.app.get(url, auth=self.auth_one, expect_errors=True)
+        assert_equal(res.status_code, 404)
+
+
+    def test_get_400_path_Nodes_Me_unauthorized(self):#~WORK
+        url = "/{}nodes/me/".format(API_BASE, self.user_one._id)
+        res = self.app.get(url, auth=self.auth_two, expect_errors=True)
+        assert_equal(res.status_code, 404)
+

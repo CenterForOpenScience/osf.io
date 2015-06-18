@@ -16,11 +16,9 @@ class UserMixin(object):
     serializer_class = UserSerializer
     node_lookup_url_kwarg = 'user_id'
 
-
     def get_user(self, check_permissions=True):
 
         key = self.kwargs[self.node_lookup_url_kwarg]
-
         if key == 'me':
             return self.request.user
 
