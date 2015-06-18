@@ -16,6 +16,7 @@ require('knockout-sortable');
 
 var $osf = require('./osfHelpers');
 var koHelpers = require('./koHelpers');
+var Raven = require('raven-js');
 require('js/objectCreateShim');
 
 
@@ -49,14 +50,14 @@ var ApplicationData = function (data){
 
     // Load in data
     if (data){
-        self.fromJSON(data)
+        self.fromJSON(data);
     }
 
     // Enable value validation in form
     var validated = ko.validatedObservable(self);
     self.isValid = ko.computed(function(){
         return validated.isValid();
-    })
+    });
 
 };
 
@@ -71,7 +72,7 @@ ApplicationData.prototype.toJSON = function () {
         description: self.description(),
         home_url: self.homeUrl(),
         callback_url: self.callbackUrl()
-    }
+    };
     };
 
 // Load data from JSON
@@ -95,14 +96,14 @@ ApplicationData.prototype.fromJSON = function (data) {
 
 var applicationFetch = function (url) { // Function shared by list and detail ViewModels
     var self = this;
-    var request = $osf.ajaxJSON("GET", url, {isCors:true});
+    var request = $osf.ajaxJSON('GET', url, {isCors: true});
 
     request.done(function (data) {
         var result;
         // Check return type to handle both list and detail views
         if (Array.isArray(data.data)) {  // ES5 dependent
             result = $.map(data.data, function (item) {
-                return new ApplicationData(item)
+                return new ApplicationData(item);
             });
         } else if (data.data) {
             result = new ApplicationData(data.data);
@@ -119,7 +120,7 @@ var applicationFetch = function (url) { // Function shared by list and detail Vi
             url: url,
             status: status,
             error: err
-        })
+        });
     });
 };
 
@@ -132,7 +133,7 @@ var ApplicationViewModel = function (urls) {
     // Read and update operations
 
     var self = this;
-    self.content = ko.observable(new ApplicationData);
+    self.content = ko.observable(new ApplicationData());
     self.message = ko.observable();
     self.messageClass = ko.observable();
 
@@ -162,13 +163,13 @@ ApplicationViewModel.prototype.updateApplication = function () {
 
     var payload = self.content().toJSON();
 
-    var request = $osf.ajaxJSON("PATCH", url, {isCors: true, data: payload});
+    var request = $osf.ajaxJSON('PATCH', url, {isCors: true, data: payload});
 
     request.done(function (data) {
         self.content().fromJSON(data.data);  // Update the data with what request returns- reflect server side cleaning
         self.changeMessage(
-            "Application data submitted",  // TODO: Some pages (eg profile) show a one-line message for updates; others use a growl box. Current best practices?
-            "text-success",
+            'Application data submitted',  // TODO: Some pages (eg profile) show a one-line message for updates; others use a growl box. Current best practices?
+            'text-success',
             5000);
     });
 
@@ -260,11 +261,11 @@ var ApplicationsListViewModel= function (urls) {
     self.content = ko.observableArray();
 
     self.sortByName = ko.computed(function(){
-
         return self.content().sort(function(a,b){
             var an = a.name().toLowerCase();
             var bn = b.name().toLowerCase();
-            return an == bn ? 0 : (an < bn ? -1 : 1)});
+            return an === bn ? 0 : (an < bn ? -1 : 1);
+        });
     });
 
     self.fetch(self.listUrl);
@@ -282,7 +283,7 @@ ApplicationsListViewModel.prototype.deleteApplication = function (appData) {
         message: 'Are you sure you want to de-register this application and revoke all access tokens? This cannot be reversed.',
         callback: function (confirmed) {
             if (confirmed) {
-                var request = $osf.ajaxJSON("DELETE", url, {isCors: true});
+                var request = $osf.ajaxJSON('DELETE', url, {isCors: true});
 
                 request.done(function () {
                         self.content.destroy(appData);
@@ -296,7 +297,7 @@ ApplicationsListViewModel.prototype.deleteApplication = function (appData) {
                     });
             }
         }
-    })
+    });
 };
 
 

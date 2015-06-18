@@ -79,7 +79,7 @@ var ajaxJSON = function(method, url, options) {
         ajaxFields.crossOrigin = true;
         ajaxFields.xhrFields =  {
             withCredentials: true
-        }
+        };
     }
     $.extend(true, ajaxFields, opts.fields);
 
@@ -119,7 +119,7 @@ var postJSON = function(url, data, success, error) {
     if (typeof error === 'function') {
         ajaxOpts.fields.error = error;
     }
-    return ajaxJSON("post", url, ajaxOpts);
+    return ajaxJSON('post', url, ajaxOpts);
 };
 
 /**
@@ -147,7 +147,7 @@ var putJSON = function(url, data, success, error) {
     if (typeof error === 'function') {
         ajaxOpts.fields.error = error;
     }
-    return ajaxJSON("put", url, ajaxOpts);
+    return ajaxJSON('put', url, ajaxOpts);
 };
 
 /**
