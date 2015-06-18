@@ -2,7 +2,6 @@
 
 var $osf = require('js/osfHelpers');
 var $ = require('jquery');
-var ko = require('knockout');
 
 // model for components, due to simplicity did not create a new file
 var ComponentControl = {};
