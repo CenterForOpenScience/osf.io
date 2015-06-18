@@ -126,17 +126,6 @@ def project_new_from_template(auth, node, **kwargs):
 ##############################################################################
 # New Folder
 ##############################################################################
-
-
-@must_be_logged_in
-def folder_new(**kwargs):
-    node_id = kwargs['nid']
-    return_value = {}
-    if node_id is not None:
-        return_value = {'node_id': node_id}
-    return return_value
-
-
 @must_be_valid_project
 @must_be_logged_in
 def folder_new_post(auth, node, **kwargs):

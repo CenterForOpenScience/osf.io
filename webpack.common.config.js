@@ -38,7 +38,6 @@ var entry = {
     'sharing-page': staticPath('js/pages/sharing-page.js'),
     'conference-page': staticPath('js/pages/conference-page.js'),
     'view-file-tree-page': staticPath('js/pages/view-file-tree-page.js'),
-    'new-folder-page': staticPath('js/pages/new-folder-page.js'),
     'project-settings-page': staticPath('js/pages/project-settings-page.js'),
     'search-page': staticPath('js/pages/search-page.js'),
     'share-search-page': staticPath('js/pages/share-search-page.js'),
@@ -49,6 +48,7 @@ var entry = {
     'notifications-config-page': staticPath('js/pages/notifications-config-page.js'),
     'share-embed-page': staticPath('js/pages/share-embed-page.js'),
     'piwikStats-page': staticPath('js/pages/piwikStats-page.js'),
+    'render-nodes': staticPath('js/pages/render-nodes.js'),
     // Commons chunk
     'vendor': [
         // Vendor libraries

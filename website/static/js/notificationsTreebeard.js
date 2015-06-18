@@ -5,6 +5,7 @@ var bootbox = require('bootbox');
 var m = require('mithril');
 var Treebeard = require('treebeard');
 var $osf = require('js/osfHelpers');
+var Fangorn = require('js/fangorn');
 require('../css/fangorn.css');
 
 
@@ -21,15 +22,6 @@ function resolveToggle(item) {
     }
     item.open = true;
     return '';
-}
-
-function resolveIcon(item) {
-    if (item.children.length > 0) {
-        if (item.open) {
-            return m('i.fa.fa-folder-open', ' ');
-        }
-        return m('i.fa.fa-folder', ' ');
-    }
 }
 
 function expandOnLoad() {
@@ -114,7 +106,7 @@ function ProjectNotifications(data) {
         paginate : false,       // Whether the applet starts with pagination or not.
         paginateToggle : false, // Show the buttons that allow users to switch between scroll and paginate.
         uploads : false,         // Turns dropzone on/off.
-        resolveIcon : resolveIcon,
+        resolveIcon : Fangorn.Utils.resolveIconView,
         hideColumnTitles: true,
         columnTitles : function notificationColumnTitles(item, col) {
             return [
