@@ -19,7 +19,7 @@
         "box": "partial",
         "dataverse": "none",
         "dropbox": "partial",
-        "figshare": "none",
+        "figshare": "partial",
         "googledrive": "partial",
         "github": "partial",
         "s3": "partial",
