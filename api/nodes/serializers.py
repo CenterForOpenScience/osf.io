@@ -130,7 +130,7 @@ class NodeSerializer(JSONAPISerializer):
 class NodeDeleteSerializer(JSONAPISerializer):
     node_id = ser.CharField(read_only=True)
     warning_message = ser.CharField(read_only=True)
-    url = ser.CharField(read_only=True, help_text='Use new url to submit DELETE request')
+    confirm_delete = ser.CharField(read_only=True, help_text='new url')
 
     class Meta:
         type_ = 'nodes'
