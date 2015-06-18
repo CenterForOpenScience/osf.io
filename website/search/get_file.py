@@ -15,14 +15,8 @@ def build_api_call(pid):
 
     Utilizes api v2.
     """
-
-    path = ['v2']
-    path.append('nodes')
-    path.append(pid)
-    path.append('files')
-    end_part = '?path=%2F&provider=osfstorage'
-    url = API_DOMAIN + '/'.join(path) + end_part
-    return url
+    api_url = API_DOMAIN + 'v2/nodes/{}/files/?path=%2F&provider=osfstorage'.format(pid)
+    return api_url
 
 
 def get_files_for(pid):
