@@ -56,6 +56,17 @@ class DataverseProvider(provider.BaseProvider):
         return WaterButlerPath('/' + path)
 
     @asyncio.coroutine
+    def revalidate_path(self, base, path, folder=False, revision=None):
+        path = path.strip('/')
+
+        for item in (yield from self._maybe_fetch_metadata(version=revision)):
+            if path == item['name']:
+                # Dataverse cant have folders
+                return base.child(item['name'], _id=item['extra']['fileId'], folder=False)
+
+        return base.child(path, _id=None, folder=False)
+
+    @asyncio.coroutine
     def _maybe_fetch_metadata(self, version=None, refresh=False):
         if refresh or self._metadata_cache.get(version) is None:
             for v in ((version, ) or ('latest', 'latest-published')):
