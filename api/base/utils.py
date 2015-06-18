@@ -8,6 +8,7 @@ from modularodm.exceptions import NoResultsFound
 from modularodm import Q
 
 from api.base import settings as api_settings
+from framework.auth.core import Auth
 from website import settings as website_settings
 from website import util as website_util  # noqa
 
@@ -65,3 +66,11 @@ def waterbutler_url_for(request_type, provider, path, node_id, token, obj_args=N
 
     url.args.update(query)
     return url.url
+
+def get_user_auth(request):
+    user = request.user
+    if user.is_anonymous():
+        auth = Auth(None)
+    else:
+        auth = Auth(user)
+    return auth

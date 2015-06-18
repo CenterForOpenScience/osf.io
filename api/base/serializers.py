@@ -45,7 +45,7 @@ class CollectionLinksField(ser.Field):
             return ''
         else:
             ret = _rapply(self.links, _url_val, obj=obj, serializer=self.parent)
-            ret['self'] = absolute_reverse('collections:collection-detail', kwargs={'pk': obj._id})
+            ret['self'] = absolute_reverse('collections:collection-detail', kwargs={'collection_id': obj._id})
             return ret
 
 

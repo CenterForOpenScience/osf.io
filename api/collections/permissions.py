@@ -1,15 +1,6 @@
 from website.models import Node, Pointer
 from rest_framework import permissions
-from framework.auth import Auth
-
-
-def get_user_auth(request):
-    user = request.user
-    if user.is_anonymous():
-        auth = Auth(None)
-    else:
-        auth = Auth(user)
-    return auth
+from api.base.utils import get_user_auth
 
 
 class ReadOnlyIfRegistration(permissions.BasePermission):

@@ -18,7 +18,7 @@ class TestCollectionsList(ApiTestCase):
         self.basic_auth = (self.user.username, 'justapoorboy')
 
         self.deleted = FolderFactory(is_deleted=True, creator=self.user)
-        self.collection = FolderFactory(creator=self.user, is_public=True, )
+        self.collection = FolderFactory(creator=self.user)
         self.url = "/{}collections/".format(API_BASE)
 
     def test_only_returns_non_deleted_collections(self):
@@ -35,11 +35,12 @@ class TestCollectionsList(ApiTestCase):
         ids = [node['id'] for node in res.json['data']]
         assert_in(self.collection._id, ids)
 
-    def test_return_collection_list_logged_out_user(self):
-        res = self.app.get(self.url, auth=self.basic_auth)
-        ids = [node['id'] for node in res.json['data']]
-        assert_in(self.collection._id, ids)
+    def test_return_403_for_logged_out_user(self):
+        res = self.app.get(self.url, expect_errors=True)
+        assert_equals(res.status_code, 403)
 
+    def tearDown(self):
+        ApiTestCase.tearDown(self)
         Node.remove()
 
 
@@ -54,13 +55,11 @@ class TestCollectionFiltering(ApiTestCase):
         self.user_two.set_password('justapoorboy')
         self.user_two.save()
         self.basic_auth_two = (self.user_two.username, 'justapoorboy')
-        self.collection_one = FolderFactory(title="Project One", is_public=True, creator=self.user_one)
-        self.collection_two = FolderFactory(title="Project Two", is_public=True, creator=self.user_one)
-        self.collection_three = FolderFactory(title="Three", is_public=True, creator=self.user_one)
-        self.private_collection_user_one = FolderFactory(title="Private Project User One", is_public=False,
-                                                         creator=self.user_one)
-        self.private_collection_user_two = FolderFactory(title="Private Project User Two", is_public=False,
-                                                         creator=self.user_two)
+        self.collection_one = FolderFactory(title="Collection One", creator=self.user_one)
+        self.collection_two = FolderFactory(title="Collection Two", creator=self.user_one)
+        self.collection_three = FolderFactory(title="Three", creator=self.user_one)
+        self.collection_four = FolderFactory(title="Collection User One", creator=self.user_one)
+        self.collection_five = FolderFactory(title="Collection User Two", creator=self.user_two)
         self.folder = FolderFactory()
         self.dashboard = DashboardFactory()
 
@@ -78,13 +77,13 @@ class TestCollectionFiltering(ApiTestCase):
         assert_in(self.collection_one._id, ids)
         assert_in(self.collection_two._id, ids)
         assert_in(self.collection_three._id, ids)
-        assert_in(self.private_collection_user_one._id, ids)
-        assert_not_in(self.private_collection_user_two._id, ids)
+        assert_in(self.collection_four._id, ids)
+        assert_not_in(self.collection_five._id, ids)
         assert_not_in(self.folder._id, ids)
         assert_not_in(self.dashboard._id, ids)
 
     def test_get_one_collection_with_exact_filter_logged_in(self):
-        url = "/{}collections/?filter[title]=Project%20One".format(API_BASE)
+        url = "/{}collections/?filter[title]=Collection%20One".format(API_BASE)
 
         res = self.app.get(url, auth=self.basic_auth_one)
         node_json = res.json['data']
@@ -93,8 +92,8 @@ class TestCollectionFiltering(ApiTestCase):
         assert_in(self.collection_one._id, ids)
         assert_not_in(self.collection_two._id, ids)
         assert_not_in(self.collection_three._id, ids)
-        assert_not_in(self.private_collection_user_one._id, ids)
-        assert_not_in(self.private_collection_user_two._id, ids)
+        assert_not_in(self.collection_four._id, ids)
+        assert_not_in(self.collection_five._id, ids)
         assert_not_in(self.folder._id, ids)
         assert_not_in(self.dashboard._id, ids)
 
@@ -108,13 +107,13 @@ class TestCollectionFiltering(ApiTestCase):
         assert_not_in(self.collection_one._id, ids)
         assert_in(self.collection_two._id, ids)
         assert_not_in(self.collection_three._id, ids)
-        assert_not_in(self.private_collection_user_one._id, ids)
-        assert_not_in(self.private_collection_user_two._id, ids)
+        assert_not_in(self.collection_four._id, ids)
+        assert_not_in(self.collection_five._id, ids)
         assert_not_in(self.folder._id, ids)
         assert_not_in(self.dashboard._id, ids)
 
-    def test_get_only_public_or_my_collections_with_filter_logged_in(self):
-        url = "/{}collections/?filter[title]=Project".format(API_BASE)
+    def test_get_only_my_collections_with_filter_logged_in(self):
+        url = "/{}collections/?filter[title]=Collection".format(API_BASE)
 
         res = self.app.get(url, auth=self.basic_auth_one)
         node_json = res.json['data']
@@ -123,8 +122,8 @@ class TestCollectionFiltering(ApiTestCase):
         assert_in(self.collection_one._id, ids)
         assert_in(self.collection_two._id, ids)
         assert_not_in(self.collection_three._id, ids)
-        assert_in(self.private_collection_user_one._id, ids)
-        assert_not_in(self.private_collection_user_two._id, ids)
+        assert_in(self.collection_four._id, ids)
+        assert_not_in(self.collection_five._id, ids)
         assert_not_in(self.folder._id, ids)
         assert_not_in(self.dashboard._id, ids)
 
@@ -139,8 +138,8 @@ class TestCollectionFiltering(ApiTestCase):
         assert_in(self.collection_one._id, ids)
         assert_in(self.collection_two._id, ids)
         assert_in(self.collection_three._id, ids)
-        assert_in(self.private_collection_user_one._id, ids)
-        assert_not_in(self.private_collection_user_two._id, ids)
+        assert_in(self.collection_four._id, ids)
+        assert_not_in(self.collection_five._id, ids)
         assert_not_in(self.folder._id, ids)
         assert_not_in(self.dashboard._id, ids)
 
@@ -163,47 +162,37 @@ class TestCollectionCreate(ApiTestCase):
         self.user_two.save()
         self.basic_auth_two = (self.user_two.username, 'justapoorboy')
 
-        self.public_folder = {'title': self.title, 'public': True, 'is_folder': True}
-        self.private_folder = {'title': self.title, 'is_folder': True, 'public': False}
+        self.collection_one = {'title': self.title}
+        self.collection_two = {'title': self.title}
 
-    def test_creates_public_collection_logged_out(self):
-        res = self.app.post_json(self.url, self.public_folder, expect_errors=True)
+    def test_not_creates_collection_logged_out(self):
+        res = self.app.post_json(self.url, self.collection_one, expect_errors=True)
         # This is 403 instead of 401 because basic authentication is only for unit tests and, in order to keep from
         # presenting a basic authentication dialog box in the front end. We may change this as we understand CAS
         # a little better
         assert_equal(res.status_code, 403)
 
-    def test_creates_public_collection_logged_in(self):
-        res = self.app.post_json(self.url, self.public_folder, auth=self.basic_auth)
+    def test_creates_collection_logged_in(self):
+        res = self.app.post_json(self.url, self.collection_one, auth=self.basic_auth)
         assert_equal(res.status_code, 201)
-        assert_equal(res.json['data']['title'], self.public_folder['title'])
+        assert_equal(res.json['data']['title'], self.collection_one['title'])
 
-    def test_creates_private_collection_logged_out(self):
-        res = self.app.post_json(self.url, self.private_folder, expect_errors=True)
-        # This is 403 instead of 401 because basic authentication is only for unit tests and, in order to keep from
-        # presenting a basic authentication dialog box in the front end. We may change this as we understand CAS
-        # a little better
-        assert_equal(res.status_code, 403)
-
-    def test_creates_private_collection_logged_in_contributor(self):
-        res = self.app.post_json(self.url, self.private_folder, auth=self.basic_auth)
+    def test_creates_collection_logged_in_two(self):
+        res = self.app.post_json(self.url, self.collection_two, auth=self.basic_auth_two)
         assert_equal(res.status_code, 201)
-        assert_equal(res.json['data']['title'], self.private_folder['title'])
+        assert_equal(res.json['data']['title'], self.collection_two['title'])
 
-    def test_creates_collection_creates_collection_and_sanitizes_html(self):
+    def test_creates_collection_and_sanitizes_html(self):
         title = '<em>Cool</em> <strong>Project</strong>'
 
         res = self.app.post_json(self.url, {
             'title': title,
-            'public': True,
-            'is_folder': True,
         }, auth=self.basic_auth)
         collection_id = res.json['data']['id']
         assert_equal(res.status_code, 201)
         url = '/{}collections/{}/'.format(API_BASE, collection_id)
         res = self.app.get(url, auth=self.basic_auth)
         assert_equal(res.json['data']['title'], strip_html(title))
-        # on
 
 
 class TestCollectionDetail(ApiTestCase):
@@ -219,52 +208,19 @@ class TestCollectionDetail(ApiTestCase):
         self.user_two.save()
         self.basic_auth_two = (self.user_two.username, 'justapoorboy')
 
-        self.public_folder = FolderFactory(title="Project One", is_public=True, creator=self.user)
-        self.nonuser_folder = FolderFactory(title="Project Two", is_public=False)
-        self.public_url = '/{}collections/{}/'.format(API_BASE, self.public_folder._id)
-        self.private_url = '/{}collections/{}/'.format(API_BASE, self.nonuser_folder._id)
-
+        self.collection_one = FolderFactory(title="Project One", creator=self.user)
+        self.collection_two = FolderFactory(title="Project Two")
+        self.url_one = '/{}collections/{}/'.format(API_BASE, self.collection_one._id)
+        self.url_two = '/{}collections/{}/'.format(API_BASE, self.collection_two._id)
 
     def test_return_403_collection_details_logged_out(self):
-        res = self.app.get(self.public_url, expect_errors=True)
+        res = self.app.get(self.url_one, expect_errors=True)
         assert_equal(res.status_code, 403)
 
-    def test_return_public_collection_details_logged_in(self):
-        res = self.app.get(self.public_url, auth=self.basic_auth)
+    def test_return_collection_details_logged_in(self):
+        res = self.app.get(self.url_one, auth=self.basic_auth)
         assert_equal(res.status_code, 200)
-        assert_equal(res.json['data']['title'], self.public_folder.title)
-
-
-class TestDashboardDetail(ApiTestCase):
-    def setUp(self):
-        ApiTestCase.setUp(self)
-        self.user = UserFactory.build()
-        self.user.set_password('justapoorboy')
-        self.user.save()
-        self.basic_auth = (self.user.username, 'justapoorboy')
-
-        self.user_two = UserFactory.build()
-        self.user_two.set_password('justapoorboy')
-        self.user_two.save()
-        self.basic_auth_two = (self.user_two.username, 'justapoorboy')
-
-        self.public_folder = FolderFactory(title="Project One", is_public=True, creator=self.user)
-        self.nonuser_folder = FolderFactory(title="Project Two", is_public=False)
-        self.public_url = '/{}collections/{}/'.format(API_BASE, self.public_folder._id)
-        self.private_url = '/{}collections/{}/'.format(API_BASE, self.nonuser_folder._id)
-        self.dash_url = "/{}collections/dashboard/".format(API_BASE)
-        self.dashboard_folder = DashboardFactory()
-
-    def test_return_403_dash_details_logged_out(self):
-        res = self.app.get(self.dash_url, expect_errors=True)
-        assert_equal(res.status_code, 403)
-
-    def test_return_dash_details_logged_in(self):
-        res = self.app.get(self.dash_url, auth=self.basic_auth)
-        assert_equal(res.status_code, 200)
-
-        ids = [node['id'] for node in res.json['data']]
-        assert_in(self.dashboard_folder._id, ids)
+        assert_equal(res.json['data']['title'], self.collection_one.title)
 
 
 class TestCollectionUpdate(ApiTestCase):
@@ -283,25 +239,22 @@ class TestCollectionUpdate(ApiTestCase):
         self.user_two.save()
         self.basic_auth_two = (self.user_two.username, 'justapoorboy')
 
-        self.public_collection = FolderFactory(title=self.title, is_public=False, creator=self.user)
-        self.public_url = '/{}collections/{}/'.format(API_BASE, self.public_collection._id)
+        self.collection_one = FolderFactory(title=self.title, creator=self.user)
+        self.url_one = '/{}collections/{}/'.format(API_BASE, self.collection_one._id)
 
-        self.private_collection = FolderFactory(title=self.title, is_public=False)
-        self.private_url = '/{}collections/{}/'.format(API_BASE, self.private_collection._id, creator=self.user_two)
+        self.collection_two = FolderFactory(title=self.title)
+        self.url_two = '/{}collections/{}/'.format(API_BASE, self.collection_two._id, creator=self.user_two)
 
-    def test_update_public_collection_logged_in(self):
-        # Public collection, logged in, contrib
-        res = self.app.put_json(self.public_url, {
+    def test_update_collection_logged_in(self):
+        res = self.app.put_json(self.url_one, {
             'title': self.new_title,
-            'public': True,
         }, auth=self.basic_auth)
         assert_equal(res.status_code, 200)
         assert_equal(res.json['data']['title'], self.new_title)
 
-    def test_update_private_collection_logged_out(self):
-        res = self.app.put_json(self.private_url, {
+    def test_update_collection_logged_out(self):
+        res = self.app.put_json(self.url_two, {
             'title': self.new_title,
-            'public': False,
         }, expect_errors=True)
         # This is 403 instead of 401 because basic authentication is only for unit tests and, in order to keep from
         # presenting a basic authentication dialog box in the front end. We may change this as we understand CAS
@@ -312,12 +265,11 @@ class TestCollectionUpdate(ApiTestCase):
         """Post request should update resource, and any HTML in fields should be stripped"""
         new_title = '<strong>Super</strong> Cool Project'
         collection = self.collection = FolderFactory(
-            title=self.title, is_public=True, creator=self.user)
+            title=self.title, creator=self.user)
 
         url = '/{}collections/{}/'.format(API_BASE, collection._id)
         res = self.app.put_json(url, {
             'title': new_title,
-            'public': True,
         }, auth=self.basic_auth)
         assert_equal(res.status_code, 200)
         assert_equal(res.json['data']['title'], strip_html(new_title))
@@ -325,7 +277,7 @@ class TestCollectionUpdate(ApiTestCase):
     def test_partial_update_collection_updates_collection_correctly_and_sanitizes_html(self):
         new_title = 'An <script>alert("even cooler")</script> collection'
         collection = self.collection = FolderFactory(
-            title=self.title, is_public=True, creator=self.user)
+            title=self.title, creator=self.user)
 
         url = '/{}collections/{}/'.format(API_BASE, collection._id)
         res = self.app.patch_json(url, {
@@ -337,25 +289,18 @@ class TestCollectionUpdate(ApiTestCase):
         assert_equal(res.json['data']['title'], strip_html(new_title))
 
     def test_partial_update_collection_logged_out(self):
-        res = self.app.patch_json(self.private_url, {'title': self.new_title}, expect_errors=True, auth=self.user)
+        res = self.app.patch_json(self.url_two, {'title': self.new_title}, expect_errors=True, auth=self.user)
         # This is 403 instead of 401 because basic authentication is only for unit tests and, in order to keep from
         # presenting a basic authentication dialog box in the front end. We may change this as we understand CAS
         # a little better
         assert_equal(res.status_code, 403)
 
     def test_partial_update_collection_logged_in(self):
-        res = self.app.patch_json(self.private_url, {
+        res = self.app.patch_json(self.url_two, {
             'title': self.new_title,
         }, auth=self.basic_auth)
         assert_equal(res.status_code, 200)
         assert_equal(res.json['data']['title'], self.new_title)
-
-    def test_partial_update_private_collection_logged_out(self):
-        res = self.app.patch_json(self.private_url, {'title': self.new_title}, expect_errors=True)
-        # This is 403 instead of 401 because basic authentication is only for unit tests and, in order to keep from
-        # presenting a basic authentication dialog box in the front end. We may change this as we understand CAS
-        # a little better
-        assert_equal(res.status_code, 403)
 
 
 class TestCollectionChildrenList(ApiTestCase):
@@ -367,19 +312,18 @@ class TestCollectionChildrenList(ApiTestCase):
         self.user.set_password(password)
         self.user.save()
         self.basic_auth = (self.user.username, password)
-        self.collection = FolderFactory()
-        self.collection.add_contributor(self.user, permissions=['read', 'write'])
-        self.collection.save()
-        self.component = NodeFactory(parent=self.collection, creator=self.user)
+        self.collection_one = FolderFactory()
+        self.collection_one.add_contributor(self.user, permissions=['read', 'write'])
+        self.collection_one.save()
+        self.component = NodeFactory(parent=self.collection_one, creator=self.user)
         self.pointer = FolderFactory()
-        self.collection.add_pointer(self.pointer, auth=Auth(self.user), save=True)
-        self.private_collection_url = '/{}collections/{}/children/'.format(API_BASE, self.collection._id)
+        self.collection_one.add_pointer(self.pointer, auth=Auth(self.user), save=True)
+        self.collection_one_url = '/{}collections/{}/children/'.format(API_BASE, self.collection_one._id)
 
-        self.public_collection = FolderFactory(is_public=True, creator=self.user)
-        self.public_collection.save()
-        self.public_component = NodeFactory(parent=self.public_collection, creator=self.user,
-                                            is_public=True)
-        self.public_collection_url = '/{}collections/{}/children/'.format(API_BASE, self.public_collection._id)
+        self.collection_two = FolderFactory(creator=self.user)
+        self.collection_two.save()
+        self.node_of_collection_two = NodeFactory(parent=self.collection_two, creator=self.user)
+        self.collection_two_url = '/{}collections/{}/children/'.format(API_BASE, self.collection_two._id)
 
         self.user_two = UserFactory.build()
         self.user_two.set_password(password)
@@ -392,31 +336,29 @@ class TestCollectionChildrenList(ApiTestCase):
         self.dash_child2 = FolderFactory(parent=self.dashboard_folder, creator=self.user)
 
     def test_collection_children_list_does_not_include_pointers(self):
-        res = self.app.get(self.private_collection_url, auth=self.basic_auth)
+        res = self.app.get(self.collection_one_url, auth=self.basic_auth)
         assert_equal(len(res.json['data']), 1)
 
-    def test_return_public_collection_children_list_logged_out(self):
-        res = self.app.get(self.public_collection_url, expect_errors=True)
+    def test_not_return_collection_children_list_logged_out(self):
+        res = self.app.get(self.collection_two_url, expect_errors=True)
         assert_equal(res.status_code, 403)
 
-    def test_return_public_collection_children_list_logged_in(self):
-        res = self.app.get(self.public_collection_url, auth=self.basic_auth_two)
+    def test_return_collection_children_list_logged_in(self):
+        res = self.app.get(self.collection_two_url, auth=self.basic_auth)
         assert_equal(res.status_code, 200)
         assert_equal(len(res.json['data']), 1)
-        assert_equal(res.json['data'][0]['id'], self.public_component._id)
+        assert_equal(res.json['data'][0]['id'], self.node_of_collection_two._id)
 
-    def test_return_private_collection_children_list_logged_out(self):
-        res = self.app.get(self.private_collection_url, expect_errors=True)
+    def test_return_collection_children_list_logged_out(self):
+        res = self.app.get(self.collection_one_url, expect_errors=True)
         # This is 403 instead of 401 because basic authentication is only for unit tests and, in order to keep from
         # presenting a basic authentication dialog box in the front end. We may change this as we understand CAS
         # a little better
         assert_equal(res.status_code, 403)
 
-    def test_return_private_collection_children_list_logged_in_contributor(self):
-        res = self.app.get(self.private_collection_url, auth=self.basic_auth)
-        assert_equal(res.status_code, 200)
-        assert_equal(len(res.json['data']), 1)
-        assert_equal(res.json['data'][0]['id'], self.component._id)
+    def test_return_collection_children_list_logged_in_different_user(self):
+        res = self.app.get(self.collection_one_url, auth=self.basic_auth_two, expect_errors=True)
+        assert_equal(res.status_code, 403)
 
     def test_smart_folders_in_dashboard_children(self):
         res = self.app.get(self.dashboard_children_url, auth=self.basic_auth)
@@ -424,8 +366,8 @@ class TestCollectionChildrenList(ApiTestCase):
 
         titles = [node['title'] for node in res_json]
         assert_equal(res.status_code, 200)
-        assert_in('Smart Folder ~amr', titles)
-        assert_in('Smart Folder ~amp', titles)
+        assert_in('Smart Folder amr', titles)
+        assert_in('Smart Folder amp', titles)
 
         Node.remove()
 
@@ -437,38 +379,32 @@ class TestCollectionPointersList(ApiTestCase):
         self.user.set_password('password')
         self.user.save()
         self.basic_auth = (self.user.username, 'password')
-        self.collection = FolderFactory(is_public=False, creator=self.user)
-        self.pointer_collection = FolderFactory(is_public=False, creator=self.user)
-        self.collection.add_pointer(self.pointer_collection, auth=Auth(self.user))
-        self.private_url = '/{}collections/{}/pointers/'.format(API_BASE, self.collection._id)
 
-        self.public_folder = FolderFactory(is_public=True, creator=self.user)
-        self.public_pointer_collection = FolderFactory(is_public=True, creator=self.user)
-        self.public_folder.add_pointer(self.public_pointer_collection, auth=Auth(self.user))
-        self.public_url = '/{}collections/{}/pointers/'.format(API_BASE, self.public_folder._id)
+        self.collection_one = FolderFactory(creator=self.user)
+        self.collection_being_pointed_to = FolderFactory(creator=self.user)
+        self.collection_one.add_pointer(self.collection_being_pointed_to, auth=Auth(self.user))
+        self.collection_one_url = '/{}collections/{}/pointers/'.format(API_BASE, self.collection_one._id)
 
         self.user_two = UserFactory.build()
         self.user_two.set_password('password')
         self.user_two.save()
-        self.basic_auth_two = (self.user_two.username, 'password')
 
-    def test_return_public_collection_pointers_logged_out(self):
-        res = self.app.get(self.public_url, expect_errors=True)
+        self.basic_auth_two = (self.user_two.username, 'password')
+        self.collection_two = FolderFactory(creator=self.user_two)
+        self.collection_being_pointed_to_two = FolderFactory(creator=self.user_two)
+        self.collection_two.add_pointer(self.collection_being_pointed_to_two, auth=Auth(self.user_two))
+        self.collection_two_url = '/{}collections/{}/pointers/'.format(API_BASE, self.collection_two._id)
+
+    def test_not_return_collection_pointers_logged_out(self):
+        res = self.app.get(self.collection_two_url, expect_errors=True)
         assert_equal(res.status_code, 403)
 
-    def test_return_public_collection_pointers_logged_in(self):
-        res = self.app.get(self.public_url, auth=self.basic_auth_two)
+    def test_return_collection_pointers_logged_in(self):
+        res = self.app.get(self.collection_two_url, auth=self.basic_auth_two)
         res_json = res.json['data']
         assert_equal(len(res_json), 1)
         assert_equal(res.status_code, 200)
-        assert_in(res_json[0]['node_id'], self.public_pointer_collection._id)
-
-    def test_return_private_collection_pointers_logged_out(self):
-        res = self.app.get(self.private_url, expect_errors=True)
-        # This is 403 instead of 401 because basic authentication is only for unit tests and, in order to keep from
-        # presenting a basic authentication dialog box in the front end. We may change this as we understand CAS
-        # a little better
-        assert_equal(res.status_code, 403)
+        assert_in(res_json[0]['node_id'], self.collection_being_pointed_to_two._id)
 
 
 class TestCreateCollectionPointer(ApiTestCase):
@@ -478,40 +414,41 @@ class TestCreateCollectionPointer(ApiTestCase):
         self.user.set_password('password')
         self.user.save()
         self.basic_auth = (self.user.username, 'password')
-        self.collection = FolderFactory(is_public=False, creator=self.user)
-        self.pointer_collection = FolderFactory(is_public=False, creator=self.user)
-        self.collection.add_pointer(self.pointer_collection, auth=Auth(self.user))
-        self.private_url = '/{}collections/{}/pointers/'.format(API_BASE, self.collection._id)
-        self.private_payload = {'node_id': self.collection._id}
 
-        self.public_collection = FolderFactory(is_public=True, creator=self.user)
-        self.public_pointer_collection = FolderFactory(is_public=True, creator=self.user)
-        self.public_collection.add_pointer(self.public_pointer_collection, auth=Auth(self.user))
-        self.public_url = '/{}collections/{}/pointers/'.format(API_BASE, self.public_collection._id)
-        self.public_payload = {'node_id': self.public_collection._id}
+        self.collection_one = FolderFactory(creator=self.user)
+        self.collection_being_pointed_to = FolderFactory(creator=self.user)
+        self.collection_one.add_pointer(self.collection_being_pointed_to, auth=Auth(self.user))
+        self.collection_one_url = '/{}collections/{}/pointers/'.format(API_BASE, self.collection_one._id)
+        self.payload_one = {'node_id': self.collection_one._id}
 
         self.user_two = UserFactory.build()
         self.user_two.set_password('password')
         self.user_two.save()
         self.basic_auth_two = (self.user_two.username, 'password')
 
-    def test_creates_public_collection_pointer_logged_out(self):
-        res = self.app.post(self.public_url, self.public_payload, expect_errors=True)
+        self.collection_two = FolderFactory(creator=self.user_two)
+        self.collection_being_pointed_to_two = FolderFactory(creator=self.user_two)
+        self.collection_two.add_pointer(self.collection_being_pointed_to_two, auth=Auth(self.user_two))
+        self.collection_two_url = '/{}collections/{}/pointers/'.format(API_BASE, self.collection_two._id)
+        self.payload_two = {'node_id': self.collection_two._id}
+
+    def test_not_creates_collection_pointer_not_creator(self):
+        res = self.app.post(self.collection_two_url, self.payload_two, expect_errors=True, auth=self.basic_auth)
         # This is 403 instead of 401 because basic authentication is only for unit tests and, in order to keep from
         # presenting a basic authentication dialog box in the front end. We may change this as we understand CAS
         # a little better
         assert_equal(res.status_code, 403)
 
-    def test_creates_public_collection_pointer_logged_in(self):
-        res = self.app.post(self.public_url, self.public_payload, auth=self.basic_auth_two, expect_errors=True)
-        assert_equal(res.status_code, 403)
-
-        res = self.app.post(self.public_url, self.public_payload, auth=self.basic_auth, expect_errors=True)
+    def test_creates_collection_pointer_logged_in(self):
+        res = self.app.post(self.collection_two_url, self.payload_two, auth=self.basic_auth_two, expect_errors=True)
         assert_equal(res.status_code, 201)
-        assert_equal(res.json['data']['node_id'], self.public_collection._id)
 
-    def test_creates_private_collection_pointer_logged_out(self):
-        res = self.app.post(self.private_url, self.private_payload, expect_errors=True)
+        res = self.app.post(self.collection_one_url, self.payload_one, auth=self.basic_auth, expect_errors=True)
+        assert_equal(res.status_code, 201)
+        assert_equal(res.json['data']['node_id'], self.collection_one._id)
+
+    def test_not_creates_collection_pointer_logged_out(self):
+        res = self.app.post(self.collection_one_url, self.payload_one, expect_errors=True)
         # This is 403 instead of 401 because basic authentication is only for unit tests and, in order to keep from
         # presenting a basic authentication dialog box in the front end. We may change this as we understand CAS
         # a little better
@@ -525,48 +462,49 @@ class TestCollectionPointerDetail(ApiTestCase):
         self.user.set_password('password')
         self.user.save()
         self.basic_auth = (self.user.username, 'password')
-        self.private_collection = FolderFactory(creator=self.user, is_public=False)
-        self.pointer_collection = FolderFactory(creator=self.user, is_public=False)
-        self.pointer = self.private_collection.add_pointer(self.pointer_collection, auth=Auth(self.user), save=True)
-        self.private_url = '/{}collections/{}/pointers/{}/'.format(API_BASE, self.private_collection._id, self.pointer._id)
+        self.collection_one = FolderFactory(creator=self.user)
+        self.collection_being_pointed_to = FolderFactory(creator=self.user)
+        self.pointer_one = self.collection_one.add_pointer(self.collection_being_pointed_to, auth=Auth(self.user),
+                                                           save=True)
+        self.collection_one_url = '/{}collections/{}/pointers/{}/'.format(API_BASE, self.collection_one._id,
+                                                                          self.pointer_one._id)
 
         self.user_two = UserFactory.build()
         self.user_two.set_password('password')
         self.user_two.save()
         self.basic_auth_two = (self.user_two.username, 'password')
 
-        self.public_collection = FolderFactory(is_public=True)
-        self.public_pointer_collection = FolderFactory(is_public=True)
-        self.public_pointer = self.public_collection.add_pointer(self.public_pointer_collection, auth=Auth(self.user),
-                                                                 save=True)
-        self.public_url = '/{}collections/{}/pointers/{}/'.format(API_BASE, self.public_collection._id, self.public_pointer._id)
+        self.collection_two = FolderFactory(creator=self.user_two)
+        self.collection_being_pointed_to_two = FolderFactory(creator=self.user_two)
+        self.pointer_two = self.collection_two.add_pointer(self.collection_being_pointed_to_two,
+                                                           auth=Auth(self.user_two),
+                                                           save=True)
+        self.collection_two_url = '/{}collections/{}/pointers/{}/'.format(API_BASE, self.collection_two._id,
+                                                                          self.pointer_two._id)
 
-        self.collection_one = FolderFactory(creator=self.user)
-        self.collection_two = FolderFactory(creator=self.user)
-        self.collection_three = FolderFactory()
+        self.collection_five = FolderFactory()
 
         self.non_folder_url = '/{}collections/{}/pointers/'.format(API_BASE, self.collection_one._id)
 
-    def test_returns_public_collection_pointer_detail_logged_out(self):
-        res = self.app.get(self.public_url, expect_errors=True)
+    def test_not_returns_collection_pointer_detail_logged_out(self):
+        res = self.app.get(self.collection_two_url, expect_errors=True)
         assert_equal(res.status_code, 403)
 
-    def test_returns_public_collection_pointer_detail_logged_in(self):
-        res = self.app.get(self.public_url, auth=self.basic_auth)
+    def test_returns_collection_pointer_detail_logged_in(self):
+        res = self.app.get(self.collection_two_url, auth=self.basic_auth_two)
         res_json = res.json['data']
         assert_equal(res.status_code, 200)
-        assert_equal(res_json['node_id'], self.public_pointer_collection._id)
+        assert_equal(res_json['node_id'], self.collection_being_pointed_to_two._id)
 
-    def test_returns_private_collection_pointer_detail_logged_out(self):
-        res = self.app.get(self.private_url, expect_errors=True)
+    def test_not_returns_collection_pointer_detail_logged_out_two(self):
+        res = self.app.get(self.collection_one_url, expect_errors=True)
         # This is 403 instead of 401 because basic authentication is only for unit tests and, in order to keep from
         # presenting a basic authentication dialog box in the front end. We may change this as we understand CAS
         # a little better
         assert_equal(res.status_code, 403)
 
-    def test_api_get_folder_pointers_from_non_folder(self):
-
-        self.collection_three.add_pointer(self.collection_two, auth=Auth(self.user))
+    def test_return_collection_pointers_from_non_folder(self):
+        self.collection_five.add_pointer(self.collection_two, auth=Auth(self.user))
         res = self.app.get(self.non_folder_url, expect_errors=True)
         assert_equal(res.status_code, 403)
         # pointers = res.json
@@ -580,43 +518,40 @@ class TestDeleteCollectionPointer(ApiTestCase):
         self.user.set_password('password')
         self.user.save()
         self.basic_auth = (self.user.username, 'password')
-        self.collection = FolderFactory(creator=self.user, is_public=False)
-        self.pointer_collection = FolderFactory(creator=self.user, is_public=True)
-        self.pointer = self.collection.add_pointer(self.pointer_collection, auth=Auth(self.user), save=True)
-        self.private_url = '/{}collections/{}/pointers/{}/'.format(API_BASE, self.collection._id, self.pointer._id)
+
+        self.collection_one = FolderFactory(creator=self.user)
+        self.collection_being_pointed_to = FolderFactory(creator=self.user)
+        self.pointer_one = self.collection_one.add_pointer(self.collection_being_pointed_to, auth=Auth(self.user),
+                                                           save=True)
+        self.pointer_one_url = '/{}collections/{}/pointers/{}/'.format(API_BASE, self.collection_one._id,
+                                                                       self.pointer_one._id)
 
         self.user_two = UserFactory.build()
         self.user_two.set_password('password')
         self.user_two.save()
         self.basic_auth_two = (self.user_two.username, 'password')
 
-        self.public_collection = FolderFactory(is_public=True, creator=self.user)
-        self.public_pointer_collection = FolderFactory(is_public=True, creator=self.user)
-        self.public_pointer = self.public_collection.add_pointer(self.public_pointer_collection, auth=Auth(self.user),
-                                                                 save=True)
-        self.public_url = '/{}collections/{}/pointers/{}/'.format(API_BASE, self.public_collection._id,
-                                                                 self.public_pointer._id)
+        self.collection_two = FolderFactory(creator=self.user)
+        self.collection_being_pointed_to_two = FolderFactory(creator=self.user)
+        self.pointer_two = self.collection_two.add_pointer(self.collection_being_pointed_to_two, auth=Auth(self.user),
+                                                           save=True)
+        self.pointer_two_url = '/{}collections/{}/pointers/{}/'.format(API_BASE, self.collection_two._id,
+                                                                       self.pointer_two._id)
 
-    def test_deletes_public_collection_pointer_logged_out(self):
-        res = self.app.delete(self.public_url, expect_errors=True)
+    def test_not_deletes_collection_pointer_logged_out(self):
+        res = self.app.delete(self.pointer_two_url, expect_errors=True)
         # This is 403 instead of 401 because basic authentication is only for unit tests and, in order to keep from
         # presenting a basic authentication dialog box in the front end. We may change this as we understand CAS
         # a little better
         assert_equal(res.status_code, 403)
 
-    def test_deletes_public_collection_pointer_logged_in(self):
-        res = self.app.delete(self.public_url, auth=self.basic_auth_two, expect_errors=True)
-        node_count_before = len(self.public_collection.nodes_pointer)
+    def test_deletes_collection_pointer_logged_in(self):
+        res = self.app.delete(self.pointer_two_url, auth=self.basic_auth_two, expect_errors=True)
+        node_count_before = len(self.collection_two.nodes_pointer)
         assert_equal(res.status_code, 403)
-        assert_equal(node_count_before, len(self.public_collection.nodes_pointer))
+        assert_equal(node_count_before, len(self.collection_two.nodes_pointer))
 
-        res = self.app.delete(self.public_url, auth=self.basic_auth)
+        res = self.app.delete(self.pointer_one_url, auth=self.basic_auth, expect_errors=True)
+        node_count_before_two = len(self.collection_one.nodes_pointer)
         assert_equal(res.status_code, 204)
-        assert_equal(node_count_before - 1, len(self.public_collection.nodes_pointer))
-
-    def test_deletes_private_collection_pointer_logged_out(self):
-        res = self.app.delete(self.private_url, expect_errors=True)
-        # This is 403 instead of 401 because basic authentication is only for unit tests and, in order to keep from
-        # presenting a basic authentication dialog box in the front end. We may change this as we understand CAS
-        # a little better
-        assert_equal(res.status_code, 403)
+        assert_equal(node_count_before_two, 0)

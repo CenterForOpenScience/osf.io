@@ -11,23 +11,27 @@ from .permissions import ContributorOrPublic
 from website.views import find_dashboard
 
 smart_folders = {
-    '~amp': Q('category', 'eq', 'project') & Q('is_deleted', 'eq', False) &
-    Q('is_registration', 'eq', False) & Q('is_folder', 'eq', True) &
-    Q('__backrefs.parent.node.nodes', 'eq', None),
+    'amp': Q('category', 'eq', 'project') &
+            Q('is_deleted', 'eq', False) &
+            Q('is_registration', 'eq', False) &
+            Q('is_folder', 'eq', True) &
+            Q('__backrefs.parent.node.nodes', 'eq', None),
 
-    '~amr': Q('category', 'eq', 'project') & Q('is_deleted', 'eq', False) &
-    Q('is_registration', 'eq', True) & Q('is_folder', 'eq', True) &
-    Q('__backrefs.parent.node.nodes', 'eq', None),
+    'amr': Q('category', 'eq', 'project') &
+            Q('is_deleted', 'eq', False) &
+            Q('is_registration', 'eq', True) &
+            Q('is_folder', 'eq', True) &
+            Q('__backrefs.parent.node.nodes', 'eq', None),
 }
 
 
 class CollectionMixin(object):
     """Mixin with convenience methods for retrieving the current node based on the
-    current URL. By default, fetches the current node based on the pk kwarg.
+    current URL. By default, fetches the current node based on the node_id kwarg.
     """
 
     serializer_class = CollectionSerializer
-    node_lookup_url_kwarg = 'pk'
+    node_lookup_url_kwarg = 'collection_id'
 
     def get_node(self):
         key = self.kwargs[self.node_lookup_url_kwarg]
@@ -37,10 +41,12 @@ class CollectionMixin(object):
         if key == 'amr' or key == 'amp':
             ret = {
                 'id': '{}'.format(key),
-                'pk': key,
                 'title': "Smart Folder {}".format(key),
+                'num_pointers': self.request.user.node__contributed.find(smart_folders[key]).count(),
                 'properties': {
                     'smart_folder': True,
+                    'is_folder': True,
+                    'is_dashboard': False,
                 },
             }
             return ret
@@ -70,51 +76,6 @@ class CollectionList(generics.ListCreateAPIView, ListFilterMixin, ODMFilterMixin
             Q('is_deleted', 'ne', True) &
             Q('is_folder', 'eq', True) &
             Q('contributors', 'icontains', user._id)
-        )
-
-        return base_query
-
-    # overrides ListCreateAPIView
-    def get_queryset(self):
-        query = self.get_query_from_request()
-        nodes = Node.find(query)
-
-        for node in nodes:
-            node.smart_folder = False
-
-        return nodes
-
-    # overrides ListCreateAPIView
-    def perform_create(self, serializer):
-        """
-        Create a node.
-        """
-        """
-        :param serializer:
-        :return:
-        """
-        # On creation, make sure that current user is the creator
-        user = self.request.user
-        serializer.save(creator=user)
-
-
-class DashboardDetail(generics.ListCreateAPIView, ODMFilterMixin):
-    """Projects and components.
-
-    By default, a GET will return a user's dashboard. Note that you must be logged in to access it
-    """
-
-    permission_classes = (
-        drf_permissions.IsAuthenticated,
-    )
-    serializer_class = CollectionSerializer
-    ordering = ('-date_modified',)  # default ordering
-
-    # overrides ODMFilterMixin
-    def get_default_odm_query(self):
-        base_query = (
-            Q('is_deleted', 'ne', True) &
-            Q('is_dashboard', 'eq', True)
         )
 
         return base_query
@@ -198,7 +159,7 @@ class CollectionChildrenList(generics.ListAPIView, CollectionMixin):
         if key == 'amp':
             contributed = self.request.user.node__contributed
             all_my_projects = contributed.find(
-                smart_folders.get('~amp')
+                smart_folders.get('amp')
             )
 
             return all_my_projects
@@ -206,7 +167,7 @@ class CollectionChildrenList(generics.ListAPIView, CollectionMixin):
         elif key == 'amr':
             contributed = self.request.user.node__contributed
             all_my_registrations = contributed.find(
-                smart_folders.get('~amr')
+                smart_folders.get('amr')
             )
             return all_my_registrations
 
@@ -225,10 +186,12 @@ class CollectionChildrenList(generics.ListAPIView, CollectionMixin):
                 for folder_id in smart_folders:
                     smart_folder_node = {
                         'id': '{}'.format(folder_id),
-                        'pk': folder_id,
                         'title': "Smart Folder {}".format(folder_id),
+                        'num_pointers': self.request.user.node__contributed.find(smart_folders[folder_id]).count(),
                         'properties': {
                             'smart_folder': True,
+                            'is_folder': True,
+                            'is_dashboard': False,
                         },
                     }
                     if smart_folder_node not in children:

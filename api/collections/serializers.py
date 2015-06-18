@@ -1,5 +1,6 @@
 from rest_framework import serializers as ser
 from api.base.serializers import JSONAPISerializer, CollectionLinksField, Link, LinksField
+from api.base.utils import get_user_auth
 from website.models import Node
 from framework.auth.core import Auth
 
@@ -14,11 +15,11 @@ class CollectionSerializer(JSONAPISerializer):
     modified_by = ser.SerializerMethodField(read_only=True, source='get_modified_by')
     links = CollectionLinksField({
         'children': {
-            'related': Link('collections:collection-children', kwargs={'pk': '<pk>'}),
+            'related': Link('collections:collection-children', kwargs={'collection_id': '<pk>'}),
             'count': 'get_node_count',
         },
         'pointers': {
-            'related': Link('collections:collection-pointers', kwargs={'pk': '<pk>'}),
+            'related': Link('collections:collection-pointers', kwargs={'collection_id': '<pk>'}),
             'count': 'get_pointers_count',
         },
     })
@@ -34,9 +35,9 @@ class CollectionSerializer(JSONAPISerializer):
 
     def get_node_count(self, obj):
         if isinstance(obj, dict) and obj['properties']['smart_folder'] is True:
-            return ''
+            return 0
         else:
-            auth = self.get_user_auth(self.context['request'])
+            auth = get_user_auth(self.context['request'])
             nodes = [node for node in obj.nodes if node.can_view(auth)]
             return len(nodes)
 
@@ -47,18 +48,10 @@ class CollectionSerializer(JSONAPISerializer):
 
     def get_modified_by(self, obj):
         if isinstance(obj, dict) and obj['properties']['smart_folder'] is True:
-            return 'Admin'
+            return ''
         user = obj.logs[-1].user
         modified_by = user.family_name or user.given_name
         return modified_by
-
-    def get_user_auth(self, request):
-        user = request.user
-        if user.is_anonymous():
-            auth = Auth(None)
-        else:
-            auth = Auth(user)
-        return auth
 
     @staticmethod
     def get_properties(obj):
@@ -77,8 +70,8 @@ class CollectionSerializer(JSONAPISerializer):
 
     def create(self, validated_data):
         node = Node(**validated_data)
-        node.save()
         node.is_folder = True
+        node.save()
         return node
 
     def update(self, instance, validated_data):
