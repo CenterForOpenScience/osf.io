@@ -8,11 +8,7 @@ var ko = require('knockout');
 var ComponentControl = {};
 
 // binds to component scope in render_nodes.mako
-$('.render-nodes-list').each(function(i) {
-    var isBound = !!ko.dataFor(this);
-    $(this).attr('id', 'renderNodesList' + i);
-    if(!isBound) {
-        $osf.applyBindings(ComponentControl, this);
-    }
+$('.render-nodes-list').each(function() {
+    $osf.applyBindings(ComponentControl, this);
 });
 
