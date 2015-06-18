@@ -40,11 +40,9 @@ function ProjectCreatorViewModel(params) {
 
     self.disableSubmitBtn = function (){
         $('#createProjectSubmitBtn').prop('disabled', true);
-        console.log("disable btn");
     };
     self.enableSubmitBtn = function (){
         $('#createProjectSubmitBtn').prop('disabled', false);
-         console.log("enable btn");
     };
 
     self.submitForm = function () {
