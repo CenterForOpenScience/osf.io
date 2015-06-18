@@ -63,6 +63,11 @@ describe('registrationRetraction', () => {
                 assert.isTrue(vm.confirmationText.isValid());
             });
 
+            it('decodes html entities in project title', () => {
+                var test = new registrationRetraction.ViewModel(submitUrl, 'Carrot &gt;== Cake');
+                assert.equal(test.registrationTitle, 'Carrot >== Cake');
+            });
+
             describe('submit', () => {
                 var postSpy;
                 var changeMessageSpy;
