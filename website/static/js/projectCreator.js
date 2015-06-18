@@ -74,7 +74,6 @@ function ProjectCreatorViewModel(params) {
         } else {
             template = $('.createNodeTemplates')[1].value;
         }
-        console.log(template);
         return {
             title: self.title(),
             category: category,
