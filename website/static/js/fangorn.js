@@ -136,7 +136,6 @@ function cancelUploads (row) {
 var uploadRowTemplate = function(item){
     var tb = this;
     var padding;
-    var progress = item.data.uploadState() === 'pending' ? 0 : Math.floor(item.data.progress);
     if (tb.filterOn) {
         padding = 20;
     } else {
@@ -152,12 +151,12 @@ var uploadRowTemplate = function(item){
             ]),
             m('.col-xs-3',
                 m('.progress', [
-                    m('.progress-bar.progress-bar-info.progress-bar-striped', {
+                    m('.progress-bar.progress-bar-info.progress-bar-striped.active', {
                         role : 'progressbar',
-                        'aria-valuenow' : progress,
+                        'aria-valuenow' : item.data.progress,
                         'aria-valuemin' : '0',
                         'aria-valuemax': '100',
-                        'style':'width: ' + progress + '%' }, m('span.sr-only', progress + '% Complete'))
+                        'style':'width: ' + item.data.progress + '%' }, m('span.sr-only', item.data.progress + '% Complete'))
                 ])
             ),
             m('.col-xs-2', [
@@ -566,23 +565,15 @@ function _fangornMouseOverRow(item, event) {
  */
 function _fangornUploadProgress(treebeard, file, progress) {
     var parent = file.treebeardParent;
-
-    var item,
-        child,
-        templateWithCancel,
-        templateWithoutCancel;
+    progress = Math.ceil(progress);
     for(var i = 0; i < parent.children.length; i++) {
-        child = parent.children[i];
-        if(!child.data.tmpID){
-            continue;
+        if (parent.children[i].data.tmpID !== file.tmpID) continue;
+        if (parent.children[i].data.progress !== progress) {
+            parent.children[i].data.progress = progress;
+            m.redraw();
         }
-        if(child.data.tmpID === file.tmpID) {
-            item = child;
-            item.data.progress = progress;
-            item.data.uploadState('uploading');
-        }
+        return;
     }
-    m.redraw();
 }
 
 /**
@@ -620,6 +611,17 @@ function _fangornAddedFile(treebeard, file) {
     if (!_fangornCanDrop(treebeard, item)) {
         return;
     }
+
+    if (item.data.provider === 'github') {
+        this.githubFileCache = this.githubFileCache || [];
+        var files = this.getActiveFiles().filter(function(f) {return f.isGithub;});
+        if (files.length > 0) {
+            this.githubFileCache.push(file);
+            this.files.splice(this.files.indexOf(files), 1);
+        }
+        file.isGithub = true;
+    }
+
     var configOption = resolveconfigOption.call(treebeard, item, 'uploadAdd', [file, item]);
 
     var tmpID = tempCounter++;
@@ -638,7 +640,8 @@ function _fangornAddedFile(treebeard, file) {
             edit: false
         },
         tmpID: tmpID,
-        uploadState : m.prop('pending')
+        progress: 0,
+        uploadState : m.prop('uploading'),
     };
     var newitem = treebeard.createItem(blankItem, item.id);
     return configOption || null;
@@ -694,6 +697,12 @@ function _fangornComplete(treebeard, file) {
     var item = file.treebeardParent;
     resolveconfigOption.call(treebeard, item, 'onUploadComplete', [item]);
     _fangornOrderFolder.call(treebeard, item);
+
+    if (file.isGithub) {
+        if (this.githubFileCache.length > 0) {
+            this.processFile(this.githubFileCache.pop());
+        }
+    }
 }
 
 /**
@@ -762,10 +771,10 @@ function _fangornDropzoneError(treebeard, file, message, xhr) {
     var msgText;
     if (file.isDirectory) {
         msgText = 'Cannot upload directories, applications, or packages.';
-    } else if (xhr.status === 507) {
+    } else if (xhr && xhr.status === 507) {
         msgText = 'Cannot upload file due to insufficient storage.';
     } else {
-        msgText = DEFAULT_ERROR_MESSAGE;
+        msgText = message || DEFAULT_ERROR_MESSAGE;
     }
     var parent = file.treebeardParent || treebeardParent.dropzoneItemCache; // jshint ignore:line
     // Parent may be undefined, e.g. in Chrome, where file is an entry object
@@ -1971,7 +1980,8 @@ function _resizeHeight () {
     var topBuffer = tbody.offset().top + 50;
     var availableSpace = windowHeight - topBuffer;
     if(availableSpace > 0) {
-        tbody.height(availableSpace);
+        // Set a minimum height
+        tbody.height(availableSpace < 300 ? 300 : availableSpace);
     }
 }
 
@@ -2087,13 +2097,15 @@ tbOptions = {
     onmouseoverrow : _fangornMouseOverRow,
     sortDepth : 2,
     dropzone : {                                           // All dropzone options.
+        maxFilesize: 10000000,
         url: function(files) {return files[0].url;},
         clickable : '#treeGrid',
         addRemoveLinks: false,
         previewTemplate: '<div></div>',
-        parallelUploads: 1,
+        parallelUploads: 10,
         acceptDirectories: false,
-        fallback: function(){}
+        createImageThumbnails: false,
+        fallback: function(){},
     },
     resolveIcon : _fangornResolveIcon,
     resolveToggle : _fangornResolveToggle,
