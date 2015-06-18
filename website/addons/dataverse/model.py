@@ -15,7 +15,12 @@ from website.addons.base import (
 )
 from website.addons.base import StorageAddonBase
 
-from website.addons.dataverse.client import connect_from_settings_or_401, get_files, get_dataset
+from website.addons.dataverse.client import (
+    connect_from_settings_or_401,
+    get_files,
+    get_dataset,
+    get_dataverse
+)
 from website.addons.dataverse.settings import HOST
 
 
@@ -127,7 +132,9 @@ class AddonDataverseNodeSettings(StorageAddonBase, AddonNodeSettingsBase):
         return self.dataset
 
     def archive_errors(self):
-        dataset = get_dataset(self.dataverse, self.dataset_doi)
+        connection = connect_from_settings_or_401(self.user_settings)
+        dataverse = get_dataverse(connection, self.dataverse_alias)
+        dataset = get_dataset(dataverse, self.dataset_doi)
         if dataset.get_state != 'RELEASED':
             return 'The dataverse {dataverse_name} is not published and we cannot copy any of the files it contains. If you publish the dataverse we should then be able to copy those files. You can view the files <a href="{url}" target="_blank">here.</a>'.format(
                 dataverse_name=self.dataverse_alias,
