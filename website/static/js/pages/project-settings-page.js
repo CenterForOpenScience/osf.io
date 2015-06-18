@@ -145,7 +145,7 @@ $(document).ready(function() {
       var unchecked = checkedOnLoad.filter($('#selectAddonsForm input:not(:checked)'));
 
       if(unchecked.length > 0 || checked.length > 0) {
-        return 'The changes on addon setting are not submitted!'
+        return 'The changes on addon setting are not submitted!';
       }
     });
 
