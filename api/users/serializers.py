@@ -5,7 +5,8 @@ from website.models import User
 from django.db import models
 from jsonfield import JSONField
 from django.utils import six, timezone
-
+import inspect
+from rest_framework.utils import html
 
 
 class JobsSerializer(JSONAPISerializer):
@@ -44,23 +45,37 @@ class empty:
     """
     pass
 
-
 class APIDictField(ser.DictField):
+
     def get_value(self, dictionary):
-        content = JSONRenderer().render(serializer.data)
+        # We override the default field access in order to support
+        # dictionaries in HTML forms.
+        if html.is_html_input(dictionary):
+            return html.parse_html_dict(dictionary, prefix=self.field_name)
         return dictionary.get(self.field_name, empty)
 
     def to_internal_value(self, data):
         """
         Dicts of native values <- Dicts of primitive datatypes.
         """
+        if html.is_html_input(data):
+            data = html.parse_html_dict(data)
         if not isinstance(data, dict):
             self.fail('not_a_dict', input_type=type(data).__name__)
-        to_internal_value = dict([
+        return dict([
             (six.text_type(key), self.child.run_validation(value))
             for key, value in data.items()
         ])
-        return to_internal_value
+
+    def to_representation(self, value):
+        """
+        List of object instances -> List of dicts of primitive datatypes.
+        """
+        return dict([
+            (six.text_type(key), self.child.to_representation(val))
+            for key, val in value.items()
+        ])
+
 
 
 class UserSerializer(JSONAPISerializer):
@@ -86,11 +101,19 @@ class UserSerializer(JSONAPISerializer):
     #                                                                  'places the user has worked')
     # educational_institutions = ser.ListField(child=ser.CharField(), required=False, source='schools', help_text='An array of dictionaries representing the '
     #                                                                      'places the user has attended school')
-    social_accounts = APIDictField(allow_null=True, child=ser.CharField(), required=False, source='social', help_text='A dictionary of various social media account '
-                                                               'identifiers including an array of user-defined URLs')
-    # github = ser.CharField(required=False, source='social.github', help_text='A dictionary of various social media account '
+    # social_accounts = ser.DictField(allow_null=True, child=ser.CharField(), source='social', help_text='A dictionary of various social media account '
     #                                                            'identifiers including an array of user-defined URLs')
-    # social_accounts = SocialSerializer
+    # social_accounts = APIDictField(source='social')
+    # social_accounts = APIDictField(allow_null=True, child=ser.CharField(), required=False, source='social', help_text='A dictionary of various social media account '
+    #                                                            'identifiers including an array of user-defined URLs')
+    github = ser.CharField(required=False, source='social.github', help_text='Github Handle')
+    scholar = ser.CharField(required=False, source='social.scholar', help_text='Google Scholar Account')
+    personal = ser.CharField(required=False, source='social.personal', help_text='Personal Website')
+    twitter = ser.CharField(required=False, source='social.twitter', help_text='Twitter Handle')
+    linkedIn = ser.CharField(required=False, source='social.linkedIn', help_text='LinkedIn Account')
+    impactStory = ser.CharField(required=False, source='social.impactStory', help_text='ImpactStory Account')
+    orcid = ser.CharField(required=False, source='social.orcid', help_text='orcid Account Number ex 1111 1111 1111 1111')
+    researcherId = ser.CharField(required=False, source='social.researcherId', help_text='ResearcherId Account')
 
     links = LinksField({
         'html': 'absolute_url',
