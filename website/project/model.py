@@ -514,7 +514,8 @@ def validate_title(value):
     """
     if value is None or not value.strip():
         raise ValidationValueError('Title cannot be blank.')
-    elif len(value) > 200:
+    
+    if len(value) > 200:
             raise ValidationValueError('Title cannot exceed 200 characters.')
     return True
 
