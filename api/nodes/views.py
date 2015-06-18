@@ -9,13 +9,16 @@ from framework.auth.core import Auth
 from website.models import Node, Pointer
 from api.base.utils import get_object_or_404, waterbutler_url_for
 from api.base.filters import ODMFilterMixin, ListFilterMixin
-from .serializers import NodeSerializer, NodePointersSerializer, NodeFilesSerializer
+from .serializers import NodeSerializer, NodePointersSerializer, NodeFilesSerializer, NodeDeleteSerializer
 from api.users.serializers import ContributorSerializer
 from .permissions import ContributorOrPublic, ReadOnlyIfRegistration, ContributorOrPublicForPointers
 
 from api.base.exceptions import Accepted
 from api.language import BEFORE_DELETE_NODE
 from api.base.utils import node_token_creator, absolute_reverse
+from rest_framework.response import Response
+from rest_framework import status
+
 
 
 class NodeMixin(object):
@@ -98,7 +101,12 @@ class NodeDetail(generics.RetrieveUpdateDestroyAPIView, NodeMixin):
         ReadOnlyIfRegistration,
     )
 
-    serializer_class = NodeSerializer
+    def get_serializer_class(self):
+        if self.request.method == 'DELETE':
+            serializer_class = NodeDeleteSerializer
+            return serializer_class
+        serializer_class = NodeSerializer
+        return serializer_class
 
     # overrides RetrieveUpdateDestroyAPIView
     def get_object(self):
@@ -110,13 +118,20 @@ class NodeDetail(generics.RetrieveUpdateDestroyAPIView, NodeMixin):
         return {'request': self.request}
 
     # overrides RetrieveUpdateDestroyAPIView
-    def perform_destroy(self, instance):
+    # def perform_destroy(self, instance):
+    #     user = self.request.user
+    #     node = self.get_node()
+    #     token = node_token_creator(node._id, user._id)
+    #     url = absolute_reverse('nodes:node-delete-confirm', kwargs={'node_id': node._id, 'token': token})
+    #     delete_warning = BEFORE_DELETE_NODE.format(_(node.title))
+    #     raise Accepted({'warning': delete_warning, 'url':url})
+    def delete(self, request, node_id):
         user = self.request.user
         node = self.get_node()
         token = node_token_creator(node._id, user._id)
         url = absolute_reverse('nodes:node-delete-confirm', kwargs={'node_id': node._id, 'token': token})
         delete_warning = BEFORE_DELETE_NODE.format(_(node.title))
-        raise Accepted([delete_warning, url])
+        return Response({'warning_message': delete_warning, 'url': url}, status=status.HTTP_202_ACCEPTED)
 
 
 class NodeDeleteConfirm(generics.DestroyAPIView, NodeMixin):

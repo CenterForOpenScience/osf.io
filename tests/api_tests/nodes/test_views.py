@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 import mock
 from nose.tools import *  # flake8: noqa
-import ast
+import json
 
 from framework.auth.core import Auth
 from website.models import Node
@@ -585,6 +585,7 @@ class TestNodeUpdate(ApiTestCase):
         assert_equal(res.json['data']['title'], self.new_title)
         assert_equal(res.json['data']['description'], self.description)
         assert_equal(res.json['data']['category'], self.category)
+        print res.json
 
         # Public resource, logged in, unauthorized
         res = self.app.patch_json(self.public_url, {
@@ -641,15 +642,14 @@ class TestNodeDelete(ApiTestCase):
         assert_equal(res.status_code, 403)
 
     def test_deletes_public_node_logged_in(self):
-        res = self.app.delete(self.public_url, auth=self.basic_auth_two, expect_errors=True)
+        res = self.app.delete_json(self.public_url, auth=self.basic_auth_two, expect_errors=True)
         assert_equal(res.status_code, 403)
         assert_equal(self.public_project.is_deleted, False)
 
-        res = self.app.delete(self.public_url, auth=self.basic_auth, expect_errors=True)
+        res = self.app.delete_json(self.public_url, auth=self.basic_auth, expect_errors=True)
         assert_equal(res.status_code, 202)
         assert_equal(self.public_project.is_deleted, False)
-        detail = ast.literal_eval(res.json['detail'])
-        returned_url = detail[1]
+        returned_url = res.json['url']
 
         res = self.app.delete(returned_url, auth=self.basic_auth)
         assert_equal(res.status_code, 204)
@@ -666,8 +666,7 @@ class TestNodeDelete(ApiTestCase):
         res = self.app.delete(self.private_url, auth=self.basic_auth, expect_errors=True)
         assert_equal(res.status_code, 202)
         assert_equal(self.project.is_deleted, False)
-        detail = ast.literal_eval(res.json['detail'])
-        returned_url = detail[1]
+        returned_url = res.json['url']
 
         res = self.app.delete(returned_url, auth=self.basic_auth)
         assert_equal(res.status_code, 204)
