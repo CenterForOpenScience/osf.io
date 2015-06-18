@@ -56,8 +56,6 @@ def send_digest(grouped_digests):
             sentry.log_message("A user with this username does not exist.")
             return
 
-        pprint(group)
-
         info = group['info']
         print info
         digest_notification_ids = [message['_id'] for message in info]

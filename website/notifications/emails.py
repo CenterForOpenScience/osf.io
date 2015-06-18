@@ -156,6 +156,7 @@ def send(recipient_ids, notification_type, uid, event, user, node, timestamp, **
     if notification_type == 'none':
         return
 
+    delta = 0
     if notification_type == 'email_transactional':
         n_seconds = timestamp.minute * timestamp.second + timestamp.microsecond*1e-6
         delta = (n_seconds//60)*60+60 - n_seconds
