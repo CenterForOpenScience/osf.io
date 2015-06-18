@@ -208,7 +208,6 @@ class GuidFile(GuidStoredObject):
     _metadata_cache = None
     _id = fields.StringField(primary=True)
     node = fields.ForeignField('node', required=True, index=True)
-    source_url = None
 
     _meta = {
         'abstract': True,
