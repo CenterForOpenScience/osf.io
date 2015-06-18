@@ -27,6 +27,7 @@ from framework import status
 from framework.mongo import ObjectId
 from framework.mongo import StoredObject
 from framework.addons import AddonModelMixin
+from framework.auth import cas
 from framework.auth import get_user, User, Auth
 from framework.auth import signals as auth_signals
 from framework.exceptions import PermissionsError
@@ -298,7 +299,7 @@ class ApiOAuth2Application(StoredObject):
     # Client ID and secret  # TODO: index=True?
     client_id = fields.StringField(default=lambda: uuid.uuid4().hex,
                                    index=True)
-    client_secret = fields.StringField(default=lambda: base64.b64encode(uuid.uuid4().hex))
+    client_secret = fields.StringField(default=lambda: base64.b64encode(uuid.uuid4().hex).replace('=', ''))
 
     active = fields.BooleanField(default=True,  # Set to False if application is deactivated
                                  index=True)
@@ -326,8 +327,10 @@ class ApiOAuth2Application(StoredObject):
 
         Does not delete the database record, but revokes all tokens and sets a flag that hides this instance from API
         """
-        # TODO FIXME : Should we revoke all access tokens when application inactivated? Seems likely.
-        # If so, add an exception handler and change all users of this function
+        client = cas.get_client()
+        # Will raise a CasHttpError if deletion fails, which will also stop setting of active=False.
+        resp = client.revoke_application_tokens(self.client_id, self.client_secret)  # noqa
+
         self.active = False
         self.save()
         return True

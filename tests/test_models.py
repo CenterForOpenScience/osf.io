@@ -18,6 +18,7 @@ from modularodm.exceptions import ValidationError, ValidationValueError, Validat
 from framework.analytics import get_total_activity_count
 from framework.exceptions import PermissionsError
 from framework.auth import User, Auth
+from framework.auth import cas
 from framework.sessions.model import Session
 from framework.auth import exceptions as auth_exc
 from framework.auth.exceptions import ChangePasswordError, ExpiredTokenError
@@ -957,50 +958,59 @@ class TestApiKey(OsfTestCase):
 class TestApiOAuth2Application(OsfTestCase):
     def setUp(self):
         super(TestApiOAuth2Application, self).setUp()
-        self.app = ApiOAuth2ApplicationFactory()
+        self.api_app = ApiOAuth2ApplicationFactory()
 
     def test_must_have_owner(self):
         with assert_raises(ValidationError):
-            app = ApiOAuth2ApplicationFactory(owner=None)
-            app.save()
+            api_app = ApiOAuth2ApplicationFactory(owner=None)
+            api_app.save()
 
     def test_client_id_auto_populates(self):
-        assert_greater(len(self.app.client_id), 0)
+        assert_greater(len(self.api_app.client_id), 0)
 
     def test_client_secret_auto_populates(self):
-        assert_greater(len(self.app.client_secret), 0)
+        assert_greater(len(self.api_app.client_secret), 0)
 
     def test_new_app_is_not_flagged_as_deleted(self):
-        assert_true(self.app.active)
+        assert_true(self.api_app.active)
 
     def test_user_backref_updates_when_app_created(self):
         u = UserFactory()
-        app = ApiOAuth2ApplicationFactory(owner=u)
-        app.save()
+        api_app = ApiOAuth2ApplicationFactory(owner=u)
+        api_app.save()
 
-        backrefs = u.oauth2app__created
+        backrefs = u.apioauth2application__created
         assert_greater(len(backrefs), 0)
 
     def test_cant_edit_creation_date(self):
         with assert_raises(AttributeError):
-            self.app.create_date = datetime.datetime.utcnow()
+            self.api_app.create_date = datetime.datetime.utcnow()
 
     def test_invalid_home_url_raises_exception(self):
         with assert_raises(ValidationError):
-            app = ApiOAuth2ApplicationFactory(home_url="Totally not a URL")
-            app.save()
+            api_app = ApiOAuth2ApplicationFactory(home_url="Totally not a URL")
+            api_app.save()
 
     def test_invalid_callback_url_raises_exception(self):
         with assert_raises(ValidationError):
-            app = ApiOAuth2ApplicationFactory(callback_url="itms://itunes.apple.com/us/app/apple-store/id375380948?mt=8")
-            app.save()
+            api_app = ApiOAuth2ApplicationFactory(callback_url="itms://itunes.apple.com/us/app/apple-store/id375380948?mt=8")
+            api_app.save()
 
-    def test_deletion_sets_inactive(self):
-        app = ApiOAuth2ApplicationFactory()
-        app.deactivate()
-        assert_false(app.active)
+    @mock.patch('framework.auth.cas.CasClient.revoke_application_tokens')
+    def test_active_set_to_false_upon_successful_deletion(self, mock_method):
+        mock_method.return_value(True)
+        self.api_app.deactivate()
+        assert_false(self.api_app.active)
 
-    # TODO: Write tests for token revocation? (relying on mocks to check response/call)
+    @mock.patch('framework.auth.cas.CasClient.revoke_application_tokens')
+    def test_active_remains_true_when_cas_token_deletion_fails(self, mock_method):
+        mock_method.side_effect = cas.CasHTTPError("CAS can't revoke tokens", 400, 'blank')
+
+        with assert_raises(cas.CasHTTPError):
+            self.api_app.deactivate()
+
+        assert_true(self.api_app.active)
+
 
 class TestNodeWikiPage(OsfTestCase):
 

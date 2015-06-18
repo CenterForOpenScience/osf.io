@@ -1,9 +1,11 @@
 from rest_framework import generics, permissions as drf_permissions
+from rest_framework.exceptions import APIException
 from rest_framework import renderers
 from modularodm import Q
 
 from website.models import User, Node, ApiOAuth2Application
 from framework.auth.core import Auth
+from framework.auth import cas
 from api.base.utils import get_object_or_404
 from api.base.filters import ODMFilterMixin
 from api.nodes.serializers import NodeSerializer
@@ -153,7 +155,10 @@ class ApplicationDetail(generics.RetrieveUpdateDestroyAPIView):
     def perform_destroy(self, instance):
         """Node is not actually deleted from DB- just flagged as inactive, which hides it from list views"""
         obj = self.get_object()
-        obj.deactivate()  # TODO: Handle exception if save/revocation fails
+        try:
+            obj.deactivate()
+        except cas.CasHTTPError:
+            raise APIException("Could not revoke application auth tokens; please try again later")
 
     def perform_update(self, serializer):
         """Necessary to prevent owner field from being blanked on updates"""

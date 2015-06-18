@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 import copy
 
+import mock
 from nose.tools import *  # flake8: noqa
 
 from website.models import Node, ApiOAuth2Application, User
@@ -251,7 +252,9 @@ class TestApplicationList(ApiTestCase):
         assert_equal(len(res.json['data']),
                      len(self.user2_apps))
 
-    def test_deleting_application_should_hide_it_from_api_list(self):
+    @mock.patch('framework.auth.cas.CasClient.revoke_application_tokens')
+    def test_deleting_application_should_hide_it_from_api_list(self, mock_method):
+        mock_method.return_value(True)
         app = self.user1_apps[0]
         url = _get_application_detail_route(app)
 
@@ -331,7 +334,9 @@ class TestApplicationDetail(ApiTestCase):
         res = self.app.get(self.user1_app_url, expect_errors=True)
         assert_equal(res.status_code, 403)
 
-    def test_owner_can_delete(self):
+    @mock.patch('framework.auth.cas.CasClient.revoke_application_tokens')
+    def test_owner_can_delete(self, mock_method):
+        mock_method.return_value(True)
         res = self.app.delete(self.user1_app_url, auth=self.basic_auth1)
         assert_equal(res.status_code, 204)
 
@@ -341,7 +346,9 @@ class TestApplicationDetail(ApiTestCase):
                               expect_errors=True)
         assert_equal(res.status_code, 403)
 
-    def test_deleting_application_makes_api_view_inaccessible(self):
+    @mock.patch('framework.auth.cas.CasClient.revoke_application_tokens')
+    def test_deleting_application_makes_api_view_inaccessible(self, mock_method):
+        mock_method.return_value(True)
         res = self.app.delete(self.user1_app_url, auth=self.basic_auth1)
         res = self.app.get(self.user1_app_url, auth=self.basic_auth1, expect_errors=True)
         assert_equal(res.status_code, 404)
@@ -377,9 +384,11 @@ class TestApplicationDetail(ApiTestCase):
         assert_equal(len(res.json['data']),
                      1)
 
-    def test_deleting_application_flags_instance_inactive(self):
+    @mock.patch('framework.auth.cas.CasClient.revoke_application_tokens')
+    def test_deleting_application_flags_instance_inactive(self, mock_method):
+        mock_method.return_value(True)
         res = self.app.delete(self.user1_app_url, auth=self.basic_auth1)
-        # TODO: Will DB instance always be updated with newest result from API modification
+        # TODO: Will DB instance always be updated with newest result from API modification?
         assert_false(self.user1_app.active)
 
     def tearDown(self):
