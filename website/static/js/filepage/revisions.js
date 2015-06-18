@@ -118,7 +118,7 @@ var FileRevisionsTable = {
             }
             var payload = {
                 id: self.node.id,
-                event: "file_updated",
+                event: 'file_updated',
                 notification_type: sub,
                 path: self.file.path,
                 provider: self.file.provider
@@ -167,15 +167,15 @@ var FileRevisionsTable = {
                                 m('a',
                                     {onclick: function(e) {
                                         e.preventDefault();
-                                        self.setSub(sub.value)}
+                                        self.setSub(sub.value);}
                                     },
                                     sub.text)
                             ])
-                        ]
+                        ];
                     }),
                     m('.m-t-xs')
                 ])
-            ])
+            ]);
         };
         // End of Subscriptions
 
