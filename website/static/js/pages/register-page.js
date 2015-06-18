@@ -18,6 +18,8 @@ var ctx = window.contextVars;
     var init_schemas = [];
     var prereg = [];
     var open_ended = [];
+    var postcomp = [];
+    var osf_stand = [];
     var titles = [];
     var editor;
 
@@ -33,6 +35,10 @@ var ctx = window.contextVars;
             item8: "an answer",
             item9: "an answer",
             summary: "a summary",
+            item29: "an answer",
+            datacompletion: "yes",
+            looked: "yes",
+            comments: "an answer",
         },
         {
             item10: "yes",
@@ -42,6 +48,15 @@ var ctx = window.contextVars;
             item14: "an answer",
             item15: "an answer",
             item16: "an answer",
+            item30: "an answer",
+            item31: "an answer",
+            item32: "significantly different from the original effect size",
+            item33: "success",
+            item34: "an answer",
+            item35: "an answer",
+            item36: "an answer",
+            item37: "an answer",
+
         },
         {
 
@@ -78,6 +93,97 @@ var ctx = window.contextVars;
 
     ];
 
+    osf_stand = [
+        {
+            id: "OSF-Standard_Pre-Data_Collection_Registration",
+            title: "OSF-Standard Pre-Data Collection Registration",
+            type: "object",
+            properties: {
+                datacompletion: {
+                    type: "array",
+                    title: "Is data collection for this project underway or complete?",
+                    uniqueItems: "true",
+                    items: {
+                        type: "string",
+                        enum: ["yes", "no"],
+                    },
+                    description: "Choose..."
+                },
+                looked: {
+                    type: "array",
+                    title: "Have you looked at the data?",
+                    uniqueItems: "true",
+                    items: {
+                        type: "string",
+                        enum: ["yes", "no"],
+                    },
+                    description: "Choose..."
+                },
+                comments: {
+                    type: "string",
+                    format: "textarea",
+                    title: "Other Comments"
+                }
+            }
+        }
+    ];
+
+    postcomp = [
+        {
+            id: "Replication_Recipe_(Brandt_et_al.,_2013):_Post-Completion",
+            title: "Registering the Replication Attempt",
+            type: "object",
+            properties: {
+                item29: {
+                    type: "string", format: "text", title: "The finalized materials, procedures, analysis plan etc of the replication are registered here"
+                }
+            }
+        },
+        {  
+            title: "Reporting the Replication",
+            type: "object",
+            properties: {
+                item30: {
+                    type: "string", format: "text", title: "The effect size of the replication is"
+                },
+                item31: {
+                    type: "string", format: "text", title: "The confidence interval of the replication effect size is"
+                },
+                item32: {
+                    type: "array", title: "The replication effect size is",
+                    uniqueItems: "true",
+                    items: {
+                        type: "string",
+                        enum: ["significantly different from the original effect size", "not significantly different from the original effect size"], 
+                    },
+                    description: "Choose..."
+                },
+                item33: {
+                    type: "array", title: "I judge the replication to be a(n)", 
+                    uniqueItems: "true",
+                    items: {
+                        type: "string",
+                        enum: ["success", "informative failure to replicate", "practical failure to replicate", "inconclusive"],
+                    },
+                    description: "Choose..."
+                },
+                item34: {
+                    type: "string", format: "textarea", title: "I judge it so because"
+                },
+                item35: {
+                    type: "string", format: "text", title: "Interested experts can obtain my data and syntax here"
+                },
+                item36: {
+                    type: "string", format: "text", title: "All of the analyses were reported in the report or are available here"
+                },
+                item37: {
+                    type: "string", format: "textarea", title: "The limitations of my replication study are"
+                }
+            }
+        }      
+
+    ]
+
     prereg = [
         {
             id: "Replication_Recipe_(Brandt_et_al.,_2013):_Pre-Registration",
@@ -85,31 +191,31 @@ var ctx = window.contextVars;
             type: "object",
             properties: {
                 item1: {
-                   type: "string", title: "Verbal description of the effect I am trying to replicate" 
+                   type: "string", format: "textarea", title: "Verbal description of the effect I am trying to replicate" 
                 },
                 item2: {
-                    type: "string", title: "It is important to replicate this effect because"
+                    type: "string", format: "textarea", title: "It is important to replicate this effect because"
                 },
                 item3: {
-                    type: "string", title: "The effect size of the effect I am trying to replicate is"
+                    type: "string", format: "text", title: "The effect size of the effect I am trying to replicate is"
                 },
                 item4: {
-                    type: "string", title: "The confidence interval of the original effect is"
+                    type: "string", format: "text", title: "The confidence interval of the original effect is"
                 },
                 item5: {
-                    type: "string", title: "The sample size of the original effect is"
+                    type: "string", format: "text", title: "The sample size of the original effect is"
                 },
                 item6: {
-                    type: "string", title: "Where was the original study conducted? (e.g., lab, in the field, online)"
+                    type: "string", format: "text", title: "Where was the original study conducted? (e.g., lab, in the field, online)"
                 },
                 item7: {
-                    type: "string", title: "What country/region was the original study conducted in?"
+                    type: "string", format: "text", title: "What country/region was the original study conducted in?"
                 },
                 item8: {
-                    type: "string", title: "What kind of sample did the original study use? (e.g., student, Mturk, representative)"
+                    type: "string", format: "text", title: "What kind of sample did the original study use? (e.g., student, Mturk, representative)"
                 },
                 item9: {
-                    type: "string", title: "Was the original study conducted with paper-and-pencil surveys, on a computer, or something else?"
+                    type: "string", format: "text", title: "Was the original study conducted with paper-and-pencil surveys, on a computer, or something else?"
                 }
             }
         },
@@ -118,25 +224,31 @@ var ctx = window.contextVars;
             type: "object",
             properties: {
                 item10: {
-                    type: "string", title: "Are the original materials for the study available from the author?", enum: ["yes", "no"], description: "Choose..."
+                    type: "array", title: "Are the original materials for the study available from the author?",
+                    uniqueItems: "true",
+                    items: {
+                        type: "string",
+                        enum: ["yes", "no"], 
+                    },
+                    description: "Choose..."
                 },
                 item11: {
-                    type: "string", title: "I know that assumptions (e.g., about the meaning of the stimuli) in the original study will also hold in my replication because"
+                    type: "string", format: "textarea", title: "I know that assumptions (e.g., about the meaning of the stimuli) in the original study will also hold in my replication because"
                 },
                 item12: {
-                    type: "string", title: "Location of the experimenter during data collection"
+                    type: "string", format: "text", title: "Location of the experimenter during data collection"
                 },
                 item13: {
-                    type: "string", title: "Experimenter knowledge of participant experimental condition"
+                    type: "string", format: "text", title: "Experimenter knowledge of participant experimental condition"
                 },
                 item14: {
-                    type: "string", title: "Experimenter knowledge of overall hypotheses"
+                    type: "string", format: "text", title: "Experimenter knowledge of overall hypotheses"
                 },
                 item15: {
-                    type: "string", title: "My target sample size is"
+                    type: "string", format: "text", title: "My target sample size is"
                 },
                 item16: {
-                    type: "string", title: "The rationale for my sample size is"
+                    type: "string", format: "textarea", title: "The rationale for my sample size is"
                 }
             }
         },
@@ -145,31 +257,73 @@ var ctx = window.contextVars;
             type: "object",
             properties: {
                 item17: {
-                    type: "string", title: "The similarities/differences in the instructions are", enum: ["Exact", "Close", "Different"], description: "Choose..."
+                    type: "array", title: "The similarities/differences in the instructions are",
+                    uniqueItems: "true",
+                    items: {
+                        type: "string",
+                        enum: ["Exact", "Close", "Different"],
+                    },
+                    description: "Choose..."
                 },
                 item18: {
-                    type: "string", title: "The similarities/differences in the measures are", enum: ["Exact", "Close", "Different"], description: "Choose..."
+                    type: "array", title: "The similarities/differences in the measures are", 
+                    uniqueItems: "true",
+                    items: {
+                        type: "string",
+                        enum: ["Exact", "Close", "Different"],
+                    },
+                    description: "Choose..."
                 },
                 item19: {
-                    type: "string", title: "The similarities/differences in the stimuli are", enum: ["Exact", "Close", "Different"], description: "Choose..."
+                    type: "array", title: "The similarities/differences in the stimuli are", 
+                    uniqueItems: "true",
+                    items: {
+                        type: "string",
+                        enum: ["Exact", "Close", "Different"],
+                    },
+                    description: "Choose..."
                 },
                 item20: {
-                    type: "string", title: "The similarities/differences in the procedure are", enum: ["Exact", "Close", "Different"], description: "Choose..."
+                    type: "array", title: "The similarities/differences in the procedure are", 
+                    uniqueItems: "true",
+                    items: {
+                        type: "string",
+                        enum: ["Exact", "Close", "Different"],
+                    },
+                    description: "Choose..."
                 },
                 item21: {
-                    type: "string", title: "The similarities/differences in the location (e.g., lab vs. online; alone vs. in groups) are", enum: ["Exact", "Close", "Different"], description: "Choose..."
+                    type: "array", title: "The similarities/differences in the location (e.g., lab vs. online; alone vs. in groups) are", 
+                    uniqueItems: "true",
+                    items: {
+                        type: "string",
+                        enum: ["Exact", "Close", "Different"],
+                    },
+                    description: "Choose..."
                 },
                 item22: {
-                    type: "string", title: "The similarities/difference in remuneration are", enum: ["Exact", "Close", "Different"], description: "Choose..."
+                    type: "array", title: "The similarities/difference in remuneration are", 
+                    uniqueItems: "true",
+                    items: {
+                        type: "string",
+                        enum: ["Exact", "Close", "Different"],
+                    },
+                    description: "Choose..."
                 },
                 item23: {
-                    type: "string", title: "The similarities/differences between participant populations are", enum: ["Exact", "Close", "Different"], description: "Choose..."
+                    type: "array", title: "The similarities/differences between participant populations are", 
+                    uniqueItems: "true",
+                    items: {
+                        type: "string",
+                        enum: ["Exact", "Close", "Different"],
+                    },
+                    description: "Choose..."
                 },
                 item24: {
-                    type: "string", title: "What differences between the original study and your study might be expected to influence the size and/or direction of the effect?"
+                    type: "string", format: "textarea", title: "What differences between the original study and your study might be expected to influence the size and/or direction of the effect?"
                 },
                 item25: {
-                    type: "string", title: "I have taken the following steps to test whether the differences listed in the previous question will influence the outcome of my replication attempt"
+                    type: "string", format: "textarea", title: "I have taken the following steps to test whether the differences listed in the previous question will influence the outcome of my replication attempt"
                 }
             }
         },
@@ -178,13 +332,13 @@ var ctx = window.contextVars;
             type: "object",
             properties: {
                 item26: {
-                    type: "string", title: "My exclusion criteria are (e.g., handling outliers, removing participants from analysis)"
+                    type: "string", format: "textarea", title: "My exclusion criteria are (e.g., handling outliers, removing participants from analysis)"
                 },
                 item27: {
-                    type: "string", title: "My analysis plan is (justify differences from the original)"
+                    type: "string", format: "textarea", title: "My analysis plan is (justify differences from the original)"
                 },
                 item28: {
-                    type: "string", title: "A successful replication is defined as"
+                    type: "string", format: "textarea", title: "A successful replication is defined as"
                 }
             }
         }
@@ -193,6 +347,8 @@ var ctx = window.contextVars;
     // all schemas are in one array of arrays
     init_schemas.push(open_ended);
     init_schemas.push(prereg);
+    init_schemas.push(postcomp);
+    init_schemas.push(osf_stand);
 
     var which_schema = 0;
 
@@ -236,9 +392,6 @@ var ctx = window.contextVars;
         editor.setValue(arrays[0]);
         window.editor = editor;
     };
-
-    // where the array of schemas and array of data is held
-    loadData(init_schemas, schema_data, 0);
 
     // called when switches pages
     var reload = function(schemas, data, num, which) {
@@ -287,12 +440,13 @@ var ctx = window.contextVars;
     });
 
     // get schema that was selected by user
-    $(document.body).on('change', "#select-registration-template", function() {
-        var $tempName = '';
+    $(document.body).on('change', "#select-registration-template", function() {  
         var $this = $(this);
         var val = $this.val();
+        var tempName = val.replace(/_/g , " ");
+
         if (val !== '') {
-            document.getElementById("title").innerHTML = val;
+            document.getElementById("title").innerHTML = tempName;
 
             var schema;
             for (schema in init_schemas) {
@@ -309,11 +463,13 @@ var ctx = window.contextVars;
     });
 
     document.getElementById('save').onclick = function () {
-        console.log(editor.options.schema.title);
         var schema;
-        for (schema in init_schemas) {
-            if (init_schemas[schema].title === editor.options.schema.title) {
-                schema_data[schema] = editor.getValue();
+        var value;
+        for (schema in init_schemas[which_schema]) {
+            if (init_schemas[which_schema][schema].title === editor.options.schema.title) {
+                for (value in editor.getValue()) {
+                   schema_data[schema][value] = editor.getValue()[value];
+                }
             }
         } 
     };
