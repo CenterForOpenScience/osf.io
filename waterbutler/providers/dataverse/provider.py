@@ -38,6 +38,10 @@ class DataverseProvider(provider.BaseProvider):
 
         self._metadata_cache = {}
 
+    def build_url(self, path, *segments, **query):
+        # Need to split up the dataverse subpaths and push them into segments
+        return super().build_url(*(tuple(path.split('/')) + segments), **query)
+
     @asyncio.coroutine
     def validate_path(self, path, revision=None, **kwargs):
         """Ensure path is in configured dataset
@@ -54,6 +58,17 @@ class DataverseProvider(provider.BaseProvider):
             if path == item['extra']['fileId']:
                 return WaterButlerPath('/' + item['name'], _ids=(None, item['extra']['fileId']))
         return WaterButlerPath('/' + path)
+
+    @asyncio.coroutine
+    def revalidate_path(self, base, path, folder=False, revision=None):
+        path = path.strip('/')
+
+        for item in (yield from self._maybe_fetch_metadata(version=revision)):
+            if path == item['name']:
+                # Dataverse cant have folders
+                return base.child(item['name'], _id=item['extra']['fileId'], folder=False)
+
+        return base.child(path, _id=None, folder=False)
 
     @asyncio.coroutine
     def _maybe_fetch_metadata(self, version=None, refresh=False):
