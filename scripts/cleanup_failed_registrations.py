@@ -47,7 +47,7 @@ def main():
     init_app(set_backends=True, routes=False)
     flags = ['dry_run']
     args = {arg.lstrip('--'): True for arg in sys.argv if arg.lstrip('--') in flags}
-    if not args['dry']:
+    if not args.get('dry', False):
         script_utils.add_file_logger(logger, __file__)
     remove_failed_registrations(*args)
 
