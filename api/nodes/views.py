@@ -13,7 +13,6 @@ from .serializers import NodeSerializer, NodePointersSerializer, NodeFilesSerial
 from api.users.serializers import ContributorSerializer
 from .permissions import ContributorOrPublic, ReadOnlyIfRegistration, ContributorOrPublicForPointers
 
-from api.base.exceptions import Accepted
 from api.language import BEFORE_DELETE_NODE
 from api.base.utils import node_token_creator, absolute_reverse
 from rest_framework.response import Response
@@ -117,14 +116,6 @@ class NodeDetail(generics.RetrieveUpdateDestroyAPIView, NodeMixin):
         # Serializer needs the request in order to make an update to privacy
         return {'request': self.request}
 
-    # overrides RetrieveUpdateDestroyAPIView
-    # def perform_destroy(self, instance):
-    #     user = self.request.user
-    #     node = self.get_node()
-    #     token = node_token_creator(node._id, user._id)
-    #     url = absolute_reverse('nodes:node-delete-confirm', kwargs={'node_id': node._id, 'token': token})
-    #     delete_warning = BEFORE_DELETE_NODE.format(_(node.title))
-    #     raise Accepted({'warning': delete_warning, 'url':url})
     def delete(self, request, node_id):
         user = self.request.user
         node = self.get_node()
