@@ -29,9 +29,10 @@ class File(object):
         return self.name[ext_start:] if ext_start >= 0 else None
 
     @property
-    def contents(self):
-        content = requests.get(self.download_link)
-        return content.text if content else None
+    def content(self):
+        c = requests.get(self.download_link)
+        print("TYPE {}".format(type(c.text)))
+        return c.text if c else None
 
     def __repr__(self):
         s = u'<{} {} from {}>'.format(self.__class__, self.name, self.pid)
@@ -73,6 +74,4 @@ def get_files_for(pid):
 
     # print('FILES:')
     # pprint(files)
-
-    file_contents = []
-    return file_contents
+    return files
