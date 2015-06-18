@@ -33,27 +33,6 @@
 
     </form>
 
-    <script type="text/javascript">
-
-        $('#select-registration-template').on('change', function() {
-            var $tempName = '';
-            var $this = $(this);
-            var val = $this.val();
-            if (val !== '') {
-                document.getElementById("title").innerHTML = val;
-                //var urlparse = window.location.href.split("#/");
-                //console.log(urlparse[0]);
-                //urlparse[0] += '/' + val;
-                //window.location.href = urlparse.join("?")
-                
-            } else {
-                document.getElementById("title").innerHTML = "Select an option above";
-            }
-        });
-
-    </script>
-
-
 <%def name="javascript_bottom()">
     ${parent.javascript_bottom()}
     <script src="${'/static/public/js/register-page.js' | webpack_asset}"></script>

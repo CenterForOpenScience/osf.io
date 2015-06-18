@@ -13,41 +13,15 @@ var ctx = window.contextVars;
 
 (function() {
     var $editor = document.getElementById('editor');
-
-    var proj_info, your_info, interesting, init_proj_info, init_your_info, init_interesting; 
-    var init_array = [];
+ 
+    var schema_data = [];
     var init_schemas = [];
     var prereg = [];
     var open_ended = [];
-    var prereg_data = [];
     var titles = [];
     var editor;
 
-    init_proj_info = [
-        {
-            name: "Project 1",
-            year: 2015,
-            publish_status: "unpublished"
-        }
-    ];
-
-    init_your_info = [
-        {
-            name: "Bob Barker",
-            age: 25,
-            relationship_status: "single"
-        }
-    ];
-
-    init_interesting = [
-        {
-            secrets: "I have no secrets.",
-            upload_file: "",
-            wiki: ""
-        }
-    ];
-
-     prereg_data = [
+     schema_data = [
         {
             item1: "an answer",
             item2: "an answer",
@@ -88,15 +62,9 @@ var ctx = window.contextVars;
         }
     ];
 
-    // initial data
-    init_array.push(init_proj_info);
-    init_array.push(init_your_info);
-    init_array.push(init_interesting);
-
-    init_array = prereg_data;
-
     open_ended = [
         {
+            id: "Open-Ended_Registration",
             title: "Open Ended Registration",
             type: "object",
             properties: {           
@@ -112,6 +80,7 @@ var ctx = window.contextVars;
 
     prereg = [
         {
+            id: "Replication_Recipe_(Brandt_et_al.,_2013):_Pre-Registration",
             title: "The Nature of the Effect",
             type: "object",
             properties: {
@@ -220,113 +189,34 @@ var ctx = window.contextVars;
             }
         }
     ];
-    
 
-    proj_info = {
-        title: "Project Info",
-        type: "object",
-        properties: {
-            name: {
-                type: "string",
-                description: "Name of project",
-                minLength: 3,
-                //default: "Project 1"
-            },
-            year: {
-                type: "integer",
-                //default: 2015,
-                minimum: 1900,
-                maximum: 2016
-            },
-            publish_status: {
-                type: "string",
-                title: "publish status",
-                //default: "unpublished"
-            }
-        }
-    };
+    // all schemas are in one array of arrays
+    init_schemas.push(open_ended);
+    init_schemas.push(prereg);
 
-    your_info = {
-        title: "Your Info",
-        type: "object",
-        properties: {
-            name: {
-                type: "string",
-                description: "First and Last name",
-                minLength: 3,
-                //default: "Bob Barker"
-            },
-            age: {
-                type: "integer",
-                //default: 25,
-                minimum: 5,
-                maximum: 105
-            },
-            relationship_status: {
-                type: "string",
-                title: "relationship status",
-                //default: "single"
-            }
-        }
-    };
+    var which_schema = 0;
 
-    interesting = {
-        title: "Interesting Questions",
-        type: "object",
-        properties: {
-            secrets: {
-                type: "string",
-                description: "Enter your most valued secret",
-                minLength: 3,
-                //default: "I have no secrets."
-            },
-            upload_file: {
-                title: "upload file",
-                type: "string",
-                format: "url",
-                options: {
-                    upload: true
-                },
-                "links": [{
-                    "href": "{{self}}"
-                }]
-            },
-            wiki: {
-                type: "string",
-                format: "markdown"
-            }
-        }
-    };
-
-    // schemas for pagination
-    init_schemas.push(proj_info);
-    init_schemas.push(your_info);
-    init_schemas.push(interesting);
-
-    //init_schemas = prereg;
-
-    init_schemas = open_ended;
-
+    // this is how the import and export should work
     //var str = JSON.stringify(prereg);
     //console.log(str);
     //console.log(JSON.parse(str));
 
-    var loadData = function(schemas, arrays) {
+    var loadData = function(schemas, arrays, which) {
         // incorrect data input
-        if (schemas.length > arrays.length) {
+        if (schemas[which].length > arrays.length) {
             alert("The amount of data is inconsistent. Unable to load.");
             return;
-        } if (schemas.length <= 0) {
+        } if (schemas[which].length <= 0) {
             alert("There is no data to load.");
             return;
         }
 
-        // load nav bar -- need to account for situations when there is only one page
+        // load nav bar -- need to account for situations when there is only one page (take away prev and next)
         var tabs = '<li><a id="prev" href="#" aria-label="Previous"><span aria-hidden="true">&laquo;</span></a></li>';
         var pages;
-        for (pages in init_schemas) {
-            titles.push(init_schemas[pages].title);
-            tabs = tabs + '<li><a id="tab' + pages + '" href="#">' + init_schemas[pages].title + '</a></li>';
+        for (pages in schemas[which]) {
+            titles.push(schemas[which][pages].title);
+            tabs = tabs + '<li><a id="tab' + pages + '" href="#">' + schemas[which][pages].title + '</a></li>';
         }
 
         tabs = tabs + '<li><a id="next" href="#" aria-label="Next"><span aria-hidden="true">&raquo;</span></a></li>';
@@ -336,7 +226,7 @@ var ctx = window.contextVars;
         // load the data for the first schema and display
         if(editor) editor.destroy();
         editor = new JSONEditor($editor,{
-            schema: schemas[0],
+            schema: schemas[which][0],
             theme: 'bootstrap3',
             disable_collapse: true,
             disable_edit_json: true,
@@ -347,19 +237,21 @@ var ctx = window.contextVars;
         window.editor = editor;
     };
 
-    loadData(init_schemas, init_array);
+    // where the array of schemas and array of data is held
+    loadData(init_schemas, schema_data, 0);
 
-    var reload = function(schemas, arrays, num) {
+    // called when switches pages
+    var reload = function(schemas, data, num, which) {
         if(editor) editor.destroy();
         editor = new JSONEditor($editor,{
-            schema: schemas[num],
+            schema: schemas[which][num],
             theme: 'bootstrap3',
             disable_collapse: true,
             disable_edit_json: true,
             disable_properties: true,
             no_additional_properties: true
         });
-        editor.setValue(arrays[num]);
+        editor.setValue(data[num]);
         window.editor = editor;
     };
 
@@ -371,27 +263,49 @@ var ctx = window.contextVars;
         if (clicked === 'prev') {
             index = titles.indexOf(editor.options.schema.title);
             if (index === 0) {
-                reload(init_schemas, init_array, 0);
+                reload(init_schemas, schema_data, 0, which_schema);
             } else {
-                reload(init_schemas, init_array, parseInt(index) - 1); 
+                reload(init_schemas, schema_data, parseInt(index) - 1, which_schema); 
             }
         } else if (clicked === 'next') {
             index = titles.indexOf(editor.options.schema.title);
             var max = init_schemas.length - 1;
             if (index === max) {
-                reload(init_schemas, init_array, max);
+                reload(init_schemas, schema_data, max, which_schema);
             } else {
-                reload(init_schemas, init_array, parseInt(index) + 1); 
+                reload(init_schemas, schema_data, parseInt(index) + 1, which_schema); 
             }
             
         } else {
             var id = clicked.split("tab");
-            reload(init_schemas, init_array, id[1]);
+            reload(init_schemas, schema_data, id[1], which_schema);
         }
 
-        // this doesn't really work...
+        // this doesn't really work...needs to add query string to url without page refresh
         //window.history.pushState('container', editor.options.schema.title, window.location.href + '?' + editor.options.schema.title);
         
+    });
+
+    // get schema that was selected by user
+    $(document.body).on('change', "#select-registration-template", function() {
+        var $tempName = '';
+        var $this = $(this);
+        var val = $this.val();
+        if (val !== '') {
+            document.getElementById("title").innerHTML = val;
+
+            var schema;
+            for (schema in init_schemas) {
+                if (init_schemas[schema][0].id === val) {
+                    which_schema = schema;
+                    loadData(init_schemas, schema_data, which_schema);
+                } 
+            }
+            
+            //reload(init_schemas, schema_data, 0);
+        } else {
+            document.getElementById("title").innerHTML = "Select an option above";
+        }
     });
 
     document.getElementById('save').onclick = function () {
@@ -399,7 +313,7 @@ var ctx = window.contextVars;
         var schema;
         for (schema in init_schemas) {
             if (init_schemas[schema].title === editor.options.schema.title) {
-                init_array[schema] = editor.getValue();
+                schema_data[schema] = editor.getValue();
             }
         } 
     };
@@ -480,8 +394,6 @@ $(document).ready(function() {
     //     });
 
     // $(document).ready(function() {
-
-    // console.log("Test");
 
     // $.ajax({
     //     url: ctx.node.urls.api + 'beforerdraft/',
