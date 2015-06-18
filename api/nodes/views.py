@@ -11,7 +11,6 @@ from framework.auth.core import Auth
 from website.models import Node, Pointer
 from api.base.utils import get_object_or_404, waterbutler_url_for
 from api.base.filters import ODMFilterMixin, ListFilterMixin
-from api.base.serializers import Link
 from .serializers import NodeSerializer, NodePointersSerializer, NodeFilesSerializer, NodeDeleteSerializer
 from api.users.serializers import ContributorSerializer
 from .permissions import ContributorOrPublic, ReadOnlyIfRegistration, ContributorOrPublicForPointers
@@ -122,7 +121,7 @@ class NodeDetail(generics.RetrieveUpdateDestroyAPIView, NodeMixin):
         token = node_token_creator(node._id, user._id)
         url = absolute_reverse('nodes:node-delete-confirm', kwargs={'node_id': node._id, 'token': token})
         delete_warning = BEFORE_DELETE_NODE.format(_(node.title))
-        return Response({'data':{'id': node._id, 'warning_message': delete_warning}, 'links': {'confirm_delete': url }}, status=status.HTTP_202_ACCEPTED)
+        return Response({'data': {'id': node._id, 'warning_message': delete_warning}, 'links': {'confirm_delete': url}}, status=status.HTTP_202_ACCEPTED)
 
 
 class NodeDeleteConfirm(generics.DestroyAPIView, NodeMixin):
