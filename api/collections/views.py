@@ -12,22 +12,22 @@ from website.views import find_dashboard
 
 smart_folders = {
     'amp': Q('category', 'eq', 'project') &
-            Q('is_deleted', 'eq', False) &
-            Q('is_registration', 'eq', False) &
-            Q('is_folder', 'eq', True) &
-            Q('__backrefs.parent.node.nodes', 'eq', None),
+    Q('is_deleted', 'eq', False) &
+    Q('is_registration', 'eq', False) &
+    Q('is_folder', 'eq', True) &
+    Q('__backrefs.parent.node.nodes', 'eq', None),
 
     'amr': Q('category', 'eq', 'project') &
-            Q('is_deleted', 'eq', False) &
-            Q('is_registration', 'eq', True) &
-            Q('is_folder', 'eq', True) &
-            Q('__backrefs.parent.node.nodes', 'eq', None),
+    Q('is_deleted', 'eq', False) &
+    Q('is_registration', 'eq', True) &
+    Q('is_folder', 'eq', True) &
+    Q('__backrefs.parent.node.nodes', 'eq', None),
 }
 
 
 class CollectionMixin(object):
     """Mixin with convenience methods for retrieving the current node based on the
-    current URL. By default, fetches the current node based on the node_id kwarg.
+    current URL. By default, fetches the current node based on the collection_id kwarg.
     """
 
     serializer_class = CollectionSerializer
