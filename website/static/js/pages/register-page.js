@@ -102,7 +102,7 @@ var ctx = window.contextVars;
                 datacompletion: {
                     type: "array",
                     title: "Is data collection for this project underway or complete?",
-                    uniqueItems: "true",
+                    uniqueItems: true,
                     items: {
                         type: "string",
                         enum: ["yes", "no"],
@@ -112,7 +112,7 @@ var ctx = window.contextVars;
                 looked: {
                     type: "array",
                     title: "Have you looked at the data?",
-                    uniqueItems: "true",
+                    uniqueItems: true,
                     items: {
                         type: "string",
                         enum: ["yes", "no"],
@@ -151,7 +151,7 @@ var ctx = window.contextVars;
                 },
                 item32: {
                     type: "array", title: "The replication effect size is",
-                    uniqueItems: "true",
+                    uniqueItems: true,
                     items: {
                         type: "string",
                         enum: ["significantly different from the original effect size", "not significantly different from the original effect size"], 
@@ -160,7 +160,7 @@ var ctx = window.contextVars;
                 },
                 item33: {
                     type: "array", title: "I judge the replication to be a(n)", 
-                    uniqueItems: "true",
+                    uniqueItems: true,
                     items: {
                         type: "string",
                         enum: ["success", "informative failure to replicate", "practical failure to replicate", "inconclusive"],
@@ -225,7 +225,7 @@ var ctx = window.contextVars;
             properties: {
                 item10: {
                     type: "array", title: "Are the original materials for the study available from the author?",
-                    uniqueItems: "true",
+                    uniqueItems: true,
                     items: {
                         type: "string",
                         enum: ["yes", "no"], 
@@ -258,7 +258,7 @@ var ctx = window.contextVars;
             properties: {
                 item17: {
                     type: "array", title: "The similarities/differences in the instructions are",
-                    uniqueItems: "true",
+                    uniqueItems: true,
                     items: {
                         type: "string",
                         enum: ["Exact", "Close", "Different"],
@@ -267,7 +267,7 @@ var ctx = window.contextVars;
                 },
                 item18: {
                     type: "array", title: "The similarities/differences in the measures are", 
-                    uniqueItems: "true",
+                    uniqueItems: true,
                     items: {
                         type: "string",
                         enum: ["Exact", "Close", "Different"],
@@ -276,7 +276,7 @@ var ctx = window.contextVars;
                 },
                 item19: {
                     type: "array", title: "The similarities/differences in the stimuli are", 
-                    uniqueItems: "true",
+                    uniqueItems: true,
                     items: {
                         type: "string",
                         enum: ["Exact", "Close", "Different"],
@@ -285,7 +285,7 @@ var ctx = window.contextVars;
                 },
                 item20: {
                     type: "array", title: "The similarities/differences in the procedure are", 
-                    uniqueItems: "true",
+                    uniqueItems: true,
                     items: {
                         type: "string",
                         enum: ["Exact", "Close", "Different"],
@@ -294,7 +294,7 @@ var ctx = window.contextVars;
                 },
                 item21: {
                     type: "array", title: "The similarities/differences in the location (e.g., lab vs. online; alone vs. in groups) are", 
-                    uniqueItems: "true",
+                    uniqueItems: true,
                     items: {
                         type: "string",
                         enum: ["Exact", "Close", "Different"],
@@ -303,7 +303,7 @@ var ctx = window.contextVars;
                 },
                 item22: {
                     type: "array", title: "The similarities/difference in remuneration are", 
-                    uniqueItems: "true",
+                    uniqueItems: true,
                     items: {
                         type: "string",
                         enum: ["Exact", "Close", "Different"],
@@ -312,7 +312,7 @@ var ctx = window.contextVars;
                 },
                 item23: {
                     type: "array", title: "The similarities/differences between participant populations are", 
-                    uniqueItems: "true",
+                    uniqueItems: true,
                     items: {
                         type: "string",
                         enum: ["Exact", "Close", "Different"],
@@ -357,7 +357,17 @@ var ctx = window.contextVars;
     //console.log(str);
     //console.log(JSON.parse(str));
 
+    // add for single select of check boxes
+    // JSONEditor.defaults.resolvers.unshift(function(schema) {
+    //     if(schema.type === "object" && schema.format === "location") {
+    //         return "location";
+    //     }
+
+    //     // If no valid editor is returned, the next resolver function will be used
+    // });
+
     var loadData = function(schemas, arrays, which) {
+        titles = [];
         // incorrect data input
         if (schemas[which].length > arrays.length) {
             alert("The amount of data is inconsistent. Unable to load.");
@@ -368,14 +378,14 @@ var ctx = window.contextVars;
         }
 
         // load nav bar -- need to account for situations when there is only one page (take away prev and next)
-        var tabs = '<li><a id="prev" href="#" aria-label="Previous"><span aria-hidden="true">&laquo;</span></a></li>';
+        var tabs = '<li><a id="prev" href="#" aria-label="Previous"><span aria-hidden=true>&laquo;</span></a></li>';
         var pages;
         for (pages in schemas[which]) {
             titles.push(schemas[which][pages].title);
             tabs = tabs + '<li><a id="tab' + pages + '" href="#">' + schemas[which][pages].title + '</a></li>';
         }
 
-        tabs = tabs + '<li><a id="next" href="#" aria-label="Next"><span aria-hidden="true">&raquo;</span></a></li>';
+        tabs = tabs + '<li><a id="next" href="#" aria-label="Next"><span aria-hidden=true>&raquo;</span></a></li>';
 
         document.getElementById("myNavBar").innerHTML = tabs;
 
@@ -422,7 +432,7 @@ var ctx = window.contextVars;
             }
         } else if (clicked === 'next') {
             index = titles.indexOf(editor.options.schema.title);
-            var max = init_schemas.length - 1;
+            var max = init_schemas[which_schema].length - 1;
             if (index === max) {
                 reload(init_schemas, schema_data, max, which_schema);
             } else {
