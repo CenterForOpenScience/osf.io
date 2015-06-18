@@ -131,23 +131,6 @@ class AddonDataverseNodeSettings(StorageAddonBase, AddonNodeSettingsBase):
     def folder_name(self):
         return self.dataset
 
-    def archive_errors(self):
-        connection = connect_from_settings_or_401(self.user_settings)
-        dataverse = get_dataverse(connection, self.dataverse_alias)
-        dataset = get_dataset(dataverse, self.dataset_doi)
-        if dataset.get_state != 'RELEASED':
-            return 'The dataverse <strong>{dataverse_name}</strong> is not published and we cannot copy any of the files it contains. If you publish the dataverse we should then be able to copy those files. You can view the files <a href="{url}" target="_blank">here.</a>'.format(
-                dataverse_name=self.dataverse,
-                url=self.owner.web_url_for('collect_file_trees'),
-            )
-        published_files = get_files(dataset, published=True)
-        unpublished_files = get_files(dataset)
-        if len(unpublished_files) > len(published_files):
-            return 'The dataverse <strong>{dataverse_name}</strong> contains some unpublished files and we cannot copy its contents. If you publish those files we should then be able to copy them.  You can view the files <a href="{url}" target="_blank">here.</a>'.format(
-                dataverse_name=self.dataverse,
-                url=self.owner.web_url_for('collect_file_trees'),
-            )
-
     @property
     def dataset_id(self):
         if self._dataset_id is None:
