@@ -38,6 +38,10 @@ class DataverseProvider(provider.BaseProvider):
 
         self._metadata_cache = {}
 
+    def build_url(self, path, *segments, **query):
+        # Need to split up the dataverse subpaths and push them into segments
+        return super().build_url(*(tuple(path.split('/')) + segments), **query)
+
     @asyncio.coroutine
     def validate_path(self, path, revision=None, **kwargs):
         """Ensure path is in configured dataset
