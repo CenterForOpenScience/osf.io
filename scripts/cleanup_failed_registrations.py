@@ -27,7 +27,7 @@ def find_failed_registrations():
         Q('registered_date', 'lt', expired_if_before) &
         Q('__backrefs.active.archivejob', 'exists', True)
     )
-    return [node for node in Node.find(query) if not node.archive_job.sent or node.archive_job.status != ARCHIVER_SUCCESS]
+    return {node.root for node in Node.find(query) if not node.archive_job.sent or node.archive_job.status != ARCHIVER_SUCCESS}
 
 def remove_failed_registrations(dry_run=True):
     init_app(set_backends=True)
@@ -40,7 +40,7 @@ def remove_failed_registrations(dry_run=True):
                 f.registered_from,
                 f,
                 f.creator,
-                f.archived_providers
+                f.archive_job.target_info()
             )
     logging.info('Cleaned {} registrations'.format(len(failed)))
 
