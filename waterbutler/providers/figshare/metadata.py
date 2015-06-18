@@ -31,6 +31,12 @@ class FigshareFileMetadata(BaseFigshareMetadata, metadata.BaseMetadata):
         return '/{0}'.format(self.raw['id'])
 
     @property
+    def materialized_path(self):
+        if self.child:
+            return '/{0}/{1}'.format(self.parent['title'], self.name)
+        return '/{0}'.format(self.name)
+
+    @property
     def size(self):
         return self.raw.get('size')
 
@@ -76,6 +82,10 @@ class FigshareArticleMetadata(BaseFigshareMetadata, metadata.BaseMetadata):
     @property
     def path(self):
         return '/{0}/'.format(self.raw.get('article_id'))
+
+    @property
+    def materialized_path(self):
+        return '/{0}/'.format(self.name)
 
     @property
     def size(self):

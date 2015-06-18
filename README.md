@@ -9,10 +9,7 @@ Docs can be found [here](https://waterbutler.readthedocs.org/en/latest/)
 
 ### osf startup commands
 
-*(requires two instances of osf in order to render files)*
-
 ```bash
-invoke server --port 5001
 invoke server
 ```
 
@@ -57,7 +54,9 @@ waterbutler-test.json, e.g.
     "PORT": 7777,
     "DEBUG": true,
     "HMAC_SECRET": "changeme",
-    "IDENTITY_API_URL": "http://127.0.0.1:5001/api/v1/files/auth/"
+  },
+  "OSF_AUTH_CONFIG": {
+      "API_URL": "http://127.0.0.1:5000/api/v1/files/auth/"
   }
 }
 ```

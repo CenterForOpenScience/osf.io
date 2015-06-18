@@ -89,7 +89,7 @@ def folder_metadata():
                 </Owner>
             </Contents>
             <CommonPrefixes>
-                <Prefix>photos/</Prefix>
+                <Prefix>   photos/</Prefix>
             </CommonPrefixes>
         </ListBucketResult>'''
 
@@ -378,6 +378,7 @@ class TestMetadata:
 
         assert isinstance(result, list)
         assert len(result) == 3
+        assert result[0]['name'] == '   photos'
         assert result[1]['name'] == 'my-image.jpg'
         assert result[2]['extra']['md5'] == '1b2cf535f27731c974343645a3985328'
 

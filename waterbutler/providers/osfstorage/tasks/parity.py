@@ -18,6 +18,9 @@ def _parity_create_files(self, name, credentials, settings):
             path,
             redundancy=osf_settings.PARITY_REDUNDANCY,
         )
+        if not parity_paths:
+            #create_parity_files will return [] for empty files
+            return
         futures = [asyncio.async(_upload_parity(each, credentials, settings)) for each in parity_paths]
         results, _ = loop.run_until_complete(asyncio.wait(futures, return_when=asyncio.FIRST_EXCEPTION))
         # Errors are not raised in `wait`; explicitly check results for errors

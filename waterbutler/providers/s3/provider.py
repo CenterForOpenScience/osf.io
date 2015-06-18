@@ -7,6 +7,7 @@ import xmltodict
 
 from boto.s3.connection import S3Connection
 from boto.s3.connection import OrdinaryCallingFormat
+from boto.s3.connection import SubdomainCallingFormat
 
 from waterbutler.core import streams
 from waterbutler.core import provider
@@ -38,8 +39,17 @@ class S3Provider(provider.BaseProvider):
         :param dict settings: Dict containing `bucket`
         """
         super().__init__(auth, credentials, settings)
+
+        # If a bucket has capital letters in the name
+        # ordinary calling format MUST be used
+        if settings['bucket'] != settings['bucket'].lower():
+            calling_format = OrdinaryCallingFormat()
+        else:
+            # if a bucket is out of the us Subdomain calling format MUST be used
+            calling_format = SubdomainCallingFormat()
+
         self.connection = S3Connection(credentials['access_key'],
-                credentials['secret_key'], calling_format=OrdinaryCallingFormat())
+                credentials['secret_key'], calling_format=calling_format)
         self.bucket = self.connection.get_bucket(settings['bucket'], validate=False)
 
     @asyncio.coroutine
@@ -242,12 +252,15 @@ class S3Provider(provider.BaseProvider):
 
         contents = yield from resp.read_and_close()
 
-        parsed = xmltodict.parse(contents)['ListBucketResult']
+        parsed = xmltodict.parse(contents, strip_whitespace=False)['ListBucketResult']
 
         contents = parsed.get('Contents', [])
         prefixes = parsed.get('CommonPrefixes', [])
 
-        if not contents and not prefixes:
+        if not contents and not prefixes and not path.is_root:
+            # If contents and prefixes are empty then this "folder"
+            # must exist as a key with a / at the end of the name
+            # if the path is root there is no need to test if it exists
             yield from self.make_request(
                 'HEAD',
                 self.bucket.new_key(path.path).generate_url(settings.TEMP_URL_SECS, 'HEAD'),

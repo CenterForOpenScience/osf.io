@@ -23,5 +23,10 @@ env:
 script:
   - invoke test
 
+before_cache:
+  # exclude python requirements from github repo's
+  - rm -f $HOME/wheelhouse/boto-*.whl
+  - rm -f $HOME/wheelhouse/raven-*.whl
+
 notifications:
   flowdock: 9f8a6baf3feafdb62e515718698d06d0
