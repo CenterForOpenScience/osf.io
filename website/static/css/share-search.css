@@ -131,3 +131,7 @@ stroke: #BAB5B5;
     column-count: 2;
     column-gap: 2.5em;
 }
+
+.info_bullets li {
+  font-size: 150%;
+}
