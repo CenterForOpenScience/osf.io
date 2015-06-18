@@ -2,14 +2,17 @@
 
 var $osf = require('js/osfHelpers');
 var $ = require('jquery');
+var ko = require('knockout');
 
 // model for components, due to simplicity did not create a new file
 var ComponentControl = {};
 
 // binds to component scope in render_nodes.mako
-$(document).ready(function() {
-    $('.componentScope').each(function(i) {
-       $(this).attr('id', 'componentScope' + i);
-       $osf.applyBindings(ComponentControl, this);
-    });
+$('.render-nodes-list').each(function(i) {
+    var isBound = !!ko.dataFor(this);
+    $(this).attr('id', 'renderNodesList' + i);
+    if(!isBound) {
+        $osf.applyBindings(ComponentControl, this);
+    }
 });
+

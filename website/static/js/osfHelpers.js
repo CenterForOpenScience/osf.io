@@ -461,15 +461,11 @@ var applyBindings = function(viewModel, selector) {
         $elem.show();
     }
     // Also show any child elements that have the scripted class
-    $(cssSelector + ' .scripted').each(function (elm) {
+    $(cssSelector + ' .scripted').each(function(elm) {
         $(this).show();
     });
 
-    //Check if bindings have been applied to the element already
-    var isBound = !!ko.dataFor(elem);
-    if(!isBound) {
-        ko.applyBindings(viewModel, $elem[0]);
-    }
+    ko.applyBindings(viewModel, $elem[0]);
 };
 
 
