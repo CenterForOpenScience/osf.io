@@ -31,7 +31,6 @@ var ViewModel = function(url, selector) {
     self.loadedRepoList = ko.observable(false);
     self.currentRepo = ko.observable('');
     self.selectedRepo = ko.observable('');
-
     self.accessToken = ko.observable('');
 
     self.loading = ko.observable(false);

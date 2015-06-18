@@ -458,3 +458,5 @@ class GitHubNodeSettings(AddonOAuthNodeSettingsBase):
                     self.save()
                 return True
         return False
+
+    selected_folder_name = repo

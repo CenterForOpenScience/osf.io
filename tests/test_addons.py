@@ -563,24 +563,6 @@ class TestAddonFileViews(OsfTestCase):
 
         assert_equals(resp.status_code, 400)
 
-    def test_unconfigured_addons_raise(self):
-        path = 'cloudfiles'
-        self.node_addon.owner = "fakeowner"
-        self.node_addon.save()
-
-        resp = self.app.get(
-            self.project.api_url_for(
-                'addon_render_file',
-                path=path,
-                provider='github',
-                action='download'
-            ),
-            auth=self.user.auth,
-            expect_errors=True
-        )
-
-        assert_equals(resp.status_code, 400)
-
 
 class TestLegacyViews(OsfTestCase):
 
