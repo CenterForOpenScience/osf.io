@@ -228,7 +228,7 @@ ViewModel.prototype.createRepo = function(repoName) {
         self.loadedRepoList(true);
         self.selectedRepo((self.ownerName() + " / " + repoName));
         self.showSelect(true);
-        var newName = repoName.replace(/[^a-z0-9A-Z\d.-\d._]+/g, '-');
+        var newName = repoName.replace(/[^a-zA-Z0-9\-\_]+/g, '-');
         var msg = 'Successfully created repo "' + newName + '". You can now select it from the drop down list.';
         var msgType = 'text-success';
         self.changeMessage(msg, msgType);
@@ -256,34 +256,34 @@ ViewModel.prototype.createRepo = function(repoName) {
 ViewModel.prototype.openCreateRepo = function() {
     var self = this;
 
-    var isConvertRepo = /^(?!.*(\.\.|-\.))[^.][a-zA-Z0-9\d.-\d._]{2,61}[^.]$/;
-
     bootbox.prompt('Name your new repo', function(repoName) {
         if (!repoName) {
             return;
-        } else if (isConvertRepo.exec(repoName) == null) {
-            var newName = repoName.replace(/[^a-zA-Z0-9\d.-\d._]+/g, '-');
-            bootbox.dialog({
-                title: 'Repo name will be converted',
-                message: 'That name will be converted to <i>' + newName + '</i>. You can try another ' +
-                'name, or accept <i>' + newName + '</i> as your repo name.',
-                buttons:  {
-                    accept: {
-                        label: "Try Different Name",
-                        callback: function() {
-                            self.openCreateRepo();
-                        }
-                    },
-                    newName: {
-                        label: "Keep Name",
-                        callback: function() {
-                            self.createRepo(repoName);
+        } else {
+            var newName = repoName.replace(/[^a-zA-Z0-9\-\_]+/g, '-');
+            if (newName != repoName) {
+                bootbox.dialog({
+                    title: 'Repo name will be converted',
+                    message: 'That name will be converted to <i>' + newName + '</i>. You can try another ' +
+                    'name, or accept <i>' + newName + '</i> as your repo name.',
+                    buttons:  {
+                        accept: {
+                            label: "Try Different Name",
+                            callback: function() {
+                                self.openCreateRepo();
+                            }
+                        },
+                        newName: {
+                            label: "Keep Name",
+                            callback: function() {
+                                self.createRepo(repoName);
+                            }
                         }
                     }
-                }
-            });
-        } else {
-            self.createRepo(repoName);
+                });
+            } else {
+                self.createRepo(repoName);
+            }
         }
     });
 };
