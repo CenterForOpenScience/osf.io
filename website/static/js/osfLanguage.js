@@ -9,7 +9,7 @@ module.exports = {
         invalidEmbargoTitle: 'Invalid embargo end date',
         invalidEmbargoMessage: 'Please choose a date more than two days, but less than four years, from today.',
         registerConfirm: 'Are you sure you want to register this project?',
-        registerSkipAddons: 'If you choose to continue continue with the registration at this time we will exclude the contents of any addons that are not copyable. These files will not appear in the final registration.'
+        registerSkipAddons: 'If you choose to continue with the registration at this time we will exclude the contents of any addons that are not copyable. These files will not appear in the final registration.'
     },
     Addons: {
         dataverse: {
