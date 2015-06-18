@@ -2,14 +2,17 @@
 
 import datetime
 
+import mock
 from nose.tools import *  # noqa
 from tests.base import fake, OsfTestCase
 from tests.factories import (
     AuthUserFactory, NodeFactory, ProjectFactory,
     RegistrationFactory, UserFactory, UnconfirmedUserFactory,
+    UnregUserFactory
 )
 
 from modularodm.exceptions import ValidationValueError
+from framework.auth import Auth
 from framework.exceptions import PermissionsError
 from website.exceptions import (
     InvalidRetractionApprovalToken, InvalidRetractionDisapprovalToken,
@@ -675,6 +678,24 @@ class RegistrationRetractionViewsTestCase(OsfTestCase):
         assert_equal(res.status_code, 400)
         self.registration.reload()
         assert_is_none(self.registration.retraction)
+
+    # https://trello.com/c/bYyt6nYT/89-clicking-retract-registration-with-unregistered-users-as-project-admins-gives-500-error
+    @mock.patch('website.project.views.register.mails.send_mail')
+    def test_POST_retraction_does_not_send_email_to_unregistered_admins(self, mock_send_mail):
+        unreg = UnregUserFactory()
+        self.registration.add_contributor(
+            unreg,
+            auth=Auth(self.user),
+            permissions=('read', 'write', 'admin')
+        )
+        self.registration.save()
+        self.app.post_json(
+            self.retraction_post_url,
+            {'justification': ''},
+            auth=self.auth,
+        )
+        # Only the creator gets an email; the unreg user does not get emailed
+        assert_equal(mock_send_mail.call_count, 1)
 
     def test_POST_pending_embargo_returns_HTTPBad_request(self):
         self.registration.embargo_registration(
