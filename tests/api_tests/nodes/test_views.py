@@ -648,7 +648,7 @@ class TestNodeDelete(ApiTestCase):
         res = self.app.delete_json(self.public_url, auth=self.basic_auth, expect_errors=True)
         assert_equal(res.status_code, 202)
         assert_equal(self.public_project.is_deleted, False)
-        returned_url = res.json['links']['confirm_delete']
+        returned_url = res.json['data']['links']['confirm_delete']
 
         res = self.app.delete(returned_url, auth=self.basic_auth)
         assert_equal(res.status_code, 204)
@@ -665,7 +665,7 @@ class TestNodeDelete(ApiTestCase):
         res = self.app.delete(self.private_url, auth=self.basic_auth, expect_errors=True)
         assert_equal(res.status_code, 202)
         assert_equal(self.project.is_deleted, False)
-        returned_url = res.json['links']['confirm_delete']
+        returned_url = res.json['data']['links']['confirm_delete']
 
         res = self.app.delete(returned_url, auth=self.basic_auth)
         assert_equal(res.status_code, 204)
