@@ -8,8 +8,6 @@ from framework.tasks import app as celery_app
 from framework.exceptions import HTTPError
 
 from website.archiver import (
-    ARCHIVER_PENDING,
-    ARCHIVER_CHECKING,
     ARCHIVER_SUCCESS,
     ARCHIVER_FAILURE,
     ARCHIVER_SIZE_EXCEEDED,
@@ -90,7 +88,6 @@ def stat_addon(addon_short_name, job_pk):
     create_app_context()
     job = ArchiveJob.load(job_pk)
     src, dst, user = job.info()
-    dst.archive_job.update_target(addon_short_name, ARCHIVER_CHECKING)
     src_addon = src.get_addon(addon_short_name)
     try:
         file_tree = src_addon._get_file_tree(user=user)
@@ -146,11 +143,6 @@ def archive_addon(addon_short_name, job_pk, stat_result):
     job = ArchiveJob.load(job_pk)
     src, dst, user = job.info()
     logger.info("Archiving addon: {0} on node: {1}".format(addon_short_name, src._id))
-    dst.archive_job.update_target(
-        addon_short_name,
-        ARCHIVER_PENDING,
-        stat_result=stat_result._to_dict(),
-    )
     src_provider = src.get_addon(addon_short_name)
     folder_name = src_provider.archive_folder_name
     provider = src_provider.config.short_name
