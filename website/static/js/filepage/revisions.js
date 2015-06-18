@@ -140,8 +140,6 @@ var FileRevisionsTable = {
         self.bell = function() {
             if(self.subscription() === 'email_transactional') {
                 return m('span', [m('i.fa.fa-bell-o'), m('i.fa.fa-plus')]);
-            } else if (self.subscription() === 'email_quarter') {
-                return m('span', [m('i.fa.fa-bell-o'), m('span', '15')]);
             } else if (self.subscription() === 'email_hour') {
                 return m('span', [m('i.fa.fa-bell-o'), m('i.fa.fa-clock-o')]);
             } else if(self.subscription() === 'email_digest') {

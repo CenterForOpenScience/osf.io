@@ -17,8 +17,6 @@ from website.notifications.model import NotificationDigest
 from website.notifications.utils import NotificationsDict
 from website import settings
 
-from pprint import pprint
-
 
 logger = logging.getLogger(__name__)
 # Silence loud internal mail logger
@@ -45,10 +43,6 @@ def send_digest(grouped_digests):
     :param grouped_digests: digest notification messages from the past 24 hours grouped by user
     :return:
     """
-    current_time = datetime.datetime.utcnow()
-    ten_before = current_time - datetime.timedelta(seconds=600)
-    ten_after = current_time + datetime.timedelta(seconds=600)
-
     for group in grouped_digests:
         user = User.load(group['user_id'])
         if not user:
@@ -57,7 +51,6 @@ def send_digest(grouped_digests):
             return
 
         info = group['info']
-        print info
         digest_notification_ids = [message['_id'] for message in info]
         sorted_messages = group_messages_by_node(info)
 
@@ -106,11 +99,16 @@ def group_digest_notifications_by_user():
                 'user_id': ...
               }]
     """
+    ten_after = datetime.datetime.utcnow() + datetime.timedelta(seconds=600)  # Catching 10 min errors
+
     return db['notificationdigest'].group(
         key={'user_id': 1},
         condition={
             'timestamp': {
                 '$lt': datetime.datetime.utcnow()
+            },
+            'time_to_send': {
+                '$lt': ten_after  # clears any digests with a time to send before 10 min after current
             }
         },
         initial={'info': []},

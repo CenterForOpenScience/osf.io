@@ -11,7 +11,6 @@ USER_SUBSCRIPTIONS_AVAILABLE = {
 # Note: the python value None mean inherit from parent
 NOTIFICATION_TYPES = {
     'email_transactional': 'Email when a change occurs',
-    'email_quarter': 'Email at most 15 minutes after change occurs',
     'email_hour': 'Email on the hour about changes that have occurred',
     'email_digest': 'Daily email digest of all changes to this project',
     'none': 'None'
