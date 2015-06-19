@@ -160,9 +160,15 @@ def archive_addon(addon_short_name, job_pk, stat_result):
     cookie = user.get_or_create_cookie()
     copy_url = settings.WATERBUTLER_URL + '/ops/copy'
     if addon_short_name == 'dataverse':
-        data = make_waterbutler_payload(src, dst, addon_short_name, '{0} (published)'.format(folder_name), cookie, revision='latetst-published')
+        # The dataverse API will not differentiate between published and draft files
+        # unless expcicitly asked. We need to create seperate folders for published and
+        # draft in the resulting archive.
+        #
+        # Additionally trying to run the archive without this distinction creates a race
+        # condition that non-deterministically caused archive jobs to fail.
+        data = make_waterbutler_payload(src, dst, addon_short_name, '{0} (published)'.format(folder_name), cookie, revision='latest-published')
         make_copy_request.delay(job_pk=job_pk, url=copy_url, data=data)
-        data = make_waterbutler_payload(src, dst, addon_short_name, '{0} (draft)'.format(folder_name), cookie, revision='latetst')
+        data = make_waterbutler_payload(src, dst, addon_short_name, '{0} (draft)'.format(folder_name), cookie, revision='latest')
         make_copy_request.delay(job_pk=job_pk, url=copy_url, data=data)
     else:
         data = make_waterbutler_payload(src, dst, addon_short_name, folder_name, cookie)
