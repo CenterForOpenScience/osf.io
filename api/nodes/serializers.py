@@ -1,9 +1,24 @@
 from rest_framework import serializers as ser
+import datetime
 
 from api.base.serializers import JSONAPISerializer, LinksField, Link, WaterbutlerLink
 from website.models import Node
 from framework.auth.core import Auth
 from rest_framework import exceptions
+
+from rest_framework import serializers as ser
+from api.base.serializers import JSONAPISerializer, LinksField, Link, WaterbutlerLink
+from website.models import Node
+from framework.auth.core import Auth
+from website.project.model import MetaSchema
+from modularodm import Q
+from framework.forms.utils import process_payload
+from rest_framework import serializers
+import json
+from api.base.utils import absolute_reverse
+
+from django.utils.translation import ugettext_lazy as _
+
 
 
 class NodeSerializer(JSONAPISerializer):
@@ -126,24 +141,27 @@ class NodeSerializer(JSONAPISerializer):
         instance.save()
         return instance
 
+
 class RegistrationSerializer(NodeSerializer):
     title = ser.CharField(read_only=True)
     description = ser.CharField(read_only=True)
     category=ser.CharField(read_only=True)
 
-
     def create(self, validated_data):
         request = self.context['request']
-        schema = MetaSchema.find(
-            Q('name', 'eq', self.template)).sort('-schema_version')[0]
         user = request.user
+        when = datetime.datetime.utcnow()
         node = self.context['view'].get_node()
-        registration = node.register_node(
-            schema=schema,
-            auth=Auth(user),
-            template=self.template,
-            data=json.dumps(process_payload(formatted_data))
-        )
+        registration = node.clone()
+        registration.is_registration = True
+        registration.registered_date = when
+        registration.registered_user = user
+        registration.registered_from = node
+        registration.contributors = node.contributors
+        registration.forked_from = node.forked_from
+        registration.creator = user
+        registration.logs = node.logs
+        registration.tags = node.tags
         registration.title = node.title + '_DRAFT_REGISTRATION'
         registration.save()
         return registration
