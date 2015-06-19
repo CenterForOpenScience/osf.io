@@ -8,6 +8,7 @@ to projects files. To be replaced with the standard
 way files are accessed.
 """
 
+PROJECT_FILES_URL = 'v2/nodes/{}/files/?path=%2F&provider=osfstorage'
 
 class File(object):
     def __init__(self, name, download_link, pid):
@@ -32,30 +33,26 @@ class File(object):
         c = requests.get(self.download_link)
         return c.text if c else None
 
+    @property
+    def dict(self):
+        return {
+            'filename': self.name,
+            'pid': self.pid,
+            'content': self.content,
+        }
+
     def __repr__(self):
         s = u'<{} {} from {}>'.format(self.__class__, self.name, self.pid)
         s = s.encode('ascii', 'replace')
         return s
 
 
-def build_api_call(pid):
-    """ Get a url to a project's files.
-    :param pid: project id
-    :return: url to project's files
-
-    Utilizes api v2.
-    """
-    api_url = API_DOMAIN + 'v2/nodes/{}/files/?path=%2F&provider=osfstorage'.format(pid)
-    return api_url
-
-
-def get_files_for(pid):
+def collect_files(pid):
     """ Return the contents of a projects files.
     :param pid: project id
     :return: list of file objects.
     """
-
-    url = build_api_call(pid)
+    url = API_DOMAIN + PROJECT_FILES_URL.format(pid)
     response = requests.get(url).json()
     file_dicts = response.get('data', [])
     files = []

@@ -10,7 +10,7 @@ import unicodedata
 import six
 
 # TODO: Remove when using standard calls to API
-import get_file
+import index_file
 
 from elasticsearch import (
     Elasticsearch,
@@ -210,20 +210,6 @@ def load_parent(parent_id):
     return parent_info
 
 
-def get_file_contents(node):
-    """ Return the contents of a nodes files.
-    :param node:
-    :return: A string of all the nodes files concatanated.
-    """
-    contents = ''
-    files = get_file.get_files_for(node._id)
-    for f in files:
-        ext = f.extension
-        if f.extension in ['.txt', '.rtf', '.md']:
-            contents += f.content
-    return contents
-
-
 @requires_search
 def update_node(node, index=None):
     index = index or INDEX
@@ -273,7 +259,7 @@ def update_node(node, index=None):
             'is_registration': node.is_registration,
             'registered_date': node.registered_date,
             'wikis': {},
-            'files': get_file_contents(node),
+            'files': index_file.get_file_contents(node),
             'parent_id': parent_id,
             'date_created': node.date_created,
             'boost': int(not node.is_registration) + 1,  # This is for making registered projects less relevant

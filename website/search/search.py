@@ -6,7 +6,7 @@ from website.search import share_search
 logger = logging.getLogger(__name__)
 
 # TODO: Remove
-import get_file
+import index_file
 
 if settings.SEARCH_ENGINE == 'elastic':
     import elastic_search as search_engine
