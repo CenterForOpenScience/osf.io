@@ -437,8 +437,19 @@ def karma(single=False, sauce=False, browsers=None):
 
 
 @task
-def wheelhouse(addons=False, release=False, dev=False):
+def addon_wheelhouse():
     from website import settings
+    for directory in os.listdir(settings.ADDON_PATH):
+        path = os.path.join(settings.ADDON_PATH, directory)
+        if os.path.isdir(path):
+            req_file = os.path.join(path, 'requirements.txt')
+            if os.path.exists(req_file):
+                cmd = 'pip wheel --find-links={} -r {} --wheel-dir={}'.format(WHEELHOUSE_PATH, req_file, WHEELHOUSE_PATH)
+                run(cmd, pty=True)
+
+
+@task
+def wheelhouse(addons=False, release=False, dev=False):
     if release:
         req_file = os.path.join(HERE, 'requirements', 'release.txt')
     elif dev:
@@ -447,16 +458,8 @@ def wheelhouse(addons=False, release=False, dev=False):
         req_file = os.path.join(HERE, 'requirements.txt')
     cmd = 'pip wheel --find-links={} -r {} --wheel-dir={}'.format(WHEELHOUSE_PATH, req_file, WHEELHOUSE_PATH)
     run(cmd, pty=True)
-
-    if not addons:
-        return
-    for directory in os.listdir(settings.ADDON_PATH):
-        path = os.path.join(settings.ADDON_PATH, directory)
-        if os.path.isdir(path):
-            req_file = os.path.join(path, 'requirements.txt')
-            if os.path.exists(req_file):
-                cmd = 'pip wheel --find-links={} -r {} --wheel-dir={}'.format(WHEELHOUSE_PATH, req_file, WHEELHOUSE_PATH)
-                run(cmd, pty=True)
+    if addons:
+        addon_wheelhouse()
 
 
 @task

@@ -70,9 +70,11 @@ install:
     - travis_retry pip install --upgrade pip
     - travis_retry pip install invoke==0.9.0
     - travis_retry pip install flake8==2.4.0 --force-reinstall --upgrade
-    - travis_retry invoke wheelhouse --dev --addons
+    - travis_retry invoke wheelhouse --dev
+    - travis_retry invoke requirements --dev
+    - travis_retry invoke addon_wheelhouse
     - travis_retry invoke travis_addon_settings
-    - travis_retry invoke requirements --dev --addons
+    - travis_retry invoke addon_requirements
     # Hack to fix package conflict between uritemplate and uritemplate.py (dependency of github3.py)
     - pip uninstall uritemplate.py --yes
     - pip install uritemplate.py==0.3.0
