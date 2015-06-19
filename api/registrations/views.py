@@ -4,8 +4,17 @@ from modularodm import Q
 from website.models import Node
 from api.base.filters import ODMFilterMixin
 from api.registrations.serializers import RegistrationSerializer
-from api.nodes.views import NodeDetail, NodePointersList, NodeFilesList, NodeChildrenList, NodeContributorsList
+from api.nodes.views import NodeMixin, NodePointersList, NodeFilesList, NodeChildrenList, NodeContributorsList
 
+from api.nodes.permissions import ContributorOrPublic, ReadOnlyIfRegistration
+
+class RegistrationMixin(NodeMixin):
+    """Mixin with convenience methods for retrieving the current node based on the
+    current URL. By default, fetches the current node based on the pk kwarg.
+    """
+
+    serializer_class = RegistrationSerializer
+    node_lookup_url_kwarg = 'registration_id'
 
 class RegistrationList(generics.ListAPIView, ODMFilterMixin):
     """All node registrations"""
@@ -36,31 +45,42 @@ class RegistrationList(generics.ListAPIView, ODMFilterMixin):
         return Node.find(query)
 
 
-class RegistrationDetail(NodeDetail):
+class RegistrationDetail(generics.RetrieveAPIView, RegistrationMixin):
     """
     Registration details
     """
+    permission_classes = (
+        ContributorOrPublic,
+        ReadOnlyIfRegistration,
+    )
+    serializer_class = RegistrationSerializer
+
+    # overrides RetrieveAPIView
+    def get_object(self):
+        return self.get_node()
 
 
-class RegistrationPointersList(NodePointersList):
+class RegistrationContributorsList(NodeContributorsList, RegistrationMixin):
+    """
+    Contributors(users) for a registration
+    """
+
+class RegistrationChildrenList(NodeChildrenList, RegistrationMixin):
+    """
+    Children of the current registration
+    """
+
+class RegistrationPointersList(NodePointersList, RegistrationMixin):
      """
     Registration pointers
     """
 
 
-class RegistrationFilesList(NodeFilesList):
+class RegistrationFilesList(NodeFilesList, RegistrationMixin):
      """
     Files attached to a registration
     """
 
 
-class RegistrationChildrenList(NodeChildrenList):
-    """
-    Children of the current registration
-    """
 
 
-class RegistrationContributorsList(NodeContributorsList):
-    """
-    Contributors(users) for a registration
-    """
