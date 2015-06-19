@@ -4,6 +4,7 @@ from modularodm import Q
 from website.models import Node
 from api.base.filters import ODMFilterMixin
 from api.registrations.serializers import RegistrationSerializer
+from api.nodes.serializers import NodePointersSerializer
 from api.nodes.views import NodeMixin, NodePointersList, NodeFilesList, NodeChildrenList, NodeContributorsList
 
 from api.nodes.permissions import ContributorOrPublic, ReadOnlyIfRegistration
@@ -70,10 +71,22 @@ class RegistrationChildrenList(NodeChildrenList, RegistrationMixin):
     Children of the current registration
     """
 
-class RegistrationPointersList(NodePointersList, RegistrationMixin):
-     """
+
+class RegistrationPointersList(generics.ListAPIView, RegistrationMixin):
+    """
     Registration pointers
     """
+
+    permission_classes = (
+        drf_permissions.IsAuthenticatedOrReadOnly,
+        ContributorOrPublic,
+    )
+
+    serializer_class = NodePointersSerializer
+
+    def get_queryset(self):
+        pointers = self.get_node().nodes_pointer
+        return pointers
 
 
 class RegistrationFilesList(NodeFilesList, RegistrationMixin):
