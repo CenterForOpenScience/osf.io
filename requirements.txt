@@ -11,6 +11,7 @@ Markdown==2.4.1
 Pygments==1.6
 WTForms==1.0.4
 beautifulsoup4==4.3.2
+kombu==3.0.26
 celery==3.1.17
 httplib2==0.9
 hurry.filesize==0.9
