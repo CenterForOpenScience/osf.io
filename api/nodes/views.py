@@ -1,7 +1,10 @@
 import requests
 
-from rest_framework import generics, permissions as drf_permissions
+from rest_framework import generics,permissions as drf_permissions
 from rest_framework.exceptions import PermissionDenied, ValidationError
+from rest_framework.request import Request
+from rest_framework.response import Response
+from rest_framework import status
 from modularodm import Q
 
 from framework.auth.core import Auth
@@ -118,6 +121,7 @@ class NodeContributorsList(generics.ListCreateAPIView, ListFilterMixin, NodeMixi
     )
 
     serializer_class = ContributorSerializer
+    serializer_class.save()
 
     def get_default_queryset(self):
         node = self.get_node()
@@ -132,14 +136,9 @@ class NodeContributorsList(generics.ListCreateAPIView, ListFilterMixin, NodeMixi
     def get_queryset(self):
         return self.get_queryset_from_request()
 
-    # adds contributor to node
     def perform_create(self, serializer):
-        id = serializer.data['data']['id']
-        user = get_object_or_404(User, id)
-        node = self.get_node()
-        if user not in node.contributors:
-            node.add_contributor(user)
-            node.save()
+        serializer.save()
+
 
 
 class NodeRegistrationsList(generics.ListAPIView, NodeMixin):

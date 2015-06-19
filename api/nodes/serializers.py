@@ -1,9 +1,13 @@
-from rest_framework import serializers as ser
-
+from rest_framework.exceptions import ValidationError, NotFound
+from rest_framework.request import Request
+from rest_framework.response import Response
+from rest_framework import status, serializers as ser
+from api.base.utils import get_object_or_404
 from api.base.serializers import JSONAPISerializer, LinksField, Link, WaterbutlerLink
-from website.models import Node
+from api.users.serializers import UserSerializer
+from website.models import Node, User
 from framework.auth.core import Auth
-from rest_framework import exceptions
+
 
 
 class NodeSerializer(JSONAPISerializer):
@@ -152,12 +156,12 @@ class NodePointersSerializer(JSONAPISerializer):
         node = self.context['view'].get_node()
         pointer_node = Node.load(validated_data['node']['_id'])
         if not pointer_node:
-            raise exceptions.NotFound('Node not found.')
+            raise NotFound('Node not found.')
         try:
             pointer = node.add_pointer(pointer_node, auth, save=True)
             return pointer
         except ValueError:
-            raise exceptions.ValidationError('Pointer to node {} already in list'.format(pointer_node._id))
+            raise ValidationError('Pointer to node {} already in list'.format(pointer_node._id))
 
     def update(self, instance, validated_data):
         pass
@@ -194,16 +198,13 @@ class NodeFilesSerializer(JSONAPISerializer):
         pass
 
 
-class ContributorSerializer(JSONAPISerializer):
+class ContributorSerializer(UserSerializer):
+    local_filterable = frozenset(['bibliographic'])
+    filterable_fields = frozenset.union(UserSerializer.filterable_fields, local_filterable)
+    bibliographic = ser.BooleanField(required=False, help_text='Whether the user will be included in citations for this node or not')
 
-    filterable_fields = frozenset([
-        'fullname',
-        'given_name',
-        'middle_name',
-        'family_name',
-        'id',
-        'bibliographic'
-    ])
+
+
     id = ser.CharField(source='_id')
     fullname = ser.CharField(read_only=True, help_text='Display name used in the general user interface')
     given_name = ser.CharField(read_only=True, help_text='For bibliographic citations')
@@ -218,8 +219,6 @@ class ContributorSerializer(JSONAPISerializer):
                                                                          'places the user has attended school')
     social_accounts = ser.DictField(read_only=True, source='social', help_text='A dictionary of various social media account '
                                                                'identifiers including an array of user-defined URLs')
-    bibliographic = ser.BooleanField(help_text='Whether the user will be included in citations for this node or not')
-
     links = LinksField({
         'html': 'absolute_url',
         'nodes': {
@@ -227,14 +226,42 @@ class ContributorSerializer(JSONAPISerializer):
         }
     })
 
-    class Meta:
-        type_ = 'users'
-
     def absolute_url(self, obj):
-        if type(obj) == dict:
-            return '/v2/nodes/'+obj['_id']
         return obj.absolute_url
 
-    def update(self, instance, validated_data):
-        # TODO
-        pass
+    def create(self, request, *args, **kwargs):
+        user_id = request['_id']
+        user = get_object_or_404(User, user_id)
+        node = self.context['view'].get_node()
+        if 'bibliographic'in request:
+            bibliographic = True
+        else:
+            bibliographic = False
+        self.create_contributor(user, node, bibliographic)
+        node.save()
+        request = Request(data=self.validated_data)
+        return Response(data=request, status=status.HTTP_201_CREATED)
+
+
+    def create_contributor(self, user, node, bibliographic):
+        if user in node.contributors:
+            if bibliographic and node.has_permission(user=user, permission='admin'):
+                raise ValidationError(detail='{} is already a bibliographic contributor'.format(user.username))
+            elif not bibliographic:
+                raise ValidationError(detail='{} is already a contributor'.format(user.username))
+        if bibliographic:
+            node.add_contributor(contributor=user, permissions=['read','write','admin'])
+        else:
+            node.add_contributor(contributor=user, permissions=['read','write'])
+
+
+    # adds, removes or edits contributors in node
+    # def perform_create(self, validated_data):
+    #     user_id = validated_data['_id']
+    #     user = get_object_or_404(User, user_id)
+    #     raise ValidationError(user)
+    #     node = context.get_node()
+    #     bibliographic = validated_data['bibliographic'] == "True"
+    #     self.create_contributor(user, node, bibliographic)
+    #     node.save()
+    #     return User.api_keys

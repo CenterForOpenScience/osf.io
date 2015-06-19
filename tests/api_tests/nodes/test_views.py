@@ -626,6 +626,11 @@ class TestNodeContributorList(ApiTestCase):
         self.public_project = ProjectFactory(is_public=True, creator=self.user)
         self.public_url = '/{}nodes/{}/contributors/'.format(API_BASE, self.public_project._id)
 
+    def test_add_new_contributor(self):
+        res = self.app.get(self.public_url)
+        res.post()
+
+
     def test_return_public_contributor_list_logged_out(self):
         self.public_project.add_contributor(self.user_two)
         res = self.app.get(self.public_url)

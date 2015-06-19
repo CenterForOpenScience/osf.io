@@ -42,11 +42,3 @@ class UserSerializer(JSONAPISerializer):
     def update(self, instance, validated_data):
         # TODO
         pass
-
-
-class ContributorSerializer(UserSerializer):
-
-    local_filterable = frozenset(['bibliographic'])
-    filterable_fields = frozenset.union(UserSerializer.filterable_fields, local_filterable)
-
-    bibliographic = ser.BooleanField(help_text='Whether the user will be included in citations for this node or not')

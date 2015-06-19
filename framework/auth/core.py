@@ -716,7 +716,6 @@ class User(GuidStoredObject, AddonModelMixin):
             if value.get('email') == email:
                 del self.email_verifications[token]
                 return True
-
         return False
 
     def remove_email(self, email):

@@ -22,3 +22,4 @@ def root(request, format=None):
             'users': absolute_reverse('users:user-list'),
         }
     })
+
