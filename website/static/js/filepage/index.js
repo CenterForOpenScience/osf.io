@@ -199,7 +199,7 @@ var FileViewPage = {
         $('.file-view-panels').removeClass().addClass('file-view-panels').addClass(fileViewPanelsLayout);
 
         m.render(document.getElementById('toggleBar'), m('.btn-toolbar[style=margin-top:20px]', [
-            ctrl.sourceUrl !== 'None' ? m('.btn-group', {}, [
+            ctrl.sourceUrl ? m('.btn-group', {}, [
                 m('a', {href: ctrl.sourceUrl, target: '_blank', class: 'btn btn-sm btn-success'}, 'View ', [
                   m('i', {class: 'fa fa-external-link'})
                 ])
