@@ -351,8 +351,6 @@ def requirements(addons=False, release=False, dev=False):
         inv requirements --addons
         inv requirements --release
     """
-    if release or addons:
-        addon_requirements()
     # "release" takes precedence
     if release:
         req_file = os.path.join(HERE, 'requirements', 'release.txt')
@@ -361,6 +359,9 @@ def requirements(addons=False, release=False, dev=False):
     else:  # then base requirements
         req_file = os.path.join(HERE, 'requirements.txt')
     run(pip_install(req_file), echo=True)
+    # addon requirements should be loaded after application requirements
+    if release or addons:
+        addon_requirements()
 
 
 @task
