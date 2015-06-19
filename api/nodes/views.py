@@ -134,7 +134,7 @@ class NodeContributorsList(generics.ListAPIView, ListFilterMixin, NodeMixin):
         return self.get_queryset_from_request()
 
 
-class NodeRegistrationsList(generics.ListAPIView, NodeMixin):
+class NodeRegistrationsList(generics.ListCreateAPIView, NodeMixin):
     """Registrations of the current node.
 
     Registrations are read-only snapshots of a project. This view lists all of the existing registrations
@@ -144,7 +144,7 @@ class NodeRegistrationsList(generics.ListAPIView, NodeMixin):
         drf_permissions.IsAuthenticatedOrReadOnly,
     )
 
-    serializer_class = NodeSerializer
+    serializer_class = RegistrationSerializer
 
     # overrides ListAPIView
     def get_queryset(self):
@@ -156,6 +156,19 @@ class NodeRegistrationsList(generics.ListAPIView, NodeMixin):
             auth = Auth(user)
         registrations = [node for node in nodes if node.can_view(auth)]
         return registrations
+
+        # overrides ListCreateAPIView
+    def perform_create(self, serializer):
+        """
+        Create a registration of the current node.
+        """
+        """
+        :param serializer:
+        :return:
+        """
+        # On creation, make sure that current user is the creator
+        user = self.request.user
+        serializer.save(creator=user)
 
 
 class NodeChildrenList(generics.ListAPIView, NodeMixin):

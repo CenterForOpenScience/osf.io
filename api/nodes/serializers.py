@@ -126,6 +126,24 @@ class NodeSerializer(JSONAPISerializer):
         instance.save()
         return instance
 
+class RegistrationSerializer(NodeSerializer):
+    def create(self, validated_data):
+        node = Node(**validated_data)
+        node.save()
+        return node
+        request = self.context['request']
+        user = request.user
+        auth = Auth(user)
+        node = self.context['view'].get_node()
+        pointer_node = Node.load(validated_data['node']['_id'])
+        if not pointer_node:
+            raise exceptions.NotFound('Node not found.')
+        try:
+            pointer = node.add_pointer(pointer_node, auth, save=True)
+            return pointer
+        except ValueError:
+            raise exceptions.ValidationError('Pointer to node {} already in list'.format(pointer_node._id))
+
 class NodePointersSerializer(JSONAPISerializer):
 
     id = ser.CharField(read_only=True, source='_id')

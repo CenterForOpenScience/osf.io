@@ -1,17 +1,10 @@
-import requests
 
 from rest_framework import generics, permissions as drf_permissions
-from rest_framework.exceptions import PermissionDenied, ValidationError
 from modularodm import Q
 
-from framework.auth.core import Auth
 from website.models import Node, Pointer
-from api.base.utils import get_object_or_404, waterbutler_url_for
 from api.base.filters import ODMFilterMixin, ListFilterMixin
 from api.registrations.serializers import RegistrationSerializer
-from api.users.serializers import ContributorSerializer
-from api.nodes.permissions import ContributorOrPublic, ReadOnlyIfRegistration, ContributorOrPublicForPointers
-
 
 class NodeRegistrationsAll(generics.ListAPIView, ODMFilterMixin):
     """Node registrations"""
