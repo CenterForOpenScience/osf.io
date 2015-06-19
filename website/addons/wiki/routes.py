@@ -67,6 +67,12 @@ page_routes = {
             '/project/<pid>/node/<nid>/wiki/<wname>/',
         ], 'post', views.project_wiki_edit_post, OsfWebRenderer(os.path.join(TEMPLATE_DIR, 'edit.mako'))),
 
+        # Set Editable | POST
+        Rule([
+            '/project/<pid>/wiki/<wname>/permissions/<permissions>/',
+            '/project/<pid>/node/<nid>/wiki/<wname>/permissions/<permissions>/',
+        ], 'post', views.edit_wiki_permissions, OsfWebRenderer(os.path.join(TEMPLATE_DIR, 'edit.mako'))),
+
     ]
 
 }

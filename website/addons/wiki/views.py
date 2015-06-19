@@ -21,6 +21,7 @@ from website.project.decorators import (
     must_have_addon, must_not_be_registration,
     must_be_valid_project,
     must_have_permission,
+    must_have_permission_or_public_wiki,
 )
 
 from .exceptions import (
@@ -178,7 +179,7 @@ def wiki_widget(**kwargs):
 
 
 @must_be_valid_project
-@must_have_permission('write')
+@must_have_permission_or_public_wiki
 @must_have_addon('wiki', 'node')
 def wiki_page_draft(wname, **kwargs):
     node = kwargs['node'] or kwargs['project']
@@ -207,7 +208,7 @@ def wiki_page_content(wname, wver=None, **kwargs):
 
 
 @must_be_valid_project  # injects project
-@must_have_permission('write')  # injects user, project
+@must_have_permission_or_public_wiki  # injects user, project
 @must_not_be_registration
 @must_have_addon('wiki', 'node')
 def project_wiki_delete(auth, wname, **kwargs):
@@ -235,7 +236,7 @@ def project_wiki_view(auth, wname, path=None, **kwargs): #GRUMBLE
     wiki_settings = node.get_addon('wiki')
     toc = _serialize_wiki_toc(node, auth=auth)
     can_edit = (node.has_permission(auth.user, 'write')
-                or wiki_settings.is_publicly_editable or True) and not node.is_registration
+                or wiki_settings.is_publicly_editable) and not node.is_registration
     versions = _get_wiki_versions(node, wiki_name, anonymous=anonymous)
 
     # Determine panels used in view
@@ -327,7 +328,7 @@ def project_wiki_view(auth, wname, path=None, **kwargs): #GRUMBLE
 
 
 @must_be_valid_project  # injects node or project
-@must_have_permission('write')  # injects user
+@must_have_permission_or_public_wiki  # injects user
 @must_not_be_registration
 @must_have_addon('wiki', 'node')
 def project_wiki_edit_post(auth, wname, **kwargs):
@@ -354,6 +355,13 @@ def project_wiki_edit_post(auth, wname, **kwargs):
         ret = {'status': 'success'}
     return ret, http.FOUND, None, redirect_url
 
+@must_be_valid_project  # injects node or project
+@must_have_permission('admin')
+@must_not_be_registration
+@must_have_addon('wiki', 'node')
+def edit_wiki_permissions(auth, wname, **kwargs):
+    return True
+
 
 @must_be_valid_project
 @must_have_addon('wiki', 'node')
@@ -375,7 +383,7 @@ def project_wiki_id_page(auth, wid, **kwargs):
 
 
 @must_be_valid_project
-@must_have_permission('write') #GRUMBLE
+@must_have_permission_or_public_wiki
 @must_not_be_registration
 @must_have_addon('wiki', 'node')
 def project_wiki_edit(wname, **kwargs):
@@ -392,7 +400,7 @@ def project_wiki_compare(wname, wver, **kwargs):
 
 
 @must_not_be_registration
-@must_have_permission('write')
+@must_have_permission_or_public_wiki
 @must_have_addon('wiki', 'node')
 def project_wiki_rename(auth, wname, **kwargs):
     """View that handles user the X-editable input for wiki page renaming.
@@ -427,7 +435,7 @@ def project_wiki_rename(auth, wname, **kwargs):
 
 
 @must_be_valid_project  # returns project
-@must_have_permission('write')  # returns user, project
+@must_have_permission_or_public_wiki # returns user, project
 @must_not_be_registration
 @must_have_addon('wiki', 'node')
 def project_wiki_validate_name(wname, **kwargs):

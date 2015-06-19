@@ -4,6 +4,8 @@
 ## Use full page width
 <%def name="container_class()">container-xxl</%def>
 
+<a id='makeEditable' class="btn btn-default">Make Publicly Editable</a>
+
 <div class="row" style="margin-bottom: 5px;">
     <div class="col-sm-6">
         <%include file="wiki/templates/status.mako"/>
@@ -49,8 +51,9 @@
     </div>
 
     <div class="panel-expand col-sm-${'9' if 'menu' in panels_used else '11' | n}">
+
+
       <div class="row">
-          ##GRUMBLE CHANGE HERE
         % if user['can_edit']:
             <div data-bind="with: $root.editVM.wikiEditor.viewModel"
                  data-osf-panel="Edit"
@@ -360,4 +363,12 @@ ${parent.javascript_bottom()}
 <script src="//${sharejs_url}/text.js"></script>
 <script src="//${sharejs_url}/share.js"></script>
 <script src=${"/static/public/js/wiki-edit-page.js" | webpack_asset}></script>
+
+
+<script>
+$( "#makeEditable" ).click(function() {
+  alert( "Handler for .click() called." );
+});
+</script>
+
 </%def>
