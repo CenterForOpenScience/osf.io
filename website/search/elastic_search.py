@@ -259,16 +259,16 @@ def update_node(node, index=None):
             'is_registration': node.is_registration,
             'registered_date': node.registered_date,
             'wikis': {},
-            'files': index_file.get_file_contents(node),
+            'files': {},
             'parent_id': parent_id,
             'date_created': node.date_created,
             'boost': int(not node.is_registration) + 1,  # This is for making registered projects less relevant
         }
-        for wiki in [
-            NodeWikiPage.load(x)
-            for x in node.wiki_pages_current.values()
-        ]:
+        for wiki in [NodeWikiPage.load(x) for x in node.wiki_pages_current.values()]:
             elastic_document['wikis'][wiki.page_name] = wiki.raw_text(node)
+
+        for file_ in index_file.collect_files(node._id):
+            elastic_document['files'][file_.name] = file_.content
 
         es.index(index=index, doc_type=category, id=elastic_document_id, body=elastic_document, refresh=True)
 
