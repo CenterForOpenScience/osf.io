@@ -78,7 +78,7 @@
                     <dt><span class="date log-date" data-bind="text: log.date.local, tooltip: {title: log.date.utc}"></span></dt>
                     <dd class="log-content">
                         <span data-bind="if:log.anonymous">
-                            <span><em>A user</em></span>
+                            <span data-bind="html: anonymousUserName"></span>
                         </span>
                         <span data-bind="ifnot:log.anonymous">
                             <a data-bind="text: log.userFullName || log.apiKey, attr: {href: log.userURL}"></a>
