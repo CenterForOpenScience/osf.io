@@ -8,6 +8,7 @@ urlpatterns = [
     url(r'^$', views.NodeList.as_view(), name='node-list'),
     url(r'^(?P<node_id>\w+)/$', views.NodeDetail.as_view(), name='node-detail'),
     url(r'^(?P<node_id>\w+)/contributors/$', views.NodeContributorsList.as_view(), name='node-contributors'),
+    url(r'^/all-registrations/$', views.NodeRegistrationsAll.as_view(), name='node-registrations-all'),
     url(r'^(?P<node_id>\w+)/registrations/$', views.NodeRegistrationsList.as_view(), name='node-registrations'),
     url(r'^(?P<node_id>\w+)/children/$', views.NodeChildrenList.as_view(), name='node-children'),
     url(r'^(?P<node_id>\w+)/pointers/$', views.NodePointersList.as_view(), name='node-pointers'),

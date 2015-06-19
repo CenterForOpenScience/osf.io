@@ -134,6 +134,10 @@ class NodeContributorsList(generics.ListAPIView, ListFilterMixin, NodeMixin):
         return self.get_queryset_from_request()
 
 
+class NodeRegistrationsAll(NodeList):
+    pass
+
+
 class NodeRegistrationsList(generics.ListAPIView, NodeMixin):
     """Registrations of the current node.
 
