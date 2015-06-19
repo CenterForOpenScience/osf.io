@@ -281,7 +281,7 @@ def node_setting(auth, node, **kwargs):
             # TODO inject only short_name and render fully client side
             config['template_lookup'] = addon.config.template_lookup
             addon_enabled_settings.append(config)
-    addon_enabled_settings = sorted(addon_enabled_settings, key=lambda addon: addon['addon_full_name'])
+    addon_enabled_settings = sorted(addon_enabled_settings, key=lambda addon: addon['addon_full_name'].lower())
 
     ret['addon_categories'] = settings.ADDON_CATEGORIES
     ret['addons_available'] = sorted([
@@ -289,7 +289,7 @@ def node_setting(auth, node, **kwargs):
         for addon in settings.ADDONS_AVAILABLE
         if 'node' in addon.owners
         and addon.short_name not in settings.SYSTEM_ADDED_ADDONS['node']
-    ], key=lambda addon: addon.full_name)
+    ], key=lambda addon: addon.full_name.lower())
 
     ret['addons_enabled'] = addons_enabled
     ret['addon_enabled_settings'] = addon_enabled_settings

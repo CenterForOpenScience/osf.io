@@ -88,6 +88,8 @@ $(document).ready(function() {
 
     });
 
+    var checkedOnLoad = $('#selectAddonsForm input:checked');
+    var uncheckedOnLoad = $('#selectAddonsForm input:not(:checked)');
 
     // Set up submission for addon selection form
     $('#selectAddonsForm').on('submit', function() {
@@ -106,12 +108,26 @@ $(document).ready(function() {
             dataType: 'json',
             success: function() {
                 msgElm.text('Settings updated').fadeIn();
+                checkedOnLoad = $('#selectAddonsForm input:checked');
+                uncheckedOnLoad = $('#selectAddonsForm input:not(:checked)');
                 window.location.reload();
             }
         });
 
         return false;
 
+    });
+
+    /* Before closing the page, Check whether the newly checked addon are updated or not */
+    $(window).on('beforeunload',function() {
+      //new checked items but not updated
+      var checked = uncheckedOnLoad.filter('#selectAddonsForm input:checked');
+      //new unchecked items but not updated
+      var unchecked = checkedOnLoad.filter('#selectAddonsForm input:not(:checked)');
+
+      if(unchecked.length > 0 || checked.length > 0) {
+        return 'The changes on addon setting are not submitted!';
+      }
     });
 
     // Show capabilities modal on selecting an addon; unselect if user
@@ -136,3 +152,5 @@ $(document).ready(function() {
     });
 
 });
+
+

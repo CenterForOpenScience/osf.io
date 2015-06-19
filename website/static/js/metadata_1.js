@@ -432,7 +432,7 @@ var MetaData = (function() {
             'item';
         var klass = contentDelegator[type];
         var args = Array.prototype.concat.apply([null], arguments);
-        return new Function.prototype.bind.apply(klass, args);
+        return new (Function.prototype.bind.apply(klass, args));  // jshint ignore: line
     }
 
     function Page(id, title, contents, $root) {
