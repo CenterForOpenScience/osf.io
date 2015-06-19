@@ -296,7 +296,7 @@ class ApiOAuth2Application(StoredObject):
         default=lambda: str(ObjectId())
     )
 
-    # Client ID and secret  # TODO: index=True?
+    # Client ID and secret
     client_id = fields.StringField(default=lambda: uuid.uuid4().hex,
                                    index=True)
     client_secret = fields.StringField(default=lambda: base64.b64encode(uuid.uuid4().hex).replace('=', ''))

@@ -387,8 +387,6 @@ def user_notifications(auth, **kwargs):
 @must_be_logged_in
 def oauth_application_list(auth, **kwargs):
     """Return app creation page with list of known apps"""
-    # TODO: Hardcoded URL
-
     app_list_url = api_v2_url("users/{}/applications/".format(auth.user._id))
     return {
         "app_list_url": json.dumps(app_list_url)
