@@ -64,7 +64,8 @@ SideBar.controller = function(vm) {
     self.renderProvider = function(result, index) {
         var checked = (self.vm.optionalFilters.indexOf('source:' + result.short_name) > -1 || self.vm.requiredFilters.indexOf('source:' + result.short_name) > -1) ? 'in-filter' : '';
 
-        return m('li', m('.provider-filter', {
+        return m('li',
+            m('.provider-filter', {
                 'class': checked,
                 onclick: function(cb){
                     if (checked === 'in-filter') {
@@ -73,22 +74,18 @@ SideBar.controller = function(vm) {
                         utils.updateFilter(self.vm, 'source:' + result.short_name);
                     }
                 }
-            }, result.long_name
-        ));
+            }, [
+                m('img', {src: result.favicon, style: {height:'16px', width:'16px'}}), ' ', result.long_name
+            ])
+        );
 
     };
 
-    self.sortProviders = function() {
-        return $.map(Object.keys(self.vm.ProviderMap), function(result, index){
-            return self.vm.ProviderMap[result];
-        }).sort(function(a,b){
-                return a.long_name > b.long_name ? 1: -1;
-        });
-    };
 
     self.renderProviders = function () {
-        return $.map(self.sortProviders(), self.renderProvider);
+        return $.map(self.vm.sortProviders(), self.renderProvider);
     };
+
 };
 
 

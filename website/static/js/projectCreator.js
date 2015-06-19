@@ -72,7 +72,7 @@ function ProjectCreatorViewModel(params) {
             title: self.title(),
             category: category,
             description: self.description(),
-            template: $('#createNodeTemplates').val()
+            template: $('#createNodeTemplatesInput').val()
         };
     };
     /**
@@ -174,7 +174,7 @@ function ProjectCreatorViewModel(params) {
 
     // IE won't select template with id correctly. so we replace #createNodeTemplates with .createNodeTemplates
     // More explanation -- https://github.com/CenterForOpenScience/osf.io/pull/2858
-    $('.createNodeTemplates').select2({
+    $('.create-node-templates').select2({
         allowClear: true,
         placeholder: 'Select a project to use as a template',
         query: self.query
