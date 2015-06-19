@@ -29,6 +29,7 @@ class TestWelcomeToApi(ApiTestCase):
         assert_equal(res.status_code, 200)
         assert_equal(res.json['meta']['current_user']['data']['given_name'], self.user.given_name)
 
+
 class TestNodeList(ApiTestCase):
     def setUp(self):
         ApiTestCase.setUp(self)
@@ -91,6 +92,7 @@ class TestNodeList(ApiTestCase):
         assert_not_in(self.private._id, ids)
 
         Node.remove()
+
 
 class TestNodeFiltering(ApiTestCase):
 
@@ -295,6 +297,7 @@ class TestNodeFiltering(ApiTestCase):
         assert_not_in(self.folder._id, ids)
         assert_not_in(self.dashboard._id, ids)
 
+
 class TestNodeCreate(ApiTestCase):
 
     def setUp(self):
@@ -365,6 +368,7 @@ class TestNodeCreate(ApiTestCase):
         assert_equal(res.json['data']['title'], strip_html(title))
         assert_equal(res.json['data']['description'], strip_html(description))
         assert_equal(res.json['data']['category'], self.category)
+
 
 class TestNodeDetail(ApiTestCase):
     def setUp(self):
@@ -605,6 +609,7 @@ class TestNodeUpdate(ApiTestCase):
         res = self.app.patch_json(self.private_url, {'title': self.new_title}, auth=self.basic_auth_two, expect_errors=True)
         assert_equal(res.status_code, 403)
 
+
 class TestNodeContributorList(ApiTestCase):
 
     def setUp(self):
@@ -659,6 +664,7 @@ class TestNodeContributorList(ApiTestCase):
          res = self.app.get(self.private_url, auth=self.basic_auth_two, expect_errors=True)
          assert_equal(res.status_code, 403)
 
+
 class TestNodeContributorFiltering(ApiTestCase):
 
     def setUp(self):
@@ -710,6 +716,7 @@ class TestNodeContributorFiltering(ApiTestCase):
         assert_equal(len(res.json['data']), 1)
         assert_false(res.json['data'][0].get('bibliographic', None))
 
+
 class TestNodeRegistrationList(ApiTestCase):
     def setUp(self):
         ApiTestCase.setUp(self)
@@ -759,6 +766,51 @@ class TestNodeRegistrationList(ApiTestCase):
     def test_return_private_registrations_logged_in_non_contributor(self):
         res = self.app.get(self.private_url, auth=self.basic_auth_two, expect_errors=True)
         assert_equal(res.status_code, 403)
+
+
+class TestNodeRegistrationAll(ApiTestCase):
+    def setUp(self):
+        ApiTestCase.setUp(self)
+        self.user = UserFactory.build()
+        password = fake.password()
+        self.password = password
+        self.user.set_password(password)
+        self.user.save()
+        self.basic_auth = (self.user.username, password)
+
+        self.user_two = UserFactory.build()
+        self.user_two.set_password(password)
+        self.user_two.save()
+        self.basic_auth_two = (self.user_two.username, password)
+
+        self.project = ProjectFactory(is_public=False, creator=self.user)
+        self.registration_project = RegistrationFactory(creator=self.user, project=self.project)
+
+        self.project_two = ProjectFactory(is_public=False, creator=self.user)
+        self.registration_project_two = RegistrationFactory(creator=self.user, project=self.project_two)
+        self.project_two.is_deleted = True
+        self.registration_project_two.is_deleted = True
+        self.project_two.save()
+        self.registration_project_two.save()
+
+        self.project_three = ProjectFactory(is_public=True, creator=self.user_two)
+        self.registration_project_three = RegistrationFactory(creator=self.user_two, project=self.project_three)
+
+        self.project_four = ProjectFactory(is_public=False, creator=self.user_two)
+        self.registration_project_four = RegistrationFactory(creator=self.user_two, project=self.project_four)
+
+        self.url = '/{}nodes/all-registrations/'.format(API_BASE)
+
+
+    def test_list_all_registrations(self):
+        res = self.app.get(self.url, auth=self.basic_auth)
+        assert_equal(res.status_code, 200)
+        ids = [each['id'] for each in res.json['data']]
+        assert_in(self.registration_project._id, ids)
+        assert_not_in(self.registration_project_two._id, ids)
+        assert_in(self.registration_project_three._id, ids)
+        assert_not_in(self.registration_project_four._id, ids)
+
 
 class TestNodeChildrenList(ApiTestCase):
     def setUp(self):
@@ -827,6 +879,7 @@ class TestNodeChildrenList(ApiTestCase):
 
         Node.remove()
 
+
 class TestNodePointersList(ApiTestCase):
 
     def setUp(self):
@@ -881,6 +934,7 @@ class TestNodePointersList(ApiTestCase):
     def test_return_private_node_pointers_logged_in_non_contributor(self):
         res = self.app.get(self.private_url, auth=self.basic_auth_two, expect_errors=True)
         assert_equal(res.status_code, 403)
+
 
 class TestCreateNodePointer(ApiTestCase):
     def setUp(self):
@@ -981,6 +1035,7 @@ class TestCreateNodePointer(ApiTestCase):
 
         res = self.app.post(self.public_url, self.public_payload, auth=self.basic_auth, expect_errors=True)
         assert_equal(res.status_code, 400)
+
 
 class TestNodeFilesList(ApiTestCase):
 
@@ -1084,6 +1139,7 @@ class TestNodeFilesList(ApiTestCase):
         res = self.app.get(url, auth=self.basic_auth, expect_errors=True)
         assert_equal(res.status_code, 400)
 
+
 class TestNodePointerDetail(ApiTestCase):
 
     def setUp(self):
@@ -1135,6 +1191,7 @@ class TestNodePointerDetail(ApiTestCase):
     def returns_private_node_pointer_detail_logged_in_non_contributor(self):
         res = self.app.get(self.private_url, auth=self.basic_auth_two, expect_errors=True)
         assert_equal(res.status_code, 403)
+
 
 class TestDeleteNodePointer(ApiTestCase):
 
