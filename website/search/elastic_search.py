@@ -272,9 +272,11 @@ def update_node(node, index=None):
             if content:
                 elastic_document['files'][file_.name] = file_.content
                 print(elastic_document['files'][file_.name])
+
         es.index(index=index, doc_type=category, id=elastic_document_id, body=elastic_document, refresh=True)
 
 
+# TODO: Not yet called by anything.
 @requires_search
 def update_project_files(node, index=None):
     index = index or INDEX
