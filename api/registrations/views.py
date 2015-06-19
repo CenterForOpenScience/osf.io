@@ -1,13 +1,14 @@
-
 from rest_framework import generics, permissions as drf_permissions
 from modularodm import Q
 
 from website.models import Node
 from api.base.filters import ODMFilterMixin
 from api.registrations.serializers import RegistrationSerializer
+from api.nodes.views import NodeDetail, NodePointersList, NodeFilesList, NodeChildrenList, NodeContributorsList
 
-class NodeRegistrationsAll(generics.ListAPIView, ODMFilterMixin):
-    """Node registrations"""
+
+class RegistrationList(generics.ListAPIView, ODMFilterMixin):
+    """All node registrations"""
 
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
@@ -33,3 +34,33 @@ class NodeRegistrationsAll(generics.ListAPIView, ODMFilterMixin):
     def get_queryset(self):
         query = self.get_query_from_request()
         return Node.find(query)
+
+
+class RegistrationDetail(NodeDetail):
+    """
+    Registration details
+    """
+
+
+class RegistrationPointersList(NodePointersList):
+     """
+    Registration pointers
+    """
+
+
+class RegistrationFilesList(NodeFilesList):
+     """
+    Files attached to a registration
+    """
+
+
+class RegistrationChildrenList(NodeChildrenList):
+    """
+    Children of the current registration
+    """
+
+
+class RegistrationContributorsList(NodeContributorsList):
+    """
+    Contributors(users) for a registration
+    """
