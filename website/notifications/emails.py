@@ -70,7 +70,6 @@ def email_digest(recipient_ids, uid, event, user, node, timestamp, **context):
 
 EMAIL_FUNCTION_MAP = {
     'email_transactional': email_transactional,
-    'email_quarter': email_digest,
     'email_hour': email_digest,
     'email_digest': email_digest,
 }
