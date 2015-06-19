@@ -37,12 +37,13 @@ function ProjectCreatorViewModel(params) {
     self.hasFocus = params.hasFocus;
 
     self.usingTemplate = ko.observable(false);
+    self.enableCreateBtn =  ko.observable(true);
 
     self.disableSubmitBtn = function (){
-        $('#createProjectSubmitBtn').prop('disabled', true);
+        self.enableCreateBtn(false);
     };
     self.enableSubmitBtn = function (){
-        $('#createProjectSubmitBtn').prop('disabled', false);
+        self.enableCreateBtn(true);
     };
 
     self.submitForm = function () {
