@@ -127,22 +127,26 @@ class NodeSerializer(JSONAPISerializer):
         return instance
 
 class RegistrationSerializer(NodeSerializer):
+    title = ser.CharField(read_only=True)
+    description = ser.CharField(read_only=True)
+    category=ser.CharField(read_only=True)
+
+
     def create(self, validated_data):
-        node = Node(**validated_data)
-        node.save()
-        return node
         request = self.context['request']
+        schema = MetaSchema.find(
+            Q('name', 'eq', self.template)).sort('-schema_version')[0]
         user = request.user
-        auth = Auth(user)
         node = self.context['view'].get_node()
-        pointer_node = Node.load(validated_data['node']['_id'])
-        if not pointer_node:
-            raise exceptions.NotFound('Node not found.')
-        try:
-            pointer = node.add_pointer(pointer_node, auth, save=True)
-            return pointer
-        except ValueError:
-            raise exceptions.ValidationError('Pointer to node {} already in list'.format(pointer_node._id))
+        registration = node.register_node(
+            schema=schema,
+            auth=Auth(user),
+            template=self.template,
+            data=json.dumps(process_payload(formatted_data))
+        )
+        registration.title = node.title + '_DRAFT_REGISTRATION'
+        registration.save()
+        return registration
 
 class NodePointersSerializer(JSONAPISerializer):
 

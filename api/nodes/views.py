@@ -8,7 +8,7 @@ from framework.auth.core import Auth
 from website.models import Node, Pointer
 from api.base.utils import get_object_or_404, waterbutler_url_for
 from api.base.filters import ODMFilterMixin, ListFilterMixin
-from .serializers import NodeSerializer, NodePointersSerializer, NodeFilesSerializer
+from .serializers import NodeSerializer, NodePointersSerializer, NodeFilesSerializer, RegistrationSerializer
 from api.users.serializers import ContributorSerializer
 from .permissions import ContributorOrPublic, ReadOnlyIfRegistration, ContributorOrPublicForPointers
 
