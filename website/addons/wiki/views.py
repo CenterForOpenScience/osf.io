@@ -359,8 +359,22 @@ def project_wiki_edit_post(auth, wname, **kwargs):
 @must_have_permission('admin')
 @must_not_be_registration
 @must_have_addon('wiki', 'node')
-def edit_wiki_permissions(auth, wname, **kwargs):
-    return True
+def edit_wiki_permissions(**kwargs):
+    node = kwargs['node'] or kwargs['project']
+
+    wiki_settings = node.get_addon('wiki')
+
+    permissions = kwargs.get('permissions')
+
+    if permissions is None:
+        raise HTTPError(http.BAD_REQUEST)
+
+    wiki_settings.set_editing(permissions)
+
+    return {
+        'status': 'success',
+        'permissions': permissions,
+    }
 
 
 @must_be_valid_project

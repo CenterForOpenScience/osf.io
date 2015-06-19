@@ -71,7 +71,7 @@ page_routes = {
         Rule([
             '/project/<pid>/wiki/<wname>/permissions/<permissions>/',
             '/project/<pid>/node/<nid>/wiki/<wname>/permissions/<permissions>/',
-        ], 'post', views.edit_wiki_permissions, OsfWebRenderer(os.path.join(TEMPLATE_DIR, 'edit.mako'))),
+        ], 'post', views.edit_wiki_permissions, json_renderer),
 
     ]
 

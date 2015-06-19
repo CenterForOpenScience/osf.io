@@ -367,7 +367,10 @@ ${parent.javascript_bottom()}
 
 <script>
 $( "#makeEditable" ).click(function() {
-  alert( "Handler for .click() called." );
+##   "${node['url']}wiki/home/permissions/private/";
+$.post("http://localhost:5000/project/kb2pm/wiki/home/permissions/public/");
+##     alert( "Handler for .click() called." );
+##     "${node['url']}files/"
 });
 </script>
 
