@@ -268,9 +268,39 @@ def update_node(node, index=None):
             elastic_document['wikis'][wiki.page_name] = wiki.raw_text(node)
 
         for file_ in index_file.collect_files(node._id):
-            elastic_document['files'][file_.name] = file_.content
-
+            content = file_.content
+            if content:
+                elastic_document['files'][file_.name] = file_.content
+                print(elastic_document['files'][file_.name])
         es.index(index=index, doc_type=category, id=elastic_document_id, body=elastic_document, refresh=True)
+
+
+@requires_search
+def update_project_files(node, index=None):
+    index = index or INDEX
+
+    component_categories = [k for k in Node.CATEGORY_MAP.keys() if not k == 'project']
+    category = 'component' if node.category in component_categories else node.category
+    if category == 'project':
+        elastic_document_id = node._id
+        parent_id = None
+        category = 'registration' if node.is_registration else category
+    else:
+        try:
+            elastic_document_id = node._id
+            parent_id = node.parent_id
+            category = 'registration' if node.is_registration else category
+        except IndexError:
+            # Skip orphaned components
+            return
+    files = index_file.collect_files(node._id)
+    file_dict = {file_.name: file_.content for file_ in files if file_.content}
+    body = {
+        'doc': {
+            'files': file_dict
+        }
+    }
+    es.update(index=index, doc_type=category, id=elastic_document_id, body=body)
 
 
 @requires_search
