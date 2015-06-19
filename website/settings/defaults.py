@@ -10,6 +10,8 @@ import json
 import hashlib
 from datetime import timedelta
 
+from kombu import Queue, Exchange
+
 os_env = os.environ
 
 def parent_dir(path):
@@ -173,6 +175,15 @@ WIKI_WHITELIST = {
 ##### Celery #####
 ## Default RabbitMQ broker
 BROKER_URL = 'amqp://'
+
+CELERY_CREATE_MISSING_QUEUES = False
+CELERY_DEFAULT_QUEUE = 'osf'
+CELERY_QUEUES = (
+    Queue('osf', Exchange('osf'), routing_key='osf'),
+)
+CELERY_ALWAYS_EAGER = False
+CELERYD_HIJACK_ROOT_LOGGER = False
+CELERY_EAGER_PROPAGATES_EXCEPTIONS = True
 
 # Default RabbitMQ backend
 CELERY_RESULT_BACKEND = 'amqp://'

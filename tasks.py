@@ -285,8 +285,8 @@ def sharejs(host=None, port=None, db_host=None, db_port=None, db_name=None, cors
 @task(aliases=['celery'])
 def celery_worker(level="debug"):
     """Run the Celery process."""
-    cmd = 'celery worker -A framework.tasks -l {0}'.format(level)
-    run(bin_prefix(cmd))
+    from framework.tasks import app
+    app.worker_main(['worker', '-l', level])
 
 
 @task
