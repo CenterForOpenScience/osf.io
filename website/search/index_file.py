@@ -11,6 +11,13 @@ way files are accessed.
 PROJECT_FILES_URL = 'v2/nodes/{}/files/?path=%2F&provider=osfstorage'
 
 class File(object):
+    MAX_SIZE = 1000
+    INDEXED_EXTENSIONS = [
+        '.txt',
+        '.md',
+        '.py',
+    ]
+
     def __init__(self, name, download_link, pid):
         self.name = name
         self.download_link = download_link
@@ -30,8 +37,12 @@ class File(object):
 
     @property
     def content(self):
+        if self.extension not in File.INDEXED_EXTENSIONS:
+            return ''
+
         c = requests.get(self.download_link)
-        return c.text if c else None
+        size = min(File.MAX_SIZE, len(c.text))
+        return c.text[:size] if c else ''
 
     @property
     def dict(self):
