@@ -6,20 +6,6 @@ from website.models import Node
 from framework.auth.core import Auth
 from rest_framework import exceptions
 
-from rest_framework import serializers as ser
-from api.base.serializers import JSONAPISerializer, LinksField, Link, WaterbutlerLink
-from website.models import Node
-from framework.auth.core import Auth
-from website.project.model import MetaSchema
-from modularodm import Q
-from framework.forms.utils import process_payload
-from rest_framework import serializers
-import json
-from api.base.utils import absolute_reverse
-
-from django.utils.translation import ugettext_lazy as _
-
-
 
 class NodeSerializer(JSONAPISerializer):
     # TODO: If we have to redo this implementation in any of the other serializers, subclass ChoiceField and make it
@@ -145,7 +131,7 @@ class NodeSerializer(JSONAPISerializer):
 class RegistrationSerializer(NodeSerializer):
     title = ser.CharField(read_only=True)
     description = ser.CharField(read_only=True)
-    category=ser.CharField(read_only=True)
+    category = ser.CharField(read_only=True)
 
     def create(self, validated_data):
         request = self.context['request']

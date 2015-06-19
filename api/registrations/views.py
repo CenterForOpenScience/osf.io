@@ -2,8 +2,8 @@
 from rest_framework import generics, permissions as drf_permissions
 from modularodm import Q
 
-from website.models import Node, Pointer
-from api.base.filters import ODMFilterMixin, ListFilterMixin
+from website.models import Node
+from api.base.filters import ODMFilterMixin
 from api.registrations.serializers import RegistrationSerializer
 
 class NodeRegistrationsAll(generics.ListAPIView, ODMFilterMixin):
@@ -33,4 +33,3 @@ class NodeRegistrationsAll(generics.ListAPIView, ODMFilterMixin):
     def get_queryset(self):
         query = self.get_query_from_request()
         return Node.find(query)
-
