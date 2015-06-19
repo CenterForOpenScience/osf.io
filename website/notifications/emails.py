@@ -158,11 +158,12 @@ def send(recipient_ids, notification_type, uid, event, user, node, timestamp, **
 
     delta = 0
     if notification_type == 'email_transactional':
-        n_seconds = timestamp.minute * timestamp.second + timestamp.microsecond*1e-6
-        delta = (n_seconds//60)*60+60 - n_seconds
+        delay = 60
+        delta = delay  # TODO: Look into making this adjustable, learn how fast users generally check Email
     elif notification_type == 'email_digest':
+        delay = 86400
         n_seconds = timestamp.hour * 3600 + timestamp.minute * 60 + timestamp.second + timestamp.microsecond * 1e-6
-        delta = (n_seconds // 86400) * 86400 + 86400 - n_seconds
+        delta = (n_seconds // delay) * delay + delay - n_seconds
     context['time_to_send'] = timestamp + timedelta(seconds=delta)
 
     try:
