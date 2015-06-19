@@ -150,6 +150,7 @@ class RegistrationSerializer(NodeSerializer):
         registration.tags = node.tags
         registration.title = node.title + '_DRAFT_REGISTRATION'
         registration.save()
+        node.add_pointer(registration, auth=Auth(user))
         return registration
 
 class NodePointersSerializer(JSONAPISerializer):
