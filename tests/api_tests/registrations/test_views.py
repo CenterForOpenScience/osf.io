@@ -6,7 +6,7 @@ from api.base.settings.defaults import API_BASE
 from tests.base import ApiTestCase, fake
 from tests.factories import UserFactory, ProjectFactory, FolderFactory, RegistrationFactory, DashboardFactory, NodeFactory
 
-class TestNodeRegistrationAll(ApiTestCase):
+class TestRegistrationList(ApiTestCase):
     def setUp(self):
         ApiTestCase.setUp(self)
         self.user = UserFactory.build()
