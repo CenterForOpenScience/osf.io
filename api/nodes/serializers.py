@@ -126,6 +126,8 @@ class NodeSerializer(JSONAPISerializer):
         instance.save()
         return instance
 
+class RegistrationSerializer(NodeSerializer):
+    pass
 
 class NodePointersSerializer(JSONAPISerializer):
 
@@ -161,6 +163,7 @@ class NodePointersSerializer(JSONAPISerializer):
 
     def update(self, instance, validated_data):
         pass
+
 
 class NodeFilesSerializer(JSONAPISerializer):
 
