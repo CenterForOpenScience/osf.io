@@ -138,11 +138,9 @@ STATICFILES_DIRS = (
     ('rest_framework_swagger/images', os.path.join(BASE_DIR, 'static/images')),
 )
 
+# TODO: Revisit methods for excluding priovate routes from swagger docs
 SWAGGER_SETTINGS = {
     'api_path': API_PATH,
-    #'exclude_namespaces': [
-    #    'users.internal_apis',
-    #    'internal_apis'],  # TODO: Revisit url exclusion; it does not seem to work at present
     'info': {
         'description':
         """
