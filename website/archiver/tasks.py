@@ -122,6 +122,26 @@ def make_copy_request(job_pk, url, data):
     logger.info("Sending copy request for addon: {0} on node: {1}".format(provider, dst._id))
     requests.post(url, data=json.dumps(data))
 
+def make_waterbutler_payload(src, dst, addon_short_name, rename, cookie, revision=None):
+    ret = {
+        'source': {
+            'cookie': cookie,
+            'nid': src._id,
+            'provider': addon_short_name,
+            'path': '/',
+        },
+        'destination': {
+            'cookie': cookie,
+            'nid': dst._id,
+            'provider': settings.ARCHIVE_PROVIDER,
+            'path': '/',
+        },
+        'rename': rename
+    }
+    if revision:
+        ret.update({'revision': revision})
+    return ret
+
 @celery_app.task(base=ArchiverTask, name="archiver.archive_addon")
 def archive_addon(addon_short_name, job_pk, stat_result):
     """Archive the contents of an addon by making a copy request to the
@@ -137,46 +157,15 @@ def archive_addon(addon_short_name, job_pk, stat_result):
     logger.info("Archiving addon: {0} on node: {1}".format(addon_short_name, src._id))
     src_provider = src.get_addon(addon_short_name)
     folder_name = src_provider.archive_folder_name
-    provider = src_provider.config.short_name
     cookie = user.get_or_create_cookie()
     copy_url = settings.WATERBUTLER_URL + '/ops/copy'
     if addon_short_name == 'dataverse':
-        data = {
-            'source': {
-                'cookie': cookie,
-                'nid': src._id,
-                'provider': provider,
-                'path': '/',
-                'revision': 'latest-published',
-            },
-            'destination': {
-                'cookie': cookie,
-                'nid': dst._id,
-                'provider': settings.ARCHIVE_PROVIDER,
-                'path': '/',
-            },
-            'rename': folder_name + ' (published)',
-        }
+        data = make_waterbutler_payload(src, dst, addon_short_name, '{0} (published)'.format(folder_name), cookie, revision='latetst-published')
         make_copy_request.delay(job_pk=job_pk, url=copy_url, data=data)
-        data['source']['revision'] = 'latest'
-        data['rename'] = folder_name + ' (draft)'
+        data = make_waterbutler_payload(src, dst, addon_short_name, '{0} (draft)'.format(folder_name), cookie, revision='latetst')
         make_copy_request.delay(job_pk=job_pk, url=copy_url, data=data)
     else:
-        data = {
-            'source': {
-                'cookie': cookie,
-                'nid': src._id,
-                'provider': provider,
-                'path': '/',
-            },
-            'destination': {
-                'cookie': cookie,
-                'nid': dst._id,
-                'provider': settings.ARCHIVE_PROVIDER,
-                'path': '/',
-            },
-            'rename': folder_name,
-        }
+        data = make_waterbutler_payload(src, dst, addon_short_name, folder_name, cookie)
         make_copy_request.delay(job_pk=job_pk, url=copy_url, data=data)
 
 
