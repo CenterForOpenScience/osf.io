@@ -19,7 +19,7 @@ class UserMixin(object):
     def get_user(self, check_permissions=True):
 
         key = self.kwargs[self.node_lookup_url_kwarg]
-        if key == 'me':
+        if key == 'me' & self.user.IsAuthenticatedOrReadOnly:
             return self.request.user
 
         obj = get_object_or_404(User, self.kwargs[self.node_lookup_url_kwarg])

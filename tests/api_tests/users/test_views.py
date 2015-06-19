@@ -234,11 +234,27 @@ class TestUserRoutes(ApiTestCase):
         assert_not_in(self.deleted_project_user_one._id, ids)
 
     def test_get_400_path_Users_Me_user_not_logged_in(self): #~WORK
-        url = "/{}users/me/".format(API_BASE, self.user_two._id)
-        res = self.app.get(url, auth=self.auth_one)
+        url = "/{}users/me/".format(API_BASE)
+        res = self.app.get(url, expect_errors=True)
+
+        assert_equal(res.status_code, 404)
+
         user_json = res.json['data']
-        assert_not_equal(user_json['fullname'], self.user_one.fullname)
-        assert_equal(user_json['fullname'], self.user_two.fullname)
+
+        # assert_not_equal(user_json['fullname'], self.user_one.fullname)
+        # assert_equal(user_json['fullname'], self.user_two.fullname)
+
+        # ids = [each['id'] for each in node_json]
+        # assert_in(self.public_project_user_one._id, ids)
+        # assert_not_in(self.private_project_user_one._id, ids)
+        # assert_not_in(self.public_project_user_two._id, ids)
+        # assert_not_in(self.private_project_user_two._id, ids)
+        # assert_not_in(self.folder._id, ids)
+        # assert_not_in(self.deleted_project_user_one._id, ids)
+
+
+
+
 
     def test_get_400_path_Users_User_id_user_not_logged_in(self):#~WORK
         url = "/{}users/{}/".format(API_BASE, self.user_two._id)
@@ -337,22 +353,31 @@ class TestUserRoutes(ApiTestCase):
         res = self.app.get(url, auth=self.auth_two, expect_errors=True)
         assert_equal(res.status_code, 404)
 
-
     def test_get_400_path_Users_Me_Nodes_user_not_logged_in(self): #~WORK
-            url = "/{}users/me/nodes/".format(API_BASE, self.user_one._id)
-            res = self.app.get(url)
-            node_json = res.json['data']
+            url = "/{}users/me/nodes/".format(API_BASE)
+            res = self.app.get(url, expect_errors=True)
+            #node_json = res.json['data']
 
-            ids = [each['id'] for each in node_json]
-            assert_in(self.public_project_user_one._id, ids)
-            assert_not_in(self.private_project_user_one._id, ids)
-            assert_not_in(self.public_project_user_two._id, ids)
-            assert_not_in(self.private_project_user_two._id, ids)
-            assert_not_in(self.folder._id, ids)
-            assert_not_in(self.deleted_project_user_one._id, ids)
+            assert_equal(res.status_code, 404)
 
-    def test_get_400_path_Nodes_Me_no_user(self): #~WORK
-        url = "/users/me/".format(API_BASE, self.user_one._id)
+            # ids = [each['id'] for each in node_json]
+            # assert_in(self.public_project_user_one._id, ids)
+            # assert_not_in(self.private_project_user_one._id, ids)
+            # assert_not_in(self.public_project_user_two._id, ids)
+            # assert_not_in(self.private_project_user_two._id, ids)
+            # assert_not_in(self.folder._id, ids)
+            # assert_not_in(self.deleted_project_user_one._id, ids)
+
+    def test_get_400_path_Users_Me_no_user(self): #~WORK
+        #url = "/users/me/".format(API_BASE, self.user_one._id)
+        url = "/users/me/".format(API_BASE)
+
         res = self.app.get(url, auth=self.auth_one, expect_errors=True)
         assert_equal(res.status_code, 404)
 
+    def test_get_400_path_Nodes_Me_no_user(self): #~WORK
+        #url = "/users/me/".format(API_BASE, self.user_one._id)
+        url = "/nodes/me/".format(API_BASE)
+
+        res = self.app.get(url, auth=self.auth_one, expect_errors=True)
+        assert_equal(res.status_code, 404)
