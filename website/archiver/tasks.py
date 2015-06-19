@@ -136,10 +136,10 @@ def make_waterbutler_payload(src, dst, addon_short_name, rename, cookie, revisio
             'provider': settings.ARCHIVE_PROVIDER,
             'path': '/',
         },
-        'rename': rename
+        'rename': rename.replace('/', '-')
     }
     if revision:
-        ret.update({'revision': revision})
+        ret['source']['revision'] = revision
     return ret
 
 @celery_app.task(base=ArchiverTask, name="archiver.archive_addon")
