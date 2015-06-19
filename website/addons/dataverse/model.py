@@ -15,12 +15,7 @@ from website.addons.base import (
 )
 from website.addons.base import StorageAddonBase
 
-from website.addons.dataverse.client import (
-    connect_from_settings_or_401,
-    get_files,
-    get_dataset,
-    get_dataverse
-)
+from website.addons.dataverse.client import connect_from_settings_or_401
 from website.addons.dataverse.settings import HOST
 
 

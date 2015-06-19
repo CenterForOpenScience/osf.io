@@ -12,8 +12,6 @@ import logging
 
 from invoke import task, run
 
-from website import settings
-
 logging.getLogger('invoke').setLevel(logging.CRITICAL)
 
 HERE = os.path.dirname(os.path.abspath(__file__))
@@ -43,6 +41,7 @@ else:
 @task
 def server(host=None, port=5000, debug=True, live=False):
     """Run the app server."""
+    from website import settings
     from website.app import init_app
     app = init_app(set_backends=True, routes=True)
     settings.API_SERVER_PORT = port
@@ -178,6 +177,7 @@ def shell():
 def mongoserver(daemon=False, config=None):
     """Run the mongod process.
     """
+    from website import settings
     if not config:
         platform_configs = {
             'darwin': '/usr/local/etc/tokumx.conf',  # default for homebrew install
@@ -197,6 +197,7 @@ def mongoserver(daemon=False, config=None):
 @task(aliases=['mongoshell'])
 def mongoclient():
     """Run the mongo shell for the OSF database."""
+    from website import settings
     db = settings.DB_NAME
     port = settings.DB_PORT
     run("mongo {db} --port {port}".format(db=db, port=port), pty=True)
@@ -205,6 +206,7 @@ def mongoclient():
 @task
 def mongodump(path):
     """Back up the contents of the running OSF database"""
+    from website import settings
     db = settings.DB_NAME
     port = settings.DB_PORT
 
@@ -239,6 +241,7 @@ def mongorestore(path, drop=False):
     `invoke mongorestore {path}/{settings.DB_NAME}, as that's where the
     database dump will be stored.
     """
+    from website import settings
     db = settings.DB_NAME
     port = settings.DB_PORT
 
@@ -262,6 +265,7 @@ def mongorestore(path, drop=False):
 @task
 def sharejs(host=None, port=None, db_host=None, db_port=None, db_name=None, cors_allow_origin=None):
     """Start a local ShareJS server."""
+    from website import settings
     if host:
         os.environ['SHAREJS_SERVER_HOST'] = host
     if port:
@@ -285,8 +289,8 @@ def sharejs(host=None, port=None, db_host=None, db_port=None, db_name=None, cors
 @task(aliases=['celery'])
 def celery_worker(level="debug"):
     """Run the Celery process."""
-    cmd = 'celery worker -A framework.tasks -l {0}'.format(level)
-    run(bin_prefix(cmd))
+    from framework.tasks import app
+    app.worker_main(['worker', '-l', level])
 
 
 @task
@@ -314,10 +318,11 @@ def elasticsearch():
         print("Your system is not recognized, you will have to start elasticsearch manually")
 
 @task
-def migrate_search(delete=False, index=settings.ELASTIC_INDEX):
+def migrate_search(delete=False, index=None):
     '''Migrate the search-enabled models.'''
+    from website import settings
     from website.search_migration.migrate import migrate
-    migrate(delete, index=index)
+    migrate(delete, index=index or settings.ELASTIC_INDEX)
 
 
 @task
@@ -384,6 +389,7 @@ def test_osf():
 def test_addons():
     """Run all the tests in the addons directory.
     """
+    from website import settings
     modules = []
     for addon in settings.ADDONS_REQUESTED:
         module = os.path.join(settings.BASE_PATH, 'addons', addon)
@@ -431,18 +437,8 @@ def karma(single=False, sauce=False, browsers=None):
 
 
 @task
-def wheelhouse(addons=False, release=False, dev=False):
-    if release:
-        req_file = os.path.join(HERE, 'requirements', 'release.txt')
-    elif dev:
-        req_file = os.path.join(HERE, 'requirements', 'dev.txt')
-    else:
-        req_file = os.path.join(HERE, 'requirements.txt')
-    cmd = 'pip wheel --find-links={} -r {} --wheel-dir={}'.format(WHEELHOUSE_PATH, req_file, WHEELHOUSE_PATH)
-    run(cmd, pty=True)
-
-    if not addons:
-        return
+def addon_wheelhouse():
+    from website import settings
     for directory in os.listdir(settings.ADDON_PATH):
         path = os.path.join(settings.ADDON_PATH, directory)
         if os.path.isdir(path):
@@ -453,8 +449,23 @@ def wheelhouse(addons=False, release=False, dev=False):
 
 
 @task
+def wheelhouse(addons=False, release=False, dev=False):
+    if release:
+        req_file = os.path.join(HERE, 'requirements', 'release.txt')
+    elif dev:
+        req_file = os.path.join(HERE, 'requirements', 'dev.txt')
+    else:
+        req_file = os.path.join(HERE, 'requirements.txt')
+    cmd = 'pip wheel --find-links={} -r {} --wheel-dir={}'.format(WHEELHOUSE_PATH, req_file, WHEELHOUSE_PATH)
+    run(cmd, pty=True)
+    if addons:
+        addon_wheelhouse()
+
+
+@task
 def addon_requirements():
     """Install all addon requirements."""
+    from website import settings
     for directory in os.listdir(settings.ADDON_PATH):
         path = os.path.join(settings.ADDON_PATH, directory)
         if os.path.isdir(path):
@@ -480,6 +491,7 @@ def encryption(owner=None):
     > sudo env/bin/invoke encryption --owner www-data
 
     """
+    from website import settings
     if not settings.USE_GNUPG:
         print('GnuPG is not enabled. No GnuPG key will be generated.')
         return
@@ -499,6 +511,7 @@ def encryption(owner=None):
 
 @task
 def travis_addon_settings():
+    from website import settings
     for directory in os.listdir(settings.ADDON_PATH):
         path = os.path.join(settings.ADDON_PATH, directory, 'settings')
         if os.path.isdir(path):
@@ -511,6 +524,7 @@ def travis_addon_settings():
 
 @task
 def copy_addon_settings():
+    from website import settings
     for directory in os.listdir(settings.ADDON_PATH):
         path = os.path.join(settings.ADDON_PATH, directory, 'settings')
         if os.path.isdir(path) and not os.path.isfile(os.path.join(path, 'local.py')):
@@ -757,6 +771,7 @@ def clean_assets():
 @task(aliases=['pack'])
 def webpack(clean=False, watch=False, dev=False):
     """Build static assets with webpack."""
+    from website import settings
     if clean:
         clean_assets()
     webpack_bin = os.path.join(HERE, 'node_modules', 'webpack', 'bin', 'webpack.js')
