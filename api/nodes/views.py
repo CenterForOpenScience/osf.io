@@ -134,8 +134,12 @@ class NodeContributorsList(generics.ListAPIView, ListFilterMixin, NodeMixin):
         return self.get_queryset_from_request()
 
 
-class NodeRegistrationsAll(NodeList):
+class NodeRegistrationsAll(generics.ListAPIView, ODMFilterMixin):
     """Node registrations"""
+
+    permission_classes = (
+        drf_permissions.IsAuthenticatedOrReadOnly,
+    )
     serializer_class = RegistrationSerializer
 
     # overrides ODMFilterMixin

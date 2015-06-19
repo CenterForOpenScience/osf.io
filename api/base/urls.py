@@ -15,6 +15,7 @@ urlpatterns = [
         include(patterns('',
                          url(r'^$', views.root),
                          url(r'^nodes/', include('api.nodes.urls', namespace='nodes')),
+                         url(r'^registrations/', include('api.registrations.urls', namespace='registrations')),
                          url(r'^users/', include('api.users.urls', namespace='users')),
                          url(r'^docs/', include('rest_framework_swagger.urls')),
                          ))
