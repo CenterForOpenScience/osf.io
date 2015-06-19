@@ -320,8 +320,8 @@ def must_have_permission(permission):
             # if not(node.get_addon('wiki') and kwargs["publiclyEditableWiki"]): #GRUMBLE
 
             # User must have permissions
-            #if not node.has_permission(user, permission):
-            #   raise HTTPError(http.FORBIDDEN)
+            # if not node.has_permission(user, permission):
+            #    raise HTTPError(http.FORBIDDEN)
 
             # Call view function
             return func(*args, **kwargs)

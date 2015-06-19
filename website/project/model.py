@@ -762,10 +762,9 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
             is_api_node = auth.api_node == self
         else:
             is_api_node = False
-        addon = self.get_addon('wiki')
-        if addon and addon.owner:
-            print("THIS IS THE ADDON")
-            print (addon.owner)
+        #If wiki, check if publicly editable
+        wiki = self.get_addon('wiki')
+        if wiki and wiki.is_publicly_editable:
             return True
         return (
             (user and self.has_permission(user, 'write'))

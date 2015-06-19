@@ -232,8 +232,10 @@ def project_wiki_view(auth, wname, path=None, **kwargs): #GRUMBLE
     wiki_name = (wname or '').strip()
     wiki_key = to_mongo_key(wiki_name)
     wiki_page = node.get_wiki_page(wiki_name)
+    wiki_settings = node.get_addon('wiki')
     toc = _serialize_wiki_toc(node, auth=auth)
-    can_edit = True #node.has_permission(auth.user, 'write') or True and not node.is_registration #GRUMBLE
+    can_edit = (node.has_permission(auth.user, 'write')
+                or wiki_settings.is_publicly_editable or True) and not node.is_registration
     versions = _get_wiki_versions(node, wiki_name, anonymous=anonymous)
 
     # Determine panels used in view
