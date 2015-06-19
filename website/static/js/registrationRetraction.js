@@ -24,9 +24,9 @@ var RegistrationRetractionViewModel = oop.extend(
             var self = this;
 
             self.submitUrl = submitUrl;
-            self.registrationTitle = registrationTitle;
+            self.registrationTitle = $osf.htmlDecode(registrationTitle);
             // Truncate title to around 50 chars
-            var parts = registrationTitle.slice(0, 50).split(' ');
+            var parts = self.registrationTitle.slice(0, 50).split(' ');
             if (parts.length > 1) {
                 self.truncatedTitle = parts.slice(0, -1).join(' ');
             }

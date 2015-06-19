@@ -8,12 +8,8 @@ from framework.tasks import app as celery_app
 from framework.exceptions import HTTPError
 
 from website.archiver import (
-    ARCHIVER_PENDING,
-    ARCHIVER_CHECKING,
     ARCHIVER_SUCCESS,
     ARCHIVER_FAILURE,
-    ARCHIVER_SENDING,
-    ARCHIVER_SENT,
     ARCHIVER_SIZE_EXCEEDED,
     ARCHIVER_NETWORK_ERROR,
     ARCHIVER_UNCAUGHT_ERROR,
@@ -92,7 +88,6 @@ def stat_addon(addon_short_name, job_pk):
     create_app_context()
     job = ArchiveJob.load(job_pk)
     src, dst, user = job.info()
-    dst.archive_job.update_target(addon_short_name, ARCHIVER_CHECKING)
     src_addon = src.get_addon(addon_short_name)
     try:
         file_tree = src_addon._get_file_tree(user=user)
@@ -124,10 +119,8 @@ def make_copy_request(job_pk, url, data):
     job = ArchiveJob.load(job_pk)
     src, dst, user = job.info()
     provider = data['source']['provider']
-    dst.archive_job.update_target(provider, ARCHIVER_SENDING)
     logger.info("Sending copy request for addon: {0} on node: {1}".format(provider, dst._id))
     res = requests.post(url, data=json.dumps(data))
-    dst.archive_job.update_target(provider, ARCHIVER_SENT)
     if res.status_code not in (200, 201, 202):
         dst.archive_job.update_target(
             provider,
@@ -135,7 +128,6 @@ def make_copy_request(job_pk, url, data):
             errors=[res.json()],
         )
         raise HTTPError(res.status_code)
-    project_signals.archive_callback.send(dst)
 
 @celery_app.task(base=ArchiverTask, name="archiver.archive_addon")
 def archive_addon(addon_short_name, job_pk, stat_result):
@@ -150,11 +142,6 @@ def archive_addon(addon_short_name, job_pk, stat_result):
     job = ArchiveJob.load(job_pk)
     src, dst, user = job.info()
     logger.info("Archiving addon: {0} on node: {1}".format(addon_short_name, src._id))
-    dst.archive_job.update_target(
-        addon_short_name,
-        ARCHIVER_PENDING,
-        stat_result=stat_result._to_dict(),
-    )
     src_provider = src.get_addon(addon_short_name)
     folder_name = src_provider.archive_folder_name
     provider = src_provider.config.short_name
@@ -201,19 +188,16 @@ def archive_node(results, job_pk):
     if stat_result.disk_usage > settings.MAX_ARCHIVE_SIZE:
         raise ArchiverSizeExceeded(result=stat_result)
     else:
-        addons_archived = 0
         for result in stat_result.targets:
             if not result.num_files:
                 job.update_target(result.target_name, ARCHIVER_SUCCESS)
-                continue
-            addons_archived = addons_archived + 1
-            archive_addon.delay(
-                addon_short_name=result.target_name,
-                job_pk=job_pk,
-                stat_result=result,
-            )
-        if not addons_archived:
-            project_signals.archive_callback.send(dst)
+            else:
+                archive_addon.delay(
+                    addon_short_name=result.target_name,
+                    job_pk=job_pk,
+                    stat_result=result,
+                )
+        project_signals.archive_callback.send(dst)
 
 @celery_app.task(bind=True, base=ArchiverTask, name='archiver.archive')
 def archive(self, job_pk):

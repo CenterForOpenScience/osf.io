@@ -379,15 +379,26 @@ def project_before_register(auth, node, **kwargs):
             'message': 'The contents of <strong>{0}</strong> cannot be registered at this time,  and will not be included as part of this registration.',
         },
     }
+    errors = []
+
     addon_set = [n.get_addons() for n in itertools.chain([node], node.get_descendants_recursive(lambda n: n.primary))]
     for addon in itertools.chain(*addon_set):
         if not addon.complete:
             continue
+        archive_errors = getattr(addon, 'archive_errors', None)
+        error = None
+        if archive_errors:
+            error = archive_errors()
+            if error:
+                errors.append(error)
+                continue
         name = addon.config.short_name
         if name in settings.ADDONS_ARCHIVABLE:
             messages[settings.ADDONS_ARCHIVABLE[name]]['addons'].add(addon.config.full_name)
         else:
             messages['none']['addons'].add(addon.config.full_name)
+    errors = [e for e in errors if e]
+
     prompts = [
         m['message'].format(util.conjunct(m['addons']))
         for m in messages.values() if m['addons']
@@ -400,7 +411,10 @@ def project_before_register(auth, node, **kwargs):
             )
         )
 
-    return {'prompts': prompts}
+    return {
+        'prompts': prompts,
+        'errors': errors
+    }
 
 
 @must_be_valid_project
