@@ -4,12 +4,15 @@ var ko = require('knockout');
 var bootbox = require('bootbox');
 var $osf = require('js/osfHelpers');
 
-var MetaData = require('../metadata_1.js');
+var MetaData = require('js/metadata_1.js');
 var ctx = window.contextVars;
+
+require('pikaday-css');
+
 /**
     * Unblock UI and display error modal
     */
-function registration_failed() {
+function registrationFailed() {
     $osf.unblock();
     bootbox.alert('Registration failed');
 }
@@ -27,14 +30,15 @@ function registerNode(data) {
         contentType: 'application/json',
         dataType: 'json'
     }).done(function(response) {
-        if (response.status === 'success') {
-            window.location.href = response.result;
+        if (response.status === 'initiated') {
+            $osf.unblock();
+            window.location.assign(response.urls.registrations);
         }
         else if (response.status === 'error') {
-            registration_failed();
+            registrationFailed();
         }
     }).fail(function() {
-        registration_failed();
+        registrationFailed();
     });
 
     // Stop event propagation
@@ -65,6 +69,19 @@ $(document).ready(function() {
 
     $('#registration_template form').on('submit', function() {
 
+        // If embargo is requested, verify its end date, and inform user if date is out of range
+        if (registrationViewModel.embargoAddon.requestingEmbargo()) {
+            if (!registrationViewModel.embargoAddon.isEmbargoEndDateValid()) {
+                registrationViewModel.continueText('');
+                $osf.growl(
+                    'Invalid embargo end date',
+                    'Please choose a date more than two days, but less than four years, from today.',
+                    'warning'
+                );
+                $('#endDatePicker').focus();
+                return false;
+            }
+        }
         // Serialize responses
         var serialized = registrationViewModel.serialize(),
             data = serialized.data,
