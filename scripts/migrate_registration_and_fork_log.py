@@ -15,10 +15,12 @@ def get_all_parents(node):
     parent_list = []
     while True:
         if get_parent(node) is None:
-            return parent_list
+            return False
         if get_parent(node):
             parent_list.append(get_parent(node))
+            return True
         node = get_parent(node)
+    return parent_list
 
 
 def get_parent(node):
