@@ -161,7 +161,7 @@ var _dataverseItemButtons = {
                     className: 'text-info'
                 }, 'Download')
             );
-            if (item.parent().data.state === 'draft' && item.data.permissions.edit) {
+            if (item.parent().data.version === 'latest' && item.data.permissions.edit) {
                 buttons.push(
                     m.component(Fangorn.Components.button, {
                         onclick: function (event) {
