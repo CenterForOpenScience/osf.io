@@ -126,9 +126,6 @@ class NodeSerializer(JSONAPISerializer):
         instance.save()
         return instance
 
-class RegistrationSerializer(NodeSerializer):
-    pass
-
 class NodePointersSerializer(JSONAPISerializer):
 
     id = ser.CharField(read_only=True, source='_id')
