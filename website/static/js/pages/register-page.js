@@ -100,23 +100,22 @@ var ctx = window.contextVars;
             type: "object",
             properties: {
                 datacompletion: {
-                    type: "array",
+                    type: "string",
                     title: "Is data collection for this project underway or complete?",
-                    uniqueItems: true,
-                    items: {
-                        type: "string",
-                        enum: ["yes", "no"],
-                    },
+                    //items: {
+                        //type: "string",
+                    enum: ["yes", "no"],
+                    //},
                     description: "Choose..."
                 },
                 looked: {
-                    type: "array",
+                    type: "string",
                     title: "Have you looked at the data?",
                     uniqueItems: true,
-                    items: {
-                        type: "string",
-                        enum: ["yes", "no"],
-                    },
+                    //items: {
+                        //type: "string",
+                    enum: ["yes", "no"],
+                    //},
                     description: "Choose..."
                 },
                 comments: {
@@ -150,21 +149,18 @@ var ctx = window.contextVars;
                     type: "string", format: "text", title: "The confidence interval of the replication effect size is"
                 },
                 item32: {
-                    type: "array", title: "The replication effect size is",
+                    type: "string", title: "The replication effect size is",
                     uniqueItems: true,
-                    items: {
-                        type: "string",
-                        enum: ["significantly different from the original effect size", "not significantly different from the original effect size"], 
-                    },
+                    //items: {
+                        //type: "string",
+                    enum: ["significantly different from the original effect size", "not significantly different from the original effect size"], 
+                    //},
                     description: "Choose..."
                 },
                 item33: {
-                    type: "array", title: "I judge the replication to be a(n)", 
-                    uniqueItems: true,
-                    items: {
-                        type: "string",
-                        enum: ["success", "informative failure to replicate", "practical failure to replicate", "inconclusive"],
-                    },
+                    type: "string", 
+                    title: "I judge the replication to be a(n)", 
+                    enum: ["success", "informative failure to replicate", "practical failure to replicate", "inconclusive"],
                     description: "Choose..."
                 },
                 item34: {
@@ -224,12 +220,12 @@ var ctx = window.contextVars;
             type: "object",
             properties: {
                 item10: {
-                    type: "array", title: "Are the original materials for the study available from the author?",
+                    type: "string", title: "Are the original materials for the study available from the author?",
                     uniqueItems: true,
-                    items: {
-                        type: "string",
-                        enum: ["yes", "no"], 
-                    },
+                    //items: {
+                        //type: "string",
+                    enum: ["yes", "no"], 
+                    //},
                     description: "Choose..."
                 },
                 item11: {
@@ -266,57 +262,57 @@ var ctx = window.contextVars;
                     description: "Choose..."
                 },
                 item18: {
-                    type: "array", title: "The similarities/differences in the measures are", 
+                    type: "string", title: "The similarities/differences in the measures are", 
                     uniqueItems: true,
-                    items: {
-                        type: "string",
-                        enum: ["Exact", "Close", "Different"],
-                    },
+                    //items: {
+                        //type: "string",
+                    enum: ["Exact", "Close", "Different"],
+                    //},
                     description: "Choose..."
                 },
                 item19: {
-                    type: "array", title: "The similarities/differences in the stimuli are", 
+                    type: "string", title: "The similarities/differences in the stimuli are", 
                     uniqueItems: true,
-                    items: {
-                        type: "string",
-                        enum: ["Exact", "Close", "Different"],
-                    },
+                    //items: {
+                        //type: "string",
+                    enum: ["Exact", "Close", "Different"],
+                    //},
                     description: "Choose..."
                 },
                 item20: {
-                    type: "array", title: "The similarities/differences in the procedure are", 
+                    type: "string", title: "The similarities/differences in the procedure are", 
                     uniqueItems: true,
-                    items: {
-                        type: "string",
-                        enum: ["Exact", "Close", "Different"],
-                    },
+                    //items: {
+                        //type: "string",
+                    enum: ["Exact", "Close", "Different"],
+                    //},
                     description: "Choose..."
                 },
                 item21: {
-                    type: "array", title: "The similarities/differences in the location (e.g., lab vs. online; alone vs. in groups) are", 
+                    type: "string", title: "The similarities/differences in the location (e.g., lab vs. online; alone vs. in groups) are", 
                     uniqueItems: true,
-                    items: {
-                        type: "string",
-                        enum: ["Exact", "Close", "Different"],
-                    },
+                    //items: {
+                        //type: "string",
+                    enum: ["Exact", "Close", "Different"],
+                    //},
                     description: "Choose..."
                 },
                 item22: {
-                    type: "array", title: "The similarities/difference in remuneration are", 
+                    type: "string", title: "The similarities/difference in remuneration are", 
                     uniqueItems: true,
-                    items: {
-                        type: "string",
-                        enum: ["Exact", "Close", "Different"],
-                    },
+                    //items: {
+                        //type: "string",
+                    enum: ["Exact", "Close", "Different"],
+                    //},
                     description: "Choose..."
                 },
                 item23: {
-                    type: "array", title: "The similarities/differences between participant populations are", 
+                    type: "string", title: "The similarities/differences between participant populations are", 
                     uniqueItems: true,
-                    items: {
-                        type: "string",
-                        enum: ["Exact", "Close", "Different"],
-                    },
+                    //items: {
+                        //type: "string",
+                    enum: ["Exact", "Close", "Different"],
+                    //},
                     description: "Choose..."
                 },
                 item24: {
@@ -358,13 +354,87 @@ var ctx = window.contextVars;
     //console.log(JSON.parse(str));
 
     // add for single select of check boxes
-    // JSONEditor.defaults.resolvers.unshift(function(schema) {
-    //     if(schema.type === "object" && schema.format === "location") {
-    //         return "location";
-    //     }
+    JSONEditor.defaults.resolvers.unshift(function(schema) {
+        if(schema.type === "array" && schema.items && !(Array.isArray(schema.items)) && schema.uniqueItems && schema.items["enum"] && ['string','number','integer'].indexOf(schema.items.type) >= 0) {
+             return "singleselect";       
+        }    
+    });
 
-    //     // If no valid editor is returned, the next resolver function will be used
-    // });
+    JSONEditor.defaults.editors.singleselect = JSONEditor.defaults.editors.multiselect.extend({      
+        build: function() {
+            
+            var self = this, i;
+            if(!this.options.compact) this.header = this.label = this.theme.getFormInputLabel(this.getTitle());
+            if(this.schema.description) this.description = this.theme.getFormInputDescription(this.schema.description);
+
+            if((!this.schema.format && this.option_keys.length < 8) || this.schema.format === "checkbox") {
+              this.input_type = 'checkboxes';
+
+              this.inputs = {};
+              this.controls = {};
+              for(i=0; i<this.option_keys.length; i++) {
+                this.inputs[this.option_keys[i]] = this.theme.getCheckbox();
+                this.select_options[this.option_keys[i]] = this.inputs[this.option_keys[i]];
+                var label = this.theme.getCheckboxLabel(this.option_keys[i]);
+                this.controls[this.option_keys[i]] = this.theme.getFormControl(label, this.inputs[this.option_keys[i]]);
+              }
+
+              this.control = this.theme.getMultiCheckboxHolder(this.controls,this.label,this.description);
+            }
+            else {
+              this.input_type = 'select';
+              this.input = this.theme.getSelectInput(this.option_keys);
+              this.input.multiple = true;
+              this.input.size = Math.min(10,this.option_keys.length);
+
+              for(i=0; i<this.option_keys.length; i++) {
+                this.select_options[this.option_keys[i]] = this.input.children[i];
+              }
+
+              if(this.schema.readOnly || this.schema.readonly) {
+                this.always_disabled = true;
+                this.input.disabled = true;
+              }
+
+              this.control = this.theme.getFormControl(this.label, this.input, this.description);
+            }
+            
+            this.container.appendChild(this.control);
+            var previous;
+            this.control.addEventListener("mouseover", function(e) {
+                var new_value = [];
+                for(i = 0; i<self.option_keys.length; i++) {
+                    if(self.select_options[self.option_keys[i]].selected || self.select_options[self.option_keys[i]].checked) {
+                        new_value.push(self.select_values[self.option_keys[i]]);
+                    }
+                }
+                previous = new_value;
+                   
+            });
+            this.control.addEventListener('change',function(e) {
+              e.preventDefault();
+              e.stopPropagation();
+
+              // delete older one using previous
+              var new_value = [];
+                for(i = 0; i<self.option_keys.length; i++) {
+                    if(self.select_options[self.option_keys[i]].selected || self.select_options[self.option_keys[i]].checked) {
+
+                        var str = '"' + self.select_values[self.option_keys[i]] + '"';
+                        var blah = self.select_values[self.option_keys[i]];
+                        if (previous.indexOf(blah) != -1) {
+                            self.select_options[self.option_keys[i]].checked = false;
+                        }
+                         else { 
+                            new_value.push(self.select_values[self.option_keys[i]]);
+                        }
+                    }
+                }
+              self.updateValue(new_value);
+              self.onChange(true);
+            });
+        },
+    });
 
     var loadData = function(schemas, arrays, which) {
         titles = [];
