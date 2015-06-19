@@ -153,7 +153,7 @@
             <br />
             <label>Template (Optional)</label>
             <span class="help-block">Start typing to search. Selecting project as template will duplicate its structure in the new project without importing the content of that project.</span>
-            <input type="hidden" class="select2-container createNodeTemplates" style="width: 100%">
+            <input type="hidden" class="select2-container create-node-templates" id="createNodeTemplatesInput" style="width: 100%">
         </div>
     </div>
     <br />
