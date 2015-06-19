@@ -6,6 +6,7 @@ from celery.utils.log import get_task_logger
 
 from framework.tasks import app as celery_app
 from framework.exceptions import HTTPError
+from framework.sentry import log_message, log_exception
 
 from website.archiver import (
     ARCHIVER_SUCCESS,
@@ -51,6 +52,7 @@ class ArchiverTask(celery.Task):
     max_retries = 0
 
     def on_failure(self, exc, task_id, args, kwargs, einfo):
+        log_message(einfo)
         job = ArchiveJob.load(kwargs.get('job_pk'))
         if not job:
             raise ArchiverStateError({
@@ -120,14 +122,7 @@ def make_copy_request(job_pk, url, data):
     src, dst, user = job.info()
     provider = data['source']['provider']
     logger.info("Sending copy request for addon: {0} on node: {1}".format(provider, dst._id))
-    res = requests.post(url, data=json.dumps(data))
-    if res.status_code not in (200, 201, 202):
-        dst.archive_job.update_target(
-            provider,
-            ARCHIVER_FAILURE,
-            errors=[res.json()],
-        )
-        raise HTTPError(res.status_code)
+    requests.post(url, data=json.dumps(data))
 
 @celery_app.task(base=ArchiverTask, name="archiver.archive_addon")
 def archive_addon(addon_short_name, job_pk, stat_result):
@@ -146,23 +141,45 @@ def archive_addon(addon_short_name, job_pk, stat_result):
     folder_name = src_provider.archive_folder_name
     provider = src_provider.config.short_name
     cookie = user.get_or_create_cookie()
-    data = {
-        'source': {
-            'cookie': cookie,
-            'nid': src._id,
-            'provider': provider,
-            'path': '/',
-        },
-        'destination': {
-            'cookie': cookie,
-            'nid': dst._id,
-            'provider': settings.ARCHIVE_PROVIDER,
-            'path': '/',
-        },
-        'rename': folder_name,
-    }
     copy_url = settings.WATERBUTLER_URL + '/ops/copy'
-    make_copy_request.delay(job_pk=job_pk, url=copy_url, data=data)
+    if addon_short_name == 'dataverse':
+        data = {
+            'source': {
+                'cookie': cookie,
+                'nid': src._id,
+                'provider': provider,
+                'path': '/',
+                'revision': 'latest-published',
+            },
+            'destination': {
+                'cookie': cookie,
+                'nid': dst._id,
+                'provider': settings.ARCHIVE_PROVIDER,
+                'path': '/',
+            },
+            'rename': folder_name + ' (published)',
+        }
+        make_copy_request.delay(job_pk=job_pk, url=copy_url, data=data)
+        data['source']['revision'] = 'latest'
+        data['rename'] = folder_name + ' (draft)'
+        make_copy_request.delay(job_pk=job_pk, url=copy_url, data=data)
+    else:
+        data = {
+            'source': {
+                'cookie': cookie,
+                'nid': src._id,
+                'provider': provider,
+                'path': '/',
+            },
+            'destination': {
+                'cookie': cookie,
+                'nid': dst._id,
+                'provider': settings.ARCHIVE_PROVIDER,
+                'path': '/',
+            },
+            'rename': folder_name,
+        }
+        make_copy_request.delay(job_pk=job_pk, url=copy_url, data=data)
 
 
 @celery_app.task(base=ArchiverTask, name="archiver.archive_node")
@@ -186,7 +203,9 @@ def archive_node(results, job_pk):
         targets=results,
     )
     if stat_result.disk_usage > settings.MAX_ARCHIVE_SIZE:
-        raise ArchiverSizeExceeded(result=stat_result)
+        e = ArchiverSizeExceeded(result=stat_result)
+        log_exception(e)
+        raise e
     else:
         for result in stat_result.targets:
             if not result.num_files:
