@@ -483,8 +483,8 @@ class TestProjectViews(OsfTestCase):
         self.app.delete_json(url, {"tag": "foo'ta#@%#%^&g?"}, auth=self.auth)
         self.project.reload()
         assert_not_in(sanitize.clean_tag("foo'ta#@%#%^&g?"), self.project.tags)
-        assert_equal("tag_removed", self.project.logs[-1].action) \
-            and assert_equal("foo'ta#@%#%^&g?", self.project.logs[-1].params['tag'])
+        assert_equal("tag_removed", self.project.logs[-1].action)
+        assert_equal("foo'ta#@%#%^&g?", self.project.logs[-1].params['tag'])
 
     def test_register_template_page(self):
         url = "/api/v1/project/{0}/register/Replication_Recipe_(Brandt_et_al.,_2013):_Post-Completion/".format(
