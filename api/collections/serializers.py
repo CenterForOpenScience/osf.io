@@ -1,7 +1,8 @@
 from rest_framework import serializers as ser
+
 from api.base.serializers import JSONAPISerializer, CollectionLinksField, Link, LinksField
 from api.base.utils import get_user_auth
-from website.models import Node
+from website.models import Node, Pointer
 from framework.auth.core import Auth
 
 
@@ -90,10 +91,13 @@ class CollectionSerializer(JSONAPISerializer):
 
 
 class CollectionPointersSerializer(JSONAPISerializer):
-    id = ser.CharField(read_only=True, source='_id')
-    node_id = ser.CharField(source='node._id', help_text='The ID of the node that this pointer points to')
-    title = ser.CharField(read_only=True, source='node.title', help_text='The title of the node that this pointer '
-                                                                         'points to')
+    # try:
+    #     id = ser.CharField(read_only=True, source='_id')
+    #     node_id = ser.CharField(source='node._id', help_text='The ID of the node that this pointer points to')
+    #     title = ser.CharField(read_only=True, source='node.title', help_text='The title of the node that this pointer')
+    # except AttributeError as e:
+    node_id = ser.CharField(source='key', help_text='ayy lmao')
+    title = ser.CharField(read_only=True, help_text='ayy lmao')
 
     class Meta:
         type_ = 'pointers'
@@ -103,8 +107,11 @@ class CollectionPointersSerializer(JSONAPISerializer):
     })
 
     def get_absolute_url(self, obj):
-        pointer_node = Node.load(obj.node._id)
-        return pointer_node.absolute_url
+        if isinstance(obj, Node):
+            return obj._id
+        else:
+            pointer_node = Node.load(obj.node._id)
+            return pointer_node.absolute_url
 
     def create(self, validated_data):
         request = self.context['request']
@@ -115,5 +122,3 @@ class CollectionPointersSerializer(JSONAPISerializer):
         pointer = node.add_pointer(pointer_node, auth, save=True)
         return pointer
 
-    def update(self, instance, validated_data):
-        pass

@@ -369,6 +369,9 @@ class TestCollectionChildrenList(ApiTestCase):
         assert_in('Smart Folder amr', titles)
         assert_in('Smart Folder amp', titles)
 
+
+    def tearDown(self):
+        ApiTestCase.tearDown(self)
         Node.remove()
 
 
@@ -432,6 +435,12 @@ class TestCreateCollectionPointer(ApiTestCase):
         self.collection_two_url = '/{}collections/{}/pointers/'.format(API_BASE, self.collection_two._id)
         self.payload_two = {'node_id': self.collection_two._id}
 
+        self.smart_folder_amp = FolderFactory(_id="amp", creator=self.user)
+        self.smart_folder_amr = FolderFactory(_id="amr", creator=self.user)
+        self.smart_folder_amp_url = '/{}collections/amp/pointers/'.format(API_BASE)
+        self.smart_folder_amr_url = '/{}collections/amr/pointers/'.format(API_BASE)
+
+
     def test_not_creates_collection_pointer_not_creator(self):
         res = self.app.post(self.collection_two_url, self.payload_two, expect_errors=True, auth=self.basic_auth)
         # This is 403 instead of 401 because basic authentication is only for unit tests and, in order to keep from
@@ -453,6 +462,12 @@ class TestCreateCollectionPointer(ApiTestCase):
         # presenting a basic authentication dialog box in the front end. We may change this as we understand CAS
         # a little better
         assert_equal(res.status_code, 403)
+
+    def test_return_smart_folder_info(self):
+        res = self.app.get(self.smart_folder_amp_url, auth=self.basic_auth)
+        res_json = res.json['data']
+
+        assert_equal(res.status_code, 200)
 
 
 class TestCollectionPointerDetail(ApiTestCase):

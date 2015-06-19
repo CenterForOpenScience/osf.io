@@ -4,7 +4,7 @@ from datetime import datetime
 
 from framework.auth.core import Auth
 from website.models import Node, Pointer
-from api.base.utils import get_object_or_404
+from api.base.utils import get_object_or_404, get_user_auth
 from api.base.filters import ODMFilterMixin, ListFilterMixin
 from .serializers import CollectionSerializer, CollectionPointersSerializer
 from .permissions import ContributorOrPublic
@@ -12,16 +12,16 @@ from website.views import find_dashboard
 
 smart_folders = {
     'amp': Q('category', 'eq', 'project') &
-    Q('is_deleted', 'eq', False) &
-    Q('is_registration', 'eq', False) &
-    Q('is_folder', 'eq', True) &
-    Q('__backrefs.parent.node.nodes', 'eq', None),
+           Q('is_deleted', 'eq', False) &
+           Q('is_registration', 'eq', False) &
+           Q('is_folder', 'eq', True) &
+           Q('__backrefs.parent.node.nodes', 'eq', None),
 
     'amr': Q('category', 'eq', 'project') &
-    Q('is_deleted', 'eq', False) &
-    Q('is_registration', 'eq', True) &
-    Q('is_folder', 'eq', True) &
-    Q('__backrefs.parent.node.nodes', 'eq', None),
+           Q('is_deleted', 'eq', False) &
+           Q('is_registration', 'eq', True) &
+           Q('is_folder', 'eq', True) &
+           Q('__backrefs.parent.node.nodes', 'eq', None),
 }
 
 
@@ -58,9 +58,9 @@ class CollectionMixin(object):
 
 
 class CollectionList(generics.ListCreateAPIView, ListFilterMixin, ODMFilterMixin):
-    """Projects and components.
+    """List of all collections
 
-    By default, a GET will return a list of collections, sorted by date_modified. You can filter Collection by their
+    By default, a GET will return a list of collections, sorted by date_modified. You can filter a Collection by its
     title. Note that you must be logged in to access it
     """
     permission_classes = (
@@ -128,8 +128,7 @@ class CollectionDetail(generics.RetrieveUpdateAPIView, generics.RetrieveDestroyA
 
     # overrides DestroyAPIView
     def perform_destroy(self, instance):
-        user = self.request.user
-        auth = Auth(user)
+        auth = get_user_auth(self.request)
         node = self.get_node()
         date = datetime.now()
         # Right now you cannot DELETE the dashboard but if you try, you get a 204
@@ -151,13 +150,15 @@ class CollectionChildrenList(generics.ListAPIView, CollectionMixin):
         ContributorOrPublic
     )
 
-    serializer_class = CollectionSerializer  # overrides ListAPIView
+    serializer_class = CollectionSerializer
 
+    # overrides ListAPIView
     def get_queryset(self):
 
         key = self.kwargs[self.node_lookup_url_kwarg]
+        user = self.request.user
         if key == 'amp':
-            contributed = self.request.user.node__contributed
+            contributed = user.node__contributed
             all_my_projects = contributed.find(
                 smart_folders.get('amp')
             )
@@ -165,7 +166,7 @@ class CollectionChildrenList(generics.ListAPIView, CollectionMixin):
             return all_my_projects
 
         elif key == 'amr':
-            contributed = self.request.user.node__contributed
+            contributed = user.node__contributed
             all_my_registrations = contributed.find(
                 smart_folders.get('amr')
             )
@@ -174,11 +175,7 @@ class CollectionChildrenList(generics.ListAPIView, CollectionMixin):
         current_node = self.get_node()
         nodes = current_node.nodes
 
-        user = self.request.user
-        if user.is_anonymous():
-            auth = Auth(None)
-        else:
-            auth = Auth(user)
+        auth = get_user_auth(self.request)
         children = [node for node in nodes if node.can_view(auth)]
 
         if current_node.is_dashboard:
@@ -200,7 +197,7 @@ class CollectionChildrenList(generics.ListAPIView, CollectionMixin):
         return children
 
 
-class CollectionPointersList(generics.ListCreateAPIView, CollectionMixin):
+class CollectionPointersList(generics.ListAPIView, CollectionMixin):
     """Pointers to other nodes.
 
     Pointers are essentially aliases or symlinks: All they do is point to another node.
@@ -213,8 +210,24 @@ class CollectionPointersList(generics.ListCreateAPIView, CollectionMixin):
     serializer_class = CollectionPointersSerializer
 
     def get_queryset(self):
-        pointers = self.get_node().nodes_pointer
-        return pointers
+        key = self.kwargs[self.node_lookup_url_kwarg]
+        user = self.request.user
+        if key == 'amp':
+            contributed = user.node__contributed
+            all_my_projects = contributed.find(
+                smart_folders.get('amp')
+            )
+
+            return all_my_projects
+
+        elif key == 'amr':
+            contributed = user.node__contributed
+            all_my_registrations = contributed.find(
+                smart_folders.get('amr')
+            )
+            return all_my_registrations
+
+        return self.get_node().nodes_pointer
 
 
 class CollectionPointerDetail(generics.RetrieveDestroyAPIView, CollectionMixin):

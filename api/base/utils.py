@@ -18,8 +18,8 @@ def absolute_reverse(view_name, query_kwargs=None, args=None, kwargs=None):
 
     # this facilitates spoofing smart_folders
     if kwargs is not None:
-        if 'pk' in kwargs:
-            if kwargs['pk'] == '' and kwargs['smart_folder'] is True:
+        if 'properties' in kwargs:
+            if kwargs['properties']['smart_folder'] is True:
                 return ''
 
     relative_url = reverse(view_name, kwargs=kwargs)
