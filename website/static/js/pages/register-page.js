@@ -100,22 +100,23 @@ var ctx = window.contextVars;
             type: "object",
             properties: {
                 datacompletion: {
-                    type: "string",
+                    type: "array",
                     title: "Is data collection for this project underway or complete?",
-                    //items: {
-                        //type: "string",
-                    enum: ["yes", "no"],
-                    //},
+                    uniqueItems: true,
+                    items: {
+                        type: "string",
+                        enum: ["yes", "no"],
+                    },
                     description: "Choose..."
                 },
                 looked: {
-                    type: "string",
+                    type: "array",
                     title: "Have you looked at the data?",
                     uniqueItems: true,
-                    //items: {
-                        //type: "string",
-                    enum: ["yes", "no"],
-                    //},
+                    items: {
+                        type: "string",
+                        enum: ["yes", "no"],
+                    },
                     description: "Choose..."
                 },
                 comments: {
@@ -149,18 +150,22 @@ var ctx = window.contextVars;
                     type: "string", format: "text", title: "The confidence interval of the replication effect size is"
                 },
                 item32: {
-                    type: "string", title: "The replication effect size is",
+                    type: "array", title: "The replication effect size is",
                     uniqueItems: true,
-                    //items: {
-                        //type: "string",
-                    enum: ["significantly different from the original effect size", "not significantly different from the original effect size"], 
-                    //},
+                    items: {
+                        type: "string",
+                        enum: ["significantly different from the original effect size", "not significantly different from the original effect size"], 
+                    },
                     description: "Choose..."
                 },
                 item33: {
-                    type: "string", 
+                    type: "array", 
                     title: "I judge the replication to be a(n)", 
-                    enum: ["success", "informative failure to replicate", "practical failure to replicate", "inconclusive"],
+                    uniqueItems: true,
+                    items: {
+                        type: "string",
+                        enum: ["success", "informative failure to replicate", "practical failure to replicate", "inconclusive"],
+                    },
                     description: "Choose..."
                 },
                 item34: {
@@ -220,12 +225,12 @@ var ctx = window.contextVars;
             type: "object",
             properties: {
                 item10: {
-                    type: "string", title: "Are the original materials for the study available from the author?",
+                    type: "array", title: "Are the original materials for the study available from the author?",
                     uniqueItems: true,
-                    //items: {
-                        //type: "string",
-                    enum: ["yes", "no"], 
-                    //},
+                    items: {
+                        type: "string",
+                        enum: ["yes", "no"], 
+                    },
                     description: "Choose..."
                 },
                 item11: {
@@ -262,57 +267,57 @@ var ctx = window.contextVars;
                     description: "Choose..."
                 },
                 item18: {
-                    type: "string", title: "The similarities/differences in the measures are", 
+                    type: "array", title: "The similarities/differences in the measures are", 
                     uniqueItems: true,
-                    //items: {
-                        //type: "string",
-                    enum: ["Exact", "Close", "Different"],
-                    //},
+                    items: {
+                        type: "string",
+                        enum: ["Exact", "Close", "Different"],
+                    },
                     description: "Choose..."
                 },
                 item19: {
-                    type: "string", title: "The similarities/differences in the stimuli are", 
+                    type: "array", title: "The similarities/differences in the stimuli are", 
                     uniqueItems: true,
-                    //items: {
-                        //type: "string",
-                    enum: ["Exact", "Close", "Different"],
-                    //},
+                    items: {
+                        type: "string",
+                        enum: ["Exact", "Close", "Different"],
+                    },
                     description: "Choose..."
                 },
                 item20: {
-                    type: "string", title: "The similarities/differences in the procedure are", 
+                    type: "array", title: "The similarities/differences in the procedure are", 
                     uniqueItems: true,
-                    //items: {
-                        //type: "string",
-                    enum: ["Exact", "Close", "Different"],
-                    //},
+                    items: {
+                        type: "string",
+                        enum: ["Exact", "Close", "Different"],
+                    },
                     description: "Choose..."
                 },
                 item21: {
-                    type: "string", title: "The similarities/differences in the location (e.g., lab vs. online; alone vs. in groups) are", 
+                    type: "array", title: "The similarities/differences in the location (e.g., lab vs. online; alone vs. in groups) are", 
                     uniqueItems: true,
-                    //items: {
-                        //type: "string",
-                    enum: ["Exact", "Close", "Different"],
-                    //},
+                    items: {
+                        type: "string",
+                        enum: ["Exact", "Close", "Different"],
+                    },
                     description: "Choose..."
                 },
                 item22: {
-                    type: "string", title: "The similarities/difference in remuneration are", 
+                    type: "array", title: "The similarities/difference in remuneration are", 
                     uniqueItems: true,
-                    //items: {
-                        //type: "string",
-                    enum: ["Exact", "Close", "Different"],
-                    //},
+                    items: {
+                        type: "string",
+                        enum: ["Exact", "Close", "Different"],
+                    },
                     description: "Choose..."
                 },
                 item23: {
-                    type: "string", title: "The similarities/differences between participant populations are", 
+                    type: "array", title: "The similarities/differences between participant populations are", 
                     uniqueItems: true,
-                    //items: {
-                        //type: "string",
-                    enum: ["Exact", "Close", "Different"],
-                    //},
+                    items: {
+                        type: "string",
+                        enum: ["Exact", "Close", "Different"],
+                    },
                     description: "Choose..."
                 },
                 item24: {
