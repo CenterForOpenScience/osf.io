@@ -332,6 +332,9 @@ def node_choose_addons(auth, node, **kwargs):
 def node_contributors(auth, node, **kwargs):
     ret = _view_project(node, auth, primary=True)
     ret['contributors'] = utils.serialize_contributors(node.contributors, node)
+    # tack on pending data from this node for each user
+    for contributor in ret['contributors']:
+        contributor['pending'] = contributor["id"] in node.pending_contributors
     ret['adminContributors'] = utils.serialize_contributors(node.admin_contributors, node, admin=True)
     return ret
 

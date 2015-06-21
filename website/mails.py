@@ -131,6 +131,8 @@ INVITE = Mail('invite', subject='You have been added as a contributor to an OSF 
 FORWARD_INVITE = Mail('forward_invite', subject='Please forward to ${fullname}')
 FORWARD_INVITE_REGiSTERED = Mail('forward_invite_registered', subject='Please forward to ${fullname}')
 
+CONTRIBUTOR_ADD_INVITE = Mail('contributor_invite', subject="[via OSF] You've been added as a project contributor")
+
 FORGOT_PASSWORD = Mail('forgot_password', subject='Reset Password')
 PENDING_VERIFICATION = Mail('pending_invite', subject="Your account is almost ready!")
 PENDING_VERIFICATION_REGISTERED = Mail('pending_registered', subject='Received request to be a contributor')

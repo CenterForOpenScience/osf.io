@@ -1159,6 +1159,17 @@ def make_url_map(app):
             '/project/<pid>/node/<nid>/removecontributors/',
         ], 'post', project_views.contributor.project_removecontributor, json_renderer),
 
+        # confirm / deny participation in a project
+        Rule(['/project/<string:pid>/contributor/<string:uid>/confirm/<string:token>/'], 'get',
+             project_views.contributor.confirm_participation,
+             OsfWebRenderer('confirm_node_add.mako')),
+        Rule(['/project/<string:pid>/contributor/<string:uid>/confirm/<string:token>/ok/'], 'get',
+             project_views.contributor.verify_added_token,
+             json_renderer),
+        Rule(['/project/<string:pid>/contributor/<string:uid>/confirm/<string:token>/nope/'], 'get',
+             project_views.contributor.deny_added_token,
+             json_renderer),
+        
         # Forks
         Rule(
             [

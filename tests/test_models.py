@@ -16,7 +16,7 @@ from modularodm.exceptions import ValidationError, ValidationValueError, Validat
 
 
 from framework.analytics import get_total_activity_count
-from framework.exceptions import PermissionsError
+from framework.exceptions import PermissionsError, HTTPError
 from framework.auth import User, Auth
 from framework.sessions.model import Session
 from framework.auth import exceptions as auth_exc
@@ -25,6 +25,7 @@ from framework.auth.utils import impute_names_model
 from framework.bcrypt import check_password_hash
 from website import filters, language, settings
 from website.exceptions import NodeStateError
+from website import mails
 from website.profile.utils import serialize_user
 from website.project.model import (
     ApiKey, Comment, Node, NodeLog, Pointer, ensure_schemas, has_anonymous_link,
@@ -1847,6 +1848,10 @@ class TestProject(OsfTestCase):
         self.consolidate_auth = Auth(user=self.user)
         self.project = ProjectFactory(creator=self.user, description='foobar')
 
+    def tearDown(self):
+        self.project.pending_contributors.clear()
+        self.project.save()
+
     def test_repr(self):
         assert_in(self.project.title, repr(self.project))
         assert_in(self.project._id, repr(self.project))
@@ -1922,6 +1927,67 @@ class TestProject(OsfTestCase):
         self.project.save()
         assert_in(user2, self.project.contributors)
         assert_equal(self.project.logs[-1].action, 'contributor_added')
+
+    @mock.patch('website.project.views.contributor.mails.send_mail')
+    def test_send_contributor_added_email(self, send_mail):
+        project = ProjectFactory()
+        added_user = UserFactory()
+        project.add_contributor(added_user)
+
+        assert_true(send_mail.called)
+        assert_true(send_mail.called_with(
+            to_addr=added_user.username,
+            mail=mails.CONTRIBUTOR_ADD_INVITE
+        ))
+
+    @mock.patch('website.project.views.contributor.mails.send_mail')
+    def test_send_contributor_email_before_throttle_expires(self, send_mail):
+        project = ProjectFactory()
+        added_user = AuthUserFactory()
+        project.add_contributor(added_user)
+        project.remove_contributor(added_user, Auth(user=added_user, api_key=added_user.auth[1]))
+
+        # 2nd call raises error because throttle hasn't expired
+        with assert_raises(HTTPError):
+            project.add_contributor(added_user)
+        send_mail.assert_not_called()
+
+    def test_affirm_participation_removes_pending_status(self):
+        project = ProjectFactory()
+        added_user = UserFactory()
+        project.add_contributor(added_user)
+        token = project.pending_contributors[added_user._id]["token"]
+        assert_false(project.confirm_contributor_participation(added_user, "invalidtoken"))
+        assert_true(project.confirm_contributor_participation(added_user, token))
+        # shouldn't work a second time
+        assert_false(project.confirm_contributor_participation(added_user, token))
+        assert_false(added_user._id in project.pending_contributors)
+
+    def test_deny_participation_cleanly_removes_participation_and_adds_to_ignore_list(self):
+        project = ProjectFactory()
+        added_user = AuthUserFactory()
+        auth = Auth(user=added_user, api_key=added_user.auth[1])
+        project.add_contributor(added_user)
+        token = project.pending_contributors[added_user._id]["token"]
+        assert_false(project.deny_contributor_participation(added_user, "invalidtoken", auth))
+        assert_true(project.deny_contributor_participation(added_user, token, auth))
+        # shouldn't work a second time
+        assert_false(project.deny_contributor_participation(added_user, token, auth))
+        # spam prevention: people who have denied participation can't be re-added
+        # TODO: maybe they should allow themselves to be re-added?
+        assert_true(added_user._id in project.contributors_in_denial)
+        assert_false(added_user._id in project.pending_contributors)
+        assert_false(added_user._id in [user._id for user in project.contributors])
+
+    def test_cant_add_already_denied_contributor(self):
+        project = ProjectFactory()
+        added_user = AuthUserFactory()
+        auth = Auth(user=added_user, api_key=added_user.auth[1])
+        project.add_contributor(added_user)
+        token = project.pending_contributors[added_user._id]["token"]
+        assert_true(project.deny_contributor_participation(added_user, token, auth))
+        assert_true(added_user._id in project.contributors_in_denial)
+        assert_false(project.add_contributor(added_user))
 
     def test_add_unregistered_contributor(self):
         self.project.add_unregistered_contributor(

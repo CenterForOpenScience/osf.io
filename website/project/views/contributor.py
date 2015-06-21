@@ -28,7 +28,7 @@ from website.models import Node
 from website.profile import utils
 from website.project.model import has_anonymous_link
 from website.util import web_url_for, is_json_request
-from website.project.model import unreg_contributor_added
+from website.project.model import unreg_contributor_added, contributor_added
 from website.util.permissions import expand_permissions, ADMIN
 from website.project.decorators import (must_have_permission, must_be_valid_project,
         must_not_be_registration, must_be_contributor_or_public, must_be_contributor)
@@ -71,6 +71,7 @@ def get_node_contributors_abbrev(auth, node, **kwargs):
         contributors.append({
             'user_id': user._primary_key,
             'separator': separator,
+            'pending': node.is_contributor_pending(user._id)
         })
 
     return {
@@ -106,6 +107,8 @@ def get_contributors(auth, node, **kwargs):
         node.visible_contributors[0:limit],
         node=node,
     )
+    for contributor in contribs:
+        contributor["pending"] = contributor["id"] in node.pending_contributors
 
     # Will either return just contributor list or contributor list + 'more' element
     if limit:
@@ -505,6 +508,122 @@ def send_claim_email(email, user, node, notify=True, throttle=24 * 3600):
     return to_addr
 
 
+@contributor_added.connect
+def send_contributor_added_email(node, contributor, throttle=24*3600, **kwargs):
+    """Send an email to users when they are added as contributors to projects.
+
+    :param Node node: The node that the user is being added to.
+    :param User contributor: The User record being added to the project.
+    :param int throttle: Time period (in seconds) after the referrer is
+        emailed during which the referrer will not be emailed again.
+
+    """
+    existing_pending = node.pending_contributors
+    if contributor._id in existing_pending:
+        record = existing_pending[contributor._id]
+        if "timestamp" in record and not throttle_period_expired(record["timestamp"], throttle):
+            raise HTTPError(400, data=dict(
+                message_long='Group addtions can only be sent once every {0} hours'.format(throttle/3600.0)
+            ))
+    else:
+        existing_pending[contributor._id] = {}
+    record = existing_pending[contributor._id]
+    record["timestamp"] = get_timestamp()
+    # only make a new token if they don't already have one.
+    project_url = node.get_contributor_added_url(contributor._id)
+    mail_tpl = mails.CONTRIBUTOR_ADD_INVITE
+    to_addr = contributor.username
+    mails.send_mail(
+        to_addr,
+        mail_tpl,
+        user=contributor,
+        node=node,
+        project_url=project_url,
+        email=contributor.username,
+        fullname=contributor.fullname
+    )
+
+    node.save()
+
+
+@collect_auth
+@must_be_valid_project
+def confirm_participation(pid, uid, token, auth, node):
+    """View that prompts logged-in user to confirm or deny their participation
+    in a project.
+    """
+    current_user = auth.user
+
+    sign_out_url = web_url_for('auth_login', logout=True, next=request.url)
+    if not current_user:
+        return redirect(sign_out_url)
+    # Logged in user should be a contributor the project
+    if not node.is_contributor(current_user):
+        logout_url = web_url_for('auth_logout', redirect_url=request.url)
+        data = {
+            'message_short': 'Not a contributor',
+            'message_long': ('The logged-in user is not a contributor to this'
+                'project. Would you like to <a href="{}">log out</a>?').format(logout_url)
+        }
+        raise HTTPError(http.BAD_REQUEST, data=data)
+    return {
+        'confirmUrl': node.get_contributor_added_url(uid, token)+"ok/",
+        'denyUrl': node.get_contributor_added_url(uid, token)+"nope/",
+    }
+
+@must_be_valid_project
+@must_be_logged_in
+def verify_added_token(pid, uid, token, node, auth):
+    """View helper that ensures that logged-in user matches contributor being added,
+    then confirms this contributor.
+
+    Raises error if logged-in user does not match added contributor.
+    Returns boolean whether confirmation was successful.
+    """
+    user = User.load(uid)  # The contributor being added
+    if auth.user._id != user._id:
+        logout_url = web_url_for('auth_logout', redirect_url=request.url)
+        data = {
+            'message_short': 'Not the current contributor',
+            'message_long': ('The logged-in user does not match the contributor being added to this'
+                'project. Would you like to <a href="{}">log out</a>?').format(logout_url)
+        }
+        raise HTTPError(400, data=data)
+    if node.confirm_contributor_participation(user, token):
+        status.push_status_message("Your participation is confirmed.", 'success')
+    else:
+        data = {
+            'message_short': 'Wrong token',
+            'message_long': ("Can't confirm contributor - incorrect token")
+        }
+        raise HTTPError(400, data=data)
+    return redirect(node.url)
+
+@must_be_valid_project
+@must_be_logged_in
+def deny_added_token(pid, uid, token, node, auth):
+    user = User.load(uid)  # The contributor being added
+    if auth.user._id != user._id:
+        logout_url = web_url_for('auth_logout', redirect_url=request.url)
+        data = {
+            'message_short': 'Not the current contributor',
+            'message_long': ('The logged-in user does not match the contributor being added to this'
+                'project. Would you like to <a href="{}">log out</a>?').format(logout_url)
+        }
+        raise HTTPError(400, data=data)
+    if node.deny_contributor_participation(user, token, auth):
+        status.push_status_message("You have been removed as a contributor.", 'success')
+    else: 
+        data = {
+            'message_short': 'Wrong token',
+            'message_long': ("Can't remove contributor - incorrect token")
+        }
+        raise HTTPError(400, data=data)
+    return redirect(node.url)
+
+
+@must_be_valid_project
+@must_be_logged_in
 def verify_claim_token(user, token, pid):
     """View helper that checks that a claim token for a given user and node ID
     is valid. If not valid, throws an error with custom error messages.

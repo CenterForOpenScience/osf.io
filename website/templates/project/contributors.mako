@@ -184,6 +184,9 @@
             <span data-bind="if: profileUrl">
                 <a class="no-sort" data-bind="text: contributor.shortname, attr:{href: profileUrl}"></a>
             </span>
+            <!-- ko if: contributor.pending -->
+                <span>(unconfirmed)</span>
+            <!-- /ko -->
         </td>
         <td class="permissions">
             <!-- ko if: contributor.canEdit() -->
