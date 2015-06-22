@@ -28,6 +28,10 @@ from website.profile.utils import get_gravatar
 from website.project.utils import serialize_node
 from website.project.decorators import must_be_valid_project, must_be_contributor_or_public
 
+# TODO: REMOVE DEBUGGING
+import logging
+from pprint import pprint
+
 
 @decorators.must_have_permission('write')
 @decorators.must_not_be_registration
@@ -189,6 +193,14 @@ LOG_ACTION_MAP = {
 @restrict_waterbutler
 @must_be_valid_project
 def create_waterbutler_log(payload, **kwargs):
+    # TODO: REMOVE DEBUGGING
+    logging.info('\nCALLED CREATE WATERBUTLER LOG')
+    logging.info('PAYLOAD:')
+    pprint(payload)
+    logging.info('KWARGS')
+    pprint(kwargs)
+    print('\n')
+
     try:
         auth = payload['auth']
         action = LOG_ACTION_MAP[payload['action']]
