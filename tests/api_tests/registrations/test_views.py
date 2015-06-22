@@ -50,12 +50,68 @@ class TestRegistrationList(ApiTestCase):
         assert_not_in(self.registration_project_four._id, ids)
 
 class TestRegistrationDetail(ApiTestCase):
-    pass
 
-    # TODO
-    """
-    1) Create registration (is_registration is True).  Get registration Detail.  Assert 400, Node is not registration
-    2) Get registration detail with fake node.  Assert node not found.
-    3)
+    def setUp(self):
+        ApiTestCase.setUp(self)
+        self.user = UserFactory.build()
+        password = fake.password()
+        self.password = password
+        self.user.set_password(password)
+        self.user.save()
+        self.basic_auth = (self.user.username, password)
 
-    """
+        self.user_two = UserFactory.build()
+        self.user_two.set_password(password)
+        self.user_two.save()
+        self.basic_auth_two = (self.user_two.username, password)
+
+        self.public_project = ProjectFactory(creator=self.user, is_public=True)
+        self.public_registration = RegistrationFactory(creator=self.user, project=self.public_project)
+        self.public_url = '/{}registrations/{}'.format(API_BASE, self.public_registration._id)
+
+        self.private_project = ProjectFactory(creator=self.user, is_private=True)
+        self.private_registration = RegistrationFactory(creator=self.user, project=self.private_project)
+        self.private_url = '/{}registrations/{}'.format(API_BASE, self.private_registration._id)
+
+        # TODO test getting registration details for registration DRAFTS
+
+    def test_return_registration_detail_node_is_not_registration(self):
+        url = '/{}registrations/{}'.format(API_BASE, self.public_project)
+        res = self.app.get(url, auth=self.basic_auth, expect_errors=True)
+        assert_equal(res.status_code, 400)
+
+    def test_return_registration_details_node_does_not_exist(self):
+        url = '/{}registrations/{}'.format(API_BASE, '12345')
+        res = self.app.get(url, auth=self.basic_auth, expect_errors=True)
+        assert_equal(res.status_code, 404)
+
+    def test_return_public_registration_details_logged_out(self):
+        res = self.app.get(self.public_url)
+        assert_equal(res.status_code, 200)
+        assert_equal(res.json['data']['id'], self.public_registration._id)
+        # TODO assert registration's source?
+
+    def test_return_public_registration_details_logged_in(self):
+        res = self.app.get(self.public_url, auth=self.basic_auth)
+        assert_equal(res.status_code, 200)
+        assert_equal(res.json['data']['id'], self.public_registration._id)
+
+        res = self.app.get(self.public_url, auth=self.basic_auth_two)
+        assert_equal(res.status_code, 200)
+        assert_equal(res.json['data']['id'], self.public_registration._id)
+        # TODO assert registration's source?
+
+    def test_return_private_registration_details_logged_out(self):
+        res = self.app.get(self.private_url, expect_errors=True)
+        assert_equal(res.status_code, 403)
+
+    def test_return_private_registration_details_logged_in_contributor(self):
+        res = self.app.get(self.private_url, auth=self.basic_auth)
+        assert_equal(res.status_code, 200)
+        assert_equal(res.json['data']['id'], self.private_registration._id)
+        assert_equal(res.json['data']['description'], self.private_registration.description)
+
+    def test_return_private_registration_details_logged_in_non_contributor(self):
+        res = self.app.get(self.private_url, auth=self.basic_auth_two, expect_errors=True)
+        assert_equal(res.status_code, 403)
+
