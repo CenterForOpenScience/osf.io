@@ -9,6 +9,11 @@ approved embargo of
 <a class="log-node-title-link overflow" data-bind="text: nodeTitle, attr: {href: nodeUrl}"></a>
 </script>
 
+<script type="text/html" id="embargo_approved_no_user">
+Embargo for
+<a class="log-node-title-link overflow" data-bind="text: nodeTitle, attr: {href: nodeUrl}"></a> approved
+</script>
+
 <script type="text/html" id="embargo_cancelled">
 cancelled embargo of
 <a class="log-node-title-link overflow" data-bind="text: nodeTitle, attr: {href: nodeUrl}"></a>
@@ -17,6 +22,11 @@ cancelled embargo of
 <script type="text/html" id="embargo_completed">
 completed embargo of
 <a class="log-node-title-link overflow" data-bind="text: nodeTitle, attr: {href: nodeUrl}"></a>
+</script>
+
+<script type="text/html" id="embargo_completed_no_user">
+Embargo for
+<a class="log-node-title-link overflow" data-bind="text: nodeTitle, attr: {href: nodeUrl}"></a> completed
 </script>
 
 <script type="text/html" id="embargo_initiated">

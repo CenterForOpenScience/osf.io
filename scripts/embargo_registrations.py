@@ -9,7 +9,6 @@ import sys
 
 from modularodm import Q
 
-from framework.auth import Auth
 from framework.transactions.context import TokuTransaction
 from website import models, settings
 from website.app import init_app
@@ -42,7 +41,7 @@ def main(dry_run=True):
                                 'node': parent_registration._id,
                                 'embargo_id': embargo._id,
                             },
-                            auth=Auth(parent_registration.embargo.initiated_by),
+                            auth=None,
                         )
                         embargo.save()
                     except Exception as err:
@@ -72,7 +71,7 @@ def main(dry_run=True):
                                 'node': parent_registration._id,
                                 'embargo_id': embargo._id,
                             },
-                            auth=Auth(parent_registration.embargo.initiated_by),
+                            auth=None,
                         )
                         embargo.save()
                     except Exception as err:
