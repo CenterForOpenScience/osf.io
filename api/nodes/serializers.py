@@ -1,8 +1,6 @@
 from rest_framework.exceptions import ValidationError, NotFound
-from rest_framework.request import Request
-from rest_framework.response import Response
-from rest_framework import status, serializers as ser
-from api.base.utils import get_object_or_404
+from rest_framework import serializers as ser
+
 from api.base.serializers import JSONAPISerializer, LinksField, Link, WaterbutlerLink
 from api.users.serializers import UserSerializer
 from website.models import Node, User
@@ -199,12 +197,16 @@ class NodeFilesSerializer(JSONAPISerializer):
 
 
 class ContributorSerializer(UserSerializer):
-    local_filterable = frozenset(['bibliographic'])
+
+    local_filterable = frozenset(['bibliographic, admin'])
     filterable_fields = frozenset.union(UserSerializer.filterable_fields, local_filterable)
-    bibliographic = ser.BooleanField(required=False, help_text='Whether the user will be included in citations for this node or not')
+    bibliographic = ser.BooleanField(help_text='Whether the user will be included in citations for this node or not')
 
 
+    #todo Allow admin option in add contributors?
+    # admin = ser.BooleanField(help_text='Whether the user will be able to add and remove contributors')
 
+    admin = ser.BooleanField(read_only=True, help_text='Whether the user will be able to add and remove contributors')
     id = ser.CharField(source='_id')
     fullname = ser.CharField(read_only=True, help_text='Display name used in the general user interface')
     given_name = ser.CharField(read_only=True, help_text='For bibliographic citations')
@@ -218,50 +220,62 @@ class ContributorSerializer(UserSerializer):
     educational_institutions = ser.ListField(read_only=True, source='schools', help_text='An array of dictionaries representing the '
                                                                          'places the user has attended school')
     social_accounts = ser.DictField(read_only=True, source='social', help_text='A dictionary of various social media account '
-                                                               'identifiers including an array of user-defined URLs')
+                                                     'identifiers including an array of user-defined URLs')
     links = LinksField({
         'html': 'absolute_url',
         'nodes': {
             'relation': Link('users:user-nodes', kwargs={'user_id': '<_id>'})
-        }
-    })
+        },
+        'edit contributor': Link('nodes:node-contributor-detail', kwargs={'user_id': '<_id>',
+                                                                    'node_id':'<node_id>'})
+        })
 
     def absolute_url(self, obj):
         return obj.absolute_url
 
-    def create(self, request, *args, **kwargs):
-        user_id = request['_id']
-        user = get_object_or_404(User, user_id)
+    def create(self, validated_data):
+        request = self.context['request']
+        user = request.user
+        auth = Auth(user)
         node = self.context['view'].get_node()
-        if 'bibliographic'in request:
+        contributor = User.load(validated_data['_id'])
+        if not contributor:
+            raise NotFound('User not found.')
+        permissions = ['read', 'write']
+        if validated_data['bibliographic']:
+            visible = True
+        else:
+            visible = False
+        added = node.add_contributor(contributor=contributor, auth=auth, permissions=permissions, visible=visible, save=True)
+        if added:
+            return self.context['view'].get_default_queryset()
+        else:
+            raise ValidationError('Contributor {} already added to project.'.format(contributor.username))
+
+
+class ContributorDetailSerializer(ContributorSerializer):
+
+    id = ser.CharField(source='_id', read_only=True)
+    admin = ser.BooleanField(help_text='Whether the user will be able to add and remove contributors')
+
+    def update(self, user, validated_data):
+        node = self.context['view'].get_node()
+        if validated_data['bibliographic']:
             bibliographic = True
         else:
             bibliographic = False
-        self.create_contributor(user, node, bibliographic)
-        node.save()
-        request = Request(data=self.validated_data)
-        return Response(data=request, status=status.HTTP_201_CREATED)
-
-
-    def create_contributor(self, user, node, bibliographic):
-        if user in node.contributors:
-            if bibliographic and node.has_permission(user=user, permission='admin'):
-                raise ValidationError(detail='{} is already a bibliographic contributor'.format(user.username))
-            elif not bibliographic:
-                raise ValidationError(detail='{} is already a contributor'.format(user.username))
-        if bibliographic:
-            node.add_contributor(contributor=user, permissions=['read','write','admin'])
+        if bibliographic != node.get_visible(user):
+            node.set_visible(user, bibliographic, save=True)
+        if validated_data['admin']:
+            node.add_permission(user, 'admin', save=True)
         else:
-            node.add_contributor(contributor=user, permissions=['read','write'])
+            node.remove_permission(user, 'admin')
+        return self.context['view'].get_object()
 
 
-    # adds, removes or edits contributors in node
-    # def perform_create(self, validated_data):
-    #     user_id = validated_data['_id']
-    #     user = get_object_or_404(User, user_id)
-    #     raise ValidationError(user)
-    #     node = context.get_node()
-    #     bibliographic = validated_data['bibliographic'] == "True"
-    #     self.create_contributor(user, node, bibliographic)
-    #     node.save()
-    #     return User.api_keys
+    links = LinksField({
+        'html': 'absolute_url',
+        'nodes': {
+            'relation': Link('users:user-nodes', kwargs={'user_id': '<_id>'})
+            },
+        })
