@@ -33,7 +33,9 @@ $('.addon-select').on('change', function() {
     }
 });
 
+
 var checkedOnLoad = $('#selectAddonsForm input:checked');
+var uncheckedOnLoad = $('#selectAddonsForm input:not(:checked)');
 
 // TODO: Refactor into a View Model
 $('#selectAddonsForm').on('submit', function() {
@@ -44,11 +46,13 @@ $('#selectAddonsForm').on('submit', function() {
         formData[$elm.attr('name')] = $elm.is(':checked');
     });
 
-    var unchecked = checkedOnLoad.filter($('#selectAddonsForm input:not(:checked)'));
+    var unchecked = checkedOnLoad.filter('#selectAddonsForm input:not(:checked)');
 
     var submit = function() {
         var request = $osf.postJSON('/api/v1/settings/addons/', formData);
         request.done(function() {
+            checkedOnLoad = $('#selectAddonsForm input:checked');
+            uncheckedOnLoad = $('#selectAddonsForm input:not(:checked)');
             window.location.reload();
         });
         request.fail(function() {
@@ -88,6 +92,18 @@ for (var i=0; i < addonEnabledSettings.length; i++) {
                                       window.contextVars.addonsWithNodes[addonName].fullName);
    }
 }
+
+/* Before closing the page, Check whether the newly checked addon are updated or not */
+$(window).on('beforeunload',function() {
+    //new checked items but not updated
+    var checked = uncheckedOnLoad.filter('#selectAddonsForm input:checked');
+    //new unchecked items but not updated
+    var unchecked = checkedOnLoad.filter('#selectAddonsForm input:not(:checked)');
+
+    if(unchecked.length > 0 || checked.length > 0) {
+        return 'The changes on addon setting are not submitted!';
+    }
+});
 
 /***************
 * OAuth addons *

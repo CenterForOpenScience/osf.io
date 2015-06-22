@@ -285,6 +285,22 @@ MEETING_DATA = {
         'admins': [],
         'public_projects': True,
     },
+    'IARR2016': {
+        'name': 'International Association for Relationship Research 2016',
+        'info_url': 'http://iarr.psych.utoronto.ca/',
+        'logo_url': 'http://iarr.psych.utoronto.ca/iarrV2.jpg',
+        'active': True,
+        'admins': [],
+        'public_projects': True,
+    },
+    'IA2015': {
+        'name': 'Inclusive Astronomy 2015',
+        'info_url': 'https://vanderbilt.irisregistration.com/Home/Site?code=InclusiveAstronomy2015',
+        'logo_url': 'https://vanderbilt.blob.core.windows.net/images/Inclusive%20Astronomy.jpg',
+        'active': True,
+        'admins': [],
+        'public_projects': True,
+    },    
 }
 
 
