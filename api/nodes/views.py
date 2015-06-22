@@ -181,7 +181,40 @@ class NodeChildrenList(generics.ListAPIView, NodeMixin):
             auth = Auth(None)
         else:
             auth = Auth(user)
-        children = [node for node in nodes if node.can_view(auth) and node.primary]
+        children = []
+        count_private_nodes = 0
+        # Add visible nodes to children list; count number of private nodes.
+        for node in nodes:
+            if node.primary:
+                if node.can_view(auth):
+                    children.append(node)
+                else:  # not node.can_view(auth)
+                    count_private_nodes += 1
+
+        if count_private_nodes == 0:
+           return children
+        else:  # add a fake, visible component with the number of private nodes as its title
+            if count_private_nodes == 1:
+                title_with_count = "1 Private Component"
+            else:  # count_private_nodes > 1
+                title_with_count = "{} Private Components".format(count_private_nodes)
+            # fake_component = Node(title=title_with_count)  TODO delete this
+            # fake_component.add_permission(user, 'read', save=False)
+            fc = {
+                'primary': True,
+                '_id': '12345',
+                'category': '',
+                'node_type': 'component',
+                'url': '',  # /search/?tags={12345}',  # TODO should have a url?
+                'title': title_with_count,
+                'path': '/-- private project --/',
+                'api_url': '',  # '/api/v2/12345',  #or 'API_PREFIX' (for real site) or 'API_BASE' (for tests)
+                'is_public': True,
+                'is_registration': False,
+                'is_fake_component': True,
+            }
+            children.append(fc)
+
         return children
 
 

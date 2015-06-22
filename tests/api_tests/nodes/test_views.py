@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 import mock
+import json
 from nose.tools import *  # flake8: noqa
 
 from framework.auth.core import Auth
@@ -821,9 +822,17 @@ class TestNodeChildrenList(ApiTestCase):
         assert_equal(res.status_code, 403)
 
     def test_node_children_list_does_not_include_unauthorized_projects(self):
-        private_component = NodeFactory(parent=self.project)
+        private_component = NodeFactory(parent=self.project)  # add a private component
+        private_component.add_contributor(self.user, permissions=['read', 'write'])  # make it visible to user
+        private_component_two = NodeFactory(parent=self.project)  # and second one
+        private_component_two.add_contributor(self.user, permissions=['read'])  # make it read-only to user
+        private_component_three = NodeFactory(parent=self.project)  # and a third, invisible to user
+        private_component_four = NodeFactory(parent=self.project)  # and a fourth, invisible to user
+        # A fake node is created in views.py with title of "2 Private Components" -- check that this exists.
         res = self.app.get(self.private_project_url, auth=self.basic_auth)
-        assert_equal(len(res.json['data']), 1)
+        assert_equal(len(res.json['data']), 4)  # 3 visible, plus 1 fake component enumerating the private components
+        fake_component = res.json['data'][3]  # last (4th) element in 'data' should be fake component
+        assert_equal(fake_component['title'], "2 Private Components")
 
         Node.remove()
 

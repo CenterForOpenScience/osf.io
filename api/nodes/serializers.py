@@ -66,6 +66,10 @@ class NodeSerializer(JSONAPISerializer):
         type_ = 'nodes'
 
     def get_absolute_url(self, obj):
+        if isinstance(obj, dict):  # helps for creating fake components
+            if 'is_fake_component' in obj:
+                if obj['is_fake_component'] is True:
+                    return ''
         return obj.absolute_url
 
     # TODO: See if we can get the count filters into the filter rather than the serializer.
@@ -79,23 +83,48 @@ class NodeSerializer(JSONAPISerializer):
         return auth
 
     def get_node_count(self, obj):
+        if isinstance(obj, dict):  # helps for creating fake components
+            if 'is_fake_component' in obj:
+                if obj['is_fake_component'] is True:
+                    return 0
         auth = self.get_user_auth(self.context['request'])
         nodes = [node for node in obj.nodes if node.can_view(auth) and node.primary]
         return len(nodes)
 
     def get_contrib_count(self, obj):
+        if isinstance(obj, dict):  # helps for creating fake components
+            if 'is_fake_component' in obj:
+                if obj['is_fake_component'] is True:
+                    return 0
         return len(obj.contributors)
 
     def get_registration_count(self, obj):
+        if isinstance(obj, dict):  # helps for creating fake components
+            if 'is_fake_component' in obj:
+                if obj['is_fake_component'] is True:
+                    return 0
         auth = self.get_user_auth(self.context['request'])
         registrations = [node for node in obj.node__registrations if node.can_view(auth)]
         return len(registrations)
 
     def get_pointers_count(self, obj):
+        if isinstance(obj, dict):  # helps for creating fake components
+            if 'is_fake_component' in obj:
+                if obj['is_fake_component'] is True:
+                    return 0
         return len(obj.nodes_pointer)
 
     @staticmethod
     def get_properties(obj):
+        if isinstance(obj, dict):  # helps for creating fake components
+            if 'is_fake_component' in obj:
+                if obj['is_fake_component'] is True:
+                    fake_ret = {
+                        'registration': False,
+                        'collection': False,
+                        'dashboard': False,
+                    }
+                    return fake_ret
         ret = {
             'registration': obj.is_registration,
             'collection': obj.is_folder,
@@ -105,6 +134,10 @@ class NodeSerializer(JSONAPISerializer):
 
     @staticmethod
     def get_tags(obj):
+        if isinstance(obj, dict):  # helps for creating fake components
+            if 'is_fake_component' in obj:
+                if obj['is_fake_component'] is True:
+                    return ''  # TODO maybe do this as return [] ?
         ret = {
             'system': [tag._id for tag in obj.system_tags],
             'user': [tag._id for tag in obj.tags],

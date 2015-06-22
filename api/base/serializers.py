@@ -80,21 +80,28 @@ def _tpl(val):
 
 
 def _get_attr_from_tpl(attr_tpl, obj):
-    attr_name = _tpl(str(attr_tpl))
-    if attr_name:
-        attribute_value = getattr(obj, attr_name, ser.empty)
-        if attribute_value is not ser.empty:
-            return attribute_value
-        elif attr_name in obj:
-            return obj[attr_name]
+    if isinstance(obj, dict):  # helps for creating fake components
+        if 'is_fake_component' in obj:
+            if obj['is_fake_component'] is True:
+                return ''
+    try:
+        return obj.pk
+    except AttributeError:
+        attr_name = _tpl(str(attr_tpl))
+        if attr_name:
+            attribute_value = getattr(obj, attr_name, ser.empty)
+            if attribute_value is not ser.empty:
+                return attribute_value
+            elif attr_name in obj:
+                return obj[attr_name]
+            else:
+                raise AttributeError(
+                    '{attr_name!r} is not a valid '
+                    'attribute of {obj!r}'.format(
+                        attr_name=attr_name, obj=obj,  # Eric said this might be fixed in other PR's?
+                    ))
         else:
-            raise AttributeError(
-                '{attr_name!r} is not a valid '
-                'attribute of {obj!r}'.format(
-                    attr_name=attr_name, obj=obj,
-                ))
-    else:
-        return attr_tpl
+            return attr_tpl
 
 
 # TODO: Make this a Field that is usable on its own?
