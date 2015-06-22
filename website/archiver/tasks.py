@@ -120,14 +120,27 @@ def make_copy_request(job_pk, url, data):
     src, dst, user = job.info()
     provider = data['source']['provider']
     logger.info("Sending copy request for addon: {0} on node: {1}".format(provider, dst._id))
-    res = requests.post(url, data=json.dumps(data))
-    if res.status_code not in (200, 201, 202):
-        dst.archive_job.update_target(
-            provider,
-            ARCHIVER_FAILURE,
-            errors=[res.json()],
-        )
-        raise HTTPError(res.status_code)
+    requests.post(url, data=json.dumps(data))
+
+def make_waterbutler_payload(src, dst, addon_short_name, rename, cookie, revision=None):
+    ret = {
+        'source': {
+            'cookie': cookie,
+            'nid': src._id,
+            'provider': addon_short_name,
+            'path': '/',
+        },
+        'destination': {
+            'cookie': cookie,
+            'nid': dst._id,
+            'provider': settings.ARCHIVE_PROVIDER,
+            'path': '/',
+        },
+        'rename': rename.replace('/', '-')
+    }
+    if revision:
+        ret['source']['revision'] = revision
+    return ret
 
 @celery_app.task(base=ArchiverTask, name="archiver.archive_addon")
 def archive_addon(addon_short_name, job_pk, stat_result):
@@ -144,25 +157,22 @@ def archive_addon(addon_short_name, job_pk, stat_result):
     logger.info("Archiving addon: {0} on node: {1}".format(addon_short_name, src._id))
     src_provider = src.get_addon(addon_short_name)
     folder_name = src_provider.archive_folder_name
-    provider = src_provider.config.short_name
     cookie = user.get_or_create_cookie()
-    data = {
-        'source': {
-            'cookie': cookie,
-            'nid': src._id,
-            'provider': provider,
-            'path': '/',
-        },
-        'destination': {
-            'cookie': cookie,
-            'nid': dst._id,
-            'provider': settings.ARCHIVE_PROVIDER,
-            'path': '/',
-        },
-        'rename': folder_name,
-    }
     copy_url = settings.WATERBUTLER_URL + '/ops/copy'
-    make_copy_request.delay(job_pk=job_pk, url=copy_url, data=data)
+    if addon_short_name == 'dataverse':
+        # The dataverse API will not differentiate between published and draft files
+        # unless expcicitly asked. We need to create seperate folders for published and
+        # draft in the resulting archive.
+        #
+        # Additionally trying to run the archive without this distinction creates a race
+        # condition that non-deterministically caused archive jobs to fail.
+        data = make_waterbutler_payload(src, dst, addon_short_name, '{0} (published)'.format(folder_name), cookie, revision='latest-published')
+        make_copy_request.delay(job_pk=job_pk, url=copy_url, data=data)
+        data = make_waterbutler_payload(src, dst, addon_short_name, '{0} (draft)'.format(folder_name), cookie, revision='latest')
+        make_copy_request.delay(job_pk=job_pk, url=copy_url, data=data)
+    else:
+        data = make_waterbutler_payload(src, dst, addon_short_name, folder_name, cookie)
+        make_copy_request.delay(job_pk=job_pk, url=copy_url, data=data)
 
 
 @celery_app.task(base=ArchiverTask, name="archiver.archive_node")
