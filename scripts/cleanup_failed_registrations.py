@@ -35,6 +35,8 @@ def remove_failed_registrations(dry_run=True):
             if not f.registered_from:
                 logging.info('Node {0} had registered_from == None'.format(f._id))
                 continue
+            if not f.archive_job:  # Be extra sure not to delete legacy registrations
+                continue
             f.archive_job.status = ARCHIVER_FAILURE
             f.archive_job.sent = True
             f.archive_job.save()
