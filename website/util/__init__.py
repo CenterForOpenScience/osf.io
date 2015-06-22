@@ -58,7 +58,7 @@ def api_url_for(view_name, _absolute=False, _xml=False, *args, **kwargs):
 def api_v2_url(path_str,
                params=None,
                base_route=website_settings.API_DOMAIN,
-               base_prefix=api_settings.API_PREFIX,
+               base_prefix='',
                **kwargs):
     """
     Convenience function for APIv2 usage: Concatenates parts of the absolute API url based on arguments provided
