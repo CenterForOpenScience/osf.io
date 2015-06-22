@@ -81,7 +81,7 @@ class MockAddon(mock.MagicMock, StorageAddonBase):
 
     complete = True
 
-    def _get_file_tree(self, user):
+    def _get_file_tree(self, user, version):
         return FILE_TREE
 
     def after_register(self, *args):
@@ -251,7 +251,7 @@ class TestArchiverTasks(ArchiverTestCase):
     def test_archive_node_does_not_archive_empty_addons(self, mock_archive_addon):
         with mock.patch.object(self.src, 'get_addon') as mock_get_addon:
             mock_addon = MockAddon()
-            def empty_file_tree(user):
+            def empty_file_tree(user, version):
                 return {
                     'path': '/',
                     'kind': 'folder',
@@ -443,7 +443,7 @@ class TestArchiverListeners(ArchiverTestCase):
     @mock.patch('celery.chain')
     @mock.patch('website.archiver.utils.before_archive')
     def test_after_register(self, mock_before_archive, mock_chain):
-        mock_chain.return_value = []
+        mock_chain.return_value = celery.chain()
         listeners.after_register(self.src, self.dst, self.user)
         mock_before_archive.assert_called_with(self.dst, self.user)
         archive_signature = archive.si(job_pk=self.archive_job._id)
