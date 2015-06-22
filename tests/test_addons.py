@@ -409,7 +409,7 @@ class TestAddonFileViews(OsfTestCase):
             },
             'size': '',
             'extra': '',
-            'source_url': '',
+            'view_url': '',
             'file_name': '',
             'materialized_path': '',
         })

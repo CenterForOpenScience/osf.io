@@ -26,7 +26,7 @@ var FileViewPage = {
         self.editorMeta = self.context.editor;
         //Force canEdit into a bool
         self.canEdit = m.prop(!!self.context.currentUser.canEdit);
-        self.sourceUrl = self.context.file.sourceUrl;
+        self.viewUrl = self.context.file.viewUrl;
 
         $.extend(self.file.urls, {
             delete: waterbutler.buildDeleteUrl(self.file.path, self.file.provider, self.node.id),
@@ -199,8 +199,8 @@ var FileViewPage = {
         $('.file-view-panels').removeClass().addClass('file-view-panels').addClass(fileViewPanelsLayout);
 
         m.render(document.getElementById('toggleBar'), m('.btn-toolbar[style=margin-top:20px]', [
-            ctrl.sourceUrl ? m('.btn-group', {}, [
-                m('a', {href: ctrl.sourceUrl, target: '_blank', class: 'btn btn-sm btn-success'}, 'View ', [
+            ctrl.viewUrl ? m('.btn-group', {}, [
+                m('a', {href: ctrl.viewUrl, target: '_blank', class: 'btn btn-sm btn-success'}, 'View ', [
                   m('i', {class: 'fa fa-external-link'})
                 ])
             ]) : '',

@@ -149,7 +149,7 @@
         file: {
             size: ${size},
             extra: ${extra},
-            sourceUrl: '${(source_url or '') | js_str}',
+            viewUrl: '${(view_url or '') | js_str}',
             error: '${error | js_str}',
             name: '${file_name | js_str}',
             path: '${file_path | js_str}',
