@@ -37,6 +37,7 @@
     "markdown-it-sanitizer": "~0.3.0",
     "markdown-it-toc": "~1.1.0",
     "markdown-it-video": "~0.2.1",
+    "mime-types": "~2.0.12",
     "mithril": "^0.2",
     "moment": "^2.9.0",
     "morgan": "^1.5.1",
@@ -50,12 +51,12 @@
     "typeahead.js": "^0.10.5",
     "url-loader": "^0.5.5",
     "webpack": "^1.7.2",
-    "ws": "~0.4.32",
-    "mime-types": "~2.0.12"
+    "ws": "~0.4.32"
   },
   "devDependencies": {
     "chai": "^2.1.1",
     "faker": "^2.1.2",
+    "jshint": "^2.8.0",
     "karma": "^0.12.31",
     "karma-chrome-launcher": "^0.1.7",
     "karma-firefox-launcher": "^0.1.4",

@@ -20,15 +20,18 @@ def requires_search(func):
 
 
 @requires_search
-def search(query, index=settings.ELASTIC_INDEX, doc_type=None):
+def search(query, index=None, doc_type=None):
+    index = index or settings.ELASTIC_INDEX
     return search_engine.search(query, index=index, doc_type=doc_type)
 
 @requires_search
-def update_node(node, index=settings.ELASTIC_INDEX):
+def update_node(node, index=None):
+    index = index or settings.ELASTIC_INDEX
     search_engine.update_node(node, index=index)
 
 @requires_search
-def delete_node(node, index=settings.ELASTIC_INDEX):
+def delete_node(node, index=None):
+    index = index or settings.ELASTIC_INDEX
     doc_type = node.project_or_component
     if node.is_registration:
         doc_type = 'registration'
@@ -36,7 +39,8 @@ def delete_node(node, index=settings.ELASTIC_INDEX):
 
 
 @requires_search
-def update_user(user, index=settings.ELASTIC_INDEX):
+def update_user(user, index=None):
+    index = index or settings.ELASTIC_INDEX
     search_engine.update_user(user, index=index)
 
 
@@ -49,7 +53,8 @@ def delete_index(index):
     search_engine.delete_index(index)
 
 @requires_search
-def create_index(index=settings.ELASTIC_INDEX):
+def create_index(index=None):
+    index = index or settings.ELASTIC_INDEX
     search_engine.create_index(index=index)
 
 
