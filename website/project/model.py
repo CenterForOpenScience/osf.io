@@ -2935,6 +2935,12 @@ class Retraction(StoredObject):
             # Ensure retracted registration is public
             if not parent_registration.is_public:
                 parent_registration.set_privacy('public')
+            parent_registration.update_search()
+            # Retraction status is inherited from the root project, so we
+            # need to recursively update search for every descendant node
+            # so that retracted subrojects/components don't appear in search
+            for node in parent_registration.get_descendants_recursive():
+                node.update_search()
 
 
 def validate_embargo_state(value):

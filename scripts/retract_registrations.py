@@ -42,6 +42,9 @@ def main(dry_run=True):
                             auth=Auth(parent_registration.retraction.initiated_by),
                         )
                         retraction.save()
+                        parent_registration.update_search()
+                        for node in parent_registration.get_descendants_recursive():
+                            node.update_search()
                     except Exception as err:
                         logger.error(
                             'Unexpected error raised when retracting '
