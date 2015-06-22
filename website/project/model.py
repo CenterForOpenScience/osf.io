@@ -2407,14 +2407,6 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
                     raise NodeStateError("A registration with an unapproved embargo cannot be made public")
                 if self.embargo_end_date and not self.pending_embargo:
                     self.embargo.state = Embargo.CANCELLED
-                    self.registered_from.add_log(
-                        action=NodeLog.EMBARGO_CANCELLED,
-                        params={
-                            'node': self._id,
-                            'embargo_id': self.embargo._id,
-                        },
-                        auth=auth,
-                    )
                     self.embargo.save()
             self.is_public = True
         elif permissions == 'private' and self.is_public:
@@ -2668,6 +2660,9 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
 
         if not self.is_registration or (not self.is_public and not (self.embargo_end_date or self.pending_embargo)):
             raise NodeStateError('Only public registrations or active embargoes may be retracted.')
+
+        if self.root is not self:
+            raise NodeStateError('Retraction of non-parent registrations is not permitted.')
 
         retraction = self._initiate_retraction(user, justification, save=True)
         self.registered_from.add_log(
@@ -2943,6 +2938,12 @@ class Retraction(StoredObject):
             # Ensure retracted registration is public
             if not parent_registration.is_public:
                 parent_registration.set_privacy('public')
+            parent_registration.update_search()
+            # Retraction status is inherited from the root project, so we
+            # need to recursively update search for every descendant node
+            # so that retracted subrojects/components don't appear in search
+            for node in parent_registration.get_descendants_recursive():
+                node.update_search()
 
 
 def validate_embargo_state(value):

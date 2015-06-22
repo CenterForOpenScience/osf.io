@@ -32,15 +32,24 @@ def main(dry_run=True):
             if not dry_run:
                 with TokuTransaction():
                     retraction.state = models.Retraction.RETRACTED
-                    parent_registration.registered_from.add_log(
-                        action=NodeLog.RETRACTION_APPROVED,
-                        params={
-                            'node': parent_registration._id,
-                            'retraction_id': parent_registration.retraction._id,
-                        },
-                        auth=Auth(parent_registration.retraction.initiated_by),
-                    )
-                    retraction.save()
+                    try:
+                        parent_registration.registered_from.add_log(
+                            action=NodeLog.RETRACTION_APPROVED,
+                            params={
+                                'node': parent_registration._id,
+                                'retraction_id': parent_registration.retraction._id,
+                            },
+                            auth=Auth(parent_registration.retraction.initiated_by),
+                        )
+                        retraction.save()
+                        parent_registration.update_search()
+                        for node in parent_registration.get_descendants_recursive():
+                            node.update_search()
+                    except Exception as err:
+                        logger.error(
+                            'Unexpected error raised when retracting '
+                            'registration {}. Continuing...'.format(parent_registration))
+                        logger.exception(err)
 
 
 def should_be_retracted(retraction):
@@ -50,7 +59,7 @@ def should_be_retracted(retraction):
 
 if __name__ == '__main__':
     dry_run = 'dry' in sys.argv
-    init_app(routes=False, mfr=False)
+    init_app(routes=False)
     if not dry_run:
         scripts_utils.add_file_logger(logger, __file__)
-    main(dry_run=dry_run)
+        main(dry_run=dry_run)

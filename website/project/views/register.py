@@ -104,6 +104,12 @@ def node_registration_retraction_post(auth, node, **kwargs):
             'message_long': 'Retractions of non-registrations is not permitted.'
         })
 
+    if node.root is not node:
+        raise HTTPError(http.BAD_REQUEST, data={
+            'message_short': 'Invalid Request',
+            'message_long': 'Retraction of non-parent registrations is not permitted.'
+        })
+
     data = request.get_json()
     try:
         node.retract_registration(auth.user, data.get('justification', None))

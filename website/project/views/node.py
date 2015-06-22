@@ -733,6 +733,7 @@ def _view_project(node, auth, primary=False):
             'pending_embargo': node.pending_embargo,
             'registered_from_url': node.registered_from.url if node.is_registration else '',
             'registered_date': iso8601format(node.registered_date) if node.is_registration else '',
+            'root_id': node.root._id,
             'registered_meta': [
                 {
                     'name_no_ext': from_mongo(meta),

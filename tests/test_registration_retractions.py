@@ -87,6 +87,14 @@ class RegistrationRetractionModelsTestCase(OsfTestCase):
             datetime.datetime.utcnow().date()
         )
 
+    def test_retract_component_raises_NodeStateError(self):
+        project = ProjectFactory(is_public=True, creator=self.user)
+        component = NodeFactory(is_public=True, creator=self.user, parent=project)
+        registration = RegistrationFactory(is_public=True, project=project)
+
+        with assert_raises(NodeStateError):
+            registration.nodes[0].retract_registration(self.user, self.valid_justification)
+
     def test_long_justification_raises_ValidationValueError(self):
         with assert_raises(ValidationValueError):
             self.registration.retract_registration(self.user, self.invalid_justification)
@@ -643,6 +651,58 @@ class RegistrationRetractionApprovalDisapprovalViewsTestCase(OsfTestCase):
         assert_equal(self.registration.retraction.state, Retraction.CANCELLED)
         assert_equal(res.status_code, 302)
 
+class ComponentRegistrationRetractionViewsTestCase(OsfTestCase):
+    def setUp(self):
+        super(ComponentRegistrationRetractionViewsTestCase, self).setUp()
+        self.user = AuthUserFactory()
+        self.auth = self.user.auth
+        self.project = ProjectFactory(is_public=True, creator=self.user)
+        self.component = NodeFactory(
+            is_public=True,
+            creator=self.user,
+            parent=self.project,
+            title='Component'
+        )
+        self.subproject = ProjectFactory(
+            is_public=True,
+            creator=self.user,
+            parent=self.project,
+            title='Subproject'
+        )
+        self.subproject_component = NodeFactory(
+            is_public=True,
+            creator=self.user,
+            parent=self.subproject,
+            title='Subcomponent'
+        )
+        self.registration = RegistrationFactory(is_public=True, project=self.project)
+        self.component_registration = self.registration.nodes[0]
+        self.subproject_registration = self.registration.nodes[1]
+        self.subproject_component_registration = self.subproject_registration.nodes[0]
+
+    def test_POST_retraction_to_component_returns_HTTPBad_request(self):
+        res = self.app.post_json(
+            self.component_registration.api_url_for('node_registration_retraction_post'),
+            auth=self.auth,
+            expect_errors=True,
+        )
+        assert_equal(res.status_code, 400)
+
+    def test_POST_retraction_to_subproject_returns_HTTPBad_request(self):
+        res = self.app.post_json(
+            self.subproject_registration.api_url_for('node_registration_retraction_post'),
+            auth=self.auth,
+            expect_errors=True,
+        )
+        assert_equal(res.status_code, 400)
+
+    def test_POST_retraction_to_subproject_component_returns_HTTPBad_request(self):
+        res = self.app.post_json(
+            self.subproject_component_registration.api_url_for('node_registration_retraction_post'),
+            auth=self.auth,
+            expect_errors=True,
+        )
+        assert_equal(res.status_code, 400)
 
 class RegistrationRetractionViewsTestCase(OsfTestCase):
     def setUp(self):
