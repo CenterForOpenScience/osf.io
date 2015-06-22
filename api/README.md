@@ -3,18 +3,31 @@
 
 ## Getting started
 
+###Installing the OSF
+
+Installation instructions are available on the Readme.md of the root OSF directory on github.
+They assume a working knowledge of package managers and the command line.
+
+The [COS Development Docs](http://cosdev.readthedocs.org/) provides detailed information about all aspects of OSF development.
+This includes [detailed installation instructions](http://cosdev.readthedocs.org/en/latest/osf/setup.html),
+a list of [common setup errors](http://cosdev.readthedocs.org/en/latest/osf/setup.html#common-error-messages), and
+[other troubleshooting](http://cosdev.readthedocs.org/en/latest/osf/common_problems.html).
+
+The OSF `invoke` script provides several useful commands. For more information, run:
+
+`invoke --list`
+
+##Running the API server
+
 From the root osf directory:
 
 ```bash
-pip install -r requirements.txt
-# Required for browse-able API
-python manage.py collectstatic
 invoke server
 ```
 
 Both the OSF Flask app and the API Django app will run within the same WSGI app.
 
-Go to `localhost:5000/api/v2/` in your browser to go to the root of the browse-able API.
+Go to `localhost:8000/v2/` in your browser to go to the root of the browse-able API.
 
 Alternatively, you can run the Django app as a separate process from the OSF Flask app:
 
@@ -28,3 +41,4 @@ Browse to `localhost:8000/` in your browser to go to the root of the browse-able
 TODO:
 
 - Fix dev server shutdown when 500 occurs in Django app
+
