@@ -50,6 +50,10 @@ def generate_claim_token():
     return security.random_string(30)
 
 
+def generate_contributor_add_token():
+    return security.random_string(30)
+
+
 def string_required(value):
     if value is None or value == '':
         raise ValidationValueError('Value must not be empty.')

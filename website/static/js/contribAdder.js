@@ -342,10 +342,11 @@ var AddContributorViewModel = oop.extend(Paginator, {
             }
         ).done(function() {
             window.location.reload();
-        }).fail(function() {
+        }).fail(function(xhr) {
+            var response = xhr.responseJSON;
             $('.modal').modal('hide');
             $osf.unblock();
-            $osf.growl('Error', 'Add contributor failed.');
+            $osf.growl('Error', 'Add contributor failed (' + response.message_long + ")" );
         });
     },
     clear: function() {

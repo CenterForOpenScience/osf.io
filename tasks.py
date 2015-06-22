@@ -191,7 +191,7 @@ def mongoserver(daemon=False, config=None):
     if config:
         cmd += ' --config {0}'.format(config)
     if daemon:
-        cmd += " --fork"
+        cmd += " --fork --syslog"
     run(cmd, echo=True)
 
 
@@ -309,6 +309,8 @@ def elasticsearch():
     import platform
     if platform.linux_distribution()[0] == 'Ubuntu':
         run("sudo service elasticsearch start")
+    elif platform.linux_distribution()[0] == 'Arch':
+        run("sudo systemctl start elasticsearch")
     elif platform.system() == 'Darwin':  # Mac OSX
         run('elasticsearch')
     else:

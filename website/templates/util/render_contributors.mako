@@ -11,10 +11,12 @@
                 is_condensed = True
         %>
         % if contributor['registered']:
-            <a class='user-profile' rel="${'tooltip' if is_condensed else ''}" title="${contributor['fullname']}" href="/${contributor['id']}/">${condensed}</a></li>
+            <a class='user-profile' rel="${'tooltip' if is_condensed else ''}" title="${contributor['fullname']}" href="/${contributor['id']}/">${condensed}</a>
         % else:
-            <span rel="${'tooltip' if is_condensed else ''}" title="${contributor['fullname']}">${condensed}</span></li>
+            <span rel="${'tooltip' if is_condensed else ''}" title="${contributor['fullname']}">${condensed}</span>
 
         %endif
+        <span>${"(unconfirmed)" if contributor['pending'] else ""}</span>
+        </li>
 % endfor
 

@@ -375,6 +375,33 @@ class TestProjectViews(OsfTestCase):
             [project.creator, unregistered_user, reg_user1]
         )
 
+    def test_project_confirm_contributor_valid_link_from_email(self):
+        url = "/project/{pid}/contributor/{uid}/token/{token}/".format(
+            pid=self.project._id, uid=self.user2._id,
+            token=self.project.get_or_create_contributor_added_token(self.user2._id)
+        )
+        self.app.get(url)
+
+    def test_project_confirm_contributor_participation(self):
+        url = "/project/{pid}/contributor/{uid}/token/{token}/ok/".format(
+            pid=self.project._id, uid=self.user2._id,
+            token=self.project.get_or_create_contributor_added_token(self.user2._id)
+        )
+        self.app.get(url).follow()
+        self.project.reload()
+        assert_in(self.user2._id, self.project.contributors)
+        assert_not_in(self.user2._id, self.project.pending_contributors)
+
+    def test_project_deny_contributor_participation(self):
+        url = "/project/{pid}/contributor/{uid}/token/{token}/nope/".format(
+            pid=self.project._id, uid=self.user2._id,
+            token=self.project.get_or_create_contributor_added_token(self.user2._id)
+        )
+        self.app.get(url).follow()
+        self.project.reload()
+        assert_not_in(self.user2._id, self.project.contributors)
+        assert_in(self.user2._id, self.project.pending_contributors)
+
     def test_project_remove_contributor(self):
         url = "/api/v1/project/{0}/removecontributors/".format(self.project._id)
         # User 1 removes user2

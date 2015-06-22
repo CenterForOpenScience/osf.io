@@ -26,7 +26,7 @@ from framework import status
 from framework.mongo import ObjectId
 from framework.mongo import StoredObject
 from framework.addons import AddonModelMixin
-from framework.auth import get_user, User, Auth
+from framework.auth import get_user, User, Auth, core
 from framework.auth import signals as auth_signals
 from framework.exceptions import PermissionsError
 from framework.guid.model import GuidStoredObject
@@ -599,6 +599,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
     is_registration = fields.BooleanField(default=False, index=True)
     registered_date = fields.DateTimeField(index=True)
     registered_user = fields.ForeignField('user', backref='registered')
+
     registered_schema = fields.ForeignField('metaschema', backref='registered')
     registered_meta = fields.DictionaryField()
 
@@ -622,6 +623,8 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
 
     creator = fields.ForeignField('user', backref='created')
     contributors = fields.ForeignField('user', list=True, backref='contributed')
+    pending_contributors = fields.DictionaryField(default={})
+    contributors_in_denial = fields.ForeignField('user', list=True)
     users_watching_node = fields.ForeignField('user', list=True, backref='watched')
 
     logs = fields.ForeignField('nodelog', list=True, backref='logged')
@@ -883,6 +886,17 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         for key in self.permissions.keys():
             if key not in self.contributors:
                 self.permissions.pop(key)
+
+    def verify_contributor_added_token(self, user_id, token):
+        """Matches token to pending contributor list for this node.  If match found,
+        that user is removed from the pending list, and this function returns True.
+        Otherwise, return False.
+        """
+        if user_id in self.pending_contributors:
+            if self.pending_contributors[user_id]['token']==token:
+                del self.pending_contributors[user_id]
+                return True
+        return False
 
     @property
     def visible_contributors(self):
@@ -1633,6 +1647,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         # Clear permissions before adding users
         forked.permissions = {}
         forked.visible_contributor_ids = []
+        forked.pending_contributors = {}
 
         forked.add_contributor(contributor=user, log=False, save=False)
 
@@ -2049,7 +2064,10 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         if self._primary_key in contributor.unclaimed_records:
             del contributor.unclaimed_records[self._primary_key]
 
-        self.contributors.remove(contributor._id)
+        if contributor._id in self.contributors:
+            self.contributors.remove(contributor._id)
+        else:
+            return False
 
         self.clear_permission(contributor)
         if contributor._id in self.visible_contributor_ids:
@@ -2230,7 +2248,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
 
         # If user is merged into another account, use master account
         contrib_to_add = contributor.merged_by if contributor.is_merged else contributor
-        if contrib_to_add not in self.contributors:
+        if contrib_to_add not in self.contributors and contrib_to_add not in self.contributors_in_denial:
 
             self.contributors.append(contrib_to_add)
             if visible:
@@ -2372,6 +2390,51 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         )
         self.save()
         return True
+
+    def get_or_create_contributor_added_token(self, contributor_id):
+        if not contributor_id in self.pending_contributors:
+            self.pending_contributors[contributor_id] = {}
+        record = self.pending_contributors[contributor_id]
+        if not "token" in record:
+            token = core.generate_contributor_add_token()
+            record["token"] = token
+            self.save()
+        return record["token"]
+
+    def get_contributor_added_url(self, contributor_id, external=True):
+        """Return a URL for the user to confirm their participation in a node.
+
+        :param User contributor: the User object representing the added contributor
+        :param string token: the token used for confirming or denying participation
+        :raises: ValueError if a record doesn't exist for the given project ID
+        :rtype: dict
+        :returns: The activation link that confirms user participation (removes "pending" status)
+        """
+        project_id = self._primary_key
+        base_url = settings.DOMAIN if external else '/'
+        token = self.get_or_create_contributor_added_token(contributor_id)
+        return '{base_url}project/{project_id}/contributor/{user_id}/confirm/{token}/'.format(
+            base_url=base_url, project_id=project_id, user_id=contributor_id, token=token)
+
+    def confirm_contributor_participation(self, contributor, token):
+        if contributor._id in self.pending_contributors and "token" in self.pending_contributors[contributor._id]:
+            if token == self.pending_contributors[contributor._id]["token"]:
+                del self.pending_contributors[contributor._id]
+                return True
+        return False
+
+    #  TODO: should there be a separate "leave me alone" category for denied
+    #    contributors, so that they can't be added again?
+    def deny_contributor_participation(self, contributor, token, auth):
+        """User denies their involvement as contributor.  Clears their contributorship.
+        Does NOT clear them from pending list, for throttling.
+        """
+        if contributor._id in self.pending_contributors and "token" in self.pending_contributors[contributor._id]:
+            if token == self.pending_contributors[contributor._id]["token"]:
+                self.contributors_in_denial.append(contributor)
+                del self.pending_contributors[contributor._id]
+                return self.remove_contributor(contributor, auth)
+        return False
 
     # TODO: Move to wiki add-on
     def get_wiki_page(self, name=None, version=None, id=None):
