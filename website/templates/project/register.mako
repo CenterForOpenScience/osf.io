@@ -22,6 +22,7 @@
 
                       <div id='editor'></div>
                       <button id="save" type="button" class="btn btn-success">Save</button>
+                      <!--<button id="register" type="button" class="btn btn-primary">Register</button>-->
             </div>
           </div>
         </div>
