@@ -8,7 +8,7 @@
 Installation instructions are available on the Readme.md of the root OSF directory on github.
 They assume a working knowledge of package managers and the command line.
 
-The [COS Development Docs](http://cosdev.readthedocs.org/) provides detailed information about all aspects of OSF development.
+Alternatively, the [COS Development Docs](http://cosdev.readthedocs.org/) provide detailed information about all aspects of OSF development.
 This includes [detailed installation instructions](http://cosdev.readthedocs.org/en/latest/osf/setup.html),
 a list of [common setup errors](http://cosdev.readthedocs.org/en/latest/osf/setup.html#common-error-messages), and
 [other troubleshooting](http://cosdev.readthedocs.org/en/latest/osf/common_problems.html).
