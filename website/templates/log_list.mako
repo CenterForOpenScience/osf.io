@@ -16,7 +16,7 @@
     <div class="logs addon-widget-container">
 
         <div class="components">
-            <div class="addon-widget-header clearfix"> 
+            <div class="addon-widget-header clearfix">
                 <h4>Recent Activity </h4>
                 <div class="pull-right">
                 </div>
@@ -61,13 +61,13 @@
 
                     </dd>
                 </dl><!-- end foreach logs -->
-                <div class='help-block absolute-bottom'>
+                <div class='pagination-container'>
                     <ul class="pagination pagination-sm" data-bind="foreach: paginators">
                         <li data-bind="css: style"><a href="#" data-bind="click: handler, html: text"></a></li>
                     </ul>
                 </div>
 
-            </div> 
+            </div>
         </div>
 </div>
 </div><!-- end #logScope -->

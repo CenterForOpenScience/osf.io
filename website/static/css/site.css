@@ -313,7 +313,6 @@ a.btn-success.disabled {
 
 #addPointer td {
     vertical-align: middle;
-    word-break: break-all;
 }
 
 li.pointer {
@@ -444,8 +443,14 @@ img.hg-addon-icon {
     display: block;
 }
 
+/* TODO: Remove this - it's far too broad */
 h4 {
     padding-bottom: 10px;
+}
+
+/* TODO: Remove this hack, due to the h4 rule immediately prior */
+.bootbox h4 {
+    padding-bottom: 0;
 }
 
 .social-icons img {
@@ -951,13 +956,21 @@ form.form-horizontal.form-horizontal-narrow .control-group {
 
 
 /* Project page */
+#manageContributors td {
+    vertical-align: middle;
+}
+
+#manageContributors .permissions {
+    min-width: 140px;
+}
+
+#manageContributors .biblio {
+    margin: 4px 60% 0 40%;
+}
+
 #addContributors table {
     border-collapse: separate;
     border-spacing: 5px;
-}
-
-#manageContributors td {
-    vertical-align: middle;
 }
 
 #addContributors .error {
@@ -992,10 +1005,6 @@ h1.unavailable {
 }
 
 /* Search */
-.page-header
-    {
-        overflow: hidden;
-    }
 .add-query
     {
         width: 190px;
@@ -1386,10 +1395,6 @@ div.search-result  {
 }
 
 /* Logs */
-.logs .addon-widget-body .activity-log{
-    margin-bottom: 74px;
-}
-
 dl.activity-log dd {
     margin-bottom: 4px;
 }
@@ -1509,6 +1514,14 @@ tbody.file-version{
     width: 400px;
 }
 
+.dotted-underline{
+    color: #000;
+    border-bottom: 1px dotted;
+    text-decoration: none;
+}
+a.dotted-underline:hover {
+    text-decoration: none;
+}
 /* Contributors list */
 
 #contributors {
@@ -1757,9 +1770,7 @@ div.pydocx-center{
 
 span.edit-profile-settings {
     display: block;
-    position: absolute;
-    bottom: 0;
-    right: 0;
+    text-align: right;
 }
 
 div.profile-fullname{
@@ -1768,10 +1779,17 @@ div.profile-fullname{
     bottom: 0;
 }
 
-span#profileFullname{
-    position: absolute;
-    bottom: 0;
-    margin-bottom: 20px;
+.avatar-div {
+    display: table-cell;
+    vertical-align: middle;
+}
+
+.name-div {
+    display: table-cell;
+    vertical-align: middle;
+    padding-left: 10px;
+    margin-bottom: 10px;
+    word-break: break-all;
 }
 
 .scripted {display: none;}
@@ -1792,18 +1810,6 @@ span#profileFullname{
 .search-term-label,
 .tag {
     white-space: pre;
-}
-
-.bootbox-node-deletion-modal {
-    font-weight: normal;
-    font-size: medium;
-    line-height: normal;
-    padding-top: 10px;
-}
-
-.bootbox-node-deletion-modal ol {
-    padding-left: 40px;
-    list-style-type: disc;
 }
 
 /* Footer slide-in */
@@ -1970,17 +1976,15 @@ span#profileFullname{
     min-height: 605px;
 }
 
-.absolute-bottom {
-    position: absolute;
-    bottom: 0;
-    width: 90%;
-    text-align: center;
-    padding-left: 1.5em;
-    padding-right: 1.5em;
-}
-
 /* Project Dashboard */
 
+.addon-widget-body .pagination {
+    margin:0;
+}
+
+.csl-entry {
+    display: inline;
+}
 
 .addon-widget-container {
     border:1px solid #ddd;
@@ -2000,9 +2004,7 @@ span#profileFullname{
     display: inline-block;
     float: left;
     margin-bottom: 0;
-}
-.osf-dash-col .logs .addon-widget-body{
-    min-height: 485px;
+
 }
 .addon-widget-body {
     padding: 15px;
@@ -2027,6 +2029,7 @@ span#profileFullname{
 .text-300 {
     font-weight: 300;
 }
+
 
 #projectSubnav .navbar-collapse {
     padding-left: 0;
@@ -2083,9 +2086,8 @@ span#profileFullname{
         margin-top: 0px !important;
     }
 
-    span#profileFullname {
+    .name-div {
         font-size: 20px;
-        margin-bottom: 30px;
     }
 
 }
@@ -2198,6 +2200,10 @@ span#profileFullname{
 
 .progress-bar-content {
     margin: 0px 10px;
+}
+
+.progress-bar-width {
+    width: 100%;
 }
 
 .sharejs-info-btn {
@@ -2779,4 +2785,9 @@ span#profileFullname{
     .affix {
         position: relative;
     }
+}
+
+#viewPanel > .osf-panel-body,
+.mfr-file {
+  height: 100%;
 }

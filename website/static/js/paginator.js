@@ -15,15 +15,18 @@ var Paginator = oop.defclass({
     },
     addNewPaginators: function() {
         var self = this;
+        var i;
         self.paginators.removeAll();
         if (self.numberOfPages() > 1) {
             self.paginators.push({
                 style: (self.currentPage() === 0) ? 'disabled' : '',
                 handler: self.previousPage.bind(self),
                 text: '&lt;'
-            });
+            }); /* jshint ignore:line */
+                /* functions defined inside loop */
+
             self.paginators.push({
-                style: (self.currentPage() === 0) ? 'active' : '',
+                style: (self.currentPage() === 0) ? 'active hidden-xs' : 'hidden-xs',
                 text: '1',
                 handler: function() {
                     self.currentPage(0);
@@ -31,7 +34,7 @@ var Paginator = oop.defclass({
                 }
             });
             if (self.numberOfPages() <= MAX_PAGES_ON_PAGINATOR) {
-                for (var i = 1; i < self.numberOfPages() - 1; i++) {
+                for (i = 1; i < self.numberOfPages() - 1; i++) {
                     self.paginators.push({
                         style: (self.currentPage() === i) ? 'active' : '',
                         text: i + 1,
@@ -39,10 +42,11 @@ var Paginator = oop.defclass({
                             self.currentPage(parseInt(this.text) - 1);
                             self.fetchResults();
                         }
-                    });
+                    });/* jshint ignore:line */
+                    // function defined inside loop
                 }
             } else if (self.currentPage() < MAX_PAGES_ON_PAGINATOR_SIDE - 1) { // One ellipse at the end
-                for (var i = 1; i < MAX_PAGES_ON_PAGINATOR_SIDE; i++) {
+                for (i = 1; i < MAX_PAGES_ON_PAGINATOR_SIDE; i++) {
                     self.paginators.push({
                         style: (self.currentPage() === i) ? 'active' : '',
                         text: i + 1,
@@ -50,7 +54,9 @@ var Paginator = oop.defclass({
                             self.currentPage(parseInt(this.text) - 1);
                             self.fetchResults();
                         }
-                    });
+                    });/* jshint ignore:line */
+                    // functions defined inside loop
+
                 }
                 self.paginators.push({
                     style: 'disabled',
@@ -63,7 +69,7 @@ var Paginator = oop.defclass({
                     text: '...',
                     handler: function() {}
                 });
-                for (var i = self.numberOfPages() - MAX_PAGES_ON_PAGINATOR_SIDE; i < self.numberOfPages() - 1; i++) {
+                for (i = self.numberOfPages() - MAX_PAGES_ON_PAGINATOR_SIDE; i < self.numberOfPages() - 1; i++) {
                     self.paginators.push({
                         style: (self.currentPage() === i) ? 'active' : '',
                         text: i + 1,
@@ -71,7 +77,9 @@ var Paginator = oop.defclass({
                             self.currentPage(parseInt(this.text) - 1);
                             self.fetchResults();
                         }
-                    });
+                    });/* jshint ignore:line */
+                    // function defined inside loop
+
                 }
             } else { // two ellipses
                 self.paginators.push({
@@ -79,7 +87,7 @@ var Paginator = oop.defclass({
                     text: '...',
                     handler: function() {}
                 });
-                for (var i = self.currentPage() - 1; i <= self.currentPage() + 1; i++) {
+                for (i = self.currentPage() - 1; i <= self.currentPage() + 1; i++) {
                     self.paginators.push({
                         style: (self.currentPage() === i) ? 'active' : '',
                         text: i + 1,
@@ -87,7 +95,9 @@ var Paginator = oop.defclass({
                             self.currentPage(parseInt(this.text) - 1);
                             self.fetchResults();
                         }
-                    });
+                    });/* jshint ignore:line */
+                    // functions defined inside loop
+
                 }
                 self.paginators.push({
                     style: 'disabled',
