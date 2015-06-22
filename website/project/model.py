@@ -2413,14 +2413,6 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
                     raise NodeStateError("A registration with an unapproved embargo cannot be made public")
                 if self.embargo_end_date and not self.pending_embargo:
                     self.embargo.state = Embargo.CANCELLED
-                    self.registered_from.add_log(
-                        action=NodeLog.EMBARGO_CANCELLED,
-                        params={
-                            'node': self._id,
-                            'embargo_id': self.embargo._id,
-                        },
-                        auth=auth,
-                    )
                     self.embargo.save()
             self.is_public = True
         elif permissions == 'private' and self.is_public:

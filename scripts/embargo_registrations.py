@@ -9,7 +9,6 @@ import sys
 
 from modularodm import Q
 
-from framework.auth import Auth
 from framework.transactions.context import TokuTransaction
 from website import models, settings
 from website.app import init_app
@@ -34,16 +33,22 @@ def main(dry_run=True):
             )
             if not dry_run:
                 with TokuTransaction():
-                    embargo.state = models.Embargo.ACTIVE
-                    parent_registration.registered_from.add_log(
-                        action=NodeLog.EMBARGO_APPROVED,
-                        params={
-                            'node': parent_registration._id,
-                            'embargo_id': embargo._id,
-                        },
-                        auth=Auth(parent_registration.embargo.initiated_by),
-                    )
-                    embargo.save()
+                    try:
+                        embargo.state = models.Embargo.ACTIVE
+                        parent_registration.registered_from.add_log(
+                            action=NodeLog.EMBARGO_APPROVED,
+                            params={
+                                'node': parent_registration._id,
+                                'embargo_id': embargo._id,
+                            },
+                            auth=None,
+                        )
+                        embargo.save()
+                    except Exception as err:
+                        logger.error(
+                            'Unexpected error raised when activating embargo for '
+                            'registration {}. Continuing...'.format(parent_registration))
+                        logger.exception(err)
 
     active_embargoes = models.Embargo.find(Q('state', 'eq', models.Embargo.ACTIVE))
     for embargo in active_embargoes:
@@ -57,17 +62,23 @@ def main(dry_run=True):
             )
             if not dry_run:
                 with TokuTransaction():
-                    parent_registration.set_privacy('public')
-                    embargo.state = models.Embargo.COMPLETED
-                    parent_registration.registered_from.add_log(
-                        action=NodeLog.EMBARGO_COMPLETED,
-                        params={
-                            'node': parent_registration._id,
-                            'embargo_id': embargo._id,
-                        },
-                        auth=Auth(parent_registration.embargo.initiated_by),
-                    )
-                    embargo.save()
+                    try:
+                        parent_registration.set_privacy('public')
+                        embargo.state = models.Embargo.COMPLETED
+                        parent_registration.registered_from.add_log(
+                            action=NodeLog.EMBARGO_COMPLETED,
+                            params={
+                                'node': parent_registration._id,
+                                'embargo_id': embargo._id,
+                            },
+                            auth=None,
+                        )
+                        embargo.save()
+                    except Exception as err:
+                        logger.error(
+                            'Unexpected error raised when completing embargo for '
+                            'registration {}. Continuing...'.format(parent_registration))
+                        logger.exception(err)
 
 
 def should_be_embargoed(embargo):
@@ -77,7 +88,7 @@ def should_be_embargoed(embargo):
 
 if __name__ == '__main__':
     dry_run = 'dry' in sys.argv
-    init_app(routes=False, mfr=False)
+    init_app(routes=False)
     if not dry_run:
         scripts_utils.add_file_logger(logger, __file__)
     main(dry_run=dry_run)
