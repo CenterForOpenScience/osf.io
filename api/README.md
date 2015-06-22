@@ -17,7 +17,7 @@ The OSF `invoke` script provides several useful commands. For more information, 
 
 `invoke --list`
 
-##Running the API server
+###Running the API server
 
 If you have already installed all of the required services and Python packages, and activated your virtual environment, then you can start a working local API server with the following sequence:
 
