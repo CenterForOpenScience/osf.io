@@ -262,7 +262,7 @@ body {
 .student-image {
     width: 90%;
     padding-bottom: 100%;
-    background: url("/img/student-1.png") no-repeat center bottom;
+    background: url("/static/img/front-page/student-1.png") no-repeat center bottom;
     background-size: contain;
     position: relative;
     margin: -80px 0 -65px 0;
@@ -301,7 +301,7 @@ body {
     margin-left: 5px;
 }
 .grey-pullout {
-    background: #eeeeee url("/img/circles.png") no-repeat bottom right;
+    background: #eeeeee url("/static/img/front-page/circles.png") no-repeat bottom right;
     border-bottom: 1px solid #777777;
     position: relative;
     z-index: 2;
@@ -342,7 +342,7 @@ body {
 }
 .feature-3 {
     margin-top: 40px;
-    background: #282828 url("/img/collaboration.jpg") no-repeat center center;
+    background: #282828 url("/static/img/front-page/collaboration.jpg") no-repeat center center;
     background-size: cover;
     color: #ffffff;
 }
@@ -389,7 +389,7 @@ body {
     color: #386b89;
 }
 .feature-4 {
-    background: #166595 url("/img/bg-web.png") no-repeat center top;
+    background: #166595 url("/static/img/front-page/bg-web.png") no-repeat center top;
     background-size: cover;
     color: #ffffff;
     padding: 50px 0;
