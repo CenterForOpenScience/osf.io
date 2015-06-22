@@ -5,6 +5,7 @@
 'use strict';
 
 var $ = require('jquery');
+var $osf = require('js/osfHelpers');
 var ko = require('knockout');
 var bootbox = require('bootbox');
 var Raven = require('raven-js');
@@ -235,12 +236,10 @@ var ProjectViewModel = function(data) {
      * Toggle the watch status for this project.
      */
     var watchUpdateInProgress = false;
-    var noWatchUpdateInProgress = function (){
-        return watchUpdateInProgress === false;
-    };
     self.toggleWatch = function() {
-        // Send POST request to node's watch API url and update the watch count
-        if(noWatchUpdateInProgress()) {
+        // When there is no watch-update in progress,
+        // send POST request to node's watch API url and update the watch count
+        if(!watchUpdateInProgress) {
             if (self.userIsWatching()) {
                 self.watchedCount(self.watchedCount() - 1);
             } else {
@@ -251,11 +250,11 @@ var ProjectViewModel = function(data) {
                 self.apiUrl + 'togglewatch/',
                 {}
             ).done(function (data) {
-                    // Update watch count in DOM
-                    watchUpdateInProgress = false;
-                    self.userIsWatching(data.watched);
-                    self.watchedCount(data.watchCount);
-                }).fail(
+                // Update watch count in DOM
+                watchUpdateInProgress = false;
+                self.userIsWatching(data.watched);
+                self.watchedCount(data.watchCount);
+            }).fail(
                 osfHelpers.handleJSONError
             );
         }
