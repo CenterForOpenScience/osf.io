@@ -29,6 +29,8 @@ def search(query, index=None, doc_type=None):
 
 @requires_search
 def update_node(node, index=None):
+    #TODO: REMOVE DEBUGGING
+    logger.info('\nUPDATE NODE CALLED: {}\n'.format(node))
     index = index or settings.ELASTIC_INDEX
     search_engine.update_node(node, index=index)
 

@@ -196,7 +196,7 @@ def create_waterbutler_log(payload, **kwargs):
     # TODO: REMOVE DEBUGGING
     logging.info('\nCALLED CREATE WATERBUTLER LOG')
     logging.info('PAYLOAD:')
-    pprint(payload)
+    pprint(dict(payload))
     logging.info('KWARGS')
     pprint(kwargs)
     print('\n')

@@ -272,7 +272,8 @@ def update_node(node, index=None):
             if content:
                 elastic_document['files'][file_.name] = file_.content
                 print(elastic_document['files'][file_.name])
-
+        #TODO: REMOVE DEBUGGING
+        logger.info('\nES UPDATING NODE {}...\n'.format(node))
         es.index(index=index, doc_type=category, id=elastic_document_id, body=elastic_document, refresh=True)
 
 
@@ -302,6 +303,8 @@ def update_project_files(node, index=None):
             'files': file_dict
         }
     }
+    #TODO: REMOVE DEBUGGING
+    logger.info('\nES UPDATING FILES OF NODE {}...\n'.format(node))
     es.update(index=index, doc_type=category, id=elastic_document_id, body=body)
 
 
