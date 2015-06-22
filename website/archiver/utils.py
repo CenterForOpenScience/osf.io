@@ -72,13 +72,13 @@ def send_archiver_uncaught_error_mails(src, user, results):
     )
 
 def handle_archive_fail(reason, src, dst, user, result):
-    delete_registration_tree(dst.root)
     if reason == ARCHIVER_NETWORK_ERROR:
         send_archiver_copy_error_mails(src, user, result)
     elif reason == ARCHIVER_SIZE_EXCEEDED:
         send_archiver_size_exceeded_mails(src, user, result)
     else:  # reason == ARCHIVER_UNCAUGHT_ERROR
         send_archiver_uncaught_error_mails(src, user, result)
+    delete_registration_tree(dst.root)
 
 def archive_provider_for(node, user):
     """A generic function to get the archive provider for some node, user pair.
