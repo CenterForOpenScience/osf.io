@@ -61,29 +61,7 @@ h6,
 .label-green[href]:focus {
     background-color: #5f8f28;
 }
-body {
-    -webkit-font-smoothing: antialiased;
-}
-#navbarScope {
-    top: 0px;
-    -webkit-transition: top 0.3s ease-in-out;
-    -o-transition: top 0.3s ease-in-out;
-    transition: top 0.3s ease-in-out;
-}
-#navbarScope.off {
-    top: -250px;
-}
-#navbarScope a {
-    color: #ffffff;
-}
-#navbarScope a:hover {
-    color: rgba(255, 255, 255, 0.8);
-}
-#navbarScope .btn-top-login {
-    padding: 2px 30px;
-    margin-top: 5px;
-    line-height: 1.7;
-}
+
 #home-hero {
     background: #67a3bf;
     /* Old browsers */
@@ -129,19 +107,7 @@ body {
     top: 0;
     left: 0;
 }
-.navbar-default {
-    background-color: #214762;
-}
-.sign-in {
-    padding-top: 5px;
-}
-#menuLogin {
-    margin-top: 6px;
-}
-#menuLogin {
-    padding: 20px 20px 0 20px;
-    width: 300px;
-}
+
 #hero-signup {
     background: rgba(255, 255, 255, 0.15);
     position: absolute;

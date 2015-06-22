@@ -1,3 +1,26 @@
+body {
+    -webkit-font-smoothing: antialiased;
+}
+#navbarScope {
+    top: 0px;
+    -webkit-transition: top 0.3s ease-in-out;
+    -o-transition: top 0.3s ease-in-out;
+    transition: top 0.3s ease-in-out;
+}
+#navbarScope.off {
+    top: -250px;
+}
+#navbarScope a {
+    color: #ffffff;
+}
+#navbarScope a:hover {
+    color: rgba(255, 255, 255, 0.8);
+}
+#navbarScope .btn-top-login {
+    padding: 2px 30px;
+    margin-top: 5px;
+    line-height: 1.7;
+}
 .navbar-default {
     background-image: -webkit-linear-gradient(top, #ffffff 0%, #f8f8f8 100%);
     background-image: -o-linear-gradient(top, #ffffff 0%, #f8f8f8 100%);
@@ -208,4 +231,18 @@
 
 #menuLogin .form-control {
     width: 100%;
+}
+
+.navbar-default {
+    background-color: #214762;
+}
+.sign-in {
+    padding-top: 5px;
+}
+#menuLogin {
+    margin-top: 6px;
+}
+#menuLogin {
+    padding: 20px 20px 0 20px;
+    width: 300px;
 }
