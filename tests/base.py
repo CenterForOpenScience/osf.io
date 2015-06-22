@@ -13,6 +13,7 @@ import blinker
 import httpretty
 from webtest_plus import TestApp
 
+import mock
 from faker import Factory
 from nose.tools import *  # noqa (PEP8 asserts)
 from pymongo.errors import OperationFailure
@@ -148,7 +149,8 @@ class AppTestCase(unittest.TestCase):
 
     def tearDown(self):
         super(AppTestCase, self).tearDown()
-        self.context.pop()
+        with mock.patch('website.mailchimp_utils.get_mailchimp_api'):
+            self.context.pop()
 
 
 class ApiAppTestCase(unittest.TestCase):

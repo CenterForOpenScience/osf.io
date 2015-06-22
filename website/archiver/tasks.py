@@ -5,6 +5,7 @@ import celery
 from celery.utils.log import get_task_logger
 
 from framework.tasks import app as celery_app
+from framework.tasks.utils import logged
 from framework.exceptions import HTTPError
 
 from website.archiver import (
@@ -78,6 +79,7 @@ class ArchiverTask(celery.Task):
 
 
 @celery_app.task(base=ArchiverTask, name="archiver.stat_addon")
+@logged('stat_addon')
 def stat_addon(addon_short_name, job_pk):
     """Collect metadata about the file tree of a given addon
 
@@ -85,12 +87,19 @@ def stat_addon(addon_short_name, job_pk):
     :param job_pk: primary key of archive_job
     :return: AggregateStatResult containing file tree metadata
     """
+    # Dataverse reqires special handling for draft and
+    # published content
+    addon_name = addon_short_name
+    version = None
+    if 'dataverse' in addon_short_name:
+        addon_name = 'dataverse'
+        version = 'latest' if addon_short_name.split('-')[-1] == 'draft' else 'latest-published'
     create_app_context()
     job = ArchiveJob.load(job_pk)
     src, dst, user = job.info()
-    src_addon = src.get_addon(addon_short_name)
+    src_addon = src.get_addon(addon_name)
     try:
-        file_tree = src_addon._get_file_tree(user=user)
+        file_tree = src_addon._get_file_tree(user=user, version=version)
     except HTTPError as e:
         dst.archive_job.update_target(
             addon_short_name,
@@ -106,6 +115,7 @@ def stat_addon(addon_short_name, job_pk):
     return result
 
 @celery_app.task(base=ArchiverTask, name="archiver.make_copy_request")
+@logged('make_copy_request')
 def make_copy_request(job_pk, url, data):
     """Make the copy request to the WaterBulter API and handle
     successful and failed responses
@@ -143,6 +153,7 @@ def make_waterbutler_payload(src, dst, addon_short_name, rename, cookie, revisio
     return ret
 
 @celery_app.task(base=ArchiverTask, name="archiver.archive_addon")
+@logged('archive_addon')
 def archive_addon(addon_short_name, job_pk, stat_result):
     """Archive the contents of an addon by making a copy request to the
     WaterBulter API
@@ -151,31 +162,37 @@ def archive_addon(addon_short_name, job_pk, stat_result):
     :param job_pk: primary key of ArchiveJob
     :return: None
     """
+    # Dataverse requires special handling for draft
+    # and published content
+    addon_name = addon_short_name
+    if 'dataverse' in addon_short_name:
+        addon_name = 'dataverse'
     create_app_context()
     job = ArchiveJob.load(job_pk)
     src, dst, user = job.info()
     logger.info("Archiving addon: {0} on node: {1}".format(addon_short_name, src._id))
-    src_provider = src.get_addon(addon_short_name)
+    src_provider = src.get_addon(addon_name)
     folder_name = src_provider.archive_folder_name
     cookie = user.get_or_create_cookie()
     copy_url = settings.WATERBUTLER_URL + '/ops/copy'
-    if addon_short_name == 'dataverse':
+    if addon_name == 'dataverse':
         # The dataverse API will not differentiate between published and draft files
         # unless expcicitly asked. We need to create seperate folders for published and
         # draft in the resulting archive.
         #
         # Additionally trying to run the archive without this distinction creates a race
         # condition that non-deterministically caused archive jobs to fail.
-        data = make_waterbutler_payload(src, dst, addon_short_name, '{0} (published)'.format(folder_name), cookie, revision='latest-published')
+        data = make_waterbutler_payload(src, dst, addon_name, '{0} (published)'.format(folder_name), cookie, revision='latest-published')
         make_copy_request.delay(job_pk=job_pk, url=copy_url, data=data)
-        data = make_waterbutler_payload(src, dst, addon_short_name, '{0} (draft)'.format(folder_name), cookie, revision='latest')
+        data = make_waterbutler_payload(src, dst, addon_name, '{0} (draft)'.format(folder_name), cookie, revision='latest')
         make_copy_request.delay(job_pk=job_pk, url=copy_url, data=data)
     else:
-        data = make_waterbutler_payload(src, dst, addon_short_name, folder_name, cookie)
+        data = make_waterbutler_payload(src, dst, addon_name, folder_name, cookie)
         make_copy_request.delay(job_pk=job_pk, url=copy_url, data=data)
 
 
 @celery_app.task(base=ArchiverTask, name="archiver.archive_node")
+@logged('archive_node')
 def archive_node(results, job_pk):
     """First use the results of #stat_node to check disk usage of the
     initated registration, then either fail the registration or
@@ -189,7 +206,6 @@ def archive_node(results, job_pk):
     job = ArchiveJob.load(job_pk)
     src, dst, user = job.info()
     logger.info("Archiving node: {0}".format(src._id))
-    dst.save()
     stat_result = AggregateStatResult(
         src._id,
         src.title,
@@ -198,6 +214,9 @@ def archive_node(results, job_pk):
     if stat_result.disk_usage > settings.MAX_ARCHIVE_SIZE:
         raise ArchiverSizeExceeded(result=stat_result)
     else:
+        if not results:
+            job.status = ARCHIVER_SUCCESS
+            job.save()
         for result in stat_result.targets:
             if not result.num_files:
                 job.update_target(result.target_name, ARCHIVER_SUCCESS)
@@ -210,6 +229,7 @@ def archive_node(results, job_pk):
         project_signals.archive_callback.send(dst)
 
 @celery_app.task(bind=True, base=ArchiverTask, name='archiver.archive')
+@logged('archive')
 def archive(self, job_pk):
     """Starts a celery.chord that runs stat_addon for each
     complete addon attached to the Node, then runs
@@ -226,12 +246,9 @@ def archive(self, job_pk):
     celery.chord(
         celery.group(
             stat_addon.si(
-                addon_short_name=addon.config.short_name,
+                addon_short_name=target.name,
                 job_pk=job_pk,
             )
-            for addon in [
-                src.get_addon(target.name)
-                for target in dst.archive_job.target_addons
-            ]
+            for target in job.target_addons
         )
     )(archive_node.s(job_pk=job_pk))

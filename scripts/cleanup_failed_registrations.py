@@ -5,14 +5,12 @@ import logging
 
 from modularodm import Q
 
-from website.archiver import (
-    ARCHIVER_UNCAUGHT_ERROR,
-    ARCHIVER_SUCCESS,
-)
+from website.archiver import ARCHIVER_UNCAUGHT_ERROR
 from website.settings import ARCHIVE_TIMEOUT_TIMEDELTA
 from website.archiver.utils import handle_archive_fail
+from website.archiver.model import ArchiveJob
+
 from website.app import init_app
-from website.project.model import Node
 
 from scripts import utils as script_utils
 
@@ -21,13 +19,11 @@ logger = logging.getLogger(__name__)
 
 def find_failed_registrations():
     expired_if_before = datetime.utcnow() - ARCHIVE_TIMEOUT_TIMEDELTA
-    query = (
-        Q('is_deleted', 'eq', False) &
-        Q('is_registration', 'eq', True) &
-        Q('registered_date', 'lt', expired_if_before) &
-        Q('__backrefs.active.archivejob', 'exists', True)
+    jobs = ArchiveJob.find(
+        Q('sent', 'eq', False) &
+        Q('datetime_initiated', 'lt', expired_if_before)
     )
-    return {node.root for node in Node.find(query) if not node.archive_job.sent or node.archive_job.status != ARCHIVER_SUCCESS}
+    return {node.root for node in [job.dst_node for job in jobs]}
 
 def remove_failed_registrations(dry_run=True):
     init_app(set_backends=True, routes=False)

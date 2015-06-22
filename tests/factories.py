@@ -200,6 +200,11 @@ class RegistrationFactory(AbstractNodeFactory):
             template=template,
             data=data,
         )
+        ArchiveJob(
+            src_node=project,
+            dst_node=register,
+            initiator=user,
+        )
         if archive:
             return register()
         else:
