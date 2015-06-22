@@ -584,6 +584,10 @@ def registration_callbacks(node, payload, *args, **kwargs):
             errors=errors,
         )
     else:
+        # Dataverse requires two seperate targets, one
+        # for draft files and one for published files
+        if src_provider == 'dataverse':
+            src_provider += '-' + (payload['rename'].split(' ')[-1].lstrip('(').rstrip(')').strip())
         node.archive_job.update_target(
             src_provider,
             ARCHIVER_SUCCESS,

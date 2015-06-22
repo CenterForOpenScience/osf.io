@@ -171,7 +171,11 @@ class ArchiveJob(StoredObject):
                 continue
             archive_errors = getattr(addon, 'archive_errors', None)
             if not archive_errors or (archive_errors and not archive_errors()):
-                addons.append(addon.config.short_name)
+                if addon.config.short_name == 'dataverse':
+                    addons.append(addon.config.short_name + '-draft')
+                    addons.append(addon.config.short_name + '-published')
+                else:
+                    addons.append(addon.config.short_name)
         for addon in addons:
             self._set_target(addon)
         self.save()
