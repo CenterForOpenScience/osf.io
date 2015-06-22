@@ -24,69 +24,71 @@
                     <span id="nodeTitleEditable" class="overflow">${node['title']}</span>
                 </h2>
             </div>
-            <div class="col-sm-6 col-md-5">
-                <div class="btn-toolbar node-control pull-right">
-                    <div class="btn-group">
-                    % if not node["is_public"]:
-                        <button class='btn btn-default disabled'>Private</button>
-                        % if 'admin' in user['permissions']:
-                            <a class="btn btn-default" data-bind="click: makePublic">Make Public</a>
-                        % endif
-                    % else:
-                        % if 'admin' in user['permissions']:
-                            <a class="btn btn-default" data-bind="click: makePrivate">Make Private</a>
-                        % endif
-                        <button class="btn btn-default disabled">Public</button>
-                    % endif
-                    </div>
-                    <!-- ko if: canBeOrganized -->
-                    <div class="btn-group" style="display: none" data-bind="visible: true">
-
-                        <!-- ko ifnot: inDashboard -->
-                           <a data-bind="click: addToDashboard, tooltip: {title: 'Add to Dashboard Folder',
-                            placement: 'bottom'}" class="btn btn-default">
-                               <i class="fa fa-folder-open"></i>
-                               <i class="fa fa-plus"></i>
-                           </a>
-                        <!-- /ko -->
-                        <!-- ko if: inDashboard -->
-                           <a data-bind="click: removeFromDashboard, tooltip: {title: 'Remove from Dashboard Folder',
-                            placement: 'bottom'}" class="btn btn-default">
-                               <i class="fa fa-folder-open"></i>
-                               <i class="fa fa-minus"></i>
-                           </a>
-                        <!-- /ko -->
-
-                    </div>
-                    <!-- /ko -->
-                    <div class="btn-group">
-                        <a
-                        % if user_name and (node['is_public'] or user['has_read_permissions']) and not node['is_registration']:
-                            data-bind="click: toggleWatch, tooltip: {title: watchButtonAction, placement: 'bottom'}"
-                            class="btn btn-default" data-container="body"
-                        % else:
-                            class="btn btn-default disabled"
-                        % endif
-                            href="#">
-                            <i class="fa fa-eye"></i>
-                            <span data-bind="text: watchButtonDisplay" id="watchCount"></span>
-                        </a>
-                        <a class="btn btn-default"
-                           data-bind="tooltip: {title: 'Duplicate', placement: 'bottom'}"
-                           data-target="#duplicateModal" data-toggle="modal"
-                           href="#">
-                          <span class="glyphicon glyphicon-share"></span>&nbsp; ${ node['templated_count'] + node['fork_count'] + node['points'] }
-                        </a>
-                    </div>
-                    % if 'badges' in addons_enabled and badges and badges['can_award']:
+            % if user_name:
+                <div class="col-sm-6 col-md-5">
+                    <div class="btn-toolbar node-control pull-right">
                         <div class="btn-group">
-                            <button class="btn btn-success" id="awardBadge" style="border-bottom-right-radius: 4px;border-top-right-radius: 4px;">
-                                <i class="fa fa-plus"></i> Award
-                            </button>
+                        % if not node["is_public"]:
+                            <button class='btn btn-default disabled'>Private</button>
+                            % if 'admin' in user['permissions']:
+                                <a class="btn btn-default" data-bind="click: makePublic">Make Public</a>
+                            % endif
+                        % else:
+                            % if 'admin' in user['permissions']:
+                                <a class="btn btn-default" data-bind="click: makePrivate">Make Private</a>
+                            % endif
+                            <button class="btn btn-default disabled">Public</button>
+                        % endif
                         </div>
-                    % endif
+                        <!-- ko if: canBeOrganized -->
+                        <div class="btn-group" style="display: none" data-bind="visible: true">
+
+                            <!-- ko ifnot: inDashboard -->
+                               <a data-bind="click: addToDashboard, tooltip: {title: 'Add to Dashboard Folder',
+                                placement: 'bottom'}" class="btn btn-default">
+                                   <i class="fa fa-folder-open"></i>
+                                   <i class="fa fa-plus"></i>
+                               </a>
+                            <!-- /ko -->
+                            <!-- ko if: inDashboard -->
+                               <a data-bind="click: removeFromDashboard, tooltip: {title: 'Remove from Dashboard Folder',
+                                placement: 'bottom'}" class="btn btn-default">
+                                   <i class="fa fa-folder-open"></i>
+                                   <i class="fa fa-minus"></i>
+                               </a>
+                            <!-- /ko -->
+
+                        </div>
+                        <!-- /ko -->
+                        <div class="btn-group">
+                            <a
+                            % if (node['is_public'] or user['has_read_permissions']) and not node['is_registration']:
+                                data-bind="click: toggleWatch, tooltip: {title: watchButtonAction, placement: 'bottom'}"
+                                class="btn btn-default" data-container="body"
+                            % else:
+                                class="btn btn-default disabled"
+                            % endif
+                                href="#">
+                                <i class="fa fa-eye"></i>
+                                <span data-bind="text: watchButtonDisplay" id="watchCount"></span>
+                            </a>
+                            <a class="btn btn-default"
+                               data-bind="tooltip: {title: 'Duplicate', placement: 'bottom'}"
+                               data-target="#duplicateModal" data-toggle="modal"
+                               href="#">
+                              <span class="glyphicon glyphicon-share"></span>&nbsp; ${ node['templated_count'] + node['fork_count'] + node['points'] }
+                            </a>
+                        </div>
+                        % if 'badges' in addons_enabled and badges and badges['can_award']:
+                            <div class="btn-group">
+                                <button class="btn btn-success" id="awardBadge" style="border-bottom-right-radius: 4px;border-top-right-radius: 4px;">
+                                    <i class="fa fa-plus"></i> Award
+                                </button>
+                            </div>
+                        % endif
+                    </div>
                 </div>
-            </div>
+            % endif
         </div>
         <div id="contributors" class="row" style="line-height:25px">
             <div class="col-sm-12">
