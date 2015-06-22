@@ -2478,7 +2478,7 @@ class TestProject(OsfTestCase):
         assert_false(registration.pending_embargo)
         assert_equal(registration.embargo.state, Embargo.CANCELLED)
         assert_true(registration.is_public)
-        assert_equal(self.project.logs[-1].action, NodeLog.EMBARGO_CANCELLED)
+        assert_equal(self.project.logs[-1].action, NodeLog.EMBARGO_APPROVED)
 
     def test_set_description(self):
         old_desc = self.project.description
