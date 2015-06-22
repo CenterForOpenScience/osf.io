@@ -22,7 +22,7 @@ from website import mails
 from website import settings
 from website.project import decorators
 from website.addons.base import exceptions
-from website.addons.base.notifications import FileNotification
+from website.addons.base.notifications import FileEvent
 from website.models import User, Node, NodeLog
 from website.util import rubeus
 from website.profile.utils import get_gravatar
@@ -284,7 +284,7 @@ def create_waterbutler_log(payload, **kwargs):
 
         node_addon.create_waterbutler_log(auth, action, metadata)
 
-    file_update = FileNotification.unserialize(user, node, action, payload)
+    file_update = FileEvent.unserialize(user, node, action, payload)
     file_update.perform()
 
     return {'status': 'success'}

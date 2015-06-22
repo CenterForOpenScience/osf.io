@@ -66,7 +66,7 @@ class NotificationDigest(StoredObject):
     node_lineage = fields.StringField(list=True)
 
 
-class BaseNotification:
+class BaseEvent:
     """Base notification class for building notification events and messages"""
     __metaclass__ = ABCMeta
 
@@ -84,16 +84,16 @@ class BaseNotification:
         pass
 
     @abstractmethod
-    def form_message(self):
-        """Piece together the message to be sent to subscribed users"""
-        pass
-
-    @abstractmethod
     def form_event(self):
         """
         Use NODE_SUBSCRIPTIONS_AVAILABLE and USER_SUBSCRIPTIONS_AVAILABLE plus UIDs
         where available to denote individual subscriptions.
         """
+        pass
+
+    @abstractmethod
+    def form_message(self):
+        """Piece together the message to be sent to subscribed users"""
         pass
 
     @abstractmethod
