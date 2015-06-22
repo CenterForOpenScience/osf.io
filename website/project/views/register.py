@@ -28,7 +28,6 @@ from website.identifiers.client import EzidClient
 
 from .node import _view_project
 from .. import clean_template_name
-from ..metadata.schemas import OSF_META_SCHEMAS
 
 @must_be_valid_project
 @must_have_permission(ADMIN)
@@ -48,7 +47,14 @@ def node_register_page(auth, node, **kwargs):
     return ret
 
 def get_metaschema_by_name(**kwargs):
-    pass
+    names = [schema['name'] for schema in OSF_META_SCHEMAS]
+    query_name = request.query_string.split('=')[1].replace('%20', '_')
+    for name in names:
+        if name.lower() == query_name.lower():
+            for schema in OSF_META_SCHEMAS:
+                if schema['name'] == name:
+                    return schema
+    return {'message': 'Schema not found, please be sure the name matches exactly'}
 
 @must_be_valid_project
 @must_have_permission(ADMIN)
