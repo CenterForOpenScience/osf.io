@@ -6,7 +6,7 @@ var ko = require('knockout');
 
 // model for components, due to simplicity did not create a new file
 var ComponentControl = {
-     anonymousUserName:ko.observable('<em>A user</em>')
+     anonymousUserName:'<em>A User</em>'
 };
 
 // binds to component scope in render_nodes.mako
