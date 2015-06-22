@@ -58,7 +58,7 @@ then you can start a working local API server with the sequence delineated under
 
 Run the Django app as a separate process from the OSF Flask app:  
 ```bash 
-invoke apiserver
+$ invoke apiserver
  ```
 
 Go to `localhost:8000/v2/` in your browser to go to the root of the browse-able API.
