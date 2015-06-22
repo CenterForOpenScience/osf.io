@@ -120,7 +120,8 @@ var resolve = {
         'tests': staticPath('js/tests'),
         // GASP Items not defined as main in its package.json
         'TweenLite' : staticPath('../../node_modules/gsap/src/minified/TweenLite.min.js'),
-        'EasePack' : staticPath('../../node_modules/gsap/src/minified/easing/EasePack.min.js')
+        'EasePack' : staticPath('../../node_modules/gsap/src/minified/easing/EasePack.min.js'),
+        'YoutubeModal': staticPath('vendor/youtube.min.js')
 
     }
 };

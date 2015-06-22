@@ -3,7 +3,7 @@ require('../../css/front-page.css');
 // new SignUp('#signUpScope', '/api/v1/register/');
 var TweenLite = require('TweenLite');
 require('EasePack');
-
+require('YoutubeModal');
 
 // ANIMATION FOR FRONT PAGE
 // @codekit-prepend "vendor/TweenLite.min.js", "vendor/EasePack.min.js", "vendor/rAF.js", "vendor/modernizr-2.8.3-respond-1.4.2.min.js", "vendor/collapse.js", "vendor/dropdown.js", "vendor/modal.js", "vendor/youtube.min.js";
