@@ -9,8 +9,10 @@
 ## Table of contents
 - [Help](#help)
 - [Running the OSF](#running-the-osf)
+- [Running the API Server] (#running-the-api-server)
 - [Installation](#installation)
 - [Common Development Tasks](#common-development-tasks)
+
 
 
 ## Help
@@ -49,6 +51,17 @@ In order to log in on your local server, you will also need to run the authentic
 - For daily use, run fakeCAS. See [CenterForOpenScience/fakeCAS](https://github.com/CenterForOpenScience/fakeCAS) for information on how to set up this service.
 - For developing authentication-related features, run CAS. See [CenterForOpenScience/docker-library/cas](https://github.com/CenterForOpenScience/docker-library/tree/master/cas) for information on how to set up this service.
 
+## Running the API Server
+
+If you have already installed all of the required services and Python packages, and activated your virtual environment,
+then you can start a working local API server with the sequence delineated under Running the OSF (#running-the-osf) and:
+
+Run the Django app as a separate process from the OSF Flask app:  
+```bash 
+invoke apiserver
+ ```
+
+Go to `localhost:8000/v2/` in your browser to go to the root of the browse-able API.
 
 ### Livereload support
 
