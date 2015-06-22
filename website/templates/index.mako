@@ -2,6 +2,15 @@
 
 <%def name="title()">Home</%def>
 
+<%def name="contentWrap()">
+    <div class="watermarked">
+            % if status:
+                <%include file="alert.mako"/>
+            % endif
+            ${self.content()}
+    </div><!-- end watermarked -->
+</%def>
+
 <%def name="content()">
 
     <!-- Main jumbotron for a primary marketing message or call to action -->

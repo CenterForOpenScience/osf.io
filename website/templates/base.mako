@@ -68,14 +68,7 @@
 
     <%include file="nav.mako"/>
      ## TODO: shouldn't always have the watermark class
-    <div class="watermarked">
-        <div class="container ${self.container_class()}">
-            % if status:
-                <%include file="alert.mako"/>
-            % endif
-            ${self.content()}
-        </div><!-- end container -->
-    </div><!-- end watermarked -->
+    ${self.contentWrap()}
 
 % if not user_id:
 <div id="footerSlideIn">
@@ -226,6 +219,18 @@
 <%def name="footer()">
     <%include file="footer.mako"/>
 </%def>
+
+<%def name="contentWrap()">
+    <div class="watermarked">
+        <div class="container ${self.container_class()}">
+            % if status:
+                <%include file="alert.mako"/>
+            % endif
+            ${self.content()}
+        </div><!-- end container -->
+    </div><!-- end watermarked -->
+</%def>
+
 
 <%def name="includes_top()">
 
