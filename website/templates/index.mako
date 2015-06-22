@@ -5,7 +5,18 @@
 <%def name="contentWrap()">
     <div class="watermarked">
             % if status:
-                <%include file="alert.mako"/>
+                <div id="alert-container">
+                % for message, css_class, dismissible in status:
+                      <div class='alert alert-block alert-${css_class} fade in alert-front'>
+                        % if dismissible:
+                        <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                          <span aria-hidden="true">&times;</span>
+                        </button>
+                        % endif
+                        <p>${message}</p>
+                      </div>
+                % endfor
+                </div>
             % endif
             ${self.content()}
     </div><!-- end watermarked -->
@@ -36,7 +47,7 @@
           <div class="row">
             <div class="col-sm-6 hidden-xs">
               <a class="youtube" href="//www.youtube.com/watch?v=2TV21gOzfhw"><i class="icon icon-play"></i></a>
-              <img src="static/img/front-page/screenshot.png" class="img-responsive" id="screenshot" alt="" />
+              <img src="/static/img/front-page/screenshot.png" class="img-responsive" id="screenshot" alt="" />
             </div>
             <div class="col-sm-6">
               <h2>Get started for free today</h2>
@@ -143,30 +154,30 @@
         </div>
         <div class="row integrations">
           <div class="col-sm-3 col-xs-6">
-            <img src="static/img/front-page/dropbox.png" class="img-responsive"/>
+            <img src="/static/img/front-page/dropbox.png" class="img-responsive"/>
           </div>
           <div class="col-sm-3 col-xs-6">
-            <img src="static/img/front-page/github.png" class="img-responsive"/>
+            <img src="/static/img/front-page/github.png" class="img-responsive"/>
           </div>
           <div class="col-sm-3 col-xs-6">
-            <img src="static/img/front-page/amazon.png" class="img-responsive"/>
+            <img src="/static/img/front-page/amazon.png" class="img-responsive"/>
           </div>
           <div class="col-sm-3 col-xs-6">
-            <img src="static/img/front-page/box.png" class="img-responsive"/>
+            <img src="/static/img/front-page/box.png" class="img-responsive"/>
           </div>
       </div>
       <div class="row integrations">
           <div class="col-sm-3 col-xs-6">
-           <img src="static/img/front-page/google.png" class="img-responsive"/>
+           <img src="/static/img/front-page/google.png" class="img-responsive"/>
           </div>
           <div class="col-sm-3 col-xs-6">
-            <img src="static/img/front-page/figshare.png" class="img-responsive"/>
+            <img src="/static/img/front-page/figshare.png" class="img-responsive"/>
           </div>
           <div class="col-sm-3 col-xs-6">
-            <img src="static/img/front-page/dataverse.png" class="img-responsive"/>
+            <img src="/static/img/front-page/dataverse.png" class="img-responsive"/>
           </div>
           <div class="col-sm-3 col-xs-6">
-            <img src="static/img/front-page/mendeley.png" class="img-responsive"/>
+            <img src="/static/img/front-page/mendeley.png" class="img-responsive"/>
           </div>
       </div>
       <div class="row">
@@ -246,7 +257,7 @@
 
         <div class="row">
           <div class="col-xs-3">
-            <img src="static/img/front-page/user2.jpg" class="img-circle img-responsive" alt="Richard Ball" />
+            <img src="/static/img/front-page/user2.jpg" class="img-circle img-responsive" alt="Richard Ball" />
           </div>
           <div class="col-xs-8">
             <h3>Making research reproducible &amp; verifiable</h3>
@@ -260,13 +271,13 @@
             <p>The OSF makes version control effortless. My PI, my lab mates, and I have access to previous versions of a file at any time - and the most current version is always readily available.<br/><small><em>Erica Baranski, PhD Student, Social and Personality Psychology Funder Lab, UC Riverside</em></small></em></small></p>
           </div>
           <div class="col-md-3">
-            <img src="static/img/front-page/user3.jpg" class="img-circle img-responsive" alt="Erica Baranski" />
+            <img src="/static/img/front-page/user3.jpg" class="img-circle img-responsive" alt="Erica Baranski" />
           </div>
         </div>
 
         <div class="row hidden-xs hidden-sm">
           <div class="col-md-3">
-            <img src="static/img/front-page/user4.jpg" class="img-circle img-responsive" alt="" />
+            <img src="/static/img/front-page/user4.jpg" class="img-circle img-responsive" alt="" />
           </div>
           <div class="col-md-7">
             <h3>A centralized hub of information</h3>

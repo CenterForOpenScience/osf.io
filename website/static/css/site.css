@@ -1928,13 +1928,14 @@ div.profile-fullname{
     position: fixed;
     width: 100%;
     left: 0;
-    top: 43px;
+    top: 50px;
     background: #EEE;
     z-index: 99;
     box-shadow:0 0 9px -1px #838383;
     border-radius: 0;
     border: none;
-    min-height:40px;
+    height: 44px !important;
+    min-height: 40px;
 }
 
 .osf-project-navbar li>a {

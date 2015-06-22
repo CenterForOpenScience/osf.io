@@ -71,7 +71,7 @@ body {
     text-shadow: 0 -1px 0 rgba(0, 0, 0, 0.25);
 }
 .navbar {
-    min-height: 50px;
+    height: 50px;
     margin-bottom: 25px;
 }
 .navbar-brand {
