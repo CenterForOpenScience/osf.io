@@ -2,7 +2,7 @@ from rest_framework import serializers as ser
 
 from api.base.serializers import JSONAPISerializer, CollectionLinksField, Link, LinksField
 from api.base.utils import get_user_auth
-from website.models import Node, Pointer
+from website.models import Node
 from framework.auth.core import Auth
 
 
@@ -44,7 +44,7 @@ class CollectionSerializer(JSONAPISerializer):
 
     def get_pointers_count(self, obj):
         if isinstance(obj, dict) and obj['properties']['smart_folder'] is True:
-            return ''
+            return obj['num_pointers']
         return len(obj.nodes_pointer)
 
     def get_modified_by(self, obj):
@@ -91,13 +91,11 @@ class CollectionSerializer(JSONAPISerializer):
 
 
 class CollectionPointersSerializer(JSONAPISerializer):
-    # try:
-    #     id = ser.CharField(read_only=True, source='_id')
-    #     node_id = ser.CharField(source='node._id', help_text='The ID of the node that this pointer points to')
-    #     title = ser.CharField(read_only=True, source='node.title', help_text='The title of the node that this pointer')
-    # except AttributeError as e:
-    node_id = ser.CharField(source='key', help_text='ayy lmao')
-    title = ser.CharField(read_only=True, help_text='ayy lmao')
+    try:
+        collection_id = ser.CharField(read_only=True, source="_id")
+    except AttributeError:
+        collection_id = ser.CharField(read_only=True, source="_id")
+    title = ser.CharField(read_only=True)
 
     class Meta:
         type_ = 'pointers'
@@ -121,4 +119,3 @@ class CollectionPointersSerializer(JSONAPISerializer):
         pointer_node = Node.load(validated_data['node']['_id'])
         pointer = node.add_pointer(pointer_node, auth, save=True)
         return pointer
-

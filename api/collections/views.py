@@ -157,20 +157,8 @@ class CollectionChildrenList(generics.ListAPIView, CollectionMixin):
 
         key = self.kwargs[self.node_lookup_url_kwarg]
         user = self.request.user
-        if key == 'amp':
-            contributed = user.node__contributed
-            all_my_projects = contributed.find(
-                smart_folders.get('amp')
-            )
-
-            return all_my_projects
-
-        elif key == 'amr':
-            contributed = user.node__contributed
-            all_my_registrations = contributed.find(
-                smart_folders.get('amr')
-            )
-            return all_my_registrations
+        if key == 'amp' or key == 'amr':
+            return ''
 
         current_node = self.get_node()
         nodes = current_node.nodes
@@ -212,6 +200,7 @@ class CollectionPointersList(generics.ListAPIView, CollectionMixin):
     def get_queryset(self):
         key = self.kwargs[self.node_lookup_url_kwarg]
         user = self.request.user
+
         if key == 'amp':
             contributed = user.node__contributed
             all_my_projects = contributed.find(
@@ -227,7 +216,10 @@ class CollectionPointersList(generics.ListAPIView, CollectionMixin):
             )
             return all_my_registrations
 
-        return self.get_node().nodes_pointer
+        else:
+            current_node = self.get_node()
+            pointers = current_node.nodes_pointer
+            return pointers
 
 
 class CollectionPointerDetail(generics.RetrieveDestroyAPIView, CollectionMixin):

@@ -369,7 +369,6 @@ class TestCollectionChildrenList(ApiTestCase):
         assert_in('Smart Folder amr', titles)
         assert_in('Smart Folder amp', titles)
 
-
     def tearDown(self):
         ApiTestCase.tearDown(self)
         Node.remove()
@@ -407,7 +406,10 @@ class TestCollectionPointersList(ApiTestCase):
         res_json = res.json['data']
         assert_equal(len(res_json), 1)
         assert_equal(res.status_code, 200)
-        assert_in(res_json[0]['node_id'], self.collection_being_pointed_to_two._id)
+        assert_in(res_json[0]['collection_id'], self.collection_being_pointed_to_two._id)
+
+    def test_smart_folders_return_correctly(self):
+        pass
 
 
 class TestCreateCollectionPointer(ApiTestCase):
@@ -422,7 +424,7 @@ class TestCreateCollectionPointer(ApiTestCase):
         self.collection_being_pointed_to = FolderFactory(creator=self.user)
         self.collection_one.add_pointer(self.collection_being_pointed_to, auth=Auth(self.user))
         self.collection_one_url = '/{}collections/{}/pointers/'.format(API_BASE, self.collection_one._id)
-        self.payload_one = {'node_id': self.collection_one._id}
+        self.payload_one = {'collection_id': self.collection_one._id}
 
         self.user_two = UserFactory.build()
         self.user_two.set_password('password')
@@ -433,13 +435,12 @@ class TestCreateCollectionPointer(ApiTestCase):
         self.collection_being_pointed_to_two = FolderFactory(creator=self.user_two)
         self.collection_two.add_pointer(self.collection_being_pointed_to_two, auth=Auth(self.user_two))
         self.collection_two_url = '/{}collections/{}/pointers/'.format(API_BASE, self.collection_two._id)
-        self.payload_two = {'node_id': self.collection_two._id}
+        self.payload_two = {'collection_id': self.collection_two._id}
 
         self.smart_folder_amp = FolderFactory(_id="amp", creator=self.user)
         self.smart_folder_amr = FolderFactory(_id="amr", creator=self.user)
         self.smart_folder_amp_url = '/{}collections/amp/pointers/'.format(API_BASE)
         self.smart_folder_amr_url = '/{}collections/amr/pointers/'.format(API_BASE)
-
 
     def test_not_creates_collection_pointer_not_creator(self):
         res = self.app.post(self.collection_two_url, self.payload_two, expect_errors=True, auth=self.basic_auth)
@@ -454,7 +455,7 @@ class TestCreateCollectionPointer(ApiTestCase):
 
         res = self.app.post(self.collection_one_url, self.payload_one, auth=self.basic_auth, expect_errors=True)
         assert_equal(res.status_code, 201)
-        assert_equal(res.json['data']['node_id'], self.collection_one._id)
+        assert_equal(res.json['data']['collection_id'], self.collection_one._id)
 
     def test_not_creates_collection_pointer_logged_out(self):
         res = self.app.post(self.collection_one_url, self.payload_one, expect_errors=True)
@@ -509,7 +510,7 @@ class TestCollectionPointerDetail(ApiTestCase):
         res = self.app.get(self.collection_two_url, auth=self.basic_auth_two)
         res_json = res.json['data']
         assert_equal(res.status_code, 200)
-        assert_equal(res_json['node_id'], self.collection_being_pointed_to_two._id)
+        assert_equal(res_json['collection_id'], self.pointer_two._id)
 
     def test_not_returns_collection_pointer_detail_logged_out_two(self):
         res = self.app.get(self.collection_one_url, expect_errors=True)
