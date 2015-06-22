@@ -5,7 +5,7 @@ from website.models import Node
 from api.base.filters import ODMFilterMixin
 from api.registrations.serializers import RegistrationSerializer
 from api.nodes.serializers import NodePointersSerializer
-from api.nodes.views import NodeMixin, NodePointersList, NodeFilesList, NodeChildrenList, NodeContributorsList
+from api.nodes.views import NodeMixin, NodeFilesList, NodeChildrenList, NodeContributorsList
 
 from api.nodes.permissions import ContributorOrPublic, ReadOnlyIfRegistration
 
@@ -90,10 +90,6 @@ class RegistrationPointersList(generics.ListAPIView, RegistrationMixin):
 
 
 class RegistrationFilesList(NodeFilesList, RegistrationMixin):
-     """
+    """
     Files attached to a registration
     """
-
-
-
-
