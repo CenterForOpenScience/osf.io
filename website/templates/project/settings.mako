@@ -288,7 +288,7 @@
 
                                 <div class="help-block">
                                   Retracting children components of a registration is not allowed. Should you wish to
-                                  retract this component, please retract its parent registration.
+                                  retract this component, please retract its parent registration <a href="${web_url_for('node_setting', pid=node['root_id'])}">here</a>.
                                 </div>
 
                             % else:
