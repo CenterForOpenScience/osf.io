@@ -1,12 +1,15 @@
 # -*- coding: utf-8 -*-
-
+from time import sleep
+import requests
 import urlparse
+import httplib as http
 
 import pymongo
 from modularodm import fields
 
 from framework.auth.core import _get_current_user
 from framework.auth.decorators import Auth
+from framework.exceptions import HTTPError
 
 from website.security import encrypt, decrypt
 
@@ -14,6 +17,7 @@ from website.addons.base import (
     AddonNodeSettingsBase, AddonUserSettingsBase, GuidFile, exceptions,
 )
 from website.addons.base import StorageAddonBase
+from website.utils import waterbutler_url_for
 
 from website.addons.dataverse.client import connect_from_settings_or_401
 from website.addons.dataverse.settings import HOST
@@ -148,6 +152,34 @@ class AddonDataverseNodeSettings(StorageAddonBase, AddonNodeSettingsBase):
     def has_auth(self):
         """Whether a dataverse account is associated with this node."""
         return bool(self.user_settings and self.user_settings.has_auth)
+
+    def _get_fileobj_child_metadata(self, filenode, user, cookie=None, version=None):
+        kwargs = dict(
+            provider=self.config.short_name,
+            path=filenode.get('path', ''),
+            node=self.owner,
+            user=user,
+            view_only=True,
+        )
+        if cookie:
+            kwargs['cookie'] = cookie
+        if version:
+            kwargs['version'] = version
+        metadata_url = waterbutler_url_for(
+            'metadata',
+            **kwargs
+        )
+        res = requests.get(metadata_url)
+        if res.status_code != 200:
+            # The Dataverse API returns a 404 if the dataset has no published files
+            if res.status_code == http.NOT_FOUND and version == 'latest-published':
+                return []
+            raise HTTPError(res.status_code, data={
+                'error': res.json(),
+            })
+        # TODO: better throttling?
+        sleep(1.0 / 5.0)
+        return res.json().get('data', [])
 
     def find_or_create_file_guid(self, path):
         file_id = path.strip('/') if path else ''
