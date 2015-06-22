@@ -1,0 +1,203 @@
+[{
+	"id":"Replication_Recipe_(Brandt_et_al.,_2013):_Pre-Registration",
+	"title":"The Nature of the Effect",
+	"type":"object",
+	"properties": {
+		"item1": {
+			"type":"string",
+			"format":"textarea",
+			"title":"Verbal description of the effect I am trying to replicate"
+		},
+		"item2": {
+			"type":"string",
+			"format":"textarea",
+			"title":"It is important to replicate this effect because"
+		},
+		"item3": {
+			"type":"string",
+			"format":"text",
+			"title":"The effect size of the effect I am trying to replicate is"
+		},
+		"item4": {
+			"type":"string",
+			"format":"text",
+			"title":"The confidence interval of the original effect is"
+		},
+		"item5": {
+			"type":"string",
+			"format":"text",
+			"title":"The sample size of the original effect is"
+		},
+		"item6": {
+			"type":"string",
+			"format":"text",
+			"title":"Where was the original study conducted? (e.g., lab, in the field, online)"
+		},
+		"item7": {
+			"type":"string",
+			"format":"text",
+			"title":"What country/region was the original study conducted in?"
+		},
+		"item8": {
+			"type":"string",
+			"format":"text",
+			"title":"What kind of sample did the original study use? (e.g., student, Mturk, representative)"
+		},
+		"item9": {
+			"type":"string",
+			"format":"text",
+			"title":"Was the original study conducted with paper-and-pencil surveys, on a computer, or something else?"
+		}
+	}
+},
+{
+	"title":"Designing the Replication Study",
+	"type":"object",
+	"properties": {
+		"item10": {
+			"type":"array",
+			"title":"Are the original materials for the study available from the author?",
+			"uniqueItems":true,
+			"items":{"type":"string",
+			"enum":["yes","no"]},
+			"description":"Choose..."
+		},
+		"item11": {
+			"type":"string",
+			"format":"textarea",
+			"title":"I know that assumptions (e.g., about the meaning of the stimuli) in the original study will also hold in my replication because"
+		},
+		"item12": {
+			"type":"string",
+			"format":"text",
+			"title":"Location of the experimenter during data collection"
+		},
+		"item13": {
+			"type":"string",
+			"format":"text",
+			"title":"Experimenter knowledge of participant experimental condition"
+		},
+		"item14": {
+			"type":"string",
+			"format":"text",
+			"title":"Experimenter knowledge of overall hypotheses"
+		},
+		"item15": {
+			"type":"string",
+			"format":"text",
+			"title":"My target sample size is"
+		},
+		"item16": {
+			"type":"string",
+			"format":"textarea",
+			"title":"The rationale for my sample size is"
+		}
+	}
+},
+{
+	"title":"Documenting Differences between the Original and Replication Study",
+	"type":"object",
+	"properties": {
+		"item17": {
+			"type":"array",
+			"title":"The similarities/differences in the instructions are",
+			"uniqueItems":true,
+			"items": {
+				"type":"string",
+				"enum":["Exact","Close","Different"]
+			},
+			"description":"Choose..."
+		},
+		"item18": {
+			"type":"array",
+			"title":"The similarities/differences in the measures are",
+			"uniqueItems":true,
+			"items": {
+				"type":"string",
+				"enum":["Exact","Close","Different"]
+			},
+			"description":"Choose..."
+		},
+		"item19": {
+			"type":"array",
+			"title":"The similarities/differences in the stimuli are",
+			"uniqueItems":true,
+			"items": {
+				"type":"string",
+				"enum":["Exact","Close","Different"]
+			},
+			"description":"Choose..."
+		},
+		"item20": {
+			"type":"array",
+			"title":"The similarities/differences in the procedure are",
+			"uniqueItems":true,
+			"items": {
+				"type":"string",
+				"enum":["Exact","Close","Different"]
+			},
+			"description":"Choose..."
+		},
+		"item21": {
+			"type":"array",
+			"title":"The similarities/differences in the location (e.g., lab vs. online; alone vs. in groups) are",
+			"uniqueItems":true,
+			"items": {
+				"type":"string",
+				"enum":["Exact","Close","Different"]
+			},
+			"description":"Choose..."
+		},
+		"item22": {
+			"type":"array",
+			"title":"The similarities/difference in remuneration are",
+			"uniqueItems":true,
+			"items": {
+				"type":"string",
+				"enum":["Exact","Close","Different"]
+			},
+			"description":"Choose..."
+		},
+		"item23": {
+			"type":"array",
+			"title":"The similarities/differences between participant populations are",
+			"uniqueItems":true,
+			"items": {
+				"type":"string",
+				"enum":["Exact","Close","Different"]
+			},
+			"description":"Choose..."
+		},
+		"item24": {
+			"type":"string",
+			"format":"textarea",
+			"title":"What differences between the original study and your study might be expected to influence the size and/or direction of the effect?"
+		},
+		"item25": {
+			"type":"string",
+			"format":"textarea",
+			"title":"I have taken the following steps to test whether the differences listed in the previous question will influence the outcome of my replication attempt"
+		}
+	}
+},
+{
+	"title":"Analysis and Replication Evaluation",
+	"type":"object",
+	"properties": {
+		"item26": {
+			"type":"string",
+			"format":"textarea",
+			"title":"My exclusion criteria are (e.g., handling outliers, removing participants from analysis)"
+		},
+		"item27": {
+			"type":"string",
+			"format":"textarea",
+			"title":"My analysis plan is (justify differences from the original)"
+		},
+		"item28": {
+			"type":"string",
+			"format":"textarea",
+			"title":"A successful replication is defined as"
+		}
+	}
+}]

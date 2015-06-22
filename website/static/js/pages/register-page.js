@@ -13,6 +13,7 @@ var ctx = window.contextVars;
 
 (function() {
     var $editor = document.getElementById('editor');
+    document.getElementById('save').style.visibility = 'hidden';
  
     var schema_data = [];
     var init_schemas = [];
@@ -80,7 +81,7 @@ var ctx = window.contextVars;
     open_ended = [
         {
             id: "Open-Ended_Registration",
-            title: "Open Ended Registration",
+            title: "Open Ended",
             type: "object",
             properties: {           
                 summary: {
@@ -88,7 +89,8 @@ var ctx = window.contextVars;
                     format: "textarea",
                     title: "Provide a narrative summary of what is contained in this registration, or how it differs from prior registrations."
                 }          
-            }
+            },
+            category: "draft",
         }
 
     ];
@@ -96,7 +98,7 @@ var ctx = window.contextVars;
     osf_stand = [
         {
             id: "OSF-Standard_Pre-Data_Collection_Registration",
-            title: "OSF-Standard Pre-Data Collection Registration",
+            title: "Pre-Data Collection",
             type: "object",
             properties: {
                 datacompletion: {
@@ -124,7 +126,8 @@ var ctx = window.contextVars;
                     format: "textarea",
                     title: "Other Comments"
                 }
-            }
+            },
+            category: "draft",
         }
     ];
 
@@ -137,7 +140,8 @@ var ctx = window.contextVars;
                 item29: {
                     type: "string", format: "text", title: "The finalized materials, procedures, analysis plan etc of the replication are registered here"
                 }
-            }
+            },
+            category: "draft",
         },
         {  
             title: "Reporting the Replication",
@@ -180,7 +184,8 @@ var ctx = window.contextVars;
                 item37: {
                     type: "string", format: "textarea", title: "The limitations of my replication study are"
                 }
-            }
+            },
+            category: "draft",
         }      
 
     ]
@@ -218,7 +223,8 @@ var ctx = window.contextVars;
                 item9: {
                     type: "string", format: "text", title: "Was the original study conducted with paper-and-pencil surveys, on a computer, or something else?"
                 }
-            }
+            },
+            category: "draft",
         },
         {
             title: "Designing the Replication Study",
@@ -251,7 +257,8 @@ var ctx = window.contextVars;
                 item16: {
                     type: "string", format: "textarea", title: "The rationale for my sample size is"
                 }
-            }
+            },
+            category: "draft",
         },
         {
             title: "Documenting Differences between the Original and Replication Study",
@@ -326,7 +333,8 @@ var ctx = window.contextVars;
                 item25: {
                     type: "string", format: "textarea", title: "I have taken the following steps to test whether the differences listed in the previous question will influence the outcome of my replication attempt"
                 }
-            }
+            },
+            category: "draft",
         },
         {
             title: "Analysis and Replication Evaluation",
@@ -341,7 +349,8 @@ var ctx = window.contextVars;
                 item28: {
                     type: "string", format: "textarea", title: "A successful replication is defined as"
                 }
-            }
+            },
+            category: "draft",
         }
     ];
 
@@ -354,7 +363,7 @@ var ctx = window.contextVars;
     var which_schema = 0;
 
     // this is how the import and export should work
-    //var str = JSON.stringify(prereg);
+    //var str = JSON.stringify(osf_stand);
     //console.log(str);
     //console.log(JSON.parse(str));
 
@@ -453,17 +462,22 @@ var ctx = window.contextVars;
         }
 
         // load nav bar -- need to account for situations when there is only one page (take away prev and next)
-        var tabs = '<li><a id="prev" href="#" aria-label="Previous"><span aria-hidden=true>&laquo;</span></a></li>';
-        var pages;
-        for (pages in schemas[which]) {
-            titles.push(schemas[which][pages].title);
-            tabs = tabs + '<li><a id="tab' + pages + '" href="#">' + schemas[which][pages].title + '</a></li>';
+        if (schemas[which].length > 1) {
+            var tabs = '<nav><ul class="pagination"><li><a id="prev" href="#" aria-label="Previous"><span aria-hidden=true>&laquo;</span></a></li>';
+            var pages;
+            for (pages in schemas[which]) {
+                //console.log(schemas[which][pages].category);
+                titles.push(schemas[which][pages].title);
+                tabs = tabs + '<li><a id="tab' + pages + '" href="#">' + schemas[which][pages].title + '</a></li>';
+            }
+
+            tabs = tabs + '<li><a id="next" href="#" aria-label="Next"><span aria-hidden=true>&raquo;</span></a></li></ul></nav>';
+
+            document.getElementById("myNavBar").innerHTML = tabs;
+        } else {
+            document.getElementById("myNavBar").innerHTML = "";
         }
-
-        tabs = tabs + '<li><a id="next" href="#" aria-label="Next"><span aria-hidden=true>&raquo;</span></a></li>';
-
-        document.getElementById("myNavBar").innerHTML = tabs;
-
+        
         // load the data for the first schema and display
         if(editor) editor.destroy();
         editor = new JSONEditor($editor,{
@@ -540,10 +554,15 @@ var ctx = window.contextVars;
                     loadData(init_schemas, schema_data, which_schema);
                 } 
             }
-            
+
+            document.getElementById('save').style.visibility = 'visible';
             //reload(init_schemas, schema_data, 0);
         } else {
             document.getElementById("title").innerHTML = "Select an option above";
+            document.getElementById('save').style.visibility = 'hidden';
+            document.getElementById("myNavBar").innerHTML = "";
+            document.getElementById("editor").innerHTML = "";
+
         }
     });
 
