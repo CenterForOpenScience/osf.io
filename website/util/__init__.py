@@ -9,7 +9,6 @@ import furl
 from flask import request, url_for
 
 from website import settings as website_settings
-from api.base import settings as api_settings
 
 # Keep me: Makes rubeus importable from website.util
 from . import rubeus  # noqa
