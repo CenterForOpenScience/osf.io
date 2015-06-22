@@ -117,7 +117,11 @@ var resolve = {
         'highlight-css': nodePath('highlight.js/styles/default.css'),
         // Also alias some internal libraries for easy access
         'addons': path.join(__dirname, 'website', 'addons'),
-        'tests': staticPath('js/tests')
+        'tests': staticPath('js/tests'),
+        // GASP Items not defined as main in its package.json
+        'TweenLite' : staticPath('../../node_modules/gsap/src/minified/TweenLite.min.js'),
+        'EasePack' : staticPath('../../node_modules/gsap/src/minified/easing/EasePack.min.js')
+
     }
 };
 
