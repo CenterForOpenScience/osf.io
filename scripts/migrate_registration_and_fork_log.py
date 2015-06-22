@@ -14,12 +14,11 @@ def get_all_parents(node):
     # return a list contains all possible forked_from and registered_from of the node to the very origin
     parent_list = []
     while True:
-        if get_parent(node) is None:
-            return False
-        if get_parent(node):
-            parent_list.append(get_parent(node))
-            return True
-        node = get_parent(node)
+        parent = get_parent(node)
+        if parent is None:
+            break
+        parent_list.append(parent)
+        node = parent
     return parent_list
 
 
