@@ -28,6 +28,9 @@ from website.profile.utils import get_gravatar
 from website.project.utils import serialize_node
 from website.project.decorators import must_be_valid_project, must_be_contributor_or_public
 
+#TODO: Evaluate elegance of reindexing solution
+from website.search import search
+
 # TODO: REMOVE DEBUGGING
 import logging
 from pprint import pprint
@@ -200,6 +203,9 @@ def create_waterbutler_log(payload, **kwargs):
     logging.info('KWARGS')
     pprint(kwargs)
     print('\n')
+
+    #TODO: Evaluate elegance of reindexing solution
+    search.update_node(kwargs['node'])
 
     try:
         auth = payload['auth']
