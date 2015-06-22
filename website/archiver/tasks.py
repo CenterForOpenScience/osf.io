@@ -162,7 +162,7 @@ def archive_addon(addon_short_name, job_pk, stat_result):
     :param job_pk: primary key of ArchiveJob
     :return: None
     """
-    # Dataverse requires special handling for draft    
+    # Dataverse requires special handling for draft
     # and published content
     addon_name = addon_short_name
     if 'dataverse' in addon_short_name:
