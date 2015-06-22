@@ -2800,3 +2800,7 @@ div.profile-fullname{
 .mfr-file {
   height: 100%;
 }
+
+.text-center {
+    text-align: center;
+}
