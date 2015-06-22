@@ -30,7 +30,7 @@ class RegistrationList(generics.ListAPIView, ODMFilterMixin):
         base_query = (
             Q('is_deleted', 'ne', True) &
             Q('is_folder', 'ne', True) &
-            Q('is_registration', 'eq', True)
+            (Q('is_registration', 'eq', True) | Q('is_registration_draft', 'eq', True))
         )
         user = self.request.user
         permission_query = Q('is_public', 'eq', True)

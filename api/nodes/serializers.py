@@ -154,6 +154,7 @@ class RegistrationSerializer(NodeSerializer):
         'files': {
             'related': Link('nodes:node-files', kwargs={'node_id': '<pk>'})
         },
+        #===================================================================
         'source': {
             'related': Link('nodes:node-detail', kwargs={'node_id': '<pk>'})
         },
@@ -165,9 +166,10 @@ class RegistrationSerializer(NodeSerializer):
         when = datetime.datetime.utcnow()
         node = self.context['view'].get_node()
         registration = node.clone()
-        # registration.is_registration = True
-        # registration.registered_date = when
-        # registration.registered_user = user
+        registration = node.register_node
+        registration.is_registration = True
+        registration.registered_date = when
+        registration.registered_user = user
         registration.registered_from = node
         registration.contributors = node.contributors
         registration.forked_from = node.forked_from
@@ -179,6 +181,7 @@ class RegistrationSerializer(NodeSerializer):
         node.add_pointer(registration, auth=Auth(user))
         registration.add_pointer(node, auth=Auth(user))
         return registration
+
 
 class NodePointersSerializer(JSONAPISerializer):
 
