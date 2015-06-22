@@ -27,6 +27,7 @@ def find_failed_registrations():
 
 def remove_failed_registrations(dry_run=True):
     init_app(set_backends=True, routes=False)
+    count = 0
     failed = find_failed_registrations()
     if not dry_run:
         for f in failed:
@@ -46,7 +47,8 @@ def remove_failed_registrations(dry_run=True):
                 f.creator,
                 f.archive_job.target_info()
             )
-    logging.info('Cleaned {} registrations'.format(len(failed)))
+            count += 1
+    logging.info('Cleaned {} registrations'.format(count))
 
 def main():
     dry = 'dry' in sys.argv
