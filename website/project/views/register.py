@@ -28,7 +28,7 @@ from website.identifiers.client import EzidClient
 
 from .node import _view_project
 from .. import clean_template_name
-
+from ..metadata.schemas import OSF_META_SCHEMAS
 
 @must_be_valid_project
 @must_have_permission(ADMIN)
@@ -46,6 +46,9 @@ def node_register_page(auth, node, **kwargs):
     }
     ret.update(_view_project(node, auth, primary=True))
     return ret
+
+def get_metaschema_by_name(**kwargs):
+    pass
 
 @must_be_valid_project
 @must_have_permission(ADMIN)

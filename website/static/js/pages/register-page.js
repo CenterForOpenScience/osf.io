@@ -550,37 +550,36 @@ var ctx = window.contextVars;
     document.getElementById('save').onclick = function () {
         var schema;
         var value;
-        for (schema in init_schemas[which_schema]) {
-            if (init_schemas[which_schema][schema].title === editor.options.schema.title) {
-                for (value in editor.getValue()) {
-                   schema_data[schema][value] = editor.getValue()[value];
-                }
-            }
-        } 
+       for (schema in init_schemas[which_schema]) {
+           if (init_schemas[schema][schema].title === editor.options.schema.title) {
+               for (value in editor.getValue()) {
+                  schema_data[schema][value] = editor.getValue()[value];
+               }
+           }
+       }
     };
 
 })();
 
 $(document).ready(function() {
-
-    // $.ajax({
-    //     url: ctx.node.urls.api + 'beforedraft/',
-    //     contentType: 'application/json',
-    //     success: function(response) {
-    //         if (response.prompts && response.prompts.length) {
-    //             bootbox.confirm(
-    //                 $osf.joinPrompts(response.prompts, 'Are you sure you want to create a draft of this project?'),
-    //                 function(result) {
-    //                     if (result) {
-    //                         draftNode(data);
-    //                     }
-    //                 }
-    //             );
-    //         } else {
-    //             draftNode(data);
-    //         }
-    //     }
-    // });
+     //$.ajax({
+     //    url: ctx.node.urls.api + 'beforedraft/',
+     //    contentType: 'application/json',
+     //    success: function(response) {
+     //        if (response.prompts && response.prompts.length) {
+     //            bootbox.confirm(
+     //                $osf.joinPrompts(response.prompts, 'Are you sure you want to create a draft of this project?'),
+     //                function(result) {
+     //                    if (result) {
+     //                        draftNode(data);
+     //                    }
+     //                }
+     //            );
+     //        } else {
+     //            draftNode(data);
+     //        }
+     //    }
+     //});
 
 
     // Don't submit form on enter; must use $.delegate rather than $.on
