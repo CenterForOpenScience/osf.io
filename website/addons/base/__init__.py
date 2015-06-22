@@ -8,7 +8,6 @@ from flask import request
 from modularodm import fields
 from mako.lookup import TemplateLookup
 from time import sleep
-import httplib as http
 
 import furl
 import requests
@@ -871,9 +870,6 @@ class StorageAddonBase(object):
         )
         res = requests.get(metadata_url)
         if res.status_code != 200:
-            # The Dataverse API returns a 404 if the dataset has no published files
-            if res.status_code == http.NOT_FOUND and self.config.short_name == 'dataverse' and version == 'latest-published':
-                return []
             raise HTTPError(res.status_code, data={
                 'error': res.json(),
             })
