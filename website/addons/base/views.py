@@ -22,7 +22,7 @@ from website import mails
 from website import settings
 from website.project import decorators
 from website.addons.base import exceptions
-from website.addons.base.notifications import FileEvent
+from website.notifications.events.files import FileEvent
 from website.models import User, Node, NodeLog
 from website.util import rubeus
 from website.profile.utils import get_gravatar
