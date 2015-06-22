@@ -2,8 +2,8 @@ import httplib as http
 
 from modularodm.exceptions import ValidationError
 
+from flask import request
 from framework.auth.decorators import collect_auth
-from website.util.sanitize import clean_tag
 from website.project.model import Tag
 from website.project.decorators import (
     must_be_valid_project, must_have_permission, must_not_be_registration
@@ -33,8 +33,8 @@ def project_tag(tag, auth, **kwargs):
 @must_have_permission('write')
 @must_not_be_registration
 def project_addtag(auth, node, **kwargs):
-
-    tag = clean_tag(kwargs['tag'])
+    data = request.get_json()
+    tag = data['tag']
     if tag:
         try:
             node.add_tag(tag=tag, auth=auth)
@@ -47,9 +47,8 @@ def project_addtag(auth, node, **kwargs):
 @must_have_permission('write')
 @must_not_be_registration
 def project_removetag(auth, node, **kwargs):
-
-    tag = clean_tag(kwargs['tag'])
-
+    data = request.get_json()
+    tag = data['tag']
     if tag:
         node.remove_tag(tag=tag, auth=auth)
         return {'status': 'success'}
