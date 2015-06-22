@@ -283,18 +283,31 @@
                         </div>
 
                         <div class="panel-body">
-                            <div class="help-block">
-                                Retracting a registration will remove its content from the OSF, but leave basic metadata
-                                behind. The title of a retracted registration and its contributor list will remain, as will
-                                justification or explanation of the retraction, should you wish to provide it. Retracted
-                                registrations will be marked with a <strong>retracted</strong> tag.
-                            </div>
 
-                            %if not node['pending_retraction']:
-                                <a class="btn btn-danger" href="${web_url_for('node_registration_retraction_get', pid=node['id'])}">Retract Registration</a>
+                            % if parent_node['exists']:
+
+                                <div class="help-block">
+                                  Retracting children components of a registration is not allowed. Should you wish to
+                                  retract this component, please retract its parent registration <a href="${web_url_for('node_setting', pid=node['root_id'])}">here</a>.
+                                </div>
+
                             % else:
-                                <p><strong>This registration is already pending a retraction.</strong></p>
-                            %endif
+
+                                <div class="help-block">
+                                    Retracting a registration will remove its content from the OSF, but leave basic metadata
+                                    behind. The title of a retracted registration and its contributor list will remain, as will
+                                    justification or explanation of the retraction, should you wish to provide it. Retracted
+                                    registrations will be marked with a <strong>retracted</strong> tag.
+                                </div>
+
+                                %if not node['pending_retraction']:
+                                    <a class="btn btn-danger" href="${web_url_for('node_registration_retraction_get', pid=node['id'])}">Retract Registration</a>
+                                % else:
+                                    <p><strong>This registration is already pending a retraction.</strong></p>
+                                %endif
+
+                            % endif
+
 
                         </div>
                     </div>

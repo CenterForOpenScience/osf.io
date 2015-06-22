@@ -1274,6 +1274,11 @@ class TestNode(OsfTestCase):
         result = self.parent.web_url_for('view_project', _absolute=True)
         assert_in(settings.DOMAIN, result)
 
+    def test_root_id(self):
+        registration = RegistrationFactory(project=self.parent)
+        root_id = registration.root_id
+        assert_equal(root_id, registration.nodes[0].root_id)
+
     def test_category_display(self):
         node = NodeFactory(category='hypothesis')
         assert_equal(node.category_display, 'Hypothesis')
