@@ -31,6 +31,16 @@ def get_object_or_404(model_cls, query_or_pk):
     except NoResultsFound:
         raise NotFound
 
+def get_registration_or_404(model_cls, query_or_pk):
+    if isinstance(query_or_pk, basestring):
+        query = (
+            Q('_id', 'eq', query_or_pk) & (Q('is_registration', 'eq', True) or Q('is_registration_draft', 'eq', True)))
+    else:
+        query = query_or_pk
+    try:
+        return model_cls.find_one(query)
+    except NoResultsFound:
+        raise NotFound
 
 def waterbutler_url_for(request_type, provider, path, node_id, token, obj_args=None, **query):
     """Reverse URL lookup for WaterButler routes

@@ -1,6 +1,7 @@
 from rest_framework import generics, permissions as drf_permissions
 from modularodm import Q
 
+from api.base.utils import get_registration_or_404
 from website.models import Node
 from api.base.filters import ODMFilterMixin
 from api.registrations.serializers import RegistrationSerializer
@@ -16,6 +17,12 @@ class RegistrationMixin(NodeMixin):
 
     serializer_class = RegistrationSerializer
     node_lookup_url_kwarg = 'registration_id'
+
+    def get_registration(self):
+        obj = get_registration_or_404(Node, self.kwargs[self.node_lookup_url_kwarg])
+        # May raise a permission denied
+        self.check_object_permissions(self.request, obj)
+        return obj
 
 class RegistrationList(generics.ListAPIView, ODMFilterMixin):
     """All node registrations"""
@@ -58,7 +65,7 @@ class RegistrationDetail(generics.RetrieveAPIView, RegistrationMixin):
 
     # overrides RetrieveAPIView
     def get_object(self):
-        return self.get_node()
+        return self.get_registration()
 
 
 class RegistrationContributorsList(NodeContributorsList, RegistrationMixin):
@@ -85,7 +92,7 @@ class RegistrationPointersList(generics.ListAPIView, RegistrationMixin):
     serializer_class = NodePointersSerializer
 
     def get_queryset(self):
-        pointers = self.get_node().nodes_pointer
+        pointers = self.get_registration().nodes_pointer
         return pointers
 
 
