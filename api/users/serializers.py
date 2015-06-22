@@ -1,3 +1,5 @@
+from ast import literal_eval
+
 from rest_framework import serializers as ser
 
 from api.base.serializers import JSONAPISerializer, JSONAPIListSerializer, LinksField, Link
@@ -7,9 +9,41 @@ from jsonfield import JSONField
 from django.utils import six, timezone
 import inspect
 from rest_framework.utils import html
+import json
 
 
-class JobsSerializer(JSONAPISerializer):
+
+class empty:
+    """
+    This class is used to represent no data being provided for a given input
+    or output value.
+
+    It is required because `None` may be a valid input or output value.
+    """
+    pass
+
+
+class APIListField(ser.ListField):
+
+    def get_value(self, dictionary):
+        # Override ListField
+        api_list = dictionary.get(self.field_name)
+        if api_list:
+            return literal_eval(api_list)
+        return []
+
+    def to_internal_value(self, data):
+        """
+        List of dicts of native values <- List of dicts of primitive datatypes.
+        """
+        # if html.is_html_input(data):
+        #     data = html.parse_html_list(data)
+        if isinstance(data, type('')) or not hasattr(data, '__iter__'):
+            self.fail('not_a_list', input_type=type(data).__name__)
+        return [self.child.run_validation(item) for item in data]
+
+
+class JobsSerializer(APIListField):
     startYear = ser.CharField(allow_blank=True)
     title = ser.CharField()
     startMonth = ser.IntegerField(max_value=12, min_value=1, allow_null=True)
@@ -22,60 +56,19 @@ class JobsSerializer(JSONAPISerializer):
     class Meta:
         type_ = 'jobs'
 
-# class SocialSerializer(JSONAPISerializer):
-#     github = ser.CharField(allow_blank=True, source='social.github')
-#     title = ser.CharField()
-#     startMonth = ser.IntegerField(max_value=12, min_value=1, allow_null=True)
-#     endMonth = ser.IntegerField(max_value=12, min_value=1, allow_null=True)
-#     endYear = ser.CharField(allow_blank=True)
-#     ongoing = ser.BooleanField()
-#     department = ser.CharField()
-#     institution = ser.CharField()
-#
-#     class Meta:
-#         type_ = 'social'
 
+class SchoolsSerializer(APIListField):
+    startYear = ser.CharField(allow_blank=True)
+    degree = ser.CharField()
+    startMonth = ser.IntegerField(max_value=12, min_value=1, allow_null=True)
+    endMonth = ser.IntegerField(max_value=12, min_value=1, allow_null=True)
+    endYear = ser.CharField(allow_blank=True)
+    ongoing = ser.BooleanField()
+    department = ser.CharField()
+    institution = ser.CharField()
 
-class empty:
-    """
-    This class is used to represent no data being provided for a given input
-    or output value.
-
-    It is required because `None` may be a valid input or output value.
-    """
-    pass
-
-class APIDictField(ser.DictField):
-
-    def get_value(self, dictionary):
-        # We override the default field access in order to support
-        # dictionaries in HTML forms.
-        if html.is_html_input(dictionary):
-            return html.parse_html_dict(dictionary, prefix=self.field_name)
-        return dictionary.get(self.field_name, empty)
-
-    def to_internal_value(self, data):
-        """
-        Dicts of native values <- Dicts of primitive datatypes.
-        """
-        if html.is_html_input(data):
-            data = html.parse_html_dict(data)
-        if not isinstance(data, dict):
-            self.fail('not_a_dict', input_type=type(data).__name__)
-        return dict([
-            (six.text_type(key), self.child.run_validation(value))
-            for key, value in data.items()
-        ])
-
-    def to_representation(self, value):
-        """
-        List of object instances -> List of dicts of primitive datatypes.
-        """
-        return dict([
-            (six.text_type(key), self.child.to_representation(val))
-            for key, val in value.items()
-        ])
-
+    class Meta:
+        type_ = 'jobs'
 
 
 class UserSerializer(JSONAPISerializer):
@@ -95,17 +88,15 @@ class UserSerializer(JSONAPISerializer):
     suffix = ser.CharField(required=False, help_text='For bibliographic citations')
     date_registered = ser.DateTimeField(read_only=True)
     gravatar_url = ser.CharField(required=False, help_text='URL for the icon used to identify the user. Relies on http://gravatar.com ')
-    # employment_institutions = ser.ListField(child=JobsSerializer(), required=False, source='jobs', help_text='An array of dictionaries representing the '
-    #                                         'places the user has worked')
-    # employment_institutions = ser.ListField(child=ser.CharField(), required=False, source='jobs', help_text='An array of dictionaries representing the '
+    employment_institutions = JobsSerializer(required=False, source='jobs', help_text='An array of dictionaries representing the '
+                                                                     'places the user has worked')
+    # employment_institutions = ser.ListField(required=False, source='jobs', help_text='An array of dictionaries representing the '
     #                                                                  'places the user has worked')
+    educational_institutions = SchoolsSerializer(required=False, source='schools', help_text='An array of dictionaries representing the '
+                                                                     'places the user has worked')
     # educational_institutions = ser.ListField(child=ser.CharField(), required=False, source='schools', help_text='An array of dictionaries representing the '
     #                                                                      'places the user has attended school')
-    # social_accounts = ser.DictField(allow_null=True, child=ser.CharField(), source='social', help_text='A dictionary of various social media account '
-    #                                                            'identifiers including an array of user-defined URLs')
-    # social_accounts = APIDictField(source='social')
-    # social_accounts = APIDictField(allow_null=True, child=ser.CharField(), required=False, source='social', help_text='A dictionary of various social media account '
-    #                                                            'identifiers including an array of user-defined URLs')
+
     github = ser.CharField(required=False, source='social.github', help_text='Github Handle')
     scholar = ser.CharField(required=False, source='social.scholar', help_text='Google Scholar Account')
     personal = ser.CharField(required=False, source='social.personal', help_text='Personal Website')
