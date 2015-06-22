@@ -1,6 +1,7 @@
 from rest_framework import serializers as ser
 import datetime
 
+from api.base.utils import absolute_reverse
 from api.base.serializers import JSONAPISerializer, LinksField, Link, WaterbutlerLink
 from website.models import Node
 from framework.auth.core import Auth
@@ -132,6 +133,7 @@ class RegistrationSerializer(NodeSerializer):
     title = ser.CharField(read_only=True)
     description = ser.CharField(read_only=True)
     category = ser.CharField(read_only=True)
+    id = ser.CharField(read_only=True)
 
     links = LinksField({
         'html': 'get_absolute_url',
@@ -154,11 +156,14 @@ class RegistrationSerializer(NodeSerializer):
         'files': {
             'related': Link('nodes:node-files', kwargs={'node_id': '<pk>'})
         },
+        # TODO: Pass source ID to link
+
         #===================================================================
-        'source': {
-            'related': Link('nodes:node-detail', kwargs={'node_id': '<pk>'})
-        },
+        # 'source': {
+        #     'related': Link('nodes:node-detail', query_kwargs={'node_id': '<id>'})
+        # },
     })
+
 
     def create(self, validated_data):
         request = self.context['request']
@@ -166,7 +171,6 @@ class RegistrationSerializer(NodeSerializer):
         when = datetime.datetime.utcnow()
         node = self.context['view'].get_node()
         registration = node.clone()
-        registration = node.register_node
         registration.is_registration = True
         registration.registered_date = when
         registration.registered_user = user

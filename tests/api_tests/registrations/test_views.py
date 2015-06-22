@@ -48,3 +48,14 @@ class TestRegistrationList(ApiTestCase):
         assert_not_in(self.registration_project_two._id, ids)
         assert_in(self.registration_project_three._id, ids)
         assert_not_in(self.registration_project_four._id, ids)
+
+class TestRegistrationDetail(ApiTestCase):
+    pass
+
+    # TODO
+    """
+    1) Create registration (is_registration is True).  Get registration Detail.  Assert 400, Node is not registration
+    2) Get registration detail with fake node.  Assert node not found.
+    3)
+
+    """

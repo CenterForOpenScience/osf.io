@@ -1,15 +1,18 @@
+import requests
 from rest_framework import generics, permissions as drf_permissions
 from modularodm import Q
+from rest_framework.exceptions import PermissionDenied, ValidationError
 
 from framework.auth.core import Auth
-from api.base.utils import get_registration_or_404
+from api.base.utils import get_object_or_404, waterbutler_url_for
 from website.models import Node
 from api.base.filters import ODMFilterMixin
 from api.registrations.serializers import RegistrationSerializer
 from api.nodes.serializers import NodePointersSerializer
-from api.nodes.views import NodeMixin, NodeFilesList, NodeChildrenList, NodeContributorsList
+from api.nodes.views import NodeMixin, NodeFilesList, NodeChildrenList, NodeContributorsList, NodeDetail
 
 from api.nodes.permissions import ContributorOrPublic, ReadOnlyIfRegistration
+
 
 class RegistrationMixin(NodeMixin):
     """Mixin with convenience methods for retrieving the current node based on the
@@ -18,12 +21,6 @@ class RegistrationMixin(NodeMixin):
 
     serializer_class = RegistrationSerializer
     node_lookup_url_kwarg = 'registration_id'
-
-    def get_registration(self):
-        obj = get_registration_or_404(Node, self.kwargs[self.node_lookup_url_kwarg])
-        # May raise a permission denied
-        self.check_object_permissions(self.request, obj)
-        return obj
 
 
 class RegistrationList(generics.ListAPIView, ODMFilterMixin):
@@ -54,8 +51,9 @@ class RegistrationList(generics.ListAPIView, ODMFilterMixin):
         query = self.get_query_from_request()
         return Node.find(query)
 
+# TODO: Return project details for nodes that are registration_drafts in addition to registrations
 
-class RegistrationDetail(generics.RetrieveAPIView, RegistrationMixin):
+class RegistrationDetail(NodeDetail, RegistrationMixin):
     """
     Registration details
     """
@@ -67,7 +65,16 @@ class RegistrationDetail(generics.RetrieveAPIView, RegistrationMixin):
 
     # overrides RetrieveAPIView
     def get_object(self):
-        return self.get_registration()
+        node = self.get_node()
+        if node.is_registration == False:
+            raise ValidationError('Not a registration.')
+        return self.get_node()
+
+
+    # overrides RetrieveUpdateAPIView
+    def get_serializer_context(self):
+        # Serializer needs the request in order to make an update to privacy
+        return {'request': self.request}
 
 
 class RegistrationContributorsList(NodeContributorsList, RegistrationMixin):
@@ -75,7 +82,9 @@ class RegistrationContributorsList(NodeContributorsList, RegistrationMixin):
     Contributors(users) for a registration
     """
     def get_default_queryset(self):
-        node = self.get_registration()
+        node = self.get_node()
+        if node.is_registration == False:
+            raise ValidationError('Node is not registration.')
         visible_contributors = node.visible_contributor_ids
         contributors = []
         for contributor in node.contributors:
@@ -89,7 +98,10 @@ class RegistrationChildrenList(NodeChildrenList, RegistrationMixin):
     Children of the current registration
     """
     def get_queryset(self):
-        nodes = self.get_registration().nodes
+        node = self.get_node()
+        if node.is_registration == False:
+            raise ValidationError('Not a registration.')
+        nodes = node.nodes
         user = self.request.user
         if user.is_anonymous():
             auth = Auth(None)
@@ -112,7 +124,11 @@ class RegistrationPointersList(generics.ListAPIView, RegistrationMixin):
     serializer_class = NodePointersSerializer
 
     def get_queryset(self):
-        pointers = self.get_registration().nodes_pointer
+        node = self.get_node()
+        if node.is_registration == False:
+            raise ValidationError('Not a registration.')
+        return self.get_node()
+        pointers = node.nodes_pointer
         return pointers
 
 
@@ -122,11 +138,13 @@ class RegistrationFilesList(NodeFilesList, RegistrationMixin):
     """
     def get_queryset(self):
         query_params = self.request.query_params
-
-        addons = self.get_registration().get_addons()
+        node = self.get_node()
+        if node.is_registration == False:
+            raise ValidationError('Node is not registration.')
+        addons = self.get_nodes().get_addons()
         user = self.request.user
         cookie = None if self.request.user.is_anonymous() else user.get_or_create_cookie()
-        node_id = self.get_registration()._id
+        node_id = self.get_nodes()._id
         obj_args = self.request.parser_context['args']
 
         provider = query_params.get('provider')
