@@ -94,6 +94,13 @@ class ArchiveJob(StoredObject):
     def success(self):
         return self.status == ARCHIVER_SUCCESS
 
+    @property
+    def pending(self):
+        return any([
+            target for target in self.target_addons
+            if target.status not in (ARCHIVER_SUCCESS, ARCHIVER_FAILURE)
+        ])
+
     def info(self):
         return self.src_node, self.dst_node, self.initiator
 
@@ -108,14 +115,8 @@ class ArchiveJob(StoredObject):
             for target in self.target_addons
         ]
 
-    def _archive_node_finished(self):
-        return not any([
-            target for target in self.target_addons
-            if target.status not in (ARCHIVER_SUCCESS, ARCHIVER_FAILURE)
-        ])
-
     def archive_tree_finished(self):
-        if self._archive_node_finished():
+        if not self.pending:
             return len(
                 [
                     ret for ret in [
@@ -139,7 +140,7 @@ class ArchiveJob(StoredObject):
         """
         if self.status == ARCHIVER_FAILURE:
             return
-        if self._archive_node_finished():
+        if not self.pending:
             self.done = True
             if any([target.status for target in self.target_addons if target.status in ARCHIVER_FAILURE_STATUSES]):
                 self.status = ARCHIVER_FAILURE

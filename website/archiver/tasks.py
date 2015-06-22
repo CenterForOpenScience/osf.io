@@ -198,6 +198,9 @@ def archive_node(results, job_pk):
     if stat_result.disk_usage > settings.MAX_ARCHIVE_SIZE:
         raise ArchiverSizeExceeded(result=stat_result)
     else:
+        if not results:
+            job.status = ARCHIVER_SUCCESS
+            job.save()
         for result in stat_result.targets:
             if not result.num_files:
                 job.update_target(result.target_name, ARCHIVER_SUCCESS)
