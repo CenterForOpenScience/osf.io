@@ -24,7 +24,13 @@ def main(dry_run=True):
         if should_be_retracted(retraction):
             if dry_run:
                 logger.warn('Dry run mode')
-            parent_registration = models.Node.find_one(Q('retraction', 'eq', retraction))
+            try:
+                parent_registration = models.Node.find_one(Q('retraction', 'eq', retraction))
+            except Exception as err:
+                logger.error('Could not find registration associated with retraction {}'.format(retraction))
+                logger.error('Skipping...'.format(retraction))
+                continue
+
             logger.warn(
                 'Retraction {0} approved. Retracting registration {1}'
                 .format(retraction._id, parent_registration._id)
