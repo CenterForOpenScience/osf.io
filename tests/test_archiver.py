@@ -3,7 +3,6 @@ import datetime
 import functools
 import json
 import logging
-import unittest
 import itertools
 
 import celery
@@ -614,7 +613,18 @@ class TestArchiverScripts(ArchiverTestCase):
 
     def test_find_failed_registrations(self):
         failures = []
+        legacy = []
         delta = datetime.timedelta(days=2)
+        for i in range(5):
+            reg = factories.RegistrationFactory()
+            reg.archive_job._fields['datetime_initiated'].__set__(
+                reg.archive_job,
+                datetime.datetime.now() - delta,
+                safe=True
+            )
+            reg.save()
+            ArchiveJob.remove_one(reg.archive_job)
+            legacy.append(reg._id)
         for i in range(5):
             reg = factories.RegistrationFactory()
             reg.archive_job._fields['datetime_initiated'].__set__(
@@ -638,6 +648,8 @@ class TestArchiverScripts(ArchiverTestCase):
             pending.append(reg)
         failed = scripts.find_failed_registrations()
         assert_items_equal([f._id for f in failed], failures)
+        for pk in legacy:
+            assert_false(pk in failed)
 
 class TestArchiverDebugRoutes(ArchiverTestCase):
 
