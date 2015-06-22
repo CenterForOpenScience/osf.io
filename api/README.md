@@ -19,10 +19,15 @@ The OSF `invoke` script provides several useful commands. For more information, 
 
 ##Running the API server
 
+If you have already installed all of the required services and Python packages, and activated your virtual environment, then you can start a working local API server with the following sequence:
+
 From the root osf directory:
 
 ```bash
-invoke server
+invoke mongo -d
+invoke elasticsearch
+invoke assets -d
+invoke apiserver
 ```
 
 Both the OSF Flask app and the API Django app will run within the same WSGI app.
