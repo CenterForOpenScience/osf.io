@@ -54,14 +54,16 @@ In order to log in on your local server, you will also need to run the authentic
 ## Running the API Server
 
 If you have already installed all of the required services and Python packages, and activated your virtual environment,
-then you can start a working local API server with the sequence delineated under Running the OSF (#running-the-osf) and:
+then you can start a working local API server with the sequence delineated under [Running the OSF] (#running-the-osf) and:
 
 Run the Django app as a separate process from the OSF Flask app:  
-```bash 
-$ invoke apiserver
- ```
 
-Go to `localhost:8000/v2/` in your browser to go to the root of the browse-able API.
+```bash
+invoke apiserver
+```
+
+Browse to `localhost:8000/v2/` in your browser to go to the root of the browse-able API.
+
 
 ### Livereload support
 
