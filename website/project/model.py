@@ -2669,6 +2669,9 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         if not self.is_registration or (not self.is_public and not (self.embargo_end_date or self.pending_embargo)):
             raise NodeStateError('Only public registrations or active embargoes may be retracted.')
 
+        if self.root is not self:
+            raise NodeStateError('Retraction of non-parent registrations is not permitted.')
+
         retraction = self._initiate_retraction(user, justification, save=True)
         self.registered_from.add_log(
             action=NodeLog.RETRACTION_INITIATED,
