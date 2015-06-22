@@ -28,9 +28,6 @@ from website.project.model import Node
 from website.oauth.signals import oauth_complete
 
 
-# TODO: REMOVE DEBUGGING
-import logging
-
 NODE_SETTINGS_TEMPLATE_DEFAULT = os.path.join(
     settings.TEMPLATES_PATH,
     'project',
@@ -379,7 +376,6 @@ class GuidFile(GuidStoredObject):
 
     def save(self, *args, **kwargs):
         super(GuidFile, self).save(*args, **kwargs)
-        logging.info('\nCALLED BY GUIDFILE SAVE: {}\n'.format(self._id))
 
 
 class AddonSettingsBase(StoredObject):

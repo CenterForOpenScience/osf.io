@@ -31,10 +31,6 @@ from website.project.decorators import must_be_valid_project, must_be_contributo
 #TODO: Evaluate elegance of reindexing solution
 from website.search import search
 
-# TODO: REMOVE DEBUGGING
-import logging
-from pprint import pprint
-
 
 @decorators.must_have_permission('write')
 @decorators.must_not_be_registration
@@ -196,14 +192,6 @@ LOG_ACTION_MAP = {
 @restrict_waterbutler
 @must_be_valid_project
 def create_waterbutler_log(payload, **kwargs):
-    # TODO: REMOVE DEBUGGING
-    logging.info('\nCALLED CREATE WATERBUTLER LOG')
-    logging.info('PAYLOAD:')
-    pprint(dict(payload))
-    logging.info('KWARGS')
-    pprint(kwargs)
-    print('\n')
-
     #TODO: Evaluate elegance of reindexing solution
     search.update_node(kwargs['node'])
 

@@ -5,8 +5,6 @@ from website.search import share_search
 
 logger = logging.getLogger(__name__)
 
-# TODO: Remove
-import index_file
 
 if settings.SEARCH_ENGINE == 'elastic':
     import elastic_search as search_engine
@@ -29,8 +27,6 @@ def search(query, index=None, doc_type=None):
 
 @requires_search
 def update_node(node, index=None):
-    #TODO: REMOVE DEBUGGING
-    logger.info('\nUPDATE NODE CALLED: {}\n'.format(node))
     index = index or settings.ELASTIC_INDEX
     search_engine.update_node(node, index=index)
 
