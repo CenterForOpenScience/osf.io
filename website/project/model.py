@@ -1989,12 +1989,6 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
     def project_or_component(self):
         return 'project' if self.category == 'project' else 'component'
 
-    @property
-    def root_id(self):
-        if self.root:
-            return self.root._primary_key
-        return None
-
     def is_contributor(self, user):
         return (
             user is not None
