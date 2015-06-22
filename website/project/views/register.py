@@ -46,15 +46,18 @@ def node_register_page(auth, node, **kwargs):
     ret.update(_view_project(node, auth, primary=True))
     return ret
 
-def get_metaschema_by_name(**kwargs):
-    names = [schema['name'] for schema in OSF_META_SCHEMAS]
-    query_name = request.query_string.split('=')[1].replace('%20', '_')
-    for name in names:
-        if name.lower() == query_name.lower():
-            for schema in OSF_META_SCHEMAS:
-                if schema['name'] == name:
-                    return schema
-    return {'message': 'Schema not found, please be sure the name matches exactly'}
+def get_metaschema_by_name():
+    names = [schema['id'] for schema in OSF_META_SCHEMAS]
+    try:
+        query_name = request.query_string.split('=')[1].replace('%20', '_')
+        for name in names:
+            if name.lower() == query_name.lower():
+                for schema in OSF_META_SCHEMAS:
+                    if schema['id'] == name:
+                        return schema
+        return {'message': 'Schema not found, please be sure the name matches exactly'}
+    except IndexError:
+        return {'message': 'Please enter a querystring in the format of /schema/?id=NAME_OF_SCHEMA'}
 
 @must_be_valid_project
 @must_have_permission(ADMIN)
