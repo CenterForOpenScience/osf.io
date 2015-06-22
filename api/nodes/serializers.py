@@ -132,7 +132,6 @@ class RegistrationSerializer(NodeSerializer):
     title = ser.CharField(read_only=True)
     description = ser.CharField(read_only=True)
     category = ser.CharField(read_only=True)
-    register = ser.CharField(write_only=True, help_text="Please type in word register")
 
     links = LinksField({
         'html': 'get_absolute_url',
@@ -169,7 +168,7 @@ class RegistrationSerializer(NodeSerializer):
         # registration.is_registration = True
         # registration.registered_date = when
         # registration.registered_user = user
-        # registration.registered_from = node
+        registration.registered_from = node
         registration.contributors = node.contributors
         registration.forked_from = node.forked_from
         registration.creator = user

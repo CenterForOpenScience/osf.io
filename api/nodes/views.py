@@ -146,7 +146,7 @@ class NodeRegistrationsList(generics.ListCreateAPIView, NodeMixin):
 
     serializer_class = RegistrationSerializer
 
-    # overrides ListAPIView
+    # overrides ListCreateAPIView
     def get_queryset(self):
         nodes = self.get_node().node__registrations
         user = self.request.user

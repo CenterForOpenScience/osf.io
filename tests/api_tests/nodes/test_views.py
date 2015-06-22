@@ -786,7 +786,6 @@ class TestCreateRegistrationDraft(ApiTestCase):
         self.public_registration_project = RegistrationFactory(creator=self.user, project=self.public_project)
         self.public_project.save()
         self.public_url = '/{}nodes/{}/registrations/'.format(API_BASE, self.public_project._id)
-
         self.user_two = UserFactory.build()
         self.user_two.set_password(password)
         self.user_two.save()
@@ -800,6 +799,11 @@ class TestCreateRegistrationDraft(ApiTestCase):
         res = self.app.post(self.public_url, auth=self.basic_auth)
         assert_equal(res.status_code, 201)
         assert_equal(res.json['data']['category'], self.public_project.category)
+        registration_id = res.json['data']['id']
+        pointers_url = '/{}nodes/{}/pointers/'.format(API_BASE, registration_id)
+
+        res = self.app.get(pointers_url, auth=self.basic_auth)
+        assert_equal(res.json['data'][0]['node_id'], self.public_project._id)
 
     def test_create_private_registration_draft_logged_out(self):
         res = self.app.post(self.private_url, expect_errors=True)
@@ -812,6 +816,11 @@ class TestCreateRegistrationDraft(ApiTestCase):
         res = self.app.post(self.private_url, auth=self.basic_auth)
         assert_equal(res.status_code, 201)
         assert_equal(res.json['data']['category'], self.project.category)
+        registration_id = res.json['data']['id']
+        pointers_url = '/{}nodes/{}/pointers/'.format(API_BASE, registration_id)
+
+        res = self.app.get(pointers_url, auth=self.basic_auth)
+        assert_equal(res.json['data'][0]['node_id'], self.project._id)
 
     def test_create_private_registration_draft_logged_in_non_contributor(self):
         res = self.app.post(self.private_url, auth=self.basic_auth_two, expect_errors=True)
