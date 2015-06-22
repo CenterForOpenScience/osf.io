@@ -4,11 +4,9 @@ from nose.tools import *  # flake8: noqa
 from framework.auth.core import Auth
 from website.models import Node
 from tests.base import ApiTestCase, fake
-<<<<<<< HEAD
 from rest_framework import generics, permissions as drf_permissions
-=======
 from api.base.settings.defaults import API_BASE
->>>>>>> 05d7f0e135a6bd5bb8ca196646bfbb85acf2dc25
+
 from tests.factories import UserFactory, ProjectFactory, FolderFactory, DashboardFactory
 from website.util.sanitize import strip_html
 
@@ -105,7 +103,7 @@ class TestUserDetail(ApiTestCase):
         res = self.app.get(url)
         user_json = res.json['data']
         assert_equal(user_json['fullname'], self.user_one.fullname)
-        assert_equal(user_json['social_accounts']['twitter'], 'howtopizza')
+        assert_equal(user_json['twitter'], 'howtopizza')
 
     def test_get_incorrect_pk_user_logged_in(self):
         url = "/{}users/{}/".format(API_BASE, self.user_two._id)
@@ -296,7 +294,7 @@ class TestUserUpdate(ApiTestCase):
         # Logged in user updates their user information via patch
         res = self.app.patch_json(self.user_one_url, {
             'employment_institutions': self.new_employment_institutions,
-        }, auth=self.auth_one, expect_errors=True)
+        }, auth=self.auth_one)
         assert_equal(res.status_code, 200)
         assert_equal(res.json['data']['fullname'], self.new_fullname)
 
@@ -305,7 +303,6 @@ class TestUserUpdate(ApiTestCase):
         res = self.app.put_json(self.user_one_url, {
             'id': self.user_one._id,
             'fullname': self.new_fullname,
-            'social_accounts': self.new_social_accounts,
             'given_name': self.new_given_name,
             'family_name': self.new_family_name,
             'suffix': self.new_suffix,
@@ -318,8 +315,8 @@ class TestUserUpdate(ApiTestCase):
         assert_equal(res.json['data']['given_name'], self.new_given_name)
         assert_equal(res.json['data']['family_name'], self.new_family_name)
         assert_equal(res.json['data']['suffix'], self.new_suffix)
-        # assert_equal(res.json['data']['employment_institutions'], self.new_employment_institutions)
-        # assert_equal(res.json['data']['educational_institutions'], self.new_educational_institutions)
+        assert_equal(res.json['data']['employment_institutions'], self.new_employment_institutions)
+        assert_equal(res.json['data']['educational_institutions'], self.new_educational_institutions)
 
     def test_put_user_logged_out(self):
         res = self.app.put_json(self.user_one_url, {
