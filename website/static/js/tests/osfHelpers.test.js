@@ -241,6 +241,37 @@ describe('osfHelpers', () => {
             var expectedUTC = moment.utc(date).format('YYYY-MM-DD HH:mm UTC');
             assert.equal(fd.utc, expectedUTC);
         });
+        it('should parse date and datetime strings', () => {
+            var year = 2014;
+            var month = 11;
+            var day = 15;
+            var hour = 10;
+            var minute = 33;
+            var second = 17;
+            var millisecond = 123;
+
+            var dateString = [year, month, day].join('-');
+            var dateTimeString = dateString + 'T' + [hour, minute, second].join(':') + '.' + millisecond.toString();
+
+            var parsedDate = new $osf.FormattableDate(dateString).date;
+            var parsedDateTime = new $osf.FormattableDate(dateTimeString).date;
+
+            assert.equal(parsedDate.getUTCFullYear(), year);
+            assert.equal(parsedDate.getUTCMonth(), month - 1); // Javascript months count from 0
+            assert.equal(parsedDate.getUTCDate(), day);
+            assert.equal(parsedDate.getUTCHours(), 0);
+            assert.equal(parsedDate.getUTCMinutes(), 0);
+            assert.equal(parsedDate.getUTCSeconds(), 0);
+            assert.equal(parsedDate.getUTCMinutes(), 0);
+
+            assert.equal(parsedDateTime.getUTCFullYear(), year);
+            assert.equal(parsedDateTime.getUTCMonth(), month - 1); // Javascript months count from 0
+            assert.equal(parsedDateTime.getUTCDate(), day);
+            assert.equal(parsedDateTime.getUTCHours(), hour);
+            assert.equal(parsedDateTime.getUTCMinutes(), minute);
+            assert.equal(parsedDateTime.getUTCSeconds(), second);
+            assert.equal(parsedDateTime.getUTCMilliseconds(), millisecond);
+        });
     });
 
     describe('confirmDangerousAction', () => {

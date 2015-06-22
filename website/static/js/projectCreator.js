@@ -69,6 +69,7 @@ function ProjectCreatorViewModel(params) {
     self.serialize = function() {
         var category = self.category();
         var template;
+        //select behavior differently in IE from all other browser. The input tag is 1 in other browser but 3 in IE
         if($osf.isIE()){
             template = $('.createNodeTemplates')[3].value;
         } else {
