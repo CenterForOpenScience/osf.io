@@ -562,3 +562,13 @@ footer {
         width: 1170px !important;
     }
 }
+
+.signup-help {
+    background: rgba(255, 255, 255, 0.8);
+    border-radius: 5px;
+}
+
+#signUpScope {
+    position: relative;
+    z-index: 10;
+}

@@ -1,6 +1,6 @@
 var SignUp = require('../signUp.js');
 require('../../css/front-page.css');
-// new SignUp('#signUpScope', '/api/v1/register/');
+new SignUp('#signUpScope', '/api/v1/register/');
 var TweenLite = require('TweenLite');
 require('EasePack');
 require('YoutubeModal');
