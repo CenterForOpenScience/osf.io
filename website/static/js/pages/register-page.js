@@ -461,7 +461,7 @@ var ctx = window.contextVars;
             return;
         }
 
-        // load nav bar -- need to account for situations when there is only one page (take away prev and next)
+        // load nav bar
         if (schemas[which].length > 1) {
             var tabs = '<nav><ul class="pagination"><li><a id="prev" href="#" aria-label="Previous"><span aria-hidden=true>&laquo;</span></a></li>';
             var pages;
@@ -490,6 +490,22 @@ var ctx = window.contextVars;
         });
         editor.setValue(arrays[0]);
         window.editor = editor;
+    };
+
+    var exportData = function(schemas, arrays, which) {
+        titles = [];
+        // incorrect data input
+
+        var pages;
+        for (pages in schemas[which]) {
+            //console.log(schemas[which][pages].category);
+            titles.push(schemas[which][pages].title);
+        }
+        
+        // get the data for the first schema and export
+        
+        console.log(editor.getValue());
+        
     };
 
     // called when switches pages
@@ -581,26 +597,6 @@ var ctx = window.contextVars;
 })();
 
 $(document).ready(function() {
-
-    // $.ajax({
-    //     url: ctx.node.urls.api + 'beforedraft/',
-    //     contentType: 'application/json',
-    //     success: function(response) {
-    //         if (response.prompts && response.prompts.length) {
-    //             bootbox.confirm(
-    //                 $osf.joinPrompts(response.prompts, 'Are you sure you want to create a draft of this project?'),
-    //                 function(result) {
-    //                     if (result) {
-    //                         draftNode(data);
-    //                     }
-    //                 }
-    //             );
-    //         } else {
-    //             draftNode(data);
-    //         }
-    //     }
-    // });
-
 
     // Don't submit form on enter; must use $.delegate rather than $.on
     // to catch dynamically created form elements
