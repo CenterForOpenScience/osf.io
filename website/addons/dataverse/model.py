@@ -17,7 +17,6 @@ from website.addons.base import (
     AddonNodeSettingsBase, AddonUserSettingsBase, GuidFile, exceptions,
 )
 from website.addons.base import StorageAddonBase
-from website.utils import waterbutler_url_for
 
 from website.addons.dataverse.client import connect_from_settings_or_401
 from website.addons.dataverse.settings import HOST
@@ -154,6 +153,8 @@ class AddonDataverseNodeSettings(StorageAddonBase, AddonNodeSettingsBase):
         return bool(self.user_settings and self.user_settings.has_auth)
 
     def _get_fileobj_child_metadata(self, filenode, user, cookie=None, version=None):
+        # TODO: Fix circular import
+        from website.utils import waterbutler_url_for
         kwargs = dict(
             provider=self.config.short_name,
             path=filenode.get('path', ''),
