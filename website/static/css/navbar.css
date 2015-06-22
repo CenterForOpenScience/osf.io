@@ -71,7 +71,7 @@ body {
     text-shadow: 0 -1px 0 rgba(0, 0, 0, 0.25);
 }
 .navbar {
-    height: 50px;
+    min-height: 50px;
     margin-bottom: 25px;
 }
 .navbar-brand {
@@ -245,4 +245,7 @@ body {
 #menuLogin {
     padding: 20px 20px 0 20px;
     width: 300px;
+}
+.nav-profile {
+    height: 50px;
 }

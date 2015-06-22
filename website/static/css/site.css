@@ -1934,8 +1934,7 @@ div.profile-fullname{
     box-shadow:0 0 9px -1px #838383;
     border-radius: 0;
     border: none;
-    height: 44px !important;
-    min-height: 40px;
+    min-height: 40px !important;
 }
 
 .osf-project-navbar li>a {

@@ -9,7 +9,8 @@
         <span class="icon-bar"></span>
         <span class="icon-bar"></span>
       </button>
-      <a class="navbar-brand" href="/">Open Science Framework</a>
+      <a class="navbar-brand hidden-sm" href="/">Open Science Framework</a>
+      <a class="navbar-brand visible-sm" href="/">OSF</a>
     </div>
     <div id="navbar" class="navbar-collapse collapse navbar-right">
       <ul class="nav navbar-nav">
@@ -41,10 +42,10 @@
         <!-- /ko -->
         % if user_name and display_name:
         <li>
-            <a class="hidden-lg hidden-xs" href="/profile/">
+            <a class="hidden-lg hidden-xs nav-profile" href="/profile/">
                 <span rel="tooltip" data-placement="bottom" title="${user_name}" class="osf-gravatar"><img src="${user_gravatar}" alt="User gravatar"/> </span>
             </a>
-            <a class="visible-lg visible-xs" href="/profile/">
+            <a class="visible-lg visible-xs nav-profile" href="/profile/">
                 <span rel="tooltip" data-placement="bottom" title="${user_name}"><span class="osf-gravatar"> <img src="${user_gravatar}" alt="User gravatar"/> </span> ${display_name}</span>
             </a>
         </li>
