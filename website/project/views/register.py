@@ -37,8 +37,8 @@ def node_register_page(auth, node, **kwargs):
     ret = {
         'options': [
             {
-                'template_name': metaschema['name'],
-                'template_name_clean': clean_template_name(metaschema['name'])
+                'template_name': metaschema['id'],
+                'template_name_clean': clean_template_name(metaschema['id'])
             }
             for metaschema in OSF_META_SCHEMAS
         ]
