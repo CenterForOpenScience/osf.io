@@ -13,6 +13,7 @@ var ctx = window.contextVars;
 
 (function() {
     var $editor = document.getElementById('editor');
+    document.getElementById('save').style.visibility = 'hidden';
  
     var schema_data = [];
     var init_schemas = [];
@@ -77,273 +78,297 @@ var ctx = window.contextVars;
         }
     ];
 
-    open_ended = [
-        {
-            id: "Open-Ended_Registration",
-            title: "Open Ended Registration",
-            type: "object",
-            properties: {           
-                summary: {
-                    type: "string",
-                    format: "textarea",
-                    title: "Provide a narrative summary of what is contained in this registration, or how it differs from prior registrations."
-                }          
+    open_ended = {
+        id: "Open-Ended_Registration",
+        type: "object",
+        pages: [
+            {
+                id: "page1",
+                title: "Open Ended",
+                type: "object",
+                properties: {           
+                    summary: {
+                        type: "string",
+                        format: "textarea",
+                        title: "Provide a narrative summary of what is contained in this registration, or how it differs from prior registrations."
+                    }          
+                },
             }
-        }
+        ],
+        category: "draft",
+    };
 
-    ];
+    osf_stand = {
+        id: "OSF-Standard_Pre-Data_Collection_Registration",
+        type: "object",
+        pages: [
+            {
+                id: "page1",
+                title: "Pre-Data Collection",
+                type: "object",
+                properties: {
+                    datacompletion: {
+                        type: "array",
+                        title: "Is data collection for this project underway or complete?",
+                        uniqueItems: true,
+                        items: {
+                            type: "string",
+                            enum: ["yes", "no"],
+                        },
+                        description: "Choose..."
+                    },
+                    looked: {
+                        type: "array",
+                        title: "Have you looked at the data?",
+                        uniqueItems: true,
+                        items: {
+                            type: "string",
+                            enum: ["yes", "no"],
+                        },
+                        description: "Choose..."
+                    },
+                    comments: {
+                        type: "string",
+                        format: "textarea",
+                        title: "Other Comments"
+                    }
+                },
+            }
+        ],
+        category: "draft",
+    };
 
-    osf_stand = [
-        {
-            id: "OSF-Standard_Pre-Data_Collection_Registration",
-            title: "OSF-Standard Pre-Data Collection Registration",
-            type: "object",
-            properties: {
-                datacompletion: {
-                    type: "array",
-                    title: "Is data collection for this project underway or complete?",
-                    uniqueItems: true,
-                    items: {
-                        type: "string",
-                        enum: ["yes", "no"],
-                    },
-                    description: "Choose..."
-                },
-                looked: {
-                    type: "array",
-                    title: "Have you looked at the data?",
-                    uniqueItems: true,
-                    items: {
-                        type: "string",
-                        enum: ["yes", "no"],
-                    },
-                    description: "Choose..."
-                },
-                comments: {
-                    type: "string",
-                    format: "textarea",
-                    title: "Other Comments"
+    postcomp = {
+        id: "Replication_Recipe_(Brandt_et_al.,_2013):_Post-Completion",
+        type: "object",
+        pages: [
+            {  
+                id: "page1",
+                title: "Registering the Replication Attempt",
+                type: "object",
+                properties: {
+                    item29: {
+                        type: "string", format: "text", title: "The finalized materials, procedures, analysis plan etc of the replication are registered here"
+                    }
                 }
+            },
+            {  
+                id: "page2",
+                title: "Reporting the Replication",
+                type: "object",
+                properties: {
+                    item30: {
+                        type: "string", format: "text", title: "The effect size of the replication is"
+                    },
+                    item31: {
+                        type: "string", format: "text", title: "The confidence interval of the replication effect size is"
+                    },
+                    item32: {
+                        type: "array", title: "The replication effect size is",
+                        uniqueItems: true,
+                        items: {
+                            type: "string",
+                            enum: ["significantly different from the original effect size", "not significantly different from the original effect size"], 
+                        },
+                        description: "Choose..."
+                    },
+                    item33: {
+                        type: "array", 
+                        title: "I judge the replication to be a(n)", 
+                        uniqueItems: true,
+                        items: {
+                            type: "string",
+                            enum: ["success", "informative failure to replicate", "practical failure to replicate", "inconclusive"],
+                        },
+                        description: "Choose..."
+                    },
+                    item34: {
+                        type: "string", format: "textarea", title: "I judge it so because"
+                    },
+                    item35: {
+                        type: "string", format: "text", title: "Interested experts can obtain my data and syntax here"
+                    },
+                    item36: {
+                        type: "string", format: "text", title: "All of the analyses were reported in the report or are available here"
+                    },
+                    item37: {
+                        type: "string", format: "textarea", title: "The limitations of my replication study are"
+                    }
+                },        
             }
-        }
-    ];
+        ], 
+        category: "draft",     
+    };
 
-    postcomp = [
-        {
-            id: "Replication_Recipe_(Brandt_et_al.,_2013):_Post-Completion",
-            title: "Registering the Replication Attempt",
-            type: "object",
-            properties: {
-                item29: {
-                    type: "string", format: "text", title: "The finalized materials, procedures, analysis plan etc of the replication are registered here"
-                }
-            }
-        },
-        {  
-            title: "Reporting the Replication",
-            type: "object",
-            properties: {
-                item30: {
-                    type: "string", format: "text", title: "The effect size of the replication is"
-                },
-                item31: {
-                    type: "string", format: "text", title: "The confidence interval of the replication effect size is"
-                },
-                item32: {
-                    type: "array", title: "The replication effect size is",
-                    uniqueItems: true,
-                    items: {
-                        type: "string",
-                        enum: ["significantly different from the original effect size", "not significantly different from the original effect size"], 
+    prereg = {
+        id: "Replication_Recipe_(Brandt_et_al.,_2013):_Pre-Registration",
+        type: "object",
+        pages: [
+            {   
+                id: "page1",
+                title: "The Nature of the Effect",
+                type: "object",
+                properties: {
+                    item1: {
+                       type: "string", format: "textarea", title: "Verbal description of the effect I am trying to replicate" 
                     },
-                    description: "Choose..."
-                },
-                item33: {
-                    type: "array", 
-                    title: "I judge the replication to be a(n)", 
-                    uniqueItems: true,
-                    items: {
-                        type: "string",
-                        enum: ["success", "informative failure to replicate", "practical failure to replicate", "inconclusive"],
+                    item2: {
+                        type: "string", format: "textarea", title: "It is important to replicate this effect because"
                     },
-                    description: "Choose..."
+                    item3: {
+                        type: "string", format: "text", title: "The effect size of the effect I am trying to replicate is"
+                    },
+                    item4: {
+                        type: "string", format: "text", title: "The confidence interval of the original effect is"
+                    },
+                    item5: {
+                        type: "string", format: "text", title: "The sample size of the original effect is"
+                    },
+                    item6: {
+                        type: "string", format: "text", title: "Where was the original study conducted? (e.g., lab, in the field, online)"
+                    },
+                    item7: {
+                        type: "string", format: "text", title: "What country/region was the original study conducted in?"
+                    },
+                    item8: {
+                        type: "string", format: "text", title: "What kind of sample did the original study use? (e.g., student, Mturk, representative)"
+                    },
+                    item9: {
+                        type: "string", format: "text", title: "Was the original study conducted with paper-and-pencil surveys, on a computer, or something else?"
+                    }
                 },
-                item34: {
-                    type: "string", format: "textarea", title: "I judge it so because"
+            },
+            {
+                id: "page2",
+                title: "Designing the Replication Study",
+                type: "object",
+                properties: {
+                    item10: {
+                        type: "array", title: "Are the original materials for the study available from the author?",
+                        uniqueItems: true,
+                        items: {
+                            type: "string",
+                            enum: ["yes", "no"], 
+                        },
+                        description: "Choose..."
+                    },
+                    item11: {
+                        type: "string", format: "textarea", title: "I know that assumptions (e.g., about the meaning of the stimuli) in the original study will also hold in my replication because"
+                    },
+                    item12: {
+                        type: "string", format: "text", title: "Location of the experimenter during data collection"
+                    },
+                    item13: {
+                        type: "string", format: "text", title: "Experimenter knowledge of participant experimental condition"
+                    },
+                    item14: {
+                        type: "string", format: "text", title: "Experimenter knowledge of overall hypotheses"
+                    },
+                    item15: {
+                        type: "string", format: "text", title: "My target sample size is"
+                    },
+                    item16: {
+                        type: "string", format: "textarea", title: "The rationale for my sample size is"
+                    }
                 },
-                item35: {
-                    type: "string", format: "text", title: "Interested experts can obtain my data and syntax here"
-                },
-                item36: {
-                    type: "string", format: "text", title: "All of the analyses were reported in the report or are available here"
-                },
-                item37: {
-                    type: "string", format: "textarea", title: "The limitations of my replication study are"
-                }
-            }
-        }      
 
-    ]
-
-    prereg = [
-        {
-            id: "Replication_Recipe_(Brandt_et_al.,_2013):_Pre-Registration",
-            title: "The Nature of the Effect",
-            type: "object",
-            properties: {
-                item1: {
-                   type: "string", format: "textarea", title: "Verbal description of the effect I am trying to replicate" 
+            },
+            {
+                id: "page3",
+                title: "Documenting Differences between the Original and Replication Study",
+                type: "object",
+                properties: {
+                    item17: {
+                        type: "array", title: "The similarities/differences in the instructions are",
+                        uniqueItems: true,
+                        items: {
+                            type: "string",
+                            enum: ["Exact", "Close", "Different"],
+                        },
+                        description: "Choose..."
+                    },
+                    item18: {
+                        type: "array", title: "The similarities/differences in the measures are", 
+                        uniqueItems: true,
+                        items: {
+                            type: "string",
+                            enum: ["Exact", "Close", "Different"],
+                        },
+                        description: "Choose..."
+                    },
+                    item19: {
+                        type: "array", title: "The similarities/differences in the stimuli are", 
+                        uniqueItems: true,
+                        items: {
+                            type: "string",
+                            enum: ["Exact", "Close", "Different"],
+                        },
+                        description: "Choose..."
+                    },
+                    item20: {
+                        type: "array", title: "The similarities/differences in the procedure are", 
+                        uniqueItems: true,
+                        items: {
+                            type: "string",
+                            enum: ["Exact", "Close", "Different"],
+                        },
+                        description: "Choose..."
+                    },
+                    item21: {
+                        type: "array", title: "The similarities/differences in the location (e.g., lab vs. online; alone vs. in groups) are", 
+                        uniqueItems: true,
+                        items: {
+                            type: "string",
+                            enum: ["Exact", "Close", "Different"],
+                        },
+                        description: "Choose..."
+                    },
+                    item22: {
+                        type: "array", title: "The similarities/difference in remuneration are", 
+                        uniqueItems: true,
+                        items: {
+                            type: "string",
+                            enum: ["Exact", "Close", "Different"],
+                        },
+                        description: "Choose..."
+                    },
+                    item23: {
+                        type: "array", title: "The similarities/differences between participant populations are", 
+                        uniqueItems: true,
+                        items: {
+                            type: "string",
+                            enum: ["Exact", "Close", "Different"],
+                        },
+                        description: "Choose..."
+                    },
+                    item24: {
+                        type: "string", format: "textarea", title: "What differences between the original study and your study might be expected to influence the size and/or direction of the effect?"
+                    },
+                    item25: {
+                        type: "string", format: "textarea", title: "I have taken the following steps to test whether the differences listed in the previous question will influence the outcome of my replication attempt"
+                    }
                 },
-                item2: {
-                    type: "string", format: "textarea", title: "It is important to replicate this effect because"
+            },
+            {
+                id: "page4",
+                title: "Analysis and Replication Evaluation",
+                type: "object",
+                properties: {
+                    item26: {
+                        type: "string", format: "textarea", title: "My exclusion criteria are (e.g., handling outliers, removing participants from analysis)"
+                    },
+                    item27: {
+                        type: "string", format: "textarea", title: "My analysis plan is (justify differences from the original)"
+                    },
+                    item28: {
+                        type: "string", format: "textarea", title: "A successful replication is defined as"
+                    }
                 },
-                item3: {
-                    type: "string", format: "text", title: "The effect size of the effect I am trying to replicate is"
-                },
-                item4: {
-                    type: "string", format: "text", title: "The confidence interval of the original effect is"
-                },
-                item5: {
-                    type: "string", format: "text", title: "The sample size of the original effect is"
-                },
-                item6: {
-                    type: "string", format: "text", title: "Where was the original study conducted? (e.g., lab, in the field, online)"
-                },
-                item7: {
-                    type: "string", format: "text", title: "What country/region was the original study conducted in?"
-                },
-                item8: {
-                    type: "string", format: "text", title: "What kind of sample did the original study use? (e.g., student, Mturk, representative)"
-                },
-                item9: {
-                    type: "string", format: "text", title: "Was the original study conducted with paper-and-pencil surveys, on a computer, or something else?"
-                }
+                
             }
-        },
-        {
-            title: "Designing the Replication Study",
-            type: "object",
-            properties: {
-                item10: {
-                    type: "array", title: "Are the original materials for the study available from the author?",
-                    uniqueItems: true,
-                    items: {
-                        type: "string",
-                        enum: ["yes", "no"], 
-                    },
-                    description: "Choose..."
-                },
-                item11: {
-                    type: "string", format: "textarea", title: "I know that assumptions (e.g., about the meaning of the stimuli) in the original study will also hold in my replication because"
-                },
-                item12: {
-                    type: "string", format: "text", title: "Location of the experimenter during data collection"
-                },
-                item13: {
-                    type: "string", format: "text", title: "Experimenter knowledge of participant experimental condition"
-                },
-                item14: {
-                    type: "string", format: "text", title: "Experimenter knowledge of overall hypotheses"
-                },
-                item15: {
-                    type: "string", format: "text", title: "My target sample size is"
-                },
-                item16: {
-                    type: "string", format: "textarea", title: "The rationale for my sample size is"
-                }
-            }
-        },
-        {
-            title: "Documenting Differences between the Original and Replication Study",
-            type: "object",
-            properties: {
-                item17: {
-                    type: "array", title: "The similarities/differences in the instructions are",
-                    uniqueItems: true,
-                    items: {
-                        type: "string",
-                        enum: ["Exact", "Close", "Different"],
-                    },
-                    description: "Choose..."
-                },
-                item18: {
-                    type: "array", title: "The similarities/differences in the measures are", 
-                    uniqueItems: true,
-                    items: {
-                        type: "string",
-                        enum: ["Exact", "Close", "Different"],
-                    },
-                    description: "Choose..."
-                },
-                item19: {
-                    type: "array", title: "The similarities/differences in the stimuli are", 
-                    uniqueItems: true,
-                    items: {
-                        type: "string",
-                        enum: ["Exact", "Close", "Different"],
-                    },
-                    description: "Choose..."
-                },
-                item20: {
-                    type: "array", title: "The similarities/differences in the procedure are", 
-                    uniqueItems: true,
-                    items: {
-                        type: "string",
-                        enum: ["Exact", "Close", "Different"],
-                    },
-                    description: "Choose..."
-                },
-                item21: {
-                    type: "array", title: "The similarities/differences in the location (e.g., lab vs. online; alone vs. in groups) are", 
-                    uniqueItems: true,
-                    items: {
-                        type: "string",
-                        enum: ["Exact", "Close", "Different"],
-                    },
-                    description: "Choose..."
-                },
-                item22: {
-                    type: "array", title: "The similarities/difference in remuneration are", 
-                    uniqueItems: true,
-                    items: {
-                        type: "string",
-                        enum: ["Exact", "Close", "Different"],
-                    },
-                    description: "Choose..."
-                },
-                item23: {
-                    type: "array", title: "The similarities/differences between participant populations are", 
-                    uniqueItems: true,
-                    items: {
-                        type: "string",
-                        enum: ["Exact", "Close", "Different"],
-                    },
-                    description: "Choose..."
-                },
-                item24: {
-                    type: "string", format: "textarea", title: "What differences between the original study and your study might be expected to influence the size and/or direction of the effect?"
-                },
-                item25: {
-                    type: "string", format: "textarea", title: "I have taken the following steps to test whether the differences listed in the previous question will influence the outcome of my replication attempt"
-                }
-            }
-        },
-        {
-            title: "Analysis and Replication Evaluation",
-            type: "object",
-            properties: {
-                item26: {
-                    type: "string", format: "textarea", title: "My exclusion criteria are (e.g., handling outliers, removing participants from analysis)"
-                },
-                item27: {
-                    type: "string", format: "textarea", title: "My analysis plan is (justify differences from the original)"
-                },
-                item28: {
-                    type: "string", format: "textarea", title: "A successful replication is defined as"
-                }
-            }
-        }
-    ];
+        ],
+        category: "draft",
+    };
 
     // all schemas are in one array of arrays
     init_schemas.push(open_ended);
@@ -354,7 +379,7 @@ var ctx = window.contextVars;
     var which_schema = 0;
 
     // this is how the import and export should work
-    //var str = JSON.stringify(prereg);
+    //var str = JSON.stringify(osf_stand);
     //console.log(str);
     //console.log(JSON.parse(str));
 
@@ -452,22 +477,27 @@ var ctx = window.contextVars;
             return;
         }
 
-        // load nav bar -- need to account for situations when there is only one page (take away prev and next)
-        var tabs = '<li><a id="prev" href="#" aria-label="Previous"><span aria-hidden=true>&laquo;</span></a></li>';
-        var pages;
-        for (pages in schemas[which]) {
-            titles.push(schemas[which][pages].title);
-            tabs = tabs + '<li><a id="tab' + pages + '" href="#">' + schemas[which][pages].title + '</a></li>';
+        // load nav bar
+        if (schemas[which].pages.length > 1) {
+            var tabs = '<nav><ul class="pagination"><li><a id="prev" href="#" aria-label="Previous"><span aria-hidden=true>&laquo;</span></a></li>';
+            var page;
+            for (page in schemas[which].pages) {
+                //console.log(schemas[which][pages].category);
+                titles.push(schemas[which].pages[page].title);
+                tabs = tabs + '<li><a id="tab' + page + '" href="#">' + schemas[which].pages[page].title + '</a></li>';
+            }
+
+            tabs = tabs + '<li><a id="next" href="#" aria-label="Next"><span aria-hidden=true>&raquo;</span></a></li></ul></nav>';
+
+            document.getElementById("myNavBar").innerHTML = tabs;
+        } else {
+            document.getElementById("myNavBar").innerHTML = "";
         }
-
-        tabs = tabs + '<li><a id="next" href="#" aria-label="Next"><span aria-hidden=true>&raquo;</span></a></li>';
-
-        document.getElementById("myNavBar").innerHTML = tabs;
-
+        
         // load the data for the first schema and display
         if(editor) editor.destroy();
         editor = new JSONEditor($editor,{
-            schema: schemas[which][0],
+            schema: schemas[which].pages[0],
             theme: 'bootstrap3',
             disable_collapse: true,
             disable_edit_json: true,
@@ -478,11 +508,27 @@ var ctx = window.contextVars;
         window.editor = editor;
     };
 
+    var exportData = function(schemas, arrays, which) {
+        titles = [];
+        // incorrect data input
+
+        var page;
+        for (page in schemas[which].pages) {
+            //console.log(schemas[which][pages].category);
+            titles.push(schemas[which].pages[page].title);
+        }
+        
+        // get the data for the first schema and export
+        
+        console.log(editor.getValue());
+        
+    };
+
     // called when switches pages
     var reload = function(schemas, data, num, which) {
         if(editor) editor.destroy();
         editor = new JSONEditor($editor,{
-            schema: schemas[which][num],
+            schema: schemas[which].pages[num],
             theme: 'bootstrap3',
             disable_collapse: true,
             disable_edit_json: true,
@@ -535,15 +581,19 @@ var ctx = window.contextVars;
 
             var schema;
             for (schema in init_schemas) {
-                if (init_schemas[schema][0].id === val) {
+                if (init_schemas[schema].id === val) {
                     which_schema = schema;
                     loadData(init_schemas, schema_data, which_schema);
                 } 
             }
-            
+            document.getElementById('save').style.visibility = 'visible';
             //reload(init_schemas, schema_data, 0);
         } else {
             document.getElementById("title").innerHTML = "Select an option above";
+            document.getElementById('save').style.visibility = 'hidden';
+            document.getElementById("myNavBar").innerHTML = "";
+            document.getElementById("editor").innerHTML = "";
+
         }
     });
 
@@ -580,7 +630,6 @@ $(document).ready(function() {
      //        }
      //    }
      //});
-
 
     // Don't submit form on enter; must use $.delegate rather than $.on
     // to catch dynamically created form elements

@@ -18,14 +18,11 @@
           <div class='row'>
             <div class='span8 col-md-12 columns eight large-8'>
                       <h2 id="title">Select an option above</h2>
-                      <nav>
-                        <ul id="myNavBar" class="pagination">
-     
-                        </ul>
-                      </nav>
+                      <span id="myNavBar"></span>
 
                       <div id='editor'></div>
                       <button id="save" type="button" class="btn btn-success">Save</button>
+                      <!--<button id="register" type="button" class="btn btn-primary">Register</button>-->
             </div>
           </div>
         </div>
