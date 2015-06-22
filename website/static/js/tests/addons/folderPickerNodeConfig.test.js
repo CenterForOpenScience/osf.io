@@ -160,13 +160,13 @@ describe('FolderPickerNodeConfigViewModel', () => {
                 });
                 assert.equal(vm.folderName(), name);
             });
-            it("... and returns '' otherwise", () => {
+            it('... and returns "" otherwise', () => {
                 vm.nodeHasAuth(false);
                 assert.equal(vm.folderName(), '');
             });
         });
         describe('#selectedFolderName', () => {
-            it("returns the selected folder's name if set else 'None' when the User is owner", () => {
+            it('returns the selected folder\'s name if set else "None" when the User is owner', () => {
                 vm.userIsOwner(true);
                 vm.selected({
                     name: null,
