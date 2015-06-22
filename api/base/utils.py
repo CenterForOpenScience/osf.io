@@ -7,7 +7,6 @@ from rest_framework.reverse import reverse
 from modularodm.exceptions import NoResultsFound
 from modularodm import Q
 
-from api.base import settings as api_settings
 from website import settings as website_settings
 from website import util as website_util  # noqa
 
