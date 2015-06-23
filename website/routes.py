@@ -270,7 +270,7 @@ def make_url_map(app):
     process_rules(app, [
         Rule(
             [
-                '/schema/',
+                '/schemas/',
             ],
             'get', project_views.register.get_metaschema_by_name, json_renderer),
     ], prefix='/api/v1')

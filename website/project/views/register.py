@@ -48,16 +48,19 @@ def node_register_page(auth, node, **kwargs):
 
 
 def get_metaschema_by_name():
-    names = [schema['id'] for schema in OSF_META_SCHEMAS]
+    """ By default returns a list of all available OSF metaschemas
+    Accepts a query string in the form of ?id=name_of_schema that will return just that schema if the ids match exactly
+    """
+    schema_ids = [schema['id'] for schema in OSF_META_SCHEMAS]
+
     if request.query_string:
-        query_name = request.query_string.split('=')[1].replace('%20', '_')
-        if query_name:
-            for name in names:
-                if name.lower() == query_name.lower():
-                    for schema in OSF_META_SCHEMAS:
-                        if schema['id'] == name:
-                            return schema
-            return {'message': 'Schema not found, please be sure the name matches exactly'}
+        query_id = request.query_string.split('=')[1].replace('%20', '_')
+        for schema_id in schema_ids:
+            if schema_id.lower() == query_id.lower():
+                for schema in OSF_META_SCHEMAS:
+                    return schema if schema['id'] == schema_id else {
+                        'message': 'Schema not found, please be sure the ids match exactly'}
+
     return OSF_META_SCHEMAS
 
 
