@@ -1,16 +1,6 @@
-from ast import literal_eval
-
 from rest_framework import serializers as ser
-from rest_framework.serializers import empty
-
-from api.base.serializers import JSONAPISerializer, JSONAPIListSerializer, LinksField, Link
+from api.base.serializers import JSONAPISerializer, LinksField, Link
 from website.models import User
-from django.db import models
-from jsonfield import JSONField
-from django.utils import six, timezone
-import inspect
-from rest_framework.utils import html
-import json
 from rest_framework.parsers import JSONParser
 
 
@@ -60,14 +50,9 @@ class UserSerializer(JSONAPISerializer):
     date_registered = ser.DateTimeField(read_only=True)
     gravatar_url = ser.CharField(required=False, help_text='URL for the icon used to identify the user. Relies on http://gravatar.com ')
     employment_institutions = JobsSerializer(read_only=True, required=False, source='jobs', help_text='An array of dictionaries representing the '
-                                                                     'places the user has worked')
-    # employment_institutions = ser.ListField(read_only=True, required=False, source='jobs', help_text='An array of dictionaries representing the '
-    #                                                                  'places the user has worked')
+                                                                                                      'places the user has worked')
     educational_institutions = SchoolsSerializer(read_only=True, required=False, source='schools', help_text='An array of dictionaries representing the '
-                                                                     'places the user has worked')
-    # educational_institutions = ser.ListField(read_only=True, child=ser.CharField(), required=False, source='schools', help_text='An array of dictionaries representing the '
-    #                                                                      'places the user has attended school')
-
+                                                                                                             'places the user has worked')
     github = ser.CharField(required=False, source='social.github', help_text='Github Handle')
     scholar = ser.CharField(required=False, source='social.scholar', help_text='Google Scholar Account')
     personal_website = ser.CharField(required=False, source='social.personal', help_text='Personal Website')
