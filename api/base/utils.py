@@ -15,13 +15,6 @@ from website import util as website_util  # noqa
 def absolute_reverse(view_name, query_kwargs=None, args=None, kwargs=None):
     """Like django's `reverse`, except returns an absolute URL. Also add query parameters."""
 
-    # helps for creating fake components
-    if kwargs is not None:
-        if 'node_id' in kwargs:
-            if kwargs['node_id'] == '':  # TODO This doesn't seem like a safe way to do this...(how to set
-                                         # TODO node_id in kwargs?, or how to pass 'is_fake_component' to kwargs?)
-                return ''
-
     relative_url = reverse(view_name, kwargs=kwargs)
 
     url = website_util.api_v2_url(relative_url, params=query_kwargs,

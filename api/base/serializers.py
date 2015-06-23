@@ -122,6 +122,11 @@ class Link(object):
         arg_values = [_get_attr_from_tpl(attr_tpl, obj) for attr_tpl in self.args]
         query_kwarg_values = {key: _get_attr_from_tpl(attr_tpl, obj) for key, attr_tpl in self.query_kwargs.items()}
 
+        if isinstance(obj, dict):  # helps for creating fake components
+            if 'is_fake_component' in obj:
+                if obj['is_fake_component'] is True:
+                    return ''
+
         return absolute_reverse(
             self.endpoint,
             args=arg_values,

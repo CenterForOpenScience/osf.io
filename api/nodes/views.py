@@ -198,22 +198,20 @@ class NodeChildrenList(generics.ListAPIView, NodeMixin):
                 title_with_count = "1 Private Component"
             else:  # count_private_nodes > 1
                 title_with_count = "{} Private Components".format(count_private_nodes)
-            # fake_component = Node(title=title_with_count)  TODO delete this
-            # fake_component.add_permission(user, 'read', save=False)
-            fc = {
+            fake_component = {
                 'primary': True,
-                '_id': '12345',
+                '_id': '',  # TODO should have id?
                 'category': '',
                 'node_type': 'component',
                 'url': '',  # /search/?tags={12345}',  # TODO should have a url?
                 'title': title_with_count,
                 'path': '/-- private project --/',
-                'api_url': '',  # '/api/v2/12345',  #or 'API_PREFIX' (for real site) or 'API_BASE' (for tests)
+                'api_url': '',  # '/api/v2/12345',  # TODO should have api_url?; API_PREFIX (real site)/API_BASE (tests)
                 'is_public': True,
                 'is_registration': False,
                 'is_fake_component': True,
             }
-            children.append(fc)
+            children.append(fake_component)
 
         return children
 
