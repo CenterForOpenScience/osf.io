@@ -64,7 +64,7 @@ def must_not_be_registration(func):
         _inject_nodes(kwargs)
         node = kwargs['node']
 
-        if node.is_registration:
+        if node.is_registration and not node.is_draft:
             raise HTTPError(http.BAD_REQUEST)
         return func(*args, **kwargs)
 

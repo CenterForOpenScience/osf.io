@@ -34,18 +34,35 @@ from .. import clean_template_name
 @must_have_permission(ADMIN)
 @must_not_be_registration
 def node_register_page(auth, node, **kwargs):
-
     ret = {
         'options': [
             {
-                'template_name': metaschema['name'],
-                'template_name_clean': clean_template_name(metaschema['name'])
+                'template_name': metaschema['id'],
+                'template_name_clean': clean_template_name(metaschema['id'])
             }
             for metaschema in OSF_META_SCHEMAS
-        ]
+            ]
     }
     ret.update(_view_project(node, auth, primary=True))
     return ret
+
+
+def get_metaschema_by_name():
+    """ By default returns a list of all available OSF metaschemas
+    Accepts a query string in the form of ?id=name_of_schema that will return just that schema if the ids match exactly
+    """
+    schema_ids = [schema['id'] for schema in OSF_META_SCHEMAS]
+
+    if request.query_string:
+        query_id = request.query_string.split('=')[1].replace('%20', '_')
+        for schema_id in schema_ids:
+            if schema_id.lower() == query_id.lower():
+                for schema in OSF_META_SCHEMAS:
+                    return schema if schema['id'] == schema_id else {
+                        'message': 'Schema not found, please be sure the ids match exactly'}
+
+    return OSF_META_SCHEMAS
+
 
 @must_be_valid_project
 @must_have_permission(ADMIN)
@@ -68,7 +85,6 @@ def node_register_edit_page(auth, node, **kwargs):
 @must_be_valid_project
 @must_be_contributor_or_public
 def node_register_template_page(auth, node, **kwargs):
-
     template_name = kwargs['template'].replace(' ', '_')
     # Error to raise if template can't be found
     not_found_error = HTTPError(
@@ -127,11 +143,11 @@ def node_register_template_page(auth, node, **kwargs):
     ret.update(_view_project(node, auth, primary=True))
     return ret
 
+
 # TODO
 @must_be_valid_project
 @must_be_contributor_or_public
 def node_draft_template_page(auth, node, **kwargs):
-
     template_name = kwargs['template'].replace(' ', '_')
     # Error to raise if template can't be found
     not_found_error = HTTPError(
@@ -208,6 +224,7 @@ def project_before_register(auth, node, **kwargs):
 
     return {'prompts': prompts}
 
+
 @must_be_valid_project  # returns project TODO
 @must_have_permission(ADMIN)
 @must_not_be_registration
@@ -253,15 +270,15 @@ def node_register_template_page_post(auth, node, **kwargs):
     )
 
     return {
-        'status': 'success',
-        'result': register.url,
-    }, http.CREATED
+               'status': 'success',
+               'result': register.url,
+           }, http.CREATED
+
 
 @must_be_valid_project
 @must_have_permission(ADMIN)
 @must_not_be_registration
 def node_draft_template_page_post(auth, node, **kwargs):
-
     if settings.DISK_SAVING_MODE:
         raise HTTPError(
             http.METHOD_NOT_ALLOWED,
@@ -274,9 +291,10 @@ def node_draft_template_page_post(auth, node, **kwargs):
     draft = node.register_node(auth)
 
     return {
-        'status': 'success',
-        'result': draft.url,
-    }, http.CREATED
+               'status': 'success',
+               'result': draft.url,
+           }, http.CREATED
+
 
 def _build_ezid_metadata(node):
     """Build metadata for submission to EZID using the DataCite profile. See
