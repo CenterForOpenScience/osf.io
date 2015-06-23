@@ -13,7 +13,7 @@
     <div class="col-sm-6">
         <div class="pull-right">
             <div class="btn-group" id="makeEditable">
-                % if node['is_public']:
+                % if node['is_public'] and user['can_edit']:
                     % if not wiki_publicly_editable:
                         <button class='btn btn-default btn-sm disabled'>Privately Editable</button>
                         % if 'admin' in user['permissions']:
