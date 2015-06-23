@@ -31,8 +31,8 @@
 					"format":"textarea",
 					"title":"Other Comments"
 				}
-			},
+			}
 		}
 	],
-	"category": "draft",
+	"category": "draft"
 }

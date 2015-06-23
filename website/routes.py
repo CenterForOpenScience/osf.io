@@ -269,6 +269,14 @@ def make_url_map(app):
     process_rules(app, [
         Rule(
             [
+                '/schemas/',
+            ],
+            'get', project_views.register.get_metaschema_by_name, json_renderer),
+    ], prefix='/api/v1')
+
+    process_rules(app, [
+        Rule(
+            [
                 '/oauth/accounts/<external_account_id>/',
             ],
             'delete',
