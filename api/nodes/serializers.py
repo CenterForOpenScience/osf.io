@@ -130,10 +130,10 @@ class NodeSerializer(JSONAPISerializer):
 
 
 class RegistrationSerializer(NodeSerializer):
+    id = ser.CharField(read_only=True, source='_id')
     title = ser.CharField(read_only=True)
     description = ser.CharField(read_only=True)
     category = ser.CharField(read_only=True)
-    id = ser.CharField(read_only=True)
 
     links = LinksField({
         'html': 'get_absolute_url',
@@ -159,9 +159,9 @@ class RegistrationSerializer(NodeSerializer):
         # TODO: Pass source ID to link
 
         #===================================================================
-        # 'source': {
-        #     'related': Link('nodes:node-detail', query_kwargs={'node_id': '<id>'})
-        # },
+        'source': {
+            'related': Link('nodes:node-detail', kwargs={'node_id': '<pk>'})
+        },
     })
 
 

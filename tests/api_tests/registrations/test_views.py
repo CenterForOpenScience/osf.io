@@ -513,6 +513,7 @@ class TestRegistrationPointersList(ApiTestCase):
         res = self.app.get(self.private_url, auth=self.basic_auth_two, expect_errors=True)
         assert_equal(res.status_code, 403)
 
+
 class TestRegistrationFilesList(ApiTestCase):
     # TODO add tests for registration DRAFTS
     # TODO 500 error being thrown for 1,2,4,6
