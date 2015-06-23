@@ -92,8 +92,15 @@ describe('osfHelpers', () => {
     });
 
     describe('block', () => {
+        var stub;
+        beforeEach(() => {
+            stub = new sinon.stub($, 'blockUI');
+        });
+        afterEach(() => {
+            $.blockUI.restore();
+        });
+
         it('calls $.blockUI with correct arguments', () => {
-            var stub = new sinon.stub($, 'blockUI');
             $osf.block();
             assert.calledOnce(stub);
             assert.calledWith(stub, {
@@ -107,6 +114,23 @@ describe('osfHelpers', () => {
                     color: '#fff'
                 },
                 message: 'Please wait'
+            });
+        });
+        it('calls $.blockUI with the passed message if provided', () => {
+            var msg = 'Some custom message';
+            $osf.block(msg);
+            assert.calledOnce(stub);
+            assert.calledWith(stub, {
+                css: {
+                    border: 'none',
+                    padding: '15px',
+                    backgroundColor: '#000',
+                    '-webkit-border-radius': '10px',
+                    '-moz-border-radius': '10px',
+                    opacity: 0.5,
+                    color: '#fff'
+                },
+                message: msg
             });
         });
     });
@@ -240,6 +264,37 @@ describe('osfHelpers', () => {
             assert.equal(fd.local, expectedLocal);
             var expectedUTC = moment.utc(date).format('YYYY-MM-DD HH:mm UTC');
             assert.equal(fd.utc, expectedUTC);
+        });
+        it('should parse date and datetime strings', () => {
+            var year = 2014;
+            var month = 11;
+            var day = 15;
+            var hour = 10;
+            var minute = 33;
+            var second = 17;
+            var millisecond = 123;
+
+            var dateString = [year, month, day].join('-');
+            var dateTimeString = dateString + 'T' + [hour, minute, second].join(':') + '.' + millisecond.toString();
+
+            var parsedDate = new $osf.FormattableDate(dateString).date;
+            var parsedDateTime = new $osf.FormattableDate(dateTimeString).date;
+
+            assert.equal(parsedDate.getUTCFullYear(), year);
+            assert.equal(parsedDate.getUTCMonth(), month - 1); // Javascript months count from 0
+            assert.equal(parsedDate.getUTCDate(), day);
+            assert.equal(parsedDate.getUTCHours(), 0);
+            assert.equal(parsedDate.getUTCMinutes(), 0);
+            assert.equal(parsedDate.getUTCSeconds(), 0);
+            assert.equal(parsedDate.getUTCMinutes(), 0);
+
+            assert.equal(parsedDateTime.getUTCFullYear(), year);
+            assert.equal(parsedDateTime.getUTCMonth(), month - 1); // Javascript months count from 0
+            assert.equal(parsedDateTime.getUTCDate(), day);
+            assert.equal(parsedDateTime.getUTCHours(), hour);
+            assert.equal(parsedDateTime.getUTCMinutes(), minute);
+            assert.equal(parsedDateTime.getUTCSeconds(), second);
+            assert.equal(parsedDateTime.getUTCMilliseconds(), millisecond);
         });
     });
 

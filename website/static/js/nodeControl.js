@@ -5,6 +5,7 @@
 'use strict';
 
 var $ = require('jquery');
+var $osf = require('js/osfHelpers');
 var ko = require('knockout');
 var bootbox = require('bootbox');
 var Raven = require('raven-js');
@@ -38,7 +39,7 @@ var MESSAGES = {
                         'Would you like to continue?',
     // TODO(hrybacki): Remove once Retraction/Embargoes goes is merged into production
     makeRegistrationPublicWarning: '<b>Important Note:</b> As early as <u>June 8, 2015</u>, new registrations ' +
-                        'will be made public immediately or can be embargoed for up to one year. There ' +
+                        'will be made public immediately or can be embargoed for up to four years. There ' +
                         'will no longer be the option of creating a permanently private registration. This ' +
                         'registration occurred before June 8, 2015, so you do retain the option of keeping it ' +
                         'private. However, if you do choose to make the registration public now, then after ' +
@@ -234,23 +235,29 @@ var ProjectViewModel = function(data) {
     /**
      * Toggle the watch status for this project.
      */
+    var watchUpdateInProgress = false;
     self.toggleWatch = function() {
-        // Send POST request to node's watch API url and update the watch count
-        if(self.userIsWatching()) {
-            self.watchedCount(self.watchedCount() - 1);
-        } else {
-            self.watchedCount(self.watchedCount() + 1);
+        // When there is no watch-update in progress,
+        // send POST request to node's watch API url and update the watch count
+        if(!watchUpdateInProgress) {
+            if (self.userIsWatching()) {
+                self.watchedCount(self.watchedCount() - 1);
+            } else {
+                self.watchedCount(self.watchedCount() + 1);
+            }
+            watchUpdateInProgress = true;
+            osfHelpers.postJSON(
+                self.apiUrl + 'togglewatch/',
+                {}
+            ).done(function (data) {
+                // Update watch count in DOM
+                watchUpdateInProgress = false;
+                self.userIsWatching(data.watched);
+                self.watchedCount(data.watchCount);
+            }).fail(
+                osfHelpers.handleJSONError
+            );
         }
-        osfHelpers.postJSON(
-            self.apiUrl + 'togglewatch/',
-            {}
-        ).done(function(data) {
-            // Update watch count in DOM
-            self.userIsWatching(data.watched);
-            self.watchedCount(data.watchCount);
-        }).fail(
-            osfHelpers.handleJSONError
-        );
     };
 
     self.makePublic = function() {

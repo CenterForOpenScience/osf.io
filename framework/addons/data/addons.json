@@ -26,8 +26,8 @@
                 "text": "Forking a project or component does not copy Github authorization unless the user forking the project is the same user who authorized the Github add-on in the source project being forked."
             },
             "Registering": {
-                "status": "none",
-                "text": "GitHub content cannot be registered."
+                "status": "partial",
+                "text": "GitHub content will be registered, but version history will not be copied to the registration."
             }
         },
         "Amazon S3": {
@@ -56,8 +56,8 @@
                 "text": "Forking a project or component does not copy S3 authorization unless the user forking the project is the same user who authorized the S3 add-on in the source project being forked."
             },
             "Registering": {
-                "status": "none",
-                "text": "S3 content cannot be registered."
+                "status": "partial",
+                "text": "S3 content will be registered, but version history will not be copied to the registration."
             }
         },
         "figshare": {
@@ -86,8 +86,8 @@
                 "text": "Forking a project or component does not copy figshare authorization unless the user forking the project is the same user who authorized the figshare add-on in the source project being forked."
             },
             "Registering": {
-                "status": "none",
-                "text": "figshare content cannot be registered."
+                "status": "partial",
+                "text": "figshare content will be registered, but version history will not be copied to the registration."
             }
         },
         "Dropbox": {
@@ -116,8 +116,8 @@
                 "text": "Forking a project or component does not copy Dropbox authorization unless the user forking the project is the same user who authorized the Dropbox add-on in the source project being forked."
             },
             "Registering": {
-                "status": "none",
-                "text": "Dropbox content cannot be registered."
+                "status": "partial",
+                "text": "Dropbox content will be registered, but version history will not be copied to the registration."
             }
         },
         "Dataverse": {
@@ -146,8 +146,8 @@
                 "text": "Forking a project or component does not copy Dataverse authorization unless the user forking the project is the same user who authorized the Dataverse add-on in the source project being forked."
             },
             "Registering": {
-                "status": "none",
-                "text": "Dataverse content cannot be registered."
+                "status": "partial",
+                "text": "Dataverse content will be registered, but version history will not be copied to the registration."
             }
         },
         "Google Drive": {
@@ -176,8 +176,8 @@
                 "text": "Forking a project or component does not copy Google Drive authorization unless the user forking the project is the same user who authorized the Google Drive add-on in the source project being forked."
             },
             "Registering": {
-                "status": "none",
-                "text": "Google Drive content cannot be registered."
+                "status": "partial",
+                "text": "Google Drive content will be registered, but version history will not be copied to the registration."
             }
         },
         "Box": {
@@ -206,8 +206,8 @@
                 "text": "Forking a project or component does not copy Box authorization unless the user forking the project is the same user who authorized the Box add-on in the source project being forked."
             },
             "Registering": {
-                "status": "none",
-                "text": "Box content cannot be registered."
+                "status": "partial",
+                "text": "Box content will be registered, but version history will not be copied to the registration."
             }
         },
         "Mendeley": {
@@ -232,8 +232,8 @@
                 "text": "Forking a project or component does not copy Mendeley authorization unless the user forking the project is the same user who authorized the Mendeley add-on in the source project being forked."
             },
             "Registering": {
-                "status": "none",
-                "text": "Mendeley content cannot be registered."
+                "status": "partial",
+                "text": "Mendeley content will be registered, but version history will not be copied to the registration."
             }
         },
         "Zotero": {
@@ -258,8 +258,8 @@
                 "text": "Forking a project or component does not copy Zotero authorization unless the user forking the project is the same user who authorized the Zotero add-on in the source project being forked."
             },
             "Registering": {
-                "status": "none",
-                "text": "Zotero content cannot be registered."
+                "status": "partial",
+                "text": "Zotero content will be registered, but version history will not be copied to the registration."
             }
         }
     },
