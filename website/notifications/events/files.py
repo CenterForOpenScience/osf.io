@@ -5,7 +5,7 @@ File event data handling.
 
 from furl import furl
 
-from website.notifications.emails import remove_users_from_subscription
+from website.notifications.emails import warn_users_removed_from_subscription
 from website.notifications.utils import move_file_subscription
 from website.notifications.events.model import BaseEvent
 from website.models import Node
@@ -26,7 +26,6 @@ def get_notify_type(user, node, event, payload):
 
 class FileEvent(BaseEvent):
     """File event base class"""
-
     def __init__(self, user, node, event, payload):
         super(FileEvent, self).__init__(user, node, event)
         self.payload = payload
@@ -38,12 +37,12 @@ class FileEvent(BaseEvent):
         return get_notify_type(user, node, event, payload)
 
     def form_message(self):
-        f_type, action = tuple(self.event.split("_"))
+        f_type, action = tuple(self.action.split("_"))
         name = self.payload['metadata']['materialized'].strip('/')
         self.message = '{} {} "<b>{}</b>".'.format(action, f_type, name)
 
     def form_event(self):
-        self.event_sub = "file_updated"
+        self.event = "file_updated"
 
     def form_url(self):
         f_url = furl(self.node.absolute_url)
@@ -68,7 +67,7 @@ class UpdateFileEvent(FileEvent):
         self.form_url()
 
     def form_event(self):
-        self.event_sub = self.guid.guid_url.strip('/') + '_file_updated'
+        self.event = self.guid.guid_url.strip('/') + '_file_updated'
 
     def form_url(self):
         f_url = super(UpdateFileEvent, self).form_url()
@@ -109,7 +108,7 @@ class ComplexFileEvent(FileEvent):
         self.form_message()
 
     def form_message(self):
-        addon, f_type, action = tuple(self.event.split("_"))
+        addon, f_type, action = tuple(self.action.split("_"))
         destination_name = self.payload['destination']['materialized'].strip('/')
         source_name = self.payload['source']['materialized'].strip('/')
         self.message = '{} "<b>{}</b>" from {} in {} to "<b>{}</b>" in {} in {}'.format(
@@ -118,7 +117,7 @@ class ComplexFileEvent(FileEvent):
         )
 
     def form_event(self):
-        self.event_sub = self.guid.guid_url.strip('/') + '_file_updated'
+        self.event = self.guid.guid_url.strip('/') + '_file_updated'
         self.source_event_sub = self.source_guid.guid_url.strip('/') + '_file_updated'
 
     def form_url(self):
@@ -145,11 +144,12 @@ class MoveFileEvent(ComplexFileEvent):
     """
     def perform(self):
         rm_users = move_file_subscription(self.source_event_sub, self.source_node,
-                                          self.event_sub, self.node)
-        message = self.message + ' You have been removed due to insufficient permissions.',
-        remove_users_from_subscription(rm_users, self.source_event_sub, self.user, self.source_node,
-                                       timestamp=self.timestamp, gravatar_url=self.gravatar_url,
-                                       message=message, url=self.source_url)
+                                          self.event, self.node)
+        message = self.message + ' Your subscription has been removed' \
+                                 ' due to insufficient permissions in the new component.',
+        warn_users_removed_from_subscription(rm_users, self.source_event_sub, self.user, self.source_node,
+                                             timestamp=self.timestamp, gravatar_url=self.gravatar_url,
+                                             message=message, url=self.source_url)
         super(MoveFileEvent, self).perform()
 
     def form_url(self):

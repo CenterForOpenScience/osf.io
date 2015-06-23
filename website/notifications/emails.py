@@ -104,7 +104,7 @@ def notify(uid, event, user, node, timestamp, **context):
     return sent_users
 
 
-def remove_users_from_subscription(recipients, event, user, node, timestamp, **context):
+def warn_users_removed_from_subscription(recipients, event, user, node, timestamp, **context):
     """
     Notify recipients that a subscription of theirs has been cancelled due to an action
     by the user. Creates a temporary subscription and assigns user list

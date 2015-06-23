@@ -1,26 +1,37 @@
 # -*- coding: utf-8 -*-
 """Basic Event handling for events that need subscriptions"""
 
-from abc import ABCMeta, abstractmethod
+from six import with_metaclass
 from datetime import datetime
 from website.notifications.emails import notify
 
+
+class EventMeta(type):
+    def __init__(cls, name, bases, attrs):
+        if not hasattr(cls, 'registry'):
+            cls.registry = {}
+        else:
+            event_id = name.lower()
+            cls.registry[event_id] = cls
+
+        super(EventMeta, cls).__init__(name, bases, attrs)
+
+
+@with_metaclass(EventMeta)
 class BaseEvent:
     """
     Base notification class for building notification events and messages.
     - sets basic fields to default values.
     - abstract methods set methods that must be defined by subclasses.
     """
-    __metaclass__ = ABCMeta
-
     def __init__(self, user, node, event):
         self.user = user
         self.gravatar_url = user.gravatar_url
         self.node = node
         self.node_id = node._id
-        self.event = event
+        self.action = event
         self.timestamp = datetime.utcnow()
-        self.event_sub = event
+        self.event = event
         self.message = "Blank message"
         self.url = None
 
@@ -28,7 +39,7 @@ class BaseEvent:
         """Calls emails.notify"""
         notify(
             uid=self.node_id,
-            event=self.event_sub,
+            event=self.event,
             user=self.user,
             node=self.node,
             timestamp=self.timestamp,
@@ -37,20 +48,16 @@ class BaseEvent:
             url=self.url
         )
 
-    @abstractmethod
     def form_event(self):
         """
-        Use NODE_SUBSCRIPTIONS_AVAILABLE and USER_SUBSCRIPTIONS_AVAILABLE plus UIDs
-        where available to denote individual subscriptions.
+
         """
         pass
 
-    @abstractmethod
     def form_message(self):
         """Piece together the message to be sent to subscribed users"""
         pass
 
-    @abstractmethod
     def form_url(self):
         """Build url from relevant info"""
         pass
