@@ -49,6 +49,17 @@ from website.identifiers.client import EzidClient
 from .node import _view_project
 from .. import clean_template_name
 
+@must_be_valid_project
+@must_have_permission(ADMIN)
+def node_create_registration_draft(auth, node, **kwargs):
+    if settings.DISK_SAVING_MODE:
+        raise HTTPError(
+            http.METHOD_NOT_ALLOWED,
+            redirect_url=node.url
+        )
+
+    register = node.register_node(auth)
+    return redirect(register.web_url_for('view_project', post_register=True))
 
 @must_be_valid_project
 @must_have_permission(ADMIN)

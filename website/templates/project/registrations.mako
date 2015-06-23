@@ -37,6 +37,7 @@
   <div class="col-sm-3">
     <div>
         % if 'admin' in user['permissions'] and not disk_saving_mode:
+          <form id="registerNodeForm" method="post"></form>
           <a id="registerNode" href="${node['url']}register" class="btn btn-default" type="button">New Registration</a>
         % endif
     </div>

@@ -7,7 +7,6 @@ var bootbox = require('bootbox');
 var $osf = require('js/osfHelpers');
 var ctx = window.contextVars;
 
-
 var preRegisterMessage =  function(title, parentTitle, parentUrl, category) {
     // TODO(hrybacki): Remove warning once Retraction/Embargoes goes is merged into production
     if (parentUrl) {
@@ -89,10 +88,8 @@ $(document).ready(function() {
             title: bootboxTitle,
             message: preRegisterMessage(title, parentTitle, parentRegisterUrl, category),
             callback: function (confirmed) {
-                if(confirmed) {
-                    // this is where is would be set to a draft
-                    //draftNode();
-                    window.location.href = target;
+                if(confirmed) {                    
+                    $('#registerNodeForm').submit();
                 }
             }
         });

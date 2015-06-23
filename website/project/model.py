@@ -609,6 +609,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
     is_draft = fields.BooleanField(default=False, index=True)
 
     is_registration = fields.BooleanField(default=False, index=True)
+    is_draft_registration = fields.BooleanField(default=False)
     registered_date = fields.DateTimeField(index=True)
     registered_user = fields.ForeignField('user', backref='registered')
     registered_schema = fields.ForeignField('metaschema', backref='registered')
@@ -1706,7 +1707,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
 
         return forked
 
-    def register_node(self, schema, auth, template, data, parent=None):
+    def register_node(self, auth):
         """Make a frozen copy of a node.
 
         :param schema: Schema object
@@ -1715,6 +1716,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         :param data: Form data
         :param parent Node: parent registration of regitstration to be created
         """
+        import ipdb; ipdb.set_trace()
         # NOTE: Admins can register child nodes even if they don't have write access them
         if not self.can_edit(auth=auth) and not self.is_admin_parent(user=auth.user):
             raise PermissionsError(
@@ -1723,9 +1725,6 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
             )
         if self.is_folder:
             raise NodeStateError("Folders may not be registered")
-
-        template = urllib.unquote_plus(template)
-        template = to_mongo(template)
 
         when = datetime.datetime.utcnow()
 
@@ -1741,14 +1740,10 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
 
         registered = original.clone()
 
-        registered.is_registration = True
+        registered.is_draft_registration = True
         registered.registered_date = when
         registered.registered_user = auth.user
-        registered.registered_schema = schema
         registered.registered_from = original
-        if not registered.registered_meta:
-            registered.registered_meta = {}
-        registered.registered_meta[template] = data
 
         registered.contributors = self.contributors
         registered.forked_from = self.forked_from
@@ -1770,11 +1765,9 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
 
         for node_contained in original.nodes:
             if not node_contained.is_deleted:
-                child_registration = node_contained.register_node(
-                    schema, auth, template, data, parent=registered
-                )
-                if child_registration and not child_registration.primary:
-                    registered.nodes.append(child_registration)
+                registered_node = node_contained.register_node(auth)
+                if registered_node is not None:
+                    registered.nodes.append(registered_node)
 
         registered.save()
 
@@ -2700,6 +2693,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
             'url': self.url,
             # TODO: Titles shouldn't contain escaped HTML in the first place
             'title': html_parser.unescape(self.title),
+            'description': self.description,
             'path': self.path_above(auth),
             'api_url': self.api_url,
             'is_public': self.is_public,
