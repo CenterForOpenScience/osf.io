@@ -2,7 +2,7 @@
 
 <%def name="title()">Home</%def>
 
-<%def name="contentWrap()">
+<%def name="content_wrap()">
     <div class="watermarked">
             % if status:
                 <div id="alert-container">

@@ -68,7 +68,7 @@
 
     <%include file="nav.mako"/>
      ## TODO: shouldn't always have the watermark class
-    ${self.contentWrap()}
+    ${self.content_wrap()}
 
 % if not user_id:
 <div id="footerSlideIn">
@@ -220,7 +220,7 @@
     <%include file="footer.mako"/>
 </%def>
 
-<%def name="contentWrap()">
+<%def name="content_wrap()">
     <div class="watermarked">
         <div class="container ${self.container_class()}">
             % if status:
