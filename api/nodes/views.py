@@ -3,20 +3,14 @@ import requests
 from rest_framework import generics, permissions as drf_permissions
 from rest_framework.exceptions import PermissionDenied, ValidationError
 from modularodm import Q
-from django.utils.translation import ugettext_lazy as _
-from rest_framework.response import Response
-from rest_framework import status
 
 from framework.auth.core import Auth
 from website.models import Node, Pointer
 from api.base.utils import get_object_or_404, waterbutler_url_for
 from api.base.filters import ODMFilterMixin, ListFilterMixin
-from .serializers import NodeSerializer, NodePointersSerializer, NodeFilesSerializer, NodeDeleteSerializer
+from .serializers import NodeSerializer, NodePointersSerializer, NodeFilesSerializer
 from api.users.serializers import ContributorSerializer
 from .permissions import ContributorOrPublic, ReadOnlyIfRegistration, ContributorOrPublicForPointers
-
-from api.language import BEFORE_DELETE_NODE
-from api.base.utils import node_token_creator, absolute_reverse
 
 
 class NodeMixin(object):
@@ -99,12 +93,7 @@ class NodeDetail(generics.RetrieveUpdateDestroyAPIView, NodeMixin):
         ReadOnlyIfRegistration,
     )
 
-    def get_serializer_class(self):
-        if self.request.method == 'DELETE':
-            serializer_class = NodeDeleteSerializer
-            return serializer_class
-        serializer_class = NodeSerializer
-        return serializer_class
+    serializer_class = NodeSerializer
 
     # overrides RetrieveUpdateDestroyAPIView
     def get_object(self):
@@ -116,37 +105,11 @@ class NodeDetail(generics.RetrieveUpdateDestroyAPIView, NodeMixin):
         return {'request': self.request}
 
     # overrides RetrieveUpdateDestroyAPIView
-    def delete(self, request, node_id):
-        user = self.request.user
-        node = self.get_node()
-        token = node_token_creator(node._id, user._id)
-        url = absolute_reverse('nodes:node-delete-confirm', kwargs={'node_id': node._id, 'token': token})
-        delete_warning = BEFORE_DELETE_NODE.format(node.title)
-        return Response({'data': {'node_id': node._id, 'warning_message': delete_warning, 'links': {'confirm_delete': url}}}, status=status.HTTP_202_ACCEPTED)
-
-
-class NodeDeleteConfirm(generics.DestroyAPIView, NodeMixin):
-    """Projects and component deletion.
-    """
-    permission_classes = (
-        ContributorOrPublic,
-        ReadOnlyIfRegistration,
-    )
-    serializer_class = NodeSerializer
-
-    # overrides DestroyAPIView
-    def get_object(self):
-        return self.get_node()
-
-    # overrides DestroyAPIView
     def perform_destroy(self, instance):
         user = self.request.user
+        auth = Auth(user)
         node = self.get_object()
-        correct_token = node_token_creator(node._id, user._id)
-        given_token = self.kwargs['token']
-        if correct_token != given_token:
-            raise ValidationError(_("Incorrect token."))
-        node.remove_node(auth=Auth(user))
+        node.remove_node(auth=auth)
         node.save()
 
 

@@ -127,15 +127,6 @@ class NodeSerializer(JSONAPISerializer):
         return instance
 
 
-class NodeDeleteSerializer(JSONAPISerializer):
-    node_id = ser.CharField(read_only=True)
-    warning_message = ser.CharField(read_only=True)
-    confirm_delete = ser.CharField(read_only=True, help_text='new url')
-
-    class Meta:
-        type_ = 'nodes'
-
-
 class NodePointersSerializer(JSONAPISerializer):
 
     id = ser.CharField(read_only=True, source='_id')

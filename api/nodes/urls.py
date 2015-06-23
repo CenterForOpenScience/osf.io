@@ -7,7 +7,6 @@ urlpatterns = [
     # url(r'^blog/', include('blog.urls')),
     url(r'^$', views.NodeList.as_view(), name='node-list'),
     url(r'^(?P<node_id>\w+)/$', views.NodeDetail.as_view(), name='node-detail'),
-    url(r'^(?P<node_id>\w+)/confirm/(?P<token>\w+)/$', views.NodeDeleteConfirm.as_view(), name='node-delete-confirm'),
     url(r'^(?P<node_id>\w+)/contributors/$', views.NodeContributorsList.as_view(), name='node-contributors'),
     url(r'^(?P<node_id>\w+)/registrations/$', views.NodeRegistrationsList.as_view(), name='node-registrations'),
     url(r'^(?P<node_id>\w+)/children/$', views.NodeChildrenList.as_view(), name='node-children'),
