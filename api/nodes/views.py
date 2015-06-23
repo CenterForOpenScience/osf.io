@@ -115,6 +115,7 @@ class NodeDetail(generics.RetrieveUpdateDestroyAPIView, NodeMixin):
         # Serializer needs the request in order to make an update to privacy
         return {'request': self.request}
 
+    # overrides RetrieveUpdateDestroyAPIView
     def delete(self, request, node_id):
         user = self.request.user
         node = self.get_node()
@@ -139,9 +140,11 @@ class NodeDeleteConfirm(generics.DestroyAPIView, NodeMixin):
     )
     serializer_class = NodeSerializer
 
+    # overrides DestroyAPIView
     def get_object(self):
         return self.get_node()
 
+    # overrides DestroyAPIView
     def perform_destroy(self, instance):
         user = self.request.user
         node = self.get_object()
