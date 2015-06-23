@@ -74,7 +74,6 @@ page_routes = {
         ], 'post', views.edit_wiki_permissions, json_renderer),
 
     ]
-
 }
 
 api_routes = {

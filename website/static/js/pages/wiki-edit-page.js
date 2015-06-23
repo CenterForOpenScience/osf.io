@@ -37,7 +37,23 @@ var wikiPageOptions = {
 };
 
 var wikiPage = new WikiPage('#wikiPageContext', wikiPageOptions);
+//Probably not where I want to put this or how I want to do this. Reload goes somewhere else.
+function ViewModelEditable(){
+    var self = this;
 
+    self.makePubliclyEditable = function() {
+        $.post("permissions/public/");
+        location.reload();
+    };
+
+    self.makePrivatelyEditable = function() {
+        $.post("permissions/private/");
+        location.reload();
+    };
+
+}
+
+$osf.applyBindings(new ViewModelEditable(),'#makeEditable');
 
 // Edit wiki page name
 if (ctx.canEditPageName) {

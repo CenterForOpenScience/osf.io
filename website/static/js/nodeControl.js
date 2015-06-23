@@ -71,7 +71,7 @@ function setPermissions(permissions, nodeType) {
 
     var urlKey = permissions === PUBLIC ? 'makePublic' : 'makePrivate';
     var message = MESSAGES[msgKey];
-
+    //GRUMBLE take another look at this
     var confirmModal = function (message) {
         bootbox.confirm({
             title: 'Warning',

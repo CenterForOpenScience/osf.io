@@ -12,7 +12,22 @@
     </div>
     <div class="col-sm-6">
         <div class="pull-right">
-          <div class="switch"></div>
+            <div class="btn-group" id="makeEditable">
+                % if node['is_public']:
+                    % if not wiki_publicly_editable:
+                        <button class='btn btn-default btn-sm disabled'>Privately Editable</button>
+                        % if 'admin' in user['permissions']:
+                            <a class="btn btn-default btn-sm" data-bind="click: makePubliclyEditable" id="makeEditable">Make Editing Public</a>
+                        % endif
+                    % else:
+                        % if 'admin' in user['permissions']:
+                            <a class="btn btn-default btn-sm" data-bind="click: makePrivatelyEditable" id="makeNotEditable">Make Editing Private</a>
+                        % endif
+                        <button class="btn btn-default btn-sm disabled">Publicly Editable</button>
+                    % endif
+                % endif
+            </div>
+          <div class="switch" style="display: inline"></div>
           </div>
     </div>
 </div>
@@ -220,7 +235,7 @@
         <h3 class="modal-title">The permissions for this page have changed</h3>
       </div>
       <div class="modal-body">
-        <p>Your browser should refresh shortly&hellip;</p>
+        <p>Your browser should refresh shortly.&hellip;</p>
       </div>
     </div>
   </div>
@@ -233,7 +248,7 @@
         <h3 class="modal-title">The content of this wiki has been moved to a different page</h3>
       </div>
       <div class="modal-body">
-        <p>Your browser should refresh shortly&hellip;</p>
+        <p>Your browser should refresh shortly.&hellip;</p>
       </div>
     </div>
   </div>
@@ -365,13 +380,13 @@ ${parent.javascript_bottom()}
 <script src=${"/static/public/js/wiki-edit-page.js" | webpack_asset}></script>
 
 
-<script>
-$( "#makeEditable" ).click(function() {
-##   "${node['url']}wiki/home/permissions/private/";
-$.post("http://localhost:5000/project/kb2pm/wiki/home/permissions/public/");
-##     alert( "Handler for .click() called." );
-##     "${node['url']}files/"
-});
-</script>
+## <script>
+## $("#makeEditable").click(function() {
+## $.post("${node['url']}/wiki/home/permissions/public/");
+## });
+## $("#makeNotEditable").click(function() {
+## $.post("${node['url']}wiki/home/permissions/private/");
+## });
+## </script>
 
 </%def>
