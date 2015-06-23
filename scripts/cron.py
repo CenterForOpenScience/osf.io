@@ -38,10 +38,12 @@ def main(dry_run=True):
     box.minute.on(0)  # Daily 2:00 a.m.
 
     retractions = ensure_item(cron, 'bash {}'.format(app_prefix('scripts/retract_registrations.sh')))
-    retractions.hour.on(0)  # 12 a.m.
+    retractions.hour.on(0)
+    retractions.minute.on(0)  # Daily 12 a.m.
 
     embargoes = ensure_item(cron, 'bash {}'.format(app_prefix('scripts/embargo_registrations.sh')))
-    embargoes.hours.on(0)   # 12 a.m.
+    embargoes.hour.on(0)
+    embargoes.minute.on(0)  # Daily 12 a.m.
 
     files_audit = ensure_item(cron, 'bash {}'.format(app_prefix('scripts/osfstorage/files_audit.sh')))
     files_audit.dow.on(0)
