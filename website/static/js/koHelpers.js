@@ -181,6 +181,13 @@ ko.validation.rules.url = makeRegexValidator(
     'Please enter a valid URL.'
 );
 
+ko.validation.rules.mustEqual = {
+    validator: function (val, otherVal) {
+        return val === otherVal;
+    },
+    message: 'The field does not match the required input.'
+};
+
 
 // Add custom effects
 

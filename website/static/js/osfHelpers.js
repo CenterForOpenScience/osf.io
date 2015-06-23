@@ -196,7 +196,7 @@ var handleEditableError = function(response) {
     return 'Unexpected error: ' + response.statusText;
 };
 
-var block = function() {
+var block = function(message) {
     $.blockUI({
         css: {
             border: 'none',
@@ -207,7 +207,7 @@ var block = function() {
             opacity: 0.5,
             color: '#fff'
         },
-        message: 'Please wait'
+        message: message || 'Please wait'
     });
 };
 

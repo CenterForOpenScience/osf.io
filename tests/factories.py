@@ -16,6 +16,8 @@ Factory boy docs: http://factoryboy.readthedocs.org/
 import datetime
 from factory import base, Sequence, SubFactory, post_generation, LazyAttribute
 
+from mock import patch
+
 from framework.mongo import StoredObject
 from framework.auth import User, Auth
 from framework.auth.utils import impute_names_model
@@ -24,9 +26,11 @@ from website.addons import base as addons_base
 from website.oauth.models import ExternalAccount
 from website.oauth.models import ExternalProvider
 from website.project.model import (
-    ApiKey, Comment, Node, NodeLog,  ApiOAuth2Application, Pointer, PrivateLink, Tag, WatchConfig,
+    ApiKey, Comment, Embargo, Node, NodeLog,  ApiOAuth2Application, Pointer, PrivateLink, Retraction, Tag, WatchConfig,
 )
 from website.notifications.model import NotificationSubscription, NotificationDigest
+from website.archiver import utils as archiver_utils
+from website.archiver.model import ArchiveTarget, ArchiveJob
 
 from website.addons.wiki.model import NodeWikiPage
 from tests.base import fake
@@ -184,8 +188,7 @@ class RegistrationFactory(AbstractNodeFactory):
 
     @classmethod
     def _create(cls, target_class, project=None, schema=None, user=None,
-                template=None, data=None, *args, **kwargs):
-
+                template=None, data=None, archive=False, *args, **kwargs):
         save_kwargs(**kwargs)
 
         # Original project to be registered
@@ -201,12 +204,27 @@ class RegistrationFactory(AbstractNodeFactory):
         template = template or "Template1"
         data = data or "Some words"
         auth = Auth(user=user)
-        return project.register_node(
+        register = lambda: project.register_node(
             schema=schema,
             auth=auth,
             template=template,
             data=data,
         )
+        ArchiveJob(
+            src_node=project,
+            dst_node=register,
+            initiator=user,
+        )
+        if archive:
+            return register()
+        else:
+            with patch('framework.tasks.handlers.enqueue_task'):
+                reg = register()
+                archiver_utils.archive_success(
+                    reg,
+                    reg.registered_user
+                )
+                return reg
 
 
 class PointerFactory(ModularOdmFactory):
@@ -223,6 +241,16 @@ class NodeLogFactory(ModularOdmFactory):
 class WatchConfigFactory(ModularOdmFactory):
     FACTORY_FOR = WatchConfig
     node = SubFactory(NodeFactory)
+
+
+class RetractionFactory(ModularOdmFactory):
+    FACTORY_FOR = Retraction
+    user = SubFactory(UserFactory)
+
+
+class EmbargoFactory(ModularOdmFactory):
+    FACTORY_FOR = Embargo
+    user = SubFactory(UserFactory)
 
 
 class NodeWikiFactory(ModularOdmFactory):
@@ -465,3 +493,11 @@ class MockOAuthAddonUserSettings(addons_base.AddonOAuthUserSettingsBase):
 
 class MockOAuthAddonNodeSettings(addons_base.AddonOAuthNodeSettingsBase):
     oauth_provider = MockOAuth2Provider
+
+
+class ArchiveTargetFactory(ModularOdmFactory):
+    FACTORY_FOR = ArchiveTarget
+
+
+class ArchiveJobFactory(ModularOdmFactory):
+    FACTORY_FOR = ArchiveJob
