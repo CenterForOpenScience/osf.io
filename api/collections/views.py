@@ -1,14 +1,15 @@
-from rest_framework import generics, permissions as drf_permissions
-from modularodm import Q
 from datetime import datetime
+
+from modularodm import Q
+from rest_framework import generics, permissions as drf_permissions
 
 from framework.auth.core import Auth
 from website.models import Node, Pointer
+from website.views import find_dashboard
+from .permissions import ContributorOrPublic
 from api.base.utils import get_object_or_404, get_user_auth
 from api.base.filters import ODMFilterMixin, ListFilterMixin
 from .serializers import CollectionSerializer, CollectionPointersSerializer
-from .permissions import ContributorOrPublic
-from website.views import find_dashboard
 
 smart_folders = {
     'amp': Q('category', 'eq', 'project') &

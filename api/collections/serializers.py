@@ -1,11 +1,9 @@
 from rest_framework import serializers as ser
 
-from api.base.serializers import JSONAPISerializer, CollectionLinksField, Link, LinksField
-from api.base.utils import get_user_auth
 from website.models import Node
-from api.base.settings.defaults import API_PREFIX
+from api.base.utils import get_user_auth
 from framework.auth.core import Auth
-
+from api.base.serializers import JSONAPISerializer, CollectionLinksField, Link, LinksField
 
 class CollectionSerializer(JSONAPISerializer):
     filterable_fields = frozenset(['title'])

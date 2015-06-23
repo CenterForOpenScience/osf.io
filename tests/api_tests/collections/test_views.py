@@ -1,11 +1,11 @@
 # -*- coding: utf-8 -*-
 from nose.tools import *  # flake8: noqa
 
-from framework.auth.core import Auth
 from website.models import Node
+from framework.auth.core import Auth
+from tests.base import ApiTestCase, fake
 from website.util.sanitize import strip_html
 from api.base.settings.defaults import API_BASE
-from tests.base import ApiTestCase, fake
 from tests.factories import UserFactory, FolderFactory, DashboardFactory, NodeFactory
 
 
@@ -394,8 +394,15 @@ class TestCollectionPointersList(ApiTestCase):
         self.basic_auth_two = (self.user_two.username, 'password')
         self.collection_two = FolderFactory(creator=self.user_two)
         self.collection_being_pointed_to_two = FolderFactory(creator=self.user_two)
+        self.collection_being_pointed_to_three = FolderFactory(creator=self.user_two)
         self.collection_two.add_pointer(self.collection_being_pointed_to_two, auth=Auth(self.user_two))
+        self.collection_two.add_pointer(self.collection_being_pointed_to_three, auth=Auth(self.user_two))
         self.collection_two_url = '/{}collections/{}/pointers/'.format(API_BASE, self.collection_two._id)
+
+        self.smart_folder_amp = FolderFactory(_id="amp", creator=self.user)
+        self.smart_folder_amr = FolderFactory(_id="amr", creator=self.user)
+        self.smart_folder_amp_url = '/{}collections/amp/pointers/'.format(API_BASE)
+        self.smart_folder_amr_url = '/{}collections/amr/pointers/'.format(API_BASE)
 
     def test_not_return_collection_pointers_logged_out(self):
         res = self.app.get(self.collection_two_url, expect_errors=True)
@@ -404,13 +411,19 @@ class TestCollectionPointersList(ApiTestCase):
     def test_return_collection_pointers_logged_in(self):
         res = self.app.get(self.collection_two_url, auth=self.basic_auth_two)
         res_json = res.json['data']
-        assert_equal(len(res_json), 1)
+        assert_equal(len(res_json), 2)
         assert_equal(res.status_code, 200)
-        assert_in(res_json[0]['collection_id'], self.collection_being_pointed_to_two._id)
+        assert_in(res_json[0]['collection_id'], self.collection_two._id)
 
-    def test_smart_folders_return_correctly(self):
-        pass
+    def test_return_smart_folder_info(self):
+        res = self.app.get(self.smart_folder_amp_url, auth=self.basic_auth)
+        res_json = res.json['data']
 
+        assert_equal(res.status_code, 200)
+        ids = [node['collection_id'] for node in res_json]
+        assert_in(self.collection_one._id, ids)
+        assert_not_in(self.collection_two._id, ids)
+        assert_in(self.collection_being_pointed_to._id, ids)
 
 class TestCreateCollectionPointer(ApiTestCase):
     def setUp(self):
@@ -437,11 +450,6 @@ class TestCreateCollectionPointer(ApiTestCase):
         self.collection_two_url = '/{}collections/{}/pointers/'.format(API_BASE, self.collection_two._id)
         self.payload_two = {'collection_id': self.collection_two._id}
 
-        self.smart_folder_amp = FolderFactory(_id="amp", creator=self.user)
-        self.smart_folder_amr = FolderFactory(_id="amr", creator=self.user)
-        self.smart_folder_amp_url = '/{}collections/amp/pointers/'.format(API_BASE)
-        self.smart_folder_amr_url = '/{}collections/amr/pointers/'.format(API_BASE)
-
     def test_not_creates_collection_pointer_not_creator(self):
         res = self.app.post(self.collection_two_url, self.payload_two, expect_errors=True, auth=self.basic_auth)
         # This is 403 instead of 401 because basic authentication is only for unit tests and, in order to keep from
@@ -463,12 +471,6 @@ class TestCreateCollectionPointer(ApiTestCase):
         # presenting a basic authentication dialog box in the front end. We may change this as we understand CAS
         # a little better
         assert_equal(res.status_code, 403)
-
-    def test_return_smart_folder_info(self):
-        res = self.app.get(self.smart_folder_amp_url, auth=self.basic_auth)
-        res_json = res.json['data']
-
-        assert_equal(res.status_code, 200)
 
 
 class TestCollectionPointerDetail(ApiTestCase):
