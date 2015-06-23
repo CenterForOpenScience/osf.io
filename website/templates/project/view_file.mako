@@ -5,7 +5,7 @@
 
 <%def name="title()">${file_name | h}</%def>
 <div class="row">
-  <div class="col-sm-6">
+  <div class="col-sm-5">
     <h2 class="break-word">
       ${file_name | h}
       % if file_revision:
@@ -13,7 +13,7 @@
       % endif
     </h2>
   </div>
-  <div class="col-sm-6">
+  <div class="col-sm-7">
     <div id="toggleBar" class="pull-right"></div>
   </div>
 </div>

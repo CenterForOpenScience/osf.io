@@ -1,18 +1,24 @@
 # -*- coding: utf-8 -*-
+import random
 
 from modularodm import fields
 
 from framework.mongo import StoredObject
+
+from modularodm.storage.base import KeyExistsException
+
+ALPHABET = '23456789abcdefghjkmnpqrstuvwxyz'
+
+
+class BlacklistGuid(StoredObject):
+
+    _id = fields.StringField(primary=True)
 
 
 class Guid(StoredObject):
 
     _id = fields.StringField(primary=True)
     referent = fields.AbstractForeignField()
-
-    _meta = {
-        'optimistic': True,
-    }
 
     def __repr__(self):
         return '<id:{0}, referent:({1}, {2})>'.format(self._id, self.referent._primary_key, self.referent._name)
@@ -51,10 +57,20 @@ class GuidStoredObject(StoredObject):
 
         # Else create GUID optimistically
         else:
+            while True:
+                # Create GUID
+                guid_id = ''.join(random.sample(ALPHABET, 5))
 
-            # Create GUID
-            guid = Guid()
-            guid.save()
+                # Check GUID against blacklist
+                blacklist_guid = BlacklistGuid.load(guid_id)
+                if not blacklist_guid:
+                    try:
+                        guid = Guid(_id=guid_id)
+                        guid.save()
+                        break
+                    except KeyExistsException:
+                        pass
+
             guid.referent = (guid._primary_key, self._name)
             guid.save()
 

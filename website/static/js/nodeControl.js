@@ -21,7 +21,7 @@ var MESSAGES = {
     makeProjectPublicWarning: 'Once a project is made public, there is no way to guarantee that ' +
                         'access to the data it contains can be completely prevented. Users ' +
                         'should assume that once a project is made public, it will always ' +
-                        'be public. Are you absolutely sure you would like to continue?',
+                        'be public. <b>Review your project for sensitive or restricted information before making it public</b>. Are you absolutely sure you would like to continue?',
 
     makeProjectPrivateWarning: 'Making a project private will prevent users from viewing it on this site, ' +
                         'but will have no impact on external sites, including Google\'s cache. ' +
@@ -31,14 +31,14 @@ var MESSAGES = {
                         'access to the data it contains can be completely prevented. Users ' +
                         'should assume that one a component is made public, it will always ' +
                         'be public. The rest of the project, including other components, ' +
-                        'will not be made public. Are you absolutely sure you would like to continue?',
+                        'will not be made public. <b>Review your component for sensitive or restricted information before making it public</b>. Are you absolutely sure you would like to continue?',
 
     makeComponentPrivateWarning: 'Making a component private will prevent users from viewing it on this site, ' +
                         'but will have no impact on external sites, including Google\'s cache. ' +
                         'Would you like to continue?',
     // TODO(hrybacki): Remove once Retraction/Embargoes goes is merged into production
     makeRegistrationPublicWarning: '<b>Important Note:</b> As early as <u>June 8, 2015</u>, new registrations ' +
-                        'will be made public immediately or can be embargoed for up to one year. There ' +
+                        'will be made public immediately or can be embargoed for up to four years. There ' +
                         'will no longer be the option of creating a permanently private registration. This ' +
                         'registration occurred before June 8, 2015, so you do retain the option of keeping it ' +
                         'private. However, if you do choose to make the registration public now, then after ' +

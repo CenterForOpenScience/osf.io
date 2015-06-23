@@ -1,5 +1,6 @@
 % if len(nodes):
     <ul class="list-group ${'sortable' if sortable and 'write' in user['permissions'] else ''}">
+        <span id='${pluralized_node_type if pluralized_node_type is not UNDEFINED else 'osfNodeList'}' class="render-nodes-list scripted">
         % for each in nodes:
             <div mod-meta='{
                     "tpl": "util/render_node.mako",
@@ -14,6 +15,7 @@
                     "replace": true
                 }'></div>
         % endfor
+      </span>
     ## TODO: make sure these templates are only included once on a page.
     <%include file='_log_templates.mako'/>
     </ul>
@@ -48,4 +50,7 @@
     <div class="help-block">This user has no public ${pluralized_node_type}.</div>
 % else:
     <div class="help-block">No ${pluralized_node_type} to display.</div>
+% endif
+% if not skipBindings:
+    <script src=${"/static/public/js/render-nodes.js" | webpack_asset}></script>
 % endif

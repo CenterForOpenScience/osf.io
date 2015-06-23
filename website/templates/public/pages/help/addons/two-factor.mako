@@ -1,4 +1,4 @@
-<div class="col-md-12 col-sm-12">
+<div class="col-sm-12">
     <span id="twofactor" class="anchor"></span>
     <h4 class="m-t-lg f-w-lg">Two-Factor Authentication</h4>
     <p>Two factor authentication protects your account with both your password and your mobile phone. Make sure nobody can
@@ -8,9 +8,11 @@
         code into your phone. Your phone will return with a six figure code that you put into the account. Now that you
         have authenticated your account, you will need to input a code every time you log in. The code on your phone will
         change at least every minute.</p>
-    <div class="col-md-8 col-md-offset-2 col-sm-12">
-        <div class="gs-video embed-responsive embed-responsive-16by9">
-            <div class="embed-responsive-item youtube-loader" id="mSJWqP48ZLE"></div>
+    <div class="row">
+        <div class="col-md-8 col-md-offset-2 col-sm-12">
+           <div class="gs-video embed-responsive embed-responsive-16by9">
+                <div class="embed-responsive-item youtube-loader" id="mSJWqP48ZLE"></div>
+            </div>
         </div>
     </div>
 </div>

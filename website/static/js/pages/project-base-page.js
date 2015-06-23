@@ -33,4 +33,4 @@ $(document).ready(function() {
     $.getJSON(node.urls.api, function(data) {    
         $('body').trigger('nodeLoad', data);
     });
-})
+});
