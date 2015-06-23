@@ -359,7 +359,8 @@ class TestCallbacks(OsfTestCase):
         assert_true(self.node_settings.figshare_title is None)
 
     @mock.patch('website.archiver.tasks.archive.si')
-    def test_does_not_get_copied_to_registrations(self, mock_archive):
+    @mock.patch('website.addons.figshare.model.AddonFigShareNodeSettings.archive_errors')
+    def test_does_not_get_copied_to_registrations(self, mock_errors, mock_archive):
         registration = self.project.register_node(
             schema=None,
             auth=Auth(user=self.project.creator),
