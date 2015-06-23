@@ -4,6 +4,8 @@
  */
 var $ = require('jquery');
 var bootbox = require('bootbox');
+var $osf = require('js/osfHelpers');
+var ctx = window.contextVars;
 
 
 var preRegisterMessage =  function(title, parentTitle, parentUrl, category) {
@@ -37,6 +39,37 @@ var preRegisterMessage =  function(title, parentTitle, parentUrl, category) {
     }
 };
 
+function draft_failed() {
+    $osf.unblock();
+    bootbox.alert('Draft failed');
+}
+
+function draftNode() {
+
+    // Block UI until request completes
+    $osf.block();
+
+    // POST data
+    $.ajax({
+        url:  ctx.node.urls.api + 'draft/' + ctx.regTemplate + '/',
+        type: 'POST',
+        //contentType: 'application/json',
+    }).done(function(response) {
+        if (response.status === 'success') {
+            window.location.href = response.result;
+        }
+        else if (response.status === 'error') {
+            draft_failed();
+        }
+    }).fail(function() {
+        draft_failed();
+    });
+
+    // Stop event propagation
+    return false;
+
+}
+
 $(document).ready(function() {
     $('#registerNode').click(function(event) {
         var node = window.contextVars.node;
@@ -57,6 +90,8 @@ $(document).ready(function() {
             message: preRegisterMessage(title, parentTitle, parentRegisterUrl, category),
             callback: function (confirmed) {
                 if(confirmed) {
+                    // this is where is would be set to a draft
+                    //draftNode();
                     window.location.href = target;
                 }
             }

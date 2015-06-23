@@ -1,0 +1,38 @@
+{
+	"id":"OSF-Standard_Pre-Data_Collection_Registration",
+	"type": "object",
+    "pages": [
+       	{
+			"title":"OSF-Standard Pre-Data Collection Registration",
+			"type":"object",
+			"properties":{
+				"datacompletion":{
+					"type":"array",
+					"title":"Is data collection for this project underway or complete?",
+					"uniqueItems":true,
+					"items":{
+						"type":"string",
+						"enum":["yes","no"]
+					},
+					"description":"Choose..."
+				},
+				"looked":{
+					"type":"array",
+					"title":"Have you looked at the data?",
+					"uniqueItems":true,
+					"items":{
+						"type":"string",
+						"enum":["yes","no"]
+					},
+					"description":"Choose..."
+				},
+				"comments":{
+					"type":"string",
+					"format":"textarea",
+					"title":"Other Comments"
+				}
+			},
+		}
+	],
+	"category": "draft",
+}
