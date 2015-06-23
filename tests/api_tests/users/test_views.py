@@ -1,10 +1,8 @@
 # -*- coding: utf-8 -*-
 from nose.tools import *  # flake8: noqa
 
-from framework.auth.core import Auth
 from website.models import Node
-from tests.base import ApiTestCase, fake
-from rest_framework import generics, permissions as drf_permissions
+from tests.base import ApiTestCase
 from api.base.settings.defaults import API_BASE
 
 from tests.factories import UserFactory, ProjectFactory, FolderFactory, DashboardFactory
@@ -204,21 +202,19 @@ class TestUserUpdate(ApiTestCase):
         ApiTestCase.setUp(self)
         self.user_one = UserFactory.build()
         self.user_one.set_password('justapoorboy')
-        self.user_one.social_accounts = {
-            'github': '',
-            "scholar": '',
-            "personal": 'http://mymom.com',
-            "twitter": "billyhunt",
-            "linkedIn": '',
-            "impactStory": '',
-            "orcid": '',
-            "researcherId": ''
-        }
-
         self.user_one.fullname = 'Martin Luther King Jr.'
         self.user_one.given_name = 'Martin'
         self.user_one.family_name = 'King'
         self.user_one.suffix = 'Jr.'
+        self.user_one.github = 'userOneGithub'
+        self.user_one.scholar = 'userOneScholar'
+        self.user_one.personal_website = 'http://www.useronepersonalwebsite.com'
+        self.user_one.twitter = 'userOneTwitter'
+        self.user_one.linkedIn = 'userOneLinkedIn'
+        self.user_one.impactStory = 'userOneImpactStory'
+        self.user_one.orcid = 'userOneOrcid'
+        self.user_one.researcherId = 'userOneResearcherId'
+
         self.user_one.employment_institutions = [
             {
                 'startYear': '1995',
@@ -270,16 +266,14 @@ class TestUserUpdate(ApiTestCase):
             }
         ]
 
-        self.new_social_accounts = {
-            'github': 'mygit',
-            'scholar': 'malcolmXScholar',
-            'personal': 'http://mymom.com',
-            'twitter': 'malcolmxtwitter',
-            'linkedIn': 'malcolmxlinkedIn',
-            'impactStory': 'malcolmximpackstory',
-            'orcid': 'malcolmxorcid',
-            'researcherId': 'malcolmxresearchid'
-        }
+        self.newGithub = 'newGithub'
+        self.newScholar = 'newScholar'
+        self.newPersonal_website = 'http://www.newpersonalwebsite.com'
+        self.newTwitter = 'newTwitter'
+        self.newLinkedIn = 'newLinkedIn'
+        self.newImpactStory = 'newImpactStory'
+        self.newOrcid = 'newOrcid'
+        self.newResearcherId = 'newResearcherId'
 
     def test_patch_user_logged_out(self):
         res = self.app.patch_json(self.user_one_url, {
@@ -290,12 +284,19 @@ class TestUserUpdate(ApiTestCase):
         # a little better
         assert_equal(res.status_code, 403)
 
-    def test_patch_user_logged_in(self):
+    def test_patch_user_read_only_field(self):
         # Logged in user updates their user information via patch
         res = self.app.patch_json(self.user_one_url, {
             'employment_institutions': self.new_employment_institutions,
+            'educational_institutions': self.new_educational_institutions,
+            'fullname': self.new_fullname,
+
         }, auth=self.auth_one)
+        print res
         assert_equal(res.status_code, 200)
+        assert_not_equal(res.json['data']['employment_institutions'], self.new_employment_institutions)
+        assert_not_equal(res.json['data']['educational_institutions'], self.new_educational_institutions)
+        # assert_equal(res.json['data']['employment_institutions'], self.user_one.employment_institutions)
         assert_equal(res.json['data']['fullname'], self.new_fullname)
 
     def test_put_user_logged_in(self):
@@ -306,22 +307,41 @@ class TestUserUpdate(ApiTestCase):
             'given_name': self.new_given_name,
             'family_name': self.new_family_name,
             'suffix': self.new_suffix,
-            'employment_institutions': self.new_employment_institutions,
-            'educational_institutions': self.new_educational_institutions,
+            'github': self.newGithub,
+            'personal_website': self.newPersonal_website,
+            'twitter': self.newTwitter,
+            'linkedIn': self.newLinkedIn,
+            'impactStory': self.newImpactStory,
+            'orcid': self.newOrcid,
+            'researcherId': self.newResearcherId,
         }, auth=self.auth_one)
         assert_equal(res.status_code, 200)
         assert_equal(res.json['data']['fullname'], self.new_fullname)
-        assert_equal(res.json['data']['social_accounts'], self.new_social_accounts)
         assert_equal(res.json['data']['given_name'], self.new_given_name)
         assert_equal(res.json['data']['family_name'], self.new_family_name)
         assert_equal(res.json['data']['suffix'], self.new_suffix)
-        assert_equal(res.json['data']['employment_institutions'], self.new_employment_institutions)
-        assert_equal(res.json['data']['educational_institutions'], self.new_educational_institutions)
+        assert_equal(res.json['data']['github'], self.newGithub)
+        assert_equal(res.json['data']['personal_website'], self.newPersonal_website)
+        assert_equal(res.json['data']['twitter'], self.newTwitter)
+        assert_equal(res.json['data']['linkedIn'], self.newLinkedIn)
+        assert_equal(res.json['data']['impactStory'], self.newImpactStory)
+        assert_equal(res.json['data']['orcid'], self.newOrcid)
+        assert_equal(res.json['data']['researcherId'], self.newResearcherId)
 
     def test_put_user_logged_out(self):
         res = self.app.put_json(self.user_one_url, {
+            'id': self.user_one._id,
             'fullname': self.new_fullname,
-            'social_accounts': self.new_social_accounts,
+            'given_name': self.new_given_name,
+            'family_name': self.new_family_name,
+            'suffix': self.new_suffix,
+            'github': self.newGithub,
+            'personal_website': self.newPersonal_website,
+            'twitter': self.newTwitter,
+            'linkedIn': self.newLinkedIn,
+            'impactStory': self.newImpactStory,
+            'orcid': self.newOrcid,
+            'researcherId': self.newResearcherId,
         }, expect_errors=True)
         # This is 403 instead of 401 because basic authentication is only for unit tests and, in order to keep from
         # presenting a basic authentication dialog box in the front end. We may change this as we understand CAS
@@ -331,12 +351,18 @@ class TestUserUpdate(ApiTestCase):
     def test_put_user_not_logged_in(self):
         # User tries to update someone else's user information via put
         res = self.app.put_json(self.user_one_url, {
+            'id': self.user_one._id,
             'fullname': self.new_fullname,
-            'social_accounts': self.new_social_accounts,
             'given_name': self.new_given_name,
             'family_name': self.new_family_name,
             'suffix': self.new_suffix,
-            'employment_institutions': self.new_employment_institutions,
+            'github': self.newGithub,
+            'personal_website': self.newPersonal_website,
+            'twitter': self.newTwitter,
+            'linkedIn': self.newLinkedIn,
+            'impactStory': self.newImpactStory,
+            'orcid': self.newOrcid,
+            'researcherId': self.newResearcherId,
         }, auth=self.auth_two, expect_errors=True)
         # This is 403 instead of 401 because basic authentication is only for unit tests and, in order to keep from
         # presenting a basic authentication dialog box in the front end. We may change this as we understand CAS
@@ -347,7 +373,6 @@ class TestUserUpdate(ApiTestCase):
         # User tries to update someone else's user information via patch
         res = self.app.patch_json(self.user_one_url, {
             'fullname': self.new_fullname,
-            'social_accounts': self.new_social_accounts,
         }, auth=self.auth_two, expect_errors=True)
         # This is 403 instead of 401 because basic authentication is only for unit tests and, in order to keep from
         # presenting a basic authentication dialog box in the front end. We may change this as we understand CAS

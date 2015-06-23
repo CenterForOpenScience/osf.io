@@ -1,6 +1,7 @@
 from ast import literal_eval
 
 from rest_framework import serializers as ser
+from rest_framework.serializers import empty
 
 from api.base.serializers import JSONAPISerializer, JSONAPIListSerializer, LinksField, Link
 from website.models import User
@@ -10,45 +11,15 @@ from django.utils import six, timezone
 import inspect
 from rest_framework.utils import html
 import json
+from rest_framework.parsers import JSONParser
 
 
-
-class empty:
-    """
-    This class is used to represent no data being provided for a given input
-    or output value.
-
-    It is required because `None` may be a valid input or output value.
-    """
-    pass
-
-
-class APIListField(ser.ListField):
-
-    def get_value(self, dictionary):
-        # Override ListField
-        api_list = dictionary.get(self.field_name)
-        if api_list:
-            return literal_eval(api_list)
-        return []
-
-    def to_internal_value(self, data):
-        """
-        List of dicts of native values <- List of dicts of primitive datatypes.
-        """
-        # if html.is_html_input(data):
-        #     data = html.parse_html_list(data)
-        if isinstance(data, type('')) or not hasattr(data, '__iter__'):
-            self.fail('not_a_list', input_type=type(data).__name__)
-        return [self.child.run_validation(item) for item in data]
-
-
-class JobsSerializer(APIListField):
-    startYear = ser.CharField(allow_blank=True)
+class JobsSerializer(ser.ListField):
+    startYear = ser.CharField(allow_blank=True, allow_null=True)
     title = ser.CharField()
-    startMonth = ser.IntegerField(max_value=12, min_value=1, allow_null=True)
+    startMonth = ser.IntegerField(allow_null=True)
     endMonth = ser.IntegerField(max_value=12, min_value=1, allow_null=True)
-    endYear = ser.CharField(allow_blank=True)
+    endYear = ser.CharField(allow_blank=True, allow_null=True)
     ongoing = ser.BooleanField()
     department = ser.CharField()
     institution = ser.CharField()
@@ -57,18 +28,18 @@ class JobsSerializer(APIListField):
         type_ = 'jobs'
 
 
-class SchoolsSerializer(APIListField):
-    startYear = ser.CharField(allow_blank=True)
+class SchoolsSerializer(ser.ListField):
+    startYear = ser.CharField(allow_blank=True, allow_null=True)
     degree = ser.CharField()
     startMonth = ser.IntegerField(max_value=12, min_value=1, allow_null=True)
     endMonth = ser.IntegerField(max_value=12, min_value=1, allow_null=True)
-    endYear = ser.CharField(allow_blank=True)
+    endYear = ser.CharField(allow_blank=True, allow_null=True)
     ongoing = ser.BooleanField()
     department = ser.CharField()
     institution = ser.CharField()
 
     class Meta:
-        type_ = 'jobs'
+        type_ = 'schools'
 
 
 class UserSerializer(JSONAPISerializer):
@@ -79,7 +50,7 @@ class UserSerializer(JSONAPISerializer):
         'family_name',
         'id'
     ])
-
+    parser_classes = (JSONParser,)
     id = ser.CharField(read_only=True, source='_id')
     fullname = ser.CharField(help_text='Display name used in the general user interface')
     given_name = ser.CharField(required=False, help_text='For bibliographic citations')
@@ -88,18 +59,18 @@ class UserSerializer(JSONAPISerializer):
     suffix = ser.CharField(required=False, help_text='For bibliographic citations')
     date_registered = ser.DateTimeField(read_only=True)
     gravatar_url = ser.CharField(required=False, help_text='URL for the icon used to identify the user. Relies on http://gravatar.com ')
-    employment_institutions = JobsSerializer(required=False, source='jobs', help_text='An array of dictionaries representing the '
+    employment_institutions = JobsSerializer(read_only=True, required=False, source='jobs', help_text='An array of dictionaries representing the '
                                                                      'places the user has worked')
-    # employment_institutions = ser.ListField(required=False, source='jobs', help_text='An array of dictionaries representing the '
+    # employment_institutions = ser.ListField(read_only=True, required=False, source='jobs', help_text='An array of dictionaries representing the '
     #                                                                  'places the user has worked')
-    educational_institutions = SchoolsSerializer(required=False, source='schools', help_text='An array of dictionaries representing the '
+    educational_institutions = SchoolsSerializer(read_only=True, required=False, source='schools', help_text='An array of dictionaries representing the '
                                                                      'places the user has worked')
-    # educational_institutions = ser.ListField(child=ser.CharField(), required=False, source='schools', help_text='An array of dictionaries representing the '
+    # educational_institutions = ser.ListField(read_only=True, child=ser.CharField(), required=False, source='schools', help_text='An array of dictionaries representing the '
     #                                                                      'places the user has attended school')
 
     github = ser.CharField(required=False, source='social.github', help_text='Github Handle')
     scholar = ser.CharField(required=False, source='social.scholar', help_text='Google Scholar Account')
-    personal = ser.CharField(required=False, source='social.personal', help_text='Personal Website')
+    personal_website = ser.CharField(required=False, source='social.personal', help_text='Personal Website')
     twitter = ser.CharField(required=False, source='social.twitter', help_text='Twitter Handle')
     linkedIn = ser.CharField(required=False, source='social.linkedIn', help_text='LinkedIn Account')
     impactStory = ser.CharField(required=False, source='social.impactStory', help_text='ImpactStory Account')
