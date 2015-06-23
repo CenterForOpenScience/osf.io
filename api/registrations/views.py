@@ -70,7 +70,6 @@ class RegistrationDetail(NodeDetail, RegistrationMixin):
             raise ValidationError('Not a registration.')
         return self.get_node()
 
-
     # overrides RetrieveUpdateAPIView
     def get_serializer_context(self):
         # Serializer needs the request in order to make an update to privacy

@@ -281,6 +281,7 @@ class TestRegistrationPartialUpdate(ApiTestCase):
         assert_equal(res.status_code, 404)
 
     def test_partial_update_public_registration_draft_logged_out(self):
+        #TODO test updating public registration DRAFT, not registration
         res = self.app.patch(self.public_url, {
             'title': self.new_title,
         }, expect_errors=True)
@@ -320,6 +321,69 @@ class TestRegistrationPartialUpdate(ApiTestCase):
         }, auth=self.basic_auth_two, expect_errors=True)
         assert_equal(res.status_code, 403)
 
+class TestRegistrationContributorsList(ApiTestCase):
+    #TODO add tests return registration DRAFT contributors
+    def setUp(self):
+        ApiTestCase.setUp(self)
+        self.user = UserFactory.build()
+        password = fake.password()
+        self.password = password
+        self.user.set_password(password)
+        self.user.save()
+        self.basic_auth = (self.user.username, password)
+
+        self.user_two = UserFactory.build()
+        self.user_two.set_password(self.password)
+        self.user_two.save()
+        self.basic_auth_two = (self.user_two.username, self.password)
+
+        self.public_project = ProjectFactory(creator=self.user, is_public=True)
+        self.public_registration = RegistrationFactory(creator=self.user, project=self.public_project)
+        self.public_url = '/{}registrations/{}/contributors/'.format(API_BASE, self.public_registration._id)
+
+        self.private_project = ProjectFactory(creator=self.user, is_private=True)
+        self.private_registration = RegistrationFactory(creator=self.user, project=self.private_project)
+        self.private_url = '/{}registrations/{}/contributors/'.format(API_BASE, self.private_registration._id)
+
+    def test_return_non_registration_contributor_list(self):
+        url = '/{}registrations/{}/contributors/'.format(API_BASE, self.public_project._id)
+        res = self.app.get(url, auth=self.basic_auth, expect_errors=True)
+        assert_equal(res.status_code, 400)
+
+    def test_return_fake_node_contributor_list(self):
+        url = '/{}/registrations/{}/contributors/'.format(API_BASE, '12345')
+        res = self.app.get(url, auth=self.basic_auth, expect_errors=True)
+        assert_equal(res.status_code, 404)
+
+    def test_return_public_registration_contributor_list_logged_out(self):
+        self.public_registration.add_contributor(self.user_two)
+        res = self.app.get(self.public_url)
+        assert_equal(res.status_code, 200)
+        assert_equal(len(res.json['data']), 2)
+        assert_equal(res.json['data'][0]['id'], self.user._id)
+        assert_equal(res.json['data'][1]['id'], self.user_two._id)
+
+    def test_return_public_registration_contributor_list_logged_in(self):
+         res = self.app.get(self.public_url, auth=self.basic_auth_two)
+         assert_equal(res.status_code, 200)
+         assert_equal(len(res.json['data']), 1)
+         assert_equal(res.json['data'][0]['id'], self.user._id)
+
+    def test_return_private_registration_contributor_list_logged_out(self):
+        res = self.app.get(self.private_url, expect_errors=True)
+        assert_equal(res.status_code, 403)
+
+    def test_return_private_registration_contributor_list_logged_in_contributor(self):
+        self.private_registration.add_contributor(self.user_two)
+        res = self.app.get(self.private_url, auth=self.basic_auth)
+        assert_equal(res.status_code, 200)
+        assert_equal(len(res.json['data']), 2)
+        assert_equal(res.json['data'][0]['id'], self.user._id)
+        assert_equal(res.json['data'][1]['id'], self.user_two._id)
+
+    def test_return_private_registration_contributor_list_logged_in_non_contributor(self):
+         res = self.app.get(self.private_url, auth=self.basic_auth_two, expect_errors=True)
+         assert_equal(res.status_code, 403)
 
 
 
