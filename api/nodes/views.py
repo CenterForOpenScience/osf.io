@@ -126,13 +126,7 @@ class NodeDetail(generics.RetrieveUpdateDestroyAPIView, NodeMixin):
 
 
 class NodeDeleteConfirm(generics.DestroyAPIView, NodeMixin):
-    """Projects and component details.
-
-    On the front end, nodes are considered 'projects' or 'components'. The difference between a project and a component
-    is that a project is the top-level node, and components are children of the project. There is also a category field
-    that includes the option of project. The categorization essentially determines which icon is displayed by the
-    Node in the front-end UI and helps with search organization. Top-level Nodes may have a category other than
-    project, and children nodes may have a category of project.
+    """Projects and component deletion.
     """
     permission_classes = (
         ContributorOrPublic,
