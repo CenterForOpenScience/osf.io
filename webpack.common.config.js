@@ -90,7 +90,7 @@ addons.addons.forEach(function(addonName) {
 });
 
 var resolve = {
-    extensions: ['', '.es6.js', '.js'],
+    extensions: ['', '.es6.js', '.js', '.min.js'],
     root: root,
     // Look for required files in bower and npm directories
     modulesDirectories: ['./website/static/vendor/bower_components', 'node_modules'],
@@ -120,9 +120,7 @@ var resolve = {
         'tests': staticPath('js/tests'),
         // GASP Items not defined as main in its package.json
         'TweenLite' : nodePath('gsap/src/minified/TweenLite.min.js'),
-        'EasePack' : nodePath('gsap/src/minified/easing/EasePack.min.js'),
-        'YoutubeModal': staticPath('vendor/youtube.min.js')
-
+        'EasePack' : nodePath('gsap/src/minified/easing/EasePack.min.js')
     }
 };
 

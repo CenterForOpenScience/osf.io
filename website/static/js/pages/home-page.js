@@ -3,7 +3,7 @@ require('css/front-page.css');
 new SignUp('#signUpScope', '/api/v1/register/');
 var TweenLite = require('TweenLite');
 require('EasePack');
-require('YoutubeModal');
+require('vendor/youtube');
 
 // ANIMATION FOR FRONT PAGE
 $( document ).ready(function() {
