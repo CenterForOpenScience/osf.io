@@ -666,94 +666,229 @@ class TestAddNodeContributor(ApiTestCase):
     def setUp(self):
         ApiTestCase.setUp(self)
         self.creator = UserFactory.build()
-        password = fake.password()
-        self.password = password
-        self.creator.set_password(password)
+        self.password = fake.password()
+        self.creator.set_password(self.password)
         self.creator.save()
-        self.creator_auth = (self.creator.username, password)
+        self.creator_auth = (self.creator.username, self.password)
 
-        self.admin = UserFactory.build()
-        self.admin.set_password(self.password)
-        self.admin.save()
-        self.admin_auth= (self.admin.username, self.password)
-
-        self.non_admin = UserFactory.build()
-        self.non_admin.set_password(self.password)
-        self.non_admin.save()
-        self.non_admin_auth= (self.admin.username, self.password)
-
-        self.user  = UserFactory.build()
+        self.user = UserFactory.build()
         self.user.set_password(self.password)
         self.user.save()
-        self.user_auth = (self.user .username, self.password)
 
-        self.creator_data = {'user_id': self.creator._id}
-        self.admin_data = {'user_id': self.admin._id}
-        self.user_data = {'user_id': self.user._id}
-        self.non_user_data = {'user_id': 'Non_existent'}
-        self.project = ProjectFactory(is_public=True, creator=self.user)
+        self.default_data = {
+            'id': self.user._id,
+            'bibliographic': False
+        }
+        self.project = ProjectFactory(is_public=True, creator=self.creator)
         self.url = '/{}nodes/{}/contributors/'.format(API_BASE, self.project._id)
-        self.project.add_contributor(self.admin)
 
-    def test_creator_adds_bibliographic_contributor(self):
+    def test_creator_add_bibliographic_contributor(self):
         data = {
-            'user_id': self.user._id,
+            'id': self.user._id,
             'bibliographic': True
         }
         res = self.app.post(self.url, data, auth=self.creator_auth, expect_errors=False)
-        assert_equal(res.status_code, 200)
+        assert_equal(res.status_code, 201)
+        assert_in(self.user, self.project.contributors)
+        assert_equal(self.project.get_visible(self.user), True)
 
-    def test_creator_adds_non_bibliographic_contributor(self):
+    def test_creator_add_non_bibliographic_contributor(self):
+        res = self.app.post(self.url, self.default_data, auth=self.creator_auth, expect_errors=False)
+        assert_equal(res.status_code, 201)
+        assert_in(self.user, self.project.contributors)
+        assert_equal(self.project.get_visible(self.user), False)
+
+    def test_creator_add_already_existing_contributor(self):
+        self.project.add_contributor(self.user)
+        res = self.app.post(self.url, self.default_data, auth=self.creator_auth, expect_errors=True)
+        assert_equal(res.status_code, 400)
+
+    def test_creator_add_non_existing_contributor(self):
         data = {
-            'user_id': self.user._id,
+            'id': "non-existent",
             'bibliographic': False
         }
-        res = self.app.post(self.url, data, auth=self.creator_auth, expect_errors=False)
-        assert_equal(res.status_code, 200)
+        res = self.app.post(self.url, data, auth=self.creator_auth, expect_errors=True)
+        assert_equal(res.status_code, 404)
 
-    def test_creator_adds_already_existing_contributor(self):
-        res = self.app.post(self.url, self.admin_data, auth=self.creator_auth, expect_errors=True)
-        assert_equal(res.status_code, 200)
+    def test_non_logged_in_user_add_contributor(self):
+        res = self.app.post(self.url, self.default_data, expect_errors=True)
+        assert_equal(res.status_code, 403)
 
-    def test_creator_adds_self(self):
-        res = self.app.post(self.url, self.creator_data, auth=self.creator_auth, expect_errors=True)
-        assert_equal(res.status_code, 200)
 
-    def test_creator_adds_non_existing_contributor(self):
-        res = self.app.post(self.url, self.non_user_data, auth=self.creator_auth, expect_errors=True)
-        assert_equal(res.status_code, 200)
+class TestRemoveNodeContributor(ApiTestCase):
 
-    def test_admin_adds_bibliographic_contributor(self):
+    def setUp(self):
+        ApiTestCase.setUp(self)
+        self.admin = UserFactory.build()
+        self.password = fake.password()
+        self.admin.set_password(self.password)
+        self.admin.save()
+        self.admin_auth = (self.admin.username, self.password)
+
+        self.user = UserFactory.build()
+        self.user.set_password(self.password)
+        self.user.save()
+        self.user_auth = (self.user.username, self.user.password)
+
+        self.project = ProjectFactory(is_public=True, creator=self.admin)
+        self.project.add_contributor(self.user, permissions=['read', 'write'])
+        self.url_contributor = '/{}nodes/{}/contributors/{}/'.format(API_BASE, self.project._id, self.user._id)
+
+    def test_admin_remove_contributor(self):
+        res = self.app.delete(self.url_contributor, auth=self.admin_auth, expect_errors=False)
+        assert_equal(res.status_code, 204)
+        assert_not_in(self.user, self.project.contributors)
+
+    def test_admin_remove_self(self):
+        url_admin = '/{}nodes/{}/contributors/{}/'.format(API_BASE, self.project._id, self.admin._id)
+        res = self.app.delete(url_admin, auth=self.admin_auth, expect_errors=False)
+        assert_equal(res.status_code, 204)
+        assert_not_in(self.admin, self.project.contributors)
+
+    def test_admin_remove_all_contributors(self):
+        res = self.app.delete(self.url_contributor, auth=self.admin_auth, expect_errors=False)
+        assert_equal(res.status_code, 204)
+
+        url_admin = '/{}nodes/{}/contributors/{}/'.format(API_BASE, self.project._id, self.admin._id)
+        res = self.app.delete(url_admin, auth=self.admin_auth, expect_errors=True)
+        assert_equal(res.status_code, 403)
+        assert_in(self.admin, self.project.contributors)
+
+    def test_admin_remove_non_contributor(self):
+        self.non_admin = UserFactory.build()
+        self.non_admin.set_password(self.password)
+        self.user.save()
+        self.url_non_contributor = '/{}nodes/{}/contributors/{}/'.format(API_BASE, self.project._id, self.non_admin._id)
+        res = self.app.delete(self.url_non_contributor, auth=self.admin_auth, expect_errors=True)
+        assert_equal(res.status_code, 404)
+
+    def test_non_admin_remove_contributor(self):
+        res = self.app.delete(self.url_contributor, auth=self.user_auth, expect_errors=True)
+        assert_equal(res.status_code, 403)
+        assert_in(self.user, self.project.contributors)
+
+    def test_not_logged_in_remove_contributor(self):
+        res = self.app.delete(self.url_contributor, expect_errors=True)
+        # This is 403 instead of 401 because basic authentication is only for unit tests and, in order to keep from
+        # presenting a basic authentication dialog box in the front end. We may change this as we understand CAS
+        # a little better
+        assert_equal(res.status_code, 403)
+        assert_in(self.user, self.project.contributors)
+
+
+class TestEditNodeContributor(ApiTestCase):
+
+    def setUp(self):
+        ApiTestCase.setUp(self)
+        self.admin = UserFactory.build()
+        self.password = fake.password()
+        self.admin.set_password(self.password)
+        self.admin.save()
+        self.admin_auth = (self.admin.username, self.password)
+
+        self.user = UserFactory.build()
+        self.user.set_password(self.password)
+        self.user.save()
+        self.user_auth = (self.user.username, self.user.password)
+
+        self.project = ProjectFactory(is_public=True, creator=self.admin)
+        self.project.add_contributor(self.user, permissions=['read', 'write'])
+        self.url_contributor = '/{}nodes/{}/contributors/{}/'.format(API_BASE, self.project._id, self.user._id)
+
+    def test_admin_change_contributor_admin_status(self):
+        res = self.app.put(self.url_contributor, {'admin': True}, auth=self.admin_auth, expect_errors=False)
+        assert_equal(res.status_code, 200)
+        assert_true(self.project.has_permission(self.user, 'admin'))
+        res = self.app.put(self.url_contributor, {'admin': False}, auth=self.admin_auth, expect_errors=False)
+        assert_equal(res.status_code, 200)
+        assert_false(self.project.has_permission(self.user, 'admin'))
+
+    def test_admin_change_contributor_bibliographic_status(self):
+        res = self.app.put(self.url_contributor, {'bibliographic': False}, auth=self.admin_auth, expect_errors=False)
+        assert_equal(res.status_code, 200)
+        assert_false(self.project.get_visible(self.user))
+        res = self.app.put(self.url_contributor, {'bibliographic': True}, auth=self.admin_auth, expect_errors=False)
+        assert_equal(res.status_code, 200)
+        assert_true(self.project.get_visible(self.user))
+
+    def test_admin_change_contributor_admin_and_bibliographic_status(self):
         data = {
-            'user_id': self.user._id,
+            'admin': True,
+            'bibliographic': False
+        }
+        res = self.app.put(self.url_contributor, data, auth=self.admin_auth, expect_errors=False)
+        assert_equal(res.status_code, 200)
+        assert_true(self.project.has_permission(self.user, 'admin'))
+        assert_false(self.project.get_visible(self.user))
+
+    def test_admin_not_changing_contributor_admin_status(self):
+        res = self.app.put(self.url_contributor, {'admin': False}, auth=self.admin_auth, expect_errors=False)
+        assert_equal(res.status_code, 200)
+        assert_false(self.project.has_permission(self.user, 'admin'))
+
+    def test_admin_not_changing_contributor_bibliographic_status(self):
+        res = self.app.put(self.url_contributor, {'bibliographic': True}, auth=self.admin_auth, expect_errors=False)
+        assert_equal(res.status_code, 200)
+        assert_true(self.project.get_visible(self.user))
+
+    def test_admin_not_changing_contributor_admin_or_bibliographic_status(self):
+        data = {
+            'admin': False,
             'bibliographic': True
         }
-        res = self.app.post(self.url, data, auth=self.admin_auth, expect_errors=False)
+        res = self.app.put(self.url_contributor, data, auth=self.admin_auth, expect_errors=False)
         assert_equal(res.status_code, 200)
-    
-    def test_admin_adds_non_bibliographic_contributor(self):
-        data = {
-            'user_id': self.user._id,
-            'bibliographic': False
-        }
-        res = self.app.post(self.url, data, auth=self.admin_auth, expect_errors=False)
-        assert_equal(res.status_code, 200)
+        assert_false(self.project.has_permission(self.user, 'admin'))
+        assert_true(self.project.get_visible(self.user))
 
-    def test_admin_adds_already_existing_contributor(self):
-        res = self.app.post(self.url, self.admin_data, auth=self.admin_auth, expect_errors=True)
-        assert_equal(res.status_code, 200)
+    def test_unique_admin_changing_self_admin_status(self):
+        url_admin = '/{}nodes/{}/contributors/{}/'.format(API_BASE, self.project._id, self.admin._id)
+        res = self.app.put(url_admin, {'admin': False}, auth=self.admin_auth, expect_errors=True)
+        assert_equal(res.status_code, 403)
+        assert_in(self.admin, self.project.admin_contributors)
 
-    def test_admin_adds_non_existing_contributor(self):
-        res = self.app.post(self.url, self.non_user_data, auth=self.admin_auth, expect_errors=True)
-        assert_equal(res.status_code, 200)
+    def test_admin_change_non_contributor_admin_status(self):
+        non_contributor = UserFactory.build()
+        non_contributor.set_password(self.password)
+        non_contributor.save()
+        self.url_non_contributor = '/{}nodes/{}/contributors/{}/'.format(API_BASE, self.project._id, non_contributor._id)
+        res = self.app.put(self.url_non_contributor, {'admin': True}, auth=self.admin_auth, expect_errors=True)
+        assert_equal(res.status_code, 404)
 
-    def test_logged_in_non_admin_adds_contributor(self):
-        res = self.app.post(self.url, self.user_data, auth=self.non_admin_auth, expect_errors=True)
-        assert_equal(res.status_code, 200)
+    def test_admin_change_non_contributor_bibliographic_status(self):
+        non_contributor = UserFactory.build()
+        non_contributor.set_password(self.password)
+        non_contributor.save()
+        self.url_non_contributor = '/{}nodes/{}/contributors/{}/'.format(API_BASE, self.project._id, non_contributor._id)
+        res = self.app.put(self.url_non_contributor, {'bibliographic': False}, auth=self.admin_auth, expect_errors=True)
+        assert_equal(res.status_code, 404)
 
-    def test_non_logged_in_user_adds_contributor(self):
-        res = self.app.post(self.url, self.user_data, auth=None, expect_errors=True)
-        assert_equal(res.status_code, 200)
+    def test_non_admin_change_contributor_admin_status(self):
+        res = self.app.put(self.url_contributor, {'admin': True}, auth=self.user_auth, expect_errors=True)
+        # This is 403 instead of 401 because basic authentication is only for unit tests and, in order to keep from
+        # presenting a basic authentication dialog box in the front end. We may change this as we understand CAS
+        # a little better
+        assert_equal(res.status_code, 403)
+        assert_false(self.project.has_permission(self.user, 'admin'))
+
+    def test_non_admin_change_contributor_bibliographic_status(self):
+        res = self.app.put(self.url_contributor, {'bibliographic': False}, auth=self.user_auth, expect_errors=True)
+        # This is 403 instead of 401 because basic authentication is only for unit tests and, in order to keep from
+        # presenting a basic authentication dialog box in the front end. We may change this as we understand CAS
+        # a little better
+        assert_equal(res.status_code, 403)
+        assert_true(self.project.get_visible(self.user))
+
+    def test_not_logged_in_change_contributor_admin_status(self):
+        res = self.app.put(self.url_contributor, {'admin': True}, expect_errors=True)
+        assert_equal(res.status_code, 403)
+        assert_false(self.project.has_permission(self.user, 'admin'))
+
+    def test_non_logged_in_change_contributor_bibliographic_status(self):
+        res = self.app.put(self.url_contributor, {'bibliographic': False}, expect_errors=True)
+        assert_equal(res.status_code, 403)
+        assert_true(self.project.get_visible(self.user))
 
 
 class TestNodeContributorFiltering(ApiTestCase):
@@ -856,6 +991,7 @@ class TestNodeRegistrationList(ApiTestCase):
     def test_return_private_registrations_logged_in_non_contributor(self):
         res = self.app.get(self.private_url, auth=self.basic_auth_two, expect_errors=True)
         assert_equal(res.status_code, 403)
+
 
 class TestNodeChildrenList(ApiTestCase):
     def setUp(self):

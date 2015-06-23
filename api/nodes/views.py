@@ -9,7 +9,7 @@ from website.models import Node, Pointer, User
 from api.base.utils import get_object_or_404, waterbutler_url_for
 from api.base.filters import ODMFilterMixin, ListFilterMixin
 from .serializers import NodeSerializer, NodePointersSerializer, NodeFilesSerializer, ContributorSerializer, ContributorDetailSerializer
-from .permissions import ContributorOrPublic, ReadOnlyIfRegistration, ContributorOrPublicForPointers, AdminOrPublic
+from .permissions import ContributorOrPublic, ReadOnlyIfRegistration, ContributorOrPublicForPointers, AdminOrPublic, AdminOrPublicContributorDetail
 
 
 class NodeMixin(object):
@@ -115,7 +115,6 @@ class NodeContributorsList(generics.ListCreateAPIView, ListFilterMixin, NodeMixi
         drf_permissions.IsAuthenticatedOrReadOnly,
         AdminOrPublic,
     )
-
     serializer_class = ContributorSerializer
 
     def get_default_queryset(self):
@@ -143,24 +142,31 @@ class NodeContributorDetail(generics.RetrieveUpdateDestroyAPIView, NodeMixin):
     """
     serializer_class = ContributorDetailSerializer
 
+    permission_classes = (
+        drf_permissions.IsAuthenticatedOrReadOnly,
+        AdminOrPublicContributorDetail,
+    )
+
     # overrides RetrieveAPIView
     def get_object(self):
         node = self.get_node()
-        pointer_lookup_url_kwarg = 'user_id'
-        user = get_object_or_404(User, self.kwargs[pointer_lookup_url_kwarg])
+        user_lookup_url_kwarg = 'user_id'
+        user = get_object_or_404(User, self.kwargs[user_lookup_url_kwarg])
         # May raise a permission denied
         self.check_object_permissions(self.request, user)
+        if user not in node.contributors:
+            raise NotFound('{} cannot be found in the list of contributors.'.format(user))
         user.bibliographic = user._id in node.visible_contributor_ids
         user.admin = 'admin' in node.get_permissions(user)
         return user
 
     # overrides DestroyAPIView
     def perform_destroy(self, instance):
+        node = self.get_node()
         current_user = self.request.user
         auth = Auth(current_user)
-        node = self.get_node()
-        user = self.get_object()
-        node.remove_contributor(user, auth)
+        node.remove_contributor(instance, auth)
+        node.save()
 
 
 class NodeRegistrationsList(generics.ListAPIView, NodeMixin):

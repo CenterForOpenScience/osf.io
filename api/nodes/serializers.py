@@ -1,4 +1,4 @@
-from rest_framework.exceptions import ValidationError, NotFound
+from rest_framework.exceptions import ValidationError, NotFound, PermissionDenied
 from rest_framework import serializers as ser
 
 from api.base.serializers import JSONAPISerializer, LinksField, Link, WaterbutlerLink
@@ -198,7 +198,7 @@ class NodeFilesSerializer(JSONAPISerializer):
 
 class ContributorSerializer(UserSerializer):
 
-    local_filterable = frozenset(['bibliographic, admin'])
+    local_filterable = frozenset(['bibliographic'])
     filterable_fields = frozenset.union(UserSerializer.filterable_fields, local_filterable)
     bibliographic = ser.BooleanField(help_text='Whether the user will be included in citations for this node or not')
 
@@ -241,35 +241,41 @@ class ContributorSerializer(UserSerializer):
         contributor = User.load(validated_data['_id'])
         if not contributor:
             raise NotFound('User not found.')
+        if contributor in node.contributors:
+            raise ValidationError('User {} already is a contributor'.format(contributor.username))
         permissions = ['read', 'write']
         if validated_data['bibliographic']:
             visible = True
         else:
             visible = False
-        added = node.add_contributor(contributor=contributor, auth=auth, permissions=permissions, visible=visible, save=True)
-        if added:
-            return self.context['view'].get_default_queryset()
-        else:
-            raise ValidationError('Contributor {} already added to project.'.format(contributor.username))
+        node.add_contributor(contributor=contributor, auth=auth, permissions=permissions, visible=visible, save=True)
+        contributor.node_id = node._id
+        contributor.bibliographic = visible
+        return contributor
 
 
 class ContributorDetailSerializer(ContributorSerializer):
 
     id = ser.CharField(source='_id', read_only=True)
     admin = ser.BooleanField(help_text='Whether the user will be able to add and remove contributors')
+    local_filterable = frozenset(['admin'])
+    filterable_fields = frozenset.union(UserSerializer.filterable_fields, local_filterable)
+
 
     def update(self, user, validated_data):
         node = self.context['view'].get_node()
-        if validated_data['bibliographic']:
-            bibliographic = True
-        else:
-            bibliographic = False
+        bibliographic = (validated_data['bibliographic'] == "True")
         if bibliographic != node.get_visible(user):
             node.set_visible(user, bibliographic, save=True)
-        if validated_data['admin']:
+        admin_field = (validated_data['admin'] == "True")
+        if admin_field == node.has_permission(user, 'admin'):
+            return self.context['view'].get_object()
+        elif admin_field:
             node.add_permission(user, 'admin', save=True)
+        elif len(node.admin_contributor_ids) > 1:
+            node.remove_permission(user, 'admin', save=True)
         else:
-            node.remove_permission(user, 'admin')
+            raise PermissionDenied('Admin privileges for {} cannot be removed as they are the only admin.'.format(user.username))
         return self.context['view'].get_object()
 
 
