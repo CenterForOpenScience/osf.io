@@ -7,9 +7,6 @@ from api.base.filters import ODMFilterMixin
 from api.nodes.serializers import NodeSerializer
 from .serializers import UserSerializer
 from .permissions import ReadOnlyOrCurrentUser
-from rest_framework import serializers
-from rest_framework_recursive.fields import RecursiveField
-from rest_framework.renderers import JSONRenderer
 
 
 class UserMixin(object):
@@ -23,7 +20,6 @@ class UserMixin(object):
     def get_user(self):
         obj = get_object_or_404(User, self.kwargs[self.user_lookup_url_kwarg])
         self.check_object_permissions(self.request, obj)
-        # debug
         return obj
 
 
