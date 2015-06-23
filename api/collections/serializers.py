@@ -3,6 +3,7 @@ from rest_framework import serializers as ser
 from api.base.serializers import JSONAPISerializer, CollectionLinksField, Link, LinksField
 from api.base.utils import get_user_auth
 from website.models import Node
+from api.base.settings.defaults import API_PREFIX
 from framework.auth.core import Auth
 
 
@@ -45,6 +46,9 @@ class CollectionSerializer(JSONAPISerializer):
     def get_pointers_count(self, obj):
         if isinstance(obj, dict) and obj['properties']['smart_folder'] is True:
             return obj['num_pointers']
+        if obj.is_dashboard:
+            # +2 is for the two smart folders that will always be there
+            return len(obj.nodes_pointer) + 2
         return len(obj.nodes_pointer)
 
     def get_modified_by(self, obj):
@@ -107,6 +111,8 @@ class CollectionPointersSerializer(JSONAPISerializer):
     def get_absolute_url(self, obj):
         if isinstance(obj, Node):
             return obj._id
+        elif isinstance(obj, dict):
+            return ''
         else:
             pointer_node = Node.load(obj.node._id)
             return pointer_node.absolute_url

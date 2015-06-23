@@ -40,8 +40,8 @@ class CollectionMixin(object):
 
         if key == 'amr' or key == 'amp':
             ret = {
-                'id': '{}'.format(key),
-                'title': "Smart Folder {}".format(key),
+                'id': key,
+                'title': 'All my registrations' if key == 'amr' else 'All my projects',
                 'num_pointers': self.request.user.node__contributed.find(smart_folders[key]).count(),
                 'properties': {
                     'smart_folder': True,
@@ -170,8 +170,8 @@ class CollectionChildrenList(generics.ListAPIView, CollectionMixin):
             for node in nodes:
                 for folder_id in smart_folders:
                     smart_folder_node = {
-                        'id': '{}'.format(folder_id),
-                        'title': "Smart Folder {}".format(folder_id),
+                        'id': folder_id,
+                        'title': 'All my registrations' if key == 'amr' else 'All my projects',
                         'num_pointers': self.request.user.node__contributed.find(smart_folders[folder_id]).count(),
                         'properties': {
                             'smart_folder': True,
@@ -218,7 +218,24 @@ class CollectionPointersList(generics.ListAPIView, CollectionMixin):
 
         else:
             current_node = self.get_node()
-            pointers = current_node.nodes_pointer
+            pointers = [pointer for pointer in current_node.nodes_pointer if pointer.is_folder]
+
+            if current_node.is_dashboard:
+                for pointer in pointers:
+                    for folder_id in smart_folders:
+                        smart_folder_node = {
+                            'id': folder_id,
+                            'title': 'All my registrations' if key == 'amr' else 'All my projects',
+                            'num_pointers': self.request.user.node__contributed.find(smart_folders[folder_id]).count(),
+                            'properties': {
+                                'smart_folder': True,
+                                'is_folder': True,
+                                'is_dashboard': False,
+                            },
+                        }
+                        if smart_folder_node not in pointers:
+                            pointers.append(smart_folder_node)
+
             return pointers
 
 
