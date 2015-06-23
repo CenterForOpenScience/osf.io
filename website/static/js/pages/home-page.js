@@ -6,19 +6,21 @@ require('EasePack');
 require('YoutubeModal');
 
 // ANIMATION FOR FRONT PAGE
-// @codekit-prepend "vendor/TweenLite.min.js", "vendor/EasePack.min.js", "vendor/rAF.js", "vendor/modernizr-2.8.3-respond-1.4.2.min.js", "vendor/collapse.js", "vendor/dropdown.js", "vendor/modal.js", "vendor/youtube.min.js";
-
 $( document ).ready(function() {
     $('#logo').removeClass('off');
-    $(".youtube").YouTubeModal({autoplay:1, width:640, height:480});
+    $('.youtube').YouTubeModal({autoplay:1, width:640, height:480});
 });
 
 
-
 (function() {
-
-    var width, height, largeHeader, canvas, ctx, points, target, animateHeader = true;
-
+    var width;
+    var height;
+    var largeHeader;
+    var canvas;
+    var ctx;
+    var points;
+    var target;
+    var animateHeader = true;
     // Main
     initHeader();
     initAnimation();
@@ -52,22 +54,21 @@ $( document ).ready(function() {
             var closest = [];
             var p1 = points[i];
             for(var j = 0; j < points.length; j++) {
-                var p2 = points[j]
-                if(!(p1 == p2)) {
+                var p2 = points[j];
+                if(p1 !== p2) {
                     var placed = false;
                     for(var k = 0; k < 5; k++) {
                         if(!placed) {
-                            if(closest[k] == undefined) {
+                            if(closest[k] === undefined) {
                                 closest[k] = p2;
                                 placed = true;
                             }
                         }
                     }
-
-                    for(var k = 0; k < 5; k++) {
+                    for(var l = 0; l < 5; l++) {
                         if(!placed) {
-                            if(getDistance(p1, p2) < getDistance(p1, closest[k])) {
-                                closest[k] = p2;
+                            if(getDistance(p1, p2) < getDistance(p1, closest[l])) {
+                                closest[l] = p2;
                                 placed = true;
                             }
                         }
@@ -78,9 +79,9 @@ $( document ).ready(function() {
         }
 
         // assign a circle to each point
-        for(var i in points) {
-            var c = new Circle(points[i], 2+Math.random()*2, 'rgba(255,255,255,0.3)');
-            points[i].circle = c;
+        for(var m in points) {
+            var c = new Circle(points[m], 2+Math.random()*2, 'rgba(255,255,255,0.3)');
+            points[m].circle = c;
         }
     }
 
@@ -97,8 +98,11 @@ $( document ).ready(function() {
     }
 
     function scrollCheck() {
-        if(document.body.scrollTop > height) animateHeader = false;
-        else animateHeader = true;
+        if(document.body.scrollTop > height) {
+            animateHeader = false;
+        } else {
+            animateHeader = true;
+        }
     }
 
     function resize() {
@@ -132,7 +136,6 @@ $( document ).ready(function() {
                     points[i].active = 0;
                     points[i].circle.active = 0;
                 }
-
                 drawLines(points[i]);
                 points[i].circle.draw();
             }
@@ -150,7 +153,9 @@ $( document ).ready(function() {
 
     // Canvas manipulation
     function drawLines(p) {
-        if(!p.active) return;
+        if(!p.active) {
+            return;
+        }
         for(var i in p.closest) {
             ctx.beginPath();
             ctx.moveTo(p.x, p.y);
@@ -161,20 +166,22 @@ $( document ).ready(function() {
     }
 
     function Circle(pos,rad,color) {
-        var _this = this;
+        var self = this;
 
         // constructor
         (function() {
-            _this.pos = pos || null;
-            _this.radius = rad || null;
-            _this.color = color || null;
+            self.pos = pos || null;
+            self.radius = rad || null;
+            self.color = color || null;
         })();
 
         this.draw = function() {
-            if(!_this.active) return;
+            if(!self.active) {
+                return;
+            }
             ctx.beginPath();
-            ctx.arc(_this.pos.x, _this.pos.y, _this.radius, 0, 2 * Math.PI, false);
-            ctx.fillStyle = 'rgba(156,217,249,'+ _this.active+')';
+            ctx.arc(self.pos.x, self.pos.y, self.radius, 0, 2 * Math.PI, false);
+            ctx.fillStyle = 'rgba(156,217,249,'+ self.active+')';
             ctx.fill();
         };
     }
