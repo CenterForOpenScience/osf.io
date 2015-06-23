@@ -268,10 +268,7 @@ def update_node(node, index=None):
             elastic_document['wikis'][wiki.page_name] = wiki.raw_text(node)
 
         for file_ in index_file.collect_files(node._id):
-            content = file_.content
-            if content:
-                elastic_document['files'][file_.name] = file_.content
-                print(elastic_document['files'][file_.name])
+            elastic_document['files'][file_['name']] = file_['content']
         es.index(index=index, doc_type=category, id=elastic_document_id, body=elastic_document, refresh=True)
 
 
@@ -295,7 +292,7 @@ def update_project_files(node, index=None):
             # Skip orphaned components
             return
     files = index_file.collect_files(node._id)
-    file_dict = {file_.name: file_.content for file_ in files if file_.content}
+    file_dict = {file_['name']: file_['content'] for file_ in files if file_['content']}
     body = {
         'doc': {
             'files': file_dict
