@@ -360,15 +360,6 @@ class TestCollectionChildrenList(ApiTestCase):
         res = self.app.get(self.collection_one_url, auth=self.basic_auth_two, expect_errors=True)
         assert_equal(res.status_code, 403)
 
-    def test_smart_folders_in_dashboard_children(self):
-        res = self.app.get(self.dashboard_children_url, auth=self.basic_auth)
-        res_json = res.json['data']
-
-        titles = [node['title'] for node in res_json]
-        assert_equal(res.status_code, 200)
-        assert_in('Smart Folder amr', titles)
-        assert_in('Smart Folder amp', titles)
-
     def tearDown(self):
         ApiTestCase.tearDown(self)
         Node.remove()
@@ -382,6 +373,9 @@ class TestCollectionPointersList(ApiTestCase):
         self.user.save()
         self.basic_auth = (self.user.username, 'password')
 
+        self.dashboard = DashboardFactory(creator=self.user)
+        self.dashboard_pointers_url = '/{}collections/dashboard/pointers/'.format(API_BASE)
+
         self.collection_one = FolderFactory(creator=self.user)
         self.collection_being_pointed_to = FolderFactory(creator=self.user)
         self.collection_one.add_pointer(self.collection_being_pointed_to, auth=Auth(self.user))
@@ -392,7 +386,7 @@ class TestCollectionPointersList(ApiTestCase):
         self.user_two.save()
 
         self.basic_auth_two = (self.user_two.username, 'password')
-        self.collection_two = FolderFactory(creator=self.user_two)
+        self.collection_two = FolderFactory(creator=self.user_two, parent=self.dashboard)
         self.collection_being_pointed_to_two = FolderFactory(creator=self.user_two)
         self.collection_being_pointed_to_three = FolderFactory(creator=self.user_two)
         self.collection_two.add_pointer(self.collection_being_pointed_to_two, auth=Auth(self.user_two))
@@ -403,6 +397,15 @@ class TestCollectionPointersList(ApiTestCase):
         self.smart_folder_amr = FolderFactory(_id="amr", creator=self.user)
         self.smart_folder_amp_url = '/{}collections/amp/pointers/'.format(API_BASE)
         self.smart_folder_amr_url = '/{}collections/amr/pointers/'.format(API_BASE)
+
+    def test_smart_folders_in_dashboard_pointers(self):
+        res = self.app.get(self.dashboard_pointers_url, auth=self.basic_auth)
+        res_json = res.json['data']
+
+        titles = [node['title'] for node in res_json]
+        assert_equal(res.status_code, 200)
+        assert_in('All my projects', titles)
+        assert_in('All my registrations', titles)
 
     def test_not_return_collection_pointers_logged_out(self):
         res = self.app.get(self.collection_two_url, expect_errors=True)

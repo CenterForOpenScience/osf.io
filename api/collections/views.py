@@ -11,7 +11,7 @@ from api.base.utils import get_object_or_404, get_user_auth
 from api.base.filters import ODMFilterMixin, ListFilterMixin
 from .serializers import CollectionSerializer, CollectionPointersSerializer
 
-smart_folders = {
+SMART_FOLDER_QUERIES = {
     'amp': Q('category', 'eq', 'project') &
            Q('is_deleted', 'eq', False) &
            Q('is_registration', 'eq', False) &
@@ -43,7 +43,7 @@ class CollectionMixin(object):
             ret = {
                 'id': key,
                 'title': 'All my registrations' if key == 'amr' else 'All my projects',
-                'num_pointers': self.request.user.node__contributed.find(smart_folders[key]).count(),
+                'num_pointers': self.request.user.node__contributed.find(SMART_FOLDER_QUERIES[key]).count(),
                 'properties': {
                     'smart_folder': True,
                     'is_folder': True,
@@ -168,11 +168,12 @@ class CollectionChildrenList(generics.ListAPIView, CollectionMixin):
 
         if current_node.is_dashboard:
             for node in nodes:
-                for folder_id in smart_folders:
+                for folder_id in SMART_FOLDER_QUERIES:
                     smart_folder_node = {
                         'id': folder_id,
                         'title': 'All my registrations' if key == 'amr' else 'All my projects',
-                        'num_pointers': self.request.user.node__contributed.find(smart_folders[folder_id]).count(),
+                        'num_pointers': self.request.user.node__contributed.find(
+                            SMART_FOLDER_QUERIES[folder_id]).count(),
                         'properties': {
                             'smart_folder': True,
                             'is_folder': True,
@@ -185,7 +186,7 @@ class CollectionChildrenList(generics.ListAPIView, CollectionMixin):
         return children
 
 
-class CollectionPointersList(generics.ListAPIView, CollectionMixin):
+class CollectionPointersList(generics.ListAPIView, generics.ListCreateAPIView, CollectionMixin):
     """Pointers to other nodes.
 
     Pointers are essentially aliases or symlinks: All they do is point to another node.
@@ -204,7 +205,7 @@ class CollectionPointersList(generics.ListAPIView, CollectionMixin):
         if key == 'amp':
             contributed = user.node__contributed
             all_my_projects = contributed.find(
-                smart_folders.get('amp')
+                SMART_FOLDER_QUERIES.get('amp')
             )
 
             return all_my_projects
@@ -212,7 +213,7 @@ class CollectionPointersList(generics.ListAPIView, CollectionMixin):
         elif key == 'amr':
             contributed = user.node__contributed
             all_my_registrations = contributed.find(
-                smart_folders.get('amr')
+                SMART_FOLDER_QUERIES.get('amr')
             )
             return all_my_registrations
 
@@ -222,11 +223,12 @@ class CollectionPointersList(generics.ListAPIView, CollectionMixin):
 
             if current_node.is_dashboard:
                 for pointer in pointers:
-                    for folder_id in smart_folders:
+                    for folder_id in SMART_FOLDER_QUERIES:
                         smart_folder_node = {
                             'id': folder_id,
                             'title': 'All my registrations' if key == 'amr' else 'All my projects',
-                            'num_pointers': self.request.user.node__contributed.find(smart_folders[folder_id]).count(),
+                            'num_pointers': self.request.user.node__contributed.find(
+                                SMART_FOLDER_QUERIES[folder_id]).count(),
                             'properties': {
                                 'smart_folder': True,
                                 'is_folder': True,
