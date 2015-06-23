@@ -88,7 +88,7 @@
                                            click: cancelUpdateCategory"
                                 class="btn btn-default">Cancel</button>
                       </p>
-                      <span id="zak" data-bind="css: messageClass, html: message"></span>
+                      <span data-bind="css: messageClass, html: message"></span>
                       <span data-bind="if: disabled" class="help-block">
                         A top-level project's category cannot be changed
                       </span>
