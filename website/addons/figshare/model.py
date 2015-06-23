@@ -9,6 +9,7 @@ from website.models import NodeLog
 from website.addons.base import GuidFile
 from website.addons.base import exceptions
 from website.addons.base import AddonNodeSettingsBase, AddonUserSettingsBase
+from website.addons.base import StorageAddonBase
 
 from . import messages
 from .api import Figshare
@@ -93,7 +94,7 @@ class AddonFigShareUserSettings(AddonUserSettingsBase):
         super(AddonFigShareUserSettings, self).delete(save=save)
 
 
-class AddonFigShareNodeSettings(AddonNodeSettingsBase):
+class AddonFigShareNodeSettings(StorageAddonBase, AddonNodeSettingsBase):
 
     figshare_id = fields.StringField()
     figshare_type = fields.StringField()
@@ -102,6 +103,27 @@ class AddonFigShareNodeSettings(AddonNodeSettingsBase):
     user_settings = fields.ForeignField(
         'addonfigshareusersettings', backref='authorized'
     )
+
+    @property
+    def folder_name(self):
+        return self.figshare_title
+
+    def archive_errors(self):
+        api = Figshare.from_settings(self.user_settings)
+        items = []
+        if self.figshare_type in ('article', 'fileset'):
+            items = api.article(self, self.figshare_id)['items']
+        else:
+            items = api.project(self, self.figshare_id)['articles']
+        private = any(
+            [item for item in items if item['status'] != 'Public']
+        )
+
+        if private:
+            return 'The figshare {figshare_type} <strong>{figshare_title}</strong> contains private content that we cannot copy to the registration. If this content is made public on figshare we should then be able to copy those files. You can view those files <a href="{url}" target="_blank">here.</a>'.format(
+                figshare_type=self.figshare_type,
+                figshare_title=self.figshare_title,
+                url=self.owner.web_url_for('collect_file_trees'))
 
     def find_or_create_file_guid(self, path):
         # path should be /aid/fid

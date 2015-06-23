@@ -4,7 +4,7 @@ import logging
 import functools
 
 from flask import g
-from celery import chain
+from celery import group
 
 from website import settings
 
@@ -22,7 +22,11 @@ def celery_teardown_request(error=None):
     try:
         tasks = g._celery_tasks
         if tasks:
-            chain(*tasks)()
+            if settings.USE_CELERY:
+                group(tasks).apply_async()
+            else:
+                for task in tasks:
+                    task()
     except AttributeError:
         if not settings.DEBUG_MODE:
             logger.error('Task queue not initialized')
@@ -48,11 +52,8 @@ def queued_task(task):
     """
     @functools.wraps(task)
     def wrapped(*args, **kwargs):
-        if settings.USE_CELERY:
-            signature = task.si(*args, **kwargs)
-            enqueue_task(signature)
-        else:
-            task(*args, **kwargs)
+        signature = task.si(*args, **kwargs)
+        enqueue_task(signature)
     return wrapped
 
 

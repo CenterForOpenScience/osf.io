@@ -263,7 +263,6 @@ def node_forks(auth, node, **kwargs):
 
 
 @must_be_valid_project
-@must_not_be_registration
 @must_be_logged_in
 @must_be_contributor
 def node_setting(auth, node, **kwargs):
@@ -352,7 +351,7 @@ def configure_comments(node, **kwargs):
 # View Project
 ##############################################################################
 
-@must_be_valid_project
+@must_be_valid_project(retractions_valid=True)
 @must_be_contributor_or_public
 def view_project(auth, node, **kwargs):
     primary = '/api/v1' not in request.path
@@ -464,7 +463,13 @@ def project_set_privacy(auth, node, **kwargs):
     if permissions is None:
         raise HTTPError(http.BAD_REQUEST)
 
-    node.set_privacy(permissions, auth)
+    try:
+        node.set_privacy(permissions, auth)
+    except NodeStateError as e:
+        raise HTTPError(http.BAD_REQUEST, data=dict(
+            message_short="Can't change privacy",
+            message_long=e.message
+        ))
 
     return {
         'status': 'success',
@@ -704,13 +709,20 @@ def _view_project(node, auth, primary=False):
             'update_url': node.api_url_for('update_node'),
             'in_dashboard': in_dashboard,
             'is_public': node.is_public,
+            'is_archiving': node.archiving,
             'date_created': iso8601format(node.date_created),
             'date_modified': iso8601format(node.logs[-1].date) if node.logs else '',
             'tags': [tag._primary_key for tag in node.tags],
             'children': bool(node.nodes),
             'is_registration': node.is_registration,
+            'is_retracted': node.is_retracted,
+            'pending_retraction': node.pending_retraction,
+            'retracted_justification': getattr(node.retraction, 'justification', None),
+            'embargo_end_date': node.embargo_end_date.strftime("%A, %b. %d, %Y") if node.embargo_end_date else False,
+            'pending_embargo': node.pending_embargo,
             'registered_from_url': node.registered_from.url if node.is_registration else '',
             'registered_date': iso8601format(node.registered_date) if node.is_registration else '',
+            'root_id': node.root._id,
             'registered_meta': [
                 {
                     'name_no_ext': from_mongo(meta),
@@ -879,6 +891,11 @@ def _get_summary(node, auth, rescale_ratio, primary=True, link_id=None, show_pat
         'primary': primary,
         'is_registration': node.is_registration,
         'is_fork': node.is_fork,
+        'is_retracted': node.is_retracted,
+        'pending_retraction': node.pending_retraction,
+        'embargo_end_date': node.embargo_end_date.strftime("%A, %b. %d, %Y") if node.embargo_end_date else False,
+        'pending_embargo': node.pending_embargo,
+        'archiving': node.archiving,
     }
 
     if node.can_view(auth):
@@ -925,7 +942,7 @@ def _get_summary(node, auth, rescale_ratio, primary=True, link_id=None, show_pat
 
 
 @collect_auth
-@must_be_valid_project
+@must_be_valid_project(retractions_valid=True)
 def get_summary(auth, node, **kwargs):
     rescale_ratio = kwargs.get('rescale_ratio')
     if rescale_ratio is None and request.args.get('rescale_ratio'):
@@ -980,7 +997,7 @@ def get_forks(auth, node, **kwargs):
 
 @must_be_contributor_or_public
 def get_registrations(auth, node, **kwargs):
-    registrations = node.node__registrations
+    registrations = [n for n in node.node__registrations if not n.is_deleted]  # get all registrations, including archiving
     return _render_nodes(registrations, auth)
 
 

@@ -2,6 +2,14 @@
 Changelog
 *********
 
+0.40.0 (2015-06-22)
+===================
+
+- Registrations must be retracted rather than made private.
+- Registrations may be embargoed for up to four years. During this period, a
+registration remains private.
+- Addon files get archived when they are registered.
+
 0.39.0 (2015-06-15)
 ===================
 
