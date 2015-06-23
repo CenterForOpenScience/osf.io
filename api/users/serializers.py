@@ -71,18 +71,14 @@ class UserSerializer(JSONAPISerializer):
 
     class Meta:
         type_ = 'users'
-        fields = ('id', 'fullname', 'given_name', 'middle_name', 'family_name', 'suffix', 'date_registered', 'gravatar_url', 'employment_institutions', 'social_accounts')
 
     def absolute_url(self, obj):
         return obj.absolute_url
 
     def update(self, instance, validated_data):
-        # jobs_data = validated_data.pop('jobs')
-        # jobs = instance.jobs
         assert isinstance(instance, User), 'instance must be a User'
         for attr, value in validated_data.items():
             setattr(instance, attr, value)
-        # jobs.save()
         instance.save()
         return instance
 
