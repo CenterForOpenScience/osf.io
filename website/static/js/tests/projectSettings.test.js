@@ -132,7 +132,7 @@ describe('NodeCategoryTitleDescriptionSettings', () => {
         after(() => {
             vm.resetMessage.restore();
         });
-        it("restores the selectedCategory to the VM's category, sets the dirty state to false, and resets the message", () => {
+        it('restores the selectedCategory to the VM\'s category, sets the dirty state to false, and resets the message', () => {
             vm.selectedCategory(categories[0]);
             vm.dirty(true);
             vm.changeMessage('Some message', 'some-class');

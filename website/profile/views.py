@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 
 import logging
-import operator
 import httplib
 import httplib as http
 import os
@@ -342,7 +341,7 @@ def user_addons(auth, **kwargs):
     ret = {}
 
     addons = [addon.config for addon in user.get_addons()]
-    addons.sort(key=operator.attrgetter("full_name"), reverse=False)
+    addons.sort(key=lambda addon: addon.full_name.lower(), reverse=False)
     addons_enabled = []
     addon_enabled_settings = []
     user_addons_enabled = {}
@@ -367,7 +366,7 @@ def user_addons(auth, **kwargs):
         for addon in sorted(settings.ADDONS_AVAILABLE)
         if 'user' in addon.owners and addon.short_name not in settings.SYSTEM_ADDED_ADDONS['user']
     ]
-    ret['addons_available'].sort(key=operator.attrgetter("full_name"), reverse=False)
+    ret['addons_available'].sort(key=lambda addon: addon.full_name.lower(), reverse=False)
     ret['addons_enabled'] = addons_enabled
     ret['addon_enabled_settings'] = addon_enabled_settings
     ret['user_addons_enabled'] = user_addons_enabled

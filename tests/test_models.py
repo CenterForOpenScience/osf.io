@@ -1,4 +1,3 @@
-
 # -*- coding: utf-8 -*-
 '''Unit tests for models and their factories.'''
 import mock
@@ -28,7 +27,7 @@ from website.exceptions import NodeStateError
 from website.profile.utils import serialize_user
 from website.project.model import (
     ApiKey, Comment, Node, NodeLog, Pointer, ensure_schemas, has_anonymous_link,
-    get_pointer_parent,
+    get_pointer_parent, Embargo,
 )
 from website.util.permissions import CREATOR_PERMISSIONS
 from website.util import web_url_for, api_url_for
@@ -1827,7 +1826,8 @@ class TestAddonCallbacks(OsfTestCase):
                 self.node, fork, self.user
             )
 
-    def test_register_callback(self):
+    @mock.patch('website.archiver.tasks.archive.si')
+    def test_register_callback(self, mock_archive):
         registration = self.node.register_node(
             None, self.consolidate_auth, '', '',
         )
@@ -2341,14 +2341,16 @@ class TestProject(OsfTestCase):
         project = ProjectFactory()
         assert_false(project.is_fork_of(self.project))
 
-    def test_is_registration_of(self):
+    @mock.patch('website.archiver.tasks.archive.si')
+    def test_is_registration_of(self, mock_archive):
         project = ProjectFactory()
         reg1 = project.register_node(None, Auth(user=project.creator), '', None)
         reg2 = reg1.register_node(None, Auth(user=project.creator), '', None)
         assert_true(reg1.is_registration_of(project))
         assert_true(reg2.is_registration_of(project))
 
-    def test_is_registration_of_false(self):
+    @mock.patch('website.archiver.tasks.archive.si')
+    def test_is_registration_of_false(self, mock_archive):
         project = ProjectFactory()
         to_reg = ProjectFactory()
         reg = to_reg.register_node(None, Auth(user=to_reg.creator), '', None)
@@ -2360,7 +2362,8 @@ class TestProject(OsfTestCase):
         with assert_raises(PermissionsError):
             project.register_node(None, Auth(user=user), '', None)
 
-    def test_admin_can_register_private_children(self):
+    @mock.patch('website.archiver.tasks.archive.si')
+    def test_admin_can_register_private_children(self, mock_archive):
         user = UserFactory()
         project = ProjectFactory(creator=user)
         project.set_permissions(user, ['admin', 'write', 'read'])
@@ -2440,6 +2443,42 @@ class TestProject(OsfTestCase):
         self.project.save()
         assert_false(self.project.is_public)
         assert_equal(self.project.logs[-1].action, NodeLog.MADE_PRIVATE)
+
+    def test_set_privacy_can_not_cancel_pending_embargo_for_registration(self):
+        registration = RegistrationFactory(project=self.project)
+        registration.embargo_registration(
+            self.user,
+            datetime.datetime.utcnow() + datetime.timedelta(days=10)
+        )
+        assert_false(registration.embargo_end_date)
+        assert_true(registration.pending_embargo)
+
+        func = lambda: registration.set_privacy('public', auth=self.consolidate_auth)
+        assert_raises(NodeStateError, func)
+        assert_false(registration.is_public)
+
+    def test_set_privacy_cancels_active_embargo_for_registration(self):
+        registration = RegistrationFactory(project=self.project)
+        registration.embargo_registration(
+            self.user,
+            datetime.datetime.utcnow() + datetime.timedelta(days=10)
+        )
+        registration.save()
+        assert_false(registration.embargo_end_date)
+        assert_true(registration.pending_embargo)
+
+        approval_token = registration.embargo.approval_state[self.user._id]['approval_token']
+        registration.embargo.approve_embargo(self.user, approval_token)
+        assert_true(registration.embargo_end_date)
+        assert_false(registration.pending_embargo)
+
+        registration.set_privacy('public', auth=self.consolidate_auth)
+        registration.save()
+        assert_false(registration.embargo_end_date)
+        assert_false(registration.pending_embargo)
+        assert_equal(registration.embargo.state, Embargo.CANCELLED)
+        assert_true(registration.is_public)
+        assert_equal(self.project.logs[-1].action, NodeLog.EMBARGO_APPROVED)
 
     def test_set_description(self):
         old_desc = self.project.description
@@ -3094,7 +3133,6 @@ class TestRegisterNode(OsfTestCase):
     def test_registration_list(self):
         assert_in(self.registration._id, self.project.node__registrations)
 
-
 class TestNodeLog(OsfTestCase):
 
     def setUp(self):
@@ -3298,7 +3336,8 @@ class TestPointer(OsfTestCase):
         registered = self.pointer.fork_node()
         self._assert_clone(self.pointer, registered)
 
-    def test_register_with_pointer_to_registration(self):
+    @mock.patch('website.archiver.tasks.archive.si')
+    def test_register_with_pointer_to_registration(self, mock_archive):
         pointee = RegistrationFactory()
         project = ProjectFactory()
         auth = Auth(user=project.creator)

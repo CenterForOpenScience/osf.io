@@ -46,20 +46,15 @@ var NodeCategoryTitleDescriptionSettings = oop.extend(
             self.dirty = ko.observable(false);
 
             self.dirtyTitleDescription = ko.computed(function(){
-                if (self.title() !== self.decodedTitle || 
-                    self.description() !== self.decodedDescription) {
-                    return true;
-                }
-                else {
-                    return false;
-                }
-                }, self);
-            
+                return (self.title() !== self.decodedTitle ||
+                    self.description() !== self.decodedDescription)
+            }, self);
+
             self.selectedCategory.subscribe(function(value) {
                 if (value !== self.category()) {
                     self.dirty(true);
                 }
-            });    
+            });
         },
 
         /*success handlers*/
@@ -69,9 +64,9 @@ var NodeCategoryTitleDescriptionSettings = oop.extend(
             self.category(newcategory);
             self.dirty(false);
         },
-        //TODO - refactor title/description success handler to display success message 
+        //TODO - refactor title/description success handler to display success message
         updateTitleDescriptionSuccess: function() {
-            window.location.reload();   
+            window.location.reload();
         },
 
         /*error handlers*/
@@ -88,7 +83,7 @@ var NodeCategoryTitleDescriptionSettings = oop.extend(
            $('#title-input-message').html('Title cannot be blank.');
         },
         updateDescriptionError: function() {
-            $('#description-input-message').html('Error updating description, please try again.'+ 
+            $('#description-input-message').html('Error updating description, please try again.'+
             ' If the problem persists, email <a href="mailto:support@osf.io">support@osf.io</a>.');
         },
 
@@ -103,16 +98,16 @@ var NodeCategoryTitleDescriptionSettings = oop.extend(
                 })
                 .done(self.updateCategorySuccess.bind(self))
                 .fail(self.updateCategoryError.bind(self));
-        },        
+        },
         updateTitle: function() {
             var self = this;
             return $osf.putJSON(self.titleDescriptionEditUrl, {
                     title: $osf.htmlEscape(self.title()),
                 })
-                .done(self.updateDescription.bind(self))
+                .done(self.updateDescriptionAfterTitle.bind(self))
                 .fail(self.updateTitleError.bind(self));
         },
-        updateDescription: function() {
+        updateDescriptionAfterTitle: function() {
             var self = this;
             return $osf.putJSON(self.titleDescriptionEditUrl, {
                     description: $osf.htmlEscape(self.description()),

@@ -13,6 +13,8 @@ from website.addons.base import AddonNodeSettingsBase
 
 class ForwardNodeSettings(AddonNodeSettingsBase):
 
+    complete = True
+
     url = fields.StringField(validate=URLValidator())
     label = fields.StringField(validate=sanitized)
     redirect_bool = fields.BooleanField(default=True, validate=True)
