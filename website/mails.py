@@ -25,13 +25,12 @@ from mako.lookup import TemplateLookup, Template
 from framework.email import tasks
 from website import settings
 
-
 logger = logging.getLogger(__name__)
 
 EMAIL_TEMPLATES_DIR = os.path.join(settings.TEMPLATES_PATH, 'emails')
 
 _tpl_lookup = TemplateLookup(
-    directories=[EMAIL_TEMPLATES_DIR]
+    directories=[EMAIL_TEMPLATES_DIR],
 )
 
 TXT_EXT = '.txt.mako'
@@ -154,6 +153,23 @@ CONFERENCE_FAILED = Mail(
 DIGEST = Mail('digest', subject='OSF Email Digest')
 TRANSACTIONAL = Mail('transactional', subject='OSF: ${subject}')
 
+PENDING_RETRACTION_ADMIN = Mail(
+    'pending_retraction_admin',
+    subject='Retraction pending for one of your projects.'
+)
+PENDING_RETRACTION_NON_ADMIN = Mail(
+    'pending_retraction_non_admin',
+    subject='Retraction pending for one of your projects.'
+)
+
+PENDING_EMBARGO_ADMIN = Mail(
+    'pending_embargo_admin',
+    subject='Registration pending for one of your projects.'
+)
+PENDING_EMBARGO_NON_ADMIN = Mail(
+    'pending_embargo_non_admin',
+    subject='Registration pending for one of your projects.'
+)
 FILE_OPERATION_SUCCESS = Mail(
     'file_operation_success',
     subject='Your ${action} has finished',
@@ -162,4 +178,39 @@ FILE_OPERATION_SUCCESS = Mail(
 FILE_OPERATION_FAILED = Mail(
     'file_operation_failed',
     subject='Your ${action} has failed',
+)
+
+UNESCAPE = "<% from website.util.sanitize import safe_unescape_html %> ${safe_unescape_html(src.title)}"
+PROBLEM_REGISTERING = "Problem registering " + UNESCAPE
+
+ARCHIVE_SIZE_EXCEEDED_DESK = Mail(
+    'archive_size_exceeded_desk',
+    subject=PROBLEM_REGISTERING
+)
+ARCHIVE_SIZE_EXCEEDED_USER = Mail(
+    'archive_size_exceeded_user',
+    subject=PROBLEM_REGISTERING
+)
+
+ARCHIVE_COPY_ERROR_DESK = Mail(
+    'archive_copy_error_desk',
+    subject=PROBLEM_REGISTERING
+)
+ARCHIVE_COPY_ERROR_USER = Mail(
+    'archive_copy_error_user',
+    subject=PROBLEM_REGISTERING
+)
+
+ARCHIVE_UNCAUGHT_ERROR_DESK = Mail(
+    'archive_uncaught_error_desk',
+    subject=PROBLEM_REGISTERING
+)
+ARCHIVE_UNCAUGHT_ERROR_USER = Mail(
+    'archive_uncaught_error_user',
+    subject=PROBLEM_REGISTERING
+)
+
+ARCHIVE_SUCCESS = Mail(
+    'archive_success',
+    subject="Registration of " + UNESCAPE + " complete"
 )

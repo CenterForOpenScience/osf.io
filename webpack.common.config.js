@@ -40,6 +40,7 @@ var entry = {
     'view-file-tree-page': staticPath('js/pages/view-file-tree-page.js'),
     'project-settings-page': staticPath('js/pages/project-settings-page.js'),
     'search-page': staticPath('js/pages/search-page.js'),
+    'registration-retraction-page': staticPath('js/pages/registration-retraction-page.js'),
     'share-search-page': staticPath('js/pages/share-search-page.js'),
     'profile-settings-addons-page': staticPath('js/pages/profile-settings-addons-page.js'),
     'twofactor-page': staticPath('js/pages/twofactor-page.js'),
@@ -114,6 +115,7 @@ var resolve = {
         'pagedown-ace-editor': addonsPath('wiki/static/pagedown-ace/Markdown.Editor.js'),
         'wikiPage': addonsPath('wiki/static/wikiPage.js'),
         'highlight-css': nodePath('highlight.js/styles/default.css'),
+        'pikaday-css': nodePath('pikaday/css/pikaday.css'),
         // Also alias some internal libraries for easy access
         'addons': path.join(__dirname, 'website', 'addons'),
         'tests': staticPath('js/tests')
