@@ -234,7 +234,7 @@
             <div class="col-md-4 col-md-offset-1">
               <i class="icon icon-earth"></i>
               <h2><strong>Contribute</strong> to global scientific efforts</h2>
-              <p>Labs and teams across the globe use Open Science Framework to open their projects up to the scientific community. You can browse the newest and most popular public projects <a href="#">right here</a>. <span class="label label-warning">Get involved</span></p>
+              <p>Labs and teams across the globe use Open Science Framework to open their projects up to the scientific community. You can browse the newest and most popular public projects <a href="/explore/activity/">right here</a>. <span class="label label-warning">Get involved</span></p>
             </div>
             <div class="col-md-4 col-md-offset-1">
               <i class="icon icon-nonprofit"></i>
