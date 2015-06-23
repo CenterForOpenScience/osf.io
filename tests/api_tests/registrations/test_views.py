@@ -2,6 +2,7 @@ import mock
 from nose.tools import *  # flake8: noqa
 
 from api.base.settings.defaults import API_BASE
+from framework.auth.core import Auth
 
 from tests.base import ApiTestCase, fake
 from tests.factories import UserFactory, ProjectFactory, FolderFactory, RegistrationFactory, DashboardFactory, NodeFactory
@@ -454,6 +455,63 @@ class TestRegistrationChildrenList(ApiTestCase):
         private_component = NodeFactory(parent=self.private_project)
         res = self.app.get(self.private_url, auth=self.basic_auth)
         assert_equal(len(res.json['data']), 1)
+
+
+class TestRegistrationPointersList(ApiTestCase):
+    # TODO add tests for registration DRAFTS
+    # TODO 500 error being thrown for 1,2,4.
+    def setUp(self):
+        ApiTestCase.setUp(self)
+        self.user = UserFactory.build()
+        self.user.set_password('password')
+        self.user.save()
+        self.basic_auth = (self.user.username, 'password')
+
+        self.private_project = ProjectFactory(is_public=False, creator=self.user)
+        self.private_pointer_project = ProjectFactory(is_public=False, creator=self.user)
+        self.private_project.add_pointer(self.private_pointer_project, auth=Auth(self.user))
+        self.private_registration = RegistrationFactory(creator=self.user, project=self.private_project)
+        self.private_url = '/{}registrations/{}/pointers/'.format(API_BASE, self.private_registration._id)
+
+        self.public_project = ProjectFactory(is_public=True, creator=self.user)
+        self.public_pointer_project = ProjectFactory(is_public=True, creator=self.user)
+        self.public_project.add_pointer(self.public_pointer_project, auth=Auth(self.user))
+        self.public_registration = RegistrationFactory(creator=self.user, project=self.public_project)
+        self.public_url = '/{}registrations/{}/pointers/'.format(API_BASE, self.public_registration._id)
+
+        self.user_two = UserFactory.build()
+        self.user_two.set_password('password')
+        self.user_two.save()
+        self.basic_auth_two = (self.user_two.username, 'password')
+
+    def test_return_public_registration_pointers_logged_out(self):
+        res = self.app.get(self.public_url)
+        res_json = res.json['data']
+        assert_equal(len(res_json), 1)
+        assert_equal(res.status_code, 200)
+        assert_in(res_json[0]['node_id'], self.public_pointer_project._id)
+
+    def test_return_public_registration_pointers_logged_in(self):
+        res = self.app.get(self.public_url, auth=self.basic_auth_two)
+        res_json = res.json['data']
+        assert_equal(len(res_json), 1)
+        assert_equal(res.status_code, 200)
+        assert_in(res_json[0]['node_id'], self.public_pointer_project._id)
+
+    def test_return_private_registration_pointers_logged_out(self):
+        res = self.app.get(self.private_url, expect_errors=True)
+        assert_equal(res.status_code, 403)
+
+    def test_return_private_registration_pointers_logged_in_contributor(self):
+        res = self.app.get(self.private_url, auth=self.basic_auth)
+        res_json = res.json['data']
+        assert_equal(res.status_code, 200)
+        assert_equal(len(res_json), 1)
+        assert_in(res_json[0]['node_id'], self.private_pointer_project._id)
+
+    def test_return_private_registration_pointers_logged_in_non_contributor(self):
+        res = self.app.get(self.private_url, auth=self.basic_auth_two, expect_errors=True)
+        assert_equal(res.status_code, 403)
 
 
 
