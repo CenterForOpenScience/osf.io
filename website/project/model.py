@@ -1492,7 +1492,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         try:
             return self.logs[-1].date
         except IndexError:
-            return None
+            return self.date_created
 
     def set_title(self, title, auth, save=False):
         """Set the title of this Node and log it.
