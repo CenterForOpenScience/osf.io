@@ -46,9 +46,6 @@
             <i class="fa fa-list"> </i>
             <i class="fa fa-angle-right"> </i>
           </div>
-          <div class="osf-panel-body">
-              <%include file="wiki/templates/nav.mako"/>
-           </div>
         </div>
 
     </div>

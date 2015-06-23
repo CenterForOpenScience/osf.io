@@ -129,8 +129,6 @@ def _get_wiki_web_urls(node, key, version=1, additional_urls=None):
 
 
 def _serialize_wiki_toc(project, auth):
-    for node in project.nodes:
-        print node.has_addon('wiki')
     toc = [
         {
             'id': child._primary_key,

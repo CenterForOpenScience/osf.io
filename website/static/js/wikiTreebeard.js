@@ -31,7 +31,7 @@ function WikiMenu(data) {
             return[{
                 title: 'Name',
                 width: '100%'
-            }]
+            }];
         },
         onload: function() {
             var tb = this;  // jshint ignore: line
@@ -59,7 +59,7 @@ function WikiMenu(data) {
                             return m('b', item.data.title);
                         }
                     }
-                )
+                );
             } else {
                 if(item.data.page.id === tb.wiki.id) {
                     item.css = 'fangorn-selected';
@@ -78,7 +78,7 @@ function WikiMenu(data) {
                                     m('span',
                                         [m('i', {class: 'text-muted', style: 'padding-left: 10px'}, 'No wiki content')]
                                     )
-                                ]
+                                ];
                             }
                             return m('a', {href: item.data.page.url}, item.data.page.name);
                         }
