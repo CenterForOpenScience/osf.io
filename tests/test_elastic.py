@@ -3,6 +3,7 @@ import unittest
 import logging
 
 from nose.tools import *  # flake8: noqa (PEP8 asserts)
+import mock
 
 from framework.auth.core import Auth
 from website import settings
@@ -15,7 +16,8 @@ from tests.base import OsfTestCase
 from tests.test_features import requires_search
 from tests.factories import (
     UserFactory, ProjectFactory, NodeFactory,
-    UnregUserFactory, UnconfirmedUserFactory
+    UnregUserFactory, UnconfirmedUserFactory,
+    RegistrationFactory
 )
 
 TEST_INDEX = 'test'
@@ -183,6 +185,98 @@ class TestProject(SearchTestCase):
 
 
 @requires_search
+class TestRegistrationRetractions(SearchTestCase):
+
+    def setUp(self):
+        super(TestRegistrationRetractions, self).setUp()
+        self.user = UserFactory(usename='Doug Bogie')
+        self.title = 'Red Special'
+        self.consolidate_auth = Auth(user=self.user)
+        self.project = ProjectFactory(
+            title=self.title,
+            creator=self.user,
+            is_public=True,
+        )
+        self.registration = RegistrationFactory(
+            project=self.project,
+            title=self.title,
+            creator=self.user,
+            is_public=True,
+            is_registration=True
+        )
+
+    def test_retraction_is_searchable(self):
+
+        self.registration.retract_registration(self.user)
+        docs = query('category:registration AND ' + self.title)['results']
+        assert_equal(len(docs), 1)
+
+    @mock.patch('website.project.model.Node.archiving', mock.PropertyMock(return_value=False))
+    def test_pending_retraction_wiki_content_is_searchable(self):
+        # Add unique string to wiki
+        wiki_content = {'home': 'public retraction test'}
+        for key, value in wiki_content.items():
+            docs = query(value)['results']
+            assert_equal(len(docs), 0)
+            self.registration.update_node_wiki(
+                key, value, self.consolidate_auth,
+            )
+            # Query and ensure unique string shows up
+            docs = query(value)['results']
+            assert_equal(len(docs), 1)
+
+        # Query and ensure registration does show up
+        docs = query('category:registration AND ' + self.title)['results']
+        assert_equal(len(docs), 1)
+
+        # Retract registration
+        self.registration.retract_registration(self.user, '')
+        self.registration.save()
+        self.registration.reload()
+
+        # Query and ensure unique string in wiki doesn't show up
+        docs = query('category:registration AND "{}"'.format(wiki_content['home']))['results']
+        assert_equal(len(docs), 1)
+
+        # Query and ensure registration does show up
+        docs = query('category:registration AND ' + self.title)['results']
+        assert_equal(len(docs), 1)
+
+    @mock.patch('website.project.model.Node.archiving', mock.PropertyMock(return_value=False))
+    def test_retraction_wiki_content_is_not_searchable(self):
+        # Add unique string to wiki
+        wiki_content = {'home': 'public retraction test'}
+        for key, value in wiki_content.items():
+            docs = query(value)['results']
+            assert_equal(len(docs), 0)
+            self.registration.update_node_wiki(
+                key, value, self.consolidate_auth,
+            )
+            # Query and ensure unique string shows up
+            docs = query(value)['results']
+            assert_equal(len(docs), 1)
+
+        # Query and ensure registration does show up
+        docs = query('category:registration AND ' + self.title)['results']
+        assert_equal(len(docs), 1)
+
+        # Retract registration
+        self.registration.retract_registration(self.user, '')
+        self.registration.retraction.state = 'retracted'
+        self.registration.retraction.save()
+        self.registration.save()
+        self.registration.update_search()
+
+        # Query and ensure unique string in wiki doesn't show up
+        docs = query('category:registration AND "{}"'.format(wiki_content['home']))['results']
+        assert_equal(len(docs), 0)
+
+        # Query and ensure registration does show up
+        docs = query('category:registration AND ' + self.title)['results']
+        assert_equal(len(docs), 1)
+
+
+@requires_search
 class TestPublicNodes(SearchTestCase):
 
     def setUp(self):
@@ -217,9 +311,6 @@ class TestPublicNodes(SearchTestCase):
 
         self.component.set_privacy('private')
         docs = query('category:component AND ' + self.title)['results']
-        assert_equal(len(docs), 0)
-        self.registration.set_privacy('private')
-        docs = query('category:registration AND ' + self.title)['results']
         assert_equal(len(docs), 0)
 
     def test_public_parent_title(self):

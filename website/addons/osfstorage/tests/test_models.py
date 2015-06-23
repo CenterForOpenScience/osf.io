@@ -326,7 +326,10 @@ class TestNodeSettingsModel(StorageTestCase):
         assert_equal(cloned_record.versions, record.versions)
         assert_true(fork_node_settings.root_node)
 
-    def test_after_register_copies_versions(self):
+    '''
+    OSFStorage files are now copied by Archiver
+    @mock.patch('website.archiver.tasks.archive.si')
+    def test_after_register_copies_versions(self, mock_archive):
         num_versions = 5
         path = 'jazz/dreamers-ball.mp3'
 
@@ -350,6 +353,7 @@ class TestNodeSettingsModel(StorageTestCase):
         assert_equal(cloned_record.versions, record.versions)
         assert_equal(cloned_record.versions, record.versions)
         assert_true(registration_node_settings.root_node)
+    '''
 
 
 class TestOsfStorageFileVersion(OsfTestCase):

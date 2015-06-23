@@ -1,8 +1,9 @@
 /**
- * Knockout models for controlling meta-data; bound to HTML in
+ * Knockout models for controlling metadata; bound to HTML in
  * website/templates/metadata/metadata_*.mako
  */
 var ko = require('knockout');
+var registrationEmbargo = require('./registrationEmbargo');
 
 var MetaData = (function() {
 
@@ -551,6 +552,9 @@ var MetaData = (function() {
         });
         self.npages = self.pages.length;
 
+        // embargoAddon viewmodel component
+        self.embargoAddon = new registrationEmbargo.ViewModel();
+
         // Check uniqueness of IDs
         $.each(ids, function(id, count) {
             if (count > 1) {
@@ -637,7 +641,7 @@ var MetaData = (function() {
                 complete = true,
                 value;
             $.each(this.observedData, function(name, model) {
-                if (!model.value) {
+                if (!model.value) {r
                     return true;
                 }
                 value = model.serialize();
@@ -649,6 +653,11 @@ var MetaData = (function() {
                     } catch(e) {}
                     complete = false;
                 }
+            });
+            // Add embargoAddon relevant fields
+            $.extend(data, {
+                'registrationChoice': self.embargoAddon.registrationChoice(),
+                'embargoEndDate': self.embargoAddon.embargoEndDate().toUTCString()
             });
             return {
                 data: data,

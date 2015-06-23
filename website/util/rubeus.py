@@ -366,6 +366,7 @@ class NodeProjectCollector(object):
             'registeredMeta': node.registered_meta,
             'childrenCount': children_count,
             'nodeType': node.project_or_component,
+            'archiving': node.archive_job and not node.archive_job.done,
         }
 
     def _collect_addons(self, node):
