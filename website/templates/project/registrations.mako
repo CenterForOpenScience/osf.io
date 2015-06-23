@@ -12,7 +12,8 @@
         <div mod-meta='{
             "tpl": "util/render_nodes.mako",
             "uri": "${node["api_url"]}get_registrations/",
-            "replace": true
+            "replace": true,
+            "kwargs": {"sortable": false, "pluralized_node_type": "registrations"}
             }'></div>
     ## Uncomment to disable registering Components
     ##% elif node['node_type'] != 'project':
@@ -26,7 +27,7 @@
         For a list of the most viewed and most recent public registrations on the
         Open Science Framework, click <a href="/explore/activity/#newPublicRegistrations">here</a>.
     % endif
-    %if parent_node['exists'] and parent_node['can_view']:
+    %if parent_node['exists'] and user['is_admin_parent']:
         <br />
         <br />
         To register the entire project "${parent_node['title']}" instead, click <a href="${parent_node['registrations_url']}">here.</a>
