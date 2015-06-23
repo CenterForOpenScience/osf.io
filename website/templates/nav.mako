@@ -87,7 +87,11 @@
                             <input type="password" class="input input-sm form-control" data-bind="value: password" name="password" placeholder="Password" aria-label="Password">
                         </div>
                         <button type="submit" class="btn btn-sm btn-success">Sign In</button>
+
                     </form>
+                </li>
+                <li>
+                    <a href="/#signUp">Sign Up</a>
                 </li>
                 <li>
                     <a href="${web_url_for('forgot_password_get')}">Forgot Password?</a>
