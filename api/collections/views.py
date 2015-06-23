@@ -156,7 +156,6 @@ class CollectionChildrenList(generics.ListAPIView, CollectionMixin):
     def get_queryset(self):
 
         key = self.kwargs[self.node_lookup_url_kwarg]
-        user = self.request.user
         if key == 'amp' or key == 'amr':
             return ''
 
