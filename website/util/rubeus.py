@@ -292,7 +292,7 @@ class NodeProjectCollector(object):
         try:
             user = node.logs[-1].user
             modified_by = user.family_name or user.given_name
-        except AttributeError:
+        except (AttributeError, IndexError):
             modified_by = ''
         child_nodes = node.nodes
         readable_children = []
