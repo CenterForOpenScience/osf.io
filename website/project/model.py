@@ -110,7 +110,8 @@ def ensure_schemas(clear=True):
                 Q('schema_version', 'eq', schema['schema_version'])
             )
         except:
-            schema['id'] = schema['id'].replace(' ', '_')
+            schema['name'] = schema.get('id', schema.get('name', '')).replace(' ', '_')
+            schema['schema_version'] = schema.get('version', 1)
             schema_obj = MetaSchema(**schema)
             schema_obj.save()
 

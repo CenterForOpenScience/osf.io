@@ -34,4 +34,12 @@ $(document).ready(function() {
     $.getJSON(node.urls.api, function(data) {    
         $('body').trigger('nodeLoad', data);
     });
+
+    var regEditor = new RegistrationEditor({
+        schemas: '/api/v1/schemas/',
+        save: node.urls.api + 'schema/',
+        data: node.urls.api + 'schema/'
+    }, '#registrationEditor');
+    $osf.applyBindings(regEditor, '#registrationEditorScope');
+    regEditor.init();
 });

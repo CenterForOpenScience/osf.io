@@ -272,6 +272,16 @@ def make_url_map(app):
                 '/schemas/',
             ],
             'get', project_views.register.get_metaschema_by_name, json_renderer),
+        Rule(
+            [
+                '/project/<pid>/schema/',
+            ],
+            'put', project_views.register.update_metaschema, json_renderer),
+        Rule(
+            [
+                '/project/<pid>/schema/',
+            ],
+            'get', project_views.register.get_metaschema, json_renderer),
     ], prefix='/api/v1')
 
     process_rules(app, [

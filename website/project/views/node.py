@@ -697,13 +697,6 @@ def _view_project(node, auth, primary=False):
             for message in messages:
                 status.push_status_message(message, dismissible=False)
     data = {
-        'options': [
-            {
-                'template_name': metaschema['name'],
-                'template_name_clean': clean_template_name(metaschema['name'])
-            }
-            for metaschema in OSF_META_SCHEMAS
-        ], 
         'node': {
             'id': node._primary_key,
             'title': node.title,

@@ -72,28 +72,64 @@ def node_register_page(auth, node, **kwargs):
                 'template_name_clean': clean_template_name(metaschema['id'])
             }
             for metaschema in OSF_META_SCHEMAS
-            ]
+        ]
     }
     ret.update(_view_project(node, auth, primary=True))
     return ret
 
+@must_be_valid_project
+def update_metaschema(node, *args, **kwargs):
+
+    data = request.get_json()
+    schema_id = data.get('schema_id')
+    schema_version = data.get('schema_version', 1)
+    if not schema_id:
+        # TODO messages
+        raise HTTPError(http.BAD_REQUEST)
+    # TODO validate
+    created = False
+    if not node.registered_schema:
+        created = True
+        try:
+            meta_schema = MetaSchema.find_one(
+                Q('name', 'eq', schema_id) &
+                Q('schema_version', 'eq', schema_version)
+            )
+        except NoResultsFound:
+            raise HTTPError(http.NOT_FOUND)
+        node.registered_schema = meta_schema
+    node.registered_meta.update(data.get('schema_data', {}))
+    node.save()
+    return {}, 201 if created else 200
+
+@must_be_valid_project
+def get_metaschema(node, *args, **kwargs):
+    if not node.registered_schema:
+        return {}
+    schema = node.registered_schema
+    return {
+        'schema_id': schema.name,
+        'schema_version': schema.schema_version,
+        'schema_data': node.registered_meta or {},
+    }
 
 def get_metaschema_by_name():
     """ By default returns a list of all available OSF metaschemas
     Accepts a query string in the form of ?id=name_of_schema that will return just that schema if the ids match exactly
     """
-    schema_ids = [schema['id'] for schema in OSF_META_SCHEMAS]
-
-    if request.query_string:
-        query_id = request.query_string.split('=')[1].replace('%20', '_')
-        for schema_id in schema_ids:
-            if schema_id.lower() == query_id.lower():
-                for schema in OSF_META_SCHEMAS:
-                    return schema if schema['id'] == schema_id else {
-                        'message': 'Schema not found, please be sure the ids match exactly'}
-
-    return OSF_META_SCHEMAS
-
+    schema_id = request.args.get('id')
+    if schema_id:
+        schema = {
+            schema['id']: schema
+            for schema in OSF_META_SCHEMAS
+        }.get(schema_id)
+        if schema:
+            return schema
+        else:
+            # TODO messages
+            raise HTTPError(http.NOT_FOUND)
+    else:
+        return OSF_META_SCHEMAS
 
 @must_be_valid_project
 @must_have_permission(ADMIN)
