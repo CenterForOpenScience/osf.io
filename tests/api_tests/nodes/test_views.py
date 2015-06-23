@@ -584,7 +584,6 @@ class TestNodeUpdate(ApiTestCase):
         assert_equal(res.json['data']['title'], self.new_title)
         assert_equal(res.json['data']['description'], self.description)
         assert_equal(res.json['data']['category'], self.category)
-        print res.json
 
         # Public resource, logged in, unauthorized
         res = self.app.patch_json(self.public_url, {
