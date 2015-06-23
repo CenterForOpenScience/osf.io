@@ -1,20 +1,12 @@
 from website.util import api_v2_url
 import requests
-import logging
-
-
-"""
-Temporarily provides functions that give access
-to projects files. To be replaced with the standard
-way files are accessed.
-"""
 
 
 def collect_files(pid):
     """ Return the contents of a projects files.
     :param pid: project id
-    :return: list of file objects.
-    """
+q    :return: list of file objects.
+ qq   """
     path = '/nodes/{}/files/'.format(pid)
     params = {'path': '/',
               'provider': 'osfstorage'}

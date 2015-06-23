@@ -7,6 +7,7 @@ import copy
 import math
 import logging
 import unicodedata
+
 import six
 
 # TODO: Remove when using standard calls to API
@@ -272,6 +273,7 @@ def update_node(node, index=None):
             'date_created': node.date_created,
             'boost': int(not node.is_registration) + 1,  # This is for making registered projects less relevant
         }
+
         if not node.is_retracted:
             for wiki in [
                 NodeWikiPage.load(x)
@@ -290,10 +292,7 @@ def update_project_files(node, category, index=None):
     files = index_file.collect_files(node._id)
     file_text = ' '.join([file_['content'] for file_ in files if file_['content']])
     update_body = {'doc': {'files': file_text}}
-    #TODO: REMOVE DEBUGGING
-    logger.info('\nES UPDATING FILES OF NODE {}...\n'.format(node))
     response = es.update(index=index, doc_type=category, id=node._id, body=update_body)
-    logging.info('\nUPDATE RESPONSE: {}\n'.format(response))
 
 @requires_search
 def update_user(user, index=None):

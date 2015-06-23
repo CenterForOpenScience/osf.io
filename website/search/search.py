@@ -5,7 +5,6 @@ from website.search import share_search
 
 logger = logging.getLogger(__name__)
 
-
 if settings.SEARCH_ENGINE == 'elastic':
     import elastic_search as search_engine
 else:

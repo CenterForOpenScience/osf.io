@@ -31,7 +31,6 @@ from website.util import waterbutler_url_for
 
 from website.oauth.signals import oauth_complete
 
-
 NODE_SETTINGS_TEMPLATE_DEFAULT = os.path.join(
     settings.TEMPLATES_PATH,
     'project',
@@ -376,9 +375,6 @@ class GuidFile(GuidStoredObject):
         if should_raise:
             self._exception_from_response(resp)
         self._metadata_cache = resp.json()['data']
-
-    def save(self, *args, **kwargs):
-        super(GuidFile, self).save(*args, **kwargs)
 
 
 class AddonSettingsBase(StoredObject):
