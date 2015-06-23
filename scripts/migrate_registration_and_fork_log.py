@@ -2,6 +2,7 @@
 import sys
 import logging
 
+from framework.transactions.context import TokuTransaction
 from website.app import init_app
 from website.models import NodeLog, Node
 from scripts import utils as script_utils
@@ -9,6 +10,8 @@ from modularodm import Q
 
 logger = logging.getLogger(__name__)
 
+# Use a system to mark migrated nodes
+SYSTEM_TAG = 'migrated_logs'
 
 def get_all_parents(node):
     # return a list contains all possible forked_from and registered_from of the node to the very origin
@@ -40,18 +43,28 @@ def get_parent(node):
 def do_migration(records, dry=False):
     for node in records:
         logs = list(NodeLog.find(Q('was_connected_to', 'contains', node)))
-
+        existing_logs = node.logs
         for log in logs:
+            if not log.node__logged:
+                continue
             log_node = log.node__logged[0]
             # if the log_node is not contained in the node parent list then it doesn't belong to this node
             if log_node not in get_all_parents(node):
-                logger.info('Removing log {} from list because it is not associated with node {}'.format(log, node))
+                logger.info('Excluding log {} from list because it is not associated with node {}'.format(log, node))
                 logs.remove(log)
 
-        node.logs = logs
-        logger.info('Adding {} logs to {}'.format(len(logs), node))
-        if not dry:
-            node.save()
+        with TokuTransaction():
+            node.logs = logs + existing_logs
+            node.system_tags.append(SYSTEM_TAG)
+            node_type = 'registration' if node.is_registration else 'fork'
+            logger.info('Adding {} logs to {} {}'.format(len(logs), node_type, node))
+            if not dry:
+                try:
+                    node.save()
+                except Exception as err:
+                    logger.error('Could not update logs for node {} due to error'.format(node._id))
+                    logger.exception(err)
+                    logger.error('Skipping...')
 
 
 def get_targets():
@@ -61,6 +74,7 @@ def get_targets():
             | Q('forked_from', 'ne', None)
         )
         & Q('is_deleted', 'ne', True)
+        & Q('system_tags', 'ne', SYSTEM_TAG)
     )
 
 
