@@ -17,6 +17,7 @@ from website.util import web_url_for
 from website.addons.base import GuidFile
 from website.addons.base import exceptions
 from website.addons.base import AddonUserSettingsBase, AddonNodeSettingsBase
+from website.addons.base import StorageAddonBase
 
 from website.addons.github import utils
 from website.addons.github.api import GitHub
@@ -199,7 +200,7 @@ class AddonGitHubUserSettings(AddonUserSettingsBase):
         super(AddonGitHubUserSettings, self).delete(save=save)
 
 
-class AddonGitHubNodeSettings(AddonNodeSettingsBase):
+class AddonGitHubNodeSettings(StorageAddonBase, AddonNodeSettingsBase):
 
     user = fields.StringField()
     repo = fields.StringField()
@@ -211,6 +212,10 @@ class AddonGitHubNodeSettings(AddonNodeSettingsBase):
     )
 
     registration_data = fields.DictionaryField()
+
+    @property
+    def folder_name(self):
+        return self.repo
 
     @property
     def has_auth(self):

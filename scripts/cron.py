@@ -21,7 +21,6 @@ def ensure_item(cron, command):
     items = list(cron.find_command(command))
     return items[0] if items else cron.new(command)
 
-
 def main(dry_run=True):
 
     cron = crontab.CronTab(user=settings.CRON_USER)
@@ -38,18 +37,26 @@ def main(dry_run=True):
     box.hour.on(2)
     box.minute.on(0)  # Daily 2:00 a.m.
 
+    retractions = ensure_item(cron, 'bash {}'.format(app_prefix('scripts/retract_registrations.sh')))
+    retractions.hour.on(0)
+    retractions.minute.on(0)  # Daily 12 a.m.
+
+    embargoes = ensure_item(cron, 'bash {}'.format(app_prefix('scripts/embargo_registrations.sh')))
+    embargoes.hour.on(0)
+    embargoes.minute.on(0)  # Daily 12 a.m.
+
     files_audit = ensure_item(cron, 'bash {}'.format(app_prefix('scripts/osfstorage/files_audit.sh')))
-    files_audit.day_of_week.on(0)
+    files_audit.dow.on(0)
     files_audit.hour.on(2)
     files_audit.minute.on(0)  # Sunday 2:00 a.m.
 
     glacier_inventory = ensure_item(cron, 'bash {}'.format(app_prefix('scripts/osfstorage/glacier_inventory.sh')))
-    glacier_inventory.day_of_week.on(0)
+    glacier_inventory.dow.on(0)
     glacier_inventory.hour.on(0)
     glacier_inventory.minute.on(0)  # Sunday 12:00 a.m.
 
     glacier_audit = ensure_item(cron, 'bash {}'.format(app_prefix('scripts/osfstorage/glacier_audit.sh')))
-    glacier_audit.day_of_week.on(0)
+    glacier_audit.dow.on(0)
     glacier_audit.hour.on(6)
     glacier_audit.minute.on(0)  # Sunday 6:00 a.m.
 

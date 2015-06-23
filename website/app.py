@@ -26,6 +26,7 @@ def build_js_config_files(settings):
     with open(os.path.join(settings.STATIC_FOLDER, 'built', 'nodeCategories.json'), 'wb') as fp:
         json.dump(Node.CATEGORY_MAP, fp)
 
+
 def init_addons(settings, routes=True):
     """Initialize each addon in settings.ADDONS_REQUESTED.
 
@@ -42,9 +43,6 @@ def init_addons(settings, routes=True):
             settings.ADDONS_AVAILABLE_DICT[addon.short_name] = addon
     settings.ADDON_CAPABILITIES = render_addon_capabilities(settings.ADDONS_AVAILABLE)
 
-def add_cors_headers(response):
-    response.headers['Access-Control-Allow-Origin'] = '*'
-    return response
 
 def attach_handlers(app, settings):
     """Add callback handlers to ``app`` in the correct order."""
@@ -61,11 +59,6 @@ def attach_handlers(app, settings):
     # framework.session's before_request handler must go after
     # prepare_private_key, else view-only links won't work
     add_handlers(app, {'before_request': framework.sessions.before_request})
-
-    # Needed to allow the offload server and main server to properly interact
-    # without cors issues. See @jmcarp, @chrisseto, or @icereval for more detail
-    if settings.DEBUG_MODE:
-        add_handlers(app, {'after_request': add_cors_headers})
 
     return app
 
@@ -92,6 +85,13 @@ def build_log_templates(settings):
         build_fp.write('\n')
         build_addon_log_templates(build_fp, settings)
 
+def do_set_backends(settings):
+    logger.debug('Setting storage backends')
+    set_up_storage(
+        website.models.MODELS,
+        storage.MongoStorage,
+        addons=settings.ADDONS_AVAILABLE,
+    )
 
 def init_app(settings_module='website.settings', set_backends=True, routes=True,
         attach_request_handlers=True):
@@ -114,12 +114,7 @@ def init_app(settings_module='website.settings', set_backends=True, routes=True,
     app.debug = settings.DEBUG_MODE
 
     if set_backends:
-        logger.debug('Setting storage backends')
-        set_up_storage(
-            website.models.MODELS,
-            storage.MongoStorage,
-            addons=settings.ADDONS_AVAILABLE,
-        )
+        do_set_backends(settings)
     if routes:
         try:
             make_url_map(app)
@@ -138,6 +133,7 @@ def init_app(settings_module='website.settings', set_backends=True, routes=True,
     if set_backends:
         ensure_schemas()
     apply_middlewares(app, settings)
+
     return app
 
 
@@ -148,3 +144,5 @@ def apply_middlewares(flask_app, settings):
         flask_app.wsgi_app = ProxyFix(flask_app.wsgi_app)
 
     return flask_app
+
+from website.archiver import listeners  # noqa
