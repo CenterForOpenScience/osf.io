@@ -1,5 +1,5 @@
-from django.conf.urls import url
 from api.nodes import views
+from django.conf.urls import url
 
 urlpatterns = [
     # Examples:

@@ -1,9 +1,9 @@
 from rest_framework import serializers as ser
 
-from api.base.serializers import JSONAPISerializer, LinksField, Link, WaterbutlerLink
 from website.models import Node
 from framework.auth.core import Auth
 from rest_framework import exceptions
+from api.base.serializers import JSONAPISerializer, LinksField, Link, WaterbutlerLink
 
 
 class NodeSerializer(JSONAPISerializer):
