@@ -1,5 +1,6 @@
-from website.settings import API_DOMAIN
+from website.util import api_v2_url
 import requests
+
 
 
 """
@@ -8,7 +9,7 @@ to projects files. To be replaced with the standard
 way files are accessed.
 """
 
-PROJECT_FILES_URL = 'v2/nodes/{}/files/?path=%2F&provider=osfstorage'
+
 
 class File(object):
     MAX_SIZE = 1000
@@ -63,7 +64,10 @@ def collect_files(pid):
     :param pid: project id
     :return: list of file objects.
     """
-    url = API_DOMAIN + PROJECT_FILES_URL.format(pid)
+    path = '/nodes/{}/files/'.format(pid)
+    params = {'path': '/',
+              'provider': 'osfstorage'}
+    url = api_v2_url(path, params=params)
     response = requests.get(url).json()
     file_dicts = response.get('data', [])
     files = []
