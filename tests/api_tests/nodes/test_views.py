@@ -676,6 +676,12 @@ class TestNodeDelete(ApiTestCase):
         assert_equal(res.status_code, 403)
         assert_equal(self.project.is_deleted, False)
 
+    def test_deletes_private_node_logged_in_read_only_contributor(self):
+        self.project.add_contributor(self.user_two, permissions=['read'])
+        res = self.app.delete(self.private_url, auth=self.basic_auth_two, expect_errors=True)
+        assert_equal(res.status_code, 403)
+        assert_equal(self.project.is_deleted, False)
+
     def test_deletes_node_incorrect_token(self):
         res = self.app.delete(self.private_url + 'confirm/12345/', auth=self.basic_auth, expect_errors=True)
         assert_equal(res.status_code, 400)
