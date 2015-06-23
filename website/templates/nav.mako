@@ -14,7 +14,11 @@
     </div>
     <div id="navbar" class="navbar-collapse collapse navbar-right">
       <ul class="nav navbar-nav">
-        <li><a href="/explore/activity/">Browse New Projects</a></li>
+        % if user_name:
+            <li><a href="/dashboard/">My Dashboard</a></li>
+        % else:
+            <li><a href="/explore/activity/">Browse New Projects</a></li>
+        % endif
         <li class="dropdown">
           <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-expanded="false">Explore <span class="caret hidden-xs"></span></a>
           <ul class="dropdown-menu" role="menu">
