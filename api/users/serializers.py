@@ -53,6 +53,7 @@ class UserSerializer(JSONAPISerializer):
                                                                                                       'places the user has worked')
     educational_institutions = SchoolsSerializer(read_only=True, required=False, source='schools', help_text='An array of dictionaries representing the '
                                                                                                              'places the user has worked')
+    # Social Fields are broken out to get around DRF complex object bug and to make API updating more user friendly.
     github = ser.CharField(required=False, source='social.github', help_text='Github Handle')
     scholar = ser.CharField(required=False, source='social.scholar', help_text='Google Scholar Account')
     personal_website = ser.CharField(required=False, source='social.personal', help_text='Personal Website')
