@@ -11,6 +11,8 @@ require('js/project');
 
 require('js/registerNode');
 
+var RegistrationEditor = require('js/registrationEditor');
+
 var node = window.contextVars.node;
 
 

@@ -1707,7 +1707,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
 
         return forked
 
-    def register_node(self, auth):
+    def register_node(self, auth, parent=None):
         """Make a frozen copy of a node.
 
         :param schema: Schema object
@@ -1716,7 +1716,6 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         :param data: Form data
         :param parent Node: parent registration of regitstration to be created
         """
-        import ipdb; ipdb.set_trace()
         # NOTE: Admins can register child nodes even if they don't have write access them
         if not self.can_edit(auth=auth) and not self.is_admin_parent(user=auth.user):
             raise PermissionsError(
@@ -1752,7 +1751,9 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         registered.tags = self.tags
         registered.piwik_site_id = None
 
+        registered.is_registration = True  # Prevent adding default addons
         registered.save()
+        registered.is_registration = False
 
         if parent:
             registered.parent_node = parent

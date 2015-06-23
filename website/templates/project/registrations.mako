@@ -8,6 +8,25 @@
 
 <div class="row">
   <div class="col-sm-9">
+    % if node['is_draft_registration']:
+        <select class="form-control" id="select-registration-template">
+            <option value="">Please select a registration form to initiate registration</option>
+            % for option in options:
+                <option value="${option['template_name']}">${option['template_name_clean']}</option>
+            % endfor
+        </select>                
+        <div class='container'>
+          <div class='row'>
+            <div class='span8 col-md-12 columns eight large-8'>
+                      <h2 id="title">Select an option above</h2>
+                      <span id="myNavBar"></span>
+                      <div id='editor'></div>
+                      <button id="save" type="button" class="btn btn-success">Save</button>
+                      <!--<button id="register" type="button" class="btn btn-primary">Register</button>-->       
+            </div>
+          </div>
+        </div>
+    % else:
     % if node["registration_count"]:
         <div mod-meta='{
             "tpl": "util/render_nodes.mako",
@@ -41,5 +60,6 @@
           <a id="registerNode" href="${node['url']}register" class="btn btn-default" type="button">New Registration</a>
         % endif
     </div>
+    % endif
   </div>
 </div>

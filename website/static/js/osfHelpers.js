@@ -188,6 +188,25 @@ var unblock = function() {
     $.unblockUI();
 };
 
+var blockElement = function($el, message) {
+    $el.block({
+        message: message,
+        css: {
+            border: 'none',
+            padding: '15px',
+            backgroundColor: '#000',
+            '-webkit-border-radius': '10px',
+            '-moz-border-radius': '10px',
+            opacity: 0.5,
+            color: '#fff'
+        }
+    });
+};
+
+var unblockElement = function($el) {
+    $el.unblock();
+};
+
 var joinPrompts = function(prompts, base) {
     var prompt = base || '';
     if (prompts.length !==0) {
@@ -728,9 +747,11 @@ module.exports = window.$.osf = {
     handleJSONError: handleJSONError,
     handleEditableError: handleEditableError,
     block: block,
+    unblock: unblock,
+    blockElement: blockElement,
+    unblockElement: unblockElement,
     growl: growl,
     apiV2Url: apiV2Url,
-    unblock: unblock,
     joinPrompts: joinPrompts,
     mapByProperty: mapByProperty,
     isEmail: isEmail,
