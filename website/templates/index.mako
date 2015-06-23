@@ -28,7 +28,7 @@
     <div id="home-hero">
       <div class="container text-center">
         <h1><strong>Simplified</strong> scientific collaboration</h1>
-        <h3>Powerful end-to-end support for your research project.</h3>
+        <h3>Powerful end-to-end support for your research.</h3>
 
         <canvas id="demo-canvas"></canvas>
 
@@ -50,7 +50,7 @@
               <img src="/static/img/front-page/screenshot.png" class="img-responsive" id="screenshot" alt="" />
             </div>
             <div class="col-sm-6">
-              <h2>Get started for free today</h2>
+              <h2>Free. Get started today.</h2>
 
              <div id="signUp" class="anchor"></div>
                 <div id="signUpScope">
@@ -110,8 +110,8 @@
               <i class="icon icon-cloud"></i>
             </div>
             <div class="col-xs-9 col-xs-offset-1">
-              <h3>Structured projects in the cloud</h3>
-              <p>Keep all of your files and communications in <strong>one centralized location.</strong> No more trawling emails to find files or scrambling to recover from lost data. <span class="label label-primary">Secure Cloud</span></p>
+              <h3>Structured projects</h3>
+              <p>Keep all your files, data, and protocols in <strong>one centralized location.</strong> No more trawling emails to find files or scrambling to recover from lost data. <span class="label label-primary">Secure Cloud</span></p>
             </div>
           </div>
           <div class="row">
@@ -137,7 +137,7 @@
           <div class="student-image">
             <div class="quote">
               <span class="main">“The OSF is a great way to collaborate and stay organized while still using your favorite external services."</span>
-              <span class="attrib"><strong>Woo</strong> - OSF Active User</span>
+              <span class="attrib"><strong>Kara Woo</strong> - Information Manager, Aquatic Ecology, Washington State</span>
             </div>
           </div>
         </div>
@@ -149,7 +149,7 @@
       <div class="feature-2 space-top space-bottom">
         <div class="row">
           <div class="col-xs-12 text-center headline">
-            <h2>Integrations make your <strong>workflow more efficient</strong></h2>
+            <h2>OSF Integrations make your <strong>workflow more efficient</strong></h2>
           </div>
         </div>
         <div class="row integrations">
@@ -180,11 +180,7 @@
             <img src="/static/img/front-page/mendeley.png" class="img-responsive"/>
           </div>
       </div>
-      <div class="row">
-          <div class="col-xs-12 text-center feature-2">
-            <p>Open Science Framework integrates with your existing work platforms making collaboration easier.</p>
-          </div>
-      </div>
+
       </div>
     </div>
 
@@ -207,16 +203,17 @@
             <h3>See project changes</h3>
             <p>See the latest project changes, who is contributing and <strong>historical file versions.</strong></p>
 
-            <h3>Archive your data</h3>
-            <p>Computer or collaborator explode? With OSF <strong>you will never again lose your project data.</strong></p>
-          </div>
-
-          <div class="col-sm-6 text-left">
             <h3>View project statistics</h3>
             <p>Access <strong>project data</strong> ranging from visits over time to top referring websites.</p>
 
-            <h3>View other contributors</h3>
-            <p>View and <strong>engage with fellow scientists</strong> involved in your projects.</p>
+          </div>
+
+          <div class="col-sm-6 text-left">
+            <h3>Archive your data</h3>
+            <p>Computer or collaborator explode? With OSF <strong>you will never lose your project data.</strong></p>
+
+            <h3>Control access and collaboration</h3>
+            <p> Add others to your projects to collaborate, or provide private access to view.</p>
 
             <h3>Supercharge your workflow</h3>
             <p>OSF helps individuals, teams and labs make their <strong>research processes more efficient.</strong></p>
@@ -239,7 +236,7 @@
             <div class="col-md-4 col-md-offset-1">
               <i class="icon icon-nonprofit"></i>
               <h2>We are a <strong>mission-driven non-profit</strong></h2>
-              <p>OSF is a service of the non-profit Center for Open Science. We’re in pursuit of scientific utopia - focussing on the openness, integrity and reproducibility of global scientific research. <span class="label label-success">Non-Profit</span></p>
+              <p>OSF is a free, open-source service of the Center for Open Science. We’re aligning scientific practices with scientific values by improving openness, integrity and reproducibility of research. <span class="label label-success">Non-Profit</span></p>
             </div>
           </div>
         </div>
