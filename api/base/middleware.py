@@ -1,5 +1,7 @@
-from framework.transactions import commands, messages, utils
 from pymongo.errors import OperationFailure
+from raven.contrib.django.raven_compat.models import sentry_exception_handler
+
+from framework.transactions import commands, messages, utils
 
 from flask import _app_ctx_stack, Flask
 
@@ -23,6 +25,7 @@ class TokuTransactionsMiddleware(object):
         """If an exception occurs, rollback the current transaction
         if it exists.
         """
+        sentry_exception_handler(request=request)
         try:
             commands.rollback()
         except OperationFailure as err:

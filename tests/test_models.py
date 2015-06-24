@@ -8,6 +8,8 @@ import pytz
 import datetime
 import urlparse
 import itsdangerous
+import random
+import string
 from dateutil import parser
 
 from modularodm import Q
@@ -1762,7 +1764,6 @@ class TestDashboard(OsfTestCase):
 class TestAddonCallbacks(OsfTestCase):
     """Verify that callback functions are called at the right times, with the
     right arguments.
-
     """
     callbacks = {
         'after_remove_contributor': None,
@@ -2126,11 +2127,24 @@ class TestProject(OsfTestCase):
             proj.set_title('', auth=self.consolidate_auth)
         #assert_equal(proj.title, 'That Was Then')
 
+    def test_set_title_fails_if_too_long(self):
+        proj = ProjectFactory(title='That Was Then', creator=self.user)
+        long_title = ''.join(random.choice(string.ascii_letters + string.digits)
+                             for _ in range(201))
+        with assert_raises(ValidationValueError):
+            proj.set_title(long_title, auth=self.consolidate_auth)
+
     def test_title_cant_be_empty(self):
         with assert_raises(ValidationValueError):
             proj = ProjectFactory(title='', creator=self.user)
         with assert_raises(ValidationValueError):
             proj = ProjectFactory(title=' ', creator=self.user)
+
+    def test_title_cant_be_too_long(self):
+        long_title = ''.join(random.choice(string.ascii_letters + string.digits)
+                             for _ in range(201))
+        with assert_raises(ValidationValueError):
+            proj = ProjectFactory(title=long_title, creator=self.user)
 
     def test_contributor_can_edit(self):
         contributor = UserFactory()
