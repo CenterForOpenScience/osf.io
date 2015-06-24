@@ -98,9 +98,7 @@ var FileEditor = {
                     });
                     m.redraw();
                 });
-            } else {
-                alert('There are no changes to save.');
-            }
+            } 
         }, 500);
 
         self.changed = function() {
