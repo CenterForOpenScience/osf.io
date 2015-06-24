@@ -73,8 +73,9 @@ MIDDLEWARE_CLASSES = (
     # Needs to go before CommonMiddleware, so that transactions are always started,
     # even in the event of a redirect. CommonMiddleware may cause other middlewares'
     # process_request to be skipped, e.g. when a trailing slash is omitted
-    'api.base.middleware.FlaskRequestMiddleWare',
+    'api.base.middleware.FlaskRequestMiddleware',
     'api.base.middleware.TokuTransactionsMiddleware',
+
     # 'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',

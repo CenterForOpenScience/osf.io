@@ -53,7 +53,7 @@ class TokuTransactionsMiddleware(object):
         return response
 
 
-class FlaskRequestMiddleWare(object):
+class FlaskRequestMiddleware(object):
     """
     Push and pop new flask request contexts alongside Django requests
 
