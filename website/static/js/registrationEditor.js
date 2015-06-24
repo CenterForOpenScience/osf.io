@@ -181,6 +181,7 @@ RegistrationEditor.prototype.selectPage = function(page) {
 RegistrationEditor.prototype.save = function() {
     var self = this;
     var schemaData = self.editor.getValue();
+	console.log(schemaData);
 
     return $osf.putJSON(self.urls.save, {
         schema_id: self.selectedSchemaId(),

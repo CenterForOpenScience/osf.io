@@ -9,6 +9,11 @@
             "q1": {
                 "type": "commentableString",
                 "format": "text",
+                "comments": {
+                    
+                    "type": "array",
+
+                },
                 "title": "Title",
                 "description": "What is the working title of your study? It is helpful if this is the same title that you submit for publication of your final manuscript, but it is not a requirement.",
                 "default": "Effect of sugar on brownie tastiness."
@@ -87,7 +92,7 @@
             },
             "q10": {
                 "type": "array",
-                "title": "Are any aspects of your study _blinded?",
+                "title": "Are any aspects of your study _blindedî?",
                 "uniqueItems": true,
                 "items": {
                     "type": "string",
@@ -185,7 +190,7 @@
         "properties": {
             "q22": {
                 "title": "(Optional) Upload an analysis script with clear comments.",
-                "type": "string",
+                "type": "commentableString",
                 "description": "This optional step is helpful in order to create a process that is completely transparent and increase the likelihood that your analysis can be replicated. We recommend that you run the code on a simulated dataset in order to check that it will run without errors.",
                 "format": "url",
                 "options": {
