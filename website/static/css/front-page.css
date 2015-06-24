@@ -463,6 +463,9 @@ footer {
     .grey-pullout {
         padding-bottom: 90px;
     }
+    #home-hero {
+        height: 900px;
+    }
 }
 @media (min-width: 768px) and (max-width: 991px)  {
     .feature-4 .col-md-4:last-child {
