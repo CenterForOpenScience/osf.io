@@ -37,6 +37,7 @@ from framework.analytics import (
 )
 from framework.sentry import log_exception
 from framework.transactions.context import TokuTransaction
+from framework.utils import iso8601format
 
 from website import language, settings, security
 from website.util import web_url_for
@@ -2825,7 +2826,7 @@ class PrivateLink(StoredObject):
     def to_json(self):
         return {
             "id": self._id,
-            "date_created": self.date_created.strftime('%m/%d/%Y %I:%M %p UTC'),
+            "date_created": iso8601format(self.date_created),
             "key": self.key,
             "name": self.name,
             "creator": {'fullname': self.creator.fullname, 'url': self.creator.profile_url},
