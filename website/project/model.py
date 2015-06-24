@@ -521,7 +521,7 @@ def validate_title(value):
         raise ValidationValueError('Title cannot be blank.')
 
     if len(value) > 200:
-            raise ValidationValueError('Title cannot exceed 200 characters.')
+        raise ValidationValueError('Title cannot exceed 200 characters.')
     return True
 
 def validate_user(value):
