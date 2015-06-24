@@ -178,6 +178,8 @@ class RegistrationSerializer(NodeSerializer):
             Q('name', 'eq', template)).sort('-schema_version')[0]
         user = request.user
         node = self.context['view'].get_node()
+        if node.is_registration is True:
+            raise exceptions.ValidationError('This is already a registration')
         registration = node.register_node(
             schema=schema,
             auth=Auth(user),

@@ -8,6 +8,7 @@ from website.util.sanitize import strip_html
 from api.base.settings.defaults import API_BASE
 
 from tests.base import ApiTestCase, fake
+from website.project.model import ensure_schemas
 from tests.factories import UserFactory, ProjectFactory, FolderFactory, RegistrationFactory, DashboardFactory, NodeFactory
 
 class TestWelcomeToApi(ApiTestCase):
@@ -771,14 +772,20 @@ class TestNodeRegistrationList(ApiTestCase):
 class TestCreateRegistrationDraft(ApiTestCase):
     def setUp(self):
         ApiTestCase.setUp(self)
+        ensure_schemas()
         self.user = UserFactory.build()
         password = fake.password()
         self.password = password
         self.user.set_password(password)
         self.user.save()
         self.basic_auth = (self.user.username, password)
+
+        self.user_two = UserFactory.build()
+        self.user_two.set_password(password)
+        self.user_two.save()
+        self.basic_auth_two = (self.user_two.username, password)
+
         self.project = ProjectFactory(is_public=False, creator=self.user)
-        self.registration_project = RegistrationFactory(creator=self.user, project=self.project)
         self.project.save()
         self.private_url = '/{}nodes/{}/registrations/'.format(API_BASE, self.project._id)
 
@@ -786,10 +793,16 @@ class TestCreateRegistrationDraft(ApiTestCase):
         self.public_registration_project = RegistrationFactory(creator=self.user, project=self.public_project)
         self.public_project.save()
         self.public_url = '/{}nodes/{}/registrations/'.format(API_BASE, self.public_project._id)
-        self.user_two = UserFactory.build()
-        self.user_two.set_password(password)
-        self.user_two.save()
-        self.basic_auth_two = (self.user_two.username, password)
+
+    def test_create_public_registration_draft_node_does_not_exist(self):
+        url = '/{}nodes/{}/registrations/'.format(API_BASE, '12345')
+        res = self.app.post(url, expect_errors=True, auth=self.basic_auth)
+        assert_equal(res.status_code, 404)
+
+    def test_create_registration_of_registration(self):
+        url = '/{}nodes/{}/registrations/'.format(API_BASE, self.public_registration_project._id)
+        res = self.app.post(url, expect_errors=True, auth=self.basic_auth)
+        assert_equal(res.status_code, 400)
 
     def test_create_public_registration_draft_logged_out(self):
         res = self.app.post(self.public_url, expect_errors=True)
@@ -799,28 +812,22 @@ class TestCreateRegistrationDraft(ApiTestCase):
         res = self.app.post(self.public_url, auth=self.basic_auth)
         assert_equal(res.status_code, 201)
         assert_equal(res.json['data']['category'], self.public_project.category)
-        registration_id = res.json['data']['id']
-        pointers_url = '/{}nodes/{}/pointers/'.format(API_BASE, registration_id)
+        assert_equal(res.json['data']['properties']['registration'], False)
+        assert_equal(res.json['data']['is_registration_draft'], 'True')
 
-        res = self.app.get(pointers_url, auth=self.basic_auth)
-        assert_equal(res.json['data'][0]['node_id'], self.public_project._id)
+        res = self.app.post(self.public_url, auth=self.basic_auth_two, expect_errors=True)
+        assert_equal(res.status_code, 403)
 
     def test_create_private_registration_draft_logged_out(self):
         res = self.app.post(self.private_url, expect_errors=True)
-        # This is 403 instead of 401 because basic authentication is only for unit tests and, in order to keep from
-        # presenting a basic authentication dialog box in the front end. We may change this as we understand CAS
-        # a little better
         assert_equal(res.status_code, 403)
 
     def test_create_private_registration_draft_logged_in_contributor(self):
         res = self.app.post(self.private_url, auth=self.basic_auth)
         assert_equal(res.status_code, 201)
         assert_equal(res.json['data']['category'], self.project.category)
-        registration_id = res.json['data']['id']
-        pointers_url = '/{}nodes/{}/pointers/'.format(API_BASE, registration_id)
-
-        res = self.app.get(pointers_url, auth=self.basic_auth)
-        assert_equal(res.json['data'][0]['node_id'], self.project._id)
+        assert_equal(res.json['data']['properties']['registration'], False)
+        assert_equal(res.json['data']['is_registration_draft'], 'True')
 
     def test_create_private_registration_draft_logged_in_non_contributor(self):
         res = self.app.post(self.private_url, auth=self.basic_auth_two, expect_errors=True)
