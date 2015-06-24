@@ -20,6 +20,7 @@ class NodeSerializer(JSONAPISerializer):
     title = ser.CharField(required=True)
     description = ser.CharField(required=False, allow_blank=True, allow_null=True)
     category = ser.ChoiceField(choices=category_choices, help_text="Choices: " + category_choices_string)
+
     date_created = ser.DateTimeField(read_only=True)
     date_modified = ser.DateTimeField(read_only=True)
     tags = ser.SerializerMethodField(help_text='A dictionary that contains two lists of tags: '
@@ -134,6 +135,7 @@ class RegistrationSerializer(NodeSerializer):
     title = ser.CharField(read_only=True)
     description = ser.CharField(read_only=True)
     category = ser.CharField(read_only=True)
+    is_registration_draft = ser.CharField(read_only=True)
 
     links = LinksField({
         'html': 'get_absolute_url',
