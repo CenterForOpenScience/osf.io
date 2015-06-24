@@ -644,8 +644,6 @@ class TestRegistrationChildrenList(ApiTestCase):
 
 
 class TestRegistrationPointersList(ApiTestCase):
-    # TODO add tests for registration DRAFTS
-    # TODO 500 error being thrown for 1,2,4.
     def setUp(self):
         ApiTestCase.setUp(self)
         self.user = UserFactory.build()
@@ -664,10 +662,9 @@ class TestRegistrationPointersList(ApiTestCase):
         self.public_registration = RegistrationFactory(creator=self.user, project=self.public_project)
         self.public_url = '/{}registrations/{}/pointers/'.format(API_BASE, self.public_registration._id)
 
-        # self.public_registration_draft = NodeFactory(is_registration_draft=True, creator=self.user, is_public=True)
-        # self.public_reg_draft_pointer_project = ProjectFactory(parent=self.public_registration_draft, creator=self.user, is_public=True)
-        # self.public_registration_draft.add_pointer(self.public_reg_draft_pointer_project, auth=Auth(self.user))
-        # self.public_reg_draft_url = '/{}registrations/{}/pointers/'.format(API_BASE, self.public_registration_draft._id)
+        self.public_registration_draft = ProjectFactory(is_public=True, creator=self.user, is_registration_draft=True)
+        self.public_registration_draft.add_pointer(self.public_pointer_project, auth=Auth(self.user))
+        self.public_reg_draft_url = '/{}registrations/{}/pointers/'.format(API_BASE, self.public_registration_draft._id)
 
         self.private_project = ProjectFactory(is_public=False, creator=self.user)
         self.private_pointer_project = ProjectFactory(is_public=False, creator=self.user)
@@ -675,10 +672,14 @@ class TestRegistrationPointersList(ApiTestCase):
         self.private_registration = RegistrationFactory(creator=self.user, project=self.private_project)
         self.private_url = '/{}registrations/{}/pointers/'.format(API_BASE, self.private_registration._id)
 
-        # self.private_registration_draft = NodeFactory(is_registration_draft=True, creator=self.user)
-        # self.private_reg_draft_pointer_project = ProjectFactory(pointer=self.pointer_project, creator=self.user)
-        # self.private_registration_draft.add_pointer(self.private_reg_draft_pointer_project, auth=Auth(self.user))
-        # self.private_reg_draft_url = '/{}registrations/{}/pointers/'.format(API_BASE, self.private_registration_draft._id)
+        self.private_registration_draft = NodeFactory(is_registration_draft=True, creator=self.user)
+        self.private_registration_draft.add_pointer(self.private_pointer_project, auth=Auth(self.user))
+        self.private_reg_draft_url = '/{}registrations/{}/pointers/'.format(API_BASE, self.private_registration_draft._id)
+
+    def test_return_non_registration_node_pointers(self):
+        url = '/{}registrations/{}/pointers/'.format(API_BASE, self.public_project._id)
+        res = self.app.get(url, expect_errors=True)
+        assert_equal(res.status_code, 400)
 
     def test_return_public_registration_pointers_logged_out(self):
         res = self.app.get(self.public_url)
@@ -687,9 +688,22 @@ class TestRegistrationPointersList(ApiTestCase):
         assert_equal(res.status_code, 200)
         assert_in(res_json[0]['node_id'], self.public_pointer_project._id)
 
+    def test_return_public_registration_draft_pointers_logged_out(self):
+        res = self.app.get(self.public_reg_draft_url)
+        res_json = res.json['data']
+        assert_equal(len(res_json), 1)
+        assert_equal(res.status_code, 200)
+        assert_in(res_json[0]['node_id'], self.public_pointer_project._id)
 
     def test_return_public_registration_pointers_logged_in(self):
         res = self.app.get(self.public_url, auth=self.basic_auth_two)
+        res_json = res.json['data']
+        assert_equal(len(res_json), 1)
+        assert_equal(res.status_code, 200)
+        assert_in(res_json[0]['node_id'], self.public_pointer_project._id)
+
+    def test_return_public_registration_draft_pointers_logged_in(self):
+        res = self.app.get(self.public_reg_draft_url, auth=self.basic_auth_two)
         res_json = res.json['data']
         assert_equal(len(res_json), 1)
         assert_equal(res.status_code, 200)
@@ -699,8 +713,19 @@ class TestRegistrationPointersList(ApiTestCase):
         res = self.app.get(self.private_url, expect_errors=True)
         assert_equal(res.status_code, 403)
 
+    def test_return_private_registration_draft_pointers_logged_out(self):
+        res = self.app.get(self.private_reg_draft_url, expect_errors=True)
+        assert_equal(res.status_code, 403)
+
     def test_return_private_registration_pointers_logged_in_contributor(self):
         res = self.app.get(self.private_url, auth=self.basic_auth)
+        res_json = res.json['data']
+        assert_equal(res.status_code, 200)
+        assert_equal(len(res_json), 1)
+        assert_in(res_json[0]['node_id'], self.private_pointer_project._id)
+
+    def test_return_private_registration_pointers_draft_logged_in_contributor(self):
+        res = self.app.get(self.private_reg_draft_url, auth=self.basic_auth)
         res_json = res.json['data']
         assert_equal(res.status_code, 200)
         assert_equal(len(res_json), 1)
@@ -710,6 +735,9 @@ class TestRegistrationPointersList(ApiTestCase):
         res = self.app.get(self.private_url, auth=self.basic_auth_two, expect_errors=True)
         assert_equal(res.status_code, 403)
 
+    def test_return_private_registration_pointers_draft_logged_in_non_contributor(self):
+        res = self.app.get(self.private_reg_draft_url, auth=self.basic_auth_two, expect_errors=True)
+        assert_equal(res.status_code, 403)
 
 class TestRegistrationFilesList(ApiTestCase):
     # TODO add tests for registration DRAFTS
