@@ -5,7 +5,7 @@ var ko = require('knockout');
 var $osf = require('js/osfHelpers');
 var oop = require('js/oop');
 
-require('registrationEditorExtension');
+require('./registrationEditorExtension.js');
 
 var RegistrationEditor = function(urls, editorSelector) {
     var self = this;
