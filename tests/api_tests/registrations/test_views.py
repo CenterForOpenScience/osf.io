@@ -53,6 +53,7 @@ class TestRegistrationList(ApiTestCase):
         assert_not_in(self.registration_project_four._id, ids)
         assert_in(self.registration_draft._id, ids)
 
+
 class TestRegistrationDetail(ApiTestCase):
 
     def setUp(self):
@@ -369,6 +370,80 @@ class TestRegistrationPartialUpdate(ApiTestCase):
             'title': self.new_title,
         }, auth=self.basic_auth_two, expect_errors=True)
         assert_equal(res.status_code, 403)
+
+
+class TestRegistrationDelete(ApiTestCase):
+
+    def setUp(self):
+        ApiTestCase.setUp(self)
+        self.user = UserFactory.build()
+        password = fake.password()
+        self.password = password
+        self.user.set_password(password)
+        self.user.save()
+        self.basic_auth = (self.user.username, password)
+
+        self.user_two = UserFactory.build()
+        self.user_two.set_password(password)
+        self.user_two.save()
+        self.basic_auth_two = (self.user_two.username, password)
+
+        self.private_project = ProjectFactory(creator=self.user, is_private=True)
+        self.private_registration = RegistrationFactory(creator=self.user, project=self.private_project)
+        self.private_url = '/{}registrations/{}'.format(API_BASE, self.private_registration._id)
+
+        self.public_registration_draft = NodeFactory(creator=self.user, is_registration_draft=True, is_public=True)
+        self.public_reg_draft_url = '/{}registrations/{}'.format(API_BASE, self.public_registration_draft._id)
+
+        self.private_registration_draft = NodeFactory(creator=self.user, is_registration_draft=True)
+        self.private_reg_draft_url = '/{}registrations/{}'.format(API_BASE, self.private_registration_draft._id)
+
+    def test_delete_node_that_is_not_registration_draft(self):
+        url = '/{}registrations/{}'.format(API_BASE, self.private_project)
+        res = self.app.delete(url, auth=self.basic_auth, expect_errors=True)
+        assert_equal(res.status_code, 400)
+
+    def test_delete_registration(self):
+        res = self.app.delete(self.private_url, auth=self.basic_auth, expect_errors=True)
+        assert_equal(res.status_code, 403)
+
+    def test_delete_node_that_does_not_exist(self):
+        url = '/{}registrations/{}'.format(API_BASE, '12345')
+        res = self.app.delete(url, auth=self.basic_auth, expect_errors=True)
+        assert_equal(res.status_code, 404)
+
+    def test_delete_public_registration_draft_logged_out(self):
+        res = self.app.delete(self.public_reg_draft_url, expect_errors=True)
+        assert_equal(res.status_code, 403)
+
+    def test_delete_public_registration_draft_logged_in(self):
+        res = self.app.patch(self.public_reg_draft_url, auth=self.basic_auth_two, expect_errors=True)
+        assert_equal(res.status_code, 403)
+
+        assert_equal(self.public_registration_draft.is_deleted, False)
+        res = self.app.delete(self.public_reg_draft_url, auth=self.basic_auth, expect_errors=True)
+        assert_equal(res.status_code, 204)
+        assert_equal(self.public_registration_draft.is_deleted, True)
+
+    def test_delete_private_registration_draft_logged_out(self):
+        res = self.app.delete(self.private_reg_draft_url, expect_errors=True)
+        assert_equal(res.status_code, 403)
+
+    def test_delete_private_registration_draft_logged_in_contributor(self):
+        assert_equal(self.private_registration_draft.is_deleted, False)
+        res = self.app.delete(self.private_reg_draft_url, auth=self.basic_auth)
+        assert_equal(res.status_code, 204)
+        assert_equal(self.private_registration_draft.is_deleted, True)
+
+    def test_delete_private_registration_draft_logged_in_non_contributor(self):
+        res = self.app.delete(self.private_reg_draft_url, auth=self.basic_auth_two, expect_errors=True)
+        assert_equal(res.status_code, 403)
+
+    def test_delete_private_registration_draft_logged_in_read_only_contributor(self):
+        self.private_registration_draft.add_contributor(self.user_two, permissions=['read'])
+        res = self.app.delete(self.private_reg_draft_url, auth=self.basic_auth_two, expect_errors=True)
+        assert_equal(res.status_code, 403)
+
 
 class TestRegistrationContributorsList(ApiTestCase):
     #TODO add tests return registration DRAFT contributors
