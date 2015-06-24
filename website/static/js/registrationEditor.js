@@ -1,17 +1,19 @@
 var $ = require('jquery');
-var jedit = require('json-editor'); // TODO webpackify
 var ko = require('knockout');
+
+var jedit = require('json-editor'); // TODO webpackify
+require('js/json-editor-extensions');
 
 var $osf = require('js/osfHelpers');
 var oop = require('js/oop');
 
 require('./registrationEditorExtension.js');
 
-var RegistrationEditor = function(urls, editorSelector) {
+var RegistrationEditor = function(urls, editorId) {
     var self = this;
 
     self.urls = urls;
-    self.$editor = $(editorSelector);
+    self.editorId = editorId;
     self.editor = null;
 
     self.defaultOptions = [{
@@ -80,7 +82,7 @@ RegistrationEditor.prototype.updateEditor = function(page) {
     if (self.editor) {
         self.editor.destroy();
     }
-    self.editor = new JSONEditor(self.$editor[0], {
+    self.editor = new JSONEditor(document.getElementById(self.editorId), {
         schema: page,
         startVal: self.schemaData(),
         theme: 'bootstrap3',

@@ -738,6 +738,50 @@ var confirmDangerousAction = function (options) {
     bootbox.dialog(bootboxOptions);
 };
 
+var fullscreenModal = function(opts) {
+    var ret = $.Deferred();
+
+    opts = opts || {};
+    var style = $.extend({}, opts.style || {}, {
+        position: 'absolute',
+        top: '15px',
+        left: '15px',
+        right: '15px',
+        height: '96%',
+        zIndex: 1030,
+        backgroundColor: '#EEEEEE',
+        '-webkit-border-radius': '10px',
+        '-moz-border-radius': '10px'
+    });
+    var modal = $('<div>', {
+        'class': 'bg-color-light',
+        css: style
+    });
+    modal.append($('<a>', {
+        css: {
+            padding: '10px',
+            float: 'right',
+            zIndex: 1031,
+            fontSize: '150%'
+        },
+        'class': 'fa fa-times-circle text-bigger',
+        click: function() {
+            $(this).parent().remove();
+        }
+    }));
+    var container = $('<div>', {
+        id: opts.id || '',
+        css: {
+            padding: '25px'
+        }
+    });
+    modal.append(container);
+    $('body').append(modal);
+
+    ret.resolve(container);
+    return ret;
+};
+
 // Also export these to the global namespace so that these can be used in inline
 // JS. This is used on the /goodbye page at the moment.
 module.exports = window.$.osf = {
@@ -765,5 +809,6 @@ module.exports = window.$.osf = {
     htmlDecode: htmlDecode,
     tableResize: tableResize,
     humanFileSize: humanFileSize,
-    confirmDangerousAction: confirmDangerousAction
+    confirmDangerousAction: confirmDangerousAction,
+    fullscreenModal: fullscreenModal
 };

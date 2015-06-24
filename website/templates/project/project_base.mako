@@ -86,8 +86,9 @@
             category: '${node['category_short']}',
             parentTitle: ${json.dumps(parent_title) | n},
             parentRegisterUrl: '${parent_registration_url}',
-            parentExists: ${'true' if parent_exists else 'false'},
-            archiving: ${json.dumps(node['archiving'])}
+            parentExists: ${json.dumps(parent_exists)},
+            archiving: ${json.dumps(node['archiving'])},
+            isDraftRegistration: ${json.dumps(node['is_draft_registration'])}
         }
     });
 
@@ -103,6 +104,6 @@
     src="/static/vendor/bower_components/MathJax/unpacked/MathJax.js?config=TeX-AMS-MML_HTMLorMML">
 </script>
 
-## NOTE: window.contextVars must be set before loading this script
+
 <script src=${"/static/public/js/project-base-page.js" | webpack_asset}> </script>
 </%def>

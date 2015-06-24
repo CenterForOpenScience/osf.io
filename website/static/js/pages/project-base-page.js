@@ -2,7 +2,7 @@
 var $ = require('jquery');
 
 var pointers = require('js/pointers');
-var AccountClaimer = require('js/accountClaimer.js');
+var AccountClaimer = require('js/accountClaimer');
 var $osf = require('js/osfHelpers');
 
 // NodeActions is needed for rendering recent logs in nodelists (e.g. regsitrations and forks
@@ -11,9 +11,11 @@ require('js/project');
 
 require('js/registerNode');
 
-var RegistrationEditor = require('js/registrationEditor');
-
 var node = window.contextVars.node;
+
+var postRegister = function() {
+
+};
 
 
 new pointers.PointerDisplay('#showLinks');
@@ -34,12 +36,4 @@ $(document).ready(function() {
     $.getJSON(node.urls.api, function(data) {    
         $('body').trigger('nodeLoad', data);
     });
-
-    var regEditor = new RegistrationEditor({
-        schemas: '/api/v1/schemas/',
-        save: node.urls.api + 'schema/',
-        data: node.urls.api + 'schema/'
-    }, '#registrationEditor');
-    $osf.applyBindings(regEditor, '#registrationEditorScope');
-    regEditor.init();
 });
