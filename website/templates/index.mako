@@ -99,7 +99,7 @@
       <div class="row space-bottom">
         <div class="col-xs-12 text-center">
           <h2><strong>Open Science Framework</strong></h2>
-          <h3>Cloud-based management for your research.</h3>
+          <h3>Cloud-based management for your projects.</h3>
         </div>
       </div>
 
@@ -236,7 +236,7 @@
             <div class="col-md-4 col-md-offset-1">
               <i class="icon icon-nonprofit"></i>
               <h2>We are a <strong>mission-driven non-profit</strong></h2>
-              <p>OSF is a free, open-source service of the Center for Open Science. We’re aligning scientific practices with scientific values by improving openness, integrity and reproducibility of research. <span class="label label-success">Non-Profit</span></p>
+              <p>OSF is a free, open-source service of the <a href="https://cos.io/">Center for Open Science</a>. We’re aligning scientific practices with scientific values by improving openness, integrity and reproducibility of research. <span class="label label-success">Non-Profit</span></p>
             </div>
           </div>
         </div>
