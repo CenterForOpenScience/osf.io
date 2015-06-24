@@ -36,6 +36,13 @@ var MESSAGES = {
     makeComponentPrivateWarning: 'Making a component private will prevent users from viewing it on this site, ' +
                         'but will have no impact on external sites, including Google\'s cache. ' +
                         'Would you like to continue?',
+    makeRegistrationPublicWarning: 'Once a registration is made public, there is no way to guarantee that ' +
+                        'access to the data it contains can be completely prevented. Users ' +
+                        'should assume that once a registration will be made public, it will always ' +
+                        'be public. <b>Once this action has been taken, you will not be able to make ' +
+                        'the registration private again.</b> Public registrations may be retracted leaving behind a ' +
+                        'record of its existance along with basic metadata related to the project, and its ' +
+                        'contributors.',
 };
 
 // TODO(sloria): Fix this external dependency on nodeApiUrl
@@ -52,8 +59,11 @@ var COMPONENT = 'component';
 function setPermissions(permissions, nodeType) {
 
     var msgKey;
+    // TODO(hrybacki): Remove once Retraction/Embargoes goes is merged into production
+    var isRegistration = window.contextVars.node.isRegistration;
 
-    if(permissions === PUBLIC && nodeType === PROJECT) { msgKey = 'makeProjectPublicWarning'; }
+    if (permissions === PUBLIC && isRegistration) { msgKey = 'makeRegistrationPublicWarning'; }
+    else if(permissions === PUBLIC && nodeType === PROJECT) { msgKey = 'makeProjectPublicWarning'; }
     else if(permissions === PUBLIC && nodeType === COMPONENT) { msgKey = 'makeComponentPublicWarning'; }
     else if(permissions === PRIVATE && nodeType === PROJECT) { msgKey = 'makeProjectPrivateWarning'; }
     else { msgKey = 'makeComponentPrivateWarning'; }
