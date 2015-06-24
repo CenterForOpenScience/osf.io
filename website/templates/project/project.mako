@@ -61,7 +61,7 @@
                     <!-- /ko -->
                     <div
                         % if not user_name:
-                            data-bind="tooltip: {title: 'Only users can watch and duplicate projects', placement: 'bottom'}"
+                            data-bind="tooltip: {title: 'Log-in or create an account to watch/duplicate this project', placement: 'bottom'}"
                         % endif
                             class="btn-group">
                         <a
