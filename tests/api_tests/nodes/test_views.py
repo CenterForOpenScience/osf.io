@@ -641,7 +641,7 @@ class TestNodeUpdate(ApiTestCase):
 class TestNodeDelete(ApiTestCase):
 
     def setUp(self):
-        ApiTestCase.setUp(self)
+        super(TestNodeDelete, self).setUp()
         self.user = UserFactory.build()
         self.user.set_password('password')
         self.user.save()
@@ -667,12 +667,15 @@ class TestNodeDelete(ApiTestCase):
         # a little better
         assert_equal(res.status_code, 403)
 
-    def test_deletes_public_node_logged_in(self):
+    def test_deletes_public_node_fails_if_bad_auth(self):
         res = self.app.delete_json(self.public_url, auth=self.basic_auth_two, expect_errors=True)
+        self.public_project.reload()
         assert_equal(res.status_code, 403)
         assert_equal(self.public_project.is_deleted, False)
 
+    def test_deletes_public_node_succeeds_as_owner(self):
         res = self.app.delete_json(self.public_url, auth=self.basic_auth, expect_errors=True)
+        self.public_project.reload()
         assert_equal(res.status_code, 204)
         assert_equal(self.public_project.is_deleted, True)
 
@@ -685,11 +688,13 @@ class TestNodeDelete(ApiTestCase):
 
     def test_deletes_private_node_logged_in_contributor(self):
         res = self.app.delete(self.private_url, auth=self.basic_auth, expect_errors=True)
+        self.project.reload()
         assert_equal(res.status_code, 204)
         assert_equal(self.project.is_deleted, True)
 
     def test_deletes_private_node_logged_in_non_contributor(self):
         res = self.app.delete(self.private_url, auth=self.basic_auth_two, expect_errors=True)
+        self.project.reload()
         assert_equal(res.status_code, 403)
         assert_equal(self.project.is_deleted, False)
 
@@ -697,6 +702,7 @@ class TestNodeDelete(ApiTestCase):
         self.project.add_contributor(self.user_two, permissions=['read'])
         self.project.save()
         res = self.app.delete(self.private_url, auth=self.basic_auth_two, expect_errors=True)
+        self.project.reload()
         assert_equal(res.status_code, 403)
         assert_equal(self.project.is_deleted, False)
 
@@ -1286,6 +1292,7 @@ class TestDeleteNodePointer(ApiTestCase):
     def test_deletes_public_node_pointer_fails_if_bad_auth(self):
         node_count_before = len(self.public_project.nodes_pointer)
         res = self.app.delete(self.public_url, auth=self.basic_auth_two, expect_errors=True)
+        self.public_project.reload()
         # This is could arguably be a 405, but we don't need to go crazy with status codes
         assert_equal(res.status_code, 403)
         assert_equal(node_count_before, len(self.public_project.nodes_pointer))
@@ -1306,9 +1313,8 @@ class TestDeleteNodePointer(ApiTestCase):
 
     def test_deletes_private_node_pointer_logged_in_contributor(self):
         res = self.app.delete(self.private_url, auth=self.basic_auth)
-        assert_equal(res.status_code, 204)
-
         self.project.reload()  # Update the model to reflect changes made by post request
+        assert_equal(res.status_code, 204)
         assert_equal(len(self.project.nodes_pointer), 0)
 
     def test_deletes_private_node_pointer_logged_in_non_contributor(self):
