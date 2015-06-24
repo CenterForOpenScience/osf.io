@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 import unittest
 import logging
+import time
 
 from nose.tools import *  # flake8: noqa (PEP8 asserts)
 import mock
@@ -25,11 +26,11 @@ TEST_INDEX = 'test'
 
 @requires_search
 class SearchTestCase(OsfTestCase):
-
     def tearDown(self):
         super(SearchTestCase, self).tearDown()
         search.delete_index(elastic_search.INDEX)
         search.create_index(elastic_search.INDEX)
+
     def setUp(self):
         super(SearchTestCase, self).setUp()
         elastic_search.INDEX = TEST_INDEX
@@ -475,7 +476,6 @@ class TestAddContributor(SearchTestCase):
         contribs = search.search_contributor(unreg.fullname)
         assert_equal(len(contribs['users']), 0)
 
-
     def test_unreg_users_do_show_on_projects(self):
         unreg = UnregUserFactory(fullname='Robert Paulson')
         self.project = ProjectFactory(
@@ -485,7 +485,6 @@ class TestAddContributor(SearchTestCase):
         )
         results = query(unreg.fullname)['results']
         assert_equal(len(results), 1)
-
 
     def test_search_fullname(self):
         # Searching for full name yields exactly one result.
@@ -667,3 +666,51 @@ class TestSearchMigration(SearchTestCase):
             var = self.es.indices.get_aliases()
             assert_equal(var[settings.ELASTIC_INDEX + '_v{}'.format(n + 1)]['aliases'].keys()[0], settings.ELASTIC_INDEX)
             assert not var.get(settings.ELASTIC_INDEX + '_v{}'.format(n))
+
+
+@requires_search
+class TestFileIndexing(SearchTestCase):
+    def setUp(self):
+        super(TestFileIndexing, self).setUp()
+        self.user_one = UserFactory(name='Data Soong')
+
+        self.project_one = ProjectFactory(
+            title='Feline Behavior',
+            creator=self.user_one,
+            is_public=True,
+        )
+
+        self.file_one = {
+            'name': 'an_ode_to_spot.txt',
+            'pid': self.project_one._id,
+            'content': 'Nice Spot, good Spot',
+            'size': '2045',
+        }
+
+        self.file_two = {
+            'name': 'intro_to_starships.txt',
+            'pid': self.project_one._id,
+            'content': 'Always remember the deflector dish ...',
+            'size': '12402',
+        }
+
+    def test_no_files(self):
+        results = query('Starships')['results']
+        assert_equal(len(results), 0)
+
+    def test_irrelevant_file(self):
+        files = [self.file_two]
+        with mock.patch('website.search.elastic_search.index_file.collect_files', return_value=files) as mock_func:
+            elastic_search.update_project_files(self.project_one)
+        results = query('Spot')['results']
+        assert_equal(len(results), 0)
+
+    def test_relevant_file(self):
+
+        files = [self.file_one]
+        with mock.patch('website.search.elastic_search.index_file.collect_files', return_value=files) as mock_func:
+            search.update_files(self.project_one)
+
+        time.sleep(1) # Give elasticsearch time to reindex
+        results = query('Spot')['results']
+        assert_equal(len(results), 1)
