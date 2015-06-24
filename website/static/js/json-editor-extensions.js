@@ -2,6 +2,7 @@ var jedit = require('json-editor'); //TODO webpackify
 var FilesWidget = require('js/FilesWidget');
 var Fangorn = require('js/fangorn');
 var $osf = require('js/osfHelpers');
+var $ = require('jquery');
 
 // var filesWidget = new FilesWidget('treeGrid', nodeApiUrl + 'files/grid/');
 // filesWidget.init();
@@ -235,5 +236,11 @@ JSONEditor.defaults.editors.singleselect = JSONEditor.defaults.editors.multisele
             self.updateValue(new_value);
             self.onChange(true);
         });
+
+JSONEditor.defaults.editors.commentableString = JSONEditor.defaults.editors.string.extend({
+    build: function() {
+        this._super();
+
+        $(this.input).after($('<span>Comments go here</span>'));
     }
 });

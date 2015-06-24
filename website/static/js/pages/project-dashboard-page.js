@@ -58,7 +58,7 @@ if (!ctx.node.anonymous && !ctx.node.isRetracted) {
 $(document).ready(function () {
 
     var qs = $osf.urlParams();
-    var postRegister = Boolean(['True', 'true', 1, '1'].indexOf(qs.postRegister || null));
+    var postRegister = (['True', 'true', 1, '1'].indexOf(qs.postRegister || null) !== -1);
     if (postRegister) {
         registrationUtils.postRegister(node);
     }
