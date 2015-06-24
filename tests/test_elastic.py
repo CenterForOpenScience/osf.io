@@ -714,3 +714,31 @@ class TestFileIndexing(SearchTestCase):
         time.sleep(1) # Give elasticsearch time to reindex
         results = query('Spot')['results']
         assert_equal(len(results), 1)
+
+    def test_make_private(self):
+        files = [self.file_one]
+        with mock.patch('website.search.elastic_search.index_file.collect_files', return_value=files) as mock_func:
+            search.update_files(self.project_one)
+
+        time.sleep(1)
+        self.project_one.is_public = False
+        self.project_one.save()
+
+        results = query('Spot')['results']
+        assert_equal(len(results), 0)
+
+    def test_make_public(self):
+        files = [self.file_one]
+        self.project_one.is_public = False
+        self.project_one.save()
+
+        with mock.patch('website.search.elastic_search.index_file.collect_files', return_value=files) as mock_func:
+            search.update_files(self.project_one)
+
+        time.sleep(1)
+        self.project_one.is_public = True
+        self.project_one.save()
+
+        results = query('Spot')['results']
+        assert_equal(len(results), 1)
+
