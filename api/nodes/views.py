@@ -202,13 +202,13 @@ class NodeChildrenList(generics.ListAPIView, NodeMixin):
                 title_with_count = "{} Private Components".format(count_private_nodes)
             fake_component = {
                 'primary': True,
-                '_id': '',  # TODO should have id?
+                '_id': '',  # TODO should have id? - e.g. 'abcd3'
                 'category': '',
                 'node_type': 'component',
-                'url': '',  # '/search/?tags={12345}',  # TODO should have a url?
+                'url': '',  # TODO should have a url? - e.g. '/search/?tags={12345}','/search/?tags={12345}',
                 'title': title_with_count,
-                'path': '',  # '/-- private project --/',  # TODO should have path?
-                'api_url': '',  # '/api/v2/12345',  # TODO should have api_url?; API_PREFIX (real site)/API_BASE (tests)
+                'path': '',  # TODO should have path? - e.g. '/-- private project --/',
+                'api_url': '',  # TODO should have api_url? - e.g. '/api/v2/12345',
                 'is_public': True,
                 'is_registration': False,
                 'is_fake_component': True,

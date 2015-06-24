@@ -899,8 +899,8 @@ class TestNodeChildrenList(ApiTestCase):
         res = self.app.get(self.public_project_url_with_true_private_param)
         assert_equal(len(res.json['data']), 1)  # 1 public component; no fake node should have been created
 
-        # TODO tests failed without 'Node.remove()' here, but once I added and then removed it they passed again...
-        # TODO Related to immediately above: Does this need a teardown function?
+        # TODO final test failed once without 'Node.remove()' here, but once I added and then removed 'Node.remove()'
+        # they passed again... Is something wrong outside of this class? Does this need a teardown function?
 
 class TestNodePointersList(ApiTestCase):
 
