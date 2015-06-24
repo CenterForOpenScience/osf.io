@@ -121,14 +121,14 @@ var RegistrationEditor = function(urls, editorSelector) {
 RegistrationEditor.prototype.init = function() {
     var self = this;
     
-    var fetchData = self.fetchData()
-        .then(self.updateData.bind(self));
-
-    var fetchSchemas = self.fetchSchemas()
-        .then(self.updateSchemas.bind(self));
-    
-    $.when(fetchData, fetchSchemas).then(function(data) {
-        self.selectedSchemaId(data.schema_id);
+    $.when(self.fetchData(), self.fetchSchemas()).then(function(data, schemas) {
+        data = data[0] || {};
+        schemas = schemas[0] || [];
+        self.updateData(data);
+        self.updateSchemas(schemas);
+        if (data.schema_id && schemas){
+            self.selectedSchemaId(data.schema_id);
+        }
     });
 };
 RegistrationEditor.prototype.updateSchemas = function(schemas) {
@@ -161,7 +161,7 @@ RegistrationEditor.prototype.updateEditor = function(page) {
     }
     self.editor = new JSONEditor(self.$editor[0], {
         schema: page,
-        startVal: self.schmeaData(),
+        startVal: self.schemaData(),
         theme: 'bootstrap3',
         disable_collapse: true,
         disable_edit_json: true,
