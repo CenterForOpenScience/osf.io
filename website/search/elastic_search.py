@@ -302,7 +302,6 @@ def update_node(node, index=None):
 
 @requires_search
 def update_project_files(node, index=None):
-    logging.warn('\nUPDATING FILES')
     index = index or INDEX
 
     category = categorize_node(node)
@@ -312,6 +311,7 @@ def update_project_files(node, index=None):
     file_text = ' '.join(file_texts)
     update_body = {'doc': {'files': file_text}}
     es.update(index=index, doc_type=category, id=node._id, body=update_body)
+
 
 @requires_search
 def update_user(user, index=None):
