@@ -23,10 +23,11 @@ var CitationWidget = require('js/citationWidget');
 var mathrender = require('js/mathrender');
 var md = require('js/markdown').full;
 var FilesWidget = require('js/filesWidget');
-
+var registrationUtils = require('js/registrationUtils');
 
 var ctx = window.contextVars;
 var nodeApiUrl = ctx.node.urls.api;
+var node = ctx.node;
 
 // Listen for the nodeLoad event (prevents multiple requests for data)
 $('body').on('nodeLoad', function(event, data) {
@@ -55,6 +56,15 @@ if (!ctx.node.anonymous && !ctx.node.isRetracted) {
 }
 
 $(document).ready(function () {
+
+    var qs = $osf.urlParams();
+    var postRegister = Boolean(['True', 'true', 1, '1'].indexOf(qs.postRegister || null));
+    if (postRegister) {
+        registrationUtils.postRegister(node);
+    }
+    else if(node.isDraftRegistration) {
+        registrationUtils.remind();
+    }
 
     if (!ctx.node.isRetracted) {
         if (!ctx.node.archiving){

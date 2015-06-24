@@ -7,7 +7,7 @@
         "type": "object",
         "properties": {
             "q1": {
-                "type": "string",
+                "type": "commentableString",
                 "format": "text",
                 "title": "Title",
                 "description": "What is the working title of your study? It is helpful if this is the same title that you submit for publication of your final manuscript, but it is not a requirement.",
