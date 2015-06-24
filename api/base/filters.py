@@ -45,10 +45,16 @@ class FilterMixin(object):
             raise NotImplementedError()
 
     def is_filterable_field(self, key):
+        #  foo -> foo
+        #  foo.bar -> foo
+        #  foo.bar.bas -> foo
+
+        base_key = key.strip().split('.')[0]
         try:
-            return key.strip() in self.serializer_class.filterable_fields
+            base_key in self.serializer_class.filterable_fields
         except AttributeError:
             return key.strip() in self.serializer_class._declared_fields
+        return key
 
     # Used so that that queries by _id will work
     def convert_key(self, key):
@@ -118,12 +124,12 @@ class ODMFilterMixin(FilterMixin):
     def query_params_to_odm_query(self, query_params):
         """Convert query params to a modularodm Query object."""
 
+        query_parts=[]
         fields_dict = query_params_to_fields(query_params)
         if fields_dict:
-            query_parts = [
-                Q(self.convert_key(key=key), self.get_comparison_operator(key=key), self.convert_value(value=value, field=key))
-                for key, value in fields_dict.items() if self.is_filterable_field(key=key)
-            ]
+            for key, value in fields_dict.items():
+                if self.is_filterable_field(key=key):
+                    query_parts.append(Q(self.convert_key(key=key), self.get_comparison_operator(key=key), self.convert_value(value=value, field=key)))
             # TODO Ensure that if you try to filter on an invalid field, it returns a useful error. Fix related test.
             try:
                 query = functools.reduce(intersect, query_parts)
