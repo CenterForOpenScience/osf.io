@@ -69,6 +69,13 @@ body {
 
 }
 
+/* Revise container for wiki and file pages*/
+.container-xxl {
+  width : 100%;
+  padding-left: 20px;
+  padding-right: 20px;
+}
+
 /* Make images responsive */
 .panel img {
     vertical-align: middle;
