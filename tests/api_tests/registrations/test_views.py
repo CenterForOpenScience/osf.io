@@ -25,6 +25,8 @@ class TestRegistrationList(ApiTestCase):
         self.project = ProjectFactory(is_public=False, creator=self.user)
         self.registration_project = RegistrationFactory(creator=self.user, project=self.project)
 
+        self.registration_draft = NodeFactory(creator=self.user, is_registration_draft=True)
+
         self.project_two = ProjectFactory(is_public=False, creator=self.user)
         self.registration_project_two = RegistrationFactory(creator=self.user, project=self.project_two)
         self.project_two.is_deleted = True
@@ -49,7 +51,7 @@ class TestRegistrationList(ApiTestCase):
         assert_not_in(self.registration_project_two._id, ids)
         assert_in(self.registration_project_three._id, ids)
         assert_not_in(self.registration_project_four._id, ids)
-
+        assert_in(self.registration_draft._id, ids)
 
 class TestRegistrationDetail(ApiTestCase):
 

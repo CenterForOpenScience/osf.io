@@ -66,8 +66,8 @@ class RegistrationDetail(NodeDetail, RegistrationMixin):
     # overrides RetrieveAPIView
     def get_object(self):
         node = self.get_node()
-        if node.is_registration == False:
-            raise ValidationError('Not a registration.')
+        if node.is_registration == False and node.is_registration_draft == False:
+            raise ValidationError('Not a registration or registration draft.')
         return self.get_node()
 
     # overrides RetrieveUpdateAPIView
