@@ -20,7 +20,7 @@ var iconmap = require('js/iconmap');
 // Modal language
 var MESSAGES = {
     makeProjectPublicWarning: 'Once a project is made public, there is no way to guarantee that ' +
-                        'access to the data it contains can be completely prevented. Users ' +
+                        'access to its data can be completely prevented. You ' +
                         'should assume that once a project is made public, it will always ' +
                         'be public. <b>Review your project for sensitive or restricted information before making it public</b>. Are you absolutely sure you would like to continue?',
 
@@ -38,11 +38,9 @@ var MESSAGES = {
                         'but will have no impact on external sites, including Google\'s cache. ' +
                         'Would you like to continue?',
     makeRegistrationPublicWarning: 'Once a registration is made public, there is no way to guarantee that ' +
-                        'access to the data it contains can be completely prevented. Users ' +
-                        'should assume that once a registration will be made public, it will always ' +
-                        'be public. <b>Once this action has been taken, you will not be able to make ' +
-                        'the registration private again.</b> Public registrations may be retracted leaving behind a ' +
-                        'record of its existance along with basic metadata related to the project, and its ' +
+                        'access to its data can be completely prevented. <b>Once this action has been taken, you will not be able to make ' +
+                        'the registration private again.</b> Public registrations, however, may be retracted, leaving behind a ' +
+                        'record of its existence along with basic metadata related to the project and its ' +
                         'contributors.',
 };
 
