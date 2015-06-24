@@ -4,7 +4,7 @@ from modularodm import Q
 from rest_framework.exceptions import PermissionDenied, ValidationError
 
 from framework.auth.core import Auth
-from api.base.utils import get_object_or_404, waterbutler_url_for
+from api.base.utils import waterbutler_url_for
 from website.models import Node
 from api.base.filters import ODMFilterMixin
 from api.registrations.serializers import RegistrationSerializer
@@ -132,12 +132,10 @@ class RegistrationPointersList(generics.ListAPIView, RegistrationMixin):
 
     def get_queryset(self):
         node = self.get_node()
-        if node.is_registration == False:
-            raise ValidationError('Not a registration.')
-        return self.get_node()
+        if node.is_registration is False and node.is_registration_draft is False:
+            raise ValidationError('Not a registration or registration draft.')
         pointers = node.nodes_pointer
         return pointers
-
 
 class RegistrationFilesList(NodeFilesList, RegistrationMixin):
     """
