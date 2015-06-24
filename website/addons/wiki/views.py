@@ -449,7 +449,7 @@ def project_wiki_rename(auth, wname, **kwargs):
 
 
 @must_be_valid_project  # returns project
-@must_have_permission_or_public_wiki # returns user, project
+@must_have_permission_or_public_wiki  # returns user, project
 @must_not_be_registration
 @must_have_addon('wiki', 'node')
 def project_wiki_validate_name(wname, **kwargs):

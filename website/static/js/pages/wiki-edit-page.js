@@ -42,12 +42,12 @@ function ViewModelEditable(){
     var self = this;
 
     self.makePubliclyEditable = function() {
-        $.post("permissions/public/");
+        $.post('permissions/public/');
         location.reload();
     };
 
     self.makePrivatelyEditable = function() {
-        $.post("permissions/private/");
+        $.post('permissions/private/');
         location.reload();
     };
 

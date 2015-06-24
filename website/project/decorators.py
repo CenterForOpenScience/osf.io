@@ -291,7 +291,7 @@ def must_be_addon_authorizer(addon_name):
     return wrapper
 
 
-def must_have_permission(permission,wiki=False):
+def must_have_permission(permission, wiki=False):
     """Decorator factory for checking permissions. Checks that user is logged
     in and has necessary permissions for node. Node must be passed in keyword
     arguments to view function.
