@@ -1,14 +1,14 @@
 from rest_framework import serializers as ser
 import datetime
 
-from api.base.utils import absolute_reverse
-from api.base.serializers import JSONAPISerializer, LinksField, Link, WaterbutlerLink
-from website.models import Node
 from framework.auth.core import Auth
 from rest_framework import exceptions
 
-from website.project.model import MetaSchema
 from modularodm import Q
+from website.models import Node
+from api.base.utils import absolute_reverse
+from website.project.model import MetaSchema
+from api.base.serializers import JSONAPISerializer, LinksField, Link, WaterbutlerLink
 
 
 class NodeSerializer(JSONAPISerializer):
@@ -186,6 +186,7 @@ class RegistrationSerializer(NodeSerializer):
         )
         registration.is_registration = False
         registration.is_registration_draft = True
+        registration.save()
         return registration
 
 
