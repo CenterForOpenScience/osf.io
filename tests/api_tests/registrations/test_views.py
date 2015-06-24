@@ -740,9 +740,6 @@ class TestRegistrationPointersList(ApiTestCase):
         assert_equal(res.status_code, 403)
 
 class TestRegistrationFilesList(ApiTestCase):
-    # TODO add tests for registration DRAFTS
-    # TODO 500 error being thrown for 1,2,4,6
-
     def setUp(self):
         ApiTestCase.setUp(self)
         self.user = UserFactory.build()
@@ -755,13 +752,13 @@ class TestRegistrationFilesList(ApiTestCase):
         self.user_two.save()
         self.basic_auth_two = (self.user_two.username, 'justapoorboy')
 
-        self.private_project = ProjectFactory(creator=self.user)
-        self.private_registration = RegistrationFactory(creator=self.user, project=self.private_project)
-        self.private_url = '/{}registrations/{}/files/'.format(API_BASE, self.private_registration._id)
-
         self.public_project = ProjectFactory(creator=self.user, is_public=True)
         self.public_registration = RegistrationFactory(creator=self.user, project=self.public_project)
         self.public_url = '/{}registrations/{}/files/'.format(API_BASE, self.public_registration._id)
+
+        self.private_project = ProjectFactory(creator=self.user)
+        self.private_registration = RegistrationFactory(creator=self.user, project=self.private_project)
+        self.private_url = '/{}registrations/{}/files/'.format(API_BASE, self.private_registration._id)
 
     def test_returns_registration_public_files_logged_out(self):
         res = self.app.get(self.public_url, expect_errors=True)
@@ -793,8 +790,8 @@ class TestRegistrationFilesList(ApiTestCase):
         assert_equal(len(res.json['data']), 1)
         assert_equal(res.json['data'][0]['provider'], 'osfstorage')
 
-        self.private_project.add_addon('github', auth=user_auth)
-        self.private_project.save()
+        self.private_registration.add_addon('github', auth=user_auth)
+        self.private_registration.save()
         res = self.app.get(self.private_url, auth=self.basic_auth)
         data = res.json['data']
         providers = [item['provider'] for item in data]
