@@ -38,7 +38,17 @@ class UserSerializer(JSONAPISerializer):
         'given_name',
         'middle_name',
         'family_name',
-        'id'
+        'id',
+        'employment_institutions',
+        'educational_institutions',
+        'github',
+        'scholar',
+        'personal_website',
+        'twitter',
+        'linkedIn',
+        'impactStory',
+        'orcid',
+        'researcherId'
     ])
     parser_classes = (JSONParser,)
     id = ser.CharField(read_only=True, source='_id')
