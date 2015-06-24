@@ -12,8 +12,8 @@ from framework.auth.decorators import Auth
 from website.util import paths
 from website.util import sanitize
 from website.settings import (
-    ALL_MY_PROJECTS_ID, ALL_MY_REGISTRATIONS_ID, ALL_MY_PROJECTS_NAME,
-    ALL_MY_REGISTRATIONS_NAME, DISK_SAVING_MODE
+    ALL_MY_PROJECTS_ID, ALL_MY_REGISTRATIONS_ID, ALL_MY_WATCHED_ID, ALL_MY_PROJECTS_NAME,
+    ALL_MY_REGISTRATIONS_NAME, ALL_MY_WATCHED_NAME, DISK_SAVING_MODE
 )
 
 
@@ -220,6 +220,10 @@ class NodeProjectCollector(object):
         children_count = all_my_registrations.count() + comps.count()
         return self.make_smart_folder(ALL_MY_REGISTRATIONS_NAME, ALL_MY_REGISTRATIONS_ID, children_count)
 
+    def collect_all_watched_smart_folder(self):
+        watched = self.auth.user.watched
+        return self.make_smart_folder(ALL_MY_WATCHED_NAME, ALL_MY_WATCHED_ID, len(watched))
+
     def make_smart_folder(self, title, node_id, children_count=0):
         return_value = {
             'name': title,
@@ -264,6 +268,7 @@ class NodeProjectCollector(object):
         if self.node.is_dashboard:
             root.insert(0, self.collect_all_projects_smart_folder())
             root.insert(0, self.collect_all_registrations_smart_folder())
+            root.insert(0, self.collect_all_watched_smart_folder())
         return root
 
     def _serialize_node(self, node, visited=None, parent_is_folder=False):

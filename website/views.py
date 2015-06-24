@@ -32,6 +32,7 @@ from website.util import permissions
 from website.project import new_dashboard
 from website.settings import ALL_MY_PROJECTS_ID
 from website.settings import ALL_MY_REGISTRATIONS_ID
+from website.settings import ALL_MY_WATCHED_ID
 
 logger = logging.getLogger(__name__)
 
@@ -133,6 +134,8 @@ def get_dashboard(auth, nid=None, **kwargs):
         return_value = {'data': get_all_projects_smart_folder(**kwargs)}
     elif nid == ALL_MY_REGISTRATIONS_ID:
         return_value = {'data': get_all_registrations_smart_folder(**kwargs)}
+    elif nid == ALL_MY_WATCHED_ID:
+        return_value = {'data': get_all_watched_smart_folder(**kwargs)}
     else:
         node = Node.load(nid)
         dashboard_projects = rubeus.to_project_hgrid(node, auth, **kwargs)
@@ -177,6 +180,13 @@ def get_all_registrations_smart_folder(auth, **kwargs):
     nodes = filter(lambda node: not node.is_retracted and not node.pending_embargo, nodes)
     keys = [node._id for node in nodes]
     return [rubeus.to_project_root(node, auth, **kwargs) for node in nodes if node.ids_above.isdisjoint(keys)]
+
+@must_be_logged_in
+def get_all_watched_smart_folder(auth, **kwargs):
+    #TODO: Unit test
+    user = auth.user
+    watched = [watched.node for watched in user.watched]
+    return [rubeus.to_project_root(node, auth, **kwargs) for node in watched]
 
 @must_be_logged_in
 def get_dashboard_nodes(auth):
