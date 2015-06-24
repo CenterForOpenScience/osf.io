@@ -59,7 +59,7 @@
                   <div class="osf-panel-header" data-bind="css : { 'bordered': $root.singleVis() === 'edit' }">
                     <div class="row">
                       <div class="col-md-6">
-                           <span class="wiki-panel-title" > <i class="fa fa-pencil-square-o"> </i>   Edit </span>
+                          <i class="fa fa-pencil-square-o"> </i> Edit
                       </div>
                         <div class="col-md-6">
                           <div class="pull-right">
@@ -131,7 +131,7 @@
                 <div class="osf-panel-header bordered" data-bind="css: { 'osf-panel-header-flex': $root.singleVis() !== 'view', 'bordered': $root.singleVis() === 'view' }">
                     <div class="row">
                         <div class="col-sm-6">
-                            <span class="wiki-panel-title" > <i class="fa fa-eye"> </i>  View</span>
+                             <i class="fa fa-eye"> </i>  View
                         </div>
                         <div class="col-sm-6">
 
@@ -174,7 +174,7 @@
               <div class="osf-panel-header osf-panel-header-flex" data-bind="css: {  'osf-panel-header-flex': $root.singleVis() !== 'compare', 'bordered': $root.singleVis() === 'compare'}">
                   <div class="row">
                       <div class="col-xs-12">
-                          <span class="wiki-panel-title"> <i class="fa fa-exchange"> </i>   Compare </span>                        
+                          <i class="fa fa-exchange"> </i> Compare
                           <div class="inline" data-bind="css: { 'pull-right' :  $root.singleVis() === 'compare' }">
                             <!-- Version Picker -->
                             <span class="compare-version-text"><i> <span data-bind="text: viewVersionDisplay"></span></i> to
