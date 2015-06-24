@@ -4,6 +4,7 @@ var $ = require('jquery');
 require('jquery-blockui');
 var Raven = require('raven-js');
 var moment = require('moment');
+var URI = require('URIjs');
 var bootbox = require('bootbox');
 var iconmap = require('js/iconmap');
 
@@ -29,28 +30,31 @@ var growl = function(title, message, type) {
 /**
  * Generate OSF absolute URLs, including prefix and arguments. Assumes access to mako globals for pieces of URL.
  * Can optionally pass in an object with params (name:value) to be appended to URL. Calling as:
- *   apiV2Url("users/4urxt/applications", {"a":1, "filter[fullname]":"lawrence"}, "https://staging2.osf.io/api/v2/")
+ *   apiV2Url('users/4urxt/applications',
+ *      {query:
+ *          {'a':1, 'filter[fullname]': 'lawrence'},
+ *       prefix: 'https://staging2.osf.io/api/v2/'})
  * would yield the result:
- *  "https://staging2.osf.io/api/v2/users/4urxt/applications?a=1&filter%5Bfullname%5D=lawrence"
- * @param {String} pathString The string to be appended to the absolute base path, eg "users/4urxt"
- * @param {Object} paramsObject (optional) An object containing parameters to add to the URL. Otherwise pass 'undefined'.
- * @param {String} apiPrefix (optional) Manually specify the prefix used for API routes (useful for testing)
+ *  'https://staging2.osf.io/api/v2/users/4urxt/applications?a=1&filter%5Bfullname%5D=lawrence'
+ * @param {String} path The string to be appended to the absolute base path, eg 'users/4urxt'
+ * @param {Object} options (optional)
  */
-var apiV2Url = function (pathString, paramsObject, apiPrefix){
-    apiPrefix = apiPrefix || window.contextVars.apiV2Prefix;
+var apiV2Url = function (path, options){
+    var contextVars = window.contextVars || {};
+    var defaultPrefix = contextVars.apiV2Prefix || '';
 
-    // Don't output double slashes when concatenating two strings with adjoining slashes
-    if (apiPrefix && pathString && apiPrefix.charAt(apiPrefix.length - 1) === "/" && pathString.charAt(0) === "/"){
-        pathString = pathString.substring(1); // Strip off the redundant leading slash
-    }
+    var defaults = {
+        prefix: defaultPrefix, // Manually specify the prefix for API routes (useful for testing)
+        query: {}  // Optional query parameters to be appended to URL
+    };
+    var opts = $.extend({}, defaults, options);
 
-    var apiUrl = apiPrefix + pathString;
-    // Add parameters to URL (if any). Ensure encoding as necessary
-    if (paramsObject){
-        apiUrl += "?";
-        apiUrl += $.param(paramsObject);
-    }
-    return apiUrl;
+    var apiUrl = URI(opts.prefix);
+    var pathSegments = URI(path).segment();
+    pathSegments.forEach(function(el){apiUrl.segment(el);});  // Hack to prevent double slashes when joining base + path
+    apiUrl.query(opts.query);
+
+    return apiUrl.toString();
 };
 
 
@@ -165,7 +169,7 @@ var handleEditableError = function(response) {
     return 'Unexpected error: ' + response.statusText;
 };
 
-var block = function() {
+var block = function(message) {
     $.blockUI({
         css: {
             border: 'none',
@@ -176,7 +180,7 @@ var block = function() {
             opacity: 0.5,
             color: '#fff'
         },
-        message: 'Please wait'
+        message: message || 'Please wait'
     });
 };
 
@@ -348,7 +352,7 @@ var trackPiwik = function(host, siteId, cvars, useCookies) {
  * Tooltip data binder. The value accessor should be an object containing
  * parameters for the tooltip.
  * Example:
- * <span data-bind="tooltip: {title: 'Tooltip text here'}"></span>
+ * <span data-bind='tooltip: {title: 'Tooltip text here'}'></span>
  */
 ko.bindingHandlers.tooltip = {
     init: function(elem, valueAccessor) {
@@ -360,7 +364,7 @@ ko.bindingHandlers.tooltip = {
 /**
  * Takes over anchor scrolling and scrolls to anchor positions within elements
  * Example:
- * <span data-bind="anchorScroll"></span>
+ * <span data-bind='anchorScroll'></span>
  */
 ko.bindingHandlers.anchorScroll = {
     init: function(elem, valueAccessor) {
@@ -463,6 +467,14 @@ var applyBindings = function(viewModel, selector) {
 };
 
 
+var hasTimeComponent = function(dateString) {
+    return dateString.indexOf('T') !== -1;
+};
+
+var forceUTC = function(dateTimeString) {
+    return dateTimeString.slice(-1) === 'Z' ? dateTimeString : dateTimeString + 'Z';
+};
+
 /**
   * A date object with two formats: local time or UTC time.
   * @param {String} date The original date as a string. Should be an standard
@@ -471,19 +483,16 @@ var applyBindings = function(viewModel, selector) {
 var LOCAL_DATEFORMAT = 'YYYY-MM-DD hh:mm A';
 var UTC_DATEFORMAT = 'YYYY-MM-DD HH:mm UTC';
 var FormattableDate = function(date) {
+
     if (typeof date === 'string') {
-        // If Firefox, add 'Z' to the date string (Z is timezone for UTC)
-        if(navigator.userAgent.toLowerCase().indexOf('firefox') > -1 && date.slice(-1) !== 'Z') {
-           date = date + 'Z';
-        }
-        // The date as a Date object
-        this.date = new Date(date);
+        this.date = new Date(hasTimeComponent(date) ? forceUTC(date) : date);
     } else {
         this.date = date;
     }
     this.local = moment(this.date).format(LOCAL_DATEFORMAT);
     this.utc = moment.utc(this.date).format(UTC_DATEFORMAT);
 };
+
 
 /**
  * Escapes html characters in a string.

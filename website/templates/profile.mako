@@ -18,20 +18,23 @@
 
 <div class="page-header">
     <div class="profile-fullname">
-        <span class="profile-avatar">
-        % if user['is_profile']:
-            <a href="#changeAvatarModal" data-toggle="modal"><img id='profile-gravatar' src="${profile['gravatar_url']}"
-                    rel="tooltip" title="Click to change avatar"/></a>
-        % else:
-            <img id='profile-gravatar' src="${profile['gravatar_url']}"/>
-        % endif
-        </span>
-    <span id="profileFullname" class="h1 overflow ">${profile["fullname"]}</span>
-        <span class="edit-profile-settings">
-        % if user['is_profile']:
-            <a href="/settings/">Edit your profile</a></span>
-        % endif
+        <div class="avatar-div">
+            % if user['is_profile']:
+                <a href="#changeAvatarModal" data-toggle="modal"><img id='profile-gravatar' src="${profile['gravatar_url']}"
+                        rel="tooltip" title="Click to change avatar"/></a>
+            % else:
+                <img id='profile-gravatar' src="${profile['gravatar_url']}"/>
+            % endif
+        </div>
+        <div class="h1 overflow name-div">
+            ${profile["fullname"]}
+        </div>
     </div>
+    <span class="edit-profile-settings">
+        % if user['is_profile']:
+            <a href="/settings/">Edit your profile</a>
+        % endif
+    </span>
 </div><!-- end-page-header -->
 
 
@@ -139,7 +142,7 @@
                 "tpl" : "util/render_nodes.mako",
                 "uri" : "/api/v1/profile/${profile["id"]}/public_projects/",
                 "replace" : true,
-                "kwargs" : {"sortable" : true, "user": ${json.dumps(user)}, "pluralized_node_type": "projects"}
+                "kwargs" : {"sortable" : true, "user": ${json.dumps(user)}, "pluralized_node_type": "projects", "skipBindings": true}
             }'></div>
     </div>
     <div class="col-sm-6">
