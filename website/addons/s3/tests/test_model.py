@@ -224,11 +224,6 @@ class TestCallbacks(OsfTestCase):
         assert_true(self.node_settings.user_settings is None)
         assert_true(self.node_settings.bucket is None)
 
-    def test_registration_data_and_deauth(self):
-        self.node_settings.deauthorize()
-        assert_false(self.node_settings.registration_data is None)
-        assert_true(isinstance(self.node_settings.registration_data, dict))
-
     @mock.patch('website.archiver.tasks.archive.si')
     def test_does_not_get_copied_to_registrations(self, mock_archive):
         registration = self.project.register_node(
