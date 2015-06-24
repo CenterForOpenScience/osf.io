@@ -443,7 +443,7 @@ footer {
         margin-left: 5%;
     }
     .student-image .quote {
-        top: 20px;
+        bottom: 0;
     }
     .student-image .main {
         font-size: 1.0em !important;
@@ -464,7 +464,7 @@ footer {
         padding-bottom: 90px;
     }
 }
-@media (max-width: 991px) {
+@media (min-width: 768px) and (max-width: 991px)  {
     .feature-4 .col-md-4:last-child {
         padding-top: 30px;
     }
