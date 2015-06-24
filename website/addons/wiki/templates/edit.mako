@@ -379,14 +379,4 @@ ${parent.javascript_bottom()}
 <script src="//${sharejs_url}/share.js"></script>
 <script src=${"/static/public/js/wiki-edit-page.js" | webpack_asset}></script>
 
-
-## <script>
-## $("#makeEditable").click(function() {
-## $.post("${node['url']}/wiki/home/permissions/public/");
-## });
-## $("#makeNotEditable").click(function() {
-## $.post("${node['url']}wiki/home/permissions/private/");
-## });
-## </script>
-
 </%def>
