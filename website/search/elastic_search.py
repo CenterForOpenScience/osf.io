@@ -38,6 +38,12 @@ ALIASES = {
     'total': 'Total'
 }
 
+# Prevent tokenizing and stop word removal.
+NOT_ANALYZED_PROPERTY = {'type': 'string', 'index': 'not_analyzed'}
+
+# Perform stemming on the field it's applied to.
+ENGLISH_ANALYZER_PROPERTY = {'type': 'string', 'analyzer': 'english'}
+
 INDEX = settings.ELASTIC_INDEX
 
 try:
@@ -110,7 +116,7 @@ def get_tags(query, index):
 
 
 @requires_search
-def search(query, index=INDEX, doc_type='_all'):
+def search(query, index=None, doc_type='_all'):
     """Search for a query
 
     :param query: The substring of the username/project name/tag to search for
@@ -123,6 +129,7 @@ def search(query, index=INDEX, doc_type='_all'):
         tags: A list of tags that are returned by the search query
         typeAliases: the doc_types that exist in the search database
     """
+    index = index or INDEX
     tag_query = copy.deepcopy(query)
     count_query = copy.deepcopy(query)
 
@@ -174,6 +181,10 @@ def format_result(result, parent_id=None):
         'tags': result['tags'],
         'is_registration': (result['is_registration'] if parent_info is None
                                                         else parent_info.get('is_registration')),
+        'is_retracted': result['is_retracted'],
+        'pending_retraction': result['pending_retraction'],
+        'embargo_end_date': result['embargo_end_date'],
+        'pending_embargo': result['pending_embargo'],
         'description': result['description'] if parent_info is None else None,
         'category': result.get('category'),
         'date_created': result.get('date_created'),
@@ -202,7 +213,8 @@ def load_parent(parent_id):
 
 
 @requires_search
-def update_node(node, index=INDEX):
+def update_node(node, index=None):
+    index = index or INDEX
     from website.addons.wiki.model import NodeWikiPage
 
     component_categories = [k for k in Node.CATEGORY_MAP.keys() if not k == 'project']
@@ -220,7 +232,7 @@ def update_node(node, index=INDEX):
         except IndexError:
             # Skip orphaned components
             return
-    if node.is_deleted or not node.is_public:
+    if node.is_deleted or not node.is_public or node.archiving:
         delete_doc(elastic_document_id, node)
     else:
         try:
@@ -247,23 +259,30 @@ def update_node(node, index=INDEX):
             'description': node.description,
             'url': node.url,
             'is_registration': node.is_registration,
+            'is_retracted': node.is_retracted,
+            'pending_retraction': node.pending_retraction,
+            'embargo_end_date': node.embargo_end_date.strftime("%A, %b. %d, %Y") if node.embargo_end_date else False,
+            'pending_embargo': node.pending_embargo,
             'registered_date': node.registered_date,
             'wikis': {},
             'parent_id': parent_id,
             'date_created': node.date_created,
             'boost': int(not node.is_registration) + 1,  # This is for making registered projects less relevant
         }
-        for wiki in [
-            NodeWikiPage.load(x)
-            for x in node.wiki_pages_current.values()
-        ]:
-            elastic_document['wikis'][wiki.page_name] = wiki.raw_text(node)
+
+        if not node.is_retracted:
+            for wiki in [
+                NodeWikiPage.load(x)
+                for x in node.wiki_pages_current.values()
+            ]:
+                elastic_document['wikis'][wiki.page_name] = wiki.raw_text(node)
 
         es.index(index=index, doc_type=category, id=elastic_document_id, body=elastic_document, refresh=True)
 
 
 @requires_search
-def update_user(user, index=INDEX):
+def update_user(user, index=None):
+    index = index or INDEX
     if not user.is_active:
         try:
             es.delete(index=index, doc_type='user', id=user._id, refresh=True, ignore=[404])
@@ -317,24 +336,29 @@ def delete_index(index):
 
 
 @requires_search
-def create_index(index=INDEX):
+def create_index(index=None):
     '''Creates index with some specified mappings to begin with,
-    all of which are applied to all projects, components, and registrations'''
-    mapping = {
-        'properties': {
-            'tags': {
-                'type': 'string',
-                'index': 'not_analyzed',
-            },
-        }
-    }
+    all of which are applied to all projects, components, and registrations.
+    '''
+    index = index or INDEX
+    document_types = ['project', 'component', 'registration', 'user']
+    project_like_types = ['project', 'component', 'registration']
+    analyzed_fields = ['title', 'description']
+
     es.indices.create(index, ignore=[400])
-    for type_ in ['project', 'component', 'registration', 'user']:
+    for type_ in document_types:
+        mapping = {'properties': {'tags': NOT_ANALYZED_PROPERTY}}
+        if type_ in project_like_types:
+            analyzers = {field: ENGLISH_ANALYZER_PROPERTY
+                         for field in analyzed_fields}
+            mapping['properties'].update(analyzers)
+
         es.indices.put_mapping(index=index, doc_type=type_, body=mapping, ignore=[400, 404])
 
 
 @requires_search
-def delete_doc(elastic_document_id, node, index=INDEX, category=None):
+def delete_doc(elastic_document_id, node, index=None, category=None):
+    index = index or INDEX
     category = category or 'registration' if node.is_registration else node.project_or_component
     es.delete(index=index, doc_type=category, id=elastic_document_id, refresh=True, ignore=[404])
 

@@ -335,13 +335,6 @@ class TestRegistrations(OsfTestCase):
         subnav = res.html.select('#projectSubnav')[0]
         assert_not_in('Registrations', subnav.text)
 
-    def test_settings_nav_not_seen(self):
-        # Goes to project's page
-        res = self.app.get(self.project.url, auth=self.auth).maybe_follow()
-        # Settings is not in the project navigation bar
-        subnav = res.html.select('#projectSubnav')[0]
-        assert_not_in('Settings', subnav.text)
-
 
 class TestComponents(OsfTestCase):
 
@@ -867,35 +860,6 @@ class TestConfirmingEmail(OsfTestCase):
 
         assert_in(auth_exc.InvalidTokenError.message_short, res)
         assert_equal(res.status_code, http.BAD_REQUEST)
-
-    @mock.patch('framework.auth.views.send_confirm_email')
-    def test_resend_form(self, send_confirm_email):
-        res = self.app.get('/resend/')
-        form = res.forms['resendForm']
-        form['email'] = self.user.username
-        res = form.submit()
-        assert_true(send_confirm_email.called)
-        assert_in('Resent email to', res)
-
-    def test_resend_form_does_nothing_if_not_in_db(self):
-        res = self.app.get('/resend/')
-        form = res.forms['resendForm']
-        form['email'] = 'nowheretobefound@foo.com'
-        res = form.submit()
-        assert_equal(res.request.path, '/resend/')
-
-    def test_resend_form_shows_alert_if_email_already_confirmed(self):
-        user = UnconfirmedUserFactory()
-        url = user.get_confirmation_url(user.username, external=False)
-        # User confirms their email address
-        self.app.get(url).maybe_follow()
-        # tries to resend confirmation
-        res = self.app.get('/resend/')
-        form = res.forms['resendForm']
-        form['email'] = user.username
-        res = form.submit()
-        # Sees alert message
-        assert_in('already been confirmed', res)
 
 
 class TestClaimingAsARegisteredUser(OsfTestCase):

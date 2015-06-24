@@ -192,6 +192,12 @@ div.project-grid-menu span.pg-collapse-all {
     margin-right: 5px;
 }
 
+/* Project details box  */
+span.project-details {
+    visibility: hidden;
+}
+
+
 span.add-link-warning {
     color: #808080;
 }
@@ -205,9 +211,25 @@ span.rename-container{
     display: none;
 }
 
+div.project-details span.title {
+    display: inline;
+    overflow-x: hidden;
+    font-size: 15px;
+    overflow-x: hidden;
+}
+
+
 .project-action-icons img {
     margin-right: 4px;
     cursor:pointer;cursor:hand
+}
+
+div.project-details {
+    display: inline-block;
+    width: 100%;
+    background-color: #EEE;
+    padding: 7px;
+    margin-bottom: 10px;
 }
 
 div.contributors {
@@ -288,7 +310,6 @@ height: 32px ;
 .tt-input, .typeahead {
     padding: 4px 10px;
 }
-
 
 .tt-hint {
     color: #999;
@@ -386,4 +407,8 @@ h3.category {
 }
 .smaller {
     font-size: 75%;
+}
+
+.registration-archiving {
+    cursor: default;
 }
