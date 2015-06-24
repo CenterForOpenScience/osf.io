@@ -267,6 +267,16 @@ class TestRegistrationUpdate(ApiTestCase):
         }, auth=self.basic_auth_two, expect_errors=True)
         assert_equal(res.status_code, 403)
 
+    def test_partial_update_private_registration_draft_logged_in_read_only_contributor(self):
+        self.private_registration_draft.add_contributor(self.user_two, permissions=['read'])
+        res = self.app.put(self.private_reg_draft_url, {
+            'title': self.new_title,
+            'description': self.new_description,
+            'category': self.new_category,
+            'public': False,
+        }, auth=self.basic_auth_two, expect_errors=True)
+        assert_equal(res.status_code, 403)
+
 
 class TestRegistrationPartialUpdate(ApiTestCase):
 
@@ -348,6 +358,13 @@ class TestRegistrationPartialUpdate(ApiTestCase):
         assert_equal(res.json['data']['id'], self.private_registration_draft._id)
 
     def test_partial_update_private_registration_draft_logged_in_non_contributor(self):
+        res = self.app.patch(self.private_reg_draft_url, {
+            'title': self.new_title,
+        }, auth=self.basic_auth_two, expect_errors=True)
+        assert_equal(res.status_code, 403)
+
+    def test_partial_update_private_registration_draft_logged_in_read_only_contributor(self):
+        self.private_registration_draft.add_contributor(self.user_two, permissions=['read'])
         res = self.app.patch(self.private_reg_draft_url, {
             'title': self.new_title,
         }, auth=self.basic_auth_two, expect_errors=True)
