@@ -641,7 +641,7 @@ var MetaData = (function() {
                 complete = true,
                 value;
             $.each(this.observedData, function(name, model) {
-                if (!model.value) {r
+                if (!model.value) {
                     return true;
                 }
                 value = model.serialize();
