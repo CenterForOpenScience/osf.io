@@ -77,6 +77,13 @@ class TestRegistrationDetail(ApiTestCase):
         self.private_registration = RegistrationFactory(creator=self.user, project=self.private_project)
         self.private_url = '/{}registrations/{}'.format(API_BASE, self.private_registration._id)
 
+        self.public_registration_draft = NodeFactory(creator=self.user, is_registration_draft=True, is_public=True)
+        self.public_reg_draft_url = '/{}registrations/{}'.format(API_BASE, self.public_registration_draft._id)
+
+        self.private_registration_draft = NodeFactory(creator=self.user, is_registration_draft=True)
+        self.private_reg_draft_url = '/{}registrations/{}'.format(API_BASE, self.private_registration_draft._id)
+
+
         # TODO test getting registration details for registration DRAFTS
 
     def test_return_registration_detail_node_is_not_registration(self):
@@ -95,6 +102,10 @@ class TestRegistrationDetail(ApiTestCase):
         assert_equal(res.json['data']['id'], self.public_registration._id)
         # TODO assert registration's source?
 
+        res = self.app.get(self.public_reg_draft_url)
+        assert_equal(res.status_code, 200)
+        assert_equal(res.json['data']['id'], self.public_registration_draft._id)
+
     def test_return_public_registration_details_logged_in(self):
         res = self.app.get(self.public_url, auth=self.basic_auth)
         assert_equal(res.status_code, 200)
@@ -105,8 +116,19 @@ class TestRegistrationDetail(ApiTestCase):
         assert_equal(res.json['data']['id'], self.public_registration._id)
         # TODO assert registration's source?
 
+        res = self.app.get(self.public_reg_draft_url, auth=self.basic_auth_two)
+        assert_equal(res.status_code, 200)
+        assert_equal(res.json['data']['id'], self.public_registration_draft._id)
+
+        res = self.app.get(self.public_reg_draft_url, auth=self.basic_auth)
+        assert_equal(res.status_code, 200)
+        assert_equal(res.json['data']['id'], self.public_registration_draft._id)
+
     def test_return_private_registration_details_logged_out(self):
         res = self.app.get(self.private_url, expect_errors=True)
+        assert_equal(res.status_code, 403)
+
+        res = self.app.get(self.private_reg_draft_url, expect_errors=True)
         assert_equal(res.status_code, 403)
 
     def test_return_private_registration_details_logged_in_contributor(self):
@@ -115,8 +137,16 @@ class TestRegistrationDetail(ApiTestCase):
         assert_equal(res.json['data']['id'], self.private_registration._id)
         assert_equal(res.json['data']['description'], self.private_registration.description)
 
+        res = self.app.get(self.private_reg_draft_url, auth=self.basic_auth)
+        assert_equal(res.status_code, 200)
+        assert_equal(res.json['data']['id'], self.private_registration_draft._id)
+        assert_equal(res.json['data']['description'], self.private_registration.description)
+
     def test_return_private_registration_details_logged_in_non_contributor(self):
         res = self.app.get(self.private_url, auth=self.basic_auth_two, expect_errors=True)
+        assert_equal(res.status_code, 403)
+
+        res = self.app.get(self.private_reg_draft_url, auth=self.basic_auth_two, expect_errors=True)
         assert_equal(res.status_code, 403)
 
 
