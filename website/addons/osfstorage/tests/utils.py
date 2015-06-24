@@ -37,8 +37,11 @@ class StorageTestCase(OsfTestCase):
         super(StorageTestCase, self).setUp()
 
         self.project = ProjectFactory()
+        self.node = self.project  # Less typing
         self.user = self.project.creator
         self.node_settings = self.project.get_addon('osfstorage')
+        self.user_addon = self.project.creator.get_addon('osfstorage')
+        self.node_addon = self.node_settings
         self.auth_obj = Auth(user=self.project.creator)
 
         # Refresh records from database; necessary for comparing dates

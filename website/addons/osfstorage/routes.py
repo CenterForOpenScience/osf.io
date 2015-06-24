@@ -10,6 +10,24 @@ api_routes = {
     'prefix': '/api/v1',
 
     'rules': [
+        Rule(
+            [
+                '/project/<pid>/osfstorage/usage/',
+                '/project/<pid>/node/<nid>/osfstorage/usage/',
+            ],
+            'get',
+            views.osfstorage_get_node_storage_usage,
+            json_renderer,
+        ),
+        Rule(
+            [
+                '/osfstorage/usage/',
+            ],
+            'get',
+            views.osfstorage_get_user_storage_usage,
+            json_renderer,
+        ),
+
 
         Rule(
             [

@@ -1,3 +1,4 @@
+from __future__ import division
 from __future__ import unicode_literals
 
 import os
@@ -15,7 +16,11 @@ from framework.mongo import StoredObject
 from framework.mongo.utils import unique_on
 from framework.analytics import get_basic_counters
 
-from website.addons.base import AddonNodeSettingsBase, GuidFile, StorageAddonBase
+from website.addons.base import GuidFile
+from website.addons.base import StorageAddonBase
+from website.addons.base import AddonNodeSettingsBase
+from website.addons.base import AddonUserSettingsBase
+
 from website.addons.osfstorage import utils
 from website.addons.osfstorage import errors
 from website.addons.osfstorage import settings
@@ -24,12 +29,69 @@ from website.addons.osfstorage import settings
 logger = logging.getLogger(__name__)
 
 
+class OsfStorageUserSettings(AddonUserSettingsBase):
+    # The current storage being used by this user (in osfstorage) in bytes
+    storage_usage = fields.IntegerField(default=0)
+    # The max amount of storage this user may use
+    # Overrides the property storage_limit if defined
+    storage_limit_override = fields.IntegerField(default=None)
+
+    @property
+    def storage_limit(self):
+        return self.storage_limit_override or settings.DEFAULT_STORAGE_LIMIT
+
+    def merge(self, other_user_settings):
+        """Merge other_user_settings into self.
+        Swaps the all fileversions created by other.owner to self.owner
+        Sums the storage_limit of bother other and self into self
+        Recalculates storage usage for self
+        """
+        assert self.__class__ == other_user_settings.__class__
+
+        self.update_storage_limit(self.storage_limit + other_user_settings.storage_limit)
+
+        for file_node in OsfStorageFileVersion.find(Q('creator', 'eq', other_user_settings.owner)):
+            file_node.creator = self.owner
+            file_node.save()
+
+        self.calculate_storage_usage(save=True)
+
+    def calculate_storage_usage(self, save=False, all=False):
+        """Calculate the storage being used by this user
+
+        :param bool save: Save the collected value to the user object
+        :param bool all: Collect all sizes ignoring "ignore_size"
+        :rtype: int
+        :returns: The total collected storage usaging of this user in bytes
+        """
+        usage = sum(
+            version.size
+            for version in
+            OsfStorageFileVersion.find(
+                Q('creator', 'eq', self.owner) &
+                Q('ignore_size', 'eq', all)
+            )
+        )
+
+        if save:
+            self.storage_usage = usage
+            self.save()
+
+        return usage
+
+    def __repr__(self):
+        return '<{}({!r}, Using {:.2f}%)>'.format(self.__class__.__name__, self.owner, self.storage_usage / self.storage_limit * 100)
+
+
 class OsfStorageNodeSettings(StorageAddonBase, AddonNodeSettingsBase):
     complete = True
     has_auth = True
 
     root_node = fields.ForeignField('OsfStorageFileNode')
     file_tree = fields.ForeignField('OsfStorageFileTree')
+
+    # The current storage being used by this user (in osfstorage) in bytes
+    storage_usage = fields.IntegerField(default=0)
 
     # Temporary field to mark that a record has been migrated by the
     # migrate_from_oldels scripts
@@ -111,6 +173,30 @@ class OsfStorageNodeSettings(StorageAddonBase, AddonNodeSettingsBase):
                 },
             },
         )
+
+    def calculate_storage_usage(self, save=False, all=False):
+        """Calculate the storage being used by this node
+
+        :param bool save: Save the collected value to the node object
+        :param bool all: Collect all sizes ignoring "ignore_size"
+        :rtype: int
+        :returns: The total collected storage usaging of this node in bytes
+        """
+        versions = sum([
+            # Must iterate over the list to actually load versions
+            # Otherwise they are strings
+            [x for x in file_node.versions] for
+            file_node in
+            OsfStorageFileNode.find(Q('node_settings', 'eq', self))
+        ], [])
+
+        usage = sum(version.size for version in versions if all or not version.ignore_size)
+
+        if save:
+            self.storage_usage = usage
+            self.save()
+
+        return usage
 
 
 @unique_on(['name', 'kind', 'parent', 'node_settings'])
@@ -288,9 +374,15 @@ class OsfStorageFileNode(StoredObject):
             return None
 
     @utils.must_be('file')
-    def create_version(self, creator, location, metadata=None):
+    def create_version(self, creator, location, metadata=None, ignore_size=False):
+        """Creates a new OsfStorageFileVersion and pushes it to the head of versions
+        :param User creator: The user that created this version
+        :param dict location: A dict describing the location of this version
+        :param dict metadata: Optional metadata about this version
+        :param bool ignore_size: Wether or not to update storage usage on node and creator
+        """
         latest_version = self.get_version()
-        version = OsfStorageFileVersion(creator=creator, location=location)
+        version = OsfStorageFileVersion(creator=creator, location=location, ignore_size=ignore_size)
 
         if latest_version and latest_version.is_duplicate(version):
             return latest_version
@@ -299,6 +391,13 @@ class OsfStorageFileNode(StoredObject):
             version.update_metadata(metadata)
 
         version._find_matching_archive(save=False)
+
+        # No if guards, rely on ignore_size on the version
+        version.update_storage_usage(save=latest_version is None)
+        version.update_storage_usage(of=self.node_settings, save=latest_version is None)
+        if latest_version:  # None when first version is being created
+            latest_version.update_storage_usage(deleted=True)
+            latest_version.update_storage_usage(of=self.node_settings, deleted=True)
 
         version.save()
         self.versions.append(version)
@@ -314,7 +413,13 @@ class OsfStorageFileNode(StoredObject):
                 return
         raise errors.VersionNotFoundError
 
-    def delete(self, recurse=True):
+    def delete(self, recurse=True, ignore_size=False):
+        """Moves the given file node to the OsfStorageTrashedFileNode
+        collection. Also updates user and node storage usages and optionally
+        deleted children.
+        :param bool recurse: Whether or not to delete children
+        :param bool ignore_size: Whether or not to update storage_usages
+        """
         trashed = OsfStorageTrashedFileNode()
         trashed._id = self._id
         trashed.name = self.name
@@ -324,6 +429,12 @@ class OsfStorageFileNode(StoredObject):
         trashed.node_settings = self.node_settings
 
         trashed.save()
+
+        # Sometimes there are no versions
+        if self.versions:
+            # No if guards, rely on ignore_size on the version
+            self.get_version().update_storage_usage(deleted=True)
+            self.get_version().update_storage_usage(of=self.node_settings, deleted=True)
 
         if self.is_folder and recurse:
             for child in self.children:
@@ -412,6 +523,10 @@ class OsfStorageFileVersion(StoredObject):
     # exists on the backend
     date_modified = fields.DateTimeField()
 
+    # If set to True the size of this version will be ignored
+    # when calculating the the storage usage of both nodes and users
+    ignore_size = fields.BooleanField(default=False)
+
     @property
     def location_hash(self):
         return self.location['object']
@@ -425,15 +540,38 @@ class OsfStorageFileVersion(StoredObject):
 
     def update_metadata(self, metadata):
         self.metadata.update(metadata)
+
         # metadata has no defined structure so only attempt to set attributes
         # If its are not in this callback it'll be in the next
-        self.size = self.metadata.get('size', self.size)
+        if self.metadata.get('size') is not None:
+            self.size = int(self.metadata['size'])
+
         self.content_type = self.metadata.get('contentType', self.content_type)
+
         if 'modified' in self.metadata:
             # TODO handle the timezone here the user that updates the file may see an
             # Incorrect version
             self.date_modified = parse_date(self.metadata['modified'], ignoretz=True)
         self.save()
+
+    def update_storage_usage(self, of=None, deleted=False, save=True):
+        """Increments or decrements the `storage_usage` attribute of `of`
+        :param modm.StoredObject of: The model to be updated, if `None` defaults to self.creator's osfstorage addon
+        :param bool deleted: Increment if True decrement if False
+        :param bool save: Whether or not to save the model after
+        """
+        # Dont update any fields if we're ignoring size
+        if self.ignore_size:
+            return
+
+        of = of or self.creator.get_addon('osfstorage')
+        if deleted:
+            of.storage_usage -= self.size
+        else:
+            of.storage_usage += self.size
+        if save:
+            of.save()
+        return of.storage_usage
 
     def _find_matching_archive(self, save=True):
         """Find another version with the same sha256 as this file.

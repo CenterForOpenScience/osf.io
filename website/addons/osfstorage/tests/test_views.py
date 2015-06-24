@@ -1,10 +1,10 @@
 # encoding: utf-8
 from __future__ import unicode_literals
 
-import os
 import datetime
 from nose.tools import *  # noqa
 
+from tests.factories import AuthUserFactory
 from framework.auth.core import Auth
 from website.addons.osfstorage.tests.utils import (
     StorageTestCase, Delta, AssertDeltas,
@@ -14,11 +14,13 @@ from website.addons.osfstorage.tests import factories
 
 from framework.auth import signing
 from website.util import rubeus
+from website.util import api_url_for
 
 from website.addons.osfstorage import model
 from website.addons.osfstorage import utils
 from website.addons.osfstorage import views
 from website.addons.base.views import make_auth
+from website.addons.osfstorage import settings
 from website.addons.osfstorage import settings as storage_settings
 
 
@@ -28,6 +30,116 @@ def create_record_with_version(path, node_settings, **kwargs):
     record.versions.append(version)
     record.save()
     return record
+
+
+class TestOsfStorageUsage(StorageTestCase):
+
+    def setUp(self):
+        super(TestOsfStorageUsage, self).setUp()
+        self.app.authenticate(*self.user.auth)
+
+    def test_user_initial_usage(self):
+        url = api_url_for('osfstorage_get_user_storage_usage')
+        resp = self.app.get(url)
+
+        assert_equal(resp.status_code, 200)
+        assert_equal(resp.json, {
+            'user': {
+                'storageUsage': 0,
+                'storageLimit': storage_settings.DEFAULT_STORAGE_LIMIT
+            },
+            'contributed': {
+                'storageUsage': 0
+            }
+        })
+
+    def test_node_initial_usage(self):
+        url = self.project.api_url_for('osfstorage_get_node_storage_usage')
+        resp = self.app.get(url)
+
+        assert_equal(resp.status_code, 200)
+        assert_equal(resp.json, {'storageUsage': 0})
+
+    def test_node_usage(self):
+        url = self.project.api_url_for('osfstorage_get_node_storage_usage')
+        child = self.node_settings.root_node.append_file('Test')
+
+        child.create_version(self.user, {
+            'service': 'cloud',
+            settings.WATERBUTLER_RESOURCE: 'osf',
+            'object': 'd077f2',
+        }, metadata={'size': 400})
+
+        resp = self.app.get(url)
+
+        assert_equal(resp.status_code, 200)
+        assert_equal(resp.json, {'storageUsage': 400})
+
+    def test_storage_limit_override(self):
+        url = api_url_for('osfstorage_get_user_storage_usage')
+        self.user_addon.storage_limit_override = 5
+        self.user_addon.save()
+
+        assert_equal(self.user_addon.storage_limit, 5)
+
+        resp = self.app.get(url)
+
+        assert_equal(resp.status_code, 200)
+        assert_equal(resp.json, {
+            'user': {
+                'storageUsage': 0,
+                'storageLimit': 5,
+            },
+            'contributed': {
+                'storageUsage': 0,
+            }
+        })
+
+    def test_user_usage(self):
+        url = api_url_for('osfstorage_get_user_storage_usage')
+
+        child = self.node_settings.root_node.append_file('Test')
+        child.create_version(self.user, {
+            'service': 'cloud',
+            settings.WATERBUTLER_RESOURCE: 'osf',
+            'object': 'd077f2',
+        }, metadata={'size': 400})
+
+        resp = self.app.get(url)
+
+        assert_equal(resp.status_code, 200)
+        assert_equal(resp.json, {
+            'user': {
+                'storageUsage': 400,
+                'storageLimit': storage_settings.DEFAULT_STORAGE_LIMIT
+            },
+            'contributed': {
+                'storageUsage': 400
+            }
+        })
+
+    def test_user_usage_plus_others(self):
+        url = self.project.api_url_for('osfstorage_get_node_storage_usage')
+
+        child = self.node_settings.root_node.append_file('Test')
+        child.create_version(self.user, {
+            'service': 'cloud',
+            settings.WATERBUTLER_RESOURCE: 'osf',
+            'object': 'd077f2',
+        }, metadata={'size': 400})
+
+        child = self.node_settings.root_node.append_file('Test2')
+        child.create_version(AuthUserFactory(), {
+            'service': 'cloud',
+            settings.WATERBUTLER_RESOURCE: 'osf',
+            'object': 'd07kj2',
+        }, metadata={'size': 400})
+
+        resp = self.app.get(url)
+
+        assert_equal(resp.status_code, 200)
+        assert_equal(resp.json, {'storageUsage': 800})
+        assert_equal(self.user_addon.calculate_storage_usage(), 400)
 
 
 class HookTestCase(StorageTestCase):
@@ -202,7 +314,7 @@ class TestUploadFileHook(HookTestCase):
             storage_settings.WATERBUTLER_RESOURCE: 'osf',
             'object': 'file',
         }
-        version = self.record.create_version(self.user, location)
+        version = self.record.create_version(self.user, location, {'size': 123})
         with AssertDeltas(Delta(lambda: len(self.record.versions))):
             res = self.send_upload_hook(self.node_settings.root_node, self.make_payload())
             self.record.reload()
@@ -310,6 +422,7 @@ class TestUploadFileHook(HookTestCase):
             'osfstorage_update_metadata',
             {},
             payload={'metadata': {
+                'size': 583,
                 'vault': 'Vault 101',
                 'archive': '101 tluaV',
             }, 'version': res.json['version']},
@@ -320,6 +433,7 @@ class TestUploadFileHook(HookTestCase):
             name=name,
             hashes={'sha256': 'foo'},
             metadata={
+                'size': 499,
                 'name': 'lakdjf',
                 'provider': 'testing',
             }))
@@ -378,6 +492,7 @@ class TestUpdateMetadataHook(HookTestCase):
         self.send_metadata_hook({
             'version': self.version._id,
             'metadata': {
+                'size': 38502,
                 'vault': 'osf_storage_prod',
                 'archive': 'Some really long glacier object id here'
             }
@@ -390,7 +505,7 @@ class TestUpdateMetadataHook(HookTestCase):
     def test_archived_record_not_found(self):
         res = self.send_metadata_hook(
             payload={
-                'metadata': {'archive': 'glacier'},
+                'metadata': {'size': 13, 'archive': 'glacier'},
                 'version': self.version._id[::-1],
                 'size': 123,
                 'modified': 'Mon, 16 Feb 2015 18:45:34 GMT'
