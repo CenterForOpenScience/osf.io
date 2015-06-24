@@ -64,9 +64,10 @@ var AddPointerViewModel = oop.extend(Paginator, {
                 self.currentPage(result.page);
                 self.numberOfPages(result.pages);
                 self.addNewPaginators();
-            }).fail(
-                osfHelpers.handleJSONError
-            );
+            }).fail(function() {
+                self.elm.modal('hide');
+                osfHelpers.handleJSONError();
+            });
         } else {
             self.results([]);
             self.currentPage(0);
