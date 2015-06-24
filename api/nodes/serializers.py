@@ -169,10 +169,8 @@ class RegistrationSerializer(NodeSerializer):
         },
     })
 
-
     def create(self, validated_data):
         request = self.context['request']
-        user = request.user
         template = 'Open-Ended_Registration'
         schema = MetaSchema.find(
             Q('name', 'eq', template)).sort('-schema_version')[0]
