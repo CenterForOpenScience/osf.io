@@ -284,15 +284,15 @@ class TestRegistrationPartialUpdate(ApiTestCase):
         self.user_two.save()
         self.basic_auth_two = (self.user_two.username, password)
 
-        #TODO ADD registration drafts to test.  User should only be able to update registration DRAFT, never registration.
-
-        self.public_project = ProjectFactory(creator=self.user, is_public=True)
-        self.public_registration = RegistrationFactory(creator=self.user, project=self.public_project)
-        self.public_url = '/{}registrations/{}'.format(API_BASE, self.public_registration._id)
-
         self.private_project = ProjectFactory(creator=self.user, is_private=True)
         self.private_registration = RegistrationFactory(creator=self.user, project=self.private_project)
         self.private_url = '/{}registrations/{}'.format(API_BASE, self.private_registration._id)
+
+        self.public_registration_draft = NodeFactory(creator=self.user, is_registration_draft=True, is_public=True)
+        self.public_reg_draft_url = '/{}registrations/{}'.format(API_BASE, self.public_registration_draft._id)
+
+        self.private_registration_draft = NodeFactory(creator=self.user, is_registration_draft=True)
+        self.private_reg_draft_url = '/{}registrations/{}'.format(API_BASE, self.private_registration_draft._id)
 
         self.new_title = "Updated registration title"
 
@@ -317,46 +317,41 @@ class TestRegistrationPartialUpdate(ApiTestCase):
         assert_equal(res.status_code, 404)
 
     def test_partial_update_public_registration_draft_logged_out(self):
-        #TODO test updating public registration DRAFT, not registration
-        res = self.app.patch(self.public_url, {
+        res = self.app.patch(self.public_reg_draft_url, {
             'title': self.new_title,
         }, expect_errors=True)
         assert_equal(res.status_code, 403)
 
     def test_partial_update_public_registration_draft_logged_in(self):
-        #TODO test updating public registration DRAFT, not registration
-        res = self.app.patch(self.public_url, {
+        res = self.app.patch(self.public_reg_draft_url, {
             'title': self.new_title,
         }, auth=self.basic_auth, expect_errors=True)
         assert_equal(res.status_code, 200)
+        assert_equal(res.json['data']['id'], self.public_registration_draft._id)
 
-        res = self.app.patch(self.public_url, {
+        res = self.app.patch(self.public_reg_draft_url, {
             'title': self.new_title,
         }, auth=self.basic_auth_two, expect_errors=True)
         assert_equal(res.status_code, 403)
 
     def test_partial_update_private_registration_draft_logged_out(self):
-        #TODO test updating private registration DRAFT, not registration
-        res = self.app.patch(self.public_url, {
+        res = self.app.patch(self.private_reg_draft_url, {
             'title': self.new_title,
         }, expect_errors=True)
         assert_equal(res.status_code, 403)
 
     def test_partial_update_private_registration_draft_logged_in_contributor(self):
-        #TODO test updating private registration DRAFT, not registration
-        res = self.app.patch(self.public_url, {
+        res = self.app.patch(self.private_reg_draft_url, {
             'title': self.new_title,
         }, auth=self.basic_auth)
         assert_equal(res.status_code, 200)
-        assert_equal(res.json['data']['id'], self.public_registration._id)
+        assert_equal(res.json['data']['id'], self.private_registration_draft._id)
 
     def test_partial_update_private_registration_draft_logged_in_non_contributor(self):
-        #TODO test updating private registration DRAFT, not registration
-        res = self.app.patch(self.public_url, {
+        res = self.app.patch(self.private_reg_draft_url, {
             'title': self.new_title,
         }, auth=self.basic_auth_two, expect_errors=True)
         assert_equal(res.status_code, 403)
-
 
 class TestRegistrationContributorsList(ApiTestCase):
     #TODO add tests return registration DRAFT contributors
