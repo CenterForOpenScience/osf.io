@@ -129,7 +129,7 @@
             </div>
             <div class="col-xs-9 col-xs-offset-1">
               <h3>Respect for your workflow</h3>
-              <p><strong>Connect your favorite third party services</strong> directly to Open Science Framework.  <span class="label label-primary">3rd Party Integrations</span></p>
+              <p><strong>Connect your favorite third party services</strong> directly to the Open Science Framework.  <span class="label label-primary">3rd Party Integrations</span></p>
             </div>
           </div>
         </div>
@@ -210,13 +210,13 @@
 
           <div class="col-sm-6 text-left">
             <h3>Archive your data</h3>
-            <p>Computer or collaborator explode? With OSF <strong>you will never lose your project data.</strong></p>
+            <p>Computer or collaborator explode? With the OSF <strong>you will never lose your project data.</strong></p>
 
             <h3>Control access and collaboration</h3>
             <p> Add others to your projects to collaborate, or provide private access to view.</p>
 
             <h3>Supercharge your workflow</h3>
-            <p>OSF helps individuals, teams and labs make their <strong>research processes more efficient.</strong></p>
+            <p>The OSF helps individuals, teams and labs make their <strong>research processes more efficient.</strong></p>
 
             <h3>Registration</h3>
             <p><strong>Preserve the state of a project at important parts of its lifecycle</strong> such as the onset of data collection.</p>
@@ -231,12 +231,12 @@
             <div class="col-md-4 col-md-offset-1">
               <i class="icon icon-earth"></i>
               <h2><strong>Contribute</strong> to global scientific efforts</h2>
-              <p>Labs and teams across the globe use Open Science Framework to open their projects up to the scientific community. You can browse the newest and most popular public projects <a href="/explore/activity/">right here</a>. <span class="label label-warning">Get involved</span></p>
+              <p>Labs and teams across the globe use the Open Science Framework to open their projects up to the scientific community. You can browse the newest and most popular public projects <a href="/explore/activity/">right here</a>. <span class="label label-warning">Get involved</span></p>
             </div>
             <div class="col-md-4 col-md-offset-1">
               <i class="icon icon-nonprofit"></i>
               <h2>We are a <strong>mission-driven non-profit</strong></h2>
-              <p>OSF is a free, open-source service of the <a href="https://cos.io/">Center for Open Science</a>. We’re aligning scientific practices with scientific values by improving openness, integrity and reproducibility of research. <span class="label label-success">Non-Profit</span></p>
+              <p>The OSF is a free, open-source service of the <a href="https://cos.io/">Center for Open Science</a>. We’re aligning scientific practices with scientific values by improving openness, integrity and reproducibility of research. <span class="label label-success">Non-Profit</span></p>
             </div>
           </div>
         </div>
@@ -258,7 +258,7 @@
           </div>
           <div class="col-xs-8">
             <h3>Making research reproducible &amp; verifiable</h3>
-            <p>OSF helps our students understand and apply sound data management principles to their work. And since we have easy access to all of the files the students are working with, it greatly enhances our ability to offer them constructive guidance.<br/><small><em>Richard Ball, Professor of Economics, Haverford College</em></small></em></small></p>
+            <p>The OSF helps our students understand and apply sound data management principles to their work. And since we have easy access to all of the files the students are working with, it greatly enhances our ability to offer them constructive guidance.<br/><small><em>Richard Ball, Professor of Economics, Haverford College</em></small></em></small></p>
           </div>
         </div>
 
@@ -290,7 +290,7 @@
         <div class="row">
           <div class="col-md-8">
             <h2><strong>Free and open source.</strong></h2>
-            <h4>OSF is a public good built to support your research.</h4>
+            <h4>The OSF is a public good built to support your research.</h4>
             <a href="#" class="btn btn-info btn-lg">Get Started</a>
           </div>
           <div class="col-md-4 hidden-xs hidden-sm">
