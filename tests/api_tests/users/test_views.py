@@ -14,9 +14,76 @@ class TestUsers(ApiTestCase):
     def setUp(self):
         ApiTestCase.setUp(self)
         self.user_one = UserFactory.build()
+        self.user_one.set_password('justapoorboy')
+        self.user_one.fullname = 'Martin Luther King Jr.'
+        self.user_one.given_name = 'Martin'
+        self.user_one.family_name = 'King'
+        self.user_one.suffix = 'Jr.'
+        self.user_one.social['github'] = 'userOneGithub'
+        self.user_one.social['scholar'] = 'userOneScholar'
+        self.user_one.social['personal_website'] = 'http://www.useronepersonalwebsite.com'
+        self.user_one.social['twitter'] = 'userOneTwitter'
+        self.user_one.social['linkedIn'] = 'userOneLinkedIn'
+        self.user_one.social['impactStory'] = 'userOneImpactStory'
+        self.user_one.social['orcid'] = 'userOneOrcid'
+        self.user_one.social['researcherId'] = 'userOneResearcherId'
+
+        self.user_one.employment_institutions = [
+            {
+                'startYear': '1954',
+                'title': '',
+                'startMonth': 1,
+                'endMonth': None,
+                'endYear': 1968,
+                'ongoing': False,
+                'department': '',
+                'institution': 'Dexter Avenue Baptist Church'
+            },
+        ]
         self.user_one.save()
+
         self.user_two = UserFactory.build()
+        self.user_two.set_password('justapoorboy')
+        self.user_two.fullname = 'Martin Lawrence'
+        self.user_two.given_name = 'Martin'
+        self.user_two.family_name = 'Lawrence'
+        self.user_two.suffix = 'Sr.'
+        self.user_two.social['github'] = 'userTwoGithub'
+        self.user_two.social['scholar'] = 'userTwoScholar'
+        self.user_two.social['personal_website'] = 'http://www.useronepersonalwebsite.com'
+        self.user_two.social['twitter'] = 'userTwoTwitter'
+        self.user_two.social['linkedIn'] = 'userTwoLinkedIn'
+        self.user_two.social['impactStory'] = 'userTwoImpactStory'
+        self.user_two.social['orcid'] = 'userTwoOrcid'
+        self.user_two.social['researcherId'] = 'userTwoResearcherId'
+
+        self.user_two.employment_institutions = [
+            {
+                'startYear': '1900',
+                'title': 'Martin',
+                'startMonth': 1,
+                'endMonth': None,
+                'endYear': None,
+                'ongoing': True,
+                'department': '',
+                'institution': 'Waffle House'
+            },
+            {
+                "startYear": '',
+                "title": 'President of Tony Danza Management',
+                "startMonth": None,
+                "endMonth": None,
+                "endYear": '2000',
+                "ongoing": False,
+                "department": 'Mom',
+                "institution": 'Heeyyyy'
+            },
+        ]
+
         self.user_two.save()
+
+        self.auth_one = (self.user_one.username, 'justapoorboy')
+        self.auth_two = (self.user_two.username, 'justapoorboy')
 
     def tearDown(self):
         ApiTestCase.tearDown(self)
@@ -46,7 +113,7 @@ class TestUsers(ApiTestCase):
         assert_in(self.user_two._id, ids)
 
     def test_find_multiple_in_users(self):
-        url = "/{}users/?filter[fullname]=fred".format(API_BASE)
+        url = "/{}users/?filter[fullname]=Martin".format(API_BASE)
 
         res = self.app.get(url)
         user_json = res.json['data']
@@ -55,7 +122,7 @@ class TestUsers(ApiTestCase):
         assert_in(self.user_two._id, ids)
 
     def test_find_single_user_in_users(self):
-        url = "/{}users/?filter[fullname]=my".format(API_BASE)
+        url = "/{}users/?filter[fullname]=Mom".format(API_BASE)
         self.user_one.fullname = 'My Mom'
         self.user_one.save()
         res = self.app.get(url)
@@ -64,8 +131,17 @@ class TestUsers(ApiTestCase):
         assert_in(self.user_one._id, ids)
         assert_not_in(self.user_two._id, ids)
 
+    def test_filter_using_complex_field(self):
+        url = "/{}users/?filter[employment_institutions.title]=Martin".format(API_BASE)
+        self.user_one.save()
+        res = self.app.get(url)
+        user_json = res.json['data']
+        ids = [each['id'] for each in user_json]
+        assert_in(self.user_one._id, ids)
+        assert_not_in(self.user_two._id, ids)
+
     def test_find_no_user_in_users(self):
-        url = "/{}users/?filter[fullname]=NotMyMom".format(API_BASE)
+        url = "/{}users/?filter[given_name]=notMartin".format(API_BASE)
         res = self.app.get(url)
         user_json = res.json['data']
         ids = [each['id'] for each in user_json]
@@ -79,12 +155,74 @@ class TestUserDetail(ApiTestCase):
         ApiTestCase.setUp(self)
         self.user_one = UserFactory.build()
         self.user_one.set_password('justapoorboy')
-        self.user_one.social['twitter'] = 'howtopizza'
+        self.user_one.fullname = 'Martin Luther King Jr.'
+        self.user_one.given_name = 'Martin'
+        self.user_one.family_name = 'King'
+        self.user_one.suffix = 'Jr.'
+        self.user_one.social['github'] = 'userOneGithub'
+        self.user_one.social['scholar'] = 'userOneScholar'
+        self.user_one.social['personal_website'] = 'http://www.useronepersonalwebsite.com'
+        self.user_one.social['twitter'] = 'userOneTwitter'
+        self.user_one.social['linkedIn'] = 'userOneLinkedIn'
+        self.user_one.social['impactStory'] = 'userOneImpactStory'
+        self.user_one.social['orcid'] = 'userOneOrcid'
+        self.user_one.social['researcherId'] = 'userOneResearcherId'
+
+        self.user_one.employment_institutions = [
+            {
+                'startYear': '1954',
+                'title': '',
+                'startMonth': 1,
+                'endMonth': None,
+                'endYear': 1968,
+                'ongoing': False,
+                'department': '',
+                'institution': 'Dexter Avenue Baptist Church'
+            },
+        ]
         self.user_one.save()
-        self.auth_one = (self.user_one.username, 'justapoorboy')
+
         self.user_two = UserFactory.build()
         self.user_two.set_password('justapoorboy')
+        self.user_two.fullname = 'Martin Lawrence'
+        self.user_two.given_name = 'Martin'
+        self.user_two.family_name = 'Lawrence'
+        self.user_two.suffix = 'Sr.'
+        self.user_two.social['github'] = 'userTwoGithub'
+        self.user_two.social['scholar'] = 'userTwoScholar'
+        self.user_two.social['personal_website'] = 'http://www.useronepersonalwebsite.com'
+        self.user_two.social['twitter'] = 'userTwoTwitter'
+        self.user_two.social['linkedIn'] = 'userTwoLinkedIn'
+        self.user_two.social['impactStory'] = 'userTwoImpactStory'
+        self.user_two.social['orcid'] = 'userTwoOrcid'
+        self.user_two.social['researcherId'] = 'userTwoResearcherId'
+
+        self.user_two.employment_institutions = [
+            {
+                'startYear': '1900',
+                'title': '',
+                'startMonth': 1,
+                'endMonth': None,
+                'endYear': None,
+                'ongoing': True,
+                'department': '',
+                'institution': 'Waffle House'
+            },
+            {
+                "startYear": '',
+                "title": 'President of Tony Danza Management',
+                "startMonth": None,
+                "endMonth": None,
+                "endYear": '2000',
+                "ongoing": False,
+                "department": 'Mom',
+                "institution": 'Heeyyyy'
+            },
+        ]
+
         self.user_two.save()
+
+        self.auth_one = (self.user_one.username, 'justapoorboy')
         self.auth_two = (self.user_two.username, 'justapoorboy')
 
     def tearDown(self):
@@ -101,7 +239,8 @@ class TestUserDetail(ApiTestCase):
         res = self.app.get(url)
         user_json = res.json['data']
         assert_equal(user_json['fullname'], self.user_one.fullname)
-        assert_equal(user_json['twitter'], 'howtopizza')
+        assert_equal(user_json['twitter'], self.user_one.social['twitter'])
+        assert_equal(user_json['family_name'], self.user_one.family_name)
 
     def test_get_incorrect_pk_user_logged_in(self):
         url = "/{}users/{}/".format(API_BASE, self.user_two._id)
