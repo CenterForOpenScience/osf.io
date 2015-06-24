@@ -20,7 +20,7 @@ var iconmap = require('js/iconmap');
 // Modal language
 var MESSAGES = {
     makeProjectPublicWarning: 'Once a project is made public, there is no way to guarantee that ' +
-                        'access to the data it contains can be completely prevented. Users ' +
+                        'access to its data can be completely prevented. You ' +
                         'should assume that once a project is made public, it will always ' +
                         'be public. <b>Review your project for sensitive or restricted information before making it public</b>. Are you absolutely sure you would like to continue?',
 
@@ -30,21 +30,18 @@ var MESSAGES = {
 
     makeComponentPublicWarning: 'Once a component is made public, there is no way to guarantee that ' +
                         'access to the data it contains can be completely prevented. Users ' +
-                        'should assume that one a component is made public, it will always ' +
+                        'should assume that once a component is made public, it will always ' +
                         'be public. The rest of the project, including other components, ' +
                         'will not be made public. <b>Review your component for sensitive or restricted information before making it public</b>. Are you absolutely sure you would like to continue?',
 
     makeComponentPrivateWarning: 'Making a component private will prevent users from viewing it on this site, ' +
                         'but will have no impact on external sites, including Google\'s cache. ' +
                         'Would you like to continue?',
-    // TODO(hrybacki): Remove once Retraction/Embargoes goes is merged into production
-    makeRegistrationPublicWarning: '<b>Important Note:</b> As early as <u>June 8, 2015</u>, new registrations ' +
-                        'will be made public immediately or can be embargoed for up to four years. There ' +
-                        'will no longer be the option of creating a permanently private registration. This ' +
-                        'registration occurred before June 8, 2015, so you do retain the option of keeping it ' +
-                        'private. However, if you do choose to make the registration public now, then after ' +
-                        'June 8, 2015 you will not be able to return it to private. Are you sure that you would like ' +
-                        'to continue?',
+    makeRegistrationPublicWarning: 'Once a registration is made public, there is no way to guarantee that ' +
+                        'access to its data can be completely prevented. <b>Once this action has been taken, you will not be able to make ' +
+                        'the registration private again.</b> A public registration, however, may be retracted, leaving behind a ' +
+                        'record of its existence along with basic metadata related to the project and its ' +
+                        'contributors.',
 };
 
 // TODO(sloria): Fix this external dependency on nodeApiUrl
@@ -189,9 +186,13 @@ var ProjectViewModel = function(data) {
         $('#nodeTitleEditable').editable($.extend({}, editableOptions, {
             name: 'title',
             title: 'Edit Title',
+            tpl: '<input type="text" maxlength="200">',
             validate: function (value) {
                 if ($.trim(value) === '') {
                     return 'Title cannot be blank.';
+                }
+                else if(value.length > 200){
+                    return 'Title cannot exceed 200 characters.';
                 }
             }
         }));
