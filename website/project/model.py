@@ -605,6 +605,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
     deleted_date = fields.DateTimeField(index=True)
 
     is_registration = fields.BooleanField(default=False, index=True)
+    is_registration_draft = fields.BooleanField(default=False, index=True)
     registered_date = fields.DateTimeField(index=True)
     registered_user = fields.ForeignField('user', backref='registered')
     registered_schema = fields.ForeignField('metaschema', backref='registered')

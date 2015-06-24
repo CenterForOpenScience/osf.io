@@ -171,9 +171,7 @@ class RegistrationSerializer(NodeSerializer):
         when = datetime.datetime.utcnow()
         node = self.context['view'].get_node()
         registration = node.clone()
-        registration.is_registration = True
-        registration.registered_date = when
-        registration.registered_user = user
+        registration.is_registration_draft = True
         registration.registered_from = node
         registration.contributors = node.contributors
         registration.forked_from = node.forked_from
