@@ -37,6 +37,7 @@ from framework.analytics import (
 )
 from framework.sentry import log_exception
 from framework.transactions.context import TokuTransaction
+from framework.utils import iso8601format
 
 from website import language, settings, security
 from website.util import web_url_for
@@ -1492,7 +1493,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         try:
             return self.logs[-1].date
         except IndexError:
-            return None
+            return self.date_created
 
     def set_title(self, title, auth, save=False):
         """Set the title of this Node and log it.
@@ -2826,7 +2827,7 @@ class PrivateLink(StoredObject):
     def to_json(self):
         return {
             "id": self._id,
-            "date_created": self.date_created.strftime('%m/%d/%Y %I:%M %p UTC'),
+            "date_created": iso8601format(self.date_created),
             "key": self.key,
             "name": self.name,
             "creator": {'fullname': self.creator.fullname, 'url': self.creator.profile_url},
