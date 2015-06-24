@@ -1,12 +1,13 @@
 from rest_framework import generics, permissions as drf_permissions
 from modularodm import Q
-
 from website.models import User, Node
 from framework.auth.core import Auth
 from api.base.utils import get_object_or_404
 from api.base.filters import ODMFilterMixin
 from api.nodes.serializers import NodeSerializer
 from .serializers import UserSerializer
+from .permissions import ReadOnlyOrCurrentUser
+
 
 class UserMixin(object):
     """Mixin with convenience methods for retrieving the current node based on the
@@ -14,13 +15,11 @@ class UserMixin(object):
     """
 
     serializer_class = UserSerializer
-    node_lookup_url_kwarg = 'user_id'
+    user_lookup_url_kwarg = 'user_id'
 
-    def get_user(self, check_permissions=True):
-        obj = get_object_or_404(User, self.kwargs[self.node_lookup_url_kwarg])
-        if check_permissions:
-            # May raise a permission denied
-            self.check_object_permissions(self.request, obj)
+    def get_user(self):
+        obj = get_object_or_404(User, self.kwargs[self.user_lookup_url_kwarg])
+        self.check_object_permissions(self.request, obj)
         return obj
 
 
@@ -29,9 +28,11 @@ class UserList(generics.ListAPIView, ODMFilterMixin):
 
     You can filter on users by their id, fullname, given_name, middle_name, or family_name.
     """
+
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
     )
+
     serializer_class = UserSerializer
     ordering = ('-date_registered')
 
@@ -50,25 +51,37 @@ class UserList(generics.ListAPIView, ODMFilterMixin):
         return User.find(query)
 
 
-class UserDetail(generics.RetrieveAPIView, UserMixin):
+class UserDetail(generics.RetrieveUpdateAPIView, UserMixin):
     """Details about a specific user.
     """
+    permission_classes = (
+        ReadOnlyOrCurrentUser,
+    )
     serializer_class = UserSerializer
 
     # overrides RetrieveAPIView
     def get_object(self):
         return self.get_user()
 
+    # overrides RetrieveUpdateAPIView
+    def get_serializer_context(self):
+        # Serializer needs the request in order to make an update to privacy
+        return {'request': self.request}
+
 
 class UserNodes(generics.ListAPIView, UserMixin, ODMFilterMixin):
     """Nodes belonging to a user.
 
     Return a list of nodes that the user contributes to. """
+    permission_classes = (
+        drf_permissions.IsAuthenticatedOrReadOnly,
+    )
+
     serializer_class = NodeSerializer
 
     # overrides ODMFilterMixin
     def get_default_odm_query(self):
-        user = self.get_user(check_permissions=False)
+        user = self.get_user()
         return (
             Q('contributors', 'eq', user) &
             Q('is_folder', 'ne', True) &
