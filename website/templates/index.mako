@@ -72,7 +72,7 @@
                           </div>
                           <div class="form-group" data-bind="css: {'has-error': password() && !password.isValid(), 'has-success': password() && password.isValid()}">
                               <label class="placeholder-replace" style="display:none">Password</label>
-                              <input type="password" class="form-control" placeholder="Password (Must be 6 to 35 characters)" data-bind=" value: password, disable: submitted(), event: {blur: trim.bind($data, password)}">
+                              <input type="password" class="form-control" placeholder="Password (Must be 6 to 256 characters)" data-bind=" value: password, disable: submitted(), event: {blur: trim.bind($data, password)}">
                                 <p class="help-block signup-help" data-bind="validationMessage: password" style="display: none;"></p>
                           </div>
 
@@ -149,7 +149,7 @@
       <div class="feature-2 space-top space-bottom">
         <div class="row">
           <div class="col-xs-12 text-center headline">
-            <h2>OSF Integrations make your <strong>workflow more efficient</strong></h2>
+            <h2>OSF integrations make your <strong>workflow more efficient</strong></h2>
           </div>
         </div>
         <div class="row integrations">
@@ -265,7 +265,7 @@
         <div class="row hidden-xs hidden-sm">
           <div class="col-md-7 col-md-offset-2">
             <h3>Version control makes life easier</h3>
-            <p>The OSF makes version control effortless. My PI, my lab mates, and I have access to previous versions of a file at any time - and the most current version is always readily available.<br/><small><em>Erica Baranski, PhD Student, Social and Personality Psychology Funder Lab, UC Riverside</em></small></em></small></p>
+            <p>The OSF makes version control effortless. My PI, my lab mates, and I have access to previous versions of a file at any time&#151;and the most current version is always readily available.<br/><small><em>Erica Baranski, PhD Student, Social and Personality Psychology Funder Lab, UC Riverside</em></small></em></small></p>
           </div>
           <div class="col-md-3">
             <img src="/static/img/front-page/user3.jpg" class="img-circle img-responsive" alt="Erica Baranski" />
