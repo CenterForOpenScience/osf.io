@@ -4,12 +4,8 @@ var Fangorn = require('js/fangorn');
 var $osf = require('js/osfHelpers');
 var $ = require('jquery');
 
-// var filesWidget = new FilesWidget('treeGrid', nodeApiUrl + 'files/grid/');
-// filesWidget.init();
-
 JSONEditor.defaults.options.upload = function() {
-   // var filesWidget = new FilesWidget(this.input, nodeApiUrl + 'files/grid/');
-    //filesWidget.init();
+   // TODO add file handling 
 };
 
 JSONEditor.defaults.resolvers.unshift(function(schema) {
@@ -26,8 +22,6 @@ JSONEditor.defaults.editors.myUpload = JSONEditor.defaults.editors.upload.extend
         // Input that holds the base64 string
         this.input = this.theme.getFormInputField('hidden');
         this.container.appendChild(this.input);
-        
-        
 
         // Don't show uploader if this is readonly
         if(!this.schema.readOnly && !this.schema.readonly) {
@@ -35,20 +29,14 @@ JSONEditor.defaults.editors.myUpload = JSONEditor.defaults.editors.upload.extend
         if(!this.jsoneditor.options.upload) throw "Upload handler required for upload editor";
         
         // File uploader
-        //console.log(this.container);
-        //this.uploader = filesWidget;
         this.uploader = document.createElement('div');
-        //this.uploader = this.theme.getFormInputField('');
-        //$(this.uploader).attr('class', 'form-control');
-        $(this.uploader).attr('id', 'treeGrid');
-        console.log(this.uploader);
 
-        // var filesWidget = new FilesWidget('treeGrid', nodeApiUrl + 'files/grid/');
-        // filesWidget.init();
+        $(this.uploader).attr('id', 'registrationFilesGrid');
 
         this.uploader.addEventListener('change',function(e) {
             e.preventDefault();
             e.stopPropagation();
+            console.log("change");
         
             if(this.files && this.files.length) {
                 var fr = new FileReader();
@@ -72,9 +60,10 @@ JSONEditor.defaults.editors.myUpload = JSONEditor.defaults.editors.upload.extend
         this.container.appendChild(this.control);
     },
     postBuild: function() {
-        var filesWidget = new FilesWidget('treeGrid', nodeApiUrl + 'files/grid/');
-        filesWidget.init();
-        console.log(this.container);    
+        var nodeApiUrl = window.contextVars.node.urls.api;
+ 
+        var filesWidget = new FilesWidget('registrationFilesGrid', nodeApiUrl + 'files/grid/');
+        filesWidget.init();  
     },
     refreshPreview: function() {
         if(this.last_preview === this.preview_value) return;
@@ -236,6 +225,8 @@ JSONEditor.defaults.editors.singleselect = JSONEditor.defaults.editors.multisele
             self.updateValue(new_value);
             self.onChange(true);
         });
+    }
+});
 
 JSONEditor.defaults.editors.commentableString = JSONEditor.defaults.editors.string.extend({
     build: function() {
