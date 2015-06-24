@@ -64,7 +64,7 @@ class Event(object):
 
 
 class FileEvent(Event):
-    """File event base class"""
+    """File event base class, should not be called"""
     def __init__(self, user, node, event, payload=None):
         self.user = user
         self.gravatar_url = user.gravatar_url
@@ -91,6 +91,7 @@ class FileEvent(Event):
         return f_url
 
     def form_guid(self):
+        """Gets the UID for the file to use with self.event and self.url"""
         addon = self.node.get_addon(self.payload['provider'])
         path = self.payload['metadata']['path']
         path = path if path.startswith('/') else '/' + path
@@ -101,7 +102,6 @@ class UpdateFileEvent(FileEvent):
     """
     Class for simple file operations such as updating, adding files
     """
-
     def __init__(self, user, node, event, payload=None):
         super(UpdateFileEvent, self).__init__(user, node, event, payload=payload)
         self.form_guid()
@@ -119,10 +119,12 @@ class UpdateFileEvent(FileEvent):
 
 
 class FileAdded(UpdateFileEvent):
+    """Actual class called when a file is added"""
     pass
 
 
 class FileUpdated(UpdateFileEvent):
+    """Actual class called when a file is updated"""
     pass
 
 
@@ -130,7 +132,6 @@ class SimpleFileEvent(FileEvent):
     """
     Class for file/folder operations that don't lead to a specific place
     """
-
     def __init__(self, user, node, event, payload=None):
         super(SimpleFileEvent, self).__init__(user, node, event, payload=payload)
         self.form_event()
@@ -145,18 +146,20 @@ class SimpleFileEvent(FileEvent):
 
 
 class FileRemoved(SimpleFileEvent):
+    """Actual class called when a file is removed"""
     pass
 
 
 class FolderCreated(SimpleFileEvent):
+    """Actual class called when a folder is created"""
     pass
 
 
 class ComplexFileEvent(FileEvent):
     """
     Class for move and copy files. Users could be removed from subscription.
+    - Essentially every method is redone for these more complex actions.
     """
-
     def __init__(self, user, node, event, payload=None):
         super(ComplexFileEvent, self).__init__(user, node, event, payload=payload)
         self.source_guid = None
@@ -202,6 +205,7 @@ class ComplexFileEvent(FileEvent):
 
 class AddonFileMoved(ComplexFileEvent):
     """
+    Actual class called when a file is moved
     Specific methods for handling moving files
     """
     def perform(self):
@@ -222,6 +226,7 @@ class AddonFileMoved(ComplexFileEvent):
 
 class AddonFileCopied(ComplexFileEvent):
     """
+    Actual class called when a file is copied
     Specific methods for handling a copy file event.
     """
     def form_message(self):
