@@ -177,6 +177,7 @@ h6 {
 }
 #logo.off {
     transform: rotate(180deg);
+    -webkit-transform: rotate(180deg);
 }
 #logo.off .circle:before {
     top: -200px;
@@ -188,11 +189,13 @@ h6 {
 }
 #logo #circle-1 {
     transform: rotate(0deg);
+    -webkit-transform: rotate(0deg);
     left: 75px;
     top: 0;
 }
 #logo #circle-2 {
     transform: rotate(45deg);
+    -webkit-transform: rotate(45deg);
     left: 128px;
     top: 22px;
 }
@@ -201,11 +204,13 @@ h6 {
 }
 #logo #circle-3 {
     transform: rotate(90deg);
+    -webkit-transform: rotate(90deg);
     left: 150px;
     top: 75px;
 }
 #logo #circle-4 {
     transform: rotate(135deg);
+    -webkit-transform: rotate(135deg);
     left: 128px;
     top: 128px;
 }
@@ -214,11 +219,13 @@ h6 {
 }
 #logo #circle-5 {
     transform: rotate(180deg);
+    -webkit-transform: rotate(180deg);
     left: 75px;
     top: 150px;
 }
 #logo #circle-6 {
     transform: rotate(225deg);
+    -webkit-transform: rotate(225deg);
     left: 22px;
     top: 128px;
 }
@@ -227,11 +234,13 @@ h6 {
 }
 #logo #circle-7 {
     transform: rotate(270deg);
+    -webkit-transform: rotate(270deg);
     left: 0;
     top: 75px;
 }
 #logo #circle-8 {
     transform: rotate(315deg);
+    -webkit-transform: rotate(315deg);
     left: 22px;
     top: 22px;
 }
@@ -434,7 +443,7 @@ footer {
         margin-left: 5%;
     }
     .student-image .quote {
-        top: 20px;
+        bottom: 0;
     }
     .student-image .main {
         font-size: 1.0em !important;
@@ -454,8 +463,11 @@ footer {
     .grey-pullout {
         padding-bottom: 90px;
     }
+    #home-hero {
+        height: 900px;
+    }
 }
-@media (max-width: 991px) {
+@media (min-width: 768px) and (max-width: 991px)  {
     .feature-4 .col-md-4:last-child {
         padding-top: 30px;
     }
