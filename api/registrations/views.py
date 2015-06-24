@@ -53,7 +53,7 @@ class RegistrationList(generics.ListAPIView, ODMFilterMixin):
 
 # TODO: Return project details for nodes that are registration_drafts in addition to registrations
 
-class RegistrationDetail(NodeDetail, RegistrationMixin):
+class RegistrationDetail(NodeDetail, generics.DestroyAPIView, RegistrationMixin):
     """
     Registration details
     """
@@ -75,6 +75,13 @@ class RegistrationDetail(NodeDetail, RegistrationMixin):
         # Serializer needs the request in order to make an update to privacy
         return {'request': self.request}
 
+    # overrides DestroyAPIView
+    def perform_destroy(self, instance):
+        user = self.request.user
+        auth = Auth(user)
+        node = self.get_object()
+        node.remove_node(auth=auth)
+        node.save()
 
 class RegistrationContributorsList(NodeContributorsList, RegistrationMixin):
     """
