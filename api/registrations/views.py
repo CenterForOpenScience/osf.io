@@ -83,6 +83,7 @@ class RegistrationDetail(NodeDetail, generics.DestroyAPIView, RegistrationMixin)
         node.remove_node(auth=auth)
         node.save()
 
+
 class RegistrationContributorsList(NodeContributorsList, RegistrationMixin):
     """
     Contributors(users) for a registration
@@ -105,7 +106,7 @@ class RegistrationChildrenList(NodeChildrenList, RegistrationMixin):
     """
     def get_queryset(self):
         node = self.get_node()
-        if node.is_registration.False:
+        if node.is_registration is False and node.is_registration_draft is False:
             raise ValidationError('Not a registration or registration draft.')
         nodes = node.nodes
         user = self.request.user

@@ -548,8 +548,6 @@ class TestRegistrationContributorsList(ApiTestCase):
 
 
 class TestRegistrationChildrenList(ApiTestCase):
-    # TODO add tests for registration DRAFTS
-    # TODO child id not returning for registration. why?
     def setUp(self):
         ApiTestCase.setUp(self)
         self.user = UserFactory.build()
@@ -564,54 +562,85 @@ class TestRegistrationChildrenList(ApiTestCase):
         self.user_two.save()
         self.basic_auth_two = (self.user_two.username, password)
 
-        self.public_project = ProjectFactory(creator=self.user, is_public=True)
-        self.public_component = NodeFactory(parent=self.public_project, creator=self.user, is_public=True)
+        self.public_project = ProjectFactory(is_public=True, creator=self.user)
+        self.public_component = NodeFactory(title='public child', parent=self.public_project, creator=self.user, is_public=True)
         self.public_project.save()
-        self.public_registration = RegistrationFactory(creator=self.user, project=self.public_project)
-        self.public_url = '/{}registrations/{}/children/'.format(API_BASE, self.public_registration._id)
+        self.public_project_url = '/{}registrations/{}/children/'.format(API_BASE, self.public_project._id)
 
-        self.private_project = ProjectFactory(creator=self.user, is_public=True)
-        self.private_component = NodeFactory(parent=self.private_project, creator=self.user, is_public=False)
+        self.public_registration = RegistrationFactory(project=self.public_project, creator=self.user, is_public=True)
+        self.public_registration_url = '/{}registrations/{}/children/'.format(API_BASE, self.public_registration._id)
+
+        self.public_registration_draft = NodeFactory(is_registration_draft=True, creator=self.user, is_public=True)
+        self.public_reg_draft_component = NodeFactory(parent=self.public_registration_draft, creator=self.user, is_public=True)
+        self.public_registration_draft.save()
+        self.public_reg_draft_url = '/{}registrations/{}/children/'.format(API_BASE, self.public_registration_draft._id)
+
+        self.private_project = ProjectFactory(creator=self.user)
+        self.private_component = NodeFactory(parent=self.private_project, creator=self.user)
         self.private_project.save()
-        self.private_registration = RegistrationFactory(creator=self.user, project=self.private_project)
-        self.private_url = '/{}registrations/{}/children/'.format(API_BASE, self.private_registration._id)
 
-    def test_return_node_children_inside_registration_url(self):
-        url = '/{}registrations/{}/children/'.format(API_BASE, self.public_project._id)
-        res = self.app.get(url, auth=self.basic_auth, expect_errors=True)
+        self.private_registration = RegistrationFactory(project=self.private_project, creator=self.user)
+        self.private_registration_url = '/{}registrations/{}/children/'.format(API_BASE, self.private_registration._id)
+
+        self.private_registration_draft = NodeFactory(is_registration_draft=True, creator=self.user)
+        self.private_reg_draft_component = NodeFactory(parent=self.private_registration_draft, creator=self.user)
+        self.private_reg_draft_url = '/{}registrations/{}/children/'.format(API_BASE, self.private_registration_draft._id)
+
+    def test_return_non_registration_node_children(self):
+        res = self.app.get(self.public_project_url, expect_errors=True)
         assert_equal(res.status_code, 400)
 
     def test_return_public_registration_children_list_logged_out(self):
-        res = self.app.get(self.public_url)
+        res = self.app.get(self.public_registration_url)
         assert_equal(res.status_code, 200)
         assert_equal(len(res.json['data']), 1)
-        assert_equal(res.json['data'][0]['id'], self.public_component._id)
+        assert_equal(res.json['data'][0]['title'], self.public_component.title)
+
+    def test_return_public_registration_draft_children_list_logged_out(self):
+        res = self.app.get(self.public_reg_draft_url)
+        assert_equal(res.status_code, 200)
+        assert_equal(len(res.json['data']), 1)
+        assert_equal(res.json['data'][0]['title'], self.public_reg_draft_component.title)
 
     def test_return_public_registration_children_list_logged_in(self):
-        res = self.app.get(self.public_url, auth=self.basic_auth_two)
+        res = self.app.get(self.public_registration_url, auth=self.basic_auth_two)
         assert_equal(res.status_code, 200)
         assert_equal(len(res.json['data']), 1)
-        assert_equal(res.json['data'][0]['id'], self.public_component._id)
+        assert_equal(res.json['data'][0]['title'], self.public_component.title)
+
+    def test_return_public_registration_draft_children_list_logged_in(self):
+        res = self.app.get(self.public_reg_draft_url, auth=self.basic_auth_two)
+        assert_equal(res.status_code, 200)
+        assert_equal(len(res.json['data']), 1)
+        assert_equal(res.json['data'][0]['title'], self.public_reg_draft_component.title)
 
     def test_return_private_registration_children_list_logged_out(self):
-        res = self.app.get(self.private_url, expect_errors=True)
+        res = self.app.get(self.private_registration_url, expect_errors=True)
+        assert_equal(res.status_code, 403)
+
+    def test_return_private_registration_draft_children_list_logged_out(self):
+        res = self.app.get(self.private_reg_draft_url, expect_errors=True)
         assert_equal(res.status_code, 403)
 
     def test_return_private_registration_children_list_logged_in_contributor(self):
-        res = self.app.get(self.private_url, auth=self.basic_auth)
+        res = self.app.get(self.private_registration_url, auth=self.basic_auth)
         assert_equal(res.status_code, 200)
         assert_equal(len(res.json['data']), 1)
-        assert_equal(res.json['data'][0]['id'], self.private_component._id)
+        assert_equal(res.json['data'][0]['category'], self.private_component.category)
+
+    def test_return_private_registration_draft_children_list_logged_in_contributor(self):
+        res = self.app.get(self.private_reg_draft_url, auth=self.basic_auth)
+        assert_equal(res.status_code, 200)
+        assert_equal(len(res.json['data']), 1)
+        assert_equal(res.json['data'][0]['category'], self.private_reg_draft_component.category)
 
     def test_return_private_registration_children_list_logged_in_non_contributor(self):
-        res = self.app.get(self.private_url, auth=self.basic_auth_two, expect_errors=True)
+        res = self.app.get(self.private_registration_url, auth=self.basic_auth_two, expect_errors=True)
         assert_equal(res.status_code, 403)
 
-    def test_registration_children_list_does_not_include_unauthorized_projects(self):
-        private_component = NodeFactory(parent=self.private_project)
-        res = self.app.get(self.private_url, auth=self.basic_auth)
-        assert_equal(len(res.json['data']), 1)
-
+    def test_return_private_registration_draft_children_list_logged_in_non_contributor(self):
+        res = self.app.get(self.private_reg_draft_url, auth=self.basic_auth_two, expect_errors=True)
+        assert_equal(res.status_code, 403)
 
 class TestRegistrationPointersList(ApiTestCase):
     # TODO add tests for registration DRAFTS
