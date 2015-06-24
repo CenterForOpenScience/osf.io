@@ -1051,6 +1051,10 @@ h1.unavailable {
 {
     color: #E0EBF3;
 }
+.tag-cloud .cloud-tag:hover > .remove-tag
+{
+    visibility: visible;
+}
 .tag-cloud .tag-big
 {
     font-size: 13pt;
@@ -1081,6 +1085,7 @@ h1.unavailable {
 
 .remove-tag
 {
+    visibility: hidden;
     position: absolute;
     top: -5px;
     right: -5px;
@@ -1097,11 +1102,6 @@ h1.unavailable {
 {
     top: -6px;
     right: -6px;
-}
-
-.remove-tag:hover
-{
-    color: #cc0000;
 }
 
 .registration a {
