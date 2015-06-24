@@ -199,12 +199,7 @@ def render_jinja_string(tpl, data):
 mako_cache = {}
 def render_mako_string(tpldir, tplname, data, safe=False):
     """Render a mako template. Optional safe argument to activate markup escaping"""
-    if safe is True:
-        lookup_obj = _tpl_lookup_safe
-        default_filters = ['h']  # Escape HTML entities by default
-    else:
-        lookup_obj = _tpl_lookup
-        default_filters = None
+    lookup_obj = _tpl_lookup_safe if safe is True else _tpl_lookup
 
     tpl = mako_cache.get(tplname)
     if tpl is None:
@@ -215,7 +210,7 @@ def render_mako_string(tpldir, tplname, data, safe=False):
             lookup=lookup_obj,
             input_encoding='utf-8',
             output_encoding='utf-8',
-            default_filters=default_filters
+            default_filters=lookup_obj.template_args['default_filters']
         )
     # Don't cache in debug mode
     if not app.debug:
