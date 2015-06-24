@@ -375,6 +375,10 @@ class TestCollectionPointersList(ApiTestCase):
 
         self.dashboard = DashboardFactory(creator=self.user)
         self.dashboard_pointers_url = '/{}collections/dashboard/pointers/'.format(API_BASE)
+        self.dash_ptr = FolderFactory(creator=self.user)
+        self.dash_ptr_two = FolderFactory(creator=self.user, is_registration=True)
+        self.dashboard.add_pointer(self.dash_ptr, auth=Auth(self.user))
+        self.dashboard.add_pointer(self.dash_ptr_two, auth=Auth(self.user))
 
         self.collection_one = FolderFactory(creator=self.user)
         self.collection_being_pointed_to = FolderFactory(creator=self.user)
@@ -393,8 +397,6 @@ class TestCollectionPointersList(ApiTestCase):
         self.collection_two.add_pointer(self.collection_being_pointed_to_three, auth=Auth(self.user_two))
         self.collection_two_url = '/{}collections/{}/pointers/'.format(API_BASE, self.collection_two._id)
 
-        self.smart_folder_amp = FolderFactory(_id="amp", creator=self.user)
-        self.smart_folder_amr = FolderFactory(_id="amr", creator=self.user)
         self.smart_folder_amp_url = '/{}collections/amp/pointers/'.format(API_BASE)
         self.smart_folder_amr_url = '/{}collections/amr/pointers/'.format(API_BASE)
 
@@ -412,11 +414,10 @@ class TestCollectionPointersList(ApiTestCase):
         assert_equal(res.status_code, 403)
 
     def test_return_collection_pointers_logged_in(self):
-        res = self.app.get(self.collection_two_url, auth=self.basic_auth_two)
+        res = self.app.get(self.collection_one_url, auth=self.basic_auth)
         res_json = res.json['data']
-        assert_equal(len(res_json), 2)
-        assert_equal(res.status_code, 200)
-        assert_in(res_json[0]['collection_id'], self.collection_two._id)
+        assert_equal(len(res_json), 1)
+        assert_equal(res_json[0]['collection_id'], self.collection_being_pointed_to._id)
 
     def test_return_smart_folder_info(self):
         res = self.app.get(self.smart_folder_amp_url, auth=self.basic_auth)
@@ -440,7 +441,7 @@ class TestCreateCollectionPointer(ApiTestCase):
         self.collection_being_pointed_to = FolderFactory(creator=self.user)
         self.collection_one.add_pointer(self.collection_being_pointed_to, auth=Auth(self.user))
         self.collection_one_url = '/{}collections/{}/pointers/'.format(API_BASE, self.collection_one._id)
-        self.payload_one = {'collection_id': self.collection_one._id}
+        self.payload_one = {'collection_id': self.collection_being_pointed_to._id}
 
         self.user_two = UserFactory.build()
         self.user_two.set_password('password')
@@ -451,7 +452,7 @@ class TestCreateCollectionPointer(ApiTestCase):
         self.collection_being_pointed_to_two = FolderFactory(creator=self.user_two)
         self.collection_two.add_pointer(self.collection_being_pointed_to_two, auth=Auth(self.user_two))
         self.collection_two_url = '/{}collections/{}/pointers/'.format(API_BASE, self.collection_two._id)
-        self.payload_two = {'collection_id': self.collection_two._id}
+        self.payload_two = {'collection_id': self.collection_being_pointed_to_two._id}
 
     def test_not_creates_collection_pointer_not_creator(self):
         res = self.app.post(self.collection_two_url, self.payload_two, expect_errors=True, auth=self.basic_auth)

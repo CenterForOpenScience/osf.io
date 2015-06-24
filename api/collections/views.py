@@ -176,7 +176,6 @@ class CollectionPointersList(generics.ListAPIView, generics.ListCreateAPIView, C
     """
     permission_classes = (
         drf_permissions.IsAuthenticated,
-        ContributorOrPublic,
     )
 
     serializer_class = CollectionPointersSerializer
@@ -202,14 +201,14 @@ class CollectionPointersList(generics.ListAPIView, generics.ListCreateAPIView, C
 
         else:
             current_node = self.get_node()
-            pointers = [pointer for pointer in current_node.nodes_pointer if pointer.is_folder]
+            pointers = [pointer for pointer in current_node.nodes_pointer]
 
             if current_node.is_dashboard:
                 for pointer in pointers:
                     for folder_id in SMART_FOLDER_QUERIES:
                         smart_folder_node = {
                             'id': folder_id,
-                            'title': 'All my registrations' if key == 'amr' else 'All my projects',
+                            'title': 'All my registrations' if folder_id == 'amr' else 'All my projects',
                             'num_pointers': self.request.user.node__contributed.find(
                                 SMART_FOLDER_QUERIES[folder_id]).count(),
                             'properties': {
