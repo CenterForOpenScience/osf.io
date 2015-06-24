@@ -166,23 +166,6 @@ class CollectionChildrenList(generics.ListAPIView, CollectionMixin):
         auth = get_user_auth(self.request)
         children = [node for node in nodes if node.can_view(auth)]
 
-        if current_node.is_dashboard:
-            for node in nodes:
-                for folder_id in SMART_FOLDER_QUERIES:
-                    smart_folder_node = {
-                        'id': folder_id,
-                        'title': 'All my registrations' if key == 'amr' else 'All my projects',
-                        'num_pointers': self.request.user.node__contributed.find(
-                            SMART_FOLDER_QUERIES[folder_id]).count(),
-                        'properties': {
-                            'smart_folder': True,
-                            'is_folder': True,
-                            'is_dashboard': False,
-                        },
-                    }
-                    if smart_folder_node not in children:
-                        children.append(smart_folder_node)
-
         return children
 
 
