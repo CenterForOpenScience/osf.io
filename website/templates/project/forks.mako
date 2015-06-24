@@ -24,7 +24,7 @@
 
         <div>
             % if user_name and (user['is_contributor'] or node['is_public']) and not disk_saving_mode:
-                <a class="btn btn-default" type="button" onclick="NodeActions.forkNode();">New Fork</a>
+                <a class="btn btn-success" type="button" onclick="NodeActions.forkNode();">New Fork</a>
             % endif
         </div>
 
