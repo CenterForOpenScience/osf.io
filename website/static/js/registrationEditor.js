@@ -1,4 +1,5 @@
 var $ = require('jquery');
+require('js/json-editor-extensions');
 var jedit = require('json-editor'); // TODO webpackify
 var ko = require('knockout');
 
@@ -190,3 +191,4 @@ RegistrationEditor.prototype.save = function() {
 };
 
 module.exports = RegistrationEditor;
+
