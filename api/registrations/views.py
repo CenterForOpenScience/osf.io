@@ -3,12 +3,12 @@ from rest_framework import generics, permissions as drf_permissions
 from modularodm import Q
 from rest_framework.exceptions import PermissionDenied, ValidationError
 
-from framework.auth.core import Auth
-from api.base.utils import waterbutler_url_for
 from website.models import Node
+from framework.auth.core import Auth
 from api.base.filters import ODMFilterMixin
-from api.registrations.serializers import RegistrationSerializer
+from api.base.utils import waterbutler_url_for
 from api.nodes.serializers import NodePointersSerializer
+from api.registrations.serializers import RegistrationSerializer
 from api.nodes.views import NodeMixin, NodeFilesList, NodeChildrenList, NodeContributorsList, NodeDetail
 
 from api.nodes.permissions import ContributorOrPublic, ReadOnlyIfRegistration
@@ -51,9 +51,8 @@ class RegistrationList(generics.ListAPIView, ODMFilterMixin):
         query = self.get_query_from_request()
         return Node.find(query)
 
-# TODO: Return project details for nodes that are registration_drafts in addition to registrations
 
-class RegistrationDetail(NodeDetail, generics.DestroyAPIView, RegistrationMixin):
+class RegistrationDetail(NodeDetail, RegistrationMixin):
     """
     Registration details
     """
@@ -74,14 +73,6 @@ class RegistrationDetail(NodeDetail, generics.DestroyAPIView, RegistrationMixin)
     def get_serializer_context(self):
         # Serializer needs the request in order to make an update to privacy
         return {'request': self.request}
-
-    # overrides DestroyAPIView
-    def perform_destroy(self, instance):
-        user = self.request.user
-        auth = Auth(user)
-        node = self.get_object()
-        node.remove_node(auth=auth)
-        node.save()
 
 
 class RegistrationContributorsList(NodeContributorsList, RegistrationMixin):
@@ -136,6 +127,7 @@ class RegistrationPointersList(generics.ListAPIView, RegistrationMixin):
             raise ValidationError('Not a registration or registration draft.')
         pointers = node.nodes_pointer
         return pointers
+
 
 class RegistrationFilesList(NodeFilesList, RegistrationMixin):
     """

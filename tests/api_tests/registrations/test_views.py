@@ -41,7 +41,6 @@ class TestRegistrationList(ApiTestCase):
         self.registration_project_four = RegistrationFactory(creator=self.user_two, project=self.project_four)
 
         self.url = '/{}registrations/'.format(API_BASE)
-        # TODO include registration drafts!  List all registrations should include drafts as well as reg
 
     def test_list_all_registrations(self):
         res = self.app.get(self.url, auth=self.basic_auth)
@@ -83,8 +82,6 @@ class TestRegistrationDetail(ApiTestCase):
 
         self.private_registration_draft = NodeFactory(creator=self.user, is_registration_draft=True)
         self.private_reg_draft_url = '/{}registrations/{}'.format(API_BASE, self.private_registration_draft._id)
-
-        # TODO test getting registration details for registration DRAFTS
 
     def test_return_registration_detail_node_is_not_registration(self):
         url = '/{}registrations/{}'.format(API_BASE, self.public_project)
@@ -446,7 +443,6 @@ class TestRegistrationDelete(ApiTestCase):
 
 
 class TestRegistrationContributorsList(ApiTestCase):
-    #TODO add tests return registration DRAFT contributors
     def setUp(self):
         ApiTestCase.setUp(self)
         self.user = UserFactory.build()
@@ -738,6 +734,7 @@ class TestRegistrationPointersList(ApiTestCase):
     def test_return_private_registration_pointers_draft_logged_in_non_contributor(self):
         res = self.app.get(self.private_reg_draft_url, auth=self.basic_auth_two, expect_errors=True)
         assert_equal(res.status_code, 403)
+
 
 class TestRegistrationFilesList(ApiTestCase):
     def setUp(self):

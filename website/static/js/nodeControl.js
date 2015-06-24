@@ -186,9 +186,13 @@ var ProjectViewModel = function(data) {
         $('#nodeTitleEditable').editable($.extend({}, editableOptions, {
             name: 'title',
             title: 'Edit Title',
+            tpl: '<input type="text" maxlength="200">',
             validate: function (value) {
                 if ($.trim(value) === '') {
                     return 'Title cannot be blank.';
+                }
+                else if(value.length > 200){
+                    return 'Title cannot exceed 200 characters.';
                 }
             }
         }));
