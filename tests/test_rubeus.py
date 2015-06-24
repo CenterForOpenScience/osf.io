@@ -16,8 +16,8 @@ from framework.auth import Auth
 from website.util import rubeus, api_url_for
 import website.app
 from website.util.rubeus import sort_by_name
-from website.settings import ALL_MY_REGISTRATIONS_ID, ALL_MY_PROJECTS_ID, \
-    ALL_MY_PROJECTS_NAME, ALL_MY_REGISTRATIONS_NAME, DISK_SAVING_MODE
+from website.settings import ALL_MY_REGISTRATIONS_ID, ALL_MY_PROJECTS_ID, ALL_MY_WATCHED_ID, \
+    ALL_MY_PROJECTS_NAME, ALL_MY_REGISTRATIONS_NAME, ALL_MY_WATCHED_NAME, DISK_SAVING_MODE
 
 
 class TestRubeus(OsfTestCase):
@@ -355,16 +355,18 @@ class TestSerializingEmptyDashboard(OsfTestCase):
         assert_is_instance(self.dash_hgrid, list)
 
     def test_empty_dashboard_has_proper_number_of_smart_folders(self):
-        assert_equal(len(self.dash_hgrid), 2)
+        assert_equal(len(self.dash_hgrid), 3)
 
     def test_empty_dashboard_smart_folders_have_correct_names_and_ids(self):
         for node_hgrid in self.dash_hgrid:
-            assert_in(node_hgrid['name'], (ALL_MY_PROJECTS_NAME, ALL_MY_REGISTRATIONS_NAME))
+            assert_in(node_hgrid['name'], (ALL_MY_PROJECTS_NAME, ALL_MY_REGISTRATIONS_NAME, ALL_MY_WATCHED_NAME))
         for node_hgrid in self.dash_hgrid:
             if node_hgrid['name'] == ALL_MY_PROJECTS_ID:
                 assert_equal(node_hgrid['node_id'], ALL_MY_PROJECTS_ID)
             elif node_hgrid['name'] == ALL_MY_REGISTRATIONS_ID:
                 assert_equal(node_hgrid['node_id'], ALL_MY_REGISTRATIONS_ID)
+            elif node_hgrid['name'] == ALL_MY_WATCHED_ID:
+                assert_equal(node_hgrid['node_id'], ALL_MY_WATCHED_ID)
 
     def test_empty_dashboard_smart_folders_are_empty(self):
         for node_hgrid in self.dash_hgrid:
