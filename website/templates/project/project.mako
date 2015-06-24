@@ -59,7 +59,11 @@
 
                     </div>
                     <!-- /ko -->
-                    <div class="btn-group">
+                    <div
+                        % if not user_name:
+                            data-bind="tooltip: {title: 'Only users can watch and duplicate projects', placement: 'bottom'}"
+                        % endif
+                            class="btn-group">
                         <a
                         % if user_name and (node['is_public'] or user['has_read_permissions']) and not node['is_registration']:
                             data-bind="click: toggleWatch, tooltip: {title: watchButtonAction, placement: 'bottom'}"
