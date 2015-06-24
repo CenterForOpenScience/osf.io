@@ -325,7 +325,7 @@ def must_have_permission(permission,wiki=False):
 
             # User must have permissions
             if not node.has_permission(user, permission):
-               raise HTTPError(http.FORBIDDEN)
+                raise HTTPError(http.FORBIDDEN)
 
             # Call view function
             return func(*args, **kwargs)
