@@ -66,7 +66,7 @@ class RegistrationDetail(NodeDetail, RegistrationMixin):
     # overrides RetrieveAPIView
     def get_object(self):
         node = self.get_node()
-        if node.is_registration == False and node.is_registration_draft == False:
+        if node.is_registration is False and node.is_registration_draft is False:
             raise ValidationError('Not a registration or registration draft.')
         return self.get_node()
 
@@ -82,8 +82,8 @@ class RegistrationContributorsList(NodeContributorsList, RegistrationMixin):
     """
     def get_default_queryset(self):
         node = self.get_node()
-        if node.is_registration == False:
-            raise ValidationError('Node is not registration.')
+        if node.is_registration is False and node.is_registration_draft is False:
+            raise ValidationError('Not a registration or registration draft.')
         visible_contributors = node.visible_contributor_ids
         contributors = []
         for contributor in node.contributors:
@@ -98,8 +98,8 @@ class RegistrationChildrenList(NodeChildrenList, RegistrationMixin):
     """
     def get_queryset(self):
         node = self.get_node()
-        if node.is_registration == False:
-            raise ValidationError('Not a registration.')
+        if node.is_registration.False:
+            raise ValidationError('Not a registration or registration draft.')
         nodes = node.nodes
         user = self.request.user
         if user.is_anonymous():
