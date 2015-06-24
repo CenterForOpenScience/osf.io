@@ -782,6 +782,19 @@ class TestNodeChildrenList(ApiTestCase):
         self.public_project.save()
         self.public_component = NodeFactory(parent=self.public_project, creator=self.user, is_public=True)
         self.public_project_url = '/{}nodes/{}/children/'.format(API_BASE, self.public_project._id)
+        self.public_project_url_with_true_private_param = "{}?include_private=True".format(self.public_project_url)
+        self.public_project_url_with_false_private_param = "{}?include_private=False".format(self.public_project_url)
+
+        self.public_project_with_private_components = ProjectFactory(is_public=True, creator=self.user)
+        self.public_component_b = NodeFactory(parent=self.public_project_with_private_components,
+                                              creator=self.user, is_public=True)
+        # Add two components that are visible to user but not user_two
+        self.component_b = NodeFactory(parent=self.public_project_with_private_components, creator=self.user)
+        self.component_c = NodeFactory(parent=self.public_project_with_private_components, creator=self.user)
+        self.public_with_private_components_url = '/{}nodes/{}/children/'.format(API_BASE,
+                                                        self.public_project_with_private_components._id)
+        self.url_with_true_private_param = "{}?include_private=True".format(self.public_with_private_components_url)
+        self.url_with_false_private_param = "{}?include_private=False".format(self.public_with_private_components_url)
 
         self.user_two = UserFactory.build()
         self.user_two.set_password(password)
@@ -821,20 +834,73 @@ class TestNodeChildrenList(ApiTestCase):
         res = self.app.get(self.private_project_url, auth=self.basic_auth_two, expect_errors=True)
         assert_equal(res.status_code, 403)
 
-    def test_node_children_list_does_not_include_unauthorized_projects(self):
-        private_component = NodeFactory(parent=self.project)  # add a private component
-        private_component.add_contributor(self.user, permissions=['read', 'write'])  # make it visible to user
-        private_component_two = NodeFactory(parent=self.project)  # and second one
-        private_component_two.add_contributor(self.user, permissions=['read'])  # make it read-only to user
-        private_component_three = NodeFactory(parent=self.project)  # and a third, invisible to user
-        private_component_four = NodeFactory(parent=self.project)  # and a fourth, invisible to user
-        # A fake node is created in views.py with title of "2 Private Components" -- check that this exists.
-        res = self.app.get(self.private_project_url, auth=self.basic_auth)
-        assert_equal(len(res.json['data']), 4)  # 3 visible, plus 1 fake component enumerating the private components
-        fake_component = res.json['data'][3]  # last (4th) element in 'data' should be fake component
+    def test_node_children_list_excludes_fake_node_by_default_logged_in_contributor(self):
+        """ A fake node is created in api/nodes/views.py with a title of the number of private components.
+        By default (w/o query parameters), this node should NOT be returned with the other components.
+        This test also makes sure the children list does not include unauthorized projects (i.e. projects
+        that should not be viewable by the user). """
+        res = self.app.get(self.public_with_private_components_url, auth=self.basic_auth)
+        assert_equal(len(res.json['data']), 3)  # 1 public component, and 2 private components that are visible to user
+
+    def test_node_children_list_excludes_fake_node_by_default_logged_in_non_contributor(self):
+        res = self.app.get(self.public_with_private_components_url, auth=self.basic_auth_two)
+        assert_equal(len(res.json['data']), 1)  # 1 public component, visible to user_two; shouldn't include fake node
+
+    def test_node_children_list_excludes_fake_node_by_default_logged_out(self):
+        res = self.app.get(self.public_with_private_components_url)
+        assert_equal(len(res.json['data']), 1)  # 1 public component; shouldn't include fake node
+
+    def test_node_children_list_includes_fake_node_when_requested_logged_in_contributor(self):
+        """ A fake node is created in api/nodes/views.py with a title of the number of private components.
+        When explicitly specified, this node should be returned with the other components.
+        This test also makes sure the children list does not include unauthorized projects. """
+        # Fake node should be returned with query parameter "include_private=True".
+        res1 = self.app.get(self.url_with_true_private_param, auth=self.basic_auth)
+        assert_equal(len(res1.json['data']), 3)  # 3 visible to user; none private to user so no fake node should exist
+
+        # Fake node should NOT be returned with query parameter "include_private=False".
+        res2 = self.app.get(self.url_with_false_private_param, auth=self.basic_auth)
+        assert_equal(len(res2.json['data']), 3)  # 3 visible to user; no fake node should exist
+
+    def test_node_children_list_includes_fake_node_when_requested_logged_in_non_contributor(self):
+        # Fake node should be returned with query parameter "include_private=True".
+        res1 = self.app.get(self.url_with_true_private_param, auth=self.basic_auth_two)
+        assert_equal(len(res1.json['data']), 2)  # 1 public, plus 1 fake component enumerating the 2 private components
+        fake_component = res1.json['data'][1]  # last (2nd) element in 'data' should be fake component
         assert_equal(fake_component['title'], "2 Private Components")
 
-        Node.remove()
+        # Fake node should NOT be returned with query parameter "include_private=False".
+        res2 = self.app.get(self.url_with_false_private_param, auth=self.basic_auth_two)
+        assert_equal(len(res2.json['data']), 1)  # 1 public component; shouldn't include the fake one
+
+    def test_node_children_list_includes_fake_node_when_requested_logged_out(self):
+        # Fake node should be returned with query parameter "include_private=True".
+        res1 = self.app.get(self.url_with_true_private_param)
+        assert_equal(len(res1.json['data']), 2)  # 1 public, plus 1 fake component enumerating the 2 private components
+        fake_component = res1.json['data'][1]  # last (2nd) element in 'data' should be fake component
+        assert_equal(fake_component['title'], "2 Private Components")
+
+        # Fake node should NOT be returned with query parameter "include_private=False".
+        res2 = self.app.get(self.url_with_false_private_param)
+        assert_equal(len(res2.json['data']), 1)  # 1 public component; shouldn't include the fake node
+
+    def test_node_children_list_correct_when_no_private_nodes_exist_logged_in_contributor(self):
+        """ No nodes are private, so no fake node should appear when 'include_private' query_param is True. """
+        res = self.app.get(self.public_project_url_with_true_private_param, auth=self.basic_auth)
+        assert_equal(len(res.json['data']), 1)  # 1 public component; no fake node should have been created
+
+    def test_node_children_list_correct_when_no_private_nodes_exist_logged_in_non_contributor(self):
+        """ No nodes are private, so no fake node should appear when 'include_private' query_param is True. """
+        res = self.app.get(self.public_project_url_with_true_private_param, auth=self.basic_auth_two)
+        assert_equal(len(res.json['data']), 1)  # 1 public component; no fake node should have been created
+
+    def test_node_children_list_correct_when_no_private_nodes_exist_logged_out(self):
+        """ No nodes are private, so no fake node should appear when 'include_private' query_param is True. """
+        res = self.app.get(self.public_project_url_with_true_private_param)
+        assert_equal(len(res.json['data']), 1)  # 1 public component; no fake node should have been created
+
+        # TODO tests failed without 'Node.remove()' here, but once I added and then removed it they passed again...
+        # TODO Related to immediately above: Does this need a teardown function?
 
 class TestNodePointersList(ApiTestCase):
 

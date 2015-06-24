@@ -6,7 +6,7 @@ from modularodm import Q
 
 from framework.auth.core import Auth
 from website.models import Node, Pointer
-from api.base.utils import get_object_or_404, waterbutler_url_for
+from api.base.utils import get_object_or_404, waterbutler_url_for, TRUTHY
 from api.base.filters import ODMFilterMixin, ListFilterMixin
 from .serializers import NodeSerializer, NodePointersSerializer, NodeFilesSerializer
 from api.users.serializers import ContributorSerializer
@@ -192,8 +192,10 @@ class NodeChildrenList(generics.ListAPIView, NodeMixin):
                     count_private_nodes += 1
 
         if count_private_nodes == 0:
-           return children
-        else:  # add a fake, visible component with the number of private nodes as its title
+            return children
+        elif 'include_private' in self.request.query_params and \
+             self.request.query_params.get('include_private') in TRUTHY:
+            # add a fake, visible component with the number of private nodes as its title
             if count_private_nodes == 1:
                 title_with_count = "1 Private Component"
             else:  # count_private_nodes > 1
@@ -203,17 +205,18 @@ class NodeChildrenList(generics.ListAPIView, NodeMixin):
                 '_id': '',  # TODO should have id?
                 'category': '',
                 'node_type': 'component',
-                'url': '',  # /search/?tags={12345}',  # TODO should have a url?
+                'url': '',  # '/search/?tags={12345}',  # TODO should have a url?
                 'title': title_with_count,
-                'path': '/-- private project --/',
+                'path': '',  # '/-- private project --/',  # TODO should have path?
                 'api_url': '',  # '/api/v2/12345',  # TODO should have api_url?; API_PREFIX (real site)/API_BASE (tests)
                 'is_public': True,
                 'is_registration': False,
                 'is_fake_component': True,
             }
             children.append(fake_component)
-
-        return children
+            return children
+        else:  # 'include_private' is not in query_params or is False
+            return children
 
 
 class NodePointersList(generics.ListCreateAPIView, NodeMixin):

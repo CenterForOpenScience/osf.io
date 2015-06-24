@@ -2,6 +2,7 @@ import re
 import functools
 
 from modularodm import Q
+from utils import TRUTHY, FALSY
 from rest_framework.filters import OrderingFilter
 from rest_framework import serializers as ser
 
@@ -35,8 +36,6 @@ def intersect(x, y):
 class FilterMixin(object):
     """ View mixin with helper functions for filtering. """
 
-    TRUTHY = set(['true', 'True', 1, '1'])
-    FALSY = set(['false', 'False', 0, '0'])
     DEFAULT_OPERATOR = 'eq'
 
     def __init__(self, *args, **kwargs):
@@ -62,9 +61,9 @@ class FilterMixin(object):
         field_type = type(self.serializer_class._declared_fields[field])
         value = value.strip()
         if field_type == ser.BooleanField:
-            if value in self.TRUTHY:
+            if value in TRUTHY:
                 return True
-            elif value in self.FALSY:
+            elif value in FALSY:
                 return False
             # TODO Should we handle if the value is neither TRUTHY nor FALSY (first add test for how we'd expect it to
             # work, then ensure that it works that way).

@@ -11,6 +11,8 @@ from api.base import settings as api_settings
 from website import settings as website_settings
 from website import util as website_util  # noqa
 
+TRUTHY = set(['true', 'True', 1, '1'])
+FALSY = set(['false', 'False', 0, '0'])
 
 def absolute_reverse(view_name, query_kwargs=None, args=None, kwargs=None):
     """Like django's `reverse`, except returns an absolute URL. Also add query parameters."""
