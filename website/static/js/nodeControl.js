@@ -29,7 +29,7 @@ var MESSAGES = {
 
     makeComponentPublicWarning: 'Once a component is made public, there is no way to guarantee that ' +
                         'access to the data it contains can be completely prevented. Users ' +
-                        'should assume that one a component is made public, it will always ' +
+                        'should assume that once a component is made public, it will always ' +
                         'be public. The rest of the project, including other components, ' +
                         'will not be made public. <b>Review your component for sensitive or restricted information before making it public</b>. Are you absolutely sure you would like to continue?',
 
