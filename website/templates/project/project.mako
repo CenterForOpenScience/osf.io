@@ -353,3 +353,7 @@ ${parent.javascript_bottom()}
 % endfor
 
 </%def>
+
+<script type="text/html" id="registrationEditorTemplate">
+  <%include file="project/registration_editor.mako"/>
+</script>

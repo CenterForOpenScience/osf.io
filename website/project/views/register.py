@@ -59,7 +59,7 @@ def node_create_registration_draft(auth, node, **kwargs):
         )
 
     register = node.register_node(auth)
-    return redirect(register.web_url_for('view_project', post_register=True))
+    return redirect(register.web_url_for('view_project', postRegister=True))
 
 @must_be_valid_project
 @must_have_permission(ADMIN)

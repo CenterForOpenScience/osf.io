@@ -10,7 +10,7 @@ JSONEditor.defaults.editors.commentableString = JSONEditor.defaults.editors.stri
 
 		this.comment = $( "<span>Comments:</span><input type='text' class='form-control comment-input' placeholder='Comments or questions...'></input><button style='padding: 5px; margin-top:15px;' onclick='this.addComment' class='btn btn-primary btn-xs comment-button' id='comment' >New comment</button>")
 		console.log(this.comment[2]);
-	
+		
 		$(this.input).after(this.comment);
 	},
     getValue: function() {
@@ -25,6 +25,6 @@ JSONEditor.defaults.editors.commentableString = JSONEditor.defaults.editors.stri
 		else {
 			return this._super();
 		}
-		
-    }
+	}
+	
 });
