@@ -104,11 +104,38 @@ class TestWatching(OsfTestCase):
         size = 10
         page = 0
         total = len(logs)
-        paginated_logs, pages = paginate(
+        paginated_logs, pages, page = paginate(
             self.user.get_recent_log_ids(), total, page, size)
         page_num = math.ceil(total / float(size))
         assert_equal(len(list(paginated_logs)), total)
         assert_equal(page_num, pages)
+
+    def test_paginate_not_go_to_negative(self):
+        self._watch_project(self.project)
+        logs = list(self.user.get_recent_log_ids())
+        size = 10
+        page = -1
+        total = len(logs)
+        paginated_logs, pages, page = paginate(
+            self.user.get_recent_log_ids(), total, page, size)
+        page_num = math.ceil(total / float(size))
+        assert_equal(len(list(paginated_logs)), total)
+        assert_equal(page_num, pages)
+        assert_equal(page, 0)
+
+    def test_paginate_not_go_beyond_max_limit(self):
+        self._watch_project(self.project)
+        logs = list(self.user.get_recent_log_ids())
+        size = 10
+        total = len(logs)
+        pages_num = math.ceil(total / float(size))
+        page = pages_num
+        paginated_logs, pages, page = paginate(
+            self.user.get_recent_log_ids(), total, page, size)
+        page_num = math.ceil(total / float(size))
+        assert_equal(len(list(paginated_logs)), total)
+        assert_equal(page_num, pages)
+        assert_equal(page, pages - 1)
 
 if __name__ == '__main__':
     unittest.main()

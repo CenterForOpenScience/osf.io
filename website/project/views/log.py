@@ -43,14 +43,21 @@ def _get_logs(node, count, auth, link=None, page=0):
     """
     logs_set = node.get_aggregate_logs_queryset(auth)
     total = logs_set.count()
+    pages = math.ceil(total / float(count))
+
+    if page >= pages:
+        page = pages - 1
+    elif page < 0:
+        page = 0
+
     start = page * count
     stop = start + count
     logs = [
         serialize_log(log, auth=auth, anonymous=has_anonymous_link(node, auth))
         for log in logs_set[start:stop]
     ]
-    pages = math.ceil(total / float(count))
-    return logs, total, pages
+
+    return logs, total, pages, page
 
 @no_auto_transaction
 @collect_auth
@@ -81,5 +88,5 @@ def get_logs(auth, node, **kwargs):
 
     # Serialize up to `count` logs in reverse chronological order; skip
     # logs that the current user / API key cannot access
-    logs, total, pages = _get_logs(node, count, auth, link, page)
+    logs, total, pages, page = _get_logs(node, count, auth, link, page)
     return {'logs': logs, 'total': total, 'pages': pages, 'page': page}

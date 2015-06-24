@@ -46,6 +46,17 @@ describe('Paginator', () => {
         assert.equal(paginator.currentPage() + 1, currentPage);
     });
 
+    it('previousPage not goes to -1', () => {
+        numberOfPages = 5;
+        currentPage = 0;
+        paginator.configure(function(p){
+            p.numberOfPages(numberOfPages);
+            p.currentPage(currentPage);
+        });
+        paginator.previousPage();
+        assert.equal(paginator.currentPage(), currentPage);
+    });
+
     it('nextPage', () => {
         numberOfPages = 5;
         paginator.configure(function(p){
@@ -54,6 +65,17 @@ describe('Paginator', () => {
         paginator.nextPage();
         assert.calledOnce(paginator.fetchResults);
         assert.equal(paginator.currentPage() - 1, currentPage);
+    });
+
+    it('nextPage doesnot go beyond limit', () => {
+        numberOfPages = 5;
+        currentPage = 4;
+        paginator.configure(function(p){
+            p.numberOfPages(numberOfPages);
+            p.currentPage(currentPage);
+        });
+        paginator.nextPage();
+        assert.equal(paginator.currentPage(), currentPage);
     });
 
     it('enforces implementation of fetchResults', () => {
