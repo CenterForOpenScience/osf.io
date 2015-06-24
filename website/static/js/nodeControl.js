@@ -39,7 +39,7 @@ var MESSAGES = {
                         'Would you like to continue?',
     makeRegistrationPublicWarning: 'Once a registration is made public, there is no way to guarantee that ' +
                         'access to its data can be completely prevented. <b>Once this action has been taken, you will not be able to make ' +
-                        'the registration private again.</b> Public registrations, however, may be retracted, leaving behind a ' +
+                        'the registration private again.</b> A public registration, however, may be retracted, leaving behind a ' +
                         'record of its existence along with basic metadata related to the project and its ' +
                         'contributors.',
 };
