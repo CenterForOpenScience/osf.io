@@ -144,12 +144,12 @@ class RegistrationFilesList(NodeFilesList, RegistrationMixin):
     def get_queryset(self):
         query_params = self.request.query_params
         node = self.get_node()
-        if node.is_registration == False:
-            raise ValidationError('Node is not registration.')
-        addons = self.get_nodes().get_addons()
+        if node.is_registration is False and node.is_registration_draft is False:
+            raise ValidationError('Not a registration or registration draft')
+        addons = node.get_addons()
         user = self.request.user
         cookie = None if self.request.user.is_anonymous() else user.get_or_create_cookie()
-        node_id = self.get_nodes()._id
+        node_id = node._id
         obj_args = self.request.parser_context['args']
 
         provider = query_params.get('provider')
