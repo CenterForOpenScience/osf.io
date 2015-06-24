@@ -13,7 +13,6 @@ q    :return: list of file objects.
     url = api_v2_url(path, params=params)
     response = requests.get(url).json()
     file_dicts = response.get('data', [])
-    files = []
     for fd in file_dicts:
         file_data = {
             'name': fd['name'],
@@ -21,5 +20,4 @@ q    :return: list of file objects.
             'size': fd['metadata']['size'],
             'pid': pid,
         }
-        files.append(file_data)
-    return files
+        yield file_data

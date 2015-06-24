@@ -192,9 +192,6 @@ LOG_ACTION_MAP = {
 @restrict_waterbutler
 @must_be_valid_project
 def create_waterbutler_log(payload, **kwargs):
-    #TODO: Evaluate elegance of reindexing solution
-    search.update_node(kwargs['node'])
-
     try:
         auth = payload['auth']
         action = LOG_ACTION_MAP[payload['action']]
@@ -288,6 +285,10 @@ def create_waterbutler_log(payload, **kwargs):
         metadata['path'] = metadata['path'].lstrip('/')
 
         node_addon.create_waterbutler_log(auth, action, metadata)
+
+    # TODO: Evaluate elegance of reindexing solution
+    if payload['action'] in ['create', 'update', 'delete']:
+        search.update_files(node)
 
     return {'status': 'success'}
 

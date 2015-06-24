@@ -215,6 +215,21 @@ def load_parent(parent_id):
     return parent_info
 
 
+def categorize_node(node):
+    component_categories = [k for k in Node.CATEGORY_MAP.keys() if not k == 'project']
+    category = 'component' if node.category in component_categories else node.category
+
+    if category == 'project':
+        category = 'registration' if node.is_registration else category
+    else:
+        try:
+            category = 'registration' if node.is_registration else category
+        except IndexError:
+            # Skip orphaned components
+            return None
+    return category
+
+
 @requires_search
 def update_node(node, index=None):
     index = index or INDEX
@@ -235,6 +250,7 @@ def update_node(node, index=None):
         except IndexError:
             # Skip orphaned components
             return
+
     if node.is_deleted or not node.is_public or node.archiving:
         delete_doc(elastic_document_id, node)
     else:
@@ -282,17 +298,20 @@ def update_node(node, index=None):
                 elastic_document['wikis'][wiki.page_name] = wiki.raw_text(node)
 
         es.index(index=index, doc_type=category, id=elastic_document_id, body=elastic_document, refresh=True)
-        update_project_files(node, category, index=index)
 
 
 @requires_search
-def update_project_files(node, category, index=None):
+def update_project_files(node, index=None):
+    logging.warn('\nUPDATING FILES')
     index = index or INDEX
 
+    category = categorize_node(node)
+
     files = index_file.collect_files(node._id)
-    file_text = ' '.join([file_['content'] for file_ in files if file_['content']])
+    file_texts = [file_['content'] for file_ in files if file_.get('content')]
+    file_text = ' '.join(file_texts)
     update_body = {'doc': {'files': file_text}}
-    response = es.update(index=index, doc_type=category, id=node._id, body=update_body)
+    es.update(index=index, doc_type=category, id=node._id, body=update_body)
 
 @requires_search
 def update_user(user, index=None):
