@@ -7,6 +7,9 @@ from website.models import Node
 from framework.auth.core import Auth
 from rest_framework import exceptions
 
+from website.project.model import MetaSchema
+from modularodm import Q
+
 
 class NodeSerializer(JSONAPISerializer):
     # TODO: If we have to redo this implementation in any of the other serializers, subclass ChoiceField and make it
@@ -170,20 +173,19 @@ class RegistrationSerializer(NodeSerializer):
     def create(self, validated_data):
         request = self.context['request']
         user = request.user
-        when = datetime.datetime.utcnow()
+        template = 'Open-Ended_Registration'
+        schema = MetaSchema.find(
+            Q('name', 'eq', template)).sort('-schema_version')[0]
+        user = request.user
         node = self.context['view'].get_node()
-        registration = node.clone()
+        registration = node.register_node(
+            schema=schema,
+            auth=Auth(user),
+            template=template,
+            data=None
+        )
+        registration.is_registration = False
         registration.is_registration_draft = True
-        registration.registered_from = node
-        registration.contributors = node.contributors
-        registration.forked_from = node.forked_from
-        registration.creator = user
-        registration.logs = node.logs
-        registration.tags = node.tags
-        registration.title = node.title + '_DRAFT_REGISTRATION'
-        registration.save()
-        node.add_pointer(registration, auth=Auth(user))
-        registration.add_pointer(node, auth=Auth(user))
         return registration
 
 
