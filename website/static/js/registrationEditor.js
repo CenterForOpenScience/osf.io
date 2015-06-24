@@ -7,7 +7,6 @@ require('js/json-editor-extensions');
 var $osf = require('js/osfHelpers');
 var oop = require('js/oop');
 
-require('./registrationEditorExtension.js');
 
 var RegistrationEditor = function(urls, editorId) {
     var self = this;
