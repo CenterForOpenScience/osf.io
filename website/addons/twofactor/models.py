@@ -52,8 +52,8 @@ class TwoFactorUserSettings(AddonUserSettingsBase):
 
     def on_add(self):
         # TODO(hrybacki, sloria): push status message shouldn't need a session
-        push_status_message('Please <a href="#TfaVerify">activate your'
-                            ' device</a> before continuing.')
+        push_status_message('<span id="tfa-activation-warning">Please <a href="#TfaVerify">activate your'
+                            ' device</a> before continuing.</span>')
         super(TwoFactorUserSettings, self).on_add()
         self.totp_secret = _generate_seed()
         self.totp_drift = 0
