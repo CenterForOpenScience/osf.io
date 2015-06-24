@@ -44,7 +44,7 @@
     font-size: 36px;
 }
 
-/* */
+/* Multiple device support for project nav-bar */
 @media (max-width: 767px) {
     .osf-project-navbar li>a {
         padding-left: 30px;

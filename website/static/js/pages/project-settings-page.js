@@ -9,6 +9,7 @@ var ProjectSettings = require('js/projectSettings.js');
 
 var $osf = require('js/osfHelpers');
 require('css/addonsettings.css');
+require('css/pages/project-setting-page.css');
 
 var ctx = window.contextVars;
 
