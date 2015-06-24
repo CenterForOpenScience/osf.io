@@ -71,7 +71,7 @@ def remove_subscription(node):
 def move_file_subscription(old_event_sub, old_node, new_event_sub, new_node):
     if old_event_sub == new_event_sub:
         return []
-    old_sub = NotificationSubscription.load(to_subscription_key(old_node, old_event_sub))
+    old_sub = NotificationSubscription.load(to_subscription_key(old_node._id, old_event_sub))
     if not old_sub:
         return []
     old_sub.update_fields(_id=to_subscription_key(new_node._id, new_event_sub), event_name=new_event_sub,

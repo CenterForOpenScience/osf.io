@@ -1852,7 +1852,7 @@ function _dropLogic(event, items, folder) {
     var tb = this;
 
     if (items.length < 1 ||
-        items.indoexOf(folder) > -1 ||
+        items.indexOf(folder) > -1 ||
         copyMode === 'forbidden'
     ) {
         return;
