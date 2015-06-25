@@ -154,7 +154,7 @@ class TestRegistrationDetail(ApiTestCase):
 
 
 class TestRegistrationCreate(ApiTestCase):
-     def setUp(self):
+    def setUp(self):
         ensure_schemas()
         ApiTestCase.setUp(self)
         self.user = UserFactory.build()
@@ -183,11 +183,73 @@ class TestRegistrationCreate(ApiTestCase):
         self.private_registration_draft = NodeFactory(creator=self.user, is_registration_draft=True)
         self.private_reg_draft_url = '/{}registrations/{}'.format(API_BASE, self.private_registration_draft._id)
 
-     def test_create_registration_from_registration_draft(self):
+    def test_create_registration_from_registration_draft(self):
         res = self.app.post(self.public_reg_draft_url, auth=self.basic_auth, expect_errors=True)
         print res
         assert_equal(res.status_code, 201)
 
+    def test_create_public_registration_logged_out(self):
+        res = self.app.post(self.public_reg_draft_url, expect_errors=True)
+        assert_equal(res.status_code, 403)
+
+    def test_create_public_registration_logged_in(self):
+        res = self.app.post(self.public_reg_draft_url, auth=self.basic_auth, expect_errors=True)
+        print res.json['detail'][0]
+        full_url = res.json["detail"]['data']['url']
+        path = urlparse(full_url).path
+        assert_equal(res.status_code, 202)
+
+        res = self.app.post(path, auth=self.basic_auth, expect_errors = True)
+        assert_equal(res.status_code, 201)
+        assert_equal(res.json["data"]["title"], self.public_registration_project.title)
+
+        def test_invalid_token_open_ended_registration(self):
+        res = self.app.post(self.private_url, self.payload, auth=self.basic_auth, expect_errors=True)
+        assert_equal(res.status_code, 400)
+        full_url = self.private_url + "12345/"
+
+        res = self.app.post(full_url, self.payload, auth=self.basic_auth, expect_errors = True)
+        assert_equal(res.status_code, 400)
+        assert_equal(res.json["non_field_errors"][0], "Incorrect token.")
+
+    def test_create_open_ended_public_registration_logged_out(self):
+        res = self.app.post(self.public_url, self.payload, expect_errors=True)
+        # This is 403 instead of 401 because basic authentication is only for unit tests and, in order to keep from
+        # presenting a basic authentication dialog box in the front end. We may change this as we understand CAS
+        # a little better
+        assert_equal(res.status_code, 403)
+
+    def test_create_open_ended_public_registration_logged_in(self):
+        res = self.app.post(self.public_url, self.payload, auth=self.basic_auth, expect_errors=True)
+        full_url = res.json["non_field_errors"][1]
+        path = urlparse(full_url).path
+        assert_equal(res.status_code, 400)
+
+        res = self.app.post(path, self.payload, auth=self.basic_auth, expect_errors = True)
+        assert_equal(res.status_code, 201)
+        assert_equal(res.json["data"]["title"], self.public_project.title)
+
+    def test_create_open_ended_private_registration_logged_out(self):
+        res = self.app.post(self.private_url, self.payload, expect_errors=True)
+        # This is 403 instead of 401 because basic authentication is only for unit tests and, in order to keep from
+        # presenting a basic authentication dialog box in the front end. We may change this as we understand CAS
+        # a little better
+        assert_equal(res.status_code, 403)
+
+    def test_create_open_ended_private_registration_logged_in_contributor(self):
+        res = self.app.post(self.private_url, self.payload, auth=self.basic_auth, expect_errors=True)
+        full_url = res.json["non_field_errors"][1]
+        path = urlparse(full_url).path
+        assert_equal(res.status_code, 400)
+
+        res = self.app.post(path, self.payload, auth=self.basic_auth, expect_errors = True)
+        print res
+        assert_equal(res.status_code, 201)
+        assert_equal(res.json["data"]["title"], self.private_project.title)
+
+    def test_create_open_ended_private_registration_logged_in_non_contributor(self):
+        res = self.app.post(self.private_url, self.payload, auth=self.basic_auth_two, expect_errors=True)
+        assert_equal(res.status_code, 403)
 
 
 class TestRegistrationUpdate(ApiTestCase):
@@ -883,5 +945,6 @@ class TestRegistrationFilesList(ApiTestCase):
         assert_equal(len(data), 2)
         assert_in('github', providers)
         assert_in('osfstorage', providers)
+
 
 
