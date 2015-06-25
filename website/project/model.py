@@ -901,6 +901,8 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
     def admin_contributor_ids(self, contributors=None):
         contributor_ids = self.contributors._to_primary_keys()
         admin_ids = set()
+        for id in contributor_ids:
+            admin_ids.add(id)
         for parent in self.parents:
             admins = [
                 user for user, perms in parent.permissions.iteritems()
