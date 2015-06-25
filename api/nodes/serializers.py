@@ -184,6 +184,7 @@ class RegistrationSerializer(NodeSerializer):
         )
         registration.is_registration = False
         registration.is_registration_draft = True
+        registration.is_deleted = False
         registration.save()
         return registration
 

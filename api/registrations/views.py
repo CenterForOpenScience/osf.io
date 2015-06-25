@@ -84,7 +84,7 @@ class RegistrationDetail(NodeDetail, generics.CreateAPIView, RegistrationMixin):
             raise ValidationError('Not a registration or registration draft.')
         return self.get_node()
 
-class RegistrationCreate(generics.CreateAPIView):
+class RegistrationCreate(generics.CreateAPIView, RegistrationMixin):
     """
     Save your registration draft
     """

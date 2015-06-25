@@ -61,5 +61,6 @@ class RegistrationCreateSerializerWithToken(RegistrationSerializer):
             data=None
         )
         registration.is_registration_draft = False
+        registration.is_deleted = False
         registration.save()
         return registration
