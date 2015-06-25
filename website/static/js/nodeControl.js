@@ -5,6 +5,7 @@
 'use strict';
 
 var $ = require('jquery');
+var $osf = require('js/osfHelpers');
 var ko = require('knockout');
 var bootbox = require('bootbox');
 var Raven = require('raven-js');
@@ -231,23 +232,29 @@ var ProjectViewModel = function(data) {
     /**
      * Toggle the watch status for this project.
      */
+    var watchUpdateInProgress = false;
     self.toggleWatch = function() {
-        // Send POST request to node's watch API url and update the watch count
-        if(self.userIsWatching()) {
-            self.watchedCount(self.watchedCount() - 1);
-        } else {
-            self.watchedCount(self.watchedCount() + 1);
+        // When there is no watch-update in progress,
+        // send POST request to node's watch API url and update the watch count
+        if(!watchUpdateInProgress) {
+            if (self.userIsWatching()) {
+                self.watchedCount(self.watchedCount() - 1);
+            } else {
+                self.watchedCount(self.watchedCount() + 1);
+            }
+            watchUpdateInProgress = true;
+            osfHelpers.postJSON(
+                self.apiUrl + 'togglewatch/',
+                {}
+            ).done(function (data) {
+                // Update watch count in DOM
+                watchUpdateInProgress = false;
+                self.userIsWatching(data.watched);
+                self.watchedCount(data.watchCount);
+            }).fail(
+                osfHelpers.handleJSONError
+            );
         }
-        osfHelpers.postJSON(
-            self.apiUrl + 'togglewatch/',
-            {}
-        ).done(function(data) {
-            // Update watch count in DOM
-            self.userIsWatching(data.watched);
-            self.watchedCount(data.watchCount);
-        }).fail(
-            osfHelpers.handleJSONError
-        );
     };
 
     self.makePublic = function() {

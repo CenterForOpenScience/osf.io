@@ -1862,11 +1862,11 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
 
     @property
     def api_v2_url(self):
-        return reverse('nodes:node-detail', kwargs={'pk': self._id})
+        return reverse('nodes:node-detail', kwargs={'node_id': self._id})
 
     @property
     def absolute_api_v2_url(self):
-        return absolute_reverse('nodes:node-detail', kwargs={'pk': self._id})
+        return absolute_reverse('nodes:node-detail', kwargs={'node_id': self._id})
 
     # used by django and DRF
     def get_absolute_url(self):

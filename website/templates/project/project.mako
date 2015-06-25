@@ -63,7 +63,7 @@
                         <a
                         % if user_name and (node['is_public'] or user['has_read_permissions']) and not node['is_registration']:
                             data-bind="click: toggleWatch, tooltip: {title: watchButtonAction, placement: 'bottom'}"
-                            class="btn btn-default"
+                            class="btn btn-default" data-container="body"
                         % else:
                             class="btn btn-default disabled"
                         % endif

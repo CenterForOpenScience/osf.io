@@ -14,7 +14,7 @@ require('truncate');
 var $osf = require('js/osfHelpers');
 var LogFeed = require('js/logFeed');
 var pointers = require('js/pointers');
-var Comment = require('js/comment');
+var Comment = require('js/comment'); //jshint ignore:line
 var NodeControl = require('js/nodeControl');
 var CitationList = require('js/citationList');
 var CitationWidget = require('js/citationWidget');

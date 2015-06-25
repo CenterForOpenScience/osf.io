@@ -125,17 +125,6 @@ def project_new_from_template(auth, node, **kwargs):
 ##############################################################################
 # New Folder
 ##############################################################################
-
-
-@must_be_logged_in
-def folder_new(**kwargs):
-    node_id = kwargs['nid']
-    return_value = {}
-    if node_id is not None:
-        return_value = {'node_id': node_id}
-    return return_value
-
-
 @must_be_valid_project
 @must_be_logged_in
 def folder_new_post(auth, node, **kwargs):
@@ -291,7 +280,7 @@ def node_setting(auth, node, **kwargs):
             # TODO inject only short_name and render fully client side
             config['template_lookup'] = addon.config.template_lookup
             addon_enabled_settings.append(config)
-    addon_enabled_settings = sorted(addon_enabled_settings, key=lambda addon: addon['addon_full_name'])
+    addon_enabled_settings = sorted(addon_enabled_settings, key=lambda addon: addon['addon_full_name'].lower())
 
     ret['addon_categories'] = settings.ADDON_CATEGORIES
     ret['addons_available'] = sorted([
@@ -299,7 +288,7 @@ def node_setting(auth, node, **kwargs):
         for addon in settings.ADDONS_AVAILABLE
         if 'node' in addon.owners
         and addon.short_name not in settings.SYSTEM_ADDED_ADDONS['node']
-    ], key=lambda addon: addon.full_name)
+    ], key=lambda addon: addon.full_name.lower())
 
     ret['addons_enabled'] = addons_enabled
     ret['addon_enabled_settings'] = addon_enabled_settings
