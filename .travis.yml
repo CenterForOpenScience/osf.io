@@ -64,11 +64,13 @@ before_install:
 install:
     - cd $PROJECT_DIR
     - cp website/settings/local-travis.py website/settings/local.py
+    - cp api/base/settings/local-dist.py api/base/settings/local.py
     # - travis_retry invoke encryption
 
     - travis_retry pip install --upgrade pip
     - travis_retry pip install invoke==0.9.0
     - travis_retry pip install flake8==2.4.0 --force-reinstall --upgrade
+    - travis_retry npm install jshint
     - travis_retry invoke wheelhouse --dev --addons
     - travis_retry invoke travis_addon_settings
     - travis_retry invoke requirements --dev --addons
@@ -79,9 +81,11 @@ install:
 
 before_script:
     - flake8 .
+    - jshint website/static/js
 
 # Run Python tests (core and addon) and JS tests
-script: invoke test --all
+script:
+    - invoke test --all
 
 before_cache:
   - rm -Rf $HOME/.cache/pip/http

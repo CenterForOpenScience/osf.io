@@ -5,6 +5,7 @@
 'use strict';
 
 var $ = require('jquery');
+var $osf = require('js/osfHelpers');
 var ko = require('knockout');
 var bootbox = require('bootbox');
 var Raven = require('raven-js');
@@ -14,14 +15,14 @@ ko.punches.enableAll();
 
 var osfHelpers = require('js/osfHelpers');
 var NodeActions = require('js/project.js');
-var iconmap = require('js/iconmap')
+var iconmap = require('js/iconmap');
 
 // Modal language
 var MESSAGES = {
     makeProjectPublicWarning: 'Once a project is made public, there is no way to guarantee that ' +
-                        'access to the data it contains can be completely prevented. Users ' +
+                        'access to its data can be completely prevented. You ' +
                         'should assume that once a project is made public, it will always ' +
-                        'be public. Are you absolutely sure you would like to continue?',
+                        'be public. <b>Review your project for sensitive or restricted information before making it public</b>. Are you absolutely sure you would like to continue?',
 
     makeProjectPrivateWarning: 'Making a project private will prevent users from viewing it on this site, ' +
                         'but will have no impact on external sites, including Google\'s cache. ' +
@@ -29,13 +30,18 @@ var MESSAGES = {
 
     makeComponentPublicWarning: 'Once a component is made public, there is no way to guarantee that ' +
                         'access to the data it contains can be completely prevented. Users ' +
-                        'should assume that one a component is made public, it will always ' +
+                        'should assume that once a component is made public, it will always ' +
                         'be public. The rest of the project, including other components, ' +
-                        'will not be made public. Are you absolutely sure you would like to continue?',
+                        'will not be made public. <b>Review your component for sensitive or restricted information before making it public</b>. Are you absolutely sure you would like to continue?',
 
     makeComponentPrivateWarning: 'Making a component private will prevent users from viewing it on this site, ' +
                         'but will have no impact on external sites, including Google\'s cache. ' +
-                        'Would you like to continue?'
+                        'Would you like to continue?',
+    makeRegistrationPublicWarning: 'Once a registration is made public, there is no way to guarantee that ' +
+                        'access to its data can be completely prevented. <b>Once this action has been taken, you will not be able to make ' +
+                        'the registration private again.</b> A public registration, however, may be retracted, leaving behind a ' +
+                        'record of its existence along with basic metadata related to the project and its ' +
+                        'contributors.',
 };
 
 // TODO(sloria): Fix this external dependency on nodeApiUrl
@@ -52,8 +58,11 @@ var COMPONENT = 'component';
 function setPermissions(permissions, nodeType) {
 
     var msgKey;
+    // TODO(hrybacki): Remove once Retraction/Embargoes goes is merged into production
+    var isRegistration = window.contextVars.node.isRegistration;
 
-    if (permissions === PUBLIC && nodeType === PROJECT) { msgKey = 'makeProjectPublicWarning'; }
+    if (permissions === PUBLIC && isRegistration) { msgKey = 'makeRegistrationPublicWarning'; }
+    else if(permissions === PUBLIC && nodeType === PROJECT) { msgKey = 'makeProjectPublicWarning'; }
     else if(permissions === PUBLIC && nodeType === COMPONENT) { msgKey = 'makeComponentPublicWarning'; }
     else if(permissions === PRIVATE && nodeType === PROJECT) { msgKey = 'makeProjectPrivateWarning'; }
     else { msgKey = 'makeComponentPrivateWarning'; }
@@ -137,14 +146,14 @@ var ProjectViewModel = function(data) {
     });
 
     self.canBeOrganized = ko.pureComputed(function() {
-        return !!(self.user.username && (self.nodeIsPublic || self.user.is_contributor));
+        return !!(self.user.username && (self.nodeIsPublic || self.user.has_read_permissions));
     });
 
     // Add icon to title
     self.icon = '';
     var category = data.node.category_short;
     if (Object.keys(iconmap.componentIcons).indexOf(category) >=0 ){
-        self.icon = iconmap.componentIcons[category];        
+        self.icon = iconmap.componentIcons[category];
     }
     else {
         self.icon = iconmap.projectIcons[category];
@@ -177,9 +186,13 @@ var ProjectViewModel = function(data) {
         $('#nodeTitleEditable').editable($.extend({}, editableOptions, {
             name: 'title',
             title: 'Edit Title',
+            tpl: '<input type="text" maxlength="200">',
             validate: function (value) {
                 if ($.trim(value) === '') {
                     return 'Title cannot be blank.';
+                }
+                else if(value.length > 200){
+                    return 'Title cannot exceed 200 characters.';
                 }
             }
         }));
@@ -223,23 +236,29 @@ var ProjectViewModel = function(data) {
     /**
      * Toggle the watch status for this project.
      */
+    var watchUpdateInProgress = false;
     self.toggleWatch = function() {
-        // Send POST request to node's watch API url and update the watch count
-        if(self.userIsWatching()) {
-            self.watchedCount(self.watchedCount() - 1);
-        } else {
-            self.watchedCount(self.watchedCount() + 1);
+        // When there is no watch-update in progress,
+        // send POST request to node's watch API url and update the watch count
+        if(!watchUpdateInProgress) {
+            if (self.userIsWatching()) {
+                self.watchedCount(self.watchedCount() - 1);
+            } else {
+                self.watchedCount(self.watchedCount() + 1);
+            }
+            watchUpdateInProgress = true;
+            osfHelpers.postJSON(
+                self.apiUrl + 'togglewatch/',
+                {}
+            ).done(function (data) {
+                // Update watch count in DOM
+                watchUpdateInProgress = false;
+                self.userIsWatching(data.watched);
+                self.watchedCount(data.watchCount);
+            }).fail(
+                osfHelpers.handleJSONError
+            );
         }
-        osfHelpers.postJSON(
-            self.apiUrl + 'togglewatch/',
-            {}
-        ).done(function(data) {
-            // Update watch count in DOM
-            self.userIsWatching(data.watched);
-            self.watchedCount(data.watchCount);
-        }).fail(
-            osfHelpers.handleJSONError
-        );
     };
 
     self.makePublic = function() {
@@ -293,14 +312,19 @@ var ProjectViewModel = function(data) {
         var timeout = setTimeout(function() {
             self.idCreationInProgress(true); // show loading indicator
         }, 500);
+        var url = self.apiUrl + 'identifiers/';
         return $.post(
-            self.apiUrl + 'identifiers/'
+            url
         ).done(function(resp) {
             self.doi(resp.doi);
             self.ark(resp.ark);
-        }).fail(function() {
-            osfHelpers.growl('Error', 'Could not create identifiers.', 'danger');
-            Raven.captureMessage('Could not create identifiers');
+        }).fail(function(xhr) {
+            var message = 'We could not create the identifier at this time. ' +
+                'The DOI/ARK acquisition service may be down right now. ' +
+                'Please try again soon and/or contact ' +
+                '<a href="mailto: support@osf.io">support@osf.io</a>';
+            osfHelpers.growl('Error', message, 'danger');
+            Raven.captureMessage('Could not create identifiers', {url: url, status: xhr.status});
         }).always(function() {
             clearTimeout(timeout);
             self.idCreationInProgress(false); // hide loading indicator

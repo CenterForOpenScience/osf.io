@@ -53,7 +53,6 @@ var GithubConfigHelper = (function() {
     };
 
     $(document).ready(function() {
-
         $('#githubSelectRepo').on('change', function() {
             var value = $(this).val();
             if (value) {
@@ -70,7 +69,10 @@ var GithubConfigHelper = (function() {
                 nodeApiUrl + 'github/user_auth/',
                 {}
             ).done(function() {
-                window.location.reload();
+                    if($osf.isIE()){
+                        window.location.hash = "#configureAddonsAnchor";
+                    }
+                    window.location.reload();
             }).fail(
                 $osf.handleJSONError
             );

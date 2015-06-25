@@ -2,6 +2,57 @@
 Changelog
 *********
 
+0.41.0 (2015-06-24)
+===================
+
+- Updated landing page and navbar UI.
+- API: DELETE Node endpoint.
+- API: Add support for Sentry.
+- Dev: Add jshint to Travis builds.
+- Many UI bug fixes.
+
+
+0.40.0 (2015-06-22)
+===================
+
+- Registrations must be retracted rather than made private.
+- Registrations may be embargoed for up to four years. During this period, a
+registration remains private.
+- Addon files get archived when they are registered.
+
+0.39.0 (2015-06-15)
+===================
+
+- Many bug fixes and UI improvements. See
+https://github.com/CenterForOpenScience/osf.io/issues?page=1&q=milestone%3A0.39.0+is%3Aclosed
+for a list of closed PRs.
+
+0.38.0 (2015-06-07)
+===================
+
+- API v2 pre-release
+- Modular File Renderer as a service
+- File editing user interface improvements
+- Collaborative file editing for text files
+
+0.37.0 (2015-05-25)
+===================
+
+- Move & Copy files/folders between storage providers and nested folders
+- Rename files and folders
+- Download folders as Zip
+- OSF Storage deleted files/folders are moved to a "trash bin" collection
+- Central Authentication Service (CAS & Federated Authentication)
+- Enhanced logging with direct links to files/folder objects
+
+0.36.0 (2015-05-15)
+===================
+
+- Updated UI for project organizer and file browser: multi-select, action
+toolbar, batch delete.
+- Can merge user accounts by adding a confirmed user's email address as a
+secondary email.
+
 0.35.0 (2015-05-06)
 ===================
 

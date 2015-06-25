@@ -41,7 +41,15 @@ var Log = function(params) {
       * Return whether a knockout template exists for the log.
       */
     self.hasTemplate = ko.computed(function() {
-        return $('script#' + self.action).length > 0;
+        if (!self.user) {
+            $('script#' + self.action + '_no_user').length > 0;
+        } else {
+            return $('script#' + self.action).length > 0;
+        }
+    });
+
+    self.hasUser = ko.pureComputed(function() {
+        return Boolean(self.user && self.user.fullname);
     });
 
     self.mapUpdates = function(key, item) {
@@ -82,6 +90,16 @@ var Log = function(params) {
         }
         return ret;
     });
+
+    //helper function to strip the slash for file or folder in log template
+    self.stripSlash = function(path){
+        return path.replace(/(^\/)|(\/$)/g, '');
+    };
+
+    //helper funtion to determine the type for removing in log template
+    self.pathType = function(path){
+        return path.match(/\/$/) ? 'folder' : 'file';
+    };
 };
 
 /**
@@ -161,7 +179,8 @@ var createLogs = function(logData){
             params: item.params,
             nodeTitle: item.node.title,
             nodeDescription: item.params.description_new,
-            nodePath: item.node.path
+            nodePath: item.node.path,
+            user: item.user
         });
     });
     return mappedLogs;

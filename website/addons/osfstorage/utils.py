@@ -5,10 +5,7 @@ import httplib
 import logging
 import functools
 
-
-from modularodm.exceptions import NoResultsFound
 from modularodm.exceptions import ValidationValueError
-from modularodm.storage.base import KeyExistsException
 
 from framework.exceptions import HTTPError
 from framework.analytics import update_counter
@@ -18,18 +15,6 @@ from website.addons.osfstorage import settings
 
 logger = logging.getLogger(__name__)
 LOCATION_KEYS = ['service', settings.WATERBUTLER_RESOURCE, 'object']
-
-
-def handle_odm_errors(func):
-    @functools.wraps(func)
-    def wrapped(*args, **kwargs):
-        try:
-            return func(*args, **kwargs)
-        except NoResultsFound:
-            raise HTTPError(httplib.NOT_FOUND)
-        except KeyExistsException:
-            raise HTTPError(httplib.CONFLICT)
-    return wrapped
 
 
 def update_analytics(node, file_id, version_idx):
@@ -116,7 +101,7 @@ def must_be(_type):
     return _must_be
 
 
-def copy_files(src, target_settings, parent=None):
+def copy_files(src, target_settings, parent=None, name=None):
     """Copy the files from src to the target nodesettings
     :param OsfStorageFileNode src: The source to copy children from
     :param OsfStorageNodeSettings target_settings: The node settings of the project to copy files to
@@ -124,6 +109,7 @@ def copy_files(src, target_settings, parent=None):
     """
     cloned = src.clone()
     cloned.parent = parent
+    cloned.name = name or cloned.name
     cloned.node_settings = target_settings
 
     if src.is_file:
