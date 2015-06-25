@@ -4,7 +4,6 @@ from flask import request
 from modularodm.exceptions import ValidationError
 
 from framework.auth.decorators import collect_auth
-from website.util.sanitize import clean_tag
 from website.project.model import Tag
 from website.project.decorators import (
     must_be_valid_project, must_have_permission, must_not_be_registration
