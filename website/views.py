@@ -246,7 +246,7 @@ def paginate(items, total, page, size):
     start = page * size
     paginated_items = itertools.islice(items, start, start + size)
 
-    return paginated_items, pages, page
+    return paginated_items, pages
 
 
 @must_be_logged_in
@@ -266,7 +266,7 @@ def watched_logs_get(**kwargs):
         ))
 
     total = sum(1 for x in user.get_recent_log_ids())
-    paginated_logs, pages, page = paginate(user.get_recent_log_ids(), total, page, size)
+    paginated_logs, pages = paginate(user.get_recent_log_ids(), total, page, size)
     logs = (model.NodeLog.load(id) for id in paginated_logs)
 
     return {

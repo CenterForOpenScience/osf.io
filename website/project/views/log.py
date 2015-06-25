@@ -31,7 +31,7 @@ def get_log(auth, log_id):
     return {'log': serialize_log(log, auth=auth)}
 
 
-def _get_logs(node, count, auth, link=None, page=0):
+def _get_logs(node, count, auth, page=0):
     """
 
     :param Node node:
@@ -56,7 +56,7 @@ def _get_logs(node, count, auth, link=None, page=0):
         for log in logs_set[start:stop]
     ]
 
-    return logs, total, pages, page
+    return logs, total, pages
 
 @no_auto_transaction
 @collect_auth
@@ -86,5 +86,5 @@ def get_logs(auth, node, **kwargs):
 
     # Serialize up to `count` logs in reverse chronological order; skip
     # logs that the current user / API key cannot access
-    logs, total, pages, page = _get_logs(node, count, auth, page)
+    logs, total, pages = _get_logs(node, count, auth, page)
     return {'logs': logs, 'total': total, 'pages': pages, 'page': page}
