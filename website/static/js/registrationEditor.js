@@ -151,18 +151,24 @@ RegistrationEditor.prototype.fetchData = function() {
     return $.getJSON(self.urls.data);
 };
 
-RegistrationEditor.prototype.updateEditor = function(page) {
+RegistrationEditor.prototype.updateEditor = function(page, question) {
     var self = this;
+    var useSchema;
 
     if (!page) {
         return;
+    } 
+    if (!question) {
+        useSchema = page;
+    } else {
+        useSchema = question;
     }
     // load the data for the first schema and display
     if (self.editor) {
         self.editor.destroy();
     }
     self.editor = new JSONEditor(document.getElementById(self.editorId), {
-        schema: page,
+        schema: useSchema,
         startVal: self.schemaData(),
         theme: 'bootstrap3',
         disable_collapse: true,
@@ -177,6 +183,10 @@ RegistrationEditor.prototype.updateEditor = function(page) {
 RegistrationEditor.prototype.selectPage = function(page) {
     var self = this;
     self.updateEditor(page);
+};
+RegistrationEditor.prototype.selectQuestion = function(question) {
+    var self = this;
+    self.updateEditor(question);
 };
 RegistrationEditor.prototype.save = function() {
     var self = this;

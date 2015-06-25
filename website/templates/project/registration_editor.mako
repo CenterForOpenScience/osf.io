@@ -11,11 +11,17 @@
                 <p>
                     <ul class="nav navbar-nav" data-bind="foreach: schema().pages">
                         <li>
-                            <a data-bind="text: title,
+                            <a style="padding-bottom:0px;" data-bind="text: title,
                                 click: $root.selectPage"></a>
-                        </li>
+
+                            <ul class="nav navbar-nav" data-bind="foreach: schema().pages.keys">
+                                <li><a style="padding-top:0px;padding-right:5px;" data-bind="text: title,
+                                click: $root.selectPage"></a></li>
+                            </ul>
+                        </li>                
                     </ul>
                 </p>
+                <br />
                 <br />
                 <div id="registrationEditor"></div>
                 <button data-bind="css: {disabled: disableSave},                                 
