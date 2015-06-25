@@ -205,6 +205,11 @@ def update_user(auth):
                             mails.PRIMARY_EMAIL_CHANGED,
                             user=user,
                             new_address=username)
+
+            # Remove old primary email from subscribed mailing lists
+            for list_name, subscription in user.mailing_lists.iteritems():
+                if subscription:
+                    mailchimp_utils.unsubscribe_mailchimp(list_name, user._id, username=user.username)
             user.username = username
 
     ###################
@@ -222,6 +227,11 @@ def update_user(auth):
             user.timezone = data['timezone']
 
     user.save()
+
+    # Update subscribed mailing lists with new primary email
+    for list_name, subscription in user.mailing_lists.iteritems():
+        if subscription:
+            mailchimp_utils.subscribe_mailchimp(list_name, user._id)
 
     return _profile_view(user)
 
