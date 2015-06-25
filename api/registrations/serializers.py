@@ -23,6 +23,7 @@ class RegistrationCreateSerializerWithToken(RegistrationSerializer):
     title = ser.CharField(read_only=True)
     description = ser.CharField(read_only=True)
 
+
     def validate(self, data):
         request = self.context['request']
         user = request.user

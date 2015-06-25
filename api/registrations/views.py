@@ -92,8 +92,8 @@ class RegistrationDetail(NodeDetail, generics.CreateAPIView, RegistrationMixin):
             raise ValidationError('Not a registration or registration draft.')
         return self.get_node()
 
+    # overrides CreateAPIView
     def create(self, request, registration_id):
-        request = request
         user = request.user
         node = self.get_node()
         token = token_creator(node._id, user._id)
