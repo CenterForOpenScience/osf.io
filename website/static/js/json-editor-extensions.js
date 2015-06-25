@@ -3,9 +3,34 @@ var FilesWidget = require('js/FilesWidget');
 var Fangorn = require('js/fangorn');
 var $osf = require('js/osfHelpers');
 var $ = require('jquery');
+var URI = require('URIjs');
 
-JSONEditor.defaults.options.upload = function() {
-   // TODO add file handling 
+JSONEditor.defaults.options.upload = function(type, file, cbs) {
+    // TODO may want to change this
+    var nodeApiUrl = window.contextVars.node.urls.api;
+
+    var tb = this;
+    var redir = new URI(file.nodeUrl);
+    redir.segment('files').segment(file.provider).segmentCoded(file.path.substring(1));
+    var fileurl  = redir.toString() + '/';
+
+    if (type === 'root.upload_fail') cbs.failure('Upload failed');
+    else {
+        var tick = 0;
+        var tickFunction = function() {
+            tick += 1;
+            if (tick < 100) {
+                cbs.updateProgress(tick);
+                window.setTimeout(tickFunction, 50)
+            } else if (tick == 100) {
+                cbs.updateProgress();
+                window.setTimeout(tickFunction, 500)
+            } else {
+                cbs.success('/project' + fileurl);
+            }
+        };
+        window.setTimeout(tickFunction)
+    }
 };
 
 JSONEditor.defaults.resolvers.unshift(function(schema) {
@@ -15,7 +40,7 @@ JSONEditor.defaults.resolvers.unshift(function(schema) {
 });
 
 JSONEditor.defaults.editors.myUpload = JSONEditor.defaults.editors.upload.extend({
-    build: function() {    
+    build: function() {   
         var self = this;
         this.title = this.header = this.label = this.theme.getFormInputLabel(this.getTitle());
 
@@ -33,21 +58,19 @@ JSONEditor.defaults.editors.myUpload = JSONEditor.defaults.editors.upload.extend
 
         $(this.uploader).attr('id', 'registrationFilesGrid');
 
-        this.uploader.addEventListener('change',function(e) {
+        this.uploader.addEventListener('click',function(e) {
             e.preventDefault();
-            e.stopPropagation();
-            console.log("change");
-        
-            if(this.files && this.files.length) {
-                var fr = new FileReader();
-                fr.onload = function(evt) {
-                    self.preview_value = evt.target.result;
-                    self.refreshPreview();
-                    self.onChange(true);
-                    fr = null;
-                };
-                fr.readAsDataURL(this.files[0]);
+            e.stopPropagation(); 
+            folder = $(this).find($(event.target).attr('data-id'));
+            //console.log(self.preview_value);
+            if (self.preview_value.kind === 'file') {
+                self.refreshPreview();
+                self.onChange(true);
+            } else {
+                self.preview_value = undefined;
+                self.refreshPreview();
             }
+            
         });
     }
         var description = this.schema.description;
@@ -58,12 +81,25 @@ JSONEditor.defaults.editors.myUpload = JSONEditor.defaults.editors.upload.extend
 
         this.control = this.theme.getFormControl(this.label, this.uploader||this.input, this.preview);
         this.container.appendChild(this.control);
-    },
-    postBuild: function() {
+
         var nodeApiUrl = window.contextVars.node.urls.api;
- 
-        var filesWidget = new FilesWidget('registrationFilesGrid', nodeApiUrl + 'files/grid/');
-        filesWidget.init();  
+        var fangornOpts = {
+            onselectrow: function(row, event) {
+                self.preview_value = row.data;
+                this.path = row.data.path;
+                self.files = row.data;
+
+                var tb = this;
+                var redir = new URI(row.data.nodeUrl);
+                redir.segment('files').segment(row.data.provider).segmentCoded(row.data.path.substring(1));
+                var fileurl  = redir.toString() + '/';
+                console.log(fileurl);
+            }  
+        };
+        
+        var filesWidget = new FilesWidget('registrationFilesGrid', nodeApiUrl + 'files/grid/', fangornOpts);
+        filesWidget.init(); 
+
     },
     refreshPreview: function() {
         if(this.last_preview === this.preview_value) return;
@@ -75,11 +111,11 @@ JSONEditor.defaults.editors.myUpload = JSONEditor.defaults.editors.upload.extend
 
         var self = this;
 
-        var mime = this.preview_value.match(/^data:([^;,]+)[;,]/);
+        var mime = this.preview_value.name.match(/^data:([^;,]+)[;,]/);
         if(mime) mime = mime[1];
         if(!mime) mime = 'unknown';
 
-        var file = this.uploader.files[0];
+        var file = this.files;
 
         this.preview.innerHTML = '<strong>Type:</strong> '+mime+', <strong>Size:</strong> '+file.size+' bytes';
         if(mime.substr(0,5)==="image") {
@@ -128,21 +164,6 @@ JSONEditor.defaults.editors.myUpload = JSONEditor.defaults.editors.upload.extend
                 }
             });
         });
-    },
-    setValue: function(val) {
-        if(this.value !== val) {
-            this.value = val;
-            this.input.value = this.value;
-            this.onChange();
-        }
-    },
-    destroy: function() {
-        if(this.preview && this.preview.parentNode) this.preview.parentNode.removeChild(this.preview);
-        if(this.title && this.title.parentNode) this.title.parentNode.removeChild(this.title);
-        if(this.input && this.input.parentNode) this.input.parentNode.removeChild(this.input);
-        if(this.uploader && this.uploader.parentNode) this.uploader.parentNode.removeChild(this.uploader);
-
-        this._super();
     }
 });
    
