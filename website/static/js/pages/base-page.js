@@ -11,6 +11,7 @@ require('../../css/animate.css');
 require('../../../../node_modules/osf-style/css/base.css');
 require('../../css/style.css');
 require('../../css/search-bar.css');
+require('../../css/navbar.css');
 require('font-awesome-webpack');
 
 // for public activity page under explore nav-tag

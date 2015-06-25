@@ -12,13 +12,14 @@
 .cp-handle {
     /* Handle starts under Bootstrap header */
     /* Note: Must be the same as #commentPane:padding-bottom */
-    margin-top: 88px;
+    margin-top: 95px;
     width: 50px;
     height: 40px;
     background-color:#3C87C8;
     margin-left: -50px;
     text-align: center;
     border-bottom-left-radius: 15px;
+    padding-top: 10px;
 }
 
 .cp-bar {

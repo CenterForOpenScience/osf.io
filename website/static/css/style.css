@@ -224,3 +224,12 @@ body {
         position: relative; /*For project setting side-bar*/
     }
 }
+
+#viewPanel > .osf-panel-body,
+.mfr-file {
+    height: 100%;
+}
+
+.text-center {
+    text-align: center;
+}
