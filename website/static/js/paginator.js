@@ -124,12 +124,16 @@ var Paginator = oop.defclass({
         }
     },
     nextPage: function(){
-        this.currentPage(this.currentPage() + 1);
-        this.fetchResults();
+        if (this.currentPage() !== this.numberOfPages() - 1) {
+            this.currentPage(this.currentPage() + 1);
+            this.fetchResults();
+        }
     },
     previousPage: function(){
-        this.currentPage(this.currentPage() - 1);
-        this.fetchResults();
+        if (this.currentPage() !== 0) {
+            this.currentPage(this.currentPage() - 1);
+            this.fetchResults();
+        }
     },
     fetchResults: function() {
         throw new Error('Paginator subclass must define a "fetchResults" method.');
