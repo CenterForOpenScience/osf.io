@@ -31,10 +31,10 @@ class RegistrationCreateSerializerWithToken(RegistrationSerializer):
         node = view.get_node()
         given_token = view.kwargs['token']
         correct_token = token_creator(node._id, user._id)
+        if node.is_registration_draft is False:
+            raise exceptions.ValidationError('This is not a registration draft.')
         if correct_token != given_token:
             raise ser.ValidationError("Incorrect token.")
-        if node.is_registration is True:
-            raise exceptions.ValidationError('This is already a registration')
         return data
 
     def create(self, validated_data):
