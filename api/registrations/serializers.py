@@ -23,14 +23,13 @@ class RegistrationCreateSerializerWithToken(RegistrationSerializer):
     title = ser.CharField(read_only=True)
     description = ser.CharField(read_only=True)
 
-
     def validate(self, data):
         request = self.context['request']
         user = request.user
         view = self.context['view']
         node = view.get_node()
         given_token = view.kwargs['token']
-        correct_token = token_creator(node._id, user._id, data)
+        correct_token = token_creator(node._id, user._id)
         if correct_token != given_token:
             raise ser.ValidationError("Incorrect token.")
         if node.is_registration is True:
