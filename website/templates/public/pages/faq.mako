@@ -4,16 +4,16 @@
 <h1 class="page-title">Frequently Asked Questions</h1>
 <h3>How much does the OSF service cost?</h3><p>It's free!</p>
 
-<h3>How can it be free? How are you funded?</h3><p>OSF is
+<h3>How can it be free? How are you funded?</h3><p>The OSF is
     maintained and developed by the Center for Open Science (COS), a non-profit
     organization. COS is supported through grants from a variety of supporters,
     including <a href="http://centerforopenscience.org/about_sponsors/">
     federal agencies, private foundations, and commercial entities</a>.</p>
 
 <h3>How will the OSF be useful to my research?</h3><p>The OSF integrates with
-    the scientist's daily workflow. OSF helps document and archive study
-    designs, materials, and data. OSF facilitates sharing of materials and data
-    within a laboratory or across laboratories. OSF also facilitates transparency of
+    the scientist's daily workflow. The OSF helps document and archive study
+    designs, materials, and data. The OSF facilitates sharing of materials and data
+    within a laboratory or across laboratories. The OSF also facilitates transparency of
     laboratory research and provides a network design that details and credits
     individual contributions for all aspects of the research process. To see how
     it works, watch our short <a
@@ -44,26 +44,26 @@
         hash</a> of your password. This is a computation on your password that
     cannot be reversed, but is the same every time it is computed from your
     password. This provides extra security. No one but you can know your
-    password. When you click "Forgot your password," OSF sends you a new random
+    password. When you click "Forgot your password," the OSF sends you a new random
     password because it neither stores nor has the ability to compute your password.</p>
 
-<p>Data and materials posted on OSF are not yet encrypted, unless you encrypt
+<p>Data and materials posted on the OSF are not yet encrypted, unless you encrypt
     them before uploading to the site. This means that if our servers were
     compromised, the intruder would have access to raw data. While we have taken
     technological measures to minimize this risk, the level of security can be
     improved further. We will offer encryption soon, and we will partner with
     data storage services that offer strong security features.</p>
 
-<h3>How does OSF store and back up files that I upload to the site?</h3>
+<h3>How does the OSF store and back up files that I upload to the site?</h3>
     <p>The OSF stores files with <a href="http://www.rackspace.com/">Rackspace</a>
     via an open source sponsorship, and has backups on
     <a href="http://aws.amazon.com/glacier/">Amazon's Glacier platform</a>.
-    OSF maintains several backup schemes, including off-site backups and
+    The OSF maintains several backup schemes, including off-site backups and
     automated backups performed by our host every day, week, and fortnight.</p>
 
 <h3>What is coming to the OSF?</h3>
 
-<p>The OSF infrastructure will be open-sourced to encourage a community of
+<p>OSF infrastructure will be open-sourced to encourage a community of
     developers to contribute to open science by adding features and improving
     existing features. For updates on new features, you can join our <a href="https://groups.google.com/forum/#!forum/openscienceframework">Google
         Group</a>, find us on <a
