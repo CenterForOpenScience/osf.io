@@ -42,7 +42,13 @@ INSTALLED_APPS = (
     # 3rd party
     'rest_framework',
     'rest_framework_swagger',
+    'raven.contrib.django.raven_compat',
 )
+
+# TODO: Are there more granular ways to configure reporting specifically related to the API?
+RAVEN_CONFIG = {
+    'dsn': osf_settings.SENTRY_DSN
+}
 
 REST_FRAMEWORK = {
     'PAGE_SIZE': 10,

@@ -232,8 +232,8 @@
                 "text": "Forking a project or component does not copy Mendeley authorization unless the user forking the project is the same user who authorized the Mendeley add-on in the source project being forked."
             },
             "Registering": {
-                "status": "partial",
-                "text": "Mendeley content will be registered, but version history will not be copied to the registration."
+                "status": "none",
+                "text": "Mendeley content will not be registered."
             }
         },
         "Zotero": {
@@ -258,8 +258,8 @@
                 "text": "Forking a project or component does not copy Zotero authorization unless the user forking the project is the same user who authorized the Zotero add-on in the source project being forked."
             },
             "Registering": {
-                "status": "partial",
-                "text": "Zotero content will be registered, but version history will not be copied to the registration."
+                "status": "none",
+                "text": "Zotero content will not be registered."
             }
         }
     },
