@@ -10,12 +10,6 @@ from website.app import init_app
 
 from website.addons.twofactor.utils import serialize_settings, serialize_urls
 
-app = init_app(
-    routes=True,
-    set_backends=False,
-    settings_module='website.settings',
-)
-
 class TestUtils(OsfTestCase):
     @mock.patch('website.addons.twofactor.models.push_status_message')
     def setUp(self, mocked):

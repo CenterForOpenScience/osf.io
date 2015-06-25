@@ -14,7 +14,7 @@ from tests.base import OsfTestCase, assert_is_redirect
 from tests.factories import AuthUserFactory
 
 from website.addons.box.tests.utils import (
-    BoxAddonTestCase, mock_responses, MockBox, patch_client
+    BoxAddonTestCase, MockBox, patch_client
 )
 from website.addons.box.model import BoxOAuthSettings
 from website.addons.box.utils import box_addon_folder
