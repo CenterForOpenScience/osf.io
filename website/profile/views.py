@@ -229,6 +229,7 @@ def update_user(auth):
     user.save()
 
     # Update subscribed mailing lists with new primary email
+    # TODO: move to user.save()
     for list_name, subscription in user.mailing_lists.iteritems():
         if subscription:
             mailchimp_utils.subscribe_mailchimp(list_name, user._id)
