@@ -50,7 +50,7 @@
     "share": "0.7.27",
     "style-loader": "^0.8.3",
     "treebeard": "git://github.com/caneruguz/treebeard.git#7042be173a813bd7072e8345f96e7dbbb7fac551",
-    "osf-style": "git://github.com/caneruguz/osf-style.git#develop",
+    "osf-style": "git://github.com/caneruguz/osf-style.git#0f340b99128bd240af2e9a3273007b82abc1072c",
     "typeahead.js": "^0.10.5",
     "url-loader": "^0.5.5",
     "webpack": "^1.7.2",

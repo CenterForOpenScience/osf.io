@@ -6,6 +6,7 @@ html, body {
 body {
     padding-top: 50px; /* body padding for fixed top nav */
     position: relative; /* for bootstrap affix */
+    -webkit-font-smoothing: antialiased;
 }
 
 .navbar-brand {
