@@ -1139,13 +1139,13 @@ def make_url_map(app):
         Rule([
             '/project/<pid>/tags/',
             '/project/<pid>/node/<nid>/tags/',
-            '/project/<pid>/tags/<tag>',
+            '/project/<pid>/tags/<tag>/',
             '/project/<pid>/node/<nid>/tags/<tag>',
         ], 'post', project_views.tag.project_addtag, json_renderer),
         Rule([
             '/project/<pid>/tags/',
             '/project/<pid>/node/<nid>/tags/',
-            '/project/<pid>/tags/<tag>',
+            '/project/<pid>/tags/<tag>/',
             '/project/<pid>/node/<nid>/tags/<tag>',
         ], 'delete', project_views.tag.project_removetag, json_renderer),
 
