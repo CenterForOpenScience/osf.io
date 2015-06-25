@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 
 import logging
-import operator
 import httplib
 import httplib as http
 import os
@@ -18,6 +17,7 @@ from framework.auth.decorators import collect_auth
 from framework.auth.decorators import must_be_logged_in
 from framework.auth.exceptions import ChangePasswordError
 from framework.auth.views import send_confirm_email
+from framework.auth.signals import user_merged
 from framework.exceptions import HTTPError, PermissionsError
 from framework.flask import redirect  # VOL-aware redirect
 from framework.status import push_status_message
@@ -342,7 +342,7 @@ def user_addons(auth, **kwargs):
     ret = {}
 
     addons = [addon.config for addon in user.get_addons()]
-    addons.sort(key=operator.attrgetter("full_name"), reverse=False)
+    addons.sort(key=lambda addon: addon.full_name.lower(), reverse=False)
     addons_enabled = []
     addon_enabled_settings = []
     user_addons_enabled = {}
@@ -367,7 +367,7 @@ def user_addons(auth, **kwargs):
         for addon in sorted(settings.ADDONS_AVAILABLE)
         if 'user' in addon.owners and addon.short_name not in settings.SYSTEM_ADDED_ADDONS['user']
     ]
-    ret['addons_available'].sort(key=operator.attrgetter("full_name"), reverse=False)
+    ret['addons_available'].sort(key=lambda addon: addon.full_name.lower(), reverse=False)
     ret['addons_enabled'] = addons_enabled
     ret['addon_enabled_settings'] = addon_enabled_settings
     ret['user_addons_enabled'] = user_addons_enabled
@@ -427,6 +427,7 @@ def user_choose_mailing_lists(auth, **kwargs):
     return {'message': 'Successfully updated mailing lists', 'result': user.mailing_lists}, 200
 
 
+@user_merged.connect
 def update_subscription(user, list_name, subscription):
     """ Update mailing list subscription in mailchimp.
 
@@ -438,7 +439,7 @@ def update_subscription(user, list_name, subscription):
         mailchimp_utils.subscribe_mailchimp(list_name, user._id)
     else:
         try:
-            mailchimp_utils.unsubscribe_mailchimp(list_name, user._id)
+            mailchimp_utils.unsubscribe_mailchimp(list_name, user._id, username=user.username)
         except mailchimp_utils.mailchimp.ListNotSubscribedError:
             raise HTTPError(http.BAD_REQUEST,
                 data=dict(message_short="ListNotSubscribedError",
