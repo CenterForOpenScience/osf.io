@@ -77,10 +77,9 @@ def unsubscribe_mailchimp(list_name, user_id, username=None):
     :raises: ListNotSubscribed if user not already subscribed
     """
     user = User.load(user_id)
-    username = user.username if user else username
     m = get_mailchimp_api()
     list_id = get_list_id_from_name(list_name=list_name)
-    m.lists.unsubscribe(id=list_id, email={'email': username})
+    m.lists.unsubscribe(id=list_id, email={'email': user.username if user else username})
 
     # Update mailing_list user field
     if user.mailing_lists is None:
