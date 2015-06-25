@@ -11,11 +11,17 @@ def ensure_schema_structure(schema):
             {
                 'id': 'page1',
                 'type': 'object',
+                'properties': {}
             }
         ]
+
     schema['title'] = ' '.join(schema['id'].split('_'))
     # TODO better versioning
     schema['version'] = schema.get('version', 1)
+    
+    for question in schema['pages']:
+        if 'comments' not in question:
+            question['comments'] = []
     return schema
 
 here = os.path.split(os.path.abspath(__file__))[0]

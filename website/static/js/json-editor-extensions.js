@@ -2,7 +2,6 @@ var $ = require('jquery');
 require('js/registrationEditor');
 var jedit = require('json-editor');
 
-
 JSONEditor.defaults.editors.commentableString = JSONEditor.defaults.editors.string.extend({
 	build: function() {
 		var self = this;
@@ -12,7 +11,7 @@ JSONEditor.defaults.editors.commentableString = JSONEditor.defaults.editors.stri
 		this.button = $("<button style='padding: 5px; margin-top:15px;' class='btn btn-primary btn-xs comment-button' id='comment'>Add comment</button>");
 
 		$(this.button).click(function() {
-			$(this).prev().after("<input type='text' class='form-control comment-input' placeholder='Comments or questions...'></input>");
+			$(this).before("<input type='text' class='form-control comment-input' placeholder='Comments or questions...'></input>");
 		});
 
 		$(this.input).after(this.comment);
@@ -20,11 +19,17 @@ JSONEditor.defaults.editors.commentableString = JSONEditor.defaults.editors.stri
 		
 	},
     getValue: function() {
-		if(this.comment) {
+		if( this.comment ) {
+			this.comments = new Array();
+
+			for (var i = 1; i < this.comment.length; i++) {
+				this.comments.push(this.comment[i].value);
+			};
+
 			val = {
 				"value": this._super(),
-				"comments": this.comment[1].value
-			}
+				"comments": this.comments
+			};
 			return val;
 		}
 		else {
