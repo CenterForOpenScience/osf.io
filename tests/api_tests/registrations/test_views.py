@@ -52,6 +52,7 @@ class TestRegistrationList(ApiTestCase):
         assert_in(self.registration_project_three._id, ids)
         assert_not_in(self.registration_project_four._id, ids)
         assert_in(self.registration_draft._id, ids)
+        assert_not_in(self.project_two._id, ids)
 
 
 class TestRegistrationDetail(ApiTestCase):

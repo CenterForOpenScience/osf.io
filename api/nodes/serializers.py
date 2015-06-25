@@ -139,6 +139,7 @@ class RegistrationSerializer(NodeSerializer):
 
     # TODO pass source link to Links
 
+    # TODO: This create method is a placeholder for testing. Will need to be replaced once Draft registration functionality added.
     def create(self, validated_data):
         request = self.context['request']
         template = 'Open-Ended_Registration'

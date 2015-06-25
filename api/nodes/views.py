@@ -174,6 +174,7 @@ class NodeRegistrationsList(generics.ListCreateAPIView, NodeMixin):
         user = self.request.user
         serializer.save(creator=user)
 
+
 class NodeChildrenList(generics.ListAPIView, NodeMixin):
     """Children of the current node.
 
