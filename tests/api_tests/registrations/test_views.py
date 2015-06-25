@@ -215,7 +215,7 @@ class TestRegistrationCreate(ApiTestCase):
     def test_invalid_token_create_registration(self):
         res = self.app.post(self.private_reg_draft_url, auth=self.basic_auth, expect_errors=True)
         assert_equal(res.status_code, 202)
-        token_url = self.private_reg_draft_url + "12345/"
+        token_url = self.private_reg_draft_url + "freeze/12345/"
 
         res = self.app.post(token_url, auth=self.basic_auth, expect_errors = True)
         assert_equal(res.status_code, 400)

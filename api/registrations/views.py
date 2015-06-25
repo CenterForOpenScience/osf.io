@@ -1,11 +1,9 @@
 import requests
 from rest_framework import generics, permissions as drf_permissions
-from modularodm import Q
 from rest_framework.exceptions import PermissionDenied, ValidationError
 
 
 from website.models import Node
-from framework.auth.core import Auth
 from api.base.filters import ODMFilterMixin
 from api.base.utils import waterbutler_url_for
 from api.nodes.serializers import NodePointersSerializer
@@ -137,10 +135,10 @@ class RegistrationChildrenList(NodeChildrenList, RegistrationMixin):
     Children of the current registration
     """
     def get_queryset(self):
-        node = self.get_node()
-        if node.is_registration is False and node.is_registration_draft is False:
+        reg_node = self.get_node()
+        if reg_node.is_registration is False and reg_node.is_registration_draft is False:
             raise ValidationError('Not a registration or registration draft.')
-        nodes = node.nodes
+        nodes = reg_node.nodes
         user = self.request.user
         if user.is_anonymous():
             auth = Auth(None)
