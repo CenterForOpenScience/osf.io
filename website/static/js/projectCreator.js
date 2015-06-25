@@ -37,11 +37,20 @@ function ProjectCreatorViewModel(params) {
     self.hasFocus = params.hasFocus;
 
     self.usingTemplate = ko.observable(false);
+    self.enableCreateBtn =  ko.observable(true);
+
+    self.disableSubmitBtn = function (){
+        self.enableCreateBtn(false);
+    };
+    self.enableSubmitBtn = function (){
+        self.enableCreateBtn(true);
+    };
 
     self.submitForm = function () {
         if (self.title().trim() === '') {
             self.errorMessage('This field is required.');
         } else {
+            self.disableSubmitBtn();
             self.createProject();
         }
     };
@@ -62,17 +71,25 @@ function ProjectCreatorViewModel(params) {
     };
 
     self.createFailure = function() {
+        self.enableSubmitBtn();
         $osf.growl('Could not create a new project.', 'Please try again. If the problem persists, email <a href="mailto:support@osf.io.">support@osf.io</a>');
 
     };
 
     self.serialize = function() {
         var category = self.category();
+        var template;
+        //select behavior differently in IE from all other browser. The input tag is 1 in other browser but 3 in IE
+        if($osf.isIE()){
+            template = $('.create-node-templates')[3].value;
+        } else {
+            template = $('.create-node-templates')[1].value;
+        }
         return {
             title: self.title(),
             category: category,
             description: self.description(),
-            template: $('#createNodeTemplatesInput').val()
+            template: template
         };
     };
     /**

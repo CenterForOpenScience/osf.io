@@ -2,8 +2,8 @@
 import mock
 from nose.tools import *  # flake8: noqa
 
-from framework.auth.core import Auth
 from website.models import Node
+from framework.auth.core import Auth
 from website.util.sanitize import strip_html
 from api.base.settings.defaults import API_BASE
 
@@ -28,6 +28,7 @@ class TestWelcomeToApi(ApiTestCase):
         res = self.app.get(self.url, auth=self.basic_auth)
         assert_equal(res.status_code, 200)
         assert_equal(res.json['meta']['current_user']['data']['given_name'], self.user.given_name)
+
 
 class TestNodeList(ApiTestCase):
     def setUp(self):
@@ -91,6 +92,7 @@ class TestNodeList(ApiTestCase):
         assert_not_in(self.private._id, ids)
 
         Node.remove()
+
 
 class TestNodeFiltering(ApiTestCase):
 
@@ -295,6 +297,7 @@ class TestNodeFiltering(ApiTestCase):
         assert_not_in(self.folder._id, ids)
         assert_not_in(self.dashboard._id, ids)
 
+
 class TestNodeCreate(ApiTestCase):
 
     def setUp(self):
@@ -365,6 +368,7 @@ class TestNodeCreate(ApiTestCase):
         assert_equal(res.json['data']['title'], strip_html(title))
         assert_equal(res.json['data']['description'], strip_html(description))
         assert_equal(res.json['data']['category'], self.category)
+
 
 class TestNodeDetail(ApiTestCase):
     def setUp(self):
@@ -605,6 +609,74 @@ class TestNodeUpdate(ApiTestCase):
         res = self.app.patch_json(self.private_url, {'title': self.new_title}, auth=self.basic_auth_two, expect_errors=True)
         assert_equal(res.status_code, 403)
 
+
+class TestNodeDelete(ApiTestCase):
+
+    def setUp(self):
+        ApiTestCase.setUp(self)
+        self.user = UserFactory.build()
+        self.user.set_password('password')
+        self.user.save()
+        self.basic_auth = (self.user.username, 'password')
+
+        self.project = ProjectFactory(creator=self.user, is_public=False)
+        self.private_url = '/{}nodes/{}/'.format(API_BASE, self.project._id)
+
+        self.user_two = UserFactory.build()
+        self.user_two.set_password('password')
+        self.user_two.save()
+        self.basic_auth_two = (self.user_two.username, 'password')
+
+        self.public_project = ProjectFactory(is_public=True, creator=self.user)
+        self.public_url = '/{}nodes/{}/'.format(API_BASE, self.public_project._id)
+
+        self.fake_url = '/{}nodes/{}/'.format(API_BASE, '12345')
+
+    def test_deletes_public_node_logged_out(self):
+        res = self.app.delete(self.public_url, expect_errors=True)
+        # This is 403 instead of 401 because basic authentication is only for unit tests and, in order to keep from
+        # presenting a basic authentication dialog box in the front end. We may change this as we understand CAS
+        # a little better
+        assert_equal(res.status_code, 403)
+
+    def test_deletes_public_node_logged_in(self):
+        res = self.app.delete_json(self.public_url, auth=self.basic_auth_two, expect_errors=True)
+        assert_equal(res.status_code, 403)
+        assert_equal(self.public_project.is_deleted, False)
+
+        res = self.app.delete_json(self.public_url, auth=self.basic_auth, expect_errors=True)
+        assert_equal(res.status_code, 204)
+        assert_equal(self.public_project.is_deleted, True)
+
+    def test_deletes_private_node_logged_out(self):
+        res = self.app.delete(self.private_url, expect_errors=True)
+        # This is 403 instead of 401 because basic authentication is only for unit tests and, in order to keep from
+        # presenting a basic authentication dialog box in the front end. We may change this as we understand CAS
+        # a little better
+        assert_equal(res.status_code, 403)
+
+    def test_deletes_private_node_logged_in_contributor(self):
+        res = self.app.delete(self.private_url, auth=self.basic_auth, expect_errors=True)
+        assert_equal(res.status_code, 204)
+        assert_equal(self.project.is_deleted, True)
+
+    def test_deletes_private_node_logged_in_non_contributor(self):
+        res = self.app.delete(self.private_url, auth=self.basic_auth_two, expect_errors=True)
+        assert_equal(res.status_code, 403)
+        assert_equal(self.project.is_deleted, False)
+
+    def test_deletes_private_node_logged_in_read_only_contributor(self):
+        self.project.add_contributor(self.user_two, permissions=['read'])
+        self.project.save()
+        res = self.app.delete(self.private_url, auth=self.basic_auth_two, expect_errors=True)
+        assert_equal(res.status_code, 403)
+        assert_equal(self.project.is_deleted, False)
+
+    def test_deletes_invalid_node(self):
+        res = self.app.delete(self.fake_url, auth=self.basic_auth, expect_errors=True)
+        assert_equal(res.status_code, 404)
+
+
 class TestNodeContributorList(ApiTestCase):
 
     def setUp(self):
@@ -659,6 +731,7 @@ class TestNodeContributorList(ApiTestCase):
          res = self.app.get(self.private_url, auth=self.basic_auth_two, expect_errors=True)
          assert_equal(res.status_code, 403)
 
+
 class TestNodeContributorFiltering(ApiTestCase):
 
     def setUp(self):
@@ -710,6 +783,7 @@ class TestNodeContributorFiltering(ApiTestCase):
         assert_equal(len(res.json['data']), 1)
         assert_false(res.json['data'][0].get('bibliographic', None))
 
+
 class TestNodeRegistrationList(ApiTestCase):
     def setUp(self):
         ApiTestCase.setUp(self)
@@ -759,6 +833,7 @@ class TestNodeRegistrationList(ApiTestCase):
     def test_return_private_registrations_logged_in_non_contributor(self):
         res = self.app.get(self.private_url, auth=self.basic_auth_two, expect_errors=True)
         assert_equal(res.status_code, 403)
+
 
 class TestNodeChildrenList(ApiTestCase):
     def setUp(self):
@@ -827,6 +902,7 @@ class TestNodeChildrenList(ApiTestCase):
 
         Node.remove()
 
+
 class TestNodePointersList(ApiTestCase):
 
     def setUp(self):
@@ -881,6 +957,7 @@ class TestNodePointersList(ApiTestCase):
     def test_return_private_node_pointers_logged_in_non_contributor(self):
         res = self.app.get(self.private_url, auth=self.basic_auth_two, expect_errors=True)
         assert_equal(res.status_code, 403)
+
 
 class TestCreateNodePointer(ApiTestCase):
     def setUp(self):
@@ -982,6 +1059,7 @@ class TestCreateNodePointer(ApiTestCase):
         res = self.app.post(self.public_url, self.public_payload, auth=self.basic_auth, expect_errors=True)
         assert_equal(res.status_code, 400)
 
+
 class TestNodeFilesList(ApiTestCase):
 
     def setUp(self):
@@ -991,7 +1069,7 @@ class TestNodeFilesList(ApiTestCase):
         self.user.save()
         self.basic_auth = (self.user.username, 'justapoorboy')
         self.project = ProjectFactory(creator=self.user)
-        self.private_url = url = '/{}nodes/{}/files/'.format(API_BASE, self.project._id)
+        self.private_url ='/{}nodes/{}/files/'.format(API_BASE, self.project._id)
 
         self.user_two = UserFactory.build()
         self.user_two.set_password('justapoorboy')
@@ -1084,6 +1162,7 @@ class TestNodeFilesList(ApiTestCase):
         res = self.app.get(url, auth=self.basic_auth, expect_errors=True)
         assert_equal(res.status_code, 400)
 
+
 class TestNodePointerDetail(ApiTestCase):
 
     def setUp(self):
@@ -1135,6 +1214,7 @@ class TestNodePointerDetail(ApiTestCase):
     def returns_private_node_pointer_detail_logged_in_non_contributor(self):
         res = self.app.get(self.private_url, auth=self.basic_auth_two, expect_errors=True)
         assert_equal(res.status_code, 403)
+
 
 class TestDeleteNodePointer(ApiTestCase):
 
@@ -1190,9 +1270,5 @@ class TestDeleteNodePointer(ApiTestCase):
         assert_equal(len(self.project.nodes_pointer), 0)
 
     def test_deletes_private_node_pointer_logged_in_non_contributor(self):
-        url = '/{}nodes/{}/pointers/'.format(API_BASE, self.project._id)
-        payload = {'node_id': self.project._id}
-        res = self.app.post(url, payload, auth=self.basic_auth)
-
-        res = self.app.delete(url, auth=self.basic_auth_two, expect_errors=True)
-        assert_equal(res.status_code, 405)
+        res = self.app.delete(self.private_url, auth=self.basic_auth_two, expect_errors=True)
+        assert_equal(res.status_code, 403)
