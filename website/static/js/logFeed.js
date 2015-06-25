@@ -127,8 +127,6 @@ var LogsViewModel = oop.extend(Paginator, {
     //send request to get more logs when the more button is clicked
     fetchResults: function(){
         var self = this;
-        console.log(self.pageToGet());
-
         self.loading(true);
         return $.ajax({
             type: 'get',
