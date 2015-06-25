@@ -62,33 +62,48 @@ var AddContributorViewModel = oop.extend(Paginator, {
         self.inviteError = ko.observable('');
         self.totalPages = ko.observable(0);
         self.nodes = ko.observableArray([]);
+        self.contributors = ko.observableArray([]);
         self.nodesToChange = ko.observableArray();
         $.getJSON(
             nodeApiUrl + 'get_editable_children/', {},
-            function(result) {
-                $.each(result.children || [], function(idx, child) {
+            function (result) {
+                $.each(result.children || [], function (idx, child) {
                     child.margin = NODE_OFFSET + child.indent * NODE_OFFSET + 'px';
                 });
                 self.nodes(result.children);
             }
         );
-        self.foundResults = ko.pureComputed(function() {
+        $.getJSON(
+            nodeApiUrl + 'get_contributors/', {},
+            function (result) {
+                self.contributors(result.contributors);
+            }
+        );
+
+        self.foundResults = ko.pureComputed(function () {
             return self.query() && self.results().length;
         });
 
-        self.noResults = ko.pureComputed(function() {
+        self.noResults = ko.pureComputed(function () {
             return self.query() && !self.results().length;
         });
 
         self.inviteName = ko.observable();
         self.inviteEmail = ko.observable();
 
-        self.addingSummary = ko.computed(function() {
-            var names = $.map(self.selection(), function(result) {
+        self.addingSummary = ko.computed(function () {
+            var names = $.map(self.selection(), function (result) {
                 return result.fullname;
             });
             return names.join(', ');
         });
+    },
+    alreadyAdded : function(contrib) {
+        if ($osf.mapByProperty(this.contributors(), 'id').indexOf(contrib.id) == -1) {
+            return false;
+        } else {
+            return true;
+        }
     },
     selectWhom: function() {
         this.page('whom');
@@ -230,6 +245,15 @@ var AddContributorViewModel = oop.extend(Paginator, {
         elements.forEach(function(element) {
             $(element).find('.contrib-button').tooltip();
         });
+    },
+    addButtonTips: function(contrib) {
+        if(this.alreadyAdded(contrib)){
+            // This would be have tooltip, but KO can't make them for disabled inputs, so displays msg instead.
+            contrib.displayProjectsInCommon = "Already added to this component";
+            return "";
+        }else{
+            return "Add contributor";
+        }
     },
     afterRender: function(elm, data) {
         var self = this;
@@ -400,6 +424,27 @@ function ContribAdder(selector, nodeTitle, nodeId, parentTitle) {
         self.nodeId, self.parentTitle);
     self.init();
 }
+
+ko.bindingHandlers.tooltip = {
+    init: function(element, valueAccessor) {
+        var local = ko.utils.unwrapObservable(valueAccessor()),
+            options = {};
+
+        ko.utils.extend(options, ko.bindingHandlers.tooltip.options);
+        ko.utils.extend(options, local);
+
+        $(element).tooltip(options);
+
+        ko.utils.domNodeDisposal.addDisposeCallback(element, function() {
+            $(element).tooltip("destroy");
+        });
+    },
+    options: {
+        placement: "right",
+        trigger: "click"
+    }
+};
+
 
 ContribAdder.prototype.init = function() {
     var self = this;
