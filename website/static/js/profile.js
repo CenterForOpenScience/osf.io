@@ -301,7 +301,9 @@ BaseViewModel.prototype.edit = function() {
 
 BaseViewModel.prototype.cancel = function(data, event) {
     var self = this;
-    event && event.preventDefault();
+    if (event) {
+            event.preventDefault();
+    }
 
     if (self.dirty()) {
         bootbox.confirm({
@@ -376,10 +378,12 @@ var NameViewModel = function(urls, modes, preventUnsaved, fetchCallback) {
     });
     
    self.nameFieldEmpty = ko.computed(function() {
-        if (self.full() == "") {
+        if (self.full() === "") {
         return true;        
         }
-        else return false;
+        else {
+            return false;
+        }
     });
 
     
@@ -468,7 +472,9 @@ $.extend(NameViewModel.prototype, SerializeMixin.prototype, TrackedMixin.prototy
 var extendLink = function(obs, $parent, label, baseUrl) {
     obs.url = ko.computed(function($data, event) {
         // Prevent click from submitting form
-        event && event.preventDefault();
+        if (event) {
+            event.preventDefault();
+        }
         if (obs()) {
             return baseUrl ? baseUrl + obs() : obs();
         }
@@ -618,16 +624,17 @@ var ListViewModel = function(ContentModel, urls, modes) {
 
     
     self.extraFieldsEmpty = ko.computed(function() {
-        if (urls.crud == "/api/v1/settings/jobs/") {       
-            for (var i=0; i<self.contents().length; i++) {
-                if (self.contents()[i].department() == "" && self.contents()[i].title() == "") { 
+        var i;
+        if (urls.crud === "/api/v1/settings/jobs/") {
+            for (i=0; i<self.contents().length; i++) {
+                if (self.contents()[i].department() === "" && self.contents()[i].title() === "") {
                     return true;
                 }
             }
         }
-        else if (urls.crud == "/api/v1/settings/schools/") {
-            for (var i=0; i<self.contents().length; i++) {
-                if (self.contents()[i].department() == "" && self.contents()[i].degree() == "") { 
+        else if (urls.crud === "/api/v1/settings/schools/") {
+            for (i=0; i<self.contents().length; i++) {
+                if (self.contents()[i].department() === "" && self.contents()[i].degree() === "") {
                     return true;
                 }
             }
@@ -742,7 +749,7 @@ ListViewModel.prototype.unserialize = function(data) {
 };
 
 ListViewModel.prototype.serialize = function() {
-    self = this;
+    var self = this;
     var contents = [];
     
     if (self.contents().length !== 0 && typeof(self.contents()[0].serialize() !== undefined)) {
@@ -751,7 +758,9 @@ ListViewModel.prototype.serialize = function() {
             if (!self.contents()[i].institutionEmpty() || !self.hasMultiple()) {
                 contents.push(self.contents()[i].serialize());
             }
-            else  self.contents.splice(i, 1);
+            else  {
+                self.contents.splice(i, 1);
+            }
         }
     }
     else {
@@ -812,10 +821,12 @@ var JobViewModel = function() {
     });
     
     self.institutionEmpty = ko.computed(function() {
-        if (self.institution() == "") {
+        if (self.institution() === "") {
             return true;        
         }
-        else return false;
+        else {
+            return false;
+        }
     });
     
     
@@ -849,10 +860,12 @@ var SchoolViewModel = function() {
     });
     
     self.institutionEmpty = ko.computed(function() {
-        if (self.institution() == "") {
+        if (self.institution() === "") {
         return true;        
         }
-        else return false;
+        else {
+            return false;
+        }
     });
     
 
@@ -879,24 +892,28 @@ var SchoolsViewModel = function(urls, modes) {
 SchoolsViewModel.prototype = Object.create(ListViewModel.prototype);
 
 var Names = function(selector, urls, modes) {
+    var self = this;
     self.viewModel = new NameViewModel(urls, modes);
     $osf.applyBindings(self.viewModel, selector);
     window.nameModel = self.viewModel;
 };
 
 var Social = function(selector, urls, modes) {
+    var self = this;
     self.viewModel = new SocialViewModel(urls, modes);
     $osf.applyBindings(self.viewModel, selector);
     window.social = self.viewModel;
 };
 
 var Jobs = function(selector, urls, modes) {
+    var self = this;
     self.viewModel = new JobsViewModel(urls, modes);
     $osf.applyBindings(self.viewModel, selector);
     window.jobsModel = self.viewModel;
 };
 
 var Schools = function(selector, urls, modes) {
+    var self = this;
     self.viewModel = new SchoolsViewModel(urls, modes);
     $osf.applyBindings(self.viewModel, selector);
 };
