@@ -62,8 +62,10 @@ JSONEditor.defaults.editors.myUpload = JSONEditor.defaults.editors.upload.extend
             e.preventDefault();
             e.stopPropagation(); 
             folder = $(this).find($(event.target).attr('data-id'));
-            //console.log(self.preview_value);
-            if (self.preview_value.kind === 'file') {
+            if (!self.preview_value) {
+                self.refreshPreview();
+            }
+            else if (self.preview_value.kind === 'file') {
                 self.refreshPreview();
                 self.onChange(true);
             } else {
@@ -93,7 +95,6 @@ JSONEditor.defaults.editors.myUpload = JSONEditor.defaults.editors.upload.extend
                 var redir = new URI(row.data.nodeUrl);
                 redir.segment('files').segment(row.data.provider).segmentCoded(row.data.path.substring(1));
                 var fileurl  = redir.toString() + '/';
-                console.log(fileurl);
             }  
         };
         
