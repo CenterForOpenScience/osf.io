@@ -9,12 +9,14 @@ var oop = require('js/oop');
 var ChangeMessageMixin = require('js/changeMessage');
 
 var NodeCategorySettings = oop.extend(
-    ChangeMessageMixin, 
+    ChangeMessageMixin,
     {
-        constructor: function(category, categories, updateUrl) {
+        constructor: function(category, categories, updateUrl, disabled) {
             this.super.constructor.call(this);
 
             var self = this;
+
+            self.disabled = disabled || false;
 
             self.UPDATE_SUCCESS_MESSAGE = 'Category updated successfully';
             self.UPDATE_ERROR_MESSAGE = 'Error updating category, please try again. If the problem persists, email ' +
@@ -22,7 +24,7 @@ var NodeCategorySettings = oop.extend(
             self.UPDATE_ERROR_MESSAGE_RAVEN = 'Error updating Node.category';
 
             self.INSTANTIATION_ERROR_MESSAGE = 'Trying to instatiate NodeCategorySettings view model without an update URL';
-            
+
             self.MESSAGE_SUCCESS_CLASS = 'text-success';
             self.MESSAGE_ERROR_CLASS = 'text-danger';
 
@@ -80,54 +82,8 @@ var ProjectSettings = {
     NodeCategorySettings: NodeCategorySettings
 };
 
-/**
- *  returns a random name from this list to use as a confirmation string
- */
-var scientists = [
-    'Anning',
-    'Banneker',
-    'Cannon',
-    'Carver',
-    'Chappelle',
-    'Curie',
-    'Divine',
-    'Emeagwali',
-    'Fahlberg',
-    'Forssmann',
-    'Franklin',
-    'Herschel',
-    'Hodgkin',
-    'Hopper',
-    'Horowitz',
-    'Jemison',
-    'Julian',
-    'Kovalevsky',
-    'Lamarr',
-    'Lavoisier',
-    'Lovelace',
-    'Massie',
-    'McClintock',
-    'Meitner',
-    'Mitchell',
-    'Morgan',
-    'Nosek',
-    'Odum',
-    'Pasteur',
-    'Pauling',
-    'Payne',
-    'Pearce',
-    'Pollack',
-    'Rillieux',
-    'Sanger',
-    'Somerville',
-    'Tesla',
-    'Tyson',
-    'Turing'
-];
-
-function randomScientist() {
-    return scientists[Math.floor(Math.random() * scientists.length)];
-}
+// TODO: Pass this in as an argument rather than relying on global contextVars
+var nodeApiUrl = window.contextVars.node.urls.api;
 
 
 // Request the first 5 contributors, for display in the deletion modal
@@ -141,6 +97,7 @@ var request = $.ajax({
     dataType: 'json'
 });
 request.done(function(response) {
+    // TODO: Remove reliance on contextVars
     var currentUserName = window.contextVars.currentUser.fullname;
     contribs = response.contributors.filter(function(contrib) {
         return contrib.shortname !== currentUserName;
@@ -161,55 +118,27 @@ request.fail(function(xhr, textStatus, err) {
  *  Ignores case and whitespace
  */
 ProjectSettings.getConfirmationCode = function(nodeType) {
-    var key = randomScientist();
-
-    function successHandler(response) {
-        // Redirect to either the parent project or the dashboard
-        window.location.href = response.url;
-    }
-
-    var promptMsg = 'Are you sure you want to delete this ' + nodeType + '?' +
-        '<div class="bootbox-node-deletion-modal"><p>It will no longer be available to other contributors on the project.';
 
     // It's possible that the XHR request for contributors has not finished before getting to this
     // point; only construct the HTML for the list of contributors if the contribs list is populated
-    var contribsMsg = '';
-    if (contribs.length) {
-        // Build contributor unordered list
-        var contriblist = '';
-        $.each(contribs, function(i, b) {
-            contriblist += '<li>' + b.fullname + '</li>';
-        });
-        contribsMsg = ' Contributors include:</p>' +
-            '<ol>' + contriblist + '</ol>' +
-            '<p style="font-weight: normal; font-size: medium; line-height: normal;">' +
-            ((moreContribs > 0) ? 'and <strong>' + moreContribs + '</strong> others.</p>' : '');
-    }
+    var message = '<p>It will no longer be available to other contributors on the project.';
 
-    var promptMsgEnd = '<p style="font-weight: normal; font-size: medium; line-height: normal;">' +
-        'If you want to continue, type <strong>' + key + '</strong> and click OK.</p></div>';
-
-    var fullMsg = [promptMsg, contribsMsg, promptMsgEnd].join('');
-    bootbox.prompt(
-        fullMsg,
-        function(result) {
-            if (result != null) {
-                result = result.toLowerCase();
-            }
-            if ($.trim(result) === key.toLowerCase()) {
-                var request = $.ajax({
-                    type: 'DELETE',
-                    dataType: 'json',
-                    url: nodeApiUrl
-                });
-                request.done(successHandler);
-                request.fail($osf.handleJSONError);
-            } else if (result != null) {
-                $osf.growl('Incorrect confirmation',
-                    'The confirmation string you provided was incorrect. Please try again.');
-            }
+    $osf.confirmDangerousAction({
+        title: 'Are you sure you want to delete this ' + nodeType + '?',
+        message: message,
+        callback: function () {
+            var request = $.ajax({
+                type: 'DELETE',
+                dataType: 'json',
+                url: nodeApiUrl
+            });
+            request.done(function(response) {
+                // Redirect to either the parent project or the dashboard
+                window.location.href = response.url;
+            });
+            request.fail($osf.handleJSONError);
         }
-    );
+    });
 };
 
 module.exports = ProjectSettings;

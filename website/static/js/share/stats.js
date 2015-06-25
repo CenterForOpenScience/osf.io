@@ -30,7 +30,12 @@ function donutGraph (data, vm) {
         },
         data: data.charts.shareDonutGraph,
         donut: {
-            title: get_source_length(data) + ' Providers'
+            title: get_source_length(data) + ' Providers',
+            label: {
+                format: function (value, ratio, id) {
+                    return Math.round(ratio*100) + '%';
+                }
+            }
         },
         legend: {
             show: false
@@ -124,7 +129,6 @@ Stats.controller = function(vm) {
     self.vm.graphs = {};
 
     self.vm.totalCount = 0;
-    self.vm.showStats = true;
     self.vm.latestDate = undefined;
     self.vm.statsLoaded = m.prop(false);
 

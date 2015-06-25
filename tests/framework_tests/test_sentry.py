@@ -47,9 +47,7 @@ class TestSentry(OsfTestCase):
         sentry.log_exception()
         mock_capture.assert_called_with(
             extra={
-                'session': {
-                    'history': [],
-                },
+                'session': {},
             },
         )
 
@@ -65,7 +63,6 @@ class TestSentry(OsfTestCase):
             extra={
                 'session': {
                     'auth_user_id': user._id,
-                    'history': [],
                 },
             },
         )

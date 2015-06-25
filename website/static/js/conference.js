@@ -15,34 +15,32 @@ function Meeting(data) {
         columnTitles : function _conferenceColumnTitles(item, col) {
              return [
                 {
-                    title: "Title",
-                    width: "50%",
-                    sortType : "text",
+                    title: 'Title',
+                    width: '50%',
+                    sortType : 'text',
                     sort : true
                 },
                 {
-                    title: "Author",
-                    width : "20%",
-                    sortType : "text",
-                    sort : true
-
-                },
-                {
-                    title: "Category",
-                    width : "15%",
-                    sortType : "text",
+                    title: 'Author',
+                    width : '20%',
+                    sortType : 'text',
                     sort : true
                 },
                 {
-                    title: "Downloads",
-                    width : "15%",
-                    sortType : "number",
+                    title: 'Category',
+                    width : '15%',
+                    sortType : 'text',
+                    sort : true
+                },
+                {
+                    title: 'Downloads',
+                    width : '15%',
+                    sortType : 'number',
                     sort : true
                 }
             ];
         },
         resolveRows : function _conferenceResolveRows(item){
-
             var default_columns = [
                 {
                     data : 'title',  // Data field name
@@ -90,7 +88,7 @@ function Meeting(data) {
         showFilter : true,     // Gives the option to filter by showing the filter box.
         filterStyle : { 'float' : 'right', 'width' : '50%'},
         allowMove : false,       // Turn moving on or off.
-        hoverClass : 'fangorn-hover',
+        hoverClass : 'fangorn-hover'
     };
     var grid = new Treebeard(tbOptions);
 }

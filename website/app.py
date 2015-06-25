@@ -3,13 +3,11 @@
 import os
 import importlib
 from collections import OrderedDict
-from json import dumps
+import json
 
 from modularodm import storage
 from werkzeug.contrib.fixers import ProxyFix
-
 import framework
-from framework.render.core import init_mfr
 from framework.flask import app, add_handlers
 from framework.logging import logger
 from framework.mongo import set_up_storage
@@ -25,9 +23,9 @@ from website.addons.base import init_addon
 from website.project.model import ensure_schemas, Node
 
 def build_js_config_files(settings):
-    with open(os.path.join(settings.STATIC_FOLDER, 'public', 'js', 'nodeCategories.js'), 'wb') as fp:
-        fp.write("window.contextVars.nodeCategories = {0}".format(dumps(Node.CATEGORY_MAP)))
-        fp.close()
+    with open(os.path.join(settings.STATIC_FOLDER, 'built', 'nodeCategories.json'), 'wb') as fp:
+        json.dump(Node.CATEGORY_MAP, fp)
+
 
 def init_addons(settings, routes=True):
     """Initialize each addon in settings.ADDONS_REQUESTED.
@@ -38,20 +36,13 @@ def init_addons(settings, routes=True):
     settings.ADDONS_AVAILABLE = getattr(settings, 'ADDONS_AVAILABLE', [])
     settings.ADDONS_AVAILABLE_DICT = getattr(settings, 'ADDONS_AVAILABLE_DICT', OrderedDict())
     for addon_name in settings.ADDONS_REQUESTED:
-        try:
-            addon = init_addon(app, addon_name, routes=routes)
-        except AssertionError as error:
-            logger.warning(error)
-            continue
+        addon = init_addon(app, addon_name, routes=routes)
         if addon:
             if addon not in settings.ADDONS_AVAILABLE:
                 settings.ADDONS_AVAILABLE.append(addon)
             settings.ADDONS_AVAILABLE_DICT[addon.short_name] = addon
     settings.ADDON_CAPABILITIES = render_addon_capabilities(settings.ADDONS_AVAILABLE)
 
-def add_cors_headers(response):
-    response.headers['Access-Control-Allow-Origin'] = '*'
-    return response
 
 def attach_handlers(app, settings):
     """Add callback handlers to ``app`` in the correct order."""
@@ -68,11 +59,6 @@ def attach_handlers(app, settings):
     # framework.session's before_request handler must go after
     # prepare_private_key, else view-only links won't work
     add_handlers(app, {'before_request': framework.sessions.before_request})
-
-    # Needed to allow the offload server and main server to properly interact
-    # without cors issues. See @jmcarp, @chrisseto, or @icereval for more detail
-    if settings.DEBUG_MODE:
-        add_handlers(app, {'after_request': add_cors_headers})
 
     return app
 
@@ -99,8 +85,15 @@ def build_log_templates(settings):
         build_fp.write('\n')
         build_addon_log_templates(build_fp, settings)
 
+def do_set_backends(settings):
+    logger.debug('Setting storage backends')
+    set_up_storage(
+        website.models.MODELS,
+        storage.MongoStorage,
+        addons=settings.ADDONS_AVAILABLE,
+    )
 
-def init_app(settings_module='website.settings', set_backends=True, routes=True, mfr=False,
+def init_app(settings_module='website.settings', set_backends=True, routes=True,
         attach_request_handlers=True):
     """Initializes the OSF. A sort of pseudo-app factory that allows you to
     bind settings, set up routing, and set storage backends, but only acts on
@@ -120,16 +113,8 @@ def init_app(settings_module='website.settings', set_backends=True, routes=True,
 
     app.debug = settings.DEBUG_MODE
 
-    if mfr:
-        init_mfr(app)
-
     if set_backends:
-        logger.debug('Setting storage backends')
-        set_up_storage(
-            website.models.MODELS,
-            storage.MongoStorage,
-            addons=settings.ADDONS_AVAILABLE,
-        )
+        do_set_backends(settings)
     if routes:
         try:
             make_url_map(app)
@@ -148,6 +133,7 @@ def init_app(settings_module='website.settings', set_backends=True, routes=True,
     if set_backends:
         ensure_schemas()
     apply_middlewares(app, settings)
+
     return app
 
 
@@ -156,4 +142,7 @@ def apply_middlewares(flask_app, settings):
     # https://stackoverflow.com/questions/23347387/x-forwarded-proto-and-flask
     if settings.LOAD_BALANCER:
         flask_app.wsgi_app = ProxyFix(flask_app.wsgi_app)
+
     return flask_app
+
+from website.archiver import listeners  # noqa

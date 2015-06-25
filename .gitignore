@@ -58,6 +58,8 @@ website/static/robots.local.txt
 # OSF-specific
 ##############
 
+api/static/vendor
+
 # Local settings files
 local.py
 
@@ -73,7 +75,7 @@ sauce.json
 website/templates/_log_templates.mako
 
 # Build JS files
-website/static/js/built/*
+website/static/built/*
 
 # Logs
 logs/*
@@ -88,3 +90,6 @@ src/
 website/mfrtemp/
 docs/_build
 website/static/img/badges
+
+# GUIDS
+scripts/guid_blacklist.txt

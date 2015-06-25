@@ -8,7 +8,8 @@
                     data: contents,
                     options: {
                         handle: '.sort-handle',
-                        containment: '#containDrag'
+                        containment: '#containDrag',
+                        tolerance: 'pointer'
                     }
                 }">
 

@@ -7,8 +7,8 @@ var $ = require('jquery');
 var bootbox = require('bootbox');
 var Raven = require('raven-js');
 
-var $osf = require('./osfHelpers');
-var LogFeed = require('./logFeed.js');
+var $osf = require('js/osfHelpers');
+var LogFeed = require('js/logFeed.js');
 
 var ctx = window.contextVars;
 var NodeActions = {}; // Namespace for NodeActions
@@ -128,7 +128,7 @@ $(function() {
 
         if ($.trim($('#title').val()) === '') {
 
-            $('#alert').text('The new component title cannot be empty');
+            $('#newComponent .modal-alert').text('The new component title cannot be empty.');
 
             $('#add-component-submit')
                 .removeAttr('disabled', 'disabled')
@@ -136,7 +136,7 @@ $(function() {
 
             e.preventDefault();
         } else if ($(e.target).find('#title').val().length > 200) {
-            $('#alert').text('The new component title cannot be more than 200 characters.');
+            $('#newComponent .modal-alert').text('The new component title cannot be more than 200 characters.'); //This alert never appears...
 
             $('#add-component-submit')
                 .removeAttr('disabled', 'disabled')

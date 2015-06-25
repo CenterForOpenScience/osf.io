@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 
 import logging
-import operator
 import httplib
 import httplib as http
 import os
@@ -18,6 +17,7 @@ from framework.auth.decorators import collect_auth
 from framework.auth.decorators import must_be_logged_in
 from framework.auth.exceptions import ChangePasswordError
 from framework.auth.views import send_confirm_email
+from framework.auth.signals import user_merged
 from framework.exceptions import HTTPError, PermissionsError
 from framework.flask import redirect  # VOL-aware redirect
 from framework.status import push_status_message
@@ -53,16 +53,16 @@ def get_public_projects(uid=None, user=None):
 
 def get_public_components(uid=None, user=None):
     user = user or User.load(uid)
-    return _render_nodes(
-        list(user.node__contributed.find(
-            (
-                Q('category', 'ne', 'project') &
-                Q('is_public', 'eq', True) &
-                Q('is_registration', 'eq', False) &
-                Q('is_deleted', 'eq', False)
-            )
-        ))
-    )
+    # TODO: This should use User.visible_contributor_to?
+    nodes = list(user.node__contributed.find(
+        (
+            Q('category', 'ne', 'project') &
+            Q('is_public', 'eq', True) &
+            Q('is_registration', 'eq', False) &
+            Q('is_deleted', 'eq', False)
+        )
+    ))
+    return _render_nodes(nodes, show_path=True)
 
 
 @must_be_logged_in
@@ -83,22 +83,51 @@ def date_or_none(date):
         return None
 
 
-@must_be_logged_in
-def update_user(auth):
-    """Update the logged-in user's profile."""
-
-    # trust the decorator to handle auth
-    user = auth.user
-
-    data = request.get_json()
-
-    # check if the user in request is the user who log in
+def validate_user(data, user):
+    """Check if the user in request is the user who log in """
     if 'id' in data:
         if data['id'] != user._id:
             raise HTTPError(httplib.FORBIDDEN)
     else:
         # raise an error if request doesn't have user id
         raise HTTPError(httplib.BAD_REQUEST, data={'message_long': '"id" is required'})
+
+@must_be_logged_in
+def resend_confirmation(auth):
+    user = auth.user
+    data = request.get_json()
+
+    validate_user(data, user)
+
+    try:
+        primary = data['email']['primary']
+        confirmed = data['email']['confirmed']
+        address = data['email']['address'].strip().lower()
+    except KeyError:
+        raise HTTPError(httplib.BAD_REQUEST)
+
+    if primary or confirmed:
+        raise HTTPError(httplib.BAD_REQUEST, data={'message_long': 'Cannnot resend confirmation for confirmed emails'})
+
+    user.add_unconfirmed_email(address)
+
+    # TODO: This setting is now named incorrectly.
+    if settings.CONFIRM_REGISTRATIONS_BY_EMAIL:
+        send_confirm_email(user, email=address)
+
+    user.save()
+
+    return _profile_view(user)
+
+@must_be_logged_in
+def update_user(auth):
+    """Update the logged-in user's profile."""
+
+    # trust the decorator to handle auth
+    user = auth.user
+    data = request.get_json()
+
+    validate_user(data, user)
 
     # TODO: Expand this to support other user attributes
 
@@ -129,10 +158,7 @@ def update_user(auth):
                     user.remove_email(address)
                 except PermissionsError as e:
                     raise HTTPError(httplib.FORBIDDEN, e.message)
-            try:
-                user.remove_unconfirmed_email(address)
-            except PermissionsError as e:
-                raise HTTPError(httplib.FORBIDDEN, e.message)
+            user.remove_unconfirmed_email(address)
 
         # additions
         added_emails = [
@@ -316,7 +342,7 @@ def user_addons(auth, **kwargs):
     ret = {}
 
     addons = [addon.config for addon in user.get_addons()]
-    addons.sort(key=operator.attrgetter("full_name"), reverse=False)
+    addons.sort(key=lambda addon: addon.full_name.lower(), reverse=False)
     addons_enabled = []
     addon_enabled_settings = []
     user_addons_enabled = {}
@@ -341,7 +367,7 @@ def user_addons(auth, **kwargs):
         for addon in sorted(settings.ADDONS_AVAILABLE)
         if 'user' in addon.owners and addon.short_name not in settings.SYSTEM_ADDED_ADDONS['user']
     ]
-    ret['addons_available'].sort(key=operator.attrgetter("full_name"), reverse=False)
+    ret['addons_available'].sort(key=lambda addon: addon.full_name.lower(), reverse=False)
     ret['addons_enabled'] = addons_enabled
     ret['addon_enabled_settings'] = addon_enabled_settings
     ret['user_addons_enabled'] = user_addons_enabled
@@ -369,14 +395,6 @@ def collect_user_config_js(addons):
         if js_path:
             js_modules.append(js_path)
     return js_modules
-
-@must_be_logged_in
-def profile_addons(**kwargs):
-    user = kwargs['auth'].user
-    return {
-        'user_id': user._primary_key,
-    }
-
 
 @must_be_logged_in
 def user_choose_addons(**kwargs):
@@ -409,6 +427,7 @@ def user_choose_mailing_lists(auth, **kwargs):
     return {'message': 'Successfully updated mailing lists', 'result': user.mailing_lists}, 200
 
 
+@user_merged.connect
 def update_subscription(user, list_name, subscription):
     """ Update mailing list subscription in mailchimp.
 
@@ -420,7 +439,7 @@ def update_subscription(user, list_name, subscription):
         mailchimp_utils.subscribe_mailchimp(list_name, user._id)
     else:
         try:
-            mailchimp_utils.unsubscribe_mailchimp(list_name, user._id)
+            mailchimp_utils.unsubscribe_mailchimp(list_name, user._id, username=user.username)
         except mailchimp_utils.mailchimp.ListNotSubscribedError:
             raise HTTPError(http.BAD_REQUEST,
                 data=dict(message_short="ListNotSubscribedError",
@@ -734,3 +753,23 @@ def unserialize_schools(auth, **kwargs):
     verify_user_match(auth, **kwargs)
     unserialize_contents('schools', unserialize_school, auth)
     # TODO: Add return value
+
+
+@must_be_logged_in
+def request_export(auth):
+    mails.send_mail(
+        to_addr=settings.SUPPORT_EMAIL,
+        mail=mails.REQUEST_EXPORT,
+        user=auth.user,
+    )
+    return {'message': 'Sent account export request'}
+
+
+@must_be_logged_in
+def request_deactivation(auth):
+    mails.send_mail(
+        to_addr=settings.SUPPORT_EMAIL,
+        mail=mails.REQUEST_DEACTIVATION,
+        user=auth.user,
+    )
+    return {'message': 'Sent account deactivation request'}

@@ -21,6 +21,7 @@ from framework.auth import exceptions, utils, signals
 from framework.sentry import log_exception
 from framework.addons import AddonModelMixin
 from framework.sessions.model import Session
+from framework.sessions.utils import remove_sessions_for_user
 from framework.exceptions import PermissionsError
 from framework.guid.model import GuidStoredObject
 from framework.bcrypt import generate_password_hash, check_password_hash
@@ -260,6 +261,7 @@ class User(GuidStoredObject, AddonModelMixin):
     #       'referrer_id': <user ID of referrer>,
     #       'token': <token used for verification urls>,
     #       'email': <email the referrer provided or None>,
+    #       'claimer_email': <email the claimer entered or None>,
     #       'last_sent': <timestamp of last email sent to referrer or None>
     #   }
     #   ...
@@ -387,6 +389,35 @@ class User(GuidStoredObject, AddonModelMixin):
 
     def __repr__(self):
         return '<User({0!r}) with id {1!r}>'.format(self.username, self._id)
+
+    def __str__(self):
+        return self.fullname.encode('ascii', 'replace')
+
+    __unicode__ = __str__
+
+    # For compatibility with Django auth
+    @property
+    def pk(self):
+        return self._id
+
+    @property
+    def email(self):
+        return self.username
+
+    def is_authenticated(self):  # Needed for django compat
+        return True
+
+    def is_anonymous(self):
+        return False
+
+    @property
+    def absolute_api_v2_url(self):
+        from api.base.utils import absolute_reverse  # Avoid circular dependency
+        return absolute_reverse('users:user-detail', kwargs={'user_id': self.pk})
+
+    # used by django and DRF
+    def get_absolute_url(self):
+        return self.absolute_api_v2_url
 
     @classmethod
     def create_unregistered(cls, fullname, email=None):
@@ -627,6 +658,8 @@ class User(GuidStoredObject, AddonModelMixin):
             issues.append('Passwords cannot be blank')
         elif len(raw_new_password) < 6:
             issues.append('Password should be at least six characters')
+        elif len(raw_new_password) > 256:
+            issues.append('Password should not be longer than 256 characters')
 
         if raw_new_password != raw_confirm_password:
             issues.append('Password does not match the confirmation')
@@ -649,7 +682,6 @@ class User(GuidStoredObject, AddonModelMixin):
 
     def add_unconfirmed_email(self, email, expiration=None):
         """Add an email verification token for a given email."""
-        # TODO: If the unconfirmed email is already present, refresh the token
 
         # TODO: This is technically not compliant with RFC 822, which requires
         #       that case be preserved in the "local-part" of an address. From
@@ -663,6 +695,10 @@ class User(GuidStoredObject, AddonModelMixin):
 
         validate_email(email)
 
+        # If the unconfirmed email is already present, refresh the token
+        if email in self.unconfirmed_emails:
+            self.remove_unconfirmed_email(email)
+
         token = generate_confirm_token()
 
         # handle when email_verifications is None
@@ -675,8 +711,6 @@ class User(GuidStoredObject, AddonModelMixin):
 
     def remove_unconfirmed_email(self, email):
         """Remove an unconfirmed email addresses and their tokens."""
-        if email == self.username:
-            raise PermissionsError("Can't remove primary email")
         for token, value in self.email_verifications.iteritems():
             if value.get('email') == email:
                 del self.email_verifications[token]
@@ -766,13 +800,24 @@ class User(GuidStoredObject, AddonModelMixin):
             return False
         return record['token'] == token
 
-    def confirm_email(self, token):
+    def confirm_email(self, token, merge=False):
         """Confirm the email address associated with the token"""
         email = self._get_unconfirmed_email_for_token(token)
 
         # If this email is confirmed on another account, abort
-        if User.find(Q('emails', 'iexact', email)).count() > 0:
-            raise exceptions.DuplicateEmailError()
+        try:
+            user_to_merge = User.find_one(Q('emails', 'iexact', email))
+        except NoResultsFound:
+            user_to_merge = None
+
+        if user_to_merge and merge:
+            self.merge_user(user_to_merge)
+        elif user_to_merge:
+            raise exceptions.MergeConfirmedRequiredError(
+                'Merge requires confirmation',
+                user=self,
+                user_to_merge=user_to_merge,
+            )
 
         # If another user has this email as its username, get it
         try:
@@ -786,7 +831,9 @@ class User(GuidStoredObject, AddonModelMixin):
             self.save()
             unregistered_user.username = None
 
-        self.emails.append(email)
+        if email not in self.emails:
+            self.emails.append(email)
+
         # Complete registration if primary email
         if email.lower() == self.username.lower():
             self.register(self.username)
@@ -1050,10 +1097,7 @@ class User(GuidStoredObject, AddonModelMixin):
     @property
     def can_be_merged(self):
         """The ability of the `merge_user` method to fully merge the user"""
-        return (
-            self.is_confirmed is False and
-            self.get_addons() == []
-        )
+        return all((addon.can_be_merged for addon in self.get_addons()))
 
     def merge_user(self, user):
         """Merge a registered user into this account. This user will be
@@ -1061,15 +1105,16 @@ class User(GuidStoredObject, AddonModelMixin):
 
         :param user: A User object to be merged.
         """
-
+        # Fail if the other user has conflicts.
+        if not user.can_be_merged:
+            raise exceptions.MergeConflictError("Users cannot be merged")
         # Move over the other user's attributes
-
         # TODO: confirm
         for system_tag in user.system_tags:
             if system_tag not in self.system_tags:
                 self.system_tags.append(system_tag)
 
-        self.aka = list(set(self.aka + user.aka))
+        [self.aka.append(each) for each in user.aka if each not in self.aka]
 
         self.is_claimed = self.is_claimed or user.is_claimed
         self.is_invited = self.is_invited or user.is_invited
@@ -1096,11 +1141,26 @@ class User(GuidStoredObject, AddonModelMixin):
 
         for key, value in user.mailing_lists.iteritems():
             # subscribe to each list if either user was subscribed
-            self.mailing_lists[key] = self.mailing_lists.get(key, value)
-        # - clear subscriptions for merged user
-        user.mailing_lists = {}
+            subscription = value or self.mailing_lists.get(key)
+            signals.user_merged.send(self, list_name=key, subscription=subscription)
+
+            # clear subscriptions for merged user
+            signals.user_merged.send(user, list_name=key, subscription=False)
+
+        for node_id, timestamp in user.comments_viewed_timestamp.iteritems():
+            if not self.comments_viewed_timestamp.get(node_id):
+                self.comments_viewed_timestamp[node_id] = timestamp
+            elif timestamp > self.comments_viewed_timestamp[node_id]:
+                self.comments_viewed_timestamp[node_id] = timestamp
 
         self.emails.extend(user.emails)
+        user.emails = []
+
+        for k, v in user.email_verifications.iteritems():
+            email_to_confirm = v['email']
+            if k not in self.email_verifications and email_to_confirm != user.username:
+                self.email_verifications[k] = v
+        user.email_verifications = {}
 
         # FOREIGN FIELDS
         for watched in user.watched:
@@ -1113,8 +1173,18 @@ class User(GuidStoredObject, AddonModelMixin):
                 self.external_accounts.append(account)
         user.external_accounts = []
 
-        self.api_keys += user.api_keys
+        for api_key in user.api_keys:
+            self.api_keys.append(api_key)
         user.api_keys = []
+
+        # - addons
+        # Note: This must occur before the merged user is removed as a
+        #       contributor on the nodes, as an event hook is otherwise fired
+        #       which removes the credentials.
+        for addon in user.get_addons():
+            user_settings = self.get_or_add_addon(addon.config.short_name)
+            user_settings.merge(addon)
+            user_settings.save()
 
         # - projects where the user was a contributor
         for node in user.node__contributed:
@@ -1146,11 +1216,12 @@ class User(GuidStoredObject, AddonModelMixin):
 
         # finalize the merge
 
+        remove_sessions_for_user(user)
+
         # - username is set to None so the resultant user can set it primary
         #   in the future.
         user.username = None
         user.password = None
-        user.email_verifications = {}
         user.verification_key = None
         user.merged_by = self
 
