@@ -900,6 +900,11 @@ class TestCreateRegistrationDraft(ApiTestCase):
         res = self.app.post(self.private_url, auth=self.basic_auth_two, expect_errors=True)
         assert_equal(res.status_code, 403)
 
+    def test_create_private_registration_draft_logged_in_read_only_contributor(self):
+        self.project.add_contributor(self.user_two, permissions=['read'])
+        res = self.app.post(self.private_url, auth=self.basic_auth_two, expect_errors=True)
+        assert_equal(res.status_code, 403)
+
 
 class TestNodeChildrenList(ApiTestCase):
     def setUp(self):
