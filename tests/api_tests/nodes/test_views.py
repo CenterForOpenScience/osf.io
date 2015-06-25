@@ -953,7 +953,7 @@ class TestEditNodeContributor(ApiTestCase):
         assert_equal(res.status_code, 403)
         assert_false(self.project.has_permission(self.user, 'admin'))
 
-    def test_non_logged_in_change_contributor_bibliographic_status(self):
+    def test_not_logged_in_change_contributor_bibliographic_status(self):
         res = self.app.put(self.url_contributor, {'bibliographic': False}, expect_errors=True)
         assert_equal(res.status_code, 403)
         assert_true(self.project.get_visible(self.user))
