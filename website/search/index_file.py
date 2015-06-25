@@ -1,23 +1,20 @@
-from website.util import api_v2_url
 import requests
 
+def collect_files(node):
+    """ Generate the contents of a projects.
+    :param node: node
+    :return: dict with the files name and it's contents.
+    """
 
-def collect_files(pid):
-    """ Return the contents of a projects files.
-    :param pid: project id
-q    :return: list of file objects.
- qq   """
-    path = '/nodes/{}/files/'.format(pid)
-    params = {'path': '/',
-              'provider': 'osfstorage'}
-    url = api_v2_url(path, params=params)
-    response = requests.get(url).json()
-    file_dicts = response.get('data', [])
-    for fd in file_dicts:
-        file_data = {
-            'name': fd['name'],
-            'content': requests.get(fd['links']['self']).text,
-            'size': fd['metadata']['size'],
-            'pid': pid,
-        }
-        yield file_data
+    # TODO: Generalize to other addons
+    osf_addon = node.get_addon('osfstorage')
+    node_children = osf_addon._get_file_tree()['children']
+    for child in node_children:
+        path, name = child['path'], child['name']
+        file_, created = osf_addon.find_or_create_file_guid(path)
+
+        # TODO: download file without incrementing download count.
+        resp = requests.get(file_.download_url)
+        response = unicode(resp.text).encode('utf-8')
+        yield {'name': name, 'content': response}
+
