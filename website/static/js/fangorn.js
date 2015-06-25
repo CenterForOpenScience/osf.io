@@ -1084,10 +1084,11 @@ function _fangornLazyLoadOnLoad (tree, event) {
  */
 function _fangornOrderFolder(tree) {
     // Checking if this column does in fact have sorting
+    var sortDirection = '';
     if (this.isSorted[0]) {
-        var sortDirection = this.isSorted[0].desc ? 'desc' : 'asc';
+        sortDirection = this.isSorted[0].desc ? 'desc' : 'asc';
     } else {
-        var sortDirection = 'asc';
+        sortDirection = 'asc';
     }
     tree.sortChildren(this, sortDirection, 'text', 0, 1);
     this.redraw();
