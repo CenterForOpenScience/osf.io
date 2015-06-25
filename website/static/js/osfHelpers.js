@@ -661,8 +661,8 @@ var _confirmationString = function() {
 *  Helper function to judge if the user browser is IE
 */
 var isIE = function(userAgent) {
-  userAgent = userAgent || navigator.userAgent;
-  return userAgent.indexOf('MSIE ') > -1 || userAgent.indexOf('Trident/') > -1;
+    userAgent = userAgent || navigator.userAgent;
+    return userAgent.indexOf('MSIE ') > -1 || userAgent.indexOf('Trident/') > -1;
 };
 
 /**
