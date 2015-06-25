@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 
 import logging
-import operator
 import httplib
 import httplib as http
 import os
@@ -83,22 +82,51 @@ def date_or_none(date):
         return None
 
 
-@must_be_logged_in
-def update_user(auth):
-    """Update the logged-in user's profile."""
-
-    # trust the decorator to handle auth
-    user = auth.user
-
-    data = request.get_json()
-
-    # check if the user in request is the user who log in
+def validate_user(data, user):
+    """Check if the user in request is the user who log in """
     if 'id' in data:
         if data['id'] != user._id:
             raise HTTPError(httplib.FORBIDDEN)
     else:
         # raise an error if request doesn't have user id
         raise HTTPError(httplib.BAD_REQUEST, data={'message_long': '"id" is required'})
+
+@must_be_logged_in
+def resend_confirmation(auth):
+    user = auth.user
+    data = request.get_json()
+
+    validate_user(data, user)
+
+    try:
+        primary = data['email']['primary']
+        confirmed = data['email']['confirmed']
+        address = data['email']['address'].strip().lower()
+    except KeyError:
+        raise HTTPError(httplib.BAD_REQUEST)
+
+    if primary or confirmed:
+        raise HTTPError(httplib.BAD_REQUEST, data={'message_long': 'Cannnot resend confirmation for confirmed emails'})
+
+    user.add_unconfirmed_email(address)
+
+    # TODO: This setting is now named incorrectly.
+    if settings.CONFIRM_REGISTRATIONS_BY_EMAIL:
+        send_confirm_email(user, email=address)
+
+    user.save()
+
+    return _profile_view(user)
+
+@must_be_logged_in
+def update_user(auth):
+    """Update the logged-in user's profile."""
+
+    # trust the decorator to handle auth
+    user = auth.user
+    data = request.get_json()
+
+    validate_user(data, user)
 
     # TODO: Expand this to support other user attributes
 
@@ -129,10 +157,7 @@ def update_user(auth):
                     user.remove_email(address)
                 except PermissionsError as e:
                     raise HTTPError(httplib.FORBIDDEN, e.message)
-            try:
-                user.remove_unconfirmed_email(address)
-            except PermissionsError as e:
-                raise HTTPError(httplib.FORBIDDEN, e.message)
+            user.remove_unconfirmed_email(address)
 
         # additions
         added_emails = [
@@ -316,7 +341,7 @@ def user_addons(auth, **kwargs):
     ret = {}
 
     addons = [addon.config for addon in user.get_addons()]
-    addons.sort(key=operator.attrgetter("full_name"), reverse=False)
+    addons.sort(key=lambda addon: addon.full_name.lower(), reverse=False)
     addons_enabled = []
     addon_enabled_settings = []
     user_addons_enabled = {}
@@ -341,7 +366,7 @@ def user_addons(auth, **kwargs):
         for addon in sorted(settings.ADDONS_AVAILABLE)
         if 'user' in addon.owners and addon.short_name not in settings.SYSTEM_ADDED_ADDONS['user']
     ]
-    ret['addons_available'].sort(key=operator.attrgetter("full_name"), reverse=False)
+    ret['addons_available'].sort(key=lambda addon: addon.full_name.lower(), reverse=False)
     ret['addons_enabled'] = addons_enabled
     ret['addon_enabled_settings'] = addon_enabled_settings
     ret['user_addons_enabled'] = user_addons_enabled

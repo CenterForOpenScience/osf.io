@@ -14,6 +14,7 @@ from framework.exceptions import HTTPError
 
 from website.addons.base import exceptions
 from website.addons.base import AddonUserSettingsBase, AddonNodeSettingsBase, GuidFile
+from website.addons.base import StorageAddonBase
 
 from website.addons.box import settings
 from website.addons.box.utils import BoxNodeLogger
@@ -219,7 +220,7 @@ class BoxUserSettings(AddonUserSettingsBase):
         return u'<BoxUserSettings(user={self.owner.username!r})>'.format(self=self)
 
 
-class BoxNodeSettings(AddonNodeSettingsBase):
+class BoxNodeSettings(StorageAddonBase, AddonNodeSettingsBase):
 
     user_settings = fields.ForeignField(
         'boxusersettings', backref='authorized'
@@ -315,7 +316,7 @@ class BoxNodeSettings(AddonNodeSettingsBase):
         try:
             return {'token': self.user_settings.fetch_access_token()}
         except BoxClientException as error:
-            return HTTPError(error.status_code)
+            raise HTTPError(error.status_code, data={'message_long': error.message})
 
     def serialize_waterbutler_settings(self):
         if self.folder_id is None:

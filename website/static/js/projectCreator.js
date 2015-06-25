@@ -21,7 +21,7 @@ var CREATE_URL = '/api/v1/project/new/';
     * Params:
     *  - data: Data to populate the template selection input
     */
-function ProjectCreatorViewModel(params) {   
+function ProjectCreatorViewModel(params) {
     var self = this;
     self.params = params || {};
     self.minSearchLength = 2;
@@ -37,11 +37,20 @@ function ProjectCreatorViewModel(params) {
     self.hasFocus = params.hasFocus;
 
     self.usingTemplate = ko.observable(false);
+    self.enableCreateBtn =  ko.observable(true);
+
+    self.disableSubmitBtn = function (){
+        self.enableCreateBtn(false);
+    };
+    self.enableSubmitBtn = function (){
+        self.enableCreateBtn(true);
+    };
 
     self.submitForm = function () {
         if (self.title().trim() === '') {
             self.errorMessage('This field is required.');
         } else {
+            self.disableSubmitBtn();
             self.createProject();
         }
     };
@@ -62,6 +71,7 @@ function ProjectCreatorViewModel(params) {
     };
 
     self.createFailure = function() {
+        self.enableSubmitBtn();
         $osf.growl('Could not create a new project.', 'Please try again. If the problem persists, email <a href="mailto:support@osf.io.">support@osf.io</a>');
 
     };
@@ -72,7 +82,7 @@ function ProjectCreatorViewModel(params) {
             title: self.title(),
             category: category,
             description: self.description(),
-            template: $('#createNodeTemplates').val()
+            template: $('#createNodeTemplatesInput').val()
         };
     };
     /**
@@ -164,13 +174,17 @@ function ProjectCreatorViewModel(params) {
         return ko.utils.arrayMap(nodes, function(node) {
             return {
                 'id': node.id,
-                'text': node.title
+                // TODO: Remove htmlDecode when pre-sanitized strings are no longer stored
+                'text': $osf.htmlDecode(node.title)
             };
         });
     };
 
     self.templates = self.loadNodes(params.data);
-    $('#createNodeTemplates').select2({
+
+    // IE won't select template with id correctly. so we replace #createNodeTemplates with .createNodeTemplates
+    // More explanation -- https://github.com/CenterForOpenScience/osf.io/pull/2858
+    $('.create-node-templates').select2({
         allowClear: true,
         placeholder: 'Select a project to use as a template',
         query: self.query

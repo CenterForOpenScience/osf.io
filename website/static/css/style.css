@@ -218,3 +218,9 @@ body {
     }
 
 }
+
+@media (max-width: 768px) {
+    .affix {
+        position: relative; /*For project setting side-bar*/
+    }
+}

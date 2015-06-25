@@ -19,6 +19,7 @@ from framework import auth
 from framework.exceptions import HTTPError
 from framework.auth import User, Auth
 from framework.auth.utils import impute_names_model
+from framework.auth.exceptions import InvalidTokenError
 
 from website import mailchimp_utils
 from website.views import _rescale_ratio
@@ -39,6 +40,7 @@ from website.project.views.node import _view_project, abbrev_authors, _should_sh
 from website.project.views.comment import serialize_comment
 from website.project.decorators import check_can_access
 from website.addons.github.model import AddonGitHubOauthSettings
+from website.archiver import utils as archiver_utils
 
 from tests.base import (
     OsfTestCase,
@@ -489,11 +491,13 @@ class TestProjectViews(OsfTestCase):
         self.project.reload()
         assert_not_in("footag", self.project.tags)
 
-    def test_register_template_page(self):
+    @mock.patch('website.archiver.tasks.archive.si')
+    def test_register_template_page(self, mock_archive):
         url = "/api/v1/project/{0}/register/Replication_Recipe_(Brandt_et_al.,_2013):_Post-Completion/".format(
             self.project._primary_key)
-        self.app.post_json(url, {}, auth=self.auth)
+        self.app.post_json(url, {'registrationChoice': 'Make registration public immediately'}, auth=self.auth)
         self.project.reload()
+        archiver_utils.archive_success(self.project.node__registrations[0], self.project.creator)
         # A registration was added to the project's registration list
         assert_equal(len(self.project.node__registrations), 1)
         # A log event was saved
@@ -502,6 +506,40 @@ class TestProjectViews(OsfTestCase):
         reg = Node.load(self.project.node__registrations[-1])
         assert_true(reg.is_registration)
 
+    @mock.patch('framework.tasks.handlers.enqueue_task')
+    def test_register_template_make_public_creates_public_registration(self, mock_enquque):
+        url = "/api/v1/project/{0}/register/Replication_Recipe_(Brandt_et_al.,_2013):_Post-Completion/".format(
+            self.project._primary_key)
+        self.app.post_json(url, {'registrationChoice': 'immediate'}, auth=self.auth)
+        self.project.reload()
+        # Most recent node is a registration
+        reg = Node.load(self.project.node__registrations[-1])
+        assert_true(reg.is_registration)
+        # The registration created is public
+        assert_true(reg.is_public)
+
+    @mock.patch('website.archiver.tasks.archive.si')
+    def test_register_template_with_embargo_creates_embargo(self, mock_archive):
+        url = "/api/v1/project/{0}/register/Replication_Recipe_(Brandt_et_al.,_2013):_Post-Completion/".format(
+            self.project._primary_key)
+        self.app.post_json(
+            url,
+            {
+                'registrationChoice': 'embargo',
+                'embargoEndDate': "Fri, 01 Jan {year} 05:00:00 GMT".format(year=str(dt.date.today().year + 1))
+            },
+            auth=self.auth)
+
+        self.project.reload()
+        # Most recent node is a registration
+        reg = Node.load(self.project.node__registrations[-1])
+        assert_true(reg.is_registration)
+        # The registration created is not public
+        assert_false(reg.is_public)
+        # The registration is pending an embargo that has not been approved
+        assert_true(reg.pending_embargo)
+        assert_false(reg.embargo_end_date)
+
     def test_register_template_page_with_invalid_template_name(self):
         url = self.project.web_url_for('node_register_template_page', template='invalid')
         res = self.app.get(url, expect_errors=True, auth=self.auth)
@@ -509,7 +547,8 @@ class TestProjectViews(OsfTestCase):
         assert_in('Template not found', res)
 
     # Regression test for https://github.com/CenterForOpenScience/osf.io/issues/1478
-    def test_registered_projects_contributions(self):
+    @mock.patch('website.archiver.tasks.archive.si')
+    def test_registered_projects_contributions(self, mock_archive):
         # register a project
         self.project.register_node(None, Auth(user=self.project.creator), '', None)
         # get the first registered project of a project
@@ -1428,7 +1467,7 @@ class TestAddingContributorViews(OsfTestCase):
 
     def test_deserialize_contributors_sends_unreg_contributor_added_signal(self):
         unreg = UnregUserFactory()
-        from website.project.model import unreg_contributor_added
+        from website.project.signals import unreg_contributor_added
         serialized = [serialize_unregistered(fake.name(), unreg.username)]
         serialized[0]['visible'] = True
         with capture_signals() as mock_signals:
@@ -2652,6 +2691,52 @@ class TestAuthViews(OsfTestCase):
         res = self.app.get('/resend/')
         assert_equal(res.status_code, 200)
 
+    @mock.patch('framework.auth.views.mails.send_mail')
+    def test_resend_confirmation(self, send_mail):
+        email = 'test@example.com'
+        token = self.user.add_unconfirmed_email(email)
+        self.user.save()
+        url = api_url_for('resend_confirmation')
+        header = {'address': email, 'primary': False, 'confirmed': False}
+        self.app.put_json(url, {'id': self.user._id, 'email': header}, auth=self.user.auth)
+        assert_true(send_mail.called)
+        assert_true(send_mail.called_with(
+            to_addr=email
+        ))
+        self.user.reload()
+        assert_not_equal(token, self.user.get_confirmation_token(email))
+        with assert_raises(InvalidTokenError):
+            self.user._get_unconfirmed_email_for_token(token)
+
+    def test_resend_confirmation_without_user_id(self):
+        email = 'test@example.com'
+        url = api_url_for('resend_confirmation')
+        header = {'address': email, 'primary': False, 'confirmed': False}
+        res = self.app.put_json(url, {'email': header}, auth=self.user.auth, expect_errors=True)
+        assert_equal(res.status_code, 400)
+        assert_equal(res.json['message_long'], '"id" is required')
+
+    def test_resend_confirmation_without_email(self):
+        url = api_url_for('resend_confirmation')
+        res = self.app.put_json(url, {'id': self.user._id}, auth=self.user.auth, expect_errors=True)
+        assert_equal(res.status_code, 400)
+
+    def test_resend_confirmation_not_work_for_primary_email(self):
+        email = 'test@example.com'
+        url = api_url_for('resend_confirmation')
+        header = {'address': email, 'primary': True, 'confirmed': False}
+        res = self.app.put_json(url, {'id': self.user._id, 'email': header}, auth=self.user.auth, expect_errors=True)
+        assert_equal(res.status_code, 400)
+        assert_equal(res.json['message_long'], 'Cannnot resend confirmation for confirmed emails')
+
+    def test_resend_confirmation_not_work_for_confirmed_email(self):
+        email = 'test@example.com'
+        url = api_url_for('resend_confirmation')
+        header = {'address': email, 'primary': False, 'confirmed': True}
+        res = self.app.put_json(url, {'id': self.user._id, 'email': header}, auth=self.user.auth, expect_errors=True)
+        assert_equal(res.status_code, 400)
+        assert_equal(res.json['message_long'], 'Cannnot resend confirmation for confirmed emails')
+
     def test_confirm_email_clears_unclaimed_records_and_revokes_token(self):
         unclaimed_user = UnconfirmedUserFactory()
         # unclaimed user has been invited to a project.
@@ -2673,41 +2758,6 @@ class TestAuthViews(OsfTestCase):
         unclaimed_user.reload()
         assert_equal(unclaimed_user.unclaimed_records, {})
         assert_equal(len(unclaimed_user.email_verifications.keys()), 0)
-
-    @mock.patch('framework.auth.views.mails.send_mail')
-    def test_resend_confirmation_post_sends_confirm_email(self, send_mail):
-        # Make sure user has a confirmation token for their primary email
-        u = UnconfirmedUserFactory()
-        u.add_unconfirmed_email(u.username)
-        u.save()
-        self.app.post('/resend/', {'email': u.username})
-        assert_true(send_mail.called)
-        assert_true(send_mail.called_with(
-            to_addr=u.username
-        ))
-
-    # see: https://github.com/CenterForOpenScience/osf.io/issues/1492
-    @mock.patch('website.security.random_string')
-    @mock.patch('framework.auth.views.mails.send_mail')
-    def test_resend_confirmation_post_regenerates_token(self, send_mail, random_string):
-        expiration = dt.datetime.utcnow() - dt.timedelta(seconds=1)
-        random_string.return_value = '12345'
-        u = UnconfirmedUserFactory()
-        u.add_unconfirmed_email(u.username, expiration=expiration)
-        u.save()
-
-        self.app.post('/resend/', {'email': u.username})
-        confirm_url = u.get_confirmation_url(u.username, force=True)
-        assert_true(send_mail.called)
-        assert_true(send_mail.called_with(
-            to_addr=u.username,
-            confirmation_url=confirm_url
-        ))
-
-    @mock.patch('framework.auth.views.mails.send_mail')
-    def test_resend_confirmation_post_if_user_not_in_database(self, send_mail):
-        self.app.post('/resend/', {'email': 'norecord@norecord.no'})
-        assert_false(send_mail.called)
 
     def test_confirmation_link_registers_user(self):
         user = User.create_unconfirmed('brian@queen.com', 'bicycle123', 'Brian May')
@@ -3730,11 +3780,22 @@ class TestDashboardViews(OsfTestCase):
         project.register_node(
             None, Auth(self.creator), '', '',
         )
+
         # Get the All My Registrations smart folder from the dashboard
         url = api_url_for('get_dashboard', nid=ALL_MY_REGISTRATIONS_ID)
         res = self.app.get(url, auth=self.contrib.auth)
 
         assert_equal(len(res.json['data']), 1)
+
+    def test_archiving_nodes_appear_in_all_my_registrations(self):
+        project = ProjectFactory(creator=self.creator, public=False)
+        reg = RegistrationFactory(project=project, user=self.creator)
+
+        # Get the All My Registrations smart folder from the dashboard
+        url = api_url_for('get_dashboard', nid=ALL_MY_REGISTRATIONS_ID)
+        res = self.app.get(url, auth=self.creator.auth)
+
+        assert_equal(res.json['data'][0]['node_id'], reg._id)
 
     def test_untouched_node_is_collapsed(self):
         found_item = False

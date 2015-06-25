@@ -30,7 +30,7 @@ var NavbarControl = require('js/navbarControl');
 $.ajaxSetup({cache: false});
 
 // Polyfill for String.prototype.endsWith
-if (String.prototype.endsWith == undefined) {
+if (String.prototype.endsWith === undefined) {
     String.prototype.endsWith = function(suffix) {
         return this.indexOf(suffix, this.length - suffix.length) !== -1;
     };

@@ -44,7 +44,12 @@
     font-size: 36px;
 }
 
-/* */
+/* Project Setting Page Header*/
+.page-header.visible-xs {
+    margin: 0;
+}
+
+/* Multiple device support for project nav-bar */
 @media (max-width: 767px) {
     .osf-project-navbar li>a {
         padding-left: 30px;

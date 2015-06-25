@@ -4,7 +4,7 @@
 - `develop` Build Status: [![Build Status](https://travis-ci.org/CenterForOpenScience/osf.io.svg?branch=master)](https://travis-ci.org/CenterForOpenScience/osf.io)
 - Public Repo: https://github.com/CenterForOpenScience/osf.io/
 - Issues: https://github.com/CenterForOpenScience/osf.io/issues?state=open
-- COS Development Docs: http://cosdev.readthedocs.org/ 
+- COS Development Docs: http://cosdev.readthedocs.org/
 
 ## Table of contents
 - [Help](#help)
@@ -14,9 +14,9 @@
 
 
 ## Help
-The [COS Development Docs](http://cosdev.readthedocs.org/) provide detailed information about all aspects of OSF development. 
-This includes [detailed installation instructions](http://cosdev.readthedocs.org/en/latest/osf/setup.html), 
-a list of [common setup errors](http://cosdev.readthedocs.org/en/latest/osf/setup.html#common-error-messages), and 
+The [COS Development Docs](http://cosdev.readthedocs.org/) provide detailed information about all aspects of OSF development.
+This includes [detailed installation instructions](http://cosdev.readthedocs.org/en/latest/osf/setup.html),
+a list of [common setup errors](http://cosdev.readthedocs.org/en/latest/osf/setup.html#common-error-messages), and
 [other troubleshooting](http://cosdev.readthedocs.org/en/latest/osf/common_problems.html).
 
 The OSF `invoke` script provides several useful commands. For more information, run:
@@ -25,7 +25,7 @@ The OSF `invoke` script provides several useful commands. For more information, 
 
 ## Running the OSF
 
-If you have already installed all of the required services and Python packages, and activated your virtual environment, 
+If you have already installed all of the required services and Python packages, and activated your virtual environment,
 then you can start a working local test server with the following sequence:
 
 ```bash
@@ -38,11 +38,16 @@ invoke assets -dw
 invoke server
 ```
 
-Note that some or all of these commands will run attached to a console, and therefore the commands may need to be 
-run in separate terminals. Be sure to activate your virtual environment each time a new terminal is opened. 
+Note that some or all of these commands will run attached to a console, and therefore the commands may need to be
+run in separate terminals. Be sure to activate your virtual environment each time a new terminal is opened.
 It is normal for the command to keep running!
 
 Once started, you will be able to view the OSF in a web browser- by default, at http://127.0.0.1:5000/
+
+In order to log in on your local server, you will also need to run the authentication server.
+
+- For daily use, run fakeCAS. See [CenterForOpenScience/fakeCAS](https://github.com/CenterForOpenScience/fakeCAS) for information on how to set up this service.
+- For developing authentication-related features, run CAS. See [CenterForOpenScience/docker-library/cas](https://github.com/CenterForOpenScience/docker-library/tree/master/cas) for information on how to set up this service.
 
 
 ### Livereload support
@@ -57,8 +62,8 @@ This will make your browser automatically refresh whenever a code change is made
 
 ### Optional extras
 
-Some functionality depends on additional services that will not be started using the sequence above. 
-For most development tasks, it is sufficient to run the OSF without these services, except as noted below. 
+Some functionality depends on additional services that will not be started using the sequence above.
+For most development tasks, it is sufficient to run the OSF without these services, except as noted below.
 No additional installation is needed to use these features.
 
 
@@ -80,21 +85,21 @@ $ invoke sharejs
 
 #### Waterbutler
 
-Waterbutler is used for file storage features. Upload and download features will be disabled if Waterbutler is not 
-installed. Consult the Waterbutler 
-[repository](https://github.com/CenterForOpenScience/waterbutler) and 
+Waterbutler is used for file storage features. Upload and download features will be disabled if Waterbutler is not
+installed. Consult the Waterbutler
+[repository](https://github.com/CenterForOpenScience/waterbutler) and
 [documentation](https://waterbutler.readthedocs.org/en/latest/) for information on how to set up and run this service.
 
 ## Installation
 
 These instructions assume a working knowledge of package managers and the command line.
-For a detailed step-by-step walkthrough suitable for new programmers, consult the 
+For a detailed step-by-step walkthrough suitable for new programmers, consult the
 [COS Development Docs](http://cosdev.readthedocs.org/en/latest/osf/setup.html).
 
 ### Pre-requisites
 
 Before attempting to run OSF setup commands, be sure that your system meets the following minimum requirements.
- 
+
 #### Mac OS
 
 The following packages must be installed before running the automatic setup script:
@@ -119,8 +124,8 @@ virtualenv env
 source env/bin/activate
 ```
 
-- Copy `website/settings/local-dist.py` to `website/settings/local.py.`  NOTE: This is your local settings file, 
-which overrides the settings in `website/settings/defaults.py`. It will not be added to source control, so change 
+- Copy `website/settings/local-dist.py` to `website/settings/local.py.`  NOTE: This is your local settings file,
+which overrides the settings in `website/settings/defaults.py`. It will not be added to source control, so change
 it as you wish.
 
 ```bash
@@ -134,12 +139,12 @@ $ pip install invoke
 $ invoke setup
 ```
 
-To verify that your installation works, follow the instructions to [start the OSF](#running-the-osf) and 
+To verify that your installation works, follow the instructions to [start the OSF](#running-the-osf) and
 [run unit tests](#running-tests).
 
 ##### Additional configuration for Mac OS X
 
-After running the automatic installer, you may find that some actions- such as running unit tests- fail due to an error 
+After running the automatic installer, you may find that some actions- such as running unit tests- fail due to an error
 with Mongo/ TokuMX. This can be resolved by increasing the system limits on number of open files and processes.
 
 Add the following lines to `/etc/launchctl.conf` and/or `/etc/launchd.conf` (creating the files if necessary):
@@ -156,17 +161,17 @@ Then reboot.
 
 #### Additional things to install
 
-The automated installer does not install Waterbutler, which may be needed to run some OSF features locally. 
+The automated installer does not install Waterbutler, which may be needed to run some OSF features locally.
 Consult the [Waterbutler repository](https://github.com/CenterForOpenScience/waterbutler) for setup instructions.
 
 ### Manual installation
-[At present](CONTRIBUTING.md), there is no complete automated install process for other platforms. 
-Although the process above should perform most setup steps on Mac OS, users of other platforms will need to perform the 
-steps below manually in a manner appropriate to their system. Some steps of the installer script can be re-used, 
+[At present](CONTRIBUTING.md), there is no complete automated install process for other platforms.
+Although the process above should perform most setup steps on Mac OS, users of other platforms will need to perform the
+steps below manually in a manner appropriate to their system. Some steps of the installer script can be re-used,
 in which case the appropriate commands are noted below.
 
 On Mac OS, we recommend using Homebrew to install external dependencies.
- 
+
 - Create local.py files for addons that need them (`invoke copy_settings --addons`)
 - Install TokuMX
 - Install libxml2 and libxslt (required for installing python lxml)
@@ -179,7 +184,7 @@ On Mac OS, we recommend using Homebrew to install external dependencies.
 - Install node and bower packages
 - Build assets (`invoke assets --dev`)
 
-- If invoke setup hangs when 'Generating GnuPG key' (especially under linux), you may need to install some 
+- If invoke setup hangs when 'Generating GnuPG key' (especially under linux), you may need to install some
 additional software to make this work. For apt-getters this looks like:
 
 ```bash
@@ -202,8 +207,8 @@ sudo /etc/init.d/rng-tools start
 
 ### Detailed installation and setup guides
 
-Although some effort is made to provide automatic installation scripts, the following more detailed guides may be 
-helpful if you are setting up the OSF on a machine already used for other development work, or if you wish to 
+Although some effort is made to provide automatic installation scripts, the following more detailed guides may be
+helpful if you are setting up the OSF on a machine already used for other development work, or if you wish to
 perform other advanced tasks. If the OSF is already working based on the instructions above, you can skip this section.
 
 #### Using TokUMX
@@ -371,7 +376,7 @@ Run Javascript tests:
 $ inv karma
 ```
 
-By default, `inv karma` will start a Karma process which will re-run your tests every time a JS file is changed. 
+By default, `inv karma` will start a Karma process which will re-run your tests every time a JS file is changed.
 To do a single run of the JS tests:
 
 
@@ -433,7 +438,7 @@ The -w option puts you in "watch": assets will be built when a file changes.
 
 ### Getting application credentials
 
-Many addons require application credentials (typically an app key and secret) to be able to authenticate through the 
+Many addons require application credentials (typically an app key and secret) to be able to authenticate through the
 OSF. These credentials go in each addon's `local.py` settings file (e.g. `website/addons/dropbox/settings/local.py`).
 
 For local development, the COS provides [test app credentials](https://osf.io/m2hig/wiki/home/) for a number of services.

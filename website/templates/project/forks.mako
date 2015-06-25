@@ -7,17 +7,15 @@
 
 <div class="row">
 	<div class="col-md-8 col-md-offset-2">
-
-	% if node['fork_count']:
-	    <div mod-meta='{
+	    % if node['fork_count']:
+	        <div mod-meta='{
 	            "tpl": "util/render_nodes.mako",
 	            "uri": "${node["api_url"]}get_forks/",
-	            "replace": true
+	            "replace": true,
+	            "kwargs": {"sortable": false, "pluralized_node_type": "registrations"}
 	        }'></div>
-	% else:
-	    <div class="m-xl">There have been no forks of this project.</div>
-	% endif
-
-
-	</div>
+	    % else:
+	        <div class="m-xl">There have been no forks of this project.</div>
+	    % endif
+    </div>
 </div>

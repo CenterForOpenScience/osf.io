@@ -1,4 +1,4 @@
-<div class="col-md-12 col-sm-12">
+<div class="col-sm-12">
     <span id="dashboards" class="anchor"></span>
     <h4 class="m-t-lg f-w-lg">Dashboards</h4>
     <p>The Dashboard displays all of your projects and their components in the Project Organizer, and is
@@ -9,9 +9,11 @@
     <p>You can shrink or expand each project to display nested components by clicking the + or - to the
         left of the projects name. A more detailed description of how to use the
         <a href="#organizer">Project Organizer</a> is below.</p>
-    <div class="col-md-8 col-md-offset-2 col-sm-12">
-        <div class="gs-video embed-responsive embed-responsive-16by9">
-            <div class="embed-responsive-item youtube-loader" id="CiwtT70rafU"></div>
+    <div class="row">
+        <div class="col-md-8 col-md-offset-2 col-sm-12">
+            <div class="gs-video embed-responsive embed-responsive-16by9">
+                <div class="embed-responsive-item youtube-loader" id="CiwtT70rafU"></div>
+            </div>
         </div>
     </div>
 </div>

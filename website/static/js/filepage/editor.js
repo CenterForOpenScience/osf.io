@@ -30,7 +30,9 @@ var FileEditor = {
         $osf.throttle(self.observables.status, 4000, {leading: false});
 
         self.bindAce = function(element, isInitialized, context) {
-            if (isInitialized) return;
+            if (isInitialized) {
+                return;
+            }
             model.editor = ace.edit(element.id);
             model.editor.setValue(self.initialText, -1);
             new ShareJSDoc(shareWSUrl, self.editorMeta, model.editor, self.observables);
@@ -78,14 +80,20 @@ var FileEditor = {
                     $(document).trigger('fileviewpage:reload');
                     self.initialText = model.editor.getValue();
                     m.redraw();
-                }).fail(function(error) {
+                }).fail(function(xhr, textStatus, err) {
+                    var message;
+                    if (xhr.status === 507) {
+                        message = 'Could not update file. Insufficient storage space in your Dropbox.';
+                    } else {
+                        message = 'The file could not be updated.';
+                    }
                     model.editor.setReadOnly(false);
                     self.unthrottledStatus(oldstatus);
                     $(document).trigger('fileviewpage:reload');
                     model.editor.setValue(self.initialText);
-                    $osf.growl('Error', 'The file could not be updated.');
+                    $osf.growl('Error', message);
                     Raven.captureMessage('Could not PUT file content.', {
-                        error: error,
+                        textStatus: textStatus,
                         url: self.url
                     });
                     m.redraw();
@@ -112,7 +120,9 @@ var FileEditor = {
         return self;
     },
     view: function(ctrl) {
-        if (!ctrl.loaded) return util.Spinner;
+        if (!ctrl.loaded) {
+            return util.Spinner;
+        }
 
         return m('.editor-pane', [
             m('.wiki-connected-users', m('.row', m('.col-sm-12', [

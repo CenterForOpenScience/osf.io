@@ -34,10 +34,10 @@ var _figshareItemButtons = {
                 }, 'Download')
             );
         }
-        // Files can be deleted if private or if parent contains more than one child
+        // Files can be deleted if private or if it is in a dataset that contains more than one file
         var privateOrSiblings = (item.data.extra && item.data.extra.status !== 'public') ||
-            item.parent().children.length > 1;
-        if (item.kind === 'file' && privateOrSiblings) {
+            (!item.parent().data.isAddonRoot && item.parent().children.length > 1);
+        if (item.kind === 'file' && privateOrSiblings && item.data.permissions && item.data.permissions.edit) {
             buttons.push(
                 m.component(Fangorn.Components.button, {
                     onclick: function (event) {
