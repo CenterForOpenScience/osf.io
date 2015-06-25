@@ -31,27 +31,10 @@ class AdminOrPublic(permissions.BasePermission):
         node = Node.load(request.parser_context['kwargs']['node_id'])
         if request.method in permissions.SAFE_METHODS:
             return node.is_public or node.can_view(auth)
-        else:
+        elif len(node.admin_contributor_ids) > 1 or request.method != 'DELETE':
             return node.has_permission(user, 'admin')
-
-
-class AdminOrPublicContributorDetail(permissions.BasePermission):
-
-    def has_object_permission(self, request, view, obj):
-        assert isinstance(obj, (Node, User)), 'obj must be a Node or User, got {}'.format(obj)
-        auth = get_user_auth(request)
-        user = request.user
-        node = Node.load(request.parser_context['kwargs']['node_id'])
-        if request.method in permissions.SAFE_METHODS:
-            return node.is_public or node.can_view(auth)
-        elif node.has_permission(user, 'admin'):
-            if request.method != 'DELETE':
-                return True
-            else:
-                return obj != user
         else:
             return False
-
 
 
 class ContributorOrPublicForPointers(permissions.BasePermission):
@@ -68,7 +51,7 @@ class ContributorOrPublicForPointers(permissions.BasePermission):
             has_auth = public or (has_parent_auth and has_pointer_auth)
             return has_auth
         else:
-            has_auth = parent_node.can_edit(auth) and pointer_node.can_edit(auth)
+            has_auth = parent_node.can_edit(auth)
             return has_auth
 
 
