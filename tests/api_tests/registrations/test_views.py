@@ -4,6 +4,7 @@ from nose.tools import *  # flake8: noqa
 from api.base.settings.defaults import API_BASE
 from framework.auth.core import Auth
 
+from website.project.model import ensure_schemas
 from tests.base import ApiTestCase, fake
 from tests.factories import UserFactory, ProjectFactory, RegistrationFactory, NodeFactory
 
@@ -150,6 +151,43 @@ class TestRegistrationDetail(ApiTestCase):
     def test_return_private_registration_draft_details_logged_in_non_contributor(self):
         res = self.app.get(self.private_reg_draft_url, auth=self.basic_auth_two, expect_errors=True)
         assert_equal(res.status_code, 403)
+
+
+class TestRegistrationCreate(ApiTestCase):
+     def setUp(self):
+        ensure_schemas()
+        ApiTestCase.setUp(self)
+        self.user = UserFactory.build()
+        password = fake.password()
+        self.password = password
+        self.user.set_password(password)
+        self.user.save()
+        self.basic_auth = (self.user.username, password)
+
+        self.user_two = UserFactory.build()
+        self.user_two.set_password(password)
+        self.user_two.save()
+        self.basic_auth_two = (self.user_two.username, password)
+
+        self.public_project = ProjectFactory(creator=self.user, is_public=True)
+        self.public_registration = RegistrationFactory(creator=self.user, project=self.public_project)
+        self.public_url = '/{}registrations/{}'.format(API_BASE, self.public_registration._id)
+
+        self.private_project = ProjectFactory(creator=self.user, is_private=True)
+        self.private_registration = RegistrationFactory(creator=self.user, project=self.private_project)
+        self.private_url = '/{}registrations/{}'.format(API_BASE, self.private_registration._id)
+
+        self.public_registration_draft = NodeFactory(creator=self.user, is_registration_draft=True, is_public=True)
+        self.public_reg_draft_url = '/{}registrations/{}'.format(API_BASE, self.public_registration_draft._id)
+
+        self.private_registration_draft = NodeFactory(creator=self.user, is_registration_draft=True)
+        self.private_reg_draft_url = '/{}registrations/{}'.format(API_BASE, self.private_registration_draft._id)
+
+     def test_create_registration_from_registration_draft(self):
+        res = self.app.post(self.public_reg_draft_url, auth=self.basic_auth, expect_errors=True)
+        print res
+        assert_equal(res.status_code, 201)
+
 
 
 class TestRegistrationUpdate(ApiTestCase):

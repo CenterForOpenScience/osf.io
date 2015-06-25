@@ -3,12 +3,13 @@ from rest_framework import generics, permissions as drf_permissions
 from modularodm import Q
 from rest_framework.exceptions import PermissionDenied, ValidationError
 
+
 from website.models import Node
 from framework.auth.core import Auth
 from api.base.filters import ODMFilterMixin
 from api.base.utils import waterbutler_url_for
 from api.nodes.serializers import NodePointersSerializer
-from api.registrations.serializers import RegistrationSerializer
+from api.registrations.serializers import RegistrationSerializer, RegistrationCreateSerializer
 from api.nodes.views import NodeMixin, NodeFilesList, NodeChildrenList, NodeContributorsList, NodeDetail
 
 from api.nodes.permissions import ContributorOrPublic, ReadOnlyIfRegistration
@@ -52,7 +53,7 @@ class RegistrationList(generics.ListAPIView, ODMFilterMixin):
         return Node.find(query)
 
 
-class RegistrationDetail(NodeDetail, RegistrationMixin):
+class RegistrationDetail(NodeDetail, generics.CreateAPIView, RegistrationMixin):
     """
     Registration details
     """
@@ -60,7 +61,21 @@ class RegistrationDetail(NodeDetail, RegistrationMixin):
         ContributorOrPublic,
         ReadOnlyIfRegistration,
     )
-    serializer_class = RegistrationSerializer
+
+    def get_serializer_class(self):
+        if self.request.method == 'POST':
+            serializer_class = RegistrationCreateSerializer
+            return serializer_class
+        serializer_class = RegistrationSerializer
+        return serializer_class
+
+    # Restores original get_serializer_class
+    def get_serializer_context(self):
+        return {
+            'request': self.request,
+            'format': self.format_kwarg,
+            'view': self
+        }
 
     # overrides RetrieveAPIView
     def get_object(self):
@@ -68,12 +83,6 @@ class RegistrationDetail(NodeDetail, RegistrationMixin):
         if node.is_registration is False and node.is_registration_draft is False:
             raise ValidationError('Not a registration or registration draft.')
         return self.get_node()
-
-    # overrides RetrieveUpdateAPIView
-    def get_serializer_context(self):
-        # Serializer needs the request in order to make an update to privacy
-        return {'request': self.request}
-
 
 class RegistrationContributorsList(NodeContributorsList, RegistrationMixin):
     """
