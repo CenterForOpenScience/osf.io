@@ -1,12 +1,12 @@
-from rest_framework import serializers as ser
-
-from rest_framework import exceptions
 from framework.auth.core import Auth
+from rest_framework import exceptions
+from rest_framework import serializers as ser
+from django.utils.translation import ugettext_lazy as _
 
 from modularodm import Q
+from api.base.utils import token_creator
 from website.project.model import MetaSchema
 from api.nodes.serializers import NodeSerializer
-from api.base.utils import token_creator
 
 
 class RegistrationSerializer(NodeSerializer):
@@ -32,7 +32,7 @@ class RegistrationCreateSerializerWithToken(RegistrationSerializer):
         given_token = view.kwargs['token']
         correct_token = token_creator(node._id, user._id)
         if node.is_registration_draft is False:
-            raise exceptions.ValidationError('This is not a registration draft.')
+            raise exceptions.ValidationError(_('This is not a registration draft.'))
         if correct_token != given_token:
             raise ser.ValidationError("Incorrect token.")
         return data
