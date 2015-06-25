@@ -96,10 +96,12 @@ class RegistrationDetail(NodeDetail, generics.CreateAPIView, RegistrationMixin):
     def create(self, request, registration_id):
         user = request.user
         node = self.get_node()
+        if node.is_registration_draft is False:
+            raise ValidationError('Not a registration draft.')
         token = token_creator(node._id, user._id)
         url = absolute_reverse('registrations:registration-create', kwargs={'registration_id': node._id, 'token': token})
         registration_warning = REGISTER_WARNING.format((node.title))
-        return Response(data = {'id': node._id, 'warning_message': registration_warning, 'links': {'confirm_delete': url}}, status=status.HTTP_202_ACCEPTED)
+        return Response({'data': {'id': node._id, 'warning_message': registration_warning, 'links': {'confirm_delete': url}}}, status=status.HTTP_202_ACCEPTED)
 
 class RegistrationCreate(generics.CreateAPIView, RegistrationMixin):
     """
