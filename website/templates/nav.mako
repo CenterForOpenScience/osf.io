@@ -16,7 +16,8 @@
       <ul class="nav navbar-nav">
         % if user_name:
             <li><a href="/dashboard/">My Dashboard</a></li>
-        % else:
+            <li><a href="/explore/activity/">Browse New Projects</a></li>
+       % else:
             <li><a href="/explore/activity/">Browse New Projects</a></li>
         % endif
         <li class="dropdown">
