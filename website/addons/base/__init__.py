@@ -345,7 +345,7 @@ class GuidFile(GuidStoredObject):
             return url + '/'
 
     @property
-    def view_url(self):
+    def external_url(self):
         extra = self._metadata_cache['extra']
         return extra.get('viewUrl')
 

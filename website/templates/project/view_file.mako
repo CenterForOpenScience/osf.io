@@ -51,6 +51,7 @@
   <div id="fileViewPanelLeft" class="col-sm-9 panel-expand">
     <div class="row">
       <div id="mfrIframeParent" class="col-sm-9">
+        <p class="text-muted">View this file on <a href=${urls['external']} target="_blank">${provider_full_name}</a>.</p>
         <div id="mfrIframe" class="mfr mfr-file"></div>
       </div>
 
@@ -149,7 +150,6 @@
         file: {
             size: ${size},
             extra: ${extra},
-            viewUrl: '${(view_url or '') | js_str}',
             error: '${error | js_str}',
             name: '${file_name | js_str}',
             path: '${file_path | js_str}',

@@ -398,6 +398,7 @@ class TestAddonFileViews(OsfTestCase):
         ret.update({
             'error': '',
             'provider': '',
+            'provider_full_name': '',
             'file_path': '',
             'sharejs_uuid': '',
             'urls': {
@@ -406,10 +407,10 @@ class TestAddonFileViews(OsfTestCase):
                 'sharejs': '',
                 'mfr': '',
                 'gravatar': '',
+                'external': '',
             },
             'size': '',
             'extra': '',
-            'view_url': '',
             'file_name': '',
             'materialized_path': '',
         })
