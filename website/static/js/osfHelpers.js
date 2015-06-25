@@ -677,6 +677,14 @@ var _confirmationString = function() {
 };
 
 /**
+*  Helper function to judge if the user browser is IE
+*/
+var isIE = function(userAgent) {
+    userAgent = userAgent || navigator.userAgent;
+    return userAgent.indexOf('MSIE ') > -1 || userAgent.indexOf('Trident/') > -1;
+};
+
+/**
   * Confirm a dangerous action by requiring the user to enter specific text
   *
   * This is an abstraction over bootbox, and passes most options through to
@@ -764,5 +772,6 @@ module.exports = window.$.osf = {
     tableResize: tableResize,
     initializeResponsiveAffix: initializeResponsiveAffix,
     humanFileSize: humanFileSize,
-    confirmDangerousAction: confirmDangerousAction
+    confirmDangerousAction: confirmDangerousAction,
+    isIE: isIE
 };
