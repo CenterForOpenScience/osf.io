@@ -27,9 +27,18 @@ class Event(object):
     """
     Base notification class for building notification events and messages.
     - abstract methods set methods that must be defined by subclasses.
+
+    To use this interface you must use the class as a Super (inherited).
+     - Implement the form_ methods in the subclass
+     - All subclasses must be in this file for the meta class to list them
+     - Name the subclasses you will be calling as such:
+      - event (the type of event from _SUBSCRIPTIONS_AVAILABLE or specific cases)
+      - class
+      example: event = file_added, class = FileAdded
     """
     @classmethod
     def get_event(cls, user, node, event, **kwargs):
+        """If there is a class that matches the event then it returns that instance"""
         kind = ''.join(event.split('_'))
         if kind in cls.registry:
             return cls.registry[kind](user, node, event, **kwargs)
@@ -64,7 +73,7 @@ class Event(object):
 
 
 class FileEvent(Event):
-    """File event base class, should not be called"""
+    """File event base class, should not be called directly"""
     def __init__(self, user, node, event, payload=None):
         self.user = user
         self.gravatar_url = user.gravatar_url
@@ -79,14 +88,17 @@ class FileEvent(Event):
         self.guid = None
 
     def form_message(self):
+        """Sets the message to 'action file/folder <location>' """
         f_type, action = tuple(self.action.split("_"))
         name = self.payload['metadata']['materialized'].strip('/')
         self.message = '{} {} "<b>{}</b>".'.format(action, f_type, name)
 
     def form_event(self):
+        """Simplest event set"""
         self.event = "file_updated"
 
     def form_url(self):
+        """Basis of making urls, this returns the url to the node."""
         f_url = furl(self.node.absolute_url)
         return f_url
 
@@ -110,9 +122,11 @@ class UpdateFileEvent(FileEvent):
         self.form_url()
 
     def form_event(self):
+        """Add guid to file_updated"""
         self.event = self.guid.guid_url.strip('/') + '_file_updated'
 
     def form_url(self):
+        """Build url to file view"""
         f_url = super(UpdateFileEvent, self).form_url()
         f_url.path = self.guid.guid_url
         self.url = f_url.url
@@ -139,7 +153,7 @@ class SimpleFileEvent(FileEvent):
         self.form_url()
 
     def form_url(self):
-        """Forms a url that points at the file view"""
+        """Forms a url that points at the files view, not the folder or deleted file."""
         f_url = super(SimpleFileEvent, self).form_url()
         f_url.path = self.node.web_url_for('collect_file_trees')
         self.url = f_url.url
@@ -172,6 +186,7 @@ class ComplexFileEvent(FileEvent):
         self.form_message()
 
     def form_message(self):
+        """lists source and destination in message"""
         addon, f_type, action = tuple(self.action.split("_"))
         destination_name = self.payload['destination']['materialized'].strip('/')
         source_name = self.payload['source']['materialized'].strip('/')
@@ -181,6 +196,7 @@ class ComplexFileEvent(FileEvent):
         )
 
     def form_event(self):
+        """Sets event to be passed as well as the source event."""
         self.event = self.guid.guid_url.strip('/') + '_file_updated'
         self.source_event_sub = self.source_guid.guid_url.strip('/') + '_file_updated'
 
@@ -191,7 +207,7 @@ class ComplexFileEvent(FileEvent):
         return f_url
 
     def form_guid(self):
-        """Produces both guids"""
+        """Produces both guids for source and destination"""
         addon = self.node.get_addon(self.payload['destination']['provider'])
         path = self.payload['destination']['path']
         path = path if path.startswith('/') else '/' + path
@@ -209,6 +225,7 @@ class AddonFileMoved(ComplexFileEvent):
     Specific methods for handling moving files
     """
     def perform(self):
+        """Sends a message to users who are removed from the file's subscription when it is moved"""
         rm_users = move_file_subscription(self.source_event_sub, self.source_node,
                                           self.event, self.node)
         message = self.message + ' Your subscription has been removed' \
@@ -219,6 +236,7 @@ class AddonFileMoved(ComplexFileEvent):
         super(AddonFileMoved, self).perform()
 
     def form_url(self):
+        """Set source url for subscribers removed from subscription to files page view"""
         f_url = super(AddonFileMoved, self).form_url()
         f_url.path = self.node.web_url_for('collect_file_trees')
         self.source_url = f_url.url
@@ -230,10 +248,13 @@ class AddonFileCopied(ComplexFileEvent):
     Specific methods for handling a copy file event.
     """
     def form_message(self):
+        """Adds warning to message to tell user that subscription did not copy with the file."""
         super(AddonFileCopied, self).form_message()
         self.message += ' You are not subscribed to the new file, follow link to add subscription.'
 
+    # TODO: Actually use this once the path from WB comes back properly
     def form_url(self):
+        """Source url points to original file"""
         f_url = super(AddonFileCopied, self).form_url()
         f_url.path = self.source_guid.guid_url
         self.source_url = f_url.url
