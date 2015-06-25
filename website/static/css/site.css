@@ -1928,13 +1928,13 @@ div.profile-fullname{
     position: fixed;
     width: 100%;
     left: 0;
-    top: 43px;
+    top: 50px;
     background: #EEE;
     z-index: 99;
     box-shadow:0 0 9px -1px #838383;
     border-radius: 0;
     border: none;
-    min-height:40px;
+    min-height: 40px !important;
 }
 
 .osf-project-navbar li>a {
@@ -2175,7 +2175,7 @@ div.profile-fullname{
     width: 100%;
     box-shadow: 0 0 9px -2px #464545;
     left: 0;
-    top: 43px;
+    top: 50px;
 }
 
 .osf-search-input {
@@ -2796,4 +2796,8 @@ div.profile-fullname{
 #viewPanel > .osf-panel-body,
 .mfr-file {
   height: 100%;
+}
+
+.text-center {
+    text-align: center;
 }
