@@ -30,29 +30,29 @@ describe('osfHelpers', () => {
         it('returns correctly formatted URLs for described inputs', () => {
             var fullUrl = $osf.apiV2Url('/nodes/abcd3/contributors/',
                 {prefix: 'http://localhost:8000/v2/'});
-            assert.equal(fullUrl, "http://localhost:8000/v2/nodes/abcd3/contributors/");
+            assert.equal(fullUrl, 'http://localhost:8000/v2/nodes/abcd3/contributors/');
 
             // No double slashes when apiPrefix and pathString have adjoining slashes
             fullUrl = $osf.apiV2Url('nodes/abcd3/contributors/',
                 {prefix: 'http://localhost:8000/v2/'});
-            assert.equal(fullUrl, "http://localhost:8000/v2/nodes/abcd3/contributors/");
+            assert.equal(fullUrl, 'http://localhost:8000/v2/nodes/abcd3/contributors/');
 
             // User is still responsible for the trailing slash. If they omit it, it doesn't appear at end of URL
             fullUrl = $osf.apiV2Url('/nodes/abcd3/contributors',
                 {prefix: 'http://localhost:8000/v2/'});
-            assert.notEqual(fullUrl, "http://localhost:8000/v2/nodes/abcd3/contributors/");
+            assert.notEqual(fullUrl, 'http://localhost:8000/v2/nodes/abcd3/contributors/');
 
             // Correctly handles- and encodes- URLs with parameters
             fullUrl = $osf.apiV2Url('/nodes/abcd3/contributors/',
                 {query:
                     {'filter[fullname]': 'bob', 'page_size':10},
                 prefix: 'https://staging2.osf.io/api/v2/'});
-            assert.equal(fullUrl, "https://staging2.osf.io/api/v2/nodes/abcd3/contributors/?filter%5Bfullname%5D=bob&page_size=10");
+            assert.equal(fullUrl, 'https://staging2.osf.io/api/v2/nodes/abcd3/contributors/?filter%5Bfullname%5D=bob&page_size=10');
 
             // Given a blank string, should return the base path (domain + port + prefix) with no extra cruft at end
             fullUrl = $osf.apiV2Url('',
                 {prefix: 'http://localhost:8000/v2/'});
-            assert.equal(fullUrl, "http://localhost:8000/v2/");
+            assert.equal(fullUrl, 'http://localhost:8000/v2/');
         });
     });
 
@@ -92,8 +92,15 @@ describe('osfHelpers', () => {
     });
 
     describe('block', () => {
+        var stub;
+        beforeEach(() => {
+            stub = new sinon.stub($, 'blockUI');
+        });
+        afterEach(() => {
+            $.blockUI.restore();
+        });
+
         it('calls $.blockUI with correct arguments', () => {
-            var stub = new sinon.stub($, 'blockUI');
             $osf.block();
             assert.calledOnce(stub);
             assert.calledWith(stub, {
@@ -107,6 +114,23 @@ describe('osfHelpers', () => {
                     color: '#fff'
                 },
                 message: 'Please wait'
+            });
+        });
+        it('calls $.blockUI with the passed message if provided', () => {
+            var msg = 'Some custom message';
+            $osf.block(msg);
+            assert.calledOnce(stub);
+            assert.calledWith(stub, {
+                css: {
+                    border: 'none',
+                    padding: '15px',
+                    backgroundColor: '#000',
+                    '-webkit-border-radius': '10px',
+                    '-moz-border-radius': '10px',
+                    opacity: 0.5,
+                    color: '#fff'
+                },
+                message: msg
             });
         });
     });

@@ -18,7 +18,7 @@ var NavbarViewModel = function() {
     self.showClose = true;
 
     self.onSearchPage = ko.computed(function() {
-        return window.contextVars.search
+        return window.contextVars.search;
     });
 
     // signIn viewmodel component
@@ -81,10 +81,10 @@ function placeholder(inputDom, inputLabel) {
 }
 
 function searchBarPlaceHolderInit() {
-    var inputDom = $('#searchPageFullBar');
-    var inputLabel = $('#searchBarLabel');
+    var inputDom =  $('#searchPageFullBar');
+    var inputLabel =  $('#searchBarLabel');
     inputDom.attr('placeholder', ''); //Clear the original placeholder
-    inputLabel.css('visibility', 'visible');
+    inputLabel.css( 'visibility', 'visible' );
     placeholder(inputDom, inputLabel);
     inputDom.focus();
 
@@ -93,8 +93,9 @@ function searchBarPlaceHolderInit() {
     inputDom.val('').val($inputVal);
 
     //For search page with existing input, make sure placeholder is hidden.
-    if (inputDom.val() !== '') {
-        inputLabel.css('visibility', 'hidden');
+
+    if(inputDom.val() !== '' ){
+         inputLabel.css( 'visibility', 'hidden' );
     }
 }
 
