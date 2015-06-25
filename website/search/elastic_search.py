@@ -284,6 +284,7 @@ def update_node(node, index=None):
             'pending_embargo': node.pending_embargo,
             'registered_date': node.registered_date,
             'wikis': {},
+            'files': {},
             'parent_id': parent_id,
             'date_created': node.date_created,
             'boost': int(not node.is_registration) + 1,  # This is for making registered projects less relevant
@@ -296,17 +297,11 @@ def update_node(node, index=None):
             ]:
                 elastic_document['wikis'][wiki.page_name] = wiki.raw_text(node)
 
+            for file_ in index_file.collect_files(node):
+                logging.info(file_)
+                elastic_document['files'][file_['name']] = file_['content']
+
         es.index(index=index, doc_type=category, id=elastic_document_id, body=elastic_document, refresh=True)
-
-
-@requires_search
-def update_project_files(node, index=None):
-    index = index or INDEX
-
-    category = categorize_node(node)
-    aggregated_files = ' '.join([f['content'] for f in index_file.collect_files(node)])
-    update_body = {'doc': {'files': aggregated_files}}
-    es.update(index=index, doc_type=category, id=node._id, body=update_body)
 
 
 @requires_search
