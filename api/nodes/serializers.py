@@ -137,34 +137,7 @@ class RegistrationSerializer(NodeSerializer):
     category = ser.CharField(read_only=True)
     is_registration_draft = ser.CharField(read_only=True)
 
-    links = LinksField({
-        'html': 'get_absolute_url',
-        'children': {
-            'related': Link('nodes:node-children', kwargs={'node_id': '<pk>'}),
-            'count': 'get_node_count',
-        },
-        'contributors': {
-            'related': Link('nodes:node-contributors', kwargs={'node_id': '<pk>'}),
-            'count': 'get_contrib_count',
-        },
-        'pointers': {
-            'related': Link('nodes:node-pointers', kwargs={'node_id': '<pk>'}),
-            'count': 'get_pointers_count',
-        },
-        'registrations': {
-            'related': Link('nodes:node-registrations', kwargs={'node_id': '<pk>'}),
-            'count': 'get_registration_count',
-        },
-        'files': {
-            'related': Link('nodes:node-files', kwargs={'node_id': '<pk>'})
-        },
-        # TODO: Pass source ID to link
-
-        #===================================================================
-        'source': {
-            'related': Link('nodes:node-detail', kwargs={'node_id': '<pk>'})
-        },
-    })
+    # TODO pass source link to Links
 
     def create(self, validated_data):
         request = self.context['request']

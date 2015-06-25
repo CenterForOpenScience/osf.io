@@ -1,10 +1,10 @@
 import requests
 
-from modularodm import Q
+from framework.auth.core import Auth
 from rest_framework import generics, permissions as drf_permissions
 from rest_framework.exceptions import PermissionDenied, ValidationError
 
-from framework.auth.core import Auth
+from modularodm import Q
 from website.models import Node, Pointer
 from api.users.serializers import ContributorSerializer
 from api.base.filters import ODMFilterMixin, ListFilterMixin
@@ -166,19 +166,13 @@ class NodeRegistrationsList(generics.ListCreateAPIView, NodeMixin):
         registrations = [node for node in nodes if node.can_view(auth)]
         return registrations
 
-        # overrides ListCreateAPIView
+    # overrides ListCreateAPIView
     def perform_create(self, serializer):
         """
         Create a registration of the current node.
         """
-        """
-        :param serializer:
-        :return:
-        """
-        # On creation, make sure that current user is the creator
         user = self.request.user
         serializer.save(creator=user)
-
 
 class NodeChildrenList(generics.ListAPIView, NodeMixin):
     """Children of the current node.
