@@ -7,7 +7,7 @@ urlpatterns = [
     # url(r'^blog/', include('blog.urls')),
     url(r'^$', views.RegistrationList.as_view(), name='registration-list'),
     url(r'^(?P<registration_id>\w+)/$', views.RegistrationDetail.as_view(), name='registration-detail'),
-    url(r'^(?P<registration_id>\w+)/(?P<token>\w+)/$', views.RegistrationCreate.as_view(), name='registration-create'),
+    url(r'^(?P<registration_id>\w+)/freeze/(?P<token>\w+)/$', views.RegistrationCreate.as_view(), name='registration-create'),
     url(r'^(?P<registration_id>\w+)/contributors/$', views.RegistrationContributorsList.as_view(), name='registration-contributors'),
     url(r'^(?P<registration_id>\w+)/children/$', views.RegistrationChildrenList.as_view(), name='registration-children'),
     url(r'^(?P<registration_id>\w+)/pointers/$', views.RegistrationPointersList.as_view(), name='registration-pointers'),

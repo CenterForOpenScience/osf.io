@@ -123,7 +123,6 @@ class Link(object):
             **self.reverse_kwargs
         )
 
-
 class WaterbutlerLink(Link):
     """Link object to use in conjunction with Links field. Builds a Waterbutler URL for files.
     """

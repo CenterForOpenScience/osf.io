@@ -163,7 +163,7 @@ class RegistrationSerializer(NodeSerializer):
 
         #===================================================================
         'source': {
-            'related': Link('nodes:node-detail', kwargs={'node_id': '<pk>'})
+            'related': Link('nodes:node-detail', kwargs={'node_id': '<registered_from._id>'})
         },
     })
 
