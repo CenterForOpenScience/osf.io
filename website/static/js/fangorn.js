@@ -1086,9 +1086,11 @@ function _fangornOrderFolder(tree) {
     // Checking if this column does in fact have sorting
     if (this.isSorted[0]) {
         var sortDirection = this.isSorted[0].desc ? 'desc' : 'asc';
-        tree.sortChildren(this, sortDirection, 'text', 0, 1);
-        this.redraw();
+    } else {
+        var sortDirection = 'asc';
     }
+    tree.sortChildren(this, sortDirection, 'text', 0, 1);
+    this.redraw();
 }
 
 /**
@@ -2197,7 +2199,8 @@ Fangorn.Utils = {
     openParentFolders : _openParentFolders,
     dismissToolbar : _dismissToolbar,
     uploadRowTemplate : uploadRowTemplate,
-    resolveIconView: resolveIconView
+    resolveIconView: resolveIconView,
+    orderFolder: _fangornOrderFolder
 };
 
 Fangorn.DefaultOptions = tbOptions;
