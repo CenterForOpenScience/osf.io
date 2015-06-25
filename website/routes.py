@@ -1,13 +1,16 @@
 # -*- coding: utf-8 -*-
-import httplib as http
 import os
+import httplib as http
 
+from flask import request
 from flask import send_from_directory
 
 from framework import status
 from framework import sentry
+from framework.auth import cas
 from framework.routing import Rule
 from framework.flask import redirect
+from framework.sessions import session
 from framework.routing import WebRenderer
 from framework.exceptions import HTTPError
 from framework.auth import get_display_name
@@ -35,7 +38,6 @@ from website.discovery import views as discovery_views
 from website.conferences import views as conference_views
 from website.notifications import views as notification_views
 
-
 def get_globals():
     """Context variables that are available for every template rendered by
     OSFWebRenderer.
@@ -62,10 +64,14 @@ def get_globals():
         'language': language,
         'web_url_for': util.web_url_for,
         'api_url_for': util.api_url_for,
+        'api_v2_url': util.api_v2_url,  # URL function for templates
+        'api_v2_base': util.api_v2_url(''),  # Base url used by JS api helper
         'sanitize': sanitize,
         'js_str': lambda x: x.replace("'", r"\'").replace('"', r'\"'),
         'webpack_asset': paths.webpack_asset,
         'waterbutler_url': settings.WATERBUTLER_URL,
+        'login_url': cas.get_login_url(request.url, auto=True),
+        'access_token': session.data.get('auth_user_access_token') or '',
     }
 
 
@@ -195,10 +201,17 @@ def make_url_map(app):
         ),
 
         Rule(
-            '/presentations/',
+            '/meetings/',
             'get',
             conference_views.conference_view,
             OsfWebRenderer('public/pages/meeting_landing.mako'),
+        ),
+
+        Rule(
+            '/presentations/',
+            'get',
+            conference_views.redirect_to_meetings,
+            json_renderer,
         ),
 
         Rule('/news/', 'get', {}, OsfWebRenderer('public/pages/news.mako')),
@@ -274,7 +287,7 @@ def make_url_map(app):
             'get', website_views.get_dashboard, json_renderer),
     ], prefix='/api/v1')
 
-    ### Meta-data ###
+    ### Metadata ###
 
     process_rules(app, [
 
@@ -413,17 +426,18 @@ def make_url_map(app):
         ),
 
         Rule(
-            '/resend/',
-            ['get', 'post'],
-            auth_views.resend_confirmation,
-            OsfWebRenderer('resend.mako', render_mako_string)
-        ),
-
-        Rule(
             '/resetpassword/<verification_key>/',
             ['get', 'post'],
             auth_views.reset_password,
             OsfWebRenderer('public/resetpassword.mako', render_mako_string)
+        ),
+
+        # Resend confirmation URL linked to in CAS login page
+        Rule(
+            '/resend/',
+            ['get', 'post'],
+            auth_views.resend_confirmation,
+            OsfWebRenderer('resend.mako', render_mako_string)
         ),
 
         # TODO: Remove `auth_register_post`
@@ -433,18 +447,13 @@ def make_url_map(app):
 
         Rule(['/login/', '/account/'], 'get',
              auth_views.auth_login, OsfWebRenderer('public/login.mako')),
-        Rule('/login/', 'post', auth_views.auth_login,
-             OsfWebRenderer('public/login.mako'), endpoint_suffix='__post'),
         Rule('/login/first/', 'get', auth_views.auth_login,
              OsfWebRenderer('public/login.mako'),
              endpoint_suffix='__first', view_kwargs={'first': True}),
-        Rule('/login/two_factor/', ['get', 'post'], auth_views.two_factor,
-             OsfWebRenderer('public/two_factor.mako')),
         Rule('/logout/', 'get', auth_views.auth_logout, notemplate),
-        # TODO(hrybacki): combining the get/posts into a single rule is causing a build error and needs debugging
-        Rule('/forgotpassword/', 'get', auth_views._forgot_password,
+        Rule('/forgotpassword/', 'get', auth_views.forgot_password_get,
              OsfWebRenderer('public/forgot_password.mako')),
-        Rule('/forgotpassword/', 'post', auth_views.forgot_password,
+        Rule('/forgotpassword/', 'post', auth_views.forgot_password_post,
              OsfWebRenderer('public/login.mako')),
 
         Rule([
@@ -473,8 +482,6 @@ def make_url_map(app):
              OsfWebRenderer('profile.mako')),
         Rule('/settings/key_history/<kid>/', 'get', profile_views.user_key_history,
              OsfWebRenderer('profile/key_history.mako')),
-        Rule('/addons/', 'get', profile_views.profile_addons,
-             OsfWebRenderer('profile/addons.mako')),
         Rule(["/user/merge/"], 'get', auth_views.merge_user_get,
              OsfWebRenderer("merge_accounts.mako")),
         Rule(["/user/merge/"], 'post', auth_views.merge_user_post,
@@ -531,6 +538,7 @@ def make_url_map(app):
 
         Rule('/profile/', 'get', profile_views.profile_view, json_renderer),
         Rule('/profile/', 'put', profile_views.update_user, json_renderer),
+        Rule('/resend/', 'put', profile_views.resend_confirmation, json_renderer),
         Rule('/profile/<uid>/', 'get', profile_views.profile_view_id, json_renderer),
 
         # Used by profile.html
@@ -549,6 +557,20 @@ def make_url_map(app):
              profile_views.get_profile_summary, json_renderer),
         Rule('/user/<uid>/<pid>/claim/email/', 'post',
              project_views.contributor.claim_user_post, json_renderer),
+
+        Rule(
+            '/profile/export/',
+            'post',
+            profile_views.request_export,
+            json_renderer,
+        ),
+
+        Rule(
+            '/profile/deactivate/',
+            'post',
+            profile_views.request_deactivation,
+            json_renderer,
+        ),
 
         Rule(
             [
@@ -702,9 +724,6 @@ def make_url_map(app):
 
         # # TODO: Add API endpoint for tags
         # Rule('/tags/<tag>/', 'get', project_views.tag.project_tag, OsfWebRenderer('tags.mako')),
-
-        Rule('/folder/<nid>', 'get', project_views.node.folder_new,
-             OsfWebRenderer('project/new_folder.mako')),
         Rule('/api/v1/folder/<nid>', 'post', project_views.node.folder_new_post, json_renderer),
         Rule('/project/new/<pid>/beforeTemplate/', 'get',
              project_views.node.project_before_template, json_renderer),
@@ -766,6 +785,32 @@ def make_url_map(app):
             '/project/<pid>/node/<nid>/registrations/',
         ], 'get', project_views.node.node_registrations,
             OsfWebRenderer('project/registrations.mako')),
+
+        Rule([
+            '/project/<pid>/retraction/',
+            '/project/<pid>/node/<nid>/retraction/',
+        ], 'get', project_views.register.node_registration_retraction_get,
+            OsfWebRenderer('project/retract_registration.mako')),
+        Rule([
+            '/project/<pid>/retraction/approve/<token>/',
+            '/project/<pid>/node/<nid>/retraction/approve/<token>/',
+        ], 'get', project_views.register.node_registration_retraction_approve,
+            OsfWebRenderer('error.mako', render_mako_string)),
+        Rule([
+            '/project/<pid>/retraction/disapprove/<token>/',
+            '/project/<pid>/node/<nid>/retraction/disapprove/<token>/',
+        ], 'get', project_views.register.node_registration_retraction_disapprove,
+            OsfWebRenderer('error.mako', render_mako_string)),
+        Rule([
+            '/project/<pid>/embargo/approve/<token>/',
+            '/project/<pid>/node/<nid>/embargo/approve/<token>/',
+        ], 'get', project_views.register.node_registration_embargo_approve,
+            OsfWebRenderer('error.mako', render_mako_string)),
+        Rule([
+            '/project/<pid>/embargo/disapprove/<token>/',
+            '/project/<pid>/node/<nid>/embargo/disapprove/<token>/',
+        ], 'get', project_views.register.node_registration_embargo_disapprove,
+            OsfWebRenderer('error.mako', render_mako_string)),
 
         Rule(
             '/ids/<category>/<path:value>/',
@@ -1068,6 +1113,17 @@ def make_url_map(app):
             '/project/new/<nid>/',
         ], 'post', project_views.node.project_new_from_template, json_renderer),
 
+        # Update
+        Rule(
+            [
+                '/project/<pid>/',
+                '/project/<pid>/node/<nid>/',
+            ],
+            'put',
+            project_views.node.update_node,
+            json_renderer,
+        ),
+
         # Remove
         Rule(
             [
@@ -1163,6 +1219,11 @@ def make_url_map(app):
             '/project/<pid>/register/<template>/',
             '/project/<pid>/node/<nid>/register/<template>/',
         ], 'get', project_views.register.node_register_template_page, json_renderer),
+
+        Rule([
+            '/project/<pid>/retraction/',
+            '/project/<pid>/node/<nid>/retraction/'
+        ], 'post', project_views.register.node_registration_retraction_post, json_renderer),
 
         Rule([
             '/project/<pid>/register/<template>/',
@@ -1274,12 +1335,11 @@ def make_url_map(app):
         ),
         Rule(
             [
-                '/project/<pid>/files/<provider>/<path:path>/',
-                '/project/<pid>/node/<nid>/files/<provider>/<path:path>/',
+                '/registration/<pid>/callbacks/',
             ],
-            'get',
-            addon_views.addon_render_file,
-            json_renderer
+            'put',
+            project_views.register.registration_callbacks,
+            json_renderer,
         ),
         Rule(
             '/settings/addons/',

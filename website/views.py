@@ -25,6 +25,7 @@ from framework.auth.decorators import must_be_logged_in
 from website.models import Guid
 from website.models import Node
 from website.util import rubeus
+from website.util import sanitize
 from website.project import model
 from website.util import web_url_for
 from website.util import permissions
@@ -76,11 +77,12 @@ def _render_node(node, auth=None):
         'primary': node.primary,
         'date_modified': utils.iso8601format(node.date_modified),
         'category': node.category,
-        'permissions': perm,  # A string, e.g. 'admin', or None
+        'permissions': perm,  # A string, e.g. 'admin', or None,
+        'archiving': node.archiving,
     }
 
 
-def _render_nodes(nodes, auth=None):
+def _render_nodes(nodes, auth=None, show_path=False):
     """
 
     :param nodes:
@@ -92,6 +94,7 @@ def _render_nodes(nodes, auth=None):
             for node in nodes
         ],
         'rescale_ratio': _rescale_ratio(auth, nodes),
+        'show_path': show_path
     }
     return ret
 
@@ -122,7 +125,6 @@ def find_dashboard(user):
 @must_be_logged_in
 def get_dashboard(auth, nid=None, **kwargs):
     user = auth.user
-
     if nid is None:
         node = find_dashboard(user)
         dashboard_projects = [rubeus.to_project_root(node, auth, **kwargs)]
@@ -148,39 +150,14 @@ def get_all_projects_smart_folder(auth, **kwargs):
     user = auth.user
 
     contributed = user.node__contributed
-
     nodes = contributed.find(
-        Q('category', 'eq', 'project') &
-        Q('is_deleted', 'eq', False) &
-        Q('is_registration', 'eq', False) &
-        Q('is_folder', 'eq', False) &
-        # parent is not in the nodes list
-        Q('__backrefs.parent.node.nodes', 'eq', None)
-    ).sort('-title')
-
-    parents_to_exclude = contributed.find(
-        Q('category', 'eq', 'project') &
         Q('is_deleted', 'eq', False) &
         Q('is_registration', 'eq', False) &
         Q('is_folder', 'eq', False)
-    )
+    ).sort('-title')
 
-    comps = contributed.find(
-        Q('is_folder', 'eq', False) &
-        # parent is not in the nodes list
-        Q('__backrefs.parent.node.nodes', 'nin', parents_to_exclude.get_keys()) &
-        # is not in the nodes list
-        Q('_id', 'nin', nodes.get_keys()) &
-        # exclude deleted nodes
-        Q('is_deleted', 'eq', False) &
-        # exclude registrations
-        Q('is_registration', 'eq', False)
-    )
-
-    return_value = [rubeus.to_project_root(node, auth, **kwargs) for node in comps]
-    return_value.extend([rubeus.to_project_root(node, auth, **kwargs) for node in nodes])
-    return return_value
-
+    keys = nodes.get_keys()
+    return [rubeus.to_project_root(node, auth, **kwargs) for node in nodes if node.parent_id not in keys]
 
 @must_be_logged_in
 def get_all_registrations_smart_folder(auth, **kwargs):
@@ -189,37 +166,17 @@ def get_all_registrations_smart_folder(auth, **kwargs):
     contributed = user.node__contributed
 
     nodes = contributed.find(
-        Q('category', 'eq', 'project') &
-        Q('is_deleted', 'eq', False) &
-        Q('is_registration', 'eq', True) &
-        Q('is_folder', 'eq', False) &
-        # parent is not in the nodes list
-        Q('__backrefs.parent.node.nodes', 'eq', None)
-    ).sort('-title')
 
-    parents_to_exclude = contributed.find(
-        Q('category', 'eq', 'project') &
         Q('is_deleted', 'eq', False) &
         Q('is_registration', 'eq', True) &
         Q('is_folder', 'eq', False)
-    )
+    ).sort('-title')
 
-    comps = contributed.find(
-        Q('is_folder', 'eq', False) &
-        # parent is not in the nodes list
-        Q('__backrefs.parent.node.nodes', 'nin', parents_to_exclude.get_keys()) &
-        # is not in the nodes list
-        Q('_id', 'nin', nodes.get_keys()) &
-        # exclude deleted nodes
-        Q('is_deleted', 'eq', False) &
-        # exclude registrations
-        Q('is_registration', 'eq', True)
-    )
-
-    return_value = [rubeus.to_project_root(comp, auth, **kwargs) for comp in comps]
-    return_value.extend([rubeus.to_project_root(node, auth, **kwargs) for node in nodes])
-    return return_value
-
+    # Note(hrybacki): is_retracted and pending_embargo are property methods
+    # and cannot be directly queried
+    nodes = filter(lambda node: not node.is_retracted and not node.pending_embargo, nodes)
+    keys = [node._id for node in nodes]
+    return [rubeus.to_project_root(node, auth, **kwargs) for node in nodes if node.ids_above.isdisjoint(keys)]
 
 @must_be_logged_in
 def get_dashboard_nodes(auth):
@@ -243,13 +200,10 @@ def get_dashboard_nodes(auth):
         Q('is_folder', 'eq', False)
     )
 
-    # TODO: Store truthy values in a named constant available site-wide
     if request.args.get('no_components') not in [True, 'true', 'True', '1', 1]:
         comps = contributed.find(
             # components only
             Q('category', 'ne', 'project') &
-            # parent is not in the nodes list
-            Q('__backrefs.parent.node.nodes', 'nin', nodes.get_keys()) &
             # exclude deleted nodes
             Q('is_deleted', 'eq', False) &
             # exclude registrations
@@ -318,7 +272,7 @@ def watched_logs_get(**kwargs):
     }
 
 
-def serialize_log(node_log, anonymous=False):
+def serialize_log(node_log, auth=None, anonymous=False):
     '''Return a dictionary representation of the log.'''
     return {
         'id': str(node_log._primary_key),
@@ -328,9 +282,9 @@ def serialize_log(node_log, anonymous=False):
         'contributors': [node_log._render_log_contributor(c) for c in node_log.params.get("contributors", [])],
         'api_key': node_log.api_key.label if node_log.api_key else '',
         'action': node_log.action,
-        'params': node_log.params,
+        'params': sanitize.safe_unescape_html(node_log.params),
         'date': utils.iso8601format(node_log.date),
-        'node': node_log.node.serialize() if node_log.node else None,
+        'node': node_log.node.serialize(auth) if node_log.node else None,
         'anonymous': anonymous
     }
 

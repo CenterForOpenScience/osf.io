@@ -2,136 +2,241 @@
 /**
  * Github FileBrowser configuration module.
  */
-var m = require('mithril');
-var URI = require('URIjs');
 
+var m = require('mithril');
+var $ = require('jquery');
+var URI = require('URIjs');
 var Fangorn = require('js/fangorn');
 var waterbutler = require('js/waterbutler');
+var $osf = require('js/osfHelpers');
 
+// Cross browser key codes for the Command key
+var commandKeys = [224, 17, 91, 93];
 
 function _uploadUrl(item, file) {
     return waterbutler.buildTreeBeardUpload(item, file, {branch: item.data.branch});
 }
 
+// TODO: Refactor, repeating from core function too much
+function _removeEvent (event, items) {
+    var tb = this;
+    function cancelDelete() {
+        tb.modal.dismiss();
+    }
 
-// Define Fangorn Button Actions
-function _fangornActionColumn (item, col){
-    var self = this;
-    var buttons = [];
-
-    function _removeEvent (event, item, col) {
-        try {
-            event.stopPropagation();
-        } catch (e) {
-            window.event.cancelBubble = true;
-        }
-        var tb = this;
-
-        function cancelDelete () {
-            this.modal.dismiss();
-        }
-        function runDelete () {
-            var tb = this;
-            $('.tb-modal-footer .btn-success').html('<i> Deleting...</i>').attr('disabled', 'disabled');
-            // delete from server, if successful delete from view
-            $.ajax({
-                url: waterbutler.buildTreeBeardDelete(item, {branch: item.data.branch, sha: item.data.extra.fileSha}),
-                type : 'DELETE'
-            })
-            .done(function(data) {
+    function runDelete (item) {
+        tb.select('.tb-modal-footer .text-danger').html('<i> Deleting...</i>').css('color', 'grey');;
+        // delete from server, if successful delete from view
+        $.ajax({
+            url: waterbutler.buildTreeBeardDelete(item, {branch: item.data.branch, sha: item.data.extra.fileSha}),
+            type : 'DELETE',
+            beforeSend: $osf.setXHRAuthorization
+        }).done(function (data) {
                 // delete view
                 tb.deleteNode(item.parentID, item.id);
+                Fangorn.Utils.dismissToolbar.call(tb);
                 tb.modal.dismiss();
-            })
-            .fail(function(data){
+                tb.clearMultiselect();
+
+        }).fail(function (data) {
                 tb.modal.dismiss();
+                Fangorn.Utils.dismissToolbar.call(tb);
                 item.notify.update('Delete failed.', 'danger', undefined, 3000);
-            });
+                tb.clearMultiselect();
+        });
+    }
+
+    function runDeleteMultiple(items){
+        items.forEach(function(item){
+            runDelete(item);
+        });
+    }
+
+    // If there is only one item being deleted, don't complicate the issue:
+    if(items.length === 1) {
+        var parent = items[0].parent();
+        var mithrilContentSingle = m('div', [
+            m('h3.break-word', 'Delete "' + items[0].data.name + '"'),
+            m('p', 'This action is irreversible.'),
+            parent.children.length < 2 ? m('p', 'If a folder in Github has no children it will automatically be removed.') : ''
+        ]);
+        var mithrilButtonsSingle = m('div', [
+            m('span.tb-modal-btn', { 'class' : 'text-primary', onclick : function() { cancelDelete(); } }, 'Cancel'),
+            m('span.tb-modal-btn', { 'class' : 'text-danger', onclick : function() { runDelete(items[0]); }  }, 'Delete')
+        ]);
+        // This is already being checked before this step but will keep this edit permission check
+        if(items[0].data.permissions.edit){
+            tb.modal.update(mithrilContentSingle, mithrilButtonsSingle);
         }
-        if (item.data.permissions.edit) {
-            var mithrilContent = m('div', [
-                    m('h3', 'Delete "' + item.data.name+ '"?'),
-                    m('p', 'This action is irreversible.')
+    } else {
+        // Check if all items can be deleted
+        var canDelete = true;
+        var deleteList = [];
+        var noDeleteList = [];
+        var mithrilContentMultiple;
+        var mithrilButtonsMultiple;
+        items.forEach(function(item, index, arr){
+            if(!item.data.permissions.edit){
+                canDelete = false;
+                noDeleteList.push(item);
+            } else {
+                deleteList.push(item);
+            }
+        });
+        // If all items can be deleted
+        if(canDelete){
+            mithrilContentMultiple = m('div', [
+                    m('h3.break-word', 'Delete multiple files?'),
+                    m('p', 'This action is irreversible.'),
+                    deleteList.map(function(item){
+                        return m('.fangorn-canDelete.text-success', item.data.name);
+                    })
                 ]);
-            var mithrilButtons = m('div', [
-                    m('button', { 'class' : 'btn btn-default m-r-md', onclick : function() { cancelDelete.call(tb); } }, 'Cancel'),
-                    m('button', { 'class' : 'btn btn-success', onclick : function() { runDelete.call(tb); }  }, 'OK')
+            mithrilButtonsMultiple =  m('div', [
+                    m('span.tb-modal-btn', { 'class' : 'text-primary', onclick : function() { cancelDelete(); } }, 'Cancel'),
+                    m('span.tb-modal-btn', { 'class' : 'text-danger', onclick : function() { runDeleteMultiple.call(tb, deleteList); }  }, 'Delete All')
                 ]);
-            tb.modal.update(mithrilContent, mithrilButtons);
         } else {
-            item.notify.update('You don\'t have permission to delete this file.', 'info', undefined, 3000);
+            mithrilContentMultiple = m('div', [
+                    m('h3.break-word', 'Delete multiple files?'),
+                    m('p', 'Some of these files can\'t be deleted but you can delete the ones highlighted with green. This action is irreversible.'),
+                    deleteList.map(function(n){
+                        return m('.fangorn-canDelete.text-success', n.data.name);
+                    }),
+                    noDeleteList.map(function(n){
+                        return m('.fangorn-noDelete.text-warning', n.data.name);
+                    })
+                ]);
+            mithrilButtonsMultiple =  m('div', [
+                    m('span.tb-modal-btn', { 'class' : 'text-primary', onclick : function() { cancelDelete(); } }, 'Cancel'),
+                    m('span.tb-modal-btn', { 'class' : 'text-danger', onclick : function() { runDeleteMultiple.call(tb, deleteList); }  }, 'Delete Some')
+                ]);
         }
+        tb.modal.update(mithrilContentMultiple, mithrilButtonsMultiple);
     }
 
+    return true; // Let fangorn know this config option was used.
+}
 
-    function _downloadEvent (event, item, col) {
-        event.stopPropagation();
-        window.location = waterbutler.buildTreeBeardDownload(item, {fileSha: item.data.extra.fileSha});
-    }
 
-    // Download Zip File
-    if (item.kind === 'folder') {
-        // If File and FileRead are not defined dropzone is not supported and neither is uploads
-        if (window.File && window.FileReader && item.data.permissions.edit) {
-            buttons.push({
-                'name' : '',
-                'tooltip' : 'Upload files',
-                'icon' : 'fa fa-upload',
-                'css' : 'fangorn-clickable btn btn-default btn-xs',
-                'onclick' : Fangorn.ButtonEvents._uploadEvent
-            });
+// Define Fangorn Button Actions
+var _githubItemButtons = {
+    view: function (ctrl, args, children) {
+        var tb = args.treebeard;
+        var item = args.item;
+        var buttons = [];
+        function _downloadEvent(event, item, col) {
+            event.stopPropagation();
+            window.location = waterbutler.buildTreeBeardDownload(item, {fileSha: item.data.extra.fileSha});
         }
-
-        if (item.data.addonFullname) {
-            buttons.push(
-                {
-                    'name' : '',
-                    'tooltip' : 'Download Repository',
-                    'icon' : 'fa fa-download',
-                    'css' : 'fangorn-clickable btn btn-info btn-xs',
-                    'onclick' : function(){window.location = item.data.urls.zip;}
-                },
-                {
-                    'name' : '',
-                    'tooltip' : 'Go to repository webpage',
-                    'icon' : 'fa fa-external-link',
-                    'css' : 'btn btn-primary btn-xs',
-                    'onclick' : function(){window.location = item.data.urls.repo;}//GO TO EXTERNAL PAGE
+        // Download Zip File
+        if (item.kind === 'folder') {
+            var branchArray = [];
+            if (item.data.branches) {
+                item.data.branch = item.data.branch || item.data.defaultBranch;
+                for (var i = 0; i < item.data.branches.length; i++) {
+                    var selected = item.data.branches[i] === item.data.branch ? 'selected' : '';
+                    branchArray.push(m('option', {
+                        selected: selected,
+                        value: item.data.branches[i]
+                    }, item.data.branches[i]));
                 }
+            }
+            // If File and FileRead are not defined dropzone is not supported and neither is uploads
+            if (window.File && window.FileReader && item.data.permissions && item.data.permissions.edit) {
+                buttons.push(
+                    m.component(Fangorn.Components.button, {
+                        onclick: function (event) {
+                            Fangorn.ButtonEvents._uploadEvent.call(tb, event, item);
+                        },
+                        icon: 'fa fa-upload',
+                        className: 'text-success'
+                    }, 'Upload'),
+                    m.component(Fangorn.Components.button, {
+                        onclick: function (event) {
+                            tb.toolbarMode(Fangorn.Components.toolbarModes.ADDFOLDER);
+                        },
+                        icon: 'fa fa-plus',
+                        className: 'text-primary'
+                    }, 'Create Folder')
+                );
+            }
+            if (item.data.addonFullname) {
+                buttons.push(
+                    m.component(Fangorn.Components.button, {
+                        onclick: function (event) {
+                            window.location = item.data.urls.zip;
+                        },
+                        icon: 'fa fa-download',
+                        className: 'text-success'
+                    }, 'Download'),
+                    m.component(Fangorn.Components.button, {
+                        onclick: function (event) {
+                            window.open(item.data.urls.repo, '_blank');
+                        },
+                        icon: 'fa fa-external-link',
+                        className: 'text-info'
+                    }, 'Open'),
+                    m.component(Fangorn.Components.dropdown, {
+                        'label': 'Branch: ',
+                        onchange: function (event) {
+                            changeBranch.call(tb, item, event.target.value);
+                        },
+                        icon: 'fa fa-external-link',
+                        className: 'text-info'
+                    }, branchArray)
+                );
+            }
+        } else if (item.kind === 'file') {
+            buttons.push(
+                m.component(Fangorn.Components.button, {
+                    onclick: function (event) {
+                        _downloadEvent.call(tb, event, item);
+                    },
+                    icon: 'fa fa-download',
+                    className: 'text-info'
+                }, 'Download')
+            );
+            if (item.data.permissions && item.data.permissions.edit) {
+                buttons.push(
+                    m.component(Fangorn.Components.button, {
+                        onclick: function (event) {
+                            _removeEvent.call(tb, event, [item]);
+                        },
+                        icon: 'fa fa-trash',
+                        className: 'text-danger'
+                    }, 'Delete')
+                );
+            }
+            if (item.data.permissions && item.data.permissions.view) {
+                buttons.push(
+                    m.component(Fangorn.Components.button, {
+                        onclick: function(event) {
+                            gotoFile.call(tb, item);
+                        },
+                        icon: 'fa fa-external-link',
+                        className : 'text-info'
+                    }, 'View'));
+
+            }
+        }
+
+        if(item.data.provider && !item.data.isAddonRoot && item.data.permissions && item.data.permissions.edit) {
+            buttons.push(
+                m.component(Fangorn.Components.button, {
+                    onclick: function() {
+                        tb.toolbarMode(Fangorn.Components.toolbarModes.RENAME);
+                    },
+                    tooltip: 'Change the name of the item',
+                    icon: 'fa fa-font',
+                    className : 'text-info'
+                }, 'Rename')
             );
         }
-    } else if (item.kind === 'file') {
-        buttons.push({
-            'name' : '',
-            'tooltip' : 'Download file',
-            'icon' : 'fa fa-download',
-            'css' : 'btn btn-info btn-xs',
-            'onclick' : _downloadEvent
-        });
 
-        if (item.data.permissions.edit) {
-            buttons.push({
-                'name' : '',
-                'tooltip' : 'Delete',
-                'icon' : 'fa fa-times',
-                'css' : 'm-l-lg text-danger fg-hover-hide',
-                'style' : 'display:none',
-                'onclick' : _removeEvent
-            });
-        }
+        return m('span', buttons); // Tell fangorn this function is used.
     }
-
-    return buttons.map(function(btn){
-        return m('span', { 'data-col' : item.id }, [
-            m('i', {
-                'class' : btn.css,
-                style : btn.style,
-                'data-toggle' : 'tooltip', title : btn.tooltip, 'data-placement': 'bottom',
-                'onclick' : function(event){ btn.onclick.call(self, event, item, col); }
-            }, [ m('span', { 'class' : btn.icon}, btn.name) ])
-        ]);
-    });
-}
+};
 
 function changeBranch(item, ref){
     item.data.branch = ref;
@@ -153,40 +258,34 @@ function _fangornLazyLoadOnLoad (tree, event) {
     }
 }
 
+function gotoFile (item) {
+    var tb = this;
+    var fileurl = new URI(item.data.nodeUrl)
+        .segment('files')
+        .segment(item.data.provider)
+        .segment(item.data.path.substring(1))
+        .search({branch: item.data.branch})
+        .toString();
+    if(commandKeys.indexOf(tb.pressedKey) !== -1) {
+        window.open(fileurl, '_blank');
+    } else {
+        window.open(fileurl, '_self');
+    }
+}
 function _fangornGithubTitle(item, col)  {
     var tb = this;
-    var branchArray = [];
-    if (item.data.branches) {
-        item.data.branch = item.data.branch || item.data.defaultBranch;
-        for (var i = 0; i < item.data.branches.length; i++) {
-            var selected = item.data.branches[i] === item.data.branch ? 'selected' : '';
-            branchArray.push(m('option', {selected : selected, value:item.data.branches[i]}, item.data.branches[i]));
-        }
-    }
-
     if (item.data.addonFullname) {
+        var branch = item.data.branch || item.data.defaultBranch;
         return m('span',[
-            m('github-name', item.data.name + ' '),
-            m('span',[
-                m('select[name=branch-selector]', { onchange: function(ev) { changeBranch.call(tb, item, ev.target.value ); }, 'data-toggle' : 'tooltip', title : 'Change Branch', 'data-placement': 'bottom' }, branchArray)
-            ])
+            m('github-name', item.data.name + ' (' + branch + ')')
         ]);
     } else {
         if (item.kind === 'file' && item.data.permissions.view) {
             return m('span',[
-                m('github-name', {
+                m('github-name.fg-file-links', {
                     onclick: function() {
-                        var redir = new URI(item.data.nodeUrl);
-                        window.location = new URI(item.data.nodeUrl)
-                            .segment('files')
-                            .segment(item.data.provider)
-                            .segment(item.data.path.substring(1))
-                            .search({branch: item.data.branch})
-                            .toString();
-                    },
-                    'data-toggle': 'tooltip',
-                    title: 'View file',
-                    'data-placement': 'bottom'
+                        gotoFile.call(tb, item);
+                    }
                 }, item.data.name)]);
         } else {
             return m('span', item.data.name);
@@ -196,28 +295,25 @@ function _fangornGithubTitle(item, col)  {
 
 
 function _fangornColumns (item) {
+    var tb = this;
     var selectClass = '';
     var node = item.parent().parent();
-    if (item.data.kind === 'file' && this.currentFileID === item.id) {
-        selectClass = 'fangorn-hover';
+    if (item.data.kind === 'file' && tb.currentFileID === item.id) {
+        item.css = 'fangorn-selected';
+        tb.multiselected([item]);
     }
 
     var columns = [];
+
     columns.push({
         data : 'name',
         folderIcons : true,
         filter: true,
-        css: selectClass,
         custom : _fangornGithubTitle
     });
 
-    if(this.options.placement === 'project-files') {
+    if(tb.options.placement === 'project-files') {
         columns.push(
-            {
-            css : 'action-col',
-            filter : false,
-            custom : _fangornActionColumn
-        },
         {
             data  : 'downloads',
             filter : false,
@@ -253,5 +349,7 @@ Fangorn.config.github = {
     folderIcon: _fangornFolderIcons,
     onUploadComplete: _fangornUploadComplete,
     lazyLoadOnLoad: _fangornLazyLoadOnLoad,
-    uploadSuccess: _fangornUploadSuccess
+    uploadSuccess: _fangornUploadSuccess,
+    itemButtons: _githubItemButtons,
+    removeEvent : _removeEvent
 };

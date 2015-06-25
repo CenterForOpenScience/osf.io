@@ -133,12 +133,40 @@ class Mendeley(ExternalProvider):
         :return Citation:
         """
         csl = {
-            'id': document.json.get('id'),
-            'type': document.json.get('type'),
+            'id': document.json.get('id')
         }
 
-        if document.title:
-            csl['title'] = document.title
+        CSL_TYPE_MAP = {
+            'book_section': 'chapter',
+            'case': 'legal_case',
+            'computer_program': 'article',
+            'conference_proceedings': 'paper-conference',
+            'encyclopedia_article': 'entry-encyclopedia',
+            'film': 'motion_picture',
+            'generic': 'article',
+            'hearing': 'speech',
+            'journal': 'article-journal',
+            'magazine_article': 'article-magazine',
+            'newspaper_article': 'article-newspaper',
+            'statute': 'legislation',
+            'television_broadcast': 'broadcast',
+            'web_page': 'webpage',
+            'working_paper': 'report'
+        }
+
+        csl_type = document.json.get('type')
+
+        if csl_type in CSL_TYPE_MAP:
+            csl['type'] = CSL_TYPE_MAP[csl_type]
+
+        else:
+            csl['type'] = 'article'
+
+        if document.json.get('abstract'):
+            csl['abstract'] = document.json.get('abstract')
+
+        if document.json.get('accessed'):
+            csl['accessed'] = document.json.get('accessed')
 
         if document.json.get('authors'):
             csl['author'] = [
@@ -148,27 +176,89 @@ class Mendeley(ExternalProvider):
                 } for person in document.json.get('authors')
             ]
 
-        if document.json.get('source'):
-            csl['source'] = document.json.get('source')
+        if document.json.get('chapter'):
+            csl['chapter-number'] = document.json.get('chapter')
 
-        if document.year:
-            csl['issued'] = {'date-parts': [[document.year]]}
+        if document.json.get('city') and document.json.get('country'):
+            csl['publisher-place'] = document.json.get('city') + ", " + document.json.get('country')
+
+        elif document.json.get('city'):
+            csl['publisher-place'] = document.json.get('city')
+
+        elif document.json.get('country'):
+            csl['publisher-place'] = document.json.get('country')
+
+        if document.json.get('edition'):
+            csl['edition'] = document.json.get('edition')
+
+        if document.json.get('editors'):
+            csl['editor'] = [
+                {
+                    'given': person.get('first_name'),
+                    'family': person.get('last_name'),
+                } for person in document.json.get('editors')
+            ]
+
+        if document.json.get('genre'):
+            csl['genre'] = document.json.get('genre')
 
         # gather identifiers
         idents = document.json.get('identifiers')
         if idents is not None:
+            if idents.get('doi'):
+                csl['DOI'] = idents.get('doi')
             if idents.get('isbn'):
                 csl['ISBN'] = idents.get('isbn')
             if idents.get('issn'):
                 csl['ISSN'] = idents.get('issn')
             if idents.get('pmid'):
                 csl['PMID'] = idents.get('pmid')
-            if idents.get('doi'):
-                csl['DOI'] = idents.get('doi')
+
+        if document.json.get('issue'):
+            csl['issue'] = document.json.get('issue')
+
+        if document.json.get('language'):
+            csl['language'] = document.json.get('language')
+
+        if document.json.get('medium'):
+            csl['medium'] = document.json.get('medium')
+
+        if document.json.get('pages'):
+            csl['page'] = document.json.get('pages')
+
+        if document.json.get('publisher'):
+            csl['publisher'] = document.json.get('publisher')
+
+        if csl_type == 'thesis':
+            csl['publisher'] = document.json.get('institution')
+
+        if document.json.get('revision'):
+            csl['number'] = document.json.get('revision')
+
+        if document.json.get('series'):
+            csl['collection-title'] = document.json.get('series')
+
+        if document.json.get('series_editor'):
+            csl['collection-editor'] = document.json.get('series_editor')
+
+        if document.json.get('short_title'):
+            csl['shortTitle'] = document.json.get('short_title')
+
+        if document.json.get('source'):
+            csl['container-title'] = document.json.get('source')
+
+        if document.json.get('title'):
+            csl['title'] = document.json.get('title')
+
+        if document.json.get('volume'):
+            csl['volume'] = document.json.get('volume')
 
         urls = document.json.get('websites', [])
         if urls:
             csl['URL'] = urls[0]
+
+        if document.json.get('year'):
+            csl['issued'] = {'date-parts': [[document.json.get('year')]]}
 
         return csl
 

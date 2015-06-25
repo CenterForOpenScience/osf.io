@@ -7,10 +7,11 @@ import logging
 import datetime
 import urlparse
 from collections import OrderedDict
+import warnings
 
 import pytz
-import blinker
 from flask import request
+from django.core.urlresolvers import reverse
 from HTMLParser import HTMLParser
 
 from modularodm import Q
@@ -19,6 +20,7 @@ from modularodm.validators import MaxLengthValidator
 from modularodm.exceptions import ValidationTypeError
 from modularodm.exceptions import ValidationValueError
 
+from api.base.utils import absolute_reverse
 from framework import status
 from framework.mongo import ObjectId
 from framework.mongo import StoredObject
@@ -29,25 +31,29 @@ from framework.exceptions import PermissionsError
 from framework.guid.model import GuidStoredObject
 from framework.auth.utils import privacy_info_handle
 from framework.analytics import tasks as piwik_tasks
-from framework.mongo.utils import to_mongo, to_mongo_key
+from framework.mongo.utils import to_mongo, to_mongo_key, unique_on
 from framework.analytics import (
     get_basic_counters, increment_user_activity_counters
 )
 from framework.sentry import log_exception
 from framework.transactions.context import TokuTransaction
+from framework.utils import iso8601format
 
-from website import language
-from website import settings
+from website import language, settings, security
 from website.util import web_url_for
 from website.util import api_url_for
-from website.exceptions import NodeStateError
+from website.exceptions import (
+    NodeStateError, InvalidRetractionApprovalToken,
+    InvalidRetractionDisapprovalToken, InvalidEmbargoApprovalToken,
+    InvalidEmbargoDisapprovalToken,
+)
 from website.citations.utils import datetime_to_csl
 from website.identifiers.model import IdentifierMixin
 from website.util.permissions import expand_permissions
 from website.util.permissions import CREATOR_PERMISSIONS
 from website.project.metadata.schemas import OSF_META_SCHEMAS
 from website.util.permissions import DEFAULT_CONTRIBUTOR_PERMISSIONS
-
+from website.project import signals as project_signals
 
 html_parser = HTMLParser()
 
@@ -71,13 +77,6 @@ def has_anonymous_link(node, auth):
         for link in node.private_links_active
         if link.key == view_only_link
     )
-
-
-signals = blinker.Namespace()
-contributor_added = signals.signal('contributor-added')
-unreg_contributor_added = signals.signal('unreg-contributor-added')
-write_permissions_revoked = signals.signal('write-permissions-revoked')
-
 
 class MetaSchema(StoredObject):
 
@@ -164,7 +163,6 @@ class Comment(GuidStoredObject):
 
     @classmethod
     def create(cls, auth, **kwargs):
-
         comment = cls(**kwargs)
         comment.save()
 
@@ -283,6 +281,7 @@ class ApiKey(StoredObject):
         return self.node__keyed[0] if self.node__keyed else None
 
 
+@unique_on(['params.node', '_id'])
 class NodeLog(StoredObject):
 
     _id = fields.StringField(primary=True, default=lambda: str(ObjectId()))
@@ -290,6 +289,9 @@ class NodeLog(StoredObject):
     date = fields.DateTimeField(default=datetime.datetime.utcnow, index=True)
     action = fields.StringField(index=True)
     params = fields.DictionaryField()
+    should_hide = fields.BooleanField(default=False)
+
+    was_connected_to = fields.ForeignField('node', list=True)
 
     user = fields.ForeignField('user', backref='created')
     api_key = fields.ForeignField('apikey', backref='created')
@@ -331,6 +333,13 @@ class NodeLog(StoredObject):
     EDITED_TITLE = 'edit_title'
     EDITED_DESCRIPTION = 'edit_description'
 
+    UPDATED_FIELDS = 'updated_fields'
+
+    FILE_MOVED = 'addon_file_moved'
+    FILE_COPIED = 'addon_file_copied'
+
+    FOLDER_CREATED = 'folder_created'
+
     FILE_ADDED = 'file_added'
     FILE_UPDATED = 'file_updated'
     FILE_REMOVED = 'file_removed'
@@ -346,6 +355,14 @@ class NodeLog(StoredObject):
     MADE_CONTRIBUTOR_INVISIBLE = 'made_contributor_invisible'
 
     EXTERNAL_IDS_ADDED = 'external_ids_added'
+
+    EMBARGO_APPROVED = 'embargo_approved'
+    EMBARGO_CANCELLED = 'embargo_cancelled'
+    EMBARGO_COMPLETED = 'embargo_completed'
+    EMBARGO_INITIATED = 'embargo_initiated'
+    RETRACTION_APPROVED = 'retraction_approved'
+    RETRACTION_CANCELLED = 'retraction_cancelled'
+    RETRACTION_INITIATED = 'retraction_initiated'
 
     def __repr__(self):
         return ('<NodeLog({self.action!r}, params={self.params!r}) '
@@ -476,6 +493,7 @@ class Pointer(StoredObject):
             )
         )
 
+
 def get_pointer_parent(pointer):
     """Given a `Pointer` object, return its parent node.
     """
@@ -483,7 +501,7 @@ def get_pointer_parent(pointer):
     # of the pointed-at `Node`, not the parents of the `Pointer`; use the
     # back-reference syntax to find the parents of the `Pointer`.
     parent_refs = pointer.node__parent
-    assert len(parent_refs) == 1, 'Pointer must have exactly one parent'
+    assert len(parent_refs) == 1, 'Pointer must have exactly one parent.'
     return parent_refs[0]
 
 
@@ -497,12 +515,15 @@ def validate_category(value):
 
 
 def validate_title(value):
-    """Validator for Node#title. Makes sure that the value exists.
+    """Validator for Node#title. Makes sure that the value exists and is not
+    above 200 characters.
     """
     if value is None or not value.strip():
         raise ValidationValueError('Title cannot be blank.')
-    return True
 
+    if len(value) > 200:
+        raise ValidationValueError('Title cannot exceed 200 characters.')
+    return True
 
 def validate_user(value):
     if value != {}:
@@ -511,6 +532,11 @@ def validate_user(value):
             raise ValidationValueError('User does not exist.')
     return True
 
+class NodeUpdateError(Exception):
+    def __init__(self, reason, key, *args, **kwargs):
+        super(NodeUpdateError, self).__init__(*args, **kwargs)
+        self.key = key
+        self.reason = reason
 
 class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
 
@@ -526,9 +552,12 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         'tags',
         'is_fork',
         'is_registration',
+        'retraction',
+        'embargo',
         'is_public',
         'is_deleted',
         'wiki_pages_current',
+        'is_retracted',
     }
 
     # Maps category identifier => Human-readable representation for use in
@@ -546,6 +575,12 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         ('communication', 'Communication'),
         ('other', 'Other'),
     ])
+
+    WRITABLE_WHITELIST = [
+        'title',
+        'description',
+        'category',
+    ]
 
     _id = fields.StringField(primary=True)
 
@@ -577,6 +612,8 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
     registered_user = fields.ForeignField('user', backref='registered')
     registered_schema = fields.ForeignField('metaschema', backref='registered')
     registered_meta = fields.DictionaryField()
+    retraction = fields.ForeignField('retraction')
+    embargo = fields.ForeignField('embargo')
 
     is_fork = fields.BooleanField(default=False, index=True)
     forked_date = fields.DateTimeField(index=True)
@@ -594,6 +631,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
     # Dictionary field mapping node wiki page to sharejs private uuid.
     # {<page_name>: <sharejs_id>}
     wiki_private_uuids = fields.DictionaryField()
+    file_guid_to_share_uuids = fields.DictionaryField()
 
     creator = fields.ForeignField('user', backref='created')
     contributors = fields.ForeignField('user', list=True, backref='contributed')
@@ -627,11 +665,6 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
     def __init__(self, *args, **kwargs):
         super(Node, self).__init__(*args, **kwargs)
 
-        # Crash if parent provided and not project
-        project = kwargs.get('project')
-        if project and project.category != 'project':
-            raise ValueError('Parent must be a project.')
-
         if kwargs.get('_is_loaded', False):
             return
 
@@ -647,10 +680,45 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         return ('<Node(title={self.title!r}, category={self.category!r}) '
                 'with _id {self._id!r}>').format(self=self)
 
+    # For Django compatibility
+    @property
+    def pk(self):
+        return self._id
+
     @property
     def category_display(self):
         """The human-readable representation of this node's category."""
         return self.CATEGORY_MAP[self.category]
+
+    @property
+    def is_retracted(self):
+        if self.retraction is None and self.parent_node:
+            return self.parent_node.is_retracted
+        return getattr(self.retraction, 'is_retracted', False)
+
+    @property
+    def pending_retraction(self):
+        if self.retraction is None and self.parent_node:
+            return self.parent_node.pending_retraction
+        return getattr(self.retraction, 'pending_retraction', False)
+
+    @property
+    def embargo_end_date(self):
+        if self.embargo is None and self.parent_node:
+            return self.parent_node.embargo_end_date
+        return getattr(self.embargo, 'embargo_end_date', False)
+
+    @property
+    def pending_embargo(self):
+        if self.embargo is None and self.parent_node:
+            return self.parent_node.pending_embargo
+        return getattr(self.embargo, 'pending_embargo', False)
+
+    @property
+    def pending_registration(self):
+        if self.embargo is None and self.parent_node:
+            return self.parent_node.pending_registration
+        return getattr(self.embargo, 'pending_registration', False)
 
     @property
     def private_links(self):
@@ -667,6 +735,15 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
     @property
     def private_link_keys_deleted(self):
         return [x.key for x in self.private_links if x.is_deleted]
+
+    def path_above(self, auth):
+        parents = self.parents
+        return '/' + '/'.join([p.title if p.can_view(auth) else '-- private project --' for p in reversed(parents)])
+
+    @property
+    def ids_above(self):
+        parents = self.parents
+        return {p._id for p in parents}
 
     def can_edit(self, auth=None, user=None):
         """Return if a user is authorized to edit this node.
@@ -689,6 +766,11 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
             (user and self.has_permission(user, 'write'))
             or is_api_node
         )
+
+    def active_contributors(self, include=lambda n: True):
+        for contrib in self.contributors:
+            if contrib.is_active and include(contrib):
+                yield contrib
 
     def is_admin_parent(self, user):
         if self.has_permission(user, 'admin', check_parent=False):
@@ -742,6 +824,12 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
 
     def is_registration_of(self, other):
         return self.is_derived_from(other, 'registered_from')
+
+    @property
+    def forks(self):
+        """List of forks of this node"""
+        return list(self.node__forked.find(Q('is_deleted', 'eq', False) &
+                                           Q('is_registration', 'ne', True)))
 
     def add_permission(self, user, permission, save=False):
         """Grant permission to a user.
@@ -913,7 +1001,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
             self.add_log(
                 message,
                 params={
-                    'project': self.parent_id,
+                    'parent': self.parent_id,
                     'node': self._id,
                     'contributors': [user._id],
                 },
@@ -929,15 +1017,61 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
                 self.is_public or
                 (auth.user and self.has_permission(auth.user, 'read'))
             )
-        return self.can_edit(auth)
+        return self.is_contributor(auth.user)
+
+    def update(self, fields, auth=None, save=True):
+        if self.is_registration:
+            raise NodeUpdateError(reason="Registered content cannot be updated")
+        values = {}
+        for key, value in fields.iteritems():
+            if key not in self.WRITABLE_WHITELIST:
+                continue
+            with warnings.catch_warnings():
+                try:
+                    # This is in place because historically projects and components
+                    # live on different ElasticSearch indexes, and at the time of Node.save
+                    # there is no reliable way to check what the old Node.category
+                    # value was. When the cateogory changes it is possible to have duplicate/dead
+                    # search entries, so always delete the ES doc on categoryt change
+                    # TODO: consolidate Node indexes into a single index, refactor search
+                    if key == 'category':
+                        self.delete_search_entry()
+                    ###############
+                    values[key] = {
+                        'old': getattr(self, key),
+                        'new': value,
+                    }
+                    setattr(self, key, value)
+                except AttributeError:
+                    raise NodeUpdateError(reason="Invalid value for attribute '{0}'".format(key), key=key)
+                except warnings.Warning:
+                    raise NodeUpdateError(reason="Attribute '{0}' doesn't exist on the Node class".format(key), key=key)
+        if save:
+            updated = self.save()
+        else:
+            updated = []
+        for key in values:
+            values[key]['new'] = getattr(self, key)
+        self.add_log(NodeLog.UPDATED_FIELDS,
+                     params={
+                         'node': self._id,
+                         'updated_fields': {
+                             key: {
+                                 'old': values[key]['old'],
+                                 'new': values[key]['new']
+                             }
+                             for key in values
+                         }
+                     },
+                     auth=auth)
+        return updated
 
     def save(self, *args, **kwargs):
-
         update_piwik = kwargs.pop('update_piwik', True)
-
         self.adjust_permissions()
 
         first_save = not self._is_loaded
+
         if first_save and self.is_dashboard:
             existing_dashboards = self.creator.node__contributed.find(
                 Q('is_dashboard', 'eq', True)
@@ -955,34 +1089,22 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         saved_fields = super(Node, self).save(*args, **kwargs)
 
         if first_save and is_original and not suppress_log:
-
-            #
             # TODO: This logic also exists in self.use_as_template()
             for addon in settings.ADDONS_AVAILABLE:
                 if 'node' in addon.added_default:
                     self.add_addon(addon.short_name, auth=None, log=False)
 
-            #
-            if getattr(self, 'project', None):
+            # Define log fields for non-component project
+            log_action = NodeLog.PROJECT_CREATED
+            log_params = {
+                'node': self._primary_key,
+            }
 
+            if getattr(self, 'parent', None):
                 # Append log to parent
-                self.project.nodes.append(self)
-                self.project.save()
-
-                # Define log fields for component
-                log_action = NodeLog.NODE_CREATED
-                log_params = {
-                    'node': self._primary_key,
-                    'project': self.project._primary_key,
-                }
-
-            else:
-
-                # Define log fields for non-component project
-                log_action = NodeLog.PROJECT_CREATED
-                log_params = {
-                    'project': self._primary_key,
-                }
+                self.parent.nodes.append(self)
+                self.parent.save()
+                log_params.update({'parent_node': self.parent._primary_key})
 
             # Add log with appropriate fields
             self.add_log(
@@ -999,7 +1121,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         if not self.is_public:
             if first_save or 'is_public' not in saved_fields:
                 need_update = False
-        if self.is_folder:
+        if self.is_folder or self.archiving:
             need_update = False
         if need_update:
             self.update_search()
@@ -1024,7 +1146,6 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
                         children.
         :return: The `Node` instance created.
         """
-
         changes = changes or dict()
 
         # build the dict of attributes to change for the new node
@@ -1044,6 +1165,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         new.wiki_pages_current = {}
         new.wiki_pages_versions = {}
         new.wiki_private_uuids = {}
+        new.file_guid_to_share_uuids = {}
 
         # set attributes which may be overridden by `changes`
         new.is_public = False
@@ -1148,7 +1270,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         self.add_log(
             action=NodeLog.POINTER_CREATED,
             params={
-                'project': self.parent_id,
+                'parent_node': self.parent_id,
                 'node': self._primary_key,
                 'pointer': {
                     'id': pointer.node._id,
@@ -1184,7 +1306,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         self.add_log(
             action=NodeLog.POINTER_REMOVED,
             params={
-                'project': self.parent_id,
+                'parent_node': self.parent_id,
                 'node': self._primary_key,
                 'pointer': {
                     'id': pointer.node._id,
@@ -1211,6 +1333,42 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
             for node in self.nodes
             if node.primary
         ]
+
+    @property
+    def depth(self):
+        return len(self.parents)
+
+    def next_descendants(self, auth, condition=lambda auth, node: True):
+        """
+        Recursively find the first set of descedants under a given node that meet a given condition
+
+        returns a list of [(node, [children]), ...]
+        """
+        ret = []
+        for node in self.nodes:
+            if condition(auth, node):
+                # base case
+                ret.append((node, []))
+            else:
+                ret.append((node, node.next_descendants(auth, condition)))
+        ret = [item for item in ret if item[1] or condition(auth, item[0])]  # prune empty branches
+        return ret
+
+    def get_descendants_recursive(self, include=lambda n: True):
+        for node in self.nodes:
+            if include(node):
+                yield node
+            if node.primary:
+                for descendant in node.get_descendants_recursive(include):
+                    if include(descendant):
+                        yield descendant
+
+    def get_aggregate_logs_queryset(self, auth):
+        ids = [self._id] + [n._id
+                            for n in self.get_descendants_recursive()
+                            if n.can_view(auth)]
+        query = Q('__backrefs.logged.node.logs', 'in', ids)
+        return NodeLog.find(query).sort('-_id')
 
     @property
     def nodes_pointer(self):
@@ -1296,7 +1454,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         self.add_log(
             NodeLog.POINTER_FORKED,
             params={
-                'project': self.parent_id,
+                'parent_node': self.parent_id,
                 'node': self._primary_key,
                 'pointer': {
                     'id': pointer.node._id,
@@ -1336,7 +1494,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         try:
             return self.logs[-1].date
         except IndexError:
-            return None
+            return self.date_created
 
     def set_title(self, title, auth, save=False):
         """Set the title of this Node and log it.
@@ -1344,14 +1502,15 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         :param str title: The new title.
         :param auth: All the auth information including user, API key.
         """
-        if title is None or not title.strip():
-            raise ValidationValueError('Title cannot be blank.')
+        #Called so validation does not have to wait until save.
+        validate_title(title)
+
         original_title = self.title
         self.title = title
         self.add_log(
             action=NodeLog.EDITED_TITLE,
             params={
-                'project': self.parent_id,
+                'parent_node': self.parent_id,
                 'node': self._primary_key,
                 'title_new': self.title,
                 'title_original': original_title,
@@ -1375,7 +1534,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         self.add_log(
             action=NodeLog.EDITED_DESCRIPTION,
             params={
-                'project': self.parent_node,  # None if no parent
+                'parent_node': self.parent_id,
                 'node': self._primary_key,
                 'description_new': self.description,
                 'description_original': original
@@ -1391,6 +1550,14 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         from website import search
         try:
             search.search.update_node(self)
+        except search.exceptions.SearchUnavailableError as e:
+            logger.exception(e)
+            log_exception()
+
+    def delete_search_entry(self):
+        from website import search
+        try:
+            search.search.delete_node(self)
         except search.exceptions.SearchUnavailableError as e:
             logger.exception(e)
             log_exception()
@@ -1477,6 +1644,9 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
 
         original = self.load(self._primary_key)
 
+        if original.is_deleted:
+            raise NodeStateError('Cannot fork deleted node.')
+
         # Note: Cloning a node copies its `wiki_pages_current` and
         # `wiki_pages_versions` fields, but does not clone the underlying
         # database objects to which these dictionaries refer. This means that
@@ -1489,13 +1659,14 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
 
         # Recursively fork child nodes
         for node_contained in original.nodes:
-            forked_node = None
-            try:  # Catch the potential PermissionsError above
-                forked_node = node_contained.fork_node(auth=auth, title='')
-            except PermissionsError:
-                pass  # If this exception is thrown omit the node from the result set
-            if forked_node is not None:
-                forked.nodes.append(forked_node)
+            if not node_contained.is_deleted:
+                forked_node = None
+                try:  # Catch the potential PermissionsError above
+                    forked_node = node_contained.fork_node(auth=auth, title='')
+                except PermissionsError:
+                    pass  # If this exception is thrown omit the node from the result set
+                if forked_node is not None:
+                    forked.nodes.append(forked_node)
 
         forked.title = title + forked.title
         forked.is_fork = True
@@ -1517,7 +1688,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         forked.add_log(
             action=NodeLog.NODE_FORKED,
             params={
-                'project': original.parent_id,
+                'parent_node': original.parent_id,
                 'node': original._primary_key,
                 'registration': forked._primary_key,
             },
@@ -1527,7 +1698,6 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         )
 
         forked.save()
-
         # After fork callback
         for addon in original.get_addons():
             _, message = addon.after_fork(original, forked, user)
@@ -1536,13 +1706,14 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
 
         return forked
 
-    def register_node(self, schema, auth, template, data):
+    def register_node(self, schema, auth, template, data, parent=None):
         """Make a frozen copy of a node.
 
         :param schema: Schema object
         :param auth: All the auth information including user, API key.
-        :template: Template name
-        :data: Form data
+        :param template: Template name
+        :param data: Form data
+        :param parent Node: parent registration of regitstration to be created
         """
         # NOTE: Admins can register child nodes even if they don't have write access them
         if not self.can_edit(auth=auth) and not self.is_admin_parent(user=auth.user):
@@ -1565,6 +1736,9 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         # database objects to which these dictionaries refer. This means that
         # the cloned node must pass itself to its wiki objects to build the
         # correct URLs to that content.
+        if original.is_deleted:
+            raise NodeStateError('Cannot register deleted node.')
+
         registered = original.clone()
 
         registered.is_registration = True
@@ -1585,37 +1759,27 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
 
         registered.save()
 
+        if parent:
+            registered.parent_node = parent
+
         # After register callback
         for addon in original.get_addons():
             _, message = addon.after_register(original, registered, auth.user)
             if message:
                 status.push_status_message(message)
 
-        registered.nodes = []
-
         for node_contained in original.nodes:
-            registered_node = node_contained.register_node(
-                schema, auth, template, data
-            )
-            if registered_node is not None:
-                registered.nodes.append(registered_node)
-
-        original.add_log(
-            action=NodeLog.PROJECT_REGISTERED,
-            params={
-                'project': original.parent_id,
-                'node': original._primary_key,
-                'registration': registered._primary_key,
-            },
-            auth=auth,
-            log_date=when,
-            save=False,
-        )
-        original.save()
+            if not node_contained.is_deleted:
+                child_registration = node_contained.register_node(
+                    schema, auth, template, data, parent=registered
+                )
+                if child_registration and not child_registration.primary:
+                    registered.nodes.append(child_registration)
 
         registered.save()
-        for node in registered.nodes:
-            node.update_search()
+
+        if settings.ENABLE_ARCHIVER:
+            project_signals.after_create_registration.send(self, dst=registered, user=auth.user)
 
         return registered
 
@@ -1625,7 +1789,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
             self.add_log(
                 action=NodeLog.TAG_REMOVED,
                 params={
-                    'project': self.parent_id,
+                    'parent_node': self.parent_id,
                     'node': self._primary_key,
                     'tag': tag,
                 },
@@ -1645,7 +1809,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
             self.add_log(
                 action=NodeLog.TAG_ADDED,
                 params={
-                    'project': self.parent_id,
+                    'parent_node': self.parent_id,
                     'node': self._primary_key,
                     'tag': tag,
                 },
@@ -1658,6 +1822,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
     def add_log(self, action, params, auth, foreign_user=None, log_date=None, save=True):
         user = auth.user if auth else None
         api_key = auth.api_key if auth else None
+        params['node'] = params.get('node') or params.get('project')
         log = NodeLog(
             action=action,
             user=user,
@@ -1673,35 +1838,17 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
             self.save()
         if user:
             increment_user_activity_counters(user._primary_key, action, log.date)
-        if self.node__parent:
-            parent = self.node__parent[0]
-            parent.logs.append(log)
-            parent.save()
         return log
 
     @property
     def url(self):
         return '/{}/'.format(self._primary_key)
 
-    def web_url_for(self, view_name, _absolute=False, _offload=False, _guid=False, *args, **kwargs):
-        # Note: Check `parent_node` rather than `category` to avoid database
-        # inconsistencies [jmcarp]
-        if self.parent_node is None:
-            return web_url_for(view_name, pid=self._primary_key, _absolute=_absolute,
-                _offload=_offload, _guid=_guid, *args, **kwargs)
-        else:
-            return web_url_for(view_name, pid=self.parent_node._primary_key,
-                nid=self._primary_key, _absolute=_absolute, _offload=_offload, _guid=_guid, *args, **kwargs)
+    def web_url_for(self, view_name, _absolute=False, _guid=False, *args, **kwargs):
+        return web_url_for(view_name, pid=self._primary_key, _absolute=_absolute, _guid=_guid, *args, **kwargs)
 
-    def api_url_for(self, view_name, _absolute=False, _offload=False, *args, **kwargs):
-        # Note: Check `parent_node` rather than `category` to avoid database
-        # inconsistencies [jmcarp]
-        if self.parent_node is None:
-            return api_url_for(view_name, pid=self._primary_key, _absolute=_absolute,
-                _offload=_offload, *args, **kwargs)
-        else:
-            return api_url_for(view_name, pid=self.parent_node._primary_key,
-                nid=self._primary_key, _absolute=_absolute, _offload=_offload, *args, **kwargs)
+    def api_url_for(self, view_name, _absolute=False, *args, **kwargs):
+        return api_url_for(view_name, pid=self._primary_key, _absolute=_absolute, *args, **kwargs)
 
     @property
     def absolute_url(self):
@@ -1717,6 +1864,18 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
             return re.sub(r'https?:', '', url).strip('/')
 
     @property
+    def api_v2_url(self):
+        return reverse('nodes:node-detail', kwargs={'node_id': self._id})
+
+    @property
+    def absolute_api_v2_url(self):
+        return absolute_reverse('nodes:node-detail', kwargs={'node_id': self._id})
+
+    # used by django and DRF
+    def get_absolute_url(self):
+        return self.absolute_api_v2_url
+
+    @property
     def api_url(self):
         if not self.url:
             logger.error('Node {0} has a parent that is not a project'.format(self._id))
@@ -1725,15 +1884,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
 
     @property
     def deep_url(self):
-        if self.category == 'project':
-            return '/project/{}/'.format(self._primary_key)
-        else:
-            if self.node__parent and self.node__parent[0].category == 'project':
-                return '/project/{}/node/{}/'.format(
-                    self.parent_id,
-                    self._primary_key
-                )
-        logger.error("Node {0} has a parent that is not a project".format(self._id))
+        return '/project/{}/'.format(self._primary_key)
 
     @property
     def csl(self):  # formats node information into CSL format for citation parsing
@@ -1802,6 +1953,31 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         except IndexError:
             pass
         return None
+
+    @parent_node.setter
+    def parent_node(self, parent):
+        parent.nodes.append(self)
+        parent.save()
+
+    @property
+    def root(self):
+        if self.parent_node:
+            return self.parent_node.root
+        else:
+            return self
+
+    @property
+    def archiving(self):
+        job = self.archive_job
+        return job and not job.done and not job.archive_tree_finished()
+
+    @property
+    def archive_job(self):
+        return self.archivejob__active[0] if self.archivejob__active else None
+
+    @property
+    def registrations(self):
+        return self.node__registrations.find(Q('archiving', 'eq', False))
 
     @property
     def watch_url(self):
@@ -1916,7 +2092,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
                     self.add_permission(new, permission)
                 self.permissions.pop(old._id)
                 if old._id in self.visible_contributor_ids:
-                    self.visible_contributor_ids.remove(old._id)
+                    self.visible_contributor_ids[self.visible_contributor_ids.index(old._id)] = new._id
                 return True
         return False
 
@@ -2093,7 +2269,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
 
         with TokuTransaction():
             if to_remove or permissions_changed and ['read'] in permissions_changed.values():
-                write_permissions_revoked.send(self)
+                project_signals.write_permissions_revoked.send(self)
 
     def add_contributor(self, contributor, permissions=None, visible=True,
                         auth=None, log=True, save=False):
@@ -2145,8 +2321,16 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
             if save:
                 self.save()
 
-            contributor_added.send(self, contributor=contributor, auth=auth)
+            project_signals.contributor_added.send(self, contributor=contributor, auth=auth)
             return True
+
+        #Permissions must be overridden if changed when contributor is added to parent he/she is already on a child of.
+        elif contrib_to_add in self.contributors and permissions is not None:
+            self.set_permissions(contrib_to_add, permissions)
+            if save:
+                self.save()
+
+            return False
         else:
             return False
 
@@ -2214,16 +2398,26 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         self.save()
         return contributor
 
-    def set_privacy(self, permissions, auth=None):
+    def set_privacy(self, permissions, auth=None, log=True, save=True):
         """Set the permissions for this node.
 
         :param permissions: A string, either 'public' or 'private'
-        :param auth: All the auth informtion including user, API key.
+        :param auth: All the auth information including user, API key.
+        :param bool log: Whether to add a NodeLog for the privacy change.
         """
         if permissions == 'public' and not self.is_public:
+            if self.is_registration:
+                if self.pending_embargo:
+                    raise NodeStateError("A registration with an unapproved embargo cannot be made public")
+                if self.embargo_end_date and not self.pending_embargo:
+                    self.embargo.state = Embargo.CANCELLED
+                    self.embargo.save()
             self.is_public = True
         elif permissions == 'private' and self.is_public:
-            self.is_public = False
+            if self.is_registration and not self.pending_embargo:
+                raise NodeStateError("Public registrations must be retracted, not made private.")
+            else:
+                self.is_public = False
         else:
             return False
 
@@ -2233,17 +2427,19 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
             if message:
                 status.push_status_message(message)
 
-        action = NodeLog.MADE_PUBLIC if permissions == 'public' else NodeLog.MADE_PRIVATE
-        self.add_log(
-            action=action,
-            params={
-                'project': self.parent_id,
-                'node': self._primary_key,
-            },
-            auth=auth,
-            save=False,
-        )
-        self.save()
+        if log:
+            action = NodeLog.MADE_PUBLIC if permissions == 'public' else NodeLog.MADE_PRIVATE
+            self.add_log(
+                action=action,
+                params={
+                    'project': self.parent_id,
+                    'node': self._primary_key,
+                },
+                auth=auth,
+                save=False,
+            )
+        if save:
+            self.save()
         return True
 
     # TODO: Move to wiki add-on
@@ -2414,7 +2610,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
 
     # TODO: Deprecate this; it duplicates much of what serialize_project already
     # does
-    def serialize(self):
+    def serialize(self, auth=None):
         """Dictionary representation of node that is nested within a NodeLog's
         representation.
         """
@@ -2426,10 +2622,128 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
             'url': self.url,
             # TODO: Titles shouldn't contain escaped HTML in the first place
             'title': html_parser.unescape(self.title),
+            'path': self.path_above(auth),
             'api_url': self.api_url,
             'is_public': self.is_public,
-            'is_registration': self.is_registration
+            'is_registration': self.is_registration,
         }
+
+    def _initiate_retraction(self, user, justification=None, save=False):
+        """Initiates the retraction process for a registration
+        :param user: User who initiated the retraction
+        :param justification: Justification, if given, for retraction
+        """
+
+        retraction = Retraction()
+        retraction.initiated_by = user
+        if justification:
+            retraction.justification = justification
+        retraction.state = Retraction.PENDING
+
+        admins = [contrib for contrib in self.contributors if self.has_permission(contrib, 'admin') and contrib.is_active]
+
+        approval_state = {}
+        # Create approve/disapprove tokens
+        for admin in admins:
+            approval_state[admin._id] = {
+                'approval_token': security.random_string(30),
+                'disapproval_token': security.random_string(30),
+                'has_approved': False
+            }
+
+        retraction.approval_state = approval_state
+        # Retraction record needs to be saved to ensure the forward reference Node->Retraction
+        if save:
+            retraction.save()
+        return retraction
+
+    def retract_registration(self, user, justification=None, save=True):
+        """Retract public registration. Instantiate new Retraction object
+        and associate it with the respective registration.
+        """
+
+        if not self.is_registration or (not self.is_public and not (self.embargo_end_date or self.pending_embargo)):
+            raise NodeStateError('Only public registrations or active embargoes may be retracted.')
+
+        if self.root is not self:
+            raise NodeStateError('Retraction of non-parent registrations is not permitted.')
+
+        retraction = self._initiate_retraction(user, justification, save=True)
+        self.registered_from.add_log(
+            action=NodeLog.RETRACTION_INITIATED,
+            params={
+                'node': self._id,
+                'retraction_id': retraction._id,
+            },
+            auth=Auth(user),
+        )
+        self.retraction = retraction
+        if save:
+            self.save()
+
+    def _is_embargo_date_valid(self, end_date):
+        today = datetime.datetime.utcnow()
+        if (end_date - today) >= settings.EMBARGO_END_DATE_MIN:
+            if (end_date - today) <= settings.EMBARGO_END_DATE_MAX:
+                return True
+        return False
+
+    def _initiate_embargo(self, user, end_date, for_existing_registration=False, save=False):
+        """Initiates the retraction process for a registration
+        :param user: User who initiated the retraction
+        :param end_date: Date when the registration should be made public
+        """
+
+        embargo = Embargo()
+        embargo.initiated_by = user
+        embargo.for_existing_registration = for_existing_registration
+        # Convert Date to Datetime
+        embargo.end_date = datetime.datetime.combine(end_date, datetime.datetime.min.time())
+
+        admins = [contrib for contrib in self.contributors if self.has_permission(contrib, 'admin') and contrib.is_active]
+        embargo.approval_state = {
+            admin._id: {
+                'approval_token': security.random_string(30),
+                'disapproval_token': security.random_string(30),
+                'has_approved': False
+            } for admin in admins
+        }
+        if save:
+            embargo.save()
+        return embargo
+
+    def embargo_registration(self, user, end_date, for_existing_registration=False):
+        """Enter registration into an embargo period at end of which, it will
+        be made public
+        :param user: User initiating the embargo
+        :param end_date: Date when the registration should be made public
+        :raises: NodeStateError if Node is not a registration
+        :raises: PermissionsError if user is not an admin for the Node
+        :raises: ValidationValueError if end_date is not within time constraints
+        """
+
+        if not self.is_registration:
+            raise NodeStateError('Only registrations may be embargoed')
+        if not self.has_permission(user, 'admin'):
+            raise PermissionsError('Only admins may embargo a registration')
+        if not self._is_embargo_date_valid(end_date):
+            raise ValidationValueError('Embargo end date must be more than one day in the future')
+
+        embargo = self._initiate_embargo(user, end_date, for_existing_registration=for_existing_registration, save=True)
+
+        self.registered_from.add_log(
+            action=NodeLog.EMBARGO_INITIATED,
+            params={
+                'node': self._id,
+                'embargo_id': embargo._id,
+            },
+            auth=Auth(user),
+            save=True,
+        )
+        # Embargo record needs to be saved to ensure the forward reference Node->Embargo
+        self.embargo = embargo
+        if self.is_public:
+            self.set_privacy('private', Auth(user))
 
 
 @Node.subscribe('before_save')
@@ -2512,21 +2826,234 @@ class PrivateLink(StoredObject):
             offset = 20 if node.parent_node is not None else 0
             return offset + self.node_scale(node.parent_node)
 
-    def node_icon(self, node):
-        if node.category == 'project':
-            node_type = "reg-project" if node.is_registration else "project"
-        else:
-            node_type = "reg-component" if node.is_registration else "component"
-        return "/static/img/hgrid/{0}.png".format(node_type)
-
     def to_json(self):
         return {
             "id": self._id,
-            "date_created": self.date_created.strftime('%m/%d/%Y %I:%M %p UTC'),
+            "date_created": iso8601format(self.date_created),
             "key": self.key,
             "name": self.name,
             "creator": {'fullname': self.creator.fullname, 'url': self.creator.profile_url},
-            "nodes": [{'title': x.title, 'url': x.url, 'scale': str(self.node_scale(x)) + 'px', 'imgUrl': self.node_icon(x)}
+            "nodes": [{'title': x.title, 'url': x.url, 'scale': str(self.node_scale(x)) + 'px', 'category': x.category}
                       for x in self.nodes if not x.is_deleted],
             "anonymous": self.anonymous
         }
+
+
+def validate_retraction_state(value):
+    acceptable_states = [Retraction.PENDING, Retraction.RETRACTED, Retraction.CANCELLED]
+    if value not in acceptable_states:
+        raise ValidationValueError('Invalid retraction state assignment.')
+
+    return True
+
+
+class Retraction(StoredObject):
+    """Retraction object for public registrations."""
+
+    PENDING = 'pending'
+    RETRACTED = 'retracted'
+    CANCELLED = 'cancelled'
+
+    _id = fields.StringField(primary=True, default=lambda: str(ObjectId()))
+    justification = fields.StringField(default=None, validate=MaxLengthValidator(2048))
+    initiation_date = fields.DateTimeField(auto_now_add=datetime.datetime.utcnow)
+    initiated_by = fields.ForeignField('user', backref='retracted')
+    # Expanded: Dictionary field mapping admin IDs their approval status and relevant tokens:
+    # {
+    #   'b3k97': {
+    #     'has_approved': False,
+    #     'approval_token': 'Cru7wj1Puf7DENUPFPnXSwa1rf3xPN',
+    #     'disapproval_token': 'UotzClTFOic2PYxHDStby94bCQMwJy'}
+    # }
+    approval_state = fields.DictionaryField()
+    # One of 'pending', 'retracted', or 'cancelled'
+    state = fields.StringField(default='pending', validate=validate_retraction_state)
+
+    def __repr__(self):
+        parent_registration = Node.find_one(Q('retraction', 'eq', self))
+        return ('<Retraction(parent_registration={0}, initiated_by={1}) '
+                'with _id {2}>').format(
+            parent_registration,
+            self.initiated_by,
+            self._id
+        )
+
+    @property
+    def is_retracted(self):
+        return self.state == self.RETRACTED
+
+    @property
+    def pending_retraction(self):
+        return self.state == self.PENDING
+
+    def disapprove_retraction(self, user, token):
+        """Cancels retraction if user is admin and token verifies."""
+        try:
+            if self.approval_state[user._id]['disapproval_token'] != token:
+                raise InvalidRetractionDisapprovalToken('Invalid retraction disapproval token provided.')
+        except KeyError:
+            raise PermissionsError('User must be an admin to disapprove retraction of a registration.')
+
+        self.state = self.CANCELLED
+        parent_registration = Node.find_one(Q('retraction', 'eq', self))
+        parent_registration.registered_from.add_log(
+            action=NodeLog.RETRACTION_CANCELLED,
+            params={
+                'node': parent_registration._id,
+                'retraction_id': self._id,
+            },
+            auth=Auth(user),
+            save=True,
+        )
+
+    def approve_retraction(self, user, token):
+        """Add user to approval list if user is admin and token verifies."""
+        try:
+            if self.approval_state[user._id]['approval_token'] != token:
+                raise InvalidRetractionApprovalToken('Invalid retraction approval token provided.')
+        except KeyError:
+            raise PermissionsError('User must be an admin to disapprove retraction of a registration.')
+
+        self.approval_state[user._id]['has_approved'] = True
+        if all(val['has_approved'] for val in self.approval_state.values()):
+            self.state = self.RETRACTED
+
+            parent_registration = Node.find_one(Q('retraction', 'eq', self))
+            parent_registration.registered_from.add_log(
+                action=NodeLog.RETRACTION_APPROVED,
+                params={
+                    'node': parent_registration._id,
+                    'retraction_id': self._id,
+                },
+                auth=Auth(user),
+            )
+            # Remove any embargoes associated with the registration
+            if parent_registration.embargo_end_date or parent_registration.pending_embargo:
+                parent_registration.embargo.state = self.CANCELLED
+                parent_registration.registered_from.add_log(
+                    action=NodeLog.EMBARGO_CANCELLED,
+                    params={
+                        'node': parent_registration._id,
+                        'embargo_id': parent_registration.embargo._id,
+                    },
+                    auth=Auth(user),
+                )
+                parent_registration.embargo.save()
+            # Ensure retracted registration is public
+            if not parent_registration.is_public:
+                parent_registration.set_privacy('public')
+            parent_registration.update_search()
+            # Retraction status is inherited from the root project, so we
+            # need to recursively update search for every descendant node
+            # so that retracted subrojects/components don't appear in search
+            for node in parent_registration.get_descendants_recursive():
+                node.update_search()
+
+
+def validate_embargo_state(value):
+    acceptable_states = [
+        Embargo.UNAPPROVED, Embargo.ACTIVE, Embargo.CANCELLED, Embargo.COMPLETED
+    ]
+    if value not in acceptable_states:
+        raise ValidationValueError('Invalid embargo state assignment.')
+    return True
+
+
+class Embargo(StoredObject):
+    """Embargo object for registrations waiting to go public."""
+
+    UNAPPROVED = 'unapproved'
+    ACTIVE = 'active'
+    CANCELLED = 'cancelled'
+    COMPLETED = 'completed'
+
+    _id = fields.StringField(primary=True, default=lambda: str(ObjectId()))
+    initiation_date = fields.DateTimeField(auto_now_add=datetime.datetime.utcnow)
+    initiated_by = fields.ForeignField('user', backref='embargoed')
+    end_date = fields.DateTimeField()
+    # Expanded: Dictionary field mapping admin IDs their approval status and relevant tokens:
+    # {
+    #   'b3k97': {
+    #     'has_approved': False,
+    #     'approval_token': 'Pew7wj1Puf7DENUPFPnXSwa1rf3xPN',
+    #     'disapproval_token': 'TwozClTFOic2PYxHDStby94bCQMwJy'}
+    # }
+    approval_state = fields.DictionaryField()
+    # One of 'unapproved', 'active', 'cancelled', or 'completed
+    state = fields.StringField(default='unapproved', validate=validate_embargo_state)
+    for_existing_registration = fields.BooleanField(default=False)
+
+    def __repr__(self):
+        parent_registration = Node.find_one(Q('embargo', 'eq', self))
+        return ('<Embargo(parent_registration={0}, initiated_by={1}, '
+                'end_date={2}) with _id {3}>').format(
+            parent_registration,
+            self.initiated_by,
+            self.end_date,
+            self._id
+        )
+
+    @property
+    def embargo_end_date(self):
+        if self.state == Embargo.ACTIVE:
+            return self.end_date
+        return False
+
+    @property
+    def pending_embargo(self):
+        return self.state == Embargo.UNAPPROVED
+
+    # NOTE(hrybacki): Old, private registrations are grandfathered and do not
+    # require to be made public or embargoed. This field differentiates them
+    # from new registrations entering into an embargo field which should not
+    # show up in any search related fields.
+    @property
+    def pending_registration(self):
+        return not self.for_existing_registration and self.pending_embargo
+
+    def disapprove_embargo(self, user, token):
+        """Cancels retraction if user is admin and token verifies."""
+        try:
+            if self.approval_state[user._id]['disapproval_token'] != token:
+                raise InvalidEmbargoDisapprovalToken('Invalid embargo disapproval token provided.')
+        except KeyError:
+            raise PermissionsError('User must be an admin to disapprove embargoing of a registration.')
+
+        self.state = Embargo.CANCELLED
+        parent_registration = Node.find_one(Q('embargo', 'eq', self))
+        parent_registration.registered_from.add_log(
+            action=NodeLog.EMBARGO_CANCELLED,
+            params={
+                'node': parent_registration._id,
+                'embargo_id': self._id,
+            },
+            auth=Auth(user),
+        )
+        # Remove backref to parent project if embargo was for a new registration
+        if not self.for_existing_registration:
+            parent_registration.registered_from = None
+        # Delete parent registration if it was created at the time the embargo was initiated
+        if not self.for_existing_registration:
+            parent_registration.is_deleted = True
+            parent_registration.save()
+
+    def approve_embargo(self, user, token):
+        """Add user to approval list if user is admin and token verifies."""
+        try:
+            if self.approval_state[user._id]['approval_token'] != token:
+                raise InvalidEmbargoApprovalToken('Invalid embargo approval token provided.')
+        except KeyError:
+            raise PermissionsError('User must be an admin to disapprove embargoing of a registration.')
+
+        self.approval_state[user._id]['has_approved'] = True
+        if all(val['has_approved'] for val in self.approval_state.values()):
+            self.state = Embargo.ACTIVE
+            parent_registration = Node.find_one(Q('embargo', 'eq', self))
+            parent_registration.registered_from.add_log(
+                action=NodeLog.EMBARGO_APPROVED,
+                params={
+                    'node': parent_registration._id,
+                    'embargo_id': self._id,
+                },
+                auth=Auth(user),
+            )

@@ -20,10 +20,6 @@ from website.settings import ALL_MY_REGISTRATIONS_ID, ALL_MY_PROJECTS_ID, \
     ALL_MY_PROJECTS_NAME, ALL_MY_REGISTRATIONS_NAME, DISK_SAVING_MODE
 
 
-app = website.app.init_app(
-    routes=True, set_backends=False, settings_module='website.settings'
-)
-
 class TestRubeus(OsfTestCase):
 
     def setUp(self):
@@ -210,8 +206,8 @@ class TestRubeus(OsfTestCase):
         # Add contributor with write permissions to avoid admin permission cascade
         public.add_contributor(user, permissions=['read', 'write'])
         public.save()
-        private = ProjectFactory(project=public, is_public=False)
-        NodeFactory(project=private)
+        private = ProjectFactory(parent=public, is_public=False)
+        NodeFactory(parent=private)
         collector = rubeus.NodeFileCollector(node=public, auth=auth)
 
         private_dummy = collector._serialize_node(private)
@@ -221,7 +217,7 @@ class TestRubeus(OsfTestCase):
         assert_equal(len(private_dummy['children']), 0)
 
     def test_collect_components_deleted(self):
-        node = NodeFactory(creator=self.project.creator, project=self.project)
+        node = NodeFactory(creator=self.project.creator, parent=self.project)
         node.is_deleted = True
         collector = rubeus.NodeFileCollector(
             self.project, Auth(user=UserFactory())
@@ -321,7 +317,7 @@ class TestSerializingNodeWithAddon(OsfTestCase):
     def test_collect_js_recursive(self):
         self.project.get_addons.return_value[0].config.include_js = {'files': ['foo.js']}
         self.project.get_addons.return_value[0].config.short_name = 'dropbox'
-        node = NodeFactory(project=self.project)
+        node = NodeFactory(parent=self.project)
         mock_node_addon = mock.Mock()
         mock_node_addon.config.include_js = {'files': ['bar.js', 'baz.js']}
         mock_node_addon.config.short_name = 'dropbox'
@@ -335,7 +331,7 @@ class TestSerializingNodeWithAddon(OsfTestCase):
     def test_collect_js_unique(self):
         self.project.get_addons.return_value[0].config.include_js = {'files': ['foo.js']}
         self.project.get_addons.return_value[0].config.short_name = 'dropbox'
-        node = NodeFactory(project=self.project)
+        node = NodeFactory(parent=self.project)
         mock_node_addon = mock.Mock()
         mock_node_addon.config.include_js = {'files': ['foo.js', 'baz.js']}
         mock_node_addon.config.short_name = 'dropbox'
@@ -454,7 +450,6 @@ class TestSmartFolderViews(OsfTestCase):
 
     def setUp(self):
         super(TestSmartFolderViews, self).setUp()
-        self.app = TestApp(app)
         self.dash = DashboardFactory()
         self.user = self.dash.creator
         self.auth = AuthFactory(user=self.user)
@@ -463,12 +458,9 @@ class TestSmartFolderViews(OsfTestCase):
     def test_adding_project_to_dashboard_increases_json_size_by_one(self, mock_from_kwargs):
         mock_from_kwargs.return_value = Auth(user=self.user)
 
-        with app.test_request_context():
-            url = api_url_for('get_dashboard')
+        url = api_url_for('get_dashboard')
 
         res = self.app.get(url + ALL_MY_PROJECTS_ID)
-
-        import pprint;pp = pprint.PrettyPrinter()
 
         init_len = len(res.json[u'data'])
 
@@ -476,13 +468,11 @@ class TestSmartFolderViews(OsfTestCase):
         res = self.app.get(url + ALL_MY_PROJECTS_ID)
         assert_equal(len(res.json[u'data']), init_len + 1)
 
-
     @mock.patch('website.project.decorators.Auth.from_kwargs')
     def test_adding_registration_to_dashboard_increases_json_size_by_one(self, mock_from_kwargs):
         mock_from_kwargs.return_value = Auth(user=self.user)
 
-        with app.test_request_context():
-            url = api_url_for('get_dashboard')
+        url = api_url_for('get_dashboard')
 
         res = self.app.get(url + ALL_MY_REGISTRATIONS_ID)
         init_len = len(res.json[u'data'])

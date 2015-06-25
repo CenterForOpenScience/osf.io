@@ -13,11 +13,6 @@ from framework.auth import Auth
 from website.addons.twofactor.tests import _valid_code
 from website.addons.twofactor.utils import serialize_settings
 
-app = init_app(
-    routes=True,
-    set_backends=False,
-    settings_module='website.settings',
-)
 
 class TestViews(OsfTestCase):
     @mock.patch('website.addons.twofactor.models.push_status_message')
@@ -58,38 +53,3 @@ class TestViews(OsfTestCase):
         self.user_settings.reload()
 
         assert_false(self.user_settings.is_confirmed)
-
-    def test_twofactor_settings_get_enabled(self):
-        url = api_url_for('twofactor_settings_get')
-        res = self.app.get(url, auth=self.user.auth)
-        assert_equal(res.json['result'], serialize_settings(Auth(self.user)))
-
-    def test_twofactor_settings_get_disabled(self):
-        user = AuthUserFactory()
-        url = api_url_for('twofactor_settings_get')
-        res = self.app.get(url, auth=user.auth)
-        assert_equal(res.json['result'], serialize_settings(Auth(user)))
-
-    def test_twofactor_enable_disabled(self):
-        user = AuthUserFactory()
-        url = api_url_for('twofactor_enable')
-        self.app.post(url, {}, auth=user.auth)
-        user.reload()
-        assert_true(user.has_addon('twofactor'))
-
-    def test_twofactor_enable_enabled(self):
-        url = api_url_for('twofactor_enable')
-        res = self.app.post(url, {}, auth=self.user.auth, expect_errors=True)
-        assert_equal(res.status_code, http.BAD_REQUEST)
-
-    def test_twofactor_disable_enabled(self):
-        url = api_url_for('twofactor_disable')
-        res = self.app.delete(url, auth=self.user.auth)
-        assert_equal(res.json, {})
-        assert_equal(res.status_code, http.OK)
-
-    def test_twofactor_disable_disabled(self):
-        user = AuthUserFactory()
-        url = api_url_for('twofactor_disable')
-        res = self.app.delete(url, auth=user.auth, expect_errors=True)
-        assert_equal(res.status_code, http.BAD_REQUEST)

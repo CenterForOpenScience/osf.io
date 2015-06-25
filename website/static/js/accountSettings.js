@@ -68,7 +68,8 @@ var UserProfileClient = oop.defclass({
     constructor: function () {},
     urls: {
         fetch: '/api/v1/profile/',
-        update: '/api/v1/profile/'
+        update: '/api/v1/profile/',
+        resend: '/api/v1/resend/'
     },
     fetch: function () {
         var ret = $.Deferred();
@@ -89,11 +90,15 @@ var UserProfileClient = oop.defclass({
 
         return ret.promise();
     },
-    update: function (profile) {
+    update: function (profile, email) {
+        var url = this.urls.update;
+        if(email) {
+            url = this.urls.resend;
+        }
         var ret = $.Deferred();
         var request = $osf.putJSON(
-            this.urls.update,
-            this.serialize(profile)
+            url,
+            this.serialize(profile, email)
         ).done(function (data) {
             ret.resolve(this.unserialize(data, profile));
         }.bind(this)).fail(function(xhr, status, error) {
@@ -110,7 +115,17 @@ var UserProfileClient = oop.defclass({
 
         return ret;
     },
-    serialize: function (profile) {
+    serialize: function (profile, email) {
+        if(email){
+            return {
+                id: profile.id(),
+                email: {
+                    address: email.address(),
+                    primary: email.isPrimary(),
+                    confirmed: email.isConfirmed()
+                }
+            };
+        }
         return {
             id: profile.id(),
             emails: ko.utils.arrayMap(profile.emails(), function(email) {
@@ -120,6 +135,7 @@ var UserProfileClient = oop.defclass({
                     confirmed: email.isConfirmed()
                 };
             })
+
         };
     },
     unserialize: function (data, profile) {
@@ -193,6 +209,24 @@ var UserProfileViewModel = oop.extend(ChangeMessageMixin, {
             this.changeMessage('Email cannot be empty.', 'text-danger');
         }
     },
+    resendConfirmation: function(email){
+        var self = this;
+        self.changeMessage('', 'text-info');
+        bootbox.confirm({
+            title: 'Resend Email Confirmation?',
+            message: 'Are you sure that you want to resend email confirmation at ' + '<em><b>' + email.address() + '</b></em>',
+            callback: function (confirmed) {
+                if (confirmed) {
+                    self.client.update(self.profile(), email).done(function () {
+                        $osf.growl(
+                            'Email confirmation resent to <em>' + email.address() + '<em>',
+                            'You will receive a new confirmation email at <em>' + email.address()  + '<em>. Please check your email and confirm.',
+                            'success');
+                    });
+                }
+            }
+        });
+    },
     removeEmail: function (email) {
         var self = this;
         self.changeMessage('', 'text-info');
@@ -227,6 +261,91 @@ var UserProfileViewModel = oop.extend(ChangeMessageMixin, {
     }
 });
 
+
+var DeactivateAccountViewModel = oop.defclass({
+    constructor: function () {
+        this.success = ko.observable(false);
+    },
+    urls: {
+        'update': '/api/v1/profile/deactivate/'
+    },
+    _requestDeactivation: function() {
+        var request = $osf.postJSON(this.urls.update, {});
+        request.done(function() {
+            $osf.growl('Success', 'An OSF administrator will contact you shortly to confirm your deactivation request.', 'success');
+            this.success(true);
+        }.bind(this));
+        request.fail(function(xhr, status, error) {
+            $osf.growl('Error',
+                'Deactivation request failed. Please contact <a href="mailto: support@cos.io">support@cos.io</a> if the problem persists.',
+                'danger'
+            );
+            Raven.captureMessage('Error requesting account deactivation', {
+                url: this.urls.update,
+                status: status,
+                error: error
+            });
+        }.bind(this));
+        return request;
+    },
+    submit: function () {
+        var self = this;
+        bootbox.confirm({
+            title: 'Request account deactivation?',
+            message: 'Are you sure you want to request account deactivation? An OSF administrator will review your request. If accepted, you ' +
+                     'will <strong>NOT</strong> be able to reactivate your account.',
+            callback: function(confirmed) {
+                if (confirmed) {
+                    return self._requestDeactivation();
+                }
+            }
+        });
+    }
+});
+
+
+var ExportAccountViewModel = oop.defclass({
+    constructor: function () {
+        this.success = ko.observable(false);
+    },
+    urls: {
+        'update': '/api/v1/profile/export/'
+    },
+    _requestExport: function() {
+        var request = $osf.postJSON(this.urls.update, {});
+        request.done(function() {
+            $osf.growl('Success', 'An OSF administrator will contact you shortly to confirm your export request.', 'success');
+            this.success(true);
+        }.bind(this));
+        request.fail(function(xhr, status, error) {
+            $osf.growl('Error',
+                'Export request failed. Please contact <a href="mailto: support@cos.io">support@cos.io</a> if the problem persists.',
+                'danger'
+            );
+            Raven.captureMessage('Error requesting account export', {
+                url: this.urls.update,
+                status: status,
+                error: error
+            });
+        }.bind(this));
+        return request;
+    },
+    submit: function () {
+        var self = this;
+        bootbox.confirm({
+            title: 'Request account export?',
+            message: 'Are you sure you want to request account export?',
+            callback: function(confirmed) {
+                if (confirmed) {
+                    return self._requestExport();
+                }
+            }
+        });
+    }
+});
+
 module.exports = {
-    UserProfileViewModel: UserProfileViewModel
+    UserProfileViewModel: UserProfileViewModel,
+    DeactivateAccountViewModel: DeactivateAccountViewModel,
+    ExportAccountViewModel: ExportAccountViewModel
 };

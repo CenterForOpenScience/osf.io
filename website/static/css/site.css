@@ -42,7 +42,7 @@ body {
 .gs-sidebar .nav a,
 .gs-sidebar .nav a:hover,
 .gs-sidebar .nav a:focus {
-    padding: 0;
+
     text-decoration: none;
     background-color: transparent;
 }
@@ -51,6 +51,7 @@ body {
     font-size: 12px;
     padding: 4px 0 4px 15px;
     opacity: 0.8;
+    font-weight: bold;
 }/* nested navs */
 .gs-sidebar .nav .nav {
     display: none;
@@ -86,7 +87,7 @@ body {
     position: fixed;
     top: 70px;
 }
-.gs-sidebar.affix-bottom {
+.affix-bottom {
     position: relative;
 }
 
@@ -106,19 +107,11 @@ body {
 }
 
 /* headers */
-.gs-header {
-    display: block;
-    font-family: 'Patua One', cursive;
-    font-size: 24px;
-    padding-bottom: 20px;
-    padding-top: 20px;
-}
-
 #conferenceViewTable td {
     vertical-align: middle;
 }
 
-/*CSS Johanna added for front page*/
+/*CSS added for front page*/
 
 /* Knockout Validation Styles */
 
@@ -450,8 +443,14 @@ img.hg-addon-icon {
     display: block;
 }
 
+/* TODO: Remove this - it's far too broad */
 h4 {
     padding-bottom: 10px;
+}
+
+/* TODO: Remove this hack, due to the h4 rule immediately prior */
+.bootbox h4 {
+    padding-bottom: 0;
 }
 
 .social-icons img {
@@ -957,13 +956,21 @@ form.form-horizontal.form-horizontal-narrow .control-group {
 
 
 /* Project page */
+#manageContributors td {
+    vertical-align: middle;
+}
+
+#manageContributors .permissions {
+    min-width: 140px;
+}
+
+#manageContributors .biblio {
+    margin: 4px 60% 0 40%;
+}
+
 #addContributors table {
     border-collapse: separate;
     border-spacing: 5px;
-}
-
-#manageContributors td {
-    vertical-align: middle;
 }
 
 #addContributors .error {
@@ -987,6 +994,8 @@ h1.unavailable {
     margin-top: -100px;
     padding-top: 100px;
     display: block;
+  z-index: -1;
+  position: relative;
 }
 
 .anchor {
@@ -996,10 +1005,6 @@ h1.unavailable {
 }
 
 /* Search */
-.page-header
-    {
-        overflow: hidden;
-    }
 .add-query
     {
         width: 190px;
@@ -1414,6 +1419,10 @@ dl.activity-log dd {
     cursor: pointer;
 }
 
+.log-folder {
+  font-style: italic;
+}
+
 .log-node-title-link {
     font-weight: bold;
 }
@@ -1489,6 +1498,19 @@ dl.activity-log dd {
     padding:5px;
 }
 
+/*#fileRevisions{*/
+    /*margin-bottom: 625px;*/
+/*}*/
+thead.file-version-thread{
+    display: block;
+}
+
+tbody.file-version{
+    max-height: 580px;
+    overflow-y: auto;
+    display: inline-block;
+}
+
 /** The project and wiki name editable inputs should be larger
  * than the editable inputs elsewhere on the site.
  */
@@ -1496,6 +1518,14 @@ dl.activity-log dd {
     width: 400px;
 }
 
+.dotted-underline{
+    color: #000;
+    border-bottom: 1px dotted;
+    text-decoration: none;
+}
+a.dotted-underline:hover {
+    text-decoration: none;
+}
 /* Contributors list */
 
 #contributors {
@@ -1744,9 +1774,7 @@ div.pydocx-center{
 
 span.edit-profile-settings {
     display: block;
-    position: absolute;
-    bottom: 0;
-    right: 0;
+    text-align: right;
 }
 
 div.profile-fullname{
@@ -1755,9 +1783,17 @@ div.profile-fullname{
     bottom: 0;
 }
 
-span#profileFullname{
-    position: absolute;
-    bottom: 0;
+.avatar-div {
+    display: table-cell;
+    vertical-align: middle;
+}
+
+.name-div {
+    display: table-cell;
+    vertical-align: middle;
+    padding-left: 10px;
+    margin-bottom: 10px;
+    word-break: break-all;
 }
 
 .scripted {display: none;}
@@ -1778,18 +1814,6 @@ span#profileFullname{
 .search-term-label,
 .tag {
     white-space: pre;
-}
-
-.bootbox-node-deletion-modal {
-    font-weight: normal;
-    font-size: medium;
-    line-height: normal;
-    padding-top: 10px;
-}
-
-.bootbox-node-deletion-modal ol {
-    padding-left: 40px;
-    list-style-type: disc;
 }
 
 /* Footer slide-in */
@@ -1846,15 +1870,16 @@ span#profileFullname{
     background: rgba(187, 187, 187, 0.2);
 }
 .osf-navbar .navbar-nav>li>a {
-    padding-top: 9px;
-    padding-bottom: 6px;
-    line-height: 24px;
+    padding-top: 8px;
+    padding-bottom: 7px;
+    line-height: 27px;
 }
 
 .navbar-brand {
-    height: 42px;
-    line-height: 14px;
-    padding:13px 15px;
+    margin-left: 0 !important;
+    height: 42px !important;
+    line-height: 27px;
+    padding: 8px 15px 7px 15px;
 }
 
 .osf-navbar .navbar-form {
@@ -1873,10 +1898,6 @@ span#profileFullname{
     background-color: white;
 }
 
-.navbar-mid>li>a{
-    padding-bottom: 8px !important;
-}
-
 .icon-lg {
     font-size: 20px;
     line-height: 26px;
@@ -1885,7 +1906,6 @@ span#profileFullname{
 .osf-navbar-logo {
     float: left;
     margin-right: 8px;
-    margin-top: -7px;
 }
 
 .osf-navbar .navbar-nav>li>a.btn {
@@ -1908,13 +1928,13 @@ span#profileFullname{
     position: fixed;
     width: 100%;
     left: 0;
-    top: 43px;
+    top: 50px;
     background: #EEE;
     z-index: 99;
     box-shadow:0 0 9px -1px #838383;
     border-radius: 0;
     border: none;
-    min-height:40px;
+    min-height: 40px !important;
 }
 
 .osf-project-navbar li>a {
@@ -1967,6 +1987,10 @@ span#profileFullname{
 
 /* Project Dashboard */
 
+
+.csl-entry {
+    display: inline;
+}
 
 .addon-widget-container {
     border:1px solid #ddd;
@@ -2060,6 +2084,21 @@ span#profileFullname{
         text-decoration: none !important;
         padding: 14px;
     }
+
+    .navbar-brand {
+        margin-left: 0 !important;
+        height: 48px !important;
+        line-height: 27px !important;
+        padding: 11px 15px 10px 15px !important;
+    }
+    .osf-navbar-logo {
+        margin-top: 0px !important;
+    }
+
+    .name-div {
+        font-size: 20px;
+    }
+
 }
 
 @media (min-width: 768px) {
@@ -2109,15 +2148,26 @@ span#profileFullname{
 @media (min-width: 768px) and (max-width: 991px)  {
     #signInForm input {
         width: 110px;
-    }    
+    }
 }
 @media (min-width: 1600px) {
     #signInForm input {
         width: 220px;
-    }    
+    }
 }
 
 /* Search bar */
+.search-label-placeholder {
+    position:absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    font-size: 20px;
+    color: #738EA2;
+    font-weight: 300;
+    visibility: hidden;
+}
+
 .osf-search {
     padding: 10px 0;
     background: #B8ECC0;
@@ -2125,7 +2175,7 @@ span#profileFullname{
     width: 100%;
     box-shadow: 0 0 9px -2px #464545;
     left: 0;
-    top: 43px;
+    top: 50px;
 }
 
 .osf-search-input {
@@ -2159,6 +2209,10 @@ span#profileFullname{
 
 .progress-bar-content {
     margin: 0px 10px;
+}
+
+.progress-bar-width {
+    width: 100%;
 }
 
 .sharejs-info-btn {
@@ -2491,6 +2545,15 @@ span#profileFullname{
   padding-left: 20px;
   padding-right: 20px;
 }
+.unselectable {
+  -webkit-user-select: none;  /* Chrome all / Safari all */
+  -moz-user-select: none;     /* Firefox all */
+  -ms-user-select: none;      /* IE 10+ */
+
+  /* No support for these yet, use at own risk */
+  -o-user-select: none;
+  user-select: none;
+}
 .inline {
     display: inline-block;
 }
@@ -2638,4 +2701,103 @@ span#profileFullname{
 }
 .m-xl {
     margin: 50px;
+}
+
+/* COS logo spin */
+.logo-spin {
+    -webkit-animation: spin 3s infinite linear, opacity 3s infinite linear;
+    animation: spin 3s infinite linear, opacity 3s infinite linear;
+}
+
+@-moz-keyframes spin {
+    from {
+        -moz-transform: rotate(0deg);
+    }
+    to {
+        -moz-transform: rotate(360deg);
+    }
+}
+@-webkit-keyframes spin {
+    from {
+        -webkit-transform: rotate(0deg);
+    }
+    to {
+        -webkit-transform: rotate(360deg);
+    }
+}
+@keyframes spin {
+    from {
+        -webkit-transform: rotate(0deg);
+    }
+    to {
+        -webkit-transform: rotate(360deg);
+    }
+}
+@-moz-keyframes opacity {
+    0% {
+        opacity : 0.1
+    }
+    50% {
+        opacity: 1
+    }
+    100% {
+        opacity: 0.1
+    }
+}
+@-webkit-keyframes opacity {
+    0% {
+        opacity : 0.1
+    }
+    50% {
+        opacity: 1
+    }
+    100% {
+        opacity: 0.1
+    }
+}
+@keyframes opacity {
+    0% {
+        opacity : 0.1
+    }
+    50% {
+        opacity: 1
+    }
+    100% {
+        opacity: 0.1
+    }
+}
+
+/* OSF Font-Awesome Stack Alternative */
+.osf-fa-stack {
+  display: inline-block;
+  width: 15px;
+  height: 13px;
+  position: relative;
+}
+.fangorn-toolbar-icon .osf-fa-stack-top {
+  font-size: 10px;
+  margin-top: 5px;
+  line-height: 11px;
+}
+.fangorn-toolbar-icon .osf-fa-stack-bottom {
+  font-size: 18px;
+  line-height: 20px;
+}
+.text-white {
+    color: #FFF;
+}
+
+@media (max-width: 768px) {
+    .affix {
+        position: relative;
+    }
+}
+
+#viewPanel > .osf-panel-body,
+.mfr-file {
+  height: 100%;
+}
+
+.text-center {
+    text-align: center;
 }

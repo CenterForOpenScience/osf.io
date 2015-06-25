@@ -39,11 +39,6 @@ LOGIN_FAILED = '''
 Log-in failed. Please try again or reset your password.
 '''
 
-# Shown if incorrect 2fa verification is entered at login
-TWO_FACTOR_FAILED = '''
-You entered an incorrect verification code. Please try again.
-'''
-
 # Shown at login page if user tries to access a resource that requires auth
 MUST_LOGIN = '''
 You must log in to access this resource.
@@ -72,6 +67,21 @@ EXPIRED_EMAIL_CONFIRM_TOKEN = 'This confirmation link has expired. Please <a hre
 
 INVALID_EMAIL_CONFIRM_TOKEN = 'This confirmation link is invalid. Please <a href="/login/">log in</a> to continue.'
 
+CANNOT_MERGE_ACCOUNTS_SHORT = 'Cannot Merge Accounts'
+
+CANNOT_MERGE_ACCOUNTS_LONG = 'Accounts cannot be merged due to a possible conflict with add-ons. Please deactivate any add-ons authorized on the account to be merged and try again.'
+
+MERGE_COMPLETE = 'Accounts successfully merged.'
+
+MERGE_CONFIRMATION_REQUIRED_SHORT = 'Confirmation Required: Merge Accounts'
+
+MERGE_CONFIRMATION_REQUIRED_LONG = (
+    '<p>This email is confirmed to another account. '
+    'Would you like to merge <em>{user_to_merge.username}</em> with the account '
+    '<em>{user.username}</em>?<p>'
+    '<a class="btn btn-success" href="?confirm_merge">Confirm merge</a> '
+)
+
 # Node Actions
 
 BEFORE_REGISTER_HAS_POINTERS = (
@@ -89,24 +99,45 @@ BEFORE_FORK_HAS_POINTERS = (
 )
 
 REGISTRATION_INFO = '''
-<p>Registration creates a frozen version of the project that can never be edited
-or deleted. You can register your project by selecting a registration form,  entering
-information about your project, and then confirming. You will be
-able to continue editing the original project, however, and the frozen version with
-time stamps will always be linked to the original.</p>
+
+<p>Registration creates a frozen version of the project that can never be
+edited or deleted but can be retracted. You can register your project by
+selecting a registration form, entering information about your project, and
+then confirming. You will be able to continue editing the original project,
+however, and the frozen version with timestamps will always be linked to
+the original. Retracting a registration will leave behind metadata about
+when the registration was created and retracted but removes the contents
+of the registration.</p>
 
 <ul>
+    <li>A registration can be made public immediately or entered into
+    an embargo period of up to four years. At the end of the embargo period,
+    the registration will automatically become public.</li>
 
-    <li>A registration takes the same privacy settings as the project, e.g. a public project results in a public registration.</li>
+    <li>Before initiating a registration, make sure that the project is
+    in the state that you wish to freeze. Consider turning links into
+    forks.</li>
 
-    <li>Before initiating a registration, make sure that the project is in the
-    state that you wish to freeze. Consider turning links into forks.</li>
-
-    <li>Start by selecting a registration form from the list below. You can
-    hit your browser's back button if the selected form is not
-    appropriate for your use.</li>
-
+    <li>Start by selecting a registration form from the list below. You can hit
+    your browser's back button if the selected form is not appropriate for
+    your use.</li>
 </ul>
+'''
+
+REGISTRATION_EMBARGO_INFO = '''
+<p>You can choose whether to make your registration public immediately or
+embargo it for up to four years. At the end of the embargo period the registration
+is automatically made public. After becoming public, the only way to remove a
+registration is to retract it. Retractions show only the registration title,
+contributors, and description to indicate that a registration was made and
+later retracted.</p>
+
+<p>When you register, a notification will be sent to all other project
+contributors. Other administrators will have 48 hours to approve or reject
+creating the registration. If any other administrator rejects the
+registration, it will be canceled. If all other administrators approve or do
+nothing, the registration will be confirmed and released or enter its embargo
+period.</p>
 '''
 
 BEFORE_REGISTRATION_INFO = '''

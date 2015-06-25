@@ -12,6 +12,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="description" content="${self.description()}">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="fragment" content="!">
 
     % if sentry_dsn_js:
     <script src="/static/vendor/bower_components/raven-js/dist/raven.min.js"></script>
@@ -67,14 +68,7 @@
 
     <%include file="nav.mako"/>
      ## TODO: shouldn't always have the watermark class
-    <div class="watermarked">
-        <div class="container ${self.container_class()}">
-            % if status:
-                <%include file="alert.mako"/>
-            % endif
-            ${self.content()}
-        </div><!-- end container -->
-    </div><!-- end watermarked -->
+    ${self.content_wrap()}
 
 % if not user_id:
 <div id="footerSlideIn">
@@ -99,7 +93,9 @@
 </div>
 % endif
 
-    <%include file="footer.mako"/>
+
+    ${self.footer()}
+    <%include file="copyright.mako"/>
         % if settings.PINGDOM_ID:
             <script>
             var _prum = [['id', '${settings.PINGDOM_ID}'],
@@ -148,10 +144,13 @@
             // Mako variables accessible globally
             window.contextVars = $.extend(true, {}, window.contextVars, {
                 waterbutlerURL: '${waterbutler_url if waterbutler_url.endswith('/') else waterbutler_url + '/' | js_str}',
-                cookieName: '${cookie_name}'
+            % if access_token:
+                accessToken: '${access_token | js_str}',
+            % endif
+                cookieName: '${cookie_name}',
+                apiV2Prefix: '${api_v2_base | js_str }'
             });
         </script>
-
 
         % if piwik_host:
             <% is_public = node.get('is_public', 'ERROR') if node else True %>
@@ -215,6 +214,21 @@
 
 <%def name="javascript_bottom()">
     ### Javascript loaded at the bottom of the page ###
+</%def>
+
+<%def name="footer()">
+    <%include file="footer.mako"/>
+</%def>
+
+<%def name="content_wrap()">
+    <div class="watermarked">
+        <div class="container ${self.container_class()}">
+            % if status:
+                <%include file="alert.mako"/>
+            % endif
+            ${self.content()}
+        </div><!-- end container -->
+    </div><!-- end watermarked -->
 </%def>
 
 

@@ -17,9 +17,10 @@ from framework.exceptions import PermissionsError
 from framework.mongo import ObjectId
 from framework.mongo import StoredObject
 from framework.mongo.utils import unique_on
-from framework.sessions import get_session
+from framework.sessions import session
 
 from website.util import web_url_for
+from requests.exceptions import HTTPError as RequestsHTTPError
 from oauthlib.oauth2.rfc6749.errors import MissingTokenError
 from website.oauth.utils import PROVIDER_LOOKUP
 
@@ -132,8 +133,6 @@ class ExternalProvider(object):
         temporary credentials to start the flow.
         """
 
-        session = get_session()
-
         # create a dict on the session object if it's not already there
         if session.data.get("oauth_states") is None:
             session.data['oauth_states'] = {}
@@ -206,7 +205,6 @@ class ExternalProvider(object):
         This is called in the view that handles the user once they are returned
         to the OSF after authenticating on the external service.
         """
-        session = get_session()
 
         # make sure the user has temporary credentials for this provider
         try:
@@ -249,7 +247,7 @@ class ExternalProvider(object):
                     client_secret=self.client_secret,
                     code=request.args.get('code'),
                 )
-            except MissingTokenError:
+            except (MissingTokenError, RequestsHTTPError):
                 raise HTTPError(http.SERVICE_UNAVAILABLE)
 
         # pre-set as many values as possible for the ``ExternalAccount``

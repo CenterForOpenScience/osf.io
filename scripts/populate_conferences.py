@@ -67,7 +67,6 @@ MEETING_DATA = {
         'active': False,
         'admins': [
             'lvonschi@nrao.edu',
-            'presentations@osf.io',
             # 'Dkim@nrao.edu',
         ],
         'public_projects': True,
@@ -84,7 +83,6 @@ MEETING_DATA = {
         'active': False,
         'admins': [
             'gkroll@berkeley.edu',
-            'presentations@osf.io',
             'awais@berkeley.edu',
         ],
         'public_projects': True,
@@ -92,11 +90,10 @@ MEETING_DATA = {
     'spsp2015': {
         'name': 'Society for Personality and Social Psychology 2015',
         'info_url': None,
-        'logo_url': 'http://spspmeeting.org/CMSPages/SPSPimages/spsp2015banner.jpg',
-        'active': True,
+        'logo_url': None,
+        'active': False,
         'admins': [
             'meetings@spsp.org',
-            'presentations@osf.io',
         ],
     },
     'aps2015': {
@@ -105,7 +102,6 @@ MEETING_DATA = {
         'logo_url': 'http://www.psychologicalscience.org/images/APS_2015_Banner_990x157.jpg',
         'active': True,
         'admins': [
-            'presentations@osf.io',
         ],
         'public_projects': True,
     },
@@ -113,9 +109,8 @@ MEETING_DATA = {
         'name': 'International Convention of Psychological Science 2015',
         'info_url': None,
         'logo_url': 'http://icps.psychologicalscience.org/wp-content/themes/deepblue/images/ICPS_Website-header_990px.jpg',
-        'active': True,
+        'active': False,
         'admins': [
-            'presentations@osf.io',
         ],
         'public_projects': True,
     },
@@ -126,7 +121,6 @@ MEETING_DATA = {
         'active': True,
         'admins': [
             'mpa@kent.edu',
-            'presentations@osf.io',
         ],
         'public_projects': True,
     },
@@ -134,10 +128,9 @@ MEETING_DATA = {
         'name': 'North Carolina Cognition Conference 2015',
         'info_url': None,
         'logo_url': None,
-        'active': True,
+        'active': False,
         'admins': [
             'aoverman@elon.edu',
-            'presentations@osf.io',
         ],
         'public_projects': True,
     },
@@ -145,10 +138,9 @@ MEETING_DATA = {
         'name': 'Virginia Piedmont Regional Science Fair 2015',
         'info_url': None,
         'logo_url': 'http://vprsf.org/wp-content/themes/VPRSF/images/logo.png',
-        'active': True,
+        'active': False,
         'admins': [
             'director@vprsf.org',
-            'presentations@osf.io',
         ],
         'public_projects': True,
     },
@@ -156,10 +148,9 @@ MEETING_DATA = {
         'name': 'UVA Annual Postdoctoral Research Symposium 2015',
         'info_url': None,
         'logo_url': 'http://s1.postimg.org/50qj9u6i7/GPA_Logo.jpg',
-        'active': True,
+        'active': False,
         'admins': [
             'mhurst@virginia.edu',
-            'presentations@osf.io',
         ],
         'public_projects': True,
     },
@@ -167,10 +158,9 @@ MEETING_DATA = {
         'name': 'Association of Southeastern Biologists 2015',
         'info_url': None,
         'logo_url': 'http://www.sebiologists.org/wp/wp-content/uploads/2014/09/banner_image_Large.png',
-        'active': True,
+        'active': False,
         'admins': [
             'amorris.mtsu@gmail.com',
-            'presentations@osf.io',
         ],
         'public_projects': True,
     },
@@ -178,9 +168,8 @@ MEETING_DATA = {
         'name': 'Tagung experimentell arbeitender Psychologen 2015',
         'info_url': None,
         'logo_url': None,
-        'active': True,
+        'active': False,
         'admins': [
-            'presentations@osf.io',
         ],
         'public_projects': True,
     },
@@ -188,7 +177,7 @@ MEETING_DATA = {
         'name': 'Virginia State Science and Engineering Fair 2015',
         'info_url': 'http://www.vmi.edu/conferences/vssef/vssef_home/',
         'logo_url': 'http://www.vmi.edu/uploadedImages/Images/Headers/vssef4.jpg',
-        'active': True,
+        'active': False,
         'admins': [],
         'public_projects': True,
     },
@@ -196,7 +185,7 @@ MEETING_DATA = {
         'name': 'Rocky Mountain Psychological Association 2015',
         'info_url': 'http://www.rockymountainpsych.org/uploads/7/4/2/6/7426961/85th_annual_rmpa_conference_program_hr.pdf',
         'logo_url': 'http://www.rockymountainpsych.org/uploads/7/4/2/6/7426961/header_images/1397234084.jpg',
-        'active': True,
+        'active': False,
         'admins': [],
         'public_projects': True,
     },
@@ -212,7 +201,7 @@ MEETING_DATA = {
         'name': 'Society of Experimental Psychologists Meeting 2015',
         'info_url': 'http://faculty.virginia.edu/Society_of_Experimental_Psychologists/',
         'logo_url': 'http://www.sepsych.org/nav/images/SEP-header.gif',
-        'active': True,
+        'active': False,
         'admins': [],
         'public_projects': True,
     },
@@ -228,7 +217,7 @@ MEETING_DATA = {
         'name': 'Northeastern Evolutionary Psychology Conference 2015',
         'info_url': 'http://neeps2015.weebly.com/',
         'logo_url': None,
-        'active': True,
+        'active': False,
         'admins': [],
         'public_projects': True,
     },
@@ -236,7 +225,7 @@ MEETING_DATA = {
         'name': 'Virginia Section American Chemical Society Student Poster Session 2015',
         'info_url': 'http://virginia.sites.acs.org/',
         'logo_url': 'http://virginia.sites.acs.org/Bulletin/15/UVA.jpg',
-        'active': True,
+        'active': False,
         'admins': [],
         'public_projects': True,
     },
@@ -248,6 +237,70 @@ MEETING_DATA = {
         'admins': [],
         'public_projects': True,
     },
+    'NRAO2015': {
+        'name': 'National Radio Astronomy Observatory Accretion 2015',
+        'info_url': 'https://science.nrao.edu/science/meetings/2015/accretion2015/posters',
+        'logo_url': None,
+        'active': True,
+        'admins': [],
+        'public_projects': True,
+    },
+    'ARCS2015': {
+        'name': 'Advancing Research Communication and Scholarship 2015',
+        'info_url': 'http://commons.pacificu.edu/arcs/',
+        'logo_url': 'http://commons.pacificu.edu/assets/md5images/4dfd167454e9f4745360a9550e189323.png',
+        'active': True,
+        'admins': [],
+        'public_projects': True,
+    },
+    'singlecasedesigns2015': {
+        'name': 'Single Case Designs in Clinical Psychology: Uniting Research and Practice',
+        'info_url': 'https://www.royalholloway.ac.uk/psychology/events/eventsarticles/singlecasedesignsinclinicalpsychologyunitingresearchandpractice.aspx',
+        'logo_url': None,
+        'active': True,
+        'admins': [],
+        'public_projects': True,
+    },
+    'OSFM2015': {
+        'name': 'OSF for Meetings 2015',
+        'info_url': None,
+        'logo_url': None,
+        'active': True,
+        'admins': [],
+        'public_projects': True,
+    },
+    'JSSP2015': {
+        'name': 'Japanese Society of Social Psychology 2015',
+        'info_url': 'http://www.socialpsychology.jp/conf2015/index.html',
+        'logo_url': None,
+        'active': True,
+        'admins': [],
+        'public_projects': True,
+    },
+    '4S2015': {
+        'name': 'Society for Social Studies of Science 2015',
+        'info_url': 'http://www.4sonline.org/meeting',
+        'logo_url': 'http://www.4sonline.org/ee/denver-skyline.jpg',
+        'active': True,
+        'admins': [],
+        'public_projects': True,
+    },
+    'IARR2016': {
+        'name': 'International Association for Relationship Research 2016',
+        'info_url': 'http://iarr.psych.utoronto.ca/',
+        'logo_url': None,
+        'active': True,
+        'admins': [],
+        'public_projects': True,
+    },
+    'IA2015': {
+        'name': 'Inclusive Astronomy 2015',
+        'info_url': 'https://vanderbilt.irisregistration.com/Home/Site?code=InclusiveAstronomy2015',
+        'logo_url': 'https://vanderbilt.blob.core.windows.net/images/Inclusive%20Astronomy.jpg',
+        'active': True,
+        'admins': [],
+        'public_projects': True,
+    },    
 }
 
 
@@ -276,6 +329,8 @@ def populate_conferences():
             changed_fields = conf.save()
             if changed_fields:
                 print('Changed: {}'.format(changed_fields))
+        else:
+            print('Added new Conference: {}'.format(meeting))
 
 
 if __name__ == '__main__':

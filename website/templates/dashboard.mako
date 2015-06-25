@@ -8,26 +8,12 @@
 <div class="row">
     <div class="col-sm-7">
         <div>
-            <h3>Projects</h3>
+          <h3>Projects </h3>
             <hr />
         </div><!-- end div -->
 
         <div class="project-organizer" id="projectOrganizerScope">
-            <%include file="projectGridTemplates.html"/>
-            <div class="project-details">
-            </div>
-
-
             <div id="project-grid"></div>
-            <div id="organizer-legends">
-                <span class='organizer-legend'><img alt="Folder" src="/static/img/hgrid/folder.png">Folder</span>
-                <span class='organizer-legend'><img alt="Smart Folder" src="/static/img/hgrid/smart-folder.png">Smart Folder</span>
-                <span class='organizer-legend'><img alt="Project" src="/static/img/hgrid/project.png">Project</span>
-                <span class='organizer-legend'><img alt="Registration" src="/static/img/hgrid/reg-project.png">Registration</span>
-                <span class='organizer-legend'><img alt="Component" src="/static/img/hgrid/component.png">Component</span>
-                <span class='organizer-legend'><img alt="Registered Component" src="/static/img/hgrid/reg-component.png">Registered Component</span>
-                <span class='organizer-legend'><img alt="Link" src="/static/img/hgrid/pointer.png">Link</span>
-            </div>
         </div><!-- end project-organizer -->
     </div><!-- end col -->
 
@@ -54,13 +40,13 @@
                         <li id="obNewProject" class="ob-list-item list-group-item">
 
                             <div data-bind="click: toggle" class="ob-header pointer">
+                                 <i data-bind="css: {' fa-plus': !isOpen(), ' fa-minus': isOpen()}"
+                                    class="pointer ob-expand-icon fa-lg pull-right fa">
+                                </i>
                                 <h3
                                     class="ob-heading list-group-item-heading">
                                     Create a project
                                 </h3>
-                                <i data-bind="css: {' fa-plus': !isOpen(), ' fa-minus': isOpen()}"
-                                    class="pointer ob-expand-icon fa-lg pull-right fa">
-                                </i>
                             </div><!-- end ob-header -->
                             <div data-bind="visible: isOpen()" id="obRevealNewProject">
                                 <osf-project-create-form

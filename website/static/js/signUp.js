@@ -26,7 +26,7 @@ var ViewModel = function(submitUrl) {
         email: true,
         validation: {
             validator: function(val, other) {
-                return val === other;
+                return String(val).toLowerCase() === String(other).toLowerCase();
             },
             'message': 'Email addresses must match.',
             params: self.email1
@@ -35,7 +35,7 @@ var ViewModel = function(submitUrl) {
     self.password = ko.observable('').extend({
         required: true,
         minLength: 6,
-        maxLength: 35
+        maxLength: 256
     });
 
     // Preserve object of validated fields for use in `submit`
@@ -112,7 +112,8 @@ var ViewModel = function(submitUrl) {
             });
             return false;
         }
-        // Else submit
+        // Else submit, and send Google Analytics event
+        window.ga('send', 'event', 'signupSubmit', 'click', 'new_user_submit');
         $osf.postJSON(
             submitUrl,
             ko.toJS(self)

@@ -9,34 +9,34 @@ from modularodm.exceptions import ValidationValueError
 
 from framework import forms
 from framework import status
+from framework.auth import cas
 from framework.flask import redirect  # VOL-aware redirect
 from framework.sessions import session
-from framework.auth import authenticate
 from framework.auth import User, get_user
 from framework.exceptions import HTTPError
 from framework.auth.signals import user_registered
+from framework.auth.core import generate_confirm_token
 from framework.auth.decorators import collect_auth, must_be_logged_in
 from framework.auth.forms import PasswordForm, SetEmailAndPasswordForm
 from framework.transactions.handlers import no_auto_transaction
 
 from website import mails
 from website import language
+from website import security
 from website import settings
 from website.models import Node
 from website.profile import utils
 from website.project.model import has_anonymous_link
 from website.util import web_url_for, is_json_request
-from website.project.model import unreg_contributor_added
+from website.project.signals import unreg_contributor_added
 from website.util.permissions import expand_permissions, ADMIN
 from website.project.decorators import (must_have_permission, must_be_valid_project,
         must_not_be_registration, must_be_contributor_or_public, must_be_contributor)
 
 
 @collect_auth
-@must_be_valid_project
-def get_node_contributors_abbrev(auth, **kwargs):
-    node = kwargs['node'] or kwargs['project']
-
+@must_be_valid_project(retractions_valid=True)
+def get_node_contributors_abbrev(auth, node, **kwargs):
     anonymous = has_anonymous_link(node, auth)
 
     max_count = kwargs.get('max_count', 3)
@@ -80,8 +80,8 @@ def get_node_contributors_abbrev(auth, **kwargs):
 
 
 @collect_auth
-@must_be_valid_project
-def get_contributors(auth, **kwargs):
+@must_be_valid_project(retractions_valid=True)
+def get_contributors(auth, node, **kwargs):
 
     # Can set limit to only receive a specified number of contributors in a call to this route
     if request.args.get('limit'):
@@ -93,8 +93,6 @@ def get_contributors(auth, **kwargs):
             ))
     else:
         limit = None
-
-    node = kwargs['node'] or kwargs['project']
 
     anonymous = has_anonymous_link(node, auth)
 
@@ -121,9 +119,8 @@ def get_contributors(auth, **kwargs):
 
 @must_be_logged_in
 @must_be_valid_project
-def get_contributors_from_parent(auth, **kwargs):
+def get_contributors_from_parent(auth, node, **kwargs):
 
-    node = kwargs['node'] or kwargs['project']
     parent = node.parent_node
 
     if not parent:
@@ -142,8 +139,7 @@ def get_contributors_from_parent(auth, **kwargs):
 
 
 @must_be_contributor_or_public
-def get_most_in_common_contributors(auth, **kwargs):
-    node = kwargs['node'] or kwargs['project']
+def get_most_in_common_contributors(auth, node, **kwargs):
     node_contrib_ids = set(node.contributors._to_primary_keys())
     try:
         n_contribs = int(request.args.get('max', None))
@@ -172,8 +168,7 @@ def get_most_in_common_contributors(auth, **kwargs):
 
 
 @must_be_contributor_or_public
-def get_recently_added_contributors(auth, **kwargs):
-    node = kwargs['node'] or kwargs['project']
+def get_recently_added_contributors(auth, node, **kwargs):
 
     max_results = request.args.get('max')
     if max_results:
@@ -203,9 +198,7 @@ def get_recently_added_contributors(auth, **kwargs):
 @must_be_valid_project  # returns project
 @must_be_contributor
 @must_not_be_registration
-def project_before_remove_contributor(auth, **kwargs):
-
-    node = kwargs['node'] or kwargs['project']
+def project_before_remove_contributor(auth, node, **kwargs):
 
     contributor = User.load(request.json.get('id'))
 
@@ -230,8 +223,7 @@ def project_before_remove_contributor(auth, **kwargs):
 @must_be_valid_project  # returns project
 @must_be_contributor
 @must_not_be_registration
-def project_removecontributor(auth, **kwargs):
-    node = kwargs['node'] or kwargs['project']
+def project_removecontributor(auth, node, **kwargs):
 
     contributor = User.load(request.json['id'])
     if contributor is None:
@@ -249,7 +241,7 @@ def project_removecontributor(auth, **kwargs):
     if outcome:
         if auth.user == contributor:
             status.push_status_message('Removed self from project', 'info')
-            return {'redirectUrl': '/dashboard/'}
+            return {'redirectUrl': web_url_for('dashboard')}
         status.push_status_message('Contributor removed', 'info')
         return {}
 
@@ -329,11 +321,9 @@ def finalize_invitation(node, contributor, auth):
 @must_be_valid_project
 @must_have_permission(ADMIN)
 @must_not_be_registration
-def project_contributors_post(**kwargs):
+def project_contributors_post(auth, node, **kwargs):
     """ Add contributors to a node. """
 
-    node = kwargs['node'] or kwargs['project']
-    auth = kwargs['auth']
     user_dicts = request.json.get('users')
     node_ids = request.json.get('node_ids')
 
@@ -365,7 +355,7 @@ def project_contributors_post(**kwargs):
 @must_be_valid_project  # injects project
 @must_have_permission(ADMIN)
 @must_not_be_registration
-def project_manage_contributors(auth, **kwargs):
+def project_manage_contributors(auth, node, **kwargs):
     """Reorder and remove contributors.
 
     :param Auth auth: Consolidated authorization
@@ -376,8 +366,6 @@ def project_manage_contributors(auth, **kwargs):
         or if no admin users would remain after changes were applied
 
     """
-    node = kwargs['node'] or kwargs['project']
-
     contributors = request.json.get('contributors')
 
     # Update permissions and order
@@ -417,6 +405,15 @@ def throttle_period_expired(timestamp, throttle):
 
 def send_claim_registered_email(claimer, unreg_user, node, throttle=24 * 3600):
     unclaimed_record = unreg_user.get_unclaimed_record(node._primary_key)
+    # roll the valid token for each email, thus user cannot change email and approve a different email address
+    timestamp = unclaimed_record.get('last_sent')
+    if not throttle_period_expired(timestamp, throttle):
+        raise HTTPError(400, data=dict(
+            message_long='User account can only be claimed with an existing user once every 24 hours'
+        ))
+    unclaimed_record['token'] = generate_confirm_token()
+    unclaimed_record['claimer_email'] = claimer.username
+    unreg_user.save()
     referrer = User.load(unclaimed_record['referrer_id'])
     claim_url = web_url_for(
         'claim_user_registered',
@@ -425,20 +422,18 @@ def send_claim_registered_email(claimer, unreg_user, node, throttle=24 * 3600):
         token=unclaimed_record['token'],
         _external=True,
     )
-    timestamp = unclaimed_record.get('last_sent')
-    if throttle_period_expired(timestamp, throttle):
-        # Send mail to referrer, telling them to forward verification link to claimer
-        mails.send_mail(
-            referrer.username,
-            mails.FORWARD_INVITE_REGiSTERED,
-            user=unreg_user,
-            referrer=referrer,
-            node=node,
-            claim_url=claim_url,
-            fullname=unclaimed_record['name'],
-        )
-        unclaimed_record['last_sent'] = get_timestamp()
-        unreg_user.save()
+    # Send mail to referrer, telling them to forward verification link to claimer
+    mails.send_mail(
+        referrer.username,
+        mails.FORWARD_INVITE_REGiSTERED,
+        user=unreg_user,
+        referrer=referrer,
+        node=node,
+        claim_url=claim_url,
+        fullname=unclaimed_record['name'],
+    )
+    unclaimed_record['last_sent'] = get_timestamp()
+    unreg_user.save()
     # Send mail to claimer, telling them to wait for referrer
     mails.send_mail(
         claimer.username,
@@ -462,32 +457,39 @@ def send_claim_email(email, user, node, notify=True, throttle=24 * 3600):
         emailed during which the referrer will not be emailed again.
 
     """
-    invited_email = email.lower().strip()
+    claimer_email = email.lower().strip()
 
     unclaimed_record = user.get_unclaimed_record(node._primary_key)
     referrer = User.load(unclaimed_record['referrer_id'])
     claim_url = user.get_claim_url(node._primary_key, external=True)
     # If given email is the same provided by user, just send to that email
-    if unclaimed_record.get('email', None) == invited_email:
+    if unclaimed_record.get('email') == claimer_email:
         mail_tpl = mails.INVITE
-        to_addr = invited_email
+        to_addr = claimer_email
+        unclaimed_record['claimer_email'] = claimer_email
+        user.save()
     else:  # Otherwise have the referrer forward the email to the user
+        # roll the valid token for each email, thus user cannot change email and approve a different email address
+        timestamp = unclaimed_record.get('last_sent')
+        if not throttle_period_expired(timestamp, throttle):
+            raise HTTPError(400, data=dict(
+                message_long='User account can only be claimed with an existing user once every 24 hours'
+            ))
+        unclaimed_record['last_sent'] = get_timestamp()
+        unclaimed_record['token'] = generate_confirm_token()
+        unclaimed_record['claimer_email'] = claimer_email
+        user.save()
+        claim_url = user.get_claim_url(node._primary_key, external=True)
         if notify:
             pending_mail = mails.PENDING_VERIFICATION
             mails.send_mail(
-                invited_email,
+                claimer_email,
                 pending_mail,
                 user=user,
                 referrer=referrer,
                 fullname=unclaimed_record['name'],
                 node=node
             )
-        timestamp = unclaimed_record.get('last_sent')
-        if throttle_period_expired(timestamp, throttle):
-            unclaimed_record['last_sent'] = get_timestamp()
-            user.save()
-        else:  # Don't send the email to the referrer
-            return
         mail_tpl = mails.FORWARD_INVITE
         to_addr = referrer.username
     mails.send_mail(
@@ -497,7 +499,7 @@ def send_claim_email(email, user, node, notify=True, throttle=24 * 3600):
         referrer=referrer,
         node=node,
         claim_url=claim_url,
-        email=invited_email,
+        email=claimer_email,
         fullname=unclaimed_record['name']
     )
     return to_addr
@@ -521,24 +523,25 @@ def verify_claim_token(user, token, pid):
 
 @collect_auth
 @must_be_valid_project
-def claim_user_registered(auth, **kwargs):
+def claim_user_registered(auth, node, **kwargs):
     """View that prompts user to enter their password in order to claim
     contributorship on a project.
 
     A user must be logged in.
     """
     current_user = auth.user
-    node = kwargs['node'] or kwargs['project']
 
-    sign_out_url = web_url_for('auth_login', logout=True, next=request.path)
+    sign_out_url = web_url_for('auth_login', logout=True, next=request.url)
     if not current_user:
-        response = redirect(sign_out_url)
-        return response
+        return redirect(sign_out_url)
     # Logged in user should not be a contributor the project
     if node.is_contributor(current_user):
-        data = {'message_short': 'Already a contributor',
-                'message_long': 'The logged-in user is already a contributor to '
-                'this project. Would you like to <a href="/logout/">log out</a>?'}
+        logout_url = web_url_for('auth_logout', redirect_url=request.url)
+        data = {
+            'message_short': 'Already a contributor',
+            'message_long': ('The logged-in user is already a contributor to this'
+                'project. Would you like to <a href="{}">log out</a>?').format(logout_url)
+        }
         raise HTTPError(http.BAD_REQUEST, data=data)
     uid, pid, token = kwargs['uid'], kwargs['pid'], kwargs['token']
     unreg_user = User.load(uid)
@@ -619,30 +622,36 @@ def claim_user_form(auth, **kwargs):
         raise HTTPError(http.BAD_REQUEST)
     # If claim token not valid, redirect to registration page
     if not verify_claim_token(user, token, pid):
-        return redirect('/account/')
+        return redirect(web_url_for('auth_login'))
     unclaimed_record = user.unclaimed_records[pid]
     user.fullname = unclaimed_record['name']
     user.update_guessed_names()
-    email = unclaimed_record['email']
+    # The email can be the original referrer email if no claimer email has been specified.
+    claimer_email = unclaimed_record.get('claimer_email') or unclaimed_record.get('email')
     form = SetEmailAndPasswordForm(request.form, token=token)
     if request.method == 'POST':
         if form.validate():
-            username, password = email, form.password.data
+            username, password = claimer_email, form.password.data
             user.register(username=username, password=password)
             # Clear unclaimed records
             user.unclaimed_records = {}
+            user.verification_key = security.random_string(20)
             user.save()
             # Authenticate user and redirect to project page
-            response = redirect('/settings/')
             node = Node.load(pid)
-            status.push_status_message(language.CLAIMED_CONTRIBUTOR.format(node=node),
-                'success')
-            return authenticate(user, response)
+            status.push_status_message(language.CLAIMED_CONTRIBUTOR.format(node=node), 'success')
+            # Redirect to CAS and authenticate the user with a verification key.
+            return redirect(cas.get_login_url(
+                web_url_for('user_profile', _absolute=True),
+                auto=True,
+                username=user.username,
+                verification_key=user.verification_key
+            ))
         else:
             forms.push_errors_to_status(form.errors)
     return {
         'firstname': user.given_name,
-        'email': email if email else '',
+        'email': claimer_email if claimer_email else '',
         'fullname': user.fullname,
         'form': forms.utils.jsonify(form) if is_json_request() else form,
     }
@@ -651,11 +660,10 @@ def claim_user_form(auth, **kwargs):
 @must_be_valid_project
 @must_have_permission(ADMIN)
 @must_not_be_registration
-def invite_contributor_post(**kwargs):
+def invite_contributor_post(node, **kwargs):
     """API view for inviting an unregistered user.
     Expects JSON arguments with 'fullname' (required) and email (not required).
     """
-    node = kwargs['node'] or kwargs['project']
     fullname = request.json.get('fullname').strip()
     email = request.json.get('email')
     if email:
@@ -683,19 +691,18 @@ def invite_contributor_post(**kwargs):
 
 
 @must_be_contributor_or_public
-def claim_user_post(**kwargs):
+def claim_user_post(node, **kwargs):
     """View for claiming a user from the X-editable form on a project page.
     """
     reqdata = request.json
     # Unreg user
     user = User.load(reqdata['pk'])
-    node = kwargs['node'] or kwargs['project']
     unclaimed_data = user.get_unclaimed_record(node._primary_key)
     # Submitted through X-editable
     if 'value' in reqdata:  # Submitted email address
         email = reqdata['value'].lower().strip()
         claimer = get_user(email=email)
-        if claimer:
+        if claimer and claimer.is_registered:
             send_claim_registered_email(claimer=claimer, unreg_user=user,
                 node=node)
         else:

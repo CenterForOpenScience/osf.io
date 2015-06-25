@@ -6,49 +6,95 @@ from furl import furl
 from flask import request
 
 from framework import status
-from framework.auth import Auth
+from framework.auth import Auth, cas
 from framework.flask import redirect  # VOL-aware redirect
 from framework.exceptions import HTTPError
 from framework.auth.decorators import collect_auth
+from framework.mongo.utils import get_or_http_error
 
 from website.models import Node
+
+_load_node_or_fail = lambda pk: get_or_http_error(Node, pk)
 
 
 def _kwargs_to_nodes(kwargs):
     """Retrieve project and component objects from keyword arguments.
 
     :param dict kwargs: Dictionary of keyword arguments
-    :return: Tuple of project and component
+    :return: Tuple of parent and node
 
     """
-    project = kwargs.get('project') or Node.load(kwargs.get('pid', kwargs.get('nid')))
-    if not project:
-        raise HTTPError(http.NOT_FOUND)
-    if project.category != 'project':
-        raise HTTPError(http.BAD_REQUEST)
-    if project.is_deleted:
-        raise HTTPError(http.GONE)
+    node = kwargs.get('node') or kwargs.get('project')
+    parent = kwargs.get('parent')
+    if node:
+        return parent, node
 
-    if kwargs.get('nid') or kwargs.get('node'):
-        node = kwargs.get('node') or Node.load(kwargs.get('nid'))
-        if not node:
-            raise HTTPError(http.NOT_FOUND)
-        if node.is_deleted:
-            raise HTTPError(http.GONE)
-    else:
-        node = None
+    pid = kwargs.get('pid')
+    nid = kwargs.get('nid')
+    if pid and nid:
+        node = _load_node_or_fail(nid)
+        parent = _load_node_or_fail(pid)
+    elif pid and not nid:
+        node = _load_node_or_fail(pid)
+    elif nid and not pid:
+        node = _load_node_or_fail(nid)
+    elif not pid and not nid:
+        raise HTTPError(
+            http.NOT_FOUND,
+            data={
+                'message_short': 'Node not found',
+                'message_long': "No Node with that primary key could be found",
+            }
+        )
+    return parent, node
 
-    return project, node
+
+def _inject_nodes(kwargs):
+    kwargs['parent'], kwargs['node'] = _kwargs_to_nodes(kwargs)
 
 
-def must_be_valid_project(func):
+def must_be_valid_project(func=None, retractions_valid=False):
+    """ Ensures permissions to retractions are never implicitly granted. """
 
     # TODO: Check private link
+    def must_be_valid_project_inner(func):
+
+        @functools.wraps(func)
+        def wrapped(*args, **kwargs):
+
+            _inject_nodes(kwargs)
+
+            if not retractions_valid and getattr(kwargs['node'].retraction, 'is_retracted', False):
+                raise HTTPError(
+                    http.BAD_REQUEST,
+                    data=dict(message_long='Viewing retracted registrations is not permitted')
+                )
+            else:
+                return func(*args, **kwargs)
+
+        return wrapped
+
+    if func:
+        return must_be_valid_project_inner(func)
+
+    return must_be_valid_project_inner
+
+
+def must_be_public_registration(func):
 
     @functools.wraps(func)
     def wrapped(*args, **kwargs):
 
-        kwargs['project'], kwargs['node'] = _kwargs_to_nodes(kwargs)
+        _inject_nodes(kwargs)
+
+        node = kwargs['node']
+
+        if not node.is_public or not node.is_registration:
+            raise HTTPError(
+                http.BAD_REQUEST,
+                data=dict(message_long='Must be a public registration to view')
+            )
+
         return func(*args, **kwargs)
 
     return wrapped
@@ -59,11 +105,36 @@ def must_not_be_registration(func):
     @functools.wraps(func)
     def wrapped(*args, **kwargs):
 
-        kwargs['project'], kwargs['node'] = _kwargs_to_nodes(kwargs)
-        node = kwargs['node'] or kwargs['project']
+        _inject_nodes(kwargs)
+        node = kwargs['node']
 
-        if node.is_registration:
-            raise HTTPError(http.BAD_REQUEST)
+        if not node.archiving and node.is_registration:
+            raise HTTPError(
+                http.BAD_REQUEST,
+                data={
+                    'message_short': 'Registered Nodes are immutable',
+                    'message_long': "The operation you're trying to do cannot be applied to registered Nodes, which are immutable",
+                }
+            )
+        return func(*args, **kwargs)
+
+    return wrapped
+
+def must_be_registration(func):
+
+    @functools.wraps(func)
+    def wrapped(*args, **kwargs):
+        _inject_nodes(kwargs)
+        node = kwargs['node']
+
+        if not node.is_registration:
+            raise HTTPError(
+                http.BAD_REQUEST,
+                data={
+                    'message_short': 'Registered Nodes only',
+                    'message_long': "This view is restricted to registered Nodes only",
+                }
+            )
         return func(*args, **kwargs)
 
     return wrapped
@@ -98,7 +169,6 @@ def check_key_expired(key, node, url):
 
     return url
 
-
 def _must_be_contributor_factory(include_public):
     """Decorator factory for authorization wrappers. Decorators verify whether
     the current user is a contributor on the current project, or optionally
@@ -112,8 +182,8 @@ def _must_be_contributor_factory(include_public):
         @functools.wraps(func)
         def wrapped(*args, **kwargs):
             response = None
-            kwargs['project'], kwargs['node'] = _kwargs_to_nodes(kwargs)
-            node = kwargs['node'] or kwargs['project']
+            _inject_nodes(kwargs)
+            node = kwargs['node']
 
             kwargs['auth'] = Auth.from_kwargs(request.args.to_dict(), kwargs)
             user = kwargs['auth'].user
@@ -125,9 +195,11 @@ def _must_be_contributor_factory(include_public):
             if not node.is_public or not include_public:
                 if key not in node.private_link_keys_active:
                     if not check_can_access(node=node, user=user, key=key):
-                        url = '/login/?next={0}'.format(request.path)
-                        redirect_url = check_key_expired(key=key, node=node, url=url)
-                        response = redirect(redirect_url)
+                        redirect_url = check_key_expired(key=key, node=node, url=request.url)
+                        if request.headers.get('Content-Type') == 'application/json':
+                            raise HTTPError(http.UNAUTHORIZED)
+                        else:
+                            response = redirect(cas.get_login_url(redirect_url))
 
             return response or func(*args, **kwargs)
 
@@ -158,8 +230,8 @@ def must_have_addon(addon_name, model):
         @collect_auth
         def wrapped(*args, **kwargs):
             if model == 'node':
-                kwargs['project'], kwargs['node'] = _kwargs_to_nodes(kwargs)
-                owner = kwargs.get('node') or kwargs.get('project')
+                _inject_nodes(kwargs)
+                owner = kwargs['node']
             elif model == 'user':
                 auth = kwargs.get('auth')
                 owner = auth.user if auth else None
@@ -196,8 +268,8 @@ def must_be_addon_authorizer(addon_name):
 
             node_addon = kwargs.get('node_addon')
             if not node_addon:
-                kwargs['project'], kwargs['node'] = _kwargs_to_nodes(kwargs)
-                node = kwargs.get('node') or kwargs.get('project')
+                _inject_nodes(kwargs)
+                node = kwargs['node']
                 node_addon = node.get_addon(addon_name)
 
             if not node_addon:
@@ -235,8 +307,8 @@ def must_have_permission(permission):
         @functools.wraps(func)
         def wrapped(*args, **kwargs):
             # Ensure `project` and `node` kwargs
-            kwargs['project'], kwargs['node'] = _kwargs_to_nodes(kwargs)
-            node = kwargs['node'] or kwargs['project']
+            _inject_nodes(kwargs)
+            node = kwargs['node']
 
             kwargs['auth'] = Auth.from_kwargs(request.args.to_dict(), kwargs)
             user = kwargs['auth'].user
