@@ -3,7 +3,6 @@
 import logging
 import httplib
 import httplib as http
-import os
 
 from dateutil.parser import parse as parse_date
 
