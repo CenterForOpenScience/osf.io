@@ -900,7 +900,7 @@ class TestMergingUsers(OsfTestCase):
         mock_get_mailchimp_api.return_value = mock_client
         mock_client.lists.list.return_value = {'data': [{'id': 2, 'list_name': list_name}]}
         list_id = mailchimp_utils.get_list_id_from_name(list_name)
-        mailchimp_utils.unsubscribe_mailchimp(list_name, self.dupe._id, username=username)
+        self._merge_dupe()
         handlers.celery_teardown_request()
         mock_client.lists.unsubscribe.assert_called_with(id=list_id, email={'email': username})
         assert_false(self.dupe.mailing_lists[list_name])
