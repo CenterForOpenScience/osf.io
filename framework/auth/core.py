@@ -1142,9 +1142,11 @@ class User(GuidStoredObject, AddonModelMixin):
 
         for key, value in user.mailing_lists.iteritems():
             # subscribe to each list if either user was subscribed
-            self.mailing_lists[key] = value or self.mailing_lists.get(key)
-        # - clear subscriptions for merged user
-        user.mailing_lists = {}
+            subscription = value or self.mailing_lists.get(key)
+            signals.user_merged.send(self, list_name=key, subscription=subscription)
+
+            # clear subscriptions for merged user
+            signals.user_merged.send(user, list_name=key, subscription=False)
 
         for node_id, timestamp in user.comments_viewed_timestamp.iteritems():
             if not self.comments_viewed_timestamp.get(node_id):
