@@ -284,7 +284,6 @@ def update_node(node, index=None):
             'pending_embargo': node.pending_embargo,
             'registered_date': node.registered_date,
             'wikis': {},
-            'files': '',
             'parent_id': parent_id,
             'date_created': node.date_created,
             'boost': int(not node.is_registration) + 1,  # This is for making registered projects less relevant
@@ -305,11 +304,8 @@ def update_project_files(node, index=None):
     index = index or INDEX
 
     category = categorize_node(node)
-
-    files = index_file.collect_files(node._id)
-    file_texts = [file_['content'] for file_ in files if file_.get('content')]
-    file_text = ' '.join(file_texts)
-    update_body = {'doc': {'files': file_text}}
+    aggregated_files = ' '.join([f['content'] for f in index_file.collect_files(node)])
+    update_body = {'doc': {'files': aggregated_files}}
     es.update(index=index, doc_type=category, id=node._id, body=update_body)
 
 
