@@ -99,7 +99,7 @@ var AddContributorViewModel = oop.extend(Paginator, {
         });
     },
     alreadyAdded : function(contrib) {
-        if ($osf.mapByProperty(this.contributors(), 'id').indexOf(contrib.id) == -1) {
+        if ($osf.mapByProperty(this.contributors(), 'id').indexOf(contrib.id) === -1) {
             return false;
         } else {
             return true;
@@ -249,10 +249,10 @@ var AddContributorViewModel = oop.extend(Paginator, {
     addButtonTips: function(contrib) {
         if(this.alreadyAdded(contrib)){
             // This would be have tooltip, but KO can't make them for disabled inputs, so displays msg instead.
-            contrib.displayProjectsInCommon = "Already added to this component";
-            return "";
+            contrib.displayProjectsInCommon = 'Already added to this component';
+            return '';
         }else{
-            return "Add contributor";
+            return 'Add contributor';
         }
     },
     afterRender: function(elm, data) {
@@ -424,27 +424,6 @@ function ContribAdder(selector, nodeTitle, nodeId, parentTitle) {
         self.nodeId, self.parentTitle);
     self.init();
 }
-
-ko.bindingHandlers.tooltip = {
-    init: function(element, valueAccessor) {
-        var local = ko.utils.unwrapObservable(valueAccessor()),
-            options = {};
-
-        ko.utils.extend(options, ko.bindingHandlers.tooltip.options);
-        ko.utils.extend(options, local);
-
-        $(element).tooltip(options);
-
-        ko.utils.domNodeDisposal.addDisposeCallback(element, function() {
-            $(element).tooltip("destroy");
-        });
-    },
-    options: {
-        placement: "right",
-        trigger: "click"
-    }
-};
-
 
 ContribAdder.prototype.init = function() {
     var self = this;
