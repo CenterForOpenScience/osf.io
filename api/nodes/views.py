@@ -9,7 +9,7 @@ from website.models import Node, Pointer, User
 from api.base.utils import get_object_or_404, waterbutler_url_for
 from api.base.filters import ODMFilterMixin, ListFilterMixin
 from .serializers import NodeSerializer, NodePointersSerializer, NodeFilesSerializer, ContributorSerializer, ContributorDetailSerializer
-from .permissions import ContributorOrPublic, ReadOnlyIfRegistration, ContributorOrPublicForPointers, AdminOrPublic, AdminOrPublicContributorDetail
+from .permissions import ContributorOrPublic, ReadOnlyIfRegistration, ContributorOrPublicForPointers, AdminOrPublic
 
 
 class NodeMixin(object):
@@ -144,7 +144,7 @@ class NodeContributorDetail(generics.RetrieveUpdateDestroyAPIView, NodeMixin):
 
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
-        AdminOrPublicContributorDetail,
+        AdminOrPublic,
     )
 
     # overrides RetrieveAPIView
@@ -257,15 +257,6 @@ class NodePointerDetail(generics.RetrieveDestroyAPIView, NodeMixin):
         # May raise a permission denied
         self.check_object_permissions(self.request, pointer)
         return pointer
-
-    # overrides DestroyAPIView
-    def perform_destroy(self, instance):
-        user = self.request.user
-        auth = Auth(user)
-        node = self.get_node()
-        pointer = self.get_object()
-        node.rm_pointer(pointer, auth)
-        node.save()
 
 
 class NodeFilesList(generics.ListAPIView, NodeMixin):

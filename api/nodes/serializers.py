@@ -198,14 +198,6 @@ class NodeFilesSerializer(JSONAPISerializer):
 
 class ContributorSerializer(UserSerializer):
 
-    local_filterable = frozenset(['bibliographic'])
-    filterable_fields = frozenset.union(UserSerializer.filterable_fields, local_filterable)
-    bibliographic = ser.BooleanField(help_text='Whether the user will be included in citations for this node or not')
-
-
-    #todo Allow admin option in add contributors?
-    # admin = ser.BooleanField(help_text='Whether the user will be able to add and remove contributors')
-
     admin = ser.BooleanField(read_only=True, help_text='Whether the user will be able to add and remove contributors')
     id = ser.CharField(source='_id')
     fullname = ser.CharField(read_only=True, help_text='Display name used in the general user interface')
@@ -238,19 +230,17 @@ class ContributorSerializer(UserSerializer):
         user = request.user
         auth = Auth(user)
         node = self.context['view'].get_node()
-        contributor = User.load(validated_data['_id'])
+        try:
+            contributor = User.load(validated_data['_id'])
+        except NotFound:
+            raise NotFound('User with id {} not found.'.format(validated_data=['_id']))
         if not contributor:
             raise NotFound('User not found.')
         if contributor in node.contributors:
             raise ValidationError('User {} already is a contributor'.format(contributor.username))
         permissions = ['read', 'write']
-        if validated_data['bibliographic']:
-            visible = True
-        else:
-            visible = False
-        node.add_contributor(contributor=contributor, auth=auth, permissions=permissions, visible=visible, save=True)
+        node.add_contributor(contributor=contributor, auth=auth, permissions=permissions, save=True)
         contributor.node_id = node._id
-        contributor.bibliographic = visible
         return contributor
 
 
@@ -260,6 +250,7 @@ class ContributorDetailSerializer(ContributorSerializer):
     admin = ser.BooleanField(help_text='Whether the user will be able to add and remove contributors')
     local_filterable = frozenset(['admin'])
     filterable_fields = frozenset.union(UserSerializer.filterable_fields, local_filterable)
+    bibliographic = ser.BooleanField(help_text='Whether the user will be included in citations for this node or not')
 
 
     def update(self, user, validated_data):
@@ -277,6 +268,15 @@ class ContributorDetailSerializer(ContributorSerializer):
         else:
             raise PermissionDenied('Admin privileges for {} cannot be removed as they are the only admin.'.format(user.username))
         return self.context['view'].get_object()
+
+
+    def destroy(self, user, validated_data):
+        auth = Auth(user)
+        node = self.context['view'].get_node()
+        contributor = self.get_object()
+        node.rm_contributor(contributor, auth)
+        node.save()
+
 
 
     links = LinksField({
