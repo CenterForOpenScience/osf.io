@@ -675,45 +675,41 @@ class TestAddNodeContributor(ApiTestCase):
         self.user.set_password(self.password)
         self.user.save()
 
-        self.default_data = {
-            'id': self.user._id,
-            'bibliographic': False
-        }
+        self.user_data = { 'id': self.user._id}
         self.project = ProjectFactory(is_public=True, creator=self.creator)
         self.url = '/{}nodes/{}/contributors/'.format(API_BASE, self.project._id)
 
-    def test_creator_add_bibliographic_contributor(self):
-        data = {
-            'id': self.user._id,
-            'bibliographic': True
-        }
-        res = self.app.post(self.url, data, auth=self.creator_auth, expect_errors=False)
+    def test_creator_add_contributor(self):
+        res = self.app.post(self.url, self.user_data, auth=self.creator_auth, expect_errors=False)
         assert_equal(res.status_code, 201)
         assert_in(self.user, self.project.contributors)
-        assert_equal(self.project.get_visible(self.user), True)
-
-    def test_creator_add_non_bibliographic_contributor(self):
-        res = self.app.post(self.url, self.default_data, auth=self.creator_auth, expect_errors=False)
-        assert_equal(res.status_code, 201)
-        assert_in(self.user, self.project.contributors)
-        assert_equal(self.project.get_visible(self.user), False)
 
     def test_creator_add_already_existing_contributor(self):
         self.project.add_contributor(self.user)
-        res = self.app.post(self.url, self.default_data, auth=self.creator_auth, expect_errors=True)
+        res = self.app.post(self.url, self.user_data, auth=self.creator_auth, expect_errors=True)
         assert_equal(res.status_code, 400)
 
     def test_creator_add_non_existing_contributor(self):
-        data = {
-            'id': "non-existent",
-            'bibliographic': False
-        }
+        data = {'id': 'non_existent'}
         res = self.app.post(self.url, data, auth=self.creator_auth, expect_errors=True)
         assert_equal(res.status_code, 404)
+        assert_not_in(self.user, self.project.contributors)
+
+    def test_non_contributor_add_contributor(self):
+        user_two = UserFactory.build()
+        user_two.set_password(self.password)
+        user_two.save()
+        data = {'id': user_two._id}
+
+        non_contributor_auth = (self.user.username, self.password)
+        res = self.app.post(self.url, data, auth=non_contributor_auth, expect_errors=True)
+        assert_equal(res.status_code, 403)
+        assert_not_in(user_two, self.project.contributors)
 
     def test_non_logged_in_user_add_contributor(self):
-        res = self.app.post(self.url, self.default_data, expect_errors=True)
+        res = self.app.post(self.url, self.user_data, expect_errors=True)
         assert_equal(res.status_code, 403)
+        assert_not_in(self.user, self.project.contributors)
 
 
 class TestRemoveNodeContributor(ApiTestCase):
