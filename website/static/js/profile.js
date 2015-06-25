@@ -1,5 +1,6 @@
 'use strict';
 
+/*global require */
 var $ = require('jquery');
 var ko = require('knockout');
 var bootbox = require('bootbox');
@@ -378,7 +379,7 @@ var NameViewModel = function(urls, modes, preventUnsaved, fetchCallback) {
     });
     
    self.nameFieldEmpty = ko.computed(function() {
-        if (self.full() === "") {
+        if (self.full() === '') {
         return true;        
         }
         else {
@@ -625,16 +626,16 @@ var ListViewModel = function(ContentModel, urls, modes) {
     
     self.extraFieldsEmpty = ko.computed(function() {
         var i;
-        if (urls.crud === "/api/v1/settings/jobs/") {
+        if (urls.crud === '/api/v1/settings/jobs/') {
             for (i=0; i<self.contents().length; i++) {
-                if (self.contents()[i].department() === "" && self.contents()[i].title() === "") {
+                if (self.contents()[i].department() === '' && self.contents()[i].title() === '') {
                     return true;
                 }
             }
         }
-        else if (urls.crud === "/api/v1/settings/schools/") {
+        else if (urls.crud === '/api/v1/settings/schools/') {
             for (i=0; i<self.contents().length; i++) {
-                if (self.contents()[i].department() === "" && self.contents()[i].degree() === "") {
+                if (self.contents()[i].department() === '' && self.contents()[i].degree() === '') {
                     return true;
                 }
             }
@@ -821,7 +822,7 @@ var JobViewModel = function() {
     });
     
     self.institutionEmpty = ko.computed(function() {
-        if (self.institution() === "") {
+        if (self.institution() === '') {
             return true;        
         }
         else {
@@ -860,7 +861,7 @@ var SchoolViewModel = function() {
     });
     
     self.institutionEmpty = ko.computed(function() {
-        if (self.institution() === "") {
+        if (self.institution() === '') {
         return true;        
         }
         else {
@@ -918,6 +919,7 @@ var Schools = function(selector, urls, modes) {
     $osf.applyBindings(self.viewModel, selector);
 };
 
+/*global module */
 module.exports = {
     Names: Names,
     Social: Social,
