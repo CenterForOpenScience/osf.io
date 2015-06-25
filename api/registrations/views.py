@@ -14,6 +14,14 @@ from api.nodes.views import NodeMixin, NodeFilesList, NodeChildrenList, NodeCont
 
 from api.nodes.permissions import ContributorOrPublic, ReadOnlyIfRegistration
 
+from rest_framework import status
+from rest_framework.response import Response
+from framework.auth.core import Auth
+
+from modularodm import Q
+from website.language import REGISTER_WARNING
+from api.base.utils import token_creator, absolute_reverse
+
 
 class RegistrationMixin(NodeMixin):
     """Mixin with convenience methods for retrieving the current node based on the
@@ -83,6 +91,15 @@ class RegistrationDetail(NodeDetail, generics.CreateAPIView, RegistrationMixin):
         if node.is_registration is False and node.is_registration_draft is False:
             raise ValidationError('Not a registration or registration draft.')
         return self.get_node()
+
+    def create(self, request, registration_id):
+        request = request
+        user = request.user
+        node = self.get_node()
+        token = token_creator(node._id, user._id)
+        url = absolute_reverse('registrations:registration-create', kwargs={'registration_id': node._id, 'token': token})
+        registration_warning = REGISTER_WARNING.format((node.title))
+        return Response(data = {'id': node._id, 'warning_message': registration_warning, 'links': {'confirm_delete': url}}, status=status.HTTP_202_ACCEPTED)
 
 class RegistrationCreate(generics.CreateAPIView, RegistrationMixin):
     """
