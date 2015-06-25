@@ -2,13 +2,13 @@
 
 import furl
 
-from rest_framework.exceptions import NotFound
-from rest_framework.reverse import reverse
-from modularodm.exceptions import NoResultsFound
 from modularodm import Q
+from rest_framework.reverse import reverse
+from rest_framework.exceptions import NotFound
+from modularodm.exceptions import NoResultsFound
 
-from website import settings as website_settings
 from website import util as website_util  # noqa
+from website import settings as website_settings
 
 
 def absolute_reverse(view_name, query_kwargs=None, args=None, kwargs=None):
