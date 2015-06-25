@@ -9,7 +9,7 @@ from framework.auth.core import Auth
 from api.base.filters import ODMFilterMixin
 from api.base.utils import waterbutler_url_for
 from api.nodes.serializers import NodePointersSerializer
-from api.registrations.serializers import RegistrationSerializer, RegistrationCreateSerializer
+from api.registrations.serializers import RegistrationSerializer, RegistrationCreateSerializer, RegistrationCreateSerializerWithToken
 from api.nodes.views import NodeMixin, NodeFilesList, NodeChildrenList, NodeContributorsList, NodeDetail
 
 from api.nodes.permissions import ContributorOrPublic, ReadOnlyIfRegistration
@@ -83,6 +83,17 @@ class RegistrationDetail(NodeDetail, generics.CreateAPIView, RegistrationMixin):
         if node.is_registration is False and node.is_registration_draft is False:
             raise ValidationError('Not a registration or registration draft.')
         return self.get_node()
+
+class RegistrationCreate(generics.CreateAPIView):
+    """
+    Save your registration draft
+    """
+    permission_classes = (
+        ContributorOrPublic,
+        ReadOnlyIfRegistration,
+    )
+
+    serializer_class = RegistrationCreateSerializerWithToken
 
 class RegistrationContributorsList(NodeContributorsList, RegistrationMixin):
     """

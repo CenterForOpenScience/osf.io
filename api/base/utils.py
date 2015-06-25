@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 
 import furl
+import hashlib
 
 from modularodm import Q
 from rest_framework.reverse import reverse
@@ -57,3 +58,13 @@ def waterbutler_url_for(request_type, provider, path, node_id, token, obj_args=N
 
     url.args.update(query)
     return url.url
+
+def token_creator(nodeid, userid, data):
+    token = hashlib.md5()
+    token.update(nodeid)
+    token.update(userid)
+    lis = []
+    for val in data.values():
+        lis.append(val)
+    token.update(''.join(lis))
+    return token.hexdigest()
