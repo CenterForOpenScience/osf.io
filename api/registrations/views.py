@@ -8,7 +8,6 @@ from rest_framework import generics, permissions as drf_permissions
 from rest_framework.exceptions import PermissionDenied, ValidationError
 
 from modularodm import Q
-
 from website.models import Node
 from api.base.filters import ODMFilterMixin
 from website.language import REGISTER_WARNING
@@ -18,6 +17,11 @@ from api.base.utils import token_creator, absolute_reverse
 from api.nodes.permissions import ContributorOrPublic, ReadOnlyIfRegistration
 from api.nodes.views import NodeMixin, NodeFilesList, NodeChildrenList, NodeContributorsList, NodeDetail
 from api.registrations.serializers import RegistrationSerializer, RegistrationCreateSerializer, RegistrationCreateSerializerWithToken
+
+
+def registration_enforcer(node):
+    if node.is_registration is False and node.is_registration_draft is False:
+        raise ValidationError(_('Not a registration or registration draft.'))
 
 
 class RegistrationMixin(NodeMixin):
@@ -85,8 +89,7 @@ class RegistrationDetail(NodeDetail, generics.CreateAPIView, RegistrationMixin):
     # overrides RetrieveAPIView
     def get_object(self):
         node = self.get_node()
-        if node.is_registration is False and node.is_registration_draft is False:
-            raise ValidationError(_('Not a registration or registration draft.'))
+        registration_enforcer(node)
         return self.get_node()
 
     # overrides CreateAPIView
@@ -119,8 +122,7 @@ class RegistrationContributorsList(NodeContributorsList, RegistrationMixin):
     """
     def get_default_queryset(self):
         node = self.get_node()
-        if node.is_registration is False and node.is_registration_draft is False:
-            raise ValidationError(_('Not a registration or registration draft.'))
+        registration_enforcer(node)
         visible_contributors = node.visible_contributor_ids
         contributors = []
         for contributor in node.contributors:
@@ -135,8 +137,7 @@ class RegistrationChildrenList(NodeChildrenList, RegistrationMixin):
     """
     def get_queryset(self):
         reg_node = self.get_node()
-        if reg_node.is_registration is False and reg_node.is_registration_draft is False:
-            raise ValidationError(_('Not a registration or registration draft.'))
+        registration_enforcer(reg_node)
         nodes = reg_node.nodes
         user = self.request.user
         if user.is_anonymous():
@@ -161,8 +162,7 @@ class RegistrationPointersList(generics.ListAPIView, RegistrationMixin):
 
     def get_queryset(self):
         node = self.get_node()
-        if node.is_registration is False and node.is_registration_draft is False:
-            raise ValidationError(_('Not a registration or registration draft.'))
+        registration_enforcer(node)
         pointers = node.nodes_pointer
         return pointers
 
@@ -174,8 +174,7 @@ class RegistrationFilesList(NodeFilesList, RegistrationMixin):
     def get_queryset(self):
         query_params = self.request.query_params
         node = self.get_node()
-        if node.is_registration is False and node.is_registration_draft is False:
-            raise ValidationError(_('Not a registration or registration draft'))
+        registration_enforcer(node)
         addons = node.get_addons()
         user = self.request.user
         cookie = None if self.request.user.is_anonymous() else user.get_or_create_cookie()

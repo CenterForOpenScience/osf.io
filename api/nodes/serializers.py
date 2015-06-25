@@ -1,7 +1,6 @@
-from rest_framework import serializers as ser
-
 from framework.auth.core import Auth
 from rest_framework import exceptions
+from rest_framework import serializers as ser
 
 from modularodm import Q
 from website.models import Node
