@@ -103,6 +103,7 @@ class RegistrationDetail(NodeDetail, generics.CreateAPIView, RegistrationMixin):
         registration_warning = REGISTER_WARNING.format((node.title))
         return Response({'data': {'id': node._id, 'warning_message': registration_warning, 'links': {'confirm_delete': url}}}, status=status.HTTP_202_ACCEPTED)
 
+
 class RegistrationCreate(generics.CreateAPIView, RegistrationMixin):
     """
     Save your registration draft
@@ -113,6 +114,7 @@ class RegistrationCreate(generics.CreateAPIView, RegistrationMixin):
     )
 
     serializer_class = RegistrationCreateSerializerWithToken
+
 
 class RegistrationContributorsList(NodeContributorsList, RegistrationMixin):
     """

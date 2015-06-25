@@ -72,25 +72,25 @@ class TestRegistrationDetail(ApiTestCase):
 
         self.public_project = ProjectFactory(creator=self.user, is_public=True)
         self.public_registration = RegistrationFactory(creator=self.user, project=self.public_project)
-        self.public_url = '/{}registrations/{}'.format(API_BASE, self.public_registration._id)
+        self.public_url = '/{}registrations/{}/'.format(API_BASE, self.public_registration._id)
 
         self.private_project = ProjectFactory(creator=self.user, is_private=True)
         self.private_registration = RegistrationFactory(creator=self.user, project=self.private_project)
-        self.private_url = '/{}registrations/{}'.format(API_BASE, self.private_registration._id)
+        self.private_url = '/{}registrations/{}/'.format(API_BASE, self.private_registration._id)
 
         self.public_registration_draft = NodeFactory(creator=self.user, is_registration_draft=True, is_public=True)
-        self.public_reg_draft_url = '/{}registrations/{}'.format(API_BASE, self.public_registration_draft._id)
+        self.public_reg_draft_url = '/{}registrations/{}/'.format(API_BASE, self.public_registration_draft._id)
 
         self.private_registration_draft = NodeFactory(creator=self.user, is_registration_draft=True)
-        self.private_reg_draft_url = '/{}registrations/{}'.format(API_BASE, self.private_registration_draft._id)
+        self.private_reg_draft_url = '/{}registrations/{}/'.format(API_BASE, self.private_registration_draft._id)
 
     def test_return_registration_detail_node_is_not_registration(self):
-        url = '/{}registrations/{}'.format(API_BASE, self.public_project)
+        url = '/{}registrations/{}/'.format(API_BASE, self.public_project)
         res = self.app.get(url, auth=self.basic_auth, expect_errors=True)
         assert_equal(res.status_code, 400)
 
     def test_return_registration_details_node_does_not_exist(self):
-        url = '/{}registrations/{}'.format(API_BASE, '12345')
+        url = '/{}registrations/{}/'.format(API_BASE, '12345')
         res = self.app.get(url, auth=self.basic_auth, expect_errors=True)
         assert_equal(res.status_code, 404)
 
@@ -171,29 +171,29 @@ class TestRegistrationCreate(ApiTestCase):
 
         self.public_project = ProjectFactory(creator=self.user, is_public=True)
         self.public_registration = RegistrationFactory(creator=self.user, project=self.public_project)
-        self.public_url = '/{}registrations/{}'.format(API_BASE, self.public_registration._id)
+        self.public_url = '/{}registrations/{}/'.format(API_BASE, self.public_registration._id)
 
         self.private_project = ProjectFactory(creator=self.user, is_private=True)
         self.private_registration = RegistrationFactory(creator=self.user, project=self.private_project)
-        self.private_url = '/{}registrations/{}'.format(API_BASE, self.private_registration._id)
+        self.private_url = '/{}registrations/{}/'.format(API_BASE, self.private_registration._id)
 
         self.public_registration_draft = NodeFactory(creator=self.user, is_registration_draft=True, is_public=True)
-        self.public_reg_draft_url = '/{}registrations/{}'.format(API_BASE, self.public_registration_draft._id)
+        self.public_reg_draft_url = '/{}registrations/{}/'.format(API_BASE, self.public_registration_draft._id)
 
         self.private_registration_draft = NodeFactory(creator=self.user, is_registration_draft=True)
-        self.private_reg_draft_url = '/{}registrations/{}'.format(API_BASE, self.private_registration_draft._id)
+        self.private_reg_draft_url = '/{}registrations/{}/'.format(API_BASE, self.private_registration_draft._id)
 
     def test_create_registration_from_registration(self):
         res = self.app.post(self.public_url, auth=self.basic_auth, expect_errors=True)
         assert_equal(res.status_code, 403)
 
     def test_create_registration_from_node(self):
-        url = '/{}registrations/{}'.format(API_BASE, self.public_project._id)
+        url = '/{}registrations/{}/'.format(API_BASE, self.public_project._id)
         res = self.app.post(url, auth=self.basic_auth, expect_errors=True)
         assert_equal(res.status_code, 400)
 
     def test_create_registration_from_fake_node(self):
-        url = '/{}registrations/{}'.format(API_BASE, '12345')
+        url = '/{}registrations/{}/'.format(API_BASE, '12345')
         res = self.app.post(url, auth=self.basic_auth, expect_errors=True)
         assert_equal(res.status_code, 404)
 
@@ -215,7 +215,7 @@ class TestRegistrationCreate(ApiTestCase):
     def test_invalid_token_create_registration(self):
         res = self.app.post(self.private_reg_draft_url, auth=self.basic_auth, expect_errors=True)
         assert_equal(res.status_code, 202)
-        token_url = self.private_reg_draft_url + "/12345/"
+        token_url = self.private_reg_draft_url + "12345/"
 
         res = self.app.post(token_url, auth=self.basic_auth, expect_errors = True)
         assert_equal(res.status_code, 400)
@@ -264,20 +264,20 @@ class TestRegistrationUpdate(ApiTestCase):
 
         self.private_project = ProjectFactory(creator=self.user, is_private=True)
         self.private_registration = RegistrationFactory(creator=self.user, project=self.private_project)
-        self.private_url = '/{}registrations/{}'.format(API_BASE, self.private_registration._id)
+        self.private_url = '/{}registrations/{}/'.format(API_BASE, self.private_registration._id)
 
         self.new_title = "Updated registration title"
         self.new_description = "Updated registration description"
         self.new_category = 'project'
 
         self.public_registration_draft = NodeFactory(creator=self.user, is_registration_draft=True, is_public=True)
-        self.public_reg_draft_url = '/{}registrations/{}'.format(API_BASE, self.public_registration_draft._id)
+        self.public_reg_draft_url = '/{}registrations/{}/'.format(API_BASE, self.public_registration_draft._id)
 
         self.private_registration_draft = NodeFactory(creator=self.user, is_registration_draft=True)
-        self.private_reg_draft_url = '/{}registrations/{}'.format(API_BASE, self.private_registration_draft._id)
+        self.private_reg_draft_url = '/{}registrations/{}/'.format(API_BASE, self.private_registration_draft._id)
 
     def test_update_node_that_is_not_registration_draft(self):
-        url = '/{}registrations/{}'.format(API_BASE, self.private_project)
+        url = '/{}registrations/{}/'.format(API_BASE, self.private_project)
         res = self.app.put(url, {
             'title': self.new_title,
             'description': self.new_description,
@@ -296,7 +296,7 @@ class TestRegistrationUpdate(ApiTestCase):
         assert_equal(res.status_code, 403)
 
     def test_update_node_that_does_not_exist(self):
-        url = '/{}registrations/{}'.format(API_BASE, '12345')
+        url = '/{}registrations/{}/'.format(API_BASE, '12345')
         res = self.app.put(url, {
             'title': self.new_title,
             'description': self.new_description,
@@ -388,18 +388,18 @@ class TestRegistrationPartialUpdate(ApiTestCase):
 
         self.private_project = ProjectFactory(creator=self.user, is_private=True)
         self.private_registration = RegistrationFactory(creator=self.user, project=self.private_project)
-        self.private_url = '/{}registrations/{}'.format(API_BASE, self.private_registration._id)
+        self.private_url = '/{}registrations/{}/'.format(API_BASE, self.private_registration._id)
 
         self.public_registration_draft = NodeFactory(creator=self.user, is_registration_draft=True, is_public=True)
-        self.public_reg_draft_url = '/{}registrations/{}'.format(API_BASE, self.public_registration_draft._id)
+        self.public_reg_draft_url = '/{}registrations/{}/'.format(API_BASE, self.public_registration_draft._id)
 
         self.private_registration_draft = NodeFactory(creator=self.user, is_registration_draft=True)
-        self.private_reg_draft_url = '/{}registrations/{}'.format(API_BASE, self.private_registration_draft._id)
+        self.private_reg_draft_url = '/{}registrations/{}/'.format(API_BASE, self.private_registration_draft._id)
 
         self.new_title = "Updated registration title"
 
     def test_partial_update_node_that_is_not_registration_draft(self):
-        url = '/{}registrations/{}'.format(API_BASE, self.private_project)
+        url = '/{}registrations/{}/'.format(API_BASE, self.private_project)
         res = self.app.patch(url, {
             'title': self.new_title,
         }, auth=self.basic_auth, expect_errors=True)
@@ -412,7 +412,7 @@ class TestRegistrationPartialUpdate(ApiTestCase):
         assert_equal(res.status_code, 403)
 
     def test_partial_update_node_that_does_not_exist(self):
-        url = '/{}registrations/{}'.format(API_BASE, '12345')
+        url = '/{}registrations/{}/'.format(API_BASE, '12345')
         res = self.app.patch(url, {
             'title': self.new_title,
         }, auth=self.basic_auth, expect_errors=True)
@@ -481,16 +481,16 @@ class TestRegistrationDelete(ApiTestCase):
 
         self.private_project = ProjectFactory(creator=self.user, is_private=True)
         self.private_registration = RegistrationFactory(creator=self.user, project=self.private_project)
-        self.private_url = '/{}registrations/{}'.format(API_BASE, self.private_registration._id)
+        self.private_url = '/{}registrations/{}/'.format(API_BASE, self.private_registration._id)
 
         self.public_registration_draft = NodeFactory(creator=self.user, is_registration_draft=True, is_public=True)
-        self.public_reg_draft_url = '/{}registrations/{}'.format(API_BASE, self.public_registration_draft._id)
+        self.public_reg_draft_url = '/{}registrations/{}/'.format(API_BASE, self.public_registration_draft._id)
 
         self.private_registration_draft = NodeFactory(creator=self.user, is_registration_draft=True)
-        self.private_reg_draft_url = '/{}registrations/{}'.format(API_BASE, self.private_registration_draft._id)
+        self.private_reg_draft_url = '/{}registrations/{}/'.format(API_BASE, self.private_registration_draft._id)
 
     def test_delete_node_that_is_not_registration_draft(self):
-        url = '/{}registrations/{}'.format(API_BASE, self.private_project)
+        url = '/{}registrations/{}/'.format(API_BASE, self.private_project)
         res = self.app.delete(url, auth=self.basic_auth, expect_errors=True)
         assert_equal(res.status_code, 400)
 
@@ -499,7 +499,7 @@ class TestRegistrationDelete(ApiTestCase):
         assert_equal(res.status_code, 403)
 
     def test_delete_node_that_does_not_exist(self):
-        url = '/{}registrations/{}'.format(API_BASE, '12345')
+        url = '/{}registrations/{}/'.format(API_BASE, '12345')
         res = self.app.delete(url, auth=self.basic_auth, expect_errors=True)
         assert_equal(res.status_code, 404)
 

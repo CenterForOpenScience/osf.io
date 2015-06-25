@@ -18,6 +18,7 @@ class RegistrationCreateSerializer(RegistrationSerializer):
     title = ser.CharField(read_only=True)
     description = ser.CharField(read_only=True)
 
+
 class RegistrationCreateSerializerWithToken(RegistrationSerializer):
     category = ser.CharField(read_only=True)
     title = ser.CharField(read_only=True)
