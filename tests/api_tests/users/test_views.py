@@ -354,20 +354,21 @@ class TestApplicationDetail(ApiTestCase):
         assert_equal(res.status_code, 404)
 
     def test_updating_one_field_should_not_blank_others_on_patch_update(self):
-        app = self.user1_app
+        user1_app = self.user1_app
         new_name = "The instance formerly known as Prince"
         res = self.app.patch(self.user1_app_url,
                              {"name": new_name},
                              auth=self.basic_auth1)
+        user1_app.reload()
 
         assert_equal(res.status_code, 200)
-        assert_dict_contains_subset({'client_id': app.client_id,
-                                     'client_secret': app.client_secret,
-                                     'owner': app.owner._id,
+        assert_dict_contains_subset({'client_id': user1_app.client_id,
+                                     'client_secret': user1_app.client_secret,
+                                     'owner': user1_app.owner._id,
                                      'name': new_name,
-                                     'description': app.description,
-                                     'home_url': app.home_url,
-                                     'callback_url': app.callback_url
+                                     'description': user1_app.description,
+                                     'home_url': user1_app.home_url,
+                                     'callback_url': user1_app.callback_url
                                      },
                                     res.json['data'])
 
@@ -388,7 +389,7 @@ class TestApplicationDetail(ApiTestCase):
     def test_deleting_application_flags_instance_inactive(self, mock_method):
         mock_method.return_value(True)
         res = self.app.delete(self.user1_app_url, auth=self.basic_auth1)
-        # TODO: Will DB instance always be updated with newest result from API modification?
+        self.user1_app.reload()
         assert_false(self.user1_app.active)
 
     def tearDown(self):

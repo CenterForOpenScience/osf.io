@@ -43,7 +43,7 @@ INSTALLED_APPS = (
     # 3rd party
     'rest_framework',
     'rest_framework_swagger',
-    'corsheaders'
+    'corsheaders',
     'raven.contrib.django.raven_compat',
 )
 
