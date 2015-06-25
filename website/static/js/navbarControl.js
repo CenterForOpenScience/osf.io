@@ -3,6 +3,7 @@ var $ = require('jquery');
 var ko = require('knockout');
 var bootbox = require('bootbox');
 var signIn = require('js/signIn');
+var $osf = require('js/osfHelpers');
 
 /**
     * The NavbarViewModel, for OSF wide navigation.
@@ -92,21 +93,16 @@ function searchBarPlaceHolderInit() {
     inputDom.val('').val($inputVal);
 
     //For search page with existing input, make sure placeholder is hidden.
+
     if(inputDom.val() !== '' ){
          inputLabel.css( 'visibility', 'hidden' );
     }
 }
 
-function isIE(userAgent) {
-  userAgent = userAgent || navigator.userAgent;
-  return userAgent.indexOf('MSIE ') > -1 || userAgent.indexOf('Trident/') > -1;
-}
-
-
 NavbarControl.prototype.init = function() {
     var self = this;
     ko.applyBindings(self.viewModel, self.$element[0]);
-    if(isIE()){
+    if($osf.isIE()){
         searchBarPlaceHolderInit();
     }
     
