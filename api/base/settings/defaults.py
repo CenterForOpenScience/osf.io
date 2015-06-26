@@ -133,12 +133,8 @@ USE_TZ = True
 
 STATIC_ROOT = os.path.join(BASE_DIR, 'static/vendor')
 
-# API_PATH is '/api' on staging/production, '' on develop
-API_PATH = ''
 API_BASE = 'v2/'
-
-API_PREFIX = '{}/{}'.format(API_PATH, API_BASE)
-STATIC_URL = '{}static/'.format(API_PREFIX)
+STATIC_URL = '/static/'
 
 STATICFILES_DIRS = (
     ('rest_framework_swagger/css', os.path.join(BASE_DIR, 'static/css')),
@@ -147,8 +143,8 @@ STATICFILES_DIRS = (
 
 # TODO: Revisit methods for excluding private routes from swagger docs
 SWAGGER_SETTINGS = {
-    'api_path': API_PATH,
     'info': {
+        'api_path': '/',
         'description':
         """
         <p>Welcome to the V2 Open Science Framework API. With this API you can programatically access users,
