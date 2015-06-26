@@ -94,17 +94,3 @@
     </div><!-- end modal-dialog -->
 
 </div><!-- end modal -->
-<script type="text/javascript">
-        $(document).ready(function() {
-            $('#addPointer').on('shown.bs.modal', function(){
-                var isIE = function(userAgent) {
-                    userAgent = userAgent || navigator.userAgent;
-                    return userAgent.indexOf('MSIE ') > -1 || userAgent.indexOf('Trident/') > -1;
-                };
-                // if not IE, focus input field
-                if(!isIE()){
-                    $("#addPointer input").focus();
-                }
-            });
-        });
-</script>
