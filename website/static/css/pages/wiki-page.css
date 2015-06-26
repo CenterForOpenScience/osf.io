@@ -1,56 +1,6 @@
-/*.osf-panel {*/
-    /*border: 1px solid #ddd;*/
-    /*height: 750px;*/
-    /*overflow: auto;*/
-    /*display: block;*/
-    /*position: relative;*/
-    /*overflow-x: hidden;*/
-/*}*/
-
-/*.superlist li.active {*/
-    /*background: #EFEFEF;*/
-    /*font-weight: bold;*/
-/*}*/
-/*.osf-panel-body {*/
-    /*overflow: auto;*/
-    /*overflow-x: hidden;*/
-/*}*/
-/*.osf-panel-body .navbar-collapse {*/
-    /*background: #F5F5F5;*/
-    /*padding: 0px;*/
-/*}*/
-/*.osf-panel-header {*/
-    /*background: #efefef;*/
-    /*padding: 10px;*/
-    /*font-size: 16px;*/
-    /*font-weight: 300;*/
-/*}*/
-
-/*.osf-panel-header.no-background {*/
-    /*background: transparent;*/
-/*}*/
-
-/*.osf-panel-header.bottom-border {*/
-    /*border-bottom: 1px solid #eee;*/
-/*}*/
-
-/*.osf-panel-header.bordered {*/
-    /*border: 1px solid #ddd;*/
-/*}*/
-
-/*.osf-panel-footer {*/
-    /*position: absolute;*/
-    /*bottom : 0;*/
-    /*left: 0;*/
-    /*padding: 10px;*/
-    /*background: #F5F5F5;*/
-    /*width: 100%;*/
-    /*z-index: 99;*/
-/*}*/
-
-/*#wiki-form {*/
-    /*padding: 10px;*/
-/*}*/
+.panel-heading.no-background {
+    background: transparent;
+}
 
 .markdown-it-view {
     padding: 10px;
@@ -151,6 +101,7 @@
     -ms-flex: 3 0 auto;
     flex: 3 0 auto;
     height: 500px;
+    overflow: auto;
 }
 
 .reset-height {
