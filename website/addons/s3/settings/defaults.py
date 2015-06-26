@@ -4,6 +4,18 @@ MAX_RENDER_SIZE = (1024 ** 2) * 3
 
 ALLOWED_ORIGIN = '*'
 
+VALID_BUCKET_LOCATIONS = [
+    'DEFAULT',
+    'EU',
+    'USWest',
+    'USWest2',
+    'SAEast',
+    'APNortheast',
+    'APSoutheast',
+    'APSoutheast2',
+    'CNNorth1'
+]
+
 OSF_USER = 'osf-user{0}'
 OSF_USER_POLICY_NAME = 'osf-user-policy'
 OSF_USER_POLICY = json.dumps(
