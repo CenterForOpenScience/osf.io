@@ -1,8 +1,8 @@
-<form role="form" id="addonSettings${addon_short_name.capitalize()}" data-addon="${addon_short_name}">
+<form role="form" id="addonSettings${addon_short_name.capitalize()}">
 
-    <div>
+    <div data-addon="${addon_short_name}">
         <h4 class="addon-title">
-            GitHub
+            GitHub (<div class="terms-and-conditions"><span>Terms & Conditions</span></div>)
             <small class="authorized-by">
                 % if node_has_auth:
                         authorized by

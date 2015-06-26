@@ -1,6 +1,6 @@
-<div id="${addon_short_name}Scope" class="scripted">
+<div id="${addon_short_name}Scope" class="scripted" data-addon="${addon_short_name}">
     <h4 class="addon-title">
-    ${addon_full_name}        
+    ${addon_full_name} (<div class="terms-and-conditions"><p>Terms & Conditions</p></div>)
         <small class="authorized-by">
             <span data-bind="if: nodeHasAuth">
                 authorized by <a data-bind="attr.href: urls().owner">
@@ -34,6 +34,7 @@
             </span>
         </small>
     </h4>
+
     <!-- Settings Pane -->
     <div class="${addon_short_name}-settings" data-bind="visible: showSettings">
         <div class="row">
@@ -74,7 +75,7 @@
                                 <input type="submit" class="btn btn-primary" value="Submit" />
                             </div>
                         </form>
-                    </div>         
+                    </div>
                 </div>
             </div>
             <!-- end col -->
@@ -85,4 +86,5 @@
     <div class="help-block">
         <p data-bind="html: message, attr.class: messageClass"></p>
     </div>
+
 </div>

@@ -229,7 +229,7 @@ $(document).ready(function() {
         '<dt>Read + Write</dt><dd>Read privileges plus add and configure components; add and edit content</dd>' +
         '<dt>Administrator</dt><dd>Read and write privileges; manage contributors; delete and register project; public-private settings</dd>' +
         '</dl>';
-
+    
     $('.permission-info').attr(
         'data-content', permissionInfoHtml
     ).popover({
