@@ -7,13 +7,12 @@ MODELS = [
     model.BoxFile,
     model.BoxUserSettings,
     model.BoxNodeSettings,
-    model.BoxOAuthSettings,
 ]
 
 USER_SETTINGS_MODEL = model.BoxUserSettings
 NODE_SETTINGS_MODEL = model.BoxNodeSettings
 
-ROUTES = [routes.auth_routes, routes.api_routes]
+ROUTES = [routes.api_routes]
 
 SHORT_NAME = 'box'
 FULL_NAME = 'Box'
@@ -47,4 +46,4 @@ GET_HGRID_DATA = utils.box_addon_folder
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 NODE_SETTINGS_TEMPLATE = None  # use default node settings template
-USER_SETTINGS_TEMPLATE = os.path.join(HERE, 'templates', 'box_user_settings.mako')
+USER_SETTINGS_TEMPLATE = None  # use default user settings template

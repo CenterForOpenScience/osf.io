@@ -1,26 +1,55 @@
 # -*- coding: utf-8 -*-
-import time
 import logging
-from datetime import datetime
 
-import furl
 import pymongo
-import requests
-from modularodm import fields, StoredObject
-from box import CredentialsV2, refresh_v2_token, BoxClientException
+from box import CredentialsV2, BoxClient
+from box.client import BoxClientException
+from modularodm import fields
 
 from framework.auth import Auth
 from framework.exceptions import HTTPError
 
 from website.addons.base import exceptions
-from website.addons.base import AddonUserSettingsBase, AddonNodeSettingsBase, GuidFile
+from website.addons.base import AddonOAuthUserSettingsBase, AddonOAuthNodeSettingsBase, GuidFile
 
 from website.addons.box import settings
-from website.addons.box.utils import BoxNodeLogger
-from website.addons.box.client import get_client_from_user_settings
-
+from website.addons.box.utils import BoxNodeLogger, refresh_oauth_key
+from website.addons.box.serializer import BoxSerializer
+from website.oauth.models import ExternalProvider
 
 logger = logging.getLogger(__name__)
+
+
+class Box(ExternalProvider):
+    name = 'Box'
+    short_name = 'box'
+
+    client_id = settings.BOX_KEY
+    client_secret = settings.BOX_SECRET
+
+    auth_url_base = settings.BOX_OAUTH_AUTH_ENDPOINT
+    auto_refresh_url = settings.BOX_OAUTH_TOKEN_ENDPOINT
+    default_scopes = ['root_readwrite']
+
+    def handle_callback(self, response):
+        """View called when the Oauth flow is completed. Adds a new BoxUserSettings
+        record to the user and saves the user's access token and account info.
+        """
+
+        client = BoxClient(CredentialsV2(
+            response['access_token'],
+            response['refresh_token'],
+            settings.BOX_KEY,
+            settings.BOX_SECRET,
+        ))
+
+        about = client.get_user_info()
+
+        return {
+            'provider_id': about['id'],
+            'display_name': about['name'],
+            'profile_url': 'https://app.box.com/profile/{0}'.format(about['id'])
+        }
 
 
 class BoxFile(GuidFile):
@@ -57,169 +86,16 @@ class BoxFile(GuidFile):
         return self._metadata_cache['extra'].get('etag') or self._metadata_cache['version']
 
 
-class BoxOAuthSettings(StoredObject):
+class BoxUserSettings(AddonOAuthUserSettingsBase):
+    """Stores user-specific box information
     """
-    this model address the problem if we have two osf user link
-    to the same box user and their access token conflicts issue
-    """
-
-    # Box user id, for example, "4974056"
-    user_id = fields.StringField(primary=True, required=True)
-    # Box user name this is the user's login
-    username = fields.StringField()
-    access_token = fields.StringField()
-    refresh_token = fields.StringField()
-    expires_at = fields.DateTimeField()
-
-    def fetch_access_token(self):
-        self.refresh_access_token()
-        return self.access_token
-
-    def get_credentialsv2(self):
-        return CredentialsV2(
-            self.access_token,
-            self.refresh_token,
-            settings.BOX_KEY,
-            settings.BOX_SECRET
-        )
-
-    def refresh_access_token(self, force=False):
-        # Ensure that most recent tokens are loaded from the database. Needed
-        # in case another concurrent request has already changed the tokens.
-        if self._is_loaded:
-            try:
-                self.reload()
-            except:
-                pass
-        if self._needs_refresh() or force:
-            token = refresh_v2_token(settings.BOX_KEY, settings.BOX_SECRET, self.refresh_token)
-
-            self.access_token = token['access_token']
-            self.refresh_token = token.get('refresh_token', self.refresh_token)
-            self.expires_at = datetime.utcfromtimestamp(time.time() + token['expires_in'])
-            self.save()
-
-    def revoke_access_token(self):
-        # if there is only one osf user linked to this box user oauth, revoke the token,
-        # otherwise, disconnect the osf user from the boxoauthsettings
-        if len(self.boxusersettings__accessed) <= 1:
-            url = furl.furl('https://www.box.com/api/oauth2/revoke/')
-            url.args = {
-                'token': self.access_token,
-                'client_id': settings.BOX_KEY,
-                'client_secret': settings.BOX_SECRET,
-            }
-            # no need to fail, revoke is opportunistic
-            requests.post(url.url)
-
-            # remove the object as its the last instance.
-            BoxOAuthSettings.remove_one(self)
-
-    def _needs_refresh(self):
-        if self.expires_at is None:
-            return False
-        return (self.expires_at - datetime.utcnow()).total_seconds() < settings.REFRESH_TIME
+    oauth_provider = Box
+    serializer = BoxSerializer
 
 
-class BoxUserSettings(AddonUserSettingsBase):
-    """Stores user-specific box information, including the Oauth access
-    token.
-    """
-    oauth_settings = fields.ForeignField(
-        'boxoauthsettings', backref='accessed'
-    )
-
-    @property
-    def user_id(self):
-        if self.oauth_settings:
-            return self.oauth_settings.user_id
-        return None
-
-    @user_id.setter
-    def user_id(self, val):
-        self.oauth_settings.user_id = val
-
-    @property
-    def username(self):
-        if self.oauth_settings:
-            return self.oauth_settings.username
-        return None
-
-    @username.setter
-    def username(self, val):
-        self.oauth_settings.name = val
-
-    @property
-    def access_token(self):
-        if self.oauth_settings:
-            return self.oauth_settings.access_token
-        return None
-
-    @access_token.setter
-    def access_token(self, val):
-        self.oauth_settings.access_token = val
-
-    @property
-    def refresh_token(self):
-        if self.oauth_settings:
-            return self.oauth_settings.refresh_token
-        return None
-
-    @refresh_token.setter
-    def refresh_token(self, val):
-        self.oauth_settings.refresh_token = val
-
-    @property
-    def expires_at(self):
-        if self.oauth_settings:
-            return self.oauth_settings.expires_at
-        return None
-
-    @expires_at.setter
-    def expires_at(self, val):
-        self.oauth_settings.expires_at = val
-
-    @property
-    def has_auth(self):
-        if self.oauth_settings:
-            return self.oauth_settings.access_token is not None
-        return False
-
-    def fetch_access_token(self):
-        if self.oauth_settings:
-            return self.oauth_settings.fetch_access_token()
-        return None
-
-    def delete(self, save=True):
-        self.clear()
-        super(BoxUserSettings, self).delete(save)
-
-    def clear(self):
-        """Clear settings and deauthorize any associated nodes."""
-        if self.oauth_settings:
-            self.oauth_settings.revoke_access_token()
-            self.oauth_settings = None
-            self.save()
-
-        for node_settings in self.boxnodesettings__authorized:
-            node_settings.deauthorize(Auth(self.owner))
-            node_settings.save()
-
-    def get_credentialsv2(self):
-        if not self.has_auth:
-            return None
-        return self.oauth_settings.get_credentialsv2()
-
-    def save(self, *args, **kwargs):
-        if self.oauth_settings:
-            self.oauth_settings.save()
-        return super(BoxUserSettings, self).save(*args, **kwargs)
-
-    def __repr__(self):
-        return u'<BoxUserSettings(user={self.owner.username!r})>'.format(self=self)
-
-
-class BoxNodeSettings(AddonNodeSettingsBase):
+class BoxNodeSettings(AddonOAuthNodeSettingsBase):
+    oauth_provider = Box
+    serializer = BoxSerializer
 
     user_settings = fields.ForeignField(
         'boxusersettings', backref='authorized'
@@ -229,6 +105,16 @@ class BoxNodeSettings(AddonNodeSettingsBase):
     folder_path = fields.StringField()
 
     _folder_data = None
+
+    _api = None
+
+    @property
+    def api(self):
+        """authenticated ExternalProvider instance"""
+        if self._api is None:
+            self._api = Box()
+            self._api.account = self.external_account
+        return self._api
 
     @property
     def display_name(self):
@@ -241,7 +127,10 @@ class BoxNodeSettings(AddonNodeSettingsBase):
 
     @property
     def complete(self):
-        return self.has_auth and self.folder_id is not None
+        return bool(self.has_auth and self.user_settings.verify_oauth_access(
+            node=self.owner,
+            external_account=self.external_account,
+        ))
 
     def fetch_folder_name(self):
         self._update_folder_data()
@@ -257,7 +146,8 @@ class BoxNodeSettings(AddonNodeSettingsBase):
 
         if not self._folder_data:
             try:
-                client = get_client_from_user_settings(self.user_settings)
+                refresh_oauth_key(self.external_account)
+                client = BoxClient(self.external_account.oauth_key)
                 self._folder_data = client.get_folder(self.folder_id)
             except BoxClientException:
                 return
@@ -289,11 +179,6 @@ class BoxNodeSettings(AddonNodeSettingsBase):
     def find_or_create_file_guid(self, path):
         return BoxFile.get_or_create(node=self.owner, path=path)
 
-    # TODO: Is this used? If not, remove this and perhaps remove the 'deleted' field
-    def delete(self, save=True):
-        self.deauthorize(add_log=False)
-        super(BoxNodeSettings, self).delete(save)
-
     def deauthorize(self, auth=None, add_log=True):
         """Remove user authorization from this node and log the event."""
         node = self.owner
@@ -313,7 +198,8 @@ class BoxNodeSettings(AddonNodeSettingsBase):
         if not self.has_auth:
             raise exceptions.AddonError('Addon is not authorized')
         try:
-            return {'token': self.user_settings.fetch_access_token()}
+            refresh_oauth_key(self.external_account)
+            return {'token': self.external_account.oauth_key}
         except BoxClientException as error:
             raise HTTPError(error.status_code, data={'message_long': error.message})
 
@@ -340,114 +226,11 @@ class BoxNodeSettings(AddonNodeSettingsBase):
 
     ##### Callback overrides #####
 
-    def before_register_message(self, node, user):
-        """Return warning text to display if user auth will be copied to a
-        registration.
-        """
-        category = node.project_or_component
-        if self.user_settings and self.user_settings.has_auth:
-            return (
-                u'The contents of Box add-ons cannot be registered at this time; '
-                u'the Box folder linked to this {category} will not be included '
-                u'as part of this registration.'
-            ).format(**locals())
-
-    # backwards compatibility
-    before_register = before_register_message
-
-    def before_fork_message(self, node, user):
-        """Return warning text to display if user auth will be copied to a
-        fork.
-        """
-        category = node.project_or_component
-        if self.user_settings and self.user_settings.owner == user:
-            return (
-                u'Because you have authorized the Box add-on for this '
-                '{category}, forking it will also transfer your authentication token to '
-                'the forked {category}.'
-            ).format(category=category)
+    def after_delete(self, node=None, user=None):
+        if user:
+            self.deauthorize(Auth(user=user), add_log=True)
         else:
-            return (
-                u'Because the Box add-on has been authorized by a different '
-                'user, forking it will not transfer authentication token to the forked '
-                '{category}.'
-            ).format(category=category)
-
-    # backwards compatibility
-    before_fork = before_fork_message
-
-    def before_remove_contributor_message(self, node, removed):
-        """Return warning text to display if removed contributor is the user
-        who authorized the Box addon
-        """
-        if self.user_settings and self.user_settings.owner == removed:
-            category = node.project_or_component
-            name = removed.fullname
-            return (
-                u'The Box add-on for this {category} is authenticated by {name}. '
-                'Removing this user will also remove write access to Box '
-                'unless another contributor re-authenticates the add-on.'
-            ).format(**locals())
-
-    # backwards compatibility
-    before_remove_contributor = before_remove_contributor_message
-
-    def after_fork(self, node, fork, user, save=True):
-        """After forking, copy user settings if the user is the one who authorized
-        the addon.
-
-        :return: A tuple of the form (cloned_settings, message)
-        """
-        clone, _ = super(BoxNodeSettings, self).after_fork(
-            node=node, fork=fork, user=user, save=False
-        )
-
-        if self.user_settings and self.user_settings.owner == user:
-            clone.user_settings = self.user_settings
-            message = (
-                'Box authorization copied to forked {cat}.'
-            ).format(cat=fork.project_or_component)
-        else:
-            message = (
-                u'Box authorization not copied to forked {cat}. You may '
-                'authorize this fork on the <a href="{url}">Settings</a> '
-                'page.'
-            ).format(
-                url=fork.web_url_for('node_setting'),
-                cat=fork.project_or_component
-            )
-        if save:
-            clone.save()
-        return clone, message
-
-    def after_remove_contributor(self, node, removed, auth=None):
-        """If the removed contributor was the user who authorized the Box
-        addon, remove the auth credentials from this node.
-        Return the message text that will be displayed to the user.
-        """
-
-        if self.user_settings and self.user_settings.owner == removed:
-
-            # Delete OAuth tokens
-            self.user_settings = None
-            self.save()
-            message = (
-                u'Because the Box add-on for {category} "{title}" was authenticated '
-                u'by {user}, authentication information has been deleted.'
-            ).format(
-                category=node.category_display,
-                title=node.title,
-                user=removed.fullname
-            )
-
-            if not auth or auth.user != removed:
-                url = node.web_url_for('node_setting')
-                message += (
-                    u' You can re-authenticate on the <a href="{url}">Settings</a> page.'
-                ).format(url=url)
-            #
-            return message
-
-    def after_delete(self, node, user):
-        self.deauthorize(Auth(user=user), add_log=True)
+            self.deauthorize(add_log=True)
         self.save()
+
+    on_delete = after_delete

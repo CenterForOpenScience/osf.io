@@ -12,8 +12,9 @@ from website.addons.box.model import (
 from tests.base import OsfTestCase
 from tests.factories import UserFactory, ProjectFactory
 from website.addons.box.tests.factories import (
-    BoxOAuthSettings,
-    BoxUserSettingsFactory, BoxNodeSettingsFactory,
+    BoxAccountFactory,
+    BoxUserSettingsFactory,
+    BoxNodeSettingsFactory,
 )
 from website.addons.base import exceptions
 
@@ -86,136 +87,142 @@ class TestFileGuid(OsfTestCase):
 
 class TestUserSettingsModel(OsfTestCase):
 
-    def setUp(self):
-        super(TestUserSettingsModel, self).setUp()
-        self.user = UserFactory()
+    def _prep_oauth_case(self):
+        self.node = ProjectFactory()
+        self.user = self.node.creator
 
-    def test_fields(self):
-        oauth_settings = BoxOAuthSettings(user_id='foo', username='bar', access_token='defined')
-        oauth_settings.save()
-        user_settings = BoxUserSettings(owner=self.user, oauth_settings=oauth_settings)
+        self.external_account = BoxAccountFactory()
 
-        user_settings.save()
-        retrieved = BoxUserSettings.load(user_settings._id)
+        self.user.external_accounts.append(self.external_account)
+        self.user.save()
 
-        assert_true(retrieved.owner)
-        assert_true(retrieved.user_id)
-        assert_true(retrieved.username)
-        assert_true(retrieved.access_token)
+        self.user_settings = self.user.get_or_add_addon('box')
 
-    def test_has_auth(self):
-        oauth_settings = BoxOAuthSettings(user_id='foo', username='bar')
-        oauth_settings.save()
+    def test_grant_oauth_access_no_metadata(self):
+        self._prep_oauth_case()
 
-        user_settings = BoxUserSettingsFactory(oauth_settings=oauth_settings)
+        self.user_settings.grant_oauth_access(
+            node=self.node,
+            external_account=self.external_account,
+        )
+        self.user_settings.save()
 
-        assert_false(user_settings.has_auth)
-        user_settings.access_token = '12345'
-        user_settings.save()
-        assert_true(user_settings.has_auth)
+        assert_equal(
+            self.user_settings.oauth_grants,
+            {self.node._id: {self.external_account._id: {}}},
+        )
 
-    @mock.patch('website.addons.box.model.requests')
-    def test_clear_clears_associated_node_settings(self, mock_requests):
-        node_settings = BoxNodeSettingsFactory()
-        user_settings = BoxUserSettingsFactory()
-        node_settings.user_settings = user_settings
-        node_settings.save()
+    def test_grant_oauth_access_metadata(self):
+        self._prep_oauth_case()
 
-        user_settings.clear()
-        user_settings.save()
+        self.user_settings.grant_oauth_access(
+            node=self.node,
+            external_account=self.external_account,
+            metadata={'folder': 'fake_folder_id'}
+        )
+        self.user_settings.save()
 
-        # Node settings no longer associated with user settings
-        assert_is(node_settings.folder_id, None)
-        assert_is(node_settings.user_settings, None)
-        mock_requests.post.assert_called_once()
+        assert_equal(
+            self.user_settings.oauth_grants,
+            {
+                self.node._id: {
+                    self.external_account._id: {'folder': 'fake_folder_id'}
+                },
+            }
+        )
 
-    @mock.patch('website.addons.box.model.requests')
-    def test_clear(self, mock_requests):
-        node_settings = BoxNodeSettingsFactory()
-        user_settings = BoxUserSettingsFactory()
-        node_settings.user_settings = user_settings
-        node_settings.save()
+    def test_verify_oauth_access_no_metadata(self):
+        self._prep_oauth_case()
 
-        assert_true(user_settings.access_token)
-        user_settings.clear()
-        user_settings.save()
+        self.user_settings.grant_oauth_access(
+            node=self.node,
+            external_account=self.external_account,
+        )
+        self.user_settings.save()
 
-        assert_false(user_settings.user_id)
-        assert_false(user_settings.access_token)
-        mock_requests.post.assert_called_once()
+        assert_true(
+            self.user_settings.verify_oauth_access(
+                node=self.node,
+                external_account=self.external_account
+            )
+        )
 
-    @mock.patch('website.addons.box.model.requests')
-    def test_clear_wo_oauth_settings(self, mock_requests):
-        user_settings = BoxUserSettingsFactory()
-        user_settings.oauth_settings = None
-        user_settings.save()
-        node_settings = BoxNodeSettingsFactory()
-        node_settings.user_settings = user_settings
-        node_settings.save()
+        assert_false(
+            self.user_settings.verify_oauth_access(
+                node=self.node,
+                external_account=BoxAccountFactory()
+            )
+        )
 
-        assert_false(user_settings.oauth_settings)
-        user_settings.clear()
-        user_settings.save()
+    def test_verify_oauth_access_metadata(self):
+        self._prep_oauth_case()
 
-        assert_false(user_settings.user_id)
-        assert_false(user_settings.access_token)
-        assert_false(mock_requests.post.called)
+        self.user_settings.grant_oauth_access(
+            node=self.node,
+            external_account=self.external_account,
+            metadata={'folder': 'fake_folder_id'}
+        )
+        self.user_settings.save()
 
-    @mock.patch('website.addons.box.model.requests')
-    def test_delete(self, mock_requests):
-        user_settings = BoxUserSettingsFactory()
-        assert_true(user_settings.has_auth)
-        user_settings.delete()
-        user_settings.save()
+        assert_true(
+            self.user_settings.verify_oauth_access(
+                node=self.node,
+                external_account=self.external_account,
+                metadata={'folder': 'fake_folder_id'}
+            )
+        )
 
-        assert_false(user_settings.user_id)
-        assert_true(user_settings.deleted)
-        assert_false(user_settings.access_token)
-        mock_requests.post.assert_called_once()
-
-    @mock.patch('website.addons.box.model.requests')
-    def test_delete_clears_associated_node_settings(self, mock_requests):
-        node_settings = BoxNodeSettingsFactory()
-        user_settings = BoxUserSettingsFactory()
-        node_settings.user_settings = user_settings
-        node_settings.save()
-
-        user_settings.delete()
-        user_settings.save()
-
-        # Node settings no longer associated with user settings
-        assert_false(node_settings.deleted)
-        assert_is(node_settings.folder_id, None)
-        mock_requests.post.assert_called_once()
-        assert_is(node_settings.user_settings, None)
+        assert_false(
+            self.user_settings.verify_oauth_access(
+                node=self.node,
+                external_account=self.external_account,
+                metadata={'folder': 'another_folder_id'}
+            )
+        )
 
 
 class TestBoxNodeSettingsModel(OsfTestCase):
 
     def setUp(self):
         super(TestBoxNodeSettingsModel, self).setUp()
-        self.user = UserFactory()
+        self.node = ProjectFactory()
+        self.user = self.node.creator
+        self.external_account = BoxAccountFactory()
+
         self.user.add_addon('box')
+        self.user.external_accounts.append(self.external_account)
         self.user.save()
-        self.oauth = BoxOAuthSettings(user_id='not sleep', access_token='seems legit')
-        self.oauth.save()
 
         self.user_settings = self.user.get_addon('box')
-        self.user_settings.oauth_settings = self.oauth
+        self.user_settings.grant_oauth_access(
+            node=self.node,
+            external_account=self.external_account,
+            metadata={'folder': 'fake_folder_id'}
+        )
         self.user_settings.save()
-        self.project = ProjectFactory()
+
         self.node_settings = BoxNodeSettingsFactory(
             user_settings=self.user_settings,
             folder_id='1234567890',
-            owner=self.project
+            owner=self.node
         )
+        self.node_settings.external_account = self.external_account
+        self.node_settings.save()
+
+    def tearDown(self):
+        super(TestBoxNodeSettingsModel, self).tearDown()
+        self.user_settings.remove()
+        self.node_settings.remove()
+        self.external_account.remove()
+        self.node.remove()
+        self.user.remove()
 
     def test_complete_true(self):
         assert_true(self.node_settings.has_auth)
         assert_true(self.node_settings.complete)
 
     def test_complete_false(self):
-        self.node_settings.folder_id = None
+        self.user_settings.revoke_oauth_access(self.external_account)
 
         assert_true(self.node_settings.has_auth)
         assert_false(self.node_settings.complete)
@@ -240,14 +247,27 @@ class TestBoxNodeSettingsModel(OsfTestCase):
         assert_is_none(node_settings.folder_id)
 
     def test_has_auth(self):
-        self.user_settings.access_token = None
+        self.user.external_accounts = []
+        self.user_settings.reload()
         settings = BoxNodeSettings(user_settings=self.user_settings)
         settings.save()
         assert_false(settings.has_auth)
 
-        settings.user_settings.access_token = '123abc'
-        settings.user_settings.save()
+        self.user.external_accounts.append(self.external_account)
+        settings.reload()
         assert_true(settings.has_auth)
+
+    def test_clear_auth(self):
+        node_settings = BoxNodeSettingsFactory()
+        node_settings.external_account = BoxAccountFactory()
+        node_settings.user_settings = BoxUserSettingsFactory()
+        node_settings.save()
+
+        node_settings.clear_auth()
+
+        assert_is_none(node_settings.external_account)
+        assert_is_none(node_settings.folder_id)
+        assert_is_none(node_settings.user_settings)
 
     def test_to_json(self):
         settings = self.node_settings
@@ -258,13 +278,13 @@ class TestBoxNodeSettingsModel(OsfTestCase):
     def test_delete(self):
         assert_true(self.node_settings.user_settings)
         assert_true(self.node_settings.folder_id)
-        old_logs = self.project.logs
+        old_logs = self.node.logs
         self.node_settings.delete()
         self.node_settings.save()
         assert_is(self.node_settings.user_settings, None)
         assert_is(self.node_settings.folder_id, None)
         assert_true(self.node_settings.deleted)
-        assert_equal(self.project.logs, old_logs)
+        assert_equal(self.node.logs, old_logs)
 
     def test_deauthorize(self):
         assert_true(self.node_settings.user_settings)
@@ -274,7 +294,7 @@ class TestBoxNodeSettingsModel(OsfTestCase):
         assert_is(self.node_settings.user_settings, None)
         assert_is(self.node_settings.folder_id, None)
 
-        last_log = self.project.logs[-1]
+        last_log = self.node.logs[-1]
         assert_equal(last_log.action, 'box_node_deauthorized')
         params = last_log.params
         assert_in('node', params)
@@ -289,13 +309,18 @@ class TestBoxNodeSettingsModel(OsfTestCase):
         # Folder was set
         assert_equal(self.node_settings.folder_id, folder_id)
         # Log was saved
-        last_log = self.project.logs[-1]
+        last_log = self.node.logs[-1]
         assert_equal(last_log.action, 'box_folder_selected')
 
     def test_set_user_auth(self):
         node_settings = BoxNodeSettingsFactory()
         user_settings = BoxUserSettingsFactory()
+        external_account = BoxAccountFactory()
 
+        user_settings.owner.external_accounts.append(external_account)
+        user_settings.save()
+
+        node_settings.external_account = external_account
         node_settings.set_user_auth(user_settings)
         node_settings.save()
 
@@ -310,7 +335,7 @@ class TestBoxNodeSettingsModel(OsfTestCase):
         assert_equal(last_log.user, user_settings.owner)
 
     def test_serialize_credentials(self):
-        self.user_settings.access_token = 'secret'
+        self.user_settings.access_token = 'key-11'
         self.user_settings.save()
         credentials = self.node_settings.serialize_waterbutler_credentials()
 
@@ -345,20 +370,20 @@ class TestBoxNodeSettingsModel(OsfTestCase):
     def test_create_log(self):
         action = 'file_added'
         path = 'pizza.nii'
-        nlog = len(self.project.logs)
+        nlog = len(self.node.logs)
         self.node_settings.create_waterbutler_log(
             auth=Auth(user=self.user),
             action=action,
             metadata={'path': path, 'materialized': path},
         )
-        self.project.reload()
-        assert_equal(len(self.project.logs), nlog + 1)
+        self.node.reload()
+        assert_equal(len(self.node.logs), nlog + 1)
         assert_equal(
-            self.project.logs[-1].action,
+            self.node.logs[-1].action,
             'box_{0}'.format(action),
         )
         assert_equal(
-            self.project.logs[-1].params['path'],
+            self.node.logs[-1].params['path'],
             path
         )
 
@@ -372,15 +397,24 @@ class TestNodeSettingsCallbacks(OsfTestCase):
         self.node_settings = BoxNodeSettingsFactory(
             user_settings=self.user_settings,
         )
+        self.external_account = BoxAccountFactory()
+        self.user_settings.owner.external_accounts.append(self.external_account)
+        self.node_settings.external_account = self.external_account
 
         self.project = self.node_settings.owner
         self.user = self.user_settings.owner
+
+        self.user_settings.grant_oauth_access(
+            node=self.project,
+            external_account=self.external_account,
+        )
 
     def test_after_fork_by_authorized_box_user(self):
         fork = ProjectFactory()
         clone, message = self.node_settings.after_fork(
             node=self.project, fork=fork, user=self.user_settings.owner
         )
+        print(message)
         assert_equal(clone.user_settings, self.user_settings)
 
     def test_after_fork_by_unauthorized_box_user(self):
@@ -426,5 +460,5 @@ class TestNodeSettingsCallbacks(OsfTestCase):
         self.project.remove_node(Auth(user=self.project.creator))
         # Ensure that changes to node settings have been saved
         self.node_settings.reload()
-        assert_true(self.node_settings.user_settings is None)
-        assert_true(self.node_settings.folder_id is None)
+        assert_is_none(self.node_settings.user_settings)
+        assert_is_none(self.node_settings.folder_id)
