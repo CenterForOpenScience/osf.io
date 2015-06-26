@@ -386,7 +386,7 @@ def project_before_register(auth, node, **kwargs):
         },
     }
     errors = []
-
+    addon_error = []
     addon_set = [n.get_addons() for n in itertools.chain([node], node.get_descendants_recursive(lambda n: n.primary))]
     for addon in itertools.chain(*addon_set):
         if not addon.complete:
@@ -395,7 +395,8 @@ def project_before_register(auth, node, **kwargs):
         error = None
         if archive_errors:
             error = archive_errors()
-            if error:
+            if error and (addon.config.short_name not in addon_error):
+                addon_error.append(addon.config.short_name)
                 errors.append(error)
                 continue
         name = addon.config.short_name
