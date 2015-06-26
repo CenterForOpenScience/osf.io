@@ -81,6 +81,7 @@ def project_new_post(auth, **kwargs):
     category = data.get('category', 'project')
     template = data.get('template')
     description = strip_html(data.get('description'))
+    new_project = {}
 
     if template:
         original_node = Node.load(template)
@@ -108,8 +109,10 @@ def project_new_post(auth, **kwargs):
                 http.BAD_REQUEST,
                 data=dict(message_long=e.message)
             )
+        new_project = _view_project(project, auth)
     return {
-        'projectUrl': project.url
+        'projectUrl': project.url,
+        'newNode': new_project['node'] if new_project else None
     }, http.CREATED
 
 

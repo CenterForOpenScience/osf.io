@@ -223,6 +223,7 @@ class User(GuidStoredObject, AddonModelMixin):
     # The primary email address for the account.
     # This value is unique, but multiple "None" records exist for:
     #   * unregistered contributors where an email address was not provided.
+    # TODO: Update mailchimp subscription on username change in user.save()
     username = fields.StringField(required=False, unique=True, index=True)
 
     # Hashed. Use `User.set_password` and `User.check_password`
@@ -985,6 +986,7 @@ class User(GuidStoredObject, AddonModelMixin):
         }
 
     def save(self, *args, **kwargs):
+        # TODO: Update mailchimp subscription on username change
         # Avoid circular import
         from framework.analytics import tasks as piwik_tasks
         self.username = self.username.lower().strip() if self.username else None
@@ -1142,9 +1144,11 @@ class User(GuidStoredObject, AddonModelMixin):
 
         for key, value in user.mailing_lists.iteritems():
             # subscribe to each list if either user was subscribed
-            self.mailing_lists[key] = value or self.mailing_lists.get(key)
-        # - clear subscriptions for merged user
-        user.mailing_lists = {}
+            subscription = value or self.mailing_lists.get(key)
+            signals.user_merged.send(self, list_name=key, subscription=subscription)
+
+            # clear subscriptions for merged user
+            signals.user_merged.send(user, list_name=key, subscription=False)
 
         for node_id, timestamp in user.comments_viewed_timestamp.iteritems():
             if not self.comments_viewed_timestamp.get(node_id):

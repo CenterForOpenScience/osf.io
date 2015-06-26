@@ -145,18 +145,26 @@ class TestUserNodes(ApiTestCase):
         self.user_two.save()
         self.auth_two = (self.user_two.username, 'justapoorboy')
         self.public_project_user_one = ProjectFactory(title="Public Project User One",
-                                                      is_public=True, creator=self.user_one)
+                                                      is_public=True,
+                                                      creator=self.user_one)
         self.private_project_user_one = ProjectFactory(title="Private Project User One",
-                                                       is_public=False, creator=self.user_one)
+                                                       is_public=False,
+                                                       creator=self.user_one)
         self.public_project_user_two = ProjectFactory(title="Public Project User Two",
-                                                      is_public=True, creator=self.user_two)
+                                                      is_public=True,
+                                                      creator=self.user_two)
         self.private_project_user_two = ProjectFactory(title="Private Project User Two",
-                                                       is_public=False, creator=self.user_two)
+                                                       is_public=False,
+                                                       creator=self.user_two)
         self.deleted_project_user_one = FolderFactory(title="Deleted Project User One",
-                                                      is_public=False, creator=self.user_one, is_deleted=True)
+                                                      is_public=False,
+                                                      creator=self.user_one,
+                                                      is_deleted=True)
         self.folder = FolderFactory()
         self.deleted_folder = FolderFactory(title="Deleted Folder User One",
-                                            is_public=False, creator=self.user_one, is_deleted=True)
+                                            is_public=False,
+                                            creator=self.user_one,
+                                            is_deleted=True)
         self.dashboard = DashboardFactory()
 
     def tearDown(self):
