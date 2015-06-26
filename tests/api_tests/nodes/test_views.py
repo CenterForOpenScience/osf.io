@@ -876,6 +876,7 @@ class TestNodeRegistrationList(ApiTestCase):
 
 class TestCreateRegistrationDraft(ApiTestCase):
     def setUp(self):
+        super(TestCreateRegistrationDraft, self).setUp()
         ApiTestCase.setUp(self)
         ensure_schemas()
         self.user = UserFactory.build()

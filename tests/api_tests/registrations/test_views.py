@@ -10,7 +10,7 @@ from tests.factories import UserFactory, ProjectFactory, RegistrationFactory, No
 
 class TestRegistrationList(ApiTestCase):
     def setUp(self):
-        ApiTestCase.setUp(self)
+        super(TestRegistrationList, self).setUp()
         self.user = UserFactory.build()
         password = fake.password()
         self.password = password
@@ -58,7 +58,7 @@ class TestRegistrationList(ApiTestCase):
 class TestRegistrationDetail(ApiTestCase):
 
     def setUp(self):
-        ApiTestCase.setUp(self)
+        super(TestRegistrationDetail, self).setUp()
         self.user = UserFactory.build()
         password = fake.password()
         self.password = password
@@ -157,7 +157,7 @@ class TestRegistrationDetail(ApiTestCase):
 class TestRegistrationCreate(ApiTestCase):
     def setUp(self):
         ensure_schemas()
-        ApiTestCase.setUp(self)
+        super(TestRegistrationCreate, self).setUp()
         self.user = UserFactory.build()
         password = fake.password()
         self.password = password
@@ -250,7 +250,7 @@ class TestRegistrationCreate(ApiTestCase):
 class TestRegistrationUpdate(ApiTestCase):
 
     def setUp(self):
-        ApiTestCase.setUp(self)
+        super(TestRegistrationUpdate, self).setUp()
         self.user = UserFactory.build()
         password = fake.password()
         self.password = password
@@ -374,7 +374,7 @@ class TestRegistrationUpdate(ApiTestCase):
 class TestRegistrationPartialUpdate(ApiTestCase):
 
     def setUp(self):
-        ApiTestCase.setUp(self)
+        super(TestRegistrationPartialUpdate, self).setUp()
         self.user = UserFactory.build()
         password = fake.password()
         self.password = password
@@ -467,7 +467,7 @@ class TestRegistrationPartialUpdate(ApiTestCase):
 class TestRegistrationDelete(ApiTestCase):
 
     def setUp(self):
-        ApiTestCase.setUp(self)
+        super(TestRegistrationDelete, self).setUp()
         self.user = UserFactory.build()
         password = fake.password()
         self.password = password
@@ -539,7 +539,7 @@ class TestRegistrationDelete(ApiTestCase):
 
 class TestRegistrationContributorsList(ApiTestCase):
     def setUp(self):
-        ApiTestCase.setUp(self)
+        super(TestRegistrationContributorsList, self).setUp()
         self.user = UserFactory.build()
         password = fake.password()
         self.password = password
@@ -640,7 +640,7 @@ class TestRegistrationContributorsList(ApiTestCase):
 
 class TestRegistrationChildrenList(ApiTestCase):
     def setUp(self):
-        ApiTestCase.setUp(self)
+        super(TestRegistrationChildrenList, self).setUp()
         self.user = UserFactory.build()
         password = fake.password()
         self.password = password
@@ -736,7 +736,7 @@ class TestRegistrationChildrenList(ApiTestCase):
 
 class TestRegistrationPointersList(ApiTestCase):
     def setUp(self):
-        ApiTestCase.setUp(self)
+        super(TestRegistrationPointersList, self).setUp()
         self.user = UserFactory.build()
         self.user.set_password('password')
         self.user.save()
@@ -833,7 +833,7 @@ class TestRegistrationPointersList(ApiTestCase):
 
 class TestRegistrationFilesList(ApiTestCase):
     def setUp(self):
-        ApiTestCase.setUp(self)
+        super(TestRegistrationFilesList, self).setUp()
         self.user = UserFactory.build()
         self.user.set_password('justapoorboy')
         self.user.save()
