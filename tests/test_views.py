@@ -8,6 +8,7 @@ import json
 import datetime as dt
 import mock
 import httplib as http
+import math
 
 from nose.tools import *  # noqa PEP8 asserts
 from tests.test_features import requires_search
@@ -609,6 +610,31 @@ class TestProjectViews(OsfTestCase):
         invalid_input = 'invalid page'
         res = self.app.get(
             url, {'page': invalid_input}, auth=self.auth, expect_errors=True
+        )
+        assert_equal(res.status_code, 400)
+        assert_equal(
+            res.json['message_long'],
+            'Invalid value for "page".'
+        )
+
+    def test_get_logs_negative_page_num(self):
+        url = self.project.api_url_for('get_logs')
+        invalid_input = -1
+        res = self.app.get(
+            url, {'page': invalid_input}, auth=self.auth, expect_errors=True
+        )
+        assert_equal(res.status_code, 400)
+        assert_equal(
+            res.json['message_long'],
+            'Invalid value for "page".'
+        )
+
+    def test_get_logs_page_num_beyond_limit(self):
+        url = self.project.api_url_for('get_logs')
+        size = 10
+        page_num = math.ceil(len(self.project.logs)/ float(size))
+        res = self.app.get(
+            url, {'page': page_num}, auth=self.auth, expect_errors=True
         )
         assert_equal(res.status_code, 400)
         assert_equal(
@@ -4089,6 +4115,16 @@ class TestProjectCreation(OsfTestCase):
         node = Node.load(res.json['projectUrl'].replace('/', ''))
         assert_true(node)
         assert_true(node.title, 'Im a real title')
+
+    def test_new_project_returns_serialized_node_data(self):
+        payload = {
+            'title': 'Im a real title'
+        }
+        res = self.app.post_json(self.url, payload, auth=self.creator.auth)
+        assert_equal(res.status_code, 201)
+        node = res.json['newNode']
+        assert_true(node)
+        assert_equal(node['title'], 'Im a real title')
 
     def test_description_works(self):
         payload = {
