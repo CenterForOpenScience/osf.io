@@ -624,3 +624,20 @@ ko.components.register('osf-ob-goto', {
     viewModel: OBGoToViewModel,
     template: {element: 'osf-ob-goto'}
 });
+
+
+function ProjectCreateViewModel(response) {
+    var self = this;
+    self.isOpen = ko.observable(false);
+    self.focus = ko.observable(false);
+    self.toggle = function() {
+        self.isOpen(!self.isOpen());
+        self.focus(self.isOpen());
+    };
+    self.nodes = response.nodes;
+}
+
+ko.components.register('osf-ob-create', {
+    viewModel: ProjectCreateViewModel,
+    template: {element: 'osf-ob-create'}
+});

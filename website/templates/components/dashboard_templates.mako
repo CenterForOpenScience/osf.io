@@ -75,6 +75,23 @@
 </div> <!-- end .ob-list -->
 </template>
 
+<template id="osf-ob-create">
+    <div id="obNewProject" class=" panel panel-default m-b-sm ob-list-item">
+        <div class="panel-heading clearfix pointer">
+            <h3 class="m-xs panel-title">Create a project</h3>
+           <div class="pull-right" >
+                <a href="#" class="btn btn-sm project-toggle"><i class="fa fa-angle-down"></i></a>
+           </div>
+        </div><!-- end ob-header -->
+        <div style="display:none" class="panel-body" id="obRevealNewProject">
+            <osf-project-create-form
+                params="data: nodes, hasFocus: focus">
+            </osf-project-create-form>
+        </div>
+    </div> <!-- end ob-list-item -->
+</template>
+
+
 <template id="osf-ob-uploader">
 <div class="m-b-sm panel panel-default ob-list-item">
     <div class="pointer panel-heading clearfix ">

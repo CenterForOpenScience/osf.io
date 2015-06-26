@@ -36,22 +36,10 @@
                     <div id="obGoToProject">
                         <osf-ob-goto params="data: nodes"></osf-ob-goto>
                     </div>
-                    <div id="projectCreate">
-                        <div id="obNewProject" class=" panel panel-default m-b-sm ob-list-item">
-
-                            <div class="panel-heading clearfix pointer">
-                                <h3 class="m-xs panel-title">Create a project</h3>
-                               <div class="pull-right" >
-                                    <a href="#" class="btn btn-sm project-toggle"><i class="fa fa-angle-down"></i></a>
-                               </div>
-                            </div><!-- end ob-header -->
-                            <div style="display:none" class="panel-body" id="obRevealNewProject">
-                                <osf-project-create-form
-                                    params="data: nodes, hasFocus: focus">
-                                </osf-project-create-form>
-                            </div>
-                        </div> <!-- end ob-list-item -->
+                    <div id="obCreateProject">
+                        <osf-ob-create params="data: nodes"></osf-ob-create>
                     </div>
+
                     % if not disk_saving_mode:
                     <div id="obRegisterProject">
                         <osf-ob-register params="data: nodes"></osf-ob-register>

@@ -30,18 +30,7 @@ var request = $.getJSON(url, function(response) {
     $osf.applyBindings({nodes: allNodes}, '#obGoToProject');
     $osf.applyBindings({nodes: registrationSelection, enableComponents: true}, '#obRegisterProject');
     $osf.applyBindings({nodes: uploadSelection}, '#obUploader');
-
-    function ProjectCreateViewModel() {
-        var self = this;
-        self.isOpen = ko.observable(false);
-        self.focus = ko.observable(false);
-        self.toggle = function() {
-            self.isOpen(!self.isOpen());
-            self.focus(self.isOpen());
-        };
-        self.nodes = response.nodes;
-    }
-    $osf.applyBindings(new ProjectCreateViewModel(), '#projectCreate');
+    $osf.applyBindings({nodes: allNodes}, '#obCreateProject');
 });
 request.fail(function(xhr, textStatus, error) {
     Raven.captureMessage('Could not fetch dashboard nodes.', {
