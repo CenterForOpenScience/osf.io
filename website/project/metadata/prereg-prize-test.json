@@ -9,7 +9,8 @@
         "questions": [
             {
                 "id": "1",
-                "title": "Basic Info",
+                "nav": "Title",
+                "title": "Basic Information",
                 "type": "object",
                 "properties": {
                     "q1": {
@@ -23,7 +24,8 @@
             },
             {
                 "id": "2",
-                "title": "Basic Info",
+                "nav": "Author",
+                "title": "Basic Information",
                 "type": "object",
                 "properties": {
                     "q2": {
@@ -37,7 +39,8 @@
             },
             {   
                 "id": "3",
-                "title": "Basic Info",
+                "nav": "COI",
+                "title": "Basic Information",
                 "type": "object",
                 "properties": {
                     "q3": {
@@ -51,7 +54,8 @@
             },
             {
                 "id": "4",
-                "title": "Basic Info",
+                "nav": "Hypothesis",
+                "title": "Basic Information",
                 "type": "object",
                 "properties": {
                     "q4": {
@@ -71,6 +75,7 @@
         "questions": [
             {
                 "id": "5",
+                "nav": "Procedures",
                 "title": "Sampling Plan",
                 "type": "object",
                 "properties": {
@@ -85,6 +90,7 @@
             },
             {
                 "id": "6",
+                "nav": "Sample Size",
                 "title": "Sampling Plan",
                 "type": "object",
                 "properties": {
@@ -99,6 +105,7 @@
             },
             {
                 "id": "7",
+                "nav": "Rationale",
                 "title": "Sampling Plan",
                 "type": "object",
                 "properties": {
@@ -113,6 +120,7 @@
             },
             {
                 "id": "8",
+                "nav": "",
                 "title": "Sampling Plan",
                 "type": "object",
                 "properties": {
@@ -135,6 +143,7 @@
         "questions": [
             {
                 "id": "9",
+                "nav": "Type",
                 "title": "Design Plan",
                 "type": "object",
                 "properties": {
@@ -151,6 +160,7 @@
             },
             {
                 "id": "10",
+                "nav": "Blind",
                 "title": "Design Plan",
                 "type": "object",
                 "properties": {
@@ -167,6 +177,7 @@
             },
             {
                 "id": "11",
+                "nav": "Description",
                 "title": "Design Plan",
                 "type": "object",
                 "properties": {
@@ -181,6 +192,7 @@
             },
             {
                 "id": "12",
+                "nav": "Predictor",
                 "title": "Design Plan",
                 "type": "object",
                 "properties": {
@@ -195,6 +207,7 @@
             },
             {
                 "id": "13",
+                "nav": "Outcome",
                 "title": "Design Plan",
                 "type": "object",
                 "properties": {
@@ -209,6 +222,7 @@
             },
             {
                 "id": "14",
+                "nav": "Covariates",
                 "title": "Design Plan",
                 "type": "object",
                 "properties": {
@@ -223,6 +237,7 @@
             },
             {
                 "id": "15",
+                "nav": "Random",
                 "title": "Design Plan",
                 "type": "object",
                 "properties": {
@@ -243,6 +258,7 @@
         "questions": [
             {
                 "id": "16",
+                "nav": "",
                 "title": "Analysis Plan",
                 "type": "object",
                 "properties": {
@@ -257,6 +273,7 @@
             },
             {
                 "id": "17",
+                "nav": "",
                 "title": "Analysis Plan",
                 "type": "object",
                 "properties": {
@@ -271,6 +288,7 @@
             },
             {
                 "id": "18",
+                "nav": "",
                 "title": "Analysis Plan",
                 "type": "object",
                 "properties": {
@@ -285,6 +303,7 @@
             },
             {
                 "id": "19",
+                "nav": "",
                 "title": "Analysis Plan",
                 "type": "object",
                 "properties": {
@@ -299,6 +318,7 @@
             },
             {
                 "id": "20",
+                "nav": "",
                 "title": "Analysis Plan",
                 "type": "object",
                 "properties": {
@@ -313,6 +333,7 @@
             },
             {
                 "id": "21",
+                "nav": "",
                 "title": "Analysis Plan",
                 "type": "object",
                 "properties": {
@@ -333,6 +354,7 @@
         "questions": [
             {
                 "id": "22",
+                "nav": "Script",
                 "title": "Script",
                 "type": "object",
                 "properties": {
