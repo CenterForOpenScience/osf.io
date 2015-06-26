@@ -13,7 +13,7 @@
             "tpl": "util/render_nodes.mako",
             "uri": "${node["api_url"]}get_forks/",
             "replace": true,
-            "kwargs": {"sortable": false, "pluralized_node_type": "registrations"}
+            "kwargs": {"sortable": false, "pluralized_node_type": "forks"}
         }'></div>
     % else:
         <div>There have been no forks of this project.</div>
