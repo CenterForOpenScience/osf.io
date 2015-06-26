@@ -722,7 +722,7 @@ ListViewModel.prototype.removeContent = function(content) {
 
     }
         self.changeMessage(
-            'School Removed',
+            'Institution Removed',
             'text-danger',
             5000
         );
