@@ -21,15 +21,15 @@
 <div class="row">
 
   <div id="file-navigation" class="panel-toggle col-sm-3 file-tree">
-    <div class="osf-panel osf-panel-hide osf-panel-flex reset-height">
-      <div class="osf-panel-header osf-panel-header-flex" style="display:none">
+    <div class="osf-panel panel panel-default osf-panel-hide osf-panel-flex reset-height">
+      <div class="panel-heading clearfix osf-panel-header-flex" style="display:none">
         <div id="filesSearch"></div>
         <div id="toggleIcon" class="pull-right">
           <div class="panel-collapse"><i class="fa fa-angle-left"></i></div>
         </div>
       </div>
 
-      <div class="osf-panel-body osf-panel-body-flex file-page reset-height">
+      <div class="osf-panel-body-flex file-page reset-height">
         <div id="grid">
           <div class="spinner-loading-wrapper">
             <div class="logo-spin text-center"><img src="/static/img/logo_spin.png" alt="loader"> </div>
@@ -40,8 +40,8 @@
     </div>
 
     <!-- Menu toggle closed -->
-    <div class="osf-panel osf-panel-show text-center reset-height"  style="display: none">
-      <div class="osf-panel-header">
+    <div class="panel panel-default osf-panel-show text-center reset-height"  style="display: none">
+      <div class="panel-heading">
         <i class="fa fa-file"></i>
         <i class="fa fa-angle-right"></i>
       </div>
@@ -182,6 +182,7 @@
       });
     </script>
 
+    <link href="/static/css/pages/file-view-page.css" rel="stylesheet">
     <link href="${urls['mfr']}/static/css/mfr.css" media="all" rel="stylesheet" />
     <script src="${urls['mfr']}/static/js/mfr.js"></script>
 
