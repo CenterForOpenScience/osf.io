@@ -17,7 +17,7 @@ require('font-awesome-webpack');
 require('../../css/pages/public-activity-page.css');
 
 // for help tab
-require('../../css/pages/getting-start-page.css');
+require('../../css/pages/getting-started-page.css');
 
 var $ = require('jquery');
 require('jquery.cookie');
