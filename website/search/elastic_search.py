@@ -10,7 +10,6 @@ import unicodedata
 
 import six
 
-# TODO: Remove when using standard calls to API
 import index_file
 
 from elasticsearch import (

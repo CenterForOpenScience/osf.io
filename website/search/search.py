@@ -29,7 +29,6 @@ def update_node(node, index=None):
     index = index or settings.ELASTIC_INDEX
     search_engine.update_node(node, index=index)
 
-
 @requires_search
 def delete_node(node, index=None):
     index = index or settings.ELASTIC_INDEX

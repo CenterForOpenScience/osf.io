@@ -17,4 +17,3 @@ def collect_files(node):
         resp = requests.get(file_.download_url)
         response = unicode(resp.text).encode('utf-8')
         yield {'name': name, 'content': response}
-
