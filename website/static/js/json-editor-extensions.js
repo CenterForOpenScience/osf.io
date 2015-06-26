@@ -81,7 +81,36 @@ Comments.prototype.add = function() {
     self.$commentsList.append(comment.$element);
 };
 
+JSONEditor.defaults.editors.commentableString = JSONEditor.defaults.editors.string.extend({
+    build: function() {
+        var self = this;
+        this._super();
 
+        var $element = $('<div>');
+        $(this.input).after($element);
+        this.comments = new Comments($element);        
+    },
+    getValue: function() {
+        if (this.comments) {
+            var comments = $.map(this.comments.comments, function(comment) {
+                return {
+                    value: comment.$input.val(),
+                    user: comment.user
+                };
+            });
+            var val = {
+                value: this._super(),
+                comments: comments
+            };
+            return val;
+        } else {
+            return this._super();
+        }
+    }
+
+});
+
+///////////////////////////////
 
 JSONEditor.defaults.options.upload = function(type, file, cbs) {
     // TODO may want to change this
