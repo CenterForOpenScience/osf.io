@@ -215,21 +215,6 @@ def load_parent(parent_id):
     return parent_info
 
 
-def categorize_node(node):
-    component_categories = [k for k in Node.CATEGORY_MAP.keys() if not k == 'project']
-    category = 'component' if node.category in component_categories else node.category
-
-    if category == 'project':
-        category = 'registration' if node.is_registration else category
-    else:
-        try:
-            category = 'registration' if node.is_registration else category
-        except IndexError:
-            # Skip orphaned components
-            return None
-    return category
-
-
 @requires_search
 def update_node(node, index=None):
     index = index or INDEX
