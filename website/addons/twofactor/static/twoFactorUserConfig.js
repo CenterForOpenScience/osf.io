@@ -37,8 +37,8 @@ function ViewModel(qrCodeSelector, otpURL) {
             SETTINGS_URL,
             {code: self.tfaCode()}
         ).done(function(response) {
-            $('#Tfa-success-message').html(response['message']);
-            $('#tfa-activation-warning').closest('#alert-container').hide();
+            $('#TfaSuccessMessage').html(response['message']);
+            $('#TfaActivationWarning').closest('#alert-container').hide();
             $('#TfaVerify').slideUp(function() {
                 $('#TfaDeactivate').slideDown();
             });
