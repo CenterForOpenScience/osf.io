@@ -14,7 +14,8 @@ from elasticsearch import (
     Elasticsearch,
     RequestError,
     NotFoundError,
-    ConnectionError
+    ConnectionError,
+    helpers,
 )
 
 from framework import sentry
@@ -212,23 +213,31 @@ def load_parent(parent_id):
     return parent_info
 
 
+def get_doctype_from_node(node):
+    component_categories = [k for k in Node.CATEGORY_MAP.keys() if not k == 'project']
+
+    if node.category in component_categories:
+        return 'component'
+    elif node.is_registration:
+        return 'registration'
+    else:
+        return node.category
+
+
 @requires_search
 def update_node(node, index=None):
     index = index or INDEX
     from website.addons.wiki.model import NodeWikiPage
 
-    component_categories = [k for k in Node.CATEGORY_MAP.keys() if not k == 'project']
-    category = 'component' if node.category in component_categories else node.category
+    category = get_doctype_from_node(node)
 
     if category == 'project':
         elastic_document_id = node._id
         parent_id = None
-        category = 'registration' if node.is_registration else category
     else:
         try:
             elastic_document_id = node._id
             parent_id = node.parent_id
-            category = 'registration' if node.is_registration else category
         except IndexError:
             # Skip orphaned components
             return
@@ -278,6 +287,34 @@ def update_node(node, index=None):
                 elastic_document['wikis'][wiki.page_name] = wiki.raw_text(node)
 
         es.index(index=index, doc_type=category, id=elastic_document_id, body=elastic_document, refresh=True)
+
+
+def bulk_update_contributors(nodes, index=INDEX):
+    """Updates only the list of contributors of input projects
+
+    :param nodes: Projects, components or registrations
+    :param index: Indices of the nodes
+    :return:
+    """
+    actions = []
+    for node in nodes:
+        actions.append({
+            '_op_type': 'update',
+            '_index': index,
+            '_id': node._id,
+            '_type': get_doctype_from_node(node),
+            'doc': {
+                'contributors': [
+                    {
+                        'fullname': user.fullname,
+                        'url': user.profile_url if user.is_active else None
+                    } for user in node.visible_contributors
+                    if user is not None
+                    and user.is_active
+                ]
+            }
+        })
+    return helpers.bulk(es, actions)
 
 
 @requires_search

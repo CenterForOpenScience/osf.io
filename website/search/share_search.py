@@ -52,11 +52,15 @@ def clean_count_query(query):
 @requires_search
 def count(query, index='share'):
     query = clean_count_query(query)
-    count = share_es.count(index=index, body=query)
+
+    if settings.USE_SHARE:
+        count = share_es.count(index=index, body=query)['count']
+    else:
+        count = 0
 
     return {
         'results': [],
-        'count': count['count']
+        'count': count
     }
 
 
@@ -175,8 +179,10 @@ def stats(query=None):
         }
     }
 
-    results = share_es.search(index='share_v1', body=query)
-    date_results = share_es.search(index='share_v1', body=date_histogram_query)
+    results = share_es.search(index=settings.SHARE_ELASTIC_INDEX,
+                              body=query)
+    date_results = share_es.search(index=settings.SHARE_ELASTIC_INDEX,
+                                   body=date_histogram_query)
     results['aggregations']['date_chunks'] = date_results['aggregations']['date_chunks']
 
     chart_results = data_for_charts(results)

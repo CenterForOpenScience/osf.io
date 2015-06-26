@@ -871,6 +871,15 @@ class User(GuidStoredObject, AddonModelMixin):
         for node in self.node__contributed:
             node.update_search()
 
+    def update_search_nodes_contributors(self):
+        """
+        Bulk update contributor name on all nodes on which the user is
+        a contributor.
+        :return:
+        """
+        from website.search import search
+        search.update_contributors(self.visible_contributor_to)
+
     @property
     def is_confirmed(self):
         return bool(self.date_confirmed)
@@ -976,6 +985,23 @@ class User(GuidStoredObject, AddonModelMixin):
     def profile_url(self):
         return '/{}/'.format(self._id)
 
+    @property
+    def contributor_to(self):
+        return (
+            node for node in self.node__contributed
+            if not (
+                node.is_deleted
+                or node.is_dashboard
+            )
+        )
+
+    @property
+    def visible_contributor_to(self):
+        return (
+            node for node in self.contributor_to
+            if self._id in node.visible_contributor_ids
+        )
+
     def get_summary(self, formatter='long'):
         return {
             'user_fullname': self.fullname,
@@ -991,6 +1017,7 @@ class User(GuidStoredObject, AddonModelMixin):
         ret = super(User, self).save(*args, **kwargs)
         if self.SEARCH_UPDATE_FIELDS.intersection(ret) and self.is_confirmed:
             self.update_search()
+            self.update_search_nodes_contributors()
         if settings.PIWIK_HOST and not self.piwik_token:
             piwik_tasks.update_user(self._id)
         return ret
