@@ -13,7 +13,9 @@ var Comments = function($element){
     self.comments = [];
 
     var $commentsDiv = $('<div>');
-    var $commentsList = $('<ul>');
+    var $commentsList = $('<ul>', {
+		'class': 'list-group'
+	});
     self.$commentsList = $commentsList;    
     $commentsDiv.append($commentsList);
     $commentsDiv.append($('<button>', {
@@ -46,7 +48,9 @@ Comments.prototype.Comment = function(value){
                     }
                    );
     
-    self.$element = $('<li>');
+    self.$element = $('<li>', {
+		'class': 'list-group-item'
+	});
     var $row = $('<div>', {
         'class': 'row'
     });
@@ -59,11 +63,25 @@ Comments.prototype.Comment = function(value){
     $control.append($('<a>', {
         'class': 'btn fa fa-check',
         click: function() {
-            self.editable = false;
-            $(this).addClass('disabled');
-            self.$input.addClass('disabled');
+			//if(window.contextVars.currentUser === Comments.Comment.user) {
+				self.editable = false;
+				$(this).addClass('disabled');
+				self.$input.addClass('disabled');
+			// } else {
+			// 	console.log('Only the author may edit this comment');
+			// }
         }
     }));
+	$control.append($('<a>', {
+		'class': 'btn fa fa-pencil',
+		click: function() {
+			$(this).removeClass('disabled');
+			self.$input.toggleClass('disabled');
+			//if (window.contextVars.currentUser === this.comments.user) {
+				console.log('u rite');
+			//}
+		}
+	}));
     $row.append($control);
     
     self.$element.append($row);
