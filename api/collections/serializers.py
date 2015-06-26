@@ -1,8 +1,9 @@
 from rest_framework import serializers as ser
 
 from website.models import Node
-from api.base.utils import get_user_auth
+from website.util import api_v2_url
 from framework.auth.core import Auth
+from api.base.utils import get_user_auth
 from api.base.serializers import JSONAPISerializer, CollectionLinksField, Link, LinksField
 
 class CollectionSerializer(JSONAPISerializer):
@@ -110,7 +111,7 @@ class CollectionPointersSerializer(JSONAPISerializer):
         if isinstance(obj, Node):
             return obj._id
         elif isinstance(obj, dict):
-            return ''
+            return api_v2_url('/collections/{}/'.format(obj['id']))
         else:
             pointer_node = Node.load(obj.node._id)
             return pointer_node.absolute_url

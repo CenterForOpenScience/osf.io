@@ -1,8 +1,9 @@
 import collections
 import re
 
-from rest_framework import serializers as ser
+from website.util import api_v2_url
 from website.util.sanitize import strip_html
+from rest_framework import serializers as ser
 from api.base.utils import absolute_reverse, waterbutler_url_for
 
 
@@ -42,7 +43,7 @@ class CollectionLinksField(ser.Field):
 
     def to_representation(self, obj):
         if isinstance(obj, dict):
-            return ''
+            return api_v2_url('/collections/{}/'.format(obj['id']))
         else:
             ret = _rapply(self.links, _url_val, obj=obj, serializer=self.parent)
             ret['self'] = absolute_reverse('collections:collection-detail', kwargs={'collection_id': obj._id})
