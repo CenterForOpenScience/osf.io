@@ -18,10 +18,13 @@ var Comments = function($element) {
     var self = this;
 
     self.comments = [];
+	self.lastModified = '';
 
     var $commentsDiv = $('<div>');
-    var $commentsList = $('<ul>');
-    self.$commentsList = $commentsList;
+    var $commentsList = $('<ul>', {
+		'class': 'list-group'
+	});
+    self.$commentsList = $commentsList;    
     $commentsDiv.append($commentsList);
     $commentsDiv.append($('<button>', {
         'class': 'btn btn-primary btn-xs',
@@ -50,25 +53,57 @@ Comments.prototype.Comment = function(value) {
         placeholder: 'Comments or questions...',
         html: value
     });
-
-    self.$element = $('<li>');
+    
+    self.$element = $('<li>', {
+		'class': 'list-group-item'
+	});
     var $row = $('<div>', {
         'class': 'row'
     });
     $row.append($('<div>', {
         'class': 'col-md-6'
-    }).append(self.$input));
+    }).append($('<span>', {
+		html: '<strong>' + curentUser.fullname + '</strong> said...'
+	})).append(self.$input));
+	
     var $control = $('<div>', {
         'class': 'col-md-3'
     });
-    $control.append($('<a>', {
+	self.$check = $('<a>', {
         'class': 'btn fa fa-check',
         click: function() {
-            self.editable = false;
-            $(this).addClass('disabled');
-            self.$input.addClass('disabled');
+			if(window.contextVars.currentUser.id === self.user.pk) {
+				self.editable = false;
+				self.lastModified = Date();
+				$(this).addClass('disabled');
+				self.$input.addClass('disabled');
+				self.$edit.removeClass('disabled');
+			}
+			else {
+				console.log('Only the author may edit this comment');
+			}
         }
-    }));
+    });
+	self.$edit = $('<a>', {
+		'class': 'btn fa fa-pencil',
+		click: function() {
+			if(window.contextVars.currentUser.id === self.user.pk) {
+				self.editable = true;
+				self.lastModified = Date();
+				$(this).addClass('disabled');
+				self.$input.removeClass('disabled');
+				self.$check.removeClass('disabled');
+			} else {
+				self.editable = false;
+				$(this).addClass('disabled');
+				self.$input.addClass('disabled');
+				self.$check.addClass('disabled');
+				alert('Only the author may edit this comment');
+			}
+		}
+	});
+	$control.append(self.$check);
+	$control.append(self.$edit);
     $row.append($control);
 
     self.$element.append($row);
@@ -95,7 +130,8 @@ JSONEditor.defaults.editors.commentableString = JSONEditor.defaults.editors.stri
             var comments = $.map(this.comments.comments, function(comment) {
                 return {
                     value: comment.$input.val(),
-                    user: comment.user
+                    user: comment.user,
+					lastModified: comment.lastModified
                 };
             });
             var val = {
