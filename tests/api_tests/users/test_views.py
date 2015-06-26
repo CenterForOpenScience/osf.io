@@ -131,6 +131,15 @@ class TestUsers(ApiTestCase):
         assert_in(self.user_one._id, ids)
         assert_not_in(self.user_two._id, ids)
 
+    def test_filter_using_user_id(self):
+        url = "/{}users/?filter[id]={}".format(API_BASE, self.user_one._id)
+        self.user_one.save()
+        res = self.app.get(url)
+        user_json = res.json['data']
+        ids = [each['id'] for each in user_json]
+        assert_in(self.user_one._id, ids)
+        assert_not_in(self.user_two._id, ids)
+
     def test_filter_using_complex_field(self):
         url = "/{}users/?filter[employment_institutions.title]=Martin".format(API_BASE)
         self.user_one.save()
