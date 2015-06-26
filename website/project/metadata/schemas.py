@@ -3,16 +3,30 @@ import json
 
 
 def ensure_schema_structure(schema):
-    if 'type' not in schema:
-        schema['type'] = 'object'
+    # if 'type' not in schema:
+    #     schema['type'] = 'object'
 
-    if 'pages' not in schema:
-        schema['pages'] = [
-            {
-                'id': 'page1',
-                'type': 'object',
-            }
-        ]
+    # if 'pages' not in schema:
+    #     schema['pages'] = [
+    #         {
+    #             'id': 'page1',
+    #             'type': 'object',
+    #         }
+    #     ]
+    # if 'questions' not in schema['pages'][0]:
+    #     schema['pages'][0]['questions'] = [
+    #         {
+    #             'id': 'question1',
+    #             'type': 'object',
+    #             'title': '1',
+    #             'properties': {
+    #                 'q1': {
+    #                     'title': 'first questions',
+    #                     'type': 'string',
+    #                 }
+    #             }
+    #         }
+    #     ]
     schema['title'] = ' '.join(schema['id'].split('_'))
     # TODO better versioning
     schema['version'] = schema.get('version', 1)
@@ -26,7 +40,7 @@ def from_json(fname):
 OSF_META_SCHEMAS = [
     # ensure_schema_structure(from_json('osf-open-ended-1.json')),
     # ensure_schema_structure(from_json('osf-standard-1.json')),
-    ensure_schema_structure(from_json('osf-standard-test.json')),
+    #ensure_schema_structure(from_json('osf-standard-test.json')),
     # ensure_schema_structure(from_json('brandt-prereg-1.json')),
     #ensure_schema_structure(from_json('brandt-prereg-test.json')),
     #o ensure_schema_structure(from_json('brandt-postcomp-1.json')),

@@ -107,7 +107,7 @@ var RegistrationEditor = function(urls, editorId) {
                 return s.id === self.selectedSchemaId();
             })[0]
         );
-        self.updateEditor(self.schema().pages[0]);
+        self.updateEditor(self.schema().pages[0], 0);
     });
 
     self.schema = ko.observable({});
@@ -153,20 +153,26 @@ RegistrationEditor.prototype.fetchData = function() {
 
 RegistrationEditor.prototype.updateEditor = function(page, question) {
     var self = this;
-    var useSchema;
+    var useSchema = page;
+    console.log(page);
 
     if (!page) {
         return;
     } 
     if (!question) {
-        useSchema = page;
-    } else {
-        useSchema = question;
-    }
+        question = 0;
+    } 
     // load the data for the first schema and display
     if (self.editor) {
         self.editor.destroy();
     }
+    if (page.questions !== undefined) {
+       useSchema = page.questions[question]; 
+    } else if (page.properties !== undefined) {
+        console.log(page.properties.questions);
+        useSchema = page.properties.questions[question];
+    }
+    
     self.editor = new JSONEditor(document.getElementById(self.editorId), {
         schema: useSchema,
         startVal: self.schemaData(),
@@ -182,13 +188,11 @@ RegistrationEditor.prototype.updateEditor = function(page, question) {
 };
 RegistrationEditor.prototype.selectPage = function(page) {
     var self = this;
-    console.log(this);
     self.updateEditor(page);
 };
-RegistrationEditor.prototype.selectQuestion = function(question) {
+RegistrationEditor.prototype.selectQuestion = function(page, question) {
     var self = this;
-    console.log(question);
-    self.updateEditor(undefined ,question);
+    self.updateEditor(page ,question);
 };
 RegistrationEditor.prototype.save = function() {
     var self = this;
