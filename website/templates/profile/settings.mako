@@ -23,7 +23,7 @@
             <ul class="nav nav-stacked nav-pills">
                 <li><a href="#">Profile Information</a></li>
                 <li><a href="${ web_url_for('user_account') }">Account Settings</a></li>
-                <li><a href="${ web_url_for('user_addons') }">Configure Add-ons</a></li>
+                <li><a href="${ web_url_for('user_addons') }">Configure External Accounts</a></li>
                 <li><a href="${ web_url_for('user_notifications') }">Notifications</a></li>
             </ul>
         </div><!-- end sidebar -->

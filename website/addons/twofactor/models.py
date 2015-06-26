@@ -8,7 +8,6 @@ from oath import accept_totp
 from framework.status import push_status_message
 from website.addons.base import AddonUserSettingsBase
 
-
 class TwoFactorUserSettings(AddonUserSettingsBase):
     totp_secret = StringField()  # hexadecimal
     totp_drift = IntegerField()
@@ -26,10 +25,10 @@ class TwoFactorUserSettings(AddonUserSettingsBase):
     def to_json(self, user):
         rv = super(TwoFactorUserSettings, self).to_json(user)
         rv.update({
+            'is_enabled': True,
             'is_confirmed': self.is_confirmed,
             'secret': self.totp_secret_b32,
             'drift': self.totp_drift,
-            'otpauth_url': self.otpauth_url,
         })
         return rv
 

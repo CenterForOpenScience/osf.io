@@ -1,17 +1,19 @@
 <!-- Authorization -->
 <div class="addon-oauth"
      data-addon-short-name="${ addon_short_name }"
-     data-addon-name="${ addon_full_name }">
-    <a data-bind="click: connectAccount" class="pull-right text-primary">Connect an account</a>
-    <h4 class="addon-title">{{ properName }}</h4>
+     data-addon-name="${ addon_full_name }">  
+    <a data-bind="click: connectAccount" class="pull-right text-primary">Connect Account</a>
+    <h4 class="addon-title">
+      <img class="addon-icon" src="${addon_icon_url}"></img>
+      {{ properName }}
+    </h4>
     <!-- ko foreach: accounts -->
-
 
     <table class="table">
         <thead>
             <tr>
-                <th>Authorized as <a href="{{ profileUrl }}"><em>{{ name }}</em></a></th>
-                <th><a data-bind="click: $root.askDisconnect" class="text-danger">Delete Access Token</a></th>
+                <th>Authorized by <a href="{{ profileUrl }}"><em>{{ name }}</em></a></th>
+                <th><a data-bind="click: $root.askDisconnect" class="text-danger">Disconnect Account</a></th>
             </tr>
         </thead>
         <!-- ko if: connectedNodes().length > 0 -->
@@ -23,7 +25,7 @@
                 </td>
                 <td>
                     <a data-bind="click: $parent.deauthorizeNode">
-                        <i class="fa fa-times text-danger" title="Deauthorize Project"></i>
+                        <i class="fa fa-times text-danger" title="Disconnect Project"></i>
                     </a>
                 </td>
             </tr>

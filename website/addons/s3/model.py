@@ -49,6 +49,9 @@ class AddonS3UserSettings(AddonUserSettingsBase):
     def to_json(self, user):
         ret = super(AddonS3UserSettings, self).to_json(user)
         ret['has_auth'] = self.has_auth
+        if self.owner:
+            ret['name'] = self.owner.display_full_name()
+            ret['profile_url'] = self.owner.profile_url
         return ret
 
     @property

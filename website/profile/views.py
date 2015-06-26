@@ -3,7 +3,6 @@
 import logging
 import httplib
 import httplib as http
-import os
 
 from dateutil.parser import parse as parse_date
 
@@ -32,7 +31,7 @@ from website.util import web_url_for, paths
 from website.util.sanitize import escape_html
 from website.util.sanitize import strip_html
 from website.views import _render_nodes
-
+from website.addons.base import utils as addon_utils
 
 logger = logging.getLogger(__name__)
 
@@ -322,8 +321,13 @@ def user_profile(auth, **kwargs):
 @must_be_logged_in
 def user_account(auth, **kwargs):
     user = auth.user
+    user_addons = addon_utils.get_addons_by_config_type('user', user)
+
     return {
         'user_id': user._id,
+        'addons': user_addons,
+        'addons_js': collect_user_config_js([addon for addon in settings.ADDONS_AVAILABLE if 'user' in addon.configs]),
+        'addons_css': []
     }
 
 
@@ -350,40 +354,16 @@ def user_addons(auth, **kwargs):
 
     user = auth.user
 
-    ret = {}
-
-    addons = [addon.config for addon in user.get_addons()]
-    addons.sort(key=lambda addon: addon.full_name.lower(), reverse=False)
-    addons_enabled = []
-    addon_enabled_settings = []
-    user_addons_enabled = {}
-
-    # sort addon_enabled_settings alphabetically by category
-    for category in settings.ADDON_CATEGORIES:
-        for addon_config in addons:
-            if addon_config.categories[0] == category:
-                addons_enabled.append(addon_config.short_name)
-                if 'user' in addon_config.configs:
-                    short_name = addon_config.short_name
-                    addon_enabled_settings.append(short_name)
-                    user_addons_enabled[addon_config.short_name] = user.get_addon(short_name).to_json(user)
-                    # inject the MakoTemplateLookup into the template context
-                    # TODO inject only short_name and render fully client side
-                    user_addons_enabled[short_name]['template_lookup'] = addon_config.template_lookup
-                    user_addons_enabled[short_name]['user_settings_template'] = os.path.basename(addon_config.user_settings_template)
-
-    ret['addon_categories'] = settings.ADDON_CATEGORIES
-    ret['addons_available'] = [
-        addon
-        for addon in sorted(settings.ADDONS_AVAILABLE)
-        if 'user' in addon.owners and addon.short_name not in settings.SYSTEM_ADDED_ADDONS['user']
-    ]
-    ret['addons_available'].sort(key=lambda addon: addon.full_name.lower(), reverse=False)
-    ret['addons_enabled'] = addons_enabled
-    ret['addon_enabled_settings'] = addon_enabled_settings
-    ret['user_addons_enabled'] = user_addons_enabled
-    ret['addon_js'] = collect_user_config_js(user.get_addons())
-    ret['addon_capabilities'] = settings.ADDON_CAPABILITIES
+    ret = {
+        'addon_settings': addon_utils.get_addons_by_config_type('accounts', user),
+    }
+    accounts_addons = [addon for addon in settings.ADDONS_AVAILABLE if 'accounts' in addon.configs]
+    ret.update({
+        'addon_enabled_settings': [addon.short_name for addon in accounts_addons],
+        'addons_js': collect_user_config_js(accounts_addons),
+        'addon_capabilities': settings.ADDON_CAPABILITIES,
+        'addons_css': []
+    })
     return ret
 
 @must_be_logged_in
@@ -394,18 +374,26 @@ def user_notifications(auth, **kwargs):
     }
 
 
-def collect_user_config_js(addons):
+def collect_user_config_js(addon_configs):
     """Collect webpack bundles for each of the addons' user-cfg.js modules. Return
     the URLs for each of the JS modules to be included on the user addons config page.
 
     :param list addons: List of user's addon config records.
     """
     js_modules = []
-    for addon in addons:
-        js_path = paths.resolve_addon_path(addon.config, 'user-cfg.js')
+    for addon_config in addon_configs:
+        js_path = paths.resolve_addon_path(addon_config, 'user-cfg.js')
         if js_path:
             js_modules.append(js_path)
     return js_modules
+
+@must_be_logged_in
+def profile_addons(**kwargs):
+    user = kwargs['auth'].user
+    return {
+        'user_id': user._primary_key,
+    }
+
 
 @must_be_logged_in
 def user_choose_addons(**kwargs):

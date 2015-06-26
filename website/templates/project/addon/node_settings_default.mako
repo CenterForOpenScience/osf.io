@@ -8,14 +8,14 @@
                 </a>
                 % if not is_registration:
                     <a data-bind="click: deauthorize"
-                        class="text-danger pull-right addon-auth">Deauthorize</a>
+                        class="text-danger pull-right addon-auth">Disconnect Account</a>
                 % endif
             </span>
 
              <!-- Import Access Token Button -->
             <span data-bind="if: showImport">
                 <a data-bind="click: importAuth" href="#" class="text-primary pull-right addon-auth">
-                    Import Access Token
+                    Import Account From Profile
                 </a>
             </span>
 
@@ -29,7 +29,7 @@
             <!-- Oauth Start Button -->
             <span data-bind="if: showTokenCreateButton">
                 <a data-bind="click: connectAccount" class="text-primary pull-right addon-auth">
-                    Create Access Token
+                  Connect Account
                 </a>
             </span>
         </small>

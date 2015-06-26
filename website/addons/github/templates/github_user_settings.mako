@@ -1,6 +1,7 @@
 <!-- Authorization -->
 <div>
     <h4 class="addon-title">
+      <img class="addon-icon" src="${addon_icon_url}"></img>
         GitHub
         <small class="authorized-by">
             % if authorized:
@@ -8,10 +9,10 @@
                     <a href="https://github.com/${authorized_github_user}" target="_blank">
                         ${authorized_github_user}
                     </a>
-                <a id="githubDelKey" class="text-danger pull-right addon-auth">Delete Access Token</a>
+                <a id="githubDelKey" class="text-danger pull-right addon-auth">Disconnect Account</a>
             % else:
                 <a id="githubAddKey" class="text-primary pull-right addon-auth">
-                    Create Access Token
+                    Connect Account
                 </a>
             % endif
         </small>

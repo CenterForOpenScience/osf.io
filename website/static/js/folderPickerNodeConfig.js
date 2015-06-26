@@ -81,13 +81,13 @@ var FolderPickerViewModel = oop.defclass({
         self.messages = {
             invalidCredOwner: ko.pureComputed(function() {
                 return 'Could not retrieve ' + self.addonName + ' settings at ' +
-                    'this time. The ' + self.addonName + ' addon credentials may no longer be valid.' +
-                    ' Try deauthorizing and reauthorizing ' + self.addonName + ' on your <a href="' +
-                    self.urls().settings + '">account settings page</a>.';
+                    'this time. The credentials associated with this ' + self.addonName + ' Account may no longer be valid.' +
+                    ' Try disconnecting and reconnecting the ' + self.addonName + 'Account on your <a href="' +
+                    self.urls().settings + 'addons/">account settings page</a>.';
             }),
             invalidCredNotOwner: ko.pureComputed(function() {
                 return 'Could not retrieve ' + self.addonName + ' settings at ' +
-                    'this time. The ' + self.addonName + ' addon credentials may no longer be valid.' +
+                    'this time. The credentials' + self.addonName + ' addon credentials may no longer be valid.' +
                     ' Contact ' + self.ownerName() + ' to verify.';
             }),
             cantRetrieveSettings: ko.pureComputed(function() {
@@ -102,13 +102,13 @@ var FolderPickerViewModel = oop.defclass({
                     '<a href="mailto:support@osf.io">support@osf.io</a>.';
             }),
             deauthorizeSuccess: ko.pureComputed(function() {
-                return 'Deauthorized ' + self.addonName + '.';
+                return 'Disconnect ' + self.addonName + '.';
             }),
             deauthorizeFail: ko.pureComputed(function() {
-                return 'Could not deauthorize because of an error. Please try again later.';
+                return 'Could not disconnect ' + self.addonName + ' Account because of an error. Please try again later.';
             }),
             connectAccountSuccess: ko.pureComputed(function() {
-                return 'Successfully created a ' + self.addonName + ' Access Token';
+                return 'Successfully connected a ' + self.addonName + ' Account';
             }),
             submitSettingsSuccess: ko.pureComputed(function() {
                 throw new Error('Subclasses of FolderPickerViewModel must provide a message for successful settings updates. ' +
@@ -116,19 +116,19 @@ var FolderPickerViewModel = oop.defclass({
                                 '{PAGE_NAME} to view your {CONTENT_TYPE}.');
             }),
             submitSettingsError: ko.pureComputed(function() {
-                return 'Could not change settings. Please try again later.';
+                return 'Could not change ' + self.addonName + ' settings. Please try again later.';
             }),
             confirmDeauth: ko.pureComputed(function() {
-                return 'Are you sure you want to remove this ' + self.addonName + ' authorization?';
+                return 'Are you sure you want to remove this ' + self.addonName + ' Account?';
             }),
             confirmAuth: ko.pureComputed(function() {
-                return 'Are you sure you want to authorize this project with your ' + self.addonName + ' access token?';
+                return 'Are you sure you want to link your ' + self.addonName + ' Account with this project?';
             }),
             tokenImportSuccess: ko.pureComputed(function() {
-                return 'Successfully imported access token from profile.';
+                return 'Successfully imported ' + self.addonName + ' Account from profile.';
             }),
             tokenImportError: ko.pureComputed(function() {
-                return 'Error occurred while importing access token.';
+                return 'Error occurred while importing ' + self.addonName + ' Account.';
             }),
             connectError: ko.pureComputed(function() {
                 return 'Could not connect to ' + self.addonName + ' at this time. Please try again later.';
@@ -161,7 +161,7 @@ var FolderPickerViewModel = oop.defclass({
             return self.nodeHasAuth() && self.validCredentials();
         });
 
-        /** Whether or not to show the Create Access Token button */
+        /** Whether or not to show the Connect Account button */
         self.showTokenCreateButton = ko.pureComputed(function() {
             // Invoke the observables to ensure dependency tracking
             var userHasAuth = self.userHasAuth();
@@ -346,7 +346,7 @@ var FolderPickerViewModel = oop.defclass({
     importAuth: function() {
         var self = this;
         bootbox.confirm({
-            title: 'Import ' + self.addonName + ' Access Token?',
+            title: 'Import ' + self.addonName + ' Account?',
             message: self.messages.confirmAuth(),
             callback: function(confirmed) {
                 if (confirmed) {
@@ -390,7 +390,7 @@ var FolderPickerViewModel = oop.defclass({
     deauthorize: function() {
         var self = this;
         bootbox.confirm({
-            title: 'Deauthorize ' + self.addonName + '?',
+            title: 'Disconnect ' + self.addonName + ' Account?',
             message: self.messages.confirmDeauth(),
             callback: function(confirmed) {
                 if (confirmed) {

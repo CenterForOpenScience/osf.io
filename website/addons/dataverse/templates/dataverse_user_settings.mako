@@ -3,11 +3,12 @@
 <div id='dataverseAddonScope' class='addon-settings scripted'>
 
     <h4 class="addon-title">
+      <img class="addon-icon" src="${addon_icon_url}"></img>
         Dataverse
         <span data-bind="if: showDeleteAuth">
             <small class="authorized-by">
-                authorized
-                    <a data-bind="click: deleteKey" class="text-danger pull-right addon-auth">Delete API Token</a>
+                authorized by {{ dataverseUsername }}
+                    <a data-bind="click: deleteKey" class="text-danger pull-right addon-auth">Disconnect Account</a>
 
             </small>
         </span>

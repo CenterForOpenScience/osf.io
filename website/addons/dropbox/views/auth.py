@@ -142,8 +142,7 @@ def dropbox_oauth_delete_user(user_addon, auth, **kwargs):
 
 
 @must_be_logged_in
-@must_have_addon('dropbox', 'user')
-def dropbox_user_config_get(user_addon, auth, **kwargs):
+def dropbox_user_config_get(auth, **kwargs):
     """View for getting a JSON representation of the logged-in user's
     Dropbox user settings.
     """
@@ -151,25 +150,32 @@ def dropbox_user_config_get(user_addon, auth, **kwargs):
         'create': api_url_for('dropbox_oauth_start_user'),
         'delete': api_url_for('dropbox_oauth_delete_user')
     }
-    info = user_addon.dropbox_info
+    user_addon = auth.user.get_addon('dropbox')
+
+    info = None
+    user_has_auth = False
+    n_nodes_authorized = 0
     valid_credentials = True
+    if user_addon:
+        info = user_addon.dropbox_info
+        user_has_auth = user_addon.has_auth
+        n_nodes_authorized = len(user_addon.nodes_authorized)
 
-    if user_addon.has_auth:
-        try:
-            client = get_client_from_user_settings(user_addon)
-            client.account_info()
-        except ErrorResponse as error:
-            if error.status == 401:
-                valid_credentials = False
-            else:
-                HTTPError(http.BAD_REQUEST)
-
+        if user_addon.has_auth:
+            try:
+                client = get_client_from_user_settings(user_addon)
+                client.account_info()
+            except ErrorResponse as error:
+                if error.status == 401:
+                    valid_credentials = False
+                else:
+                    raise HTTPError(http.BAD_REQUEST)
     return {
         'result': {
-            'userHasAuth': user_addon.has_auth,
+            'userHasAuth': user_has_auth,
             'validCredentials': valid_credentials,
             'dropboxName': info['display_name'] if info else None,
-            'nNodesAuthorized': len(user_addon.nodes_authorized),
+            'nNodesAuthorized': n_nodes_authorized,
             'urls': urls
         },
     }, http.OK

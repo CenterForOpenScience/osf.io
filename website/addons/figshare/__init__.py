@@ -21,7 +21,7 @@ ADDED_DEFAULT = []
 ADDED_MANDATORY = []
 
 VIEWS = []
-CONFIGS = ['user', 'node']
+CONFIGS = ['accounts', 'node']
 
 CATEGORIES = ['storage']
 

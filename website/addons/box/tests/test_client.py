@@ -2,7 +2,6 @@
 
 from nose.tools import *  # noqa (PEP8 asserts)
 from box import BoxClient
-from datetime import datetime
 
 from tests.base import OsfTestCase
 from tests.factories import UserFactory
@@ -12,7 +11,6 @@ from website.addons.box.model import BoxUserSettings
 from website.addons.box.tests.factories import (
     BoxUserSettingsFactory,
     BoxNodeSettingsFactory,
-    BoxOAuthSettingsFactory
 )
 from website.addons.box.client import (
     get_client, get_node_addon_client, get_node_client,

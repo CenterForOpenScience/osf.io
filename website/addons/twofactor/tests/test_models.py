@@ -1,7 +1,7 @@
 from urlparse import urlparse, parse_qs
 
 import mock
-from nose.tools import *
+from nose.tools import *  # noqa
 
 from tests.base import OsfTestCase
 from tests.factories import UserFactory
@@ -91,12 +91,12 @@ class TestUserSettingsModel(OsfTestCase):
         assert_equal(
             settings,
             {
+                'is_enabled': True,
                 'addon_full_name': 'Two-factor Authentication',
                 'addon_short_name': 'twofactor',
                 'drift': 0,
                 'is_confirmed': False,
                 'nodes': [],
-                'otpauth_url': url.format(self.user.username),
                 'secret': self.TOTP_SECRET_B32,
                 'has_auth': False,
             }

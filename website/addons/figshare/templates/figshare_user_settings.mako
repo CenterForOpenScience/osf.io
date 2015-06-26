@@ -1,14 +1,15 @@
 <!-- Authorization -->
 <div>
     <h4 class="addon-title">
+      <img class="addon-icon" src="${addon_icon_url}"></img>
         figshare
         <small class="authorized-by">
             % if authorized:
-                    authorized
-                <a id="figshareDelKey" class="text-danger pull-right addon-auth">Delete Access Token</a>
+                    authorized by <a href="{{ profileUrl }}"><em> ${name} </em></a>
+                <a id="figshareDelKey" class="text-danger pull-right addon-auth">Disconnect Account</a>
             % else:
                 <a id="figshareAddKey" class="text-primary pull-right addon-auth">
-                    Create Access Token
+                Connect Account
                 </a>
             % endif
         </small>

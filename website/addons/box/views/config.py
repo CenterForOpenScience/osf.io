@@ -173,31 +173,6 @@ def box_deauthorize(auth, node_addon, **kwargs):
     node_addon.save()
 
 
-@must_have_addon('box', 'user')
-@must_have_addon('box', 'node')
-@must_have_permission(permissions.WRITE)
-def box_get_share_emails(auth, user_addon, node_addon, **kwargs):
-    """Return a list of emails of the contributors on a project.
-
-    The current user MUST be the user who authenticated Box for the node.
-    """
-    if not node_addon.user_settings:
-        raise HTTPError(http.BAD_REQUEST)
-    # Current user must be the user who authorized the addon
-    if node_addon.user_settings.owner != auth.user:
-        raise HTTPError(http.FORBIDDEN)
-
-    return {
-        'result': {
-            'emails': [
-                contrib.username
-                for contrib in node_addon.owner.contributors
-                if contrib != auth.user
-            ],
-        }
-    }
-
-
 @must_have_addon('box', 'node')
 @must_be_addon_authorizer('box')
 def box_list_folders(node_addon, **kwargs):
