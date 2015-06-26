@@ -23,8 +23,10 @@ from framework.sessions.model import Session
 from framework.auth import exceptions as auth_exc
 from framework.auth.exceptions import ChangePasswordError, ExpiredTokenError
 from framework.auth.utils import impute_names_model
+from framework.auth.signals import user_merged
+from framework.tasks import handlers
 from framework.bcrypt import check_password_hash
-from website import filters, language, settings
+from website import filters, language, settings, mailchimp_utils
 from website.exceptions import NodeStateError
 from website.profile.utils import serialize_user
 from website.project.model import (
@@ -42,7 +44,7 @@ from website.addons.wiki.exceptions import (
     PageNotFoundError,
 )
 
-from tests.base import OsfTestCase, Guid, fake
+from tests.base import OsfTestCase, Guid, fake, capture_signals
 from tests.factories import (
     UserFactory, ApiKeyFactory, NodeFactory, PointerFactory,
     ProjectFactory, NodeLogFactory, WatchConfigFactory,
@@ -848,6 +850,9 @@ class TestMergingUsers(OsfTestCase):
 
     def setUp(self):
         super(TestMergingUsers, self).setUp()
+        with self.context:
+            handlers.celery_before_request()
+
         self.master = UserFactory(
             fullname='Joe Shmo',
             is_registered=True,
@@ -878,6 +883,29 @@ class TestMergingUsers(OsfTestCase):
     def test_dupe_email_is_appended(self):
         self._merge_dupe()
         assert_in('joseph123@hotmail.com', self.master.emails)
+
+    def test_send_user_merged_signal(self):
+        self.dupe.mailing_lists['foo'] = True
+        self.dupe.save()
+
+        with capture_signals() as mock_signals:
+            self._merge_dupe()
+            assert_equal(mock_signals.signals_sent(), set([user_merged]))
+
+    @mock.patch('website.mailchimp_utils.get_mailchimp_api')
+    def test_merged_user_unsubscribed_from_mailing_lists(self, mock_get_mailchimp_api):
+        list_name = 'foo'
+        username = self.dupe.username
+        self.dupe.mailing_lists[list_name] = True
+        self.dupe.save()
+        mock_client = mock.MagicMock()
+        mock_get_mailchimp_api.return_value = mock_client
+        mock_client.lists.list.return_value = {'data': [{'id': 2, 'list_name': list_name}]}
+        list_id = mailchimp_utils.get_list_id_from_name(list_name)
+        self._merge_dupe()
+        handlers.celery_teardown_request()
+        mock_client.lists.unsubscribe.assert_called_with(id=list_id, email={'email': username})
+        assert_false(self.dupe.mailing_lists[list_name])
 
     def test_inherits_projects_contributed_by_dupe(self):
         project = ProjectFactory()
