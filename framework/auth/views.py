@@ -221,7 +221,7 @@ def send_confirm_email(user, email):
         merge_target = None
 
     mails.send_mail(
-        email,
+        merge_target.username if merge_target else email,
         mails.CONFIRM_MERGE if merge_target else mails.CONFIRM_EMAIL,
         'plain',
         user=user,
