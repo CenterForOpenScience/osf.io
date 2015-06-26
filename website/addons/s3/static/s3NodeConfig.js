@@ -243,23 +243,64 @@ ViewModel.prototype.openCreateBucket = function() {
 
     var isValidBucket = /^(?!.*(\.\.|-\.))[^.][a-z0-9\d.-]{2,61}[^.]$/;
 
-    bootbox.prompt('Name your new bucket', function(bucketName) {
-        if (!bucketName) {
-            return;
-        } else if (isValidBucket.exec(bucketName) == null) {
-            bootbox.confirm({
-                title: 'Invalid bucket name',
-                message: 'Sorry, that\'s not a valid bucket name. Try another name?',
-                callback: function(result) {
-                    if (result) {
-                        self.openCreateBucket();
+    bootbox.dialog({
+        title: 'Create a new bucket',
+        message:
+                '<div class="row"> ' +
+                '<div class="col-md-12"> ' +
+                '<form class="form-horizontal"> ' +
+                '<div class="form-group"> ' +
+                '<label class="col-md-4 control-label" for="bucketName">Bucket Name</label> ' +
+                '<div class="col-md-4"> ' +
+                '<input id="bucketName" name="bucketName" type="text" placeholder="Enter bucket\'s name" class="form-control"> ' +
+                '</div>' +
+                '</div>' +
+                '</form>' +
+                '</div> </div>',
+        buttons: {
+            confirm: {
+                label: 'Save',
+                className: 'btn-info',
+                callback: function () {
+                    var bucketName = $('#bucketName').val();
+                    //var bucketLocation = $('#bucketLocation').val();
+
+                    if (!bucketName) {
+                        return;
+                    } else if (isValidBucket.exec(bucketName) == null) {
+                        bootbox.confirm({
+                            title: 'Invalid bucket name',
+                            message: 'Sorry, that\'s not a valid bucket name. Try another name?',
+                            callback: function(result) {
+                                if (result) {
+                                    self.openCreateBucket();
+                                }
+                            }
+                        });
+                    } else {
+                        self.createBucket(bucketName);
                     }
                 }
-            });
-        } else {
-            self.createBucket(bucketName);
+            }
         }
     });
+    //bootbox.prompt('Name your new bucket', function(bucketName) {
+    //    if (!bucketName) {
+    //        return;
+    //    } else if (isValidBucket.exec(bucketName) == null) {
+    //        bootbox.confirm({
+    //            title: 'Invalid bucket name',
+    //            message: 'Sorry, that\'s not a valid bucket name. Try another name?',
+    //            callback: function(result) {
+    //                if (result) {
+    //                    self.openCreateBucket();
+    //                }
+    //            }
+    //        });
+    //    } else {
+    //        self.createBucket(bucketName);
+    //    }
+    //});
 };
 
 ViewModel.prototype.fetchBucketList = function() {
