@@ -91,7 +91,7 @@ class BoxUserSettings(AddonOAuthUserSettingsBase):
     """Stores user-specific box information
     """
     oauth_provider = Box
-    serializer = BoxSerializer 
+    serializer = BoxSerializer
 
 
 class BoxNodeSettings(StorageAddonBase, AddonOAuthNodeSettingsBase):
