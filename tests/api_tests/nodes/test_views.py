@@ -10,6 +10,15 @@ from api.base.settings.defaults import API_BASE
 from tests.base import ApiTestCase, fake
 from tests.factories import UserFactory, ProjectFactory, FolderFactory, RegistrationFactory, DashboardFactory, NodeFactory
 
+
+from website.search import elastic_search
+from website import settings
+
+# TOOD: move this to 
+TEST_INDEX = 'test'
+elastic_search.INDEX = TEST_INDEX
+settings.ELASTIC_INDEX = TEST_INDEX
+
 class TestWelcomeToApi(ApiTestCase):
     def setUp(self):
         ApiTestCase.setUp(self)

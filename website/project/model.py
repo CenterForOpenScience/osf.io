@@ -1123,6 +1123,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
                 need_update = False
         if self.is_folder or self.archiving:
             need_update = False
+
         if need_update:
             self.update_search()
 
