@@ -125,18 +125,30 @@ RegistrationEditor.prototype.fetchData = function() {
     return ret;
 };
 
-RegistrationEditor.prototype.updateEditor = function(page) {
+RegistrationEditor.prototype.updateEditor = function(page, question) {
     var self = this;
+    var useSchema = page;
+    console.log(page);
 
     if (!page) {
         return;
-    }
+    } 
+    if (!question) {
+        question = 0;
+    } 
     // load the data for the first schema and display
     if (self.editor) {
         self.editor.destroy();
     }
+    if (page.questions !== undefined) {
+       useSchema = page.questions[question]; 
+    } else if (page.properties !== undefined) {
+        console.log(page.properties.questions);
+        useSchema = page.properties.questions[question];
+    }
+    
     self.editor = new JSONEditor(document.getElementById(self.editorId), {
-        schema: page,
+        schema: useSchema,
         startVal: self.draft().schemaData,
         theme: 'bootstrap3',
         disable_collapse: true,
@@ -151,6 +163,10 @@ RegistrationEditor.prototype.updateEditor = function(page) {
 RegistrationEditor.prototype.selectPage = function(page) {
     var self = this;
     self.updateEditor(page);
+};
+RegistrationEditor.prototype.selectQuestion = function(page, question) {
+    var self = this;
+    self.updateEditor(page ,question);
 };
 RegistrationEditor.prototype.create = function(schemaData) {
     var self = this;
