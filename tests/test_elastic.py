@@ -4,11 +4,12 @@ import logging
 
 from nose.tools import *  # flake8: noqa (PEP8 asserts)
 import mock
+import httpretty
 
 from framework.auth.core import Auth
 from framework.addons import AddonModelMixin
 from website import settings
-from website.models import Node
+from website.addons.base import StorageAddonBase
 import website.search.search as search
 from website.search import elastic_search, index_file
 from website.search.util import build_query
@@ -670,7 +671,7 @@ class TestSearchMigration(SearchTestCase):
 
 
 
-class MockFileObject(mock.MagicMock, GuidFile):
+class MockFileObject(mock.MagicMock):
     URL_BASE = 'http://fakeurl.com'
 
     def __init__(self, filename, content, path):
@@ -723,7 +724,7 @@ class MockAddon(mock.MagicMock, StorageAddonBase):
         pass
 
 
-class MockProject(Node, AddonModelMixin):
+class MockProject(AddonModelMixin):
     def __init__(self, addon):
         self.addon = addon
 
@@ -740,7 +741,7 @@ class TestCollectFiles(OsfTestCase):
                                         'tea, Earl Gray, hot!',
                                         '/123456789')
 
-    # @httpretty.activate
+    @httpretty.activate
     def testCollectFiles(self):
         for f in index_file.collect_files(self.fake_project):
             assert(f == 'tea, Earl Gray, hot!')
