@@ -37,7 +37,16 @@
                 $("#alert").text("");
                 $("#title").val("");
                 $("#category").val("");
-
+            });
+            $('#newComponent').on('shown.bs.modal', function(){
+                var isIE = function(userAgent) {
+                    userAgent = userAgent || navigator.userAgent;
+                    return userAgent.indexOf('MSIE ') > -1 || userAgent.indexOf('Trident/') > -1;
+                };
+                // if not IE, focus input field
+                if(!isIE()){
+                    $("#title").focus();
+                }
             });
         });
 </script>
