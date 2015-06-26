@@ -113,7 +113,7 @@ var AddContributorViewModel = oop.extend(Paginator, {
      * currently logged-in user has in common with the contributor.
      */
     startSearch: function() {
-        this.currentPage(0);
+        this.pageToGet(0);
         this.fetchResults();
     },
     fetchResults: function() {
@@ -124,7 +124,7 @@ var AddContributorViewModel = oop.extend(Paginator, {
                 '/api/v1/user/search/', {
                     query: self.query(),
                     excludeNode: nodeId,
-                    page: self.currentPage
+                    page: self.pageToGet
                 },
                 function(result) {
                     var contributors = result.users.map(function(userData) {
