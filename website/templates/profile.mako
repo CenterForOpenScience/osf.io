@@ -20,10 +20,10 @@
     <div class="profile-fullname">
         <span class="m-r-sm">
             % if user['is_profile']:
-                <a href="#changeAvatarModal" data-toggle="modal"><img id='profile-gravatar' src="${profile['gravatar_url']}"
+                <a href="#changeAvatarModal" data-toggle="modal"><img class='profile-gravatar' src="${profile['gravatar_url']}"
                         rel="tooltip" title="Click to change avatar"/></a>
             % else:
-                <img id='profile-gravatar' src="${profile['gravatar_url']}"/>
+                <img class='profile-gravatar' src="${profile['gravatar_url']}"/>
             % endif
         </span>
         <span id="profileFullname" class="h1 overflow ">
@@ -34,6 +34,7 @@
                 <a href="/settings/">Edit your profile</a>
             % endif
         </span>
+    </div>
 </div><!-- end-page-header -->
 
 
