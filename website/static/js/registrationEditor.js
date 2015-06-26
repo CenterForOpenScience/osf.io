@@ -171,5 +171,15 @@ RegistrationEditor.prototype.save = function() {
         console.log(response);
     });
 };
+RegistrationEditor.prototype.check = function() {
+    var self = this;
+    var question = self.editor.schema.nav;
+    $('#' + question).attr('class', 'fa fa-check');
+};
+RegistrationEditor.prototype.uncheck = function() {
+    var self = this;
+    var question = self.editor.schema.nav;
+    $('#' + question).removeClass('fa fa-check');
+};
 
 module.exports = RegistrationEditor;
