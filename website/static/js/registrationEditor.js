@@ -45,14 +45,6 @@ var RegistrationEditor = function(urls, editorId) {
             registration_metadata: {}
         })
     );
-    /*
-    self.defaultOptions = [{
-        id: 'DEFAULT',B
-        name: null,
-        schema_version: 0,
-        title: 'Please select a registration form to initiate registration'
-    }];
-     */
     self.schemas = ko.observable([]);
 
     self.selectedSchemaName = ko.observable();
@@ -127,28 +119,16 @@ RegistrationEditor.prototype.fetchData = function() {
 
 RegistrationEditor.prototype.updateEditor = function(page, question) {
     var self = this;
-    var useSchema = page;
-    console.log(page);
 
-    if (!page) {
-        return;
-    } 
     if (!question) {
-        question = 0;
+        question = page.questions[0];
     } 
     // load the data for the first schema and display
     if (self.editor) {
         self.editor.destroy();
     }
-    if (page.questions !== undefined) {
-       useSchema = page.questions[question]; 
-    } else if (page.properties !== undefined) {
-        console.log(page.properties.questions);
-        useSchema = page.properties.questions[question];
-    }
-    
     self.editor = new JSONEditor(document.getElementById(self.editorId), {
-        schema: useSchema,
+        schema: question,
         startVal: self.draft().schemaData,
         theme: 'bootstrap3',
         disable_collapse: true,
@@ -160,7 +140,7 @@ RegistrationEditor.prototype.updateEditor = function(page, question) {
         self.save();
     });
 };
-RegistrationEditor.prototype.selectPage = function(page) {
+RegistrationEditor.prototype.selectPage = function(page, index) {
     var self = this;
     self.updateEditor(page);
 };
