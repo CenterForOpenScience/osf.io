@@ -227,3 +227,9 @@ body {
 .text-center {
     text-align: center;
 }
+
+.osf-gravatar>img {
+    border: 1px solid #CDCDCD;
+    border-radius: 13px;
+    margin-right: 5px;
+}
