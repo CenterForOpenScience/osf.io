@@ -67,7 +67,10 @@ var FilesWidget = oop.defclass({
         self.fangornOpts = $.extend({}, fangornOpts, opts);
     },
     init: function() {
-        var filebrowser = new Fangorn(this.fangornOpts);
+        this.filebrowser = new Fangorn(this.fangornOpts);
+    },
+    destroy: function() {
+        this.filebrowser.grid.tbController.destroy();
     }
 });
 
