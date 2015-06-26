@@ -20,6 +20,7 @@ from framework.exceptions import HTTPError
 from framework.auth import User, Auth
 from framework.auth.utils import impute_names_model
 from framework.auth.exceptions import InvalidTokenError
+from framework.tasks import handlers
 
 from website import mailchimp_utils
 from website.views import _rescale_ratio
@@ -1328,6 +1329,68 @@ class TestUserProfile(OsfTestCase):
         res = self.app.put_json(url, header, auth=user1.auth, expect_errors=True)
         assert_equal(res.status_code, 400)
         assert_equal(res.json['message_long'], '"id" is required')
+
+    @mock.patch('framework.auth.views.mails.send_mail')
+    @mock.patch('website.mailchimp_utils.get_mailchimp_api')
+    def test_update_user_mailing_lists(self, mock_get_mailchimp_api, send_mail):
+        email = fake.email()
+        self.user.emails.append(email)
+        list_name = 'foo'
+        self.user.mailing_lists[list_name] = True
+        self.user.save()
+
+        mock_client = mock.MagicMock()
+        mock_get_mailchimp_api.return_value = mock_client
+        mock_client.lists.list.return_value = {'data': [{'id': 1, 'list_name': list_name}]}
+        list_id = mailchimp_utils.get_list_id_from_name(list_name)
+
+        url = api_url_for('update_user', uid=self.user._id)
+        emails = [
+            {'address': self.user.username, 'primary': False, 'confirmed': True},
+            {'address': email, 'primary': True, 'confirmed': True}]
+        payload = {'locale': '', 'id': self.user._id, 'emails': emails}
+        self.app.put_json(url, payload, auth=self.user.auth)
+
+        mock_client.lists.unsubscribe.assert_called_with(
+            id=list_id,
+            email={'email': self.user.username}
+        )
+        mock_client.lists.subscribe.assert_called_with(
+            id=list_id,
+            email={'email': email},
+            merge_vars={
+                'fname': self.user.given_name,
+                'lname': self.user.family_name,
+            },
+            double_optin=False,
+            update_existing=True
+        )
+        handlers.celery_teardown_request()
+
+    @mock.patch('framework.auth.views.mails.send_mail')
+    @mock.patch('website.mailchimp_utils.get_mailchimp_api')
+    def test_unsubscribe_mailchimp_not_called_if_user_not_subscribed(self, mock_get_mailchimp_api, send_mail):
+        email = fake.email()
+        self.user.emails.append(email)
+        list_name = 'foo'
+        self.user.mailing_lists[list_name] = False
+        self.user.save()
+
+        mock_client = mock.MagicMock()
+        mock_get_mailchimp_api.return_value = mock_client
+        mock_client.lists.list.return_value = {'data': [{'id': 1, 'list_name': list_name}]}
+
+        url = api_url_for('update_user', uid=self.user._id)
+        emails = [
+            {'address': self.user.username, 'primary': False, 'confirmed': True},
+            {'address': email, 'primary': True, 'confirmed': True}]
+        payload = {'locale': '', 'id': self.user._id, 'emails': emails}
+        self.app.put_json(url, payload, auth=self.user.auth)
+
+        assert_equal(mock_client.lists.unsubscribe.call_count, 0)
+        assert_equal(mock_client.lists.subscribe.call_count, 0)
+        handlers.celery_teardown_request()
+
 
 class TestUserAccount(OsfTestCase):
 
