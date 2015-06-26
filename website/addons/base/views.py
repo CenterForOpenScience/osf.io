@@ -288,7 +288,7 @@ def create_waterbutler_log(payload, **kwargs):
 
     # TODO: Evaluate elegance of reindexing solution
     if payload['action'] in ['create', 'update', 'delete']:
-        search.update_files(node)
+        search.update_node(node)
 
     return {'status': 'success'}
 
