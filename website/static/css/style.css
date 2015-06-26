@@ -9,13 +9,6 @@ body {
     -webkit-font-smoothing: antialiased;
 }
 
-.navbar-brand {
-    margin-left: 0 !important;
-    height: 42px !important;
-    line-height: 27px;
-    padding: 8px 0px 7px;
-}
-
 
 /* Footer
 -------------------------------------------------- */
