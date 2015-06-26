@@ -11,6 +11,7 @@ from framework.exceptions import HTTPError
 
 from website.addons.base import exceptions
 from website.addons.base import AddonOAuthUserSettingsBase, AddonOAuthNodeSettingsBase, GuidFile
+from website.addons.base import StorageAddonBase
 
 from website.addons.box import settings
 from website.addons.box.utils import BoxNodeLogger, refresh_oauth_key
@@ -90,10 +91,11 @@ class BoxUserSettings(AddonOAuthUserSettingsBase):
     """Stores user-specific box information
     """
     oauth_provider = Box
-    serializer = BoxSerializer
+    serializer = BoxSerializer 
 
 
-class BoxNodeSettings(AddonOAuthNodeSettingsBase):
+class BoxNodeSettings(StorageAddonBase, AddonOAuthNodeSettingsBase):
+
     oauth_provider = Box
     serializer = BoxSerializer
 
