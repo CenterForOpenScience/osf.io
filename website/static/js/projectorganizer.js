@@ -1115,7 +1115,6 @@ var _dismissToolbar = function () {
     m.redraw();
 };
 
-
 var POToolbar = {
     controller: function (args) {
         var self = this;
@@ -1399,7 +1398,8 @@ var tbOptions = {
     resolveRefreshIcon : function () {
         return m('i.fa.fa-refresh.fa-spin');
     },
-    toolbarComponent : POToolbar
+    toolbarComponent : POToolbar,
+    naturalScrollLimit : 0
 };
 
 /**
