@@ -85,10 +85,10 @@ class TestUrlForHelpers(unittest.TestCase):
         """Handles- and encodes- URLs with parameters (dict and kwarg) correctly"""
         full_url = api_v2_url('/nodes/abcd3/contributors/',
                               params={'filter[fullname]': 'bob'},
-                              base_route='https://staging2.osf.io/',
-                              base_prefix='api/v2/',
+                              base_route='https://api.osf.io/',
+                              base_prefix='v2/',
                               page_size=10)
-        assert_equal(full_url, "https://staging2.osf.io/api/v2/nodes/abcd3/contributors/?filter%5Bfullname%5D=bob&page_size=10")
+        assert_equal(full_url, "https://api.osf.io/v2/nodes/abcd3/contributors/?filter%5Bfullname%5D=bob&page_size=10")
 
     def test_api_v2_url_base_path(self):
         """Given a blank string, should return the base path (domain + port + prefix) with no extra cruft at end"""
