@@ -146,20 +146,20 @@ $(document).ready(function () {
 
     //Clear input fields on Add Component Modal
     $('#confirm').on('click', function () {
-        $("#alert").text("");
-        $("#title").val("");
-        $("#category").val("");
+        $('#alert').text('');
+        $('#title').val('');
+        $('#category').val('');
     });
 
     // only focus input field on modals when not IE
     $('#newComponent').on('shown.bs.modal', function(){
         if(!$osf.isIE()){
-            $("#title").focus();
+            $('#title').focus();
         }
     });
     $('#addPointer').on('shown.bs.modal', function(){
         if(!$osf.isIE()){
-            $("#addPointer input").focus();
+            $('#addPointer input').focus();
         }
     });
 
