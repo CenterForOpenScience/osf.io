@@ -18,6 +18,7 @@ var Comments = function($element) {
     var self = this;
 
     self.comments = [];
+	self.lastModified = '';
 
     var $commentsDiv = $('<div>');
     var $commentsList = $('<ul>', {
@@ -46,14 +47,12 @@ Comments.prototype.Comment = function(value) {
 
     self.editable = true;
 
-    self.$input = $('<input>',
-                    {
-                        'class': 'form-control',
-                        type: 'text',
-                        placeholder: 'Comments or questions...',
-                        html: value
-                    }
-                   );
+    self.$input = $('<input>', {
+        'class': 'form-control',
+        type: 'text',
+        placeholder: 'Comments or questions...',
+        html: value
+    });
     
     self.$element = $('<li>', {
 		'class': 'list-group-item'
@@ -63,30 +62,44 @@ Comments.prototype.Comment = function(value) {
     });
     $row.append($('<div>', {
         'class': 'col-md-6'
-    }).append(self.$input));
+    }).append($('<span>', {
+		html: '<strong>' + curentUser.fullname + '</strong> said...'
+	})).append(self.$input));
+	
     var $control = $('<div>', {
         'class': 'col-md-3'
     });
 	self.$check = $('<a>', {
         'class': 'btn fa fa-check',
         click: function() {
-			//if(window.contextVars.currentUser === Comments.Comment.user) {
-			self.editable = false;
-			$(this).addClass('disabled');
-			self.$input.addClass('disabled');
-			self.$edit.removeClass('disabled');
-			// } else {
-			// 	console.log('Only the author may edit this comment');
-			// }
+			if(window.contextVars.currentUser.id === self.user.pk) {
+				self.editable = false;
+				self.lastModified = Date();
+				$(this).addClass('disabled');
+				self.$input.addClass('disabled');
+				self.$edit.removeClass('disabled');
+			}
+			else {
+				console.log('Only the author may edit this comment');
+			}
         }
     });
 	self.$edit = $('<a>', {
 		'class': 'btn fa fa-pencil',
 		click: function() {
-			self.editable = true;
-			$(this).addClass('disabled');
-			self.$input.removeClass('disabled');
-			self.$check.removeClass('disabled');
+			if(window.contextVars.currentUser.id === self.user.pk) {
+				self.editable = true;
+				self.lastModified = Date();
+				$(this).addClass('disabled');
+				self.$input.removeClass('disabled');
+				self.$check.removeClass('disabled');
+			} else {
+				self.editable = false;
+				$(this).addClass('disabled');
+				self.$input.addClass('disabled');
+				self.$check.addClass('disabled');
+				alert('Only the author may edit this comment');
+			}
 		}
 	});
 	$control.append(self.$check);
@@ -117,7 +130,8 @@ JSONEditor.defaults.editors.commentableString = JSONEditor.defaults.editors.stri
             var comments = $.map(this.comments.comments, function(comment) {
                 return {
                     value: comment.$input.val(),
-                    user: comment.user
+                    user: comment.user,
+					lastModified: comment.lastModified
                 };
             });
             var val = {
