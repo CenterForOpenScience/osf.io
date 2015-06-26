@@ -15,12 +15,12 @@ from api.base.settings.defaults import API_BASE
 
 def _get_application_detail_route(app):
     path = "/users/{}/applications/{}/".format(app.owner._id, app.client_id)
-    return api_v2_url(path, base_route='')
+    return api_v2_url(path, base_route='/')
 
 
 def _get_application_list_url(user):
     path = "/users/{}/applications/".format(user._id)
-    return api_v2_url(path, base_route='')
+    return api_v2_url(path, base_route='/')
 
 
 class TestUsers(ApiTestCase):
@@ -263,8 +263,8 @@ class TestApplicationList(ApiTestCase):
     @mock.patch('framework.auth.cas.CasClient.revoke_application_tokens')
     def test_deleting_application_should_hide_it_from_api_list(self, mock_method):
         mock_method.return_value(True)
-        app = self.user1_apps[0]
-        url = _get_application_detail_route(app)
+        api_app = self.user1_apps[0]
+        url = _get_application_detail_route(api_app)
 
         res = self.app.delete(url, auth=self.basic_auth1)
         assert_equal(res.status_code, 204)
