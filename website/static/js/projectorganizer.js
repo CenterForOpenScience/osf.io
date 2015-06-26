@@ -1396,8 +1396,7 @@ var tbOptions = {
     resolveRefreshIcon : function () {
         return m('i.fa.fa-refresh.fa-spin');
     },
-    toolbarComponent : POToolbar,
-    naturalScrollLimit : 0
+    toolbarComponent : POToolbar
 };
 
 /**
