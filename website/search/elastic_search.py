@@ -293,7 +293,7 @@ def bulk_update_contributors(nodes, index=INDEX):
     """Updates only the list of contributors of input projects
 
     :param nodes: Projects, components or registrations
-    :param index: Indices of the nodes
+    :param index: Index of the nodes
     :return:
     """
     actions = []
