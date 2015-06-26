@@ -18,11 +18,11 @@
 <div class="row project-page">
 
     <!-- Begin left column -->
-    <div class="col-sm-3 affix-parent">
+    <div class="col-sm-3 affix-parent scrollspy">
 
         % if 'write' in user['permissions']:
 
-            <div class="panel panel-default" data-spy="affix" data-offset-top="60" data-offset-bottom="268"><!-- Begin sidebar -->
+            <div class="osf-affix" data-spy="affix" data-offset-top="0" data-offset-bottom="268"><!-- Begin sidebar -->
                 <ul class="nav nav-stacked nav-pills">
 
                     % if not node['is_registration']:

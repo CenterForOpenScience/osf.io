@@ -23,7 +23,7 @@ var NodeCategorySettings = oop.extend(
                 '<a href="mailto:support@osf.io">support@osf.io</a>.';
             self.UPDATE_ERROR_MESSAGE_RAVEN = 'Error updating Node.category';
 
-            self.INSTANTIATION_ERROR_MESSAGE = 'Trying to instatiate NodeCategorySettings view model without an update URL';
+            self.INSTANTIATION_ERROR_MESSAGE = 'Trying to instantiate NodeCategorySettings view model without an update URL';
 
             self.MESSAGE_SUCCESS_CLASS = 'text-success';
             self.MESSAGE_ERROR_CLASS = 'text-danger';

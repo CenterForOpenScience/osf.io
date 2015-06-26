@@ -2793,11 +2793,21 @@ div.profile-fullname{
     }
 }
 
-#viewPanel > .osf-panel-body,
-.mfr-file {
+/* Settings side-nav positions. Min-width to prevent
+ * affix scrolling into columns on small devices/affix
+ * needs to be relative any smaller. See above @media.
+ */
+@media (min-width: 769px) {
+    .osf-affix.profile-affix {
+        top: 80px;
+    }
+}
+
+#viewPanel > .osf-panel-body, .mfr-file {
   height: 100%;
 }
 
 .text-center {
     text-align: center;
 }
+

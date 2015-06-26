@@ -16,12 +16,12 @@
 ##    </div>
 ##</div>
 
-<div class="row">
+<div id="profileSettings" class="row">
 
-    <div class="col-sm-3">
-        <div class="panel panel-default">
+    <div class="col-sm-3 affix-parent">
+        <div class="osf-affix profile-affix" data-spy="affix" data-offset-top="70" data-offset-bottom="268">
             <ul class="nav nav-stacked nav-pills">
-                <li><a href="#">Profile Information</a></li>
+                <li class="active"><a href="#">Profile Information</a></li>
                 <li><a href="${ web_url_for('user_account') }">Account Settings</a></li>
                 <li><a href="${ web_url_for('user_addons') }">Configure Add-ons</a></li>
                 <li><a href="${ web_url_for('user_notifications') }">Notifications</a></li>

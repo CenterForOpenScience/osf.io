@@ -1,10 +1,12 @@
 <%inherit file="base.mako"/>
 <%def name="title()">Getting Started</%def>
 <%def name="content()">
+
     <div href="#start">
-        <div class="col-sm-4 col-md-3 nav-list-spy">
-            <div data-spy="affix" class="gs-sidebar hidden-print hidden-xs panel panel-default" role="complementary">
+        <div class="col-sm-4 col-md-3 affix-parent scrollspy">
+            <div data-spy="affix" data-offset-top="0" class="osf-affix gs-sidebar hidden-print hidden-xs" role="complementary">
                 <ul class="nav nav-stacked nav-pills gs-sidenav" style="min-width: 210px">
+
                     <li>
                         <a  class="active" href="#start">Getting Started</a>
                         <ul class="nav">
