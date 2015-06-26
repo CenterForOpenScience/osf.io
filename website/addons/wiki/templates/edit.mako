@@ -176,7 +176,7 @@
               <div class="panel-heading osf-panel-heading-flex" data-bind="css: {  'osf-panel-heading-flex': $root.singleVis() !== 'compare', 'no-background': $root.singleVis() === 'compare'}">
                   <div class="row">
                       <div class="col-xs-12">
-                          <h3 class="panel-title"> <i class="fa fa-exchange"> </i>   Compare </h3>
+                          <h3 class="panel-title m-r-xs"> <i class="fa fa-exchange"> </i>   Compare </h3>
                           <div class="inline" data-bind="css: { 'pull-right' :  $root.singleVis() === 'compare' }">
                             <!-- Version Picker -->
                             <span class="compare-version-text"><i> <span data-bind="text: viewVersionDisplay"></span></i> to
