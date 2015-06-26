@@ -376,7 +376,14 @@ class TestCreateBucket(OsfTestCase):
             'doesntevenmatter'
         ]
         url = self.project.api_url_for('create_bucket')
-        ret = self.app.post_json(url, {'bucket_name': 'doesntevenmatter'}, auth=self.user.auth)
+        ret = self.app.post_json(
+            url,
+            {
+                'bucket_name': 'doesntevenmatter',
+                'bucket_location': 'DEFAULT',
+            },
+            auth=self.user.auth
+        )
 
         assert_equals(ret.status_int, http.OK)
         assert_in('doesntevenmatter', ret.json['buckets'])
@@ -391,3 +398,17 @@ class TestCreateBucket(OsfTestCase):
         ret = self.app.post_json(url, {'bucket_name': 'doesntevenmatter'}, auth=self.user.auth, expect_errors=True)
 
         assert_equals(ret.body, '{"message": "This should work", "title": "Problem connecting to S3"}')
+
+    @mock.patch('website.addons.s3.views.crud.utils.create_bucket')
+    def test_bad_location_fails(self, mock_make):
+        url = "/api/v1/project/{0}/s3/newbucket/".format(self.project._id)
+        ret = self.app.post_json(
+            url,
+            {
+                'bucket_name': 'doesntevenmatter',
+                'bucket_location': 'not a real bucket location',
+            },
+            auth=self.user.auth,
+            expect_errors=True)
+
+        assert_equals(ret.body, '{"message": "That bucket location is not valid.", "title": "Invalid bucket location"}')
