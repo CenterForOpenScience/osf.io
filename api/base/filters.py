@@ -56,11 +56,18 @@ class FilterMixin(object):
             return key.strip() in self.serializer_class._declared_fields
         return key
 
-    # Used so that that queries by _id will work
+    # Used so that that queries by _id, jobs, and schools, will work
     def convert_key(self, key):
         key = key.strip()
-        if self.serializer_class._declared_fields[key].source:
-            return self.serializer_class._declared_fields[key].source
+        # If the field is a complex field, then break it apart to rebuild it better/stronger/faster.
+        if '.' in key:
+            key_base = key.strip().split('.')[0]
+            key_field = key.strip().split('.')[1]
+        else:
+            base_key = key
+        if self.serializer_class._declared_fields[key_base].source:
+            new_key = self.serializer_class._declared_fields[key_base].source + '.' + key_field
+            return new_key
         return key
 
     # Used to convert string values from query params to Python booleans when necessary
@@ -129,7 +136,10 @@ class ODMFilterMixin(FilterMixin):
         if fields_dict:
             for key, value in fields_dict.items():
                 if self.is_filterable_field(key=key):
-                    query_parts.append(Q(self.convert_key(key=key), self.get_comparison_operator(key=key), self.convert_value(value=value, field=key)))
+                    converted_key = self.convert_key(key=key)
+                    comparison_operator = self.get_comparison_operator(key=converted_key)
+                    converted_value = self.convert_value(value=value, field=converted_key)
+                    query_parts.append(Q(converted_key, comparison_operator, converted_value))
             # TODO Ensure that if you try to filter on an invalid field, it returns a useful error. Fix related test.
             try:
                 query = functools.reduce(intersect, query_parts)
