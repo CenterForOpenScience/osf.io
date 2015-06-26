@@ -5,7 +5,7 @@
                        optionsValue: 'id',
                        value: selectedSchemaName">      
       <option data-bind="if: draft().schemaName" value="" disabled selected>Please select a registration form to initiate registration</option>
-    </select>
+1    </select>
     <div class='container'>
         <div class='row'>
             <div class='span8 col-md-12 columns eight large-8'>

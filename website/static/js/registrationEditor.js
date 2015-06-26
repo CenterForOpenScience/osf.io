@@ -74,7 +74,7 @@ RegistrationEditor.prototype.init = function(draft) {
 };
 RegistrationEditor.prototype.selectSchema = function() {
     var self = this;
-    if(!self.schemas.length) {
+    if(!self.schemas().length) {
         return;
     }
 
@@ -137,12 +137,12 @@ RegistrationEditor.prototype.updateEditor = function(page) {
     }
     self.editor = new JSONEditor(document.getElementById(self.editorId), {
         schema: page,
-        startVal: self.draft.schema_data,
+        startVal: self.draft().schemaData,
         theme: 'bootstrap3',
         disable_collapse: true,
         disable_edit_json: true,
         disable_properties: true,
-        no_additional_properties: true
+        no_additional_properties: false
     });
     self.editor.on('change', function() {
         self.save();
