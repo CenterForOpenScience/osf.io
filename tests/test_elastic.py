@@ -1,15 +1,16 @@
 # -*- coding: utf-8 -*-
 import unittest
 import logging
-import time
 
 from nose.tools import *  # flake8: noqa (PEP8 asserts)
 import mock
 
 from framework.auth.core import Auth
+from framework.addons import AddonModelMixin
 from website import settings
+from website.models import Node
 import website.search.search as search
-from website.search import elastic_search
+from website.search import elastic_search, index_file
 from website.search.util import build_query
 from website.search_migration.migrate import migrate
 
@@ -668,75 +669,78 @@ class TestSearchMigration(SearchTestCase):
             assert not var.get(settings.ELASTIC_INDEX + '_v{}'.format(n))
 
 
-@requires_search
-class TestFileIndexing(SearchTestCase):
+
+class MockFileObject(mock.MagicMock, GuidFile):
+    URL_BASE = 'http://fakeurl.com'
+
+    def __init__(self, filename, content, path):
+        super(MockFileObject, self).__init__()
+        self.filename = filename
+        self.content = content
+        self.path = path
+        self.register_url()
+
+    def get_dict(self):
+        return {
+            'name': self.filename,
+            'path': self.path,
+            'size': '9001',
+            'kind': 'file',
+        }
+
+    def register_url(self):
+        httpretty.register_uri(httpretty.GET, self.download_url, body=self.content)
+        pass
+
+    @property
+    def download_url(self):
+        return '/'.join([MockFileObject.URL_BASE, self.path])
+
+
+class MockAddon(mock.MagicMock, StorageAddonBase):
+    def __init__(self):
+        super(MockAddon, self).__init__()
+        self.file_tree = {
+            'kind': 'folder',
+            'path': '/',
+            'name': '',
+            'children': []
+        }
+        self.content_dict = {}
+
+    def add_file(self, file_):
+        self.file_tree['children'].append(file_.get_dict())
+        self.content_dict[file_.path] = self.file_.content
+
+    def _get_file_tree(self, filenode=None, user=None, cookie=None, version=None):
+        return self.file_tree
+
+    def find_or_create_file_guid(self, path):
+        for f in self.file_tree['children']:
+            if f['path'] == path:
+                return MockFileObject(self.file_tree['name'], self.content_dict[path])
+        # Return FileObject, True
+        pass
+
+
+class MockProject(Node, AddonModelMixin):
+    def __init__(self, addon):
+        self.addon = addon
+
+    def get_addon(self, addon_name, deleted=False):
+        return self.addon
+
+
+class TestCollectFiles(OsfTestCase):
     def setUp(self):
-        super(TestFileIndexing, self).setUp()
-        self.user_one = UserFactory(name='Data Soong')
+        super(TestCollectFiles, self).setUp()
+        self.fake_addon = MockAddon()
+        self.fake_project = MockProject(self.fake_addon)
+        self.fake_file = MockFileObject('fake_name.file',
+                                        'tea, Earl Gray, hot!',
+                                        '/123456789')
 
-        self.project_one = ProjectFactory(
-            title='Feline Behavior',
-            creator=self.user_one,
-            is_public=True,
-        )
-
-        self.file_one = {
-            'name': 'an_ode_to_spot.txt',
-            'pid': self.project_one._id,
-            'content': 'Nice Spot, good Spot',
-            'size': '2045',
-        }
-
-        self.file_two = {
-            'name': 'intro_to_starships.txt',
-            'pid': self.project_one._id,
-            'content': 'Always remember the deflector dish ...',
-            'size': '12402',
-        }
-
-    def test_no_files(self):
-        results = query('Starships')['results']
-        assert_equal(len(results), 0)
-
-    def test_irrelevant_file(self):
-        files = [self.file_two]
-        with mock.patch('website.search.elastic_search.index_file.collect_files', return_value=files) as mock_func:
-            elastic_search.update_project_files(self.project_one)
-        results = query('Spot')['results']
-        assert_equal(len(results), 0)
-
-    def test_relevant_file(self):
-
-        files = [self.file_one]
-        with mock.patch('website.search.elastic_search.index_file.collect_files', return_value=files) as mock_func:
-            search.update_files(self.project_one)
-
-        time.sleep(1) # Give elasticsearch time to reindex
-        results = query('Spot')['results']
-        assert_equal(len(results), 1)
-
-    def test_make_private(self):
-        files = [self.file_one]
-        with mock.patch('website.search.elastic_search.index_file.collect_files', return_value=files) as mock_func:
-            search.update_files(self.project_one)
-
-        time.sleep(1)
-        self.project_one.is_public = False
-        self.project_one.save()
-
-        results = query('Spot')['results']
-        assert_equal(len(results), 0)
-
-    def test_make_public(self):
-        files = [self.file_one]
-        self.project_one.is_public = False
-        self.project_one.save()
-
-        with mock.patch('website.search.elastic_search.index_file.collect_files', return_value=files) as mock_func:
-            self.project_one.is_public = True
-            self.project_one.save()
-
-        time.sleep(1)
-        results = query('Spot')['results']
-        assert_equal(len(results), 1)
-
+    # @httpretty.activate
+    def testCollectFiles(self):
+        for f in index_file.collect_files(self.fake_project):
+            assert(f == 'tea, Earl Gray, hot!')
