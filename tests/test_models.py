@@ -1029,15 +1029,15 @@ class TestApiOAuth2Application(OsfTestCase):
     def test_active_set_to_false_upon_successful_deletion(self, mock_method):
         mock_method.return_value(True)
         self.api_app.deactivate()
+        self.api_app.reload()
         assert_false(self.api_app.active)
 
     @mock.patch('framework.auth.cas.CasClient.revoke_application_tokens')
     def test_active_remains_true_when_cas_token_deletion_fails(self, mock_method):
-        mock_method.side_effect = cas.CasHTTPError("CAS can't revoke tokens", 400, 'blank')
-
+        mock_method.side_effect = cas.CasHTTPError("CAS can't revoke tokens", 400, 'blank', 'blank')
         with assert_raises(cas.CasHTTPError):
             self.api_app.deactivate()
-
+        self.api_app.reload()
         assert_true(self.api_app.active)
 
 
