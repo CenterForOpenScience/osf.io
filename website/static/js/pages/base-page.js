@@ -80,8 +80,8 @@ var SlideInViewModel = function (){
 
 $(document).on('click', '.project-toggle', function() {
     var widget = $(this).closest('.panel');
-    var up = $(this).find('.fa fa-angle-up');
-    var down = $(this).find('.fa fa-angle-down');
+    var up = $(this).find('.fa.fa-angle-up');
+    var down = $(this).find('.fa.fa-angle-down');
     if(up.length > 0) {
         up.removeClass('fa fa-angle-up').addClass('fa fa-angle-down');
     }

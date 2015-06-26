@@ -52,15 +52,15 @@
 
 ## The onboarding "register" widget
 <template id="osf-ob-register">
-<div class="m-b-sm p-md ob-list-item osf-box box-round">
-    <div data-bind="click: toggle" class="m-b-md pointer">
-        <h3 class="m-xs ob-heading">Register a project</h3>
-        <i data-bind="css: {' fa-plus': !isOpen(), ' fa-minus': isOpen()}"
-            class="pointer ob-expand-icon fa-lg pull-right fa">
-        </i>
+<div class="m-b-sm panel panel-default ob-list-item">
+    <div data-bind="click: toggle" class="panel-heading clearfix">
+        <h3 class="m-xs panel-title">Register a project</h3>
+        <div class="pull-right" >
+            <a href="#" class="btn btn-sm project-toggle"><i class="fa fa-angle-down"></i></a>
+        </div>
     </div><!-- end ob-header -->
 
-    <div data-bind="visible: isOpen()">
+    <div style="display:none;" class="panel-body">
         <div class="row">
             <div class="col-md-12" >
                 <osf-project-search
@@ -76,16 +76,16 @@
 </template>
 
 <template id="osf-ob-uploader">
-<div class="m-b-sm p-md ob-list-item osf-box box-round">
-    <div data-bind="click: toggle" class="m-b-md pointer">
-        <h3 class="m-xs ob-heading">Upload file(s)</h3>
-        <i data-bind="css: {' fa-plus': !isOpen(), ' fa-minus': isOpen()}"
-            class="pointer ob-expand-icon fa-lg pull-right fa">
-        </i>
+<div class="m-b-sm panel panel-default ob-list-item">
+    <div class="pointer panel-heading clearfix ">
+        <h3 class="m-xs panel-title">Upload file(s)</h3>
+        <div class="pull-right" >
+            <a href="#" class="btn btn-sm project-toggle"><i class="fa fa-angle-up"></i></a>
+        </div>
     </div><!-- end ob-header -->
 
 
-    <div data-bind="visible: isOpen()">
+    <div class="panel-body">
         <div class="row">
             <div class="col-md-12">
                 <h4>1. Drop file (or click below)</h4>
@@ -166,15 +166,15 @@
 </template>
 
 <template id="osf-ob-goto">
-<div class="m-b-sm p-md ob-list-item osf-box box-round">
-    <div data-bind="click: toggle" class="m-b-md pointer">
-        <h3 class="m-xs ob-heading">Go to my project</h3>
-        <i data-bind="css: {' fa-plus': !isOpen(), ' fa-minus': isOpen()}"
-            class="pointer ob-expand-icon fa-lg pull-right fa">
-        </i>
+<div class="panel panel-default m-b-sm ob-list-item">
+    <div class="panel-heading clearfix">
+        <h3 class="panel-title">Go to my project</h3>
+        <div class="pull-right" >
+            <a href="#" class="btn btn-sm project-toggle"><i class="fa fa-angle-down"></i></a>
+        </div>
     </div><!-- end ob-header -->
-    <div class="row">
-        <div data-bind="visible: isOpen()">
+    <div class="row panel-body">
+        <div>
             <div class="col-md-12" >
 
                 <!-- ko if: data.length -->
