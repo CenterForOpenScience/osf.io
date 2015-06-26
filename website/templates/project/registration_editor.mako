@@ -11,16 +11,16 @@
                 <p>
                     <ul class="nav navbar-nav" data-bind="foreach: schema().pages">
                         <li>
-                            <a style="padding-bottom:0px;" data-bind="text: title,
+                            <a style="padding-bottom:0px;text-align:center;margin:2pxposition:absolute;width:100%" data-bind="text: title,
                                 click: $root.selectPage"></a>
 
-                            <ul class="nav navbar-nav" data-bind="foreach: schema().pages.keys">
-                                <li><a style="padding-top:0px;padding-right:5px;" data-bind="text: title,
-                                click: $root.selectPage"></a></li>
+                            <ul class="nav navbar-nav" data-bind="foreach: $root.schema().pages[0].type">
+                                <li><a style="padding-top:0px;padding-right:5px;position:relative;" data-bind="text: Object.keys($parent.properties)[$index()], click: $root.selectQuestion"></a></li>
                             </ul>
                         </li>                
                     </ul>
                 </p>
+                <br />
                 <br />
                 <br />
                 <div id="registrationEditor"></div>

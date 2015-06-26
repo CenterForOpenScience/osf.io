@@ -182,11 +182,13 @@ RegistrationEditor.prototype.updateEditor = function(page, question) {
 };
 RegistrationEditor.prototype.selectPage = function(page) {
     var self = this;
+    console.log(this);
     self.updateEditor(page);
 };
 RegistrationEditor.prototype.selectQuestion = function(question) {
     var self = this;
-    self.updateEditor(question);
+    console.log(question);
+    self.updateEditor(undefined ,question);
 };
 RegistrationEditor.prototype.save = function() {
     var self = this;
