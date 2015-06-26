@@ -1,6 +1,5 @@
 <%inherit file="project/project_base.mako"/>
 
-    <link rel="stylesheet" href="/static/css/pages/project-page.css">
 
 
 <%
@@ -314,6 +313,7 @@
 </%def>
 
 <%def name="stylesheets()">
+    <link rel="stylesheet" href="/static/css/pages/project-page.css">
     ${parent.stylesheets()}
     % for style in addon_widget_css:
     <link rel="stylesheet" href="${style}" />
