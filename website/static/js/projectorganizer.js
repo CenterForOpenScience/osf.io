@@ -1189,8 +1189,7 @@ var POToolbar = {
                     id : 'renameInput',
                     helpTextId : 'renameHelpText',
                     placeholder : null,
-                    value : ctrl.tb.inputValue(),
-                    tooltip: 'Rename this item'
+                    value : ctrl.tb.inputValue()
                 }, ctrl.helpText())
                 ),
             m('.col-xs-3.tb-buttons-col',
