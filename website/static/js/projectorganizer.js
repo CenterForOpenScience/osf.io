@@ -921,7 +921,7 @@ function applyTypeahead() {
                     $('#add-link-button').click(); //submits if the control is active
                 }
             } else {
-                $('#add-link-warning').text('');
+                $('#add-link-warning').removeClass('p-sm').text('');
                 $('#add-link-button').addClass('tb-disabled');
                 linkName = '';
                 linkID = '';
@@ -937,7 +937,7 @@ function applyTypeahead() {
                     linkName = datum.name;
                     linkID = datum.node_id;
                 } else {
-                    $('#add-link-warning').text('This project is already in the folder');
+                    $('#add-link-warning').addClass('p-sm').text('This project is already in the folder');
                 }
             }).fail($osf.handleJSONError);
         });
@@ -1221,7 +1221,7 @@ var POToolbar = {
                     type : 'text',
                     placeholder : 'Name of the project to find'
                 }),
-                m('#add-link-warning.text-warning.p-sm')
+                m('#add-link-warning.text-warning')
             ]
                 ),
             m('.col-xs-3.tb-buttons-col',
