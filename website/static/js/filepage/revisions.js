@@ -131,7 +131,7 @@ var FileRevisionsTable = {
     },
     view: function(ctrl) {
         return m('#revisionsPanel', [
-            m('.osf-panel-header', 'Revisions'),
+            m('h3.panel-title', 'Revisions'),
             m('', (function() {
                 if (!model.loaded()) {
                     return util.Spinner;

@@ -54,6 +54,7 @@
         <div id="mfrIframe" class="mfr mfr-file"></div>
       </div>
 
+    <!-- This section is built by mithril in revisions.js -->
       <div class="file-view-panels col-sm-3"></div>
     </div>
   </div>

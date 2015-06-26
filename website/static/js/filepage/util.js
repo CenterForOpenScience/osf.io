@@ -21,7 +21,7 @@ Panel.controller = function(title, header, inner, args) {
 Panel.view = function(ctrl) {
     return m('#' + ctrl.title.toLowerCase() + 'Panel', [
         !ctrl.header ? '' :
-            m('.osf-panel-header', $.isFunction(ctrl.header) ? ctrl.header() : ctrl.header),
+            m('.panel-heading', $.isFunction(ctrl.header) ? ctrl.header() : ctrl.header),
         m('', ctrl.inner)
     ]);
 };

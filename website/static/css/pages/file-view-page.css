@@ -1,3 +1,47 @@
 #filesSearch {
     width: 95%;
 }
+
+/* Modular File Renderer */
+.mfr-slickgrid {
+    width: 750px;
+    height: 503px;
+    overflow: auto;
+}
+
+.mfr-pdf-button-container {
+    display: inline-block;
+    vertical-align: top;
+}
+
+.mfr-pdf-button {
+    height: 500px;
+    width: 25px;
+    display:inline-block;
+    background: #F5F5F5;
+    -moz-user-select: none;
+    -khtml-user-select: none;
+    -webkit-user-select: none;
+    border-style:none;
+    -webkit-box-shadow: none;
+}
+
+.mfr-pdf-button.active {
+    background: #D0D0D0;
+}
+
+.mfr-pdf-arrow.disabled {
+    /*background: white;*/
+    visibility:hidden;
+}
+
+.mfr-ipynb-body {
+    vertical-align: middle;
+    display: block;
+    max-width: 100%;
+    height: auto;
+}
+
+.mfr-file > img {
+    max-width:100%
+}
