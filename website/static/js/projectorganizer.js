@@ -1243,7 +1243,6 @@ var POToolbar = {
             m.component(Fangorn.Components.button, {
                 onclick: function (event) {
                     ctrl.mode(Fangorn.Components.toolbarModes.SEARCH);
-                    ctrl.tb.clearMultiselect();
                 },
                 icon: 'fa fa-search',
                 className : 'text-primary'
