@@ -1,5 +1,8 @@
 <%inherit file="project/project_base.mako"/>
 
+    <link rel="stylesheet" href="/static/css/pages/project-page.css">
+
+
 <%
     import json
     is_project = node['node_type'] == 'project'

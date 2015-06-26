@@ -9,7 +9,6 @@ require('../../vendor/bower_components/jquery-ui/themes/base/minified/jquery.ui.
 require('../../css/bootstrap-xl.css');
 require('../../css/animate.css');
 require('../../../../node_modules/osf-style/css/base.css');
-require('../../css/style.css');
 require('../../css/search-bar.css');
 require('font-awesome-webpack');
 
