@@ -1,5 +1,6 @@
 
 import mock
+from nose.tools import *
 from collections import OrderedDict
 
 from website.notifications.events.model import *
@@ -56,28 +57,48 @@ class TestEventGet(OsfTestCase):
         pass
 
 
-class TestFileEventModel(OsfTestCase):
+class TestFileAdded(OsfTestCase):
     def setUp(self):
-        pass
+        super(TestFileAdded, self).setUp()
+        self.user = factories.UserFactory()
+        self.consolidate_auth = Auth(user=self.user)
+        self.project = factories.ProjectFactory()
+        self.project_subscription = factories.NotificationSubscriptionFactory(
+            _id=self.project._id + '_file_updated',
+            owner=self.project,
+            event_name='file_updated'
+        )
+        self.project_subscription.save()
+        self.user2 = factories.UserFactory()
+        self.event = Event.get_event(self.user2, self.project, 'file_added', payload=file_payload)
+
+    @mock.patch('website.notifications.emails.notify')
+    def test_file_added(self, mock_notify):
+        self.event.perform()
+        assert_true(mock_notify.called)
 
     def tearDown(self):
         pass
 
-file_payload = OrderedDict([(u'action', u'update'),
-                            (u'auth', OrderedDict([(u'email', u'tgn6m@osf.io'), (u'id', u'tgn6m'), (u'name', u'aab')])),
-                            (u'metadata', OrderedDict([(u'contentType', None),
-                                                       (u'etag', u'10485efa4069bb94d50588df2e7466a079d49d4f5fd7bf5b35e7c0d5b12d76b7'),
-                                                       (u'extra', OrderedDict([(u'downloads', 0),
-                                                                               (u'version', 30)])),
-                                                       (u'kind', u'file'),
-                                                       (u'materialized', u'/One/Paper13.txt'),
-                                                       (u'modified', u'Wed, 24 Jun 2015 10:45:01 '),
-                                                       (u'name', u'Paper13.txt'),
-                                                       (u'path', u'5581cb50a24f710b0f4623f9'),
-                                                       (u'provider', u'osfstorage'),
-                                                       (u'size', 2008)])),
-                            (u'provider', u'osfstorage'),
-                            (u'time', 1435157161.979904)])
+file_payload = OrderedDict([
+    (u'action', u'update'),
+    (u'auth', OrderedDict([
+        (u'email', u'tgn6m@osf.io'), (u'id', u'tgn6m'), (u'name', u'aab')])),
+    (u'metadata', OrderedDict([
+        (u'contentType', None),
+        (u'etag', u'10485efa4069bb94d50588df2e7466a079d49d4f5fd7bf5b35e7c0d5b12d76b7'),
+        (u'extra', OrderedDict([
+            (u'downloads', 0),
+            (u'version', 30)])),
+        (u'kind', u'file'),
+        (u'materialized', u'/One/Paper13.txt'),
+        (u'modified', u'Wed, 24 Jun 2015 10:45:01 '),
+        (u'name', u'Paper13.txt'),
+        (u'path', u'5581cb50a24f710b0f4623f9'),
+        (u'provider', u'osfstorage'),
+        (u'size', 2008)])),
+    (u'provider', u'osfstorage'),
+    (u'time', 1435157161.979904)])
 
 file_deleted_payload = OrderedDict([
     (u'action', u'delete'),

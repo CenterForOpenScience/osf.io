@@ -704,7 +704,7 @@ class TestNotificationsDict(OsfTestCase):
         }
         message2 = {
             'message': 'Mercury commented on your component',
-            'timestamp':datetime.datetime.utcnow().replace(tzinfo=pytz.utc)
+            'timestamp': datetime.datetime.utcnow().replace(tzinfo=pytz.utc)
         }
 
         d.add_message(['project'], message)
