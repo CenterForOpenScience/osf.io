@@ -2,6 +2,7 @@ var $ = require('jquery');
 var ko = require('knockout');
 
 var jedit = require('json-editor'); // TODO webpackify
+require('js/json-editor-extensions');
 
 var $osf = require('js/osfHelpers');
 var oop = require('js/oop');
