@@ -323,9 +323,9 @@ def migrate_search(delete=False, index=settings.ELASTIC_INDEX):
 @task
 def rebuild_search():
     """Delete and recreate the index for elasticsearch"""
-    run("curl -XDELETE {uri}/{index}".format(uri=settings.ELASTIC_URI,
+    run("curl -s -XDELETE {uri}/{index}*".format(uri=settings.ELASTIC_URI,
                                              index=settings.ELASTIC_INDEX))
-    run("curl -XPUT {uri}/{index}".format(uri=settings.ELASTIC_URI,
+    run("curl -s -XPUT {uri}/{index}".format(uri=settings.ELASTIC_URI,
                                           index=settings.ELASTIC_INDEX))
     migrate_search()
 
