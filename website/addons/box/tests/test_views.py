@@ -30,6 +30,12 @@ class TestConfigViews(BoxAddonTestCase):
         self.external_account = self.user.external_accounts[0]
         self.node_settings.external_account = self.external_account
         self.node_settings.save()
+        self.patcher = mock.patch("website.addons.box.model.refresh_oauth_key")
+        self.patcher.return_value = True
+        self.patcher.start()
+
+    def tearDown(self):
+        self.patcher.stop()
 
     def test_box_get_user_settings_has_account(self):
         url = api_url_for('box_get_user_settings')
@@ -136,7 +142,9 @@ class TestConfigViews(BoxAddonTestCase):
 
     @mock.patch('website.addons.box.serializer.BoxClient.get_user_info')
     @mock.patch('website.addons.box.model.BoxClient.get_folder')
-    def test_box_get_config(self, mock_get_folder, mock_account_info):
+    @mock.patch('website.addons.box.views.refresh_oauth_key')
+    def test_box_get_config(self, mock_refresh, mock_get_folder, mock_account_info):
+        mock_refresh.return_value = True
         mock_get_folder.return_value = {
             'name': 'Camera Uploads',
             'path_collection': {
@@ -313,12 +321,16 @@ class TestFilebrowserViews(BoxAddonTestCase):
         self.user.add_addon('box')
         self.node_settings.external_account = self.user_settings.external_accounts[0]
         self.node_settings.save()
-        self.patcher = mock.patch('website.addons.box.model.BoxNodeSettings.fetch_folder_name')
-        self.patcher.return_value = 'Camera Uploads'
-        self.patcher.start()
+        self.patcher_fetch = mock.patch('website.addons.box.model.BoxNodeSettings.fetch_folder_name')
+        self.patcher_fetch.return_value = 'Camera Uploads'
+        self.patcher_fetch.start()
+        self.patcher_refresh = mock.patch('website.addons.box.views.refresh_oauth_key')
+        self.patcher_refresh.return_value = True
+        self.patcher_refresh.start()
 
     def tearDown(self):
-        self.patcher.stop()
+        self.patcher_fetch.stop()
+        self.patcher_refresh.stop()
 
     def test_box_list_folders(self):
         with patch_client('website.addons.box.views.BoxClient'):

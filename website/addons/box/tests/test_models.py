@@ -334,7 +334,9 @@ class TestBoxNodeSettingsModel(OsfTestCase):
         assert_equal(log_params['node'], node_settings.owner._primary_key)
         assert_equal(last_log.user, user_settings.owner)
 
-    def test_serialize_credentials(self):
+    @mock.patch("website.addons.box.model.refresh_oauth_key")
+    def test_serialize_credentials(self, mock_refresh):
+        mock_refresh.return_value = True
         self.user_settings.access_token = 'key-11'
         self.user_settings.save()
         credentials = self.node_settings.serialize_waterbutler_credentials()
@@ -359,13 +361,6 @@ class TestBoxNodeSettingsModel(OsfTestCase):
         self.node_settings.save()
         with assert_raises(exceptions.AddonError):
             self.node_settings.serialize_waterbutler_settings()
-
-    @mock.patch('website.addons.box.model.BoxUserSettings.fetch_access_token')
-    def test_serialize_waterbutler_credentials_reraises_box_client_exception_as_http_error(self, mock_fetch_access_token):
-        mock_fetch_access_token.side_effect = BoxClientException(status_code=400, message='Oops')
-
-        with assert_raises(HTTPError):
-            self.node_settings.serialize_waterbutler_credentials()
 
     def test_create_log(self):
         action = 'file_added'
