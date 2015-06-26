@@ -126,6 +126,7 @@ CONFIRM_MERGE = Mail('confirm_merge', subject='Confirm account merge')
 REMOVED_EMAIL = Mail('email_removed', subject='Email address removed from your OSF account')
 PRIMARY_EMAIL_CHANGED = Mail('primary_email_changed', subject='Primary email changed')
 INVITE = Mail('invite', subject='You have been added as a contributor to an OSF project.')
+CONTRIBUTOR_ADDED = Mail('contributor_added', subject='You have been added as a contributor to an OSF project.')
 
 FORWARD_INVITE = Mail('forward_invite', subject='Please forward to ${fullname}')
 FORWARD_INVITE_REGiSTERED = Mail('forward_invite_registered', subject='Please forward to ${fullname}')

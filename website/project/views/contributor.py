@@ -28,7 +28,7 @@ from website.models import Node
 from website.profile import utils
 from website.project.model import has_anonymous_link
 from website.util import web_url_for, is_json_request
-from website.project.signals import unreg_contributor_added
+from website.project.signals import unreg_contributor_added, contributor_added
 from website.util.permissions import expand_permissions, ADMIN
 from website.project.decorators import (must_have_permission, must_be_valid_project,
         must_not_be_registration, must_be_contributor_or_public, must_be_contributor)
@@ -504,6 +504,15 @@ def send_claim_email(email, user, node, notify=True, throttle=24 * 3600):
     )
     return to_addr
 
+
+@contributor_added.connect
+def notify_contributor(node, contributor, auth):
+    mails.send_mail(
+        contributor.username,
+        mails.CONTRIBUTOR_ADDED,
+        user=contributor,
+        node=node
+    )
 
 def verify_claim_token(user, token, pid):
     """View helper that checks that a claim token for a given user and node ID
