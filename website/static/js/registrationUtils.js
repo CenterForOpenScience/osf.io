@@ -5,18 +5,19 @@ var $osf = require('js/osfHelpers');
 
 var RegistrationEditor = require('js/registrationEditor');
 
-var launchRegistrationEditor = function(node) {
+var launchRegistrationEditor = function(node, draft) {
     $osf.fullscreenModal({
             id: 'registrationEditorModal'
         })
         .then(function(modal) {
             var regEditor = new RegistrationEditor({
-                schemas: '/api/v1/schemas/',
-                save: node.urls.api + 'schema/',
-                data: node.urls.api + 'schema/'
+                schemas: '/api/v1/project/schema/',                
+                create: node.urls.api + 'draft/',
+                update: node.urls.api + 'draft/{draft_pk}/',
+                get: node.urls.api + 'draft/{draft_pk}/'
             }, 'registrationEditor');
             ko.renderTemplate('registrationEditorTemplate', regEditor, {}, modal[0]);
-            regEditor.init();
+            regEditor.init(draft);
         });
 };
 
@@ -31,5 +32,6 @@ module.exports = {
     },
     remind: function(node) {
 
-    }
+    },
+    launchRegistrationEditor: launchRegistrationEditor
 };

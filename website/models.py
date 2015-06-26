@@ -10,7 +10,7 @@ from website.project.model import (
     ApiKey, Node, NodeLog,
     Tag, WatchConfig, MetaSchema, Pointer,
     Comment, PrivateLink, MetaData, Retraction,
-    Embargo,
+    Embargo, DraftRegistration
 )
 from website.oauth.models import ExternalAccount
 from website.identifiers.model import Identifier
@@ -27,7 +27,7 @@ MODELS = (
     MailRecord, Comment, PrivateLink, MetaData, Conference,
     NotificationSubscription, NotificationDigest, CitationStyle,
     CitationStyle, ExternalAccount, Identifier, Retraction,
-    Embargo, ArchiveJob, ArchiveTarget, BlacklistGuid
+    Embargo, ArchiveJob, ArchiveTarget, BlacklistGuid, DraftRegistration
 )
 
 GUID_MODELS = (User, Node, Comment, MetaData)

@@ -773,8 +773,8 @@ var fullscreenModal = function(opts) {
             fontSize: '150%'
         },
         'class': 'fa fa-times-circle text-bigger',
-        click: function() {
-            $(this).parent().remove();
+        click: function() { 
+            modal.hide('slow', function() { modal.remove(); });
         }
     }));
     var container = $('<div>', {
@@ -784,9 +784,12 @@ var fullscreenModal = function(opts) {
         }
     });
     modal.append(container);
+    modal.hide();
     $('body').append(modal);
+    modal.show('slow', function() {
+        ret.resolve(container);
+    });
 
-    ret.resolve(container);
     return ret;
 };
 
@@ -819,5 +822,5 @@ module.exports = window.$.osf = {
     humanFileSize: humanFileSize,
     confirmDangerousAction: confirmDangerousAction,
     fullscreenModal: fullscreenModal,
-	isIE: isIE
+    isIE: isIE
 };

@@ -28,7 +28,6 @@ from website.project.decorators import (
     must_have_permission,
     must_not_be_registration,
 )
-from website.project.metadata.schemas import OSF_META_SCHEMAS
 from website.util.permissions import ADMIN, READ, WRITE
 from website.util.rubeus import collect_addon_js
 from website.project.model import has_anonymous_link, get_pointer_parent, NodeUpdateError
@@ -730,7 +729,6 @@ def _view_project(node, auth, primary=False):
             'embargo_end_date': node.embargo_end_date.strftime("%A, %b. %d, %Y") if node.embargo_end_date else False,
             'pending_embargo': node.pending_embargo,
             'archiving': node.archiving,
-            'is_draft_registration': node.is_draft_registration,
             'registered_from_url': node.registered_from.url if node.is_registration else '',
             'registered_date': iso8601format(node.registered_date) if node.is_registration else '',
             'root_id': node.root._id,

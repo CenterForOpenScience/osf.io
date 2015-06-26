@@ -1,5 +1,5 @@
 {
-    "id": "Prereg_Prize",
+    "name": "Prereg Prize",
     "type": "object",
     "pages": [{
         "id": "page1",
@@ -7,7 +7,7 @@
         "type": "object",
         "properties": {
             "q1": {
-                "type": "commentableString",
+                "type": "string",
                 "format": "text",
                 "title": "Title",
                 "description": "What is the working title of your study? It is helpful if this is the same title that you submit for publication of your final manuscript, but it is not a requirement.",

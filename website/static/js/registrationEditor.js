@@ -2,91 +2,27 @@ var $ = require('jquery');
 var ko = require('knockout');
 
 var jedit = require('json-editor'); // TODO webpackify
-require('js/json-editor-extensions');
 
 var $osf = require('js/osfHelpers');
 var oop = require('js/oop');
 
-// add for single select of check boxes
-JSONEditor.defaults.resolvers.unshift(function(schema) {
-    if (schema.type === "array" && schema.items && !(Array.isArray(schema.items)) && schema.uniqueItems && schema.items["enum"] && ['string', 'number', 'integer'].indexOf(schema.items.type) >= 0) {
-        return "singleselect";
-    }
-});
-JSONEditor.defaults.editors.singleselect = JSONEditor.defaults.editors.multiselect.extend({
-    build: function() {
+var MetaSchema = function(params) {
+    this.name = params.schema_name;
+    this.version = params.schema_version;
+    this.title = params.title || params.schema.title;
+    this.schema = params.schema || {};
+    this.id = [this.name, this.version].join('_');
+};
 
-        var self = this,
-            i;
-        if (!this.options.compact) this.header = this.label = this.theme.getFormInputLabel(this.getTitle());
-        if (this.schema.description) this.description = this.theme.getFormInputDescription(this.schema.description);
-
-        if ((!this.schema.format && this.option_keys.length < 8) || this.schema.format === "checkbox") {
-            this.input_type = 'checkboxes';
-
-            this.inputs = {};
-            this.controls = {};
-            for (i = 0; i < this.option_keys.length; i++) {
-                this.inputs[this.option_keys[i]] = this.theme.getCheckbox();
-                this.select_options[this.option_keys[i]] = this.inputs[this.option_keys[i]];
-                var label = this.theme.getCheckboxLabel(this.option_keys[i]);
-                this.controls[this.option_keys[i]] = this.theme.getFormControl(label, this.inputs[this.option_keys[i]]);
-            }
-
-            this.control = this.theme.getMultiCheckboxHolder(this.controls, this.label, this.description);
-        } else {
-            this.input_type = 'select';
-            this.input = this.theme.getSelectInput(this.option_keys);
-            this.input.multiple = true;
-            this.input.size = Math.min(10, this.option_keys.length);
-
-            for (i = 0; i < this.option_keys.length; i++) {
-                this.select_options[this.option_keys[i]] = this.input.children[i];
-            }
-
-            if (this.schema.readOnly || this.schema.readonly) {
-                this.always_disabled = true;
-                this.input.disabled = true;
-            }
-
-            this.control = this.theme.getFormControl(this.label, this.input, this.description);
-        }
-
-        this.container.appendChild(this.control);
-        var previous;
-        this.control.addEventListener("mouseover", function(e) {
-            var new_value = [];
-            for (i = 0; i < self.option_keys.length; i++) {
-                if (self.select_options[self.option_keys[i]].selected || self.select_options[self.option_keys[i]].checked) {
-                    new_value.push(self.select_values[self.option_keys[i]]);
-                }
-            }
-            previous = new_value;
-
-        });
-        this.control.addEventListener('change', function(e) {
-            e.preventDefault();
-            e.stopPropagation();
-
-            // delete older one using previous
-            var new_value = [];
-            for (i = 0; i < self.option_keys.length; i++) {
-                if (self.select_options[self.option_keys[i]].selected || self.select_options[self.option_keys[i]].checked) {
-
-                    var str = '"' + self.select_values[self.option_keys[i]] + '"';
-                    var blah = self.select_values[self.option_keys[i]];
-                    if (previous.indexOf(blah) != -1) {
-                        self.select_options[self.option_keys[i]].checked = false;
-                    } else {
-                        new_value.push(self.select_values[self.option_keys[i]]);
-                    }
-                }
-            }
-            self.updateValue(new_value);
-            self.onChange(true);
-        });
-    }
-});
+var Draft = function(params) {
+    this.pk = params.pk;
+    var metaSchema = params.registration_schema;
+    this.metaSchema = new MetaSchema(metaSchema);
+    this.schema = metaSchema.schema;
+    this.schemaName = metaSchema.schema_name;
+    this.schemaVersion = metaSchema.schema_version;
+    this.schemaData = params.registration_metadata;
+};
 
 var RegistrationEditor = function(urls, editorId) {
     var self = this;
@@ -95,60 +31,97 @@ var RegistrationEditor = function(urls, editorId) {
     self.editorId = editorId;
     self.editor = null;
 
+    self.draft = ko.observable(
+        new Draft({
+            pk: null,
+            registration_schema: {
+                schema: {
+                    pages: []
+                },
+                schema_name: '',
+                schemaVersion: ''
+            },
+            registration_metadata: {}
+        })
+    );
+    /*
     self.defaultOptions = [{
-        id: null,
+        id: 'DEFAULT',B
+        name: null,
+        schema_version: 0,
         title: 'Please select a registration form to initiate registration'
     }];
-    self.schemas = ko.observable(self.defaultOptions);
-    self.selectedSchemaId = ko.observable(null);
-    self.selectedSchemaId.subscribe(function() {       
-        self.schema(
-            self.schemas().filter(function(s) {
-                return s.id === self.selectedSchemaId();
-            })[0]
-        );
-        self.updateEditor(self.schema().pages[0]);
-    });
+     */
+    self.schemas = ko.observable([]);
 
-    self.schema = ko.observable({});
-    self.schema.subscribe(function(schema) {
-        self.updateEditor(schema);
-    });
-    self.schemaData = ko.observable(null);
+    self.selectedSchemaName = ko.observable();
+    self.selectedSchemaName.subscribe(self.selectSchema.bind(self));
 
     self.disableSave = ko.pureComputed(function() {
-        return !self.schema();
+        return !self.draft().schema;
     });
 };
-RegistrationEditor.prototype.init = function() {
+RegistrationEditor.prototype.init = function(draft) {
     var self = this;
-    
-    $.when(self.fetchData(), self.fetchSchemas()).then(function(data, schemas) {
-        data = data[0] || {};
-        schemas = schemas[0] || [];
-        self.updateData(data);
-        self.updateSchemas(schemas);
-        if (data.schema_id && schemas){
-            self.selectedSchemaId(data.schema_id);
-        }
-    });
+
+    if (draft){
+        self.updateData(draft);
+        self.updateEditor(self.draft().schema.pages[0]);
+    }
+
+    self.fetchSchemas().then(self.updateSchemas.bind(self));
 };
-RegistrationEditor.prototype.updateSchemas = function(schemas) {
+RegistrationEditor.prototype.selectSchema = function() {
     var self = this;
-    self.schemas(self.defaultOptions.concat(schemas));
+    if(!self.schemas.length) {
+        return;
+    }
+
+    var selectedSchemaName = self.selectedSchemaName();
+
+    draft = self.draft();
+    draft.schemaName = selectedSchemaName.split('_').slice(0, -1).join('_');
+    if (self.schemas().length) {
+        var selectedSchema = self.schemas().filter(function(s) {
+            return s.id === selectedSchemaName;
+        })[0];
+        draft.schema = selectedSchema.schema;
+        draft.schemaVersion = selectedSchema.version || 1;
+    }
+    self.draft(draft);
+
+    self.updateEditor(draft.schema.pages[0] || {});
+};
+RegistrationEditor.prototype.updateSchemas = function(response) {
+    var self = this;
+    self.schemas(
+        $.map(response.meta_schemas, function(ms) {
+            return new MetaSchema(ms);
+        })
+    );
 };
 RegistrationEditor.prototype.fetchSchemas = function() {
     var self = this;
     return $.getJSON(self.urls.schemas);
 };
 
-RegistrationEditor.prototype.updateData = function(response) {
+RegistrationEditor.prototype.updateData = function(draft) {
     var self = this;
-    self.schemaData($.extend({}, self.schemaData() || {}, response.schema_data));
+    
+    var newDraft = new Draft(draft);
+    newDraft.schemaData = $.extend({}, newDraft.schemaData, self.draft().schemaData);   
+    self.draft(newDraft);
+
+    self.selectedSchemaName(newDraft.metaSchema.id);
 };
 RegistrationEditor.prototype.fetchData = function() {
     var self = this;
-    return $.getJSON(self.urls.data);
+    var ret = $.Deferred();
+    if (!self.draft().pk) {
+        ret.resolve();
+    }
+    $.getJSON(self.urls.get.replace('{draft_pk}', self.draft.pk)).then(ret.resolve);
+    return ret;
 };
 
 RegistrationEditor.prototype.updateEditor = function(page) {
@@ -163,7 +136,7 @@ RegistrationEditor.prototype.updateEditor = function(page) {
     }
     self.editor = new JSONEditor(document.getElementById(self.editorId), {
         schema: page,
-        startVal: self.schemaData(),
+        startVal: self.draft.schema_data,
         theme: 'bootstrap3',
         disable_collapse: true,
         disable_edit_json: true,
@@ -178,13 +151,24 @@ RegistrationEditor.prototype.selectPage = function(page) {
     var self = this;
     self.updateEditor(page);
 };
+RegistrationEditor.prototype.create = function(schemaData) {
+    var self = this;
+
+    return $osf.postJSON(self.urls.create, {
+        schema_name: self.draft().schemaName,
+        schema_version: self.draft().schemaVersion,
+        schema_data: schemaData
+    }).then(self.updateData.bind(self));
+};
 RegistrationEditor.prototype.save = function() {
     var self = this;
     var schemaData = self.editor.getValue();
-
-    return $osf.putJSON(self.urls.save, {
-        schema_id: self.selectedSchemaId(),
-        schema_version: self.schema().version,
+    if (!self.draft().pk) {
+        return self.create(schemaData);
+    }
+    return $osf.putJSON(self.urls.update.replace('{draft_pk}', self.draft().pk), {
+        schema_name: self.draft().schemaName,
+        schema_version: self.draft().schemaVersion,
         schema_data: schemaData
     }).then(function(response) {
         console.log(response);

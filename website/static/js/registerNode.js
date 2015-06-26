@@ -76,7 +76,7 @@ $(document).ready(function() {
             message: preRegisterMessage(title, parentTitle, parentRegisterUrl, category),
             callback: function (confirmed) {
                 if(confirmed) {                    
-                    $('#registerNodeForm').submit();
+                    //TODO
                 }
             }
         });

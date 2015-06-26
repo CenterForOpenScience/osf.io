@@ -1,15 +1,17 @@
 <div id="registrationEditorScope">
-    <select class="form-control" id="registrationSchemaSelect" data-bind="options: schemas,
-                           optionsText: 'title',
-                           optionsValue: 'id',
-                           value: selectedSchemaId">
+    <select class="form-control" id="registrationSchemaSelect" 
+            data-bind="options: schemas,
+                       optionsText: 'title',
+                       optionsValue: 'id',
+                       value: selectedSchemaName">      
+      <option data-bind="if: draft().schemaName" value="" disabled selected>Please select a registration form to initiate registration</option>
     </select>
     <div class='container'>
         <div class='row'>
             <div class='span8 col-md-12 columns eight large-8'>
                 <h2 id="schemaTitle">Select an option above</h2>
                 <p>
-                    <ul class="nav navbar-nav" data-bind="foreach: schema().pages">
+                    <ul class="nav navbar-nav" data-bind="foreach: draft().schema.pages">
                         <li>
                             <a data-bind="text: title,
                                 click: $root.selectPage"></a>

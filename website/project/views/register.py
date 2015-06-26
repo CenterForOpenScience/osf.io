@@ -13,7 +13,7 @@ from framework.exceptions import HTTPError, PermissionsError
 from framework.flask import redirect  # VOL-aware redirect
 
 from framework.status import push_status_message
-from framework.mongo.utils import to_mongo
+from framework.mongo.utils import to_mongo, get_or_http_error
 from framework.forms.utils import process_payload, unprocess_payload
 from framework.auth.decorators import must_be_signed
 
@@ -38,6 +38,7 @@ from website.project.utils import serialize_node
 from website.project import utils as project_utils
 from website.util.permissions import ADMIN
 from website.models import MetaSchema, NodeLog
+from website.project.model import DraftRegistration
 from website import language, mails
 from website.project import signals as project_signals
 from website import util
@@ -49,17 +50,47 @@ from website.identifiers.client import EzidClient
 from .node import _view_project
 from .. import clean_template_name
 
+get_draft_or_fail = lambda pk: get_or_http_error(DraftRegistration, pk)
+
 @must_be_valid_project
 @must_have_permission(ADMIN)
-def node_create_registration_draft(auth, node, **kwargs):
+def node_create_draft_registration(auth, node, **kwargs):
     if settings.DISK_SAVING_MODE:
         raise HTTPError(
             http.METHOD_NOT_ALLOWED,
             redirect_url=node.url
         )
 
-    register = node.register_node(auth)
-    return redirect(register.web_url_for('view_project', postRegister=True))
+    draft = DraftRegistration(
+        branched_from=node,
+        initiator=auth.user
+    )
+    schema_name = request.args.get('schema_name')
+    schema_version = request.args.get('schema_version', 1)
+    if schema_name:
+        try:
+            meta_schema = MetaSchema.find_one(
+                Q('name', 'eq', schema_name) &
+                Q('version', 'eq', schema_version)
+            )
+        except NoResultsFound:
+            raise HTTPError(http.BAD_REQUEST)
+        draft.registration_schema = meta_schema
+    draft.save()
+    return redirect(node.web_url_for('node_get_draft_registration', draft_pk=draft._id))
+
+@must_be_valid_project
+@must_have_permission(ADMIN)
+def node_get_draft_registration(auth, node, draft_pk, **kwargs):
+    if settings.DISK_SAVING_MODE:
+        raise HTTPError(
+            http.METHOD_NOT_ALLOWED,
+            redirect_url=node.url
+        )
+    draft = get_draft_or_fail(draft_pk)
+    ret = serialize_node(node, auth, primary=True)
+    ret['draft'] = draft
+    return ret
 
 @must_be_valid_project
 @must_have_permission(ADMIN)
@@ -68,8 +99,8 @@ def node_register_page(auth, node, **kwargs):
     ret = {
         'options': [
             {
-                'template_name': metaschema['id'],
-                'template_name_clean': clean_template_name(metaschema['id'])
+                'template_name': metaschema['name'],
+                'template_name_clean': clean_template_name(metaschema['name'])
             }
             for metaschema in OSF_META_SCHEMAS
         ]

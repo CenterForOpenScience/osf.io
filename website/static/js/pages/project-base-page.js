@@ -9,14 +9,7 @@ var $osf = require('js/osfHelpers');
 // pages
 require('js/project');
 
-require('js/registerNode');
-
 var node = window.contextVars.node;
-
-var postRegister = function() {
-
-};
-
 
 new pointers.PointerDisplay('#showLinks');
 
