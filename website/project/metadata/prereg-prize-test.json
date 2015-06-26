@@ -120,7 +120,7 @@
             },
             {
                 "id": "8",
-                "nav": "",
+                "nav": "Verify",
                 "title": "Sampling Plan",
                 "type": "object",
                 "properties": {
@@ -258,7 +258,7 @@
         "questions": [
             {
                 "id": "16",
-                "nav": "",
+                "nav": "Construct Predictor",
                 "title": "Analysis Plan",
                 "type": "object",
                 "properties": {
@@ -273,7 +273,7 @@
             },
             {
                 "id": "17",
-                "nav": "",
+                "nav": "Construct Outcome",
                 "title": "Analysis Plan",
                 "type": "object",
                 "properties": {
@@ -288,7 +288,7 @@
             },
             {
                 "id": "18",
-                "nav": "",
+                "nav": "Exclude",
                 "title": "Analysis Plan",
                 "type": "object",
                 "properties": {
@@ -303,7 +303,7 @@
             },
             {
                 "id": "19",
-                "nav": "",
+                "nav": "Incomplete Data",
                 "title": "Analysis Plan",
                 "type": "object",
                 "properties": {
@@ -318,7 +318,7 @@
             },
             {
                 "id": "20",
-                "nav": "",
+                "nav": "Statistical Model",
                 "title": "Analysis Plan",
                 "type": "object",
                 "properties": {
@@ -333,7 +333,7 @@
             },
             {
                 "id": "21",
-                "nav": "",
+                "nav": "Multiple",
                 "title": "Analysis Plan",
                 "type": "object",
                 "properties": {
@@ -355,7 +355,7 @@
             {
                 "id": "22",
                 "nav": "Script",
-                "title": "Script",
+                "title": "Optional",
                 "type": "object",
                 "properties": {
                     "q22": {
