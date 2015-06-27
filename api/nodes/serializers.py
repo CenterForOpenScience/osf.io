@@ -217,8 +217,7 @@ class ContributorSerializer(UserSerializer):
         'nodes': {
             'relation': Link('users:user-nodes', kwargs={'user_id': '<_id>'})
         },
-        'edit contributor': Link('nodes:node-contributor-detail', kwargs={'user_id': '<_id>',
-                                                                    'node_id':'<node_id>'})
+        'edit contributor': Link('nodes: node-contributor-detail', kwargs={'user_id': '<_id>', 'node_id':'<node_id>'})
         })
 
     def absolute_url(self, obj):
@@ -251,7 +250,6 @@ class ContributorDetailSerializer(ContributorSerializer):
     filterable_fields = frozenset.union(UserSerializer.filterable_fields, local_filterable)
     bibliographic = ser.BooleanField(help_text='Whether the user will be included in citations for this node or not')
 
-
     def update(self, user, validated_data):
         node = self.context['view'].get_node()
         bibliographic = (validated_data['bibliographic'] == "True")
@@ -268,7 +266,6 @@ class ContributorDetailSerializer(ContributorSerializer):
             raise PermissionDenied('Admin privileges for {} cannot be removed as they are the only admin.'.format(user.username))
         return self.context['view'].get_object()
 
-
     def destroy(self, user, validated_data):
         auth = Auth(user)
         node = self.context['view'].get_node()
@@ -276,11 +273,8 @@ class ContributorDetailSerializer(ContributorSerializer):
         node.rm_contributor(contributor, auth)
         node.save()
 
-
-
     links = LinksField({
         'html': 'absolute_url',
         'nodes': {
-            'relation': Link('users:user-nodes', kwargs={'user_id': '<_id>'})
-            },
+            'relation': Link('users: user-nodes', kwargs={'user_id': '<_id>'})},
         })
