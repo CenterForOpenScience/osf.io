@@ -865,12 +865,12 @@ class TestEditNodeContributor(ApiTestCase):
         self.url_contributor = '/{}nodes/{}/contributors/{}/'.format(API_BASE, self.project._id, self.user._id)
 
     def test_admin_change_contributor_admin_status(self):
-        res = self.app.put(self.url_contributor, {'admin': True}, auth=self.admin_auth, expect_errors=False)
-        assert_equal(res.status_code, 200)
-        assert_true(self.project.has_permission(self.user, 'admin'))
         res = self.app.put(self.url_contributor, {'admin': False}, auth=self.admin_auth, expect_errors=False)
         assert_equal(res.status_code, 200)
         assert_false(self.project.has_permission(self.user, 'admin'))
+        res = self.app.put(self.url_contributor, {'admin': True}, auth=self.admin_auth, expect_errors=False)
+        assert_equal(res.status_code, 200)
+        assert_true(self.project.has_permission(self.user, 'admin'))
 
     def test_admin_change_contributor_bibliographic_status(self):
         res = self.app.put(self.url_contributor, {'bibliographic': False}, auth=self.admin_auth, expect_errors=False)
@@ -882,18 +882,18 @@ class TestEditNodeContributor(ApiTestCase):
 
     def test_admin_change_contributor_admin_and_bibliographic_status(self):
         data = {
-            'admin': True,
+            'admin': False,
             'bibliographic': False
         }
         res = self.app.put(self.url_contributor, data, auth=self.admin_auth, expect_errors=False)
         assert_equal(res.status_code, 200)
-        assert_true(self.project.has_permission(self.user, 'admin'))
+        assert_false(self.project.has_permission(self.user, 'admin'))
         assert_false(self.project.get_visible(self.user))
 
     def test_admin_not_changing_contributor_admin_status(self):
-        res = self.app.put(self.url_contributor, {'admin': False}, auth=self.admin_auth, expect_errors=False)
+        res = self.app.put(self.url_contributor, {'admin': True}, auth=self.admin_auth, expect_errors=False)
         assert_equal(res.status_code, 200)
-        assert_false(self.project.has_permission(self.user, 'admin'))
+        assert_true(self.project.has_permission(self.user, 'admin'))
 
     def test_admin_not_changing_contributor_bibliographic_status(self):
         res = self.app.put(self.url_contributor, {'bibliographic': True}, auth=self.admin_auth, expect_errors=False)
@@ -902,12 +902,12 @@ class TestEditNodeContributor(ApiTestCase):
 
     def test_admin_not_changing_contributor_admin_or_bibliographic_status(self):
         data = {
-            'admin': False,
+            'admin': True,
             'bibliographic': True
         }
         res = self.app.put(self.url_contributor, data, auth=self.admin_auth, expect_errors=False)
         assert_equal(res.status_code, 200)
-        assert_false(self.project.has_permission(self.user, 'admin'))
+        assert_true(self.project.has_permission(self.user, 'admin'))
         assert_true(self.project.get_visible(self.user))
 
     def test_unique_admin_changing_self_admin_status(self):
