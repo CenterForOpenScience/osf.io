@@ -20,6 +20,7 @@ from pymongo.errors import OperationFailure
 from modularodm import storage
 
 from api.base.wsgi import application as django_app
+from tests.test_features import requires_search
 from framework.mongo import set_up_storage
 from framework.auth import User
 from framework.sessions.model import Session
@@ -36,6 +37,7 @@ from website import settings
 from website.addons.wiki.model import NodeWikiPage
 
 import website.models
+from website.search import elastic_search
 from website.signals import ALL_SIGNALS
 from website.app import init_app
 from website.addons.base import AddonConfig
@@ -66,6 +68,7 @@ fake = Factory.create()
 MODELS = (User, ApiKey, Node, NodeLog, NodeWikiPage,
           Tag, WatchConfig, Session, Guid)
 
+TEST_SEARCH_INDEX = 'test'
 
 def teardown_database(client=None, database=None):
     client = client or client_proxy
@@ -203,6 +206,10 @@ class MockRequestTestCase(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         super(MockRequestTestCase, cls).setUpClass()
+        from website.search import elastic_search
+        from website import settings
+        elastic_search.INDEX = TEST_SEARCH_INDEX
+        settings.ELASTIC_INDEX = TEST_SEARCH_INDEX
         httpretty.enable()
         for method in methods:
             httpretty.register_uri(
@@ -237,6 +244,39 @@ class ApiTestCase(DbTestCase, ApiAppTestCase, UploadTestCase, MockRequestTestCas
     teardown methods to be called correctly.
     """
     pass
+
+
+def _mock_update(node, index=None, files=None):
+    logging.warn('Calling Fake Update')
+    elastic_search.update_node(node, index=index, files=False)
+
+
+@requires_search
+class UpdateNodeCase(unittest.TestCase):
+    def setUp(self):
+        super(UpdateNodeCase, self).setUp()
+        self.search_patch = mock.patch('website.search.search.update_node',
+                                       side_effect=_mock_update)
+        self.search_patch.start()
+
+    def tearDown(self):
+        super(UpdateNodeCase, self).tearDown()
+        self.search_patch.stop()
+
+
+@requires_search
+class SearchTestCase(OsfTestCase, UpdateNodeCase):
+    def tearDown(self):
+        super(SearchTestCase, self).tearDown()
+        elastic_search.delete_index(elastic_search.INDEX)
+        elastic_search.create_index(elastic_search.INDEX)
+
+    def setUp(self):
+        super(SearchTestCase, self).setUp()
+        elastic_search.INDEX = TEST_SEARCH_INDEX
+        settings.ELASTIC_INDEX = TEST_SEARCH_INDEX
+        elastic_search.delete_index(elastic_search.INDEX)
+        elastic_search.create_index(elastic_search.INDEX)
 
 
 # From Flask-Security: https://github.com/mattupstate/flask-security/blob/develop/flask_security/utils.py

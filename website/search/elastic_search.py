@@ -215,7 +215,7 @@ def load_parent(parent_id):
 
 
 @requires_search
-def update_node(node, index=None):
+def update_node(node, index=None, files=True):
     index = index or INDEX
     from website.addons.wiki.model import NodeWikiPage
 
@@ -280,8 +280,8 @@ def update_node(node, index=None):
                 for x in node.wiki_pages_current.values()
             ]:
                 elastic_document['wikis'][wiki.page_name] = wiki.raw_text(node)
-
-            elastic_document = add_files_to_document(node, elastic_document, index=index)
+            if files:
+                elastic_document = add_files_to_document(node, elastic_document, index=index)
         es.index(index=index, doc_type=category, id=elastic_document_id, body=elastic_document, refresh=True)
 
 

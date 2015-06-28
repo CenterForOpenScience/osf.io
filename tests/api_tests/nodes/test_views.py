@@ -21,10 +21,10 @@ from tests.factories import (
 from website.search import elastic_search
 from website import settings
 
-# TOOD: move this to 
-TEST_INDEX = 'test'
-elastic_search.INDEX = TEST_INDEX
-settings.ELASTIC_INDEX = TEST_INDEX
+# TODO: remove this
+# TEST_INDEX = 'test'
+# elastic_search.INDEX = TEST_INDEX
+# settings.ELASTIC_INDEX = TEST_INDEX
 
 class TestWelcomeToApi(ApiTestCase):
     def setUp(self):
