@@ -18,10 +18,6 @@ from tests.factories import (
 )
 
 
-from website.search import elastic_search
-from website import settings
-
-
 class TestWelcomeToApi(ApiTestCase):
     def setUp(self):
         super(TestWelcomeToApi, self).setUp()

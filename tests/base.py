@@ -70,6 +70,7 @@ MODELS = (User, ApiKey, Node, NodeLog, NodeWikiPage,
 
 TEST_SEARCH_INDEX = 'test'
 
+
 def teardown_database(client=None, database=None):
     client = client or client_proxy
     database = database or database_proxy
@@ -80,6 +81,10 @@ def teardown_database(client=None, database=None):
         if messages.NO_TRANSACTION_ERROR not in message:
             raise
     client.drop_database(database)
+
+
+def _mock_update(node, index=None, files=None):
+    elastic_search.update_node(node, index=index, files=False)
 
 
 class DbTestCase(unittest.TestCase):
@@ -197,11 +202,25 @@ methods = [
     httpretty.PATCH,
     httpretty.DELETE,
 ]
+
 def kill(*args, **kwargs):
     raise httpretty.errors.UnmockedError
 
 
-class MockRequestTestCase(unittest.TestCase):
+@requires_search
+class UpdateNodeCase(unittest.TestCase):
+    def setUp(self):
+        super(UpdateNodeCase, self).setUp()
+        self.search_patch = mock.patch('website.search.search.update_node',
+                                       side_effect=_mock_update)
+        self.search_patch.start()
+
+    def tearDown(self):
+        super(UpdateNodeCase, self).tearDown()
+        self.search_patch.stop()
+
+
+class MockRequestTestCase(UpdateNodeCase):
 
     @classmethod
     def setUpClass(cls):
@@ -244,24 +263,6 @@ class ApiTestCase(DbTestCase, ApiAppTestCase, UploadTestCase, MockRequestTestCas
     teardown methods to be called correctly.
     """
     pass
-
-
-def _mock_update(node, index=None, files=None):
-    logging.warn('Calling Fake Update')
-    elastic_search.update_node(node, index=index, files=False)
-
-
-@requires_search
-class UpdateNodeCase(unittest.TestCase):
-    def setUp(self):
-        super(UpdateNodeCase, self).setUp()
-        self.search_patch = mock.patch('website.search.search.update_node',
-                                       side_effect=_mock_update)
-        self.search_patch.start()
-
-    def tearDown(self):
-        super(UpdateNodeCase, self).tearDown()
-        self.search_patch.stop()
 
 
 @requires_search
