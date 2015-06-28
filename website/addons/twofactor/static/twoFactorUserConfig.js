@@ -36,7 +36,9 @@ function ViewModel(qrCodeSelector, otpURL) {
         osfHelpers.postJSON(
             SETTINGS_URL,
             {code: self.tfaCode()}
-        ).done(function() {
+        ).done(function(response) {
+            $('#TfaSuccessMessage').html(response['message']);
+            $('#TfaActivationWarning').closest('#alert-container').hide();
             $('#TfaVerify').slideUp(function() {
                 $('#TfaDeactivate').slideDown();
             });

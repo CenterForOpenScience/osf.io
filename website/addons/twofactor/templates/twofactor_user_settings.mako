@@ -45,7 +45,8 @@
     </div>
 % endif
 <div id="TfaDeactivate" ${ 'style="display:none"' if not is_confirmed else ''}>
-    <p class="text-success">Enabled</p>
+    <p class="text-success" id="TfaSuccessMessage"></p>
+    <p class="text-success">Two-factor Authentication is enabled</p>
 </div>
 </div>
 
