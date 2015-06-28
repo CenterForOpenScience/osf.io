@@ -281,19 +281,10 @@ def update_node(node, index=None, files=True):
             ]:
                 elastic_document['wikis'][wiki.page_name] = wiki.raw_text(node)
             if files:
-                elastic_document = add_files_to_document(node, elastic_document, index=index)
+                for file_ in index_file.collect_files(node):
+                    elastic_document['files'][file_['name']] = file_['content']
         es.index(index=index, doc_type=category, id=elastic_document_id, body=elastic_document, refresh=True)
 
-
-def add_files_to_document(node, doc, index=None):
-    # TODO: remove hack to fix tests
-    if index[:4] == 'test':
-        return doc
-
-    for file_ in index_file.collect_files(node):
-        logging.info(file_)
-        doc['files'][file_['name']] = file_['content']
-    return doc
 
 @requires_search
 def update_user(user, index=None):
