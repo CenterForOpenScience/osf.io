@@ -64,9 +64,9 @@ var AddPointerViewModel = oop.extend(Paginator, {
                 self.currentPage(result.page);
                 self.numberOfPages(result.pages);
                 self.addNewPaginators();
-            }).fail(function() {
+            }).fail(function(xhr) {
                 self.elm.modal('hide');
-                osfHelpers.handleJSONError();
+                osfHelpers.handleJSONError(xhr);
             });
         } else {
             self.results([]);
@@ -178,7 +178,7 @@ function PointerManager(selector, nodeName) {
     self.selector = selector;
     self.$element = $(self.selector);
     self.nodeName = nodeName;
-    self.viewModel = new AddPointerViewModel({nodeTitle:nodeName, elm:self.$element});
+    self.viewModel = new AddPointerViewModel({nodeTitle: nodeName, elm: self.$element});
     self.init();
 }
 
