@@ -364,7 +364,7 @@ def delete_doc(elastic_document_id, node, index=None, category=None):
 
 
 @requires_search
-def search_contributor(query, page=0, size=10, exclude=[], current_user=None):
+def search_contributor(query, page=0, size=10, exclude=None, current_user=None):
     """Search for contributors to add to a project using elastic search. Request must
     include JSON data with a "query" field.
 
@@ -380,7 +380,7 @@ def search_contributor(query, page=0, size=10, exclude=[], current_user=None):
     """
     start = (page * size)
     items = re.split(r'[\s-]+', query)
-
+    exclude = exclude or []
     normalized_items = []
     for item in items:
         try:
@@ -394,7 +394,7 @@ def search_contributor(query, page=0, size=10, exclude=[], current_user=None):
     query = ''
 
     query = "  AND ".join('{}*~'.format(re.escape(item)) for item in items) + \
-            "".join(' NOT "{}"'.format(excluded) for excluded in exclude)
+            "".join(' NOT id:"{}"'.format(excluded._id) for excluded in exclude)
 
     results = search(build_query(query, start=start, size=size), index=INDEX, doc_type='user')
     docs = results['results']
