@@ -8,7 +8,7 @@ from boto.exception import S3ResponseError, BotoClientError, S3CreateError
 from website.project.decorators import must_be_contributor_or_public
 from website.project.decorators import must_have_addon
 from website.project.decorators import must_have_permission
-from website.addons.s3.api import create_bucket
+from website.addons.s3.api import create_folder
 from website.addons.s3 import utils
 
 @must_be_contributor_or_public
@@ -17,7 +17,7 @@ from website.addons.s3 import utils
 def create_new_bucket(node_addon, **kwargs):
     user = kwargs['auth'].user
     user_settings = user.get_addon('s3')
-    bucket_name = request.json.get('bucket_name')
+    bucket_name = request.json.get('folder_name')
 
     if not utils.validate_bucket_name(bucket_name):
         return {
@@ -25,7 +25,7 @@ def create_new_bucket(node_addon, **kwargs):
             'title': 'Invalid bucket name',
         }, http.NOT_ACCEPTABLE
     try:
-        create_bucket(user_settings, request.json.get('bucket_name'))
+        create_folder(user_settings, request.json.get('folder_name'))
         return {
             'buckets': utils.get_bucket_drop_down(user_settings)
         }

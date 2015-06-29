@@ -184,13 +184,13 @@ class AddonS3NodeSettings(AddonNodeSettingsBase):
         ret.update({
             'bucket': self.bucket or '',
             'has_bucket': self.bucket is not None,
-            'user_is_owner': (
+            'userIsOwner': (
                 self.user_settings and self.user_settings.owner == user
             ),
-            'user_has_auth': bool(user_settings) and user_settings.has_auth,
-            'node_has_auth': self.has_auth,
+            'userHasAuth': bool(user_settings) and user_settings.has_auth,
+            'nodeHasAuth': self.has_auth,
             'owner': None,
-            'bucket_list': None,
+            'folder_list': None,
             'is_registration': self.owner.is_registration,
             'valid_credentials': user_settings and user_settings.is_valid,
         })
@@ -198,7 +198,7 @@ class AddonS3NodeSettings(AddonNodeSettingsBase):
         if self.has_auth:
             ret['owner'] = self.user_settings.owner.fullname
             ret['owner_url'] = self.user_settings.owner.url
-            ret['node_has_auth'] = True
+            ret['nodeHasAuth'] = True
 
         return ret
 

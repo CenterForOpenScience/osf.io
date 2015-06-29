@@ -22,10 +22,10 @@ def get_bucket_list(user_settings):
         return S3Connection(user_settings.access_key, user_settings.secret_key).get_all_buckets()
 
 
-def create_bucket(user_settings, bucket_name):
+def create_folder(user_settings, bucket_name):
     connect = S3Connection(
         user_settings.access_key, user_settings.secret_key)
-    return connect.create_bucket(bucket_name)
+    return connect.create_folder(bucket_name)
 
 
 def does_bucket_exist(accessKey, secretKey, bucketName):

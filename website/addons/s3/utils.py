@@ -109,12 +109,12 @@ def serialize_urls(node_addon, user):
     user_settings = node_addon.user_settings
 
     result = {
-        'create_bucket': node.api_url_for('create_new_bucket'),
-        'import_auth': node.api_url_for('s3_node_import_auth'),
+        'create_folder': node.api_url_for('create_new_bucket'),
+        'importAuth': node.api_url_for('s3_node_import_auth'),
         'create_auth': node.api_url_for('s3_authorize_node'),
         'deauthorize': node.api_url_for('s3_remove_node_settings'),
-        'bucket_list': node.api_url_for('s3_bucket_list'),
-        'set_bucket': node.api_url_for('s3_node_settings'),
+        'folder_list': node.api_url_for('s3_bucket_list'),
+        'config': node.api_url_for('s3_node_settings'),
         'settings': web_url_for('user_addons'),
         'files': node.web_url_for('collect_file_trees'),
     }

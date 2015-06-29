@@ -106,7 +106,7 @@ def s3_node_settings(auth, user_addon, node_addon, **kwargs):
     if not node_addon.user_settings:
         node_addon.user_settings = user_addon
 
-    bucket = request.json.get('s3_bucket', '')
+    bucket = request.json.get('folder', '')
 
     if not bucket or not does_bucket_exist(user_addon.access_key, user_addon.secret_key, bucket):
         error_message = ('We are having trouble connecting to that bucket. '

@@ -33,17 +33,16 @@ var flatAddonViewModel = function(url, selector, addonName, folderType, opts) {
 
 	self.loading = ko.observable(false);
 	self.creating = ko.observable(false);
-	self.creatingCredentials = ko.observable(false);
 
     self.message = ko.observable('');
     self.messageClass = ko.observable('text-info');
 
     self.showSelect = ko.observable(false);
 
-    self.validCredentials = ko.observable(false);
+    self.validCredentials = ko.observable(true);
 
     self.showSettings = ko.pureComputed(function() {
-        return self.nodeHasAuth();
+        return self.nodeHasAuth() && self.validCredentials();
     });
     self.disableSettings = ko.pureComputed(function() {
         return !(self.userHasAuth() && self.userIsOwner());
@@ -82,7 +81,7 @@ var flatAddonViewModel = function(url, selector, addonName, folderType, opts) {
                 }
     		});
     	},
-        attemptRetrieval : function(settings) {
+        attemptRetrieval : function(self) {
             return
         },
         findFolder : function(settings) {
@@ -90,6 +89,13 @@ var flatAddonViewModel = function(url, selector, addonName, folderType, opts) {
         },
         dataGetSettings: function(data) {
             return data;
+        },
+        connectAccount: function(self, $osf) {
+            window.oauthComplete = function(res) {
+                self.changeMessage('Successfully created a ' + self.addonName + ' access token', 'text-success', 3000);
+                self.importAuth.call(self);
+            };
+            window.open(self.urls().auth);
         }
     };
 
@@ -222,11 +228,11 @@ flatAddonViewModel.prototype.updateFromData = function(data) {
         if (settings.urls) {
             self.urls(settings.urls);
         }
-        if ((settings.valid_credentials != null) && (typeof settings.valid_credentials != 'undefined')){
+        if (typeof settings.valid_credentials != 'undefined'){
             self.validCredentials(settings.valid_credentials);
         }
         self.currentFolder(self.options.findFolder(settings));
-        self.options.attemptRetrieval(settings);
+        self.options.attemptRetrieval(self);
         ret.resolve(settings);
     };
     if (typeof data === 'undefined'){
@@ -412,12 +418,7 @@ flatAddonViewModel.prototype.fetchAccounts = function() {
 
 flatAddonViewModel.prototype.connectAccount = function() {
     var self = this;
-
-    window.oauthComplete = function(res) {
-        self.changeMessage('Successfully created a ' + self.addonName + ' access token', 'text-success', 3000);
-        self.importAuth.call(self);
-    };
-    window.open(self.urls().auth);
+    self.options.connectAccount(self, $osf);
 };
 
 flatAddonViewModel.prototype.connectExistingAccount = function(account_id) {
@@ -441,6 +442,8 @@ flatAddonViewModel.prototype.connectExistingAccount = function(account_id) {
         });
     });
 };
+
+
 
 module.exports = {
     FlatNodeConfig: FlatNodeConfig,

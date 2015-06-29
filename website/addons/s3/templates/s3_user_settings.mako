@@ -1,4 +1,4 @@
-<form role="form" id="addonSettings${addon_short_name.capitalize()}" data-addon="${addon_short_name}">
+8<form role="form" id="addonSettings${addon_short_name.capitalize()}" data-addon="${addon_short_name}">
     <span data-owner="user"></span>
     <div>
         <h4 class="addon-title">

@@ -17,6 +17,11 @@
                   Import Access Token
                 </a>
             </span>
+            <span data-bind="if: showCreateCredentials">
+                <a data-bind="click: connectAccount" class="text-primary pull-right addon-auth">
+                    Connect Account
+                </a>
+            </span>
         </small>
     </h4>
     <div data-bind="if: showSettings">
@@ -24,18 +29,18 @@
       <div class="col-md-12">
         <p>
           <strong>Current Bucket:</strong>
-          <span data-bind="ifnot: currentBucket">
+          <span data-bind="ifnot: currentFolder">
             None
           </span>
-          <a data-bind="if: currentBucket, attr.href: urls().files">
-            {{currentBucket}}
+          <a data-bind="if: currentFolder, attr.href: urls().files">
+            {{currentFolder}}
           </a>
         </p>
         <div class="btn-group"
              data-bind="attr.disabled: creating">
           <button data-bind="visible: canChange, click: toggleSelect,
                              css: {active: showSelect}" class="btn btn-sm btn-addon"><i class="icon-edit"></i> Change</button>
-          <button data-bind="visible: showNewBucket, click: openCreateBucket,
+          <button data-bind="visible: showNewFolder, click: openCreateFolder,
                              attr.disabled: creating" class="btn btn-sm btn-addon" id="newBucket">Create Bucket</button>
         </div>
         <br />
@@ -43,13 +48,13 @@
         <div class="row" data-bind="if: showSelect">
           <div class="col-md-8">
             <select class="form-control" id="s3_bucket" name="s3_bucket"
-                    data-bind="value: selectedBucket,
-                               attr.disabled: !loadedBucketList(),
-                               options: bucketList"> </select>
+                    data-bind="value: selectedFolder,
+                               attr.disabled: !loadedFolderList(),
+                               options: folderList"> </select>
           </div>
           <div class="col-md-2">
-            <button data-bind="click: selectBucket,
-                               attr.disabled: !allowSelectBucket()"
+            <button data-bind="click: selectFolder,
+                               attr.disabled: !allowSelectFolder()"
                     class="btn btn-primary">
               Submit
             </button>
@@ -59,18 +64,14 @@
       </div>
     </div>
     <div data-bind="if: showCreateCredentials">
-      <div class="form-group">
+      <!--<div class="form-group">
         <label for="s3Addon">Access Key</label>
         <input data-bind="value: accessKey" class="form-control" id="access_key" name="access_key" />
       </div>
       <div class="form-group">
         <label for="s3Addon">Secret Key</label>
         <input data-bind="value: secretKey" type="password" class="form-control" id="secret_key" name="secret_key" />
-      </div>
-      <button data-bind="click: createCredentials,
-                         attr.disabled: creatingCredentials" class="btn btn-primary addon-settings-submit">
-        Submit
-      </button>
+      </div>-->
     </div>
     <!-- Flashed Messages -->
     <div class="help-block">

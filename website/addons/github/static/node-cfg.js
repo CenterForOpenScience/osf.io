@@ -43,6 +43,6 @@ new FlatNodeConfig('GitHub', '#githubScope', url, 'repo', {
         return ((settings.repo === null) ? 'None' : settings.user + " / " + settings.repo);
     },
     dataGetSettings: function(data) {
-        return data.result
+        return data.result;
     }
 });
