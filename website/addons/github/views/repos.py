@@ -20,7 +20,7 @@ from ..api import GitHub
 def github_create_repo(auth, node_addon, **kwargs):
 
     user = auth.user
-    repo_name = request.json.get('repo_name')
+    repo_name = request.json.get('folder_name')
 
     if not repo_name:
         raise HTTPError(http.BAD_REQUEST)

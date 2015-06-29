@@ -120,7 +120,7 @@ flatAddonViewModel.prototype.fetchFolderList = function() {
 		ret.resolve(self.folderList());
 	} else {
 		$.ajax({
-			url: self.urls().repo_list,
+			url: self.urls().folder_list,
 			type: 'GET',
 			datatype: 'json'
 		}).done(function(response) {
@@ -134,7 +134,7 @@ flatAddonViewModel.prototype.fetchFolderList = function() {
 				'<a href="mailto:support@osf.io">support@osf.io</a>.';
 			self.changeMessage(message, 'text-warning');
 			Raven.captureMessage('Could not GET ' + self.addonName + ' ' + self.folderType + ' list', {
-				url: self.urls().repo_list, //needs to be looked at
+				url: self.urls().folder_list, //needs to be looked at
 				textStatus: status,
 				error: error
 			});
@@ -287,14 +287,14 @@ flatAddonViewModel.prototype.createFolder = function(folderName) {
     folderName = folderName.toLowerCase();
     return $osf.postJSON(
         self.urls().create_folder, {
-            repo_name: folderName
+            folder_name: folderName
         }
     ).done(function(response) {
         self.creating(false);
         var folders = self.options.formatFolders(response);
         self.folderList(folders);
         self.loadedFolderList(true);
-        self.selectedFolder(folderName); //Github syntax: self.selectedRepo((self.ownerName() + " / " + repoName));
+        self.selectedFolder(folderName);
         self.showSelect(true);
     	var newName = self.options.formatFolderName(folderName);
         var msg = 'Successfully created ' + self.folderType + ' "' + newName +

@@ -34,7 +34,7 @@ class GitHubSerializer(OAuthAddonSerializer):
             'create_folder': node.api_url_for('github_create_repo'),
             'importAuth': node.api_url_for('github_add_user_auth'),
             'deauthorize': node.api_url_for('github_remove_user_auth'),
-            'repo_list': node.api_url_for('github_repo_list'),
+            'folder_list': node.api_url_for('github_repo_list'),
             'config': node.api_url_for('github_set_config'),
             'settings': web_url_for('user_addons'),
             'accounts': node.api_url_for('github_get_user_accounts'),
