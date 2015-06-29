@@ -260,14 +260,14 @@ ViewModel.prototype.openCreateBucket = function() {
                                 '<label class="col-md-4 control-label" for="bucketLocation">Bucket Location</label> ' +
                                 '<div class="col-md-4"> ' +
                                     '<select id="bucketLocation" name="bucketLocation" class="form-control"> ' +
-                                        '<option value="DEFAULT" selected>US Standard</option> ' +
+                                        '<option value="" selected>US Standard</option> ' +
                                         '<option value="EU">Europe Standard</option> ' +
-                                        '<option value="USWest">California</option> ' +
-                                        '<option value="USWest2">Oregon</option> ' +
-                                        '<option value="APNortheast">Tokyo</option> ' +
-                                        '<option value="APSoutheast">Singapore</option> ' +
-                                        '<option value="APSoutheast2">Sydney, Australia</option> ' +
-                                        '<option value="CNNorth1">Beijing, China</option> ' +
+                                        '<option value="us-west-1">California</option> ' +
+                                        '<option value="us-west-2">Oregon</option> ' +
+                                        '<option value="ap-northeast-1">Tokyo</option> ' +
+                                        '<option value="ap-southeast-1">Singapore</option> ' +
+                                        '<option value="ap-southeast-2">Sydney, Australia</option> ' +
+                                        '<option value="cn-north-1">Beijing, China</option> ' +
                                     '</select>' +
                                 '</div>' +
                             '</div>' +

@@ -362,9 +362,9 @@ class TestCreateBucket(OsfTestCase):
         assert_false(valid_bucket_location('CostaRica'))
 
     def test_locations(self):
-        assert_true(valid_bucket_location('DEFAULT'))
-        assert_true(valid_bucket_location('APSoutheast2'))
-        assert_true(valid_bucket_location('USWest'))
+        assert_true(valid_bucket_location(''))
+        assert_true(valid_bucket_location('EU'))
+        assert_true(valid_bucket_location('us-west-1'))
 
     @mock.patch('website.addons.s3.views.crud.utils.create_bucket')
     @mock.patch('website.addons.s3.views.crud.utils.get_bucket_names')
@@ -380,7 +380,7 @@ class TestCreateBucket(OsfTestCase):
             url,
             {
                 'bucket_name': 'doesntevenmatter',
-                'bucket_location': 'DEFAULT',
+                'bucket_location': '',
             },
             auth=self.user.auth
         )

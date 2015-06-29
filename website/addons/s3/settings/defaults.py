@@ -5,15 +5,14 @@ MAX_RENDER_SIZE = (1024 ** 2) * 3
 ALLOWED_ORIGIN = '*'
 
 VALID_BUCKET_LOCATIONS = [
-    'DEFAULT',
+    '',
     'EU',
-    'USWest',
-    'USWest2',
-    'SAEast',
-    'APNortheast',
-    'APSoutheast',
-    'APSoutheast2',
-    'CNNorth1'
+    'us-west-1',
+    'us-west-2',
+    'ap-northeast-1',
+    'ap-southeast-1',
+    'ap-southeast-2',
+    'cn-north-1'
 ]
 
 OSF_USER = 'osf-user{0}'
