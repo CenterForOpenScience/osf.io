@@ -41,7 +41,7 @@ def validate_bucket_name(name):
 
 
 def create_bucket(user_settings, bucket_name, location='DEFAULT'):
-    return connect_s3(user_settings=user_settings).create_bucket(bucket_name, location)
+    return connect_s3(user_settings=user_settings).create_bucket(bucket_name, location=location)
 
 
 def bucket_exists(access_key, secret_key, bucket_name):
