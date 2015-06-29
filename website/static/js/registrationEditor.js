@@ -171,5 +171,88 @@ RegistrationEditor.prototype.save = function() {
         console.log(response);
     });
 };
+RegistrationEditor.prototype.check = function() {
+    var self = this;
+    var question = self.editor.schema.nav;
+    $('#' + question).attr('class', 'fa fa-check');
+};
+RegistrationEditor.prototype.uncheck = function() {
+    var self = this;
+    var question = self.editor.schema.nav;
+    $('#' + question).removeClass('fa fa-check');
+};
+RegistrationEditor.prototype.previous = function() {
+    var self = this;
+    var currentPageSchema = undefined;
+    var currentQuestionID = undefined;
+    var previousQuestionID = undefined;
+    var previousQuestionSchema = undefined;
+
+    var page;
+    for (page in self.schemas._latestValue[0].schema.pages) {
+        if (self.schemas._latestValue[0].schema.pages[page].title === self.editor.schema.title) {
+            currentPageSchema = self.schemas._latestValue[0].schema.pages[page];
+        } 
+    } 
+
+    currentQuestionID = self.editor.schema.id;
+
+    if (parseInt(currentQuestionID) === 1) {
+        previousQuestionID = currentQuestionID;
+    } 
+    else if (currentPageSchema.questions[0].id === currentQuestionID) {
+        var index = self.schemas._latestValue[0].schema.pages.indexOf(currentPageSchema);
+        currentPageSchema = self.schemas._latestValue[0].schema.pages[parseInt(index) - 1];
+        previousQuestionID = parseInt(currentQuestionID) - 1;
+    }
+    else {
+        previousQuestionID = parseInt(currentQuestionID) - 1;
+    }
+    var question;
+    for (question in currentPageSchema.questions) {      
+        if (parseInt(currentPageSchema.questions[question].id) === parseInt(previousQuestionID)) {
+            previousQuestionSchema = currentPageSchema.questions[question];
+        }
+    }
+
+    self.updateEditor(currentPageSchema, previousQuestionSchema);
+};
+RegistrationEditor.prototype.next = function() {
+    var self = this;
+    var currentPageSchema = undefined;
+    var currentQuestionID = undefined;
+    var previousQuestionID = undefined;
+    var previousQuestionSchema = undefined;
+    var lastQuestionPage = undefined;
+
+    var page;
+    for (page in self.schemas._latestValue[0].schema.pages) {
+        if (self.schemas._latestValue[0].schema.pages[page].title === self.editor.schema.title) {
+            currentPageSchema = self.schemas._latestValue[0].schema.pages[page];
+        } 
+    } 
+
+    currentQuestionID = self.editor.schema.id;
+    lastQuestionPage = currentPageSchema.questions.length - 1;
+    if (parseInt(currentQuestionID) === 22) {
+        previousQuestionID = currentQuestionID;
+    } 
+    else if (currentPageSchema.questions[lastQuestionPage].id === currentQuestionID) {
+        var index = self.schemas._latestValue[0].schema.pages.indexOf(currentPageSchema);
+        currentPageSchema = self.schemas._latestValue[0].schema.pages[parseInt(index) + 1];
+        previousQuestionID = parseInt(currentQuestionID) + 1;
+    }
+    else {
+        previousQuestionID = parseInt(currentQuestionID) + 1;
+    }
+    var question;
+    for (question in currentPageSchema.questions) {      
+        if (parseInt(currentPageSchema.questions[question].id) === parseInt(previousQuestionID)) {
+            previousQuestionSchema = currentPageSchema.questions[question];
+        }
+    }
+
+    self.updateEditor(currentPageSchema, previousQuestionSchema);
+};
 
 module.exports = RegistrationEditor;
