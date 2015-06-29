@@ -201,13 +201,14 @@ ViewModel.prototype.createCredentials = function() {
     });
 };
 
-ViewModel.prototype.createBucket = function(bucketName) {
+ViewModel.prototype.createBucket = function(bucketName, bucketLocation) {
     var self = this;
     self.creating(true);
     bucketName = bucketName.toLowerCase();
     return $osf.postJSON(
         self.urls().create_bucket, {
-            bucket_name: bucketName
+            bucket_name: bucketName,
+            bucket_location: bucketLocation
         }
     ).done(function(response) {
         self.creating(false);
@@ -247,23 +248,39 @@ ViewModel.prototype.openCreateBucket = function() {
         title: 'Create a new bucket',
         message:
                 '<div class="row"> ' +
-                '<div class="col-md-12"> ' +
-                '<form class="form-horizontal"> ' +
-                '<div class="form-group"> ' +
-                '<label class="col-md-4 control-label" for="bucketName">Bucket Name</label> ' +
-                '<div class="col-md-4"> ' +
-                '<input id="bucketName" name="bucketName" type="text" placeholder="Enter bucket\'s name" class="form-control"> ' +
-                '</div>' +
-                '</div>' +
-                '</form>' +
-                '</div> </div>',
+                    '<div class="col-md-12"> ' +
+                        '<form class="form-horizontal"> ' +
+                            '<div class="form-group"> ' +
+                                '<label class="col-md-4 control-label" for="bucketName">Bucket Name</label> ' +
+                                '<div class="col-md-4"> ' +
+                                    '<input id="bucketName" name="bucketName" type="text" placeholder="Enter bucket\'s name" class="form-control" autofocus> ' +
+                                '</div>' +
+                            '</div>' +
+                            '<div class="form-group"> ' +
+                                '<label class="col-md-4 control-label" for="bucketLocation">Bucket Location</label> ' +
+                                '<div class="col-md-4"> ' +
+                                    '<select id="bucketLocation" name="bucketLocation" class="form-control"> ' +
+                                        '<option value="DEFAULT" selected>US Standard</option> ' +
+                                        '<option value="EU">Europe Standard</option> ' +
+                                        '<option value="USWest">California</option> ' +
+                                        '<option value="USWest2">Oregon</option> ' +
+                                        '<option value="APNortheast">Tokyo</option> ' +
+                                        '<option value="APSoutheast">Singapore</option> ' +
+                                        '<option value="APSoutheast2">Sydney, Australia</option> ' +
+                                        '<option value="CNNorth1">Beijing, China</option> ' +
+                                    '</select>' +
+                                '</div>' +
+                            '</div>' +
+                        '</form>' +
+                    '</div>' +
+                '</div>',
         buttons: {
             confirm: {
                 label: 'Save',
                 className: 'btn-info',
                 callback: function () {
                     var bucketName = $('#bucketName').val();
-                    //var bucketLocation = $('#bucketLocation').val();
+                    var bucketLocation = $('#bucketLocation').val();
 
                     if (!bucketName) {
                         return;
@@ -278,29 +295,12 @@ ViewModel.prototype.openCreateBucket = function() {
                             }
                         });
                     } else {
-                        self.createBucket(bucketName);
+                        self.createBucket(bucketName, bucketLocation);
                     }
                 }
             }
         }
     });
-    //bootbox.prompt('Name your new bucket', function(bucketName) {
-    //    if (!bucketName) {
-    //        return;
-    //    } else if (isValidBucket.exec(bucketName) == null) {
-    //        bootbox.confirm({
-    //            title: 'Invalid bucket name',
-    //            message: 'Sorry, that\'s not a valid bucket name. Try another name?',
-    //            callback: function(result) {
-    //                if (result) {
-    //                    self.openCreateBucket();
-    //                }
-    //            }
-    //        });
-    //    } else {
-    //        self.createBucket(bucketName);
-    //    }
-    //});
 };
 
 ViewModel.prototype.fetchBucketList = function() {
