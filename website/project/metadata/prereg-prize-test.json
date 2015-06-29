@@ -4,7 +4,7 @@
     "type": "object",
     "pages": [{
         "id": "page1",
-        "title": "Basic Info",
+        "title": "Basic Information",
         "type": "object",
         "questions": [
             {
