@@ -1218,6 +1218,3 @@ class TestWikiMenu(OsfTestCase):
             }
         ]
         assert_equal(data, expected)
-
-
-

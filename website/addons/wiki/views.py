@@ -446,9 +446,7 @@ def project_wiki_validate_name(wname, **kwargs):
 
 @must_be_valid_project
 @must_be_contributor_or_public
-def project_wiki_grid_data(auth, wname, **kwargs):
-    node = kwargs['node'] or kwargs['project']
-
+def project_wiki_grid_data(auth, node, **kwargs):
     ret = [
         {
             'title': 'Project Wiki Pages',

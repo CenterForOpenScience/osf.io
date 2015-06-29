@@ -1,10 +1,6 @@
 'use strict';
-var Fangorn = require('js/fangorn');
-var $ = require('jquery');
-var bootbox = require('bootbox');
 var m = require('mithril');
 var Treebeard = require('treebeard');
-var $osf = require('js/osfHelpers');
 require('../css/fangorn.css');
 
 function resolveIcon(item) {
@@ -16,7 +12,7 @@ function resolveIcon(item) {
     }
 }
 
-function WikiMenu(data) {
+function WikiMenu(data, wikiID, canEdit) {
 
     //  Treebeard version
     var tbOptions = {
@@ -45,12 +41,6 @@ function WikiMenu(data) {
         resolveRows : function (item){
             var tb = this;
             var columns = [];
-
-            tb.wiki = {
-                id: window.contextVars.wiki.wikiID,
-                canEdit: window.contextVars.wiki.canEdit
-            };
-
             if(item.data.type === 'heading') {
                 columns.push(
                     {
@@ -61,7 +51,7 @@ function WikiMenu(data) {
                     }
                 );
             } else {
-                if(item.data.page.id === tb.wiki.id) {
+                if(item.data.page.id === wikiID) {
                     item.css = 'fangorn-selected';
                     tb.multiselected([item]);
                 }
@@ -72,7 +62,7 @@ function WikiMenu(data) {
                             if(item.data.page.name === 'home') {
                                 return m('a', {href: item.data.page.url}, 'Home');
                             }
-                            if(item.data.page.wiki_content === '' && !tb.wiki.canEdit) {
+                            if(item.data.page.wiki_content === '' && !canEdit) {
                                 return [
                                     m('h', item.data.page.name),
                                     m('span',
@@ -92,7 +82,7 @@ function WikiMenu(data) {
         allowMove : false,       // Turn moving on or off.
         hoverClass : 'fangorn-hover',
         resolveRefreshIcon : function() {
-          return m('i.fa.fa-refresh.fa-spin');
+            return m('i.fa.fa-refresh.fa-spin');
         }
     };
     var grid = new Treebeard(tbOptions);
