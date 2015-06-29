@@ -48,6 +48,7 @@ var AddPointerViewModel = oop.extend(Paginator, {
     fetchResults: function() {
         var self = this;
         self.errorMsg('');
+        $('#searchWarningMsg').removeClass('alert alert-danger').html('');
         if (self.query()) {
             osfHelpers.postJSON(
                 '/api/v1/search/node/', {
@@ -65,8 +66,8 @@ var AddPointerViewModel = oop.extend(Paginator, {
                 self.numberOfPages(result.pages);
                 self.addNewPaginators();
             }).fail(function(xhr) {
-                self.elm.modal('hide');
-                osfHelpers.handleJSONError(xhr);
+                $('#searchWarningMsg').addClass('alert alert-danger')
+                                      .html((xhr.responseJSON && xhr.responseJSON.message_long));
             });
         } else {
             self.results([]);
@@ -121,6 +122,8 @@ var AddPointerViewModel = oop.extend(Paginator, {
         var self = this;
         self.submitEnabled(false);
         var nodeIds = osfHelpers.mapByProperty(self.selection(), 'id');
+        $('#submitWarningMsg').removeClass('alert alert-danger m-sm').html('');
+
         osfHelpers.postJSON(
             nodeApiUrl + 'pointer/', {
                 nodeIds: nodeIds
@@ -129,14 +132,16 @@ var AddPointerViewModel = oop.extend(Paginator, {
             window.location.reload();
         }).fail(function(data) {
             self.submitEnabled(true);
-            self.elm.modal('hide');
-            osfHelpers.handleJSONError(data);
+            $('#submitWarningMsg').addClass('alert alert-danger m-sm')
+                                  .html((data.responseJSON && data.responseJSON.message_long));
         });
     },
     clear: function() {
         this.query('');
         this.results([]);
         this.selection([]);
+        $('#submitWarningMsg').removeClass('alert alert-danger m-sm').html('');
+        $('#searchWarningMsg').removeClass('alert alert-danger').html('');
     },
     authorText: function(node) {
         var rv = node.firstAuthor;
