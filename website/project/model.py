@@ -635,6 +635,11 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
 
     creator = fields.ForeignField('user', backref='created')
     contributors = fields.ForeignField('user', list=True, backref='contributed')
+    # Time of last sent notification email to newly added contributors
+    # {<User._id>:
+    #   {'last_sent': time.time()}
+    # }
+    contributor_record = fields.DictionaryField(default={})
     users_watching_node = fields.ForeignField('user', list=True, backref='watched')
 
     logs = fields.ForeignField('nodelog', list=True, backref='logged')
@@ -2321,7 +2326,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
             if save:
                 self.save()
 
-            project_signals.contributor_added.send(self, contributor=contributor, auth=auth)
+            project_signals.contributor_added.send(self, contributor=contributor)
             return True
 
         #Permissions must be overridden if changed when contributor is added to parent he/she is already on a child of.

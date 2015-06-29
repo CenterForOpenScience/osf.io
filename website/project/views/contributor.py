@@ -506,13 +506,28 @@ def send_claim_email(email, user, node, notify=True, throttle=24 * 3600):
 
 
 @contributor_added.connect
-def notify_contributor(node, contributor, auth):
+def notify_contributor(node, contributor, throttle=24 * 3600):
+    contributor_record = node.contributor_record.get(contributor._id, {})
+    if contributor_record:
+        timestamp = contributor_record.get('last_sent', None)
+        if timestamp:
+            if not throttle_period_expired(timestamp, throttle):
+                raise HTTPError(400, data=dict(
+                    message_long='User can only be added to a project once every {} hours'.format(throttle/3600)
+                ))
+    else:
+        node.contributor_record[contributor._id] = {}
+
     mails.send_mail(
         contributor.username,
         mails.CONTRIBUTOR_ADDED,
         user=contributor,
         node=node
     )
+
+    node.contributor_record[contributor._id]['last_sent'] = get_timestamp()
+    node.save()
+
 
 def verify_claim_token(user, token, pid):
     """View helper that checks that a claim token for a given user and node ID
