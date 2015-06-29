@@ -252,6 +252,7 @@ class TestDataverseViewsHgrid(DataverseAddonTestCase):
         doi = self.node_settings.dataset_doi
         external_account = create_external_account()
         self.user.external_accounts.append(external_account)
+        self.user.save()
         self.node_settings.set_auth(external_account, self.user)
         self.node_settings.dataverse_alias = alias
         self.node_settings.dataset_doi = doi
@@ -286,6 +287,7 @@ class TestDataverseViewsHgrid(DataverseAddonTestCase):
         doi = self.node_settings.dataset_doi
         external_account = create_external_account()
         self.user.external_accounts.append(external_account)
+        self.user.save()
         self.node_settings.set_auth(external_account, self.user)
         self.node_settings.dataverse_alias = alias
         self.node_settings.dataset_doi = doi

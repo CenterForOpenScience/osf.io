@@ -25,6 +25,9 @@ share_es = Elasticsearch(
     request_timeout=settings.ELASTIC_TIMEOUT
 )
 
+# This is temporary until we update the backend
+FRONTEND_VERSION = 1
+
 
 @requires_search
 def search(query, raw=False, index='share'):
@@ -52,11 +55,15 @@ def clean_count_query(query):
 @requires_search
 def count(query, index='share'):
     query = clean_count_query(query)
-    count = share_es.count(index=index, body=query)
+
+    if settings.USE_SHARE:
+        count = share_es.count(index=index, body=query)['count']
+    else:
+        count = 0
 
     return {
         'results': [],
-        'count': count['count']
+        'count': count
     }
 
 
@@ -80,6 +87,9 @@ def providers():
 @requires_search
 def stats(query=None):
     query = query or {"query": {"match_all": {}}}
+
+    index = settings.SHARE_ELASTIC_INDEX_TEMPLATE.format(FRONTEND_VERSION)
+
     three_months_ago = timegm((datetime.now() + relativedelta(months=-3)).timetuple()) * 1000
     query['aggs'] = {
         "sources": {
@@ -175,8 +185,10 @@ def stats(query=None):
         }
     }
 
-    results = share_es.search(index='share_v1', body=query)
-    date_results = share_es.search(index='share_v1', body=date_histogram_query)
+    results = share_es.search(index=index,
+                              body=query)
+    date_results = share_es.search(index=index,
+                                   body=date_histogram_query)
     results['aggregations']['date_chunks'] = date_results['aggregations']['date_chunks']
 
     chart_results = data_for_charts(results)
