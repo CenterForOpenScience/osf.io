@@ -429,7 +429,9 @@ def search_contributor(query, page=0, size=10, exclude=None, current_user=None):
         normalized_items.append(normalized_item)
     items = normalized_items
 
-    query = ''
+    # Prevents exclusion of contributors with names that are similar to query
+    for item in items:
+        exclude = [contrib for contrib in exclude if item not in contrib.fullname]
 
     query = "  AND ".join('{}*~'.format(re.escape(item)) for item in items) + \
             "".join(' NOT id:"{}"'.format(excluded._id) for excluded in exclude)

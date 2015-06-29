@@ -63,7 +63,7 @@
                                         <td style="padding-right: 10px;">
                                             <a
                                                     class="btn btn-default contrib-button btn-mini"
-                                                    data-bind="click:$root.add, tooltip: {title: 'Add contributor'}"
+                                                    data-bind="click:$root.add, tooltip: {title: $root.addButtonTips(contributor)}, css:{disabled:$root.alreadyAdded(contributor)}"
                                                 >+</a>
                                         </td>
                                         <td>
