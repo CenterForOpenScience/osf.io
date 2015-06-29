@@ -353,7 +353,7 @@ def update_user(user, index=None):
         'names': names,
         'job': user.jobs[0]['institution'] if user.jobs else '',
         'job_title': user.jobs[0]['title'] if user.jobs else '',
-        'all_jobs': [job['institution'] for job in user.jobs],
+        'all_jobs': [job['institution'] for job in user.jobs[1:]],
         'school': user.schools[0]['institution'] if user.schools else '',
         'all_schools': [school['institution'] for school in user.schools],
         'category': 'user',
