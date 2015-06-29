@@ -284,7 +284,7 @@ class TestGithubViews(OsfTestCase):
         assert_equals(ret.json['repo_names'], [repo.name for repo in fake_repos])
         assert_equals(ret.json['user_names'], [repo.owner.login for repo in fake_repos])
 
-    @mock.patch('website.addons.github.api.GitHub.create_repo')
+    @mock.patch('website.addons.github.api.GitHub.create_folder')
     @mock.patch('website.addons.github.api.GitHub.repos')
     @mock.patch('website.addons.github.api.GitHub.my_org_repos')
     def test_create_repo(self, mock_my_org_repos, mock_repos, mock_repo):

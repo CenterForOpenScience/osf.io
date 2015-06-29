@@ -76,7 +76,7 @@ class GitHub(object):
             if team.permission in permissions
         )
 
-    def create_repo(self, repo, **kwargs):
+    def create_folder(self, repo, **kwargs):
         return self.gh3.create_repo(repo, **kwargs)
 
     def branches(self, user, repo, branch=None):

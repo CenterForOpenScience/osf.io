@@ -286,7 +286,7 @@ flatAddonViewModel.prototype.createFolder = function(folderName) {
     self.creating(true);
     folderName = folderName.toLowerCase();
     return $osf.postJSON(
-        self.urls().create_repo, {
+        self.urls().create_folder, {
             repo_name: folderName
         }
     ).done(function(response) {

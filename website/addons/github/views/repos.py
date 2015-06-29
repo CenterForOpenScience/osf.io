@@ -28,7 +28,7 @@ def github_create_repo(auth, node_addon, **kwargs):
     connection = GitHub.from_settings(node_addon.api.account)
 
     try:
-        connection.create_repo(repo_name, auto_init=True)
+        connection.create_folder(repo_name, auto_init=True)
     except GitHubError:
         # TODO: Check status code
         raise HTTPError(http.BAD_REQUEST)
