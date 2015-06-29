@@ -12,6 +12,7 @@ from modularodm import Q
 from framework.auth.decorators import collect_auth
 from framework.auth.decorators import must_be_logged_in
 
+from website import settings
 from website.models import Node
 from website.models import User
 from website.search import util
@@ -205,7 +206,10 @@ def search_share():
     count = request.args.get('count') is not None
     raw = request.args.get('raw') is not None
     version = request.args.get('v')
-    index = 'share_v{}'.format(version) if version else 'share'
+    if version:
+        index = settings.SHARE_ELASTIC_INDEX_TEMPLATE.format(version)
+    else:
+        index = settings.SHARE_ELASTIC_INDEX
 
     if request.method == 'POST':
         query = request.get_json()
