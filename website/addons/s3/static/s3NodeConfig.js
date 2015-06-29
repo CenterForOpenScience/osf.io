@@ -298,6 +298,10 @@ ViewModel.prototype.openCreateBucket = function() {
                         self.createBucket(bucketName, bucketLocation);
                     }
                 }
+            },
+            cancel: {
+                label: 'Cancel',
+                className: 'btn-default'
             }
         }
     });
