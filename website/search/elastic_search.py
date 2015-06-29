@@ -213,10 +213,11 @@ def load_parent(parent_id):
     return parent_info
 
 
-def get_doctype_from_node(node):
-    component_categories = [k for k in Node.CATEGORY_MAP.keys() if not k == 'project']
+COMPONENT_CATEGORIES = set([k for k in Node.CATEGORY_MAP.keys() if not k == 'project'])
 
-    if node.category in component_categories:
+def get_doctype_from_node(node):
+
+    if node.category in COMPONENT_CATEGORIES:
         return 'component'
     elif node.is_registration:
         return 'registration'
