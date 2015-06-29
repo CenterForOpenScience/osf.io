@@ -3,6 +3,8 @@ import httplib
 import logging
 import datetime
 
+from flask import request
+
 from framework.exceptions import HTTPError
 from website.addons.dataverse.client import (
     publish_dataset, get_dataset, get_dataverse, connect_from_settings_or_401,
@@ -19,24 +21,13 @@ logger = logging.getLogger(__name__)
 @must_not_be_registration
 @must_have_addon('dataverse', 'node')
 def dataverse_publish_dataset(node_addon, auth, **kwargs):
-    return dataverse_publish(node_addon, auth)
-
-
-@must_have_permission('write')
-@must_not_be_registration
-@must_have_addon('dataverse', 'node')
-def dataverse_publish_both(node_addon, auth, **kwargs):
-    return dataverse_publish(node_addon, auth, True)
-
-
-def dataverse_publish(node_addon, auth, publish_both=False):
     node = node_addon.owner
-    user_settings = node_addon.user_settings
+    publish_both = request.json.get('publish_both', False)
 
     now = datetime.datetime.utcnow()
 
     try:
-        connection = connect_from_settings_or_401(user_settings)
+        connection = connect_from_settings_or_401(node_addon)
     except HTTPError as error:
         if error.code == httplib.UNAUTHORIZED:
             connection = None
