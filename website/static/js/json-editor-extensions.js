@@ -12,6 +12,34 @@ var curentUser = window.contextVars.currentUser || {
     name: 'Anonymous'
 };
 
+// theme fix
+JSONEditor.defaults.themes.bootstrap3_OSF = JSONEditor.defaults.themes.bootstrap3.extend({
+    getFormControl: function(label, input, description) {
+        var group = document.createElement("div");
+
+        if(label && input.type === "checkbox") {
+            group.className += " checkbox";
+            label.appendChild(input);
+            label.style.fontSize = "14px";
+            group.style.marginTop = "0";
+            group.appendChild(label);
+            input.style.position = "relative";
+            input.style.cssFloat = "left";
+        } 
+        else {
+            group.className += " form-group";
+            if(label) {
+                label.className += " control-label";
+                group.appendChild(label);
+            }
+            if(description) group.appendChild(description);
+            group.appendChild(input);
+        }
+
+        return group;
+  }
+});
+
 //######### Commentable ###########
 
 var Comments = function($element) {
