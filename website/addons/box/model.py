@@ -29,6 +29,7 @@ class Box(ExternalProvider):
     client_secret = settings.BOX_SECRET
 
     auth_url_base = settings.BOX_OAUTH_AUTH_ENDPOINT
+    callback_url = settings.BOX_OAUTH_TOKEN_ENDPOINT
     auto_refresh_url = settings.BOX_OAUTH_TOKEN_ENDPOINT
     default_scopes = ['root_readwrite']
 
