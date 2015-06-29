@@ -522,7 +522,8 @@ def notify_contributor(node, contributor, throttle=24 * 3600):
         contributor.username,
         mails.CONTRIBUTOR_ADDED,
         user=contributor,
-        node=node
+        node=node,
+        sharing_page=node.web_url_for('node_contributors', _absolute=True)
     )
 
     node.contributor_record[contributor._id]['last_sent'] = get_timestamp()

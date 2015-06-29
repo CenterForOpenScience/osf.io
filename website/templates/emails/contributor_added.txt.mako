@@ -2,7 +2,7 @@ Hello ${user.fullname},
 
 You have been added as a contributor to the project "${node.title}" on the Open Science Framework: ${node.absolute_url}
 
-If you are erroneously being associated with "${node.title}" then you may visit the project sharing page and remove yourself as a contributor.
+If you are erroneously being associated with "${node.title}" then you may visit ${sharing_page} and remove yourself as a contributor.
 
 
 Sincerely,
