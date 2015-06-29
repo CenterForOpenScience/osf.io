@@ -320,6 +320,15 @@ def migrate_search(delete=False, index=settings.ELASTIC_INDEX):
     from website.search_migration.migrate import migrate
     migrate(delete, index=index)
 
+@task
+def rebuild_search():
+    """Delete and recreate the index for elasticsearch"""
+    run("curl -s -XDELETE {uri}/{index}*".format(uri=settings.ELASTIC_URI,
+                                             index=settings.ELASTIC_INDEX))
+    run("curl -s -XPUT {uri}/{index}".format(uri=settings.ELASTIC_URI,
+                                          index=settings.ELASTIC_INDEX))
+    migrate_search()
+
 
 @task
 def mailserver(port=1025):
@@ -597,13 +606,12 @@ def analytics():
     import matplotlib
     matplotlib.use('Agg')
     init_app()
-    from scripts import metrics
     from scripts.analytics import (
         logs, addons, comments, folders, links, watch, email_invites,
         permissions, profile, benchmarks
     )
     modules = (
-        metrics, logs, addons, comments, folders, links, watch, email_invites,
+        logs, addons, comments, folders, links, watch, email_invites,
         permissions, profile, benchmarks
     )
     for module in modules:

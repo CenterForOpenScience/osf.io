@@ -132,7 +132,7 @@ var LogsViewModel = oop.extend(Paginator, {
             type: 'get',
             url: self.url,
             data:{
-                page: self.currentPage()
+                page: self.pageToGet()
             },
             cache: false
         }).done(function(response) {

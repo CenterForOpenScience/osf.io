@@ -189,3 +189,10 @@ def before_request():
             return
         except:
             pass
+
+
+def after_request(response):
+    if session.data.get('auth_user_id'):
+        session.save()
+
+    return response
