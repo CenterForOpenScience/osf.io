@@ -2552,6 +2552,16 @@ div.profile-fullname{
     max-height: 500px;
     height: inherit;
 }
+#file-navigation span {
+    vertical-align: middle;
+}
+#file-navigation .tb-expand-icon-holder div {
+    vertical-align: middle;
+}
+#file-navigation .tb-td {
+    padding-top: 2px;
+    padding-bottom: 4px;
+}
 .file-page #tb-tbody {
     border: none;
 }
