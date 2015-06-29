@@ -224,17 +224,13 @@ class ContributorSerializer(UserSerializer):
         return obj.absolute_url
 
     def create(self, validated_data):
-        request = self.context['request']
-        user = request.user
+        user = self.context['request'].user
         auth = Auth(user)
         node = self.context['view'].get_node()
-        try:
-            contributor = User.load(validated_data['_id'])
-        except NotFound:
-            raise NotFound('User with id {} not found.'.format(validated_data=['_id']))
+        contributor = User.load(validated_data['_id'])
         if not contributor:
-            raise NotFound('User not found.')
-        if contributor in node.contributors:
+            raise NotFound('User with id {} cannot be found.'.format(validated_data['_id']))
+        elif contributor in node.contributors:
             raise ValidationError('User {} already is a contributor'.format(contributor.username))
         permissions = ['read', 'write']
         node.add_contributor(contributor=contributor, auth=auth, permissions=permissions, save=True)
@@ -257,7 +253,7 @@ class ContributorDetailSerializer(ContributorSerializer):
             node.set_visible(user, bibliographic, save=True)
         admin_field = (validated_data['admin'] == "True")
         if admin_field == node.has_permission(user, 'admin'):
-            return self.context['view'].get_object()
+            pass
         elif admin_field:
             node.add_permission(user, 'admin', save=True)
         elif len(node.admin_contributor_ids) > 1:

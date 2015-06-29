@@ -910,7 +910,7 @@ class TestEditNodeContributor(ApiTestCase):
         assert_true(self.project.has_permission(self.user, 'admin'))
         assert_true(self.project.get_visible(self.user))
 
-    def test_unique_admin_changing_self_admin_status(self):
+    def test_admin_remove_all_admin_privileges(self):
         url_admin = '/{}nodes/{}/contributors/{}/'.format(API_BASE, self.project._id, self.admin._id)
         res = self.app.put(url_admin, {'admin': False}, auth=self.admin_auth, expect_errors=True)
         assert_equal(res.status_code, 403)
@@ -993,7 +993,7 @@ class TestNodeContributorFiltering(ApiTestCase):
         self.project.add_contributor(non_bibliographic_contrib, visible=False)
         self.project.save()
 
-        base_url = base_url = '/{}nodes/{}/contributors/'.format(API_BASE, self.project._id)
+        base_url = '/{}nodes/{}/contributors/'.format(API_BASE, self.project._id)
 
         # no filter
         res = self.app.get(base_url, auth=self.basic_auth)
