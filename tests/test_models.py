@@ -29,6 +29,7 @@ from framework.bcrypt import check_password_hash
 from website import filters, language, settings, mailchimp_utils
 from website.exceptions import NodeStateError
 from website.profile.utils import serialize_user
+from website.project.signals import contributor_added
 from website.project.model import (
     ApiKey, Comment, Node, NodeLog, Pointer, ensure_schemas, has_anonymous_link,
     get_pointer_parent, Embargo,
@@ -1951,6 +1952,14 @@ class TestProject(OsfTestCase):
         self.project.save()
         assert_in(user2, self.project.contributors)
         assert_equal(self.project.logs[-1].action, 'contributor_added')
+
+    def test_add_contributor_sends_contributor_added_signal(self):
+        user = UserFactory()
+        with capture_signals() as mock_signals:
+            self.project.add_contributor(contributor=user, auth=self.consolidate_auth)
+            self.project.save()
+            assert_in(user, self.project.contributors)
+            assert_equal(mock_signals.signals_sent(), set([contributor_added]))
 
     def test_add_unregistered_contributor(self):
         self.project.add_unregistered_contributor(
