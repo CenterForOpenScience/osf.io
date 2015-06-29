@@ -592,6 +592,77 @@ class TestProjectSearchResults(SearchTestCase):
         assert_equal(len(results), 3)
 
 
+def job(**kwargs):
+    keys = [
+        'title',
+        'institution',
+        'department',
+        'location',
+        'startMonth',
+        'startYear',
+        'endMonth',
+        'endYear',
+        'ongoing',
+    ]
+    job = {}
+    for key in keys:
+        if key[-5:] == 'Month':
+            job[key] = kwargs.get(key, 'December')
+        elif key[-4:] == 'Year':
+            job[key] = kwargs.get(key, '2000')
+        else:
+            job[key] = kwargs.get(key, 'test_{}'.format(key))
+    return job
+
+
+class TestUserSearchResults(SearchTestCase):
+    def setUp(self):
+        super(TestUserSearchResults, self).setUp()
+        self.user_one = UserFactory(jobs=[job(institution='Oxford'),
+                                          job(institution='Star Fleet')],
+                                    )
+
+        self.user_two = UserFactory(jobs=[job(institution='Grapes la Picard'),
+                                          job(institution='Star Fleet')],
+                                    )
+
+        self.user_three = UserFactory(jobs=[job(institution='Star Fleet'),
+                                            job(institution='Federation Medical')],
+                                      )
+
+        self.user_four = UserFactory(jobs = [job(institution='Star Fleet'),
+                                             job(instutition='Star Fleet')],
+                                     )
+
+        self.user_four = UserFactory(jobs=[job(institution='Traveler intern'),
+                                           job(institution='Star Fleet Academy'),
+                                           job(institution='Star Fleet Ensign'),
+                                           job(institution='Star Fleet Intern')],
+                                     )
+
+        for i in range(25):
+            UserFactory(jobs=[job()])
+
+        self.current_starfleet = [
+            self.user_three,
+            self.user_four,
+        ]
+
+        self.were_starfleet = [
+            self.user_one,
+            self.user_two,
+            self.user_three,
+            self.user_four,
+        ]
+
+    def test_current_job_first(self):
+        results = query('Star Fleet')['results']
+        current_ids = [u._id for u in self.current_starfleet]
+        result_ids = [r['id'] for r in results]
+        for id_ in result_ids[:2]:
+            assert_in(id_, current_ids)
+
+
 class TestSearchExceptions(OsfTestCase):
     # Verify that the correct exception is thrown when the connection is lost
 
