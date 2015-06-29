@@ -15,6 +15,7 @@ var curentUser = window.contextVars.currentUser || {
 //######### Commentable ###########
 
 var Comments = function($element) {
+	
     var self = this;
 
     self.comments = [];
@@ -27,7 +28,7 @@ var Comments = function($element) {
     self.$commentsList = $commentsList;    
     $commentsDiv.append($commentsList);
     $commentsDiv.append($('<button>', {
-        'class': 'btn btn-primary btn-xs',
+        'class': 'btn btn-success',
         html: 'Add comment',
         click: self.add.bind(self)
     }));
@@ -50,10 +51,17 @@ Comments.prototype.Comment = function(value) {
     self.$input = $('<input>', {
         'class': 'form-control',
         type: 'text',
-        placeholder: 'Comments or questions...',
+        placeholder: 'Leave a comment for a reviewer',
         html: value
     });
-    
+	self.$label = $('<span>', {
+		html: function() {
+			if(window.contextVars.currentUser.id === self.user.pk) {
+				return '<strong>You</strong> said...';
+			}
+			return '<strong>' + self.user.fullname + '</strong> said...';
+		}
+	});
     self.$element = $('<li>', {
 		'class': 'list-group-item'
 	});
@@ -61,30 +69,30 @@ Comments.prototype.Comment = function(value) {
         'class': 'row'
     });
     $row.append($('<div>', {
-        'class': 'col-md-6'
-    }).append($('<span>', {
-		html: '<strong>' + curentUser.fullname + '</strong> said...'
-	})).append(self.$input));
+        'class': 'col-md-12'
+    }).append(self.$input));
 	
-    var $control = $('<div>', {
-        'class': 'col-md-3'
-    });
-	self.$check = $('<a>', {
-        'class': 'btn fa fa-check',
+    var $control = $('<span>');
+	self.$saveComment = $('<a>', {
+        'class': 'btn fa fa-save',
         click: function() {
 			if(window.contextVars.currentUser.id === self.user.pk) {
+				if (self.$input.value !== '') {
+					self.$element.last().before(self.$label);
+				}
+				
 				self.editable = false;
 				self.lastModified = Date();
 				$(this).addClass('disabled');
 				self.$input.addClass('disabled');
-				self.$edit.removeClass('disabled');
+				self.$editComment.removeClass('disabled');
 			}
 			else {
-				console.log('Only the author may edit this comment');
+				throw 'Only the author may edit this comment';
 			}
         }
     });
-	self.$edit = $('<a>', {
+	self.$editComment = $('<a>', {
 		'class': 'btn fa fa-pencil',
 		click: function() {
 			if(window.contextVars.currentUser.id === self.user.pk) {
@@ -92,18 +100,34 @@ Comments.prototype.Comment = function(value) {
 				self.lastModified = Date();
 				$(this).addClass('disabled');
 				self.$input.removeClass('disabled');
-				self.$check.removeClass('disabled');
+				self.$saveComment.removeClass('disabled');
 			} else {
 				self.editable = false;
 				$(this).addClass('disabled');
 				self.$input.addClass('disabled');
-				self.$check.addClass('disabled');
-				alert('Only the author may edit this comment');
+				self.$saveComment.addClass('disabled');
+				throw 'Only the author may edit this comment';
 			}
 		}
 	});
-	$control.append(self.$check);
-	$control.append(self.$edit);
+	self.$deleteComment = $('<a>', {
+		'class': 'btn fa fa-times',
+		click: function() {
+			if(window.contextVars.currentUser.id === self.user.pk) {
+				self.editable = true;
+				self.$input[0].value = '';
+				self.$element.remove();
+				self.$label.remove();
+				
+			} else {
+				throw 'Only the author may delete this comment';
+			}
+			
+		}
+	});
+	$control.append(self.$saveComment);
+	$control.append(self.$editComment);
+	$control.append(self.$deleteComment);
     $row.append($control);
 
     self.$element.append($row);
@@ -121,8 +145,10 @@ JSONEditor.defaults.editors.commentableString = JSONEditor.defaults.editors.stri
         var self = this;
         this._super();
 
-        var $element = $('<div>');
-        $(this.input).after($element);
+        var $element = $('<div>', {
+			'class': 'col-md-12 m-b-md'
+		});
+        $(this.input.parentNode).after($element);
         this.comments = new Comments($element);        
     },
     getValue: function() {
@@ -134,6 +160,11 @@ JSONEditor.defaults.editors.commentableString = JSONEditor.defaults.editors.stri
 					lastModified: comment.lastModified
                 };
             });
+
+			for (var i = 0; i < comments.length; i++) {
+				if ( comments[i].value === '' ) comments.splice(i, 1);
+			}
+			
             var val = {
                 value: this._super(),
                 comments: comments
