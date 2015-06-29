@@ -14,7 +14,6 @@ from framework import forms, status
 from framework.flask import redirect  # VOL-aware redirect
 from framework.auth import exceptions
 from framework.exceptions import HTTPError
-from framework.sessions import set_previous_url
 from framework.auth import (logout, get_user, DuplicateEmailError)
 from framework.auth.decorators import collect_auth, must_be_logged_in
 from framework.auth.forms import (
@@ -222,7 +221,7 @@ def send_confirm_email(user, email):
         merge_target = None
 
     mails.send_mail(
-        email,
+        merge_target.username if merge_target else email,
         mails.CONFIRM_MERGE if merge_target else mails.CONFIRM_EMAIL,
         'plain',
         user=user,
@@ -284,7 +283,6 @@ def auth_register_post():
         status.push_status_message(language.REGISTRATION_UNAVAILABLE)
         return redirect('/')
     form = RegistrationForm(request.form, prefix='register')
-    set_previous_url()
 
     # Process form
     if form.validate():
