@@ -1159,15 +1159,19 @@ def make_url_map(app):
             '/project/<pid>/node/<nid>/edit/',
         ], 'post', project_views.node.edit_node, json_renderer),
 
-        # Tags
+        # Add / remove tags
         Rule([
-            '/project/<pid>/addtag/<tag>/',
-            '/project/<pid>/node/<nid>/addtag/<tag>/',
-        ], 'post', project_views.tag.project_addtag, json_renderer),
+            '/project/<pid>/tags/',
+            '/project/<pid>/node/<nid>/tags/',
+            '/project/<pid>/tags/<tag>/',
+            '/project/<pid>/node/<nid>/tags/<tag>/',
+        ], 'post', project_views.tag.project_add_tag, json_renderer),
         Rule([
-            '/project/<pid>/removetag/<tag>/',
-            '/project/<pid>/node/<nid>/removetag/<tag>/',
-        ], 'post', project_views.tag.project_removetag, json_renderer),
+            '/project/<pid>/tags/',
+            '/project/<pid>/node/<nid>/tags/',
+            '/project/<pid>/tags/<tag>/',
+            '/project/<pid>/node/<nid>/tags/<tag>/',
+        ], 'delete', project_views.tag.project_remove_tag, json_renderer),
 
         # Add / remove contributors
         Rule([
