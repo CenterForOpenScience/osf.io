@@ -142,7 +142,6 @@ class TestUsers(ApiTestCase):
 
     def test_filter_using_complex_field(self):
         url = "/{}users/?filter[employment_institutions.title]=Martin".format(API_BASE)
-        self.user_one.save()
         res = self.app.get(url)
         user_json = res.json['data']
         ids = [each['id'] for each in user_json]
