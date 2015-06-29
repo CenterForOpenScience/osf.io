@@ -1,5 +1,6 @@
 var Fangorn = require('js/fangorn');
 var m = require('mithril');
+var $osf = require('js/osfHelpers');
 
 function FileViewTreebeard(data) {
 
@@ -23,6 +24,7 @@ function FileViewTreebeard(data) {
         title: undefined,
         hideColumnTitles: true,
         multiselect : false,
+        toolbarComponent : null,
         placement : 'fileview',
         allowMove : false,
         filterTemplate: function () {
@@ -33,6 +35,7 @@ function FileViewTreebeard(data) {
                 value: tb.filterText()
             });
         },
+        xhrconfig: $osf.setXHRAuthorization,
         onload: function(tree) {
             var tb = this;
             Fangorn.DefaultOptions.onload.call(tb, tree);
@@ -45,13 +48,8 @@ function FileViewTreebeard(data) {
             var path = '';
             tb.fangornFolderIndex = 0;
             tb.fangornFolderArray = [''];
-            if (window.contextVars.file.path && window.contextVars.file.provider !== 'figshare') {
-                if (window.contextVars.file.provider === 'osfstorage' || window.contextVars.file.provider === 'box') {
-                    path = decodeURIComponent(window.contextVars.file.extra.fullPath);
-                } else {
-                    path = decodeURIComponent(window.contextVars.file.path);
-                }
-                tb.fangornFolderArray = path.split('/');
+            if (window.contextVars.file.path) {
+                tb.fangornFolderArray = window.contextVars.file.materializedPath.split('/');
                 if (tb.fangornFolderArray.length > 1) {
                     tb.fangornFolderArray.splice(0, 1);
                 }
@@ -67,7 +65,9 @@ function FileViewTreebeard(data) {
         ontogglefolder : function (tree) {
             Fangorn.DefaultOptions.ontogglefolder.call(this, tree);
             var containerHeight = this.select('#tb-tbody').height();
-            this.options.showTotal = Math.floor(containerHeight / this.options.rowHeight) + 1;
+            if (!this.options.naturalScrollLimit){
+                this.options.showTotal = Math.floor(containerHeight / this.options.rowHeight) + 1;
+            }
             this.redraw();
         },
         lazyLoadOnLoad: function(tree, event) {
@@ -77,23 +77,23 @@ function FileViewTreebeard(data) {
             if(!event) {
                 Fangorn.Utils.scrollToFile.call(tb, tb.currentFileID);
             }
+            if (tree.depth > 1) {
+                Fangorn.Utils.orderFolder.call(this, tree);
+            }
         },
         resolveRows: function (item) {
-            var selectClass = '';
             var tb = this;
             var node = item.parent().parent();
             if (item.data.kind === 'file' && tb.currentFileID === item.id) {
-                selectClass = 'fangorn-selected';
+                item.css = 'fangorn-selected';
+                tb.multiselected([item]);
             }
-
-            item.icons = []; // In this view there won't be toolbar items.
 
             var defaultColumns = [
                 {
                     data: 'name',
                     folderIcons: true,
                     filter: true,
-                    css: selectClass,
                     custom: Fangorn.DefaultColumns._fangornTitleColumn
                 }
             ];

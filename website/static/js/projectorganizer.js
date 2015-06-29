@@ -11,7 +11,6 @@ require('css/typeahead.css');
 require('css/fangorn.css');
 require('css/projectorganizer.css');
 
-var Handlebars = require('handlebars');
 var $ = require('jquery');
 var m = require('mithril');
 var Fangorn = require('js/fangorn');
@@ -106,15 +105,13 @@ projectOrganizer.myProjects = new Bloodhound({
 function _poTitleColumn(item) {
     var tb = this;
     var css = item.data.isSmartFolder ? 'project-smart-folder smart-folder' : '';
-    var isLink = item.data.urls.fetch ? '.fg-file-links' : '';
-    return m('span' + isLink, { 'class' : css, ondblclick : function (event) {
-        if (COMMAND_KEYS.indexOf(tb.pressedKey) !== -1) {
-            window.open(item.data.urls.fetch, '_blank');
-        } else {
-            window.open(item.data.urls.fetch, '_self');
-        }
+    if(item.data.archiving) {
+        return  m('span', {'class': 'registration-archiving'}, item.data.name + ' [Archiving]');
+    } else if(item.data.urls.fetch){
+        return m('a.fg-file-links', { 'class' : css, href : item.data.urls.fetch}, item.data.name);
+    } else {
+        return  m('span', { 'class' : css}, item.data.name);
     }
-        }, item.data.name);
 }
 
 /**
@@ -255,6 +252,9 @@ function _poResolveRows(item) {
     if (item.data.permissions) {
         draggable = item.data.permissions.movable || item.data.permissions.copyable;
     }
+    if(this.isMultiselected(item.id)){
+        item.css = 'fangorn-selected';
+    }
     if (draggable) {
         css = 'po-draggable';
     }
@@ -314,66 +314,6 @@ function _poToggleCheck(item) {
     }
     item.notify.update('Not allowed: Private folder', 'warning', 1, undefined);
     return false;
-}
-
-/**
- * Returns custom icons for OSF depending on the type of item
- * @param {Object} item A Treebeard _item object. Node information is inside item.data
- * @this Treebeard.controller
- * @returns {Object}  Returns a mithril template with the m() function.
- * @private
- */
-function _poResolveIcon(item) {
-    var icons = iconmap.projectIcons;
-    var componentIcons = iconmap.componentIcons;
-    var projectIcons = iconmap.projectIcons;
-    var viewLink = item.data.urls.fetch;
-    function returnView(type, category) {
-        var iconType = icons[type];
-        if (type === 'component' || type === 'registeredComponent') {
-            iconType = componentIcons[category];
-        } else if (type === 'project' || type === 'registeredProject') {
-            iconType = projectIcons[category];
-        }
-        if (type === 'registeredComponent' || type === 'registeredProject') {
-            iconType += ' po-icon-registered';
-        } else {
-            iconType += ' po-icon';
-        }
-        var template = m('span', { 'class' : iconType});
-        if (viewLink) {
-            return m('a', { href : viewLink}, template);
-        }
-        return template;
-    }
-    if (item.data.isSmartFolder) {
-        return returnView('smartCollection');
-    }
-    if (item.data.isFolder) {
-        return returnView('collection');
-    }
-    if (item.data.isPointer && !item.parent().data.isFolder) {
-        return returnView('link');
-    }
-    if (item.data.isProject) {
-        if (item.data.isRegistration) {
-            return returnView('registeredProject', item.data.category);
-        } else {
-            return returnView('project', item.data.category);
-        }
-    }
-
-    if (item.data.isComponent) {
-        if (item.data.isRegistration) {
-            return returnView('registeredComponent', item.data.category);
-        }
-        return returnView('component', item.data.category);
-    }
-
-    if (item.data.isPointer) {
-        return returnView('link');
-    }
-    return returnView('collection');
 }
 
 /**
@@ -459,18 +399,15 @@ function _poLoadOpenChildren() {
  * @private
  */
 function _poMultiselect(event, tree) {
-    var tb = this,
-        selectedRows = filterRowsNotInParent.call(tb, tb.multiselected()),
-        someItemsAreFolders,
-        pointerIds;
+    var tb = this;
+    filterRowsNotInParent.call(tb, tb.multiselected());
     var scrollToItem = false;
-    _dismissToolbar.call(tb);
-    if (!tb.filterOn) {
+    if (tb.toolbarMode() === 'search') {
+        _dismissToolbar.call(tb);
         scrollToItem = true;
         // recursively open parents of the selected item but do not lazyload;
         Fangorn.Utils.openParentFolders.call(tb, tree);
     }
-    m.redraw();
     if (tb.multiselected().length === 1) {
         // temporarily remove classes until mithril redraws raws with another hover.
         tb.inputValue(tb.multiselected()[0].data.name);
@@ -481,6 +418,7 @@ function _poMultiselect(event, tree) {
     } else if (tb.multiselected().length > 1) {
         tb.select('#tb-tbody').addClass('unselectable');
     }
+    m.redraw();
 }
 
 /**
@@ -507,13 +445,12 @@ function deleteMultiplePointersFromFolder(pointerIds, folderToDeleteFrom) {
         });
         deleteAction.done(function () {
             tb.updateFolder(null, folderToDeleteFrom);
+            tb.clearMultiselect();
         });
         deleteAction.fail(function (jqxhr, textStatus, errorThrown) {
             $osf.growl('Error:', textStatus + '. ' + errorThrown);
         });
     }
-    _dismissToolbar.call(tb);
-
 }
 
 /**
@@ -861,7 +798,7 @@ function _addFolderEvent() {
     var tb = this;
     var val = $.trim($('#addNewFolder').val());
     if (tb.multiselected().length !== 1 || val.length < 1) {
-        tb.toolbarMode('bar');
+        tb.toolbarMode(Fangorn.Components.toolbarModes.DEFAULT);
         return;
     }
     var item = tb.multiselected()[0];
@@ -880,14 +817,14 @@ function _addFolderEvent() {
         }).fail($osf.handleJSONError);
 
     });
-    tb.toolbarMode('bar');
+    tb.toolbarMode(Fangorn.Components.toolbarModes.DEFAULT);
 }
 
 function _renameEvent() {
     var tb = this;
     var val = $.trim($('#renameInput').val());
     if (tb.multiselected().length !== 1 || val.length < 1) {
-        tb.toolbarMode('bar');
+        tb.toolbarMode(Fangorn.Components.toolbarModes.DEFAULT);
         return;
     }
     var item = tb.multiselected()[0];
@@ -903,7 +840,7 @@ function _renameEvent() {
         tb.updateFolder(null, tb.find(1));
         // Also update every
     }).fail($osf.handleJSONError);
-    tb.toolbarMode('bar');
+    tb.toolbarMode(Fangorn.Components.toolbarModes.DEFAULT);
 }
 
 function applyTypeahead() {
@@ -1031,7 +968,7 @@ function addProjectEvent() {
         });
     });
     triggerClickOnItem.call(tb, item);
-    tb.toolbarMode('bar');
+    tb.toolbarMode(Fangorn.Components.toolbarModes.DEFAULT);
     tb.select('.tb-header-row .twitter-typeahead').remove();
 }
 
@@ -1089,7 +1026,6 @@ var POItemButtons = {
                         onclick: function (event) {
                             _gotoEvent.call(tb, event, item);
                         },
-                        tooltip: 'Opens the project in same window. Use Command + Click to open in new window.',
                         icon: 'fa fa-external-link',
                         className: 'text-primary'
                     }, 'Open')
@@ -1100,17 +1036,15 @@ var POItemButtons = {
             buttons.push(
                 m.component(Fangorn.Components.button, {
                     onclick: function (event) {
-                        tb.toolbarMode('addFolder');
+                        tb.toolbarMode(Fangorn.Components.toolbarModes.ADDFOLDER);
                     },
-                    tooltip: 'Adds a Collection to visually organize your projects or components.',
                     icon: 'fa fa-cubes',
                     className: 'text-primary'
                 }, 'Add Collection'),
                 m.component(Fangorn.Components.button, {
                     onclick: function (event) {
-                        tb.toolbarMode('addProject');
+                        tb.toolbarMode(Fangorn.Components.toolbarModes.ADDPROJECT);
                     },
-                    tooltip: 'Adds an existing project or component to the Collection.',
                     icon: 'fa fa-cube',
                     className: 'text-primary'
                 }, 'Add Existing Project')
@@ -1139,7 +1073,6 @@ var POItemButtons = {
                             });
                         });
                     },
-                    tooltip: 'Removes the selected row from the Collection. This action does NOT delete the project.',
                     icon: 'fa fa-minus',
                     className: 'text-primary'
                 }, 'Remove from Collection')
@@ -1149,9 +1082,8 @@ var POItemButtons = {
             buttons.push(
                 m.component(Fangorn.Components.button, {
                     onclick: function (event) {
-                        tb.toolbarMode('rename');
+                        tb.toolbarMode(Fangorn.Components.toolbarModes.RENAME);
                     },
-                    tooltip: 'Change the name of the Collection or project.',
                     icon: 'fa fa-font',
                     className: 'text-primary'
                 }, 'Rename')
@@ -1163,7 +1095,6 @@ var POItemButtons = {
                     onclick: function (event) {
                         _deleteFolder.call(tb, item, theItem);
                     },
-                    tooltip: 'Deletes the collection.',
                     icon: 'fa fa-trash',
                     className: 'text-danger'
                 }, 'Delete')
@@ -1175,12 +1106,13 @@ var POItemButtons = {
 
 var _dismissToolbar = function () {
     var tb = this;
+    if (tb.toolbarMode() === Fangorn.Components.toolbarModes.SEARCH){
+        tb.resetFilter();
+    }
     tb.toolbarMode(Fangorn.Components.toolbarModes.DEFAULT);
-    tb.resetFilter();
     tb.filterText('');
     tb.select('.tb-header-row .twitter-typeahead').remove();
     m.redraw();
-
 };
 
 
@@ -1201,7 +1133,6 @@ var POToolbar = {
         var rowButtons = [];
         var dismissIcon = m.component(Fangorn.Components.button, {
             onclick: ctrl.dismissToolbar,
-            tooltip: 'Close Search',
             icon : 'fa fa-times'
         }, '');
         templates[Fangorn.Components.toolbarModes.SEARCH] =  [
@@ -1213,7 +1144,6 @@ var POToolbar = {
                     [
                         m.component(Fangorn.Components.button, {
                             onclick: ctrl.dismissToolbar,
-                            tooltip: 'Close Search',
                             icon : 'fa fa-times'
                         }, 'Close')
                     ]
@@ -1231,7 +1161,6 @@ var POToolbar = {
                     id : 'addNewFolder',
                     helpTextId : 'addFolderHelp',
                     placeholder : 'New collection name',
-                    tooltip: 'Name your new collection'
                 }, ctrl.helpText())
                 ),
             m('.col-xs-3.tb-buttons-col',
@@ -1241,7 +1170,6 @@ var POToolbar = {
                             onclick: function () {
                                 _addFolderEvent.call(ctrl.tb);
                             },
-                            tooltip: 'Add folder',
                             icon : 'fa fa-plus',
                             className : 'text-info'
                         }, 'Add'),
@@ -1273,7 +1201,6 @@ var POToolbar = {
                             onclick: function () {
                                 _renameEvent.call(ctrl.tb);
                             },
-                            tooltip: 'Rename collection or project',
                             icon : 'fa fa-pencil',
                             className : 'text-info'
                         }, 'Rename'),
@@ -1288,6 +1215,11 @@ var POToolbar = {
                     config : function () {
                         applyTypeahead.call(ctrl.tb);
                     },
+                    onkeypress : function (event) {
+                        if (ctrl.tb.pressedKey === ENTER_KEY) {
+                            addProjectEvent.call(ctrl.tb);
+                        }
+                    },
                     type : 'text',
                     placeholder : 'Name of the project to find'
                 }),
@@ -1301,7 +1233,6 @@ var POToolbar = {
                             onclick: function () {
                                 addProjectEvent.call(ctrl.tb);
                             },
-                            tooltip: 'Add project',
                             icon : 'fa fa-plus',
                             className : 'text-info'
                         }, 'Add'),
@@ -1316,7 +1247,6 @@ var POToolbar = {
                     ctrl.mode(Fangorn.Components.toolbarModes.SEARCH);
                     ctrl.tb.clearMultiselect();
                 },
-                tooltip: 'Filter visible items',
                 icon: 'fa fa-search',
                 className : 'text-primary'
             }, 'Search'),
@@ -1324,12 +1254,11 @@ var POToolbar = {
                 onclick: function (event) {
                     showLegend.call(ctrl.tb);
                 },
-                tooltip: 'Learn more about how to use the project organizer.',
                 icon: 'fa fa-info',
                 className : 'text-info'
             }, '')
         );
-        if(ctrl.items().length > 0){
+        if(ctrl.items().length > 1){
             var someItemsAreFolders = false;
             var pointerIds = [];
             var theParentNode = ctrl.items()[0].parent();
@@ -1350,7 +1279,6 @@ var POToolbar = {
                         onclick: function (event) {
                             deleteMultiplePointersFromFolder.call(ctrl.tb, pointerIds, theParentNode);
                         },
-                        tooltip: 'Remove all from folder',
                         icon: 'fa fa-minus',
                         className : 'text-primary'
                     }, 'Remove All from Collection')
@@ -1406,7 +1334,7 @@ function _deleteFolder(item) {
  * For documentation visit: https://github.com/caneruguz/treebeard/wiki
  */
 var tbOptions = {
-    rowHeight : 27,         // user can override or get from .tb-row height
+    rowHeight : 35,         // user can override or get from .tb-row height
     showTotal : 15,         // Actually this is calculated with div height, not needed. NEEDS CHECKING
     paginate : false,       // Whether the applet starts with pagination or not.
     paginateToggle : false, // Show the buttons that allow users to switch between scroll and paginate.
@@ -1464,7 +1392,7 @@ var tbOptions = {
         _cleanupMithril();
     },
     onmultiselect : _poMultiselect,
-    resolveIcon : _poResolveIcon,
+    resolveIcon : Fangorn.Utils.resolveIconView,
     resolveToggle : _poResolveToggle,
     resolveLazyloadUrl : _poResolveLazyLoad,
     lazyLoadOnLoad : expandStateLoad,

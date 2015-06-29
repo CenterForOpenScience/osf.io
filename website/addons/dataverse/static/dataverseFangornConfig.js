@@ -109,13 +109,28 @@ var _dataverseItemButtons = {
                 });
             }
         }
+        if (item.data.addonFullname) {
+            var options = [
+                m('option', {selected: item.data.version === 'latest-published', value: 'latest-published'}, 'Published'),
+                m('option', {selected: item.data.version === 'latest', value: 'latest'}, 'Draft')
+            ];
+            buttons.push(
+                m.component(Fangorn.Components.dropdown, {
+                    'label': 'Version: ',
+                    onchange: function (e) {
+                        changeState(tb, item, e.target.value);
+                    },
+                    icon: 'fa fa-external-link',
+                    className: 'text-info'
+                }, options)
+            );
+        }
         if (item.kind === 'folder' && item.data.addonFullname && item.data.version === 'latest' && item.data.permissions.edit) {
             buttons.push(
                 m.component(Fangorn.Components.button, {
                     onclick: function (event) {
                         _uploadEvent.call(tb, event, item);
                     },
-                    tooltip: 'Upload files from your computer.',
                     icon: 'fa fa-upload',
                     className: 'text-success'
                 }, 'Upload'),
@@ -123,7 +138,6 @@ var _dataverseItemButtons = {
                     onclick: function (event) {
                         dataversePublish.call(tb, event, item);
                     },
-                    tooltip: 'Publish files.',
                     icon: 'fa fa-globe',
                     className: 'text-success'
                 }, 'Publish')
@@ -134,7 +148,6 @@ var _dataverseItemButtons = {
                     onclick: function (event) {
                         _uploadEvent.call(tb, event, item);
                     },
-                    tooltip: 'Upload files from your computer.',
                     icon: 'fa fa-upload',
                     className: 'text-success'
                 }, 'Upload')
@@ -145,32 +158,52 @@ var _dataverseItemButtons = {
                     onclick: function (event) {
                         _downloadEvent.call(tb, event, item);
                     },
-                    tooltip: 'Download file to your computer.',
                     icon: 'fa fa-download',
                     className: 'text-info'
                 }, 'Download')
             );
-            if (item.parent().data.state === 'draft' && item.data.permissions.edit) {
+            if (item.parent().data.version === 'latest' && item.data.permissions.edit) {
                 buttons.push(
                     m.component(Fangorn.Components.button, {
                         onclick: function (event) {
                             Fangorn.ButtonEvents._removeEvent.call(tb, event, [item]);
                         },
-                        tooltip: 'Delete file.',
                         icon: 'fa fa-trash',
                         className: 'text-danger'
                     }, 'Delete')
                 );
+            }
+            if (item.data.permissions && item.data.permissions.view) {
+                buttons.push(
+                    m.component(Fangorn.Components.button, {
+                        onclick: function(event) {
+                            gotoFile(item);
+                        },
+                        icon: 'fa fa-external-link',
+                        className : 'text-info'
+                    }, 'View'));
+
             }
         }
         return m('span', buttons);
     }
 };
 
+function gotoFile (item) {
+    var redir = new URI(item.data.nodeUrl);
+    window.location = redir
+        .segment('files')
+        .segment(item.data.provider)
+        .segment(item.data.extra.fileId)
+        .query({version: item.data.extra.datasetVersion})
+        .toString();
+}
+
 function _fangornDataverseTitle(item, col) {
     var tb = this;
+    var version = item.data.version === 'latest-published' ? 'Published' : 'Draft';
     if (item.data.addonFullname) {
-        var contents = [m('dataverse-name', item.data.name + ' ')];
+        var contents = [m('dataverse-name', item.data.name + ' (' + version + ')')];
         if (item.data.hasPublishedFiles) {
             if (item.data.permissions.edit) {
                 // Default to version in url parameters for file view page
@@ -178,20 +211,6 @@ function _fangornDataverseTitle(item, col) {
                 if (urlParams.version && urlParams.version !== item.data.version) {
                     item.data.version = urlParams.version;
                 }
-                var options = [
-                    m('option', {selected: item.data.version === 'latest-published', value: 'latest-published'}, 'Published'),
-                    m('option', {selected: item.data.version === 'latest', value: 'latest'}, 'Draft')
-                ];
-                contents.push(
-                    m('span', [
-                        m('select', {
-                            class: 'dataverse-state-select',
-                            onchange: function (e) {
-                                changeState(tb, item, e.target.value);
-                            }
-                        }, options)
-                    ])
-                );
             } else {
                 contents.push(
                     m('span.text-muted', '[Published]')
@@ -206,14 +225,8 @@ function _fangornDataverseTitle(item, col) {
     } else {
         return m('span', [
             m('dataverse-name.fg-file-links', {
-                ondblclick: function () {
-                    var redir = new URI(item.data.nodeUrl);
-                    window.location = redir
-                        .segment('files')
-                        .segment(item.data.provider)
-                        .segment(item.data.extra.fileId)
-                        .query({version: item.data.extra.datasetVersion})
-                        .toString();
+                onclick: function () {
+                    gotoFile(item);
                 },
                 'data-toggle': 'tooltip',
                 title: 'View file',
@@ -228,7 +241,8 @@ function _fangornColumns(item) {
     var tb = this;
     var selectClass = '';
     if (item.data.kind === 'file' && tb.currentFileID === item.id) {
-        selectClass = 'fangorn-hover';
+        item.css = 'fangorn-selected';
+        tb.multiselected([item]);
     }
     var columns = [];
     columns.push({

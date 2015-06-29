@@ -1,15 +1,22 @@
 # -*- coding: utf-8 -*-
-
+from time import sleep
+import requests
 import urlparse
+import httplib as http
 
 import pymongo
 from modularodm import fields
 
 from framework.auth.core import _get_current_user
 from framework.auth.decorators import Auth
+from framework.exceptions import HTTPError
+
 from website.addons.base import (
     AddonOAuthNodeSettingsBase, AddonOAuthUserSettingsBase, GuidFile, exceptions,
 )
+from website.addons.base import StorageAddonBase
+from website.util import waterbutler_url_for
+
 from website.addons.dataverse.client import connect_from_settings_or_401
 from website.addons.dataverse import serializer
 from website.addons.dataverse.provider import DataverseProvider
@@ -50,7 +57,7 @@ class DataverseFile(GuidFile):
 
         # Check permissions
         user = _get_current_user()
-        if not self.node.can_edit(user=user):
+        if not user or not self.node.can_edit(user=user):
             try:
                 # Users without edit permission can only see published files
                 if not self._metadata_cache['extra']['hasPublishedVersion']:
@@ -70,8 +77,7 @@ class AddonDataverseUserSettings(AddonOAuthUserSettingsBase):
     encrypted_password = fields.StringField()
 
 
-class AddonDataverseNodeSettings(AddonOAuthNodeSettingsBase):
-
+class AddonDataverseNodeSettings(StorageAddonBase, AddonOAuthNodeSettingsBase):
     oauth_provider = DataverseProvider
     serializer = serializer.DataverseSerializer
 
@@ -91,6 +97,10 @@ class AddonDataverseNodeSettings(AddonOAuthNodeSettingsBase):
 
     # Legacy settings objects won't have IDs
     @property
+    def folder_name(self):
+        return self.dataset
+
+    @property
     def dataset_id(self):
         if self._dataset_id is None:
             connection = connect_from_settings_or_401(self.user_settings)
@@ -107,6 +117,39 @@ class AddonDataverseNodeSettings(AddonOAuthNodeSettingsBase):
     @property
     def complete(self):
         return bool(self.has_auth and self.dataset_doi is not None)
+
+    @property
+    def has_auth(self):
+        """Whether a dataverse account is associated with this node."""
+        return bool(self.user_settings and self.user_settings.has_auth)
+
+    def _get_fileobj_child_metadata(self, filenode, user, cookie=None, version=None):
+        kwargs = dict(
+            provider=self.config.short_name,
+            path=filenode.get('path', ''),
+            node=self.owner,
+            user=user,
+            view_only=True,
+        )
+        if cookie:
+            kwargs['cookie'] = cookie
+        if version:
+            kwargs['version'] = version
+        metadata_url = waterbutler_url_for(
+            'metadata',
+            **kwargs
+        )
+        res = requests.get(metadata_url)
+        if res.status_code != 200:
+            # The Dataverse API returns a 404 if the dataset has no published files
+            if res.status_code == http.NOT_FOUND and version == 'latest-published':
+                return []
+            raise HTTPError(res.status_code, data={
+                'error': res.json(),
+            })
+        # TODO: better throttling?
+        sleep(1.0 / 5.0)
+        return res.json().get('data', [])
 
     def find_or_create_file_guid(self, path):
         file_id = path.strip('/') if path else ''

@@ -30,17 +30,17 @@ var entry = {
     'project-dashboard': staticPath('js/pages/project-dashboard-page.js'),
     'project-base-page': staticPath('js/pages/project-base-page.js'),
     'wiki-edit-page': staticPath('js/pages/wiki-edit-page.js'),
+    'file-page': staticPath('js/pages/file-page.js'),
     'files-page': staticPath('js/pages/files-page.js'),
     'profile-settings-page': staticPath('js/pages/profile-settings-page.js'),
     'profile-account-settings-page': staticPath('js/pages/profile-account-settings-page.js'),
     'register_1-page': staticPath('js/pages/register_1-page.js'),
     'sharing-page': staticPath('js/pages/sharing-page.js'),
     'conference-page': staticPath('js/pages/conference-page.js'),
-    'view-file-page': staticPath('js/pages/view-file-page.js'),
     'view-file-tree-page': staticPath('js/pages/view-file-tree-page.js'),
-    'new-folder-page': staticPath('js/pages/new-folder-page.js'),
     'project-settings-page': staticPath('js/pages/project-settings-page.js'),
     'search-page': staticPath('js/pages/search-page.js'),
+    'registration-retraction-page': staticPath('js/pages/registration-retraction-page.js'),
     'share-search-page': staticPath('js/pages/share-search-page.js'),
     'profile-settings-addons-page': staticPath('js/pages/profile-settings-addons-page.js'),
     'twofactor-page': staticPath('js/pages/twofactor-page.js'),
@@ -48,6 +48,7 @@ var entry = {
     'login-page': staticPath('js/pages/login-page.js'),
     'notifications-config-page': staticPath('js/pages/notifications-config-page.js'),
     'share-embed-page': staticPath('js/pages/share-embed-page.js'),
+    'render-nodes': staticPath('js/pages/render-nodes.js'),
     // Commons chunk
     'vendor': [
         // Vendor libraries
@@ -89,7 +90,7 @@ addons.addons.forEach(function(addonName) {
 });
 
 var resolve = {
-    extensions: ['', '.es6.js', '.js'],
+    extensions: ['', '.es6.js', '.js', '.min.js'],
     root: root,
     // Look for required files in bower and npm directories
     modulesDirectories: ['./website/static/vendor/bower_components', 'node_modules'],
@@ -114,9 +115,13 @@ var resolve = {
         'pagedown-ace-editor': addonsPath('wiki/static/pagedown-ace/Markdown.Editor.js'),
         'wikiPage': addonsPath('wiki/static/wikiPage.js'),
         'highlight-css': nodePath('highlight.js/styles/default.css'),
+        'pikaday-css': nodePath('pikaday/css/pikaday.css'),
         // Also alias some internal libraries for easy access
         'addons': path.join(__dirname, 'website', 'addons'),
-        'tests': staticPath('js/tests')
+        'tests': staticPath('js/tests'),
+        // GASP Items not defined as main in its package.json
+        'TweenLite' : nodePath('gsap/src/minified/TweenLite.min.js'),
+        'EasePack' : nodePath('gsap/src/minified/easing/EasePack.min.js')
     }
 };
 
@@ -172,7 +177,9 @@ module.exports = {
             {test: /\.woff(2)?(\?v=[0-9]\.[0-9]\.[0-9])?$/, loader: 'url-loader?mimetype=application/font-woff'},
             {test: /\.svg/, loader: 'file-loader'},
             {test: /\.eot/, loader: 'file-loader'},
-            {test: /\.ttf/, loader: 'file-loader'}
+            {test: /\.ttf/, loader: 'file-loader'},
+            //Dirty hack because mime-type's json file is "special"
+            {test: /db.json/, loader: 'json-loader'},
         ]
     }
 };

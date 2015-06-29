@@ -10,7 +10,6 @@ require('css/onboarding.css');
 require('css/typeahead.css');
 
 var Dropzone = require('dropzone');
-var Handlebars = require('handlebars');
 var Raven = require('raven-js');
 var ko = require('knockout');
 var $ = require('jquery');
@@ -24,6 +23,8 @@ var $osf = require('js/osfHelpers');
 function noop() {}
 var MAX_RESULTS = 14;
 var DEFAULT_FETCH_URL = '/api/v1/dashboard/get_nodes/';
+var CREATE_URL = '/api/v1/project/new/';
+
 
 var substringMatcher = function(strs) {
     return function findMatches(q, cb) {
@@ -72,9 +73,11 @@ function initTypeahead(element, nodes, viewModel, params){
             return data.value.name;
         },
         templates: {
-            suggestion: Handlebars.compile('<p>{{value.name}}</p> ' +
-                                            '<p><small class="ob-suggestion-date text-muted">' +
-                                            'modified {{value.dateModified.local}}</small></p>')
+            suggestion: function(data) {
+                return '<p>' + data.value.name + '</p> ' +
+                        '<p><small class="ob-suggestion-date text-muted">' +
+                        'modified ' + data.value.dateModified.local + '</small></p>';
+            }
         },
         source: substringMatcher(myProjects)
     });
@@ -95,7 +98,7 @@ function initTypeahead(element, nodes, viewModel, params){
 function serializeNode(node) {
     var dateModified = new $osf.FormattableDate(node.date_modified);
     return {
-        name: node.title,
+        name: $osf.htmlDecode(node.title),
         id: node.id,
         dateModified: dateModified,
         urls: {
@@ -415,13 +418,17 @@ function OBUploaderViewModel(params) {
     self.enableUpload = ko.observable(true);
     self.filename = ko.observable('');
     self.iconSrc = ko.observable('');
+    self.newProjectName = ko.observable(null);
     self.uploadCount = ko.observable(1);
     self.disableComponents = ko.observable(false);
+    self.createAndUpload = ko.observable(true);
     // Flashed messages
     self.message = ko.observable('');
     self.messageClass = ko.observable('text-info');
     // The target node to upload to to
     self.target = ko.observable(null);
+    //Boolean to track if upload was successful
+    self.success = false;
     /* Functions */
     self.toggle = function() {
         self.isOpen(!self.isOpen());
@@ -455,6 +462,17 @@ function OBUploaderViewModel(params) {
         self.message('');
         self.messageClass('text-info');
     };
+
+    self.showCreateAndUpload = function() {
+        self.clearMessages();
+        self.createAndUpload(true);
+    };
+
+    self.hideCreateAndUpload = function(selected) {
+        self.clearMessages();
+        self.createAndUpload(false);
+    };
+
     self.clearDropzone = function() {
         if (self.dropzone.getUploadingFiles().length) {
             self.changeMessage('Upload canceled.', 'text-info');
@@ -488,10 +506,11 @@ function OBUploaderViewModel(params) {
         }
     };
 
-
     var dropzoneOpts = {
 
         sending: function(file, xhr) {
+            //Inject Bearer token
+            xhr = $osf.setXHRAuthorization(xhr);
             //Hack to remove webkitheaders
             var _send = xhr.send;
             xhr.send = function() {
@@ -517,7 +536,7 @@ function OBUploaderViewModel(params) {
         parallelUploads: 1,
         // Don't use dropzone's default preview
         previewsContainer: false,
-        // Cusom error messages
+        // Custom error messages
         dictFileTooBig: 'File is too big ({{filesize}} MB). Max filesize: {{maxFilesize}} MB.',
         // Set up listeners on initialization
         init: function() {
@@ -554,6 +573,7 @@ function OBUploaderViewModel(params) {
                 self.uploadCount(oldCount + 1);
 
                 if(self.uploadCount() > dropzone.files.length){ // when finished redirect to project/component page where uploaded.
+                    self.success = true;
                     self.changeMessage('Success!', 'text-success');
                     window.location = self.target().urls.files;
                 }
@@ -561,7 +581,7 @@ function OBUploaderViewModel(params) {
 
             // add file logic and dropzone to file display swap
             this.on('addedfile', function(file) {
-                if(dropzone.files.length>1){
+                if(dropzone.files.length > 1){
                     self.iconSrc('/static/img/upload_icons/multiple_blank.png');
                     self.filename(dropzone.files.length + ' files');
                 }else{
@@ -574,8 +594,48 @@ function OBUploaderViewModel(params) {
         }
     };
     self.dropzone = new Dropzone(self.selector, dropzoneOpts);
-}
 
+    //stop user from leaving if file is staged for upload
+    $(window).on('beforeunload', function() {
+        if(!self.enableUpload() && !self.success) {
+            return 'You have a pending upload. If you leave ' +
+                'the page now, your file will not be stored.';
+        }
+    });
+
+    self.submitCreateAndUpload = function() {
+        if (!self.dropzone.getQueuedFiles().length) {
+            self.changeMessage('Please select at least one file to upload.', 'text-danger');
+            return false;
+        }
+        if (self.newProjectName() === null || self.newProjectName().trim() === '') {
+            self.changeMessage('Please select a project.', 'text-danger');
+            return false;
+        }
+        if (self.newProjectName() && self.dropzone.getQueuedFiles().length !== 0) {
+            var request = $osf.postJSON(
+                CREATE_URL,
+                {
+                    title: self.newProjectName()
+                }
+            );
+            request.done(self.createSuccess);
+            request.fail(self.createFailure);
+        }
+    };
+
+    self.createSuccess = function(response) {
+        var node = serializeNode(response.newNode);
+        self.startUpload(node, self.selectedComponent, node.title, '');
+    };
+
+    self.createFailure = function(xhr, textStatus, error) {
+         Raven.captureMessage('Could not create a new project.', {
+            textStatus: textStatus,
+            error: error
+         });
+    };
+}
 ko.components.register('osf-ob-uploader', {
     viewModel: OBUploaderViewModel,
     template: {element: 'osf-ob-uploader'}

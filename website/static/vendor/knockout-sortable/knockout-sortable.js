@@ -26,7 +26,7 @@
         //1.8.24 included a fix for how events were triggered in nested sortables. indexOf checks will fail if version starts with that value (0 vs. -1)
         hasNestedSortableFix = version && version.indexOf("1.6.") && version.indexOf("1.7.") && (version.indexOf("1.8.") || version === "1.8.24");
 
-    //internal afterRender that adds meta-data to children
+    //internal afterRender that adds metadata to children
     var addMetaDataAfterRender = function(elements, data) {
         ko.utils.arrayForEach(elements, function(element) {
             if (element.nodeType === 1) {
@@ -54,7 +54,7 @@
             result[option] = options[option] || ko.bindingHandlers.sortable[option];
         });
 
-        //use an afterRender function to add meta-data
+        //use an afterRender function to add metadata
         if (dataName === "foreach") {
             if (result.afterRender) {
                 //wrap the existing function, if it was passed

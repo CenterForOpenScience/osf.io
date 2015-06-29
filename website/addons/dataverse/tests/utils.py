@@ -1,23 +1,13 @@
 import mock
 
-from webtest_plus import TestApp
 from dataverse import Connection, Dataverse, Dataset, DataverseFile
 
 from tests.factories import ExternalAccountFactory
-import website
 from website.addons.base.testing import AddonTestCase
-from website.oauth.models import ExternalAccount
-
-app = website.app.init_app(
-    routes=True, set_backends=False, settings_module='website.settings'
-)
 
 
 class DataverseAddonTestCase(AddonTestCase):
     ADDON_SHORT_NAME = 'dataverse'
-
-    def create_app(self):
-        return TestApp(app)
 
     def set_user_settings(self, settings):
         settings.api_token = 'snowman-frosty'

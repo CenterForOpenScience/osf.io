@@ -11,9 +11,10 @@ var Fangorn = require('js/fangorn');
 var Raven = require('raven-js');
 require('truncate');
 
+var $osf = require('js/osfHelpers');
 var LogFeed = require('js/logFeed');
 var pointers = require('js/pointers');
-var Comment = require('js/comment');
+var Comment = require('js/comment'); //jshint ignore:line
 var NodeControl = require('js/nodeControl');
 var CitationList = require('js/citationList');
 var CitationWidget = require('js/citationWidget');
@@ -24,12 +25,13 @@ var md = require('js/markdown').full;
 var ctx = window.contextVars;
 var nodeApiUrl = ctx.node.urls.api;
 
-// Initialize controller for "Add Links" modal
-new pointers.PointerManager('#addPointer', window.contextVars.node.title);
-
 // Listen for the nodeLoad event (prevents multiple requests for data)
 $('body').on('nodeLoad', function(event, data) {
-    new LogFeed('#logScope', nodeApiUrl + 'log/');
+    if (!data.node.is_retracted) {
+        // Initialize controller for "Add Links" modal
+        new pointers.PointerManager('#addPointer', window.contextVars.node.title);
+        new LogFeed('#logScope', nodeApiUrl + 'log/');
+    }
     // Initialize nodeControl
     new NodeControl.NodeControl('#projectScope', data);
 });
@@ -44,65 +46,67 @@ if ($comments.length) {
 }
 
 // Initialize CitationWidget if user isn't viewing through an anonymized VOL
-if (!ctx.node.anonymous) {
+if (!ctx.node.anonymous && !ctx.node.isRetracted) {
     new CitationList('#citationList');
     new CitationWidget('#citationStyleInput', '#citationText');
 }
 
 $(document).ready(function () {
-    // Treebeard Files view
-    $.ajax({
-        url:  nodeApiUrl + 'files/grid/'
-    }).done(function (data) {
-        var fangornOpts = {
-            divID: 'treeGrid',
-            filesData: data.data,
-            uploads : true,
-            showFilter : true,
-            placement: 'dashboard',
-            title : undefined,
-            filterFullWidth : true, // Make the filter span the entire row for this view
-            columnTitles : function () {
-                return [
-                    {
-                        title: 'Name',
-                        width : '90%',
-                        sort : true,
-                        sortType : 'text'
-                    }
-                ];
-            },
-            resolveRows : function (item) {
-                var defaultColumns = [
+
+    if (!ctx.node.isRetracted) {
+        // Treebeard Files view
+        $.ajax({
+            url:  nodeApiUrl + 'files/grid/'
+        }).done(function (data) {
+            var fangornOpts = {
+                divID: 'treeGrid',
+                filesData: data.data,
+                uploads : true,
+                showFilter : true,
+                placement: 'dashboard',
+                title : undefined,
+                filterFullWidth : true, // Make the filter span the entire row for this view
+                xhrconfig: $osf.setXHRAuthorization,
+                columnTitles : function () {
+                    return [
                         {
-                            data: 'name',
-                            folderIcons: true,
-                            filter: true,
-                            custom: Fangorn.DefaultColumns._fangornTitleColumn
-                        }];
-                if (item.parentID) {
-                    item.data.permissions = item.data.permissions || item.parent().data.permissions;
-                    if (item.data.kind === 'folder') {
-                        item.data.accept = item.data.accept || item.parent().data.accept;
-                    }
-                }
-                if (item.data.tmpID) {
-                    defaultColumns = [
-                        {
-                            data : 'name',  // Data field name
-                            folderIcons : true,
-                            filter : true,
-                            custom : function () { return m('span.text-muted', 'Uploading ' + item.data.name + '...'); }
+                            title: 'Name',
+                            width : '90%',
+                            sort : true,
+                            sortType : 'text'
                         }
                     ];
-                }
+                },
+                resolveRows : function (item) {
+                    var tb = this;
+                    item.css = '';
+                    if(tb.isMultiselected(item.id)){
+                        item.css = 'fangorn-selected';
+                    }
+                    var defaultColumns = [
+                                {
+                                data: 'name',
+                                folderIcons: true,
+                                filter: true,
+                                custom: Fangorn.DefaultColumns._fangornTitleColumn
+                            }];
+                    if (item.parentID) {
+                        item.data.permissions = item.data.permissions || item.parent().data.permissions;
+                        if (item.data.kind === 'folder') {
+                            item.data.accept = item.data.accept || item.parent().data.accept;
+                        }
+                    }
+                    if(item.data.uploadState && (item.data.uploadState() === 'pending' || item.data.uploadState() === 'uploading')){
+                        return Fangorn.Utils.uploadRowTemplate.call(tb, item);
+                    }
 
-                var configOption = Fangorn.Utils.resolveconfigOption.call(this, item, 'resolveRows', [item]);
-                return configOption || defaultColumns;
-            }
-        };
-        var filebrowser = new Fangorn(fangornOpts);
-    });
+                    var configOption = Fangorn.Utils.resolveconfigOption.call(this, item, 'resolveRows', [item]);
+                    return configOption || defaultColumns;
+                }
+            };
+            var filebrowser = new Fangorn(fangornOpts);
+        });
+    }
 
     // Tooltips
     $('[data-toggle="tooltip"]').tooltip({container: 'body'});

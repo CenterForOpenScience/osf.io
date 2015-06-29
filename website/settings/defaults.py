@@ -4,9 +4,11 @@ Base settings file, common to all environments.
 These settings can be overridden in local.py.
 """
 
+import datetime
 import os
 import json
 import hashlib
+from datetime import timedelta
 
 os_env = os.environ
 
@@ -27,6 +29,13 @@ ROOT = os.path.join(BASE_PATH, '..')
 EMAIL_TOKEN_EXPIRATION = 24
 CITATION_STYLES_PATH = os.path.join(BASE_PATH, 'static', 'vendor', 'bower_components', 'styles')
 
+# Hours before pending embargo/retraction automatically becomes active
+RETRACTION_PENDING_TIME = datetime.timedelta(days=2)
+EMBARGO_PENDING_TIME = datetime.timedelta(days=2)
+# Date range for embargo periods
+EMBARGO_END_DATE_MIN = datetime.timedelta(days=2)
+EMBARGO_END_DATE_MAX = datetime.timedelta(days=1460)  # Four years
+
 LOAD_BALANCER = False
 PROXY_ADDRS = []
 
@@ -42,7 +51,7 @@ CORE_TEMPLATES = os.path.join(BASE_PATH, 'templates/log_templates.mako')
 BUILT_TEMPLATES = os.path.join(BASE_PATH, 'templates/_log_templates.mako')
 
 DOMAIN = 'http://localhost:5000/'
-OFFLOAD_DOMAIN = 'http://localhost:5001/'
+API_DOMAIN = 'http://localhost:8000/'
 GNUPG_HOME = os.path.join(BASE_PATH, 'gpg')
 GNUPG_BINARY = 'gpg'
 
@@ -173,7 +182,6 @@ CELERY_IMPORTS = (
     'framework.tasks',
     'framework.tasks.signals',
     'framework.email.tasks',
-    'framework.render.tasks',
     'framework.analytics.tasks',
     'website.mailchimp_utils',
     'scripts.send_digest'
@@ -182,7 +190,9 @@ CELERY_IMPORTS = (
 # Add-ons
 # Load addons from addons.json
 with open(os.path.join(ROOT, 'addons.json')) as fp:
-    ADDONS_REQUESTED = json.load(fp)['addons']
+    addon_settings = json.load(fp)
+    ADDONS_REQUESTED = addon_settings['addons']
+    ADDONS_ARCHIVABLE = addon_settings['addons_archivable']
 
 ADDON_CATEGORIES = [
     'documentation',
@@ -250,3 +260,17 @@ EZID_FORMAT = '{namespace}osf.io/{guid}'
 
 SHARE_REGISTRATION_URL = ''
 SHARE_API_DOCS_URL = ''
+
+CAS_SERVER_URL = 'http://localhost:8080'
+MFR_SERVER_URL = 'http://localhost:7778'
+
+###### ARCHIVER ###########
+ARCHIVE_PROVIDER = 'osfstorage'
+
+MAX_ARCHIVE_SIZE = 1024 ** 3  # == math.pow(1024, 3) == 1 GB
+MAX_FILE_SIZE = MAX_ARCHIVE_SIZE  # TODO limit file size?
+
+ARCHIVE_TIMEOUT_TIMEDELTA = timedelta(1)  # 24 hours
+
+ENABLE_ARCHIVER = True
+###########################
