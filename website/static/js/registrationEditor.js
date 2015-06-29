@@ -129,7 +129,7 @@ RegistrationEditor.prototype.updateEditor = function(page, question) {
     }
     self.editor = new JSONEditor(document.getElementById(self.editorId), {
         schema: question,
-        startVal: self.draft().schemaData,
+        startval: self.draft().schemaData,
         theme: 'bootstrap3',
         disable_collapse: true,
         disable_edit_json: true,
