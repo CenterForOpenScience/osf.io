@@ -19,7 +19,7 @@ from website.addons.box.model import (
 
 class BoxAccountFactory(ExternalAccountFactory):
     provider = 'box'
-    prodiver_id = Sequence(lambda n: 'id-{0}'.format(n))
+    provider_id = Sequence(lambda n: 'id-{0}'.format(n))
     oauth_key = Sequence(lambda n: 'key-{0}'.format(n))
     oauth_secret = Sequence(lambda n: 'secret-{0}'.format(n))
     expires_at = datetime.now() + relativedelta(seconds=3600)
