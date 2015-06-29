@@ -20,7 +20,6 @@ from pymongo.errors import OperationFailure
 from modularodm import storage
 
 from api.base.wsgi import application as django_app
-from tests.test_features import requires_search
 from framework.mongo import set_up_storage
 from framework.auth import User
 from framework.sessions.model import Session
@@ -68,9 +67,6 @@ fake = Factory.create()
 MODELS = (User, ApiKey, Node, NodeLog, NodeWikiPage,
           Tag, WatchConfig, Session, Guid)
 
-TEST_SEARCH_INDEX = 'test'
-
-
 def teardown_database(client=None, database=None):
     client = client or client_proxy
     database = database or database_proxy
@@ -83,7 +79,7 @@ def teardown_database(client=None, database=None):
     client.drop_database(database)
 
 
-def _mock_update(node, index=None, files=None):
+def mock_search_update(node, index=None, files=None):
     elastic_search.update_node(node, index=index, files=False)
 
 
@@ -194,6 +190,20 @@ class UploadTestCase(unittest.TestCase):
         settings.UPLOADS_PATH = cls._old_uploads_path
 
 
+class MockUpdateNodeCase(unittest.TestCase):
+    """ Prevents indexing of files when seach.update_node is called.
+    """
+    def setUp(self):
+        super(MockUpdateNodeCase, self).setUp()
+        self.search_patch = mock.patch('website.search.search.update_node',
+                                       side_effect=mock_search_update)
+        self.search_patch.start()
+
+    def tearDown(self):
+        super(MockUpdateNodeCase, self).tearDown()
+        self.search_patch.stop()
+
+
 methods = [
     httpretty.GET,
     httpretty.PUT,
@@ -202,33 +212,15 @@ methods = [
     httpretty.PATCH,
     httpretty.DELETE,
 ]
-
 def kill(*args, **kwargs):
     raise httpretty.errors.UnmockedError
 
 
-@requires_search
-class UpdateNodeCase(unittest.TestCase):
-    def setUp(self):
-        super(UpdateNodeCase, self).setUp()
-        self.search_patch = mock.patch('website.search.search.update_node',
-                                       side_effect=_mock_update)
-        self.search_patch.start()
-
-    def tearDown(self):
-        super(UpdateNodeCase, self).tearDown()
-        self.search_patch.stop()
-
-
-class MockRequestTestCase(UpdateNodeCase):
+class MockRequestTestCase(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
         super(MockRequestTestCase, cls).setUpClass()
-        from website.search import elastic_search
-        from website import settings
-        elastic_search.INDEX = TEST_SEARCH_INDEX
-        settings.ELASTIC_INDEX = TEST_SEARCH_INDEX
         httpretty.enable()
         for method in methods:
             httpretty.register_uri(
@@ -249,7 +241,7 @@ class MockRequestTestCase(UpdateNodeCase):
         httpretty.disable()
 
 
-class OsfTestCase(DbTestCase, AppTestCase, UploadTestCase, MockRequestTestCase):
+class OsfTestCase(DbTestCase, AppTestCase, UploadTestCase, MockRequestTestCase, MockUpdateNodeCase):
     """Base `TestCase` for tests that require both scratch databases and the OSF
     application. Note: superclasses must call `super` in order for all setup and
     teardown methods to be called correctly.
@@ -257,27 +249,12 @@ class OsfTestCase(DbTestCase, AppTestCase, UploadTestCase, MockRequestTestCase):
     pass
 
 
-class ApiTestCase(DbTestCase, ApiAppTestCase, UploadTestCase, MockRequestTestCase):
+class ApiTestCase(DbTestCase, ApiAppTestCase, UploadTestCase, MockRequestTestCase, MockUpdateNodeCase):
     """Base `TestCase` for tests that require both scratch databases and the OSF
     API application. Note: superclasses must call `super` in order for all setup and
     teardown methods to be called correctly.
     """
     pass
-
-
-@requires_search
-class SearchTestCase(OsfTestCase, UpdateNodeCase):
-    def tearDown(self):
-        super(SearchTestCase, self).tearDown()
-        elastic_search.delete_index(elastic_search.INDEX)
-        elastic_search.create_index(elastic_search.INDEX)
-
-    def setUp(self):
-        super(SearchTestCase, self).setUp()
-        elastic_search.INDEX = TEST_SEARCH_INDEX
-        settings.ELASTIC_INDEX = TEST_SEARCH_INDEX
-        elastic_search.delete_index(elastic_search.INDEX)
-        elastic_search.create_index(elastic_search.INDEX)
 
 
 # From Flask-Security: https://github.com/mattupstate/flask-security/blob/develop/flask_security/utils.py

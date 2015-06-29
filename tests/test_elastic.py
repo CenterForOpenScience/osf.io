@@ -7,57 +7,40 @@ import mock
 import httpretty
 
 from framework.auth.core import Auth
-from framework.addons import AddonModelMixin
 from website import settings
-from website.addons.base import StorageAddonBase
 import website.search.search as search
 from website.search import elastic_search, index_file
 from website.search.util import build_query
 from website.search_migration.migrate import migrate
 
-from tests.base import OsfTestCase, SearchTestCase
+from tests.base import OsfTestCase
 from tests.test_features import requires_search
 from tests.factories import (
     UserFactory, ProjectFactory, NodeFactory,
     UnregUserFactory, UnconfirmedUserFactory,
-    RegistrationFactory
+    RegistrationFactory, MockAddonNodeSettings,
+    Node,
 )
 
 TEST_INDEX = 'test'
 
 
-# def _mock_update(node, index=None, files=None):
-#     logging.warn('Calling Fake Update')
-#     print('Calling Fake Update')
-#     elastic_search.update_node(node, index=index, files=True)
-#
-#
-# @requires_search
-# class SearchUpdateCase(unittest.TestCase):
-#     def setUp(self):
-#         super(SearchUpdateCase, self).setUp()
-#         self.search_patch = mock.patch('website.search.search.update_node',
-#                                        side_effect=_mock_update)
-#         self.search_patch.start()
-#
-#     def tearDown(self):
-#         super(SearchUpdateCase, self).tearDown()
-#         self.search_patch.stop()
-#
-#
-# @requires_search
-# class SearchTestCase(OsfTestCase, SearchUpdateCase):
-#     def tearDown(self):
-#         super(SearchTestCase, self).tearDown()
-#         search.delete_index(elastic_search.INDEX)
-#         search.create_index(elastic_search.INDEX)
-#
-#     def setUp(self):
-#         super(SearchTestCase, self).setUp()
-#         elastic_search.INDEX = TEST_INDEX
-#         settings.ELASTIC_INDEX = TEST_INDEX
-#         search.delete_index(elastic_search.INDEX)
-#         search.create_index(elastic_search.INDEX)
+@requires_search
+class SearchTestCase(OsfTestCase):
+
+    def tearDown(self):
+        super(SearchTestCase, self).tearDown()
+        search.delete_index(elastic_search.INDEX)
+        search.create_index(elastic_search.INDEX)
+
+    def setUp(self):
+        super(SearchTestCase, self).setUp()
+        from website.search import elastic_search
+        from website import settings
+        elastic_search.INDEX = TEST_INDEX
+        settings.ELASTIC_INDEX = TEST_INDEX
+        search.delete_index(elastic_search.INDEX)
+        search.create_index(elastic_search.INDEX)
 
 
 def query(term):
@@ -693,7 +676,7 @@ class TestSearchMigration(SearchTestCase):
 
 
 # FILE INDEXING
-import factories
+
 
 class MockFileObject(mock.Mock):
     URL_BASE = 'http://fakeurl.com'
@@ -722,7 +705,7 @@ class MockFileObject(mock.Mock):
         return '/'.join([MockFileObject.URL_BASE, self.path])
 
 
-class MockAddon(factories.MockAddonNodeSettings):
+class MockAddon(MockAddonNodeSettings):
     def __init__(self):
         super(MockAddon, self).__init__()
         self.file_tree = {
@@ -748,7 +731,7 @@ class MockAddon(factories.MockAddonNodeSettings):
         pass
 
 
-class MockProjectFactory(factories.Node):
+class MockProjectFactory(Node):
     def __init__(self, addon):
         self.addon = addon
 

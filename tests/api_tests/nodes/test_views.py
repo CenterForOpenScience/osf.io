@@ -17,7 +17,6 @@ from tests.factories import (
     UserFactory
 )
 
-
 class TestWelcomeToApi(ApiTestCase):
     def setUp(self):
         super(TestWelcomeToApi, self).setUp()
