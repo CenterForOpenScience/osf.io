@@ -277,7 +277,7 @@ ViewModel.prototype.openCreateBucket = function() {
         buttons: {
             confirm: {
                 label: 'Save',
-                className: 'btn-info',
+                className: 'btn-success',
                 callback: function () {
                     var bucketName = $('#bucketName').val();
                     var bucketLocation = $('#bucketLocation').val();
