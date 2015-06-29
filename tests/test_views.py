@@ -9,6 +9,7 @@ import datetime as dt
 import mock
 import httplib as http
 import math
+import time
 
 from nose.tools import *  # noqa PEP8 asserts
 from tests.test_features import requires_search
@@ -32,6 +33,7 @@ from website.project.views.contributor import (
     send_claim_email,
     deserialize_contributors,
     send_claim_registered_email,
+    notify_contributor
 )
 from website.profile.utils import add_contributor_json, serialize_unregistered
 from website.profile.views import fmt_date_or_none
@@ -1665,6 +1667,41 @@ class TestAddingContributorViews(OsfTestCase):
         self.app.post_json(url, payload).maybe_follow()
         assert_true(send_mail.called)
         assert_true(send_mail.called_with(email=email))
+
+    @mock.patch('website.mails.send_mail')
+    def test_email_sent_when_reg_user_is_added(self, send_mail):
+        contributor = UserFactory()
+        project = ProjectFactory()
+        project.add_contributor(contributor, auth=Auth(self.project.creator))
+        project.save()
+        assert_true(send_mail.called)
+        send_mail.assert_called_with(
+            contributor.username,
+            mails.CONTRIBUTOR_ADDED,
+            user=contributor,
+            node=project,
+            sharing_page=project.web_url_for('node_contributors', _absolute=True))
+        assert_equal(project.contributor_record[contributor._id]['last_sent'], int(time.time()))
+
+    @mock.patch('website.mails.send_mail')
+    def test_contributor_added_email_not_sent_to_unreg_user(self, send_mail):
+        unreg_user = UnregUserFactory()
+        project = ProjectFactory()
+        project.add_contributor(unreg_user, auth=Auth(self.project.creator))
+        project.save()
+        send_mail.assert_not_called()
+
+    @mock.patch('website.mails.send_mail')
+    def test_notify_contributor_email_sent_before_throttle_expires(self, send_mail):
+        contributor = UserFactory()
+        project = ProjectFactory()
+        notify_contributor(project, contributor)
+        assert_true(send_mail.called)
+
+        # 2nd call raises error because throttle period has not expired
+        with assert_raises(HTTPError):
+            notify_contributor(project, contributor)
+            send_mail.assert_not_called()
 
     def test_add_multiple_contributors_only_adds_one_log(self):
         n_logs_pre = len(self.project.logs)
