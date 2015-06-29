@@ -24,7 +24,8 @@ RE_XML_ILLEGAL_COMPILED = re.compile(RE_XML_ILLEGAL)
 
 TITLE_WEIGHT = 4
 DESCRIPTION_WEIGHT = 1.2
-
+JOB_SCHOOL_BOOST = 2
+ALL_JOB_SCHOOL_BOOST = 0.5
 
 def build_query(qs='*', start=0, size=10, sort=None):
     query = {
@@ -47,7 +48,12 @@ def build_query_string(qs):
     field_boosts = {
         'title': TITLE_WEIGHT,
         'description': DESCRIPTION_WEIGHT,
+        'job': JOB_SCHOOL_BOOST,
+        'school': JOB_SCHOOL_BOOST,
+        'all_jobs': ALL_JOB_SCHOOL_BOOST,
+        'all_schools': ALL_JOB_SCHOOL_BOOST,
         '_all': 1,
+
     }
 
     fields = ['{}^{}'.format(k, v) for k, v in field_boosts.iteritems()]

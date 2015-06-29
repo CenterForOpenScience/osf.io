@@ -118,11 +118,17 @@ var ViewModel = function(params) {
     self.queryObject = ko.pureComputed(function(){
         var TITLE_BOOST = '4';
         var DESCRIPTION_BOOST = '1.2';
+        var JOB_SCHOOL_BOOST = '2';
+        var ALL_JOB_SCHOOL_BOOST = '0.5';
 
         var fields = [
             '_all',
             'title^' + TITLE_BOOST,
             'description^' + DESCRIPTION_BOOST,
+            'job^' + JOB_SCHOOL_BOOST,
+            'school^' + JOB_SCHOOL_BOOST,
+            'all_jobs^' + ALL_JOB_SCHOOL_BOOST,
+            'all_schools^' + ALL_JOB_SCHOOL_BOOST
         ];
         return {
             'query_string': {
