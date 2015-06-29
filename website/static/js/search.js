@@ -191,9 +191,9 @@ var ViewModel = function(params) {
         var tagString = 'tags:("' + tag + '")';
 
         if (self.query().indexOf(tagString) === -1) {
-            if (self.query() !== '' && action === "add") {
+            if (self.query() !== '' && action === 'add') {
                 self.query(self.query() + ' AND ');
-            } else if (self.query() !== '' && action === "remove") {
+            } else if (self.query() !== '' && action === 'remove') {
                 self.query(self.query() + ' NOT ');
             }
             self.query(self.query() + tagString);
