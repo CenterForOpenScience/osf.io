@@ -99,27 +99,36 @@ var FileRevisionsTable = {
         self.makeTableRow = function(revision, index) {
             var isSelected = index === model.selectedRevision;
 
-            return m('tr' + (isSelected ? '.active' : ''), [
-                m('td',  isSelected ?
-                  revision.displayVersion :
-                  m('a', {href: revision.osfViewUrl}, revision.displayVersion)
-                ),
-                model.hasDate ? m('td', revision.displayDate) : false,
-                model.hasUser ?
-                    m('td', revision.extra.user.url ?
-                        m('a', {href: revision.extra.user.url}, revision.extra.user.name) :
-                        revision.extra.user.name
-                    ) : false,
-                m('td', revision.extra.downloads > -1 ? m('.badge', revision.extra.downloads) : ''),
-                m('td',
-                  m('a.btn.btn-primary.btn-sm.file-download', {
-                        href: revision.osfDownloadUrl,
-                        onclick: function() {
-                            window.location = revision.waterbutlerDownloadUrl;
-                            return false;
-                        }
-                    }, m('i.fa.fa-download'))
-                ),
+            return m('.m-b-md.p-md.osf-box' + (isSelected ? '.osf-box-lt' : ''), [
+                m('.version-top.clearfix.m-b-sm', [
+                    m('span', { style : 'font-size: 18px' },  isSelected ?
+                            revision.displayVersion :
+                            m('a', {href: revision.osfViewUrl}, revision.displayVersion)
+                    ),
+                    m('.pull-right',
+                        m('a.btn.btn-primary.btn-sm.file-download', {
+                            href: revision.osfDownloadUrl,
+                            onclick: function() {
+                                window.location = revision.waterbutlerDownloadUrl;
+                                return false;
+                            }
+                        }, m('i.fa.fa-download'))
+                    ),
+
+                ]),
+                m('.version-middle', [
+                    model.hasUser ?
+                        m('', revision.extra.user.url ?
+                                m('a', {href: revision.extra.user.url}, revision.extra.user.name) :
+                                revision.extra.user.name
+                        ) : false
+                ]),
+                m('.version-bottom', [
+                    m('div.text-right', revision.extra.downloads > -1 ? m('', [m('b', revision.extra.downloads), m('span', ' Downloads')])  : ''),
+                    model.hasDate ? m('div.text-muted.text-right', [
+                        m('span', revision.displayDate)
+                    ]) : false
+                ])
             ].filter(TRUTHY));
         };
 
@@ -140,9 +149,9 @@ var FileRevisionsTable = {
                         return m('.alert.alert-warning', {style:{margin: '10px'}}, model.errorMessage);
                     }
 
-                    return m('table.table', [
-                        ctrl.getTableHead(),
-                        m('tbody', model.revisions.map(ctrl.makeTableRow))
+                    return m('', [
+                        //ctrl.getTableHead(),
+                        m('', model.revisions.map(ctrl.makeTableRow))
                     ]);
                 })())
             ]);

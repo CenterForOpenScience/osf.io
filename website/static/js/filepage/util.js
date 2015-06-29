@@ -30,7 +30,7 @@ Panel.view = function(ctrl) {
 var Spinner = m.component({
     controller: function(){},
     view: function() {
-        return m('.fangorn-loading', [
+        return m('.spinner-loading-wrapper', [
             m('.logo-spin.text-center', [
                 m('img[src=/static/img/logo_spin.png][alt=loader]')
             ]),
