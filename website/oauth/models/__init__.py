@@ -170,8 +170,6 @@ class ExternalProvider(object):
 
             url = oauth.authorization_url(self.auth_url_base)
 
-        session.save()
-
         return url
 
     @abc.abstractproperty
