@@ -217,7 +217,7 @@ class ContributorSerializer(UserSerializer):
         'nodes': {
             'relation': Link('users:user-nodes', kwargs={'user_id': '<_id>'})
         },
-        'edit contributor': Link('nodes: node-contributor-detail', kwargs={'user_id': '<_id>', 'node_id': '<node_id>'})
+        'edit contributor': Link('nodes:node-contributor-detail', kwargs={'user_id': '<_id>', 'node_id': '<node_id>'})
     })
 
     def absolute_url(self, obj):
@@ -276,5 +276,5 @@ class ContributorDetailSerializer(ContributorSerializer):
     links = LinksField({
         'html': 'absolute_url',
         'nodes': {
-            'relation': Link('users: user-nodes', kwargs={'user_id': '<_id>'})},
+            'relation': Link('users:user-nodes', kwargs={'user_id': '<_id>'})},
     })
