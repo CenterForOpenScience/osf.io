@@ -91,12 +91,12 @@ def notify(uid, event, user, node, timestamp, **context):
     target_user = context.get('target_user', None)
     for notification_type in subscriptions:
         if notification_type != 'none' and subscriptions[notification_type]:
-            if user._id in subscriptions[notification_type]:
-                subscriptions[notification_type].pop(subscriptions[notification_type].index(user._id))
-            if target_user and target_user._id in subscriptions[notification_type]:
-                subscriptions[notification_type].pop(subscriptions[notification_type].index(target_user._id))
-                send([target_user._id], notification_type, uid, 'comment_replies', user, node, timestamp, **context)
-                sent_users.append(target_user._id)
+            if user in subscriptions[notification_type]:
+                subscriptions[notification_type].pop(subscriptions[notification_type].index(user))
+            if target_user and target_user in subscriptions[notification_type]:
+                subscriptions[notification_type].pop(subscriptions[notification_type].index(target_user))
+                send([target_user], notification_type, uid, 'comment_replies', user, node, timestamp, **context)
+                sent_users.append(target_user)
             if subscriptions[notification_type]:
                 send(subscriptions[notification_type], notification_type, uid, event_type, user, node,
                      timestamp, **context)
@@ -153,6 +153,11 @@ def compile_subscriptions(node, event_type, event=None):
             if notification_type != nt:
                 parent_subscriptions[notification_type] = \
                     list(set(parent_subscriptions[notification_type]).difference(set(subscriptions[nt])))
+            permission = []
+            for user in parent_subscriptions[notification_type]:
+                if node.has_permission(user, 'read'):
+                    permission.append(user)
+            parent_subscriptions[notification_type] = permission
     return parent_subscriptions
 
 
@@ -165,7 +170,7 @@ def check_node(node, event):
             users = getattr(subscription, notification_type, [])
             for user in users:
                 if node.has_permission(user, 'read'):
-                    node_subscriptions[notification_type].append(user._id)
+                    node_subscriptions[notification_type].append(user)
     return node_subscriptions
 
 

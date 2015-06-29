@@ -4,7 +4,7 @@ from modularodm import Q
 from modularodm.exceptions import NoResultsFound
 
 from framework.auth import signals
-from website.models import Node
+from website.models import Node, User
 from website.notifications import constants
 from website.notifications import model
 from website.notifications.model import NotificationSubscription
@@ -68,21 +68,26 @@ def remove_subscription(node):
         parent.save()
 
 
-def move_file_subscription(old_event_sub, old_node, new_event_sub, new_node):
+def move_subscription(old_event_sub, old_node, new_event_sub, new_node):
     if old_event_sub == new_event_sub:
         return []
     old_sub = NotificationSubscription.load(to_subscription_key(old_node._id, old_event_sub))
-    if not old_sub:
+    old_node_sub = NotificationSubscription.load(to_subscription_key(old_node._id, '_'.join(old_event_sub.split('_')[-2:])))
+    if not old_sub and not old_node_sub:
         return []
-    old_sub.update_fields(_id=to_subscription_key(new_node._id, new_event_sub), event_name=new_event_sub,
-                          owner=new_node)
+    elif old_sub:
+        old_sub.update_fields(_id=to_subscription_key(new_node._id, new_event_sub), event_name=new_event_sub,
+                              owner=new_node)
     # Remove users that don't have permission on the new node. Return user ids to send e-mail.
     removed_users = {}
     for notification_type in constants.NOTIFICATION_TYPES:
         if notification_type == 'none':
             continue
         removed_users[notification_type] = []
-        for user in getattr(old_sub, notification_type, []):
+        users = getattr(old_sub, notification_type, []) + getattr(old_node_sub, notification_type, [])
+        for user in users:
+            if not isinstance(user, User):
+                user = User.load(user)
             if not new_node.has_permission(user, 'read'):
                 removed_users[notification_type].append(user)
                 old_sub.remove_user_from_subscription(user)

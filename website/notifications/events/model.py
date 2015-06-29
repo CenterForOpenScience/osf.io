@@ -6,7 +6,7 @@ from datetime import datetime
 from six import add_metaclass
 
 from website.notifications.emails import warn_users_removed_from_subscription
-from website.notifications.utils import move_file_subscription
+from website.notifications.utils import move_subscription
 from website.models import Node
 from website.notifications.emails import notify
 
@@ -237,7 +237,6 @@ class ComplexFileEvent(FileEvent):
             action, f_type, source_name, self.payload['source']['addon'], self.payload['source']['node']['title'],
             destination_name, self.payload['destination']['addon'], self.payload['destination']['node']['title']
         )
-        print self.html_message
         self._text_message = '{} {} "{}" from {} in {} to "{}" in {} in {}.'.format(
             action, f_type, source_name, self.payload['source']['addon'], self.payload['source']['node']['title'],
             destination_name, self.payload['destination']['addon'], self.payload['destination']['node']['title']
@@ -283,8 +282,8 @@ class AddonFileMoved(ComplexFileEvent):
     def perform(self):
         """Sends a message to users who are removed from the file's subscription when it is moved"""
         if self.payload['destination']['kind'] != u'folder':
-            rm_users = move_file_subscription(self.source_event, self.source_node,
-                                              self.event, self.node)
+            rm_users = move_subscription(self.source_event, self.source_node,
+                                         self.event, self.node)
             if len(rm_users) > 0:
                 message = self._html_message + ' Your subscription has been removed' \
                                                ' due to insufficient permissions in the new component.',
