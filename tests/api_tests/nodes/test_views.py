@@ -726,7 +726,7 @@ class TestNodeContributorList(ApiTestCase):
         assert_equal(res.status_code, 200)
         assert_equal(len(res.json['data']), 2)
         assert_equal(res.json['data'][0]['id'], self.user._id)
-        assert_equal(res.json['data'][1]['id'], self.admin._id)
+        assert_equal(res.json['data'][1]['id'], self.user_two._id)
 
     def test_return_private_contributor_list_logged_in_non_contributor(self):
          res = self.app.get(self.private_url, auth=self.basic_auth_two, expect_errors=True)

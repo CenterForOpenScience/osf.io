@@ -198,6 +198,10 @@ class NodeFilesSerializer(JSONAPISerializer):
 class ContributorSerializer(UserSerializer):
 
     admin = ser.BooleanField(read_only=True, help_text='Whether the user will be able to add and remove contributors')
+    bibliographic = ser.BooleanField(read_only=True, help_text='Whether the user will be included in citations for this node or not')
+    local_filterable = frozenset(['admin', 'bibliographic'])
+    filterable_fields = frozenset.union(UserSerializer.filterable_fields, local_filterable)
+
     id = ser.CharField(source='_id')
     fullname = ser.CharField(read_only=True, help_text='Display name used in the general user interface')
     given_name = ser.CharField(read_only=True, help_text='For bibliographic citations')
@@ -242,8 +246,6 @@ class ContributorDetailSerializer(ContributorSerializer):
 
     id = ser.CharField(source='_id', read_only=True)
     admin = ser.BooleanField(help_text='Whether the user will be able to add and remove contributors')
-    local_filterable = frozenset(['admin'])
-    filterable_fields = frozenset.union(UserSerializer.filterable_fields, local_filterable)
     bibliographic = ser.BooleanField(help_text='Whether the user will be included in citations for this node or not')
 
     def update(self, user, validated_data):
