@@ -37,8 +37,8 @@ def github_set_config(auth, node_addon, **kwargs):
         raise HTTPError(http.BAD_REQUEST)
 
     # Parse request
-    github_user_name = request.json.get('github_repo', '').split('/')[0].strip()
-    github_repo_name = request.json.get('github_repo', '').split('/')[1].strip()
+    github_user_name = request.json.get('folder', '').split('/')[0].strip()
+    github_repo_name = request.json.get('folder', '').split('/')[1].strip()
 
     # Verify that repo exists and that user can access
     connection = GitHub.from_settings(node_addon.api.account)

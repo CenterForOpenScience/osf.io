@@ -30,7 +30,7 @@
             <strong>Current Repo:</strong>
 
             <a data-bind="attr.href: urls().files">
-                {{currentRepo}}
+                {{currentFolder}}
             </a>
         </p>
         <div class="btn-group" role="group" data-bind="attr.disabled: creating">
@@ -38,20 +38,20 @@
             <button data-bind="if: canChange, click: toggleSelect,
                                css: {active: showSelect}" class="btn btn-sm btn-addon"><i class="icon-edit"></i> Change</button>
 
-            <button data-bind="if: showNewRepo, click: openCreateRepo,
-                               attr.disabled: creating" class="btn btn-sm btn-addon" id="newRepo">Create Repo</button>
+            <button data-bind="if: showNewFolder, click: openCreateFolder,
+                               attr.disabled: creating" class="btn btn-sm btn-addon" id="newFolder">Create Repo</button>
           </div>
         <br />
         <div class="row" data-bind="if: showSelect">
           <div class="col-md-6">
             <select class="form-control" id="github_repo" name="github_repo" 
-                    data-bind="value: selectedRepo,
-                               attr.disabled: !loadedRepoList(),
-                               options: repoList"> </select>
+                    data-bind="value: selectedFolder,
+                               attr.disabled: !loadedFolderList(),
+                               options: folderList"> </select>
           </div>
           <div class="col-md-2">
-            <button data-bind="click: selectRepo,
-                               attr.disabled: !allowSelectRepo()"
+            <button data-bind="click: selectFolder,
+                               attr.disabled: !allowSelectFolder()"
                     class="btn btn-primary">
               Submit
             </button> 

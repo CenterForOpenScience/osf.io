@@ -405,7 +405,7 @@ ViewModel.prototype.fetchAccounts = function() {
         self.changeMessage('Could not retrieve GitHub  account list at ' +
             'this time. Please refresh the page. If the problem persists, email ' +
             '<a href="mailto:support@osf.io">support@osf.io</a>.', 'text-warning');
-        Raven.captureMessage('Could not GET ' + self.addonName + ' accounts for user', {
+        Raven.captureMessage('Could not GET github accounts for user', {
             url: self.url,
             textStatus: textStatus,
             error: error
