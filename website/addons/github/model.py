@@ -14,6 +14,8 @@ from website.addons.base import exceptions
 from website.addons.base import AddonOAuthNodeSettingsBase
 from website.addons.base import AddonOAuthUserSettingsBase
 from website.addons.base import GuidFile
+from website.addons.base import AddonUserSettingsBase, AddonNodeSettingsBase
+from website.addons.base import StorageAddonBase
 
 from website.addons.github import utils
 from website.addons.github.api import GitHub
@@ -127,8 +129,12 @@ class GitHubUserSettings(AddonOAuthUserSettingsBase):
 
 class GitHubNodeSettings(AddonOAuthNodeSettingsBase):
 
+#<<<<<<< HEAD
     oauth_provider = GitHubProvider
     serializer = GitHubSerializer
+#=======
+#class AddonGitHubNodeSettings(StorageAddonBase, AddonNodeSettingsBase):
+#>>>>>>> c59853a0281e0cf630b9438126957b9353701f2a
 
     user = fields.StringField()
     repo = fields.StringField()
@@ -144,6 +150,13 @@ class GitHubNodeSettings(AddonOAuthNodeSettingsBase):
             self._api = GitHubProvider()
             self._api.account = self.external_account
         return self._api
+
+    def folder_name(self):
+        return self.repo
+
+    @property
+    def has_auth(self):
+        return bool(self.user_settings and self.user_settings.has_auth)
 
     @property
     def complete(self):

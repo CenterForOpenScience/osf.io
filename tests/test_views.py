@@ -8,6 +8,7 @@ import json
 import datetime as dt
 import mock
 import httplib as http
+import math
 
 from nose.tools import *  # noqa PEP8 asserts
 from tests.test_features import requires_search
@@ -20,10 +21,11 @@ from framework.exceptions import HTTPError
 from framework.auth import User, Auth
 from framework.auth.utils import impute_names_model
 from framework.auth.exceptions import InvalidTokenError
+from framework.tasks import handlers
 
 from website import mailchimp_utils
 from website.views import _rescale_ratio
-from website.util import permissions
+from website.util import permissions, sanitize
 from website.models import Node, Pointer, NodeLog
 from website.project.model import ensure_schemas, has_anonymous_link
 from website.project.views.contributor import (
@@ -39,6 +41,11 @@ from website.util import rubeus
 from website.project.views.node import _view_project, abbrev_authors, _should_show_wiki_widget
 from website.project.views.comment import serialize_comment
 from website.project.decorators import check_can_access
+<<<<<<< HEAD
+=======
+from website.addons.github.model import AddonGitHubOauthSettings
+from website.archiver import utils as archiver_utils
+>>>>>>> c59853a0281e0cf630b9438126957b9353701f2a
 
 from tests.base import (
     OsfTestCase,
@@ -470,30 +477,29 @@ class TestProjectViews(OsfTestCase):
         assert_true(self.project.is_public)
 
     def test_add_tag(self):
-        url = "/api/v1/project/{0}/addtag/{tag}/".format(
-            self.project._primary_key,
-            tag="footag",
-        )
-        self.app.post_json(url, {}, auth=self.auth)
+        url = self.project.api_url_for('project_add_tag')
+        self.app.post_json(url, {'tag': "foo'ta#@%#%^&g?"}, auth=self.auth)
         self.project.reload()
-        assert_in("footag", self.project.tags)
+        assert_in("foo'ta#@%#%^&g?", self.project.tags)
+        assert_equal("foo'ta#@%#%^&g?", self.project.logs[-1].params['tag'])
 
     def test_remove_tag(self):
-        self.project.add_tag("footag", auth=self.consolidate_auth1, save=True)
-        assert_in("footag", self.project.tags)
-        url = "/api/v1/project/{0}/removetag/{tag}/".format(
-            self.project._primary_key,
-            tag="footag",
-        )
-        self.app.post_json(url, {}, auth=self.auth)
+        self.project.add_tag("foo'ta#@%#%^&g?", auth=self.consolidate_auth1, save=True)
+        assert_in("foo'ta#@%#%^&g?", self.project.tags)
+        url = self.project.api_url_for("project_remove_tag")
+        self.app.delete_json(url, {"tag": "foo'ta#@%#%^&g?"}, auth=self.auth)
         self.project.reload()
-        assert_not_in("footag", self.project.tags)
+        assert_not_in("foo'ta#@%#%^&g?", self.project.tags)
+        assert_equal("tag_removed", self.project.logs[-1].action)
+        assert_equal("foo'ta#@%#%^&g?", self.project.logs[-1].params['tag'])
 
-    def test_register_template_page(self):
+    @mock.patch('website.archiver.tasks.archive.si')
+    def test_register_template_page(self, mock_archive):
         url = "/api/v1/project/{0}/register/Replication_Recipe_(Brandt_et_al.,_2013):_Post-Completion/".format(
             self.project._primary_key)
-        self.app.post_json(url, {}, auth=self.auth)
+        self.app.post_json(url, {'registrationChoice': 'Make registration public immediately'}, auth=self.auth)
         self.project.reload()
+        archiver_utils.archive_success(self.project.node__registrations[0], self.project.creator)
         # A registration was added to the project's registration list
         assert_equal(len(self.project.node__registrations), 1)
         # A log event was saved
@@ -502,6 +508,40 @@ class TestProjectViews(OsfTestCase):
         reg = Node.load(self.project.node__registrations[-1])
         assert_true(reg.is_registration)
 
+    @mock.patch('framework.tasks.handlers.enqueue_task')
+    def test_register_template_make_public_creates_public_registration(self, mock_enquque):
+        url = "/api/v1/project/{0}/register/Replication_Recipe_(Brandt_et_al.,_2013):_Post-Completion/".format(
+            self.project._primary_key)
+        self.app.post_json(url, {'registrationChoice': 'immediate'}, auth=self.auth)
+        self.project.reload()
+        # Most recent node is a registration
+        reg = Node.load(self.project.node__registrations[-1])
+        assert_true(reg.is_registration)
+        # The registration created is public
+        assert_true(reg.is_public)
+
+    @mock.patch('website.archiver.tasks.archive.si')
+    def test_register_template_with_embargo_creates_embargo(self, mock_archive):
+        url = "/api/v1/project/{0}/register/Replication_Recipe_(Brandt_et_al.,_2013):_Post-Completion/".format(
+            self.project._primary_key)
+        self.app.post_json(
+            url,
+            {
+                'registrationChoice': 'embargo',
+                'embargoEndDate': "Fri, 01 Jan {year} 05:00:00 GMT".format(year=str(dt.date.today().year + 1))
+            },
+            auth=self.auth)
+
+        self.project.reload()
+        # Most recent node is a registration
+        reg = Node.load(self.project.node__registrations[-1])
+        assert_true(reg.is_registration)
+        # The registration created is not public
+        assert_false(reg.is_public)
+        # The registration is pending an embargo that has not been approved
+        assert_true(reg.pending_embargo)
+        assert_false(reg.embargo_end_date)
+
     def test_register_template_page_with_invalid_template_name(self):
         url = self.project.web_url_for('node_register_template_page', template='invalid')
         res = self.app.get(url, expect_errors=True, auth=self.auth)
@@ -509,7 +549,8 @@ class TestProjectViews(OsfTestCase):
         assert_in('Template not found', res)
 
     # Regression test for https://github.com/CenterForOpenScience/osf.io/issues/1478
-    def test_registered_projects_contributions(self):
+    @mock.patch('website.archiver.tasks.archive.si')
+    def test_registered_projects_contributions(self, mock_archive):
         # register a project
         self.project.register_node(None, Auth(user=self.project.creator), '', None)
         # get the first registered project of a project
@@ -569,6 +610,31 @@ class TestProjectViews(OsfTestCase):
         invalid_input = 'invalid page'
         res = self.app.get(
             url, {'page': invalid_input}, auth=self.auth, expect_errors=True
+        )
+        assert_equal(res.status_code, 400)
+        assert_equal(
+            res.json['message_long'],
+            'Invalid value for "page".'
+        )
+
+    def test_get_logs_negative_page_num(self):
+        url = self.project.api_url_for('get_logs')
+        invalid_input = -1
+        res = self.app.get(
+            url, {'page': invalid_input}, auth=self.auth, expect_errors=True
+        )
+        assert_equal(res.status_code, 400)
+        assert_equal(
+            res.json['message_long'],
+            'Invalid value for "page".'
+        )
+
+    def test_get_logs_page_num_beyond_limit(self):
+        url = self.project.api_url_for('get_logs')
+        size = 10
+        page_num = math.ceil(len(self.project.logs)/ float(size))
+        res = self.app.get(
+            url, {'page': page_num}, auth=self.auth, expect_errors=True
         )
         assert_equal(res.status_code, 400)
         assert_equal(
@@ -1227,6 +1293,68 @@ class TestUserProfile(OsfTestCase):
         assert_equal(res.status_code, 400)
         assert_equal(res.json['message_long'], '"id" is required')
 
+    @mock.patch('framework.auth.views.mails.send_mail')
+    @mock.patch('website.mailchimp_utils.get_mailchimp_api')
+    def test_update_user_mailing_lists(self, mock_get_mailchimp_api, send_mail):
+        email = fake.email()
+        self.user.emails.append(email)
+        list_name = 'foo'
+        self.user.mailing_lists[list_name] = True
+        self.user.save()
+
+        mock_client = mock.MagicMock()
+        mock_get_mailchimp_api.return_value = mock_client
+        mock_client.lists.list.return_value = {'data': [{'id': 1, 'list_name': list_name}]}
+        list_id = mailchimp_utils.get_list_id_from_name(list_name)
+
+        url = api_url_for('update_user', uid=self.user._id)
+        emails = [
+            {'address': self.user.username, 'primary': False, 'confirmed': True},
+            {'address': email, 'primary': True, 'confirmed': True}]
+        payload = {'locale': '', 'id': self.user._id, 'emails': emails}
+        self.app.put_json(url, payload, auth=self.user.auth)
+
+        mock_client.lists.unsubscribe.assert_called_with(
+            id=list_id,
+            email={'email': self.user.username}
+        )
+        mock_client.lists.subscribe.assert_called_with(
+            id=list_id,
+            email={'email': email},
+            merge_vars={
+                'fname': self.user.given_name,
+                'lname': self.user.family_name,
+            },
+            double_optin=False,
+            update_existing=True
+        )
+        handlers.celery_teardown_request()
+
+    @mock.patch('framework.auth.views.mails.send_mail')
+    @mock.patch('website.mailchimp_utils.get_mailchimp_api')
+    def test_unsubscribe_mailchimp_not_called_if_user_not_subscribed(self, mock_get_mailchimp_api, send_mail):
+        email = fake.email()
+        self.user.emails.append(email)
+        list_name = 'foo'
+        self.user.mailing_lists[list_name] = False
+        self.user.save()
+
+        mock_client = mock.MagicMock()
+        mock_get_mailchimp_api.return_value = mock_client
+        mock_client.lists.list.return_value = {'data': [{'id': 1, 'list_name': list_name}]}
+
+        url = api_url_for('update_user', uid=self.user._id)
+        emails = [
+            {'address': self.user.username, 'primary': False, 'confirmed': True},
+            {'address': email, 'primary': True, 'confirmed': True}]
+        payload = {'locale': '', 'id': self.user._id, 'emails': emails}
+        self.app.put_json(url, payload, auth=self.user.auth)
+
+        assert_equal(mock_client.lists.unsubscribe.call_count, 0)
+        assert_equal(mock_client.lists.subscribe.call_count, 0)
+        handlers.celery_teardown_request()
+
+
 class TestUserAccount(OsfTestCase):
 
     def setUp(self):
@@ -1365,7 +1493,7 @@ class TestAddingContributorViews(OsfTestCase):
 
     def test_deserialize_contributors_sends_unreg_contributor_added_signal(self):
         unreg = UnregUserFactory()
-        from website.project.model import unreg_contributor_added
+        from website.project.signals import unreg_contributor_added
         serialized = [serialize_unregistered(fake.name(), unreg.username)]
         serialized[0]['visible'] = True
         with capture_signals() as mock_signals:
@@ -3678,11 +3806,22 @@ class TestDashboardViews(OsfTestCase):
         project.register_node(
             None, Auth(self.creator), '', '',
         )
+
         # Get the All My Registrations smart folder from the dashboard
         url = api_url_for('get_dashboard', nid=ALL_MY_REGISTRATIONS_ID)
         res = self.app.get(url, auth=self.contrib.auth)
 
         assert_equal(len(res.json['data']), 1)
+
+    def test_archiving_nodes_appear_in_all_my_registrations(self):
+        project = ProjectFactory(creator=self.creator, public=False)
+        reg = RegistrationFactory(project=project, user=self.creator)
+
+        # Get the All My Registrations smart folder from the dashboard
+        url = api_url_for('get_dashboard', nid=ALL_MY_REGISTRATIONS_ID)
+        res = self.app.get(url, auth=self.creator.auth)
+
+        assert_equal(res.json['data'][0]['node_id'], reg._id)
 
     def test_untouched_node_is_collapsed(self):
         found_item = False
@@ -3913,6 +4052,16 @@ class TestProjectCreation(OsfTestCase):
         node = Node.load(res.json['projectUrl'].replace('/', ''))
         assert_true(node)
         assert_true(node.title, 'Im a real title')
+
+    def test_new_project_returns_serialized_node_data(self):
+        payload = {
+            'title': 'Im a real title'
+        }
+        res = self.app.post_json(self.url, payload, auth=self.creator.auth)
+        assert_equal(res.status_code, 201)
+        node = res.json['newNode']
+        assert_true(node)
+        assert_equal(node['title'], 'Im a real title')
 
     def test_description_works(self):
         payload = {

@@ -178,7 +178,8 @@ var ViewModel = function(params) {
         }
     };
 
-    self.addTag = function(name) {
+    /** name of tag, action add or remove.*/
+    self.clickTag = function(name, action) {
         // To handle passing from template vs. in main html
         var tag = name;
 
@@ -190,8 +191,10 @@ var ViewModel = function(params) {
         var tagString = 'tags:("' + tag + '")';
 
         if (self.query().indexOf(tagString) === -1) {
-            if (self.query() !== '') {
+            if (self.query() !== '' && action === 'add') {
                 self.query(self.query() + ' AND ');
+            } else if (self.query() !== '' && action === 'remove') {
+                self.query(self.query() + ' NOT ');
             }
             self.query(self.query() + tagString);
             self.category(new Category('total', 0, 'Total'));
