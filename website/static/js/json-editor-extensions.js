@@ -14,7 +14,7 @@ var curentUser = window.contextVars.currentUser || {
 
 /////////////////// description placement //////////
 JSONEditor.defaults.themes.bootstrap3_OSF = JSONEditor.defaults.themes.bootstrap3.extend({
-    getFormControl: function(label, input, description, help) {
+    getFormControl: function(label, input, description) {
         var group = document.createElement("div");
 
         if (label && input.type === "checkbox") {
@@ -33,9 +33,6 @@ JSONEditor.defaults.themes.bootstrap3_OSF = JSONEditor.defaults.themes.bootstrap
             }
             if (description) {
                 group.appendChild(description);
-            }
-            if (help) {
-                group.appendChild(help);
             }
             group.appendChild(input);
         }
