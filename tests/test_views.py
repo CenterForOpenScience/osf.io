@@ -1671,8 +1671,13 @@ class TestAddingContributorViews(OsfTestCase):
     @mock.patch('website.mails.send_mail')
     def test_email_sent_when_reg_user_is_added(self, send_mail):
         contributor = UserFactory()
+        contributors = [{
+            'user': contributor,
+            'visible': True,
+            'permissions': ['read', 'write']
+        }]
         project = ProjectFactory()
-        project.add_contributor(contributor, auth=Auth(self.project.creator))
+        project.add_contributors(contributors, auth=Auth(self.project.creator))
         project.save()
         assert_true(send_mail.called)
         send_mail.assert_called_with(
@@ -1686,8 +1691,13 @@ class TestAddingContributorViews(OsfTestCase):
     @mock.patch('website.mails.send_mail')
     def test_contributor_added_email_not_sent_to_unreg_user(self, send_mail):
         unreg_user = UnregUserFactory()
+        contributors = [{
+            'user': unreg_user,
+            'visible': True,
+            'permissions': ['read', 'write']
+        }]
         project = ProjectFactory()
-        project.add_contributor(unreg_user, auth=Auth(self.project.creator))
+        project.add_contributors(contributors, auth=Auth(self.project.creator))
         project.save()
         send_mail.assert_not_called()
 

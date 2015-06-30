@@ -1955,8 +1955,13 @@ class TestProject(OsfTestCase):
 
     def test_add_contributor_sends_contributor_added_signal(self):
         user = UserFactory()
+        contributors = [{
+            'user': user,
+            'visible': True,
+            'permissions': ['read', 'write']
+        }]
         with capture_signals() as mock_signals:
-            self.project.add_contributor(contributor=user, auth=self.consolidate_auth)
+            self.project.add_contributors(contributors=contributors, auth=self.consolidate_auth)
             self.project.save()
             assert_in(user, self.project.contributors)
             assert_equal(mock_signals.signals_sent(), set([contributor_added]))
