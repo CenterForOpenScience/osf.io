@@ -8,8 +8,8 @@ class FileHandler:
         self.password = password
 
     def get_file_list(self):
-        uri = "http://staging2.osf.io"
-        path = "/api/v2/nodes/" + self.pid + "/files/?provider=osfstorage&format=json"
+        uri = "http://localhost:8000"
+        path = "/v2/nodes/" + self.pid + "/files/?provider=osfstorage&format=json"
         return requests.get(uri+path, auth=(self.user, self.password)).json()
 
     def get_file_url(self, file):

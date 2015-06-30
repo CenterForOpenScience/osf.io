@@ -17,7 +17,7 @@ def parse_blog(posts):
             'location': 'Location',
             'website': 'http://facebook.com'
         },
-        'url': blog.get('url'),
+        'file': blog.get('file'),
         'tags': [{
             'id': 'foo',
             'name': 'Foo',
@@ -31,15 +31,29 @@ def parse_blog(posts):
         }],
         'next_post': {
             'title': next.get('title'),
-            'excerpt':  next.get('content'),
-            'url': next.get('url'),
-            'date': next.get('date')
+            'content':  next.get('content'),
+            'file': next.get('file'),
+            'date': next.get('date'),
+            'author': {
+                'name': 'Jo Bloggs',
+                'bio': 'test bio',
+                'url': '/author/1',
+                'location': 'Location',
+                'website': 'http://facebook.com'
+            }
         },
         'prev_post': {
             'title': prev.get('title'),
-            'excerpt':  prev.get('content'),
-            'url': prev.get('url'),
-            'date': prev.get('date')
+            'content':  prev.get('content'),
+            'file': prev.get('file'),
+            'date': prev.get('date'),
+            'author': {
+                'name': 'Jo Bloggs',
+                'bio': 'test bio',
+                'url': '/author/1',
+                'location': 'Location',
+                'website': 'http://facebook.com'
+            }
         }
     }
     return blog_dict
@@ -49,7 +63,7 @@ def parse_header(blog):
         'title': '',
         'post_class': '',
         'date': '',
-        'url': ''
+        'file': ''
     }
     meta = blog[blog.find("/**")+3:blog.find("**/")]
     for line in meta.split("\n"):

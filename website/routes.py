@@ -479,6 +479,10 @@ def make_url_map(app):
         Rule('/profile/<uid>/blog/', 'get', blog_views.blog_view_id,
             OsfWebRenderer('blog.mako')),
         Rule('/profile/<uid>/blog/post/<path:bid>', 'get', blog_views.post_view_id,
+             OsfWebRenderer('post.mako')),
+        Rule('/project/<pid>/blog/', 'get', blog_views.blog_view_pid,
+            OsfWebRenderer('blog.mako')),
+        Rule('/project/<pid>/blog/post/<path:bid>', 'get', blog_views.post_view_pid,
              OsfWebRenderer('post.mako'))
     ])
 
