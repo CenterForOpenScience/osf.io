@@ -904,8 +904,7 @@ class TestEditNodeContributor(ApiTestCase):
         self.url_contributor = '/{}nodes/{}/contributors/{}/'.format(API_BASE, self.project._id, self.user._id)
 
     def test_admin_change_contributor_admin_status(self):
-        data = {'admin': False, 'bibliographic': False}
-        res = self.app.put(self.url_contributor, data, auth=self.admin_auth, expect_errors=False)
+        res = self.app.put(self.url_contributor,{'admin': False}, auth=self.admin_auth, expect_errors=False)
         assert_equal(res.status_code, 200)
         assert_false(self.project.has_permission(self.user, 'admin'))
         res = self.app.put(self.url_contributor, {'admin': True}, auth=self.admin_auth, expect_errors=False)
@@ -950,7 +949,14 @@ class TestEditNodeContributor(ApiTestCase):
         assert_true(self.project.has_permission(self.user, 'admin'))
         assert_true(self.project.get_visible(self.user))
 
+    def test_admin_remove_own_admin_privilege(self):
+        url_admin = '/{}nodes/{}/contributors/{}/'.format(API_BASE, self.project._id, self.admin._id)
+        res = self.app.put(url_admin, {'admin': False}, auth=self.admin_auth, expect_errors=False)
+        assert_equal(res.status_code, 200)
+        assert_false(self.project.has_permission(self.admin, 'admin'))
+
     def test_admin_remove_all_admin_privileges(self):
+        self.project.remove_contributor(self.user, Auth(self.admin))
         url_admin = '/{}nodes/{}/contributors/{}/'.format(API_BASE, self.project._id, self.admin._id)
         res = self.app.put(url_admin, {'admin': False}, auth=self.admin_auth, expect_errors=True)
         assert_equal(res.status_code, 403)
@@ -973,12 +979,12 @@ class TestEditNodeContributor(ApiTestCase):
         assert_equal(res.status_code, 404)
 
     def test_non_admin_change_contributor_admin_status(self):
-        res = self.app.put(self.url_contributor, {'admin': True}, auth=self.user_auth, expect_errors=True)
+        res = self.app.put(self.url_contributor, {'admin': False}, auth=self.user_auth, expect_errors=True)
         # This is 403 instead of 401 because basic authentication is only for unit tests and, in order to keep from
         # presenting a basic authentication dialog box in the front end. We may change this as we understand CAS
         # a little better
         assert_equal(res.status_code, 403)
-        assert_false(self.project.has_permission(self.user, 'admin'))
+        assert_true(self.project.has_permission(self.user, 'admin'))
 
     def test_non_admin_change_contributor_bibliographic_status(self):
         res = self.app.put(self.url_contributor, {'bibliographic': False}, auth=self.user_auth, expect_errors=True)
@@ -989,9 +995,9 @@ class TestEditNodeContributor(ApiTestCase):
         assert_true(self.project.get_visible(self.user))
 
     def test_not_logged_in_change_contributor_admin_status(self):
-        res = self.app.put(self.url_contributor, {'admin': True}, expect_errors=True)
+        res = self.app.put(self.url_contributor, {'admin': False}, expect_errors=True)
         assert_equal(res.status_code, 403)
-        assert_false(self.project.has_permission(self.user, 'admin'))
+        assert_true(self.project.has_permission(self.user, 'admin'))
 
     def test_not_logged_in_change_contributor_bibliographic_status(self):
         res = self.app.put(self.url_contributor, {'bibliographic': False}, expect_errors=True)

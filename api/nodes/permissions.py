@@ -27,12 +27,11 @@ class AdminOrPublic(permissions.BasePermission):
     def has_object_permission(self, request, view, obj):
         assert isinstance(obj, (Node, User)), 'obj must be a Node or User, got {}'.format(obj)
         auth = get_user_auth(request)
-        user = request.user
         node = Node.load(request.parser_context['kwargs']['node_id'])
         if request.method in permissions.SAFE_METHODS:
             return node.is_public or node.can_view(auth)
         elif len(node.admin_contributor_ids) > 1 or request.method != 'DELETE':
-            return node.has_permission(user, 'admin')
+            return node.has_permission(auth.user, 'admin')
         else:
             return False
 
