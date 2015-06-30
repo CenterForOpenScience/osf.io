@@ -54,7 +54,7 @@ var RegistrationEditor = function(urls, editorId) {
 
     self.currentSchema = ko.computed(function() {
         return self.draft().schema;
-    });
+    });    
 };
 RegistrationEditor.prototype.init = function(metaSchema, draft) {
     var self = this;
