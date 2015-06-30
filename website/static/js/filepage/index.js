@@ -58,7 +58,7 @@ var FileViewPage = {
         });
 
         $(document).on('fileviewpage:download', function() {
-            window.location = self.file.urls.content;e
+            window.location = self.file.urls.content;
             return false;
         });
 
@@ -204,36 +204,26 @@ var FileViewPage = {
             ]) : '',
             m('.btn-group', [
                 m('.btn.btn-sm.btn-success', {config: function(element, isInitialized) {
-                    if(!isInitialized) {
-                        var embedbutton = $(element).popover();
-                        embedbutton.on("show.bs.popover", function(e){
-                            embedbutton.data()["bs.popover"].$tip.css("max-width", "600px");
-                        });
-                        var link = $('iframe').attr('src');
-                        link = '<input class="form-control" type="text" value="' + link.substring(0, link.indexOf('download') + 8) + '" />';
-                        $(element).attr('data-content', link);
-                    }
-                }, 'data-toggle': 'popover', 'data-placement': 'bottom', 'data-content': 'Content', 'title': 'Share Link', 'data-container': 'body', 'data-html': 'true'}, 'Share')
-            ].concat(
-                m('.btn.btn-sm.btn-success', {config: function(element, isInitialized) {
                     if(!isInitialized){
-                        var embedbutton = $(element).popover();
-                        embedbutton.on("show.bs.popover", function(e){
-                            embedbutton.data()["bs.popover"].$tip.css("max-width", "600px").css("text-align", "center");
+                        var button = $(element).popover();
+                        button.on('show.bs.popover', function(e){
+                            button.data()['bs.popover'].$tip.css('max-width', '600px').css('text-align', 'center');
                         });
                         var link = $('iframe').attr('src');
-                        var link = link.substring(0, link.indexOf('download') + 8);
+                        link = link.substring(0, link.indexOf('download') + 8);
                         var url = link.substring(0, link.indexOf('render'));
-                        var style = "\<link href=\"" + url + "static/css/mfr.css\" media=\"all\" rel=\"stylesheet\" /\>";
-                        var embed = 'Style <input class="form-control" type="text" value=\'' + style + '\' />';
-                        embed += 'Embed <input class="form-control" type="textarea" value=\'' + '\<div id="mfrIframe" class="mfr mfr-file"\>\</div\>';
-                        embed += ' \<script src="' + url + 'static/js/mfr.js"\>\</script\>';
-                        embed += ' \<script\>var mfrRender = new mfr.Render\("mfrIframe", ' + link + '\);\n\</script\>';
-                        embed += '\' />';
-                        $(element).attr('data-content', embed);
+                        var style = '\<link href=\"' + url + 'static/css/mfr.css\" media=\"all\" rel=\"stylesheet\" /\>';
+                        var data = '\<ul class="nav nav-tabs nav-justified"\>\<li class="active"\>\<a href="#share" data-toggle="tab"\>Share\</a\>\</li\>\<li\>\<a href="#embed" data-toggle="tab"\>Embed\</a\>\</li\>\</ul\>';
+                        data += '\<div class="tab-content"\>\<div id="share" class="tab-pane fade in active"\><input class="form-control" type="text" value="' + link + '" /\>\</div\>';
+                        data += '\<div id="embed" class="tab-pane fade"\> <input class="form-control" type="text" value=\'' + style + '\' />';
+                        data += '<input class="form-control" type="textarea" value=\'' + '\<div id="mfrIframe" class="mfr mfr-file"\>\</div\>';
+                        data += ' \<script src="' + url + 'static/js/mfr.js"\>\</script\>';
+                        data += ' \<script\>var mfrRender = new mfr.Render\("mfrIframe", "' + link + '"\);\n\</script\> \' />';
+                        data += '\</div\> \</div\>';
+                        $(element).attr('data-content', data);
                     }
-                }, 'data-toggle': 'popover', 'data-placement': 'bottom', 'data-content': 'Content', 'title': 'Embed', 'data-container': 'body', 'data-html': 'true'}, 'Embed')
-            ).concat(
+                }, 'data-toggle': 'popover', 'data-placement': 'bottom', 'data-content': 'Content', 'title': 'Share', 'data-container': 'body', 'data-html': 'true'}, 'Share')
+            ].concat(
                 m('.btn.btn-sm.btn-success.file-download', {onclick: $(document).trigger.bind($(document), 'fileviewpage:download')}, 'Download')
             )),
             m('.btn-group.btn-group-sm', [
