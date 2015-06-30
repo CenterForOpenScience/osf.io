@@ -17,7 +17,7 @@ JSONEditor.defaults.themes.bootstrap3_OSF = JSONEditor.defaults.themes.bootstrap
     getFormControl: function(label, input, description) {
         var group = document.createElement("div");
 
-        if(label && input.type === "checkbox") {
+        if (label && input.type === "checkbox") {
             group.className += " checkbox";
             label.appendChild(input);
             label.style.fontSize = "14px";
@@ -25,35 +25,34 @@ JSONEditor.defaults.themes.bootstrap3_OSF = JSONEditor.defaults.themes.bootstrap
             group.appendChild(label);
             input.style.position = "relative";
             input.style.cssFloat = "left";
-        } 
-        else {
+        } else {
             group.className += " form-group";
-            if(label) {
+            if (label) {
                 label.className += " control-label";
                 group.appendChild(label);
             }
-            if(description) group.appendChild(description);
+            if (description) group.appendChild(description);
             group.appendChild(input);
         }
 
         return group;
-  }
+    }
 });
 
 //######### Commentable ###########
 
 var Comments = function($element) {
-	
+
     var self = this;
 
     self.comments = [];
-	self.lastModified = '';
+    self.lastModified = '';
 
     var $commentsDiv = $('<div>');
     var $commentsList = $('<ul>', {
-		'class': 'list-group'
-	});
-    self.$commentsList = $commentsList;    
+        'class': 'list-group'
+    });
+    self.$commentsList = $commentsList;
     $commentsDiv.append($commentsList);
     $commentsDiv.append($('<button>', {
         'class': 'btn btn-success',
@@ -82,80 +81,79 @@ Comments.prototype.Comment = function(value) {
         placeholder: 'Leave a comment for a reviewer',
         html: value
     });
-	self.$label = $('<span>', {
-		html: function() {
-			if(window.contextVars.currentUser.id === self.user.pk) {
-				return '<strong>You</strong> said...';
-			}
-			return '<strong>' + self.user.fullname + '</strong> said...';
-		}
-	});
+    self.$label = $('<span>', {
+        html: function() {
+            if (window.contextVars.currentUser.id === self.user.pk) {
+                return '<strong>You</strong> said...';
+            }
+            return '<strong>' + self.user.fullname + '</strong> said...';
+        }
+    });
     self.$element = $('<li>', {
-		'class': 'list-group-item'
-	});
+        'class': 'list-group-item'
+    });
     var $row = $('<div>', {
         'class': 'row'
     });
     $row.append($('<div>', {
         'class': 'col-md-12'
     }).append(self.$input));
-	
+
     var $control = $('<span>');
-	self.$saveComment = $('<a>', {
+    self.$saveComment = $('<a>', {
         'class': 'btn fa fa-save',
         click: function() {
-			if(window.contextVars.currentUser.id === self.user.pk) {
-				if (self.$input.value !== '') {
-					self.$element.last().before(self.$label);
-				}
-				
-				self.editable = false;
-				self.lastModified = Date();
-				$(this).addClass('disabled');
-				self.$input.addClass('disabled');
-				self.$editComment.removeClass('disabled');
-			}
-			else {
-				throw 'Only the author may edit this comment';
-			}
+            if (window.contextVars.currentUser.id === self.user.pk) {
+                if (self.$input.value !== '') {
+                    self.$element.last().before(self.$label);
+                }
+
+                self.editable = false;
+                self.lastModified = Date();
+                $(this).addClass('disabled');
+                self.$input.addClass('disabled');
+                self.$editComment.removeClass('disabled');
+            } else {
+                throw 'Only the author may edit this comment';
+            }
         }
     });
-	self.$editComment = $('<a>', {
-		'class': 'btn fa fa-pencil',
-		click: function() {
-			if(window.contextVars.currentUser.id === self.user.pk) {
-				self.editable = true;
-				self.lastModified = Date();
-				$(this).addClass('disabled');
-				self.$input.removeClass('disabled');
-				self.$saveComment.removeClass('disabled');
-			} else {
-				self.editable = false;
-				$(this).addClass('disabled');
-				self.$input.addClass('disabled');
-				self.$saveComment.addClass('disabled');
-				throw 'Only the author may edit this comment';
-			}
-		}
-	});
-	self.$deleteComment = $('<a>', {
-		'class': 'btn fa fa-times',
-		click: function() {
-			if(window.contextVars.currentUser.id === self.user.pk) {
-				self.editable = true;
-				self.$input[0].value = '';
-				self.$element.remove();
-				self.$label.remove();
-				
-			} else {
-				throw 'Only the author may delete this comment';
-			}
-			
-		}
-	});
-	$control.append(self.$saveComment);
-	$control.append(self.$editComment);
-	$control.append(self.$deleteComment);
+    self.$editComment = $('<a>', {
+        'class': 'btn fa fa-pencil',
+        click: function() {
+            if (window.contextVars.currentUser.id === self.user.pk) {
+                self.editable = true;
+                self.lastModified = Date();
+                $(this).addClass('disabled');
+                self.$input.removeClass('disabled');
+                self.$saveComment.removeClass('disabled');
+            } else {
+                self.editable = false;
+                $(this).addClass('disabled');
+                self.$input.addClass('disabled');
+                self.$saveComment.addClass('disabled');
+                throw 'Only the author may edit this comment';
+            }
+        }
+    });
+    self.$deleteComment = $('<a>', {
+        'class': 'btn fa fa-times',
+        click: function() {
+            if (window.contextVars.currentUser.id === self.user.pk) {
+                self.editable = true;
+                self.$input[0].value = '';
+                self.$element.remove();
+                self.$label.remove();
+
+            } else {
+                throw 'Only the author may delete this comment';
+            }
+
+        }
+    });
+    $control.append(self.$saveComment);
+    $control.append(self.$editComment);
+    $control.append(self.$deleteComment);
     $row.append($control);
 
     self.$element.append($row);
@@ -174,10 +172,10 @@ JSONEditor.defaults.editors.commentableString = JSONEditor.defaults.editors.stri
         this._super();
 
         var $element = $('<div>', {
-			'class': 'col-md-12 m-b-md'
-		});
+            'class': 'col-md-12 m-b-md'
+        });
         $(this.input.parentNode).after($element);
-        this.comments = new Comments($element);        
+        this.comments = new Comments($element);
     },
     getValue: function() {
         if (this.comments) {
@@ -185,14 +183,16 @@ JSONEditor.defaults.editors.commentableString = JSONEditor.defaults.editors.stri
                 return {
                     value: comment.$input.val(),
                     user: comment.user,
-					lastModified: comment.lastModified
+                    lastModified: comment.lastModified
                 };
             });
 
-			for (var i = 0; i < comments.length; i++) {
-				if ( comments[i].value === '' ) comments.splice(i, 1);
-			}
-			
+            for (var i = 0; i < comments.length; i++) {
+                if (comments[i].value === '') {
+                    comments.splice(i, 1);
+                }
+            }
+
             var val = {
                 value: this._super(),
                 comments: comments
@@ -323,8 +323,7 @@ JSONEditor.defaults.editors.myUpload = JSONEditor.defaults.editors.upload.extend
         var mime = this.preview_value.name.match(/^data:([^;,]+)[;,]/);
         if (mime) {
             mime = mime[1];
-        }
-        else {
+        } else {
             mime = 'unknown';
         }
 
@@ -360,8 +359,7 @@ JSONEditor.defaults.editors.myUpload = JSONEditor.defaults.editors.upload.extend
 
                     if (self.parent) {
                         self.parent.onChildEditorChange(self);
-                    }
-                    else {
+                    } else {
                         self.jsoneditor.onChange();
                     }
 
@@ -381,8 +379,7 @@ JSONEditor.defaults.editors.myUpload = JSONEditor.defaults.editors.upload.extend
                     if (self.progressBar) {
                         if (progress) {
                             self.theme.updateProgressBar(self.progressBar, progress);
-                        }
-                        else {
+                        } else {
                             self.theme.updateProgressBarUnknown(self.progressBar);
                         }
                     }

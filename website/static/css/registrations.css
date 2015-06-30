@@ -1,3 +1,10 @@
 .registrations-view {
     min-height: 400px;
 }
+.registration-editor-question{
+    color: #333333;
+}
+.registration-editor-question-current{
+    color: #337AB7;
+    font-weight: 900;
+}

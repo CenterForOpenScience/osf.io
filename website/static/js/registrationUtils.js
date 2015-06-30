@@ -1,3 +1,4 @@
+
 var $ = require('jquery');
 var ko = require('knockout');
 var bootbox = require('bootbox');
@@ -9,6 +10,14 @@ var oop = require('js/oop');
 /* global JSONEditor */
 require('json-editor'); // TODO webpackify
 require('js/json-editor-extensions');
+
+var formattedDate = function(dateString){
+    if (!dateString){
+        return 'never';
+    }
+    var d = new Date(dateString);
+    return moment(dateString).fromNow() + ' (' + d.toGMTString() + ')';
+};
 
 var MetaSchema = function(params) {
     this.name = params.schema_name;
@@ -26,6 +35,8 @@ var Draft = function(params) {
     this.schemaName = metaSchema.schema_name;
     this.schemaVersion = metaSchema.schema_version;
     this.schemaData = params.registration_metadata;
+    this.initiated = params.initiated;
+    this.updated = params.updated;
 };
 
 var RegistrationEditor = function(urls, editorId) {
@@ -55,6 +66,9 @@ var RegistrationEditor = function(urls, editorId) {
     self.currentSchema = ko.computed(function() {
         return self.draft().schema;
     });    
+
+    self.lastSaveTime = ko.observable();
+    self.formattedDate = formattedDate;
 };
 RegistrationEditor.prototype.init = function(metaSchema, draft) {
     var self = this;
@@ -70,6 +84,9 @@ RegistrationEditor.prototype.init = function(metaSchema, draft) {
         
         self.updateEditor(metaSchema.schema.pages[0]);
     }
+    
+    var needsRefresh = false;
+    window.setInterval(self.save.bind(self), 60 * 1000);
 };
 RegistrationEditor.prototype.selectSchema = function() {
     // TODO preview schema?
@@ -89,6 +106,31 @@ RegistrationEditor.prototype.fetchData = function() {
     }
     $.getJSON(self.urls.get.replace('{draft_pk}', self.draft.pk)).then(ret.resolve);
     return ret;
+};
+RegistrationEditor.prototype.lastSaved = function(){
+    var self = this;
+
+    var t = self.lastSaveTime();
+    if(t) {
+        return t.toGMTString();
+    }
+    else {
+        return 'never';
+    }
+};
+RegistrationEditor.prototype.isComplete = function(question) {    
+    var self = this;
+
+    if(!self.draft()){
+        return false;
+    }
+
+    var questionId = Object.keys(question.properties)[0];
+
+    if (!self.draft().schemaData[questionId] || !self.draft().schemaData[questionId].value){
+        return false;
+    }
+    return true;
 };
 RegistrationEditor.prototype.nextPage = function() {
     debugger;
@@ -114,17 +156,24 @@ RegistrationEditor.prototype.updateEditor = function(page, question) {
         disable_edit_json: true,
         disable_properties: true,
         no_additional_properties: false
-    });
-    self.editor.on('change', function() {
-        self.save();
-    });
+    });   
 };
-RegistrationEditor.prototype.selectPage = function(page, index) {
+RegistrationEditor.prototype.selectPage = function(page, event) {
     var self = this;
-    self.updateEditor(page);
+    self.selectQuestion(page, page.questions[0], event);
 };
-RegistrationEditor.prototype.selectQuestion = function(page, question) {
+RegistrationEditor.prototype.selectQuestion = function(page, question, event) {
     var self = this;
+    
+    var questionClass = 'registration-editor-question';
+    var activeClass = 'registration-editor-question-current';
+    $('.' + questionClass).removeClass(activeClass);
+    if(event.currentTarget.classList.contains(questionClass)) {
+        $(event.currentTarget).addClass(activeClass);
+    }
+    else{
+        $(event.currentTarget).parent().find('.' + questionClass).eq(0).addClass(activeClass);
+    }
     self.updateEditor(page, question);
 };
 RegistrationEditor.prototype.create = function(schemaData) {
@@ -147,7 +196,8 @@ RegistrationEditor.prototype.save = function() {
         schema_version: self.draft().schemaVersion,
         schema_data: schemaData
     }).then(function(response) {
-        console.log(response);
+        self.lastSaveTime(new Date());
+        
     });
 };
 
@@ -176,6 +226,7 @@ var RegistrationManager = function(node, draftsSelector, editorSelector, control
     self.loading = ko.observable(true);
 
     // bound functions
+    self.formattedDate = formattedDate;
     self.getDraftRegistrations = $.getJSON.bind(null, self.urls.list);
     self.getSchemas = $.getJSON.bind(null, self.urls.schemas);
 
@@ -201,9 +252,6 @@ RegistrationManager.prototype.init = function() {
     $.when(getSchemas, getDraftRegistrations).then(function() {
         self.loading(false);
     });
-};
-RegistrationManager.prototype.formatDate = function(dateString){
-    return moment(dateString).toNow() + ' (' + '' + ')';
 };
 RegistrationManager.prototype.launchEditor = function(draft) {
     var self = this;
