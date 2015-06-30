@@ -376,13 +376,6 @@ def collect_user_config_js(addon_configs):
             js_modules.append(js_path)
     return js_modules
 
-@must_be_logged_in
-def profile_addons(**kwargs):
-    user = kwargs['auth'].user
-    return {
-        'user_id': user._primary_key,
-    }
-
 
 @must_be_logged_in
 def user_choose_addons(**kwargs):
