@@ -393,6 +393,26 @@ def create_index(index=None):
                          for field in analyzed_fields}
             mapping['properties'].update(analyzers)
 
+        if type_ == 'user':
+            fields = {
+                'job': {
+                    'type': 'string',
+                    'boost': '1',
+                },
+                'all_jobs': {
+                    'type': 'string',
+                    'boost': '0.125',
+                },
+                'school': {
+                    'type': 'string',
+                    'boost': '1',
+                },
+                'all_schools': {
+                    'type': 'string',
+                    'boost': '0.125'
+                },
+            }
+            mapping['properties'].update(fields)
         es.indices.put_mapping(index=index, doc_type=type_, body=mapping, ignore=[400, 404])
 
 

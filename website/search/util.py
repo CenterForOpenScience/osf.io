@@ -24,7 +24,7 @@ RE_XML_ILLEGAL_COMPILED = re.compile(RE_XML_ILLEGAL)
 
 TITLE_WEIGHT = 4
 DESCRIPTION_WEIGHT = 1.2
-JOB_SCHOOL_BOOST = .5
+JOB_SCHOOL_BOOST = 0.5
 ALL_JOB_SCHOOL_BOOST = 0.125
 
 def build_query(qs='*', start=0, size=10, sort=None):
