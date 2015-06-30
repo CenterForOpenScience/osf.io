@@ -88,7 +88,8 @@ function Meeting(data) {
         showFilter : true,     // Gives the option to filter by showing the filter box.
         filterStyle : { 'float' : 'right', 'width' : '50%'},
         allowMove : false,       // Turn moving on or off.
-        hoverClass : 'fangorn-hover'
+        hoverClass : 'fangorn-hover',
+        hiddenFilterRows : ['tags']
     };
     var grid = new Treebeard(tbOptions);
 }

@@ -37,6 +37,9 @@ def delete_node(node, index=None):
         doc_type = 'registration'
     search_engine.delete_doc(node._id, node, index=index, category=doc_type)
 
+def update_contributors(nodes):
+    search_engine.bulk_update_contributors(nodes)
+
 
 @requires_search
 def update_user(user, index=None):
@@ -59,7 +62,8 @@ def create_index(index=None):
 
 
 @requires_search
-def search_contributor(query, page=0, size=10, exclude=[], current_user=None):
+def search_contributor(query, page=0, size=10, exclude=None, current_user=None):
+    exclude = exclude or []
     result = search_engine.search_contributor(query=query, page=page, size=size,
                                               exclude=exclude, current_user=current_user)
     return result

@@ -1,10 +1,7 @@
 <span id="statistics" class="anchor"></span>
 <h4>Statistics</h4>
-<p>Every project comes with a statistics page where you can view information on how often people are visiting
-    your project and where they are being referred from.</p>
-<p>The information displayed on the statistics page can be changed. From the statistics page of your project
-    (found by clicking "Statistics" in the grey navigation bar), click on "Widgets & Dashboard." Select the
-    widget you wish to add by clicking on the orange arrow to the right of the widget's name.</P>
+<p>Every project comes with a statistics page where you can see information on how many visitors your project has and what websites are referring them to your materials. </p>
+<p>What types of information are displayed on the statistics page can be changed. From the Statistics tab of your project (found on the grey navigation bar), click on "Widgets & Dashboard." Select the widget you wish to add by clicking on the orange arrow to the right of the widget's name.</P>
 
 <div class="row">
     <div class="col-md-8 col-md-offset-2">
