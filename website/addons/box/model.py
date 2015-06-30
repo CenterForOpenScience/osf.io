@@ -6,7 +6,8 @@ from datetime import datetime
 import furl
 import pymongo
 import requests
-from modularodm import fields, StoredObject
+from modularodm import fields
+from framework.mongo import StoredObject
 from box import CredentialsV2, refresh_v2_token, BoxClientException
 
 from framework.auth import Auth
