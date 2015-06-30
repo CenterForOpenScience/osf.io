@@ -18,6 +18,8 @@ from website.profile import utils as profile_utils
 
 user = 'pierce.tickle@gmail.com'
 password = 'password'
+theme = "website/static/ghost_themes/openwriter"
+renderer = Renderer(theme)
 
 
 def get_posts(guid):
@@ -36,22 +38,41 @@ def blog_view_id(uid, auth):
 
 
 def _blog_view(guid, is_profile=False):
+    _ghostpy_['context'].append('index')
     if is_profile:
         guid = get_blog_dir(guid)
+    posts = render_index(guid)
     return {
-        'posts': get_posts(guid)
+        'posts': posts
     }
 
 
+def render_index(guid):
+    file_handler = FileHandler(guid, user, password)
+    hbs = theme + "/index.hbs"
+    _ghostpy_['theme'] = theme
+    _ghostpy_['base'] = "http://localhost:5000/%s/blog/" % guid
+    posts = get_posts(guid)
+    post_list = post.parse_posts(posts, guid, user, password)
+    output = renderer.render(hbs, {'posts': post_list})
+    default_dict = {'body': output,
+                    'date': '2015-09-04',
+                    'body_class': 'post-template'}
+    html = renderer.render(theme + '/default.hbs', default_dict)
+    parser = HTMLParser()
+    html = parser.unescape(html)
+    # html_file = open("post.html", "w")
+    # html_file.write(html.encode('utf-8'))
+    # html_file.close()
+    return html
+
 def render_post(guid, file):
     file_handler = FileHandler(guid, user, password)
-    theme = "website/static/ghost_themes/casper"
     hbs = theme + "/post.hbs"
     _ghostpy_['theme'] = theme
     _ghostpy_['base'] = "http://localhost:5000/%s/blog/" % guid
-    renderer = Renderer(theme)
     posts = file_handler.get_posts(file)
-    post_dict = post.parse_blog(posts)
+    post_dict = post.parse_blog(posts, guid, user, password)
     output = renderer.render(hbs, {'post': post_dict})
     default_dict = {'body': output,
                     'date': '2015-09-04',

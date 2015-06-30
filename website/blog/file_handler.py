@@ -28,7 +28,14 @@ class FileHandler:
     def get_posts(self, file):
         blog = self.get_file_list()['data']
         index = blog.index(filter(lambda post: post['name'] == file, blog)[0])
-        prev = self.read_file(blog[index-1])
-        curr = self.read_file(blog[index])
-        next = self.read_file(blog[index+1])
+        curr = blog[index]
+        try:
+            assert (index-1) >= 0
+            prev = blog[index-1]
+        except (IndexError, AssertionError):
+            prev = None
+        try:
+            next = blog[index+1]
+        except IndexError:
+            next = None
         return prev, curr, next
