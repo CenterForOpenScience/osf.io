@@ -247,11 +247,6 @@
 
         % endif  ## End Select Addons
 
-
-        % if user['has_read_permissions']:  ## Begin Configure Notifications
-
-            % if not node['is_registration']:
-
         % if user['has_read_permissions']:  ## Begin Configure Notifications
 
             % if not node['is_registration']:
