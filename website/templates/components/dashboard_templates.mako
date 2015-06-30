@@ -53,7 +53,7 @@
 ## The onboarding "register" widget
 <template id="osf-ob-register">
 <div class="m-b-sm panel panel-default ob-list-item">
-    <div data-bind="click: toggle" class="panel-heading clearfix">
+    <div data-bind="click: toggle" class="panel-heading clearfix pointer">
         <h3 class="m-xs panel-title">Register a project</h3>
         <div class="pull-right" >
             <a href="#" class="btn btn-sm project-toggle"><i class="fa fa-angle-down"></i></a>
@@ -108,7 +108,7 @@
                 <h4>1. Drop file (or click below)</h4>
 
                 <!-- Dropzone -->
-                <div data-bind="click: clearMessages(), visible: enableUpload()" id="obDropzone" class="ob-dropzone ob-dropzone-box osf-box box-round box-lt pull-left"></div>
+                <div data-bind="click: clearMessages(), visible: enableUpload()" id="obDropzone" class="osf-box box-round osf-box-lt ob-dropzone ob-dropzone-box osf-box box-round box-lt pull-left"></div>
 
                 <!-- File queue display -->
                 <div data-bind="visible: !enableUpload()" class="ob-dropzone-selected ob-dropzone-box osf-box box-round box-lt pull-left">
@@ -184,10 +184,10 @@
 
 <template id="osf-ob-goto">
 <div class="panel panel-default m-b-sm ob-list-item">
-    <div class="panel-heading clearfix">
+    <div class="panel-heading clearfix pointer">
         <h3 class="panel-title">Go to my project</h3>
         <div class="pull-right" >
-            <a href="#" class="btn btn-sm project-toggle"><i class="fa fa-angle-down"></i></a>
+            <a href="#" class="btn btn-sm project-toggle"><i class="fa fa-angle-up"></i></a>
         </div>
     </div><!-- end ob-header -->
     <div class="row panel-body">
