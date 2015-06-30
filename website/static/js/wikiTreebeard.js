@@ -70,22 +70,32 @@ function change_permissions(item, permission) {
 }
 
 // Helper to build path
+//function build_path(item, permission) {
+//    var id = item.parent().data.node.id;
+//    var pid = id;
+//    var url = $osf.apiV2Url(id);
+//    alert(url);
+//    var test = url.slice(url.lastIndexOf('/')+1);
+//    var permissions_change_path = '/api/v1/project/';
+//    var middle = '';
+//    if(id === test){
+//        middle = pid
+//    }
+//    else{
+//        pid = item.parent().parent().data.node.id;
+//        middle = pid + '/node/' + id
+//    }
+//    permissions_change_path += middle +
+//        '/wiki/permissions/'+ permission + '/';
+//        alert(permissions_change_path);
+//    return permissions_change_path;
+//}
+
+// Helper to build path
 function build_path(item, permission) {
     var id = item.parent().data.node.id;
-    var pid = id;
-    var url = $osf.apiV2Url(id);
-    var test = url.slice(url.lastIndexOf('/')+1);
-    var permissions_change_path = '/api/v1/project/';
-    var middle = '';
-    if(id === test){
-        middle = pid
-    }
-    else{
-        pid = item.parent().parent().data.node.id;
-        middle = pid + '/node/' + id
-    }
-    permissions_change_path += middle +
-        '/wiki/permissions/'+ permission + '/';
+    var permissions_change_path = '/api/v1/project/'+ id +
+        '/wiki/permissions/' + permission + '/';
     return permissions_change_path;
 }
 
