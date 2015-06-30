@@ -28,6 +28,8 @@ var AddPointerViewModel = oop.extend(Paginator, {
         this.errorMsg = ko.observable('');
         this.totalPages = ko.observable(0);
         this.includePublic = ko.observable(true);
+        this.searchWarningMsg = ko.observable('');
+        this.submitWarningMsg = ko.observable('');
 
         this.foundResults = ko.pureComputed(function() {
             return self.query() && self.results().length;
@@ -48,7 +50,8 @@ var AddPointerViewModel = oop.extend(Paginator, {
     fetchResults: function() {
         var self = this;
         self.errorMsg('');
-        $('#searchWarningMsg').removeClass('alert alert-danger').html('');
+        self.searchWarningMsg('');
+
         if (self.query()) {
             osfHelpers.postJSON(
                 '/api/v1/search/node/', {
@@ -66,8 +69,7 @@ var AddPointerViewModel = oop.extend(Paginator, {
                 self.numberOfPages(result.pages);
                 self.addNewPaginators();
             }).fail(function(xhr) {
-                $('#searchWarningMsg').addClass('alert alert-danger')
-                                      .html((xhr.responseJSON && xhr.responseJSON.message_long));
+                    self.searchWarningMsg(xhr.responseJSON && xhr.responseJSON.message_long);
             });
         } else {
             self.results([]);
@@ -122,7 +124,6 @@ var AddPointerViewModel = oop.extend(Paginator, {
         var self = this;
         self.submitEnabled(false);
         var nodeIds = osfHelpers.mapByProperty(self.selection(), 'id');
-        $('#submitWarningMsg').removeClass('alert alert-danger m-sm').html('');
 
         osfHelpers.postJSON(
             nodeApiUrl + 'pointer/', {
@@ -132,16 +133,15 @@ var AddPointerViewModel = oop.extend(Paginator, {
             window.location.reload();
         }).fail(function(data) {
             self.submitEnabled(true);
-            $('#submitWarningMsg').addClass('alert alert-danger m-sm')
-                                  .html((data.responseJSON && data.responseJSON.message_long));
+            self.submitWarningMsg(data.responseJSON && data.responseJSON.message_long);
         });
     },
     clear: function() {
         this.query('');
         this.results([]);
         this.selection([]);
-        $('#submitWarningMsg').removeClass('alert alert-danger m-sm').html('');
-        $('#searchWarningMsg').removeClass('alert alert-danger').html('');
+        this.searchWarningMsg('');
+        this.submitWarningMsg('');
     },
     authorText: function(node) {
         var rv = node.firstAuthor;
