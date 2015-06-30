@@ -25,8 +25,7 @@ class TestSanitize(unittest.TestCase):
     def test_clean_tag(self):
         assert_equal(
             sanitize.clean_tag('\'\'\'\'\'"""""""<script></script>'),
-            '&quot;&quot;&quot;&quot;&quot;&quot;&quot;'
-            '&lt;script&gt;&lt;/script&gt;',
+            '&#39&#39&#39&#39&#39&quot;&quot;&quot;&quot;&quot;&quot;&quot;&lt;script&gt;&lt;/script&gt;',
         )
 
     def test_strip_html(self):

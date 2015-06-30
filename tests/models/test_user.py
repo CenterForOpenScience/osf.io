@@ -1,3 +1,4 @@
+import mock
 import datetime
 
 from modularodm import Q
@@ -10,6 +11,7 @@ from website import models
 from tests import base
 from tests.base import fake
 from tests import factories
+from framework.tasks import handlers
 
 
 class TestUser(base.OsfTestCase):
@@ -134,6 +136,8 @@ class TestUserMerging(base.OsfTestCase):
     def setUp(self):
         super(TestUserMerging, self).setUp()
         self.user = factories.UserFactory()
+        with self.context:
+            handlers.celery_before_request()
 
     def _add_unconfirmed_user(self):
 
@@ -221,7 +225,8 @@ class TestUserMerging(base.OsfTestCase):
         with assert_raises(exceptions.MergeConflictError):
             self.user.merge_user(unregistered)
 
-    def test_merge(self):
+    @mock.patch('website.mailchimp_utils.get_mailchimp_api')
+    def test_merge(self, mock_get_mailchimp_api):
         other_user = factories.UserFactory()
         other_user.save()
 
@@ -363,9 +368,15 @@ class TestUserMerging(base.OsfTestCase):
             set(self.user._fields),
         )
 
+        # mock mailchimp
+        mock_client = mock.MagicMock()
+        mock_get_mailchimp_api.return_value = mock_client
+        mock_client.lists.list.return_value = {'data': [{'id': x, 'list_name': list_name} for x, list_name in enumerate(self.user.mailing_lists)]}
+
         # perform the merge
         self.user.merge_user(other_user)
         self.user.save()
+        handlers.celery_teardown_request()
 
         # check each field/value pair
         for k, v in expected.iteritems():

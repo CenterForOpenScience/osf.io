@@ -39,7 +39,6 @@ from website.discovery import views as discovery_views
 from website.conferences import views as conference_views
 from website.notifications import views as notification_views
 
-
 def get_globals():
     """Context variables that are available for every template rendered by
     OSFWebRenderer.
@@ -289,7 +288,7 @@ def make_url_map(app):
             'get', website_views.get_dashboard, json_renderer),
     ], prefix='/api/v1')
 
-    ### Meta-data ###
+    ### Metadata ###
 
     process_rules(app, [
 
@@ -797,6 +796,32 @@ def make_url_map(app):
         ], 'get', project_views.node.node_registrations,
             OsfWebRenderer('project/registrations.mako')),
 
+        Rule([
+            '/project/<pid>/retraction/',
+            '/project/<pid>/node/<nid>/retraction/',
+        ], 'get', project_views.register.node_registration_retraction_get,
+            OsfWebRenderer('project/retract_registration.mako')),
+        Rule([
+            '/project/<pid>/retraction/approve/<token>/',
+            '/project/<pid>/node/<nid>/retraction/approve/<token>/',
+        ], 'get', project_views.register.node_registration_retraction_approve,
+            OsfWebRenderer('error.mako', render_mako_string)),
+        Rule([
+            '/project/<pid>/retraction/disapprove/<token>/',
+            '/project/<pid>/node/<nid>/retraction/disapprove/<token>/',
+        ], 'get', project_views.register.node_registration_retraction_disapprove,
+            OsfWebRenderer('error.mako', render_mako_string)),
+        Rule([
+            '/project/<pid>/embargo/approve/<token>/',
+            '/project/<pid>/node/<nid>/embargo/approve/<token>/',
+        ], 'get', project_views.register.node_registration_embargo_approve,
+            OsfWebRenderer('error.mako', render_mako_string)),
+        Rule([
+            '/project/<pid>/embargo/disapprove/<token>/',
+            '/project/<pid>/node/<nid>/embargo/disapprove/<token>/',
+        ], 'get', project_views.register.node_registration_embargo_disapprove,
+            OsfWebRenderer('error.mako', render_mako_string)),
+
         Rule(
             '/ids/<category>/<path:value>/',
             'get',
@@ -1144,15 +1169,19 @@ def make_url_map(app):
             '/project/<pid>/node/<nid>/edit/',
         ], 'post', project_views.node.edit_node, json_renderer),
 
-        # Tags
+        # Add / remove tags
         Rule([
-            '/project/<pid>/addtag/<tag>/',
-            '/project/<pid>/node/<nid>/addtag/<tag>/',
-        ], 'post', project_views.tag.project_addtag, json_renderer),
+            '/project/<pid>/tags/',
+            '/project/<pid>/node/<nid>/tags/',
+            '/project/<pid>/tags/<tag>/',
+            '/project/<pid>/node/<nid>/tags/<tag>/',
+        ], 'post', project_views.tag.project_add_tag, json_renderer),
         Rule([
-            '/project/<pid>/removetag/<tag>/',
-            '/project/<pid>/node/<nid>/removetag/<tag>/',
-        ], 'post', project_views.tag.project_removetag, json_renderer),
+            '/project/<pid>/tags/',
+            '/project/<pid>/node/<nid>/tags/',
+            '/project/<pid>/tags/<tag>/',
+            '/project/<pid>/node/<nid>/tags/<tag>/',
+        ], 'delete', project_views.tag.project_remove_tag, json_renderer),
 
         # Add / remove contributors
         Rule([
@@ -1204,6 +1233,11 @@ def make_url_map(app):
             '/project/<pid>/register/<template>/',
             '/project/<pid>/node/<nid>/register/<template>/',
         ], 'get', project_views.register.node_register_template_page, json_renderer),
+
+        Rule([
+            '/project/<pid>/retraction/',
+            '/project/<pid>/node/<nid>/retraction/'
+        ], 'post', project_views.register.node_registration_retraction_post, json_renderer),
 
         Rule([
             '/project/<pid>/register/<template>/',
@@ -1311,6 +1345,14 @@ def make_url_map(app):
             ],
             'put',
             addon_views.create_waterbutler_log,
+            json_renderer,
+        ),
+        Rule(
+            [
+                '/registration/<pid>/callbacks/',
+            ],
+            'put',
+            project_views.register.registration_callbacks,
             json_renderer,
         ),
         Rule(

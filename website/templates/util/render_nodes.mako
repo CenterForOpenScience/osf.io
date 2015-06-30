@@ -1,6 +1,6 @@
 % if len(nodes):
     <ul class="list-group ${'sortable' if sortable and 'write' in user['permissions'] else ''}">
-      <span id='${pluralized_node_type}' class="render-nodes-list scripted">
+        <span id='${pluralized_node_type if pluralized_node_type is not UNDEFINED else 'osfNodeList'}' class="render-nodes-list scripted">
         % for each in nodes:
             <div mod-meta='{
                     "tpl": "util/render_node.mako",
