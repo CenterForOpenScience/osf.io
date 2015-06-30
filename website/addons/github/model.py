@@ -127,7 +127,7 @@ class GitHubUserSettings(AddonOAuthUserSettingsBase):
     serializer = serializer.GitHubSerializer
 
 
-class GitHubNodeSettings(AddonOAuthNodeSettingsBase):
+class GitHubNodeSettings(StorageAddonBase, AddonOAuthNodeSettingsBase):
 
 #<<<<<<< HEAD
     oauth_provider = GitHubProvider
