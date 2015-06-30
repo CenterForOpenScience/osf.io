@@ -224,7 +224,7 @@ var FileViewPage = {
                         data += '\<div id="embed" class="tab-pane fade"\> CSS Style Link<input onclick="this.select()" class="form-control" type="text" value=\'' + style + '\' />';
                         data += '\<br /\>HTML & Script\<textarea onclick="this.select()" class="form-control" \>' + '\<div id="mfrIframe" class="mfr mfr-file"\>\</div\>';
                         data += ' \<script src="' + url + 'static/js/mfr.js"\>\</script\>';
-                        data += ' \<script\>var mfrRender = new mfr.Render\("mfrIframe", "' + link + '"\);\n\</script\> \' \</textarea\>';
+                        data += ' \<script\>var mfrRender = new mfr.Render\("mfrIframe", "' + link + '"\);\n\</script\> \</textarea\>';
                         data += '\</div\> \</div\>';
                         $(element).attr('data-content', data);
                     }
