@@ -7,7 +7,7 @@
 
             <small class="authorized-by">
                 % if has_auth:
-                    authorized by <a href="{{ profileUrl }}"><em>${name}</em></a></th>
+                    authorized by <a href=${profile_url}><em>${name}</em></a></th>
                     <a id="s3RemoveAccess" class="text-danger pull-right addon-auth">Disconnect Account</a>
                 % endif
             </small>

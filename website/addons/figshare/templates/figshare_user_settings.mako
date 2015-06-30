@@ -5,7 +5,7 @@
         figshare
         <small class="authorized-by">
             % if authorized:
-                    authorized by <a href="{{ profileUrl }}"><em> ${name} </em></a>
+                    authorized by <a href=${profile_url}><em> ${name} </em></a>
                 <a id="figshareDelKey" class="text-danger pull-right addon-auth">Disconnect Account</a>
             % else:
                 <a id="figshareAddKey" class="text-primary pull-right addon-auth">
