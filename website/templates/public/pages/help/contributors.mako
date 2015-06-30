@@ -2,17 +2,9 @@
 <h4>Contributors</h4>
 <p>Adding contributors to a project allows credit to be given to those who have worked on the project, and
     allows them to make changes to the project.</p>
-<p>There are several levels of permissions that a contributor can have. Admins on a project can add contributors
-    by visiting the "Sharing" tab in the grey navigation bar under the project's name. Click on the top link
-    labeled "Click to add a contributor." A pop-up will appear where you can search for a person to add. If they
-    have an OSF account, their name will appear and you can add them and select their privileges. If they do not
-    have an OSF account, you can provide them as an unregistered user and they will be notified by email.  You can
-    select what components you would like to add them to.</p>
-<P>Admins can also affect the order in which contributors are listed. To re-order, just click on a contributor
-    and drag and drop them to their new position.</P>
-<p>Assigning "read" privileges means that the contributor can see any project or component they are listed as a contributor
-    on. "Read and write" privileges means that the contributor can see and edit any project or component they
-    are a contributor on, but they cannot add or remove contributors like an administrator.</p>
+<p>Administrators of a project can add contributors by visiting the "Sharing" tab in the grey navigation bar under the project's name. Click on the top link, "Click to add a contributor." A pop-up will appear to search for a collaborator. If he or she has an OSF account, his or her name will appear; select the name and choose the permissions level. If he or she does not have an OSF account, click the link to "Add as an unregistered contributor," input an email address and he or she will be notified by email. Next, select which components (if any) you would like to add them to.</p>
+<P>There are several levels of permissions for contributors. "Read" privileges allow contributor to see the contents of the project or component. "Read and write" privileges allow the contributor to: see the contents of the project; upload and delete files; create, edit, and delete wiki pages; configure add-ons; and create new components. "Administrator" privileges encompass everything "read and write" privileges do, as well as adding/deleting contributors and controlling permissions, controlling public/private settings of the project, and deleting the project. Administrators are also granted read access to all components within the project&mdash;even if the administrator is not a contributor on the component.</P>
+<p>Project administrators can also choose the order in which contributors are listed. To re-order, drag and drop the names into their new positions.</p>
 
 <div class="row">
     <div class="col-md-8 col-md-offset-2">

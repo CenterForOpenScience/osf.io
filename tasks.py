@@ -174,6 +174,7 @@ def shell():
     code.interact(banner, local=context)
     return
 
+
 @task(aliases=['mongo'])
 def mongoserver(daemon=False, config=None):
     """Run the mongod process.
@@ -315,9 +316,18 @@ def elasticsearch():
 
 @task
 def migrate_search(delete=False, index=settings.ELASTIC_INDEX):
-    '''Migrate the search-enabled models.'''
+    """Migrate the search-enabled models."""
     from website.search_migration.migrate import migrate
     migrate(delete, index=index)
+
+@task
+def rebuild_search():
+    """Delete and recreate the index for elasticsearch"""
+    run("curl -s -XDELETE {uri}/{index}*".format(uri=settings.ELASTIC_URI,
+                                             index=settings.ELASTIC_INDEX))
+    run("curl -s -XPUT {uri}/{index}".format(uri=settings.ELASTIC_URI,
+                                          index=settings.ELASTIC_INDEX))
+    migrate_search()
 
 
 @task
@@ -325,6 +335,14 @@ def mailserver(port=1025):
     """Run a SMTP test server."""
     cmd = 'python -m smtpd -n -c DebuggingServer localhost:{port}'.format(port=port)
     run(bin_prefix(cmd), pty=True)
+
+
+@task
+def jshint():
+    """Run JSHint syntax check"""
+    js_folder = os.path.join(HERE, 'website', 'static', 'js')
+    cmd = 'jshint {}'.format(js_folder)
+    run(cmd, echo=True)
 
 
 @task(aliases=['flake8'])
@@ -340,6 +358,7 @@ def pip_install(req_file):
     if WHEELHOUSE_PATH:
         cmd += ' --no-index --find-links={}'.format(WHEELHOUSE_PATH)
     return cmd
+
 
 @task(aliases=['req'])
 def requirements(addons=False, release=False, dev=False):
@@ -373,6 +392,7 @@ def test_module(module=None, verbosity=2):
     # Use pty so the process buffers "correctly"
     run(bin_prefix(TEST_CMD) + args, pty=True)
 
+
 @task
 def test_osf():
     """Run the OSF test suite."""
@@ -392,24 +412,19 @@ def test_addons():
 
 @task
 def test(all=False, syntax=False):
-    """Alias of `invoke test_osf`.
+    """
+    Run unit tests: OSF (always), plus addons and syntax checks (optional)
     """
     if syntax:
         flake()
+        jshint()
+
+    test_osf()
 
     if all:
-        test_all()
-    else:
-        test_osf()
+        test_addons()
+        karma(single=True, browsers='PhantomJS')
 
-
-@task
-def test_all(syntax=False):
-    if syntax:
-        flake()
-    test_osf()
-    test_addons()
-    karma(single=True, browsers='PhantomJS')
 
 @task
 def karma(single=False, sauce=False, browsers=None):
@@ -468,6 +483,7 @@ def addon_requirements():
             except IOError:
                 pass
     print('Finished')
+
 
 @task
 def encryption(owner=None):
@@ -590,13 +606,12 @@ def analytics():
     import matplotlib
     matplotlib.use('Agg')
     init_app()
-    from scripts import metrics
     from scripts.analytics import (
         logs, addons, comments, folders, links, watch, email_invites,
         permissions, profile, benchmarks
     )
     modules = (
-        metrics, logs, addons, comments, folders, links, watch, email_invites,
+        logs, addons, comments, folders, links, watch, email_invites,
         permissions, profile, benchmarks
     )
     for module in modules:
@@ -745,6 +760,7 @@ def bundle_certs(domain, cert_path):
     )
     run(cmd)
 
+
 @task
 def clean_assets():
     """Remove built JS files."""
@@ -771,6 +787,7 @@ def webpack(clean=False, watch=False, dev=False):
     command = ' '.join(args)
     run(command, echo=True)
 
+
 @task()
 def assets(dev=False, watch=False):
     """Install and build static assets."""
@@ -783,6 +800,7 @@ def assets(dev=False, watch=False):
     # on prod
     webpack(clean=False, watch=watch, dev=dev)
 
+
 @task
 def generate_self_signed(domain):
     """Generate self-signed SSL key and certificate.
@@ -792,6 +810,7 @@ def generate_self_signed(domain):
         ' -keyout {0}.key -out {0}.crt'
     ).format(domain)
     run(cmd)
+
 
 @task
 def update_citation_styles():

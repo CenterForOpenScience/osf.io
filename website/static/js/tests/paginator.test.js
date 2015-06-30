@@ -23,6 +23,7 @@ describe('Paginator', () => {
     var paginator;
     var numberOfPages;
     var currentPage;
+    var pageToGet;
 
     beforeEach(() => {
         paginator = new TestPaginator();
@@ -32,6 +33,7 @@ describe('Paginator', () => {
         spy.reset();
         numberOfPages = 0;
         currentPage = 0;
+        pageToGet = 0;
     });
 
     it('previousPage', () => {
@@ -43,7 +45,7 @@ describe('Paginator', () => {
         });
         paginator.previousPage();
         assert.calledOnce(paginator.fetchResults);
-        assert.equal(paginator.currentPage() + 1, currentPage);
+        assert.equal(paginator.pageToGet() + 1, currentPage);
     });
 
     it('nextPage', () => {
@@ -53,7 +55,7 @@ describe('Paginator', () => {
         });
         paginator.nextPage();
         assert.calledOnce(paginator.fetchResults);
-        assert.equal(paginator.currentPage() - 1, currentPage);
+        assert.equal(paginator.pageToGet() - 1, currentPage);
     });
 
     it('enforces implementation of fetchResults', () => {

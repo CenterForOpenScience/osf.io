@@ -8,12 +8,17 @@ var bootbox = require('bootbox');
 require('knockout.punches');
 var Raven = require('raven-js');
 
-var osfHelpers = require('js/osfHelpers');
+var $osf = require('js/osfHelpers');
+
+var $modal = $('#dataverseInputCredentials');
 
 ko.punches.enableAll();
 
 function ViewModel(url) {
     var self = this;
+    const otherString = 'Other (Please Specify)';
+
+    self.addonName = 'Dataverse';
     self.url = url;
     self.urls = ko.observable();
     self.apiToken = ko.observable();
@@ -22,7 +27,7 @@ function ViewModel(url) {
     self.nodeHasAuth = ko.observable(false);
     self.userHasAuth = ko.observable(false);
     self.userIsOwner = ko.observable(false);
-    self.connected = ko.observable(false);
+    self.validCredentials = ko.observable(false);
     self.loadedSettings = ko.observable(false);
     self.loadedDatasets = ko.observable(false);
     self.submitting = ko.observable(false);
@@ -36,48 +41,73 @@ function ViewModel(url) {
     self.savedDataverseTitle = ko.observable();
     self.datasetWasFound = ko.observable(false);
 
+    self.accounts = ko.observable([]);
+    self.hosts = ko.observableArray([]);
+    self.selectedHost = ko.observable();    // Host specified in select element
+    self.customHost = ko.observable();      // Host specified in input element
+    self.savedHost = ko.observable();       // Configured host
+
+    // Designated host, specified from select or input element
+    self.host = ko.pureComputed(function() {
+        return self.useCustomHost() ? self.customHost() : self.selectedHost();
+    });
+    // Hosts visible in select element. Includes presets and "Other" option
+    self.visibleHosts = ko.pureComputed(function() {
+        return self.hosts().concat([otherString]);
+    });
+    // Whether to use select element or input element for host designation
+    self.useCustomHost = ko.pureComputed(function() {
+        return self.selectedHost() === otherString;
+    });
+    self.showApiTokenInput = ko.pureComputed(function() {
+        return Boolean(self.selectedHost());
+    });
+    self.tokenUrl = ko.pureComputed(function() {
+       return self.host() ? 'https://' + self.host() + '/account/apitoken' : null;
+    });
+    self.savedHostUrl = ko.pureComputed(function() {
+        return 'https://' + self.savedHost();
+    });
+
     self.messages = {
         userSettingsError: ko.pureComputed(function() {
             return 'Could not retrieve settings. Please refresh the page or ' +
                 'contact <a href="mailto: support@osf.io">support@osf.io</a> if the ' +
                 'problem persists.';
         }),
-        confirmNodeDeauth: ko.pureComputed(function() {
-            return 'Are you sure you want to unlink this Dataverse account? This will ' +
-                'revoke the ability to view, download, modify, and upload files ' +
-                'to datasets on the Dataverse from the OSF. This will not remove your ' +
-                'Dataverse authorization from your <a href="' + self.urls().settings + '">user settings</a> ' +
-                'page.';
+        confirmDeauth: ko.pureComputed(function() {
+            return 'Are you sure you want to remove this ' + self.addonName + ' authorization?';
         }),
-        confirmImportAuth: ko.pureComputed(function() {
-            return 'Are you sure you want to authorize this project with your Dataverse credentials?';
+        confirmAuth: ko.pureComputed(function() {
+            return 'Are you sure you want to authorize this project with your ' + self.addonName + ' access token?';
         }),
-        deauthError: ko.pureComputed(function() {
-            return 'Could not unlink Dataverse at this time. Please refresh the page or ' +
-                'contact <a href="mailto: support@osf.io">support@osf.io</a> if the ' +
-                'problem persists.';
+        deauthorizeSuccess: ko.pureComputed(function() {
+            return 'Deauthorized ' + self.addonName + '.';
         }),
-        deauthSuccess: ko.pureComputed(function() {
-            return 'Successfully unlinked your Dataverse account.';
+        deauthorizeFail: ko.pureComputed(function() {
+            return 'Could not deauthorize because of an error. Please try again later.';
         }),
         authInvalid: ko.pureComputed(function() {
-            return 'Your Dataverse API token is invalid.';
+            return 'The API token provided for ' + self.host() + ' is invalid.';
         }),
         authError: ko.pureComputed(function() {
             return 'There was a problem connecting to the Dataverse. Please refresh the page or ' +
                 'contact <a href="mailto: support@osf.io">support@osf.io</a> if the ' +
                 'problem persists.';
         }),
-        importAuthSuccess: ko.pureComputed(function() {
-            return 'Successfully linked your Dataverse account';
+        tokenImportSuccess: ko.pureComputed(function() {
+            return 'Successfully imported access token from profile.';
         }),
-        importAuthError: ko.pureComputed(function() {
-            return 'There was a problem connecting to the Dataverse. Please refresh the page or ' +
-                'contact <a href="mailto: support@osf.io">support@osf.io</a> if the ' +
-                'problem persists.';
+        tokenImportError: ko.pureComputed(function() {
+            return 'Error occurred while importing access token.';
+        }),
+        updateAccountsError: ko.pureComputed(function() {
+            return 'Could not retrieve ' + self.addonName + ' account list at ' +
+                'this time. Please refresh the page. If the problem persists, email ' +
+                '<a href="mailto:support@osf.io">support@osf.io</a>.';
         }),
         datasetDeaccessioned: ko.pureComputed(function() {
-            return 'This dataset has already been deaccessioned on the Dataverse ' +
+            return 'This dataset has already been deaccessioned on Dataverse ' +
                 'and cannot be connected to the OSF.';
         }),
         forbiddenCharacters: ko.pureComputed(function() {
@@ -146,7 +176,7 @@ function ViewModel(url) {
         return self.userHasAuth() && !self.nodeHasAuth() && self.loadedSettings();
     });
     self.credentialsChanged = ko.pureComputed(function() {
-        return self.nodeHasAuth() && !self.connected();
+        return self.nodeHasAuth() && !self.validCredentials();
     });
     self.showInputCredentials = ko.pureComputed(function() {
         return (self.credentialsChanged() && self.userIsOwner()) ||
@@ -159,11 +189,21 @@ function ViewModel(url) {
         return self.savedDatasetDoi() && self.loadedDatasets() && !self.datasetWasFound();
     });
     self.showSubmitDataset = ko.pureComputed(function() {
-        return self.nodeHasAuth() && self.connected() && self.userIsOwner();
+        return self.nodeHasAuth() && self.validCredentials() && self.userIsOwner();
     });
     self.enableSubmitDataset = ko.pureComputed(function() {
         return !self.submitting() && self.dataverseHasDatasets() &&
             self.savedDatasetDoi() !== self.selectedDatasetDoi();
+    });
+
+    self.showSettings = ko.pureComputed(function() {
+        return self.nodeHasAuth() && self.validCredentials();
+    });
+    self.showImport = ko.pureComputed(function() {
+        return self.userHasAuth() && !self.nodeHasAuth() && self.loadedSettings();
+    });
+    self.showTokenCreateButton = ko.pureComputed(function() {
+        return !self.userHasAuth() && !self.nodeHasAuth() && self.loadedSettings();
     });
 
     // Flashed messages
@@ -188,10 +228,10 @@ function ViewModel(url) {
         });
     });
 }
+
 /**
  * Update the view model from data returned from the server.
  */
-
 ViewModel.prototype.updateFromData = function(data) {
     var self = this;
     self.urls(data.urls);
@@ -199,25 +239,37 @@ ViewModel.prototype.updateFromData = function(data) {
     self.nodeHasAuth(data.nodeHasAuth);
     self.userHasAuth(data.userHasAuth);
     self.userIsOwner(data.userIsOwner);
+    self.hosts(data.hosts);
 
     if (self.nodeHasAuth()) {
+        self.savedHost(data.dataverseHost);
         self.dataverses(data.dataverses);
         self.savedDataverseAlias(data.savedDataverse.alias);
         self.savedDataverseTitle(data.savedDataverse.title);
         self.selectedDataverseAlias(data.savedDataverse.alias);
         self.savedDatasetDoi(data.savedDataset.doi);
         self.savedDatasetTitle(data.savedDataset.title);
-        self.connected(data.connected);
+        self.validCredentials(data.connected);
         if (self.userIsOwner()) {
             self.getDatasets(); // Sets datasets, selectedDatasetDoi
         }
     }
 };
 
+/** Reset all fields from Dataverse host selection modal */
+ViewModel.prototype.clearModal = function() {
+    var self = this;
+    self.message('');
+    self.messageClass('text-info');
+    self.apiToken(null);
+    self.selectedHost(null);
+    self.customHost(null);
+};
+
 ViewModel.prototype.setInfo = function() {
     var self = this;
     self.submitting(true);
-    return osfHelpers.postJSON(
+    return $osf.postJSON(
         self.urls().set,
         ko.toJS({
             dataverse: {
@@ -266,16 +318,19 @@ ViewModel.prototype.getDatasets = function() {
     var self = this;
     self.datasets([]);
     self.loadedDatasets(false);
-    return osfHelpers.postJSON(
+    return $osf.postJSON(
         self.urls().getDatasets,
         ko.toJS({
             alias: self.selectedDataverseAlias
         })
     ).done(function(response) {
-        self.datasets(response.datasets);
-        self.loadedDatasets(true);
-        self.selectedDatasetDoi(self.savedDatasetDoi());
-        self.findDataset();
+        // Don't update if another Dataverse has been selected
+        if (response.alias === self.selectedDataverseAlias()) {
+            self.datasets(response.datasets);
+            self.loadedDatasets(true);
+            self.selectedDatasetDoi(self.savedDatasetDoi());
+            self.findDataset();
+        }
     }).fail(function(xhr, status, error) {
         self.changeMessage(self.messages.getDatasetsError, 'text-danger');
         Raven.captureMessage('Could not GET datasets', {
@@ -286,36 +341,105 @@ ViewModel.prototype.getDatasets = function() {
     });
 };
 
-ViewModel.prototype.authorizeNode = function() {
+/** Send POST request to authorize Dataverse */
+ViewModel.prototype.sendAuth = function() {
     var self = this;
-    return osfHelpers.putJSON(
-        self.urls().importAuth, {}
-    ).done(function(response) {
-        self.updateFromData(response.result);
-        self.changeMessage(self.messages.importAuthSuccess, 'text-success', 3000);
-    }).fail(function(xhr, status, error) {
-        self.changeMessage(self.messages.importAuthError, 'text-danger');
-        Raven.captureMessage('Could not import Dataverse node auth', {
-            url: self.urls().importAuth,
-            textStatus: status,
+    var url = self.urls().create;
+    return $osf.postJSON(
+        url,
+        ko.toJS({
+            host: self.host,
+            api_token: self.apiToken
+        })
+    ).done(function() {
+        self.clearModal();
+        $modal.modal('hide');
+        self.importAuth();
+    }).fail(function(xhr, textStatus, error) {
+        var errorMessage = (xhr.status === 401) ? self.messages.authInvalid : self.messages.authError;
+        self.changeMessage(errorMessage, 'text-danger');
+        Raven.captureMessage('Could not authenticate with Dataverse', {
+            url: url,
+            textStatus: textStatus,
             error: error
         });
     });
 };
 
-/** Send POST request to authorize Dataverse */
-ViewModel.prototype.sendAuth = function() {
+ViewModel.prototype.fetchAccounts = function() {
     var self = this;
-    return osfHelpers.postJSON(
-        self.urls().create,
-        ko.toJS({api_token: self.apiToken})
-    ).done(function() {
-        // User now has auth
-        self.authorizeNode();
-    }).fail(function(xhr) {
-        var errorMessage = (xhr.status === 401) ? self.messages.authInvalid : self.messages.authError;
-        self.changeMessage(errorMessage, 'text-danger');
+    var ret = $.Deferred();
+    var request = $.get(self.urls().accounts);
+    request.then(function(data) {
+        ret.resolve(data.accounts);
     });
+    request.fail(function(xhr, textStatus, error) {
+        self.changeMessage(self.messages.updateAccountsError(), 'text-warning');
+        Raven.captureMessage('Could not GET ' + self.addonName + ' accounts for user', {
+            url: self.url,
+            textStatus: textStatus,
+            error: error
+        });
+        ret.reject(xhr, textStatus, error);
+    });
+    return ret.promise();
+};
+
+ViewModel.prototype.updateAccounts = function() {
+    var self = this;
+    return self.fetchAccounts()
+        .done(function(accounts) {
+            self.accounts(
+                $.map(accounts, function(account) {
+                    return {
+                        name: account.display_name,
+                        id: account.id
+                    };
+                })
+            );
+        });
+};
+
+ViewModel.prototype.onImportSuccess = function(response) {
+    var self = this;
+    var msg = response.message || self.messages.tokenImportSuccess();
+    // Update view model based on response
+    self.changeMessage(msg, 'text-success', 3000);
+    self.updateFromData(response.result);
+};
+
+ViewModel.prototype.onImportError = function(xhr, status, error) {
+    var self = this;
+    self.changeMessage(self.messages.tokenImportError(), 'text-danger');
+    Raven.captureMessage('Failed to import ' + self.addonName + ' access token.', {
+        xhr: xhr,
+        status: status,
+        error: error
+    });
+};
+
+/**
+ * Allows a user to create an access token from the nodeSettings page
+ */
+ViewModel.prototype.connectAccount = function() {
+    var self = this;
+
+    window.oauthComplete = function(res) {
+        // Update view model based on response
+        self.changeMessage(self.messages.connectAccountSuccess(), 'text-success', 3000);
+        self.importAuth.call(self);
+    };
+    window.open(self.urls().auth);
+};
+
+ViewModel.prototype.connectExistingAccount = function(account_id) {
+    var self = this;
+
+    return $osf.putJSON(
+        self.urls().importAuth, {
+            external_account_id: account_id
+        }
+    ).then(self.onImportSuccess.bind(self), self.onImportError.bind(self));
 };
 
 /**
@@ -323,40 +447,75 @@ ViewModel.prototype.sendAuth = function() {
  */
 ViewModel.prototype.importAuth = function() {
     var self = this;
-    bootbox.confirm({
-        title: 'Link to Dataverse Account?',
-        message: self.messages.confirmImportAuth(),
-        callback: function(confirmed) {
-            if (confirmed) {
-                self.authorizeNode();
+    self.updateAccounts()
+        .then(function(){
+            if (self.accounts().length > 1) {
+                bootbox.prompt({
+                    title: 'Choose ' + self.addonName + ' Access Token to Import',
+                    inputType: 'select',
+                    inputOptions: ko.utils.arrayMap(
+                        self.accounts(),
+                        function(item) {
+                            return {
+                                text: item.name,
+                                value: item.id
+                            };
+                        }
+                    ),
+                    value: self.accounts()[0].id,
+                    callback: (self.connectExistingAccount.bind(self))
+                });
+            } else {
+                bootbox.confirm({
+                    title: 'Import ' + self.addonName + ' Access Token?',
+                    message: self.messages.confirmAuth(),
+                    callback: function(confirmed) {
+                        if (confirmed) {
+                            self.connectExistingAccount.call(self, (self.accounts()[0].id));
+                        }
+                    }
+                });
             }
-        }
-    });
+        });
 };
 
-ViewModel.prototype.clickDeauth = function() {
+/**
+ * Send DELETE request to deauthorize this node.
+ */
+ViewModel.prototype._deauthorizeConfirm = function() {
     var self = this;
-
-    function sendDeauth() {
-        return $.ajax({
+    var request = $.ajax({
+        url: self.urls().deauthorize,
+        type: 'DELETE'
+    });
+    request.done(function() {
+        // Update observables
+        self.nodeHasAuth(false);
+        self.clearModal();
+        self.changeMessage(self.messages.deauthorizeSuccess(), 'text-warning', 3000);
+    });
+    request.fail(function(xhr, textStatus, error) {
+        self.changeMessage(self.messages.deauthorizeFail(), 'text-danger');
+        Raven.captureMessage('Could not deauthorize ' + self.addonName + ' account from node', {
             url: self.urls().deauthorize,
-            type: 'DELETE'
-        }).done(function() {
-            self.nodeHasAuth(false);
-            self.userIsOwner(false);
-            self.connected(false);
-            self.changeMessage(self.messages.deauthSuccess, 'text-success', 3000);
-        }).fail(function() {
-            self.changeMessage(self.messages.deauthError, 'text-danger');
+            textStatus: textStatus,
+            error: error
         });
-    }
+    });
+    return request;
+};
 
+/** Pop up a confirmation to deauthorize addon from this node.
+ *  Send DELETE request if confirmed.
+ */
+ViewModel.prototype.deauthorize = function() {
+    var self = this;
     bootbox.confirm({
-        title: 'Deauthorize?',
-        message: self.messages.confirmNodeDeauth(),
+        title: 'Deauthorize ' + self.addonName + '?',
+        message: self.messages.confirmDeauth(),
         callback: function(confirmed) {
             if (confirmed) {
-                sendDeauth();
+                self._deauthorizeConfirm();
             }
         }
     });
@@ -387,6 +546,6 @@ function DataverseNodeConfig(selector, url) {
     self.url = url;
     // On success, instantiate and bind the ViewModel
     self.viewModel = new ViewModel(url);
-    osfHelpers.applyBindings(self.viewModel, '#dataverseScope');
+    $osf.applyBindings(self.viewModel, '#dataverseScope');
 }
 module.exports = DataverseNodeConfig;

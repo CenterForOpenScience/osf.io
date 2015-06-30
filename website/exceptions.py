@@ -14,3 +14,37 @@ class NodeStateError(NodeError):
     Example: Node.remove_node() is called, but the node has non-deleted children
     """
     pass
+
+
+class RetractionTokenError(NodeError):
+    """Base class for errors arising from the user of a retraction token."""
+    pass
+
+
+class InvalidRetractionApprovalToken(RetractionTokenError):
+    """Raised if a retraction approval token is not found."""
+    message_short = "Invalid Token"
+    message_long = "This retraction approval link is invalid. Are you logged into the correct account?"
+
+
+class InvalidRetractionDisapprovalToken(RetractionTokenError):
+    """Raised if a retraction disapproval token is not found."""
+    message_short = "Invalid Token"
+    message_long = "This retraction disapproval link is invalid. Are you logged into the correct account?"
+
+
+class EmbargoTokenError(NodeError):
+    """Base class for errors arising from the user of a embargo token."""
+    pass
+
+
+class InvalidEmbargoApprovalToken(EmbargoTokenError):
+    """Raised if a embargo approval token is not found."""
+    message_short = "Invalid Token"
+    message_long = "This embargo approval link is invalid. Are you logged into the correct account?"
+
+
+class InvalidEmbargoDisapprovalToken(EmbargoTokenError):
+    """Raised if a embargo disapproval token is not found."""
+    message_short = "Invalid Token"
+    message_long = "This embargo disapproval link is invalid. Are you logged into the correct account?"

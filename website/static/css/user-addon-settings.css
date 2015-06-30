@@ -1,13 +1,18 @@
+/* `addon-oauth` is tied to javascript; `addon-generic` is not */
+div.addon-generic td.authorized-nodes,
 div.addon-oauth td.authorized-nodes {
     padding-left:20px;
 }
 
+div.addon-generic table th:last-child,
+div.addon-generic table td:last-child,
 div.addon-oauth table th:last-child,
 div.addon-oauth table td:last-child{
     text-align: right;
     font-weight: normal;
 }
 
+div.addon-generic table.table thead:last-child tr th,
 div.addon-oauth table.table thead:last-child tr th {
     border-bottom: none;
 }

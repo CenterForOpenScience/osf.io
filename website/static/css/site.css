@@ -1041,12 +1041,20 @@ h1.unavailable {
 }
 .tag-cloud .cloud-tag:hover
 {
-    background-color: #31b0d5;
+    background-color: #337ab7;
+}
+.tag-cloud .cloud-tag:hover > .cloud-text
+{
+    color: #E0EBF3;
+}
+.tag-cloud .cloud-tag:hover > .remove-tag
+{
+    visibility: visible;
 }
 .tag-cloud .tag-big
 {
     font-size: 13pt;
-    background-color: #AABCDD;
+    background-color: #AABBDD;
 }
 
 .tag-cloud .tag-med
@@ -1065,6 +1073,32 @@ h1.unavailable {
     {
         margin: 0;
     }
+
+.tag-container
+{
+    position: relative;
+}
+
+.remove-tag
+{
+    visibility: hidden;
+    position: absolute;
+    top: -5px;
+    right: -5px;
+    color: #AAAAAA;
+}
+
+.remove-tag.big
+{
+    top: -8px;
+    right: -8px;
+}
+
+.remove-tag.med
+{
+    top: -6px;
+    right: -6px;
+}
 
 .registration a {
     color: #666;
@@ -1928,13 +1962,13 @@ div.profile-fullname{
     position: fixed;
     width: 100%;
     left: 0;
-    top: 43px;
+    top: 50px;
     background: #EEE;
     z-index: 99;
     box-shadow:0 0 9px -1px #838383;
     border-radius: 0;
     border: none;
-    min-height:40px;
+    min-height: 40px !important;
 }
 
 .osf-project-navbar li>a {
@@ -2175,7 +2209,7 @@ div.profile-fullname{
     width: 100%;
     box-shadow: 0 0 9px -2px #464545;
     left: 0;
-    top: 43px;
+    top: 50px;
 }
 
 .osf-search-input {
@@ -2278,9 +2312,6 @@ div.profile-fullname{
 }
 .break-word {
     word-wrap: break-word;
-}
-.word-break-word {
-    word-break: break-word;
 }
 .table-fixed {
     table-layout: fixed;
@@ -2520,6 +2551,16 @@ div.profile-fullname{
 #file-navigation #tb-tbody {
     max-height: 500px;
     height: inherit;
+}
+#file-navigation span {
+    vertical-align: middle;
+}
+#file-navigation .tb-expand-icon-holder div {
+    vertical-align: middle;
+}
+#file-navigation .tb-td {
+    padding-top: 2px;
+    padding-bottom: 4px;
 }
 .file-page #tb-tbody {
     border: none;
@@ -2799,4 +2840,8 @@ div.profile-fullname{
 #viewPanel > .osf-panel-body,
 .mfr-file {
   height: 100%;
+}
+
+.text-center {
+    text-align: center;
 }
