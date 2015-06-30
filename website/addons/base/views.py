@@ -28,9 +28,6 @@ from website.profile.utils import get_gravatar
 from website.project.decorators import must_be_valid_project, must_be_contributor_or_public
 from website.project.utils import serialize_node
 
-#TODO: Evaluate elegance of reindexing solution
-from website.search import search
-
 
 @decorators.must_have_permission('write')
 @decorators.must_not_be_registration
@@ -286,9 +283,8 @@ def create_waterbutler_log(payload, **kwargs):
 
         node_addon.create_waterbutler_log(auth, action, metadata)
 
-    # TODO: Evaluate elegance of reindexing solution
     if payload['action'] in ['create', 'update', 'delete']:
-        search.update_node(node)
+        node.update_search()
 
     return {'status': 'success'}
 
