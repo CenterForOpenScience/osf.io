@@ -313,7 +313,6 @@
 </%def>
 
 <%def name="stylesheets()">
-    <link rel="stylesheet" href="/static/css/pages/project-page.css">
     ${parent.stylesheets()}
     % for style in addon_widget_css:
     <link rel="stylesheet" href="${style}" />
@@ -321,6 +320,9 @@
     % for stylesheet in tree_css:
     <link rel='stylesheet' href='${stylesheet}' type='text/css' />
     % endfor
+
+    <link rel="stylesheet" href="/static/css/pages/project-page.css">
+
 </%def>
 
 <%def name="javascript_bottom()">
