@@ -514,7 +514,7 @@ def notify_contributor(node, contributor, throttle=24 * 3600):
             if timestamp:
                 if not throttle_period_expired(timestamp, throttle):
                     raise HTTPError(400, data=dict(
-                        message_long='User can only be added to a project once every {} hours'.format(throttle/3600)
+                        message_long='User can only be added to a project once every {} hours'.format(throttle / 3600)
                     ))
         else:
             node.contributor_record[contributor._id] = {}
