@@ -4,6 +4,7 @@ from rest_framework import serializers as ser
 from api.users.serializers import UserSerializer
 from website.models import Node, User
 from framework.auth.core import Auth
+from api.base.utils import get_object_or_404
 from api.base.serializers import JSONAPISerializer, LinksField, Link, WaterbutlerLink
 
 
@@ -128,73 +129,6 @@ class NodeSerializer(JSONAPISerializer):
         return instance
 
 
-class NodePointersSerializer(JSONAPISerializer):
-
-    id = ser.CharField(read_only=True, source='_id')
-    node_id = ser.CharField(source='node._id', help_text='The ID of the node that this pointer points to')
-    title = ser.CharField(read_only=True, source='node.title', help_text='The title of the node that this pointer '
-                                                                         'points to')
-
-    class Meta:
-        type_ = 'pointers'
-
-    links = LinksField({
-        'html': 'get_absolute_url',
-    })
-
-    def get_absolute_url(self, obj):
-        pointer_node = Node.load(obj.node._id)
-        return pointer_node.absolute_url
-
-    def create(self, validated_data):
-        request = self.context['request']
-        user = request.user
-        auth = Auth(user)
-        node = self.context['view'].get_node()
-        pointer_node = Node.load(validated_data['node']['_id'])
-        if not pointer_node:
-            raise NotFound('Node not found.')
-        try:
-            pointer = node.add_pointer(pointer_node, auth, save=True)
-            return pointer
-        except ValueError:
-            raise ValidationError('Pointer to node {} already in list'.format(pointer_node._id))
-
-    def update(self, instance, validated_data):
-        pass
-
-class NodeFilesSerializer(JSONAPISerializer):
-
-    id = ser.CharField(read_only=True, source='_id')
-    provider = ser.CharField(read_only=True)
-    path = ser.CharField(read_only=True)
-    item_type = ser.CharField(read_only=True)
-    name = ser.CharField(read_only=True)
-    metadata = ser.DictField(read_only=True)
-
-    class Meta:
-        type_ = 'files'
-
-    links = LinksField({
-        'self': WaterbutlerLink(kwargs={'node_id': '<node_id>'}),
-        'self_methods': 'valid_self_link_methods',
-        'related': Link('nodes:node-files', kwargs={'node_id': '<node_id>'},
-                        query_kwargs={'path': '<path>', 'provider': '<provider>'}),
-    })
-
-    @staticmethod
-    def valid_self_link_methods(obj):
-        return obj['valid_self_link_methods']
-
-    def create(self, validated_data):
-        # TODO
-        pass
-
-    def update(self, instance, validated_data):
-        # TODO
-        pass
-
-
 class ContributorSerializer(UserSerializer):
 
     admin = ser.BooleanField(read_only=True, help_text='Whether the user will be able to add and remove contributors')
@@ -259,14 +193,84 @@ class ContributorDetailSerializer(ContributorSerializer):
             pass
         elif admin_field:
             node.add_permission(user, 'admin', save=True)
-        elif len(node.admin_contributor_ids) > 1:
-            node.remove_permission(user, 'admin', save=True)
+        elif len(node.admin_contributor_ids) == 1:
+            raise PermissionDenied('User {} is the only admin.'.format(user))
         else:
-            raise PermissionDenied('Admin privileges for {} cannot be removed as they are the only admin.'.format(user.username))
-        return self.context['view'].get_object()
+            node.remove_permission(user, 'admin', save=True)
+        user.bibliographic = bibliographic
+        user.admin = admin_field
+        return user
 
     links = LinksField({
         'html': 'absolute_url',
         'nodes': {
             'relation': Link('users:user-nodes', kwargs={'user_id': '<_id>'})},
     })
+
+
+class NodePointersSerializer(JSONAPISerializer):
+
+    id = ser.CharField(read_only=True, source='_id')
+    node_id = ser.CharField(source='node._id', help_text='The ID of the node that this pointer points to')
+    title = ser.CharField(read_only=True, source='node.title', help_text='The title of the node that this pointer '
+                                                                         'points to')
+
+    class Meta:
+        type_ = 'pointers'
+
+    links = LinksField({
+        'html': 'get_absolute_url',
+    })
+
+    def get_absolute_url(self, obj):
+        pointer_node = Node.load(obj.node._id)
+        return pointer_node.absolute_url
+
+    def create(self, validated_data):
+        request = self.context['request']
+        user = request.user
+        auth = Auth(user)
+        node = self.context['view'].get_node()
+        pointer_node = Node.load(validated_data['node']['_id'])
+        if not pointer_node:
+            raise NotFound('Node not found.')
+        try:
+            pointer = node.add_pointer(pointer_node, auth, save=True)
+            return pointer
+        except ValueError:
+            raise ValidationError('Pointer to node {} already in list'.format(pointer_node._id))
+
+    def update(self, instance, validated_data):
+        pass
+
+
+class NodeFilesSerializer(JSONAPISerializer):
+
+    id = ser.CharField(read_only=True, source='_id')
+    provider = ser.CharField(read_only=True)
+    path = ser.CharField(read_only=True)
+    item_type = ser.CharField(read_only=True)
+    name = ser.CharField(read_only=True)
+    metadata = ser.DictField(read_only=True)
+
+    class Meta:
+        type_ = 'files'
+
+    links = LinksField({
+        'self': WaterbutlerLink(kwargs={'node_id': '<node_id>'}),
+        'self_methods': 'valid_self_link_methods',
+        'related': Link('nodes:node-files', kwargs={'node_id': '<node_id>'},
+                        query_kwargs={'path': '<path>', 'provider': '<provider>'}),
+    })
+
+    @staticmethod
+    def valid_self_link_methods(obj):
+        return obj['valid_self_link_methods']
+
+    def create(self, validated_data):
+        # TODO
+        pass
+
+    def update(self, instance, validated_data):
+        # TODO
+        pass
