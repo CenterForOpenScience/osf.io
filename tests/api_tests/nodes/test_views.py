@@ -960,7 +960,7 @@ class TestEditNodeContributor(ApiTestCase):
         url_admin = '/{}nodes/{}/contributors/{}/'.format(API_BASE, self.project._id, self.admin._id)
         res = self.app.put(url_admin, {'admin': False}, auth=self.admin_auth, expect_errors=True)
         assert_equal(res.status_code, 403)
-        assert_in(self.admin, self.project.admin_contributors)
+        assert_true(self.project.has_permission(self.admin, 'admin'))
 
     def test_admin_change_non_contributor_admin_status(self):
         non_contributor = UserFactory.build()

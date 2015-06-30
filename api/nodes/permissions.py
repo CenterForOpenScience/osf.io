@@ -30,7 +30,7 @@ class AdminOrPublic(permissions.BasePermission):
         node = Node.load(request.parser_context['kwargs']['node_id'])
         if request.method in permissions.SAFE_METHODS:
             return node.is_public or node.can_view(auth)
-        elif len(node.admin_contributor_ids) > 1 or request.method != 'DELETE':
+        elif request.method != 'DELETE' or node.has_multiple_admin_contributors:
             return node.has_permission(auth.user, 'admin')
         else:
             return False

@@ -949,8 +949,6 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
     def admin_contributor_ids(self, contributors=None):
         contributor_ids = self.contributors._to_primary_keys()
         admin_ids = set()
-        for id in contributor_ids:
-            admin_ids.add(id)
         for parent in self.parents:
             admins = [
                 user for user, perms in parent.permissions.iteritems()
@@ -965,6 +963,17 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
             [User.load(_id) for _id in self.admin_contributor_ids],
             key=lambda user: user.family_name,
         )
+
+    @property
+    def has_multiple_admin_contributors(self):
+        #Created due to issues with admin contributors methods
+        has_one_admin = False
+        for contributor in self.contributors:
+            if self.has_permission(contributor, 'admin'):
+                if has_one_admin:
+                    return True
+                has_one_admin = True
+        return False
 
     def get_visible(self, user):
         if not self.is_contributor(user):

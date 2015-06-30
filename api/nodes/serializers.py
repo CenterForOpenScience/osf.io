@@ -192,10 +192,10 @@ class ContributorDetailSerializer(ContributorSerializer):
             pass
         elif admin_field:
             node.add_permission(user, 'admin', save=True)
-        elif len(node.admin_contributor_ids) == 1:
-            raise PermissionDenied('User {} is the only admin.'.format(user))
-        else:
+        elif node.has_multiple_admin_contributors == 1:
             node.remove_permission(user, 'admin', save=True)
+        else:
+            raise PermissionDenied('User {} is the only admin.'.format(user))
         user.bibliographic = bibliographic
         user.admin = admin_field
         return user
