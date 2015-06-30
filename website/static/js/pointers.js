@@ -15,11 +15,10 @@ var nodeApiUrl = window.contextVars.node.urls.api;
 var nodeId = window.contextVars.node.id;
 
 var AddPointerViewModel = oop.extend(Paginator, {
-    constructor: function(params) {
+    constructor: function(nodeTitle) {
         this.super.constructor.call(this);
         var self = this;
-        this.elm = params.elm;
-        this.nodeTitle = params.nodeTitle;
+        this.nodeTitle = nodeTitle;
         this.submitEnabled = ko.observable(true);
 
         this.query = ko.observable();
@@ -123,6 +122,8 @@ var AddPointerViewModel = oop.extend(Paginator, {
     submit: function() {
         var self = this;
         self.submitEnabled(false);
+        self.submitWarningMsg('');
+
         var nodeIds = osfHelpers.mapByProperty(self.selection(), 'id');
 
         osfHelpers.postJSON(
@@ -183,7 +184,7 @@ function PointerManager(selector, nodeName) {
     self.selector = selector;
     self.$element = $(self.selector);
     self.nodeName = nodeName;
-    self.viewModel = new AddPointerViewModel({nodeTitle: nodeName, elm: self.$element});
+    self.viewModel = new AddPointerViewModel(nodeName);
     self.init();
 }
 
