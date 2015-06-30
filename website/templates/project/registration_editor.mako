@@ -9,7 +9,7 @@
                 </a>
                 <span class="btn-group-vertical" role="group">
                   <ul class="list-group" data-bind="foreach: questions">
-                    <li class="list-group-item">
+                    <li data-bind="" class="list-group-item">
                       <a data-bind="text: nav, click: $root.selectQuestion.bind($root, page, $data)"></a>
                     </li>
                   </ul>

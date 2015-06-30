@@ -4,7 +4,7 @@ import re
 import httplib as http
 
 import pymongo
-from modularodm.query.querydialect import QueryDialect
+from modularodm.query import QueryBase
 from modularodm.exceptions import ValidationValueError, NoResultsFound
 
 from framework.exceptions import HTTPError
@@ -64,9 +64,9 @@ def unique_on(*groups):
 
 def get_or_http_error(Model, pk_or_query):
 
-    name = Model.__class__.__name__
+    name = str(Model)
 
-    if isinstance(pk_or_query, QueryDialect):
+    if isinstance(pk_or_query, QueryBase):
         try:
             instance = Model.find_one(pk_or_query)
         except NoResultsFound:

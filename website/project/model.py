@@ -112,7 +112,7 @@ def ensure_schemas(clear=True):
             )
         except:
             meta_schema = {
-                'name': schema['name'].replace(' ', '_'),
+                'name': schema['name'],
                 'schema_version': schema.get('version', 1),
                 'schema': schema,
             }
