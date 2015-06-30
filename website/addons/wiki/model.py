@@ -38,7 +38,7 @@ class AddonWikiNodeSettings(AddonNodeSettingsBase):
     complete = True
     has_auth = True
     is_publicly_editable = fields.BooleanField(default=False, index=True)
-
+    #TODO: Know when it is acceptable to save
     def set_editing(self, permissions, auth=None, node=None, log=True):
         """Set the editing permissions for this node.
 
@@ -49,14 +49,13 @@ class AddonWikiNodeSettings(AddonNodeSettingsBase):
 
         if permissions == 'public' and not self.is_publicly_editable:
             self.is_publicly_editable = True
-            self.save()
         elif permissions == 'private' and self.is_publicly_editable:
             self.is_publicly_editable = False
-            self.save()
         else:
             return False
         if log:
-            action = NodeLog.MADE_WIKI_PUBLIC if permissions == 'public' else NodeLog.MADE_WIKI_PRIVATE
+            action = NodeLog.MADE_WIKI_PUBLIC if permissions == 'public'\
+                else NodeLog.MADE_WIKI_PRIVATE
             node.add_log(
                 action=action,
                 params={
@@ -66,7 +65,9 @@ class AddonWikiNodeSettings(AddonNodeSettingsBase):
                 auth=auth,
                 save=False,
             )
-            node.save()
+
+        # Only saves if permissions were changed
+        node.save()
 
         return True
 
