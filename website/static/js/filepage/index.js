@@ -203,12 +203,18 @@ var FileViewPage = {
                 m('.btn.btn-sm.btn-danger.file-delete', {onclick: $(document).trigger.bind($(document), 'fileviewpage:delete')}, 'Delete')
             ]) : '',
             m('.btn-group', [
-                m('.btn.btn-sm.btn-success', {config: function(element, isInitialized) {
+                m('#sharebutton.btn.btn-sm.btn-success', {config: function(element, isInitialized) {
                     if(!isInitialized){
                         var button = $(element).popover();
                         button.on('show.bs.popover', function(e){
                             button.data()['bs.popover'].$tip.css('max-width', '600px').css('text-align', 'center');
                         });
+                        if (!window.contextVars.node.isPublic) {
+                            $('#sharebutton').attr('disabled', 'disabled');
+                        }
+                        else {
+                            $('#sharebutton').removeAttr('disabled', 'disabled');
+                        }
                         var link = $('iframe').attr('src');
                         link = link.substring(0, link.indexOf('download') + 8);
                         var url = link.substring(0, link.indexOf('render'));
