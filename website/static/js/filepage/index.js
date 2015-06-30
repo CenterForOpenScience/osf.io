@@ -16,7 +16,6 @@ var Panel = utils.Panel;
 
 var EDITORS = {'text': FileEditor};
 
-
 var FileViewPage = {
     controller: function(context) {
         var self = this;
@@ -59,7 +58,7 @@ var FileViewPage = {
         });
 
         $(document).on('fileviewpage:download', function() {
-            window.location = self.file.urls.content;
+            window.location = self.file.urls.content;e
             return false;
         });
 
@@ -204,8 +203,39 @@ var FileViewPage = {
                 m('.btn.btn-sm.btn-danger.file-delete', {onclick: $(document).trigger.bind($(document), 'fileviewpage:delete')}, 'Delete')
             ]) : '',
             m('.btn-group', [
+                m('.btn.btn-sm.btn-success', {config: function(element, isInitialized) {
+                    if(!isInitialized) {
+                        var embedbutton = $(element).popover();
+                        embedbutton.on("show.bs.popover", function(e){
+                            embedbutton.data()["bs.popover"].$tip.css("max-width", "600px");
+                        });
+                        var link = $('iframe').attr('src');
+                        link = '<input class="form-control" type="text" value="' + link.substring(0, link.indexOf('download') + 8) + '" />';
+                        $(element).attr('data-content', link);
+                    }
+                }, 'data-toggle': 'popover', 'data-placement': 'bottom', 'data-content': 'Content', 'title': 'Share Link', 'data-container': 'body', 'data-html': 'true'}, 'Share')
+            ].concat(
+                m('.btn.btn-sm.btn-success', {config: function(element, isInitialized) {
+                    if(!isInitialized){
+                        var embedbutton = $(element).popover();
+                        embedbutton.on("show.bs.popover", function(e){
+                            embedbutton.data()["bs.popover"].$tip.css("max-width", "600px").css("text-align", "center");
+                        });
+                        var link = $('iframe').attr('src');
+                        var link = link.substring(0, link.indexOf('download') + 8);
+                        var url = link.substring(0, link.indexOf('render'));
+                        var style = "\<link href=\"" + url + "static/css/mfr.css\" media=\"all\" rel=\"stylesheet\" /\>";
+                        var embed = 'Style <input class="form-control" type="text" value=\'' + style + '\' />';
+                        embed += 'Embed <input class="form-control" type="textarea" value=\'' + '\<div id="mfrIframe" class="mfr mfr-file"\>\</div\>';
+                        embed += ' \<script src="' + url + 'static/js/mfr.js"\>\</script\>';
+                        embed += ' \<script\>var mfrRender = new mfr.Render\("mfrIframe", ' + link + '\);\n\</script\>';
+                        embed += '\' />';
+                        $(element).attr('data-content', embed);
+                    }
+                }, 'data-toggle': 'popover', 'data-placement': 'bottom', 'data-content': 'Content', 'title': 'Embed', 'data-container': 'body', 'data-html': 'true'}, 'Embed')
+            ).concat(
                 m('.btn.btn-sm.btn-success.file-download', {onclick: $(document).trigger.bind($(document), 'fileviewpage:download')}, 'Download')
-            ]),
+            )),
             m('.btn-group.btn-group-sm', [
                 m('.btn.btn-default.disabled', 'Toggle view: ')
             ].concat(
@@ -244,6 +274,7 @@ var FileViewPage = {
         ]));
     }
 };
+
 
 module.exports = function(context) {
     // Treebeard forces all mithril to load twice, to avoid
