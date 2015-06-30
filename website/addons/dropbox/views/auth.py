@@ -169,7 +169,8 @@ def dropbox_user_config_get(auth, **kwargs):
                 if error.status == 401:
                     valid_credentials = False
                 else:
-                    raise HTTPError(http.BAD_REQUEST)
+                    raise HTTPError(http.BAD_REQUEST, data=dict(message_long=error.error_msg))
+
     return {
         'result': {
             'userHasAuth': user_has_auth,

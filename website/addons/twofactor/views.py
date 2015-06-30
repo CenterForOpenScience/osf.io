@@ -39,7 +39,7 @@ def twofactor_enable(auth, *args, **kwargs):
     user = auth.user
 
     if user.has_addon('twofactor'):
-        return HTTPError(http.BAD_REQUEST, message='This user already has twofactor enabled')
+        return HTTPError(http.BAD_REQUEST, data=dict(message_long='This user already has twofactor enabled'))
 
     user.add_addon('twofactor', auth=auth)
     user_addon = user.get_addon('twofactor')
@@ -58,5 +58,5 @@ def twofactor_disable(auth, *args, **kwargs):
         return {}
     else:
         raise HTTPError(http.INTERNAL_SERVER_ERROR, data=dict(
-            message='Could not disable twofactor at this time'
+            message_long='Could not disable twofactor at this time'
         ))
