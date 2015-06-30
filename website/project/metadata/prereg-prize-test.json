@@ -2,6 +2,8 @@
     "name": "Prereg Prize",
     "version": 1,
     "type": "object",
+    "description": "Pre-Registration Prize (pre-data collection): You will be asked a series of questions to ensure that your sampling, design, and analysis plans are solidified prior to beginning your study. Publications that pre-register with this template may be eligible for a $1,000 prize. <a href=\"https://osf.io/x5w7h/\">See project page for complete information</a>.",
+    "fulfills": ["prereg"],
     "pages": [{
         "id": "page1",
         "title": "Basic Information",

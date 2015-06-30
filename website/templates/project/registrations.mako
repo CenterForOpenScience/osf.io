@@ -32,9 +32,12 @@
     ##          There have been no registrations of the parent project (<a href="${parent_node['url']}">${parent_node['title']}</a>).
     ##      %endif
         % else:
-        There have been no registrations of this ${node['node_type']}.
-        For a list of the most viewed and most recent public registrations on the
-        Open Science Framework, click <a href="/explore/activity/#newPublicRegistrations">here</a>.
+        <p>
+          There have been no completed registrations of this ${node['node_type']}.
+          For a list of the most viewed and most recent public registrations on the
+          Open Science Framework, click <a href="/explore/activity/#newPublicRegistrations">here</a>,
+          or you start a new draft registration from the "Draft Registrations" tab.
+        </p>
         % endif
         %if parent_node['exists'] and user['is_admin_parent']:
         <br />
@@ -52,7 +55,7 @@
         % if 'admin' in user['permissions'] and not disk_saving_mode:
         <a data-bind="css: {disabled: loading}" id="registerNode" class="btn btn-default" type="button">
           <i class="fa fa-plus"></i>
-          New Registration
+          New Draft Registration
         </a>
         % endif
       </div>    
@@ -67,7 +70,7 @@
                 <span class="sr-only"></span>
               </div>
             </div>
-            <p data-bind="text: registration_schema.schema.title"></p>
+            <p data-bind="text: schema.title"></p>
             <p>initiated by <span data-bind="text: initiator.fullname"></span>
             <p>started about <span data-bind="text: $root.formattedDate(initiated)"></span></p>
             <p>last updated about <span data-bind="text: $root.formattedDate(updated)"></span></p>
@@ -121,13 +124,50 @@ ${parent.javascript_bottom()}
   <div class="form-group">
     <label>Please select a registration schema to continue:</label>
     <br />
-    <select class="form-control" data-bind="options: schemas,
-                                            optionsText: function(metaschema) {return metaschema.schema.title;},
-                                            value: selectedSchema">
-    </select>
+    <div data-bind="foreach: schemas">
+      <div class="panel-group" id="accordion" role="tablist" aria-multiselectable="true">
+        <div class="panel panel-default">
+          <div class="panel-heading" role="tab" data-bind="attr.id: id">            
+            <h3 class="panel-title">
+              <div class="row">
+                <div class="col-md-9">
+                  <span role="button" data-toggle="collapse" data-parent="#accordion" aria-expanded="true"
+                     data-bind="text: name,
+                                attr.aria-controls: id + '-collapse',
+                                attr.href: id + '-collapse'">
+                  </span>
+                </div>
+                <div class="col-md-1">
+                  <button data-bind="click: $root.launchEditor.bind($root, null, $data)" class="btn btn-primary">Use</button>
+                </div>
+              </div>
+            </h3>
+          </div>
+          <div class="panel-collapse collapse in p-md" role="tabpanel" data-bind="attr.id: id + '-collapse', 
+                                                                             attr.aria-labelledby: id">
+            <h4> Fulfills: </h4>
+            <div class="btn-group" data-bind="foreach: schema.fulfills">
+              <!-- TODO badges?; definitely improve UI here -->
+              <span data-bind="text: $data"></span>
+            </div>
+            <hr />
+            <h4> Description: </h4>
+            <p data-bind="html: schema.description"></p>
+            <!--
+            <div data-bind="foreach: {data: schema.pages, as: 'page'}">
+              <h4 data-bind="text: page.title"></h4>
+              <ul data-bind="foreach: {data: page.questions, as: 'question'}">
+                <li data-bind="question.nav"></li>
+              </ul>
+            </div>
+            -->
+          </div>
+        </div>
+      </div>
+    </div>
   </div>
+  <hr />
   <div class="form-group" style="text-align: right">
     <button class="btn btn-default" data-bind="click: cancel">Cancel</button>
-    <button class="btn btn-success" data-bind="click: launchEditor.bind($root, null), css: {disabled: !selectedSchema}">Continue</button>
   </div>
 </script>

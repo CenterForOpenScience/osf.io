@@ -3,8 +3,10 @@
 }
 .registration-editor-question{
     color: #333333;
+    cursor: pointer;
 }
 .registration-editor-question-current{
     color: #337AB7;
     font-weight: 900;
+    font-size: 120%;
 }

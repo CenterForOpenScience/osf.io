@@ -29,13 +29,31 @@ var MetaSchema = function(params) {
 var Draft = function(params) {
     this.pk = params.pk;
     var metaSchema = params.registration_schema;
-    this.metaSchema = new MetaSchema(metaSchema);
     this.schema = metaSchema.schema;
     this.schemaName = metaSchema.schema_name;
     this.schemaVersion = metaSchema.schema_version;
     this.schemaData = params.registration_metadata;
+
+    this.initiator = params.initiator;
     this.initiated = params.initiated;
     this.updated = params.updated;
+    this.completion = 0.0;
+    var total = 0;
+    var complete = 0;
+    if (self.schemaData) {
+        for (var i = 0; i < metaSchema.schema.pages.length; i++) {
+            var page = metaSchema.pages[i];
+            for (var j = 0; j < page.questions.length; j++) {
+                var question = page.questions[j];
+                var questionId = Object.keys(question.properties)[0];
+                if (this.schemaData[questionId] && this.schemaData[questionId].value) {
+                    complete++;
+                }
+                total++;
+            }
+        }
+        this.completion = 100 * (complete / total);
+    }
 };
 
 var RegistrationEditor = function(urls, editorId) {
@@ -52,13 +70,13 @@ var RegistrationEditor = function(urls, editorId) {
     self.draft = ko.observable(
         new Draft({
             pk: null,
-            registration_schema: {
+            registration_schema: new MetaSchema({
                 schema: {
                     pages: []
                 },
                 schema_name: '',
                 schema_version: ''
-            },
+            }),
             registration_metadata: {}
         })
     );
@@ -89,6 +107,13 @@ RegistrationEditor.prototype.init = function(metaSchema, draft) {
 
     var needsRefresh = false;
     window.setInterval(self.save.bind(self), 60 * 1000);
+
+    return self.draft();
+};
+RegistrationEditor.prototype.destroy = function() {
+    if(this.editor) {
+        this.editor.destroy();
+    }    
 };
 RegistrationEditor.prototype.selectSchema = function() {
     // TODO preview schema?
@@ -96,9 +121,8 @@ RegistrationEditor.prototype.selectSchema = function() {
 RegistrationEditor.prototype.updateData = function(draft) {
     var self = this;
 
-    var newDraft = new Draft(draft);
-    newDraft.schemaData = $.extend({}, newDraft.schemaData, self.draft().schemaData);
-    self.draft(newDraft);
+    draft.schemaData = $.extend({}, draft.schemaData, self.draft().schemaData);
+    self.draft(draft);
 };
 RegistrationEditor.prototype.fetchData = function() {
     var self = this;
@@ -245,39 +269,55 @@ RegistrationManager.prototype.init = function() {
     var getSchemas = self.getSchemas();
 
     getSchemas.then(function(response) {
-        self.schemas(response.meta_schemas);
+        self.schemas(
+            $.map(response.meta_schemas, function(schema) {
+                return new MetaSchema(schema);
+            })
+        );
     });
 
     var getDraftRegistrations = self.getDraftRegistrations();
 
     getDraftRegistrations.then(function(response) {
-        self.drafts(response.drafts);
+        self.drafts(
+            $.map(response.drafts, function(draft) {
+                return new Draft(draft);
+            })
+        );
     });
 
     $.when(getSchemas, getDraftRegistrations).then(function() {
         self.loading(false);
     });
 };
-RegistrationManager.prototype.launchEditor = function(draft) {
+RegistrationManager.prototype.launchEditor = function(draft, schema) {
     var self = this;
     var node = self.node;
-
+    
     bootbox.hideAll();
     self.controls.showEditor();
 
-    var regEditor = new RegistrationEditor({
+    if (self.regEditor) {
+        self.regEditor.destroy();
+        ko.cleanNode($(self.editorSelector)[0]);
+    }
+    self.regEditor = new RegistrationEditor({
         schemas: '/api/v1/project/schema/',
         create: node.urls.api + 'draft/',
         update: node.urls.api + 'draft/{draft_pk}/',
         get: node.urls.api + 'draft/{draft_pk}/'
     }, 'registrationEditor');
-    var schema = self.selectedSchema();
-    regEditor.init(schema, draft);
-    $osf.applyBindings(regEditor, self.editorSelector);
-    window.editor = regEditor;
+    
+    var unshift = Boolean(draft);
+    var newDraft = self.regEditor.init(schema, draft);    
+    $osf.applyBindings(self.regEditor, self.editorSelector);
+
+    if (unshift) {
+        self.drafts.unshift(newDraft);
+    }
 };
 RegistrationManager.prototype.editDraft = function(draft) {
-    this.launchEditor(draft);
+    this.launchEditor(draft, draft.schema);
 };
 RegistrationManager.prototype.deleteDraft = function(draft) {
     var self = this;
@@ -295,7 +335,6 @@ RegistrationManager.prototype.beforeRegister = function() {
 
     var node = self.node;
    
-    
     var VM = {
         title: node.title,
         parentTitle: node.parentTitle,
@@ -303,9 +342,7 @@ RegistrationManager.prototype.beforeRegister = function() {
         category: node.category === 'project' ? node.category : 'component',
         schemas: self.schemas,
         selectedSchema: self.selectedSchema,
-        cancel: function() {
-            bootbox.hideAll();
-        },
+        cancel: bootbox.hideAll,
         launchEditor: self.launchEditor.bind(self)
     };
     bootbox.dialog({
