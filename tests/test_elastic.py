@@ -592,6 +592,84 @@ class TestProjectSearchResults(SearchTestCase):
         assert_equal(len(results), 3)
 
 
+def job(**kwargs):
+    keys = [
+        'title',
+        'institution',
+        'department',
+        'location',
+        'startMonth',
+        'startYear',
+        'endMonth',
+        'endYear',
+        'ongoing',
+    ]
+    job = {}
+    for key in keys:
+        if key[-5:] == 'Month':
+            job[key] = kwargs.get(key, 'December')
+        elif key[-4:] == 'Year':
+            job[key] = kwargs.get(key, '2000')
+        else:
+            job[key] = kwargs.get(key, 'test_{}'.format(key))
+    return job
+
+
+class TestUserSearchResults(SearchTestCase):
+    def setUp(self):
+        super(TestUserSearchResults, self).setUp()
+        self.user_one = UserFactory(jobs=[job(institution='Oxford'),
+                                          job(institution='Star Fleet')],
+                                    fullname='Date Soong')
+
+        self.user_two = UserFactory(jobs=[job(institution='Grapes la Picard'),
+                                          job(institution='Star Fleet')],
+                                    fullname='Jean-Luc Picard')
+
+        self.user_three = UserFactory(jobs=[job(institution='Star Fleet'),
+                                            job(institution='Federation Medical')],
+                                      fullname='Beverly Crusher')
+
+        self.user_four = UserFactory(jobs=[job(institution='Star Fleet')],
+                                     fullname='William Riker')
+
+        self.user_five = UserFactory(jobs=[job(institution='Traveler intern'),
+                                           job(institution='Star Fleet Academy'),
+                                           job(institution='Star Fleet Intern')],
+                                     fullname='Wesley Crusher')
+
+        for i in range(25):
+            UserFactory(jobs=[job()])
+
+        self.current_starfleet = [
+            self.user_three,
+            self.user_four,
+        ]
+
+        self.were_starfleet = [
+            self.user_one,
+            self.user_two,
+            self.user_three,
+            self.user_four,
+            self.user_five
+        ]
+
+    @unittest.skip('Cannot guarentee always passes')
+    def test_current_job_first_in_results(self):
+        results = query_user('Star Fleet')['results']
+        result_names = [r['names']['fullname'] for r in results]
+        current_starfleet_names = [u.fullname for u in self.current_starfleet]
+        for name in result_names[:2]:
+            assert_in(name, current_starfleet_names)
+
+    def test_had_job_in_results(self):
+        results = query_user('Star Fleet')['results']
+        result_names = [r['names']['fullname'] for r in results]
+        were_starfleet_names = [u.fullname for u in self.were_starfleet]
+        for name in result_names:
+            assert_in(name, were_starfleet_names)
+
+
 class TestSearchExceptions(OsfTestCase):
     # Verify that the correct exception is thrown when the connection is lost
 
