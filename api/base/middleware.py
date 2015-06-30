@@ -58,8 +58,15 @@ class TokuTransactionsMiddleware(object):
 class DjangoGlobalMiddleware(object):
     """
     Store request object on a thread-local variable for use in database caching mechanism.
-
-    Thread-locals should be auto-cleared when request is done (?), in which case no need to clean up separately.
     """
     def process_request(self, request):
         api_globals.request = request
+
+    def process_exception(self, request, exception):
+        sentry_exception_handler(request=request)
+        api_globals.request = None
+        return None
+
+    def process_response(self, request, response):
+        api_globals.request = None
+        return response

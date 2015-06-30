@@ -25,9 +25,9 @@ def get_cache_key():
     try:
         return request._get_current_object()
     except RuntimeError:  # Not in a flask request context
-        try:
+        if hasattr(api_globals, 'request') and api_globals.request is not None:
             return api_globals.request
-        except AttributeError:  # Not in a Django request # TODO: Edge case- are threads re-used across requests?
+        else:  # Not in a Django request
             return dummy_request
 
 
