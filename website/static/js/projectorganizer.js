@@ -254,11 +254,14 @@ function _poResolveRows(item) {
     }
     if(this.isMultiselected(item.id)){
         item.css = 'fangorn-selected';
+    } else {
+        item.css = '';
     }
+
     if (draggable) {
         css = 'po-draggable';
     }
-    item.css = '';
+
     default_columns = [{
         data : 'name',  // Data field name
         folderIcons : true,
