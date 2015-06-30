@@ -41,13 +41,17 @@ JSONEditor.defaults.themes.bootstrap3_OSF = JSONEditor.defaults.themes.bootstrap
         }
 
         return group;
-  },
-  getFormInputHelp: function(text) {
-    var el = document.createElement('p');
-    el.className = 'example-block';
-    el.innerHTML = "<a>Show Example</a>";
-    return el;
-  },
+    },
+    getFormInputHelp: function(text) {
+        var el = document.createElement('p');
+        el.className = 'example-block';
+        el.innerHTML = '<a>Show Example</a>';
+        var el_inner = document.createElement('p');
+        el_inner.id = 'example';
+        el_inner.innerHTML = text;
+        el.appendChild(el_inner);
+        return el;
+    },
 });
 
 //######### Commentable ###########
@@ -180,14 +184,13 @@ Comments.prototype.add = function() {
 JSONEditor.defaults.editors.commentableString = JSONEditor.defaults.editors.string.extend({
     build: function() {
         var self = this;
-        var help = this.schema.help;
         this._super();
         if (this.schema.help) {
-            this.help = this.theme.getFormInputHelp(help);
+            this.help = this.theme.getFormInputHelp(this.schema.help);
             $(this.input.previousSibling).after(this.help);
+            $("#example").hide();
             $( ".example-block" ).click(function() {
-                var example = '<p>' + help + '</p>';
-                $(".example-block").append(example);
+                $("#example").slideToggle("slow");
             });
         };
 
