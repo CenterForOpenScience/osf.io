@@ -14,8 +14,6 @@ from website.addons.base import exceptions
 from website.addons.base import AddonOAuthNodeSettingsBase
 from website.addons.base import AddonOAuthUserSettingsBase
 from website.addons.base import GuidFile
-from website.addons.base import AddonNodeSettingsBase
-from website.addons.base import StorageAddonBase
 
 from website.addons.github import utils
 from website.addons.github.api import GitHub
