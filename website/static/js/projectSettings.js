@@ -8,13 +8,19 @@ var $osf = require('js/osfHelpers');
 var oop = require('js/oop');
 var ChangeMessageMixin = require('js/changeMessage');
 
-var NodeCategorySettings = oop.extend(
+var NodeCategoryTitleDescriptionSettings = oop.extend(
     ChangeMessageMixin,
     {
         constructor: function(category, categories, updateUrl, disabled) {
             this.super.constructor.call(this);
 
             var self = this;
+            self.currentNode = window.contextVars.node;
+            self.titleDescriptionEditUrl = self.currentNode.api_url;
+            self.decodedTitle = $osf.htmlDecode(self.currentNode.title);
+            self.decodedDescription = $osf.htmlDecode(self.currentNode.description);
+            self.title = ko.observable(self.decodedTitle);
+            self.description = ko.observable(self.decodedDescription);
 
             self.disabled = disabled || false;
 
@@ -23,7 +29,7 @@ var NodeCategorySettings = oop.extend(
                 '<a href="mailto:support@osf.io">support@osf.io</a>.';
             self.UPDATE_ERROR_MESSAGE_RAVEN = 'Error updating Node.category';
 
-            self.INSTANTIATION_ERROR_MESSAGE = 'Trying to instatiate NodeCategorySettings view model without an update URL';
+            self.INSTANTIATION_ERROR_MESSAGE = 'Trying to instatiate NodeCategoryTitleDescriptionSettings view model without an update URL';
 
             self.MESSAGE_SUCCESS_CLASS = 'text-success';
             self.MESSAGE_ERROR_CLASS = 'text-danger';
@@ -38,19 +44,33 @@ var NodeCategorySettings = oop.extend(
 
             self.selectedCategory = ko.observable(category);
             self.dirty = ko.observable(false);
+
+            self.dirtyTitleDescription = ko.computed(function(){
+                return (self.title() !== self.decodedTitle ||
+                    self.description() !== self.decodedDescription)
+            }, self);
+
             self.selectedCategory.subscribe(function(value) {
                 if (value !== self.category()) {
                     self.dirty(true);
                 }
             });
         },
-        updateSuccess: function(newcategory) {
+
+        /*success handlers*/
+        updateCategorySuccess: function(newcategory) {
             var self = this;
             self.changeMessage(self.UPDATE_SUCCESS_MESSAGE, self.MESSAGE_SUCCESS_CLASS);
             self.category(newcategory);
             self.dirty(false);
         },
-        updateError: function(xhr, status, error) {
+        //TODO - refactor title/description success handler to display success message
+        updateTitleDescriptionSuccess: function() {
+            window.location.reload();
+        },
+
+        /*error handlers*/
+        updateCategoryError: function(xhr, status, error) {
             var self = this;
             self.changeMessage(self.UPDATE_ERROR_MESSAGE, self.MESSAGE_ERROR_CLASS);
             Raven.captureMessage(self.UPDATE_ERROR_MESSAGE_RAVEN, {
@@ -59,6 +79,15 @@ var NodeCategorySettings = oop.extend(
                 err: error
             });
         },
+        updateTitleError: function() {
+           $('#titleInputMessage').html('Title cannot be blank.');
+        },
+        updateDescriptionError: function() {
+            $('#descriptionInputMessage').html('Error updating description, please try again.'+
+            ' If the problem persists, email <a href="mailto:support@osf.io">support@osf.io</a>.');
+        },
+
+        /*update handlers*/
         updateCategory: function() {
             var self = this;
             return $osf.putJSON(self.updateUrl, {
@@ -67,19 +96,45 @@ var NodeCategorySettings = oop.extend(
                 .then(function(response) {
                     return response.updated_fields.category;
                 })
-                .done(self.updateSuccess.bind(self))
-                .fail(self.updateError.bind(self));
+                .done(self.updateCategorySuccess.bind(self))
+                .fail(self.updateCategoryError.bind(self));
         },
+        updateTitle: function() {
+            var self = this;
+            return $osf.putJSON(self.titleDescriptionEditUrl, {
+                    title: $osf.htmlEscape(self.title()),
+                })
+                .done(self.updateDescriptionAfterTitle.bind(self))
+                .fail(self.updateTitleError.bind(self));
+        },
+        updateDescriptionAfterTitle: function() {
+            var self = this;
+            return $osf.putJSON(self.titleDescriptionEditUrl, {
+                    description: $osf.htmlEscape(self.description()),
+                })
+                .done(self.updateTitleDescriptionSuccess.bind(self))
+                .fail(self.updateDescriptionError.bind(self));
+        },
+
+        /*cancel handlers*/
         cancelUpdateCategory: function() {
             var self = this;
             self.selectedCategory(self.category());
             self.dirty(false);
             self.resetMessage();
+        },
+        cancelUpdateTitle: function() {
+            var self = this;
+            self.title(self.decodedTitle);
+        },
+        cancelUpdateDescription: function() {
+            var self = this;
+            self.description(self.decodedDescription);
         }
     });
 
 var ProjectSettings = {
-    NodeCategorySettings: NodeCategorySettings
+    NodeCategoryTitleDescriptionSettings: NodeCategoryTitleDescriptionSettings
 };
 
 // TODO: Pass this in as an argument rather than relying on global contextVars

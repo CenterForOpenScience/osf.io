@@ -55,14 +55,14 @@ $(document).ready(function() {
     }
     var disableCategory = !window.contextVars.node.parentExists;
     // need check because node category doesn't exist for registrations
-    if ($('#nodeCategorySettings').length) {
-        var categorySettingsVM = new ProjectSettings.NodeCategorySettings(
+    if ($('#nodeCategoryTitleDescriptionSettings').length) {
+        var categorySettingsVM = new ProjectSettings.NodeCategoryTitleDescriptionSettings(
             window.contextVars.node.category,
             categories,
             window.contextVars.node.urls.update,
             disableCategory
         );
-        ko.applyBindings(categorySettingsVM, $('#nodeCategorySettings')[0]);
+        ko.applyBindings(categorySettingsVM, $('#nodeCategoryTitleDescriptionSettings')[0]);
     }
 
     $(window).resize(function (){ fixAffixWidth(); });
@@ -158,5 +158,4 @@ $(document).ready(function() {
     });
 
 });
-
 

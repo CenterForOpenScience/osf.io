@@ -25,20 +25,20 @@ window.contextVars = {
 
 var ProjectSettings = require('js/projectSettings.js');
 
-var NodeCategorySettings = ProjectSettings.NodeCategorySettings;
+var NodeCategoryTitleDescriptionSettings = ProjectSettings.NodeCategoryTitleDescriptionSettings;
 
-describe('NodeCategorySettings', () => {
+describe('NodeCategoryTitleDescriptionSettings', () => {
     var category = faker.internet.domainWord();
     var categories = [];
     for (var i = 0; i < 10; i++) {
         categories.push(faker.internet.domainWord());
     }
     var updateUrl = faker.internet.ip();
-    var vm = new NodeCategorySettings(category, categories, updateUrl);
+    var vm = new NodeCategoryTitleDescriptionSettings(category, categories, updateUrl);
     describe('#constructor', function() {
         it('throws an error if no updateUrl is passed', () => {
             var broken = function() {
-                new NodeCategorySettings(category, categories);
+                new NodeCategoryTitleDescriptionSettings(category, categories);
             };
             assert.throws(broken , vm.INSTANTIATION_ERROR_MESSAGE);
         });
@@ -49,7 +49,7 @@ describe('NodeCategorySettings', () => {
             assert.isTrue(Boolean(vm.resetMessage) || false);
         });
     });
-    describe('#updateSuccess', () => {
+    describe('#updateCategorySuccess', () => {
         var changeMessageSpy;
         before(() => {
             changeMessageSpy = sinon.spy(vm, 'changeMessage');
@@ -59,13 +59,13 @@ describe('NodeCategorySettings', () => {
         });
         it('updates the message, updates the category, and sets the dirty state to false', () => {
             var newcategory = categories[0];
-            vm.updateSuccess(newcategory);
+            vm.updateCategorySuccess(newcategory);
             assert.calledWith(changeMessageSpy, vm.UPDATE_SUCCESS_MESSAGE, vm.MESSAGE_SUCCESS_CLASS);
             assert.equal(newcategory, vm.category());
             assert.isFalse(vm.dirty());
         });
     });
-    describe('#updateError', () => {
+    describe('#updateCategoryError', () => {
         var changeMessageSpy;
         var ravenStub;
         before(() => {
@@ -78,7 +78,7 @@ describe('NodeCategorySettings', () => {
         });
         it('updates the message, and captures the error with Raven', () => {
             var error = faker.lorem.sentence();
-            vm.updateError({}, error, {});
+            vm.updateCategoryError({}, error, {});
             assert.calledWith(changeMessageSpy, vm.UPDATE_ERROR_MESSAGE, vm.MESSAGE_ERROR_CLASS);
             assert.calledWith(ravenStub, vm.UPDATE_ERROR_MESSAGE_RAVEN, {
                 url: updateUrl,
@@ -90,7 +90,7 @@ describe('NodeCategorySettings', () => {
     describe('#updateCategory', () => {
         var server;
         var serverSpy = sinon.spy();
-        var updateSuccessSpy = sinon.spy(vm, 'updateSuccess');
+        var updateSuccessSpy = sinon.spy(vm, 'updateCategorySuccess');
         before(() => {
             server = sinon.fakeServer.create();
             server.respondWith(
