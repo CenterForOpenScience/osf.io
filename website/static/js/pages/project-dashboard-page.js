@@ -144,6 +144,25 @@ $(document).ready(function () {
         }
     });
 
+    //Clear input fields on Add Component Modal
+    $('#confirm').on('click', function () {
+        $('#alert').text('');
+        $('#title').val('');
+        $('#category').val('');
+    });
+
+    // only focus input field on modals when not IE
+    $('#newComponent').on('shown.bs.modal', function(){
+        if(!$osf.isIE()){
+            $('#title').focus();
+        }
+    });
+    $('#addPointer').on('shown.bs.modal', function(){
+        if(!$osf.isIE()){
+            $('#addPointer input').focus();
+        }
+    });
+
     // Limit the maximum length that you can type when adding a tag
     $('#node-tags_tag').attr('maxlength', '128');
 
