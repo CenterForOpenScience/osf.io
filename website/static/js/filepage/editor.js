@@ -64,43 +64,39 @@ var FileEditor = {
         };
 
         self.saveFile = $osf.throttle(function() {
-            if(self.changed()) {
-                var oldstatus = self.observables.status();
-                model.editor.setReadOnly(true);
-                self.unthrottledStatus('saving');
+            var oldstatus = self.observables.status();
+            model.editor.setReadOnly(true);
+            self.unthrottledStatus('saving');
+            m.redraw();
+            var request = $.ajax({
+                type: 'PUT',
+                url: self.url,
+                data: model.editor.getValue(),
+                beforeSend: $osf.setXHRAuthorization
+            }).done(function () {
+                model.editor.setReadOnly(false);
+                self.unthrottledStatus(oldstatus);
+                $(document).trigger('fileviewpage:reload');
+                self.initialText = model.editor.getValue();
                 m.redraw();
-                var request = $.ajax({
-                    type: 'PUT',
-                    url: self.url,
-                    data: model.editor.getValue(),
-                    beforeSend: $osf.setXHRAuthorization
-                }).done(function () {
-                    model.editor.setReadOnly(false);
-                    self.unthrottledStatus(oldstatus);
-                    $(document).trigger('fileviewpage:reload');
-                    self.initialText = model.editor.getValue();
-                    m.redraw();
-                }).fail(function(xhr, textStatus, err) {
-                    var message;
-                    if (xhr.status === 507) {
-                        message = 'Could not update file. Insufficient storage space in your Dropbox.';
-                    } else {
-                        message = 'The file could not be updated.';
-                    }
-                    model.editor.setReadOnly(false);
-                    self.unthrottledStatus(oldstatus);
-                    $(document).trigger('fileviewpage:reload');
-                    model.editor.setValue(self.initialText);
-                    $osf.growl('Error', message);
-                    Raven.captureMessage('Could not PUT file content.', {
-                        textStatus: textStatus,
-                        url: self.url
-                    });
-                    m.redraw();
+            }).fail(function(xhr, textStatus, err) {
+                var message;
+                if (xhr.status === 507) {
+                    message = 'Could not update file. Insufficient storage space in your Dropbox.';
+                } else {
+                    message = 'The file could not be updated.';
+                }
+                model.editor.setReadOnly(false);
+                self.unthrottledStatus(oldstatus);
+                $(document).trigger('fileviewpage:reload');
+                model.editor.setValue(self.initialText);
+                $osf.growl('Error', message);
+                Raven.captureMessage('Could not PUT file content.', {
+                    textStatus: textStatus,
+                    url: self.url
                 });
-            } else {
-                alert('There are no changes to save.');
-            }
+                m.redraw();
+            });
         }, 500);
 
         self.changed = function() {
