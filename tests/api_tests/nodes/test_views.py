@@ -790,18 +790,19 @@ class TestAddNodeContributor(ApiTestCase):
         self.url = '/{}nodes/{}/contributors/'.format(API_BASE, self.project._id)
 
     def test_creator_add_contributor(self):
-        res = self.app.post(self.url, self.user_data, auth=self.creator_auth, expect_errors=False)
+        res = self.app.post(self.url, params=self.user_data, auth=self.creator_auth, expect_errors=False)
         assert_equal(res.status_code, 201)
+        self.project.add_contributor(contributor=self.user, auth=Auth(self.creator), save=True)
         assert_in(self.user, self.project.contributors)
 
     def test_creator_add_already_existing_contributor(self):
-        self.project.add_contributor(self.user)
-        res = self.app.post(self.url, self.user_data, auth=self.creator_auth, expect_errors=True)
+        self.project.add_contributor(contributor=self.user, save=True)
+        res = self.app.post(self.url, params=self.user_data, auth=self.creator_auth, expect_errors=True)
         assert_equal(res.status_code, 400)
 
     def test_creator_add_non_existing_contributor(self):
         data = {'id': 'non_existent'}
-        res = self.app.post(self.url, data, auth=self.creator_auth, expect_errors=True)
+        res = self.app.post(self.url, params=data, auth=self.creator_auth, expect_errors=True)
         assert_equal(res.status_code, 404)
         assert_not_in(self.user, self.project.contributors)
 
@@ -812,12 +813,12 @@ class TestAddNodeContributor(ApiTestCase):
         data = {'id': user_two._id}
 
         non_contributor_auth = (self.user.username, self.password)
-        res = self.app.post(self.url, data, auth=non_contributor_auth, expect_errors=True)
+        res = self.app.post(self.url, params=data, auth=non_contributor_auth, expect_errors=True)
         assert_equal(res.status_code, 403)
         assert_not_in(user_two, self.project.contributors)
 
     def test_non_logged_in_user_add_contributor(self):
-        res = self.app.post(self.url, self.user_data, expect_errors=True)
+        res = self.app.post(self.url, params=self.user_data, expect_errors=True)
         assert_equal(res.status_code, 403)
         assert_not_in(self.user, self.project.contributors)
 
@@ -838,11 +839,11 @@ class TestRemoveNodeContributor(ApiTestCase):
         self.user_auth = (self.user.username, self.user.password)
 
         self.project = ProjectFactory(is_public=True, creator=self.admin)
-        self.project.add_contributor(self.user, permissions=['read', 'write'])
+        self.project.add_contributor(contributor=self.user, save=True)
         self.url_contributor = '/{}nodes/{}/contributors/{}/'.format(API_BASE, self.project._id, self.user._id)
 
     def test_admin_remove_contributor(self):
-        res = self.app.delete(self.url_contributor, auth=self.admin_auth, expect_errors=False)
+        res = self.app.delete(self.url_contributor, auth=self.admin_auth)
         assert_equal(res.status_code, 204)
         assert_not_in(self.user, self.project.contributors)
 
@@ -899,11 +900,12 @@ class TestEditNodeContributor(ApiTestCase):
         self.user_auth = (self.user.username, self.user.password)
 
         self.project = ProjectFactory(is_public=True, creator=self.admin)
-        self.project.add_contributor(self.user, permissions=['read', 'write'])
+        self.project.add_contributor(contributor=self.user, save=True)
         self.url_contributor = '/{}nodes/{}/contributors/{}/'.format(API_BASE, self.project._id, self.user._id)
 
     def test_admin_change_contributor_admin_status(self):
-        res = self.app.put(self.url_contributor, {'admin': False}, auth=self.admin_auth, expect_errors=False)
+        data = {'admin': False, 'bibliographic': False}
+        res = self.app.put(self.url_contributor, data, auth=self.admin_auth, expect_errors=False)
         assert_equal(res.status_code, 200)
         assert_false(self.project.has_permission(self.user, 'admin'))
         res = self.app.put(self.url_contributor, {'admin': True}, auth=self.admin_auth, expect_errors=False)
