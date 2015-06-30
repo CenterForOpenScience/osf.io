@@ -157,7 +157,7 @@ def format_wiki_version(version, num_versions, allow_preview):
 
     return version
 
-def get_wiki_permission(node): ##add try to check if this is really a wiki node
+def get_wiki_permission(node):
     wiki = node.get_addon('wiki')
     if not wiki:
         raise NonWikiNodeError
