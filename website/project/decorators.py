@@ -336,10 +336,5 @@ def must_have_permission(permission, wiki=False):
     # Return decorator
     return wrapper
 
-# def must_have_permission_or_public_editing(permission="write"):
-#     if public_editing:
-#         return True
-#     else:
-#         return must_have_permission(permission)
-
 must_have_permission_or_public_wiki = must_have_permission("write", True)
+

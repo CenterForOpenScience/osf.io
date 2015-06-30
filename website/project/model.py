@@ -748,7 +748,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         parents = self.parents
         return {p._id for p in parents}
 
-    def can_edit(self, auth=None, user=None): #GRUMBLE where you set if can edit =]
+    def can_edit(self, auth=None, user=None):
         """Return if a user is authorized to edit this node.
         Must specify one of (`auth`, `user`).
 

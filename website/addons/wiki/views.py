@@ -228,7 +228,7 @@ def project_wiki_delete(auth, wname, **kwargs):
 @must_be_valid_project  # returns project
 @must_be_contributor_or_public
 @must_have_addon('wiki', 'node')
-def project_wiki_view(auth, wname, path=None, **kwargs): #GRUMBLE
+def project_wiki_view(auth, wname, path=None, **kwargs):
     node = kwargs['node'] or kwargs['project']
     anonymous = has_anonymous_link(node, auth)
     wiki_name = (wname or '').strip()
