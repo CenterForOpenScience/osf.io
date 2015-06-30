@@ -71,9 +71,9 @@ var flatAddonViewModel = function(url, selector, addonName, folderType, opts) {
     		return folderName
     	},
     	fixBadName : function(newName, folderName, self) {
-    		bootbox.dialog({
+    		bootbox.confirm({
     			title: 'Invalid ' + folderType + ' name',
-    			message: 'Sorry, that\'s not a valid ' + folderType + 'name. Try another name?',
+    			message: 'Sorry, that\'s not a valid ' + folderType + ' name. Try another name?',
                 callback: function(result) {
                     if (result) {
                         self.openCreateFolder();
@@ -96,6 +96,26 @@ var flatAddonViewModel = function(url, selector, addonName, folderType, opts) {
                 self.importAuth.call(self);
             };
             window.open(self.urls().auth);
+        },
+        importAccount: function(account_id, self, $osf) {
+            return $osf.putJSON(
+                self.urls().importAuth, {
+                    external_account_id: account_id
+                }
+            ).done(function(response) {
+                self.changeMessage('Successfully imported ' + self.addonName + ' credentials.', 'text-success');
+                self.updateFromData(response);
+            }).fail(function(xhr, status, error) {
+                var message = 'Could not import ' + self.addonName + ' credentials at this time.' +
+                    ' Please refresh the page. If the problem persists, email ' +
+                    '<a href="mailto:support@osf.io">support@osf.io</a>';
+                self.changeMessage(message, 'text-warning');
+                Raven.captureMessage('Could not import ' + self.addonName + ' credentials', {
+                    url: self.urls().importAuth,
+                    textStatus: status,
+                    error: error
+                });
+            });
         }
     };
 
@@ -225,14 +245,14 @@ flatAddonViewModel.prototype.updateFromData = function(data) {
         self.userHasAuth(settings.userHasAuth);
         self.userIsOwner(settings.userIsOwner);
         self.ownerName(settings.owner);
-        if (settings.urls) {
-            self.urls(settings.urls);
-        }
         if (typeof settings.valid_credentials != 'undefined'){
             self.validCredentials(settings.valid_credentials);
         }
+        if (settings.urls) {
+            self.urls(settings.urls);
+        }
         self.currentFolder(self.options.findFolder(settings));
-        self.options.attemptRetrieval(self);
+        self.options.attemptRetrieval(self); //DOES NOT ACTUALLY WORK EVEN ON PRODUCTION
         ret.resolve(settings);
     };
     if (typeof data === 'undefined'){
@@ -423,24 +443,7 @@ flatAddonViewModel.prototype.connectAccount = function() {
 
 flatAddonViewModel.prototype.connectExistingAccount = function(account_id) {
     var self = this;
-    return $osf.putJSON(
-        self.urls().importAuth, {
-            external_account_id: account_id
-        }
-    ).done(function(response) {
-        self.changeMessage('Successfully imported ' + self.addonName + ' credentials.', 'text-success');
-        self.updateFromData(response);
-    }).fail(function(xhr, status, error) {
-        var message = 'Could not import ' + self.addonName + ' credentials at this time.' +
-            ' Please refresh the page. If the problem persists, email ' +
-            '<a href="mailto:support@osf.io">support@osf.io</a>';
-        self.changeMessage(message, 'text-warning');
-        Raven.captureMessage('Could not import ' + self.addonName + ' credentials', {
-            url: self.urls().importAuth,
-            textStatus: status,
-            error: error
-        });
-    });
+    self.options.importAccount(account_id, self, $osf);
 };
 
 

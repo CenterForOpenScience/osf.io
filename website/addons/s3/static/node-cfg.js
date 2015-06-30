@@ -10,19 +10,19 @@ new FlatNodeConfig('S3', '#s3Scope', url, 'bucket', {
         return response.buckets
     },
     formatFolderName: function(folderName) {
-        var newName = folderName.replace(/^(?!.*(\.\.|-\.))[^.][a-z0-9\d.-]{2,61}[^.]$/g, '-');
+        var newName = folderName.replace(/[^a-z0-9\d.-]+/g, '-');
         return newName
     },
     attemptRetrieval: function(self) {
          if (self.nodeHasAuth() && !self.validCredentials()) {
+             debugger;
             var message = '';
             if(self.userIsOwner()) {
                 message = 'Could not retrieve S3 settings at ' +
                     'this time. The S3 credentials may no longer be valid.' +
                     ' Try deauthorizing and reauthorizing S3 on your <a href="' +
                     self.urls().settings + '">account settings page</a>.';
-            }
-            else {
+            } else {
                 message = 'Could not retrieve S3 settings at ' +
                     'this time. The S3 addon credentials may no longer be valid.' +
                     ' Contact ' + self.ownerName() + ' to verify.';
@@ -53,7 +53,7 @@ new FlatNodeConfig('S3', '#s3Scope', url, 'bucket', {
                         return $osf.postJSON(
                             self.urls().create_auth, {
                                 access_key: accessKey,
-                                secret_key: secretKey,
+                                secret_key: secretKey
                         }).done(function (response) {
                                 self.changeMessage('Successfully added S3 credentials.', 'text-success');
                                 self.updateFromData(response);
@@ -72,5 +72,23 @@ new FlatNodeConfig('S3', '#s3Scope', url, 'bucket', {
                 }
             }
         }); 
+    },
+    importAccount: function(account_id, self, $osf) {
+        return $osf.postJSON(
+            self.urls().importAuth, {}
+        ).done(function(response) {
+            self.changeMessage('Successfully imported S3 credentials.', 'text-success');
+            self.updateFromData(response);
+        }).fail(function(xhr, status, error) {
+            var message = 'Could not import S3 credentials at ' +
+                'this time. Please refresh the page. If the problem persists, email ' +
+                '<a href="mailto:support@osf.io">support@osf.io</a>.';
+            self.changeMessage(message, 'text-warning');
+            Raven.captureMessage('Could not import S3 credentials', {
+                url: self.urls().importAuth,
+                textStatus: status,
+                error: error
+            });
+        });
     }
 });

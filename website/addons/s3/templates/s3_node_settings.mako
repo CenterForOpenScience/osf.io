@@ -13,7 +13,7 @@
                 % endif
             </span>
             <span data-bind="if: showImport">
-                <a data-bind="click: importAuth" class="text-primary pull-right addon-auth">
+                <a data-bind="click: connectExistingAccount" class="text-primary pull-right addon-auth">
                   Import Access Token
                 </a>
             </span>
