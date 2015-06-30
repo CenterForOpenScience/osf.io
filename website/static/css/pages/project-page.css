@@ -49,6 +49,10 @@
     margin: 0;
 }
 
+.contributor-self {
+    font-weight: bold;
+}
+
 /* Multiple device support for project nav-bar */
 @media (max-width: 767px) {
     .osf-project-navbar li>a {
