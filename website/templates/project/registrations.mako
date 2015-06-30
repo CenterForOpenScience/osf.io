@@ -69,8 +69,8 @@
             </div>
             <p data-bind="text: registration_schema.schema.title"></p>
             <p>initiated by <span data-bind="text: initiator.fullname"></span>
-            <p>started about <span data-bind="text: $root.formatDate(initiated)"></span></p>
-            <p>last updated about <span data-bind="text: $root.formatDate(updated)"></span></p>
+            <p>started about <span data-bind="text: $root.formattedDate(initiated)"></span></p>
+            <p>last updated about <span data-bind="text: $root.formattedDate(updated)"></span></p>
             <p>
               <button class="btn btn-success"
                       data-bind="click: $root.editDraft"><i class="fa fa-pencil"></i>Edit</button>

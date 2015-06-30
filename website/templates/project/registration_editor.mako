@@ -24,6 +24,7 @@
                 <a data-bind="click: nextPage" style="float:right; padding-right:5px;">Next
                     <i style="display:inline-block; padding-right: 5px; padding-left: 5px;" class="fa fa-arrow-right"></i>
                 </a>
+                <!-- EDITOR -->
                 <div id="registrationEditor"></div>
                 <button data-bind="css: {disabled: disableSave},                                 
                                    click: check" type="button" class="btn btn-success">Save</button>

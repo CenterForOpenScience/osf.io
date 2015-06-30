@@ -203,7 +203,7 @@ RegistrationManager.prototype.init = function() {
     });
 };
 RegistrationManager.prototype.formatDate = function(dateString){
-    return moment(dateString).toNow();
+    return moment(dateString).toNow() + ' (' + '' + ')';
 };
 RegistrationManager.prototype.launchEditor = function(draft) {
     var self = this;

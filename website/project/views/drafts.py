@@ -2,7 +2,6 @@ from flask import request
 import httplib as http
 
 from modularodm import Q
-from modularodm.exceptions import NoResultsFound
 
 from framework.mongo.utils import get_or_http_error
 from framework.exceptions import HTTPError
@@ -16,7 +15,7 @@ from website.project.model import MetaSchema, DraftRegistration
 from website.project.metadata.utils import serialize_meta_schema, serialize_draft_registration
 
 get_draft_or_fail = lambda pk: get_or_http_error(DraftRegistration, pk)
-
+get_schema_or_fail = lambda query: get_or_http_error(MetaSchema, query)
 
 @must_have_permission(ADMIN)
 @must_be_valid_project
@@ -50,14 +49,10 @@ def create_draft_registration(auth, node, *args, **kwargs):
     schema_version = data.get('schema_version', 1)
     schema_data = data.get('schema_data', {})
 
-    try:
-        meta_schema = MetaSchema.find_one(
-            Q('name', 'eq', schema_name) &
-            Q('schema_version', 'eq', schema_version)
-        )
-    except NoResultsFound:
-        raise HTTPError(http.NOT_FOUND)
-
+    meta_schema = get_schema_or_fail(
+        Q('name', 'eq', schema_name) &
+        Q('schema_version', 'eq', schema_version)
+    )
     draft = DraftRegistration(
         initiator=auth.user,
         branched_from=node,
@@ -79,13 +74,10 @@ def update_draft_registration(auth, node, draft_pk, *args, **kwargs):
     schema_name = data.get('schema_name')
     schema_version = data.get('schema_version', 1)
     if schema_name:
-        try:
-            meta_schema = MetaSchema.find_one(
-                Q('name', 'eq', schema_name) &
-                Q('schema_version', 'eq', schema_version)
-            )
-        except NoResultsFound:
-            raise HTTPError(http.NOT_FOUND)
+        meta_schema = get_schema_or_fail(
+            Q('name', 'eq', schema_name) &
+            Q('schema_version', 'eq', schema_version)
+        )
         existing_schema = draft.registration_schema
         if (existing_schema.name, existing_schema.schema_version) != (meta_schema.name, meta_schema.schema_version):
             draft.registration_schema = meta_schema
@@ -115,12 +107,8 @@ def get_metaschemas(*args, **kwargs):
     }, http.OK
 
 def get_metaschema(schema_name, schema_version=1, *args, **kwargs):
-    try:
-        meta_schema = MetaSchema.find_one(
-            Q('name', 'eq', schema_name) &
-            Q('schema_version', 'eq', schema_version)
-        )
-    except NoResultsFound:
-        raise HTTPError(http.NOT_FOUND)
+    meta_schema = get_schema_or_fail(
+        Q('name', 'eq', schema_name) &
+        Q('schema_version', 'eq', schema_version)
+    )
     return serialize_meta_schema(meta_schema), http.OK
-
