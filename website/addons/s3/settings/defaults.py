@@ -14,6 +14,10 @@ VALID_BUCKET_LOCATIONS = [
     'ap-southeast-2',
     'cn-north-1'
 ]
+DEFAULT_BUCKET_LOCATION = {
+    'value': '',
+    'message': 'US Standard'
+}
 
 OSF_USER = 'osf-user{0}'
 OSF_USER_POLICY_NAME = 'osf-user-policy'

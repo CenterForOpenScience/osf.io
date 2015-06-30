@@ -260,7 +260,8 @@ ViewModel.prototype.openCreateBucket = function() {
                                 '<label class="col-md-4 control-label" for="bucketLocation">Bucket Location</label> ' +
                                 '<div class="col-md-4"> ' +
                                     '<select id="bucketLocation" name="bucketLocation" class="form-control"> ' +
-                                        '<option value="" selected>US Standard</option> ' +
+                                        '<option value="' + window.contextVars.s3Settings.defaultBucketLocationValue + '' +
+                                            '" selected>' + window.contextVars.s3Settings.defaultBucketLocationMessage + '</option> ' +
                                         '<option value="EU">Europe Standard</option> ' +
                                         '<option value="us-west-1">California</option> ' +
                                         '<option value="us-west-2">Oregon</option> ' +
