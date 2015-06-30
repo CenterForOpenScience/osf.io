@@ -5,7 +5,6 @@ var $ = require('jquery');
 
 // model for components, due to simplicity did not create a new file
 var ComponentControl = {
-     anonymousUserName:'<em>A User</em>'
 };
 
 // binds to component scope in render_nodes.mako
