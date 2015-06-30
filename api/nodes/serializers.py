@@ -4,7 +4,6 @@ from rest_framework import serializers as ser
 from api.users.serializers import UserSerializer
 from website.models import Node, User
 from framework.auth.core import Auth
-from api.base.utils import get_object_or_404
 from api.base.serializers import JSONAPISerializer, LinksField, Link, WaterbutlerLink
 
 
