@@ -1,16 +1,21 @@
 <div id="registrationEditorScope">
-  <div class="container">
+   <div class="container">
         <div class="row">
           <div class="span8 col-md-2 columns eight large-8" data-bind="with: currentSchema">
             <ul class="nav nav-stacked list-group" data-bind="foreach: {data: pages, as: 'page'}">
               <li class="re-navbar">
-                <a style="text-align: left; font-weight:bold;" data-bind="text: title, click: $root.selectPage">
+                <a class="registration-editor-page" style="text-align: left; font-weight:bold;" data-bind="text: title, click: $root.selectPage">
                   <i class="fa fa-caret-right"></i>
                 </a>
                 <span class="btn-group-vertical" role="group">
                   <ul class="list-group" data-bind="foreach: questions">
-                    <li data-bind="" class="list-group-item">
-                      <a data-bind="text: nav, click: $root.selectQuestion.bind($root, page, $data)"></a>
+                    <li data-bind="css: {
+                                     list-group-item-success: $root.isComplete($data), 
+                                     list-group-item-warning: !$root.isComplete($data)
+                                   },
+                                   click: $root.selectQuestion.bind($root, page),
+                                   text: nav"
+                        class="registration-editor-question list-group-item">
                     </li>
                   </ul>
                 </span>
@@ -26,10 +31,9 @@
                 </a>
                 <!-- EDITOR -->
                 <div id="registrationEditor"></div>
+                <p>Last saved: <span data-bind="text: $root.lastSaved()"></span></p>
                 <button data-bind="css: {disabled: disableSave},                                 
-                                   click: check" type="button" class="btn btn-success">Save</button>
-                <button data-bind="css: {disabled: disableSave},                                 
-                                   click: uncheck" type="button" class="btn btn-warning">Mark Incomplete</button>
+                                   click: save" type="button" class="btn btn-success">Save</button>
             </div>
         </div>
     </div>
