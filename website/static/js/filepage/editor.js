@@ -123,8 +123,7 @@ var FileEditor = {
         if (!ctrl.loaded) {
             return util.Spinner;
         }
-
-        return m('.editor-pane', [
+        return m('.editor-pane.panel-body', [
             m('.wiki-connected-users', m('.row', m('.col-sm-12', [
                 m('.ul.list-inline', {style: {'margin-top': '10px'}}, [
                     ctrl.observables.activeUsers().map(function(user) {
@@ -146,7 +145,7 @@ var FileEditor = {
                 m('.wmd-input.wiki-editor#editor', {config: ctrl.bindAce})
             ]),
             m('br'),
-            m('.osf-panel-footer[style=position:inherit]', [
+            m('[style=position:inherit]', [
                 m('.row', m('.col-sm-12', [
                     m('.pull-right', [
                         m('button#fileEditorRevert.btn.btn-sm.btn-danger', {onclick: function(){ctrl.reloadFile();}}, 'Revert'),

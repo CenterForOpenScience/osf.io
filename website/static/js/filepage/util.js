@@ -19,7 +19,7 @@ Panel.controller = function(title, header, inner, args) {
 
 
 Panel.view = function(ctrl) {
-    return m('#' + ctrl.title.toLowerCase() + 'Panel', [
+    return m('#' + ctrl.title.toLowerCase() + 'Panel.panel.panel-default', [
         !ctrl.header ? '' :
             m('.panel-heading', $.isFunction(ctrl.header) ? ctrl.header() : ctrl.header),
         m('', ctrl.inner)
