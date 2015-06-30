@@ -9,6 +9,7 @@ from framework.auth import Auth
 from tests.base import OsfTestCase
 from tests.factories import ProjectFactory, AuthUserFactory
 
+from website.addons.s3.settings import DEFAULT_BUCKET_LOCATION
 from website.addons.s3.utils import validate_bucket_name, valid_bucket_location
 from website.util import api_url_for
 
@@ -362,7 +363,7 @@ class TestCreateBucket(OsfTestCase):
         assert_false(valid_bucket_location('CostaRica'))
 
     def test_locations(self):
-        assert_true(valid_bucket_location(''))
+        assert_true(valid_bucket_location(DEFAULT_BUCKET_LOCATION))
         assert_true(valid_bucket_location('EU'))
         assert_true(valid_bucket_location('us-west-1'))
 
@@ -380,7 +381,7 @@ class TestCreateBucket(OsfTestCase):
             url,
             {
                 'bucket_name': 'doesntevenmatter',
-                'bucket_location': '',
+                'bucket_location': DEFAULT_BUCKET_LOCATION,
             },
             auth=self.user.auth
         )

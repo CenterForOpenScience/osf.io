@@ -3,7 +3,9 @@ import httplib
 from flask import request
 from boto import exception
 
+
 from website.addons.s3 import utils
+from website.addons.s3.settings import DEFAULT_BUCKET_LOCATION
 from website.project.decorators import must_have_addon
 from website.project.decorators import must_have_permission
 from website.project.decorators import must_be_contributor_or_public
@@ -14,7 +16,7 @@ from website.project.decorators import must_be_contributor_or_public
 @must_have_permission('write')
 def create_bucket(auth, node_addon, **kwargs):
     bucket_name = request.json.get('bucket_name', '')
-    bucket_location = request.json.get('bucket_location', '')
+    bucket_location = request.json.get('bucket_location', DEFAULT_BUCKET_LOCATION)
 
     if not utils.validate_bucket_name(bucket_name):
         return {
