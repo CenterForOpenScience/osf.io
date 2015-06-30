@@ -86,16 +86,12 @@ def github_hgrid_data(node_settings, auth, **kwargs):
         'repo': github_repo_url(owner=node_settings.user, repo=node_settings.repo, branch=branch)
     }
 
-    branch_names = [each.name for each in branches]
-    if not branch_names:
-        branch_names = [branch]  # if repo un-init-ed then still add default branch to list of branches
-
     return [rubeus.build_addon_root(
         node_settings,
         name_tpl,
         urls=urls,
         permissions=permissions,
-        branches=branch_names,
+        branches=[each.name for each in branches],
         defaultBranch=branch,
     )]
 
