@@ -40,7 +40,7 @@ ViewModel.prototype.updateFromData = function(data) {
     if (self.isEnabled()) {
         // Initialize QR Code
         if (!self.urls.otpauth) {
-            throw new Error('Tried to initailize jQuery.fn.qrcode without a otpauth URL');
+            throw new Error('Tried to initialize jQuery.fn.qrcode without a otpauth URL');
         } else {
             $(self.qrCodeSelector).qrcode(self.urls.otpauth);
         }

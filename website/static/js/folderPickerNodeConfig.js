@@ -81,8 +81,8 @@ var FolderPickerViewModel = oop.defclass({
         self.messages = {
             invalidCredOwner: ko.pureComputed(function() {
                 return 'Could not retrieve ' + self.addonName + ' settings at ' +
-                    'this time. The credentials associated with this ' + self.addonName + ' Account may no longer be valid.' +
-                    ' Try disconnecting and reconnecting the ' + self.addonName + 'Account on your <a href="' +
+                    'this time. The credentials associated with this ' + self.addonName + ' account may no longer be valid.' +
+                    ' Try disconnecting and reconnecting the ' + self.addonName + 'account on your <a href="' +
                     self.urls().settings + 'addons/">account settings page</a>.';
             }),
             invalidCredNotOwner: ko.pureComputed(function() {
@@ -105,10 +105,10 @@ var FolderPickerViewModel = oop.defclass({
                 return 'Disconnect ' + self.addonName + '.';
             }),
             deauthorizeFail: ko.pureComputed(function() {
-                return 'Could not disconnect ' + self.addonName + ' Account because of an error. Please try again later.';
+                return 'Could not disconnect ' + self.addonName + ' account because of an error. Please try again later.';
             }),
             connectAccountSuccess: ko.pureComputed(function() {
-                return 'Successfully connected a ' + self.addonName + ' Account';
+                return 'Successfully connected a ' + self.addonName + ' account';
             }),
             submitSettingsSuccess: ko.pureComputed(function() {
                 throw new Error('Subclasses of FolderPickerViewModel must provide a message for successful settings updates. ' +
@@ -119,16 +119,16 @@ var FolderPickerViewModel = oop.defclass({
                 return 'Could not change ' + self.addonName + ' settings. Please try again later.';
             }),
             confirmDeauth: ko.pureComputed(function() {
-                return 'Are you sure you want to remove this ' + self.addonName + ' Account?';
+                return 'Are you sure you want to remove this ' + self.addonName + ' account?';
             }),
             confirmAuth: ko.pureComputed(function() {
-                return 'Are you sure you want to link your ' + self.addonName + ' Account with this project?';
+                return 'Are you sure you want to link your ' + self.addonName + ' account with this project?';
             }),
             tokenImportSuccess: ko.pureComputed(function() {
-                return 'Successfully imported ' + self.addonName + ' Account from profile.';
+                return 'Successfully imported ' + self.addonName + ' account from profile.';
             }),
             tokenImportError: ko.pureComputed(function() {
-                return 'Error occurred while importing ' + self.addonName + ' Account.';
+                return 'Error occurred while importing ' + self.addonName + ' account.';
             }),
             connectError: ko.pureComputed(function() {
                 return 'Could not connect to ' + self.addonName + ' at this time. Please try again later.';
