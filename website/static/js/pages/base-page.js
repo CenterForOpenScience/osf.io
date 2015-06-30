@@ -12,12 +12,6 @@ require('../../../../node_modules/osf-style/css/base.css');
 require('../../css/search-bar.css');
 require('font-awesome-webpack');
 
-// for public activity page under explore nav-tag
-require('../../css/pages/public-activity-page.css');
-
-// for help tab
-require('../../css/pages/getting-started-page.css');
-
 var $ = require('jquery');
 require('jquery.cookie');
 

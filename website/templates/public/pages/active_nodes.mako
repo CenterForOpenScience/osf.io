@@ -2,6 +2,10 @@
 
 <%def name="title()">Public Activity</%def>
 
+<%def name="stylesheets()">
+    <link rel="stylesheet" href="/static/css/pages/public-activity-page.css">
+</%def>
+
 <%def name="content()">
     <%
         from framework.auth import get_user
