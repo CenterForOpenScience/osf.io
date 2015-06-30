@@ -854,17 +854,13 @@ class TestCompileSubscriptions(OsfTestCase):
 class TestMoveSubscription(OsfTestCase):
     def setUp(self):
         super(TestMoveSubscription, self).setUp()
-        self.user_1 = factories.UserFactory()
-        self.user_2 = factories.UserFactory()
-        self.user_3 = factories.UserFactory()
-        self.user_4 = factories.UserFactory()
-        self.project = factories.ProjectFactory()
+        self.user_1 = factories.AuthUserFactory()
+        self.auth = Auth(user=self.user_1)
+        self.user_2 = factories.AuthUserFactory()
+        self.user_3 = factories.AuthUserFactory()
+        self.user_4 = factories.AuthUserFactory()
+        self.project = factories.ProjectFactory(creator=self.user_1)
         self.private_node = factories.NodeFactory(parent=self.project, is_public=False, creator=self.user_1)
-        self.private_node.save()
-        self.private_node.add_contributor(self.user_2, 'admin', auth=Auth(self.private_node.creator))
-        self.private_node.save()
-        self.private_node.add_contributor(self.user_3, 'write')
-        self.private_node.save()
         self.sub = factories.NotificationSubscriptionFactory(
             _id=self.project._id + '_file_updated',
             owner=self.project,
@@ -877,7 +873,6 @@ class TestMoveSubscription(OsfTestCase):
             owner=self.project,
             event_name='xyz42_file_updated'
         )
-        self.file_sub.email_transactional.extend([self.user_2, self.user_3, self.user_4])
         self.file_sub.save()
 
     @mock.patch('website.notifications.emails.notify')
@@ -888,10 +883,40 @@ class TestMoveSubscription(OsfTestCase):
                                                     self.project, time_now)
         mock_notify.assert_called_with(self.project._id, 'xyz42_file_updated', self.user_1, self.project, time_now)
 
+    def test_move_sub(self):
+        """Tests old sub is replaced with new sub."""
+        utils.move_subscription('xyz42_file_updated', self.project, 'abc42_file_updated', self.private_node)
+        assert_equal('abc42_file_updated', self.file_sub.event_name)
+        assert_equal(self.private_node, self.file_sub.owner)
+        assert_equal(self.private_node._id + '_abc42_file_updated', self.file_sub._id)
+
     def test_remove_one_user(self):
+        """One user doesn't have permissions on the node the sub is moved to. Should be listed."""
+        self.file_sub.email_transactional.extend([self.user_2, self.user_3, self.user_4])
+        self.file_sub.save()
+        self.private_node.add_contributor(self.user_2, permissions=['admin', 'write', 'read'], auth=self.auth)
+        self.private_node.add_contributor(self.user_3, permissions=['write', 'read'], auth=self.auth)
+        self.private_node.save()
         results = utils.move_subscription('xyz42_file_updated', self.project, 'abc42_file_updated', self.private_node)
-        print self.private_node.has_permission(self.user_2, 'read')
-        print results
+        assert_equal({'email_transactional': [self.user_4], 'email_digest': []}, results)
+
+        # url = self.private_node.api_url_for('get_contributors')
+        # res = self.app.get(url, auth=self.user_1.auth)
+        # result = [item['id'] for item in res.json['contributors']]
+        # print result
+
+    def test_remove_one_user_warn_another(self):
+        """Two users do not have permissions on new node, but one has a project sub. Both should be listed."""
+        self.private_node.add_contributor(self.user_2, permissions=['admin', 'write', 'read'], auth=self.auth)
+        self.private_node.save()
+        self.project.add_contributor(self.user_3, permissions=['write', 'read'], auth=self.auth)
+        self.project.save()
+        self.sub.email_digest.append(self.user_3)
+        self.sub.save()
+        self.file_sub.email_transactional.extend([self.user_2, self.user_4])
+        results = utils.move_subscription('xyz42_file_updated', self.project, 'abc42_file_updated', self.private_node)
+        assert_equal({'email_transactional': [self.user_4], 'email_digest': [self.user_3]}, results)
+        assert_true(self.user_3 in self.sub.email_digest)  # Is not removed from the project subscription.
 
 
 class TestSendEmails(OsfTestCase):
