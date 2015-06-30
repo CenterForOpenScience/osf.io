@@ -183,7 +183,7 @@ RegistrationEditor.prototype.updateEditor = function(page, question) {
     self.editor = new JSONEditor(document.getElementById(self.editorId), {
         schema: question,
         startVal: self.draft().schemaData,
-        theme: 'bootstrap3',
+        theme: 'bootstrap3_OSF',
         disable_collapse: true,
         disable_edit_json: true,
         disable_properties: true,

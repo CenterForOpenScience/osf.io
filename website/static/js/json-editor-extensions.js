@@ -12,7 +12,7 @@ var curentUser = window.contextVars.currentUser || {
     name: 'Anonymous'
 };
 
-// theme fix
+/////////////////// description placement //////////
 JSONEditor.defaults.themes.bootstrap3_OSF = JSONEditor.defaults.themes.bootstrap3.extend({
     getFormControl: function(label, input, description) {
         var group = document.createElement("div");
@@ -31,12 +31,24 @@ JSONEditor.defaults.themes.bootstrap3_OSF = JSONEditor.defaults.themes.bootstrap
                 label.className += " control-label";
                 group.appendChild(label);
             }
-            if (description) group.appendChild(description);
+            if (description) {
+                group.appendChild(description);
+            }
             group.appendChild(input);
         }
 
         return group;
-    }
+    },
+    getFormInputHelp: function(text) {
+        var el = document.createElement('p');
+        el.className = 'example-block';
+        el.innerHTML = '<a>Show Example</a>';
+        var el_inner = document.createElement('p');
+        el_inner.id = 'example';
+        el_inner.innerHTML = text;
+        el.appendChild(el_inner);
+        return el;
+    },
 });
 
 //######### Commentable ###########
@@ -170,6 +182,14 @@ JSONEditor.defaults.editors.commentableString = JSONEditor.defaults.editors.stri
     build: function() {
         var self = this;
         this._super();
+        if (this.schema.help) {
+            this.help = this.theme.getFormInputHelp(this.schema.help);
+            $(this.input.previousSibling).after(this.help);
+            $("#example").hide();
+            $( ".example-block" ).click(function() {
+                $("#example").slideToggle("slow");
+            });
+        };
 
         var $element = $('<div>', {
             'class': 'col-md-12 m-b-md'
@@ -205,7 +225,7 @@ JSONEditor.defaults.editors.commentableString = JSONEditor.defaults.editors.stri
 
 });
 
-///////////////////////////////
+/////////////// upload ////////////////
 
 JSONEditor.defaults.options.upload = function(type, file, cbs) {
     // TODO may want to change this
