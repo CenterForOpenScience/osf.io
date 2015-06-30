@@ -12,9 +12,11 @@ var curentUser = window.contextVars.currentUser || {
     name: 'Anonymous'
 };
 
-// theme fix
+//////////////////// help text /////////////////////
+
+/////////////////// description placement //////////
 JSONEditor.defaults.themes.bootstrap3_OSF = JSONEditor.defaults.themes.bootstrap3.extend({
-    getFormControl: function(label, input, description) {
+    getFormControl: function(label, input, description, help) {
         var group = document.createElement("div");
 
         if(label && input.type === "checkbox") {
@@ -28,16 +30,27 @@ JSONEditor.defaults.themes.bootstrap3_OSF = JSONEditor.defaults.themes.bootstrap
         } 
         else {
             group.className += " form-group";
-            if(label) {
+            if (label) {
                 label.className += " control-label";
                 group.appendChild(label);
             }
-            if(description) group.appendChild(description);
+            if (description) {
+                group.appendChild(description);
+            }
+            if (help) {
+                group.appendChild(help);
+            }
             group.appendChild(input);
         }
 
         return group;
-  }
+  },
+  getFormInputHelp: function(text) {
+    var el = document.createElement('p');
+    el.className = 'example-block';
+    el.innerHTML = "<a>Show Example</a>";
+    return el;
+  },
 });
 
 //######### Commentable ###########
@@ -171,7 +184,16 @@ Comments.prototype.add = function() {
 JSONEditor.defaults.editors.commentableString = JSONEditor.defaults.editors.string.extend({
     build: function() {
         var self = this;
+        var help = this.schema.help;
         this._super();
+        if (this.schema.help) {
+            this.help = this.theme.getFormInputHelp(help);
+            $(this.input.previousSibling).after(this.help);
+            $( ".example-block" ).click(function() {
+                var example = '<p>' + help + '</p>';
+                $(".example-block").append(example);
+            });
+        };
 
         var $element = $('<div>', {
 			'class': 'col-md-12 m-b-md'
