@@ -40,7 +40,12 @@
                             % endif
 
                             <li><a href="#configureNotificationsAnchor">Configure Notifications</a></li>
-                        %endif
+                        % endif
+
+                        % if 'admin' in user['permissions'] and 'wiki' in addons_enabled:
+                            <li><a href="#configureWikiAnchor">Configure Wiki</a></li>
+                        % endif
+
 
                     % endif
 
@@ -242,6 +247,11 @@
 
         % endif  ## End Select Addons
 
+
+        % if user['has_read_permissions']:  ## Begin Configure Notifications
+
+            % if not node['is_registration']:
+
         % if user['has_read_permissions']:  ## Begin Configure Notifications
 
             % if not node['is_registration']:
@@ -267,7 +277,35 @@
 
             %endif
 
-        % endif  ## End Configure Addons
+        % endif  ## End Configure Notifications
+
+        % if 'admin' in user['permissions'] and 'wiki' in addons_enabled:  ## Begin Configure Wiki
+
+            % if not node['is_registration']:
+
+                <div class="panel panel-default">
+                    <span id="configureWikiAnchor" class="anchor"></span>
+
+                    <div class="panel-heading">
+                        <h3 class="panel-title">Configure Wiki</h3>
+                    </div>
+                    <div class="help-block" style="padding-left: 15px">
+                        <p>When a project or component is public,  you can set its wiki to be publicly editable. When publicly editable, any OSF user can edit its wiki.</p>
+                    </div>
+                    <form id="wikiSettings" class="osf-treebeard-minimal">
+                        <div id="wgrid">
+                            <div class="notifications-loading"> <i class="fa fa-spinner notifications-spin"></i> <p class="m-t-sm fg-load-message"> Loading wiki settings...  </p> </div>
+                        </div>
+                        <div class="help-block" style="padding-left: 15px">
+                            <p id="configureWikiMessage"></p>
+                        </div>
+                    </form>
+                </div>
+
+            %endif
+
+        % endif ## End Configure Wiki
+
 
         % if 'admin' in user['permissions']:  ## Begin Retract Registration
 

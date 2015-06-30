@@ -9,6 +9,7 @@ from flask import request
 from framework.mongo.utils import to_mongo_key
 from framework.exceptions import HTTPError
 from framework.auth.utils import privacy_info_handle
+from framework.auth.decorators import must_be_logged_in
 from framework.flask import redirect
 
 from website.addons.wiki import settings
@@ -310,6 +311,7 @@ def project_wiki_view(auth, wname, path=None, **kwargs): #GRUMBLE
         'is_current': is_current,
         'version_settings': version_settings,
         'pages_current': _get_wiki_pages_current(node),
+        'can_edit': can_edit,
         'toc': toc,
         'category': node.category,
         'panels_used': panels_used,
@@ -361,12 +363,13 @@ def project_wiki_edit_post(auth, wname, **kwargs):
 @must_have_addon('wiki', 'node')
 def edit_wiki_permissions(**kwargs):
     node = kwargs['node'] or kwargs['project']
-
     wiki_settings = node.get_addon('wiki')
-
     permissions = kwargs.get('permissions')
 
     if permissions is None:
+        raise HTTPError(http.BAD_REQUEST)
+
+    if wiki_settings is None:
         raise HTTPError(http.BAD_REQUEST)
 
     wiki_settings.set_editing(permissions)
@@ -376,6 +379,11 @@ def edit_wiki_permissions(**kwargs):
         'permissions': permissions,
     }
 
+@must_be_logged_in
+@must_be_valid_project
+def get_node_wiki_permissions(auth, **kwargs):
+    node = kwargs.get('node') or kwargs['project']
+    return wiki_utils.format_data(auth.user, [node._id])
 
 @must_be_valid_project
 @must_have_addon('wiki', 'node')

@@ -27,8 +27,29 @@ if ($('#grid').length) {
     }).fail(function(xhr, status, error) {
         $notificationsMsg.addClass('text-danger');
         $notificationsMsg.text('Could not retrieve notification settings.');
-        Raven.captureMessage('Could not GET notification settings', {
+        Raven.captureMessage('Could not GET notification settings.', {
             url: notificationsURL, status: status, error: error
+        });
+    });
+}
+
+// Initialize treebeard grid for wiki
+var ProjectWiki = require('js/wikiTreebeard.js');
+var $notificationsMsg = $('#configureWikiMessage');
+var wikiPermissionsURL = ctx.node.urls.api  + 'wiki/permissions/';
+// Need check because notifications settings don't exist on registration's settings page
+if ($('#wgrid').length) {
+    $.ajax({
+        url: wikiPermissionsURL,
+        type: 'GET',
+        dataType: 'json'
+    }).done(function(response) {
+        new ProjectWiki(response);
+    }).fail(function(xhr, status, error) {
+        $notificationsMsg.addClass('text-danger');
+        $notificationsMsg.text('Could not retrieve wiki settings.');
+        Raven.captureMessage('Could not GET wiki settings.', {
+            url: wikiPermissionsURL, status: status, error: error
         });
     });
 }

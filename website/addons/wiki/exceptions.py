@@ -32,3 +32,7 @@ class PageNotFoundError(WikiError):
 class InvalidVersionError(WikiError):
     """Raised if user tries to access a wiki page version that does not exist."""
     pass
+
+class NonWikiNodeError(WikiError):
+    """Raised if wiki actions are attempted on a node without a wiki."""
+    pass

@@ -926,6 +926,22 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
 
         return False
 
+    def has_permission_on_children(self, user, permission):
+        """Checks if the given user has read permissions on any child nodes
+            that are not registrations or deleted
+        """
+        if self.has_permission(user, permission):
+            return True
+
+        for node in self.nodes:
+            if not node.primary or node.is_deleted:
+                continue
+
+            if node.has_permissions_on_children(user, permission):
+                return True
+
+        return False
+
     def get_permissions(self, user):
         """Get list of permissions for user.
 

@@ -12,22 +12,7 @@
     </div>
     <div class="col-sm-6">
         <div class="pull-right">
-            <div class="btn-group" id="makeEditable">
-                % if node['is_public'] and user['can_edit']:
-                    % if not wiki_publicly_editable:
-                        <button class='btn btn-default btn-sm disabled'>Privately Editable</button>
-                        % if 'admin' in user['permissions']:
-                            <a class="btn btn-default btn-sm" data-bind="click: makePubliclyEditable" id="makeEditable">Make Editing Public</a>
-                        % endif
-                    % else:
-                        % if 'admin' in user['permissions']:
-                            <a class="btn btn-default btn-sm" data-bind="click: makePrivatelyEditable" id="makeNotEditable">Make Editing Private</a>
-                        % endif
-                        <button class="btn btn-default btn-sm disabled">Publicly Editable</button>
-                    % endif
-                % endif
-            </div>
-          <div class="switch" style="display: inline"></div>
+          <div class="switch"></div>
           </div>
     </div>
 </div>
@@ -69,7 +54,7 @@
 
 
       <div class="row">
-        % if user['can_edit']:
+        % if can_edit:
             <div data-bind="with: $root.editVM.wikiEditor.viewModel"
                  data-osf-panel="Edit"
                  class="${'col-sm-{0}'.format(12 / num_columns) | n}"
@@ -157,7 +142,7 @@
                             <div class="pull-right">
                                 <!-- Version Picker -->                            
                                 <select data-bind="value:viewVersion" id="viewVersionSelect">
-                                    % if user['can_edit']: ##GRUMBLE CHANGE HERE
+                                    % if can_edit:
                                         <option value="preview" ${'selected' if version_settings['view'] == 'preview' else ''}>Preview</option>
                                     % endif
                                     <option value="current" ${'selected' if version_settings['view'] == 'current' else ''}>Current</option>
@@ -344,7 +329,7 @@
 ${parent.javascript_bottom()}
 <script>
 
-    var canEdit = ${json.dumps(user['can_edit'])}; //GRUMBLE CHANGE HERE
+    var canEdit = ${json.dumps(can_edit)};
 
     var canEditPageName = canEdit && ${json.dumps(
         wiki_id and wiki_name != 'home'

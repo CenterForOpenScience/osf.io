@@ -9,8 +9,10 @@ import requests
 from framework.mongo.utils import to_mongo_key
 
 from website import settings
+from website.models import Node
 from website.addons.wiki import settings as wiki_settings
-from website.addons.wiki.exceptions import InvalidVersionError
+from website.addons.wiki.exceptions import InvalidVersionError,\
+    NonWikiNodeError
 
 
 def generate_private_uuid(node, wname):
@@ -154,3 +156,66 @@ def format_wiki_version(version, num_versions, allow_preview):
         raise InvalidVersionError
 
     return version
+
+def get_wiki_permission(node): ##add try to check if this is really a wiki node
+    wiki = node.get_addon('wiki')
+    if not wiki:
+        raise NonWikiNodeError
+    if wiki.is_publicly_editable:
+        return 'public'
+    return 'private'
+
+def format_data(user, node_ids):
+    """ Format subscriptions data for project settings page
+    :param user: modular odm User object
+    :param node_ids: list of parent project ids
+    :return: treebeard-formatted data
+    """
+    items = []
+
+    for node_id in node_ids:
+        node = Node.load(node_id)
+        assert node, '{} is not a valid Node.'.format(node_id)
+
+        admin = node.has_permission(user, 'admin')
+        admin_on_children = node.has_permission_on_children(user, 'admin')
+        if not admin and not admin_on_children:
+            continue
+
+        children = []
+
+        if admin:
+            children.append({
+                'event': {
+                    'title': "permission",
+                    'permission': get_wiki_permission(node),
+                },
+        })
+        children.extend(format_data(
+            user,
+            [
+                n._id
+                for n in node.nodes
+                if n.primary and
+                not n.is_deleted
+            ]
+        ))
+
+        item = {
+            'node': {
+                'id': node_id,
+                'url': node.url if admin else '',
+                'title': node.title if admin else 'Private Project',
+            },
+            'children': children,
+            'kind': 'folder' if not node.node__parent or not node.parent_node.has_permission(user, 'admin') else 'node',
+            'nodeType': node.project_or_component,
+            'category': node.category,
+            'permissions': {
+                'admin': admin,
+            },
+        }
+
+        items.append(item)
+
+    return items

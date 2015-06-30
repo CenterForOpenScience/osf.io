@@ -67,12 +67,6 @@ page_routes = {
             '/project/<pid>/node/<nid>/wiki/<wname>/',
         ], 'post', views.project_wiki_edit_post, OsfWebRenderer(os.path.join(TEMPLATE_DIR, 'edit.mako'))),
 
-        # Set Editable | POST
-        Rule([
-            '/project/<pid>/wiki/<wname>/permissions/<permissions>/',
-            '/project/<pid>/node/<nid>/wiki/<wname>/permissions/<permissions>/',
-        ], 'post', views.edit_wiki_permissions, json_renderer),
-
     ]
 }
 
@@ -124,6 +118,23 @@ api_routes = {
             '/project/<pid>/wiki/<wname>/',
             '/project/<pid>/node/<nid>/wiki/<wname>/',
         ], 'delete', views.project_wiki_delete, json_renderer),
+
+        # Edit Permissions | PUT
+        Rule([
+            '/project/<pid>/wiki/permissions/<permissions>/',
+            '/project/<pid>/node/<nid>/wiki/permissions/<permissions>/',
+        ], 'put', views.edit_wiki_permissions, json_renderer),
+
+        #Permissions Info for Settings Page | GET
+        Rule(
+            [
+                '/project/<pid>/wiki/permissions/',
+                '/project/<pid>/node/<nid>/wiki/permissions/'
+            ],
+            'get',
+            views.get_node_wiki_permissions,
+            json_renderer,
+        ),
 
     ],
 
