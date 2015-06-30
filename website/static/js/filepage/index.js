@@ -222,9 +222,9 @@ var FileViewPage = {
                         var data = '\<ul class="nav nav-tabs nav-justified"\>\<li class="active"\>\<a href="#share" data-toggle="tab"\>Share\</a\>\</li\>\<li\>\<a href="#embed" data-toggle="tab"\>Embed\</a\>\</li\>\</ul\>';
                         data += '\<div class="tab-content"\>\<div id="share" class="tab-pane fade in active"\> \<input onclick="this.select()" class="form-control" type="text" value="' + link + '" /\> \</div\>';
                         data += '\<div id="embed" class="tab-pane fade"\> CSS Style Link<input onclick="this.select()" class="form-control" type="text" value=\'' + style + '\' />';
-                        data += '\<br /\>HTML & Script\<input onclick="this.select()" class="form-control" type="textarea" value=\'' + '\<div id="mfrIframe" class="mfr mfr-file"\>\</div\>';
+                        data += '\<br /\>HTML & Script\<textarea onclick="this.select()" class="form-control" \>' + '\<div id="mfrIframe" class="mfr mfr-file"\>\</div\>';
                         data += ' \<script src="' + url + 'static/js/mfr.js"\>\</script\>';
-                        data += ' \<script\>var mfrRender = new mfr.Render\("mfrIframe", "' + link + '"\);\n\</script\> \' />';
+                        data += ' \<script\>var mfrRender = new mfr.Render\("mfrIframe", "' + link + '"\);\n\</script\> \' \</textarea\>';
                         data += '\</div\> \</div\>';
                         $(element).attr('data-content', data);
                     }
