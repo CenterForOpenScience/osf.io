@@ -111,8 +111,12 @@ def ensure_schemas(clear=True):
                 Q('schema_version', 'eq', schema['schema_version'])
             )
         except:
-            schema['name'] = schema['name'].replace(' ', '_')
-            schema_obj = MetaSchema(**schema)
+            meta_schema = {
+                'name': schema['name'].replace(' ', '_'),
+                'schema_version': schema.get('version', 1),
+                'schema': schema,
+            }
+            schema_obj = MetaSchema(**meta_schema)
             schema_obj.save()
 
 
@@ -543,6 +547,8 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
     #: Whether this is a pointer or not
     primary = True
 
+    is_draft_registration = False
+
     # Node fields that trigger an update to Solr on save
     SOLR_UPDATE_FIELDS = {
         'title',
@@ -614,6 +620,8 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
     registered_meta = fields.DictionaryField()
     retraction = fields.ForeignField('retraction')
     embargo = fields.ForeignField('embargo')
+
+    draft_registrations = fields.ForeignField('draftregistration', backref='branched')
 
     is_fork = fields.BooleanField(default=False, index=True)
     forked_date = fields.DateTimeField(index=True)
@@ -3057,3 +3065,28 @@ class Embargo(StoredObject):
                 },
                 auth=Auth(user),
             )
+
+class DraftRegistration(AddonModelMixin, StoredObject):
+
+    is_draft_registration = True
+
+    _id = fields.StringField(primary=True, default=lambda: str(ObjectId()))
+
+    datetime_initiated = fields.DateTimeField(auto_now_add=True)
+    datetime_updated = fields.DateTimeField(auto_now=True)
+
+    branched_from = fields.ForeignField('node')
+
+    initiator = fields.ForeignField('user')
+
+    registration_metadata = fields.DictionaryField({})
+    registration_schema = fields.ForeignField('metaschema')
+
+    storage = fields.ForeignField('osfstoragenodesettings')
+
+    # proxy fields from branched_from Node
+    def __getattr__(self, attr):
+        try:
+            return self.__dict__[attr]
+        except KeyError:
+            return getattr(self.branched_from, attr, None)

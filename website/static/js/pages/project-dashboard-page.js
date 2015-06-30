@@ -6,6 +6,8 @@ require('../../vendor/bower_components/jquery.tagsinput/jquery.tagsinput.css');
 require('jquery-tagsinput');
 require('bootstrap-editable');
 
+var language = require('js/osfLanguage').projects;
+
 var m = require('mithril');
 var Fangorn = require('js/fangorn');
 var Raven = require('raven-js');
@@ -20,10 +22,12 @@ var CitationList = require('js/citationList');
 var CitationWidget = require('js/citationWidget');
 var mathrender = require('js/mathrender');
 var md = require('js/markdown').full;
-
+var FilesWidget = require('js/filesWidget');
+var registrationUtils = require('js/registrationUtils');
 
 var ctx = window.contextVars;
 var nodeApiUrl = ctx.node.urls.api;
+var node = ctx.node;
 
 // Listen for the nodeLoad event (prevents multiple requests for data)
 $('body').on('nodeLoad', function(event, data) {
@@ -53,59 +57,25 @@ if (!ctx.node.anonymous && !ctx.node.isRetracted) {
 
 $(document).ready(function () {
 
-    if (!ctx.node.isRetracted) {
-        // Treebeard Files view
-        $.ajax({
-            url:  nodeApiUrl + 'files/grid/'
-        }).done(function (data) {
-            var fangornOpts = {
-                divID: 'treeGrid',
-                filesData: data.data,
-                uploads : true,
-                showFilter : true,
-                placement: 'dashboard',
-                title : undefined,
-                filterFullWidth : true, // Make the filter span the entire row for this view
-                xhrconfig: $osf.setXHRAuthorization,
-                columnTitles : function () {
-                    return [
-                        {
-                            title: 'Name',
-                            width : '90%',
-                            sort : true,
-                            sortType : 'text'
-                        }
-                    ];
-                },
-                resolveRows : function (item) {
-                    var tb = this;
-                    item.css = '';
-                    if(tb.isMultiselected(item.id)){
-                        item.css = 'fangorn-selected';
-                    }
-                    var defaultColumns = [
-                                {
-                                data: 'name',
-                                folderIcons: true,
-                                filter: true,
-                                custom: Fangorn.DefaultColumns._fangornTitleColumn
-                            }];
-                    if (item.parentID) {
-                        item.data.permissions = item.data.permissions || item.parent().data.permissions;
-                        if (item.data.kind === 'folder') {
-                            item.data.accept = item.data.accept || item.parent().data.accept;
-                        }
-                    }
-                    if(item.data.uploadState && (item.data.uploadState() === 'pending' || item.data.uploadState() === 'uploading')){
-                        return Fangorn.Utils.uploadRowTemplate.call(tb, item);
-                    }
+    var qs = $osf.urlParams();
+    var postRegister = (['True', 'true', 1, '1'].indexOf(qs.postRegister || null) !== -1);
+    if (postRegister) {
+        registrationUtils.postRegister(node);
+    }
+    else if(node.isDraftRegistration) {
+        registrationUtils.remind();
+    }
 
-                    var configOption = Fangorn.Utils.resolveconfigOption.call(this, item, 'resolveRows', [item]);
-                    return configOption || defaultColumns;
-                }
-            };
-            var filebrowser = new Fangorn(fangornOpts);
-        });
+    if (!ctx.node.isRetracted) {
+        if (!ctx.node.archiving){
+            // Treebeard Files view
+            var filesWidget = new FilesWidget('treeGrid', nodeApiUrl + 'files/grid/');
+            filesWidget.init();
+        }
+        else {
+            $('#treeGrid').find('.fangorn-loading').remove();
+            $osf.blockElement($('#filesMessage'), language.filesArchiving);
+        }
     }
 
     // Tooltips
