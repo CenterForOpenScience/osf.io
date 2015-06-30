@@ -69,12 +69,12 @@ def remove_subscription(node):
 
 
 def move_subscription(old_event_sub, old_node, new_event_sub, new_node):
-    if old_event_sub == new_event_sub:
-        return []
+    if old_event_sub == new_event_sub or old_node == new_node:
+        return {}
     old_sub = NotificationSubscription.load(to_subscription_key(old_node._id, old_event_sub))
     old_node_sub = NotificationSubscription.load(to_subscription_key(old_node._id, '_'.join(old_event_sub.split('_')[-2:])))
     if not old_sub and not old_node_sub:
-        return []
+        return {}
     elif old_sub:
         old_sub.update_fields(_id=to_subscription_key(new_node._id, new_event_sub), event_name=new_event_sub,
                               owner=new_node)
@@ -90,8 +90,9 @@ def move_subscription(old_event_sub, old_node, new_event_sub, new_node):
                 user = User.load(user)
             if not new_node.has_permission(user, 'read'):
                 removed_users[notification_type].append(user)
-                old_sub.remove_user_from_subscription(user)
-    old_sub.save()
+                if old_sub:
+                    old_sub.remove_user_from_subscription(user)
+                    old_sub.save()
     return removed_users
 
 
@@ -249,7 +250,7 @@ def serialize_event(user, subscription=None, node=None, event_description=None):
     all_subs.update(constants.USER_SUBSCRIPTIONS_AVAILABLE)
     if not event_description:
         event_description = getattr(subscription, 'event_name')
-    # Looks at only the types available. Deals with prepending file names.
+    # Looks at only the types available. Deals with pre-pending file names.
         for sub_type in all_subs:
             if sub_type in event_description:
                 event_type = sub_type

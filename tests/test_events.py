@@ -4,6 +4,7 @@ from nose.tools import *
 from collections import OrderedDict
 
 from website.notifications.events.model import *
+from website.notifications.emails import notify
 
 from framework.auth import Auth
 from tests import factories
@@ -48,7 +49,6 @@ class TestEventGet(OsfTestCase):
 
     def test_get_file_copied(self):
         """Event gets AddonFileCopied from addon_file_copied"""
-
         file_copied_payload = file_copy_payload(self.node, self.node)
         event = Event.get_event(self.user, self.node, 'addon_file_copied', payload=file_copied_payload)
         self.assertIsInstance(event, AddonFileCopied)
@@ -72,10 +72,66 @@ class TestFileAdded(OsfTestCase):
         self.user2 = factories.UserFactory()
         self.event = Event.get_event(self.user2, self.project, 'file_added', payload=file_payload)
 
-    @mock.patch('website.notifications.emails.notify')
+    @mock.patch('website.notifications.events.model.notify')
     def test_file_added(self, mock_notify):
         self.event.perform()
+        # notify('exd', 'file_updated', 'user', self.project, datetime.utcnow())
         assert_true(mock_notify.called)
+
+    def tearDown(self):
+        pass
+
+class TestAddonFileMoved(OsfTestCase):
+    def setUp(self):
+        super(TestAddonFileMoved, self).setUp()
+        self.user_1 = factories.AuthUserFactory()
+        self.auth = Auth(user=self.user_1)
+        self.user_2 = factories.AuthUserFactory()
+        self.user_3 = factories.AuthUserFactory()
+        self.user_4 = factories.AuthUserFactory()
+        self.project = factories.ProjectFactory(creator=self.user_1)
+        self.private_node = factories.NodeFactory(parent=self.project, is_public=False, creator=self.user_1)
+        # Payload
+        file_moved_payload = file_move_payload(self.project, self.private_node)
+        self.event = Event.get_event(self.user_2, self.project, 'addon_file_moved', payload=file_moved_payload)
+        # Subscriptions
+        self.sub = factories.NotificationSubscriptionFactory(
+            _id=self.project._id + '_file_updated',
+            owner=self.project,
+            event_name='file_updated'
+        )
+        self.sub.email_transactional.extend([self.user_1])
+        self.sub.save()
+        self.file_sub = factories.NotificationSubscriptionFactory(
+            _id=self.project._id + '_' + self.event.source_guid._id + '_file_updated',
+            owner=self.project,
+            event_name='xyz42_file_updated'
+        )
+        self.file_sub.save()
+
+    @mock.patch('website.notifications.events.model.notify')
+    @mock.patch('website.notifications.events.model.warn_users_removed_from_subscription')
+    def test_file_moved_no_users(self, mock_warn, mock_notify):
+        self.event.perform()
+        assert_false(mock_warn.called)  # No users subscribed.
+        assert_true(mock_notify.called)
+
+    def test_remove_one_user_file(self):
+        pass
+
+    def test_remove_one_warn_another_user_file(self):
+        pass
+
+    @mock.patch('website.notifications.emails.send')
+    @mock.patch('website.notifications.events.model.warn_users_removed_from_subscription')
+    def test_just_warn_project_subs(self, mock_warn, mock_send):
+        self.project.add_contributor(self.user_3, permissions=['write', 'read'], auth=self.auth)
+        self.project.save()
+        self.sub.email_digest.append(self.user_3)
+        self.sub.save()
+        self.event.perform()
+        assert_true(mock_warn.called)
+        assert_false(mock_send)
 
     def tearDown(self):
         pass
@@ -148,11 +204,11 @@ def file_move_payload(new_node, old_node):
             (u'modified', None),
             (u'name', u'Paper13.txt'),
             (u'nid', str(old_node)),
-            (u'path', u'/5581cb50a24f710b0f4623f9'),
+            (u'path', u'/a'),
             (u'provider', u'osfstorage'),
             (u'size', 2008),
             ('url', '/project/nhgts/files/osfstorage/5581cb50a24f710b0f4623f9/'),
-            ('node', {'url': '/nhgts/', '_id': old_node._id, 'title': u'Consolidate'}),
+            ('node', {'url': '/nhgts/', '_id': new_node._id, 'title': u'Consolidate'}),
             ('addon', 'OSF Storage')])),
         (u'source', OrderedDict([
             (u'materialized', u'One/Paper13.txt'),
@@ -161,7 +217,7 @@ def file_move_payload(new_node, old_node):
             (u'path', u'One/Paper13.txt'),
             (u'provider', u'osfstorage'),
             ('url', '/project/nhgts/files/osfstorage/One/Paper13.txt/'),
-            ('node', {'url': '/nhgts/', '_id': new_node._id, 'title': u'Consolidate'}),
+            ('node', {'url': '/nhgts/', '_id': old_node._id, 'title': u'Consolidate'}),
             ('addon', 'OSF Storage')])),
         (u'time', 1435158051.204264),
         ('node', u'nhgts'),

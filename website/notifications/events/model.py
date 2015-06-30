@@ -5,10 +5,9 @@ from furl import furl
 from datetime import datetime
 from six import add_metaclass
 
-from website.notifications.emails import warn_users_removed_from_subscription
+from website.notifications.emails import notify, warn_users_removed_from_subscription
 from website.notifications.utils import move_subscription
 from website.models import Node
-from website.notifications.emails import notify
 
 
 class _EventMeta(type):
@@ -307,14 +306,15 @@ class AddonFileCopied(ComplexFileEvent):
     def form_message(self):
         """Adds warning to message to tell user that subscription did not copy with the file."""
         super(AddonFileCopied, self).form_message()
-        self.message += ' You are not subscribed to the new file, follow link to add subscription.'
+        self._html_message += ' You are not subscribed to the new file, follow link to add subscription.'
+        self._text_message += ' You are not subscribed to the new file, follow link to add subscription.'
 
     # TODO: Actually use this once the path from WB comes back properly
     def form_url(self):
         """Source url points to original file"""
         f_url = super(AddonFileCopied, self).form_url()
-        if self.payload['destination']['kind'] != u'folder':
-            f_url.path = self.source_guid.guid_url
-        else:
-            f_url.path = self.source_node.web_url_for('collect_file_tree')
-        self._source_url = f_url.url
+        # if self.payload['destination']['kind'] != u'folder':
+        #     f_url.path = self.source_guid.guid_url
+        # else:
+        #     f_url.path = self.source_node.web_url_for('collect_file_tree')
+        # self._source_url = f_url.url
