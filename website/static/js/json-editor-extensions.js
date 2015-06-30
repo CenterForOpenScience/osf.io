@@ -228,7 +228,7 @@ JSONEditor.defaults.editors.commentableString = JSONEditor.defaults.editors.stri
 
 });
 
-/////////////// uplpad ////////////////
+/////////////// upload ////////////////
 
 JSONEditor.defaults.options.upload = function(type, file, cbs) {
     // TODO may want to change this
