@@ -54,12 +54,12 @@ ViewModel.prototype.fetchFromServer = function() {
             return response.result;
         })
         .fail(function(xhr, status, error) {
-            Raven.captureMessage('Failed to fetch twofactor settings.', {
+            Raven.captureMessage('Failed to fetch two-factor settings.', {
                 xhr: xhr,
                 status: status,
                 error: error
             });
-            self.changeMessage('Could not retrieve Two-factor settings at ' +
+            self.changeMessage('Could not retrieve two-factor settings at ' +
                 'this time. Please refresh the page. ' +
                 'If the problem persists, email ' +
                 '<a href="mailto:support@osf.io">support@osf.io</a>.', 'text-danger', 5000);
@@ -91,7 +91,7 @@ ViewModel.prototype.submitSettings = function() {
         self.isConfirmed(true);
         $('#TfaVerify').slideUp();
     }).fail(function(xhr, status, error) {
-        Raven.captureMessage('Failed to update twofactor settings.', {
+        Raven.captureMessage('Failed to update two-factor settings.', {
             xhr: xhr,
             status: status,
             error: error
@@ -120,18 +120,18 @@ ViewModel.prototype.disableTwofactorConfirm = function() {
             self.isConfirmed(false);
             $(self.qrCodeSelector).html('');
             self.changeMessage(
-                'Successfully disabled Two-factor Authentication.',
+                'Successfully disabled two-factor authentication.',
                 'text-success',
                 5000);
         })
         .fail(function(xhr, status, error) {
-            Raven.captureMessage('Failed to disable twofactor.', {
+            Raven.captureMessage('Failed to disable two-factor.', {
                 xhr: xhr,
                 status: status,
                 error: error
             });
             self.changeMessage(
-                'Could not disable Two-factor Authentication at this time. Please refresh ' +
+                'Could not disable two-factor authentication at this time. Please refresh ' +
                 'the page. If the problem persists, email ' +
                 '<a href="mailto:support@osf.io">support@osf.io</a>.',
                 5000);
@@ -142,7 +142,7 @@ ViewModel.prototype.disableTwofactor = function() {
     var self = this;
     bootbox.confirm({
         title: 'Disable Two-factor Authentication',
-        message: 'Are you sure you want to disable Two-factor Authentication?',
+        message: 'Are you sure you want to disable two-factor authentication?',
         callback: function(confirmed) {
             if (confirmed) {
                 self.disableTwofactorConfirm.call(self);
@@ -156,19 +156,19 @@ ViewModel.prototype.enableTwofactorConfirm = function() {
     return osfHelpers.postJSON(self.urls.enable, {})
         .done(function(response) {
             self.changeMessage(
-                'Successfully enabled Two-factor Authentication.',
+                'Successfully enabled two-factor authentication.',
                 'text-success',
                 5000);
             self.updateFromData(response.result);
         })
         .fail(function(xhr, status, error) {
-            Raven.captureMessage('Failed to enable twofactor.', {
+            Raven.captureMessage('Failed to enable two-factor.', {
                 xhr: xhr,
                 status: status,
                 error: error
             });
             self.changeMessage(
-                'Could not enable Two-factor Authentication at this time. Please refresh ' +
+                'Could not enable two-factor authentication at this time. Please refresh ' +
                 'the page. If the problem persists, email ' +
                 '<a href="mailto:support@osf.io">support@osf.io</a>.',
                 5000);
@@ -179,9 +179,9 @@ ViewModel.prototype.enableTwofactor = function() {
     var self = this;
     bootbox.confirm({
         title: 'Enable Two-factor Authentication',
-        message: 'Enabling Two-factor Authentication will not immediately activate ' +
+        message: 'Enabling two-factor authentication will not immediately activate ' +
             'this feature for your account. You will need to follow the ' +
-            'steps that appear below to complete the activation of  Two-factor Authentication ' +
+            'steps that appear below to complete the activation of two-factor authentication ' +
             'for your account.',
         callback: function(confirmed) {
             if (confirmed) {
