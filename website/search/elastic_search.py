@@ -401,7 +401,7 @@ def create_index(index=None):
                 },
                 'all_jobs': {
                     'type': 'string',
-                    'boost': '0.125',
+                    'boost': '0.01',
                 },
                 'school': {
                     'type': 'string',
@@ -409,7 +409,7 @@ def create_index(index=None):
                 },
                 'all_schools': {
                     'type': 'string',
-                    'boost': '0.125'
+                    'boost': '0.01'
                 },
             }
             mapping['properties'].update(fields)

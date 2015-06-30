@@ -118,7 +118,7 @@ var ViewModel = function(params) {
     self.queryObject = ko.pureComputed(function(){
         var TITLE_BOOST = '4';
         var DESCRIPTION_BOOST = '1.2';
-        var JOB_SCHOOL_BOOST = '.5';
+        var JOB_SCHOOL_BOOST = '1';
         var ALL_JOB_SCHOOL_BOOST = '0.125';
 
         var fields = [
