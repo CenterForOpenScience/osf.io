@@ -1,3 +1,6 @@
 .registrations-view {
     min-height: 400px;
 }
+.btn-group-vertical {
+    width: 100%;
+}
