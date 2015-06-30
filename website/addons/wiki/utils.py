@@ -192,7 +192,7 @@ def format_data(user, node_ids):
                     'title': "permission",
                     'permission': get_wiki_permission(node),
                 },
-        })
+            })
         children.extend(format_data(
             user,
             [
@@ -217,8 +217,7 @@ def format_data(user, node_ids):
                     'admin': admin,
                 },
             }
-       
+
             items.append(item)
 
     return items
-

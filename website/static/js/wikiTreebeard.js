@@ -198,7 +198,7 @@ function ProjectWiki(data) {
                     css : iconcss,
                     sortInclude : false,
                     custom : function() {
-                        return "Editing Settings";
+                        return 'Editing Settings';
 
                     }
                 },

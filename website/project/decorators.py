@@ -337,4 +337,3 @@ def must_have_permission(permission, wiki=False):
     return wrapper
 
 must_have_permission_or_public_wiki = must_have_permission("write", True)
-
