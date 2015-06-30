@@ -290,28 +290,6 @@ class TestArchiverTasks(ArchiverTestCase):
             )
         ))
 
-    @httpretty.activate
-    def test_make_copy_request_20X(self):
-        def callback_OK(request, uri, headers):
-            return (200, headers, json.dumps({}))
-        self.dst.archive_job.update_target(
-            'dropbox',
-            ARCHIVER_INITIATED
-        )
-        url = 'http://' + fake.ipv4()
-        httpretty.register_uri(httpretty.POST,
-                               url,
-                               body=callback_OK,
-                               content_type='application/json')
-        with mock.patch.object(project_signals, 'archive_callback') as mock_callback:
-            make_copy_request(self.archive_job._id,
-                              url, {
-                                  'source': {
-                                      'provider': 'dropbox'
-                                  }
-                              })
-        assert(mock_callback.called_with(self.dst))
-
 class TestArchiverUtils(ArchiverTestCase):
 
     @mock.patch('framework.tasks.handlers.enqueue_task')

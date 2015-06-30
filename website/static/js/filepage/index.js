@@ -135,7 +135,7 @@ var FileViewPage = {
         //Hack to polyfill the Panel interface
         //Ran into problems with mithrils caching messing up with multiple "Panels"
         self.revisions = m.component(FileRevisionsTable, self.file, self.node, self.enableEditing, self.canEdit);
-        self.revisions.selected = true;
+        self.revisions.selected = false;
         self.revisions.title = 'Revisions';
 
         // inform the mfr of a change in display size performed via javascript,
