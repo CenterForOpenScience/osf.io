@@ -16,7 +16,7 @@ from website.project.decorators import must_be_contributor_or_public
 @must_have_permission('write')
 def create_bucket(auth, node_addon, **kwargs):
     bucket_name = request.json.get('bucket_name', '')
-    bucket_location = request.json.get('bucket_location', DEFAULT_BUCKET_LOCATION)
+    bucket_location = request.json.get('bucket_location', DEFAULT_BUCKET_LOCATION['value'])
 
     if not utils.validate_bucket_name(bucket_name):
         return {

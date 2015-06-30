@@ -363,7 +363,7 @@ class TestCreateBucket(OsfTestCase):
         assert_false(valid_bucket_location('CostaRica'))
 
     def test_locations(self):
-        assert_true(valid_bucket_location(DEFAULT_BUCKET_LOCATION))
+        assert_true(valid_bucket_location(DEFAULT_BUCKET_LOCATION['value']))
         assert_true(valid_bucket_location('EU'))
         assert_true(valid_bucket_location('us-west-1'))
 
@@ -381,7 +381,7 @@ class TestCreateBucket(OsfTestCase):
             url,
             {
                 'bucket_name': 'doesntevenmatter',
-                'bucket_location': DEFAULT_BUCKET_LOCATION,
+                'bucket_location': DEFAULT_BUCKET_LOCATION['value'],
             },
             auth=self.user.auth
         )

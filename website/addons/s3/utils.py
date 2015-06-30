@@ -41,7 +41,7 @@ def validate_bucket_name(name):
     return bool(validate_name.match(name))
 
 
-def create_bucket(user_settings, bucket_name, location=DEFAULT_BUCKET_LOCATION):
+def create_bucket(user_settings, bucket_name, location=DEFAULT_BUCKET_LOCATION['value']):
     return connect_s3(user_settings=user_settings).create_bucket(bucket_name, location=location)
 
 
