@@ -1,62 +1,47 @@
 import httplib as http
+from flask import request
 
-from framework.exceptions import HTTPError
 from framework.auth.decorators import must_be_logged_in
-from website.addons.dataverse.client import connect_from_settings_or_401
-from website.addons.dataverse.settings import HOST
+from website.addons.dataverse.provider import DataverseProvider
+from website.addons.dataverse.settings import DEFAULT_HOSTS
 from website.project import decorators
 from website.util import api_url_for
 
 
-@decorators.must_be_contributor
+@decorators.must_have_permission('write')
 @decorators.must_have_addon('dataverse', 'node')
 @decorators.must_not_be_registration
-def deauthorize_dataverse(*args, **kwargs):
+def dataverse_add_user_auth(auth, node_addon, **kwargs):
+    """Allows for importing existing auth to AddonDataverseNodeSettings"""
 
-    node_settings = kwargs['node_addon']
-    auth = kwargs['auth']
-
-    node_settings.deauthorize(auth)
-    node_settings.save()
-
-    return {}
+    provider = DataverseProvider()
+    external_account_id = request.get_json().get('external_account_id')
+    return provider.add_user_auth(node_addon, auth.user, external_account_id)
 
 
-@decorators.must_have_addon('dataverse', 'user')
-def dataverse_delete_user(*args, **kwargs):
+@decorators.must_have_permission('write')
+@decorators.must_have_addon('dataverse', 'node')
+@decorators.must_not_be_registration
+def dataverse_remove_user_auth(auth, node_addon, **kwargs):
+    """Remove Dataverse authorization and settings from node"""
 
-    user_settings = kwargs['user_addon']
-
-    user_settings.clear()
-    user_settings.save()
-
-    return {}
+    provider = DataverseProvider()
+    return provider.remove_user_auth(node_addon, auth.user)
 
 
 @must_be_logged_in
 @decorators.must_have_addon('dataverse', 'user')
-def dataverse_user_config_get(user_addon, auth, **kwargs):
+def dataverse_user_config_get(user_addon, **kwargs):
     """View for getting a JSON representation of the logged-in user's
     Dataverse user settings.
     """
-    try:
-        connection = connect_from_settings_or_401(user_addon)
-    except HTTPError as error:
-        if error.code == 401:
-            connection = None
-        else:
-            raise
-
-    urls = {
-        'create': api_url_for('dataverse_set_user_config'),
-        'delete': api_url_for('dataverse_delete_user'),
-        'apiToken': 'https://{0}/account/apitoken'.format(HOST),
-    }
     return {
         'result': {
-            'connected': connection is not None,
             'userHasAuth': user_addon.has_auth,
-            'apiToken': user_addon.api_token,
-            'urls': urls
+            'urls': {
+                'create': api_url_for('dataverse_add_user_account'),
+                'accounts': api_url_for('dataverse_get_user_accounts'),
+            },
+            'hosts': DEFAULT_HOSTS,
         },
     }, http.OK
