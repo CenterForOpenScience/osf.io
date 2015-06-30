@@ -67,7 +67,7 @@
                           <div class="pull-right">
                             <div class="progress progress-no-margin pointer " data-toggle="modal" data-bind="attr: {data-target: modalTarget}" >
                                 <div role="progressbar"data-bind="attr: progressBar">
-                                    <span class="progress-bar-content">
+                                    <span class="progress-bar-content p-h-sm">
                                         <span data-bind="text: statusDisplay"></span>
                                         <span class="sharejs-info-btn">
                                             <i class="fa fa-question-circle fa-large"></i>
