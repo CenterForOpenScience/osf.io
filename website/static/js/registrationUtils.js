@@ -122,13 +122,14 @@ RegistrationEditor.prototype.lastSaved = function() {
 RegistrationEditor.prototype.isComplete = function(question) {
     var self = this;
 
-    if (!self.draft()) {
+    var draft = self.draft();
+    if (!draft || !draft.schemaData) {
         return false;
     }
 
     var questionId = Object.keys(question.properties)[0];
 
-    if (!self.draft().schemaData[questionId] || !self.draft().schemaData[questionId].value) {
+    if (!draft.schemaData[questionId] || !draft.schemaData[questionId].value) {
         return false;
     }
     return true;
@@ -293,8 +294,9 @@ RegistrationManager.prototype.beforeRegister = function() {
     var self = this;
 
     var node = self.node;
-
-    var context = {
+   
+    
+    var VM = {
         title: node.title,
         parentTitle: node.parentTitle,
         parentUrl: node.parentRegisterUrl,
@@ -306,11 +308,10 @@ RegistrationManager.prototype.beforeRegister = function() {
         },
         launchEditor: self.launchEditor.bind(self)
     };
-
     bootbox.dialog({
         title: 'Register ' + node.title,
         message: function() {
-            var preRegisterMessage = ko.renderTemplate('preRegisterMessageTemplate', context, {}, this);
+            var preRegisterMessage = ko.renderTemplate('preRegisterMessageTemplate', VM, {}, this);
         }
     });
 };
