@@ -77,19 +77,22 @@ var SlideInViewModel = function (){
     };
 };
 
-$(document).on('click', '.project-toggle', function() {
-    var widget = $(this).closest('.panel');
-    var up = $(this).find('.fa.fa-angle-up');
-    var down = $(this).find('.fa.fa-angle-down');
-    if(up.length > 0) {
-        up.removeClass('fa fa-angle-up').addClass('fa fa-angle-down');
-    }
-    if(down.length > 0) {
-        down.removeClass('fa fa-angle-down').addClass('fa fa-angle-up');
-    }
 
-    widget.find('.panel-body').slideToggle();
-    return false;
+$(document).on('click', '.panel-heading', function(){
+    var toggle = $(this).find('.project-toggle');
+    if(toggle.length > 0){
+        var widget = $(this).closest('.panel');
+        var up = toggle.find('.fa.fa-angle-up');
+        var down = toggle.find('.fa.fa-angle-down');
+        if(up.length > 0) {
+            up.removeClass('fa fa-angle-up').addClass('fa fa-angle-down');
+        }
+        if(down.length > 0) {
+            down.removeClass('fa fa-angle-down').addClass('fa fa-angle-up');
+        }
+
+        widget.find('.panel-body').slideToggle();
+    }
 });
 
 $(function() {
