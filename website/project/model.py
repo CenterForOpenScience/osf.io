@@ -318,6 +318,9 @@ class NodeLog(StoredObject):
     WIKI_DELETED = 'wiki_deleted'
     WIKI_RENAMED = 'wiki_renamed'
 
+    MADE_WIKI_PUBLIC = 'made_wiki_public'
+    MADE_WIKI_PRIVATE = 'made_wiki_private'
+
     CONTRIB_ADDED = 'contributor_added'
     CONTRIB_REMOVED = 'contributor_removed'
     CONTRIB_REORDERED = 'contributors_reordered'
@@ -763,15 +766,8 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         else:
             is_api_node = False
 
-        edit_permission = self.has_permission(user, 'write')
-
-        # If wiki, check if publicly editable
-        wiki = self.get_addon('wiki')
-        if wiki and wiki.is_publicly_editable:
-            edit_permission = True
-
         return (
-            (user and edit_permission)
+            (user and self.has_permission(user, 'write'))
             or is_api_node
         )
 

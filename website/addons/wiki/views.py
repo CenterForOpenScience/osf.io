@@ -365,14 +365,20 @@ def edit_wiki_permissions(**kwargs):
     node = kwargs['node'] or kwargs['project']
     wiki_settings = node.get_addon('wiki')
     permissions = kwargs.get('permissions')
+    auth = kwargs['auth']
 
     if permissions is None:
         raise HTTPError(http.BAD_REQUEST)
 
     if wiki_settings is None:
         raise HTTPError(http.BAD_REQUEST)
-
-    wiki_settings.set_editing(permissions)
+    try:
+        wiki_settings.set_editing(permissions, auth, node)
+    except InvalidVersionError as e:
+        raise HTTPError(http.BAD_REQUEST, data=dict(
+            message_short="Can't change privacy.",
+            message_long=e.message
+        ))
 
     return {
         'status': 'success',

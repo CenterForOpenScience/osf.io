@@ -6,13 +6,16 @@ import logging
 
 from bleach import linkify
 from bleach.callbacks import nofollow
+from website.models import NodeLog
 
 import markdown
 from markdown.extensions import codehilite, fenced_code, wikilinks
 from modularodm import fields
 
+
 from framework.forms.utils import sanitize
 from framework.guid.model import GuidStoredObject
+
 
 from website import settings
 from website.addons.base import AddonNodeSettingsBase
@@ -36,12 +39,14 @@ class AddonWikiNodeSettings(AddonNodeSettingsBase):
     has_auth = True
     is_publicly_editable = fields.BooleanField(default=False, index=True)
 
-    def set_editing(self, permissions, auth=None):
+    def set_editing(self, permissions, auth=None, node=None, log=True):
         """Set the editing permissions for this node.
 
         :param permissions: A string, either 'public' or 'private'
         :param auth: All the auth informtion including user, API key.
+        :param bool log: Whether to add a NodeLog for the privacy change.
         """
+
         if permissions == 'public' and not self.is_publicly_editable:
             self.is_publicly_editable = True
             self.save()
@@ -50,6 +55,20 @@ class AddonWikiNodeSettings(AddonNodeSettingsBase):
             self.save()
         else:
             return False
+        if log:
+            action = NodeLog.MADE_WIKI_PUBLIC if permissions == 'public' else NodeLog.MADE_WIKI_PRIVATE
+            node.add_log(
+                action=action,
+                params={
+                    'project': node.parent_id,
+                    'node': node._primary_key,
+                },
+                auth=auth,
+                save=False,
+            )
+            node.save()
+
+        return True
 
     def after_register(self, node, registration, user, save=True):
         """Copy wiki settings to registrations."""

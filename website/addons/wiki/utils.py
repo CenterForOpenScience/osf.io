@@ -221,3 +221,4 @@ def format_data(user, node_ids):
             items.append(item)
 
     return items
+
