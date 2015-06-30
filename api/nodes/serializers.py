@@ -234,12 +234,13 @@ class ContributorSerializer(UserSerializer):
         contributor = User.load(validated_data['_id'])
         if not contributor:
             raise NotFound('User with id {} cannot be found.'.format(validated_data['_id']))
+        elif node.add_contributor(contributor=contributor, auth=auth, save=True):
+            contributor.node_id = node._id
+            return contributor
         elif contributor in node.contributors:
             raise ValidationError('User {} already is a contributor'.format(contributor.username))
-        permissions = ['read', 'write']
-        node.add_contributor(contributor=contributor, auth=auth, permissions=permissions, save=True)
-        contributor.node_id = node._id
-        return contributor
+        else:
+            raise ValidationError('Error')
 
 
 class ContributorDetailSerializer(ContributorSerializer):
@@ -263,13 +264,6 @@ class ContributorDetailSerializer(ContributorSerializer):
         else:
             raise PermissionDenied('Admin privileges for {} cannot be removed as they are the only admin.'.format(user.username))
         return self.context['view'].get_object()
-
-    def destroy(self, user, validated_data):
-        auth = Auth(user)
-        node = self.context['view'].get_node()
-        contributor = self.get_object()
-        node.rm_contributor(contributor, auth)
-        node.save()
 
     links = LinksField({
         'html': 'absolute_url',
