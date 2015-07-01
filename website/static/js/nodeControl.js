@@ -60,7 +60,6 @@ var COMPONENT = 'component';
 function setPermissions(permissions, nodeType) {
 
     var msgKey;
-    // TODO(hrybacki): Remove once Retraction/Embargoes goes is merged into production
     var isRegistration = window.contextVars.node.isRegistration;
 
     if (permissions === PUBLIC && isRegistration) { msgKey = 'makeRegistrationPublicWarning'; }
