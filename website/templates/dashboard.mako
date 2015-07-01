@@ -81,8 +81,11 @@
 %endif
 </%def>
 
-<%def name="javascript_bottom()">
+<%def name="stylesheets()">
+    <link rel="stylesheet" href="/static/css/pages/dashboard-page.css">
+</%def>
 
+<%def name="javascript_bottom()">
 <script>
     window.contextVars = $.extend(true, {}, window.contextVars, {
         currentUser: {

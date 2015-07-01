@@ -54,9 +54,9 @@
 <template id="osf-ob-register">
 <div class="m-b-sm panel panel-default ob-list-item">
     <div data-bind="click: toggle" class="panel-heading clearfix pointer">
-        <h3 class="m-xs panel-title">Register a project</h3>
+        <h3 class="panel-title">Register a project</h3>
         <div class="pull-right" >
-            <a href="#" class="btn btn-sm project-toggle"><i class="fa fa-angle-down"></i></a>
+            <a href="#" class="project-toggle"><i class="fa fa-angle-down"></i></a>
         </div>
     </div><!-- end ob-header -->
 
@@ -78,9 +78,9 @@
 <template id="osf-ob-create">
     <div id="obNewProject" class=" panel panel-default m-b-sm ob-list-item">
         <div class="panel-heading clearfix pointer">
-            <h3 class="m-xs panel-title">Create a project</h3>
+            <h3 class="panel-title">Create a project</h3>
            <div class="pull-right" >
-                <a href="#" class="btn btn-sm project-toggle"><i class="fa fa-angle-down"></i></a>
+                <a href="#" class="project-toggle"><i class="fa fa-angle-down"></i></a>
            </div>
         </div><!-- end ob-header -->
         <div style="display:none" class="panel-body" id="obRevealNewProject">
@@ -95,9 +95,9 @@
 <template id="osf-ob-uploader">
 <div class="m-b-sm panel panel-default ob-list-item">
     <div class="pointer panel-heading clearfix ">
-        <h3 class="m-xs panel-title">Upload file(s)</h3>
+        <h3 class="panel-title">Upload file(s)</h3>
         <div class="pull-right" >
-            <a href="#" class="btn btn-sm project-toggle"><i class="fa fa-angle-up"></i></a>
+            <a href="#" class="project-toggle"><i class="fa fa-angle-up"></i></a>
         </div>
     </div><!-- end ob-header -->
 
@@ -208,7 +208,7 @@
     <div class="panel-heading clearfix pointer">
         <h3 class="panel-title">Go to my project</h3>
         <div class="pull-right" >
-            <a href="#" class="btn btn-sm project-toggle"><i class="fa fa-angle-up"></i></a>
+            <a href="#" class="project-toggle"><i class="fa fa-angle-up"></i></a>
         </div>
     </div><!-- end ob-header -->
     <div class="row panel-body">
