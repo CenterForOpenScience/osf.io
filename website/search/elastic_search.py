@@ -353,7 +353,9 @@ def update_user(user, index=None):
         'names': names,
         'job': user.jobs[0]['institution'] if user.jobs else '',
         'job_title': user.jobs[0]['title'] if user.jobs else '',
+        'all_jobs': [job['institution'] for job in user.jobs[1:]],
         'school': user.schools[0]['institution'] if user.schools else '',
+        'all_schools': [school['institution'] for school in user.schools],
         'category': 'user',
         'degree': user.schools[0]['degree'] if user.schools else '',
         'social': user.social_links,
@@ -391,6 +393,26 @@ def create_index(index=None):
                          for field in analyzed_fields}
             mapping['properties'].update(analyzers)
 
+        if type_ == 'user':
+            fields = {
+                'job': {
+                    'type': 'string',
+                    'boost': '1',
+                },
+                'all_jobs': {
+                    'type': 'string',
+                    'boost': '0.01',
+                },
+                'school': {
+                    'type': 'string',
+                    'boost': '1',
+                },
+                'all_schools': {
+                    'type': 'string',
+                    'boost': '0.01'
+                },
+            }
+            mapping['properties'].update(fields)
         es.indices.put_mapping(index=index, doc_type=type_, body=mapping, ignore=[400, 404])
 
 
