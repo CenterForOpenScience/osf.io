@@ -1,6 +1,5 @@
 'use strict';
 
-/* jshint shadow:true */
 /*global require */
 var $ = require('jquery');
 var ko = require('knockout');
@@ -13,6 +12,8 @@ require('knockout-sortable');
 var $osf = require('./osfHelpers');
 var koHelpers = require('./koHelpers');
 require('js/objectCreateShim');
+var SCHOOLS = 1;
+var JOBS = 2;
 
 var socialRules = {
     orcid: /orcid\.org\/([-\d]+)/i,
@@ -607,17 +608,27 @@ var ListViewModel = function(ContentModel, urls, modes) {
         return false;
     });
 
+   // Add enable/disable button css to use bootstrap and conform to style guide.
+   self.enablebtn = ko.computed(function(){
+        return this.institutionsEmpty() ? 'disabled':'enabled';
+    }, this);
+
+    self.jobsOrSchools = ko.computed(function() {
+        if (urls.crud.indexOf('jobs') !== -1) { return JOBS; }
+        if (urls.crud.indexOf('schools') !== -1) { return SCHOOLS; }
+    });
+
     self.extraFieldsEmpty = ko.computed(function() {
-        if (urls.crud.indexOf('jobs') !== -1) {
+        if (self.jobsOrSchools() === JOBS) {
             for (var i=0; i<self.contents().length; i++) {
                 if (self.contents()[i].department() === '' && self.contents()[i].title() === '') {
                     return true;
                 }
             }
         }
-        else if (urls.crud.indexOf('schools') !== -1) {
-            for (var i=0; i<self.contents().length; i++) {
-                if (self.contents()[i].department() === '' && self.contents()[i].degree() === '') {
+        else if (self.jobsOrSchools() === SCHOOLS) {
+            for (var j=0; j<self.contents().length; j++) {
+                if (self.contents()[j].department() === '' && self.contents()[j].degree() === '') {
                     return true;
                 }
             }
