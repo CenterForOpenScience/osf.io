@@ -4,8 +4,6 @@
 ## Use full page width
 <%def name="container_class()">container-xxl</%def>
 
-<a id='makeEditable' class="btn btn-default">Make Publicly Editable</a>
-
 <div class="row" style="margin-bottom: 5px;">
     <div class="col-sm-6">
         <%include file="wiki/templates/status.mako"/>
@@ -51,7 +49,6 @@
     </div>
 
     <div class="panel-expand col-sm-${'9' if 'menu' in panels_used else '11' | n}">
-
 
       <div class="row">
         % if can_edit:

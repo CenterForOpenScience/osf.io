@@ -67,6 +67,7 @@ class AddonWikiNodeSettings(AddonNodeSettingsBase):
             )
 
         # Only saves if permissions were changed
+        self.save()
         node.save()
 
         return True

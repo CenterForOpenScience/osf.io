@@ -372,12 +372,10 @@ def edit_wiki_permissions(**kwargs):
 
     if wiki_settings is None:
         raise HTTPError(http.BAD_REQUEST)
-    try:
-        wiki_settings.set_editing(permissions, auth, node)
-    except InvalidVersionError as e:
+
+    if not wiki_settings.set_editing(permissions, auth, node):
         raise HTTPError(http.BAD_REQUEST, data=dict(
-            message_short="Can't change privacy.",
-            message_long=e.message
+            message_short="Can't change privacy."
         ))
 
     return {
