@@ -267,3 +267,7 @@ a {
 .log-node-title-link {
     font-weight: 700;
 }
+
+.footer h4 {
+    font-weight: normal;
+}

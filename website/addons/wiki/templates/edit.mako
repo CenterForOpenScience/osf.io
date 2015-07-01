@@ -24,7 +24,7 @@
                 <h3 class="panel-title"> <i class="fa fa-list"> </i>  Menu </h3>
                 <div class="pull-right"> <div class="panel-collapse"> <i class="fa fa-angle-left pointer"> </i> </div></div>
             </div>
-            <div class="panel-body" data-bind="css: {  'osf-panel-body-flex': !$root.singleVis()}">
+            <div data-bind="css: {  'osf-panel-body-flex': !$root.singleVis()}">
                 <%include file="wiki/templates/toc.mako"/>
             </div>
         </div>
@@ -138,7 +138,7 @@
 
                             <div class="pull-right">
                                 <!-- Version Picker -->
-                                <select class="form-control input-sm" data-bind="value:viewVersion" id="viewVersionSelect">
+                                <select class="form-control" data-bind="value:viewVersion" id="viewVersionSelect">
                                     % if user['can_edit']:
                                         <option value="preview" ${'selected' if version_settings['view'] == 'preview' else ''}>Preview</option>
                                     % endif
@@ -175,11 +175,11 @@
               <div class="panel-heading osf-panel-heading-flex" data-bind="css: {  'osf-panel-heading-flex': $root.singleVis() !== 'compare', 'wiki-single-heading': $root.singleVis() === 'compare'}">
                   <div class="row">
                       <div class="col-xs-12">
-                          <h3 class="panel-title m-r-xs"> <i class="fa fa-exchange"> </i>   Compare </h3>
+                          <span class="panel-title m-r-xs"> <i class="fa fa-exchange"> </i>   Compare </span>
                           <div class="inline" data-bind="css: { 'pull-right' :  $root.singleVis() === 'compare' }">
                             <!-- Version Picker -->
                             <span class="compare-version-text"><i> <span data-bind="text: viewVersionDisplay"></span></i> to
-                              <select class="form-control input-sm" data-bind="value: compareVersion" id="compareVersionSelect">
+                              <select class="form-control" data-bind="value: compareVersion" id="compareVersionSelect">
                                   <option value="current" ${'selected' if version_settings['compare'] == 'current' else ''}>Current</option>
                                   % if len(versions) > 1:
                                       <option value="previous" ${'selected' if version_settings['compare'] == 'previous' else ''}>Previous</option>

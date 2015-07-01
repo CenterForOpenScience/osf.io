@@ -26,6 +26,7 @@
 .wiki-sidenav h4 {
     margin-top:20px;
     margin-bottom: 0;
+    font-weigth: normal;
 }
 .osf-sidenav.wiki-sidenav ul>li a:hover {
     background: transparent;
@@ -317,4 +318,11 @@
 
 .wiki-single-heading {
     border: 1px solid #ddd;
+}
+
+select.form-control {
+    width: inherit;
+    display: inline;
+    height: 24px;
+    font-size: 13px;
 }
