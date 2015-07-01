@@ -6,21 +6,21 @@
 </div>
 
 <div class="row">
-	<div class="col-md-8 col-md-offset-2 p-lg">
-	    % if node['fork_count']:
-	        <div mod-meta='{
-	            "tpl": "util/render_nodes.mako",
-	            "uri": "${node["api_url"]}get_forks/",
-	            "replace": true,
-	            "kwargs": {"sortable": false, "pluralized_node_type": "registrations"}
-	        }'></div>
-	    % else:
-	       <div class="alert alert-info m-xl text-center">There have been no forks of this project.</div>
-            <div class="text-center">
-                <p>Forking a project means you have created a copy of it into your dashboard, and can change that copy for your own purposes. You will be the only contributor to the forked project until you add others.</p>
+    % if node['fork_count']:
+        <div class="col-md-8 col-md-offset-2 p-lg">
+            <div mod-meta='{
+                "tpl": "util/render_nodes.mako",
+                "uri": "${node["api_url"]}get_forks/",
+                "replace": true,
+                "kwargs": {"sortable": false, "pluralized_node_type": "registrations"}
+            }'></div>
+        </div>
+    % else:
+        <div class="col-md-8 p-lg">
+                <p>There have been no forks of this project.. Forking a project means you have created a copy of it into your dashboard, and can change that copy for your own purposes. You will be the only contributor to the forked project until you add others.</p>
+        </div>
+        <div class="col-md-4 p-lg">
                 <a href="/getting-started/#forks" class="btn btn-info"> Learn more about Forks</a>
-            </div>
-            </div>
-	    % endif
-    </div>
+        </div>
+    % endif
 </div>
