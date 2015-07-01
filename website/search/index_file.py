@@ -1,5 +1,16 @@
 import requests
 
+
+def collect_from_osfstorage(addon, tree):
+    children = tree['children']
+    for child in children:
+        path, name = child['path'], child['name']
+        file_, created = addon.find_or_create_file_guid(path)
+        response = requests.get(file_.download_url + '&mode=render')
+        content = unicode(response.text).encode('utf-8')
+        yield {'name': name, 'content': content}
+
+
 def collect_files(node):
     """ Generate the contents of a projects.
     :param node: node
@@ -7,12 +18,17 @@ def collect_files(node):
     """
 
     # TODO: Generalize to other addons
-    osf_addon = node.get_addon('osfstorage')
-    node_children = osf_addon._get_file_tree()['children']
-    for child in node_children:
-        path, name = child['path'], child['name']
-        file_, created = osf_addon.find_or_create_file_guid(path)
-        # download count not incremented when rendering.
-        resp = requests.get(file_.download_url + '&mode=render')
-        response = unicode(resp.text).encode('utf-8')
-        yield {'name': name, 'content': response}
+    addons = node.get_addons()
+    for addon in addons:
+        addon_name = addon.config.short_name
+        logging.info('ADDON : {}\n'.format(addon_name))
+        try:
+            file_tree = addon._get_file_tree()
+        except AttributeError:
+            continue
+
+        if addon_name == 'osfstorage':
+            for file_ in collect_from_osfstorage(addon, file_tree):
+                logging.info('File from {}:\n {}\n'.format(addon_name, pformat(file_)))
+                yield file_
+
