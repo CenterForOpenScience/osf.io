@@ -37,20 +37,50 @@ var wikiPageOptions = {
 };
 
 var wikiPage = new WikiPage('#wikiPageContext', wikiPageOptions);
-//Probably not where I want to put this or how I want to do this. Reload goes somewhere else.
-function ViewModelEditable(){
-    var self = this;
 
-    self.makePubliclyEditable = function() {
-        $.post('permissions/public/');
-        location.reload();
-    };
 
-    self.makePrivatelyEditable = function() {
-        $.post('permissions/private/');
-        location.reload();
-    };
-
+// Edit wiki page name
+if (ctx.canEditPageName) {
+    // Initialize editable wiki page name
+    var $pageName = $('#pageName');
+    $.fn.editable.defaults.mode = 'inline';
+    $pageName.editable({
+        type: 'text',
+        send: 'always',
+        url: ctx.urls.rename,
+        ajaxOptions: {
+            type: 'put',
+            contentType: 'application/json',
+            dataType: 'json'
+        },
+        validate: function(value) {
+            if($.trim(value) === ''){
+                return 'The wiki page name cannot be empty.';
+            } else if(value.length > 100){
+                return 'The wiki page name cannot be more than 100 characters.';
+            }
+        },
+        params: function(params) {
+            return JSON.stringify(params);
+        },
+        success: function(response, value) {
+            window.location.href = ctx.urls.base + encodeURIComponent(value) + '/';
+        },
+        error: function(response) {
+            var msg = response.responseJSON.message_long;
+            if (msg) {
+                return msg;
+            } else {
+                // Log unexpected error with Raven
+                Raven.captureMessage('Error in renaming wiki', {
+                    url: ctx.urls.rename,
+                    responseText: response.responseText,
+                    statusText: response.statusText
+                });
+                return 'An unexpected error occurred. Please try again.';
+            }
+        }
+    });
 }
 
 // Apply panels

@@ -53,6 +53,9 @@ class AddonWikiNodeSettings(AddonNodeSettingsBase):
             self.is_publicly_editable = False
         else:
             return False
+
+        self.save()
+
         if log:
             action = NodeLog.MADE_WIKI_PUBLIC if permissions == 'public'\
                 else NodeLog.MADE_WIKI_PRIVATE
@@ -66,8 +69,6 @@ class AddonWikiNodeSettings(AddonNodeSettingsBase):
                 save=False,
             )
 
-        # Only saves if permissions were changed
-        self.save()
         node.save()
 
         return True
