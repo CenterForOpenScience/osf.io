@@ -263,3 +263,7 @@ a {
     font-size: 24px;
     font-weight: normal;
 }
+
+.log-node-title-link {
+    font-weight: 700;
+}
