@@ -1,5 +1,3 @@
-<% from website.models import Node %>
-
 <%inherit file="notify_base.mako" />
 
 <% from website import util %>
@@ -10,6 +8,7 @@
             <thead class="block-head">
             <th colspan="2" style="padding: 0px 15px 0px 15px;">
                 <h3 style="padding: 0 15px 5px 15px; margin: 30px 0 0 0;border: none;list-style: none;font-weight: 300; border-bottom: 1px solid #eee; text-align: left;">
+                  <% from website.project.model import Node %>
                 ${Node.load(key).title}
                 %if parent :
                     <small style="font-size: 14px;color: #999;"> in ${Node.load(parent).title}</small>
@@ -34,7 +33,7 @@
 %endfor
 </%def>
 
-<%def name="conent()">
+<%def name="content()">
 <tr>
   <td style="border-collapse: collapse;">
     <h3 class="text-center" style="padding: 0;margin: 30px 0 0 0;border: none;list-style: none;font-weight: 300;text-align: center;">Recent Activity</h3>

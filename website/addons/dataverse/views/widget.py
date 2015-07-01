@@ -2,7 +2,6 @@ import httplib as http
 
 from website.addons.dataverse.client import connect_from_settings_or_401, \
     get_dataverse, get_dataset
-from website.addons.dataverse.settings import HOST
 from website.project.decorators import must_be_contributor_or_public, \
     must_have_addon
 
@@ -37,14 +36,15 @@ def dataverse_get_widget_contents(node_addon, **kwargs):
     doi = node_addon.dataset_doi
     alias = node_addon.dataverse_alias
 
-    connection = connect_from_settings_or_401(node_addon.user_settings)
+    connection = connect_from_settings_or_401(node_addon)
     dataverse = get_dataverse(connection, alias)
     dataset = get_dataset(dataverse, doi)
 
     if dataset is None:
         return {'data': data}, http.BAD_REQUEST
 
-    dataverse_url = 'http://{0}/dataverse/'.format(HOST) + alias
+    dataverse_host = node_addon.external_account.oauth_key
+    dataverse_url = 'http://{0}/dataverse/{1}'.format(dataverse_host, alias)
     dataset_url = 'http://dx.doi.org/' + doi
 
     data.update({

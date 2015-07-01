@@ -300,7 +300,15 @@ MEETING_DATA = {
         'active': True,
         'admins': [],
         'public_projects': True,
-    },    
+    },
+    'PsiChiRepository': {
+        'name': 'Psi Chi Repository',
+        'info_url': None,
+        'logo_url': None,
+        'active': True,
+        'admins': [],
+        'public_projects': True,
+    },
 }
 
 

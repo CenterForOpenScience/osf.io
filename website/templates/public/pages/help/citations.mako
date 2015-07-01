@@ -3,8 +3,7 @@
 <p>Every project, component, file, and user has a unique URL on the OSF. This means that anything you upload
     and make public on the OSF can be cited, giving you credit for your work.</p>
 <p>To find a pre-formatted citation for a project, look directly below the grey navigation bar on the project's
-    page and you will see the URL to be cited. If you click "more" then you ill see the APA, MLA, and Chicago
-    citations.</p>
+    page and you will see the URL to be cited. Click "more" to see APA, MLA, and Chicago style citations, or search many other citation formats.</p>
 
 <div class="row">
     <div class="col-md-8 col-md-offset-2">
