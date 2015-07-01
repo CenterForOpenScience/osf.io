@@ -145,7 +145,6 @@ class DraftRegistrationSerializer(JSONAPISerializer):
     updated = ser.CharField(read_only=True)
     completion = ser.CharField(read_only=True)
 
-    # TODO: This create method is a placeholder for testing. Will need to be replaced once Draft registration functionality added.
     def create(self, validated_data):
         request = self.context['request']
         schema = validated_data['registration_schema']
