@@ -126,11 +126,12 @@
                             <div>
                                 <span class="link-name overflow-block" data-bind="text: name, tooltip: {title: 'Link name'}" style="width: 200px"></span>
                             </div>
+
                             <div class="btn-group">
-                            <button class="btn btn-default btn-mini copy-button" data-trigger="manual"
-                                    data-bind="attr: {data-clipboard-text: linkUrl}, tooltip: {title: 'Click to copy'}" >
-                                <span class="fa fa-copy" ></span>
-                            </button>
+                                <button class="btn btn-default btn-sm m-r-xs copy-button" data-trigger="manual"
+                                        data-bind="attr: {data-clipboard-text: linkUrl}, tooltip: {title: 'Click to copy'}" >
+                                    <span class="fa fa-copy" ></span>
+                                </button>
                                 <input class="link-url" type="text" data-bind="value: linkUrl, attr:{readonly: readonly}"  />
                             </div>
                         </td>
@@ -174,6 +175,7 @@
     </div><!-- end col-md -->
 </div><!-- end row -->
 
+<link rel="stylesheet" href="/static/css/pages/contributor-page.css">
 
 <script id="contribTpl" type="text/html">
     <tr data-bind="click: unremove, css: {'contributor-delete-staged': deleteStaged}">
