@@ -169,7 +169,7 @@ var UserProfileViewModel = oop.extend(ChangeMessageMixin, {
 
         this.enableSubmit = ko.pureComputed(function ()
         {
-            return this.emailInput() !== '';
+            return this.emailInput().trim() !== '';
         }, this);
 
     },
