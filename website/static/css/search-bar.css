@@ -62,3 +62,6 @@
 #searchPageFullBar:-ms-input-placeholder {
    color: #738EA2;
 }
+#searchControls>.row {
+    padding-top: 60px;
+}
