@@ -7,7 +7,7 @@
 
 <div class="row">
     % if node['fork_count']:
-        <div class="col-md-8 col-md-offset-2 p-lg">
+        <div class="col-xs-9 col-sm-8 p-lg">
             <div mod-meta='{
                 "tpl": "util/render_nodes.mako",
                 "uri": "${node["api_url"]}get_forks/",
@@ -15,15 +15,23 @@
                 "kwargs": {"sortable": false, "pluralized_node_type": "forks"}
             }'></div>
         </div>
+        <div class="col-xs-3 col-sm-4 p-lg">
+                <div class="p-lg text-center">
+                    % if user_name and (user['is_contributor'] or node['is_public']) and not disk_saving_mode:
+                        <a class="btn btn-success" type="button" onclick="NodeActions.forkNode();">New Fork</a>
+                    % endif
+                </div>
+        </div>
+
     % else:
-        <div class="col-md-8 p-lg">
+        <div class="col-xs-9 col-sm-8 p-lg">
                 <p>There have been no forks of this project.. Forking a project means you have created a copy of it into your dashboard, and can change that copy for your own purposes. You will be the only contributor to the forked project until you add others.</p>
         </div>
-        <div class="col-md-4 p-lg">
+        <div class="col-xs-3 col-sm-4 p-lg">
                 <div class="p-lg">
                     <a href="/getting-started/#forks" class="btn btn-info"> Learn more about Forks</a>
                 </div>
-                <div class="p-lg">
+                <div class="p-lg text-center">
                     % if user_name and (user['is_contributor'] or node['is_public']) and not disk_saving_mode:
                         <a class="btn btn-success" type="button" onclick="NodeActions.forkNode();">New Fork</a>
                     % endif
