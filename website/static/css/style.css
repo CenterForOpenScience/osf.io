@@ -9,6 +9,10 @@ body {
     -webkit-font-smoothing: antialiased;
 }
 
+a {
+    cursor: pointer;
+}
+
 
 /* Footer
 -------------------------------------------------- */
