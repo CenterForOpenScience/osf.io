@@ -6,10 +6,24 @@ require('../css/fangorn.css');
 function resolveIcon(item) {
     if (item.children.length > 0) {
         if (item.open) {
-            return m('i.fa.fa-folder-open-o', ' ');
+            return m('i.fa.fa-folder-open', ' ');
         }
-        return m('i.fa.fa-folder-o', ' ');
+        return m('i.fa.fa-folder', ' ');
     }
+}
+
+function resolveToggle(item) {
+    var toggleMinus = m('i.fa.fa-minus', ' '),
+        togglePlus = m('i.fa.fa-plus', ' ');
+
+    if (item.children.length > 0) {
+        if (item.open) {
+            return toggleMinus;
+        }
+        return togglePlus;
+    }
+    item.open = true;
+    return '';
 }
 
 function WikiMenu(data, wikiID, canEdit) {
@@ -23,6 +37,7 @@ function WikiMenu(data, wikiID, canEdit) {
         uploads : false,         // Turns dropzone on/off.
         hideColumnTitles: true,
         resolveIcon : resolveIcon,
+        resolveToggle : resolveToggle,
         columnTitles: function () {
             return[{
                 title: 'Name',
@@ -42,42 +57,46 @@ function WikiMenu(data, wikiID, canEdit) {
             var tb = this;
             var columns = [];
             if(item.data.type === 'heading') {
-                columns.push(
-                    {
+                if(item.data.children.length >  0) {
+                    columns.push({
                         folderIcons: true,
                         custom: function() {
                             return m('b', item.data.title);
                         }
-                    }
-                );
+                    });
+                }
             } else {
                 if(item.data.page.id === wikiID) {
                     item.css = 'fangorn-selected';
                     tb.multiselected([item]);
                 }
-                columns.push(
-                    {
-                        folderIcons: true,
-                        custom: function() {
-                            if(item.data.page.name === 'home') {
-                                return m('a', {href: item.data.page.url}, 'Home');
-                            }
-                            if(item.data.page.wiki_content === '' && !canEdit) {
-                                return [
-                                    m('h', item.data.page.name),
-                                    m('span',
-                                        [m('i', {class: 'text-muted', style: 'padding-left: 10px'}, 'No wiki content')]
-                                    )
-                                ];
-                            }
+                columns.push({
+                    folderIcons: true,
+                    custom: function() {
+                        if(item.data.page.name === 'home') {
+                            return m('a', {href: item.data.page.url}, 'Home');
+                        }
+                        if(item.data.page.wiki_content === '' && !canEdit) {
+                            return [
+                                m('h', item.data.page.name),
+                                m('span',
+                                    [m('i', {class: 'text-muted', style: 'padding-left: 10px'}, 'No wiki content')]
+                                )
+                            ];
+                        }
+                        if(item.data.kind === 'component') {
+                            return m('a', {href: item.data.page.url}, item.data.page.name, [
+                                m('i.fa.fa-external-link.tb-td-first')
+                            ]);
+                        } else {
                             return m('a', {href: item.data.page.url}, item.data.page.name);
                         }
                     }
-                );
+                });
             }
-
             return columns;
         },
+        hScroll: 500,
         showFilter : false,     // Gives the option to filter by showing the filter box.
         allowMove : false,       // Turn moving on or off.
         hoverClass : 'fangorn-hover',

@@ -464,20 +464,47 @@ def project_wiki_grid_data(auth, node, **kwargs):
     return ret
 
 
+def format_home_wiki_page(node):
+    home_wiki = node.get_wiki_page('home')
+    home_wiki_page = {
+        'page': {
+            'url': node.web_url_for('project_wiki_home'),
+            'name': 'home',
+            'id': 'None',
+            'wiki_content': ''
+        },
+        'children': []
+    }
+    if home_wiki:
+        home_wiki_page = {
+            'page': {
+                'url': node.web_url_for('project_wiki_view', wname='home', _guid=True),
+                'name': home_wiki.page_name,
+                'id': home_wiki._primary_key,
+                'wiki_content': wiki_page_content(home_wiki.page_name, node=node).get('wiki_content')
+            },
+            'children': []
+        }
+    return home_wiki_page
+
+
 def format_project_wiki_pages(node):
     pages = []
     project_wiki_pages = _get_wiki_pages_current(node)
+    home_wiki_page = format_home_wiki_page(node)
+    pages.append(home_wiki_page)
     for wiki_page in project_wiki_pages:
-        page = {
-            'page': {
-                'url': wiki_page['url'],
-                'name': wiki_page['name'],
-                'id': wiki_page['wiki_id'],
-                'wiki_content': wiki_page['wiki_content'].get('wiki_content')
-            },
-            'children': [],
-        }
-        pages.append(page)
+        if wiki_page['name'] != 'home':
+            page = {
+                'page': {
+                    'url': wiki_page['url'],
+                    'name': wiki_page['name'],
+                    'id': wiki_page['wiki_id'],
+                    'wiki_content': wiki_page['wiki_content'].get('wiki_content')
+                },
+                'children': [],
+            }
+            pages.append(page)
     return pages
 
 
@@ -495,6 +522,7 @@ def format_component_wiki_pages(node, auth):
                         'id': component_page['wiki_id'],
                         'wiki_content': component_page['wiki_content'].get('wiki_content')
                     },
+                    'kind': 'component',
                     'children': [],
                 }
                 children.append(child)
@@ -507,7 +535,7 @@ def format_component_wiki_pages(node, auth):
                 'wiki_content': wiki_page['wiki_content'].get('wiki_content')
             },
             'children': children,
-            'kind': 'folder'
+            'kind': 'component'
         }
         pages.append(page)
     return pages

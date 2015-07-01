@@ -1117,6 +1117,19 @@ class TestWikiMenu(OsfTestCase):
         self.component = NodeFactory(creator=self.user, parent=self.project, is_public=True)
         self.consolidate_auth = Auth(user=self.user, api_key=self.api_key)
 
+    def test_format_home_wiki_page_no_content(self):
+        data = views.format_home_wiki_page(self.project)
+        expected = {
+            'page': {
+                'url': self.project.web_url_for('project_wiki_home'),
+                'name': 'home',
+                'id': 'None',
+                'wiki_content': ''
+            },
+            'children': [],
+        }
+        assert_equal(data, expected)
+
     def test_format_project_wiki_pages(self):
         self.project.update_node_wiki('home', 'content here', self.consolidate_auth)
         page = self.project.get_wiki_page(name='home')
@@ -1136,7 +1149,6 @@ class TestWikiMenu(OsfTestCase):
 
     def test_format_component_wiki_pages(self):
         self.component.update_node_wiki('home', 'home content', self.consolidate_auth)
-        component_home_page = self.component.get_wiki_page(name='home')
         data = views.format_component_wiki_pages(node=self.project, auth=self.consolidate_auth)
         expected = [
             {
@@ -1147,7 +1159,7 @@ class TestWikiMenu(OsfTestCase):
                     'wiki_content': 'home content'
                 },
                 'children': [],
-                'kind': 'folder'
+                'kind': 'component'
             }
         ]
         assert_equal(data, expected)
@@ -1174,9 +1186,10 @@ class TestWikiMenu(OsfTestCase):
                             'wiki_content': 'inner content'
                         },
                         'children': [],
+                        'kind': 'component',
                     }
                 ],
-                'kind': 'folder'
+                'kind': 'component'
             }
         ]
         assert_equal(data, expected)
@@ -1192,7 +1205,7 @@ class TestWikiMenu(OsfTestCase):
                     'wiki_content': ''
                 },
                 'children': [],
-                'kind': 'folder'
+                'kind': 'component'
             }
         ]
         assert_equal(data, expected)
@@ -1200,8 +1213,6 @@ class TestWikiMenu(OsfTestCase):
     def test_project_wiki_grid_data(self):
         self.project.update_node_wiki('home', 'project content', self.consolidate_auth)
         self.component.update_node_wiki('home', 'component content', self.consolidate_auth)
-        project_wiki_page = self.project.get_wiki_page(name='home')
-        component_wiki_page = self.component.get_wiki_page(name='home')
         data = views.project_wiki_grid_data(auth=self.consolidate_auth, wname='home', node=self.project)
         expected = [
             {
