@@ -5,11 +5,11 @@ from rest_framework import generics, permissions as drf_permissions
 from rest_framework.exceptions import PermissionDenied, ValidationError
 
 from modularodm import Q
-from website.models import Node, Pointer
+from website.models import Node, Pointer, DraftRegistration
 from api.users.serializers import ContributorSerializer
 from api.base.filters import ODMFilterMixin, ListFilterMixin
 from api.base.utils import get_object_or_404, waterbutler_url_for
-from .serializers import NodeSerializer, NodePointersSerializer, NodeFilesSerializer, RegistrationSerializer
+from .serializers import NodeSerializer, NodePointersSerializer, NodeFilesSerializer, DraftRegistrationSerializer
 from .permissions import ContributorOrPublic, ReadOnlyIfRegistration, ContributorOrPublicForPointers
 
 
@@ -165,6 +165,43 @@ class NodeRegistrationsList(generics.ListAPIView, NodeMixin):
             auth = Auth(user)
         registrations = [node for node in nodes if node.can_view(auth)]
         return registrations
+
+
+class NodeDraftRegistrationsList(generics.ListCreateAPIView, NodeMixin):
+    """
+    Draft registrations of the current node
+    """
+
+    permission_classes = (
+        ContributorOrPublic,
+        drf_permissions.IsAuthenticatedOrReadOnly,
+    )
+
+    serializer_class = DraftRegistrationSerializer
+
+
+    def get_queryset(self):
+        node = self.get_node()
+        user = self.request.user
+
+        if user.is_anonymous():
+            auth = Auth(None)
+        else:
+            auth = Auth(user)
+        drafts = DraftRegistration.find(
+            Q('branched_from', 'eq', node)
+              )
+        draft_registrations = [reg for reg in drafts if reg.can_view(auth)]
+        return draft_registrations
+
+
+    # overrides ListCreateAPIView
+    def perform_create(self, serializer):
+        """
+        Create a registration of the current node.
+        """
+        user = self.request.user
+        serializer.save(creator=user)
 
 
 class NodeChildrenList(generics.ListAPIView, NodeMixin):

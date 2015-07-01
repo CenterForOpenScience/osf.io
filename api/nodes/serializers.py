@@ -3,9 +3,13 @@ from rest_framework import exceptions
 from rest_framework import serializers as ser
 
 from modularodm import Q
-from website.models import Node
+from website.models import Node, DraftRegistration
+from framework.exceptions import HTTPError
 from website.project.model import MetaSchema
 from api.base.serializers import JSONAPISerializer, LinksField, Link, WaterbutlerLink
+from website.project.views import drafts
+from website.project.views import register
+from website.project.metadata.schemas import OSF_META_SCHEMAS
 
 
 class NodeSerializer(JSONAPISerializer):
@@ -130,36 +134,36 @@ class NodeSerializer(JSONAPISerializer):
         return instance
 
 
-class RegistrationSerializer(NodeSerializer):
+class DraftRegistrationSerializer(JSONAPISerializer):
+    schema_choices = [schema['name'] for schema in OSF_META_SCHEMAS]
     id = ser.CharField(read_only=True, source='_id')
-    title = ser.CharField(read_only=True)
-    description = ser.CharField(read_only=True)
-    category = ser.CharField(read_only=True)
-    is_registration_draft = ser.CharField(read_only=True)
-
-    # TODO pass source link to Links
+    branched_from = ser.CharField(read_only = True)
+    initiator = ser.CharField(read_only=True)
+    registration_schema = ser.ChoiceField(choices=schema_choices, required=True)
+    registration_metadata = ser.CharField(read_only=True)
+    initiated = ser.CharField(read_only=True)
+    updated = ser.CharField(read_only=True)
+    completion = ser.CharField(read_only=True)
 
     # TODO: This create method is a placeholder for testing. Will need to be replaced once Draft registration functionality added.
     def create(self, validated_data):
         request = self.context['request']
-        template = 'Open-Ended_Registration'
-        schema = MetaSchema.find(
-            Q('name', 'eq', template)).sort('-schema_version')[0]
-        user = request.user
+        schema = validated_data['registration_schema']
+        meta_schema = MetaSchema.find_one(
+                Q('name', 'eq', schema)
+            )
         node = self.context['view'].get_node()
-        if node.is_registration is True:
-            raise exceptions.ValidationError('This is already a registration')
-        registration = node.register_node(
-            schema=schema,
-            auth=Auth(user),
-            template=template,
-            data=None
+        user = request.user
+        draft = DraftRegistration(
+            branched_from=node,
+            initiator=user,
         )
-        registration.is_registration = False
-        registration.is_registration_draft = True
-        registration.is_deleted = False
-        registration.save()
-        return registration
+        draft.registration_schema = meta_schema.schema
+        draft.save()
+        return draft
+
+    class Meta:
+        type_ = "draft_registrations"
 
 
 class NodePointersSerializer(JSONAPISerializer):
