@@ -147,6 +147,7 @@ def _render_conference_node(node, idx):
         download_count = 0
 
     author = node.visible_contributors[0]
+    tags = [tag._id for tag in node.tags]
 
     return {
         'id': idx,
@@ -157,6 +158,7 @@ def _render_conference_node(node, idx):
         'category': 'talk' if 'talk' in node.system_tags else 'poster',
         'download': download_count,
         'downloadUrl': download_url,
+        'tags': ' '.join(tags)
     }
 
 

@@ -3,6 +3,7 @@ import unittest
 import logging
 
 from nose.tools import *  # flake8: noqa (PEP8 asserts)
+import mock
 
 from framework.auth.core import Auth
 from website import settings
@@ -15,7 +16,8 @@ from tests.base import OsfTestCase
 from tests.test_features import requires_search
 from tests.factories import (
     UserFactory, ProjectFactory, NodeFactory,
-    UnregUserFactory, UnconfirmedUserFactory
+    UnregUserFactory, UnconfirmedUserFactory,
+    RegistrationFactory
 )
 
 TEST_INDEX = 'test'
@@ -183,6 +185,98 @@ class TestProject(SearchTestCase):
 
 
 @requires_search
+class TestRegistrationRetractions(SearchTestCase):
+
+    def setUp(self):
+        super(TestRegistrationRetractions, self).setUp()
+        self.user = UserFactory(usename='Doug Bogie')
+        self.title = 'Red Special'
+        self.consolidate_auth = Auth(user=self.user)
+        self.project = ProjectFactory(
+            title=self.title,
+            creator=self.user,
+            is_public=True,
+        )
+        self.registration = RegistrationFactory(
+            project=self.project,
+            title=self.title,
+            creator=self.user,
+            is_public=True,
+            is_registration=True
+        )
+
+    def test_retraction_is_searchable(self):
+
+        self.registration.retract_registration(self.user)
+        docs = query('category:registration AND ' + self.title)['results']
+        assert_equal(len(docs), 1)
+
+    @mock.patch('website.project.model.Node.archiving', mock.PropertyMock(return_value=False))
+    def test_pending_retraction_wiki_content_is_searchable(self):
+        # Add unique string to wiki
+        wiki_content = {'home': 'public retraction test'}
+        for key, value in wiki_content.items():
+            docs = query(value)['results']
+            assert_equal(len(docs), 0)
+            self.registration.update_node_wiki(
+                key, value, self.consolidate_auth,
+            )
+            # Query and ensure unique string shows up
+            docs = query(value)['results']
+            assert_equal(len(docs), 1)
+
+        # Query and ensure registration does show up
+        docs = query('category:registration AND ' + self.title)['results']
+        assert_equal(len(docs), 1)
+
+        # Retract registration
+        self.registration.retract_registration(self.user, '')
+        self.registration.save()
+        self.registration.reload()
+
+        # Query and ensure unique string in wiki doesn't show up
+        docs = query('category:registration AND "{}"'.format(wiki_content['home']))['results']
+        assert_equal(len(docs), 1)
+
+        # Query and ensure registration does show up
+        docs = query('category:registration AND ' + self.title)['results']
+        assert_equal(len(docs), 1)
+
+    @mock.patch('website.project.model.Node.archiving', mock.PropertyMock(return_value=False))
+    def test_retraction_wiki_content_is_not_searchable(self):
+        # Add unique string to wiki
+        wiki_content = {'home': 'public retraction test'}
+        for key, value in wiki_content.items():
+            docs = query(value)['results']
+            assert_equal(len(docs), 0)
+            self.registration.update_node_wiki(
+                key, value, self.consolidate_auth,
+            )
+            # Query and ensure unique string shows up
+            docs = query(value)['results']
+            assert_equal(len(docs), 1)
+
+        # Query and ensure registration does show up
+        docs = query('category:registration AND ' + self.title)['results']
+        assert_equal(len(docs), 1)
+
+        # Retract registration
+        self.registration.retract_registration(self.user, '')
+        self.registration.retraction.state = 'retracted'
+        self.registration.retraction.save()
+        self.registration.save()
+        self.registration.update_search()
+
+        # Query and ensure unique string in wiki doesn't show up
+        docs = query('category:registration AND "{}"'.format(wiki_content['home']))['results']
+        assert_equal(len(docs), 0)
+
+        # Query and ensure registration does show up
+        docs = query('category:registration AND ' + self.title)['results']
+        assert_equal(len(docs), 1)
+
+
+@requires_search
 class TestPublicNodes(SearchTestCase):
 
     def setUp(self):
@@ -217,9 +311,6 @@ class TestPublicNodes(SearchTestCase):
 
         self.component.set_privacy('private')
         docs = query('category:component AND ' + self.title)['results']
-        assert_equal(len(docs), 0)
-        self.registration.set_privacy('private')
-        docs = query('category:registration AND ' + self.title)['results']
         assert_equal(len(docs), 0)
 
     def test_public_parent_title(self):
@@ -499,6 +590,84 @@ class TestProjectSearchResults(SearchTestCase):
         # possessive and plural versions in results.
         results = query(self.possessive)['results']
         assert_equal(len(results), 3)
+
+
+def job(**kwargs):
+    keys = [
+        'title',
+        'institution',
+        'department',
+        'location',
+        'startMonth',
+        'startYear',
+        'endMonth',
+        'endYear',
+        'ongoing',
+    ]
+    job = {}
+    for key in keys:
+        if key[-5:] == 'Month':
+            job[key] = kwargs.get(key, 'December')
+        elif key[-4:] == 'Year':
+            job[key] = kwargs.get(key, '2000')
+        else:
+            job[key] = kwargs.get(key, 'test_{}'.format(key))
+    return job
+
+
+class TestUserSearchResults(SearchTestCase):
+    def setUp(self):
+        super(TestUserSearchResults, self).setUp()
+        self.user_one = UserFactory(jobs=[job(institution='Oxford'),
+                                          job(institution='Star Fleet')],
+                                    fullname='Date Soong')
+
+        self.user_two = UserFactory(jobs=[job(institution='Grapes la Picard'),
+                                          job(institution='Star Fleet')],
+                                    fullname='Jean-Luc Picard')
+
+        self.user_three = UserFactory(jobs=[job(institution='Star Fleet'),
+                                            job(institution='Federation Medical')],
+                                      fullname='Beverly Crusher')
+
+        self.user_four = UserFactory(jobs=[job(institution='Star Fleet')],
+                                     fullname='William Riker')
+
+        self.user_five = UserFactory(jobs=[job(institution='Traveler intern'),
+                                           job(institution='Star Fleet Academy'),
+                                           job(institution='Star Fleet Intern')],
+                                     fullname='Wesley Crusher')
+
+        for i in range(25):
+            UserFactory(jobs=[job()])
+
+        self.current_starfleet = [
+            self.user_three,
+            self.user_four,
+        ]
+
+        self.were_starfleet = [
+            self.user_one,
+            self.user_two,
+            self.user_three,
+            self.user_four,
+            self.user_five
+        ]
+
+    @unittest.skip('Cannot guarentee always passes')
+    def test_current_job_first_in_results(self):
+        results = query_user('Star Fleet')['results']
+        result_names = [r['names']['fullname'] for r in results]
+        current_starfleet_names = [u.fullname for u in self.current_starfleet]
+        for name in result_names[:2]:
+            assert_in(name, current_starfleet_names)
+
+    def test_had_job_in_results(self):
+        results = query_user('Star Fleet')['results']
+        result_names = [r['names']['fullname'] for r in results]
+        were_starfleet_names = [u.fullname for u in self.were_starfleet]
+        for name in result_names:
+            assert_in(name, were_starfleet_names)
 
 
 class TestSearchExceptions(OsfTestCase):

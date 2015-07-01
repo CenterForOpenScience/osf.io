@@ -78,6 +78,7 @@ def _render_node(node, auth=None):
         'date_modified': utils.iso8601format(node.date_modified),
         'category': node.category,
         'permissions': perm,  # A string, e.g. 'admin', or None,
+        'archiving': node.archiving,
     }
 
 
@@ -165,13 +166,17 @@ def get_all_registrations_smart_folder(auth, **kwargs):
     contributed = user.node__contributed
 
     nodes = contributed.find(
+
         Q('is_deleted', 'eq', False) &
         Q('is_registration', 'eq', True) &
         Q('is_folder', 'eq', False)
     ).sort('-title')
 
-    keys = nodes.get_keys()
-    return [rubeus.to_project_root(node, auth, **kwargs) for node in nodes if node.parent_id not in keys]
+    # Note(hrybacki): is_retracted and pending_embargo are property methods
+    # and cannot be directly queried
+    nodes = filter(lambda node: not node.is_retracted and not node.pending_embargo, nodes)
+    keys = [node._id for node in nodes]
+    return [rubeus.to_project_root(node, auth, **kwargs) for node in nodes if node.ids_above.isdisjoint(keys)]
 
 @must_be_logged_in
 def get_dashboard_nodes(auth):
@@ -232,9 +237,14 @@ def dashboard(auth):
 
 
 def paginate(items, total, page, size):
+    pages = math.ceil(total / float(size))
+    if page < 0 or (pages and page >= pages):
+        raise HTTPError(http.BAD_REQUEST, data=dict(
+            message_long='Invalid value for "page".'
+        ))
+
     start = page * size
     paginated_items = itertools.islice(items, start, start + size)
-    pages = math.ceil(total / float(size))
 
     return paginated_items, pages
 

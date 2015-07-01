@@ -29,11 +29,11 @@
                     <div class="btn-group">
                     % if not node["is_public"]:
                         <button class='btn btn-default disabled'>Private</button>
-                        % if 'admin' in user['permissions']:
+                        % if 'admin' in user['permissions'] and not node['pending_embargo']:
                             <a class="btn btn-default" data-bind="click: makePublic">Make Public</a>
                         % endif
                     % else:
-                        % if 'admin' in user['permissions']:
+                        % if 'admin' in user['permissions'] and not node['is_registration']:
                             <a class="btn btn-default" data-bind="click: makePrivate">Make Private</a>
                         % endif
                         <button class="btn btn-default disabled">Public</button>
@@ -59,7 +59,11 @@
 
                     </div>
                     <!-- /ko -->
-                    <div class="btn-group">
+                    <div
+                        % if not user_name:
+                            data-bind="tooltip: {title: 'Log-in or create an account to watch/duplicate this project', placement: 'bottom'}"
+                        % endif
+                            class="btn-group">
                         <a
                         % if user_name and (node['is_public'] or user['has_read_permissions']) and not node['is_registration']:
                             data-bind="click: toggleWatch, tooltip: {title: watchButtonAction, placement: 'bottom'}"
@@ -71,11 +75,16 @@
                             <i class="fa fa-eye"></i>
                             <span data-bind="text: watchButtonDisplay" id="watchCount"></span>
                         </a>
-                        <a class="btn btn-default"
-                           data-bind="tooltip: {title: 'Duplicate', placement: 'bottom'}"
-                           data-target="#duplicateModal" data-toggle="modal"
-                           href="#">
-                          <span class="glyphicon glyphicon-share"></span>&nbsp; ${ node['templated_count'] + node['fork_count'] + node['points'] }
+                        <a
+                        % if user_name:
+                            class="btn btn-default"
+                            data-bind="tooltip: {title: 'Duplicate', placement: 'bottom'}"
+                            data-target="#duplicateModal" data-toggle="modal"
+                        % else:
+                            class="btn btn-default disabled"
+                        % endif
+                            href="#">
+                            <span class="glyphicon glyphicon-share"></span>&nbsp; ${ node['templated_count'] + node['fork_count'] + node['points'] }
                         </a>
                     </div>
                     % if 'badges' in addons_enabled and badges and badges['can_award']:

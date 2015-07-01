@@ -7,12 +7,13 @@ from dataverse.exceptions import UnauthorizedError
 
 from framework.exceptions import HTTPError
 from website.addons.dataverse.tests.utils import DataverseAddonTestCase
-from website.addons.dataverse.client import (_connect, get_files,
-    publish_dataset, get_datasets, get_dataset,
+from website.addons.dataverse.tests.utils import create_external_account
+from website.addons.dataverse.client import (
+    _connect, get_files, publish_dataset, get_datasets, get_dataset,
     get_dataverses, get_dataverse, connect_from_settings, connect_or_401,
-    connect_from_settings_or_401)
-from website.addons.dataverse.model import AddonDataverseUserSettings
-from website.addons.dataverse import settings
+    connect_from_settings_or_401,
+)
+from website.addons.dataverse.model import AddonDataverseNodeSettings
 
 
 class TestClient(DataverseAddonTestCase):
@@ -20,6 +21,9 @@ class TestClient(DataverseAddonTestCase):
     def setUp(self):
 
         super(TestClient, self).setUp()
+
+        self.host = 'some.host.url'
+        self.token = 'some-fancy-api-token-which-is-long'
 
         self.mock_connection = mock.create_autospec(Connection)
         self.mock_dataverse = mock.create_autospec(Dataverse)
@@ -33,52 +37,46 @@ class TestClient(DataverseAddonTestCase):
     @mock.patch('website.addons.dataverse.client.Connection')
     def test_connect(self, mock_connection):
         mock_connection.return_value = mock.create_autospec(Connection)
-        c = _connect('My token', 'My host')
+        c = _connect(self.host, self.token)
 
-        mock_connection.assert_called_once_with('My host', 'My token')
-        assert_true(c)
-
-    @mock.patch('website.addons.dataverse.client.Connection')
-    def test_connect_default_host(self, mock_connection):
-        mock_connection.return_value = mock.create_autospec(Connection)
-        c = _connect('My token')
-
-        mock_connection.assert_called_once_with(settings.HOST, 'My token')
+        mock_connection.assert_called_once_with(self.host, self.token)
         assert_true(c)
 
     @mock.patch('website.addons.dataverse.client.Connection')
     def test_connect_fail(self, mock_connection):
         mock_connection.side_effect = UnauthorizedError()
         with assert_raises(UnauthorizedError):
-            _connect('My token', 'My host')
+            _connect(self.host, self.token)
 
-        mock_connection.assert_called_once_with('My host', 'My token')
+        mock_connection.assert_called_once_with(self.host, self.token)
 
     @mock.patch('website.addons.dataverse.client.Connection')
     def test_connect_or_401(self, mock_connection):
         mock_connection.return_value = mock.create_autospec(Connection)
-        c = connect_or_401('My token')
+        c = connect_or_401(self.host, self.token)
 
-        mock_connection.assert_called_once_with(settings.HOST, 'My token')
+        mock_connection.assert_called_once_with(self.host, self.token)
         assert_true(c)
 
     @mock.patch('website.addons.dataverse.client.Connection')
     def test_connect_or_401_forbidden(self, mock_connection):
         mock_connection.side_effect = UnauthorizedError()
         with assert_raises(HTTPError) as cm:
-            connect_or_401('My token')
+            connect_or_401(self.host, self.token)
 
-        mock_connection.assert_called_once_with(settings.HOST, 'My token')
+        mock_connection.assert_called_once_with(self.host, self.token)
         assert_equal(cm.exception.code, 401)
 
     @mock.patch('website.addons.dataverse.client._connect')
     def test_connect_from_settings(self, mock_connect):
-        user_settings = AddonDataverseUserSettings()
-        user_settings.api_token = 'Something ridiculous'
+        node_settings = AddonDataverseNodeSettings()
+        node_settings.external_account = create_external_account(
+            self.host, self.token,
+        )
 
-        connection = connect_from_settings(user_settings)
+        connection = connect_from_settings(node_settings)
         assert_true(connection)
-        mock_connect.assert_called_once_with(user_settings.api_token)
+        mock_connect.assert_called_once_with(self.host, self.token)
 
     def test_connect_from_settings_none(self):
         connection = connect_from_settings(None)
@@ -86,12 +84,14 @@ class TestClient(DataverseAddonTestCase):
 
     @mock.patch('website.addons.dataverse.client._connect')
     def test_connect_from_settings_or_401(self, mock_connect):
-        user_settings = AddonDataverseUserSettings()
-        user_settings.api_token = 'Something ridiculous'
+        node_settings = AddonDataverseNodeSettings()
+        node_settings.external_account = create_external_account(
+            self.host, self.token,
+        )
 
-        connection = connect_from_settings_or_401(user_settings)
+        connection = connect_from_settings_or_401(node_settings)
         assert_true(connection)
-        mock_connect.assert_called_once_with(user_settings.api_token)
+        mock_connect.assert_called_once_with(self.host, self.token)
 
     def test_connect_from_settings_or_401_none(self):
         connection = connect_from_settings_or_401(None)
@@ -100,15 +100,15 @@ class TestClient(DataverseAddonTestCase):
     @mock.patch('website.addons.dataverse.client.Connection')
     def test_connect_from_settings_or_401_forbidden(self, mock_connection):
         mock_connection.side_effect = UnauthorizedError()
-        user_settings = AddonDataverseUserSettings()
-        user_settings.api_token = 'Something ridiculous'
+        node_settings = AddonDataverseNodeSettings()
+        node_settings.external_account = create_external_account(
+            self.host, self.token,
+        )
 
         with assert_raises(HTTPError) as e:
-            connect_from_settings_or_401(user_settings)
+            connect_from_settings_or_401(node_settings)
 
-        mock_connection.assert_called_once_with(
-            settings.HOST, user_settings.api_token,
-        )
+        mock_connection.assert_called_once_with(self.host, self.token)
         assert_equal(e.exception.code, 401)
 
     def test_get_files(self):

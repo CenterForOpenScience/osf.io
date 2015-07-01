@@ -3,10 +3,13 @@ import mock
 
 from tests.factories import UserFactory, ProjectFactory
 from framework.auth.decorators import Auth
+from framework.exceptions import PermissionsError
+
 from website.addons.dataverse.model import (
-    AddonDataverseUserSettings, AddonDataverseNodeSettings, DataverseFile
+    AddonDataverseNodeSettings, DataverseFile
 )
 from website.addons.dataverse.tests.utils import DataverseAddonTestCase
+from website.addons.dataverse.tests.utils import create_external_account
 
 
 class TestDataverseFile(DataverseAddonTestCase):
@@ -72,44 +75,56 @@ class TestDataverseFile(DataverseAddonTestCase):
 
 
 class TestDataverseUserSettings(DataverseAddonTestCase):
+    """Tests were modified from Mendeley. None of this functionality is
+    currently Dataverse specific."""
 
-    def test_has_auth(self):
+    def _prep_auth_case(self):
+        self.node = ProjectFactory()
+        self.user = self.node.creator
 
-        # Dataverse has no auth by default
-        dataverse = AddonDataverseUserSettings()
-        assert_false(dataverse.has_auth)
+        self.external_account = create_external_account()
 
-        # With valid credentials, dataverse is authorized
-        dataverse.api_token = 'snowman-frosty'
-        assert_true(dataverse.has_auth)
+        self.user.external_accounts.append(self.external_account)
+        self.user.save()
 
-    def test_clear(self):
+        self.user_settings = self.user.get_or_add_addon('mendeley')
 
-        self.user_settings.clear()
+    def test_grant_auth_access_no_metadata(self):
+        self._prep_auth_case()
 
-        # Fields were cleared, but settings were not deleted
-        assert_false(self.user_settings.api_token)
-        assert_false(self.user_settings.deleted)
+        self.user_settings.grant_oauth_access(
+            node=self.node,
+            external_account=self.external_account,
+        )
+        self.user_settings.save()
 
-        # Authorized node settings were deauthorized
-        assert_false(self.node_settings.dataverse_alias)
-        assert_false(self.node_settings.dataverse)
-        assert_false(self.node_settings.dataset_doi)
-        assert_false(self.node_settings._dataset_id)  # Getter makes request
-        assert_false(self.node_settings.dataset)
-        assert_false(self.node_settings.user_settings)
+        assert_equal(
+            self.user_settings.oauth_grants,
+            {self.node._id: {self.external_account._id: {}}},
+        )
 
-        # Authorized node settings were not deleted
-        assert_false(self.node_settings.deleted)
+    def test_verify_oauth_access_no_metadata(self):
+        self._prep_auth_case()
 
-    @mock.patch('website.addons.dataverse.model.AddonDataverseUserSettings.clear')
-    def test_delete(self, mock_clear):
+        self.user_settings.grant_oauth_access(
+            node=self.node,
+            external_account=self.external_account,
+        )
+        self.user_settings.save()
 
-        self.user_settings.delete()
+        assert_true(
+            self.user_settings.verify_oauth_access(
+                node=self.node,
+                external_account=self.external_account
+            )
+        )
 
-        assert_true(self.user_settings.deleted)
-        mock_clear.assert_called_once_with()
-
+        assert_false(
+            self.user_settings.verify_oauth_access(
+                node=self.node,
+                external_account=create_external_account()
+            )
+        )
 
 class TestDataverseNodeSettings(DataverseAddonTestCase):
 
@@ -132,19 +147,36 @@ class TestDataverseNodeSettings(DataverseAddonTestCase):
         assert_is_none(node_settings.dataset_doi)
 
     def test_has_auth(self):
-        node_settings = AddonDataverseNodeSettings()
-        node_settings.save()
-        assert_false(node_settings.has_auth)
+        # No auth by default
+        assert_false(self.node_settings.has_auth)
 
-        user_settings = AddonDataverseUserSettings()
-        user_settings.save()
-        node_settings.user_settings = user_settings
-        node_settings.save()
-        assert_false(node_settings.has_auth)
+        # Append an external account
+        external_account = create_external_account()
+        self.user.external_accounts.append(external_account)
+        self.node_settings.set_auth(external_account, self.user)
+        assert_true(self.node_settings.has_auth)
 
-        user_settings.api_token = 'foo-bar'
-        user_settings.save()
-        assert_true(node_settings.has_auth)
+        # Node settings configuration should have no effect
+        self.node_settings.dataset_doi = None
+        assert_true(self.node_settings.has_auth)
+
+    def test_has_auth_false(self):
+        # No auth by default
+        assert_false(self.node_settings.has_auth)
+
+        # both external_account and user_settings must be set to have auth
+        external_account = create_external_account()
+        self.node_settings.external_account = external_account
+        assert_false(self.node_settings.has_auth)
+
+        self.node_settings.external_account = None
+        self.node_settings.user_settings = self.user_settings
+        assert_false(self.node_settings.has_auth)
+
+        # set_auth must be called to have auth
+        self.node_settings.external_account = external_account
+        self.node_settings.user_settings = self.user_settings
+        assert_false(self.node_settings.has_auth)
 
     @mock.patch('website.addons.dataverse.model.AddonDataverseNodeSettings.deauthorize')
     def test_delete(self, mock_deauth):
@@ -161,24 +193,51 @@ class TestDataverseNodeSettings(DataverseAddonTestCase):
         self.project.reload()
         assert_equal(len(self.project.logs), num_old_logs)
 
-    def test_set_user_auth(self):
-        project = ProjectFactory()
-        project.add_addon('dataverse', auth=Auth(self.user))
-        node_settings = project.get_addon('dataverse')
-        num_old_logs = len(project.logs)
+    def test_set_auth(self):
+        external_account = create_external_account()
+        self.user.external_accounts.append(external_account)
+        self.user.save()
 
-        assert_false(node_settings.user_settings)
-        node_settings.set_user_auth(self.user_settings)
-        node_settings.save()
-        assert_equal(node_settings.user_settings, self.user_settings)
+        # this should not affect settings implicitly
+        original_doi = self.node_settings.dataset_doi
 
-        # Test log
-        project.reload()
-        assert_equal(len(project.logs), num_old_logs + 1)
-        last_log = project.logs[-1]
-        assert_equal(last_log.action, 'dataverse_node_authorized')
-        assert_equal(last_log.params['node'], project._primary_key)
-        assert_is_none(last_log.params['project'])
+        self.node_settings.set_auth(
+            external_account=external_account,
+            user=self.user
+        )
+
+        # this instance is updated
+        assert_equal(
+            self.node_settings.external_account,
+            external_account
+        )
+        assert_equal(
+            self.node_settings.user_settings,
+            self.user_settings
+        )
+        assert_equal(
+            self.node_settings.dataset_doi,
+            original_doi
+        )
+
+        # user_settings was updated
+        assert_true(
+            self.user_settings.verify_oauth_access(
+                node=self.project,
+                external_account=external_account,
+            )
+        )
+
+    def test_set_auth_wrong_user(self):
+        external_account = create_external_account()
+        self.user.external_accounts.append(external_account)
+        self.user.save()
+
+        with assert_raises(PermissionsError):
+            self.node_settings.set_auth(
+                external_account=external_account,
+                user=UserFactory()
+            )
 
     def test_deauthorize(self):
 
@@ -248,7 +307,8 @@ class TestNodeSettingsCallbacks(DataverseAddonTestCase):
         assert_true(self.node_settings.dataset_doi is None)
         assert_true(self.node_settings.dataset is None)
 
-    def test_does_not_get_copied_to_registrations(self):
+    @mock.patch('website.archiver.tasks.archive.si')
+    def test_does_not_get_copied_to_registrations(self, mock_archive):
         registration = self.project.register_node(
             schema=None,
             auth=Auth(user=self.project.creator),

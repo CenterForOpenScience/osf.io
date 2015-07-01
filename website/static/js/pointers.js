@@ -27,6 +27,8 @@ var AddPointerViewModel = oop.extend(Paginator, {
         this.errorMsg = ko.observable('');
         this.totalPages = ko.observable(0);
         this.includePublic = ko.observable(true);
+        this.searchWarningMsg = ko.observable('');
+        this.submitWarningMsg = ko.observable('');
 
         this.foundResults = ko.pureComputed(function() {
             return self.query() && self.results().length;
@@ -47,6 +49,8 @@ var AddPointerViewModel = oop.extend(Paginator, {
     fetchResults: function() {
         var self = this;
         self.errorMsg('');
+        self.searchWarningMsg('');
+
         if (self.query()) {
             osfHelpers.postJSON(
                 '/api/v1/search/node/', {
@@ -63,9 +67,9 @@ var AddPointerViewModel = oop.extend(Paginator, {
                 self.currentPage(result.page);
                 self.numberOfPages(result.pages);
                 self.addNewPaginators();
-            }).fail(
-                osfHelpers.handleJSONError
-            );
+            }).fail(function(xhr) {
+                    self.searchWarningMsg(xhr.responseJSON && xhr.responseJSON.message_long);
+            });
         } else {
             self.results([]);
             self.currentPage(0);
@@ -118,7 +122,10 @@ var AddPointerViewModel = oop.extend(Paginator, {
     submit: function() {
         var self = this;
         self.submitEnabled(false);
+        self.submitWarningMsg('');
+
         var nodeIds = osfHelpers.mapByProperty(self.selection(), 'id');
+
         osfHelpers.postJSON(
             nodeApiUrl + 'pointer/', {
                 nodeIds: nodeIds
@@ -127,13 +134,15 @@ var AddPointerViewModel = oop.extend(Paginator, {
             window.location.reload();
         }).fail(function(data) {
             self.submitEnabled(true);
-            osfHelpers.handleJSONError(data);
+            self.submitWarningMsg(data.responseJSON && data.responseJSON.message_long);
         });
     },
     clear: function() {
         this.query('');
         this.results([]);
         this.selection([]);
+        this.searchWarningMsg('');
+        this.submitWarningMsg('');
     },
     authorText: function(node) {
         var rv = node.firstAuthor;
