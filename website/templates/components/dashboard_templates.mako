@@ -139,12 +139,13 @@
         <form data-bind="submit: submitCreateAndUpload, visible:createAndUpload">
             <div class="row">
                 <div class="col-md-12">
-                    <h4> "OR" Upload to a New Project</h4>
+                    <h4> OR Upload to a new project</h4>
                     <input class="form-control"
                         type="text" name="title"
                         maxlength="200"
                         data-bind="value: newProjectName"
-                        placeholder="Enter a Project name"
+                        placeholder="Enter a project name"
+                        style="font-size:16px"
                     >
                 </div>
             </div>
