@@ -69,9 +69,9 @@
                                     <td colspan="2">
                                         <form data-bind="submit: addEmail">
                                             <div class="form-group">
-                                              <input placeholder="Email address" data-bind="value: emailInput" class="form-control">
+                                              <input placeholder="Email address" data-bind="value: emailInput, valueUpdate: 'input'" class="form-control">
                                             </div>
-                                            <input type="submit" value="Add Email" class="btn btn-default">
+                                            <input type="submit" value="Add Email" class="btn btn-default" data-bind="enable: enableSubmit">
                                         </form>
                                         <div class="help-block">
                                             <p data-bind="html: message, attr: {class: messageClass}"></p>

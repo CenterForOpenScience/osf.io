@@ -165,13 +165,19 @@ var UserProfileViewModel = oop.extend(ChangeMessageMixin, {
         this.super.constructor.call(this);
         this.client = new UserProfileClient();
         this.profile = ko.observable(new UserProfile());
-        this.emailInput = ko.observable();
+        this.emailInput = ko.observable('');
+
+        this.enableSubmit = ko.pureComputed(function ()
+        {
+            return this.emailInput() !== '';
+        }, this);
 
     },
     init: function () {
         this.client.fetch().done(
             function(profile) { this.profile(profile); }.bind(this)
         );
+        console.log(this.enableSubmit());
     },
     addEmail: function () {
         this.changeMessage('', 'text-info');
