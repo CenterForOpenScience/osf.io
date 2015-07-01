@@ -177,6 +177,18 @@ class NodeContributorDetail(generics.RetrieveUpdateDestroyAPIView, NodeMixin):
         node.remove_contributor(instance, auth)
         node.save()
 
+    #todo move this, combine with method in views?
+    def has_multiple_admin_contributors(self):
+        #Created due to issues with admin contributors methods
+        node = self.get_node()
+        has_one_admin = False
+        for contributor in node.contributors:
+            if node.has_permission(contributor, 'admin'):
+                if has_one_admin:
+                    return True
+                has_one_admin = True
+        return False
+
 
 class NodeRegistrationsList(generics.ListAPIView, NodeMixin):
     """Registrations of the current node.

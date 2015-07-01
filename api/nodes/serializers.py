@@ -192,7 +192,7 @@ class ContributorDetailSerializer(ContributorSerializer):
             pass
         elif admin_field:
             node.add_permission(user, 'admin', save=True)
-        elif node.has_multiple_admin_contributors == 1:
+        elif self.context['view'].has_multiple_admin_contributors():
             node.remove_permission(user, 'admin', save=True)
         else:
             raise PermissionDenied('User {} is the only admin.'.format(user))

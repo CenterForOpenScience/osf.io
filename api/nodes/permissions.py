@@ -30,10 +30,21 @@ class AdminOrPublic(permissions.BasePermission):
         node = Node.load(request.parser_context['kwargs']['node_id'])
         if request.method in permissions.SAFE_METHODS:
             return node.is_public or node.can_view(auth)
-        elif request.method != 'DELETE' or node.has_multiple_admin_contributors:
+        elif request.method != 'DELETE' or self.has_multiple_admin_contributors(node):
             return node.has_permission(auth.user, 'admin')
         else:
             return False
+
+    #todo move this, combine with method in views?
+    def has_multiple_admin_contributors(self, node):
+        #Created due to issues with admin contributors methods
+        has_one_admin = False
+        for contributor in node.contributors:
+            if node.has_permission(contributor, 'admin'):
+                if has_one_admin:
+                    return True
+                has_one_admin = True
+        return False
 
 
 class ContributorOrPublicForPointers(permissions.BasePermission):

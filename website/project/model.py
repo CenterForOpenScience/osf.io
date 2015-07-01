@@ -964,17 +964,6 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
             key=lambda user: user.family_name,
         )
 
-    @property
-    def has_multiple_admin_contributors(self):
-        #Created due to issues with admin contributors methods
-        has_one_admin = False
-        for contributor in self.contributors:
-            if self.has_permission(contributor, 'admin'):
-                if has_one_admin:
-                    return True
-                has_one_admin = True
-        return False
-
     def get_visible(self, user):
         if not self.is_contributor(user):
             raise ValueError(u'User {0} not in contributors'.format(user))
