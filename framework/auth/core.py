@@ -56,7 +56,6 @@ def string_required(value):
 
 
 def validate_history_item(item):
-    string_required(item.get('institution'))
     startMonth = item.get('startMonth')
     startYear = item.get('startYear')
     endMonth = item.get('endMonth')
