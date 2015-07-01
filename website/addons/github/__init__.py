@@ -1,5 +1,6 @@
 import os
 
+from website.settings import TEMPLATES_PATH
 from . import routes, views, model
 
 MODELS = [
@@ -37,5 +38,5 @@ GET_HGRID_DATA = views.hgrid.github_hgrid_data
 MAX_FILE_SIZE = 100
 
 HERE = os.path.dirname(os.path.abspath(__file__))
-NODE_SETTINGS_TEMPLATE = os.path.join(HERE, 'templates', 'github_node_settings.mako')
+NODE_SETTINGS_TEMPLATE = os.path.join(TEMPLATES_PATH, 'project', 'addon', 'flat_node_settings_default.mako');
 USER_SETTINGS_TEMPLATE = None
