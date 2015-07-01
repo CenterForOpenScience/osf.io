@@ -258,3 +258,8 @@ a {
     border: none !important;
     box-shadow: none !important;
 }
+
+.bootbox.modal h4 {
+    font-size: 24px;
+    font-weight: normal;
+}
