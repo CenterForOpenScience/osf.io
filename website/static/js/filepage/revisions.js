@@ -28,6 +28,7 @@ var FileRevisionsTable = {
         self.file = file;
         self.canEdit = canEdit;
         self.enableEditing = enableEditing;
+        self.baseUrl = (window.location.href).split('?')[0];
 
         model.hasDate = self.file.provider !== 'dataverse';
 
@@ -100,9 +101,8 @@ var FileRevisionsTable = {
             var isSelected = index === model.selectedRevision;
 
             return m('tr' + (isSelected ? '.active' : ''), [
-                m('td',  isSelected ?
-                        revision.displayVersion :
-                        m('a', {href: parseInt(revision.displayVersion) === model.revisions.length ? self.baseUrl : revision.osfViewUrl}, revision.displayVersion)
+                m('td',  isSelected ? revision.displayVersion :
+                  m('a', {href: parseInt(revision.displayVersion) === model.revisions.length ? self.baseUrl : revision.osfViewUrl}, revision.displayVersion)
                 ),
                 model.hasDate ? m('td', revision.displayDate) : false,
                 model.hasUser ?

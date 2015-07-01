@@ -63,19 +63,18 @@
 
 <h4 class="m-t-lg f-w-lg">What is coming to the OSF?</h4>
 
-<p>The OSF infrastructure will be open-sourced to encourage a community of
-    developers to contribute to open science by adding features and improving
-    existing features. For updates on new features, you can join our <a href="https://groups.google.com/forum/#!forum/openscienceframework">Google
+For updates on new features, you can join our <a href="https://groups.google.com/forum/#!forum/openscienceframework">Google
         Group</a>, find us on <a
             href="https://twitter.com/osframework">Twitter</a> and on <a
             href="https://www.facebook.com/OpenScienceFramework">Facebook</a>,
     or follow the COS <a
             href="https://github.com/centerforopenscience">GitHub</a> page.</p>
-<h4 class="m-t-lg f-w-lg">How can I help develop the OSF?</h4><p>If you are a developer, email the <a
-        href="mailto:contact@osf.io">dev team</a> for
-    more information. If you want to comment on how to make the OSF more useful
-    for managing your workflow, send comments <a
-            href="mailto:contact@osf.io">here</a>.</p>
+
+<h4 class="m-t-lg f-w-lg">How can I help develop the OSF?</h4>
+<p>If you are a developer, check out the source code for the OSF <a href="https://github.com/CenterForOpenScience/osf.io">on GitHub</a>.
+        The <a href="https://github.com/CenterForOpenScience/osf.io/issues">issue tracker</a> is a good place to find ways to help. For more information, send an email to <a
+          href="mailto:contact@osf.io">contact@osf.io</a>.</p>
+
 
 <h4 class="m-t-lg f-w-lg">Is the OSF HIPAA compliant?</h4>
 <p>You should refer to your institutional policies regarding specific security requirements for your research.</p>

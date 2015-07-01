@@ -30,14 +30,3 @@
         </div><!-- end modal- content -->
     </div><!-- end modal-dialog -->
 </div><!-- end modal -->
-
-<script type="text/javascript">
-        $(document).ready(function() {
-            $('#confirm').on('click', function () {
-                $("#alert").text("");
-                $("#title").val("");
-                $("#category").val("");
-
-            });
-        });
-</script>

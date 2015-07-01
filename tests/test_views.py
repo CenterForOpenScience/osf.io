@@ -8,6 +8,7 @@ import json
 import datetime as dt
 import mock
 import httplib as http
+import math
 
 from nose.tools import *  # noqa PEP8 asserts
 from tests.test_features import requires_search
@@ -20,10 +21,11 @@ from framework.exceptions import HTTPError
 from framework.auth import User, Auth
 from framework.auth.utils import impute_names_model
 from framework.auth.exceptions import InvalidTokenError
+from framework.tasks import handlers
 
 from website import mailchimp_utils
 from website.views import _rescale_ratio
-from website.util import permissions
+from website.util import permissions, sanitize
 from website.models import Node, Pointer, NodeLog
 from website.project.model import ensure_schemas, has_anonymous_link
 from website.project.views.contributor import (
@@ -472,24 +474,21 @@ class TestProjectViews(OsfTestCase):
         assert_true(self.project.is_public)
 
     def test_add_tag(self):
-        url = "/api/v1/project/{0}/addtag/{tag}/".format(
-            self.project._primary_key,
-            tag="footag",
-        )
-        self.app.post_json(url, {}, auth=self.auth)
+        url = self.project.api_url_for('project_add_tag')
+        self.app.post_json(url, {'tag': "foo'ta#@%#%^&g?"}, auth=self.auth)
         self.project.reload()
-        assert_in("footag", self.project.tags)
+        assert_in("foo'ta#@%#%^&g?", self.project.tags)
+        assert_equal("foo'ta#@%#%^&g?", self.project.logs[-1].params['tag'])
 
     def test_remove_tag(self):
-        self.project.add_tag("footag", auth=self.consolidate_auth1, save=True)
-        assert_in("footag", self.project.tags)
-        url = "/api/v1/project/{0}/removetag/{tag}/".format(
-            self.project._primary_key,
-            tag="footag",
-        )
-        self.app.post_json(url, {}, auth=self.auth)
+        self.project.add_tag("foo'ta#@%#%^&g?", auth=self.consolidate_auth1, save=True)
+        assert_in("foo'ta#@%#%^&g?", self.project.tags)
+        url = self.project.api_url_for("project_remove_tag")
+        self.app.delete_json(url, {"tag": "foo'ta#@%#%^&g?"}, auth=self.auth)
         self.project.reload()
-        assert_not_in("footag", self.project.tags)
+        assert_not_in("foo'ta#@%#%^&g?", self.project.tags)
+        assert_equal("tag_removed", self.project.logs[-1].action)
+        assert_equal("foo'ta#@%#%^&g?", self.project.logs[-1].params['tag'])
 
     @mock.patch('website.archiver.tasks.archive.si')
     def test_register_template_page(self, mock_archive):
@@ -608,6 +607,31 @@ class TestProjectViews(OsfTestCase):
         invalid_input = 'invalid page'
         res = self.app.get(
             url, {'page': invalid_input}, auth=self.auth, expect_errors=True
+        )
+        assert_equal(res.status_code, 400)
+        assert_equal(
+            res.json['message_long'],
+            'Invalid value for "page".'
+        )
+
+    def test_get_logs_negative_page_num(self):
+        url = self.project.api_url_for('get_logs')
+        invalid_input = -1
+        res = self.app.get(
+            url, {'page': invalid_input}, auth=self.auth, expect_errors=True
+        )
+        assert_equal(res.status_code, 400)
+        assert_equal(
+            res.json['message_long'],
+            'Invalid value for "page".'
+        )
+
+    def test_get_logs_page_num_beyond_limit(self):
+        url = self.project.api_url_for('get_logs')
+        size = 10
+        page_num = math.ceil(len(self.project.logs)/ float(size))
+        res = self.app.get(
+            url, {'page': page_num}, auth=self.auth, expect_errors=True
         )
         assert_equal(res.status_code, 400)
         assert_equal(
@@ -1328,6 +1352,68 @@ class TestUserProfile(OsfTestCase):
         res = self.app.put_json(url, header, auth=user1.auth, expect_errors=True)
         assert_equal(res.status_code, 400)
         assert_equal(res.json['message_long'], '"id" is required')
+
+    @mock.patch('framework.auth.views.mails.send_mail')
+    @mock.patch('website.mailchimp_utils.get_mailchimp_api')
+    def test_update_user_mailing_lists(self, mock_get_mailchimp_api, send_mail):
+        email = fake.email()
+        self.user.emails.append(email)
+        list_name = 'foo'
+        self.user.mailing_lists[list_name] = True
+        self.user.save()
+
+        mock_client = mock.MagicMock()
+        mock_get_mailchimp_api.return_value = mock_client
+        mock_client.lists.list.return_value = {'data': [{'id': 1, 'list_name': list_name}]}
+        list_id = mailchimp_utils.get_list_id_from_name(list_name)
+
+        url = api_url_for('update_user', uid=self.user._id)
+        emails = [
+            {'address': self.user.username, 'primary': False, 'confirmed': True},
+            {'address': email, 'primary': True, 'confirmed': True}]
+        payload = {'locale': '', 'id': self.user._id, 'emails': emails}
+        self.app.put_json(url, payload, auth=self.user.auth)
+
+        mock_client.lists.unsubscribe.assert_called_with(
+            id=list_id,
+            email={'email': self.user.username}
+        )
+        mock_client.lists.subscribe.assert_called_with(
+            id=list_id,
+            email={'email': email},
+            merge_vars={
+                'fname': self.user.given_name,
+                'lname': self.user.family_name,
+            },
+            double_optin=False,
+            update_existing=True
+        )
+        handlers.celery_teardown_request()
+
+    @mock.patch('framework.auth.views.mails.send_mail')
+    @mock.patch('website.mailchimp_utils.get_mailchimp_api')
+    def test_unsubscribe_mailchimp_not_called_if_user_not_subscribed(self, mock_get_mailchimp_api, send_mail):
+        email = fake.email()
+        self.user.emails.append(email)
+        list_name = 'foo'
+        self.user.mailing_lists[list_name] = False
+        self.user.save()
+
+        mock_client = mock.MagicMock()
+        mock_get_mailchimp_api.return_value = mock_client
+        mock_client.lists.list.return_value = {'data': [{'id': 1, 'list_name': list_name}]}
+
+        url = api_url_for('update_user', uid=self.user._id)
+        emails = [
+            {'address': self.user.username, 'primary': False, 'confirmed': True},
+            {'address': email, 'primary': True, 'confirmed': True}]
+        payload = {'locale': '', 'id': self.user._id, 'emails': emails}
+        self.app.put_json(url, payload, auth=self.user.auth)
+
+        assert_equal(mock_client.lists.unsubscribe.call_count, 0)
+        assert_equal(mock_client.lists.subscribe.call_count, 0)
+        handlers.celery_teardown_request()
+
 
 class TestUserAccount(OsfTestCase):
 
@@ -4026,6 +4112,16 @@ class TestProjectCreation(OsfTestCase):
         node = Node.load(res.json['projectUrl'].replace('/', ''))
         assert_true(node)
         assert_true(node.title, 'Im a real title')
+
+    def test_new_project_returns_serialized_node_data(self):
+        payload = {
+            'title': 'Im a real title'
+        }
+        res = self.app.post_json(self.url, payload, auth=self.creator.auth)
+        assert_equal(res.status_code, 201)
+        node = res.json['newNode']
+        assert_true(node)
+        assert_equal(node['title'], 'Im a real title')
 
     def test_description_works(self):
         payload = {

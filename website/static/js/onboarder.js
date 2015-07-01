@@ -23,6 +23,8 @@ var $osf = require('js/osfHelpers');
 function noop() {}
 var MAX_RESULTS = 14;
 var DEFAULT_FETCH_URL = '/api/v1/dashboard/get_nodes/';
+var CREATE_URL = '/api/v1/project/new/';
+
 
 var substringMatcher = function(strs) {
     return function findMatches(q, cb) {
@@ -416,8 +418,10 @@ function OBUploaderViewModel(params) {
     self.enableUpload = ko.observable(true);
     self.filename = ko.observable('');
     self.iconSrc = ko.observable('');
+    self.newProjectName = ko.observable(null);
     self.uploadCount = ko.observable(1);
     self.disableComponents = ko.observable(false);
+    self.createAndUpload = ko.observable(true);
     // Flashed messages
     self.message = ko.observable('');
     self.messageClass = ko.observable('text-info');
@@ -458,6 +462,17 @@ function OBUploaderViewModel(params) {
         self.message('');
         self.messageClass('text-info');
     };
+
+    self.showCreateAndUpload = function() {
+        self.clearMessages();
+        self.createAndUpload(true);
+    };
+
+    self.hideCreateAndUpload = function(selected) {
+        self.clearMessages();
+        self.createAndUpload(false);
+    };
+
     self.clearDropzone = function() {
         if (self.dropzone.getUploadingFiles().length) {
             self.changeMessage('Upload canceled.', 'text-info');
@@ -491,7 +506,6 @@ function OBUploaderViewModel(params) {
         }
     };
 
-
     var dropzoneOpts = {
 
         sending: function(file, xhr) {
@@ -522,7 +536,7 @@ function OBUploaderViewModel(params) {
         parallelUploads: 1,
         // Don't use dropzone's default preview
         previewsContainer: false,
-        // Cusom error messages
+        // Custom error messages
         dictFileTooBig: 'File is too big ({{filesize}} MB). Max filesize: {{maxFilesize}} MB.',
         // Set up listeners on initialization
         init: function() {
@@ -567,7 +581,7 @@ function OBUploaderViewModel(params) {
 
             // add file logic and dropzone to file display swap
             this.on('addedfile', function(file) {
-                if(dropzone.files.length>1){
+                if(dropzone.files.length > 1){
                     self.iconSrc('/static/img/upload_icons/multiple_blank.png');
                     self.filename(dropzone.files.length + ' files');
                 }else{
@@ -588,8 +602,40 @@ function OBUploaderViewModel(params) {
                 'the page now, your file will not be stored.';
         }
     });
-}
 
+    self.submitCreateAndUpload = function() {
+        if (!self.dropzone.getQueuedFiles().length) {
+            self.changeMessage('Please select at least one file to upload.', 'text-danger');
+            return false;
+        }
+        if (self.newProjectName() === null || self.newProjectName().trim() === '') {
+            self.changeMessage('Please select a project.', 'text-danger');
+            return false;
+        }
+        if (self.newProjectName() && self.dropzone.getQueuedFiles().length !== 0) {
+            var request = $osf.postJSON(
+                CREATE_URL,
+                {
+                    title: self.newProjectName()
+                }
+            );
+            request.done(self.createSuccess);
+            request.fail(self.createFailure);
+        }
+    };
+
+    self.createSuccess = function(response) {
+        var node = serializeNode(response.newNode);
+        self.startUpload(node, self.selectedComponent, node.title, '');
+    };
+
+    self.createFailure = function(xhr, textStatus, error) {
+         Raven.captureMessage('Could not create a new project.', {
+            textStatus: textStatus,
+            error: error
+         });
+    };
+}
 ko.components.register('osf-ob-uploader', {
     viewModel: OBUploaderViewModel,
     template: {element: 'osf-ob-uploader'}

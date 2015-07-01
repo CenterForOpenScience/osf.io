@@ -14,7 +14,8 @@ from elasticsearch import (
     Elasticsearch,
     RequestError,
     NotFoundError,
-    ConnectionError
+    ConnectionError,
+    helpers,
 )
 
 from framework import sentry
@@ -212,23 +213,32 @@ def load_parent(parent_id):
     return parent_info
 
 
+COMPONENT_CATEGORIES = set([k for k in Node.CATEGORY_MAP.keys() if not k == 'project'])
+
+def get_doctype_from_node(node):
+
+    if node.category in COMPONENT_CATEGORIES:
+        return 'component'
+    elif node.is_registration:
+        return 'registration'
+    else:
+        return node.category
+
+
 @requires_search
 def update_node(node, index=None):
     index = index or INDEX
     from website.addons.wiki.model import NodeWikiPage
 
-    component_categories = [k for k in Node.CATEGORY_MAP.keys() if not k == 'project']
-    category = 'component' if node.category in component_categories else node.category
+    category = get_doctype_from_node(node)
 
     if category == 'project':
         elastic_document_id = node._id
         parent_id = None
-        category = 'registration' if node.is_registration else category
     else:
         try:
             elastic_document_id = node._id
             parent_id = node.parent_id
-            category = 'registration' if node.is_registration else category
         except IndexError:
             # Skip orphaned components
             return
@@ -280,6 +290,34 @@ def update_node(node, index=None):
         es.index(index=index, doc_type=category, id=elastic_document_id, body=elastic_document, refresh=True)
 
 
+def bulk_update_contributors(nodes, index=INDEX):
+    """Updates only the list of contributors of input projects
+
+    :param nodes: Projects, components or registrations
+    :param index: Index of the nodes
+    :return:
+    """
+    actions = []
+    for node in nodes:
+        actions.append({
+            '_op_type': 'update',
+            '_index': index,
+            '_id': node._id,
+            '_type': get_doctype_from_node(node),
+            'doc': {
+                'contributors': [
+                    {
+                        'fullname': user.fullname,
+                        'url': user.profile_url if user.is_active else None
+                    } for user in node.visible_contributors
+                    if user is not None
+                    and user.is_active
+                ]
+            }
+        })
+    return helpers.bulk(es, actions)
+
+
 @requires_search
 def update_user(user, index=None):
     index = index or INDEX
@@ -315,7 +353,9 @@ def update_user(user, index=None):
         'names': names,
         'job': user.jobs[0]['institution'] if user.jobs else '',
         'job_title': user.jobs[0]['title'] if user.jobs else '',
+        'all_jobs': [job['institution'] for job in user.jobs[1:]],
         'school': user.schools[0]['institution'] if user.schools else '',
+        'all_schools': [school['institution'] for school in user.schools],
         'category': 'user',
         'degree': user.schools[0]['degree'] if user.schools else '',
         'social': user.social_links,
@@ -353,6 +393,26 @@ def create_index(index=None):
                          for field in analyzed_fields}
             mapping['properties'].update(analyzers)
 
+        if type_ == 'user':
+            fields = {
+                'job': {
+                    'type': 'string',
+                    'boost': '1',
+                },
+                'all_jobs': {
+                    'type': 'string',
+                    'boost': '0.01',
+                },
+                'school': {
+                    'type': 'string',
+                    'boost': '1',
+                },
+                'all_schools': {
+                    'type': 'string',
+                    'boost': '0.01'
+                },
+            }
+            mapping['properties'].update(fields)
         es.indices.put_mapping(index=index, doc_type=type_, body=mapping, ignore=[400, 404])
 
 
@@ -364,7 +424,7 @@ def delete_doc(elastic_document_id, node, index=None, category=None):
 
 
 @requires_search
-def search_contributor(query, page=0, size=10, exclude=[], current_user=None):
+def search_contributor(query, page=0, size=10, exclude=None, current_user=None):
     """Search for contributors to add to a project using elastic search. Request must
     include JSON data with a "query" field.
 
@@ -380,7 +440,7 @@ def search_contributor(query, page=0, size=10, exclude=[], current_user=None):
     """
     start = (page * size)
     items = re.split(r'[\s-]+', query)
-
+    exclude = exclude or []
     normalized_items = []
     for item in items:
         try:
@@ -394,7 +454,7 @@ def search_contributor(query, page=0, size=10, exclude=[], current_user=None):
     query = ''
 
     query = "  AND ".join('{}*~'.format(re.escape(item)) for item in items) + \
-            "".join(' NOT "{}"'.format(excluded) for excluded in exclude)
+            "".join(' NOT id:"{}"'.format(excluded._id) for excluded in exclude)
 
     results = search(build_query(query, start=start, size=size), index=INDEX, doc_type='user')
     docs = results['results']

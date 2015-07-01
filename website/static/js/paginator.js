@@ -12,6 +12,7 @@ var MAX_PAGES_ON_PAGINATOR_SIDE = 5;
 
 var Paginator = oop.defclass({
     constructor: function() {
+        this.pageToGet = ko.observable(0);
         this.numberOfPages = ko.observable(0);
         this.currentPage = ko.observable(0);
         this.paginators = ko.observableArray([]);
@@ -32,7 +33,7 @@ var Paginator = oop.defclass({
                 style: (self.currentPage() === 0) ? 'active' : '',
                 text: '1',
                 handler: function() {
-                    self.currentPage(0);
+                    self.pageToGet(0);
                     self.fetchResults();
                 }
             });
@@ -42,7 +43,7 @@ var Paginator = oop.defclass({
                         style: (self.currentPage() === i) ? 'active' : '',
                         text: i + 1,
                         handler: function() {
-                            self.currentPage(parseInt(this.text) - 1);
+                            self.pageToGet(parseInt(this.text) - 1);
                             self.fetchResults();
                         }
                     });/* jshint ignore:line */
@@ -54,7 +55,7 @@ var Paginator = oop.defclass({
                         style: (self.currentPage() === i) ? 'active' : '',
                         text: i + 1,
                         handler: function() {
-                            self.currentPage(parseInt(this.text) - 1);
+                            self.pageToGet(parseInt(this.text) - 1);
                             self.fetchResults();
                         }
                     });/* jshint ignore:line */
@@ -77,7 +78,7 @@ var Paginator = oop.defclass({
                         style: (self.currentPage() === i) ? 'active' : '',
                         text: i + 1,
                         handler: function() {
-                            self.currentPage(parseInt(this.text) - 1);
+                            self.pageToGet(parseInt(this.text) - 1);
                             self.fetchResults();
                         }
                     });/* jshint ignore:line */
@@ -95,7 +96,7 @@ var Paginator = oop.defclass({
                         style: (self.currentPage() === i) ? 'active' : '',
                         text: i + 1,
                         handler: function() {
-                            self.currentPage(parseInt(this.text) - 1);
+                            self.pageToGet(parseInt(this.text) - 1);
                             self.fetchResults();
                         }
                     });/* jshint ignore:line */
@@ -112,7 +113,7 @@ var Paginator = oop.defclass({
                 style: (self.currentPage() === self.numberOfPages() - 1) ? 'active' : '',
                 text: self.numberOfPages(),
                 handler: function() {
-                    self.currentPage(self.numberOfPages() - 1);
+                    self.pageToGet(self.numberOfPages() - 1);
                     self.fetchResults();
                 }
             });
@@ -124,11 +125,11 @@ var Paginator = oop.defclass({
         }
     },
     nextPage: function(){
-        this.currentPage(this.currentPage() + 1);
+        this.pageToGet(this.currentPage() + 1);
         this.fetchResults();
     },
     previousPage: function(){
-        this.currentPage(this.currentPage() - 1);
+        this.pageToGet(this.currentPage() - 1);
         this.fetchResults();
     },
     fetchResults: function() {
