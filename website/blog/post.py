@@ -64,6 +64,7 @@ def parse_header(blog_, guid, user, password):
             'name': 'Jo Bloggs',
             'bio': 'test bio',
             'url': '/author/1',
+            'image': '/static/ghost_themes/puppies.jpg',
             'location': 'Location',
             'website': 'http://facebook.com'
         }

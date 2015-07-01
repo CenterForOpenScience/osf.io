@@ -2,6 +2,7 @@ import logging
 import httplib
 import httplib as http
 import urllib as url
+from urlparse import urlparse, parse_qsl, urlunparse
 import requests
 
 import post
@@ -11,6 +12,7 @@ from HTMLParser import HTMLParser
 from ghostpy._compiler import _ghostpy_
 
 from framework.auth.decorators import collect_auth
+from mako.template import Template
 from framework.exceptions import HTTPError, PermissionsError
 
 from website.models import User
@@ -18,7 +20,7 @@ from website.profile import utils as profile_utils
 
 user = 'pierce.tickle@gmail.com'
 password = 'password'
-theme = "website/static/ghost_themes/openwriter"
+theme = "website/static/ghost_themes/casper"
 renderer = Renderer(theme)
 
 
@@ -66,7 +68,7 @@ def render_index(guid):
     # html_file.close()
     return html
 
-def render_post(guid, file):
+def render_post(guid, file, uid=None):
     file_handler = FileHandler(guid, user, password)
     hbs = theme + "/post.hbs"
     _ghostpy_['theme'] = theme
@@ -77,21 +79,33 @@ def render_post(guid, file):
     default_dict = {'body': output,
                     'date': '2015-09-04',
                     'body_class': 'post-template'}
-    html = renderer.render(theme + '/default.hbs', default_dict)
+    mako = renderer.render(theme + '/default.hbs', default_dict)
     parser = HTMLParser()
-    html = parser.unescape(html)
+    mako = Template(parser.unescape(mako))
+
     # html_file = open("post.html", "w")
     # html_file.write(html.encode('utf-8'))
     # html_file.close()
-    return html
+    uri = "http://localhost:8000"
+    path = "/v2/users/" + uid + "/?format=json"
+    json = requests.get(uri+path, auth=(user, password)).json()['data']
+    image_url = json.get('gravatar_url')
+    parse = urlparse(image_url)
+    queries = parse_qsl(parse.query)
+    queries = [(k, v) if (k != 'size') else ('size', '160') for (k, v) in queries]
+    url_split = parse._replace(query=url.urlencode(queries))
+    image = urlunparse(tuple(url_split))
+    return mako.render(image=image)
 
 
 def _post_view(guid, bid, is_profile=False):
     _ghostpy_['context'].append('post')
     blog_file = url.unquote(bid).decode('utf8')[:-1] + ".md"
+    uid = None
     if is_profile:
+        uid = guid
         guid = get_blog_dir(guid)
-    post = render_post(guid, blog_file)
+    post = render_post(guid, blog_file, uid=uid)
     return {
         'post': post
     }
