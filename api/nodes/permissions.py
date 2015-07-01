@@ -61,7 +61,7 @@ class ContributorOrPublicForPointers(permissions.BasePermission):
             has_auth = public or (has_parent_auth and has_pointer_auth)
             return has_auth
         else:
-            has_auth = parent_node.can_edit(auth)
+            has_auth = parent_node.can_edit(auth) and pointer_node.can_edit(auth)
             return has_auth
 
 
