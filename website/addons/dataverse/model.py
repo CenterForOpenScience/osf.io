@@ -79,6 +79,14 @@ class AddonDataverseUserSettings(AddonUserSettingsBase):
     def has_auth(self):
         return bool(self.api_token)
 
+    def to_json(self, user):
+        ret = super(AddonDataverseUserSettings, self).to_json(user)
+        ret.update({
+            'dataverseUsername': self.owner.display_full_name(),
+            'profile_url': self.owner.profile_url,
+        })
+        return ret
+
     @property
     def dataverse_password(self):
         if self.encrypted_password is None:

@@ -7,7 +7,7 @@
         Dataverse
         <span data-bind="if: showDeleteAuth">
             <small class="authorized-by">
-                authorized by {{ dataverseUsername }}
+                authorized by <a href=${profile_url}><em>${dataverseUsername}</em></a>
                     <a data-bind="click: deleteKey" class="text-danger pull-right addon-auth">Disconnect Account</a>
 
             </small>
