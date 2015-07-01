@@ -25,20 +25,20 @@ window.contextVars = {
 
 var ProjectSettings = require('js/projectSettings.js');
 
-var NodeCategoryTitleDescriptionSettings = ProjectSettings.NodeCategoryTitleDescriptionSettings;
+var ProjectSettings= ProjectSettings.ProjectSettings;
 
-describe('NodeCategoryTitleDescriptionSettings', () => {
+describe('ProjectSettings', () => {
     var category = faker.internet.domainWord();
     var categories = [];
     for (var i = 0; i < 10; i++) {
         categories.push(faker.internet.domainWord());
     }
     var updateUrl = faker.internet.ip();
-    var vm = new NodeCategoryTitleDescriptionSettings(category, categories, updateUrl);
+    var vm = new ProjectSettings({category: category, categories: categories, updateUrl: updateUrl});
     describe('#constructor', function() {
         it('throws an error if no updateUrl is passed', () => {
             var broken = function() {
-                new NodeCategoryTitleDescriptionSettings(category, categories);
+                new ProjectSettings({category: category, categories: categories});
             };
             assert.throws(broken , vm.INSTANTIATION_ERROR_MESSAGE);
         });

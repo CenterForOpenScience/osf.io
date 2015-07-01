@@ -8,87 +8,75 @@ var $osf = require('js/osfHelpers');
 var oop = require('js/oop');
 var ChangeMessageMixin = require('js/changeMessage');
 
-var NodeCategoryTitleDescriptionSettings = oop.extend(
+var ProjectSettings = oop.extend(
     ChangeMessageMixin,
     {
-        constructor: function(category, categories, updateUrl, disabled) {
+        constructor: function(params) {
             this.super.constructor.call(this);
 
             var self = this;
             self.currentNode = window.contextVars.node;
-            self.titleDescriptionEditUrl = self.currentNode.api_url;
-            self.decodedTitle = $osf.htmlDecode(self.currentNode.title);
-            self.decodedDescription = $osf.htmlDecode(self.currentNode.description);
+
+            self.titleDescriptionEditUrl = params['api_url'];
+            self.decodedTitle = $osf.htmlDecode(params['currentTitle']);
+            self.decodedDescription = $osf.htmlDecode(params['currentDescription']);
             self.title = ko.observable(self.decodedTitle);
             self.description = ko.observable(self.decodedDescription);
 
-            self.disabled = disabled || false;
+            self.disabled = params['disabled'] || false;
 
-            self.UPDATE_SUCCESS_MESSAGE = 'Category updated successfully';
-            self.UPDATE_ERROR_MESSAGE = 'Error updating category, please try again. If the problem persists, email ' +
+            self.UPDATE_SUCCESS_MESSAGE = 'Category, title, and description updated successfully';
+            self.UPDATE_CATEGORY_ERROR_MESSAGE = 'Error updating category, please try again. If the problem persists, email ' +
+                '<a href="mailto:support@osf.io">support@osf.io</a>.';
+            self.UPDATE_TITLE_ERROR_MESSAGE = 'Title cannot be blank.';
+            self.UPDATE_DESCRIPTION_ERROR_MESSAGE = 'Error updating description, please try again. If the problem persists, email ' +
                 '<a href="mailto:support@osf.io">support@osf.io</a>.';
             self.UPDATE_ERROR_MESSAGE_RAVEN = 'Error updating Node.category';
 
-            self.INSTANTIATION_ERROR_MESSAGE = 'Trying to instatiate NodeCategoryTitleDescriptionSettings view model without an update URL';
+            self.INSTANTIATION_ERROR_MESSAGE = 'Trying to instantiate ProjectSettings view model without an update URL';
 
             self.MESSAGE_SUCCESS_CLASS = 'text-success';
             self.MESSAGE_ERROR_CLASS = 'text-danger';
 
-            if (!updateUrl) {
+            if (!params['updateUrl']) {
                 throw new Error(self.INSTANTIATION_ERROR_MESSAGE);
             }
 
-            self.categories = categories;
-            self.category = ko.observable(category);
-            self.updateUrl = updateUrl;
-
-            self.selectedCategory = ko.observable(category);
-            self.dirty = ko.observable(false);
-
-            self.dirtyTitleDescription = ko.computed(function(){
-                return (self.title() !== self.decodedTitle ||
-                    self.description() !== self.decodedDescription)
-            }, self);
-
-            self.selectedCategory.subscribe(function(value) {
-                if (value !== self.category()) {
-                    self.dirty(true);
-                }
-            });
+            self.categories = params['categories'];
+            self.category = params['category'];
+            self.updateUrl = params['updateUrl'];
+            self.selectedCategory = ko.observable(params['category']);
         },
 
-        /*success handlers*/
-        updateCategorySuccess: function(newcategory) {
+        /*success handler*/
+        //TODO - refactor success handler to display success message after reloading
+        //Alternatively, do not reload.
+        updateSuccess: function(newcategory) {
             var self = this;
-            self.changeMessage(self.UPDATE_SUCCESS_MESSAGE, self.MESSAGE_SUCCESS_CLASS);
-            self.category(newcategory);
-            self.dirty(false);
-        },
-        //TODO - refactor title/description success handler to display success message
-        updateTitleDescriptionSuccess: function() {
-            window.location.reload();
+            window.location.reload()
         },
 
         /*error handlers*/
         updateCategoryError: function(xhr, status, error) {
             var self = this;
-            self.changeMessage(self.UPDATE_ERROR_MESSAGE, self.MESSAGE_ERROR_CLASS);
-            Raven.captureMessage(self.UPDATE_ERROR_MESSAGE_RAVEN, {
+            self.changeMessage(self.UPDATE_CATEGORY_ERROR_MESSAGE, self.MESSAGE_ERROR_CLASS);
+            Raven.captureMessage(self.UPDATE_CATEGORY_ERROR_MESSAGE_RAVEN, {
                 url: self.updateUrl,
                 textStatus: status,
                 err: error
             });
         },
         updateTitleError: function() {
-           $('#titleInputMessage').html('Title cannot be blank.');
+            var self = this;
+            self.changeMessage(self.UPDATE_TITLE_ERROR_MESSAGE, self.MESSAGE_ERROR_CLASS);
         },
         updateDescriptionError: function() {
-            $('#descriptionInputMessage').html('Error updating description, please try again.'+
-            ' If the problem persists, email <a href="mailto:support@osf.io">support@osf.io</a>.');
+            var self = this;
+            self.changeMessage(self.UPDATE_DESCRIPTION_ERROR_MESSAGE, self.MESSAGE_ERROR_CLASS);
         },
 
         /*update handlers*/
-        updateCategory: function() {
+        updateAll: function() {
             var self = this;
             return $osf.putJSON(self.updateUrl, {
                     category: self.selectedCategory()
@@ -96,45 +84,38 @@ var NodeCategoryTitleDescriptionSettings = oop.extend(
                 .then(function(response) {
                     return response.updated_fields.category;
                 })
-                .done(self.updateCategorySuccess.bind(self))
+                .done(self.updateTitle.bind(self))
                 .fail(self.updateCategoryError.bind(self));
         },
         updateTitle: function() {
             var self = this;
             return $osf.putJSON(self.titleDescriptionEditUrl, {
-                    title: $osf.htmlEscape(self.title()),
+                    title: $osf.htmlEscape(self.title())
                 })
-                .done(self.updateDescriptionAfterTitle.bind(self))
+                .done(self.updateDescription.bind(self))
                 .fail(self.updateTitleError.bind(self));
         },
-        updateDescriptionAfterTitle: function() {
+        updateDescription: function() {
             var self = this;
             return $osf.putJSON(self.titleDescriptionEditUrl, {
-                    description: $osf.htmlEscape(self.description()),
+                    description: $osf.htmlEscape(self.description())
                 })
-                .done(self.updateTitleDescriptionSuccess.bind(self))
+                .done(self.updateSuccess.bind(self))
                 .fail(self.updateDescriptionError.bind(self));
         },
 
         /*cancel handlers*/
-        cancelUpdateCategory: function() {
+        cancelAll: function() {
             var self = this;
-            self.selectedCategory(self.category());
-            self.dirty(false);
-            self.resetMessage();
-        },
-        cancelUpdateTitle: function() {
-            var self = this;
+            self.selectedCategory(self.category);
             self.title(self.decodedTitle);
-        },
-        cancelUpdateDescription: function() {
-            var self = this;
             self.description(self.decodedDescription);
+            self.resetMessage();
         }
     });
 
 var ProjectSettings = {
-    NodeCategoryTitleDescriptionSettings: NodeCategoryTitleDescriptionSettings
+    ProjectSettings: ProjectSettings
 };
 
 // TODO: Pass this in as an argument rather than relying on global contextVars
