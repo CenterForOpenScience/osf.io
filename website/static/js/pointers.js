@@ -57,7 +57,7 @@ var AddPointerViewModel = oop.extend(Paginator, {
                     query: self.query(),
                     nodeId: nodeId,
                     includePublic: self.includePublic(),
-                    page: self.currentPage()
+                    page: self.pageToGet()
                 }
             ).done(function(result) {
                 if (!result.nodes.length) {
