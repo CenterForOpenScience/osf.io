@@ -233,3 +233,19 @@ body {
     border-radius: 13px;
     margin-right: 5px;
 }
+
+.container-xxl {
+    width : 100%;
+    padding-left: 20px;
+    padding-right: 20px;
+}
+
+.unselectable {
+    -webkit-user-select: none;  /* Chrome all / Safari all */
+    -moz-user-select: none;     /* Firefox all */
+    -ms-user-select: none;      /* IE 10+ */
+
+    /* No support for these yet, use at own risk */
+    -o-user-select: none;
+    user-select: none;
+}
