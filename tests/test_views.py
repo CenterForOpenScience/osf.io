@@ -1423,7 +1423,7 @@ class TestUserProfile(OsfTestCase):
         assert_equals(res.status_code, 302)
         assert_equal(res.location, expected_redirect)
 
-    def test_twitter_redirect_to_non_existent_user_returns_HTTPBad_request(self):
+    def test_twitter_redirect_to_non_existent_user_returns_404(self):
         non_existent_uid = 'abc123'
         expected_error = 'There is no active user associated with user id: {0}.'.format(non_existent_uid)
 
@@ -1434,7 +1434,7 @@ class TestUserProfile(OsfTestCase):
         assert_equal(res.status_code, 404)
         assert_true(expected_error in res.body)
 
-    def test_twitter_redirect_for_user_without_handle_returns_HTTPBad_request(self):
+    def test_twitter_redirect_for_user_without_handle_returns_400(self):
         expected_error = '{0} does not have a Twitter handle associated with their account.'.format(self.user.fullname)
 
         res = self.app.get(
