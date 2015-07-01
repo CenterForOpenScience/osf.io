@@ -999,8 +999,6 @@ class TestNodeRegistrationDraftList(ApiTestCase):
         assert_equal(res.status_code, 403)
 
 
-
-
 class TestNodeChildrenList(ApiTestCase):
     def setUp(self):
         super(TestNodeChildrenList, self).setUp()
