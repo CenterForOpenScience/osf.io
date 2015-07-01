@@ -9,9 +9,12 @@ var bootbox = require('bootbox');
 require('jquery-qrcode');
 
 var osfHelpers = require('js/osfHelpers');
+var ChangeMessageMixin = require('js/changeMessage');
+
 
 function ViewModel(settingsUrl, qrCodeSelector) {
     var self = this;
+    ChangeMessageMixin.call(self);
     self.settingsUrl = settingsUrl;
     self.qrCodeSelector = qrCodeSelector;
     self.tfaCode = ko.observable('');
@@ -64,21 +67,6 @@ ViewModel.prototype.fetchFromServer = function() {
                 'If the problem persists, email ' +
                 '<a href="mailto:support@osf.io">support@osf.io</a>.', 'text-danger', 5000);
         });
-};
-
-/** Change the flashed message. */
-ViewModel.prototype.changeMessage = function(text, css, timeout) {
-    var self = this;
-    self.message(text);
-    var cssClass = css || 'text-info';
-    self.messageClass(cssClass);
-    if (timeout) {
-        // Reset message after timeout period
-        window.setTimeout(function() {
-            self.message('');
-            self.messageClass('text-info');
-        }, timeout);
-    }
 };
 
 ViewModel.prototype.submitSettings = function() {
