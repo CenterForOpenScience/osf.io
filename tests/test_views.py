@@ -1431,7 +1431,7 @@ class TestUserProfile(OsfTestCase):
             web_url_for('redirect_to_twitter', uid=non_existent_uid),
             expect_errors=True
         )
-        assert_equal(res.status_code, 400)
+        assert_equal(res.status_code, 404)
         assert_true(expected_error in res.body)
 
     def test_twitter_redirect_for_user_without_handle_returns_HTTPBad_request(self):

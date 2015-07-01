@@ -798,8 +798,8 @@ def redirect_to_twitter(uid):
     if user:
         twitter_handle = user.social.get('twitter', None)
     else:
-        raise HTTPError(http.BAD_REQUEST, data={
-            'message_short': 'Invalid Request',
+        raise HTTPError(http.NOT_FOUND, data={
+            'message_short': 'User Not Found',
             'message_long': 'There is no active user associated with user id: {0}.'.format(uid)
         })
 
