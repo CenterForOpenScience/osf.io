@@ -1,3 +1,4 @@
+from framework.exceptions import HTTPError
 import requests
 
 
@@ -35,7 +36,7 @@ def collect_files(node):
         addon_name = addon.config.short_name
         try:
             file_tree = addon._get_file_tree()
-        except AttributeError:
+        except (AttributeError, HTTPError):
             continue
 
         if addon_name == 'osfstorage':
