@@ -373,7 +373,7 @@ def edit_wiki_permissions(**kwargs):
     if wiki_settings is None:
         raise HTTPError(http.BAD_REQUEST)
 
-    if not wiki_settings.set_editing(permissions, auth, node):
+    if not wiki_settings.set_editing(permissions, auth, node, True):
         raise HTTPError(http.BAD_REQUEST, data=dict(
             message_short="Can't change privacy."
         ))
