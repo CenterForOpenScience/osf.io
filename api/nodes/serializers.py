@@ -167,13 +167,12 @@ class ContributorSerializer(UserSerializer):
         contributor = User.load(validated_data['_id'])
         if not contributor:
             raise NotFound('User with id {} cannot be found.'.format(validated_data['_id']))
-        elif node.add_contributor(contributor=contributor, auth=auth, save=True):
-            contributor.node_id = node._id
-            return contributor
         elif contributor in node.contributors:
-            raise ValidationError('User {} already is a contributor'.format(contributor.username))
+            raise ValidationError('User {} already is a contributor.'.format(contributor.username))
         else:
-            raise ValidationError('Error')
+            node.add_contributor(contributor=contributor, auth=auth, save=True)
+            contributor.node_id = node._id
+        return contributor
 
 
 class ContributorDetailSerializer(ContributorSerializer):

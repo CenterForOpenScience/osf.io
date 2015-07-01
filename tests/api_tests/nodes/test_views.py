@@ -799,6 +799,12 @@ class TestAddNodeContributor(ApiTestCase):
         res = self.app.post(self.url, params=self.user_data, auth=self.creator_auth, expect_errors=True)
         assert_equal(res.status_code, 400)
 
+    def test_creator_add_already_existing_contributor_with_non_default_conditions(self):
+        self.project.add_contributor(contributor=self.user,permissions=['read', 'write'], save=True)
+        res = self.app.post(self.url, params=self.user_data, auth=self.creator_auth, expect_errors=True)
+        assert_equal(res.status_code, 400)
+        assert_false(self.project.has_permission(self.user, 'admin'))
+
     def test_creator_add_non_existing_contributor(self):
         data = {'id': 'non_existent'}
         res = self.app.post(self.url, params=data, auth=self.creator_auth, expect_errors=True)
