@@ -17,13 +17,13 @@ var ProjectSettings = oop.extend(
             var self = this;
             self.currentNode = window.contextVars.node;
 
-            self.titleDescriptionEditUrl = params['api_url'];
-            self.decodedTitle = $osf.htmlDecode(params['currentTitle']);
-            self.decodedDescription = $osf.htmlDecode(params['currentDescription']);
+            self.titleDescriptionEditUrl = params.api_url;
+            self.decodedTitle = $osf.htmlDecode(params.currentTitle);
+            self.decodedDescription = $osf.htmlDecode(params.currentDescription);
             self.title = ko.observable(self.decodedTitle);
             self.description = ko.observable(self.decodedDescription);
 
-            self.disabled = params['disabled'] || false;
+            self.disabled = params.disabled || false;
 
             self.UPDATE_SUCCESS_MESSAGE = 'Category, title, and description updated successfully';
             self.UPDATE_CATEGORY_ERROR_MESSAGE = 'Error updating category, please try again. If the problem persists, email ' +
@@ -38,14 +38,14 @@ var ProjectSettings = oop.extend(
             self.MESSAGE_SUCCESS_CLASS = 'text-success';
             self.MESSAGE_ERROR_CLASS = 'text-danger';
 
-            if (!params['updateUrl']) {
+            if (!params.updateUrl) {
                 throw new Error(self.INSTANTIATION_ERROR_MESSAGE);
             }
 
-            self.categories = params['categories'];
-            self.category = params['category'];
-            self.updateUrl = params['updateUrl'];
-            self.selectedCategory = ko.observable(params['category']);
+            self.categories = params.categories;
+            self.category = params.category;
+            self.updateUrl = params.updateUrl;
+            self.selectedCategory = ko.observable(params.category);
         },
 
         /*success handler*/
@@ -53,7 +53,7 @@ var ProjectSettings = oop.extend(
         //Alternatively, do not reload.
         updateSuccess: function(newcategory) {
             var self = this;
-            window.location.reload()
+            window.location.reload();
         },
 
         /*error handlers*/
