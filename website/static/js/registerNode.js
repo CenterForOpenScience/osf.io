@@ -10,6 +10,22 @@ var registrationUtils = require('js/registrationUtils');
 
 var ctx = window.contextVars;
 var node = ctx.node;
+var preRegisterMessage =  function(title, parentTitle, parentUrl, category) {
+    if (parentUrl) {
+        return 'You are about to register the ' + category + ' <b>' + title +
+            '</b> including all components and data within it. This will <b>not</b> register' +
+            ' its parent, <b>' + parentTitle + '</b>.' +
+            ' If you want to register the parent, please go <a href="' +
+            parentUrl + '">here.</a> After selecting OK, you will next select a registration form.';
+    } else {
+        return 'You are about to register <b>' + title + '</b> ' +
+            'including all components and data within it. ' +
+            'Registration creates a permanent, time-stamped, uneditable version ' +
+            'of the project. If you would prefer to register only one particular ' +
+            'component, please navigate to that component and then initiate registration. ' +
+            'After selecting OK, you will next select a registration form.';
+    }
+};
 
 $(document).ready(function() {
     $('#registerNode').click(function(event) {

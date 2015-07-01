@@ -65,6 +65,10 @@ ELASTIC_URI = 'localhost:9200'
 ELASTIC_TIMEOUT = 10
 ELASTIC_INDEX = 'website'
 SHARE_ELASTIC_URI = ELASTIC_URI
+SHARE_ELASTIC_INDEX = 'share'
+# For old indices
+SHARE_ELASTIC_INDEX_TEMPLATE = 'share_v{}'
+
 # Sessions
 # TODO: Override SECRET_KEY in local.py in production
 COOKIE_NAME = 'osf'
@@ -258,6 +262,7 @@ EZID_PASSWORD = 'changeme'
 EZID_FORMAT = '{namespace}osf.io/{guid}'
 
 
+USE_SHARE = True
 SHARE_REGISTRATION_URL = ''
 SHARE_API_DOCS_URL = ''
 

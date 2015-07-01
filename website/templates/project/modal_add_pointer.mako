@@ -13,6 +13,9 @@
                 <form role='form'>
                     <div class="form-group">
                         <input class="form-control" placeholder="Search projects" style="margin-bottom: 8px;" data-bind="value:query" />
+                        <div class="help-block">
+                            <span class="text-danger" data-bind="html: searchWarningMsg"></span>
+                        </div>
                     </div>
                     <div>
                         <button class="btn btn-default" data-bind="click:searchAllProjects">Search all projects</button>
@@ -86,7 +89,9 @@
                 <span data-bind="if:selection().length">
                     <a class="btn btn-success" data-bind="click:submit, css: {disabled: !submitEnabled() }">Submit</a>
                 </span>
-
+                <div class="help-block">
+                    <span class="text-danger" data-bind="html: submitWarningMsg"></span>
+                </div>
             </div><!-- end modal-footer -->
 
         </div><!-- end modal-content -->

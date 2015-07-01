@@ -300,10 +300,6 @@ class User(GuidStoredObject, AddonModelMixin):
     #    ...
     # }
 
-    # nicknames, or other names by which this used is known
-    # TODO: remove - unused
-    aka = fields.StringField(list=True)
-
     # the date this user was registered
     # TODO: consider removal - this can be derived from date_registered
     date_registered = fields.DateTimeField(auto_now_add=dt.datetime.utcnow,
@@ -872,6 +868,15 @@ class User(GuidStoredObject, AddonModelMixin):
         for node in self.node__contributed:
             node.update_search()
 
+    def update_search_nodes_contributors(self):
+        """
+        Bulk update contributor name on all nodes on which the user is
+        a contributor.
+        :return:
+        """
+        from website.search import search
+        search.update_contributors(self.visible_contributor_to)
+
     @property
     def is_confirmed(self):
         return bool(self.date_confirmed)
@@ -977,6 +982,23 @@ class User(GuidStoredObject, AddonModelMixin):
     def profile_url(self):
         return '/{}/'.format(self._id)
 
+    @property
+    def contributor_to(self):
+        return (
+            node for node in self.node__contributed
+            if not (
+                node.is_deleted
+                or node.is_dashboard
+            )
+        )
+
+    @property
+    def visible_contributor_to(self):
+        return (
+            node for node in self.contributor_to
+            if self._id in node.visible_contributor_ids
+        )
+
     def get_summary(self, formatter='long'):
         return {
             'user_fullname': self.fullname,
@@ -993,6 +1015,7 @@ class User(GuidStoredObject, AddonModelMixin):
         ret = super(User, self).save(*args, **kwargs)
         if self.SEARCH_UPDATE_FIELDS.intersection(ret) and self.is_confirmed:
             self.update_search()
+            self.update_search_nodes_contributors()
         if settings.PIWIK_HOST and not self.piwik_token:
             piwik_tasks.update_user(self._id)
         return ret
@@ -1116,8 +1139,6 @@ class User(GuidStoredObject, AddonModelMixin):
         for system_tag in user.system_tags:
             if system_tag not in self.system_tags:
                 self.system_tags.append(system_tag)
-
-        [self.aka.append(each) for each in user.aka if each not in self.aka]
 
         self.is_claimed = self.is_claimed or user.is_claimed
         self.is_invited = self.is_invited or user.is_invited

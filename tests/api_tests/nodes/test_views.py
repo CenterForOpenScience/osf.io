@@ -15,6 +15,7 @@ from tests.factories import (
     NodeFactory,
     ProjectFactory,
     RegistrationFactory,
+    DraftRegistrationFactory,
     UserFactory
 )
 
@@ -943,6 +944,61 @@ class TestCreateRegistrationDraft(ApiTestCase):
         self.project.add_contributor(self.user_two, permissions=['read'])
         res = self.app.post(self.private_url, auth=self.basic_auth_two, expect_errors=True)
         assert_equal(res.status_code, 403)
+
+
+class TestNodeRegistrationDraftList(ApiTestCase):
+    def setUp(self):
+        super(TestNodeRegistrationDraftList, self).setUp()
+        self.user = UserFactory.build()
+        password = fake.password()
+        self.password = password
+        self.user.set_password(password)
+        self.user.save()
+        self.basic_auth = (self.user.username, password)
+
+        self.user_two = UserFactory.build()
+        self.user_two.set_password(password)
+        self.user_two.save()
+        self.basic_auth_two = (self.user_two.username, password)
+
+        self.private_project = ProjectFactory(is_public=False, creator=self.user)
+        self.private_draft = DraftRegistrationFactory(branched_from=self.private_project, initiator=self.user)
+        self.private_url = '/{}nodes/{}/draft_registrations/'.format(API_BASE, self.private_project._id)
+
+        self.public_project = ProjectFactory(is_public=True, creator=self.user)
+        self.public_registration_project = RegistrationFactory(creator=self.user, project=self.public_project)
+        self.public_project.save()
+        self.public_url = '/{}nodes/{}/registrations/'.format(API_BASE, self.public_project._id)
+
+
+    def test_return_public_registrations_logged_out(self):
+        res = self.app.get(self.public_url)
+        assert_equal(res.status_code, 200)
+        assert_equal(res.json['data'][0]['title'], self.public_project.title)
+
+    def test_return_public_registrations_logged_in(self):
+        res = self.app.get(self.public_url, auth=self.basic_auth)
+        assert_equal(res.status_code, 200)
+        assert_equal(res.json['data'][0]['category'], self.public_project.category)
+
+    def test_return_private_registrations_logged_out(self):
+        res = self.app.get(self.private_url, expect_errors=True)
+        # This is 403 instead of 401 because basic authentication is only for unit tests and, in order to keep from
+        # presenting a basic authentication dialog box in the front end. We may change this as we understand CAS
+        # a little better
+        assert_equal(res.status_code, 403)
+
+    def test_return_private_registrations_logged_in_contributor(self):
+        res = self.app.get(self.private_url, auth=self.basic_auth)
+        print self.user.id
+        assert_equal(res.status_code, 200)
+        assert_equal(res.json['data'][0]['initiator'], self.user.name)
+
+    def test_return_private_registrations_logged_in_non_contributor(self):
+        res = self.app.get(self.private_url, auth=self.basic_auth_two, expect_errors=True)
+        assert_equal(res.status_code, 403)
+
+
 
 
 class TestNodeChildrenList(ApiTestCase):

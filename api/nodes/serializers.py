@@ -149,7 +149,7 @@ class DraftRegistrationSerializer(JSONAPISerializer):
     def create(self, validated_data):
         request = self.context['request']
         schema = validated_data['registration_schema']
-        meta_schema = MetaSchema.find_one(
+        meta_schema = drafts.get_schema_or_fail(
                 Q('name', 'eq', schema)
             )
         node = self.context['view'].get_node()

@@ -74,7 +74,7 @@ def prepare_private_key():
         key = None
 
     # Update URL and redirect
-    if key and not session:
+    if key and not session.is_authenticated:
         new_url = add_key_to_url(request.url, scheme, key)
         return redirect(new_url, code=http.TEMPORARY_REDIRECT)
 
@@ -189,3 +189,10 @@ def before_request():
             return
         except:
             pass
+
+
+def after_request(response):
+    if session.data.get('auth_user_id'):
+        session.save()
+
+    return response

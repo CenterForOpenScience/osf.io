@@ -57,6 +57,7 @@
           <i class="fa fa-plus"></i>
           New Draft Registration
         </a>
+          <a id="registerNode" href="${node['url']}register" class="btn btn-success" type="button">New Registration</a>
         % endif
       </div>    
       <br />

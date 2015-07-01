@@ -25,7 +25,7 @@ from framework.tasks import handlers
 
 from website import mailchimp_utils
 from website.views import _rescale_ratio
-from website.util import permissions
+from website.util import permissions, sanitize
 from website.models import Node, Pointer, NodeLog
 from website.project.model import ensure_schemas, has_anonymous_link
 from website.project.views.contributor import (
@@ -474,24 +474,21 @@ class TestProjectViews(OsfTestCase):
         assert_true(self.project.is_public)
 
     def test_add_tag(self):
-        url = "/api/v1/project/{0}/addtag/{tag}/".format(
-            self.project._primary_key,
-            tag="footag",
-        )
-        self.app.post_json(url, {}, auth=self.auth)
+        url = self.project.api_url_for('project_add_tag')
+        self.app.post_json(url, {'tag': "foo'ta#@%#%^&g?"}, auth=self.auth)
         self.project.reload()
-        assert_in("footag", self.project.tags)
+        assert_in("foo'ta#@%#%^&g?", self.project.tags)
+        assert_equal("foo'ta#@%#%^&g?", self.project.logs[-1].params['tag'])
 
     def test_remove_tag(self):
-        self.project.add_tag("footag", auth=self.consolidate_auth1, save=True)
-        assert_in("footag", self.project.tags)
-        url = "/api/v1/project/{0}/removetag/{tag}/".format(
-            self.project._primary_key,
-            tag="footag",
-        )
-        self.app.post_json(url, {}, auth=self.auth)
+        self.project.add_tag("foo'ta#@%#%^&g?", auth=self.consolidate_auth1, save=True)
+        assert_in("foo'ta#@%#%^&g?", self.project.tags)
+        url = self.project.api_url_for("project_remove_tag")
+        self.app.delete_json(url, {"tag": "foo'ta#@%#%^&g?"}, auth=self.auth)
         self.project.reload()
-        assert_not_in("footag", self.project.tags)
+        assert_not_in("foo'ta#@%#%^&g?", self.project.tags)
+        assert_equal("tag_removed", self.project.logs[-1].action)
+        assert_equal("foo'ta#@%#%^&g?", self.project.logs[-1].params['tag'])
 
     @mock.patch('website.archiver.tasks.archive.si')
     def test_register_template_page(self, mock_archive):
