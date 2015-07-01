@@ -4,7 +4,7 @@
             <div class="modal-body">
                 <div class="row">
                     <div class="col-md-4">
-                        <h4>Links
+                        <h4 class="f-w-lg">Links
                             % if node['points'] > 0:
                                 <a class="btn btn-primary pull-right"
                                    href="#showLinks"
@@ -14,7 +14,7 @@
                                     ${ node['points'] }
                                 </a>
                             % else:
-                                 <span class="well well-inline pull-right">
+                                 <span class="btn btn-default  pull-right">
                                     ${ node['points'] }
                                 </span>
                             % endif
@@ -22,15 +22,15 @@
                         ${ language.LINK_DESCRIPTION }
                     </div>
                     <div class="col-md-4">
-                        <h4>Templated From
-                            <span class="well well-inline pull-right">
+                        <h4 class="f-w-lg">Templated From
+                            <span class="btn btn-default  pull-right">
                                 ${ node['templated_count'] }
                             </span>
                         </h4>
                         ${ language.TEMPLATE_DESCRIPTION }
                     </div>
                     <div class="col-md-4">
-                        <h4>Forks
+                        <h4 class="f-w-lg">Forks
                             <a class="btn btn-primary pull-right"
                                href="${ node['url'] }forks/"
                             >
