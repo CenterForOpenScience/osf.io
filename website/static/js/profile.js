@@ -1,5 +1,6 @@
 'use strict';
 
+/* jshint shadow:true */
 /*global require */
 var $ = require('jquery');
 var ko = require('knockout');
@@ -39,8 +40,7 @@ var SerializeMixin = function() {};
 
 /** Serialize to a JS Object. */
 SerializeMixin.prototype.serialize = function() {
-    var self = this;
-    return ko.toJS(self);
+    return ko.toJS(this);
 };
 
 SerializeMixin.prototype.unserialize = function(data) {
@@ -230,10 +230,10 @@ var BaseViewModel = function(urls, modes, preventUnsaved) {
         }
         return true;
     });
-    
-    self.message = ko.observable();
-    self.messageClass = ko.observable();
-    self.showMessages = ko.observable(false);
+
+    this.message = ko.observable();
+    this.messageClass = ko.observable();
+    this.showMessages = ko.observable(false);
 };
 
 BaseViewModel.prototype.changeMessage = function(text, css, timeout) {
@@ -254,11 +254,10 @@ BaseViewModel.prototype.changeMessage = function(text, css, timeout) {
 };
 
 BaseViewModel.prototype.handleSuccess = function() {
-    var self = this;
-    if ($.inArray('view', self.modes) >= 0) {
-        self.mode('view');
+    if ($.inArray('view', this.modes) >= 0) {
+        this.mode('view');
     } else {
-        self.changeMessage(
+        this.changeMessage(
             'Settings updated',
             'text-success',
             5000
@@ -267,10 +266,9 @@ BaseViewModel.prototype.handleSuccess = function() {
 };
 
 BaseViewModel.prototype.handleError = function(response) {
-    var self = this;
     var defaultMsg = 'Could not update settings';
     var msg = response.message_long || defaultMsg;
-    self.changeMessage(
+    this.changeMessage(
         msg,
         'text-danger',
         5000
@@ -286,17 +284,16 @@ BaseViewModel.prototype.fetch = function(callback) {
     callback = callback || noop;
     $.ajax({
         type: 'GET',
-        url: self.urls.crud,
+        url: this.urls.crud,
         dataType: 'json',
-        success: [self.unserialize.bind(self), self.setOriginal.bind(self), callback.bind(self)],
-        error: self.handleError.bind(self, 'Could not retrieve your data')
+        success: [this.unserialize.bind(this), self.setOriginal.bind(self), callback.bind(self)],
+        error: this.handleError.bind(this, 'Could not retrieve your data')
     });
 };
 
 BaseViewModel.prototype.edit = function() {
-    var self = this;
-    if (self.editable() && this.editAllowed) {
-        self.mode('edit');
+    if (this.editable() && this.editAllowed) {
+        this.mode('edit');
     }
 };
 
@@ -306,7 +303,7 @@ BaseViewModel.prototype.cancel = function(data, event) {
             event.preventDefault();
     }
 
-    if (self.dirty()) {
+    if (this.dirty()) {
         bootbox.confirm({
             title: 'Discard changes?',
             message: 'Are you sure you want to discard your unsaved changes?',
@@ -328,29 +325,27 @@ BaseViewModel.prototype.cancel = function(data, event) {
 };
 
 BaseViewModel.prototype.submit = function() {
-    var self = this;
-    if (self.hasValidProperty() && self.isValid()) {
+    if (this.hasValidProperty() && this.isValid()) {
         // Name on Name view is empty
-        if (self.nameFieldEmpty()) {
-            $osf.growl('Please enter Full Name before pressing "Save"');            
-        }        
+        if (this.nameFieldEmpty()) {
+            $osf.growl('Please enter Full Name before pressing "Save"');
+        }
           else {
             $osf.putJSON(
-                self.urls.crud,
-                self.serialize()
+                this.urls.crud,
+                this.serialize()
             ).done(
-                self.handleSuccess.bind(self)
+                this.handleSuccess.bind(this)
             ).done(
-                self.setOriginal.bind(self)
+                this.setOriginal.bind(this)
             ).fail(
-                self.handleError.bind(self)
+                this.handleError.bind(this)
             );
-        } 
-    } 
-    else {
-            self.showMessages(true);
+        }
     }
-
+    else {
+            this.showMessages(true);
+    }
 };
 
 var NameViewModel = function(urls, modes, preventUnsaved, fetchCallback) {
@@ -364,7 +359,7 @@ var NameViewModel = function(urls, modes, preventUnsaved, fetchCallback) {
     self.middle = koHelpers.sanitizedObservable().extend({trimmed: true});
     self.family = koHelpers.sanitizedObservable().extend({trimmed: true});
     self.suffix = koHelpers.sanitizedObservable().extend({trimmed: true});
-    
+
     self.trackedProperties = [
         self.full,
         self.given,
@@ -377,16 +372,10 @@ var NameViewModel = function(urls, modes, preventUnsaved, fetchCallback) {
     self.isValid = ko.computed(function() {
         return validated.isValid();
     });
-    
-   self.nameFieldEmpty = ko.computed(function() {
-        if (self.full() === '') {
-        return true;        
-        }
-        else {
-            return false;
-        }
-    });
 
+    self.nameFieldEmpty = ko.computed(function () {
+        return (self.full() === '');
+    });
     
     self.hasValidProperty(true);
 
@@ -541,7 +530,6 @@ var SocialViewModel = function(urls, modes) {
         self, 'github', 'https://github.com/'
     );
 
-    
     self.trackedProperties = [
         self.personal,
         self.orcid,
@@ -594,7 +582,7 @@ var ListViewModel = function(ContentModel, urls, modes) {
 
     self.ContentModel = ContentModel;
     self.contents = ko.observableArray();
-    
+
     self.tracked = self.contents;
 
     self.canRemove = ko.computed(function() {
@@ -609,41 +597,34 @@ var ListViewModel = function(ContentModel, urls, modes) {
         }
         return true;
     });
-    
 
     self.institutionsEmpty = ko.computed(function() {
-
-            for (var i=0; i<self.contents().length; i++) {
-                if (self.contents()[i].institutionEmpty()) { 
-                    return true;
-                }
+        for (var i=0; i<self.contents().length; i++) {
+            if (self.contents()[i].institutionEmpty()) {
+                return true;
             }
- 
+        }
         return false;
-                
     });
 
-    
     self.extraFieldsEmpty = ko.computed(function() {
-        var i;
-        if (urls.crud === '/api/v1/settings/jobs/') {
-            for (i=0; i<self.contents().length; i++) {
+        if (urls.crud.indexOf('jobs') !== -1) {
+            for (var i=0; i<self.contents().length; i++) {
                 if (self.contents()[i].department() === '' && self.contents()[i].title() === '') {
                     return true;
                 }
             }
         }
-        else if (urls.crud === '/api/v1/settings/schools/') {
-            for (i=0; i<self.contents().length; i++) {
+        else if (urls.crud.indexOf('schools') !== -1) {
+            for (var i=0; i<self.contents().length; i++) {
                 if (self.contents()[i].department() === '' && self.contents()[i].degree() === '') {
                     return true;
                 }
             }
         }
-        return false;           
+        return false;
     });
 
-    
     self.hasMultiple = ko.computed(function() {
         return self.contents().length > 1;
     });
@@ -668,8 +649,6 @@ var ListViewModel = function(ContentModel, urls, modes) {
         }
         return false;
     };
-
-
 
     /** Restore all items in the list to their original state
         *
@@ -705,29 +684,24 @@ var ListViewModel = function(ContentModel, urls, modes) {
 ListViewModel.prototype = Object.create(BaseViewModel.prototype);
 
 ListViewModel.prototype.addContent = function() {
-    var self = this;
-    self.contents.push(new self.ContentModel(self));
+    this.contents.push(new this.ContentModel(this));
 };
 
 ListViewModel.prototype.removeContent = function(content) {
-    var self = this;
-    var idx = self.contents().indexOf(content);
+    var idx = this.contents().indexOf(content);
     //  If there is more then one model, then delete it.  If there is only one, then delete it and add another.
-    if (self.hasMultiple()) {
-        self.contents.splice(idx, 1);
+    if (this.hasMultiple()) {
+        this.contents.splice(idx, 1);
     }
     else {
-        self.contents.splice(idx, 1);
-        self.contents.push(new self.ContentModel(self));
-
+        this.contents.splice(idx, 1);
+        this.contents.push(new this.ContentModel(this));
     }
-        self.changeMessage(
+        this.changeMessage(
             'Institution Removed',
             'text-danger',
             5000
         );
-
-    
 };
 
 ListViewModel.prototype.unserialize = function(data) {
@@ -750,22 +724,20 @@ ListViewModel.prototype.unserialize = function(data) {
 };
 
 ListViewModel.prototype.serialize = function() {
-    var self = this;
     var contents = [];
-    
-    if (self.contents().length !== 0 && typeof(self.contents()[0].serialize() !== undefined)) {
-        for (var i=0; i < self.contents().length; i++) {            
+    if (this.contents().length !== 0 && typeof(this.contents()[0].serialize()) !== 'undefined') {
+        for (var i=0; i < this.contents().length; i++) {
             // If the requiredField is empty, it will not save it and will delete the blank structure from the database.  
-            if (!self.contents()[i].institutionEmpty() || !self.hasMultiple()) {
-                contents.push(self.contents()[i].serialize());
+            if (!( this.contents()[i].institutionEmpty() && this.hasMultiple() )) {
+                contents.push(this.contents()[i].serialize());
             }
             else  {
-                self.contents.splice(i, 1);
+                this.contents.splice(i, 1);
             }
         }
     }
     else {
-        contents = ko.toJS(self.contents);
+        contents = ko.toJS(this.contents);
     }
     return {contents: contents};
 };
@@ -796,7 +768,6 @@ ListViewModel.prototype.submit = function() {
 
 };
 
-
 var JobViewModel = function() {
     var self = this;
     DateMixin.call(self);
@@ -805,7 +776,7 @@ var JobViewModel = function() {
     self.institution = ko.observable('').extend({trimmed: true});
     self.department = ko.observable('').extend({trimmed: true});
     self.title = ko.observable('').extend({trimmed: true});
-    
+
     self.trackedProperties = [
         self.institution,
         self.department,
@@ -822,17 +793,10 @@ var JobViewModel = function() {
     });
     
     self.institutionEmpty = ko.computed(function() {
-        if (self.institution() === '') {
-            return true;        
-        }
-        else {
-            return false;
-        }
+        return (self.institution() === '');
     });
-    
-    
 
-    
+
 };
 $.extend(JobViewModel.prototype, DateMixin.prototype, TrackedMixin.prototype);
 
@@ -841,7 +805,7 @@ var SchoolViewModel = function() {
     DateMixin.call(self);
     TrackedMixin.call(self);
 
-    self.institution = ko.observable('').extend({trimmed: true});
+    self.institution = ko.observable('').extend({required: true, trimmed: true});
     self.department = ko.observable('').extend({trimmed: true});
     self.degree = ko.observable('').extend({trimmed: true});
 
@@ -861,15 +825,8 @@ var SchoolViewModel = function() {
     });
     
     self.institutionEmpty = ko.computed(function() {
-        if (self.institution() === '') {
-        return true;        
-        }
-        else {
-            return false;
-        }
+        return (self.institution() === '');
     });
-    
-
 
 };
 $.extend(SchoolViewModel.prototype, DateMixin.prototype, TrackedMixin.prototype);
@@ -878,9 +835,6 @@ var JobsViewModel = function(urls, modes) {
     var self = this;
     ListViewModel.call(self, JobViewModel, urls, modes);
     self.fetch();
-    
-//    self.isValid = ListViewModel.prototype.isValid;
-    
 };
 JobsViewModel.prototype = Object.create(ListViewModel.prototype);
 
@@ -893,30 +847,26 @@ var SchoolsViewModel = function(urls, modes) {
 SchoolsViewModel.prototype = Object.create(ListViewModel.prototype);
 
 var Names = function(selector, urls, modes) {
-    var self = this;
-    self.viewModel = new NameViewModel(urls, modes);
-    $osf.applyBindings(self.viewModel, selector);
-    window.nameModel = self.viewModel;
+    this.viewModel = new NameViewModel(urls, modes);
+    $osf.applyBindings(this.viewModel, selector);
+    window.nameModel = this.viewModel;
 };
 
 var Social = function(selector, urls, modes) {
-    var self = this;
-    self.viewModel = new SocialViewModel(urls, modes);
-    $osf.applyBindings(self.viewModel, selector);
-    window.social = self.viewModel;
+    this.viewModel = new SocialViewModel(urls, modes);
+    $osf.applyBindings(this.viewModel, selector);
+    window.social = this.viewModel;
 };
 
 var Jobs = function(selector, urls, modes) {
-    var self = this;
-    self.viewModel = new JobsViewModel(urls, modes);
-    $osf.applyBindings(self.viewModel, selector);
-    window.jobsModel = self.viewModel;
+    this.viewModel = new JobsViewModel(urls, modes);
+    $osf.applyBindings(this.viewModel, selector);
+    window.jobsModel = this.viewModel;
 };
 
 var Schools = function(selector, urls, modes) {
-    var self = this;
-    self.viewModel = new SchoolsViewModel(urls, modes);
-    $osf.applyBindings(self.viewModel, selector);
+    this.viewModel = new SchoolsViewModel(urls, modes);
+    $osf.applyBindings(this.viewModel, selector);
 };
 
 /*global module */
