@@ -469,7 +469,7 @@ class GitHubNodeSettingsTestCase(OsfTestCase):
 
 
     def test_has_auth_true(self):
-        external_account = ExternalAccountFactory()
+        external_account = GitHubAccountFactory()
         self.user.external_accounts.append(external_account)
 
         self.node_settings.set_auth(external_account, self.user)
@@ -485,7 +485,7 @@ class GitHubNodeSettingsTestCase(OsfTestCase):
     # failing
     @mock.patch('framework.status.push_status_message')
     def test_remove_contributor_authorizer(self, mock_push_status):
-        external_account = ExternalAccountFactory()
+        external_account = GitHubAccountFactory()
         self.user.external_accounts.append(external_account)
         self.node_settings.set_auth(external_account, self.user)
 
@@ -497,7 +497,7 @@ class GitHubNodeSettingsTestCase(OsfTestCase):
         assert_false(self.user_settings.verify_oauth_access(self.node, external_account))
 
     def test_remove_contributor_not_authorizer(self):
-        external_account = ExternalAccountFactory()
+        external_account = GitHubAccountFactory()
         self.user.external_accounts.append(external_account)
         self.node_settings.set_auth(external_account, self.user)
 
@@ -510,7 +510,7 @@ class GitHubNodeSettingsTestCase(OsfTestCase):
 
     @mock.patch('framework.status.push_status_message')
     def test_fork_by_authorizer(self, mock_push_status):
-        external_account = ExternalAccountFactory()
+        external_account = GitHubAccountFactory()
         self.user.external_accounts.append(external_account)
         self.node_settings.set_auth(external_account, self.user)
 
