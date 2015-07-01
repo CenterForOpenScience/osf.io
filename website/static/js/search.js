@@ -116,9 +116,24 @@ var ViewModel = function(params) {
     });
 
     self.queryObject = ko.pureComputed(function(){
+        var TITLE_BOOST = '4';
+        var DESCRIPTION_BOOST = '1.2';
+        var JOB_SCHOOL_BOOST = '1';
+        var ALL_JOB_SCHOOL_BOOST = '0.125';
+
+        var fields = [
+            '_all',
+            'title^' + TITLE_BOOST,
+            'description^' + DESCRIPTION_BOOST,
+            'job^' + JOB_SCHOOL_BOOST,
+            'school^' + JOB_SCHOOL_BOOST,
+            'all_jobs^' + ALL_JOB_SCHOOL_BOOST,
+            'all_schools^' + ALL_JOB_SCHOOL_BOOST
+        ];
         return {
             'query_string': {
                 'default_field': '_all',
+                'fields': fields,
                 'query': self.query(),
                 'analyze_wildcard': true,
                 'lenient': true
@@ -169,7 +184,8 @@ var ViewModel = function(params) {
         }
     };
 
-    self.addTag = function(name) {
+    /** name of tag, action add or remove.*/
+    self.clickTag = function(name, action) {
         // To handle passing from template vs. in main html
         var tag = name;
 
@@ -181,8 +197,10 @@ var ViewModel = function(params) {
         var tagString = 'tags:("' + tag + '")';
 
         if (self.query().indexOf(tagString) === -1) {
-            if (self.query() !== '') {
+            if (self.query() !== '' && action === 'add') {
                 self.query(self.query() + ' AND ');
+            } else if (self.query() !== '' && action === 'remove') {
+                self.query(self.query() + ' NOT ');
             }
             self.query(self.query() + tagString);
             self.category(new Category('total', 0, 'Total'));

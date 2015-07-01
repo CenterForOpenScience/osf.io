@@ -6,6 +6,26 @@
 
         % if not registered:
 
+            <div id="embargo-addon" data-bind="with: $root.embargoAddon, ">
+                <hr />
+
+                <p class="help-block">${language.REGISTRATION_EMBARGO_INFO}</p>
+                <div class="form-group">
+                    <label class="control-label">Registration Choice</label>
+                    <select class="form-control" data-bind="options: registrationOptions,
+                                                            value: registrationChoice,
+                                                            optionsText: 'message',
+                                                            optionsValue: 'value',
+                                                            event: {change: checkShowEmbargoDatePicker}"></select>
+                </div>
+                <span data-bind="visible: showEmbargoDatePicker">
+                    <div class="form-group">
+                        <label class="control-label">Embargo End Date</label>
+                        <input type="text" id="endDatePicker" class="form-control">
+                    </div>
+                </span>
+            </div>
+
             <div id="register-show-submit" data-bind="visible:$root.isLast()">
 
                 <hr />
@@ -20,7 +40,6 @@
                         <input class="form-control" data-bind="value:$root.continueText, valueUpdate: 'afterkeydown'" />
                     </div>
                 </div>
-
             </div>
 
         % endif

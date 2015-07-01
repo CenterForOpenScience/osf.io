@@ -4,7 +4,7 @@ var assert = require('chai').assert;
 var $osf = require('js/osfHelpers');
 
 var signIn = require('js/signIn');
-var formViewModel = require('js/formViewModel')
+var formViewModel = require('js/formViewModel');
 
 // Add sinon asserts to chai.assert, so we can do assert.calledWith instead of sinon.assert.calledWith
 sinon.assert.expose(assert, {prefix: ''});

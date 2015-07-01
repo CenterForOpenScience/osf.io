@@ -1,10 +1,11 @@
 # -*- coding: utf-8 -*-
-import os
 import mock
 
 from nose.tools import *  # noqa (PEP8 asserts)
+from box import BoxClientException
 
 from framework.auth import Auth
+from framework.exceptions import HTTPError
 from website.addons.box.model import (
     BoxUserSettings, BoxNodeSettings, BoxFile
 )
@@ -333,6 +334,13 @@ class TestBoxNodeSettingsModel(OsfTestCase):
         self.node_settings.save()
         with assert_raises(exceptions.AddonError):
             self.node_settings.serialize_waterbutler_settings()
+
+    @mock.patch('website.addons.box.model.BoxUserSettings.fetch_access_token')
+    def test_serialize_waterbutler_credentials_reraises_box_client_exception_as_http_error(self, mock_fetch_access_token):
+        mock_fetch_access_token.side_effect = BoxClientException(status_code=400, message='Oops')
+
+        with assert_raises(HTTPError):
+            self.node_settings.serialize_waterbutler_credentials()
 
     def test_create_log(self):
         action = 'file_added'

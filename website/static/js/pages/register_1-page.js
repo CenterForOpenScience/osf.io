@@ -4,12 +4,17 @@ var ko = require('knockout');
 var bootbox = require('bootbox');
 var $osf = require('js/osfHelpers');
 
-var MetaData = require('../metadata_1.js');
+var language = require('js/osfLanguage').registrations;
+
+var MetaData = require('js/metadata_1.js');
 var ctx = window.contextVars;
+
+require('pikaday-css');
+
 /**
     * Unblock UI and display error modal
     */
-function registration_failed() {
+function registrationFailed() {
     $osf.unblock();
     bootbox.alert('Registration failed');
 }
@@ -27,14 +32,15 @@ function registerNode(data) {
         contentType: 'application/json',
         dataType: 'json'
     }).done(function(response) {
-        if (response.status === 'success') {
-            window.location.href = response.result;
+        if (response.status === 'initiated') {
+            $osf.unblock();
+            window.location.assign(response.urls.registrations);
         }
         else if (response.status === 'error') {
-            registration_failed();
+            registrationFailed();
         }
     }).fail(function() {
-        registration_failed();
+        registrationFailed();
     });
 
     // Stop event propagation
@@ -65,6 +71,19 @@ $(document).ready(function() {
 
     $('#registration_template form').on('submit', function() {
 
+        // If embargo is requested, verify its end date, and inform user if date is out of range
+        if (registrationViewModel.embargoAddon.requestingEmbargo()) {
+            if (!registrationViewModel.embargoAddon.isEmbargoEndDateValid()) {
+                registrationViewModel.continueText('');
+                $osf.growl(
+                    language.invalidEmbargoTitle,
+                    language.invalidEmbargoMessage,
+                    'warning'
+                );
+                $('#endDatePicker').focus();
+                return false;
+            }
+        }
         // Serialize responses
         var serialized = registrationViewModel.serialize(),
             data = serialized.data,
@@ -76,26 +95,48 @@ $(document).ready(function() {
             return false;
         }
 
+        $osf.block();
         $.ajax({
             url: ctx.node.urls.api + 'beforeregister/',
             contentType: 'application/json',
             success: function(response) {
-                if (response.prompts && response.prompts.length) {
+                var preRegisterWarnings = function() {
                     bootbox.confirm(
-                        $osf.joinPrompts(response.prompts, 'Are you sure you want to register this project?'),
+                        $osf.joinPrompts(response.prompts, language.registerConfirm),
                         function(result) {
                             if (result) {
                                 registerNode(data);
                             }
                         }
                     );
-                } else {
+                };
+                var preRegisterErrors = function(confirm, reject) {
+                    bootbox.confirm(
+                        $osf.joinPrompts(
+                            response.errors, 
+                            'Before you continue...'
+                        ) + '<br /><hr /> ' + language.registerSkipAddons,
+                        function(result) {
+                            if(result) {
+                                confirm();
+                            }
+                        }
+                    );
+                };
+
+                if (response.errors && response.errors.length) {
+                    preRegisterErrors(preRegisterWarnings);
+                }
+                else if (response.prompts && response.prompts.length) {
+                    preRegisterWarnings();
+                } 
+                else {
                     registerNode(data);
                 }
             }
+        }).always(function() {
+            $osf.unblock();
         });
-
         return false;
-
     });
 });

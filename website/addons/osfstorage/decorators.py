@@ -10,6 +10,7 @@ from framework.exceptions import HTTPError
 from website.models import User
 from website.models import Node
 from website.addons.osfstorage import model
+from website.addons.osfstorage import errors
 from website.project.decorators import (
     must_not_be_registration, must_have_addon,
 )
@@ -24,6 +25,8 @@ def handle_odm_errors(func):
             raise HTTPError(httplib.NOT_FOUND)
         except KeyExistsException:
             raise HTTPError(httplib.CONFLICT)
+        except errors.VersionNotFoundError:
+            raise HTTPError(httplib.NOT_FOUND)
     return wrapped
 
 

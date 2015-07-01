@@ -6,6 +6,7 @@
 var $ = require('jquery');
 var ko = require('knockout');
 var bootbox = require('bootbox');
+var Raven = require('raven-js');
 
 var oop = require('./oop');
 var $osf = require('./osfHelpers');
@@ -14,6 +15,10 @@ var Paginator = require('./paginator');
 var NODE_OFFSET = 25;
 // Max number of recent/common contributors to show
 var MAX_RECENT = 5;
+
+// TODO: Remove dependency on contextVars
+var nodeApiUrl = window.contextVars.node.urls.api;
+var nodeId = window.contextVars.node.id;
 
 function Contributor(data) {
     $.extend(this, data);
@@ -108,7 +113,7 @@ var AddContributorViewModel = oop.extend(Paginator, {
      * currently logged-in user has in common with the contributor.
      */
     startSearch: function() {
-        this.currentPage(0);
+        this.pageToGet(0);
         this.fetchResults();
     },
     fetchResults: function() {
@@ -119,7 +124,7 @@ var AddContributorViewModel = oop.extend(Paginator, {
                 '/api/v1/user/search/', {
                     query: self.query(),
                     excludeNode: nodeId,
-                    page: self.currentPage
+                    page: self.pageToGet
                 },
                 function(result) {
                     var contributors = result.users.map(function(userData) {

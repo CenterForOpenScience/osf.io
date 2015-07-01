@@ -16,10 +16,11 @@ class CasError(Exception):
 
 class CasHTTPError(CasError):
     """Error raised when an unexpected error is returned from the CAS server."""
-    def __init__(self, message, status_code, headers):
+    def __init__(self, message, status_code, headers, content):
         super(CasError, self).__init__(message)
         self.status_code = status_code
         self.headers = headers
+        self.content = content
 
 
 class CasTokenError(CasError):
@@ -120,6 +121,7 @@ class CasClient(object):
             message,
             status_code=response.status_code,
             headers=response.headers,
+            content=response.content,
         )
 
     def _parse_service_validation(self, xml):

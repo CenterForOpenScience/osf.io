@@ -14,4 +14,4 @@ function scrollToTop(data) {
     window.scrollTo(0, 0);
 }
 
-pymParent.onMessage('scroll_top_now', scrollToTop)
+pymParent.onMessage('scroll_top_now', scrollToTop);

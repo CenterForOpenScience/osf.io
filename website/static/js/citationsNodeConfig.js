@@ -146,7 +146,11 @@ var CitationsFolderPickerViewModel = oop.extend(FolderPickerViewModel, {
                             }
                         ),
                         value: self.accounts()[0].id,
-                        callback: (self.connectExistingAccount.bind(self))
+                        callback: function(accountId) {
+                            if (accountId) {
+                                self.connectExistingAccount.call(self, (accountId));
+                            }
+                        }
                     });
                 } else {
                     bootbox.confirm({

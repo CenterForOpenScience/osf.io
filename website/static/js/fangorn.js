@@ -14,6 +14,8 @@ var Treebeard = require('treebeard');
 var $osf = require('js/osfHelpers');
 var waterbutler = require('js/waterbutler');
 
+var iconmap = require('js/iconmap');
+
 // CSS
 require('css/fangorn.css');
 
@@ -184,6 +186,66 @@ var uploadRowTemplate = function(item){
 };
 
 /**
+ * Returns custom icons for OSF depending on the type of item. Used for non-file icons.
+ * @param {Object} item A Treebeard _item object. Node information is inside item.data
+ * @this Treebeard.controller
+ * @returns {Object}  Returns a mithril template with the m() function.
+ */
+function resolveIconView(item) {
+    var componentIcons = iconmap.componentIcons;
+    var projectIcons = iconmap.projectIcons;
+    function returnView(type, category) {
+        var iconType = projectIcons[type];
+        if (type === 'component' || type === 'registeredComponent') {
+            if (!item.data.permissions.view) {
+                return null;
+            } else {
+                iconType = componentIcons[category];
+            }
+        } else if (type === 'project' || type === 'registeredProject') {
+            iconType = projectIcons[category];
+        }
+        if (type === 'registeredComponent' || type === 'registeredProject') {
+            iconType += ' po-icon-registered';
+        } else {
+            iconType += ' po-icon';
+        }
+        var template = m('span', { 'class' : iconType});
+        return template;
+    }
+    if (item.data.isDashboard) {
+        return returnView('collection');
+    }
+    if (item.data.isSmartFolder) {
+        return returnView('smartCollection');
+    }
+    if ((item.data.nodeType === 'pointer' && item.parent().data.nodeType !== 'folder') || (item.data.isPointer && !item.parent().data.isFolder)) {
+        return returnView('link');
+    }
+    if (item.data.nodeType === 'project') {
+        if (item.data.parentIsFolder && item.data.isFolder) {
+            return returnView('collection');
+        }
+        if (item.data.isRegistration) {
+            return returnView('registeredProject', item.data.category);
+        } else {
+            return returnView('project', item.data.category);
+        }
+    }
+    if (item.data.nodeType === 'component') {
+        if (item.data.isRegistration) {
+            return returnView('registeredComponent', item.data.category);
+        }
+        return returnView('component', item.data.category);
+    }
+
+    if (item.data.nodeType === 'pointer') {
+        return returnView('link');
+    }
+    return null;
+}
+
+/**
  * Returns custom icons for OSF depending on the type of item
  * @param {Object} item A Treebeard _item object. Node information is inside item.data
  * @this Treebeard.controller
@@ -197,31 +259,35 @@ function _fangornResolveIcon(item) {
         closedFolder = m('i.fa.fa-folder', ' '),
         configOption = item.data.provider ? resolveconfigOption.call(this, item, 'folderIcon', [item]) : undefined,  // jshint ignore:line
         icon;
+    var newIcon = resolveIconView(item);
+    if ( newIcon === null) {
 
-    if (item.kind === 'folder') {
-        if (item.data.iconUrl) {
-            return m('span', {style: {width:'16px', height:'16px', background:'url(' + item.data.iconUrl+ ')', display:'block'}}, '');
+        if (item.kind === 'folder') {
+            if (item.data.iconUrl) {
+                return m('span', {style: {width:'16px', height:'16px', background:'url(' + item.data.iconUrl+ ')', display:'block'}}, '');
+            }
+            if (!item.data.permissions.view) {
+                return privateFolder;
+            }
+            if (item.data.isPointer) {
+                return pointerFolder;
+            }
+            if (item.open) {
+                return configOption || openFolder;
+            }
+            return configOption || closedFolder;
         }
-        if (!item.data.permissions.view) {
-            return privateFolder;
+        if (item.data.icon) {
+            return m('i.fa.' + item.data.icon, ' ');
         }
-        if (item.data.isPointer) {
-            return pointerFolder;
-        }
-        if (item.open) {
-            return configOption || openFolder;
-        }
-        return configOption || closedFolder;
-    }
-    if (item.data.icon) {
-        return m('i.fa.' + item.data.icon, ' ');
-    }
 
-    icon = getExtensionIconClass(item.data.name);
-    if (icon) {
-        return m('div.file-extension', { 'class': icon });
+        icon = getExtensionIconClass(item.data.name);
+        if (icon) {
+            return m('div.file-extension', { 'class': icon });
+        }
+        return m('i.fa.fa-file-text-o');
     }
-    return m('i.fa.fa-file-text-o');
+    return newIcon;
 }
 
 // Addon config registry. this will be populated with add on specific items if any.
@@ -321,8 +387,8 @@ function checkConflicts(tb, item, folder, cb) {
                 m('p', 'Do you want to replace it?')
             ]), m('', [
                 m('span.tb-modal-btn.text-default', {onclick: cb.bind(tb, 'keep')}, 'Keep Both'),
-                m('span.tb-modal-btn.text-default', {onclick: function() {tb.modal.dismiss();}}, 'Cancel'),
-                m('span.tb-modal-btn.text-defualt', {onclick: cb.bind(tb, 'replace')},'Replace'),
+                m('span.tb-modal-btn.text-default', {onclick: function() {tb.modal.dismiss();}}, 'Cancel'), //jshint ignore:line
+                m('span.tb-modal-btn.text-default', {onclick: cb.bind(tb, 'replace')},'Replace'),
             ]));
             return;
         }
@@ -340,8 +406,8 @@ function checkConflictsRename(tb, item, name, cb) {
                 m('p', 'Do you want to replace it?')
             ]), m('', [
                 m('span.tb-modal-btn.text-default', {onclick: cb.bind(tb, 'keep')}, 'Keep Both'),
-                m('span.tb-modal-btn.text-default', {onclick: function() {tb.modal.dismiss();}}, 'Cancel'),
-                m('span.tb-modal-btn.text-defualt', {onclick: cb.bind(tb, 'replace')},'Replace'),
+                m('span.tb-modal-btn.text-default', {onclick: function() {tb.modal.dismiss();}}, 'Cancel'), // jshint ignore:line
+                m('span.tb-modal-btn.text-default', {onclick: cb.bind(tb, 'replace')},'Replace'),
             ]));
             return;
         }
@@ -353,7 +419,9 @@ function doItemOp(operation, to, from, rename, conflict) {
     var tb = this;
     tb.modal.dismiss();
     var ogParent = from.parentID;
-    if (to.id === ogParent && (!rename || rename === from.data.name)) return;
+    if (to.id === ogParent && (!rename || rename === from.data.name)){
+      return;
+    }
 
     if (operation === OPERATIONS.COPY) {
         from = tb.createItem($.extend(true, {status: operation.status}, from.data), to.id);
@@ -365,7 +433,7 @@ function doItemOp(operation, to, from, rename, conflict) {
     if (to.data.provider === from.provider) {
         tb.pendingFileOps.push(from.id);
     }
-    _fangornOrderFolder.call(tb, from.parent());
+    orderFolder.call(tb, from.parent());
 
 
     $.ajax({
@@ -423,7 +491,7 @@ function doItemOp(operation, to, from, rename, conflict) {
             from.load = true;
         }
         // no need to redraw because fangornOrderFolder does it
-        _fangornOrderFolder.call(tb, from.parent());
+        orderFolder.call(tb, from.parent());
     }).fail(function(xhr, textStatus) {
         if (to.data.provider === from.provider) {
             tb.pendingFileOps.pop();
@@ -459,7 +527,7 @@ function doItemOp(operation, to, from, rename, conflict) {
             }
         });
 
-        _fangornOrderFolder.call(tb, from.parent());
+        orderFolder.call(tb, from.parent());
     });
 }
 
@@ -625,7 +693,7 @@ function _fangornDropzoneDrop(treebeard, event) {
 function _fangornComplete(treebeard, file) {
     var item = file.treebeardParent;
     resolveconfigOption.call(treebeard, item, 'onUploadComplete', [item]);
-    _fangornOrderFolder.call(treebeard, item);
+    orderFolder.call(treebeard, item);
 }
 
 /**
@@ -687,17 +755,19 @@ function _fangornDropzoneSuccess(treebeard, file, response) {
  */
 var DEFAULT_ERROR_MESSAGE = 'Could not upload file. The file may be invalid ' +
     'or the file folder has been deleted.';
-function _fangornDropzoneError(treebeard, file, message) {
+function _fangornDropzoneError(treebeard, file, message, xhr) {
     var tb = treebeard;
     // File may either be a webkit Entry or a file object, depending on the browser
     // On Chrome we can check if a directory is being uploaded
     var msgText;
     if (file.isDirectory) {
         msgText = 'Cannot upload directories, applications, or packages.';
+    } else if (xhr.status === 507) {
+        msgText = 'Cannot upload file due to insufficient storage.';
     } else {
         msgText = DEFAULT_ERROR_MESSAGE;
     }
-    var parent = file.treebeardParent || treebeardParent.dropzoneItemCache;
+    var parent = file.treebeardParent || treebeardParent.dropzoneItemCache; // jshint ignore:line
     // Parent may be undefined, e.g. in Chrome, where file is an entry object
     var item;
     var child;
@@ -792,7 +862,7 @@ function _createFolder(event, dismissCallback, helpText) {
     }).then(function(item) {
         inheritFromParent({data: item}, parent, ['branch']);
         item = tb.createItem(item, parent.id);
-        _fangornOrderFolder.call(tb, parent);
+        orderFolder.call(tb, parent);
         item.notify.update('New folder created!', 'success', undefined, 1000);
         if(dismissCallback) {
             dismissCallback();
@@ -976,7 +1046,7 @@ function _fangornResolveLazyLoad(item) {
 function _fangornLazyLoadError (item) {
     var configOption = resolveconfigOption.call(this, item, 'lazyLoadError', [item]);
     if (!configOption) {
-        item.notify.update('Files couldn\'t load, please try again later.', 'deleting', undefined, 3000);
+        item.notify.update('Files couldn\'t load. Please try again later.', 'deleting', undefined, 3000);
     }
 }
 
@@ -1002,7 +1072,7 @@ function _fangornLazyLoadOnLoad (tree, event) {
     reapplyTooltips();
 
     if (tree.depth > 1) {
-        _fangornOrderFolder.call(this, tree);
+        orderFolder.call(this, tree);
     }
 }
 
@@ -1012,13 +1082,16 @@ function _fangornLazyLoadOnLoad (tree, event) {
  * @this Treebeard.controller
  * @private
  */
-function _fangornOrderFolder(tree) {
+function orderFolder(tree) {
     // Checking if this column does in fact have sorting
+    var sortDirection = '';
     if (this.isSorted[0]) {
-        var sortDirection = this.isSorted[0].desc ? 'desc' : 'asc';
-        tree.sortChildren(this, sortDirection, 'text', 0, 1);
-        this.redraw();
+        sortDirection = this.isSorted[0].desc ? 'desc' : 'asc';
+    } else {
+        sortDirection = 'asc';
     }
+    tree.sortChildren(this, sortDirection, 'text', 0, 1);
+    this.redraw();
 }
 
 /**
@@ -1109,20 +1182,29 @@ function _fangornResolveRows(item) {
         filter : true,
         custom : _fangornTitleColumn
     });
-    if (item.data.provider === 'osfstorage' && item.data.kind === 'file') {
-        default_columns.push({
-            data : 'downloads',
-            sortInclude : false,
-            filter : false,
-            custom: function() { return item.data.extra ? item.data.extra.downloads.toString() : ''; }
+
+    if (item.data.kind === 'file') {
+        default_columns.push(
+        {
+            data : 'size',  // Data field name
+            filter : true,
+            custom : function() {return item.data.size ? $osf.humanFileSize(item.data.size, true) : '';}
         });
-    } else {
-        default_columns.push({
-            data : 'downloads',
-            sortInclude : false,
-            filter : false,
-            custom : function() { return m(''); }
-        });
+        if (item.data.provider === 'osfstorage') {
+            default_columns.push({
+                data : 'downloads',
+                sortInclude : false,
+                filter : false,
+                custom: function() { return item.data.extra ? item.data.extra.downloads.toString() : ''; }
+            });
+        } else {
+            default_columns.push({
+                data : 'downloads',
+                sortInclude : false,
+                filter : false,
+                custom : function() { return m(''); }
+            });
+        }
     }
     configOption = resolveconfigOption.call(this, item, 'resolveRows', [item]);
     return configOption || default_columns;
@@ -1139,9 +1221,13 @@ function _fangornColumnTitles () {
     columns.push(
     {
         title: 'Name',
-        width : '90%',
+        width : '80%',
         sort : true,
         sortType : 'text'
+    }, {
+        title : 'Size',
+        width : '10%',
+        sort : false
     }, {
         title : 'Downloads',
         width : '10%',
@@ -1254,7 +1340,9 @@ function _renameEvent () {
     var val = $.trim($('#renameInput').val());
     var folder = item.parent();
     //TODO Error message?
-    if  (val === item.name) return;
+    if  (val === item.name) {
+        return;
+    }
     checkConflictsRename(tb, item, val, doItemOp.bind(tb, OPERATIONS.RENAME, folder, item, val));
     tb.toolbarMode(toolbarModes.DEFAULT);
 }
@@ -1400,7 +1488,7 @@ var FGItemButtons = {
                     }, 'Delete'));
 
             }
-        } else if(item.data.provider) {
+        } else if(item.data.provider && item.children.length !== 0) {
             rowButtons.push(
                 m.component(FGButton, {
                     onclick: function(event) { _downloadZipEvent.call(tb, event, item); },
@@ -1424,7 +1512,7 @@ var FGItemButtons = {
     }
 };
 
-var _dismissToolbar = function(){
+var dismissToolbar = function(){
     var tb = this;
     if (tb.toolbarMode() === toolbarModes.SEARCH){
         tb.resetFilter();
@@ -1444,7 +1532,7 @@ var FGToolbar = {
         self.mode = self.tb.toolbarMode;
         self.isUploading = args.treebeard.isUploading;
         self.helpText = m.prop('');
-        self.dismissToolbar = _dismissToolbar.bind(self.tb);
+        self.dismissToolbar = dismissToolbar.bind(self.tb);
         self.createFolder = function(event){
             _createFolder.call(self.tb, event, self.dismissToolbar, self.helpText );
         };
@@ -1580,10 +1668,11 @@ var FGToolbar = {
                 onclick: function(event){
                     var mithrilContent = m('div', [
                         m('h3.break-word.m-b-lg', 'How to Use the File Browser'),
-                        m('p', [ m('b', 'Select rows:'), m('span', ' Click on a row (outside the name) to show further actions in the toolbar.')]),
-                        m('p', [ m('b', 'Select Multiple Files:'), m('span', ' Use command or shift keys to select multiple files.')]),
+                        m('p', [ m('b', 'Select Rows:'), m('span', ' Click on a row (outside the name) to show further actions in the toolbar.')]),
+                        m('p', [ m('b', 'Select Multiple Files:'), m('span', ' Use Command or Shift keys to select multiple files.')]),
                         m('p', [ m('b', 'Open Files:'), m('span', ' Click a file name to go to the file.')]),
                         m('p', [ m('b', 'Open Files in New Tab:'), m('span',  ' Press Command (or Ctrl in Windows) and  click a file name to open it in a new tab.')]),
+                        m('p', [ m('b', 'Copy Files:'), m('span', ' Press Option (or Alt in Windows) while dragging a file to a new folder or component.')])
                     ]);
                     var mithrilButtons = m('div', [
                         m('span.tb-modal-btn', { 'class' : 'text-primary', onclick : function(event) { ctrl.tb.modal.dismiss(); } }, 'Close'),
@@ -1644,7 +1733,7 @@ function filterRowsNotInParent(rows) {
  * @param {Object} item A Treebeard _item object.
  * @private
  */
-function _openParentFolders (item) {
+function openParentFolders (item) {
     var tb = this;
     // does it have a parent? If so change open
     var parent = item.parent();
@@ -1654,7 +1743,7 @@ function _openParentFolders (item) {
             parent.load = true;
             tb.toggleFolder(index);
         }
-        _openParentFolders.call(tb, parent);
+        openParentFolders.call(tb, parent);
     }
     return;
 }
@@ -1671,10 +1760,10 @@ function _openParentFolders (item) {
     var scrollToItem = false;
     filterRowsNotInParent.call(tb, tb.multiselected());
     if (tb.toolbarMode() === 'search') {
-        _dismissToolbar.call(tb);
+        dismissToolbar.call(tb);
         scrollToItem = true;
         // recursively open parents of the selected item but do not lazyload;
-        _openParentFolders.call(tb, row);
+        openParentFolders.call(tb, row);
     }
 
     if (tb.multiselected().length === 1){
@@ -1766,9 +1855,12 @@ function _fangornOver(event, ui) {
 function _dropLogic(event, items, folder) {
     var tb = this;
 
-    if (items.length < 1) { return; }
-    if (items.indexOf(folder) > -1) { return; }
-    if (copyMode === 'forbidden') return;
+    if (items.length < 1 ||
+        items.indexOf(folder) > -1 ||
+        copyMode === 'forbidden'
+    ) {
+        return;
+    }
 
     // if (items[0].data.kind === 'folder' && ['github', 'figshare', 'dataverse'].indexOf(folder.data.provider) !== -1) { return; }
 
@@ -1817,13 +1909,27 @@ function getCopyMode(folder, items) {
     var tb = this;
     var canMove = true;
     var mustBeIntra = (folder.data.provider === 'github');
+    var cannotBeFolder = (folder.data.provider === 'figshare' || folder.data.provider === 'dataverse');
 
-    if (folder.parentId === 0) return 'forbidden';
-    if (folder.data.kind !== 'folder' || !folder.data.permissions.edit) return 'forbidden';
-    if (!folder.data.provider || folder.data.status) return 'forbidden';
+    if (folder.parentId === 0 ||
+        folder.data.kind !== 'folder' ||
+        !folder.data.permissions.edit ||
+        !folder.data.provider ||
+        folder.data.status ||
+        folder.data.provider === 'dataverse'
+    ) {
+        return 'forbidden';
+    }
 
-    if (folder.data.provider === 'figshare') return 'forbidden';
-    if (folder.data.provider === 'dataverse') return 'forbidden';
+    //Disallow moving INTO a public figshare folder
+    if (
+        folder.data.provider === 'figshare' &&
+        folder.data.extra &&
+        folder.data.extra.status &&
+        folder.data.extra.status === 'public'
+    ) {
+        return 'forbidden';
+    }
 
     for(var i = 0; i < items.length; i++) {
         var item = items[i];
@@ -1832,17 +1938,30 @@ function getCopyMode(folder, items) {
             item.data.isAddonRoot ||
             item.id === folder.id ||
             item.parentID === folder.id ||
-            item.data.provider === 'figshare' ||
             item.data.provider === 'dataverse' ||
-            (mustBeIntra && item.data.provider !== folder.data.provider)
-        ) return 'forbidden';
+            (cannotBeFolder && item.data.kind === 'folder') ||
+            (mustBeIntra && item.data.provider !== folder.data.provider) ||
+            //Disallow moving OUT of a public figshare folder
+            (item.data.provider === 'figshare' && item.data.extra && item.data.status && item.data.status !== 'public')
+        ) {
+            return 'forbidden';
+        }
 
         mustBeIntra = mustBeIntra || item.data.provider === 'github';
-        canMove = canMove && item.data.permissions.edit && (!mustBeIntra || (item.data.provider === folder.data.provider && item.data.nodeId === folder.data.nodeId));
+        canMove = (
+            canMove &&
+            item.data.permissions.edit &&
+            //Can only COPY OUT of figshare
+            item.data.provider !== 'figshare' &&
+            (!mustBeIntra || (item.data.provider === folder.data.provider && item.data.nodeId === folder.data.nodeId))
+        );
     }
-    if (folder.data.isPointer) return 'copy';
-    if (altKey) return 'copy';
-    if (!canMove) return 'copy';
+    if (folder.data.isPointer ||
+        altKey ||
+        !canMove
+    ) {
+        return 'copy';
+    }
     return 'move';
 }
 /* END MOVE */
@@ -1914,7 +2033,7 @@ tbOptions = {
                 return;
             }
             tb.clearMultiselect();
-            _dismissToolbar.call(tb);
+            dismissToolbar.call(tb);
         });
 
         $(window).on('beforeunload', function() {
@@ -1933,7 +2052,7 @@ tbOptions = {
         }
         $(window).on('keydown', function(event){
             if (event.keyCode === ESCAPE_KEY) {
-                _dismissToolbar.call(tb);
+                dismissToolbar.call(tb);
             }
         });
     },
@@ -2020,7 +2139,8 @@ tbOptions = {
         var item = tb.find(row.id);
         _fangornMultiselect.call(tb,null,item);
     },
-    hScroll : 400
+    hScroll : 400,
+    naturalScrollLimit : 0
 };
 
 /**
@@ -2077,9 +2197,11 @@ Fangorn.Utils = {
     reapplyTooltips : reapplyTooltips,
     setCurrentFileID: setCurrentFileID,
     scrollToFile: scrollToFile,
-    openParentFolders : _openParentFolders,
-    dismissToolbar : _dismissToolbar,
-    uploadRowTemplate : uploadRowTemplate
+    openParentFolders : openParentFolders,
+    dismissToolbar : dismissToolbar,
+    uploadRowTemplate : uploadRowTemplate,
+    resolveIconView: resolveIconView,
+    orderFolder: orderFolder
 };
 
 Fangorn.DefaultOptions = tbOptions;

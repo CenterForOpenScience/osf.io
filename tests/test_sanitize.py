@@ -1,5 +1,5 @@
 import unittest
-from nose.tools import *
+from nose.tools import *  # flake8: noqa
 from website.util import sanitize
 
 
@@ -25,8 +25,7 @@ class TestSanitize(unittest.TestCase):
     def test_clean_tag(self):
         assert_equal(
             sanitize.clean_tag('\'\'\'\'\'"""""""<script></script>'),
-            '&quot;&quot;&quot;&quot;&quot;&quot;&quot;'
-                '&lt;script&gt;&lt;/script&gt;',
+            '&#39&#39&#39&#39&#39&quot;&quot;&quot;&quot;&quot;&quot;&quot;&lt;script&gt;&lt;/script&gt;',
         )
 
     def test_strip_html(self):
@@ -39,4 +38,16 @@ class TestSanitize(unittest.TestCase):
         assert_equal(
             sanitize.safe_unescape_html('&lt;&gt; diamonds &amp; diamonds &lt;&gt;'),
             '<> diamonds & diamonds <>'
+        )
+        assert_equal(
+            sanitize.safe_unescape_html(['&lt;&gt;&amp;'])[0],
+            '<>&'
+        )
+        assert_equal(
+            sanitize.safe_unescape_html(('&lt;&gt;&amp;', ))[0],
+            '<>&'
+        )
+        assert_equal(
+            sanitize.safe_unescape_html({'key': '&lt;&gt;&amp;'})['key'],
+            '<>&'
         )

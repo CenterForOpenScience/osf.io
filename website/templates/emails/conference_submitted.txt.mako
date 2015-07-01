@@ -17,7 +17,7 @@ Get more from the OSF by enhancing your page with the following:
 * Collaborators/contributors to the submission
 * Charts, graphs, and data that didn't make it onto the submission
 * Links to related publications or reference lists
-* Connecting your GitHub account via add-on integration
+* Connecting other accounts, like Dropbox, Google Drive, GitHub, figshare and Mendeley via add-on integration. Learn more and read the full list of available add-ons: [ http://osf.io/getting-started/#addons ]
 
 To learn more about the OSF, visit [ http://osf.io/getting-started ]!
 
