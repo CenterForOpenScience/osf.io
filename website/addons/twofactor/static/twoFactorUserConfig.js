@@ -14,7 +14,6 @@ var ChangeMessageMixin = require('js/changeMessage');
 
 function ViewModel(settingsUrl, qrCodeSelector) {
     var self = this;
-    ChangeMessageMixin.call(self);
     self.settingsUrl = settingsUrl;
     self.qrCodeSelector = qrCodeSelector;
     self.tfaCode = ko.observable('');
@@ -28,6 +27,8 @@ function ViewModel(settingsUrl, qrCodeSelector) {
 
     self.urls = {};
 }
+$.extend(ViewModel.prototype, ChangeMessageMixin.prototype);
+
 
 ViewModel.prototype.initialize = function() {
     var self = this;
