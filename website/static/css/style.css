@@ -271,3 +271,7 @@ a {
 .footer h4 {
     font-weight: normal;
 }
+
+.popover h3 {
+    font-weight: 500;
+}

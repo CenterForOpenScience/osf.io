@@ -32,3 +32,7 @@
 #privateLinkTable .btn-group .btn-mini{
     padding:5px;
 }
+
+.contributor-delete-staged {
+    background-color: #f5f5f5;
+}
