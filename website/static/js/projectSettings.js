@@ -13,9 +13,7 @@ var ProjectSettings = oop.extend(
     {
         constructor: function(params) {
             this.super.constructor.call(this);
-
             var self = this;
-            self.currentNode = window.contextVars.node;
 
             self.titleDescriptionEditUrl = params.api_url;
             self.decodedTitle = $osf.htmlDecode(params.currentTitle);
