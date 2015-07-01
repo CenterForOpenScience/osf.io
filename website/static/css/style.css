@@ -253,3 +253,8 @@ a {
     -o-user-select: none;
     user-select: none;
 }
+
+.no-border {
+    border: none !important;
+    box-shadow: none !important;
+}

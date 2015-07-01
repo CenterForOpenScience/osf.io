@@ -314,3 +314,7 @@
     font-size: 0.8em;
     font-weight: bold;
 }
+
+.wiki-single-heading {
+    border: 1px solid #ddd;
+}

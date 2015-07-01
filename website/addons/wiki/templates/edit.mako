@@ -58,7 +58,7 @@
                  style="${'' if 'edit' in panels_used else 'display: none' | n}">
               <form id="wiki-form" action="${urls['web']['edit']}" method="POST">
                 <div class="osf-panel panel panel-default" data-bind="css: { 'no-border': $root.singleVis() === 'edit' }">
-                  <div class="panel-heading clearfix" data-bind="css : { 'no-background': $root.singleVis() === 'edit' }">
+                  <div class="panel-heading clearfix" data-bind="css : { 'wiki-single-heading': $root.singleVis() === 'edit' }">
                     <div class="row">
                       <div class="col-md-6">
                            <h3 class="panel-title" > <i class="fa fa-pencil-square-o"> </i>   Edit </h3>
@@ -129,7 +129,7 @@
                class="${'col-sm-{0}'.format(12 / num_columns) | n}"
                style="${'' if 'view' in panels_used else 'display: none' | n}">
               <div class="osf-panel panel panel-default no-border" data-bind="css: { 'no-border reset-height': $root.singleVis() === 'view', 'osf-panel-flex': $root.singleVis() !== 'view' }">
-                <div class="panel-heading no-background" data-bind="css: { 'osf-panel-heading-flex': $root.singleVis() !== 'view', 'no-background': $root.singleVis() === 'view' }">
+                <div class="panel-heading wiki-single-heading" data-bind="css: { 'osf-panel-heading-flex': $root.singleVis() !== 'view', 'wiki-single-heading': $root.singleVis() === 'view' }">
                     <div class="row">
                         <div class="col-sm-6">
                             <span class="panel-title" > <i class="fa fa-eye"> </i>  View</span>
@@ -172,7 +172,7 @@
                class="${'col-sm-{0}'.format(12 / num_columns) | n}"
                style="${'' if 'compare' in panels_used else 'display: none' | n}">
             <div class="osf-panel panel panel-default osf-panel-flex" data-bind="css: { 'no-border reset-height': $root.singleVis() === 'compare', 'osf-panel-flex': $root.singleVis() !== 'compare' }">
-              <div class="panel-heading osf-panel-heading-flex" data-bind="css: {  'osf-panel-heading-flex': $root.singleVis() !== 'compare', 'no-background': $root.singleVis() === 'compare'}">
+              <div class="panel-heading osf-panel-heading-flex" data-bind="css: {  'osf-panel-heading-flex': $root.singleVis() !== 'compare', 'wiki-single-heading': $root.singleVis() === 'compare'}">
                   <div class="row">
                       <div class="col-xs-12">
                           <h3 class="panel-title m-r-xs"> <i class="fa fa-exchange"> </i>   Compare </h3>
