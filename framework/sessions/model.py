@@ -12,3 +12,7 @@ class Session(StoredObject):
     date_created = fields.DateTimeField(auto_now_add=True)
     date_modified = fields.DateTimeField(auto_now=True)
     data = fields.DictionaryField()
+
+    @property
+    def is_authenticated(self):
+        return 'auth_user_id' in self.data
