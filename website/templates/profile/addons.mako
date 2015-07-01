@@ -1,5 +1,5 @@
 <%inherit file="base.mako"/>
-<%def name="title()">Configure External Accounts </%def>
+<%def name="title()">Configure Add-on Accounts </%def>
 <%def name="content()">
 <style>
 .addon-icon {
@@ -8,7 +8,7 @@
 </style>
 
 <% from website import settings %>
-<h2 class="page-header">Configure External Accounts</h2>
+<h2 class="page-header">Configure Add-on Accounts</h2>
 
 <div class="row">
 
@@ -18,7 +18,7 @@
             <ul class="nav nav-stacked nav-pills">
                 <li><a href="${ web_url_for('user_profile') }">Profile Information</a></li>
                 <li><a href="${ web_url_for('user_account') }">Account Settings</a></li>
-                <li><a href="#">Configure External Accounts</a></li>
+                <li><a href="#">Configure Add-on Accounts</a></li>
                 <li><a href="${ web_url_for('user_notifications') }">Notifications</a></li>
             </ul>
         </div><!-- end sidebar -->
