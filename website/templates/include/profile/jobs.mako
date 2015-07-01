@@ -94,8 +94,8 @@
 
             </div>
 
-            <div data-bind="visible: !institutionsEmpty()">
-                <a class="btn btn-default" data-bind="click: addContent">
+            <div>
+                <a class="btn btn-default" data-bind="css: enablebtn, click: addContent">
                     Add another
                 </a>
             </div>
