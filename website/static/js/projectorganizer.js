@@ -1399,7 +1399,8 @@ var tbOptions = {
     resolveRefreshIcon : function () {
         return m('i.fa.fa-refresh.fa-spin');
     },
-    toolbarComponent : POToolbar
+    toolbarComponent : POToolbar,
+    naturalScrollLimit : 0
 };
 
 /**
