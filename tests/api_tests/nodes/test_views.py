@@ -721,7 +721,6 @@ class TestNodeContributorList(ApiTestCase):
         self.user.set_password(password)
         self.user.save()
         self.basic_auth = (self.user.username, password)
-        self.post_data = {'id': self.user._id}
 
         self.user_two = UserFactory.build()
         self.user_two.set_password(self.password)
@@ -1107,7 +1106,6 @@ class TestNodeRegistrationList(ApiTestCase):
     def test_return_private_registrations_logged_in_non_contributor(self):
         res = self.app.get(self.private_url, auth=self.basic_auth_two, expect_errors=True)
         assert_equal(res.status_code, 403)
-
 
 
 class TestNodeChildrenList(ApiTestCase):
