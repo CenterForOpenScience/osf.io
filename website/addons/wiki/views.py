@@ -534,8 +534,9 @@ def format_component_wiki_pages(node, auth):
                 'id': wiki_page['id'],
                 'wiki_content': wiki_page['wiki_content'].get('wiki_content')
             },
+            'kind': 'component',
+            'category': wiki_page['category'],
             'children': children,
-            'kind': 'component'
         }
         pages.append(page)
     return pages

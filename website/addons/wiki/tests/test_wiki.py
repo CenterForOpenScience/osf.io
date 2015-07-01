@@ -1159,7 +1159,8 @@ class TestWikiMenu(OsfTestCase):
                     'wiki_content': 'home content'
                 },
                 'children': [],
-                'kind': 'component'
+                'kind': 'component',
+                'category': self.component.category,
             }
         ]
         assert_equal(data, expected)
@@ -1189,7 +1190,8 @@ class TestWikiMenu(OsfTestCase):
                         'kind': 'component',
                     }
                 ],
-                'kind': 'component'
+                'kind': 'component',
+                'category': self.component.category,
             }
         ]
         assert_equal(data, expected)
@@ -1205,7 +1207,8 @@ class TestWikiMenu(OsfTestCase):
                     'wiki_content': ''
                 },
                 'children': [],
-                'kind': 'component'
+                'kind': 'component',
+                'category': self.component.category
             }
         ]
         assert_equal(data, expected)

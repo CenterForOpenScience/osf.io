@@ -1,16 +1,8 @@
 'use strict';
 var m = require('mithril');
+var iconmap = require('js/iconmap');
 var Treebeard = require('treebeard');
 require('../css/fangorn.css');
-
-function resolveIcon(item) {
-    if (item.children.length > 0) {
-        if (item.open) {
-            return m('i.fa.fa-folder-open', ' ');
-        }
-        return m('i.fa.fa-folder', ' ');
-    }
-}
 
 function resolveToggle(item) {
     var toggleMinus = m('i.fa.fa-minus', ' '),
@@ -25,6 +17,64 @@ function resolveToggle(item) {
     item.open = true;
     return '';
 }
+
+function resolveIcon(item) {
+    var componentIcons = iconmap.componentIcons;
+    function returnView(category) {
+        var iconType = componentIcons[category];
+        return m('span', { 'class' : iconType});
+    }
+    if (item.data.kind === 'component' && item.parent().data.title === 'Component Wiki Pages') {
+        return returnView(item.data.category);
+    }
+    if (item.data.type === 'heading' && item.data.children.length > 0 ) {
+        if (item.open) {
+            return m('i.fa.fa-folder-open', ' ');
+        }
+        return m('i.fa.fa-folder', ' ');
+    }
+    return m('i.fa.fa-file-o', ' ');
+}
+
+var WikiMenuToolbar = {
+    controller : function(args) {
+        var self = this;
+        self.tb = args.treebeard;
+        self.items = self.tb.multiselected;
+    },
+    view : function(ctrl) {
+        var items = ctrl.items();
+        var item = items[0];
+        var buttons = [];
+        if(item) {
+            if(window.contextVars.wiki.canEdit) {
+                buttons.push(
+                    m('a.fangorn-toolbar-icon.text-success', {'data-toggle': 'modal', 'data-target': '#newWiki'}, [
+                        m('i.fa.fa-plus.text-success'),
+                        m('span', 'New')
+                    ])
+                );
+                if(item.data.page.name !== 'home') {
+                    buttons.push(
+                        m('a.fangorn-toolbar-icon.text-danger', {'data-toggle': 'modal', 'data-target': '#deleteWiki'}, [
+                            m('i.fa.fa-trash-o.text-danger'),
+                            m('span', 'Delete')
+                        ])
+                    )
+                }
+            } else {
+                buttons.push(
+                    m('', [m('i.fa.fa-list')], 'Menu')
+                );
+            }
+        }
+        return m('.row.tb-header-row', [
+            m('#toolbarRow', [
+                m('.col-xs-12', [buttons])
+            ])
+        ]);
+    }
+};
 
 function WikiMenu(data, wikiID, canEdit) {
 
@@ -97,6 +147,7 @@ function WikiMenu(data, wikiID, canEdit) {
             return columns;
         },
         hScroll: 500,
+        toolbarComponent: WikiMenuToolbar,
         showFilter : false,     // Gives the option to filter by showing the filter box.
         allowMove : false,       // Turn moving on or off.
         hoverClass : 'fangorn-hover',
@@ -106,5 +157,9 @@ function WikiMenu(data, wikiID, canEdit) {
     };
     var grid = new Treebeard(tbOptions);
 }
+
+WikiMenu.Components = {
+    toolbar : WikiMenuToolbar
+};
 
 module.exports = WikiMenu;
