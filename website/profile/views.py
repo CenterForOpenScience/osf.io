@@ -804,6 +804,8 @@ def redirect_to_twitter(uid):
         })
 
     if twitter_handle:
+        # TODO(hrybacki): Verify Twitter handle is for a real account.
+        # Requires authenticated access to Twitter API
         redirect_url = "https://twitter.com/{0}".format(twitter_handle)
     else:
         raise HTTPError(http.BAD_REQUEST, data={
