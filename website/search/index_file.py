@@ -11,11 +11,11 @@ def collect_from_osfstorage(addon, tree):
         yield {'name': name, 'content': content}
 
 
-def collect_from_github(addon, tree):
+def collect_from_addon(addon, tree):
     children = tree['children']
     for child in children:
         if child.get('children'):
-            for file_ in collect_from_github(addon, child):
+            for file_ in collect_from_addon(addon, child):
                 yield file_
         else:
             path, name = child['path'], child['name']
@@ -30,12 +30,9 @@ def collect_files(node):
     :param node: node
     :return: dict with the files name and it's contents.
     """
-
-    # TODO: Generalize to other addons
     addons = node.get_addons()
     for addon in addons:
         addon_name = addon.config.short_name
-        logging.info('ADDON : {}\n'.format(addon_name))
         try:
             file_tree = addon._get_file_tree()
         except AttributeError:
@@ -43,9 +40,8 @@ def collect_files(node):
 
         if addon_name == 'osfstorage':
             for file_ in collect_from_osfstorage(addon, file_tree):
-                logging.info('File from {}:\n {}\n'.format(addon_name, pformat(file_)))
                 yield file_
 
-        elif addon_name == 'github':
-            for file_ in collect_from_github(addon, file_tree):
+        else:
+            for file_ in collect_from_addon(addon, file_tree):
                 yield file_
