@@ -42,7 +42,7 @@
                             <li><a href="#configureNotificationsAnchor">Configure Notifications</a></li>
                         % endif
 
-                        % if 'admin' in user['permissions'] and 'wiki' in addons_enabled:
+                        % if 'admin' in user['permissions']and wiki_on_children:
                             <li><a href="#configureWikiAnchor">Configure Wiki</a></li>
                         % endif
 
@@ -274,7 +274,7 @@
 
         % endif  ## End Configure Notifications
 
-        % if 'admin' in user['permissions'] and 'wiki' in addons_enabled:  ## Begin Configure Wiki
+        % if 'admin' in user['permissions']and wiki_on_children:  ## Begin Configure Wiki
 
             % if not node['is_registration']:
 

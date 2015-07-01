@@ -180,8 +180,12 @@ def format_data(user, node_ids):
         admin = node.has_permission(user, 'admin')
         has_wiki = node.has_addon('wiki')
         admin_on_children = node.has_permission_on_children(user, 'admin')
+        wiki_on_children = node.has_addon_on_children('wiki')
 
         if not admin and not admin_on_children:
+            continue
+
+        if not has_wiki and not wiki_on_children:
             continue
 
         children = []
@@ -202,22 +206,22 @@ def format_data(user, node_ids):
                 not n.is_deleted
             ]
         ))
-        if has_wiki:
-            item = {
-                'node': {
-                    'id': node_id,
-                    'url': node.url if admin else '',
-                    'title': node.title if admin else 'Private Project',
-                },
-                'children': children,
-                'kind': 'folder' if not node.node__parent or not node.parent_node.has_permission(user, 'admin') else 'node',
-                'nodeType': node.project_or_component,
-                'category': node.category,
-                'permissions': {
-                    'admin': admin,
-                },
-            }
 
-            items.append(item)
+        item = {
+            'node': {
+                'id': node_id,
+                'url': node.url if admin else '',
+                'title': node.title if admin else 'Private Project',
+            },
+            'children': children,
+            'kind': 'folder' if not node.node__parent or not node.parent_node.has_permission(user, 'admin') else 'node',
+            'nodeType': node.project_or_component,
+            'category': node.category,
+            'permissions': {
+                'admin': admin,
+            },
+        }
+
+        items.append(item)
 
     return items
