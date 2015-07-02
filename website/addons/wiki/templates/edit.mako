@@ -43,7 +43,7 @@
         <!-- Menu without toggle in XS size only -->
         <div class="osf-panel panel panel-default visible-xs">
             <div class="panel-heading"> <i class="fa fa-list"> </i>  Menu </div>
-            <div class="panel-body ">
+            <div>
                 <%include file="wiki/templates/toc.mako"/>
             </div>
         </div>
