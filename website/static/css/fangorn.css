@@ -266,6 +266,11 @@ text-align: center;
 .file-extension._exe {background: url('/static/img/hgrid/fatcowicons/file_extension_exe.png');	}
 .file-extension._fla {background: url('/static/img/hgrid/fatcowicons/file_extension_fla.png');	}
 .file-extension._flv {background: url('/static/img/hgrid/fatcowicons/file_extension_flv.png');	}
+.file-extension._gdoc {background: url('/static/img/hgrid/googledrive/icon_1_document_x16.png');	}
+.file-extension._gdraw {background: url('/static/img/hgrid/googledrive/icon_1_drawing_x16.png');	}
+.file-extension._gform {background: url('/static/img/hgrid/googledrive/icon_1_form_x16.png');	}
+.file-extension._gslides {background: url('/static/img/hgrid/googledrive/icon_1_presentation_x16.png');	}
+.file-extension._gsheet {background: url('/static/img/hgrid/googledrive/icon_1_spreadsheet_x16.png');	}
 .file-extension._gif {background: url('/static/img/hgrid/fatcowicons/file_extension_gif.png');	}
 .file-extension._gz  {background: url('/static/img/hgrid/fatcowicons/file_extension_gz.png');	}
 .file-extension._hqx {background: url('/static/img/hgrid/fatcowicons/file_extension_hqx.png');	}
