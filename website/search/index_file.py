@@ -5,11 +5,15 @@ import requests
 def collect_from_osfstorage(addon, tree):
     children = tree['children']
     for child in children:
-        path, name = child['path'], child['name']
-        file_, created = addon.find_or_create_file_guid(path)
-        response = requests.get(file_.download_url + '&mode=render')
-        content = unicode(response.text).encode('utf-8')
-        yield {'name': name, 'content': content}
+        if child.get('children'):
+            for file_ in collect_from_osfstorage(addon, child):
+                yield file_
+        else:
+            path, name = child['path'], child['name']
+            file_, created = addon.find_or_create_file_guid(path)
+            response = requests.get(file_.download_url + '&mode=render')
+            content = unicode(response.text).encode('utf-8')
+            yield {'name': name, 'content': content}
 
 
 def collect_from_addon(addon, tree):
