@@ -136,3 +136,12 @@ class TestCollectFiles(OsfTestCase):
         for file_ in collect_files(self.fake_project_with_addon):
             assert_equal(file_['name'], 'file_one.txt', 'This is file one.')
             assert_equal(file_['content'], 'This is file one.')
+
+    def test_does_not_include_images(self):
+        add_file('file_one.txt', '/f_one', 'No one expects the finches swim audition!')
+        add_file('file_two.png', '/f_two', '*A picture of the moon*')
+        add_file('file_two.jpg', '/f_two', '*A picture of the moon*')
+        add_file('file_two.jpeg', '/f_two', '*A picture of the moon*')
+        add_file('file_two.bmp', '/f_two', '*A picture of the moon*')
+        for file_ in collect_files(self.fake_project_with_addon):
+            assert_equal(file_['name'], 'file_one.txt')
