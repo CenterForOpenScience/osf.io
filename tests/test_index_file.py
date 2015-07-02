@@ -90,12 +90,14 @@ def reset_files():
 
 class TestCollectFiles(OsfTestCase):
     def setUp(self):
+        super(TestCollectFiles, self).tearDown()
         self._start_mocks()
         self.fake_project_with_addon = factories.ProjectWithAddonFactory()
         self.fake_project_with_addon.add_addon('github', None)
         self.fake_project_with_addon.add_addon('brandons_addon', None)
 
     def tearDown(self):
+        super(TestCollectFiles, self).setUp()
         self._stop_mocks()
         reset_files()
 
