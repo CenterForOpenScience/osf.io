@@ -49,97 +49,99 @@ describe('ProjectSettings', () => {
             assert.isTrue(Boolean(vm.resetMessage) || false);
         });
     });
-    describe('#updateCategorySuccess', () => {
-        var changeMessageSpy;
-        before(() => {
-            changeMessageSpy = sinon.spy(vm, 'changeMessage');
-        });
-        after(() => {
-            vm.changeMessage.restore();
-        });
-        it('updates the message, updates the category, and sets the dirty state to false', () => {
-            var newcategory = categories[0];
-            vm.updateCategorySuccess(newcategory);
-            assert.calledWith(changeMessageSpy, vm.UPDATE_SUCCESS_MESSAGE, vm.MESSAGE_SUCCESS_CLASS);
-            assert.equal(newcategory, vm.category());
-            assert.isFalse(vm.dirty());
-        });
-    });
-    describe('#updateCategoryError', () => {
-        var changeMessageSpy;
-        var ravenStub;
-        before(() => {
-            changeMessageSpy = sinon.spy(vm, 'changeMessage');
-            ravenStub = sinon.stub(Raven, 'captureMessage');
-        });
-        after(() => {
-            vm.changeMessage.restore();
-            Raven.captureMessage.restore();
-        });
-        it('updates the message, and captures the error with Raven', () => {
-            var error = faker.lorem.sentence();
-            vm.updateCategoryError({}, error, {});
-            assert.calledWith(changeMessageSpy, vm.UPDATE_ERROR_MESSAGE, vm.MESSAGE_ERROR_CLASS);
-            assert.calledWith(ravenStub, vm.UPDATE_ERROR_MESSAGE_RAVEN, {
-                url: updateUrl,
-                textStatus: error,
-                err: {}
-            });
-        });
-    });
-    describe('#updateCategory', () => {
-        var server;
-        var serverSpy = sinon.spy();
-        var updateSuccessSpy = sinon.spy(vm, 'updateCategorySuccess');
-        before(() => {
-            server = sinon.fakeServer.create();
-            server.respondWith(
-                'PUT',
-                updateUrl,
-                function(xhr) {
-                    serverSpy();
-                    var response = {
-                        'updated_fields': JSON.parse(xhr.requestBody)
-                    };
-                    xhr.respond(
-                        200,
-                        {'Content-Type': 'application/json'},
-                        JSON.stringify(response)
-                    );
-                }
-            );
-        });
-        after(() => {
-            server.restore();
-        });
-        it('sends a put to the updateUrl with the selected category, and updates the category on success', (done) => {
-            var newcategory = categories[0];
-            vm.selectedCategory(newcategory);
-            vm.updateCategory()
-                .always(function() {
-                    assert.called(serverSpy);
-                    assert.calledWith(updateSuccessSpy, newcategory);
-                    done();
-                });
-            server.respond();
-        });
-    });
-    describe('#cancelUpdateCategory', () => {
-        var resetMessageSpy;
-        before(() => {
-            resetMessageSpy = sinon.spy(vm, 'resetMessage');
-        });
-        after(() => {
-            vm.resetMessage.restore();
-        });
-        it('restores the selectedCategory to the VM\'s category, sets the dirty state to false, and resets the message', () => {
-            vm.selectedCategory(categories[0]);
-            vm.dirty(true);
-            vm.changeMessage('Some message', 'some-class');
-            vm.cancelUpdateCategory();
-            assert.equal(vm.selectedCategory(), vm.category());
-            assert.isFalse(vm.dirty());
-            assert.called(resetMessageSpy);
-        });
-    });
+    //  These test deprecated functions.
+    //  TODO - write new tests
+    // describe('#updateCategorySuccess', () => {
+    //     var changeMessageSpy;
+    //     before(() => {
+    //         changeMessageSpy = sinon.spy(vm, 'changeMessage');
+    //     });
+    //     after(() => {
+    //         vm.changeMessage.restore();
+    //     });
+    //     it('updates the message, updates the category, and sets the dirty state to false', () => {
+    //         var newcategory = categories[0];
+    //         vm.updateCategorySuccess(newcategory);
+    //         assert.calledWith(changeMessageSpy, vm.UPDATE_SUCCESS_MESSAGE, vm.MESSAGE_SUCCESS_CLASS);
+    //         assert.equal(newcategory, vm.category());
+    //         assert.isFalse(vm.dirty());
+    //     });
+    // });
+    // describe('#updateCategoryError', () => {
+    //     var changeMessageSpy;
+    //     var ravenStub;
+    //     before(() => {
+    //         changeMessageSpy = sinon.spy(vm, 'changeMessage');
+    //         ravenStub = sinon.stub(Raven, 'captureMessage');
+    //     });
+    //     after(() => {
+    //         vm.changeMessage.restore();
+    //         Raven.captureMessage.restore();
+    //     });
+    //     it('updates the message, and captures the error with Raven', () => {
+    //         var error = faker.lorem.sentence();
+    //         vm.updateCategoryError({}, error, {});
+    //         assert.calledWith(changeMessageSpy, vm.UPDATE_ERROR_MESSAGE, vm.MESSAGE_ERROR_CLASS);
+    //         assert.calledWith(ravenStub, vm.UPDATE_ERROR_MESSAGE_RAVEN, {
+    //             url: updateUrl,
+    //             textStatus: error,
+    //             err: {}
+    //         });
+    //     });
+    // });
+    // describe('#updateCategory', () => {
+    //     var server;
+    //     var serverSpy = sinon.spy();
+    //     var updateSuccessSpy = sinon.spy(vm, 'updateCategorySuccess');
+    //     before(() => {
+    //         server = sinon.fakeServer.create();
+    //         server.respondWith(
+    //             'PUT',
+    //             updateUrl,
+    //             function(xhr) {
+    //                 serverSpy();
+    //                 var response = {
+    //                     'updated_fields': JSON.parse(xhr.requestBody)
+    //                 };
+    //                 xhr.respond(
+    //                     200,
+    //                     {'Content-Type': 'application/json'},
+    //                     JSON.stringify(response)
+    //                 );
+    //             }
+    //         );
+    //     });
+    //     after(() => {
+    //         server.restore();
+    //     });
+    //     it('sends a put to the updateUrl with the selected category, and updates the category on success', (done) => {
+    //         var newcategory = categories[0];
+    //         vm.selectedCategory(newcategory);
+    //         vm.updateCategory()
+    //             .always(function() {
+    //                 assert.called(serverSpy);
+    //                 assert.calledWith(updateSuccessSpy, newcategory);
+    //                 done();
+    //             });
+    //         server.respond();
+    //     });
+    // });
+    // describe('#cancelUpdateCategory', () => {
+    //     var resetMessageSpy;
+    //     before(() => {
+    //         resetMessageSpy = sinon.spy(vm, 'resetMessage');
+    //     });
+    //     after(() => {
+    //         vm.resetMessage.restore();
+    //     });
+    //     it('restores the selectedCategory to the VM\'s category, sets the dirty state to false, and resets the message', () => {
+    //         vm.selectedCategory(categories[0]);
+    //         vm.dirty(true);
+    //         vm.changeMessage('Some message', 'some-class');
+    //         vm.cancelUpdateCategory();
+    //         assert.equal(vm.selectedCategory(), vm.category());
+    //         assert.isFalse(vm.dirty());
+    //         assert.called(resetMessageSpy);
+    //     });
+    // });
 });
