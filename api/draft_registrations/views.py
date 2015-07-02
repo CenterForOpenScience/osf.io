@@ -8,7 +8,7 @@ from rest_framework import generics, permissions as drf_permissions
 from rest_framework.exceptions import PermissionDenied, ValidationError
 
 from modularodm import Q
-from website.models import Node
+from website.models import DraftRegistration
 from api.base.filters import ODMFilterMixin
 from website.language import REGISTER_WARNING
 from api.base.utils import waterbutler_url_for
@@ -16,7 +16,7 @@ from api.nodes.serializers import NodePointersSerializer
 from api.base.utils import token_creator, absolute_reverse
 from api.nodes.permissions import ContributorOrPublic, ReadOnlyIfRegistration
 from api.nodes.views import NodeMixin, NodeFilesList, NodeChildrenList, NodeContributorsList, NodeDetail
-from api.registrations.serializers import RegistrationSerializer, RegistrationCreateSerializer, RegistrationCreateSerializerWithToken
+from api.draft_registrations.serializers import DraftRegistrationSerializer, DraftRegistrationCreateSerializer, DraftRegistrationCreateSerializerWithToken
 
 
 def registration_enforcer(node):
@@ -24,45 +24,30 @@ def registration_enforcer(node):
         raise ValidationError(_('Not a registration or registration draft.'))
 
 
-class RegistrationMixin(NodeMixin):
+class DraftRegistrationMixin(NodeMixin):
     """Mixin with convenience methods for retrieving the current node based on the
     current URL. By default, fetches the current node based on the pk kwarg.
     """
 
-    serializer_class = RegistrationSerializer
+    serializer_class = DraftRegistrationSerializer
     node_lookup_url_kwarg = 'registration_id'
 
 
 class DraftRegistrationList(generics.ListAPIView, ODMFilterMixin):
-    """All node registrations"""
+    """All draft registrations"""
 
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
     )
-    serializer_class = RegistrationSerializer
+    serializer_class = DraftRegistrationSerializer
 
-    # overrides ODMFilterMixin
-    def get_default_odm_query(self):
-        base_query = (
-            Q('is_deleted', 'ne', True) &
-            Q('is_folder', 'ne', True) &
-            (Q('is_registration', 'eq', True) | Q('is_registration_draft', 'eq', True))
-        )
-        user = self.request.user
-        permission_query = Q('is_public', 'eq', True)
-        if not user.is_anonymous():
-            permission_query = (Q('is_public', 'eq', True) | Q('contributors', 'icontains', user._id))
-
-        query = base_query & permission_query
-        return query
-
-    # overrides ListCreateAPIView
+    # overrides ListAPIView
     def get_queryset(self):
-        query = self.get_query_from_request()
-        return Node.find(query)
+        user = self.request.user
+        return DraftRegistration.find(Q('initiator', 'eq', user))
 
 
-class RegistrationDetail(NodeDetail, generics.CreateAPIView, RegistrationMixin):
+class DraftRegistrationDetail(NodeDetail, generics.CreateAPIView, DraftRegistrationMixin):
     """
     Registration details
     """
@@ -73,9 +58,9 @@ class RegistrationDetail(NodeDetail, generics.CreateAPIView, RegistrationMixin):
 
     def get_serializer_class(self):
         if self.request.method == 'POST':
-            serializer_class = RegistrationCreateSerializer
+            serializer_class = DraftRegistrationCreateSerializer
             return serializer_class
-        serializer_class = RegistrationSerializer
+        serializer_class = DraftRegistrationSerializer
         return serializer_class
 
     # Restores original get_serializer_class
@@ -104,7 +89,7 @@ class RegistrationDetail(NodeDetail, generics.CreateAPIView, RegistrationMixin):
         return Response({'data': {'id': node._id, 'warning_message': registration_warning, 'links': {'confirm_delete': url}}}, status=status.HTTP_202_ACCEPTED)
 
 
-class RegistrationCreate(generics.CreateAPIView, RegistrationMixin):
+class DraftRegistrationCreate(generics.CreateAPIView, DraftRegistrationMixin):
     """
     Save your registration draft
     """
@@ -113,10 +98,10 @@ class RegistrationCreate(generics.CreateAPIView, RegistrationMixin):
         ReadOnlyIfRegistration,
     )
 
-    serializer_class = RegistrationCreateSerializerWithToken
+    serializer_class = DraftRegistrationCreateSerializerWithToken
 
 
-class RegistrationContributorsList(NodeContributorsList, RegistrationMixin):
+class DraftRegistrationContributorsList(NodeContributorsList, DraftRegistrationMixin):
     """
     Contributors(users) for a registration
     """
@@ -131,7 +116,7 @@ class RegistrationContributorsList(NodeContributorsList, RegistrationMixin):
         return contributors
 
 
-class RegistrationChildrenList(NodeChildrenList, RegistrationMixin):
+class DraftRegistrationChildrenList(NodeChildrenList, DraftRegistrationMixin):
     """
     Children of the current registration
     """
@@ -148,7 +133,7 @@ class RegistrationChildrenList(NodeChildrenList, RegistrationMixin):
         return children
 
 
-class RegistrationPointersList(generics.ListAPIView, RegistrationMixin):
+class DraftRegistrationPointersList(generics.ListAPIView, DraftRegistrationMixin):
     """
     Registration pointers
     """
@@ -167,7 +152,7 @@ class RegistrationPointersList(generics.ListAPIView, RegistrationMixin):
         return pointers
 
 
-class RegistrationFilesList(NodeFilesList, RegistrationMixin):
+class DraftRegistrationFilesList(NodeFilesList, DraftRegistrationMixin):
     """
     Files attached to a registration
     """

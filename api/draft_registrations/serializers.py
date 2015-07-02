@@ -9,18 +9,17 @@ from website.project.model import MetaSchema
 from api.nodes.serializers import NodeSerializer
 
 
-class RegistrationSerializer(NodeSerializer):
+class DraftRegistrationSerializer(NodeSerializer):
     is_registration_draft = ser.BooleanField(read_only=True)
 
 
-class RegistrationCreateSerializer(RegistrationSerializer):
+class DraftRegistrationCreateSerializer(DraftRegistrationSerializer):
     category = ser.CharField(read_only=True)
     title = ser.CharField(read_only=True)
     description = ser.CharField(read_only=True)
 
 
-
-class RegistrationCreateSerializerWithToken(RegistrationSerializer):
+class DraftRegistrationCreateSerializerWithToken(DraftRegistrationSerializer):
     category = ser.CharField(read_only=True)
     title = ser.CharField(read_only=True)
     description = ser.CharField(read_only=True)
