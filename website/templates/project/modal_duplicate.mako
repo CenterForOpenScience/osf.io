@@ -28,6 +28,13 @@
                             </span>
                         </h4>
                         ${ language.TEMPLATE_DESCRIPTION }
+                        <a class="btn btn-primary form-control${'' if user_name and (user['is_contributor'] or node['is_public']) else ' disabled'}"
+                           data-dismiss="modal"
+                           onclick="NodeActions.useAsTemplate();"
+                        >
+                            ${ language.TEMPLATE_ACTION }
+                        </a>
+
                     </div>
                     <div class="col-md-4">
                         <h4 class="f-w-lg">Forks
@@ -42,22 +49,6 @@
                         % else:
                             ${ language.DISK_SAVING_MODE}
                         % endif
-                    </div>
-                </div>
-                <div class="row">
-                    <div class="col-md-4">
-##                        <a class="btn btn-primary form-control disabled">${ language.LINK_ACTION }</a>
-                    </div>
-                    <div class="col-md-4">
-                        <a class="btn btn-primary form-control${'' if user_name and (user['is_contributor'] or node['is_public']) else ' disabled'}"
-                           data-dismiss="modal"
-                           onclick="NodeActions.useAsTemplate();"
-                        >
-                            ${ language.TEMPLATE_ACTION }
-                        </a>
-                    </div>
-
-                    <div class="col-md-4">
                         % if not disk_saving_mode:
                             <a class="btn btn-primary form-control${ '' if user_name and (user['is_contributor'] or node['is_public']) else ' disabled'}"
                                data-dismiss="modal"
