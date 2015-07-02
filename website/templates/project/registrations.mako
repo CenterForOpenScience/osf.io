@@ -53,6 +53,7 @@
       <div class="col-md-9">
       <div>
         % if 'admin' in user['permissions'] and not disk_saving_mode:
+          <a id="registerNode" href="${node['url']}register" class="btn btn-success" type="button">New Registration</a>
         <a data-bind="css: {disabled: loading}" id="registerNode" class="btn btn-default" type="button">
           <i class="fa fa-plus"></i>
           New Draft Registration
