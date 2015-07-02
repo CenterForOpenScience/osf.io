@@ -24,6 +24,7 @@ from website.filters import gravatar
 from website.models import User, Node
 from website.search import exceptions
 from website.search.util import build_query
+from website.util import sanitize
 
 logger = logging.getLogger(__name__)
 
@@ -164,11 +165,11 @@ def format_result(result, parent_id=None):
     formatted_result = {
         'contributors': result['contributors'],
         'wiki_link': result['url'] + 'wiki/',
-        # TODO: Remove when html safe comes in
-        'title': result['title'].replace('&amp;', '&'),
+        # TODO: Remove safe_unescape_html when mako html safe comes in
+        'title': sanitize.safe_unescape_html(result['title']),
         'url': result['url'],
         'is_component': False if parent_info is None else True,
-        'parent_title': parent_info.get('title').replace('&amp;', '&') if parent_info else None,
+        'parent_title': sanitize.safe_unescape_html(parent_info.get('title')) if parent_info else None,
         'parent_url': parent_info.get('url') if parent_info is not None else None,
         'tags': result['tags'],
         'is_registration': (result['is_registration'] if parent_info is None

@@ -81,10 +81,10 @@
                             method="POST"
                         >
                         <div class="form-group">
-                            <input type="email" class="input-sm form-control" data-bind="value: username" name="username" placeholder="Email">
+                            <input type="email" class="input-sm form-control" data-bind="value: username" name="username" placeholder="Email" aria-label="Username">
                         </div>
                         <div class="form-group">
-                            <input type="password" class="input input-sm form-control" data-bind="value: password" name="password" placeholder="Password">
+                            <input type="password" class="input input-sm form-control" data-bind="value: password" name="password" placeholder="Password" aria-label="Password">
                         </div>
                         <button type="submit" class="btn btn-sm btn-success">Sign In</button>
                     </form>

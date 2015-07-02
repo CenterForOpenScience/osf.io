@@ -26,7 +26,7 @@ var ViewModel = function(submitUrl) {
         email: true,
         validation: {
             validator: function(val, other) {
-                return val === other;
+                return String(val).toLowerCase() === String(other).toLowerCase();
             },
             'message': 'Email addresses must match.',
             params: self.email1

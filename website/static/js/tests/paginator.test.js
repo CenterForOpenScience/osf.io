@@ -104,7 +104,7 @@ describe('Paginator', () => {
             assert.equal(paginator.paginators()[0].text, '&lt;');
             assert.equal(paginator.paginators()[maxPaginatorNumber - 1].text, '&gt;');
             assert.equal(paginator.paginators()[maxPaginatorNumber - 2].text, numberOfPages);
-            assert.equal(paginator.paginators()[maxPaginatorNumber - 3].text, '...')
+            assert.equal(paginator.paginators()[maxPaginatorNumber - 3].text, '...');
         });
 
         it('more than 7 pages, currentPage more than numbersOfPages - 5, one ellipse at the beginning',
@@ -140,7 +140,7 @@ describe('Paginator', () => {
             assert.equal(paginator.paginators()[2].text, '...');
             assert.equal(paginator.paginators()[maxPaginatorNumber - 1].text, '&gt;');
             assert.equal(paginator.paginators()[maxPaginatorNumber - 2].text, numberOfPages);
-            assert.equal(paginator.paginators()[maxPaginatorNumber - 3].text, '...')
+            assert.equal(paginator.paginators()[maxPaginatorNumber - 3].text, '...');
 
         });
 

@@ -8,7 +8,8 @@
                         "rescale_ratio": ${rescale_ratio},
                         "primary": ${int(each['primary'])},
                         "link_id": "${each['id']}",
-                        "uid": "${user_id}"
+                        "uid": "${user_id}",
+                        "show_path": ${"true" if show_path else "false"}
                     },
                     "replace": true
                 }'></div>

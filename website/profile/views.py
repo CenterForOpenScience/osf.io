@@ -53,16 +53,16 @@ def get_public_projects(uid=None, user=None):
 
 def get_public_components(uid=None, user=None):
     user = user or User.load(uid)
-    return _render_nodes(
-        list(user.node__contributed.find(
-            (
-                Q('category', 'ne', 'project') &
-                Q('is_public', 'eq', True) &
-                Q('is_registration', 'eq', False) &
-                Q('is_deleted', 'eq', False)
-            )
-        ))
-    )
+    # TODO: This should use User.visible_contributor_to?
+    nodes = list(user.node__contributed.find(
+        (
+            Q('category', 'ne', 'project') &
+            Q('is_public', 'eq', True) &
+            Q('is_registration', 'eq', False) &
+            Q('is_deleted', 'eq', False)
+        )
+    ))
+    return _render_nodes(nodes, show_path=True)
 
 
 @must_be_logged_in
