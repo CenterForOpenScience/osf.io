@@ -3082,6 +3082,10 @@ class DraftRegistration(AddonModelMixin, StoredObject):
     registration_metadata = fields.DictionaryField({})
     registration_schema = fields.ForeignField('metaschema')
 
+    is_pending_review = fields.BooleanField(default=False)
+
+    schema_name = fields.StringField()
+
     storage = fields.ForeignField('osfstoragenodesettings')
 
     # proxy fields from branched_from Node
