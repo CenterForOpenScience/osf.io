@@ -116,9 +116,18 @@ var ViewModel = function(params) {
     });
 
     self.queryObject = ko.pureComputed(function(){
+        var TITLE_BOOST = '4';
+        var DESCRIPTION_BOOST = '1.2';
+
+        var fields = [
+            '_all',
+            'title^' + TITLE_BOOST,
+            'description^' + DESCRIPTION_BOOST,
+        ];
         return {
             'query_string': {
                 'default_field': '_all',
+                'fields': fields,
                 'query': self.query(),
                 'analyze_wildcard': true,
                 'lenient': true

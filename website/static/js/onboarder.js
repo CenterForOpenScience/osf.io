@@ -10,7 +10,6 @@ require('css/onboarding.css');
 require('css/typeahead.css');
 
 var Dropzone = require('dropzone');
-var Handlebars = require('handlebars');
 var Raven = require('raven-js');
 var ko = require('knockout');
 var $ = require('jquery');
@@ -72,9 +71,11 @@ function initTypeahead(element, nodes, viewModel, params){
             return data.value.name;
         },
         templates: {
-            suggestion: Handlebars.compile('<p>{{value.name}}</p> ' +
-                                            '<p><small class="ob-suggestion-date text-muted">' +
-                                            'modified {{value.dateModified.local}}</small></p>')
+            suggestion: function(data) {
+                return '<p>' + data.value.name + '</p> ' +
+                        '<p><small class="ob-suggestion-date text-muted">' +
+                        'modified ' + data.value.dateModified.local + '</small></p>';
+            }
         },
         source: substringMatcher(myProjects)
     });

@@ -17,8 +17,10 @@ from framework.exceptions import HTTPError
 from framework.sessions import set_previous_url
 from framework.auth import (logout, get_user, DuplicateEmailError)
 from framework.auth.decorators import collect_auth, must_be_logged_in
-from framework.auth.forms import (MergeAccountForm, RegistrationForm,
-        ResetPasswordForm, ForgotPasswordForm, ResendConfirmationForm)
+from framework.auth.forms import (
+    MergeAccountForm, RegistrationForm, ResendConfirmationForm,
+    ResetPasswordForm, ForgotPasswordForm
+)
 
 from website import settings
 from website import mails
@@ -309,6 +311,12 @@ def auth_register_post():
         return auth_login()
 
 
+def merge_user_get(**kwargs):
+    '''Web view for merging an account. Renders the form for confirmation.
+    '''
+    return forms.utils.jsonify(MergeAccountForm())
+
+
 def resend_confirmation():
     """View for resending an email confirmation email.
     """
@@ -332,12 +340,6 @@ def resend_confirmation():
             forms.push_errors_to_status(form.errors)
     # Don't go anywhere
     return {'form': form}
-
-
-def merge_user_get(**kwargs):
-    '''Web view for merging an account. Renders the form for confirmation.
-    '''
-    return forms.utils.jsonify(MergeAccountForm())
 
 
 # TODO: shrink me

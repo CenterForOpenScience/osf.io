@@ -43,7 +43,8 @@ def migrate_users(index):
     logger.info('Users iterated: {0}\nUsers migrated: {1}'.format(n_iter, n_migr))
 
 
-def migrate(delete, index=settings.ELASTIC_INDEX, app=None):
+def migrate(delete, index=None, app=None):
+    index = index or settings.ELASTIC_INDEX
     app = app or init_app("website.settings", set_backends=True, routes=True)
 
     script_utils.add_file_logger(logger, __file__)

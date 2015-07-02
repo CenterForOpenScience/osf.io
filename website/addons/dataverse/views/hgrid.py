@@ -1,5 +1,7 @@
 # -*- coding: utf-8 -*-
 
+from requests.exceptions import SSLError
+
 from website.addons.dataverse.client import get_dataset, get_files, \
     get_dataverse, connect_from_settings
 
@@ -19,16 +21,29 @@ def dataverse_hgrid_root(node_addon, auth, **kwargs):
     if not node_addon.complete:
         return []
 
-    connection = connect_from_settings(user_settings)
-    dataverse = get_dataverse(connection, node_addon.dataverse_alias)
-    dataset = get_dataset(dataverse, node_addon.dataset_doi)
+    can_edit = node.can_edit(auth)
+
+    permissions = {
+        'edit': can_edit and not node.is_registration,
+        'view': node.can_view(auth)
+    }
+
+    try:
+        connection = connect_from_settings(user_settings)
+        dataverse = get_dataverse(connection, node_addon.dataverse_alias)
+        dataset = get_dataset(dataverse, node_addon.dataset_doi)
+    except SSLError:
+        return [rubeus.build_addon_root(
+            node_addon,
+            node_addon.dataset,
+            permissions=permissions
+        )]
 
     # Quit if doi does not produce a dataset
     if dataset is None:
         return []
 
     published_files = get_files(dataset, published=True)
-    can_edit = node.can_edit(auth)
 
     # Produce draft version or quit if no published version is available
     if not published_files:
@@ -36,11 +51,6 @@ def dataverse_hgrid_root(node_addon, auth, **kwargs):
             version = 'latest'
         else:
             return []
-
-    permissions = {
-        'edit': can_edit and not node.is_registration,
-        'view': node.can_view(auth)
-    }
 
     urls = {
         'publish': node.api_url_for('dataverse_publish_dataset'),

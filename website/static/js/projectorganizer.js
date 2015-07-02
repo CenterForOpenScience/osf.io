@@ -11,7 +11,6 @@ require('css/typeahead.css');
 require('css/fangorn.css');
 require('css/projectorganizer.css');
 
-var Handlebars = require('handlebars');
 var $ = require('jquery');
 var m = require('mithril');
 var Fangorn = require('js/fangorn');
@@ -106,7 +105,9 @@ projectOrganizer.myProjects = new Bloodhound({
 function _poTitleColumn(item) {
     var tb = this;
     var css = item.data.isSmartFolder ? 'project-smart-folder smart-folder' : '';
-    if(item.data.urls.fetch){
+    if(item.data.archiving) {
+        return  m('span', {'class': 'registration-archiving'}, item.data.name + ' [Archiving]');
+    } else if(item.data.urls.fetch){
         return m('a.fg-file-links', { 'class' : css, href : item.data.urls.fetch}, item.data.name);
     } else {
         return  m('span', { 'class' : css}, item.data.name);
@@ -313,21 +314,6 @@ function _poToggleCheck(item) {
     }
     item.notify.update('Not allowed: Private folder', 'warning', 1, undefined);
     return false;
-}
-
-/**
- * Returns custom icons for OSF depending on the type of item
- * @param {Object} item A Treebeard _item object. Node information is inside item.data
- * @this Treebeard.controller
- * @returns {Object}  Returns a mithril template with the m() function.
- * @private
- */
-function _poResolveIcon(item) {
-    var newIcon = Fangorn.Utils.resolveIconView(item);
-    if (newIcon === null) {
-        return m('span', { 'class' : 'collection'});
-    }
-    return newIcon;
 }
 
 /**
@@ -1175,7 +1161,6 @@ var POToolbar = {
                     id : 'addNewFolder',
                     helpTextId : 'addFolderHelp',
                     placeholder : 'New collection name',
-                    tooltip: 'Name your new collection'
                 }, ctrl.helpText())
                 ),
             m('.col-xs-3.tb-buttons-col',
@@ -1407,7 +1392,7 @@ var tbOptions = {
         _cleanupMithril();
     },
     onmultiselect : _poMultiselect,
-    resolveIcon : _poResolveIcon,
+    resolveIcon : Fangorn.Utils.resolveIconView,
     resolveToggle : _poResolveToggle,
     resolveLazyloadUrl : _poResolveLazyLoad,
     lazyLoadOnLoad : expandStateLoad,

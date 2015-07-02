@@ -108,6 +108,22 @@ var _dataverseItemButtons = {
                 });
             }
         }
+        if (item.data.addonFullname) {
+            var options = [
+                m('option', {selected: item.data.version === 'latest-published', value: 'latest-published'}, 'Published'),
+                m('option', {selected: item.data.version === 'latest', value: 'latest'}, 'Draft')
+            ];
+            buttons.push(
+                m.component(Fangorn.Components.dropdown, {
+                    'label': 'Version: ',
+                    onchange: function (e) {
+                        changeState(tb, item, e.target.value);
+                    },
+                    icon: 'fa fa-external-link',
+                    className: 'text-info'
+                }, options)
+            );
+        }
         if (item.kind === 'folder' && item.data.addonFullname && item.data.version === 'latest' && item.data.permissions.edit) {
             buttons.push(
                 m.component(Fangorn.Components.button, {
@@ -145,7 +161,7 @@ var _dataverseItemButtons = {
                     className: 'text-info'
                 }, 'Download')
             );
-            if (item.parent().data.state === 'draft' && item.data.permissions.edit) {
+            if (item.parent().data.version === 'latest' && item.data.permissions.edit) {
                 buttons.push(
                     m.component(Fangorn.Components.button, {
                         onclick: function (event) {
@@ -184,8 +200,9 @@ function gotoFile (item) {
 
 function _fangornDataverseTitle(item, col) {
     var tb = this;
+    var version = item.data.version === 'latest-published' ? 'Published' : 'Draft';
     if (item.data.addonFullname) {
-        var contents = [m('dataverse-name', item.data.name + ' ')];
+        var contents = [m('dataverse-name', item.data.name + ' (' + version + ')')];
         if (item.data.hasPublishedFiles) {
             if (item.data.permissions.edit) {
                 // Default to version in url parameters for file view page
@@ -193,21 +210,6 @@ function _fangornDataverseTitle(item, col) {
                 if (urlParams.version && urlParams.version !== item.data.version) {
                     item.data.version = urlParams.version;
                 }
-                var options = [
-                    m('option', {selected: item.data.version === 'latest-published', value: 'latest-published'}, 'Published'),
-                    m('option', {selected: item.data.version === 'latest', value: 'latest'}, 'Draft')
-                ];
-                contents.push(
-                    m('span', [
-                        m('select', {
-                            class: 'dataverse-state-select',
-                            style: { color : '#000000'},
-                            onchange: function (e) {
-                                changeState(tb, item, e.target.value);
-                            }
-                        }, options)
-                    ])
-                );
             } else {
                 contents.push(
                     m('span.text-muted', '[Published]')

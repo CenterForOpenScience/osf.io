@@ -1,3 +1,4 @@
+import mock
 import datetime
 
 from modularodm import Q
@@ -10,6 +11,7 @@ from website import models
 from tests import base
 from tests.base import fake
 from tests import factories
+from framework.tasks import handlers
 
 
 class TestUser(base.OsfTestCase):
@@ -101,10 +103,22 @@ class TestUser(base.OsfTestCase):
             self.user.remove_email(self.user.username)
         assert_equal(e.exception.message, "Can't remove primary email")
 
-    def test_cannot_remove_primary_email_from_unconfirmed_list(self):
-        with assert_raises(PermissionsError) as e:
-            self.user.remove_unconfirmed_email(self.user.username)
-        assert_equal(e.exception.message, "Can't remove primary email")
+    def test_add_same_unconfirmed_email_twice(self):
+        email = "test@example.com"
+        token1 = self.user.add_unconfirmed_email(email)
+        self.user.save()
+        self.user.reload()
+        assert_equal(token1, self.user.get_confirmation_token(email))
+        assert_equal(email, self.user._get_unconfirmed_email_for_token(token1))
+
+        token2 = self.user.add_unconfirmed_email(email)
+        self.user.save()
+        self.user.reload()
+        assert_not_equal(token1, self.user.get_confirmation_token(email))
+        assert_equal(token2, self.user.get_confirmation_token(email))
+        assert_equal(email, self.user._get_unconfirmed_email_for_token(token2))
+        with assert_raises(exceptions.InvalidTokenError):
+            self.user._get_unconfirmed_email_for_token(token1)
 
 
 class TestUserMerging(base.OsfTestCase):
@@ -122,6 +136,8 @@ class TestUserMerging(base.OsfTestCase):
     def setUp(self):
         super(TestUserMerging, self).setUp()
         self.user = factories.UserFactory()
+        with self.context:
+            handlers.celery_before_request()
 
     def _add_unconfirmed_user(self):
 
@@ -209,7 +225,8 @@ class TestUserMerging(base.OsfTestCase):
         with assert_raises(exceptions.MergeConflictError):
             self.user.merge_user(unregistered)
 
-    def test_merge(self):
+    @mock.patch('website.mailchimp_utils.get_mailchimp_api')
+    def test_merge(self, mock_get_mailchimp_api):
         other_user = factories.UserFactory()
         other_user.save()
 
@@ -351,9 +368,15 @@ class TestUserMerging(base.OsfTestCase):
             set(self.user._fields),
         )
 
+        # mock mailchimp
+        mock_client = mock.MagicMock()
+        mock_get_mailchimp_api.return_value = mock_client
+        mock_client.lists.list.return_value = {'data': [{'id': x, 'list_name': list_name} for x, list_name in enumerate(self.user.mailing_lists)]}
+
         # perform the merge
         self.user.merge_user(other_user)
         self.user.save()
+        handlers.celery_teardown_request()
 
         # check each field/value pair
         for k, v in expected.iteritems():
@@ -413,3 +436,4 @@ class TestUserMerging(base.OsfTestCase):
         assert_true(self.user.is_invited)
 
         assert_in(self.user, self.project_with_unreg_contrib.contributors)
+

@@ -37,21 +37,30 @@
                     <dt><span class="date log-date" data-bind="text: log.date.local, tooltip: {title: log.date.utc}"></span></dt>
                     <dd class="log-content break-word">
 
+
                         <!-- ko if: log.hasTemplate() -->
-                        <span data-bind="if:log.anonymous">
-                        <span class="contributor-anonymous">A user</span>
-                        </span>
-                        <span data-bind="ifnot:log.anonymous">
-                            <span data-bind="if: log.userURL">
-                                <a class="overflow" data-bind="text: log.userFullName || log.apiKey, attr: {href: log.userURL}"></a>
+                            <!-- ko if: log.hasUser() -->
+                            <span data-bind="if:log.anonymous">
+                            <span class="contributor-anonymous">A user</span>
                             </span>
-                            <span data-bind="ifnot: log.userURL">
-                                <span class="overflow" data-bind="text: log.userFullName"></span>
+                            <span data-bind="ifnot:log.anonymous">
+                                <span data-bind="if: log.userURL">
+                                    <a class="overflow" data-bind="text: log.userFullName || log.apiKey, attr: {href: log.userURL}"></a>
+                                </span>
+                                <span data-bind="ifnot: log.userURL">
+                                    <span class="overflow" data-bind="text: log.userFullName"></span>
+                                </span>
                             </span>
-                        </span>
-                        <!-- Log actions are the same as their template name -->
-                        <span data-bind="template: {name: log.action, data: log}"></span>
+                            <!-- Log actions are the same as their template name -->
+                            <span data-bind="template: {name: log.action, data: log}"></span>
+                            <!-- /ko -->
+
+                            <!-- ko ifnot: log.hasUser() -->
+                                <!-- Log actions are the same as their template name  + no_user -->
+                                <span data-bind="template: {name: log.action + '_no_user', data: log}"></span>
+                            <!-- /ko -->
                         <!-- /ko -->
+
 
                         <!-- For debugging purposes: If a log template for a the Log can't be found, show
                             an error message with its log action. -->

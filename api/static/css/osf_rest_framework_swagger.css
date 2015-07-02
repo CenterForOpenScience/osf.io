@@ -1,0 +1,11 @@
+#django-rest-swagger {
+    background: #eee;
+    color: #eee;
+    text-align:right;
+    padding: 7px 0;
+    font-size: 0.8em
+}
+#django-rest-swagger a {
+    color: #333;
+    text-decoration: none;
+}
