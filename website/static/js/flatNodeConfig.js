@@ -209,7 +209,7 @@ flatAddonViewModel.prototype._deauthorizeNodeConfirm = function() {
         dataType: 'json'
     }).done(function(response) {
         self.updateFromData(response);
-        self.changeMessage('Successfully deauthorized ' + self.addonName + ' credentials', 'text-success');
+        self.changeMessage('Successfully deauthorized ' + self.addonName + ' credentials', 'text-success', 3500);
     }).fail(function(xhr, status, error) {
         var message = 'Could not deauthorize ' + self.addonName + ' at ' +
             'this time. Please refresh the page. If the problem persists, email ' +
@@ -325,8 +325,7 @@ flatAddonViewModel.prototype.createFolder = function(folderName) {
     	var newName = self.options.formatFolderName(folderName);
         var msg = 'Successfully created ' + self.folderType + ' "' + newName +
             '". You can now select it from the drop down list.';
-        var msgType = 'text-success';
-        self.changeMessage(msg, msgType);
+        self.changeMessage(msg, 'text-success', 3500);
     }).fail(function(xhr) {
         var resp = JSON.parse(xhr.responseText);
         var message = resp.message;
@@ -391,7 +390,11 @@ flatAddonViewModel.prototype.importAuth = function() {
                         ' access token?',
                     callback: function(confirmed) {
                         if (confirmed) {
-                            self.connectExistingAccount.call(self, (self.accounts()[0].id));
+                            if (self.accounts().length === 0) {
+                                self.connectExistingAccount.call(self, null);
+                            } else {
+                                self.connectExistingAccount.call(self, (self.accounts()[0].id));
+                            }
                         }
                     }
                 });
@@ -402,17 +405,21 @@ flatAddonViewModel.prototype.importAuth = function() {
 //For flat addons with multiple possible connected accounts
 flatAddonViewModel.prototype.updateAccounts = function() {
     var self = this;
-    return self.fetchAccounts()
-        .done(function(accounts) {
-            self.accounts(
-                $.map(accounts, function(account) {
-                    return {
-                        name: account.display_name,
-                        id: account.id
-                    };
-                })
-            );
-        });
+    if (typeof self.urls().accounts === "undefined") {
+        return $.Deferred().resolve();
+    } else {
+        return self.fetchAccounts()
+            .done(function (accounts) {
+                self.accounts(
+                    $.map(accounts, function (account) {
+                        return {
+                            name: account.display_name,
+                            id: account.id
+                        };
+                    })
+                );
+            });
+    }
 };
 
 flatAddonViewModel.prototype.fetchAccounts = function() {
