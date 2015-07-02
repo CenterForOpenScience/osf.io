@@ -1,0 +1,6 @@
+div.search-result {
+    margin-bottom: 10pt;
+    padding: 10px;
+    border-bottom: 1px solid #D3D3D3;
+    overflow-x: hidden;
+}
