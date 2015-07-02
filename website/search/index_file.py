@@ -1,5 +1,15 @@
-from framework.exceptions import HTTPError
+import logging
 import requests
+import mimetypes
+from framework.exceptions import HTTPError
+
+
+def is_indexed(filename):
+    INDEXED_TYPES = [
+        'test/plain',
+    ]
+    mime_type, _ = mimetypes.guess_type(filename)
+    return mime_type and mime_type in INDEXED_TYPES
 
 
 def collect_from_addon(addon, tree):
@@ -11,12 +21,13 @@ def collect_from_addon(addon, tree):
                 yield file_
         else:
             path, name = child['path'], child['name']
-            file_, created = addon.find_or_create_file_guid(path)
-            download_url = file_.download_url
-            download_url += '&mode=render' if addon_name == 'osfstorage' else ''
-            response = requests.get(download_url)
-            content = unicode(response.text).encode('utf-8')
-            yield {'name': name, 'content': content}
+            if is_indexed(name):
+                file_, created = addon.find_or_create_file_guid(path)
+                download_url = file_.download_url
+                download_url += '&mode=render' if addon_name == 'osfstorage' else ''
+                response = requests.get(download_url)
+                content = unicode(response.text).encode('utf-8')
+                yield {'name': name, 'content': content}
 
 
 def collect_files(node):
