@@ -169,7 +169,6 @@ class DraftRegistrationSerializer(JSONAPISerializer):
     class Meta:
         type_ = "draft_registrations"
 
-
 class NodePointersSerializer(JSONAPISerializer):
 
     id = ser.CharField(read_only=True, source='_id')
