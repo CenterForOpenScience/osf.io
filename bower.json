@@ -17,6 +17,7 @@
     "styles": "https://github.com/lyndsysimon/styles.git#master",
     "locales": "https://github.com/citation-style-language/locales.git#d2b612f8a6f764cbd66e67238636fac3888a7736",
     "raven-js": "1.1.17",
-    "zeroclipboard": "2.1.6"
+    "zeroclipboard": "2.1.6",
+    "osf-style": "https://github.com/CenterForOpenScience/osf-style.git#3388a17f6259f7c25771ba7159160cfd91c3574e"
   }
 }
