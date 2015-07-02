@@ -168,6 +168,8 @@ def make_url_map(app):
     process_rules(app, [
 
         Rule('/dashboard/', 'get', website_views.dashboard, OsfWebRenderer('dashboard.mako')),
+        #TODO
+        Rule('/preregAdmin/', 'get', website_views.preregAdmin, OsfWebRenderer('preregAdmin.mako')),
         Rule('/reproducibility/', 'get',
              website_views.reproducibility, OsfWebRenderer('', render_mako_string)),
 

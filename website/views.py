@@ -235,6 +235,15 @@ def dashboard(auth):
             'dashboard_id': dashboard_id,
             }
 
+#TODO
+@must_be_logged_in
+def preregAdmin(auth):
+    user = auth.user
+    dashboard_folder = find_dashboard(user)
+    dashboard_id = dashboard_folder._id
+    return {'addons_enabled': user.get_addon_names(),
+            'dashboard_id': dashboard_id,
+            }
 
 def paginate(items, total, page, size):
     start = page * size
