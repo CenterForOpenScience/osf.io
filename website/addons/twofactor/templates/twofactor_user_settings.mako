@@ -1,19 +1,20 @@
 <div id="twoFactorScope" class="scripted">
   <h4 class="addon-title">
     Two-factor Authentication
+      <small>
+          <span data-bind="if: isEnabled">
+            <a data-bind="click: disableTwofactor" class="text-danger pull-right addon-auth">
+              Disable Two-Factor Authentication
+            </a>
+          </span>
+          <span data-bind="ifnot: isEnabled">
+            <a data-bind="click: enableTwofactor" class="text-primary pull-right addon-auth">
+              Enable Two-Factor Authentication
+            </a>
+          </span>
+      </small>
   </h4>
-  <hr />
-  <div data-bind="if: isEnabled">
-    <button data-bind="click: disableTwofactor" class="btn btn-warning">
-      Disable Two-factor Authentication
-    </button>
-  </div> 
-  <div data-bind="ifnot: isEnabled">
-    <button data-bind="click: enableTwofactor" class="btn btn-primary">
-      Enable Two-factor Authentication
-    </button>
-  </div>
-  <hr />
+
   <div id="TfaVerify" data-bind="visible: !isConfirmed()">
     <p>By using two-factor authentication, you'll protect your OSF account with both your password and your mobile phone.</p>
     <div data-bind="visible: isEnabled">
