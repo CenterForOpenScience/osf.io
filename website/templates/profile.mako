@@ -18,23 +18,23 @@
 
 <div class="page-header">
     <div class="profile-fullname">
-        <div class="avatar-div">
+        <span class="m-r-sm">
             % if user['is_profile']:
-                <a href="#changeAvatarModal" data-toggle="modal"><img id='profile-gravatar' src="${profile['gravatar_url']}"
+                <a href="#changeAvatarModal" data-toggle="modal"><img class='profile-gravatar' src="${profile['gravatar_url']}"
                         rel="tooltip" title="Click to change avatar"/></a>
             % else:
-                <img id='profile-gravatar' src="${profile['gravatar_url']}"/>
+                <img class='profile-gravatar' src="${profile['gravatar_url']}"/>
             % endif
-        </div>
-        <div class="h1 overflow name-div">
+        </span>
+        <span id="profileFullname" class="h1 overflow ">
             ${profile["fullname"]}
-        </div>
+        </span>
+        <span class="edit-profile-settings">
+            % if user['is_profile']:
+                <a href="/settings/">Edit your profile</a>
+            % endif
+        </span>
     </div>
-    <span class="edit-profile-settings">
-        % if user['is_profile']:
-            <a href="/settings/">Edit your profile</a>
-        % endif
-    </span>
 </div><!-- end-page-header -->
 
 
@@ -73,15 +73,15 @@
 
         <div class="tab-content" id="containDrag">
 
-            <div class="tab-pane active" id="social">
+            <div class="m-t-md tab-pane active" id="social">
                 <div data-bind="template: {name: 'profileSocial'}"></div>
             </div>
 
-            <div class="tab-pane" id="jobs">
+            <div class="m-t-md tab-pane" id="jobs">
                 <div data-bind="template: {name: 'profileJobs'}"></div>
             </div>
 
-            <div class="tab-pane" id="schools">
+            <div class="m-t-md tab-pane" id="schools">
                 <div data-bind="template: {name: 'profileSchools'}"></div>
             </div>
 
@@ -137,22 +137,34 @@
 <hr />
 <div class="row">
     <div class="col-sm-6">
-        <h3>Public Projects</h3>
-        <div mod-meta='{
-                "tpl" : "util/render_nodes.mako",
-                "uri" : "/api/v1/profile/${profile["id"]}/public_projects/",
-                "replace" : true,
-                "kwargs" : {"sortable" : true, "user": ${json.dumps(user)}, "pluralized_node_type": "projects", "skipBindings": true}
-            }'></div>
+        <div class="panel panel-default">
+            <div class="panel-heading clearfix">
+              <h3 class="panel-title" >Public Projects</h3>
+            </div>
+            <div class="panel-body">
+                <div mod-meta='{
+                   "tpl" : "util/render_nodes.mako",
+                   "uri" : "/api/v1/profile/${profile["id"]}/public_projects/",
+                   "replace" : true,
+                   "kwargs" : {"sortable" : true, "user": ${json.dumps(user)}, "pluralized_node_type": "projects", "skipBindings": true}
+                 }'></div>
+            </div>
+        </div>
     </div>
     <div class="col-sm-6">
-        <h3>Public Components</h3>
-          <div mod-meta='{
+        <div class="panel panel-default">
+            <div class="panel-heading clearfix">
+                <h3 class="panel-title">Public Components</h3>
+            </div>
+            <div class="panel-body">
+                <div mod-meta='{
                   "tpl" : "util/render_nodes.mako",
                   "uri" : "/api/v1/profile/${profile["id"]}/public_components/",
                   "replace" : true,
                   "kwargs" : {"sortable" : true,  "user": ${json.dumps(user)}, "pluralized_node_type": "components"}
               }'></div>
+            </div>
+        </div>
     </div>
 </div><!-- end row -->
 
