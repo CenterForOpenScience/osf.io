@@ -4,7 +4,7 @@
      data-addon-name="${ addon_full_name }">
 
     <%include file="dataverse_credentials_modal.mako"/>
-    <a href="#dataverseInputCredentials" data-toggle="modal" class="pull-right text-primary">Connect an account</a>
+    <a href="#dataverseInputCredentials" data-toggle="modal" class="pull-right text-primary">Connect account</a>
     <img class="addon-icon pull-left" src=${addon_icon_url}></img>
     <h4 class="addon-title"> {{ properName }}</h4>
 
