@@ -49,7 +49,7 @@ class Event(object):
         self.timestamp = datetime.utcnow()
 
     @classmethod
-    def get_event(cls, user, node, event, **kwargs):
+    def parse_event(cls, user, node, event, **kwargs):
         """If there is a class that matches the event then it returns that instance"""
         kind = ''.join(event.split('_'))
         if kind in cls.registry:
@@ -281,15 +281,29 @@ class AddonFileMoved(ComplexFileEvent):
     def perform(self):
         """Sends a message to users who are removed from the file's subscription when it is moved"""
         if self.payload['destination']['kind'] != u'folder':
+            # if source_node != node
             rm_users = move_subscription(self.source_event, self.source_node,
                                          self.event, self.node)
+            # source_node_subs = emails.compile_subscriptions(source_node...
+            # new_node_subs = emails.compile_subscriptions(new_node
+            # warn = set(source_node_subs).diff(set(new_node_subs))
+            # for user in warn:
+            #  rm_users.append if user doesn't have permissions
+            # warn = new_file_sub.diff(set(warn))
+            # new_node_subs = new_node_subs.diff(set(new_file_sub))
+            # Make temporary subs for
+            #  Destination
+            #  warn
+            #  rm_users
+
             if len(rm_users) > 0:
-                message = self._html_message + ' Your subscription has been removed' \
-                                               ' due to insufficient permissions in the new component.',
+                message = self.html_message + ' Your subscription has been removed' \
+                                              ' due to insufficient permissions in the new component.'
                 warn_users_removed_from_subscription(rm_users, self.source_event, self.user, self.source_node,
                                                      timestamp=self.timestamp, gravatar_url=self.gravatar_url,
                                                      message=message, url=self.source_url)
         super(AddonFileMoved, self).perform()
+
 
     def form_url(self):
         """Set source url for subscribers removed from subscription to files page view"""

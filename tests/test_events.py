@@ -23,34 +23,34 @@ class TestEventGet(OsfTestCase):
 
     def test_get_file_updated(self):
         """Event gets FileUpdated from file_updated"""
-        event = Event.get_event(self.user, self.node, 'file_updated', payload=file_payload)
+        event = Event.parse_event(self.user, self.node, 'file_updated', payload=file_payload)
         self.assertIsInstance(event, FileUpdated)
 
     def test_get_file_added(self):
         """Event gets FileAdded from file_added"""
-        event = Event.get_event(self.user, self.node, 'file_added', payload=file_payload)
+        event = Event.parse_event(self.user, self.node, 'file_added', payload=file_payload)
         self.assertIsInstance(event, FileAdded)
 
     def test_get_file_removed(self):
         """Event gets FileRemoved from file_removed"""
-        event = Event.get_event(self.user, self.node, 'file_removed', payload=file_deleted_payload)
+        event = Event.parse_event(self.user, self.node, 'file_removed', payload=file_deleted_payload)
         self.assertIsInstance(event, FileRemoved)
 
     def test_get_folder_created(self):
         """Event gets FolderCreated from folder_created"""
-        event = Event.get_event(self.user, self.node, 'folder_created', payload=folder_created_payload)
+        event = Event.parse_event(self.user, self.node, 'folder_created', payload=folder_created_payload)
         self.assertIsInstance(event, FolderCreated)
 
     def test_get_file_moved(self):
         """Event gets AddonFileMoved from addon_file_moved"""
         file_moved_payload = file_move_payload(self.node, self.node)
-        event = Event.get_event(self.user, self.node, 'addon_file_moved', payload=file_moved_payload)
+        event = Event.parse_event(self.user, self.node, 'addon_file_moved', payload=file_moved_payload)
         self.assertIsInstance(event, AddonFileMoved)
 
     def test_get_file_copied(self):
         """Event gets AddonFileCopied from addon_file_copied"""
         file_copied_payload = file_copy_payload(self.node, self.node)
-        event = Event.get_event(self.user, self.node, 'addon_file_copied', payload=file_copied_payload)
+        event = Event.parse_event(self.user, self.node, 'addon_file_copied', payload=file_copied_payload)
         self.assertIsInstance(event, AddonFileCopied)
 
     def tearDown(self):
@@ -70,7 +70,7 @@ class TestFileAdded(OsfTestCase):
         )
         self.project_subscription.save()
         self.user2 = factories.UserFactory()
-        self.event = Event.get_event(self.user2, self.project, 'file_added', payload=file_payload)
+        self.event = Event.parse_event(self.user2, self.project, 'file_added', payload=file_payload)
 
     @mock.patch('website.notifications.events.model.notify')
     def test_file_added(self, mock_notify):
@@ -93,7 +93,7 @@ class TestAddonFileMoved(OsfTestCase):
         self.private_node = factories.NodeFactory(parent=self.project, is_public=False, creator=self.user_1)
         # Payload
         file_moved_payload = file_move_payload(self.project, self.private_node)
-        self.event = Event.get_event(self.user_2, self.project, 'addon_file_moved', payload=file_moved_payload)
+        self.event = Event.parse_event(self.user_2, self.project, 'addon_file_moved', payload=file_moved_payload)
         # Subscriptions
         self.sub = factories.NotificationSubscriptionFactory(
             _id=self.project._id + '_file_updated',
