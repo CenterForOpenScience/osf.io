@@ -35,7 +35,7 @@
     important points of the lifecycle, such as manuscript submission or the
     onset of data collection.</p>
 
-<h4>What if I don't want to register anything in the OSF?</h4><p>Registering is
+<h4 class="m-t-lg f-w-lg">What if I don't want to register anything in the OSF?</h4><p>Registering is
     an optional feature of the OSF.</p>
 
 <h4 class="m-t-lg f-w-lg">How secure is my information?</h4><p>Security is extremely important for
