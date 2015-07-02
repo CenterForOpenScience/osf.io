@@ -12,6 +12,7 @@ from api.base.serializers import JSONAPISerializer, LinksField, Link, Waterbutle
 from website.project.views import drafts
 from website.project.views import register
 from website.project.metadata.schemas import OSF_META_SCHEMAS
+from api.draft_registrations.serializers import DraftRegSerializer
 
 
 class NodeSerializer(JSONAPISerializer):
@@ -136,17 +137,7 @@ class NodeSerializer(JSONAPISerializer):
         return instance
 
 
-class DraftRegistrationSerializer(JSONAPISerializer):
-    schema_choices = [schema['name'] for schema in OSF_META_SCHEMAS]
-    id = ser.CharField(read_only=True, source='_id')
-    branched_from = ser.CharField(read_only = True)
-    initiator = ser.CharField(read_only=True)
-    registration_schema = ser.CharField(read_only=True)
-    registration_form = ser.ChoiceField(choices=schema_choices, required=True, write_only=True, help_text="Please select a registration form to initiate registration.")
-    registration_metadata = ser.CharField(read_only=True)
-    initiated = ser.DateTimeField(read_only=True)
-    updated = ser.DateTimeField(read_only=True)
-    completion = ser.CharField(read_only=True)
+class DraftRegistrationSerializer(DraftRegSerializer):
 
     def create(self, validated_data):
         request = self.context['request']

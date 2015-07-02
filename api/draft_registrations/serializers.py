@@ -5,21 +5,35 @@ from django.utils.translation import ugettext_lazy as _
 
 from modularodm import Q
 from api.base.utils import token_creator
+from api.base.serializers import JSONAPISerializer
 from website.project.model import MetaSchema
-from api.nodes.serializers import NodeSerializer
+from website.project.metadata.schemas import OSF_META_SCHEMAS
 
 
-class DraftRegistrationSerializer(NodeSerializer):
-    is_registration_draft = ser.BooleanField(read_only=True)
+
+class DraftRegSerializer(JSONAPISerializer):
+    schema_choices = [schema['name'] for schema in OSF_META_SCHEMAS]
+    id = ser.CharField(read_only=True, source='_id')
+    branched_from = ser.CharField(read_only = True)
+    initiator = ser.CharField(read_only=True)
+    registration_schema = ser.CharField(read_only=True)
+    registration_form = ser.ChoiceField(choices=schema_choices, required=True, write_only=True, help_text="Please select a registration form to initiate registration.")
+    registration_metadata = ser.CharField(read_only=True)
+    initiated = ser.DateTimeField(read_only=True)
+    updated = ser.DateTimeField(read_only=True)
+    completion = ser.CharField(read_only=True)
+
+    class Meta:
+        type_='draft-registrations'
 
 
-class DraftRegistrationCreateSerializer(DraftRegistrationSerializer):
+class DraftRegistrationCreateSerializer(DraftRegSerializer):
     category = ser.CharField(read_only=True)
     title = ser.CharField(read_only=True)
     description = ser.CharField(read_only=True)
 
 
-class DraftRegistrationCreateSerializerWithToken(DraftRegistrationSerializer):
+class DraftRegistrationCreateSerializerWithToken(DraftRegSerializer):
     category = ser.CharField(read_only=True)
     title = ser.CharField(read_only=True)
     description = ser.CharField(read_only=True)

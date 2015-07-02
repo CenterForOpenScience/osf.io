@@ -16,7 +16,7 @@ from api.nodes.serializers import NodePointersSerializer
 from api.base.utils import token_creator, absolute_reverse
 from api.nodes.permissions import ContributorOrPublic, ReadOnlyIfRegistration
 from api.nodes.views import NodeMixin, NodeFilesList, NodeChildrenList, NodeContributorsList, NodeDetail
-from api.draft_registrations.serializers import DraftRegistrationSerializer, DraftRegistrationCreateSerializer, DraftRegistrationCreateSerializerWithToken
+from api.draft_registrations.serializers import DraftRegSerializer, DraftRegistrationCreateSerializer, DraftRegistrationCreateSerializerWithToken
 
 
 def registration_enforcer(node):
@@ -29,7 +29,7 @@ class DraftRegistrationMixin(NodeMixin):
     current URL. By default, fetches the current node based on the pk kwarg.
     """
 
-    serializer_class = DraftRegistrationSerializer
+    serializer_class = DraftRegSerializer
     node_lookup_url_kwarg = 'registration_id'
 
 
@@ -39,7 +39,7 @@ class DraftRegistrationList(generics.ListAPIView, ODMFilterMixin):
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
     )
-    serializer_class = DraftRegistrationSerializer
+    serializer_class = DraftRegSerializer
 
     # overrides ListAPIView
     def get_queryset(self):
@@ -49,7 +49,7 @@ class DraftRegistrationList(generics.ListAPIView, ODMFilterMixin):
 
 class DraftRegistrationDetail(NodeDetail, generics.CreateAPIView, DraftRegistrationMixin):
     """
-    Registration details
+    Draft Registration details
     """
     permission_classes = (
         ContributorOrPublic,
@@ -60,7 +60,7 @@ class DraftRegistrationDetail(NodeDetail, generics.CreateAPIView, DraftRegistrat
         if self.request.method == 'POST':
             serializer_class = DraftRegistrationCreateSerializer
             return serializer_class
-        serializer_class = DraftRegistrationSerializer
+        serializer_class = DraftRegSerializer
         return serializer_class
 
     # Restores original get_serializer_class
