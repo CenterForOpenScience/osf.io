@@ -680,7 +680,7 @@ function ProjectCreateViewModel(response) {
         self.isOpen(!self.isOpen());
         self.focus(self.isOpen());
     };
-    self.nodes = response.nodes;
+    self.nodes = response.data;
 }
 
 ko.components.register('osf-ob-create', {
