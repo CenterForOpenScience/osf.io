@@ -1042,6 +1042,9 @@ def make_url_map(app):
 
         # Draft Registrations
         Rule([
+            '/project/all_drafts',
+        ], 'get', project_views.drafts.get_all_draft_registrations, json_renderer),
+        Rule([
             '/project/<pid>/draft/',
         ], 'get', project_views.drafts.get_draft_registrations, json_renderer),
         Rule([

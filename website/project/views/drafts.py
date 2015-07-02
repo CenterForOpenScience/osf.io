@@ -17,6 +17,15 @@ from website.project.metadata.utils import serialize_meta_schema, serialize_draf
 get_draft_or_fail = lambda pk: get_or_http_error(DraftRegistration, pk)
 get_schema_or_fail = lambda query: get_or_http_error(MetaSchema, query)
 
+def get_all_draft_registrations(*args, **kwargs):
+    count = request.args.get('count', 100)
+
+    all_drafts = DraftRegistration.find()[:count]
+
+    return {
+        'drafts': [serialize_draft_registration(d) for d in all_drafts]
+    }
+
 @must_have_permission(ADMIN)
 @must_be_valid_project
 def get_draft_registration(auth, node, draft_pk, *args, **kwargs):
