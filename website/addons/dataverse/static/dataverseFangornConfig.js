@@ -115,7 +115,7 @@ var _dataverseItemButtons = {
                         _uploadEvent.call(tb, event, item);
                     },
                     icon: 'fa fa-upload',
-                    className: 'text-success'
+                    className: 'text-primary'
                 }, 'Upload'),
                 m.component(Fangorn.Components.button, {
                     onclick: function (event) {
@@ -132,7 +132,7 @@ var _dataverseItemButtons = {
                         _uploadEvent.call(tb, event, item);
                     },
                     icon: 'fa fa-upload',
-                    className: 'text-success'
+                    className: 'text-primary'
                 }, 'Upload')
             );
         } else if (item.kind === 'file') {
@@ -142,7 +142,7 @@ var _dataverseItemButtons = {
                         _downloadEvent.call(tb, event, item);
                     },
                     icon: 'fa fa-download',
-                    className: 'text-info'
+                    className: 'text-success'
                 }, 'Download')
             );
             if (item.parent().data.state === 'draft' && item.data.permissions.edit) {
@@ -162,7 +162,7 @@ var _dataverseItemButtons = {
                         onclick: function(event) {
                             gotoFile(item);
                         },
-                        icon: 'fa fa-external-link',
+                        icon: 'fa fa-file-o',
                         className : 'text-info'
                     }, 'View'));
 

@@ -84,6 +84,7 @@ permission_map = {
     'moveto': 'write',
     'copyfrom': 'read',
     'movefrom': 'write',
+    'webview': 'read',
 }
 
 
@@ -422,7 +423,6 @@ def addon_view_file(auth, node, node_addon, guid_file, extras):
     ret.update({
         'error': error.replace('\n', '') if error else None,
         'provider': guid_file.provider,
-        'provider_full_name': node_addon.config.full_name,
         'file_path': guid_file.waterbutler_path,
         'panels_used': ['edit', 'view'],
         'sharejs_uuid': sharejs_uuid,
@@ -432,7 +432,6 @@ def addon_view_file(auth, node, node_addon, guid_file, extras):
             'sharejs': wiki_settings.SHAREJS_URL,
             'mfr': settings.MFR_SERVER_URL,
             'gravatar': get_gravatar(auth.user, 25),
-            'external': guid_file.external_url,
         },
         # Note: must be called after get_or_start_render. This is really only for github
         'size': size,

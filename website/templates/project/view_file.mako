@@ -51,7 +51,7 @@
   <div id="fileViewPanelLeft" class="col-sm-9 panel-expand">
     <div class="row">
       <div id="mfrIframeParent" class="col-sm-9">
-        <p class="text-muted">View this file on <a href=${urls['external']} target="_blank">${provider_full_name}</a>.</p>
+        <div id="externalView"></div>
         <div id="mfrIframe" class="mfr mfr-file"></div>
       </div>
 

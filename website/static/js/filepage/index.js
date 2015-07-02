@@ -4,6 +4,7 @@ var mime = require('js/mime');
 var bootbox = require('bootbox');
 var $osf = require('js/osfHelpers');
 var waterbutler = require('js/waterbutler');
+var storageAddons = require('json!storageAddons.json');
 
 // Local requires
 var utils = require('./util.js');
@@ -31,7 +32,8 @@ var FileViewPage = {
             delete: waterbutler.buildDeleteUrl(self.file.path, self.file.provider, self.node.id),
             metadata: waterbutler.buildMetadataUrl(self.file.path, self.file.provider, self.node.id),
             revisions: waterbutler.buildRevisionsUrl(self.file.path, self.file.provider, self.node.id),
-            content: waterbutler.buildDownloadUrl(self.file.path, self.file.provider, self.node.id, {accept_url: false, mode: 'render'})
+            content: waterbutler.buildDownloadUrl(self.file.path, self.file.provider, self.node.id, {accept_url: false, mode: 'render'}),
+            external: waterbutler.buildExternalViewUrl(self.file.path, self.file.provider, self.node.id)
         });
 
         $(document).on('fileviewpage:delete', function() {
@@ -59,6 +61,16 @@ var FileViewPage = {
         $(document).on('fileviewpage:download', function() {
             window.location = self.file.urls.content;
             return false;
+        });
+
+        $(document).on('fileviewpage:externalView', function() {
+            $.ajax({
+                url: self.file.urls.external,
+                type: 'GET',
+                beforeSend: $osf.setXHRAuthorization
+            }).done(function(response) {
+                window.open(response.data, '_blank');
+            });
         });
 
         self.shareJSObservables = {
@@ -196,6 +208,15 @@ var FileViewPage = {
         }
         $('#mfrIframeParent').removeClass().addClass(mfrIframeParentLayout);
         $('.file-view-panels').removeClass().addClass('file-view-panels').addClass(fileViewPanelsLayout);
+
+        if (storageAddons[ctrl.file.provider].externalView) {
+            m.render(document.getElementById('externalView'), [
+                m('p.text-muted', 'View this file on ', [
+                    m('a', {onclick: $(document).trigger.bind($(document), 'fileviewpage:externalView')},
+                        storageAddons[ctrl.file.provider].fullName)
+                ], '.')
+            ]);
+        }
 
         m.render(document.getElementById('toggleBar'), m('.btn-toolbar[style=margin-top:20px]', [
             ctrl.canEdit() ? m('.btn-group', {style: 'margin-left: 0;'}, [

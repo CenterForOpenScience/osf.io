@@ -19,7 +19,7 @@ var _figshareItemButtons = {
                         Fangorn.ButtonEvents._uploadEvent.call(tb, event, item);
                     },
                     icon: 'fa fa-upload',
-                    className: 'text-success'
+                    className: 'text-primary'
                 }, 'Upload')
             );
         }
@@ -30,7 +30,7 @@ var _figshareItemButtons = {
                         Fangorn.ButtonEvents._downloadEvent.call(tb, event, item);
                     },
                     icon: 'fa fa-download',
-                    className: 'text-info'
+                    className: 'text-success'
                 }, 'Download')
             );
         }
@@ -54,9 +54,19 @@ var _figshareItemButtons = {
                     onclick: function(event) {
                         Fangorn.ButtonEvents._gotoFileEvent.call(tb, item);
                     },
-                    icon: 'fa fa-external-link',
+                    icon: 'fa fa-file-o',
                     className : 'text-info'
                 }, 'View'));
+            if (item.kind === 'file') {
+                buttons.push(
+                    m.component(Fangorn.Components.button, {
+                        onclick: function(event) {
+                            Fangorn.ButtonEvents._externalViewEvent.call(tb, item);
+                        },
+                        icon: 'fa fa-external-link',
+                        className : 'text-info'
+                    }, 'Go to figshare'));
+            }
         }
         return m('span', buttons); // Tell fangorn this function is used.
     }
