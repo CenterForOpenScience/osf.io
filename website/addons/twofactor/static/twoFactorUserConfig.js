@@ -14,12 +14,11 @@ var ChangeMessageMixin = require('js/changeMessage');
 
 function ViewModel(settingsUrl, qrCodeSelector) {
     var self = this;
+    ChangeMessageMixin.call(self);
+
     self.settingsUrl = settingsUrl;
     self.qrCodeSelector = qrCodeSelector;
     self.tfaCode = ko.observable('');
-
-    self.message = ko.observable('');
-    self.messageClass = ko.observable('');
 
     self.isEnabled = ko.observable(false);
     self.isConfirmed = ko.observable(false);
