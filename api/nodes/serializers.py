@@ -161,7 +161,8 @@ class DraftRegistrationSerializer(JSONAPISerializer):
         draft = DraftRegistration(
             branched_from=node,
             initiator=user,
-            registration_schema = meta_schema
+            registration_schema = meta_schema,
+            initiated = datetime.datetime.utcnow
         )
         draft.save()
         return draft
