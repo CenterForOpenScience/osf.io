@@ -19,42 +19,42 @@ logger.setLevel(logging.INFO)
 
 
 def find_question_type(question):
-#     if question['type'] == 'textfield':
-#         return {
-#             'type': 'string',
-#             'format': 'textarea',
-#             'title': question['label'],
-#             'description': question['caption'] if 'caption' in question else '',
-#         }
-#     elif question['type'] == 'string':
-#         return {
-#             'type': 'string',
-#             'format': 'text',
-#             'title': question['label'],
-#             'description': question['caption'] if 'caption' in question else '',
-#         }
-#     elif question['type'] == 'select':
-#         return {
-#             'type': 'array',
-#             'format': 'select',
-#             'items': {
-#                 'type': 'string',
-#                 'enum': [option for option in question['options']]
-#             },
-#             'title': question['label'],
-#             'description': question['caption'] if 'caption' in question else ''
-#         }
-#     elif question['type'] == 'checkbox':
-#         return {
-#             'type': 'multiselect',
-#             'items': [option for option in question['options']],
-#             'title': question['label'],
-#             'description': question['caption'] if 'caption' in question else ''
-#         }
-#     elif question['type'] == 'section':
-#         return [find_question_type(sq) for sq in question['contents']]
-#     else:
-         return False
+    if question['type'] == 'textfield':
+        return {
+            'type': 'string',
+            'format': 'textarea',
+            'title': question['label'],
+            'description': question['caption'] if 'caption' in question else '',
+        }
+    elif question['type'] == 'string':
+        return {
+            'type': 'string',
+            'format': 'text',
+            'title': question['label'],
+            'description': question['caption'] if 'caption' in question else '',
+        }
+    elif question['type'] == 'select':
+        return {
+            'type': 'array',
+            'format': 'select',
+            'items': {
+                'type': 'string',
+                'enum': [option for option in question['options']]
+            },
+            'title': question['label'],
+            'description': question['caption'] if 'caption' in question else ''
+        }
+    elif question['type'] == 'checkbox':
+        return {
+            'type': 'multiselect',
+            'items': [option for option in question['options']],
+            'title': question['label'],
+            'description': question['caption'] if 'caption' in question else ''
+        }
+    elif question['type'] == 'section':
+        return [find_question_type(sq) for sq in question['contents']]
+    else:
+        return False
 
 
 def construct_page(old_page, num_pages):
@@ -111,7 +111,6 @@ def get_registered_nodes():
     )
 
 
-
 def main(dry_run=True):
     init_app(routes=False)
     count = 0
@@ -125,7 +124,9 @@ def main(dry_run=True):
         for schema in node.registered_meta:
             values = ast.literal_eval(node.registered_meta.get(schema))
 
-            from pprint import pprint; pprint(values)
+            from pprint import pprint;
+
+            pprint(values)
 
             # in some schemas, answers are just stored as { 'itemX': 'answer' }
             matches = dict()
@@ -159,7 +160,7 @@ def main(dry_run=True):
         else:
             new_page = construct_page(matches, num_pages)
             valid_schema['pages'].append(new_page)
-            num_pages +=1
+            num_pages += 1
 
         count += 1
 
@@ -168,6 +169,7 @@ def main(dry_run=True):
             node.save()
 
     logger.info('Done with {} nodes migrated'.format(count))
+
 
 if __name__ == '__main__':
     dry_run = 'dry' in sys.argv
