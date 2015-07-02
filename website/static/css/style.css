@@ -142,6 +142,10 @@ a {
     border-radius: 4px;
 }
 
+#projectSubnav .navbar-collapse {
+    padding-left: 0;
+    padding-right: 0;
+}
 
 /* Allow search-bar and nav-bar to support mutiple size of screen */
 @media (max-width: 767px) {
