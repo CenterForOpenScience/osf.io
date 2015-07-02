@@ -64,7 +64,7 @@ class FilterMixin(object):
             key_base = key.strip().split('.')[0]
             key_field = key.strip().split('.')[1]
         else:
-            base_key = key
+            key_base = key
         if self.serializer_class._declared_fields[key_base].source:
             new_key = self.serializer_class._declared_fields[key_base].source + '.' + key_field
             return new_key
