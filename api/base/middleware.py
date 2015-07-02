@@ -3,6 +3,10 @@ from raven.contrib.django.raven_compat.models import sentry_exception_handler
 
 from framework.transactions import commands, messages, utils
 
+from flask import _app_ctx_stack, Flask
+
+dummy_app = Flask(__name__)
+
 # TODO: Verify that a transaction is being created for every
 # individual request.
 class TokuTransactionsMiddleware(object):
@@ -49,4 +53,26 @@ class TokuTransactionsMiddleware(object):
             else:
                 raise err
         commands.disconnect()
+        return response
+
+
+class FlaskRequestMiddleware(object):
+    """
+    Push and pop new flask request contexts alongside Django requests
+
+    This is required to prevent caching issues with ModularODM, since (Flask)StoredObject is keyed on the flask
+    request object.
+    """
+    def process_request(self, request):
+        ## Called on every request, so self.flask_ctx should always be defined
+        self.flask_ctx = dummy_app.test_request_context()
+        self.flask_ctx.push()
+
+    def process_exception(self, request, exception):
+        if _app_ctx_stack.top is not None:
+            self.flask_ctx.pop()
+
+    def process_response(self, request, response):
+        if _app_ctx_stack.top is not None:
+            self.flask_ctx.pop()
         return response

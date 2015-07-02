@@ -237,9 +237,14 @@ def dashboard(auth):
 
 
 def paginate(items, total, page, size):
+    pages = math.ceil(total / float(size))
+    if page < 0 or (pages and page >= pages):
+        raise HTTPError(http.BAD_REQUEST, data=dict(
+            message_long='Invalid value for "page".'
+        ))
+
     start = page * size
     paginated_items = itertools.islice(items, start, start + size)
-    pages = math.ceil(total / float(size))
 
     return paginated_items, pages
 

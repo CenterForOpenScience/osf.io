@@ -1,8 +1,8 @@
 <span id="dashboards" class="anchor"></span>
-<h4>Dashboards</h4>
+<h4>Dashboard</h4>
 <p>The Dashboard displays all of your projects and their components in the Project Organizer, and is
-    linked in the black navigation bar at the top of the page. From the Project Organizer, you can
-    open any of your projects or components by clicking on the "open" icon to the right of the project's name.
+    linked in the blue navigation bar at the top of the page. From the Project Organizer, you can
+    open any of your projects or components by clicking on the project's name.
     To the right of your project organizer you will find a set of widgets that make it easy to create,
     register, and add files to your projects</p>
 <p>You can shrink or expand each project to display nested components by clicking the + or - to the

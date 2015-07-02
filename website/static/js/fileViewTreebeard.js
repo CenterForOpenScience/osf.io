@@ -77,6 +77,9 @@ function FileViewTreebeard(data) {
             if(!event) {
                 Fangorn.Utils.scrollToFile.call(tb, tb.currentFileID);
             }
+            if (tree.depth > 1) {
+                Fangorn.Utils.orderFolder.call(this, tree);
+            }
         },
         resolveRows: function (item) {
             var tb = this;
