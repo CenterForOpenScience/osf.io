@@ -4,12 +4,11 @@ import logging
 
 from nose.tools import *  # flake8: noqa (PEP8 asserts)
 import mock
-import httpretty
 
 from framework.auth.core import Auth
 from website import settings
 import website.search.search as search
-from website.search import elastic_search, index_file
+from website.search import elastic_search
 from website.search.util import build_query
 from website.search_migration.migrate import migrate
 
@@ -18,8 +17,7 @@ from tests.test_features import requires_search
 from tests.factories import (
     UserFactory, ProjectFactory, NodeFactory,
     UnregUserFactory, UnconfirmedUserFactory,
-    RegistrationFactory, MockAddonNodeSettings,
-    Node,
+    RegistrationFactory
 )
 
 TEST_INDEX = 'test'
@@ -32,11 +30,8 @@ class SearchTestCase(OsfTestCase):
         super(SearchTestCase, self).tearDown()
         search.delete_index(elastic_search.INDEX)
         search.create_index(elastic_search.INDEX)
-
     def setUp(self):
         super(SearchTestCase, self).setUp()
-        from website.search import elastic_search
-        from website import settings
         elastic_search.INDEX = TEST_INDEX
         settings.ELASTIC_INDEX = TEST_INDEX
         search.delete_index(elastic_search.INDEX)
@@ -474,7 +469,6 @@ class TestAddContributor(SearchTestCase):
         self.name4 = u'B\xc3\xb3bbert4 Jones4'
         self.user = UserFactory(fullname=self.name1)
         self.user3 = UserFactory(fullname=self.name3)
-
 
     def test_unreg_users_dont_show_in_search(self):
         unreg = UnregUserFactory()

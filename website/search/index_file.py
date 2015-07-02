@@ -1,6 +1,6 @@
-import logging
 import requests
 import mimetypes
+
 from framework.exceptions import HTTPError
 
 
