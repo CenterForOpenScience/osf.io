@@ -25,7 +25,7 @@ def get_cache_key():
     try:
         return request._get_current_object()
     except RuntimeError:  # Not in a flask request context
-        if hasattr(api_globals, 'request') and api_globals.request is not None:
+        if getattr(api_globals, 'request', None) is not None:
             return api_globals.request
         else:  # Not in a Django request
             return dummy_request
