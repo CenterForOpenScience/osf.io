@@ -1,3 +1,5 @@
+import json
+
 from framework.auth.core import Auth
 from rest_framework import exceptions
 from rest_framework import serializers as ser
@@ -139,25 +141,28 @@ class DraftRegistrationSerializer(JSONAPISerializer):
     id = ser.CharField(read_only=True, source='_id')
     branched_from = ser.CharField(read_only = True)
     initiator = ser.CharField(read_only=True)
-    registration_schema = ser.ChoiceField(choices=schema_choices, required=True)
+    registration_schema = ser.CharField(read_only=True)
+    registration_form = ser.ChoiceField(choices=schema_choices, required=True, write_only=True, help_text="Please select a registration form to initiate registration.")
     registration_metadata = ser.CharField(read_only=True)
-    initiated = ser.CharField(read_only=True)
-    updated = ser.CharField(read_only=True)
+    initiated = ser.DateTimeField(read_only=True)
+    updated = ser.DateTimeField(read_only=True)
     completion = ser.CharField(read_only=True)
 
     def create(self, validated_data):
         request = self.context['request']
-        schema = validated_data['registration_schema']
+        schema_name = validated_data['registration_form']
+        if not schema_name:
+            raise HTTPError(http.BAD_REQUEST)
         meta_schema = drafts.get_schema_or_fail(
-                Q('name', 'eq', schema)
+                Q('name', 'eq', schema_name)
             )
         node = self.context['view'].get_node()
         user = request.user
         draft = DraftRegistration(
             branched_from=node,
             initiator=user,
+            registration_schema = meta_schema
         )
-        draft.registration_schema = meta_schema.schema
         draft.save()
         return draft
 
