@@ -6,7 +6,7 @@ from framework.exceptions import HTTPError
 
 def is_indexed(filename):
     INDEXED_TYPES = [
-        'test/plain',
+        'text/plain',
     ]
     mime_type, _ = mimetypes.guess_type(filename)
     return mime_type and mime_type in INDEXED_TYPES
