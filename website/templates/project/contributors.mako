@@ -191,7 +191,7 @@
         <td class="permissions">
             <!-- ko if: contributor.canEdit() -->
                 <span data-bind="visible: notDeleteStaged">
-                    <select class="form-control" data-bind="
+                    <select class="form-control input-sm" data-bind="
                         options: permissionList,
                         value: curPermission,
                         optionsText: 'text',
@@ -207,7 +207,7 @@
                 <span data-bind="text: formatPermission"></span>
             <!-- /ko -->
         </td>
-        <td>
+        <td class="text-center">
             <input
                     type="checkbox" class="no-sort biblio"
                     data-bind="checked: visible, enable: $parent.canEdit() && !contributor.isAdmin"
