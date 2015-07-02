@@ -1,34 +1,32 @@
-var jedit = require('json-editor'); //TODO webpackify
+require('json-editor'); //TODO webpackify
+
+var $ = require('jquery');
+var URI = require('URIjs');
+var moment = require('moment');
+
 var FilesWidget = require('js/FilesWidget');
 var Fangorn = require('js/fangorn');
 var $osf = require('js/osfHelpers');
-var $ = require('jquery');
-var URI = require('URIjs');
 
 require('json-editor');
-
-var curentUser = window.contextVars.currentUser || {
-    pk: null,
-    name: 'Anonymous'
-};
 
 /////////////////// description placement //////////
 JSONEditor.defaults.themes.bootstrap3_OSF = JSONEditor.defaults.themes.bootstrap3.extend({
     getFormControl: function(label, input, description) {
-        var group = document.createElement("div");
+        var group = document.createElement('div');
 
-        if (label && input.type === "checkbox") {
-            group.className += " checkbox";
+        if (label && input.type === 'checkbox') {
+            group.className += ' checkbox';
             label.appendChild(input);
-            label.style.fontSize = "14px";
-            group.style.marginTop = "0";
+            label.style.fontSize = '14px';
+            group.style.marginTop = '0';
             group.appendChild(label);
-            input.style.position = "relative";
-            input.style.cssFloat = "left";
+            input.style.position = 'relative';
+            input.style.cssFloat = 'left';
         } else {
-            group.className += " form-group";
+            group.className += ' form-group';
             if (label) {
-                label.className += " control-label";
+                label.className += ' control-label';
                 group.appendChild(label);
             }
             if (description) {
@@ -48,181 +46,7 @@ JSONEditor.defaults.themes.bootstrap3_OSF = JSONEditor.defaults.themes.bootstrap
         el_inner.innerHTML = text;
         el.appendChild(el_inner);
         return el;
-    },
-});
-
-//######### Commentable ###########
-
-var Comments = function($element) {
-
-    var self = this;
-
-    self.comments = [];
-    self.lastModified = '';
-
-    var $commentsDiv = $('<div>');
-    var $commentsList = $('<ul>', {
-        'class': 'list-group'
-    });
-    self.$commentsList = $commentsList;
-    $commentsDiv.append($commentsList);
-    $commentsDiv.append($('<button>', {
-        'class': 'btn btn-success',
-        html: 'Add comment',
-        click: self.add.bind(self)
-    }));
-    $element.append($commentsDiv);
-
-    self.add();
-};
-Comments.prototype.Comment = function(value) {
-    var self = this;
-
-    value = value || '';
-
-    self.user = {
-        pk: curentUser.id,
-        name: curentUser.fullname
-    };
-
-    self.editable = true;
-
-    self.$input = $('<input>', {
-        'class': 'form-control',
-        type: 'text',
-        placeholder: 'Leave a comment for a reviewer',
-        html: value
-    });
-    self.$label = $('<span>', {
-        html: function() {
-            if (window.contextVars.currentUser.id === self.user.pk) {
-                return '<strong>You</strong> said...';
-            }
-            return '<strong>' + self.user.fullname + '</strong> said...';
-        }
-    });
-    self.$element = $('<li>', {
-        'class': 'list-group-item'
-    });
-    var $row = $('<div>', {
-        'class': 'row'
-    });
-    $row.append($('<div>', {
-        'class': 'col-md-12'
-    }).append(self.$input));
-
-    var $control = $('<span>');
-    self.$saveComment = $('<a>', {
-        'class': 'btn fa fa-save',
-        click: function() {
-            if (window.contextVars.currentUser.id === self.user.pk) {
-                if (self.$input.value !== '') {
-                    self.$element.last().before(self.$label);
-                }
-
-                self.editable = false;
-                self.lastModified = Date();
-                $(this).addClass('disabled');
-                self.$input.addClass('disabled');
-                self.$editComment.removeClass('disabled');
-            } else {
-                throw 'Only the author may edit this comment';
-            }
-        }
-    });
-    self.$editComment = $('<a>', {
-        'class': 'btn fa fa-pencil',
-        click: function() {
-            if (window.contextVars.currentUser.id === self.user.pk) {
-                self.editable = true;
-                self.lastModified = Date();
-                $(this).addClass('disabled');
-                self.$input.removeClass('disabled');
-                self.$saveComment.removeClass('disabled');
-            } else {
-                self.editable = false;
-                $(this).addClass('disabled');
-                self.$input.addClass('disabled');
-                self.$saveComment.addClass('disabled');
-                throw 'Only the author may edit this comment';
-            }
-        }
-    });
-    self.$deleteComment = $('<a>', {
-        'class': 'btn fa fa-times',
-        click: function() {
-            if (window.contextVars.currentUser.id === self.user.pk) {
-                self.editable = true;
-                self.$input[0].value = '';
-                self.$element.remove();
-                self.$label.remove();
-
-            } else {
-                throw 'Only the author may delete this comment';
-            }
-
-        }
-    });
-    $control.append(self.$saveComment);
-    $control.append(self.$editComment);
-    $control.append(self.$deleteComment);
-    $row.append($control);
-
-    self.$element.append($row);
-};
-Comments.prototype.add = function() {
-    var self = this;
-
-    var comment = new self.Comment();
-    self.comments.push(comment);
-    self.$commentsList.append(comment.$element);
-};
-
-JSONEditor.defaults.editors.commentableString = JSONEditor.defaults.editors.string.extend({
-    build: function() {
-        var self = this;
-        this._super();
-        if (this.schema.help) {
-            this.help = this.theme.getFormInputHelp(this.schema.help);
-            $(this.input.previousSibling).after(this.help);
-            $("#example").hide();
-            $( ".example-block" ).click(function() {
-                $("#example").slideToggle("slow");
-            });
-        };
-
-        var $element = $('<div>', {
-            'class': 'col-md-12 m-b-md'
-        });
-        $(this.input.parentNode).after($element);
-        this.comments = new Comments($element);
-    },
-    getValue: function() {
-        if (this.comments) {
-            var comments = $.map(this.comments.comments, function(comment) {
-                return {
-                    value: comment.$input.val(),
-                    user: comment.user,
-                    lastModified: comment.lastModified
-                };
-            });
-
-            for (var i = 0; i < comments.length; i++) {
-                if (comments[i].value === '') {
-                    comments.splice(i, 1);
-                }
-            }
-
-            var val = {
-                value: this._super(),
-                comments: comments
-            };
-            return val;
-        } else {
-            return this._super();
-        }
     }
-
 });
 
 /////////////// upload ////////////////
@@ -490,3 +314,44 @@ JSONEditor.defaults.editors.singleselect = JSONEditor.defaults.editors.multisele
         });
     }
 });
+
+
+function osfExtend(editor) {
+    return editor.extend({
+        build: function() {
+            var self = this;
+            this._super();
+            
+            if (this.schema.help) {
+                this.help = this.theme.getFormInputHelp(this.schema.help);
+                $(this.input.previousSibling).after(this.help);
+                $('#example').hide();
+                $( '.example-block').click(function() {
+                    $('#example').slideToggle('slow');
+                });
+            }
+        }
+    });
+}
+
+var editors = Object.keys(JSONEditor.defaults.editors);
+for (var i = 0; i < editors.length; i++) {
+    var editor = editors[i];
+    JSONEditor.defaults.editors['osf-' + editor] = osfExtend(JSONEditor.defaults.editors[editor]);
+    
+    /*
+    var resolvers = JSONEditor.defaults.resolvers.length;
+    for(var j = 0; j < resolvers; j++) {
+        var resolver = JSONEditor.defaults.resolvers[j];
+        JSONEditor.defaults.resolvers.unshift(function(schema) {
+            var parts = schema.type.split('osf-');
+            if(parts.length > 1) {
+                var altSchema = JSON.parse(JSON.stringify(schema));
+                altSchema.type = parts.pop();
+                if (resolver(altSchema)) {
+                    return 'osf-' + editor;
+                }                
+            }
+        });
+    }*/
+}
