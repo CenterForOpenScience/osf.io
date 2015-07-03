@@ -65,27 +65,10 @@ var OPERATIONS = {
     }
 };
 
-var EXTENSIONS = ['3gp', '7z', 'ace', 'ai', 'aif', 'aiff', 'amr', 'asf', 'asx', 'bat', 'bin', 'bmp', 'bup',
-    'cab', 'cbr', 'cda', 'cdl', 'cdr', 'chm', 'dat', 'divx', 'dll', 'dmg', 'doc', 'docx', 'dss', 'dvf', 'dwg',
-    'eml', 'eps', 'exe', 'fla', 'flv', 'gif', 'gz', 'hqx', 'htm', 'html', 'ifo', 'indd', 'iso', 'jar',
-    'jpeg', 'jpg', 'lnk', 'log', 'm4a', 'm4b', 'm4p', 'm4v', 'mcd', 'md', 'mdb', 'mid', 'mov', 'mp2', 'mp3', 'mp4',
-    'mpeg', 'mpg', 'msi', 'mswmm', 'ogg', 'pdf', 'png', 'pps', 'ps', 'psd', 'pst', 'ptb', 'pub', 'qbb',
-    'qbw', 'qxd', 'ram', 'rar', 'rm', 'rmvb', 'rtf', 'sea', 'ses', 'sit', 'sitx', 'ss', 'swf', 'tgz', 'thm',
-    'tif', 'tmp', 'torrent', 'ttf', 'txt', 'vcd', 'vob', 'wav', 'wma', 'wmv', 'wps', 'xls', 'xpi', 'zip',
-    'xlsx', 'py', 'gdoc', 'gdraw', 'gform', 'gslides', 'gsheet'];
-
 // Cross browser key codes for the Command key
 var COMMAND_KEYS = [224, 17, 91, 93];
 var ESCAPE_KEY = 27;
 var ENTER_KEY = 13;
-
-var getExtensionIconClass = function (name) {
-    var extension = name.split('.').pop().toLowerCase();
-    if (EXTENSIONS.indexOf(extension) > -1) {
-        return '_' + extension;
-    }
-    return null;
-};
 
 function findByTempID(parent, tmpID) {
     var child;
@@ -269,12 +252,7 @@ function _fangornResolveIcon(item) {
         if (item.data.icon) {
             return m('i.fa.' + item.data.icon, ' ');
         }
-
-        icon = getExtensionIconClass(item.data.name);
-        if (icon) {
-            return m('div.file-extension', { 'class': icon });
-        }
-        return m('i.fa.fa-file-text-o');
+        return m('div.file-extension', { 'class': '_' + item.data.name.split('.').pop().toLowerCase() });
     }
     return newIcon;
 }
