@@ -195,6 +195,15 @@ class NodeDraftRegistrationsList(generics.ListCreateAPIView, NodeMixin):
         return draft_registrations
 
 
+    # overrides ListCreateAPIView
+    def perform_create(self, serializer):
+        """
+        Create a registration of the current node.
+        """
+        user = self.request.user
+        serializer.save(creator=user)
+
+
 class NodeChildrenList(generics.ListAPIView, NodeMixin):
     """Children of the current node.
 

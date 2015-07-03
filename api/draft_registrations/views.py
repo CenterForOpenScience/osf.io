@@ -9,6 +9,7 @@ from rest_framework.exceptions import PermissionDenied, ValidationError
 
 from modularodm import Q
 from website.models import DraftRegistration
+from api.base.utils import get_object_or_404
 from api.base.filters import ODMFilterMixin
 from website.language import REGISTER_WARNING
 from api.base.utils import waterbutler_url_for
@@ -19,18 +20,20 @@ from api.nodes.views import NodeMixin, NodeFilesList, NodeChildrenList, NodeCont
 from api.draft_registrations.serializers import DraftRegSerializer, DraftRegistrationCreateSerializer, DraftRegistrationCreateSerializerWithToken
 
 
-def registration_enforcer(node):
-    if node.is_registration is False and node.is_registration_draft is False:
-        raise ValidationError(_('Not a registration or registration draft.'))
-
-
 class DraftRegistrationMixin(NodeMixin):
-    """Mixin with convenience methods for retrieving the current node based on the
-    current URL. By default, fetches the current node based on the pk kwarg.
+    """Mixin with convenience methods for retrieving the current draft based on the
+    current URL. By default, fetches the current draft based on the id kwarg.
     """
 
     serializer_class = DraftRegSerializer
-    node_lookup_url_kwarg = 'registration_id'
+    draft_lookup_url_kwarg = 'registration_id'
+
+
+    def get_draft(self):
+        obj = get_object_or_404(DraftRegistration, self.kwargs[self.draft_lookup_url_kwarg])
+        # May raise a permission denied
+        self.check_object_permissions(self.request, obj)
+        return obj
 
 
 class DraftRegistrationList(generics.ListAPIView, ODMFilterMixin):
@@ -47,21 +50,15 @@ class DraftRegistrationList(generics.ListAPIView, ODMFilterMixin):
         return DraftRegistration.find(Q('initiator', 'eq', user))
 
 
-class DraftRegistrationDetail(NodeDetail, generics.CreateAPIView, DraftRegistrationMixin):
+class DraftRegistrationDetail(generics.RetrieveUpdateDestroyAPIView, DraftRegistrationMixin):
     """
     Draft Registration details
     """
     permission_classes = (
         ContributorOrPublic,
-        ReadOnlyIfRegistration,
     )
 
-    def get_serializer_class(self):
-        if self.request.method == 'POST':
-            serializer_class = DraftRegistrationCreateSerializer
-            return serializer_class
-        serializer_class = DraftRegSerializer
-        return serializer_class
+    serializer_class = DraftRegSerializer
 
     # Restores original get_serializer_class
     def get_serializer_context(self):
@@ -73,20 +70,9 @@ class DraftRegistrationDetail(NodeDetail, generics.CreateAPIView, DraftRegistrat
 
     # overrides RetrieveAPIView
     def get_object(self):
-        node = self.get_node()
-        registration_enforcer(node)
-        return self.get_node()
+        draft = self.get_draft()
+        return draft
 
-    # overrides CreateAPIView
-    def create(self, request, registration_id):
-        user = request.user
-        node = self.get_node()
-        if node.is_registration_draft is False:
-            raise ValidationError(_('Not a registration draft.'))
-        token = token_creator(node._id, user._id)
-        url = absolute_reverse('registrations:registration-create', kwargs={'registration_id': node._id, 'token': token})
-        registration_warning = REGISTER_WARNING.format((node.title))
-        return Response({'data': {'id': node._id, 'warning_message': registration_warning, 'links': {'confirm_delete': url}}}, status=status.HTTP_202_ACCEPTED)
 
 
 class DraftRegistrationCreate(generics.CreateAPIView, DraftRegistrationMixin):
