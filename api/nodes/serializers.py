@@ -23,6 +23,7 @@ class NodeSerializer(JSONAPISerializer):
     tags = ser.SerializerMethodField(help_text='A dictionary that contains two lists of tags: '
                                                'user and system. Any tag that a user will define in the UI will be '
                                                'a user tag')
+    include = ser.CharField(required=False)
 
     links = LinksField({
         'html': 'get_absolute_url',
