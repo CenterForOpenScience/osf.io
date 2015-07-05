@@ -60,6 +60,9 @@ class NodeSerializer(JSONAPISerializer):
                                                             'public and private nodes. Administrators on a parent '
                                                             'node have implicit read permissions for all child nodes',
                               )
+
+    include = ser.CharField(required=False, read_only=True)
+
     # TODO: finish me
 
     class Meta:
