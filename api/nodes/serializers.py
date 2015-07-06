@@ -61,7 +61,7 @@ class NodeSerializer(JSONAPISerializer):
                                                             'node have implicit read permissions for all child nodes',
                               )
 
-    include = ser.CharField(required=False, read_only=True)
+    include_params = ser.SerializerMethodField()
 
     # TODO: finish me
 
@@ -113,6 +113,14 @@ class NodeSerializer(JSONAPISerializer):
             'user': [tag._id for tag in obj.tags],
         }
         return ret
+
+    @staticmethod
+    def get_include_params(obj):
+        if hasattr(obj, 'include_params'):
+            ret = {}
+            for param in obj.include_params:
+                ret[param] = 'test'
+            return ret
 
     def create(self, validated_data):
         node = Node(**validated_data)
