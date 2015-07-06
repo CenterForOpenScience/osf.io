@@ -176,7 +176,7 @@ class TestGithubViews(OsfTestCase):
             self.project.api_url_for('github_set_config'),
             {
                 'external_account_id': self.account._id,
-                'github_repo': 'fakeuser / fakerepo',
+                'folder': 'fakeuser / fakerepo',
             },
             auth=self.user.auth,
 
@@ -202,7 +202,7 @@ class TestGithubViews(OsfTestCase):
             self.project.api_url_for('github_set_config'),
             {
                 'external_account_id': self.account._id,
-                'github_repo': 'Queen / Sheer-Heart-Attack',
+                'folder': 'Queen / Sheer-Heart-Attack',
             },
             auth=self.user.auth,
 
@@ -223,7 +223,7 @@ class TestGithubViews(OsfTestCase):
             self.project.api_url_for('github_set_config'),
             {
                 'external_account_id': self.account._id,
-                'github_repo': 'fakeuser / fakerepo',
+                'folder': 'fakeuser / fakerepo',
             },
             auth=self.user.auth,
             expect_errors=True
@@ -260,7 +260,7 @@ class TestGithubViews(OsfTestCase):
         res = self.app.post_json(
             url,
             {
-                'github_repo': 'queen / night at the opera',
+                'folder': 'queen / night at the opera',
             },
             auth=self.user.auth,
             expect_errors=True

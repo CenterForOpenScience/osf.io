@@ -65,7 +65,7 @@ class TestS3ViewsConfig(OsfTestCase):
         mock_exists.return_value = True
         url = self.project.api_url_for('s3_post_node_settings')
         self.app.post_json(
-            url, {'s3_bucket': 'hammertofall'}, auth=self.user.auth,
+            url, {'folder': 'hammertofall'}, auth=self.user.auth,
         )
 
         self.project.reload()
@@ -80,7 +80,7 @@ class TestS3ViewsConfig(OsfTestCase):
         self.project.add_contributor(user, save=True)
         url = self.project.api_url_for('s3_post_node_settings')
         res = self.app.post_json(
-            url, {'s3_bucket': 'hammertofall'}, auth=user.auth,
+            url, {'folder': 'hammertofall'}, auth=user.auth,
             expect_errors=True
         )
         assert_equal(res.status_code, http.BAD_REQUEST)
@@ -92,7 +92,7 @@ class TestS3ViewsConfig(OsfTestCase):
         self.project.add_contributor(user, save=True)
         url = self.project.api_url_for('s3_post_node_settings')
         res = self.app.post_json(
-            url, {'s3_bucket': 'hammertofall'}, auth=user.auth,
+            url, {'folder': 'hammertofall'}, auth=user.auth,
             expect_errors=True
         )
         assert_equal(res.status_code, http.BAD_REQUEST)
@@ -107,7 +107,7 @@ class TestS3ViewsConfig(OsfTestCase):
         self.project.add_contributor(user, save=True)
         url = self.project.api_url_for('s3_post_node_settings')
         res = self.app.post_json(
-            url, {'s3_bucket': 'hammertofall'}, auth=user.auth,
+            url, {'folder': 'hammertofall'}, auth=user.auth,
             expect_errors=True
         )
         assert_equal(res.status_code, http.BAD_REQUEST)
@@ -119,7 +119,7 @@ class TestS3ViewsConfig(OsfTestCase):
 
         url = registration.api_url_for('s3_post_node_settings')
         res = self.app.post_json(
-            url, {'s3_bucket': 'hammertofall'}, auth=self.user.auth,
+            url, {'folder': 'hammertofall'}, auth=self.user.auth,
             expect_errors=True,
         )
 
@@ -197,7 +197,7 @@ class TestS3ViewsConfig(OsfTestCase):
         ret = self.app.delete(url, auth=self.user.auth)
 
         assert_equal(ret.json['has_bucket'], False)
-        assert_equal(ret.json['node_has_auth'], False)
+        assert_equal(ret.json['nodeHasAuth'], False)
 
     def test_s3_remove_node_settings_unauthorized(self):
         url = self.node_settings.owner.api_url_for('s3_delete_node_settings')
@@ -211,8 +211,8 @@ class TestS3ViewsConfig(OsfTestCase):
 
         result = res.json['result']
 
-        assert_equal(result['node_has_auth'], True)
-        assert_equal(result['user_is_owner'], True)
+        assert_equal(result['nodeHasAuth'], True)
+        assert_equal(result['userIsOwner'], True)
         assert_equal(result['bucket'], self.node_settings.bucket)
 
     def test_s3_get_node_settings_not_owner(self):
@@ -223,8 +223,8 @@ class TestS3ViewsConfig(OsfTestCase):
 
         result = res.json['result']
         assert_equal(result['bucket'], self.node_settings.bucket)
-        assert_equal(result['node_has_auth'], True)
-        assert_equal(result['user_is_owner'], False)
+        assert_equal(result['nodeHasAuth'], True)
+        assert_equal(result['userIsOwner'], False)
 
     def test_s3_get_node_settings_unauthorized(self):
         url = self.node_settings.owner.api_url_for('s3_get_node_settings')
@@ -241,7 +241,7 @@ class TestS3ViewsConfig(OsfTestCase):
             'secret_key': fake.password(),
         }
         res = self.app.post_json(url, cred, auth=self.user.auth)
-        assert_equal(res.json['node_has_auth'], True)
+        assert_equal(res.json['nodeHasAuth'], True)
 
     def test_s3_authorize_node_malformed(self):
         url = self.project.api_url_for('s3_authorize_node')
@@ -306,8 +306,8 @@ class TestS3ViewsConfig(OsfTestCase):
         url = self.project.api_url_for('s3_node_import_auth')
         self.node_settings.deauthorize(auth=None, save=True)
         res = self.app.post(url, auth=self.user.auth)
-        assert_equal(res.json['node_has_auth'], True)
-        assert_equal(res.json['user_is_owner'], True)
+        assert_equal(res.json['nodeHasAuth'], True)
+        assert_equal(res.json['userIsOwner'], True)
 
     def test_s3_node_import_auth_unauthorized(self):
         url = self.project.api_url_for('s3_node_import_auth')
@@ -366,7 +366,7 @@ class TestCreateBucket(OsfTestCase):
             'doesntevenmatter'
         ]
         url = self.project.api_url_for('create_bucket')
-        ret = self.app.post_json(url, {'bucket_name': 'doesntevenmatter'}, auth=self.user.auth)
+        ret = self.app.post_json(url, {'folder_name': 'doesntevenmatter'}, auth=self.user.auth)
 
         assert_equals(ret.status_int, http.OK)
         assert_in('doesntevenmatter', ret.json['buckets'])
@@ -378,6 +378,6 @@ class TestCreateBucket(OsfTestCase):
         mock_make.side_effect = error
 
         url = "/api/v1/project/{0}/s3/newbucket/".format(self.project._id)
-        ret = self.app.post_json(url, {'bucket_name': 'doesntevenmatter'}, auth=self.user.auth, expect_errors=True)
+        ret = self.app.post_json(url, {'folder_name': 'doesntevenmatter'}, auth=self.user.auth, expect_errors=True)
 
         assert_equals(ret.body, '{"message": "This should work", "title": "Problem connecting to S3"}')
