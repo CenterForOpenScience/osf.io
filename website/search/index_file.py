@@ -12,6 +12,15 @@ def is_indexed(filename):
     return mime_type and mime_type in INDEXED_TYPES
 
 
+def get_content_of_file_from_addon(file_, render):
+    url = file_.download_url
+    if render:
+        url += '&mode=render'
+    response = requests.get(url)
+    content = unicode(response.text).encode('utf-8')
+    return content
+
+
 def collect_from_addon(addon, tree):
     addon_name = addon.config.short_name
     children = tree['children']
@@ -23,10 +32,8 @@ def collect_from_addon(addon, tree):
             path, name = child['path'], child['name']
             if is_indexed(name):
                 file_, created = addon.find_or_create_file_guid(path)
-                download_url = file_.download_url
-                download_url += '&mode=render' if addon_name == 'osfstorage' else ''
-                response = requests.get(download_url)
-                content = unicode(response.text).encode('utf-8')
+                to_render = addon_name == 'osfstorage'
+                content = get_content_of_file_from_addon(file_, render=to_render)
                 yield {'name': name, 'content': content}
 
 
