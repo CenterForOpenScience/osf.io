@@ -11,7 +11,7 @@ from api.base.filters import ODMFilterMixin, ListFilterMixin
 from api.base.utils import get_object_or_404, waterbutler_url_for
 from .serializers import NodeSerializer, NodePointersSerializer, NodeFilesSerializer
 from .permissions import ContributorOrPublic, ReadOnlyIfRegistration, ContributorOrPublicForPointers
-from .utils import IncludeParamsProcessor
+from api.base.utils import process_additional_query_params
 
 
 class NodeMixin(object):
@@ -28,8 +28,7 @@ class NodeMixin(object):
         self.check_object_permissions(self.request, obj)
         if 'include' in self.request.query_params:
             include = self.request.query_params['include']
-            params_processor = IncludeParamsProcessor(include)
-            obj.additional_query_params = params_processor.additional_query_params
+            obj.additional_query_params = process_additional_query_params(include, 'node')
         else:
             obj.additional_query_params = {}
         return obj

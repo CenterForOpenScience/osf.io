@@ -4,11 +4,14 @@ import furl
 
 from modularodm import Q
 from rest_framework.reverse import reverse
-from rest_framework.exceptions import NotFound
 from modularodm.exceptions import NoResultsFound
 
 from website import util as website_util  # noqa
 from website import settings as website_settings
+from rest_framework.exceptions import NotFound
+
+from api.nodes.settings.defaults import NODE_ALLOWED_SUBQUERY_SETS
+from api.users.settings.defaults import USER_ALLOWED_SUBQUERY_SETS
 
 
 def absolute_reverse(view_name, query_kwargs=None, args=None, kwargs=None):
@@ -28,6 +31,32 @@ def get_object_or_404(model_cls, query_or_pk):
         return model_cls.find_one(query)
     except NoResultsFound:
         raise NotFound
+
+
+def process_additional_query_params(include, obj_type):
+
+    if obj_type == 'node':
+        allowed_keys = NODE_ALLOWED_SUBQUERY_SETS
+    elif obj_type == 'user':
+        allowed_keys = USER_ALLOWED_SUBQUERY_SETS
+
+    # Checks and cuts off include value if '/' is found
+    include = include.split('/')[0]
+    query_params = {}
+
+    # Processes include string into ',' separated parameters with '.' marking relationships
+    for raw_parameter in include.split(','):
+        sub_query_list = raw_parameter.split('.')
+        query = {}
+        for sub_query in reversed(sub_query_list):
+            query = {sub_query: query}
+        for sub_query_test in sub_query_list:
+            try:
+                allowed_keys = allowed_keys[sub_query_test]
+            except:
+                raise NotFound('{} is not a valid property of the Node object.'.format(query))
+        query_params[sub_query_list[0]] = query[sub_query_list[0]]
+    return query_params
 
 
 def waterbutler_url_for(request_type, provider, path, node_id, token, obj_args=None, **query):

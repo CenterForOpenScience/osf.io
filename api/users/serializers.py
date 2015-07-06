@@ -33,6 +33,8 @@ class UserSerializer(JSONAPISerializer):
         }
     })
 
+    additional_query_params = ser.SerializerMethodField()
+
     class Meta:
         type_ = 'users'
 
@@ -42,6 +44,11 @@ class UserSerializer(JSONAPISerializer):
     def update(self, instance, validated_data):
         # TODO
         pass
+
+    @staticmethod
+    def get_additional_query_params(obj):
+        if hasattr(obj, 'additional_query_params'):
+            return obj.additional_query_params
 
 
 class ContributorSerializer(UserSerializer):

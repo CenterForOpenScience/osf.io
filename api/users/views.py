@@ -3,7 +3,7 @@ from modularodm import Q
 
 from website.models import User, Node
 from framework.auth.core import Auth
-from api.base.utils import get_object_or_404
+from api.base.utils import get_object_or_404, process_additional_query_params
 from api.base.filters import ODMFilterMixin
 from api.nodes.serializers import NodeSerializer
 from .serializers import UserSerializer
@@ -21,6 +21,11 @@ class UserMixin(object):
         if check_permissions:
             # May raise a permission denied
             self.check_object_permissions(self.request, obj)
+        if 'include' in self.request.query_params:
+            include = self.request.query_params['include']
+            obj.additional_query_params = process_additional_query_params(include, 'user')
+        else:
+            obj.additional_query_params = {}
         return obj
 
 
