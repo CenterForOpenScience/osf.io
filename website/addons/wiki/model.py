@@ -12,10 +12,8 @@ import markdown
 from markdown.extensions import codehilite, fenced_code, wikilinks
 from modularodm import fields
 
-
 from framework.forms.utils import sanitize
 from framework.guid.model import GuidStoredObject
-
 
 from website import settings
 from website.addons.base import AddonNodeSettingsBase
@@ -39,12 +37,13 @@ class AddonWikiNodeSettings(AddonNodeSettingsBase):
     has_auth = True
     is_publicly_editable = fields.BooleanField(default=False, index=True)
 
-    def set_editing(self, permissions, auth=None, node=None, save=False, log=True):
+    def set_editing(self, permissions, auth=None, node=None, save=False):
         """Set the editing permissions for this node.
 
         :param permissions: A string, either 'public' or 'private'
-        :param auth: All the auth informtion including user, API key.
-        :param bool log: Whether to add a NodeLog for the privacy change.
+        :param auth: All the auth informtion including user, API key
+        :param node: Node to which self belongs,
+         only add if logging is desired
         """
 
         if permissions == 'public' and not self.is_publicly_editable:
@@ -54,7 +53,8 @@ class AddonWikiNodeSettings(AddonNodeSettingsBase):
         else:
             return False
 
-        if log:
+        # Add logging
+        if node:
             action = NodeLog.MADE_WIKI_PUBLIC if permissions == 'public'\
                 else NodeLog.MADE_WIKI_PRIVATE
             node.add_log(
@@ -66,10 +66,11 @@ class AddonWikiNodeSettings(AddonNodeSettingsBase):
                 auth=auth,
                 save=False,
             )
+            if save:
+                node.save()
 
         if save:
             self.save()
-            node.save()
 
         return True
 

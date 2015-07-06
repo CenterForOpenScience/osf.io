@@ -41,7 +41,7 @@ class TestNotificationsModels(OsfTestCase):
         self.parent = factories.ProjectFactory(creator=self.user)
         self.node = factories.NodeFactory(creator=self.user, parent=self.parent)
 
-    def has_permission_on_children(self):
+    def test_has_permission_on_children(self):
         non_admin_user = factories.UserFactory()
         parent = factories.ProjectFactory()
         parent.add_contributor(contributor=non_admin_user, permissions=['read'])

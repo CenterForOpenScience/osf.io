@@ -166,7 +166,7 @@ def get_wiki_permission(node):
     return 'private'
 
 def format_data(user, node_ids):
-    """ Format subscriptions data for project settings page
+    """ Format wiki data for project settings page
     :param user: modular odm User object
     :param node_ids: list of parent project ids
     :return: treebeard-formatted data
@@ -177,6 +177,7 @@ def format_data(user, node_ids):
         node = Node.load(node_id)
         assert node, '{} is not a valid Node.'.format(node_id)
 
+        can_read = node.has_permission(user, 'read')
         admin = node.has_permission(user, 'admin')
         has_wiki = node.has_addon('wiki')
         admin_on_children = node.has_permission_on_children(user, 'admin')
@@ -211,14 +212,14 @@ def format_data(user, node_ids):
             'node': {
                 'id': node_id,
                 'url': node.url if admin else '',
-                'title': node.title if admin else 'Private Project',
+                'title': node.title if can_read else 'Private Project',
             },
             'children': children,
-            'kind': 'folder' if not node.node__parent or not node.parent_node.has_permission(user, 'admin') else 'node',
+            'kind': 'folder' if not node.node__parent or not node.parent_node.has_permission(user, 'read') else 'node',
             'nodeType': node.project_or_component,
             'category': node.category,
             'permissions': {
-                'admin': admin,
+                'view': can_read,
             },
         }
 

@@ -907,7 +907,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         return False
 
     def has_permission_on_children(self, user, permission):
-        """Checks if the given user has read permissions on any child nodes
+        """Checks if the given user has a given permission on any child nodes
             that are not registrations or deleted
         """
         if self.has_permission(user, permission):
@@ -923,7 +923,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         return False
 
     def has_addon_on_children(self, addon):
-        """Checks if the given user has read permissions on any child nodes
+        """Checks if a given node has a specific addon on child nodes
             that are not registrations or deleted
         """
         if self.has_addon(addon):
@@ -2428,7 +2428,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         if permissions == 'public' and not self.is_public:
             if self.is_registration:
                 if self.pending_embargo:
-                    raise NodeStateError("A registration with an unapproved embargo cannot be made public")
+                    raise NodeStateError("A registration with an unapproved embargo cannot be made public.")
                 if self.embargo_end_date and not self.pending_embargo:
                     self.embargo.state = Embargo.CANCELLED
                     self.embargo.save()

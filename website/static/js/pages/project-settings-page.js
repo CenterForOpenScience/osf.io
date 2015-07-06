@@ -12,7 +12,7 @@ require('css/addonsettings.css');
 
 var ctx = window.contextVars;
 
-// Initialize treebeard grid
+// Initialize treebeard grid for notifications
 var ProjectNotifications = require('js/notificationsTreebeard.js');
 var $notificationsMsg = $('#configureNotificationsMessage');
 var notificationsURL = ctx.node.urls.api  + 'subscriptions/';
@@ -33,11 +33,10 @@ if ($('#grid').length) {
     });
 }
 
-// Initialize treebeard grid for wiki
+//Initialize treebeard grid for wiki
 var ProjectWiki = require('js/wikiTreebeard.js');
-var $notificationsMsg = $('#configureWikiMessage');
 var wikiPermissionsURL = ctx.node.urls.api  + 'wiki/permissions/';
-// Need check because notifications settings don't exist on registration's settings page
+
 if ($('#wgrid').length) {
     $.ajax({
         url: wikiPermissionsURL,

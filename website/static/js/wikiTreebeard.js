@@ -70,28 +70,6 @@ function change_permissions(item, permission) {
 }
 
 // Helper to build path
-//function build_path(item, permission) {
-//    var id = item.parent().data.node.id;
-//    var pid = id;
-//    var url = $osf.apiV2Url(id);
-//    alert(url);
-//    var test = url.slice(url.lastIndexOf('/')+1);
-//    var permissions_change_path = '/api/v1/project/';
-//    var middle = '';
-//    if(id === test){
-//        middle = pid
-//    }
-//    else{
-//        pid = item.parent().parent().data.node.id;
-//        middle = pid + '/node/' + id
-//    }
-//    permissions_change_path += middle +
-//        '/wiki/permissions/'+ permission + '/';
-//        alert(permissions_change_path);
-//    return permissions_change_path;
-//}
-
-// Helper to build path
 function build_path(item, permission) {
     var id = item.parent().data.node.id;
     var permissions_change_path = '/api/v1/project/'+ id +
@@ -112,7 +90,7 @@ function ProjectWiki(data) {
         uploads : false,         // Turns dropzone on/off.
         resolveIcon : Fangorn.Utils.resolveIconView,
         hideColumnTitles: true,
-        columnTitles : function notificationColumnTitles(item, col) {
+        columnTitles : function wikiColumnTitles(item, col) {
             return [
                 {
                     title: 'Project',
@@ -133,7 +111,7 @@ function ProjectWiki(data) {
             this.options.showTotal = Math.floor(containerHeight / this.options.rowHeight) + 1;
             this.redraw();
         },
-        resolveRows : function notificationResolveRows(item){
+        resolveRows : function wikiResolveRows(item){
             var columns = [];
             var iconcss = '';
             // check if should not get icon
@@ -234,8 +212,8 @@ function ProjectWiki(data) {
           return m('i.fa.fa-refresh.fa-spin');
         }
     };
-    var grid = new Treebeard(tbOptions);
-    expandOnLoad.call(grid.tbController);
+    var wgrid = new Treebeard(tbOptions);
+    expandOnLoad.call(wgrid.tbController);
 }
 
 module.exports = ProjectWiki;

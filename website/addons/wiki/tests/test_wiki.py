@@ -3,30 +3,30 @@
 # PEP8 asserts
 from copy import deepcopy
 import httplib as http
-
-import mock
 import time
 
+import mock
 from nose.tools import *  # noqa
 from modularodm.exceptions import ValidationValueError
 
+from tests import factories
 from tests.base import OsfTestCase, fake
 from tests.factories import (
     UserFactory, NodeFactory, ProjectFactory, ApiKeyFactory,
-    AuthUserFactory, NodeWikiFactory,
+    AuthUserFactory, NodeWikiFactory, ProjectWithAddonFactory,
 )
-
 from website.addons.wiki import settings
 from website.addons.wiki.exceptions import InvalidVersionError
 from website.addons.wiki.views import _serialize_wiki_toc, _get_wiki_web_urls, _get_wiki_api_urls
 from website.addons.wiki.model import NodeWikiPage, render_content
 from website.addons.wiki.utils import (
     get_sharejs_uuid, generate_private_uuid, share_db, delete_share_doc,
-    migrate_uuid, format_wiki_version,
+    migrate_uuid, format_wiki_version, format_data,
 )
 from website.addons.wiki.tests.config import EXAMPLE_DOCS, EXAMPLE_OPS
 from framework.auth import Auth
 from framework.mongo.utils import to_mongo_key
+
 
 # forward slashes are not allowed, typically they would be replaced with spaces
 SPECIAL_CHARACTERS_ALL = u'`~!@#$%^*()-=_+ []{}\|/?.df,;:''"'
@@ -55,7 +55,7 @@ class TestWikiViews(OsfTestCase):
         res = self.app.get(url)
         assert_equal(res.status_code, 200)
 
-    def test_wiki_url_404_with_no_write_permission(self):
+    def test_wiki_url_404_with_no_write_permission(self): # and not public
         url = self.project.web_url_for('project_wiki_view', wname='somerandomid')
         res = self.app.get(url, auth=self.user.auth)
         assert_equal(res.status_code, 200)
@@ -86,7 +86,7 @@ class TestWikiViews(OsfTestCase):
         res = self.app.get(url, auth=self.user.auth)
         assert_equal(res.status_code, 200)
 
-    def test_wiki_url_with_edit_get_returns_404_with_no_write_permission(self):
+    def test_wiki_url_with_edit_get_returns_403_with_no_write_permission(self): #GRUMBLE - this one is real- need to do something with this find best way to update wiki settings object!!!
         self.project.update_node_wiki('funpage', 'Version 1', Auth(self.user))
         self.project.update_node_wiki('funpage', 'Version 2', Auth(self.user))
         self.project.save()
@@ -442,7 +442,7 @@ class TestWikiViews(OsfTestCase):
         res = self.app.get(url, auth=self.user.auth)
         assert_true(res.json['use_python_render'])
 
-    def test_read_only_users_cannot_view_edit_pane(self):
+    def test_read_only_users_cannot_view_edit_pane(self): #GRUMBLE
         url = self.project.web_url_for('project_wiki_view', wname='home')
         # No write permissions
         res = self.app.get(url)
@@ -454,7 +454,7 @@ class TestWikiViews(OsfTestCase):
         assert_in('data-osf-panel="Edit"', res.text)
 
 
-class TestViewHelpers(OsfTestCase):
+class TestViewHelpers(OsfTestCase): #Grumble add view helper for notifications? or should that go elsewhere
 
     def setUp(self):
         super(TestViewHelpers, self).setUp()
@@ -469,7 +469,7 @@ class TestViewHelpers(OsfTestCase):
         assert_equal(urls['home'], self.project.web_url_for('project_wiki_home', _guid=True))
         assert_equal(urls['page'], self.project.web_url_for('project_wiki_view', wname=self.wname, _guid=True))
 
-    def test_get_wiki_api_urls(self):
+    def test_get_wiki_api_urls(self): #GRUMBLE -add to here?
         urls = _get_wiki_api_urls(self.project, self.wname)
         assert_equal(urls['base'], self.project.api_url_for('project_wiki_home'))
         assert_equal(urls['delete'], self.project.api_url_for('project_wiki_delete', wname=self.wname))
@@ -1106,3 +1106,91 @@ class TestWikiUtils(OsfTestCase):
         with assert_raises(InvalidVersionError):
             format_wiki_version('nonsense', 5, True)
 
+    # START TESTS THAT DONT BELONG HERE!!!!! WHY DO THESE ADDON TESTS WORK?? THIS MAKES NO SENSE!!!
+    def test_addon_on_children(self):
+        consolidated_auth = Auth(user=self.project.creator) # Add to setup when I get that working
+        parent = ProjectFactory()
+        node = NodeFactory(parent=parent, category='project')
+        sub_component = factories.NodeFactory(parent=node)
+
+        parent.delete_addon('wiki', consolidated_auth)
+        node.delete_addon('wiki', consolidated_auth)
+        sub_component.delete_addon('wiki', consolidated_auth)
+
+        sub_component2 = factories.NodeFactory(parent=node)
+
+        has_addon_on_child_node =\
+            node.has_addon_on_children('wiki')
+        assert_true(has_addon_on_child_node)
+
+    def test_check_user_has_addon_excludes_deleted_components(self):
+        self.consolidated_auth = Auth(user=self.project.creator)
+        parent = ProjectFactory()
+        parent.delete_addon('wiki', self.consolidated_auth)
+        node = NodeFactory(parent=parent, category='project')
+        node.delete_addon('wiki', self.consolidated_auth)
+        sub_component = NodeFactory(parent=node)
+        sub_component.is_deleted = True
+        sub_component.save()
+
+        has_addon_on_child_node =\
+            node.has_addon_on_children('wiki')
+        assert_false(has_addon_on_child_node)
+
+    def test_set_editing(self):
+        consolidated_auth = Auth(user=self.project.creator)
+        parent = ProjectFactory()
+        node = NodeFactory(parent=parent, category='project')
+        wiki = node.get_addon('wiki')
+        wiki.set_editing('public', consolidated_auth, node, True)
+        assert_true(wiki.is_publicly_editable)
+        assert_equal(node.logs[-1].action, 'made_wiki_public')
+        wiki.set_editing('private', consolidated_auth, node, True)
+        assert_false(wiki.is_publicly_editable)
+        assert_equal(node.logs[-1].action, 'made_wiki_private')
+
+        # If you try to set to private if it is already private
+        assert_false(wiki.set_editing(
+            'private', consolidated_auth, node, True))
+
+    def test_format_data(self):
+        consolidated_auth = Auth(user=self.project.creator)
+        user = UserFactory()
+        node = NodeFactory(parent=self.project, creator=user)
+        node.get_addon('wiki').set_editing(
+            'public', consolidated_auth, None, True)
+        data = format_data(user, [node._id])
+        print(data)
+        expected = [{
+            'node': {
+                'id': node._id,
+                'title': node.title,
+                'url': node.url,
+            },
+            'children': [
+                {
+                    'event': {
+                        'title': 'permission',
+                        'permission': 'public'
+                    },
+                }
+            ],
+            'kind': 'folder',
+            'nodeType': 'component',
+            'category': 'hypothesis',
+            'permissions': {'view': True}
+        }]
+
+        assert_equal(data, expected)
+
+    def test_format_data_no_wiki(self):
+        consolidated_auth = Auth(user=self.project.creator)
+        user = factories.UserFactory()
+        node = factories.NodeFactory(parent=self.project, creator=user)
+        node.delete_addon('wiki', consolidated_auth)
+        data = format_data(user, [node._id])
+        expected = []
+
+        assert_equal(data, expected)
+
+# TODO: FIGURE OUT BETTER HOW THE EXCPETION PATHS SHOULD WORK
