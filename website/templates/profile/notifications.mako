@@ -5,15 +5,15 @@
 <% from website import settings%>
 <h2 class="page-header">Notifications</h2>
 
-<div class="row">
+<div id="notificationSettings" class="row">
 
-    <div class="col-md-3">
-        <div class="panel panel-default">
+    <div class="col-md-3 affix-parent">
+        <div class="osf-affix profile-affix" data-spy="affix" data-offset-top="70" data-offset-bottom="268">
             <ul class="nav nav-stacked nav-pills">
                 <li><a href="${ web_url_for('user_profile') }">Profile Information</a></li>
                 <li><a href="${ web_url_for('user_account') }">Account Settings</a></li>
                 <li><a href="${ web_url_for('user_addons') }">Configure Add-ons</a></li>
-                <li><a href="#">Notifications</a></li>
+                <li class="active"><a href="#">Notifications</a></li>
             </ul>
         </div><!-- end sidebar -->
     </div>

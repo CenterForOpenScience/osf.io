@@ -50,7 +50,7 @@
     <link href='//fonts.googleapis.com/css?family=Carrois+Gothic|Inika|Patua+One' rel='stylesheet' type='text/css'>
 
 </head>
-<body data-spy="scroll" data-target=".nav-list-spy">
+<body data-spy="scroll" data-target=".scrollspy">
     % if dev_mode:
     <style>
         #devmode {
