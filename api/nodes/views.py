@@ -34,16 +34,21 @@ class NodeMixin(object):
             return obj
 
     def process_include_params(self, include, obj):
-        query_params = {}
+        query_keys = {}
         # Processes include string into ',' separated parameters with '.' marking relationships
         for raw_parameter in include.split(','):
             sub_query_list = raw_parameter.split('.')
             query = {}
             for subquery in reversed(sub_query_list):
                 query = {subquery: query}
-            query_params[sub_query_list[0]] = query[sub_query_list[0]]
+            query_keys[sub_query_list[0]] = query[sub_query_list[0]]
+        query_params = self.get_query_values(query_keys)
         obj.query_params = query_params
         return obj
+
+    def get_query_values(self, query_keys):
+        query_params = query_keys
+        return query_params
 
 
 class NodeList(generics.ListCreateAPIView, ODMFilterMixin):
