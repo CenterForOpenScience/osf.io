@@ -1,4 +1,5 @@
 import json
+import datetime
 
 from framework.auth.core import Auth
 from rest_framework import exceptions
@@ -150,15 +151,16 @@ class DraftRegistrationSerializer(DraftRegSerializer):
                 Q('name', 'eq', schema_name) &
                 Q('schema_version', 'eq',  schema_version)
             )
-
         questions = validated_data.get('registration_metadata', {})
         node = self.context['view'].get_node()
         user = request.user
         draft = DraftRegistration(
             branched_from=node,
             initiator=user,
-            registration_schema = meta_schema,
-            registration_metadata = questions
+            registration_schema=meta_schema,
+            registration_metadata=questions,
+            initiated=datetime.datetime.utcnow(),
+            updated = datetime.datetime.utcnow()
         )
         draft.save()
         return draft
