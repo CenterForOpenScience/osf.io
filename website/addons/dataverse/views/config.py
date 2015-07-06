@@ -21,7 +21,7 @@ def dataverse_get_user_accounts(auth):
     """ Returns the list of all of the current user's authorized Dataverse accounts """
 
     return DataverseSerializer(
-        user_settings=auth.user.get_addon('dataverse')
+        user_settings=auth.user.get_or_add_addon('dataverse')
     ).serialized_user_settings
 
 
