@@ -70,7 +70,7 @@
                 </div>
             </div>
 
-            <div class="padded">
+            <div class="p-t-lg p-b-lg">
 
                 <button
                         type="button"
@@ -80,7 +80,7 @@
 
                 <button
                         type="submit"
-                        class="btn btn-primary"
+                        class="btn btn-success"
                     >Submit</button>
 
             </div>

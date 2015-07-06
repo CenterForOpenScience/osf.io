@@ -223,7 +223,6 @@ def node_registration_retraction_disapprove(auth, node, token, **kwargs):
             'message_short': e.message_short,
             'message_long': e.message_long
         })
-    # FIXME(hrybacki) should be PermissionsError
     except PermissionsError as e:
         raise HTTPError(http.BAD_REQUEST, data={
             'message_short': 'Unauthorized access',
