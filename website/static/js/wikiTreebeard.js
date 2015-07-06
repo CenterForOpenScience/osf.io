@@ -56,9 +56,29 @@ function openAncestors (tb, item) {
     }
 }
 
+function before_change_permissions(item, permission){
+    var title = item.parent().data.node.title;
+    if(permission === 'public'){
+        bootbox.confirm({
+            title: 'Make Wiki Publicly Editable',
+            message: 'Are you sure you want to make the wiki of '+title+
+                ' publicly editable? This will allow any logged in user to edit your wiki. ' +
+                '<b>Note:</b> ' +title+ ' must be public for public editing to be available.',
+            callback: function(confirm) {
+            if (confirm) {
+                change_permissions(item, permission);
+                }
+            }
+        });
+    }
+    else {
+        change_permissions(item, permission);
+    }
+}
 
 function change_permissions(item, permission) {
     var id = item.parent().data.node.id;
+
     $osf.putJSON(
         build_path(item, permission), {}
     ).done(function(){
@@ -188,7 +208,7 @@ function ProjectWiki(data) {
                         return  m('div[style="padding-right:10px"]',
                             [m('select.form-control', {
                                 onchange: function(ev) {
-                                    change_permissions(item, ev.target.value);
+                                    before_change_permissions(item, ev.target.value);
                                 }},
                                 [
                                     m('option', {value: 'private', selected : item.data.event.permission === 'private' ? 'selected': ''}, 'Private'),

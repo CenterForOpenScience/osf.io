@@ -86,7 +86,7 @@ class TestWikiViews(OsfTestCase):
         res = self.app.get(url, auth=self.user.auth)
         assert_equal(res.status_code, 200)
 
-    def test_wiki_url_with_edit_get_returns_403_with_no_write_permission(self): #GRUMBLE - this one is real- need to do something with this find best way to update wiki settings object!!!
+    def test_wiki_url_with_edit_get_returns_403_with_no_write_permission(self): #GRUMBLE
         self.project.update_node_wiki('funpage', 'Version 1', Auth(self.user))
         self.project.update_node_wiki('funpage', 'Version 2', Auth(self.user))
         self.project.save()
@@ -1193,4 +1193,10 @@ class TestWikiUtils(OsfTestCase):
 
         assert_equal(data, expected)
 
-# TODO: FIGURE OUT BETTER HOW THE EXCPETION PATHS SHOULD WORK
+class TestWikiViews(OsfTestCase):
+
+    def setUp(self):
+        super(TestWikiViews, self).setUp()
+        self.user = AuthUserFactory()
+        self.project = ProjectFactory(is_public=True, creator=self.user)
+        self.consolidate_auth = Auth(user=self.project.creator)
