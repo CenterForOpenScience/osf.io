@@ -67,8 +67,8 @@ def get_or_http_error(Model, pk):
     if getattr(instance, 'is_deleted', False):
         if hasattr(instance, 'registrations'):
             raise HTTPError(http.GONE, data=dict(
-                message_short="Registration Deleted",
-                message_long="This registration has been deleted"
+                message_short="Project Deleted",
+                message_long="This Project has been deleted"
             ))
         else:
             raise HTTPError(http.GONE, data=dict(
