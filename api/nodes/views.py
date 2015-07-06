@@ -29,10 +29,10 @@ class NodeMixin(object):
         query_params = {}
         if 'include' in self.request.query_params:
             include = self.request.query_params['include']
-            # Checks and cuts off include value if '/' is found
-            include = include.split('/')[0]
             params_processor = IncludeParamsProcessor(include)
-        obj.query_params = params_processor.query_params
+            obj.query_params = params_processor.query_params
+        else:
+            obj.query_params = {}
         return obj
 
 
