@@ -341,12 +341,6 @@ def addon_view_or_download_file(auth, path, provider, **kwargs):
     node = kwargs.get('node') or kwargs['project']
 
     node_addon = node.get_addon(provider)
-    metadata_url = waterbutler_url_for('metadata', path=path, provider=provider, node=node, view_only=True)
-    res = requests.get(metadata_url)
-    if res.status_code == 200:
-        extras.update(res.json().get('data'))
-
-    import ipdb; ipdb.set_trace()
 
     if not path:
         raise HTTPError(httplib.BAD_REQUEST)
@@ -371,6 +365,11 @@ def addon_view_or_download_file(auth, path, provider, **kwargs):
 
     if not path.startswith('/'):
         path = '/' + path
+
+    metadata_url = waterbutler_url_for('metadata', path=path, provider=provider, node=node, view_only=True)
+    res = requests.get(metadata_url)
+    if res.status_code == 200:
+        extras.update(res.json().get('data'))
 
     guid_file, created = node_addon.find_or_create_file_guid(path)
 
@@ -441,6 +440,7 @@ def addon_view_file(auth, node, node_addon, guid_file, extras):
         },
         # Note: must be called after get_or_start_render. This is really only for github
         'size': size,
+        'extras': extras, #probably should be named something else
         'extra': json.dumps(getattr(guid_file, 'extra', {})),
         #NOTE: get_or_start_render must be called first to populate name
         'file_name': getattr(guid_file, 'name', os.path.split(guid_file.waterbutler_path)[1]),

@@ -2,8 +2,11 @@
 
 ## Use full page width
 <%def name="container_class()">container-xxl</%def>
-
+% if extras.get('extra').get('md5'):
+    ${extras.get('extra').get('md5')}
+% endif
 <%def name="title()">${file_name | h}</%def>
+
 <div class="row">
   <div class="col-sm-5">
     <h2 class="break-word">
