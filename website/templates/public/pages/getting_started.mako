@@ -1,5 +1,10 @@
 <%inherit file="base.mako"/>
 <%def name="title()">Getting Started</%def>
+
+<%def name="stylesheets()">
+    <link rel="stylesheet" href="/static/css/pages/getting-started-page.css">
+</%def>
+
 <%def name="content()">
     <div href="#start">
         <div class="col-sm-4 col-md-3 nav-list-spy">

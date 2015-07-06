@@ -60,7 +60,6 @@ var COMPONENT = 'component';
 function setPermissions(permissions, nodeType) {
 
     var msgKey;
-    // TODO(hrybacki): Remove once Retraction/Embargoes goes is merged into production
     var isRegistration = window.contextVars.node.isRegistration;
 
     if (permissions === PUBLIC && isRegistration) { msgKey = 'makeRegistrationPublicWarning'; }
@@ -70,22 +69,34 @@ function setPermissions(permissions, nodeType) {
     else { msgKey = 'makeComponentPrivateWarning'; }
 
     var urlKey = permissions === PUBLIC ? 'makePublic' : 'makePrivate';
+    var buttonText = permissions === PUBLIC ? 'Make Public' : 'Make Private';
+
     var message = MESSAGES[msgKey];
 
     var confirmModal = function (message) {
-        bootbox.confirm({
+        bootbox.dialog({
             title: 'Warning',
             message: message,
-            callback: function(result) {
-                if (result) {
-                    osfHelpers.postJSON(
-                        URLS[urlKey],
-                        {permissions: permissions}
-                    ).done(function() {
-                        window.location.reload();
-                    }).fail(
-                        osfHelpers.handleJSONError
-                    );
+            buttons: {
+                cancel : {
+                    label : 'Cancel',
+                    className : 'btn-default',
+                    callback : function() {
+                    }
+                },
+                success: {
+                    label: buttonText,
+                    className: 'btn-primary',
+                    callback: function() {
+                        osfHelpers.postJSON(
+                            URLS[urlKey],
+                            {permissions: permissions}
+                        ).done(function() {
+                                window.location.reload();
+                        }).fail(
+                            osfHelpers.handleJSONError
+                        );
+                    }
                 }
             }
         });

@@ -9,7 +9,7 @@
 </div>
 
 <div class="row">
-    <div class="col-md-10 col-md-offset-1">
+    <div class="col-lg-10 col-lg-offset-1">
 
             <div id="manageContributors" class="scripted">
                 <h3> Contributors
@@ -124,13 +124,14 @@
                     <tr>
                         <td class="col-sm-3">
                             <div>
-                                <span class="link-name overflow-block" data-bind="text: name, tooltip: {title: 'Link name'}" style="width: 200px"></span>
+                                <span class="link-name m-b-xs" data-bind="text: name, tooltip: {title: 'Link name'}" style="display: block; width: 100%"></span>
                             </div>
+
                             <div class="btn-group">
-                            <button class="btn btn-default btn-mini copy-button" data-trigger="manual"
-                                    data-bind="attr: {data-clipboard-text: linkUrl}, tooltip: {title: 'Click to copy'}" >
-                                <span class="fa fa-copy" ></span>
-                            </button>
+                                <button class="btn btn-default btn-sm m-r-xs copy-button" data-trigger="manual"
+                                        data-bind="attr: {data-clipboard-text: linkUrl}, tooltip: {title: 'Click to copy'}" >
+                                    <span class="fa fa-copy" ></span>
+                                </button>
                                 <input class="link-url" type="text" data-bind="value: linkUrl, attr:{readonly: readonly}"  />
                             </div>
                         </td>
@@ -174,6 +175,7 @@
     </div><!-- end col-md -->
 </div><!-- end row -->
 
+<link rel="stylesheet" href="/static/css/pages/contributor-page.css">
 
 <script id="contribTpl" type="text/html">
     <tr data-bind="click: unremove, css: {'contributor-delete-staged': deleteStaged}">
@@ -189,7 +191,7 @@
         <td class="permissions">
             <!-- ko if: contributor.canEdit() -->
                 <span data-bind="visible: notDeleteStaged">
-                    <select class="form-control" data-bind="
+                    <select class="form-control input-sm" data-bind="
                         options: permissionList,
                         value: curPermission,
                         optionsText: 'text',
@@ -205,7 +207,7 @@
                 <span data-bind="text: formatPermission"></span>
             <!-- /ko -->
         </td>
-        <td>
+        <td class="text-center">
             <input
                     type="checkbox" class="no-sort biblio"
                     data-bind="checked: visible, enable: $parent.canEdit() && !contributor.isAdmin"

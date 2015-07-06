@@ -20,7 +20,11 @@
 %>
 
 % if not node['piwik_site_id']:
-    <img src="/static/img/no_analytics.png">
+    <div class="row m-lg">
+        <div class="col-xs-12 text-center">
+            <img src="/static/img/no_analytics.png">
+        </div>
+    </div>
 % else:
     % if not node['is_public']:
         <div class='alert alert-warning'>
