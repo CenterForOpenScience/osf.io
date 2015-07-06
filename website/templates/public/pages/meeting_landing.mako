@@ -49,6 +49,7 @@
                             </span>
                         </td>
                         <td>${meeting['submissions']} submission(s)</td>
+                        <td>${meeting['downloads']} download(s)</td>
                     </tr>
                 % endfor
                 </tbody>

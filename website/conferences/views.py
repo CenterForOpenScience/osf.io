@@ -217,6 +217,14 @@ def conference_view(**kwargs):
         )
         projects = Node.find(query)
         submissions = projects.count()
+        downloads_list = [
+            _render_conference_node(each, idx)
+            for idx, each in enumerate(projects)
+        ]
+        total = 0
+        for count in downloads_list:
+            total += count['download']
+
         if submissions < settings.CONFERNCE_MIN_COUNT:
             continue
         meetings.append({
@@ -224,6 +232,7 @@ def conference_view(**kwargs):
             'active': conf.active,
             'url': web_url_for('conference_results', meeting=conf.endpoint),
             'submissions': submissions,
+            'downloads': total,
         })
     meetings.sort(key=lambda meeting: meeting['submissions'], reverse=True)
 
