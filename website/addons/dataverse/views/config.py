@@ -58,7 +58,11 @@ def dataverse_add_user_account(auth, **kwargs):
 
     if provider.account not in user.external_accounts:
         user.external_accounts.append(provider.account)
-        user.save()
+
+    user_addon = auth.user.get_addon('dataverse')
+    if not user_addon:
+        user.add_addon('dataverse')
+    user.save()
 
     return {}
 
