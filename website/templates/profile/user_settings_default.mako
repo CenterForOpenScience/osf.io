@@ -4,17 +4,16 @@
      data-addon-name="${ addon_full_name }">  
     <h4 class="addon-title">
       <img class="addon-icon" src="${addon_icon_url}"></img>
-      {{ properName }}
+      <span data-bind="text:properName"></span>
       <small>
         <a data-bind="click: connectAccount" class="pull-right text-primary">Connect Account</a>
       </small>
     </h4>
     <!-- ko foreach: accounts -->
-
     <table class="table">
         <thead>
             <tr>
-                <th>Authorized by <a href="{{ profileUrl }}"><em>{{ name }}</em></a></th>
+                <th>Authorized by <a data-bind="attr.href: profileUrl, text: name"></a></th>
                 <th><a data-bind="click: $root.askDisconnect" class="text-danger auth">Disconnect Account</a></th>
             </tr>
         </thead>
@@ -22,7 +21,7 @@
         <tbody data-bind="foreach: connectedNodes()">
             <tr>
                 <td class="authorized-nodes">
-                    <!-- ko if: title --><a href="{{ urls.view }}">{{ title }}</a><!-- /ko -->
+                    <!-- ko if: title --><a data-bind="attr.href: urls.view, text: title"></a><!-- /ko -->
                     <!-- ko if: !title --><em>Private project</em><!-- /ko -->
                 </td>
                 <td>
