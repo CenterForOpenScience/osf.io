@@ -460,8 +460,8 @@ class TestNodeIncludeQueryParams(ApiTestCase):
         self.public_url += '/?include=contributors/'
         res = self.app.get(self.public_url)
         assert_equal(res.status_code, 200)
-        query_params = res.json['data']['query_params']
-        assert_in('contributors', query_params)
+        additional_query_params = res.json['data']['additional_query_params']
+        assert_in('contributors', additional_query_params)
 
     def test_get_invalid_include_key(self):
         self.public_url += '/?include=freddiemercury/'
@@ -472,30 +472,40 @@ class TestNodeIncludeQueryParams(ApiTestCase):
         self.public_url += '/?include=contributors,pointers/'
         res = self.app.get(self.public_url)
         assert_equal(res.status_code, 200)
-        query_params = res.json['data']['query_params']
-        assert_in('contributors', query_params)
-        assert_in('pointers', query_params)
+        additional_query_params = res.json['data']['additional_query_params']
+        assert_in('contributors', additional_query_params)
+        assert_in('pointers', additional_query_params)
 
     def test_get_include_relationship_key(self):
         self.public_url += '/?include=contributors.count/'
         res = self.app.get(self.public_url)
         assert_equal(res.status_code, 200)
-        query_params = res.json['data']['query_params']
-        assert_in('count', query_params['contributors'])
+        additional_query_params = res.json['data']['additional_query_params']
+        assert_in('count', additional_query_params['contributors'])
 
-    # todo Make check to send 404 for invalid key
-    # def test_get_invalid_include_relationship_key(self):
-    #     self.public_url += '/?include=contributors.nope/'
-    #     res = self.app.get(self.public_url, expect_errors=True)
-    #     assert_equal(res.status_code, 404)
+
+    # todo Comment out and refactor method when depth of possible query relationships increases
+    # def test_get_include_sub_relationship_key(self):
+    #     self.public_url += '/?include=contributors.data.username/'
+    #     res = self.app.get(self.public_url)
+    #     assert_equal(res.status_code, 200)
+    #     additional_query_params = res.json['data']['additional_query_params']
+    #     assert_in('username', additional_query_params['contributors']['data'])
+    #     # Added due to error with sub relationships appearing on different levels
+    #     assert_not_in('username', additional_query_params['contributors'])
+
+    def test_get_invalid_include_relationship_key(self):
+        self.public_url += '/?include=contributors.nope/'
+        res = self.app.get(self.public_url, expect_errors=True)
+        assert_equal(res.status_code, 404)
 
     def test_get_include_and_relationship_keys(self):
         self.public_url += '/?include=contributors.count,pointers/'
         res = self.app.get(self.public_url)
         assert_equal(res.status_code, 200)
-        query_params = res.json['data']['query_params']
-        assert_in('count', query_params['contributors'])
-        assert_in('pointers', query_params)
+        additional_query_params = res.json['data']['additional_query_params']
+        assert_in('count', additional_query_params['contributors'])
+        assert_in('pointers', additional_query_params)
 
 
 class TestNodeUpdate(ApiTestCase):
