@@ -39,7 +39,7 @@ function FileViewTreebeard(data) {
         onload: function(tree) {
             var tb = this;
             Fangorn.DefaultOptions.onload.call(tb, tree);
-            $('.osf-panel-header.osf-panel-header-flex').show();
+            $('.panel-heading.osf-panel-header-flex').show();
             tb.select('.tb-header-row').hide();
 
         },

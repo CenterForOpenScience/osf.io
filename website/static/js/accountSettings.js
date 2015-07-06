@@ -165,7 +165,7 @@ var UserProfileViewModel = oop.extend(ChangeMessageMixin, {
         this.super.constructor.call(this);
         this.client = new UserProfileClient();
         this.profile = ko.observable(new UserProfile());
-        this.emailInput = ko.observable();
+        this.emailInput = ko.observable('');
 
     },
     init: function () {

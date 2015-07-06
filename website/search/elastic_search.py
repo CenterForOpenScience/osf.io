@@ -26,6 +26,7 @@ from website.models import User, Node
 from website.search import exceptions
 from website.search.util import build_query
 from website.util import sanitize
+from website.views import validate_page_num
 
 logger = logging.getLogger(__name__)
 
@@ -451,14 +452,13 @@ def search_contributor(query, page=0, size=10, exclude=None, current_user=None):
         normalized_items.append(normalized_item)
     items = normalized_items
 
-    query = ''
-
     query = "  AND ".join('{}*~'.format(re.escape(item)) for item in items) + \
             "".join(' NOT id:"{}"'.format(excluded._id) for excluded in exclude)
 
     results = search(build_query(query, start=start, size=size), index=INDEX, doc_type='user')
     docs = results['results']
     pages = math.ceil(results['counts'].get('user', 0) / size)
+    validate_page_num(page, pages)
 
     users = []
     for doc in docs:
