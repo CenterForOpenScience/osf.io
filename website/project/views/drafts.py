@@ -36,10 +36,8 @@ def get_all_draft_registrations(*args, **kwargs):
     count = request.args.get('count', 100)
 
     all_drafts = DraftRegistration.find(
-        Q(
-            ('is_pending_review', 'eq', True) &
-            ('schema_name', 'eq', 'Prereg Prize')
-        )
+        Q('is_pending_review', 'eq', True) &
+        Q('schema_name', 'eq', 'Prereg Prize')
     )[:count]
 
     return {

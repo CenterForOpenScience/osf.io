@@ -8,7 +8,7 @@ var Raven = require('raven-js');
 $(document).ready(function() {
 
     var request = $.ajax({
-        url:  '/api/v1/all_drafts/'
+        url:  '/api/v1/drafts/'
     });
     request.done(function(data) {
         console.log(data);
