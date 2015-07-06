@@ -177,6 +177,11 @@ var UserProfileViewModel = oop.extend(ChangeMessageMixin, {
         this.changeMessage('', 'text-info');
         var newEmail = this.emailInput().toLowerCase().trim();
         if(newEmail){
+            if(!$osf.validateEmail(newEmail) || newEmail.length > 254){
+                this.changeMessage('Invalid Email.', 'text-danger');
+                return;
+            }
+
             var email = new UserEmail({
                 address: newEmail
             });
