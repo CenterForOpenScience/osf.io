@@ -51,60 +51,6 @@ class RegistrationList(generics.ListAPIView, ODMFilterMixin):
         return Node.find(query)
 
 
-# class RegistrationDetail(NodeDetail, generics.CreateAPIView, RegistrationMixin):
-#     """
-#     Registration details
-#     """
-#     permission_classes = (
-#         ContributorOrPublic,
-#         ReadOnlyIfRegistration,
-#     )
-#
-#     def get_serializer_class(self):
-#         if self.request.method == 'POST':
-#             serializer_class = RegistrationCreateSerializer
-#             return serializer_class
-#         serializer_class = RegistrationSerializer
-#         return serializer_class
-#
-#     # Restores original get_serializer_class
-#     def get_serializer_context(self):
-#         return {
-#             'request': self.request,
-#             'format': self.format_kwarg,
-#             'view': self
-#         }
-#
-#     # overrides RetrieveAPIView
-#     def get_object(self):
-#         node = self.get_node()
-#         registration_enforcer(node)
-#         return self.get_node()
-#
-#     # overrides CreateAPIView
-#     def create(self, request, registration_id):
-#         user = request.user
-#         node = self.get_node()
-#         if node.is_registration_draft is False:
-#             raise ValidationError(_('Not a registration draft.'))
-#         token = token_creator(node._id, user._id)
-#         url = absolute_reverse('registrations:registration-create', kwargs={'registration_id': node._id, 'token': token})
-#         registration_warning = REGISTER_WARNING.format((node.title))
-#         return Response({'data': {'id': node._id, 'warning_message': registration_warning, 'links': {'confirm_delete': url}}}, status=status.HTTP_202_ACCEPTED)
-
-#
-class RegistrationCreateWithToken(generics.CreateAPIView, NodeMixin):
-    """
-    Save your registration draft
-    """
-    permission_classes = (
-        ContributorOrPublic,
-        ReadOnlyIfRegistration,
-    )
-
-    serializer_class = RegistrationCreateSerializerWithToken
-
-
 class RegistrationCreate(generics.CreateAPIView, DraftRegistrationMixin):
     "Turn a draft registration into a frozen registration"
     permission_classes = (
@@ -121,6 +67,18 @@ class RegistrationCreate(generics.CreateAPIView, DraftRegistrationMixin):
         url = absolute_reverse('registrations:registration-create', kwargs={'registration_id': draft._id, 'token': token})
         registration_warning = REGISTER_WARNING.format((draft.title))
         return Response({'data': {'id': draft._id, 'warning_message': registration_warning, 'links': {'confirm_register': url}}}, status=status.HTTP_202_ACCEPTED)
+
+
+class RegistrationCreateWithToken(generics.CreateAPIView, NodeMixin):
+    """
+    Save your registration draft
+    """
+    permission_classes = (
+        ContributorOrPublic,
+        ReadOnlyIfRegistration,
+    )
+
+    serializer_class = RegistrationCreateSerializerWithToken
 
 
 
