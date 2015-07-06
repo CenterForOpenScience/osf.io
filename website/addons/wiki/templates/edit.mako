@@ -138,6 +138,7 @@
                         <div class="col-sm-6">
 
                             <div class="pull-right">
+                                <!-- Version Picker -->
                                 <select class="form-control" data-bind="value:viewVersion" id="viewVersionSelect">
                                     % if can_edit:
                                         <option value="preview" ${'selected' if version_settings['view'] == 'preview' else ''}>Preview</option>
