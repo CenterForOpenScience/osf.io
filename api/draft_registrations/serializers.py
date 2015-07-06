@@ -14,7 +14,7 @@ from website.project.metadata.schemas import OSF_META_SCHEMAS
 class DraftRegSerializer(JSONAPISerializer):
     schema_choices = [schema['name'] for schema in OSF_META_SCHEMAS]
     id = ser.CharField(read_only=True, source='_id')
-    branched_from = ser.CharField(read_only = True)
+    branched_from = ser.CharField(read_only = True, help_text="Source node")
     initiator = ser.CharField(read_only=True)
     registration_schema = ser.CharField(read_only=True)
     registration_form = ser.ChoiceField(choices=schema_choices, required=True, write_only=True, help_text="Please select a registration form to initiate registration.")

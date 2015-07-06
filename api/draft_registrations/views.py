@@ -1,4 +1,5 @@
 import requests
+import datetime
 
 from rest_framework import status
 from framework.auth.core import Auth
@@ -68,11 +69,18 @@ class DraftRegistrationDetail(generics.RetrieveUpdateDestroyAPIView, DraftRegist
             'view': self
         }
 
-    # overrides RetrieveAPIView
+    # overrides RetrieveUpdateDestroyAPIView
     def get_object(self):
         draft = self.get_draft()
         return draft
 
+    # overrides RetrieveUpdateDestroyAPIView
+    def perform_destroy(self, instance):
+        user = self.request.user
+        auth = Auth(user)
+        draft = self.get_object()
+        draft.remove_node(auth=auth)
+        draft.save()
 
 
 class DraftRegistrationCreate(generics.CreateAPIView, DraftRegistrationMixin):
