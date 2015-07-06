@@ -179,11 +179,10 @@ class NodeDraftRegistrationsList(generics.ListCreateAPIView, NodeMixin):
 
     serializer_class = DraftRegistrationSerializer
 
-
+    # overrides ListCreateAPIView
     def get_queryset(self):
         node = self.get_node()
         user = self.request.user
-
         if user.is_anonymous():
             auth = Auth(None)
         else:

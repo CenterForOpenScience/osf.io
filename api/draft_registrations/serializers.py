@@ -19,6 +19,7 @@ class DraftRegSerializer(JSONAPISerializer):
     registration_schema = ser.CharField(read_only=True)
     registration_form = ser.ChoiceField(choices=schema_choices, required=True, write_only=True, help_text="Please select a registration form to initiate registration.")
     registration_metadata = ser.DictField(help_text="Responses to supplemental registration questions")
+    schema_version = ser.IntegerField(help_text="Registration schema version", write_only=True)
     initiated = ser.DateTimeField(read_only=True)
     updated = ser.DateTimeField(read_only=True)
     completion = ser.CharField(read_only=True)
