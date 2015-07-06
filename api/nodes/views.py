@@ -27,17 +27,21 @@ class NodeMixin(object):
         self.check_object_permissions(self.request, obj)
         if 'include' in self.request.query_params:
             include = self.request.query_params['include']
+            # Checks and cuts off include value if '/' is found
+            include = include.split('/')[0]
             return self.process_include_params(include, obj)
-        return obj
+        else:
+            return obj
 
     def process_include_params(self, include, obj):
-        query_params = []
+        query_params = {}
+        # Processes include string into ',' separated parameters with '.' marking relationships
         for raw_parameter in include.split(','):
             sub_query_list = raw_parameter.split('.')
-            query = {} #todo insert data here
+            query = {}
             for subquery in reversed(sub_query_list):
                 query = {subquery: query}
-            query_params.append(query)
+            query_params[sub_query_list[0]] = query[sub_query_list[0]]
         obj.query_params = query_params
         return obj
 
