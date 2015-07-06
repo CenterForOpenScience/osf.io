@@ -15,8 +15,19 @@ ko.bindingHandlers.osfUploader = {
             element.id,
             node.urls.api + 'files/grid/',
             {
-                onSelectRow: function(item) {
-                    debugger;
+                onselectrow: function(item) {
+                    console.log(item);
+                    self.preview_value = item.data;
+                    this.path = item.data.path;
+                    self.files = item.data;
+
+                    var tb = this;
+                    if (item.data.kind === 'file') {
+                        var redir = new URI(item.data.nodeUrl);
+                        redir.segment('files').segment(item.data.provider).segmentCoded(item.data.path.substring(1));
+                        var fileurl = redir.toString() + '/';
+                        console.log(fileurl);
+                    }
                 },
                 dropzone : {                                           // All dropzone options.
                     url: function(files) {return files[0].url;},
@@ -32,7 +43,7 @@ ko.bindingHandlers.osfUploader = {
         fw.init();
     },
     update: function(element, valueAccessor, allBindings, viewModel, bindingContext) {
-        
+
     }
 };
 
