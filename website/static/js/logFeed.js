@@ -41,7 +41,15 @@ var Log = function(params) {
       * Return whether a knockout template exists for the log.
       */
     self.hasTemplate = ko.computed(function() {
-        return $('script#' + self.action).length > 0;
+        if (!self.user) {
+            $('script#' + self.action + '_no_user').length > 0;
+        } else {
+            return $('script#' + self.action).length > 0;
+        }
+    });
+
+    self.hasUser = ko.pureComputed(function() {
+        return Boolean(self.user && self.user.fullname);
     });
 
     self.mapUpdates = function(key, item) {
@@ -124,7 +132,7 @@ var LogsViewModel = oop.extend(Paginator, {
             type: 'get',
             url: self.url,
             data:{
-                page: self.currentPage()
+                page: self.pageToGet()
             },
             cache: false
         }).done(function(response) {
@@ -171,7 +179,8 @@ var createLogs = function(logData){
             params: item.params,
             nodeTitle: item.node.title,
             nodeDescription: item.params.description_new,
-            nodePath: item.node.path
+            nodePath: item.node.path,
+            user: item.user
         });
     });
     return mappedLogs;

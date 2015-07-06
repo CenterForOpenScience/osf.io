@@ -1,0 +1,235 @@
+<script id="project-detail-template" type="text/x-handlebars-template">
+    <div class="row" id="ptd-{{ theItem.node_id }}">
+
+        {{#if theItem.parentIsFolder}}
+            <div class="col-xs-12">
+                <span class="rename-container" id="rnc-{{theItem.node_id}}">
+                    <form action="">
+                          <fieldset class="project-detail-fields">
+                            <div class="row">
+                                <div class="col-xs-8">
+                                    <input class="typeahead" id="rename-node-input{{theItem.node_id}}" type="text" value="{{{theItem.name}}}" autofocus>
+                                </div>
+                                <div class="col-xs-4">
+                                    <input type="submit" class = "rename-node-btn btn btn-sm btn-default submit-button-{{ theItem.node_id }}" id="rename-node-button{{theItem.node_id}}" disabled="disabled" value="Rename">
+                                    <input type="reset" class = "btn btn-sm btn-default cancel-button-{{ theItem.node_id }}" value="Cancel">
+                                </div>
+                            </div>
+                          </fieldset>
+                    </form>
+                </span>
+            </div>
+            {{#if theItem.isFolder}}
+                        <div class="col-md-5">
+                            <span class = "title">
+                                <span class = "name-container" id="nc-{{theItem.node_id}}">
+                                      {{#if theItem.isFolder}}{{{ theItem.name }}}{{/if}}
+                                      {{#unless theItem.isFolder}}<a href="{{ theItem.urls.fetch }}">{{{ theItem.name }}}</a>{{#if theItem.isRegistration}} (Registration){{/if}}
+                                      {{/unless}}
+                                      {{#unless theItem.isDashboard}}{{#unless theItem.isRegistration}}{{#if theItem.permissions.edit}}
+                                          <button id="rename-node-{{theItem.node_id}}" class="editableControl dker btn btn-xs">
+                                            <i class="fa fa-pencil" style="font-size: 11px;"></i> Edit</button>
+                                      {{/if}}{{/unless}}{{/unless}}
+                                </span>
+                            </span>
+                        </div>
+            {{/if}}
+            <div class="col-md-7 ">
+                {{#if theItem.isFolder}}
+                    <div class = "organize-project-controls pull-right">
+                        <div id = "buttons{{theItem.node_id}}">
+                        <div class = "orgnaize-btn btn btn-sm btn-default" id="add-item-{{theItem.node_id}}">Add Existing Project</div>
+                        <div id="add-folder-{{theItem.node_id}}" class = "orgnaize-btn btn btn-sm btn-default">New Folder</div>
+                            {{#unless theItem.isDashboard}}
+                                <div class = "orgnaize-btn btn btn-sm btn-default" id="delete-folder-{{theItem.node_id}}">Delete Folder</div>
+                            {{/unless}}
+                        </div>
+                        <div id="findNode{{theItem.node_id}}">
+                            <form action="">
+                            <fieldset class="project-detail-fields">
+                                <div class="row">
+                                    <div class="col-xs-7 col-sm-12 col-md-7 col-lg-8">
+                                        <input class="typeahead" id="input{{theItem.node_id}}" type="text" placeholder="Name of project to find" autofocus>
+                                        <span class="add-link-warning" id="add-link-warn-{{theItem.node_id}}"></span>
+                                    </div>
+                                    <div class="col-xs-5 col-sm-12 col-md-5 col-lg-4">
+                                        <input type="submit" class = "pull-left m-r-xs findBtn btn btn-sm btn-default" id="add-link-{{theItem.node_id}}" disabled="disabled" value="Add">
+                                        <input type="reset" class = "pull-left btn btn-sm btn-default cancel-button-{{ theItem.node_id }}" value="Cancel">
+                                    </div>
+                                </div>
+                            </fieldset>
+                                </form>
+                        </div>
+                        <div class="add-folder-container" id="afc-{{theItem.node_id}}">
+                            <form action="">
+                            <fieldset class="project-detail-fields">
+
+                            <div class="row">
+                                <div class="col-xs-8">
+                                     <input class = "typeahead" id="add-folder-input{{theItem.node_id}}" type="text" placeholder="Folder Name" autofocus>
+                                </div>
+                                <div class="col-xs-4">
+                                    <input type="submit" class = "pull-left m-r-xs addFolderBtn btn btn-sm btn-default submit-button-{{ theItem.node_id }}" id="add-folder-button{{theItem.node_id}}" disabled="disabled" value="Add">
+                                    <input type="reset" class = "pull-left btn btn-sm btn-default cancel-button-{{ theItem.node_id }}" value="Cancel">
+                                </div>
+                            </div>
+                            </fieldset>
+                                </form>
+                        </div>
+                    </div>
+                {{/if}}
+            </div>
+        {{/if}}
+
+        {{#unless theItem.isFolder}}
+            {{#if theItem.parentIsFolder}}
+                {{#unless parentIsSmartFolder}}
+                    <div class="col-sm-7 col-md-8">
+                        <span class = "title">
+                            <span class = "name-container" id="nc-{{theItem.node_id}}">
+                                  {{#if theItem.isFolder}}{{{ theItem.name }}}{{/if}}
+                                  {{#unless theItem.isFolder}}<a href="{{ theItem.urls.fetch }}">{{{ theItem.name }}}</a>{{#if theItem.isRegistration}} (Registration){{/if}}
+                                  {{/unless}}
+                                  {{#unless theItem.isDashboard}}{{#unless theItem.isRegistration}}{{#if theItem.permissions.edit}}
+                                      <button id="rename-node-{{theItem.node_id}}" class="editableControl dker btn btn-xs">
+                                        <i class="fa fa-pencil" style="font-size: 11px;"></i> Edit</button>
+                                  {{/if}}{{/unless}}{{/unless}}
+                            </span>
+                        </span>
+                    </div>
+                    <div class="col-sm-5 col-md-4">
+                        <div class = "organize-project-controls pull-right">
+                            <div id = "buttons{{theItem.node_id}}">
+                                <div class="orgnaize-btn btn btn-sm btn-default" id="remove-link-{{theItem.node_id}}">Remove from folder</div>
+                            </div>
+                        </div>
+                    </div>
+                {{/unless}}
+            {{/if}}
+        {{/unless}}
+
+
+        {{#unless theItem.parentIsFolder}}
+            {{#unless theItem.isDashboard}}
+                <div class="col-xs-12">
+                    <span class = "title">  
+                        <span class = "name-container" id="nc-{{theItem.node_id}}">
+                              {{#if theItem.isFolder}}{{{ theItem.name }}}{{/if}}
+                              {{#unless theItem.isFolder}}<a href="{{ theItem.urls.fetch }}">{{{ theItem.name }}}</a>{{#if theItem.isRegistration}} (Registration){{/if}}
+                              {{/unless}}
+                              {{#unless theItem.isDashboard}}{{#unless theItem.isRegistration}}{{#if theItem.permissions.edit}}
+                                  <button id="rename-node-{{theItem.node_id}}" class="editableControl dker btn btn-xs">
+                                    <i class="fa fa-pencil" style="font-size: 11px;"></i> Edit</button>
+                              {{/if}}{{/unless}}{{/unless}}
+                        </span>
+                    </span>
+                </div>
+            {{/unless}}
+            {{#if theItem.isDashboard}}
+                <div class="col-xs-4">
+                    <span class="title">
+                        <span class = "name-container" id="nc-{{theItem.node_id}}">
+                              {{#if theItem.isFolder}}{{{ theItem.name }}}{{/if}}
+                              {{#unless theItem.isFolder}}<a href="{{ theItem.urls.fetch }}">{{{ theItem.name }}}</a>{{#if theItem.isRegistration}} (Registration){{/if}}
+                              {{/unless}}
+                              {{#unless theItem.isDashboard}}{{#unless theItem.isRegistration}}{{#if theItem.permissions.edit}}
+                                  <button id="rename-node-{{theItem.node_id}}" class="editableControl dker btn btn-xs">
+                                    <i class="fa fa-pencil" style="font-size: 11px;"></i> Edit</button>
+                              {{/if}}{{/unless}}{{/unless}}
+                        </span>
+                    </span>
+                </div>
+                <div class="col-xs-8">
+                    <div class = "organize-project-controls pull-right">
+                        <div id = "buttons{{theItem.node_id}}">
+                            <div class = "orgnaize-btn btn btn-sm btn-default" id="add-item-{{theItem.node_id}}">Add Existing Project</div>
+                            <div id="add-folder-{{theItem.node_id}}" class = "orgnaize-btn btn btn-sm btn-default">New Folder</div>
+                        </div>
+                        <div id="findNode{{theItem.node_id}}">
+                            <form action="">
+                            <fieldset class="project-detail-fields">
+                                <div class="row">
+                                    <div class="col-xs-7 col-sm-12 col-md-7 col-lg-8">
+                                        <input class="typeahead" id="input{{theItem.node_id}}" type="text" placeholder="Name of project to find" autofocus>
+                                        <span class="add-link-warning" id="add-link-warn-{{theItem.node_id}}"></span>
+                                    </div>
+                                    <div class="col-xs-5 col-sm-12 col-md-5 col-lg-4">
+                                        <input type="submit" class = "pull-left m-r-xs findBtn btn btn-sm btn-default" id="add-link-{{theItem.node_id}}" disabled="disabled" value="Add">
+                                        <input type="reset" class = "pull-left btn btn-sm btn-default cancel-button-{{ theItem.node_id }}" value="Cancel">
+                                    </div>
+                                </div>
+                            </fieldset>
+                                </form>
+                        </div>
+                        <div class="add-folder-container" id="afc-{{theItem.node_id}}">
+                            <form action="">
+                            <fieldset class="project-detail-fields">
+
+                            <div class="row">
+                                <div class="col-xs-7 col-sm-12 col-md-7 col-lg-8">
+                                     <input class = "typeahead" id="add-folder-input{{theItem.node_id}}" type="text" placeholder="Folder Name" autofocus>
+                                </div>
+                                <div class="col-xs-5 col-sm-12 col-md-5 col-lg-4">
+                                    <input type="submit" class = "pull-left m-r-xs addFolderBtn btn btn-sm btn-default submit-button-{{ theItem.node_id }}" id="add-folder-button{{theItem.node_id}}" disabled="disabled" value="Add">
+                                    <input type="reset" class = "pull-left btn btn-sm btn-default cancel-button-{{ theItem.node_id }}" value="Cancel">
+                                </div>
+                            </div>
+                            </fieldset>
+                                </form>
+                        </div>
+                    </div>
+                </div>
+            {{/if}}
+                <div class="col-xs-12">
+                    <span class="rename-container" id="rnc-{{theItem.node_id}}">
+                          <form action="">
+                                <fieldset class="project-detail-fields">
+                                  <div class="row">
+                                      <div class="col-xs-8 col-sm-7 col-lg-9">
+                                          <input class="typeahead" id="rename-node-input{{theItem.node_id}}" type="text" value="{{{theItem.name}}}" autofocus>
+                                      </div>
+                                      <div class="col-xs-4 col-sm-5 col-lg-3">
+                                          <input type="submit" class = "rename-node-btn btn btn-sm btn-default submit-button-{{ theItem.node_id }}" id="rename-node-button{{theItem.node_id}}" disabled="disabled" value="Rename">
+                                          <input type="reset" class = "btn btn-sm btn-default cancel-button-{{ theItem.node_id }}" value="Cancel">
+                                      </div>
+                                  </div>
+                                </fieldset>
+                          </form>
+                    </span>
+                </div>
+            </div>
+        {{/unless}}
+
+    </div>
+</script>
+
+<script id="project-detail-multi-item-template" type="text/x-handlebars-template">
+    <div class="project-detail-box" id="ptd-multi">
+        <div class="row">
+            <div class="col-xs-6">
+                <span class="title">Selection of {{ itemsCount }} items.
+                </span>
+            </div>
+            <div class="col-xs-6">
+                <div class = "project-detail-content pull-right">
+                    <div class="orgnaize-btn btn btn-sm btn-default" id="remove-links-multiple">Remove all from folder</div>
+                </div>
+            </div>
+        </div>
+    </div>
+</script>
+<script id="project-detail-multi-item-no-action" type="text/x-handlebars-template">
+    <div class="project-detail-box" id="ptd-multi">
+        <div class="row">
+            <div class="col-xs-6">
+                <span class="title">Selection of {{ itemsCount }} items.
+                </span>
+            </div>
+            <div class="col-xs-6">
+                <div class = "project-detail-content pull-right">
+                    <div class="text-muted" style="padding-top: 5px;"><i> No actions </i></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</script>

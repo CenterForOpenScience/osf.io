@@ -3,15 +3,16 @@
 require('c3/c3.css');
 require('../../css/share-search.css');
 
+var $ = require('jquery');
 var m = require('mithril');
 var $osf = require('js/osfHelpers');
 var Stats = require('./stats');
 var utils = require('./utils');
 var SideBar = require('./sideBar');
 var Results = require('./results');
+var Footer = require('./footer');
 var History = require('exports?History!history');
 var SearchBar = require('./searchBar');
-var MESSAGES = JSON.parse(require('raw!./messages.json'));
 
 var ShareApp = {};
 
@@ -24,8 +25,18 @@ ShareApp.ViewModel = function() {
     self.results = null;
     self.query = m.prop($osf.urlParams().q || '');
     self.sort = m.prop($osf.urlParams().sort || 'Relevance');
+    self.showStats = false;
+    self.showFooter = (self.query() === '');
     self.requiredFilters = $osf.urlParams().required ? $osf.urlParams().required.split('|') : [];
     self.optionalFilters = $osf.urlParams().optional ? $osf.urlParams().optional.split('|') : [];
+
+    self.sortProviders = function() {
+        return $.map(Object.keys(self.ProviderMap), function(result, index){
+            return self.ProviderMap[result];
+        }).sort(function(a,b){
+                return a.long_name.toUpperCase() > b.long_name.toUpperCase() ? 1: -1;
+        });
+    };
 };
 
 
@@ -43,7 +54,7 @@ ShareApp.view = function(ctrl) {
                     Results.view(ctrl.resultsController)
                 ])
             ]),
-            m('.row', m('.col-md-12', {style: 'padding-top: 30px;'}, m('span', m.trust(MESSAGES.ABOUTSHARE))))
+            Footer.view(ctrl.footerController),
         ])
     ]);
 };
@@ -72,6 +83,7 @@ ShareApp.controller = function() {
         self.statsController = new Stats.controller(self.vm);
         self.resultsController = new Results.controller(self.vm);
         self.searchBarController = new SearchBar.controller(self.vm);
+        self.footerController = new Footer.controller(self.vm);
 
     });
 

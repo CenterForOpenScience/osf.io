@@ -8,7 +8,7 @@
 <p>Most Add-Ons require both account authentication as well as project application. The easiest way to do this is
     directly from the project page. First, navigate to the project's settings. Then select the Add-Ons that you want to
     incorporate into your project. A pop-up with information about the Add-On will show up, click okay, and then click
-    submit. After clicking submit, you will notice a box labled "Configure Add-Ons" beneath the "Select Add-Ons" box.
+    submit. After clicking submit, you will notice a box labeled "Configure Add-Ons" beneath the "Select Add-Ons" box.
     Go to the "Configure Add-Ons" box and create an access token for the Add-On, this authorizes the Add-On for the
     entire OSF account. Then configure the Add-On and click submit to apply the Add-On to the individual project.
     Once you've authorized an Add-On, you never have to do it again. However, you always need to apply the Add-On to

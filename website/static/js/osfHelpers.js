@@ -169,7 +169,7 @@ var handleEditableError = function(response) {
     return 'Unexpected error: ' + response.statusText;
 };
 
-var block = function() {
+var block = function(message) {
     $.blockUI({
         css: {
             border: 'none',
@@ -180,7 +180,7 @@ var block = function() {
             opacity: 0.5,
             color: '#fff'
         },
-        message: 'Please wait'
+        message: message || 'Please wait'
     });
 };
 
@@ -189,14 +189,13 @@ var unblock = function() {
 };
 
 var joinPrompts = function(prompts, base) {
-    var prompt = base || '';
+    var prompt = base ? '<h4>'+ base +'</h4>': '';
     if (prompts.length !==0) {
-        prompt += '<hr />';
-        prompt += '<ul>';
+        prompt += '<div>';
         for (var i=0; i<prompts.length; i++) {
-            prompt += '<li>' + prompts[i] + '</li>';
+            prompt += '<div class="osf-box p-sm">' + prompts[i] + '</div>';
         }
-        prompt += '</ul>';
+        prompt += '</div>';
     }
     return prompt;
 };
@@ -472,6 +471,14 @@ var applyBindings = function(viewModel, selector) {
 };
 
 
+var hasTimeComponent = function(dateString) {
+    return dateString.indexOf('T') !== -1;
+};
+
+var forceUTC = function(dateTimeString) {
+    return dateTimeString.slice(-1) === 'Z' ? dateTimeString : dateTimeString + 'Z';
+};
+
 /**
   * A date object with two formats: local time or UTC time.
   * @param {String} date The original date as a string. Should be an standard
@@ -480,19 +487,16 @@ var applyBindings = function(viewModel, selector) {
 var LOCAL_DATEFORMAT = 'YYYY-MM-DD hh:mm A';
 var UTC_DATEFORMAT = 'YYYY-MM-DD HH:mm UTC';
 var FormattableDate = function(date) {
+
     if (typeof date === 'string') {
-        // If Firefox, add 'Z' to the date string (Z is timezone for UTC)
-        if(navigator.userAgent.toLowerCase().indexOf('firefox') > -1 && date.slice(-1) !== 'Z') {
-           date = date + 'Z';
-        }
-        // The date as a Date object
-        this.date = new Date(date);
+        this.date = new Date(hasTimeComponent(date) ? forceUTC(date) : date);
     } else {
         this.date = date;
     }
     this.local = moment(this.date).format(LOCAL_DATEFORMAT);
     this.utc = moment.utc(this.date).format(UTC_DATEFORMAT);
 };
+
 
 /**
  * Escapes html characters in a string.
@@ -658,6 +662,14 @@ var _confirmationString = function() {
 };
 
 /**
+*  Helper function to judge if the user browser is IE
+*/
+var isIE = function(userAgent) {
+    userAgent = userAgent || navigator.userAgent;
+    return userAgent.indexOf('MSIE ') > -1 || userAgent.indexOf('Trident/') > -1;
+};
+
+/**
   * Confirm a dangerous action by requiring the user to enter specific text
   *
   * This is an abstraction over bootbox, and passes most options through to
@@ -744,5 +756,6 @@ module.exports = window.$.osf = {
     htmlDecode: htmlDecode,
     tableResize: tableResize,
     humanFileSize: humanFileSize,
-    confirmDangerousAction: confirmDangerousAction
+    confirmDangerousAction: confirmDangerousAction,
+    isIE: isIE
 };

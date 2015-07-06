@@ -1,5 +1,5 @@
 <%inherit file="project/project_base.mako"/>
-<%def name="title()">Register Component</%def>
+<%def name="title()">Register ${node['title']}</%def>
 
 <legend class="text-center">Register</legend>
 

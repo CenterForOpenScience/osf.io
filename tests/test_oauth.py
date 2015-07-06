@@ -9,7 +9,7 @@ from nose.tools import *  # noqa
 
 from framework.auth import authenticate
 from framework.exceptions import PermissionsError, HTTPError
-from framework.sessions import get_session
+from framework.sessions import session
 from website.oauth.models import (
     ExternalAccount,
     ExternalProvider,
@@ -217,8 +217,6 @@ class TestExternalProviderOAuth1(OsfTestCase):
             # The URL to which the user would be redirected
             assert_equal(url, "http://mock1a.com/auth?oauth_token=temp_token")
 
-            session = get_session()
-
             # Temporary credentials are added to the session
             creds = session.data['oauth_states'][self.provider.short_name]
             assert_equal(creds['token'], 'temp_token')
@@ -252,7 +250,6 @@ class TestExternalProviderOAuth1(OsfTestCase):
             # make sure the user is logged in
             authenticate(user=user, access_token=None, response=None)
 
-            session = get_session()
             session.data['oauth_states'] = {
                 self.provider.short_name: {
                     'token': 'temp_key',
@@ -352,8 +349,6 @@ class TestExternalProviderOAuth2(OsfTestCase):
             #   auth url
             url = self.provider.auth_url
 
-            session = get_session()
-
             # Temporary credentials are added to the session
             creds = session.data['oauth_states'][self.provider.short_name]
             assert_in('state', creds)
@@ -401,7 +396,6 @@ class TestExternalProviderOAuth2(OsfTestCase):
             # make sure the user is logged in
             authenticate(user=self.user, access_token=None, response=None)
 
-            session = get_session()
             session.data['oauth_states'] = {
                 self.provider.short_name: {
                     'state': 'mock_state',
@@ -432,7 +426,6 @@ class TestExternalProviderOAuth2(OsfTestCase):
             # make sure the user is logged in
             authenticate(user=user, access_token=None, response=None)
 
-            session = get_session()
             session.data['oauth_states'] = {
                 self.provider.short_name: {
                     'state': 'mock_state',
@@ -486,7 +479,6 @@ class TestExternalProviderOAuth2(OsfTestCase):
             # make sure the user is logged in
             authenticate(user=user_b, access_token=None, response=None)
 
-            session = get_session()
             session.data['oauth_states'] = {
                 self.provider.short_name: {
                     'state': 'mock_state',
