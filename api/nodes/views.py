@@ -29,9 +29,9 @@ class NodeMixin(object):
         if 'include' in self.request.query_params:
             include = self.request.query_params['include']
             params_processor = IncludeParamsProcessor(include)
-            obj.query_params = params_processor.query_params
+            obj.additional_query_params = params_processor.additional_query_params
         else:
-            obj.query_params = {}
+            obj.additional_query_params = {}
         return obj
 
 
