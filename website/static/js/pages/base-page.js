@@ -87,15 +87,6 @@ $(document).on('click', '.project-toggle', function() {
     return false;
 });
 
-$(document).ready(function () {
-
-        var affix = $('.osf-affix');
-
-        if(affix.length){
-            $osf.initializeResponsiveAffix();
-        }
-});
-
 
 $(function() {
     if(/MSIE 9.0/.test(window.navigator.userAgent) ||
@@ -110,5 +101,11 @@ $(function() {
     ) {
         $osf.applyBindings(new SlideInViewModel(), sliderSelector);
     }
+
+    var affix = $('.osf-affix');
+    if(affix.length){
+        $osf.initializeResponsiveAffix();
+    }
+
     new NavbarControl('.osf-nav-wrapper');
 });
