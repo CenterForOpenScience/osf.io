@@ -65,8 +65,8 @@
           <h4 class="list-group-item-heading">          
             <div class="progress progress-bar-md">
               <div class="progress-bar" role="progressbar" aria-valuemin="0" aria-valuemax="100"
-               data-bind="attr.aria-completion: completion,
-                          style: {width: completion + '%'}">
+                   data-bind="attr.aria-completion: completion,
+                              style: {width: completion + '%'}">
                 <span class="sr-only"></span>
               </div>
             </div>
@@ -76,9 +76,9 @@
             <p>last updated about <span data-bind="text: $root.formattedDate(updated)"></span></p>
             <p>
               <button class="btn btn-success"
-                      data-bind="click: $root.editDraft"><i class="fa fa-pencil"></i>Edit</button>
+                      data-bind="click: $root.editDraft"><i style="margin-right: 5px;" class="fa fa-pencil"></i>Edit</button>
               <button class="btn btn-danger"
-                      data-bind="click: $root.deleteDraft"><i class="fa fa-times"></i>Delete</button>
+                      data-bind="click: $root.deleteDraft"><i style="margin-right: 5px;" class="fa fa-times"></i>Delete</button>
             </p>
           </h4>
         </li>
@@ -138,7 +138,7 @@ ${parent.javascript_bottom()}
                   </span>
                 </div>
                 <div class="col-md-1">
-                  <button data-bind="click: $root.launchEditor.bind($root, null, $data)" class="btn btn-primary">Use</button>
+                  <button data-bind="click: $root.launchEditor.bind($root, $root.blankDraft($data))" class="btn btn-primary">Use</button>
                 </div>
               </div>
             </h3>

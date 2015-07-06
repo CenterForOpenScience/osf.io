@@ -1,0 +1,60 @@
+{
+    "name": "Simple Schema",
+    "version": 1,
+    "type": "object",
+    "description": "Pre-Registration Prize (pre-data collection): You will be asked a series of questions to ensure that your sampling, design, and analysis plans are solidified prior to beginning your study. Publications that pre-register with this template may be eligible for a $1,000 prize. <a href=\"https://osf.io/x5w7h/\">See project page for complete information</a>.",
+    "fulfills": ["prereg"],
+    "pages": [{
+        "id": "page1",
+        "title": "Basic Information",
+        "type": "object",
+        "questions": {
+            "q1": {
+                "nav": "Title",
+                "type": "string",
+                "format": "text",
+                "title": "Title",
+                "description": "What is the working title of your study? It is helpful if this is the same title that you submit for publication of your final manuscript, but it is not a requirement.",
+                "help": "Effect of sugar on brownie tastiness."
+            },
+            "q2": {
+                "nav": "Authors",
+                "type": "string",
+                "format": "text",
+                "title": "Authorship",
+                "description": "The first author of the pre-registered study is the recipient of the award money and must also be the first author of the published manuscript. Additional authors may be added or removed at any time.",
+                "help": "Jimmy Stewart, Ava Gardner, Bob Hope, Greta Garbo"
+            }
+        }
+    }, {
+        "id": "page2",
+        "title": "Sampling Plan",
+        "type": "object",
+        "questions": {
+            "q3": {
+                "nav": "Data",
+                "type": "string",
+                "format": "textarea",
+                "title": "Data collection procedures",
+                "description": "Please describe your data collection procedures. This may include the population from which you obtain subjects, recruitment efforts, how subjects will be selected for eligibility from the initial pool (e.g. inclusion and exclusion rules), and your study timeline.",
+                "help": "Participants will be recruited through advertisements at local pastry shops. Participants will be paid $10 for agreeing to  participating (raised to $30 if our sample size is not reached within 15 days of beginning recruitment). Participants must be at least 18 years old and be able to eat the ingredients of the pastries."
+            },
+            "q4": {
+                "nav": "COI",
+                "type": "object",
+                "title": "Please check and certify one of the following statements.",
+                "properties": {
+                    "statement": {
+                        "type": "choose",
+                        "format": "list",
+                        "options": ["I certify that none of the data that will be used in this upcoming study have yet been collected. Please enter your name and the phrase _I certifyî in the following box. Why is this necessary?", "I will be using pre-existing data in this study. I certify that I have no knowledge about any of its basic descriptive statistics, nor am I aware of any differences or relationships within the data that I will use. Please enter your name and the phrase _I certifyî in the following boxes."]
+                    },
+                    "certify": {
+                        "type": "string",
+                        "format": "text"
+                    }
+                }
+            }
+        }
+    }]
+}

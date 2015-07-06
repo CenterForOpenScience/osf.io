@@ -6,9 +6,32 @@ var moment = require('moment');
 var $osf = require('js/osfHelpers');
 var oop = require('js/oop');
 
-/* global JSONEditor */
-require('json-editor'); // TODO webpackify
-require('js/json-editor-extensions');
+require('js/registrationEditorExtensions');
+
+var iterObject = function(obj) {
+    var ret = [];
+    $.each(obj, function(prop, value) {
+        ret.push({
+            key: prop,
+            value: value
+        });
+    });
+    return ret;
+};
+
+function isBlank(item) {    
+    return !item || /^\s*$/.test(item || '');
+}
+
+function indexOf(array, searchFn) {
+    var len = array.length;
+    for(var i = 0; i < len; i++) {
+        if(searchFn(array[i])) {
+            return i;
+        }
+    }
+    return -1;
+}
 
 var formattedDate = function(dateString) {
     if (!dateString) {
@@ -18,120 +41,254 @@ var formattedDate = function(dateString) {
     return moment(dateString).fromNow() + ' (' + d.toGMTString() + ')';
 };
 
-var MetaSchema = function(params) {
-    this.name = params.schema_name;
-    this.version = params.schema_version;
-    this.title = params.title || params.schema.title;
-    this.schema = params.schema || {};
-    this.id = [this.name, this.version].join('_');
+//######### Commentable ###########
+var currentUser = window.contextVars.currentUser || {
+    id: null,
+    name: 'Anonymous'
 };
 
-var Draft = function(params) {
-    this.pk = params.pk;
-    var metaSchema = params.registration_schema;
-    this.schema = metaSchema.schema;
-    this.schemaName = metaSchema.schema_name;
-    this.schemaVersion = metaSchema.schema_version;
-    this.schemaData = params.registration_metadata;
+var Comment = function(data) {
+    var self = this;
+    
+    self.saved = ko.observable(data ? true : false);   
 
-    this.initiator = params.initiator;
-    this.initiated = params.initiated;
-    this.updated = params.updated;
-    this.completion = 0.0;
+    data = data || {};
+    self.user = data.user || currentUser;
+    self.lastModified = moment(data.lastModified || new Date());
+    self.value = ko.observable(data.value || '');
+
+    self.author = ko.pureComputed(function() {
+        if (self.user.id === currentUser.id) {
+            return 'You';
+        }
+        else {
+            return self.user.name;
+        }
+    });
+
+    self.canDelete = ko.pureComputed(function() {
+        return self.user.id === currentUser.id;
+    });
+    self.canEdit = ko.pureComputed(function() {
+        return self.saved() && self.user.id === currentUser.id;
+    });
+};
+
+$(document).keydown(function(e) {
+    if (e.keyCode === 13) {
+        $target = $(e.target);
+        if ($target.hasClass('registration-editor-comment')) {
+            var $button = $target.siblings('span').find('button');
+            if(!$button.is(':disabled')) {
+                $button.click();
+            }
+        }
+    }
+});
+
+////////////////////
+
+var Question = function(data, id) {
+    var self = this;
+
+    self.id = id || -1;    
+
+    self.value = ko.observable(data.value || null);    
+    self.setValue = function(val) {
+        self.value(val);
+    };
+
+    self.title = data.title || 'Untitled';
+    self.nav = data.nav || 'Untitled';
+    self.type = data.type || 'string';
+    self.format = data.format || 'text';
+    self.description = data.description || '';
+    self.help = data.help || 'no help text provided';
+    self.options = data.options || [];
+    self.properties = data.properties || {};
+
+    self.showExample = ko.observable(false);    
+    
+    self.comments = ko.observableArray(
+        $.map(data.comments || [], function(comment) {
+            return new Comment(comment);
+        })
+    );
+    self.nextComment = ko.observable('');
+    self.allowAddNext = ko.computed(function() {
+        return !isBlank(self.nextComment());
+    });
+
+    self.isComplete = ko.computed(function() {
+        return !isBlank(self.value());
+    });
+    
+    self.init();
+};
+Question.prototype.init = function() {
+    var self = this;
+    if (self.type === 'object') {
+        $.each(self.properties, function(prop, field) {
+            self.properties[prop] = new Question(field, prop);
+        });
+    }
+};
+Question.prototype.addComment = function() {
+    var self = this;
+
+    var comment = new Comment({
+        value: self.nextComment()
+    });
+    self.nextComment('');
+    self.comments.push(comment);
+};
+Question.prototype.toggleExample = function(){
+    this.showExample(!this.showExample());
+};
+/////////////////////
+
+var MetaSchema = function(params) {
+    var self = this;
+
+    self.name = params.schema_name;
+    self.version = params.schema_version;
+    self.title = params.title || params.schema.title;
+    self.schema = params.schema || {};
+    self.id = [self.name, self.version].join('_');
+
+    $.each(self.schema.pages, function(i, page) {
+        var mapped = {};
+        $.each(page.questions, function(qid, question) {
+            mapped[qid]  = new Question(question, qid);
+        });
+        self.schema.pages[i].questions = mapped;
+    });
+};
+
+var Draft = function(params, metaSchema) {
+    var self = this;
+    
+    self.pk = params.pk;
+    self.metaSchema = metaSchema || new MetaSchema(params.registration_schema);
+    self.schema = ko.pureComputed(function() {
+        return self.metaSchema.schema;
+    });
+    self.schemaName = self.metaSchema.name;
+    self.schemaVersion = self.metaSchema.version;
+    self.schemaData = params.registration_metadata || {};
+
+    self.initiator = params.initiator;
+    self.initiated = params.initiated;
+    self.updated = params.updated;
+    self.completion = 0.0;
     var total = 0;
     var complete = 0;
     if (self.schemaData) {
-        for (var i = 0; i < metaSchema.schema.pages.length; i++) {
-            var page = metaSchema.pages[i];
-            for (var j = 0; j < page.questions.length; j++) {
-                var question = page.questions[j];
-                var questionId = Object.keys(question.properties)[0];
-                if (this.schemaData[questionId] && this.schemaData[questionId].value) {
+        for (var i = 0; i < self.metaSchema.schema.pages.length; i++) {
+            var page = self.metaSchema.schema.pages[i];
+            $.each(page.questions, function(qid, question) {
+                if (self.schemaData[qid] && self.schemaData[qid].value) {
                     complete++;
                 }
                 total++;
-            }
+            });
         }
-        this.completion = 100 * (complete / total);
+        self.completion = 100 * (complete / total);
     }
 };
 
-var RegistrationEditor = function(urls, editorId) {
+var RegistrationEditor = function(urls, editorId, utils) {
 
     var self = this;
+    self.utils = utils;
 
-    self.urls = urls;
-    self.editorId = editorId;
-    self.editor = null;
+    self.urls = urls; 
 
-    self.QUESTION_CLASS = 'registration-editor-question';
-    self.ACTIVE_CLASS = 'registration-editor-question-current';
+    self.readonly = ko.observable(false);
 
-    self.draft = ko.observable(
-        new Draft({
-            pk: null,
-            registration_schema: new MetaSchema({
-                schema: {
-                    pages: []
-                },
-                schema_name: '',
-                schema_version: ''
-            }),
-            registration_metadata: {}
-        })
-    );
-    self.disableSave = ko.pureComputed(function() {
-        return !self.draft().schema;
-    });
+    self.draftPk = ko.observable(false);
 
+    self.draft = ko.observable();
     self.currentSchema = ko.computed(function() {
-        return self.draft().schema;
-    });
+        var draft = self.draft();        
+        if (!draft || !draft.schema()) {            
+            return {pages: []};
+        }
+        else {
+            return draft.schema();
+        }
+    });     
 
+    self.currentQuestion = ko.observable();
+    self.currentPages = ko.computed(function() {
+        return self.currentSchema().pages;
+    });
+    
     self.lastSaveTime = ko.observable();
     self.formattedDate = formattedDate;
+
+    self.flatQuestions = ko.computed(function() {
+        var flat = [];
+        var schema = self.currentSchema();
+        
+        $.each(schema.pages, function(i, page) {
+            $.each(page.questions, function(qid, question) {
+                flat.push(question);
+            });
+        });
+        return flat;
+    });
+
+    self.iterObject = iterObject;
+
+    self.extensions = {};
 };
-RegistrationEditor.prototype.init = function(metaSchema, draft) {
+RegistrationEditor.prototype.init = function(draft) {
     var self = this;
 
-    if (draft) {
-        self.updateData(draft);
-        self.updateEditor(self.draft().schema.pages[0]);
-    } else {
-        self.draft(new Draft({
-            registration_schema: metaSchema
-        }));
-
-        self.updateEditor(metaSchema.schema.pages[0]);
-    }
-
-    var needsRefresh = false;
-    window.setInterval(self.save.bind(self), 60 * 1000);
-
-    return self.draft();
-};
-RegistrationEditor.prototype.destroy = function() {
-    if(this.editor) {
-        this.editor.destroy();
-    }    
-};
-RegistrationEditor.prototype.selectSchema = function() {
-    // TODO preview schema?
-};
-RegistrationEditor.prototype.updateData = function(draft) {
-    var self = this;
-
-    draft.schemaData = $.extend({}, draft.schemaData, self.draft().schemaData);
     self.draft(draft);
-};
-RegistrationEditor.prototype.fetchData = function() {
-    var self = this;
-    var ret = $.Deferred();
-    if (!self.draft().pk) {
-        ret.resolve();
+    var metaSchema = draft.metaSchema;
+    
+    var schemaData = {};
+    if(draft) {
+        schemaData = draft.schemaData || {};
     }
-    $.getJSON(self.urls.get.replace('{draft_pk}', self.draft.pk)).then(ret.resolve);
-    return ret;
+    
+    var keys = Object.keys(metaSchema.schema.pages[0].questions);
+    self.currentQuestion(metaSchema.schema.pages[0].questions[keys.shift()]);
+
+    var questions = self.flatQuestions();
+    $.each(questions, function(i, question) {
+        var val = schemaData[question.id];
+        if(val) {
+            if(question.type === 'object') {
+                $.each(question.properties, function(prop, subQuestion) {
+                    val = schemaData[question.id][prop];
+                    if(val) {
+                        subQuestion.value(val.value);
+                        subQuestion.comments($.map(val.comments, function(data) {
+                            return new Comment(data);
+                        }));
+                    }
+                });
+            }
+            else {
+                question.value(val.value);
+                question.comments($.map(val.comments, function(data) {
+                    return new Comment(data);
+                }));
+            }
+        }
+    });
+};
+RegistrationEditor.prototype.context = function(data) {
+    if (this.extensions[data.type]) {
+        return new this.extensions[data.type](data);
+    }
+    return data;
+};
+RegistrationEditor.prototype.extendEditor = function(type, ViewModel) {
+    this.extensions[type] = ViewModel;
 };
 RegistrationEditor.prototype.lastSaved = function() {
     var self = this;
@@ -143,91 +300,95 @@ RegistrationEditor.prototype.lastSaved = function() {
         return 'never';
     }
 };
-RegistrationEditor.prototype.isComplete = function(question) {
-    var self = this;
-
-    var draft = self.draft();
-    if (!draft || !draft.schemaData) {
-        return false;
-    }
-
-    var questionId = Object.keys(question.properties)[0];
-
-    if (!draft.schemaData[questionId] || !draft.schemaData[questionId].value) {
-        return false;
-    }
-    return true;
-};
 RegistrationEditor.prototype.nextPage = function() {
     var self = this;
 
-    var index = $('.' + self.ACTIVE_CLASS).index('.' + self.QUESTION_CLASS);
-    $('.' + self.QUESTION_CLASS).eq(index + 1).click();
+    var currentQuestion = self.currentQuestion();
+
+    var questions = self.flatQuestions();   
+    var index = indexOf(questions, function(q){
+        return q.id === currentQuestion.id;
+    });
+    if(index + 1 === questions.length) {
+        self.currentQuestion(questions.shift());        
+    }
+    else {
+        self.currentQuestion(questions[index + 1]);
+    }
 };
 RegistrationEditor.prototype.previousPage = function() {
     var self = this;
 
-    var index = $('.' + self.ACTIVE_CLASS).index('.' + self.QUESTION_CLASS);
-    $('.' + self.QUESTION_CLASS).eq(index - 1).click();
-};
-RegistrationEditor.prototype.updateEditor = function(page, question) {
-    var self = this;
+    var currentQuestion = self.currentQuestion();
 
-    if (!question) {
-        question = page.questions[0];
-    }
-    // load the data for the first schema and display
-    if (self.editor) {
-        self.editor.destroy();
-    }
-    self.editor = new JSONEditor(document.getElementById(self.editorId), {
-        schema: question,
-        startVal: self.draft().schemaData,
-        theme: 'bootstrap3_OSF',
-        disable_collapse: true,
-        disable_edit_json: true,
-        disable_properties: true,
-        no_additional_properties: false
+    var questions = self.flatQuestions();   
+    var index = indexOf(questions, function(q){
+        return q.id === currentQuestion.id;
     });
+    if(index - 1 < 0){
+        self.currentQuestion(questions.pop());        
+    }
+    else {
+        self.currentQuestion(questions[index - 1]);
+    }   
 };
-RegistrationEditor.prototype.selectPage = function(page, event) {
+RegistrationEditor.prototype.selectPage = function(page) {
     var self = this;
-    self.selectQuestion(page, page.questions[0], event);
+    self.currentQuestion(page.questions[0]);
 };
-RegistrationEditor.prototype.selectQuestion = function(page, question, event) {
+RegistrationEditor.prototype.updateData = function(response) {
     var self = this;
 
-    $('.' + self.QUESTION_CLASS).removeClass(self.ACTIVE_CLASS);
-    if (event.currentTarget.classList.contains(self.QUESTION_CLASS)) {
-        $(event.currentTarget).addClass(self.ACTIVE_CLASS);
-    } else {
-        $(event.currentTarget).parent().find('.' + self.QUESTION_CLASS).eq(0).addClass(self.ACTIVE_CLASS);
-    }
-    self.updateEditor(page, question);
+    self.draftPk(response.pk);    
+    self.lastSaveTime(new Date());
 };
 RegistrationEditor.prototype.create = function(schemaData) {
     var self = this;
 
+    var metaSchema = self.draft().metaSchema;
+
     return $osf.postJSON(self.urls.create, {
-        schema_name: self.draft().schemaName,
-        schema_version: self.draft().schemaVersion,
+        schema_name: metaSchema.name,
+        schema_version: metaSchema.version,
         schema_data: schemaData
     }).then(self.updateData.bind(self));
 };
-RegistrationEditor.prototype.save = function() {
+RegistrationEditor.prototype.save = function() {    
     var self = this;
-    var schemaData = self.editor.getValue();
-    if (!self.draft().pk) {
-        return self.create(schemaData);
-    }
-    return $osf.putJSON(self.urls.update.replace('{draft_pk}', self.draft().pk), {
-        schema_name: self.draft().schemaName,
-        schema_version: self.draft().schemaVersion,
-        schema_data: schemaData
-    }).then(function(response) {
-        self.lastSaveTime(new Date());
 
-    });
+    var metaSchema = self.draft().metaSchema;
+    var schema = metaSchema.schema;
+    var data = {};
+    $.each(schema.pages, function(i, page) {
+        $.each(page.questions, function(qid, question) {
+            if(question.type === 'object'){ 
+                var value = {};
+                $.each(question.properties, function(prop, subQuestion) {
+                    value[prop] = {
+                        value: subQuestion.value(),
+                        comments: ko.toJS(subQuestion.comments())
+                    };
+                });
+                data[qid] = value;
+            }
+            else {
+                data[qid] = {
+                    value: question.value(),
+                    comments: ko.toJS(question.comments())
+                };
+            }
+        });
+    });    
+
+    if (!self.draftPk()){
+        return self.create(data);
+    }
+
+    return $osf.putJSON(self.urls.update.replace('{draft_pk}', self.draftPk()), {
+        schema_name: metaSchema.name,
+        schema_version: metaSchema.version,
+        schema_data: data
+    }).then(self.updateData.bind(self));
 };
 
 var RegistrationManager = function(node, draftsSelector, editorSelector, controls) {
@@ -251,6 +412,15 @@ var RegistrationManager = function(node, draftsSelector, editorSelector, control
     // TODO: convert existing registration UI to frontend impl.
     // self.registrations = ko.observable([]);
     self.drafts = ko.observableArray();
+    /*
+    self.drafts.subscribe(function(changes) {
+        $.each(changes, function(i, change) {
+            if(change.status === 'deleted' && self.regEditor) {
+                self.regEditor.destroy();
+            }
+        });
+    }, null, 'arrayChange');
+     */
 
     self.loading = ko.observable(true);
 
@@ -259,6 +429,12 @@ var RegistrationManager = function(node, draftsSelector, editorSelector, control
     self.getDraftRegistrations = $.getJSON.bind(null, self.urls.list);
     self.getSchemas = $.getJSON.bind(null, self.urls.schemas);
 
+    self.sortedDrafts = ko.computed(function() {
+        return self.drafts().sort(function(a, b) {
+            return a.initiated > b.initiated;
+        });
+    });
+    
     self.controls.showManager();
 };
 RegistrationManager.prototype.init = function() {
@@ -290,30 +466,44 @@ RegistrationManager.prototype.init = function() {
         self.loading(false);
     });
 };
-RegistrationManager.prototype.launchEditor = function(draft, schema) {
+RegistrationManager.prototype.blankDraft = function(metaSchema) {
+    return new Draft({}, metaSchema);
+};
+RegistrationManager.prototype.launchEditor = function(draft) {
     var self = this;
     var node = self.node;
     
     bootbox.hideAll();
-    self.controls.showEditor();
+    self.controls.showEditor();  
 
+    var newDraft;
     if (self.regEditor) {
-        self.regEditor.destroy();
-        ko.cleanNode($(self.editorSelector)[0]);
+        //self.regEditor.destroy();
+        newDraft = self.regEditor.init(draft);
     }
-    self.regEditor = new RegistrationEditor({
-        schemas: '/api/v1/project/schema/',
-        create: node.urls.api + 'draft/',
-        update: node.urls.api + 'draft/{draft_pk}/',
-        get: node.urls.api + 'draft/{draft_pk}/'
-    }, 'registrationEditor');
-    
-    var unshift = Boolean(draft);
-    var newDraft = self.regEditor.init(schema, draft);    
-    $osf.applyBindings(self.regEditor, self.editorSelector);
-
-    if (unshift) {
-        self.drafts.unshift(newDraft);
+    else {
+        self.regEditor = new RegistrationEditor({
+            schemas: '/api/v1/project/schema/',
+            create: node.urls.api + 'draft/',
+            update: node.urls.api + 'draft/{draft_pk}/',
+            get: node.urls.api + 'draft/{draft_pk}/'
+        }, 'registrationEditor', {
+            addDraft: function(draft) {
+                if (!self.drafts().filter(function(d) {
+                    return draft.pk === d.pk;
+                }).length) {
+                    self.drafts.unshift(draft);
+                }
+            },
+            updateDraft: function(draft) {
+                self.drafts.remove(function(d) {
+                    return d.pk === draft.pk;
+                });
+                self.drafts.unshift(draft);
+            }
+        });
+        newDraft = self.regEditor.init(draft);    
+        $osf.applyBindings(self.regEditor, self.editorSelector);
     }
 };
 RegistrationManager.prototype.editDraft = function(draft) {
@@ -321,13 +511,18 @@ RegistrationManager.prototype.editDraft = function(draft) {
 };
 RegistrationManager.prototype.deleteDraft = function(draft) {
     var self = this;
-    $.ajax({
-        url: self.urls.delete.replace('{draft_pk}', draft.pk),
-        method: 'DELETE'
-    }).then(function() {
-        self.drafts.remove(function(item) {
-            return item.pk === draft.pk;
-        });
+    
+    bootbox.confirm('Are you sure you want to delete this draft registration?', function(confirmed) {
+        if(confirmed) {
+            $.ajax({
+                url: self.urls.delete.replace('{draft_pk}', draft.pk),
+                method: 'DELETE'
+            }).then(function() {
+                self.drafts.remove(function(item) {
+                    return item.pk === draft.pk;
+                });
+            });            
+        }
     });
 };
 RegistrationManager.prototype.beforeRegister = function() {
@@ -343,7 +538,8 @@ RegistrationManager.prototype.beforeRegister = function() {
         schemas: self.schemas,
         selectedSchema: self.selectedSchema,
         cancel: bootbox.hideAll,
-        launchEditor: self.launchEditor.bind(self)
+        launchEditor: self.launchEditor.bind(self),
+        blankDraft: self.blankDraft.bind(self)
     };
     bootbox.dialog({
         title: 'Register ' + node.title,
