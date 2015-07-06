@@ -8,6 +8,7 @@ from modularodm import Q
 from modularodm.exceptions import ModularOdmException
 
 from framework.exceptions import HTTPError
+from framework.flask import redirect
 from framework.transactions.context import TokuTransaction
 from framework.transactions.handlers import no_auto_transaction
 
@@ -146,6 +147,7 @@ def _render_conference_node(node, idx):
         download_count = 0
 
     author = node.visible_contributors[0]
+    tags = [tag._id for tag in node.tags]
 
     return {
         'id': idx,
@@ -156,6 +158,7 @@ def _render_conference_node(node, idx):
         'category': 'talk' if 'talk' in node.system_tags else 'poster',
         'download': download_count,
         'downloadUrl': download_url,
+        'tags': ' '.join(tags)
     }
 
 
@@ -176,6 +179,10 @@ def conference_data(meeting):
         for idx, each in enumerate(nodes)
     ]
     return ret
+
+
+def redirect_to_meetings(**kwargs):
+    return redirect('/meetings/')
 
 
 def conference_results(meeting):

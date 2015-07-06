@@ -4,6 +4,7 @@ var assert = require('chai').assert;
 var $ = require('jquery');
 var moment = require('moment');
 var Raven = require('raven-js');
+var bootbox = require('bootbox');
 
 var $osf = require('../osfHelpers');
 
@@ -23,6 +24,38 @@ describe('osfHelpers', () => {
             stub.restore();
         });
     });
+
+
+    describe('apiV2Url', () => {
+        it('returns correctly formatted URLs for described inputs', () => {
+            var fullUrl = $osf.apiV2Url('/nodes/abcd3/contributors/',
+                {prefix: 'http://localhost:8000/v2/'});
+            assert.equal(fullUrl, 'http://localhost:8000/v2/nodes/abcd3/contributors/');
+
+            // No double slashes when apiPrefix and pathString have adjoining slashes
+            fullUrl = $osf.apiV2Url('nodes/abcd3/contributors/',
+                {prefix: 'http://localhost:8000/v2/'});
+            assert.equal(fullUrl, 'http://localhost:8000/v2/nodes/abcd3/contributors/');
+
+            // User is still responsible for the trailing slash. If they omit it, it doesn't appear at end of URL
+            fullUrl = $osf.apiV2Url('/nodes/abcd3/contributors',
+                {prefix: 'http://localhost:8000/v2/'});
+            assert.notEqual(fullUrl, 'http://localhost:8000/v2/nodes/abcd3/contributors/');
+
+            // Correctly handles- and encodes- URLs with parameters
+            fullUrl = $osf.apiV2Url('/nodes/abcd3/contributors/',
+                {query:
+                    {'filter[fullname]': 'bob', 'page_size':10},
+                prefix: 'https://staging2.osf.io/api/v2/'});
+            assert.equal(fullUrl, 'https://staging2.osf.io/api/v2/nodes/abcd3/contributors/?filter%5Bfullname%5D=bob&page_size=10');
+
+            // Given a blank string, should return the base path (domain + port + prefix) with no extra cruft at end
+            fullUrl = $osf.apiV2Url('',
+                {prefix: 'http://localhost:8000/v2/'});
+            assert.equal(fullUrl, 'http://localhost:8000/v2/');
+        });
+    });
+
 
     describe('handleJSONError', () => {
 
@@ -59,8 +92,15 @@ describe('osfHelpers', () => {
     });
 
     describe('block', () => {
+        var stub;
+        beforeEach(() => {
+            stub = new sinon.stub($, 'blockUI');
+        });
+        afterEach(() => {
+            $.blockUI.restore();
+        });
+
         it('calls $.blockUI with correct arguments', () => {
-            var stub = new sinon.stub($, 'blockUI');
             $osf.block();
             assert.calledOnce(stub);
             assert.calledWith(stub, {
@@ -74,6 +114,23 @@ describe('osfHelpers', () => {
                     color: '#fff'
                 },
                 message: 'Please wait'
+            });
+        });
+        it('calls $.blockUI with the passed message if provided', () => {
+            var msg = 'Some custom message';
+            $osf.block(msg);
+            assert.calledOnce(stub);
+            assert.calledWith(stub, {
+                css: {
+                    border: 'none',
+                    padding: '15px',
+                    backgroundColor: '#000',
+                    '-webkit-border-radius': '10px',
+                    '-moz-border-radius': '10px',
+                    opacity: 0.5,
+                    color: '#fff'
+                },
+                message: msg
             });
         });
     });
@@ -191,6 +248,14 @@ describe('osfHelpers', () => {
         });
     });
 
+    describe('htmlDecode', () => {
+        it('should decode html entities', () => {
+            assert.equal($osf.htmlDecode('safe'), 'safe');
+            assert.equal($osf.htmlDecode('b&gt;a&amp;'), 'b>a&');
+            assert.equal($osf.htmlDecode('&lt;script&gt;alert("lol")&lt;/script&gt;'), '<script>alert("lol")</script>');
+        });
+    });
+
     describe('FormattableDate', () => {
         it('should have local and utc time', () => {
             var date = new Date();
@@ -199,6 +264,52 @@ describe('osfHelpers', () => {
             assert.equal(fd.local, expectedLocal);
             var expectedUTC = moment.utc(date).format('YYYY-MM-DD HH:mm UTC');
             assert.equal(fd.utc, expectedUTC);
+        });
+        it('should parse date and datetime strings', () => {
+            var year = 2014;
+            var month = 11;
+            var day = 15;
+            var hour = 10;
+            var minute = 33;
+            var second = 17;
+            var millisecond = 123;
+
+            var dateString = [year, month, day].join('-');
+            var dateTimeString = dateString + 'T' + [hour, minute, second].join(':') + '.' + millisecond.toString();
+
+            var parsedDate = new $osf.FormattableDate(dateString).date;
+            var parsedDateTime = new $osf.FormattableDate(dateTimeString).date;
+
+            assert.equal(parsedDate.getUTCFullYear(), year);
+            assert.equal(parsedDate.getUTCMonth(), month - 1); // Javascript months count from 0
+            assert.equal(parsedDate.getUTCDate(), day);
+            assert.equal(parsedDate.getUTCHours(), 0);
+            assert.equal(parsedDate.getUTCMinutes(), 0);
+            assert.equal(parsedDate.getUTCSeconds(), 0);
+            assert.equal(parsedDate.getUTCMinutes(), 0);
+
+            assert.equal(parsedDateTime.getUTCFullYear(), year);
+            assert.equal(parsedDateTime.getUTCMonth(), month - 1); // Javascript months count from 0
+            assert.equal(parsedDateTime.getUTCDate(), day);
+            assert.equal(parsedDateTime.getUTCHours(), hour);
+            assert.equal(parsedDateTime.getUTCMinutes(), minute);
+            assert.equal(parsedDateTime.getUTCSeconds(), second);
+            assert.equal(parsedDateTime.getUTCMilliseconds(), millisecond);
+        });
+    });
+
+    describe('confirmDangerousAction', () => {
+        var bootboxStub, callbackStub;
+        beforeEach(() => {
+            bootboxStub = new sinon.stub(bootbox, 'dialog');
+            callbackStub = new sinon.spy();
+        });
+        afterEach(() => {
+            bootboxStub.restore();
+        });
+        it('should trigger bootbox', () => {
+            $osf.confirmDangerousAction({callback: callbackStub});
+            assert.calledOnce(bootboxStub);
         });
     });
 });

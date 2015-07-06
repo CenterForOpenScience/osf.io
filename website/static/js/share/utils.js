@@ -88,10 +88,12 @@ utils.loadMore = function(vm) {
 };
 
 utils.search = function(vm) {
+    vm.showFooter = false;
     var ret = m.deferred();
     if (!vm.query() || vm.query().length === 0){
         vm.query = m.prop('');
         vm.results = null;
+        vm.showFooter = true;
         vm.optionalFilters = [];
         vm.requiredFilters = [];
         vm.sort('Relevance');

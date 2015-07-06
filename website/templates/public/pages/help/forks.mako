@@ -1,6 +1,6 @@
-<div class="col-md-12 col-sm-12">
+<div class="col-sm-12">
     <span id="forks" class="anchor"></span>
-    <h4>Forks</h4>
+    <h4 class="m-t-lg f-w-lg">Forks</h4>
     <p>Forking a project means you have created a copy of it into your dashboard, and can change that copy
         for your own purposes. You will be the only contributor to the forked project until you add others.</p>
     <p>Forks will automatically reference the original project as a functional citation. Over time, the network of
@@ -13,9 +13,11 @@
         linking to someone else's project but would now like to edit it and make your own version, from the project
         overview page, find the linked project from the and hit the small fork button. There will now be a version you
         can edit in addition to the original.</p>
-    <div class="col-md-8 col-md-offset-2 col-sm-12">
-        <div class="gs-video embed-responsive embed-responsive-16by9">
-            <div class="embed-responsive-item youtube-loader" id="RVFTg0iT2gg"></div>
+    <div class="row">
+        <div class="col-md-8 col-md-offset-2 col-sm-12">
+            <div class="gs-video embed-responsive embed-responsive-16by9">
+                <div class="embed-responsive-item youtube-loader" id="RVFTg0iT2gg"></div>
+            </div>
         </div>
     </div>
 </div>

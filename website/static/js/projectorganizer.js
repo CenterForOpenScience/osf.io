@@ -11,7 +11,6 @@ require('css/typeahead.css');
 require('css/fangorn.css');
 require('css/projectorganizer.css');
 
-var Handlebars = require('handlebars');
 var $ = require('jquery');
 var m = require('mithril');
 var Fangorn = require('js/fangorn');
@@ -106,7 +105,9 @@ projectOrganizer.myProjects = new Bloodhound({
 function _poTitleColumn(item) {
     var tb = this;
     var css = item.data.isSmartFolder ? 'project-smart-folder smart-folder' : '';
-    if(item.data.urls.fetch){
+    if(item.data.archiving) {
+        return  m('span', {'class': 'registration-archiving'}, item.data.name + ' [Archiving]');
+    } else if(item.data.urls.fetch){
         return m('a.fg-file-links', { 'class' : css, href : item.data.urls.fetch}, item.data.name);
     } else {
         return  m('span', { 'class' : css}, item.data.name);
@@ -316,63 +317,6 @@ function _poToggleCheck(item) {
 }
 
 /**
- * Returns custom icons for OSF depending on the type of item
- * @param {Object} item A Treebeard _item object. Node information is inside item.data
- * @this Treebeard.controller
- * @returns {Object}  Returns a mithril template with the m() function.
- * @private
- */
-function _poResolveIcon(item) {
-    var icons = iconmap.projectIcons;
-    var componentIcons = iconmap.componentIcons;
-    var projectIcons = iconmap.projectIcons;
-    var viewLink = item.data.urls.fetch;
-    function returnView(type, category) {
-        var iconType = icons[type];
-        if (type === 'component' || type === 'registeredComponent') {
-            iconType = componentIcons[category];
-        } else if (type === 'project' || type === 'registeredProject') {
-            iconType = projectIcons[category];
-        }
-        if (type === 'registeredComponent' || type === 'registeredProject') {
-            iconType += ' po-icon-registered';
-        } else {
-            iconType += ' po-icon';
-        }
-        var template = m('span', { 'class' : iconType});
-        return template;
-    }
-    if (item.data.isSmartFolder) {
-        return returnView('smartCollection');
-    }
-    if (item.data.isFolder) {
-        return returnView('collection');
-    }
-    if (item.data.isPointer && !item.parent().data.isFolder) {
-        return returnView('link');
-    }
-    if (item.data.isProject) {
-        if (item.data.isRegistration) {
-            return returnView('registeredProject', item.data.category);
-        } else {
-            return returnView('project', item.data.category);
-        }
-    }
-
-    if (item.data.isComponent) {
-        if (item.data.isRegistration) {
-            return returnView('registeredComponent', item.data.category);
-        }
-        return returnView('component', item.data.category);
-    }
-
-    if (item.data.isPointer) {
-        return returnView('link');
-    }
-    return returnView('collection');
-}
-
-/**
  * Returns custom folder toggle icons for OSF
  * @param {Object} item A Treebeard _item object. Node information is inside item.data
  * @this Treebeard.controller
@@ -501,13 +445,12 @@ function deleteMultiplePointersFromFolder(pointerIds, folderToDeleteFrom) {
         });
         deleteAction.done(function () {
             tb.updateFolder(null, folderToDeleteFrom);
+            tb.clearMultiselect();
         });
         deleteAction.fail(function (jqxhr, textStatus, errorThrown) {
             $osf.growl('Error:', textStatus + '. ' + errorThrown);
         });
     }
-    _dismissToolbar.call(tb);
-
 }
 
 /**
@@ -1218,7 +1161,6 @@ var POToolbar = {
                     id : 'addNewFolder',
                     helpTextId : 'addFolderHelp',
                     placeholder : 'New collection name',
-                    tooltip: 'Name your new collection'
                 }, ctrl.helpText())
                 ),
             m('.col-xs-3.tb-buttons-col',
@@ -1450,14 +1392,15 @@ var tbOptions = {
         _cleanupMithril();
     },
     onmultiselect : _poMultiselect,
-    resolveIcon : _poResolveIcon,
+    resolveIcon : Fangorn.Utils.resolveIconView,
     resolveToggle : _poResolveToggle,
     resolveLazyloadUrl : _poResolveLazyLoad,
     lazyLoadOnLoad : expandStateLoad,
     resolveRefreshIcon : function () {
         return m('i.fa.fa-refresh.fa-spin');
     },
-    toolbarComponent : POToolbar
+    toolbarComponent : POToolbar,
+    naturalScrollLimit : 0
 };
 
 /**

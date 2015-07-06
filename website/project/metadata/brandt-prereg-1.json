@@ -42,7 +42,7 @@
                     {"type": "select",   "id": "item22", "label": "The similarities/difference in remuneration are", "options": ["Exact", "Close", "Different"], "caption": "Choose..."},
                     {"type": "select",   "id": "item23", "label": "The similarities/differences between participant populations are", "options": ["Exact", "Close", "Different"], "caption": "Choose..."},
                     {"type": "textarea", "id": "item24", "label": "What differences between the original study and your study might be expected to influence the size and/or direction of the effect?"},
-                    {"type": "textarea", "id": "item25", "label": "I have taken the following steps to test whether the differences listed in #22 will influence the outcome of my replication attempt"}
+                    {"type": "textarea", "id": "item25", "label": "I have taken the following steps to test whether the differences listed in the previous question will influence the outcome of my replication attempt"}
                 ]
             },
             {

@@ -12,6 +12,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="description" content="${self.description()}">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="fragment" content="!">
 
     % if sentry_dsn_js:
     <script src="/static/vendor/bower_components/raven-js/dist/raven.min.js"></script>
@@ -67,14 +68,7 @@
 
     <%include file="nav.mako"/>
      ## TODO: shouldn't always have the watermark class
-    <div class="watermarked">
-        <div class="container ${self.container_class()}">
-            % if status:
-                <%include file="alert.mako"/>
-            % endif
-            ${self.content()}
-        </div><!-- end container -->
-    </div><!-- end watermarked -->
+    ${self.content_wrap()}
 
 % if not user_id:
 <div id="footerSlideIn">
@@ -99,7 +93,9 @@
 </div>
 % endif
 
-    <%include file="footer.mako"/>
+
+    ${self.footer()}
+    <%include file="copyright.mako"/>
         % if settings.PINGDOM_ID:
             <script>
             var _prum = [['id', '${settings.PINGDOM_ID}'],
@@ -151,7 +147,8 @@
             % if access_token:
                 accessToken: '${access_token | js_str}',
             % endif
-                cookieName: '${cookie_name}'
+                cookieName: '${cookie_name}',
+                apiV2Prefix: '${api_v2_base | js_str }'
             });
         </script>
 
@@ -219,6 +216,21 @@
     ### Javascript loaded at the bottom of the page ###
 </%def>
 
+<%def name="footer()">
+    <%include file="footer.mako"/>
+</%def>
+
+<%def name="content_wrap()">
+    <div class="watermarked">
+        <div class="container ${self.container_class()}">
+            % if status:
+                <%include file="alert.mako"/>
+            % endif
+            ${self.content()}
+        </div><!-- end container -->
+    </div><!-- end watermarked -->
+</%def>
+
 
 <%def name="includes_top()">
 
@@ -235,6 +247,8 @@
     ## TODO: Get fontawesome and select2 to play nicely with webpack
     <link rel="stylesheet" href="/static/vendor/bower_components/bootstrap/dist/css/bootstrap.min.css">
     <link rel="stylesheet" href="/static/vendor/bower_components/select2/select2.css">
+    <link rel="stylesheet" href="/static/vendor/bower_components/osf-style/css/base.css">
+    <link rel="stylesheet" href="/static/css/style.css">
 
     % if settings.USE_CDN_FOR_CLIENT_LIBS:
         <script src="//code.jquery.com/jquery-1.11.2.min.js"></script>
