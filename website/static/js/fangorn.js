@@ -115,10 +115,13 @@ function findByTempID(parent, tmpID) {
 
 function cancelUploads (row) {
     var tb = this;
-    var filesArr = tb.dropzone.getQueuedFiles();
+    var filesArr = tb.dropzone.getActiveFiles();
     for (var i = 0; i < filesArr.length; i++) {
         var j = filesArr[i];
         if(!row){
+            if (j.status !== "queued") {
+                j.status = "queued";
+            }
             var parent = j.treebeardParent || tb.dropzoneItemCache;
             var item = findByTempID(parent, j.tmpID);
             tb.dropzone.removeFile(j);
@@ -126,7 +129,9 @@ function cancelUploads (row) {
         } else {
             tb.deleteNode(row.parentID,row.id);
             if(row.data.tmpID === j.tmpID){
+                j.status = "queued";
                 tb.dropzone.removeFile(j);
+                tb.dropzone.processQueue();
             }
         }
     }
@@ -168,6 +173,7 @@ var uploadRowTemplate = function(item){
                         },
                         'onclick' : function (e) {
                             e.stopImmediatePropagation();
+                            $(this).closest('.tb-row').remove(); //TODO: refactor this bit of logic
                             cancelUploads.call(tb, item);
                         }},
                      m('span.text-muted','×')
@@ -725,25 +731,29 @@ function _fangornDropzoneSuccess(treebeard, file, response) {
     // S3 : Nothing
     // GITHUB : Object; addon : 'github'
     // Dataverse : Object, actionTaken : file_uploaded
-    revisedItem = resolveconfigOption.call(treebeard, item.parent(), 'uploadSuccess', [file, item, response]);
-    if (!revisedItem && response) {
-        item.data = response;
-        inheritFromParent(item, item.parent());
+    // Error here: item undefined so item.parent() triggers error after cancelling currently uploading file.
+    // ...inserted conditional to prevent error
+    if (item) {
+        revisedItem = resolveconfigOption.call(treebeard, item.parent(), 'uploadSuccess', [file, item, response]);
+        if (!revisedItem && response) {
+            item.data = response;
+            inheritFromParent(item, item.parent());
+        }
+        if (item.data.tmpID) {
+            item.data.tmpID = null;
+            item.data.uploadState('completed');
+        }
+        // Remove duplicates if file was updated
+        var status = file.xhr.status;
+        if (status === 200) {
+            parent.children.forEach(function(child) {
+                if (child.data.name === item.data.name && child.id !== item.id) {
+                    child.removeSelf();
+                }
+            });
+        }
+        treebeard.redraw();
     }
-    if (item.data.tmpID) {
-        item.data.tmpID = null;
-        item.data.uploadState('completed');
-    }
-    // Remove duplicates if file was updated
-    var status = file.xhr.status;
-    if (status === 200) {
-        parent.children.forEach(function(child) {
-            if (child.data.name === item.data.name && child.id !== item.id) {
-                child.removeSelf();
-            }
-        });
-    }
-    treebeard.redraw();
 }
 
 /**
