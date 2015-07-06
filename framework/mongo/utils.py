@@ -64,16 +64,17 @@ def unique_on(*groups):
 def get_or_http_error(Model, pk):
     instance = Model.load(pk)
 
-    if getattr(instance, 'is_deleted', False):
-        if hasattr(instance, 'registrations'):
-            raise HTTPError(http.GONE, data=dict(
-                message_short="Project Deleted",
-                message_long="This Project has been deleted"
-            ))
-        else:
-            raise HTTPError(http.GONE, data=dict(
-                message_long="This resource has been deleted"
-            ))
+    if hasattr(instance, 'registrations'):
+        exc_options = {
+            'message_short': 'Project Deleted',
+            'message_long': 'This project has been deleted',
+        }
+    else:
+        exc_options = {
+            'message_long' :'This resource has been deleted'
+        }
+
+    raise HTTPError(http.GONE, data=exc_options)
 
     if not instance:
         raise HTTPError(http.NOT_FOUND, data=dict(
