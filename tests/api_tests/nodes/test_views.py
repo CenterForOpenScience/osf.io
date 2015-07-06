@@ -463,6 +463,11 @@ class TestNodeIncludeQueryParams(ApiTestCase):
         query_params = res.json['data']['query_params']
         assert_in('contributors', query_params)
 
+    def test_get_invalid_include_key(self):
+        self.public_url += '/?include=freddiemercury/'
+        res = self.app.get(self.public_url, expect_errors=True)
+        assert_equal(res.status_code, 404)
+
     def test_get_include_keys(self):
         self.public_url += '/?include=contributors,pointers/'
         res = self.app.get(self.public_url)
@@ -472,11 +477,17 @@ class TestNodeIncludeQueryParams(ApiTestCase):
         assert_in('pointers', query_params)
 
     def test_get_include_relationship_key(self):
-        self.public_url += '/?include=contributors.count,pointers/'
+        self.public_url += '/?include=contributors.count/'
         res = self.app.get(self.public_url)
         assert_equal(res.status_code, 200)
         query_params = res.json['data']['query_params']
         assert_in('count', query_params['contributors'])
+
+    # todo Make check to send 404 for invalid key
+    # def test_get_invalid_include_relationship_key(self):
+    #     self.public_url += '/?include=contributors.nope/'
+    #     res = self.app.get(self.public_url, expect_errors=True)
+    #     assert_equal(res.status_code, 404)
 
     def test_get_include_and_relationship_keys(self):
         self.public_url += '/?include=contributors.count,pointers/'
