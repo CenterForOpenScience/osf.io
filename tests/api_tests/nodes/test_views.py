@@ -911,6 +911,8 @@ class TestNodeDraftRegistrationList(ApiTestCase):
         source = eval(res.json['data'][0]['branched_from'])
         assert_equal(res.status_code, 200)
         assert_equal(source['title'], self.public_project.title)
+        assert_not_equal(res.json['data'][0]['registration_schema'], None)
+        print res
 
     def test_return_private_registrations_logged_out(self):
         res = self.app.get(self.private_url, expect_errors=True)
@@ -920,6 +922,8 @@ class TestNodeDraftRegistrationList(ApiTestCase):
         res = self.app.get(self.private_url, auth=self.basic_auth)
         assert_equal(res.status_code, 200)
         assert_equal((res.json['data'][0]['initiator']), self.user.given_name + ' ' + self.user.family_name)
+        assert_not_equal(res.json['data'][0]['registration_schema'], None)
+
 
     def test_return_private_registrations_logged_in_non_contributor(self):
         res = self.app.get(self.private_url, auth=self.basic_auth_two, expect_errors=True)
@@ -973,6 +977,8 @@ class TestCreateDraftRegistration(ApiTestCase):
         schema = eval(res.json['data']['registration_schema'])
         assert_equal(source['title'], self.public_project.title)
         assert_equal(schema['name'], self.payload['registration_form'])
+        assert_not_equal(res.json['data']['registration_schema'], None)
+
 
     def test_create_private_registration_draft_logged_out(self):
         res = self.app.post(self.private_url, self.payload, expect_errors=True)
@@ -985,6 +991,8 @@ class TestCreateDraftRegistration(ApiTestCase):
         schema = eval(res.json['data']['registration_schema'])
         assert_equal(source['title'], self.private_project.title)
         assert_equal(schema['name'], self.payload['registration_form'])
+        assert_not_equal(res.json['data']['registration_schema'], None)
+
 
     def test_create_private_registration_draft_logged_in_non_contributor(self):
         res = self.app.post(self.private_url, self.payload, auth=self.basic_auth_two, expect_errors=True)
