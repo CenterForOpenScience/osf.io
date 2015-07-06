@@ -264,6 +264,13 @@ BaseViewModel.prototype.handleSuccess = function() {
 BaseViewModel.prototype.handleError = function(response) {
     var defaultMsg = 'Could not update settings';
     var msg = response.message_long || defaultMsg;
+
+    for(var i = 0 ;i<this.contents().length; i++){
+        if(this.contents()[i]['institution']() === ""){
+            msg = "Missing required field";
+        }
+    }
+
     this.changeMessage(
         msg,
         'text-danger',
@@ -333,6 +340,7 @@ BaseViewModel.prototype.submit = function() {
     } else {
         this.showMessages(true);
     }
+
 };
 
 var NameViewModel = function(urls, modes, preventUnsaved, fetchCallback) {
