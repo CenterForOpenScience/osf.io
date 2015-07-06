@@ -89,8 +89,8 @@
 
                 <button
                         type="submit"
-                        class="btn btn-primary"
-                    >Save</button>
+                        class="btn btn-success"
+                    >Submit</button>
 
             </div>
 

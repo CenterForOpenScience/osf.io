@@ -22,7 +22,7 @@
     <div class="col-sm-9 col-md-7">
 
         <div id="selectAddons" class="panel panel-default">
-            <div class="panel-heading"><h3 class="panel-title">Select Add-ons</h3></div>
+            <div class="panel-heading clearfix"><h3 class="panel-title">Select Add-ons</h3></div>
             <div class="panel-body">
 
                 <form id="selectAddonsForm">
@@ -67,7 +67,7 @@
         </div>
         % if addon_enabled_settings:
             <div id="configureAddons" class="panel panel-default">
-                <div class="panel-heading"><h3 class="panel-title">Configure Add-ons</h3></div>
+                <div class="panel-heading clearfix"><h3 class="panel-title">Configure Add-ons</h3></div>
                 <div class="panel-body">
 
                     % for name in addon_enabled_settings:

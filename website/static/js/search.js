@@ -218,6 +218,11 @@ var ViewModel = function(params) {
 
     self.search = function(noPush, validate) {
 
+        // Check for NOTs and ANDs put spaces before the ones that don't have spaces
+        var query = self.query().replace(/\s?NOT tags:/g, ' NOT tags:');
+        query = query.replace(/\s?AND tags:/g, ' AND tags:');
+        self.query(query);
+
         var jsonData = {'query': self.fullQuery(), 'from': self.currentIndex(), 'size': self.resultsPerPage()};
         var url = self.queryUrl + self.category().url();
 
