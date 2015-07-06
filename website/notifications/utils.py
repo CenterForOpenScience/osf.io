@@ -89,8 +89,8 @@ def move_subscription(old_event_sub, old_node, new_event_sub, new_node):
             if not isinstance(user, User):
                 user = User.load(user)
             if not new_node.has_permission(user, 'read'):
-                removed_users[notification_type].append(user)
-                if old_sub:
+                removed_users[notification_type].append(user._id)
+                if old_sub and user._id in getattr(old_sub, notification_type):
                     old_sub.remove_user_from_subscription(user)
                     old_sub.save()
     return removed_users

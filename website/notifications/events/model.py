@@ -5,9 +5,11 @@ from furl import furl
 from datetime import datetime
 from six import add_metaclass
 
-from website.notifications.emails import notify, warn_users_removed_from_subscription
+import website.notifications.emails as emails
+from website.notifications.constants import NOTIFICATION_TYPES
 from website.notifications.utils import move_subscription
 from website.models import Node
+from website.addons.base import GuidFile
 
 
 class _EventMeta(type):
@@ -58,7 +60,7 @@ class Event(object):
 
     def perform(self):
         """Calls emails.notify"""
-        notify(
+        emails.notify(
             uid=self.node_id,
             event=self.event,
             user=self.user,
@@ -284,8 +286,18 @@ class AddonFileMoved(ComplexFileEvent):
             # if source_node != node
             rm_users = move_subscription(self.source_event, self.source_node,
                                          self.event, self.node)
-            # source_node_subs = emails.compile_subscriptions(source_node...
-            # new_node_subs = emails.compile_subscriptions(new_node
+            source_node_subs = emails.compile_subscriptions(self.source_node, 'file_updated')
+            new_node_subs = emails.compile_subscriptions(self.node, 'file_updated')
+            warn = {}
+            for notifications in NOTIFICATION_TYPES:
+                if notifications == 'none':
+                    continue
+                warn[notifications] = set(source_node_subs[notifications]).difference(set(new_node_subs[notifications]))
+                for nt in NOTIFICATION_TYPES:
+                    if nt == 'none' or nt not in rm_users or len(rm_users[nt]) == 0:
+                        continue
+                    warn[notifications] = set(warn[notifications]).difference(set(rm_users[nt]))
+
             # warn = set(source_node_subs).diff(set(new_node_subs))
             # for user in warn:
             #  rm_users.append if user doesn't have permissions
@@ -299,11 +311,10 @@ class AddonFileMoved(ComplexFileEvent):
             if len(rm_users) > 0:
                 message = self.html_message + ' Your subscription has been removed' \
                                               ' due to insufficient permissions in the new component.'
-                warn_users_removed_from_subscription(rm_users, self.source_event, self.user, self.source_node,
+                emails.warn_users_removed_from_subscription(rm_users, self.source_event, self.user, self.source_node,
                                                      timestamp=self.timestamp, gravatar_url=self.gravatar_url,
                                                      message=message, url=self.source_url)
         super(AddonFileMoved, self).perform()
-
 
     def form_url(self):
         """Set source url for subscribers removed from subscription to files page view"""

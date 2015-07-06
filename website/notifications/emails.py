@@ -136,7 +136,7 @@ def warn_users_removed_from_subscription(recipients, event, user, node, timestam
     NotificationSubscription.remove(Q('_id', 'eq', event_id))
 
 
-def compile_subscriptions(node, event_type, event=None):
+def compile_subscriptions(node, event_type, event=None, level=0):
     """
     Recurse through node and parents for subscriptions.
     :param node: current node
@@ -147,9 +147,10 @@ def compile_subscriptions(node, event_type, event=None):
     subscriptions = check_node(node, event_type)
     if event:
         subscriptions = check_node(node, event)  # Gets particular event subscriptions
-        parent_subscriptions = compile_subscriptions(node, event_type)  # get node and parent subs
+        parent_subscriptions = compile_subscriptions(node, event_type, level=level+1)  # get node and parent subs
     elif node.parent_id:
-        parent_subscriptions = compile_subscriptions(website_models.Node.load(node.parent_id), event_type)
+        parent_subscriptions = \
+            compile_subscriptions(website_models.Node.load(node.parent_id), event_type, level=level+1)
     else:
         parent_subscriptions = check_node(None, event_type)
     for notification_type in parent_subscriptions:
@@ -158,6 +159,13 @@ def compile_subscriptions(node, event_type, event=None):
             if notification_type != nt:
                 parent_subscriptions[notification_type] = \
                     list(set(parent_subscriptions[notification_type]).difference(set(subscriptions[nt])))
+        if level == 0:
+            permission = []
+            for user_id in parent_subscriptions[notification_type]:
+                user = website_models.User.load(user_id)
+                if node.has_permission(user, 'read'):
+                    permission.append(user_id)
+            parent_subscriptions[notification_type] = permission
     return parent_subscriptions
 
 
