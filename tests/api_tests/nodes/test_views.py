@@ -944,7 +944,7 @@ class TestCreateDraftRegistration(ApiTestCase):
 
         self.private_project = ProjectFactory(is_public=False, creator=self.user)
         self.private_url = '/{}nodes/{}/draft_registrations/'.format(API_BASE, self.private_project._id)
-        self.schema = {'registration_form': 'Open-Ended Registration'}
+        self.payload = {'registration_form': 'Open-Ended Registration', 'schema_version': 1}
 
         self.public_project = ProjectFactory(is_public=True, creator=self.user)
         self.public_registration = RegistrationFactory(source=self.public_project)
@@ -954,7 +954,7 @@ class TestCreateDraftRegistration(ApiTestCase):
     # TODO fix so doesn't require eval
     def test_create_public_registration_draft_node_does_not_exist(self):
         url = '/{}nodes/{}/draft_registrations/'.format(API_BASE, '12345')
-        res = self.app.post(url, self.schema, expect_errors=True, auth=self.basic_auth)
+        res = self.app.post(url, self.payload, expect_errors=True, auth=self.basic_auth)
         assert_equal(res.status_code, 404)
 
     def test_create_registration_of_registration(self):
@@ -963,36 +963,36 @@ class TestCreateDraftRegistration(ApiTestCase):
         assert_equal(res.status_code, 400)
 
     def test_create_public_registration_draft_logged_out(self):
-        res = self.app.post(self.public_url, self.schema, expect_errors=True)
+        res = self.app.post(self.public_url, self.payload, expect_errors=True)
         assert_equal(res.status_code, 403)
 
     def test_create_public_registration_draft_logged_in(self):
-        res = self.app.post(self.public_url, self.schema, auth=self.basic_auth, expect_errors=True)
+        res = self.app.post(self.public_url, self.payload, auth=self.basic_auth, expect_errors=True)
         assert_equal(res.status_code, 201)
         source = eval(res.json['data']['branched_from'])
         schema = eval(res.json['data']['registration_schema'])
         assert_equal(source['title'], self.public_project.title)
-        assert_equal(schema['name'], self.schema['registration_form'])
+        assert_equal(schema['name'], self.payload['registration_form'])
 
     def test_create_private_registration_draft_logged_out(self):
-        res = self.app.post(self.private_url, self.schema, expect_errors=True)
+        res = self.app.post(self.private_url, self.payload, expect_errors=True)
         assert_equal(res.status_code, 403)
 
     def test_create_private_registration_draft_logged_in_contributor(self):
-        res = self.app.post(self.private_url, self.schema, auth=self.basic_auth)
+        res = self.app.post(self.private_url, self.payload, auth=self.basic_auth)
         assert_equal(res.status_code, 201)
         source = eval(res.json['data']['branched_from'])
         schema = eval(res.json['data']['registration_schema'])
         assert_equal(source['title'], self.private_project.title)
-        assert_equal(schema['name'], self.schema['registration_form'])
+        assert_equal(schema['name'], self.payload['registration_form'])
 
     def test_create_private_registration_draft_logged_in_non_contributor(self):
-        res = self.app.post(self.private_url, self.schema, auth=self.basic_auth_two, expect_errors=True)
+        res = self.app.post(self.private_url, self.payload, auth=self.basic_auth_two, expect_errors=True)
         assert_equal(res.status_code, 403)
 
     def test_create_private_registration_draft_logged_in_read_only_contributor(self):
         self.private_project.add_contributor(self.user_two, permissions=['read'])
-        res = self.app.post(self.private_url, self.schema, auth=self.basic_auth_two, expect_errors=True)
+        res = self.app.post(self.private_url, self.payload, auth=self.basic_auth_two, expect_errors=True)
         assert_equal(res.status_code, 403)
 
 

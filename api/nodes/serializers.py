@@ -6,14 +6,15 @@ from rest_framework import exceptions
 from rest_framework import serializers as ser
 
 from modularodm import Q
-from website.models import Node, DraftRegistration
-from framework.exceptions import HTTPError
-from website.project.model import MetaSchema
-from api.base.serializers import JSONAPISerializer, LinksField, Link, WaterbutlerLink
 from website.project.views import drafts
 from website.project.views import register
+from framework.exceptions import HTTPError
+from website.project.model import MetaSchema
+from website.models import Node, DraftRegistration
 from website.project.metadata.schemas import OSF_META_SCHEMAS
 from api.draft_registrations.serializers import DraftRegSerializer
+from api.base.serializers import JSONAPISerializer, LinksField, Link, WaterbutlerLink
+
 
 
 class NodeSerializer(JSONAPISerializer):
