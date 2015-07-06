@@ -26,13 +26,19 @@ class NodeMixin(object):
         # May raise a permission denied
         self.check_object_permissions(self.request, obj)
         if 'include' in self.request.query_params:
-            include_params = self.request.query_params['include']
-            return self.process_include_params(include_params, obj)
+            include = self.request.query_params['include']
+            return self.process_include_params(include, obj)
         return obj
 
-    def process_include_params(self, include_params, obj):
-        parameter_list = include_params.split(',')
-        obj.include_params = parameter_list
+    def process_include_params(self, include, obj):
+        query_params = []
+        for raw_parameter in include.split(','):
+            sub_query_list = raw_parameter.split('.')
+            query = {} #todo insert data here
+            for subquery in reversed(sub_query_list):
+                query = {subquery: query}
+            query_params.append(query)
+        obj.query_params = query_params
         return obj
 
 
