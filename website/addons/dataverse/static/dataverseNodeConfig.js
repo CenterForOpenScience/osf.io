@@ -434,7 +434,6 @@ ViewModel.prototype.connectAccount = function() {
 
 ViewModel.prototype.connectExistingAccount = function(account_id) {
     var self = this;
-
     return $osf.putJSON(
         self.urls().importAuth, {
             external_account_id: account_id
