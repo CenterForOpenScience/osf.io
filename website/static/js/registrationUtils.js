@@ -6,6 +6,8 @@ var moment = require('moment');
 var $osf = require('js/osfHelpers');
 var oop = require('js/oop');
 
+require('js/registrationEditorExtensions');
+
 var iterObject = function(obj) {
     var ret = [];
     $.each(obj, function(prop, value) {
