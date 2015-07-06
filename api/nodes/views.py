@@ -11,6 +11,7 @@ from api.base.filters import ODMFilterMixin, ListFilterMixin
 from api.base.utils import get_object_or_404, waterbutler_url_for
 from .serializers import NodeSerializer, NodePointersSerializer, NodeFilesSerializer
 from .permissions import ContributorOrPublic, ReadOnlyIfRegistration, ContributorOrPublicForPointers
+from .utils import IncludeParamsProcessor
 
 
 class NodeMixin(object):
@@ -25,30 +26,14 @@ class NodeMixin(object):
         obj = get_object_or_404(Node, self.kwargs[self.node_lookup_url_kwarg])
         # May raise a permission denied
         self.check_object_permissions(self.request, obj)
+        query_params = {}
         if 'include' in self.request.query_params:
             include = self.request.query_params['include']
             # Checks and cuts off include value if '/' is found
             include = include.split('/')[0]
-            return self.process_include_params(include, obj)
-        else:
-            return obj
-
-    def process_include_params(self, include, obj):
-        query_keys = {}
-        # Processes include string into ',' separated parameters with '.' marking relationships
-        for raw_parameter in include.split(','):
-            sub_query_list = raw_parameter.split('.')
-            query = {}
-            for subquery in reversed(sub_query_list):
-                query = {subquery: query}
-            query_keys[sub_query_list[0]] = query[sub_query_list[0]]
-        query_params = self.get_query_values(query_keys)
-        obj.query_params = query_params
+            params_processor = IncludeParamsProcessor(include)
+        obj.query_params = params_processor.query_params
         return obj
-
-    def get_query_values(self, query_keys):
-        query_params = query_keys
-        return query_params
 
 
 class NodeList(generics.ListCreateAPIView, ODMFilterMixin):
