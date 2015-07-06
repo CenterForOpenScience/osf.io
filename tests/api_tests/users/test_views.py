@@ -145,6 +145,14 @@ class TestUsers(ApiTestCase):
         assert_in(self.user_one._id, ids)
         assert_not_in(self.user_two._id, ids)
 
+    def test_filter_using_full_dictionary(self):
+        url = "/{}users/?filter[employment_institutions]=Martin".format(API_BASE)
+        res = self.app.get(url)
+        user_json = res.json['data']
+        ids = [each['id'] for each in user_json]
+        assert_in(self.user_one._id, ids)
+        assert_not_in(self.user_two._id, ids)
+
     def test_find_no_user_in_users(self):
         url = "/{}users/?filter[given_name]=notMartin".format(API_BASE)
         res = self.app.get(url)
