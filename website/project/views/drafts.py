@@ -11,19 +11,26 @@ from website.project.decorators import (
     must_be_valid_project,
     must_have_permission,
 )
-from website.project.model import MetaSchema, DraftRegistration
+from website.mails import Mail, send_mail
+from website.project.model import MetaSchema, DraftRegistration, User
 from website.project.metadata.utils import serialize_meta_schema, serialize_draft_registration
 
 get_draft_or_fail = lambda pk: get_or_http_error(DraftRegistration, pk)
 get_schema_or_fail = lambda query: get_or_http_error(MetaSchema, query)
 
-ADMIN_USERNAMES = ['vndqr']
+ADMIN_USERNAMES = ['vndqr', 'szj4b']
 
 @must_be_valid_project
 def send_for_review(node, *args, **kwargs):
     data = request.get_json()
     
     node.is_pending_review = True
+
+    creator = User.load(data.get('user')['id'])
+    REVIEW_EMAIL = Mail(tpl_prefix='prereg_review', subject='New Prereg Prize registration ready for review')
+    for uid in ADMIN_USERNAMES:
+        admin = User.load(uid)
+        send_mail(admin.email, REVIEW_EMAIL, user=creator, src=node)
 
 def get_all_draft_registrations(*args, **kwargs):
     count = request.args.get('count', 100)
@@ -79,7 +86,7 @@ def create_draft_registration(auth, node, *args, **kwargs):
         initiator=auth.user,
         branched_from=node,
         registration_schema=meta_schema,
-        registration_metadata=schema_data
+        registration_metadata=schema_data,
         schema_name = schema_name
     )
     draft.save()
