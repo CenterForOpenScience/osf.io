@@ -1,5 +1,7 @@
 from framework.auth.core import Auth
 
+from rest_framework import status
+from rest_framework.response import Response
 from rest_framework import generics, permissions as drf_permissions
 
 from modularodm import Q
@@ -8,6 +10,7 @@ from api.base.utils import get_object_or_404
 from api.base.filters import ODMFilterMixin
 from api.nodes.permissions import ContributorOrPublic
 from api.draft_registrations.serializers import DraftRegSerializer
+from rest_framework.exceptions import NotAuthenticated
 
 
 class DraftRegistrationMixin(object):
@@ -37,8 +40,48 @@ class DraftRegistrationList(generics.ListAPIView, ODMFilterMixin):
     # overrides ListAPIView
     def get_queryset(self):
         user = self.request.user
+        if user.is_anonymous():
+            raise NotAuthenticated("Must be logged in to view draft registrations")
         return DraftRegistration.find(Q('initiator', 'eq', user))
 
+
+ # permission_classes = (
+ #        drf_permissions.IsAuthenticatedOrReadOnly,
+ #    )
+ #    serializer_class = NodeSerializer
+ #    ordering = ('-date_modified', )  # default ordering
+ #
+ #    # overrides ODMFilterMixin
+ #    def get_default_odm_query(self):
+ #        base_query = (
+ #            Q('is_deleted', 'ne', True) &
+ #            Q('is_folder', 'ne', True)
+ #        )
+ #        user = self.request.user
+ #        permission_query = Q('is_public', 'eq', True)
+ #        if not user.is_anonymous():
+ #            permission_query = (Q('is_public', 'eq', True) | Q('contributors', 'icontains', user._id))
+ #
+ #        query = base_query & permission_query
+ #        return query
+ #
+ #    # overrides ListCreateAPIView
+ #    def get_queryset(self):
+ #        query = self.get_query_from_request()
+ #        return Node.find(query)
+ #
+ #    # overrides ListCreateAPIView
+ #    def perform_create(self, serializer):
+ #        """
+ #        Create a node.
+ #        """
+ #        """
+ #        :param serializer:
+ #        :return:
+ #        """
+ #        # On creation, make sure that current user is the creator
+ #        user = self.request.user
+ #        serializer.save(creator=user)
 
 class DraftRegistrationDetail(generics.RetrieveUpdateDestroyAPIView, DraftRegistrationMixin):
     """

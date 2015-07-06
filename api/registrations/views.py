@@ -1,9 +1,7 @@
 
 from rest_framework import status
 from rest_framework.response import Response
-from django.utils.translation import ugettext_lazy as _
 from rest_framework import generics, permissions as drf_permissions
-from rest_framework.exceptions import ValidationError
 
 from modularodm import Q
 from website.models import Node
@@ -11,7 +9,7 @@ from api.base.filters import ODMFilterMixin
 from website.language import REGISTER_WARNING
 from api.base.utils import token_creator, absolute_reverse
 from api.nodes.permissions import ContributorOrPublic, ReadOnlyIfRegistration
-from api.nodes.views import NodeMixin, NodeDetail
+from api.nodes.views import NodeMixin
 from api.draft_registrations.views import DraftRegistrationMixin
 from api.registrations.serializers import RegistrationCreateSerializer, RegistrationCreateSerializerWithToken
 from api.nodes.serializers import NodeSerializer
