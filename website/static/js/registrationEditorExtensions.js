@@ -17,6 +17,15 @@ ko.bindingHandlers.osfUploader = {
             {
                 onSelectRow: function(item) {
                     debugger;
+                },
+                dropzone : {                                           // All dropzone options.
+                    url: function(files) {return files[0].url;},
+                    clickable : "#" + element.id,
+                    addRemoveLinks: false,
+                    previewTemplate: '<div></div>',
+                    parallelUploads: 1,
+                    acceptDirectories: false,
+                    fallback: function(){}
                 }
             }
         );
