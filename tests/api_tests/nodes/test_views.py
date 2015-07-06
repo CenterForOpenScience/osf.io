@@ -437,10 +437,54 @@ class TestNodeDetail(ApiTestCase):
         assert_equal(res.status_code, 403)
 
 
-class TestNodeFeatureDetail(ApiTestCase):
+class TestNodeIncludeQueryParams(ApiTestCase):
 
     def setUp(self):
-        pass
+        super(TestNodeIncludeQueryParams, self).setUp()
+        self.user = UserFactory.build()
+        self.user.set_password('justapoorboy')
+        self.user.save()
+        self.basic_auth = (self.user.username, 'justapoorboy')
+
+        self.user_two = UserFactory.build()
+        self.user_two.set_password('justapoorboy')
+        self.user_two.save()
+        self.basic_auth_two = (self.user_two.username, 'justapoorboy')
+
+        self.public_project = ProjectFactory(title="Project One", is_public=True, creator=self.user)
+        self.private_project = ProjectFactory(title="Project Two", is_public=False, creator=self.user)
+        self.public_url = '/{}nodes/{}'.format(API_BASE, self.public_project._id)
+        self.private_url = '/{}nodes/{}'.format(API_BASE, self.private_project._id)
+
+    def test_get_include_key(self):
+        self.public_url += '/?include=contributors/'
+        res = self.app.get(self.public_url)
+        assert_equal(res.status_code, 200)
+        query_params = res.json['data']['query_params']
+        assert_in('contributors', query_params)
+
+    def test_get_include_keys(self):
+        self.public_url += '/?include=contributors,pointers/'
+        res = self.app.get(self.public_url)
+        assert_equal(res.status_code, 200)
+        query_params = res.json['data']['query_params']
+        assert_in('contributors', query_params)
+        assert_in('pointers', query_params)
+
+    def test_get_include_relationship_key(self):
+        self.public_url += '/?include=contributors.count,pointers/'
+        res = self.app.get(self.public_url)
+        assert_equal(res.status_code, 200)
+        query_params = res.json['data']['query_params']
+        assert_in('count', query_params['contributors'])
+
+    def test_get_include_and_relationship_keys(self):
+        self.public_url += '/?include=contributors.count,pointers/'
+        res = self.app.get(self.public_url)
+        assert_equal(res.status_code, 200)
+        query_params = res.json['data']['query_params']
+        assert_in('count', query_params['contributors'])
+        assert_in('pointers', query_params)
 
 
 class TestNodeUpdate(ApiTestCase):
