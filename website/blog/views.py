@@ -46,7 +46,7 @@ def render_index(guid, uid):
     _ghostpy_['base'] = "http://localhost:5000/%s/blog" % guid
     posts = get_posts(guid)
     post_list = post.parse_posts(posts, guid)
-    blog_dict = user_.blog_dict
+    blog_dict = user_.blog_dict()
     output = renderer.render(hbs, blog_dict, {'posts': post_list})
     default_dict = {'body': output,
                     'date': '2015-09-04',
@@ -70,7 +70,7 @@ def render_post(guid, file, uid=None):
     _ghostpy_['base'] = "http://localhost:5000/%s/blog" % guid
     posts = file_handler.get_posts(file)
     post_dict = post.parse_blog(posts, guid)
-    blog_dict = user_.blog_dict
+    blog_dict = user_.blog_dict()
     output = renderer.render(hbs, blog_dict, {'post': post_dict})
     default_dict = {'body': output,
                     'date': '2015-09-04',
@@ -91,7 +91,7 @@ def render_post(guid, file, uid=None):
 
 def _post_view(guid, bid, is_profile=False):
     _ghostpy_['context'].append('post')
-    blog_file = url.unquote(bid).decode('utf8')[:-1] + ".md"
+    blog_file = url.unquote(bid).decode('utf8') + ".md"
     uid = None
     if is_profile:
         uid = guid

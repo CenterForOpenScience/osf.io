@@ -139,7 +139,7 @@ def make_url_map(app):
         Rule(
             [
                 '/<guid>/',
-                '/<guid>/<path:suffix>',
+                '/<guid>/<path:suffix>/',
             ],
             ['get', 'post', 'put', 'patch', 'delete'],
             website_views.resolve_guid,
@@ -149,7 +149,7 @@ def make_url_map(app):
         Rule(
             [
                 '/api/v1/<guid>/',
-                '/api/v1/<guid>/<path:suffix>',
+                '/api/v1/<guid>/<path:suffix>/',
             ],
             ['get', 'post', 'put', 'patch', 'delete'],
             website_views.resolve_guid,
@@ -478,11 +478,11 @@ def make_url_map(app):
     process_rules(app, [
         Rule('/profile/<uid>/blog/', 'get', blog_views.blog_view_id,
             OsfWebRenderer('blog.mako')),
-        Rule('/profile/<uid>/blog/post/<path:bid>', 'get', blog_views.post_view_id,
+        Rule('/profile/<uid>/blog/post/<path:bid>/', 'get', blog_views.post_view_id,
              OsfWebRenderer('post.mako')),
         Rule('/project/<pid>/blog/', 'get', blog_views.blog_view_pid,
             OsfWebRenderer('blog.mako')),
-        Rule('/project/<pid>/blog/post/<path:bid>', 'get', blog_views.post_view_pid,
+        Rule('/project/<pid>/blog/post/<path:bid>/', 'get', blog_views.post_view_pid,
              OsfWebRenderer('post.mako'))
     ])
 

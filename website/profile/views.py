@@ -753,12 +753,6 @@ def unserialize_blog(auth, **kwargs):
     user = auth.user
     json_data = escape_html(request.get_json())
 
-    json_blog_dict = json_data.get('blog_dict')
-
-    if json_blog_dict is not None:
-        for field in user.blog['blog_dict'].keys():
-            user.blog['blog_dict'][field] = json_data.get('blog_dict')[field]
-
     for field in user.blog.keys():
         data = json_data.get(field)
         if data is not None:

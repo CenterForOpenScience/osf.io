@@ -366,12 +366,11 @@ class User(GuidStoredObject, AddonModelMixin):
     # Format: {
     #     'blog_guid': <blog guid>,
     #     'theme': <theme name>,
-    #     'blog_dict': {
-    #         'title': <blog title>,
-    #         'description': <blog description>,
-    #         'logo': <blog logo>,
-    #         'cover': <blog cover>,
-    #         'navigation': <blog navigation>
+    #     'title': <blog title>,
+    #     'description': <blog description>,
+    #     'logo': <blog logo>,
+    #     'cover': <blog cover>,
+    #     'navigation': <blog navigation>
     #     }
     # }
 
@@ -968,9 +967,15 @@ class User(GuidStoredObject, AddonModelMixin):
     # def blog_list(self):
     #     nodes = self.node__contributed
 
-    @property
+
     def blog_dict(self):
-        return self.blog['blog_dict']
+        return {
+            'title': self.blog['title'],
+            'description': self.blog['description'],
+            'logo': self.blog['logo'],
+            'cover': self.blog['cover'],
+            'navigation': self.blog['navigation']
+        }
 
     @property
     def blog_theme(self):

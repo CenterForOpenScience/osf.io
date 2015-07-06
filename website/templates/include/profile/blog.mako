@@ -15,6 +15,16 @@
                 </div>
             </div>
 
+            <div class="form-group">
+                <label>Blog Name</label>
+                <input class="form-control" data-bind="value: title" placeholder="My Blog"/>
+            </div>
+
+            <div class="form-group">
+                <label>Blog Description</label>
+                <input class="form-control" data-bind="value: description" placeholder="My Blog Description"/>
+            </div>
+
             <div class="padded">
 
                 <button

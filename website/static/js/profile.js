@@ -752,11 +752,17 @@ var BlogViewModel = function(urls, modes) {
 
     self.trackedProperties = [
         self.theme,
-        self.blog_guid,
-        self.blog_dict
+        self.title,
+        self.description,
+        self.logo,
+        self.cover,
     ];
 
-    self.theme = ko.observable()
+    self.theme = ko.observable();
+    self.title = ko.observable();
+    self.description = ko.observable();
+    self.logo = ko.observable();
+    self.cover = ko.observable();
 
     var validated = ko.validatedObservable(self);
     self.isValid = ko.computed(function() {
