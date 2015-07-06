@@ -10,9 +10,9 @@ from framework.mongo.utils import to_mongo_key
 
 from website import settings
 from website.models import Node
+from website.exceptions import NodeStateError
 from website.addons.wiki import settings as wiki_settings
-from website.addons.wiki.exceptions import InvalidVersionError,\
-    NonWikiNodeError
+from website.addons.wiki.exceptions import InvalidVersionError
 
 
 def generate_private_uuid(node, wname):
@@ -158,9 +158,14 @@ def format_wiki_version(version, num_versions, allow_preview):
     return version
 
 def get_wiki_permission(node):
+    """Return if wiki is publicly editable from node
+    :param node: Node to which the wiki belongs
+    :raises: NodeStateError if Node does not have wiki
+    :returns: 'public' if wiki is publicly editable, 'private' if not
+    """
     wiki = node.get_addon('wiki')
     if not wiki:
-        raise NonWikiNodeError
+        raise NodeStateError('Node must have wiki addon.')
     if wiki.is_publicly_editable:
         return 'public'
     return 'private'

@@ -37,13 +37,15 @@ class AddonWikiNodeSettings(AddonNodeSettingsBase):
     has_auth = True
     is_publicly_editable = fields.BooleanField(default=False, index=True)
 
-    def set_editing(self, permissions, auth=None, node=None, save=False):
+    def set_editing(self, permissions, auth=None, node=None, save=False, log=False):
         """Set the editing permissions for this node.
 
         :param permissions: A string, either 'public' or 'private'
         :param auth: All the auth informtion including user, API key
         :param node: Node to which self belongs,
-         only add if logging is desired
+         only necessary if logging is desired
+        :param bool save: Whether to save the privacy change
+        :param bool log: Whether to add a NodeLog for the privacy change
         """
 
         if permissions == 'public' and not self.is_publicly_editable:
@@ -53,8 +55,9 @@ class AddonWikiNodeSettings(AddonNodeSettingsBase):
         else:
             return False
 
-        # Add logging
-        if node:
+        if log:
+            if not node:
+                raise AttributeError("Node object is required for logging.")
             action = NodeLog.MADE_WIKI_PUBLIC if permissions == 'public'\
                 else NodeLog.MADE_WIKI_PRIVATE
             node.add_log(

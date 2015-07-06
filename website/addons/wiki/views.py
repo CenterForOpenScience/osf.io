@@ -109,6 +109,7 @@ def _get_wiki_api_urls(node, name, additional_urls=None):
         'delete': node.api_url_for('project_wiki_delete', wname=name),
         'rename': node.api_url_for('project_wiki_rename', wname=name),
         'content': node.api_url_for('wiki_page_content', wname=name),
+        'set_permissions': node.api_url_for('edit_wiki_permissions', permissions='public'),
     }
     if additional_urls:
         urls.update(additional_urls)
@@ -373,10 +374,17 @@ def edit_wiki_permissions(**kwargs):
     if wiki_settings is None:
         raise HTTPError(http.BAD_REQUEST)
 
-    if not wiki_settings.set_editing(permissions, auth, node, True):
+    try:
+        edited = wiki_settings.set_editing(permissions, auth, node, True, True)
+    except AttributeError as e:
         raise HTTPError(http.BAD_REQUEST, data=dict(
-            message_short="Can't change privacy."
+            message_short=e.message
         ))
+    else:
+        if not edited:
+            raise HTTPError(http.BAD_REQUEST, data=dict(
+                message_short="Can't change privacy."
+            ))
 
     return {
         'status': 'success',
