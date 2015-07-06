@@ -1415,34 +1415,52 @@ class TestUserProfile(OsfTestCase):
         handlers.celery_teardown_request()
 
     def test_twitter_redirect_success(self):
-        self.user.social['twitter'] = 'someTwitterHandle'
+        self.user.social['twitter'] = fake.last_name()
         self.user.save()
-        expected_redirect = 'https://twitter.com/someTwitterHandle'
+        expected_redirect = web_url_for('profile_view_id', uid=self.user._id)
 
-        res = self.app.get(web_url_for('redirect_to_twitter', uid=self.user._id))
-        assert_equals(res.status_code, 302)
-        assert_equal(res.location, expected_redirect)
+        res = self.app.get(web_url_for('redirect_to_twitter', twitter_handle=self.user.social['twitter']))
+        assert_equals(res.status_code, http.FOUND)
+        assert_in(expected_redirect, res.location)
 
-    def test_twitter_redirect_to_non_existent_user_returns_404(self):
-        non_existent_uid = 'abc123'
-        expected_error = 'There is no active user associated with user id: {0}.'.format(non_existent_uid)
+    def test_twitter_redirect_is_case_insensitive(self):
+        self.user.social['twitter'] = fake.last_name()
+        self.user.save()
 
-        res = self.app.get(
-            web_url_for('redirect_to_twitter', uid=non_existent_uid),
-            expect_errors=True
-        )
-        assert_equal(res.status_code, 404)
-        assert_true(expected_error in res.body)
+        res1 = self.app.get(web_url_for('redirect_to_twitter', twitter_handle=self.user.social['twitter']))
+        res2 = self.app.get(web_url_for('redirect_to_twitter', twitter_handle=self.user.social['twitter'].lower()))
+        assert_equal(res1.location, res2.location)
 
-    def test_twitter_redirect_for_user_without_handle_returns_400(self):
-        expected_error = '{0} does not have a Twitter handle associated with their account.'.format(self.user.fullname)
+    def test_twitter_redirect_unassociated_twitter_handle_returns_404(self):
+        unassociated_handle = fake.last_name()
+        expected_error = 'There is no active user associated with the Twitter handle: {0}.'.format(unassociated_handle)
 
         res = self.app.get(
-            web_url_for('redirect_to_twitter', uid=self.user._id),
+            web_url_for('redirect_to_twitter', twitter_handle=unassociated_handle),
             expect_errors=True
         )
-        assert_equal(res.status_code, 400)
+        assert_equal(res.status_code, http.NOT_FOUND)
         assert_true(expected_error in res.body)
+
+    def test_twitter_redirect_handle_with_multiple_associated_accounts_redirects_to_selection_page(self):
+        self.user.social['twitter'] = fake.last_name()
+        self.user.save()
+        user2 = AuthUserFactory()
+        user2.social['twitter'] = self.user.social['twitter']
+        user2.save()
+
+        expected_error = 'There are multiple OSF accounts associated with the Twitter handle: <strong>{0}</strong>.'.format(self.user.social['twitter'])
+        res = self.app.get(
+            web_url_for(
+                'redirect_to_twitter',
+                twitter_handle=self.user.social['twitter'],
+                expect_error=True
+            )
+        )
+        assert_equal(res.status_code, http.MULTIPLE_CHOICES)
+        assert_true(expected_error in res.body)
+        assert_true(web_url_for('profile_view_id', uid=self.user._id) in res.body)
+        assert_true(web_url_for('profile_view_id', uid=user2._id) in res.body)
 
 
 class TestUserAccount(OsfTestCase):
