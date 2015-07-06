@@ -10,9 +10,6 @@ from website import util as website_util  # noqa
 from website import settings as website_settings
 from rest_framework.exceptions import NotFound
 
-from api.nodes.settings.defaults import NODE_ALLOWED_SUBQUERY_SETS
-from api.users.settings.defaults import USER_ALLOWED_SUBQUERY_SETS
-
 
 def absolute_reverse(view_name, query_kwargs=None, args=None, kwargs=None):
     """Like django's `reverse`, except returns an absolute URL. Also add query parameters."""
@@ -40,17 +37,11 @@ def process_additional_query_params(include, obj_type):
 
     # Processes include string into ',' separated parameters with '.' marking relationships
     for raw_parameter in include.split(','):
-        if obj_type == 'node':
-            allowed_keys = NODE_ALLOWED_SUBQUERY_SETS
-        elif obj_type == 'user':
-            allowed_keys = USER_ALLOWED_SUBQUERY_SETS
         sub_query_list = raw_parameter.split('.')
         query = {}
         for sub_query in reversed(sub_query_list):
             query = {sub_query: query}
-
         # todo process query
-
         query_params[sub_query_list[0]] = query[sub_query_list[0]]
     return query_params
 
