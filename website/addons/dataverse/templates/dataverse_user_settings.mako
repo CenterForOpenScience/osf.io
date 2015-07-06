@@ -18,7 +18,7 @@
         <thead>
             <tr>
                 <th>Authorized on <a data-bind="attr.href: dataverseUrl"><em>{{ dataverseHost }}</em></a></th>
-                <th><a data-bind="click: $root.askDisconnect" class="text-danger auth">Disconnect Account</a></th>
+                <th><a data-bind="click: $root.askDisconnect" class="text-danger user-settings-addons-link">Disconnect Account</a></th>
             </tr>
         </thead>
         <!-- ko if: connectedNodes().length > 0 -->

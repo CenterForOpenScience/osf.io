@@ -14,7 +14,7 @@
         <thead>
             <tr>
                 <th>Authorized by <a data-bind="attr.href: profileUrl, text: name"></a></th>
-                <th><a data-bind="click: $root.askDisconnect" class="text-danger auth">Disconnect Account</a></th>
+                <th><a data-bind="click: $root.askDisconnect" class="text-danger user-settings-addons-link">Disconnect Account</a></th>
             </tr>
         </thead>
         <!-- ko if: connectedNodes().length > 0 -->
