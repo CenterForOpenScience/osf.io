@@ -375,6 +375,10 @@ li.pointer {
     margin-top: 4.8px;
 }
 
+.auth {
+    font-size: 13.5px;
+}
+
 .addon-message {
     padding-top: 20px;
 }
