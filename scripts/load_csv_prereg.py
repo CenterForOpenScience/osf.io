@@ -69,9 +69,9 @@ def main():
 				rowType = getLabel(questionPart)
 
 				if (json_data['pages'][int(currentPage[1])]['id'] == currentPage[0]):
-					properties = json_data['pages'][int(currentPage[1])]['questions'][int(currentPage[2])]['properties']
+					properties = json_data['pages'][int(currentPage[1])]['questions']
 					questionData = properties.itervalues().next()
-					key = properties.keys()[0]
+					key = properties.keys()[int(currentPage[2])]
 					if isinstance(rowType, tuple):
 						if (questionNumber in multipleChoice):
 							multipleChoice[questionNumber].append(unicode(row[1]))
@@ -79,13 +79,17 @@ def main():
 							multipleChoice[questionNumber] = [unicode(row[1])]
 					else:
 						if (row[1] != questionData[rowType]):
-							json_data['pages'][int(currentPage[1])]['questions'][int(currentPage[2])]['properties'][key][rowType] = unicode(row[1])
+							json_data['pages'][int(currentPage[1])]['questions'][key][rowType] = unicode(row[1])
 			
 		for array in multipleChoice:
 			currentPage = getPage(array)
-			properties = json_data['pages'][int(currentPage[1])]['questions'][int(currentPage[2])]['properties']
-			key = properties.keys()[0]
-			json_data['pages'][int(currentPage[1])]['questions'][int(currentPage[2])]['properties'][key]['items']['enum'] = multipleChoice[array]
+			properties = json_data['pages'][int(currentPage[1])]['questions']
+			key = properties.keys()[int(currentPage[2])]
+	
+			if (currentPage[1] == 1):
+				print json_data['pages'][int(currentPage[1])]['questions'][key]
+			else:
+				json_data['pages'][int(currentPage[1])]['questions'][key]['options'] = multipleChoice[array]
 
 		with open(os.path.join(jsonFileDir, 'prereg-prize-test.json'), 'w') as newFile:
 			json.dump(json_data, newFile)
