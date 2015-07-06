@@ -5,6 +5,7 @@ import json
 import uuid
 import httplib
 import functools
+import requests
 
 import furl
 from flask import request
@@ -23,7 +24,7 @@ from website import settings
 from website.project import decorators
 from website.addons.base import exceptions
 from website.models import User, Node, NodeLog
-from website.util import rubeus
+from website.util import rubeus, waterbutler_url_for
 from website.profile.utils import get_gravatar
 from website.project.decorators import must_be_valid_project, must_be_contributor_or_public
 from website.project.utils import serialize_node
@@ -290,7 +291,6 @@ def create_waterbutler_log(payload, **kwargs):
 def addon_view_or_download_file_legacy(**kwargs):
     query_params = request.args.to_dict()
     node = kwargs.get('node') or kwargs['project']
-
     action = query_params.pop('action', 'view')
     provider = kwargs.get('provider', 'osfstorage')
 
@@ -335,11 +335,18 @@ def addon_view_or_download_file_legacy(**kwargs):
 @must_be_valid_project
 @must_be_contributor_or_public
 def addon_view_or_download_file(auth, path, provider, **kwargs):
+
     extras = request.args.to_dict()
     action = extras.get('action', 'view')
     node = kwargs.get('node') or kwargs['project']
 
     node_addon = node.get_addon(provider)
+    metadata_url = waterbutler_url_for('metadata', path=path, provider=provider, node=node, view_only=True)
+    res = requests.get(metadata_url)
+    if res.status_code == 200:
+        extras.update(res.json().get('data'))
+
+    import ipdb; ipdb.set_trace()
 
     if not path:
         raise HTTPError(httplib.BAD_REQUEST)
