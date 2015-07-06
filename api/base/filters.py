@@ -131,7 +131,7 @@ class ODMFilterMixin(FilterMixin):
     def query_params_to_odm_query(self, query_params):
         """Convert query params to a modularodm Query object."""
 
-        query_parts=[]
+        query_parts = []
         fields_dict = query_params_to_fields(query_params)
         if fields_dict:
             for key, value in fields_dict.items():
