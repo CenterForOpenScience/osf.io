@@ -34,18 +34,16 @@ def get_object_or_404(model_cls, query_or_pk):
 
 
 def process_additional_query_params(include, obj_type):
-
-    if obj_type == 'node':
-        allowed_keys = NODE_ALLOWED_SUBQUERY_SETS
-    elif obj_type == 'user':
-        allowed_keys = USER_ALLOWED_SUBQUERY_SETS
-
     # Checks and cuts off include value if '/' is found
     include = include.split('/')[0]
     query_params = {}
 
     # Processes include string into ',' separated parameters with '.' marking relationships
     for raw_parameter in include.split(','):
+        if obj_type == 'node':
+            allowed_keys = NODE_ALLOWED_SUBQUERY_SETS
+        elif obj_type == 'user':
+            allowed_keys = USER_ALLOWED_SUBQUERY_SETS
         sub_query_list = raw_parameter.split('.')
         query = {}
         for sub_query in reversed(sub_query_list):
