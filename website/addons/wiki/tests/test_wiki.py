@@ -9,7 +9,6 @@ import mock
 from nose.tools import *  # noqa
 from modularodm.exceptions import ValidationValueError
 
-from tests import factories
 from tests.base import OsfTestCase, fake
 from tests.factories import (
     UserFactory, NodeFactory, ProjectFactory, ApiKeyFactory,
@@ -1130,13 +1129,13 @@ class TestPublicWiki(OsfTestCase):
 
         parent = ProjectFactory()
         node = NodeFactory(parent=parent, category='project')
-        sub_component = factories.NodeFactory(parent=node)
+        sub_component = NodeFactory(parent=node)
 
         parent.delete_addon('wiki', self.consolidated_auth)
         node.delete_addon('wiki', self.consolidated_auth)
         sub_component.delete_addon('wiki', self.consolidated_auth)
 
-        sub_component2 = factories.NodeFactory(parent=node)
+        sub_component2 = NodeFactory(parent=node)
 
         has_addon_on_child_node =\
             node.has_addon_on_children('wiki')
