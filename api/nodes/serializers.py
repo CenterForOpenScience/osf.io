@@ -141,6 +141,7 @@ class NodeSerializer(JSONAPISerializer):
 class DraftRegistrationSerializer(DraftRegSerializer):
 
     def create(self, validated_data):
+        time = datetime.datetime.utcnow()
         request = self.context['request']
         schema_name = validated_data['registration_form']
         if not schema_name:
@@ -159,8 +160,8 @@ class DraftRegistrationSerializer(DraftRegSerializer):
             initiator=user,
             registration_schema=meta_schema,
             registration_metadata=questions,
-            initiated=datetime.datetime.utcnow(),
-            updated = datetime.datetime.utcnow()
+            initiated=time,
+            updated=time
         )
         draft.save()
         return draft
