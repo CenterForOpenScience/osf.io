@@ -7,19 +7,21 @@ from modularodm import Q
 from api.base.utils import token_creator
 from website.project.model import MetaSchema
 from api.nodes.serializers import NodeSerializer
+from api.base.serializers import JSONAPISerializer
+
+from api.draft_registrations.serializers import DraftRegSerializer
 
 
-class RegistrationSerializer(NodeSerializer):
-    is_registration_draft = ser.BooleanField(read_only=True)
+# class RegistrationSerializer(NodeSerializer):
+#     is_registration_draft = ser.BooleanField(read_only=True)
 
 
-class RegistrationCreateSerializer(RegistrationSerializer):
-    category = ser.CharField(read_only=True)
-    title = ser.CharField(read_only=True)
-    description = ser.CharField(read_only=True)
+class RegistrationCreateSerializer(JSONAPISerializer):
+    id = ser.CharField(read_only=True, source='_id')
+    class Meta:
+        type_='registrations'
 
-
-class RegistrationCreateSerializerWithToken(RegistrationSerializer):
+class RegistrationCreateSerializerWithToken(DraftRegSerializer):
     category = ser.CharField(read_only=True)
     title = ser.CharField(read_only=True)
     description = ser.CharField(read_only=True)
