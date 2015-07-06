@@ -806,16 +806,11 @@ def redirect_to_twitter(twitter_handle):
                        'Twitter handle: <strong>{0}</strong>. <br /> Please ' \
                        'select from the accounts below. <br /><ul>'.format(twitter_handle)
         for user in users:
-            message_long += '<li><a href="{0}">{1}</a></li>'.format(web_url_for(
-                'profile_view_id',
-                uid=user._id),
-                user.fullname
-            )
+            message_long += '<li><a href="{0}">{1}</a></li>'.format(user.url, user.fullname)
         message_long += '</ul>'
         raise HTTPError(http.MULTIPLE_CHOICES, data={
             'message_short': 'Multiple Users Found',
             'message_long': message_long
         })
 
-    redirect_url = web_url_for('profile_view_id', uid=user._id)
-    return redirect(redirect_url)
+    return redirect(user.url)

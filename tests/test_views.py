@@ -1417,11 +1417,10 @@ class TestUserProfile(OsfTestCase):
     def test_twitter_redirect_success(self):
         self.user.social['twitter'] = fake.last_name()
         self.user.save()
-        expected_redirect = web_url_for('profile_view_id', uid=self.user._id)
 
         res = self.app.get(web_url_for('redirect_to_twitter', twitter_handle=self.user.social['twitter']))
         assert_equals(res.status_code, http.FOUND)
-        assert_in(expected_redirect, res.location)
+        assert_in(self.user.url, res.location)
 
     def test_twitter_redirect_is_case_insensitive(self):
         self.user.social['twitter'] = fake.last_name()
@@ -1459,8 +1458,8 @@ class TestUserProfile(OsfTestCase):
         )
         assert_equal(res.status_code, http.MULTIPLE_CHOICES)
         assert_true(expected_error in res.body)
-        assert_true(web_url_for('profile_view_id', uid=self.user._id) in res.body)
-        assert_true(web_url_for('profile_view_id', uid=user2._id) in res.body)
+        assert_true(self.user.url in res.body)
+        assert_true(user2.url in res.body)
 
 
 class TestUserAccount(OsfTestCase):
