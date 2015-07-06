@@ -138,7 +138,7 @@ ${parent.javascript_bottom()}
                   </span>
                 </div>
                 <div class="col-md-1">
-                  <button data-bind="click: $root.launchEditor.bind($root, null, $data)" class="btn btn-primary">Use</button>
+                  <button data-bind="click: $root.launchEditor.bind($root, $root.blankDraft($data))" class="btn btn-primary">Use</button>
                 </div>
               </div>
             </h3>
