@@ -42,7 +42,13 @@ INSTALLED_APPS = (
     # 3rd party
     'rest_framework',
     'rest_framework_swagger',
+    'raven.contrib.django.raven_compat',
 )
+
+# TODO: Are there more granular ways to configure reporting specifically related to the API?
+RAVEN_CONFIG = {
+    'dsn': osf_settings.SENTRY_DSN
+}
 
 REST_FRAMEWORK = {
     'PAGE_SIZE': 10,
@@ -73,6 +79,7 @@ MIDDLEWARE_CLASSES = (
     # Needs to go before CommonMiddleware, so that transactions are always started,
     # even in the event of a redirect. CommonMiddleware may cause other middlewares'
     # process_request to be skipped, e.g. when a trailing slash is omitted
+    'api.base.middleware.FlaskRequestMiddleware',
     'api.base.middleware.TokuTransactionsMiddleware',
 
     # 'django.contrib.sessions.middleware.SessionMiddleware',
@@ -115,12 +122,8 @@ USE_TZ = True
 
 STATIC_ROOT = os.path.join(BASE_DIR, 'static/vendor')
 
-# API_PATH is '/api' on staging/production, '' on develop
-API_PATH = ''
 API_BASE = 'v2/'
-
-API_PREFIX = '{}/{}'.format(API_PATH, API_BASE)
-STATIC_URL = '{}static/'.format(API_PREFIX)
+STATIC_URL = '/static/'
 
 STATICFILES_DIRS = (
     ('rest_framework_swagger/css', os.path.join(BASE_DIR, 'static/css')),
@@ -128,8 +131,8 @@ STATICFILES_DIRS = (
 )
 
 SWAGGER_SETTINGS = {
-    'api_path': API_PATH,
     'info': {
+        'api_path': '/',
         'description':
         """
         <p>Welcome to the V2 Open Science Framework API. With this API you can programatically access users,

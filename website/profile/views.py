@@ -17,6 +17,7 @@ from framework.auth.decorators import collect_auth
 from framework.auth.decorators import must_be_logged_in
 from framework.auth.exceptions import ChangePasswordError
 from framework.auth.views import send_confirm_email
+from framework.auth.signals import user_merged
 from framework.exceptions import HTTPError, PermissionsError
 from framework.flask import redirect  # VOL-aware redirect
 from framework.status import push_status_message
@@ -204,6 +205,11 @@ def update_user(auth):
                             mails.PRIMARY_EMAIL_CHANGED,
                             user=user,
                             new_address=username)
+
+            # Remove old primary email from subscribed mailing lists
+            for list_name, subscription in user.mailing_lists.iteritems():
+                if subscription:
+                    mailchimp_utils.unsubscribe_mailchimp(list_name, user._id, username=user.username)
             user.username = username
 
     ###################
@@ -221,6 +227,12 @@ def update_user(auth):
             user.timezone = data['timezone']
 
     user.save()
+
+    # Update subscribed mailing lists with new primary email
+    # TODO: move to user.save()
+    for list_name, subscription in user.mailing_lists.iteritems():
+        if subscription:
+            mailchimp_utils.subscribe_mailchimp(list_name, user._id)
 
     return _profile_view(user)
 
@@ -426,6 +438,7 @@ def user_choose_mailing_lists(auth, **kwargs):
     return {'message': 'Successfully updated mailing lists', 'result': user.mailing_lists}, 200
 
 
+@user_merged.connect
 def update_subscription(user, list_name, subscription):
     """ Update mailing list subscription in mailchimp.
 
@@ -437,7 +450,7 @@ def update_subscription(user, list_name, subscription):
         mailchimp_utils.subscribe_mailchimp(list_name, user._id)
     else:
         try:
-            mailchimp_utils.unsubscribe_mailchimp(list_name, user._id)
+            mailchimp_utils.unsubscribe_mailchimp(list_name, user._id, username=user.username)
         except mailchimp_utils.mailchimp.ListNotSubscribedError:
             raise HTTPError(http.BAD_REQUEST,
                 data=dict(message_short="ListNotSubscribedError",
@@ -771,3 +784,33 @@ def request_deactivation(auth):
         user=auth.user,
     )
     return {'message': 'Sent account deactivation request'}
+
+
+def redirect_to_twitter(uid):
+    """Redirect GET requests for /@uid/ to respective the Twitter account if a User
+    exists and has a Twitter handle associated with the account.
+
+    :param uid: uid for requested User
+    :return: Redirect to User's Twitter account page
+    """
+    user = User.load(uid)
+
+    if user:
+        twitter_handle = user.social.get('twitter', None)
+    else:
+        raise HTTPError(http.NOT_FOUND, data={
+            'message_short': 'User Not Found',
+            'message_long': 'There is no active user associated with user id: {0}.'.format(uid)
+        })
+
+    if twitter_handle:
+        # TODO(hrybacki): Verify Twitter handle is for a real account.
+        # Requires authenticated access to Twitter API
+        redirect_url = "https://twitter.com/{0}".format(twitter_handle)
+    else:
+        raise HTTPError(http.BAD_REQUEST, data={
+            'message_short': 'Invalid Request',
+            'message_long': '{0} does not have a Twitter handle associated with their account.'.format(user.fullname)
+        })
+
+    return redirect(redirect_url)

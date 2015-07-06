@@ -34,13 +34,12 @@ from website.project.model import has_anonymous_link, get_pointer_parent, NodeUp
 from website.project.forms import NewNodeForm
 from website.models import Node, Pointer, WatchConfig, PrivateLink
 from website import settings
-from website.views import _render_nodes, find_dashboard
+from website.views import _render_nodes, find_dashboard, validate_page_num
 from website.profile import utils
 from website.project import new_folder
 from website.util.sanitize import strip_html
 
 logger = logging.getLogger(__name__)
-
 
 @must_be_valid_project
 @must_have_permission(WRITE)
@@ -52,10 +51,10 @@ def edit_node(auth, node, **kwargs):
     if edited_field == 'title':
         try:
             node.set_title(value, auth=auth)
-        except ValidationValueError:
+        except ValidationValueError as e:
             raise HTTPError(
                 http.BAD_REQUEST,
-                data=dict(message_long='Title cannot be blank.')
+                data=dict(message_long=e.message)
             )
     elif edited_field == 'description':
         node.set_description(value, auth=auth)
@@ -72,7 +71,6 @@ def edit_node(auth, node, **kwargs):
 def project_new(**kwargs):
     return {}
 
-
 @must_be_logged_in
 def project_new_post(auth, **kwargs):
     user = auth.user
@@ -83,9 +81,7 @@ def project_new_post(auth, **kwargs):
     category = data.get('category', 'project')
     template = data.get('template')
     description = strip_html(data.get('description'))
-
-    if not title or len(title) > 200:
-        raise HTTPError(http.BAD_REQUEST)
+    new_project = {}
 
     if template:
         original_node = Node.load(template)
@@ -106,10 +102,17 @@ def project_new_post(auth, **kwargs):
         )
 
     else:
-        project = new_node(category, title, user, description)
-
+        try:
+            project = new_node(category, title, user, description)
+        except ValidationValueError as e:
+            raise HTTPError(
+                http.BAD_REQUEST,
+                data=dict(message_long=e.message)
+            )
+        new_project = _view_project(project, auth)
     return {
-        'projectUrl': project.url
+        'projectUrl': project.url,
+        'newNode': new_project['node'] if new_project else None
     }, http.CREATED
 
 
@@ -131,9 +134,6 @@ def folder_new_post(auth, node, **kwargs):
     user = auth.user
 
     title = request.json.get('title')
-
-    if not title or len(title) > 200:
-        raise HTTPError(http.BAD_REQUEST)
 
     if not node.is_folder:
         raise HTTPError(http.BAD_REQUEST)
@@ -174,7 +174,6 @@ def add_folder(auth, **kwargs):
 # New Node
 ##############################################################################
 
-
 @must_be_valid_project
 @must_have_permission(WRITE)
 @must_not_be_registration
@@ -182,12 +181,19 @@ def project_new_node(auth, node, **kwargs):
     form = NewNodeForm(request.form)
     user = auth.user
     if form.validate():
-        node = new_node(
-            title=strip_html(form.title.data),
-            user=user,
-            category=form.category.data,
-            parent=node,
-        )
+        try:
+            node = new_node(
+                title=strip_html(form.title.data),
+                user=user,
+                category=form.category.data,
+                parent=node,
+            )
+        except ValidationValueError as e:
+            raise HTTPError(
+                http.BAD_REQUEST,
+                data=dict(message_long=e.message)
+            )
+
         message = (
             'Your component was created successfully. You can keep working on the component page below, '
             'or return to the <u><a href="{url}">Project Page</a></u>.'
@@ -1098,6 +1104,7 @@ def search_node(auth, **kwargs):
     nodes = Node.find(odm_query)
     count = nodes.count()
     pages = math.ceil(count / size)
+    validate_page_num(page, pages)
 
     return {
         'nodes': [

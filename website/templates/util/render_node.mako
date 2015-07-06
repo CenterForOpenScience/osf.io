@@ -36,7 +36,7 @@
                 <a href="${summary['url']}">${summary['title']}</a>
             % endif
             % if summary['archiving']:
-                <span>${summary['title']}</span>
+                <span class="f-w-lg">${summary['title']}</span>
             % endif
 
 

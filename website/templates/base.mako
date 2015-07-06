@@ -68,14 +68,7 @@
 
     <%include file="nav.mako"/>
      ## TODO: shouldn't always have the watermark class
-    <div class="watermarked">
-        <div class="container ${self.container_class()}">
-            % if status:
-                <%include file="alert.mako"/>
-            % endif
-            ${self.content()}
-        </div><!-- end container -->
-    </div><!-- end watermarked -->
+    ${self.content_wrap()}
 
 % if not user_id:
 <div id="footerSlideIn">
@@ -100,7 +93,9 @@
 </div>
 % endif
 
-    <%include file="footer.mako"/>
+
+    ${self.footer()}
+    <%include file="copyright.mako"/>
         % if settings.PINGDOM_ID:
             <script>
             var _prum = [['id', '${settings.PINGDOM_ID}'],
@@ -221,6 +216,21 @@
     ### Javascript loaded at the bottom of the page ###
 </%def>
 
+<%def name="footer()">
+    <%include file="footer.mako"/>
+</%def>
+
+<%def name="content_wrap()">
+    <div class="watermarked">
+        <div class="container ${self.container_class()}">
+            % if status:
+                <%include file="alert.mako"/>
+            % endif
+            ${self.content()}
+        </div><!-- end container -->
+    </div><!-- end watermarked -->
+</%def>
+
 
 <%def name="includes_top()">
 
@@ -237,6 +247,8 @@
     ## TODO: Get fontawesome and select2 to play nicely with webpack
     <link rel="stylesheet" href="/static/vendor/bower_components/bootstrap/dist/css/bootstrap.min.css">
     <link rel="stylesheet" href="/static/vendor/bower_components/select2/select2.css">
+    <link rel="stylesheet" href="/static/vendor/bower_components/osf-style/css/base.css">
+    <link rel="stylesheet" href="/static/css/style.css">
 
     % if settings.USE_CDN_FOR_CLIENT_LIBS:
         <script src="//code.jquery.com/jquery-1.11.2.min.js"></script>

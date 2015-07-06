@@ -23,7 +23,7 @@
                     % if parent_node['id']:
 
                         % if parent_node['can_view'] or parent_node['is_public'] or parent_node['is_contributor']:
-                            <li><a href="${parent_node['url']}" data-toggle="tooltip" title="${parent_node['title']}" data-placement="bottom" style="padding: 13px 17px;"> <i class="fa fa-level-down fa-rotate-180"></i>  </a></li>
+                            <li><a href="${parent_node['url']}" data-toggle="tooltip" title="${parent_node['title']}" data-placement="bottom" style="padding: 12px 17px;"> <i class="fa fa-level-down fa-rotate-180"></i>  </a></li>
 
                         % else:
                             <li><a href="#" data-toggle="tooltip" title="Parent project is private" data-placement="bottom" style="cursor: default"> <i class="fa fa-level-down fa-rotate-180 text-muted"></i>  </a></li>
@@ -63,7 +63,7 @@
                             <li><a href="${node['url']}contributors/">Sharing</a></li>
                         % endif
 
-                        % if not node['is_registration'] or (node['is_registration'] and 'admin' in user['permissions']):
+                        % if user['has_read_permissions'] and not node['is_registration'] or (node['is_registration'] and 'admin' in user['permissions']):
                             <li><a href="${node['url']}settings/">Settings</a></li>
                         % endif
 

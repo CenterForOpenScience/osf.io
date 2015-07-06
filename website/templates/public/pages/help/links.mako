@@ -5,9 +5,9 @@
         instead of making a new component or project inside the project, the component already exists separately and
         is only being pointed to from the present project.</p>
     <p>Any existing public project can be a link, be it your own project or someone else's. Linking is useful if
-        you want to reference another persons's work or indicate that something is part of a larger
+        you want to reference another person's work or indicate that something is part of a larger
         project.</p>
-    <p>A link can created be by visiting the project you want to add the link to. Click "Add Links" in the components
+    <p>A link can be created by visiting the project you want to add the link to. Click "Add Links" in the components
         section of your project dashboard and search for the project you wish to link to.</p>
     <div class="row">
         <div class="col-md-8 col-md-offset-2 col-sm-12">

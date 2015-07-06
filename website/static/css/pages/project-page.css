@@ -49,6 +49,15 @@
     margin: 0;
 }
 
+.contributor-self {
+    font-weight: bold;
+}
+
+#duplicateModal h4 {
+    line-height: 34px;
+    padding-bottom: 10px;
+}
+
 /* Multiple device support for project nav-bar */
 @media (max-width: 767px) {
     .osf-project-navbar li>a {

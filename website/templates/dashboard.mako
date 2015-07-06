@@ -36,25 +36,10 @@
                     <div id="obGoToProject">
                         <osf-ob-goto params="data: nodes"></osf-ob-goto>
                     </div>
-                    <div id="projectCreate">
-                        <div id="obNewProject" class="m-b-sm p-md ob-list-item osf-box box-round">
-
-                            <div data-bind="click: toggle" class="m-b-md pointer">
-                                 <i data-bind="css: {' fa-plus': !isOpen(), ' fa-minus': isOpen()}"
-                                    class="pointer ob-expand-icon fa-lg pull-right fa">
-                                </i>
-                                <h3
-                                    class="m-xs ob-heading">
-                                    Create a project
-                                </h3>
-                            </div><!-- end ob-header -->
-                            <div data-bind="visible: isOpen()" id="obRevealNewProject">
-                                <osf-project-create-form
-                                    params="data: nodes, hasFocus: focus">
-                                </osf-project-create-form>
-                            </div>
-                        </div> <!-- end ob-list-item -->
+                    <div id="obCreateProject">
+                        <osf-ob-create params="data: nodes"></osf-ob-create>
                     </div>
+
                     % if not disk_saving_mode:
                     <div id="obRegisterProject">
                         <osf-ob-register params="data: nodes"></osf-ob-register>
@@ -96,8 +81,11 @@
 %endif
 </%def>
 
-<%def name="javascript_bottom()">
+<%def name="stylesheets()">
+    <link rel="stylesheet" href="/static/css/pages/dashboard-page.css">
+</%def>
 
+<%def name="javascript_bottom()">
 <script>
     window.contextVars = $.extend(true, {}, window.contextVars, {
         currentUser: {

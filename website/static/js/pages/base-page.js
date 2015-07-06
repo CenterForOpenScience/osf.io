@@ -8,16 +8,8 @@ require('../../vendor/bootstrap-editable-custom/css/bootstrap-editable.css');
 require('../../vendor/bower_components/jquery-ui/themes/base/minified/jquery.ui.resizable.min.css');
 require('../../css/bootstrap-xl.css');
 require('../../css/animate.css');
-require('../../../../node_modules/osf-style/css/base.css');
-require('../../css/style.css');
 require('../../css/search-bar.css');
 require('font-awesome-webpack');
-
-// for public activity page under explore nav-tag
-require('../../css/pages/public-activity-page.css');
-
-// for help tab
-require('../../css/pages/getting-start-page.css');
 
 var $ = require('jquery');
 require('jquery.cookie');
@@ -78,19 +70,22 @@ var SlideInViewModel = function (){
     };
 };
 
-$(document).on('click', '.project-toggle', function() {
-    var widget = $(this).closest('.panel');
-    var up = $(this).find('.fa fa-angle-up');
-    var down = $(this).find('.fa fa-angle-down');
-    if(up.length > 0) {
-        up.removeClass('fa fa-angle-up').addClass('fa fa-angle-down');
-    }
-    if(down.length > 0) {
-        down.removeClass('fa fa-angle-down').addClass('fa fa-angle-up');
-    }
 
-    widget.find('.panel-body').slideToggle();
-    return false;
+$(document).on('click', '.panel-heading', function(){
+    var toggle = $(this).find('.project-toggle');
+    if(toggle.length > 0){
+        var widget = $(this).closest('.panel');
+        var up = toggle.find('.fa.fa-angle-up');
+        var down = toggle.find('.fa.fa-angle-down');
+        if(up.length > 0) {
+            up.removeClass('fa fa-angle-up').addClass('fa fa-angle-down');
+        }
+        if(down.length > 0) {
+            down.removeClass('fa fa-angle-down').addClass('fa fa-angle-up');
+        }
+
+        widget.find('.panel-body').slideToggle();
+    }
 });
 
 $(function() {

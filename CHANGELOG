@@ -2,6 +2,16 @@
 Changelog
 *********
 
+0.41.0 (2015-06-24)
+===================
+
+- Updated landing page and navbar UI.
+- API: DELETE Node endpoint.
+- API: Add support for Sentry.
+- Dev: Add jshint to Travis builds.
+- Many UI bug fixes.
+
+
 0.40.0 (2015-06-22)
 ===================
 

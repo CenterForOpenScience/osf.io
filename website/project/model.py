@@ -37,6 +37,7 @@ from framework.analytics import (
 )
 from framework.sentry import log_exception
 from framework.transactions.context import TokuTransaction
+from framework.utils import iso8601format
 
 from website import language, settings, security
 from website.util import web_url_for
@@ -162,7 +163,6 @@ class Comment(GuidStoredObject):
 
     @classmethod
     def create(cls, auth, **kwargs):
-
         comment = cls(**kwargs)
         comment.save()
 
@@ -501,7 +501,7 @@ def get_pointer_parent(pointer):
     # of the pointed-at `Node`, not the parents of the `Pointer`; use the
     # back-reference syntax to find the parents of the `Pointer`.
     parent_refs = pointer.node__parent
-    assert len(parent_refs) == 1, 'Pointer must have exactly one parent'
+    assert len(parent_refs) == 1, 'Pointer must have exactly one parent.'
     return parent_refs[0]
 
 
@@ -515,12 +515,15 @@ def validate_category(value):
 
 
 def validate_title(value):
-    """Validator for Node#title. Makes sure that the value exists.
+    """Validator for Node#title. Makes sure that the value exists and is not
+    above 200 characters.
     """
     if value is None or not value.strip():
         raise ValidationValueError('Title cannot be blank.')
-    return True
 
+    if len(value) > 200:
+        raise ValidationValueError('Title cannot exceed 200 characters.')
+    return True
 
 def validate_user(value):
     if value != {}:
@@ -1065,10 +1068,10 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
 
     def save(self, *args, **kwargs):
         update_piwik = kwargs.pop('update_piwik', True)
-
         self.adjust_permissions()
 
         first_save = not self._is_loaded
+
         if first_save and self.is_dashboard:
             existing_dashboards = self.creator.node__contributed.find(
                 Q('is_dashboard', 'eq', True)
@@ -1499,8 +1502,9 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         :param str title: The new title.
         :param auth: All the auth information including user, API key.
         """
-        if title is None or not title.strip():
-            raise ValidationValueError('Title cannot be blank.')
+        #Called so validation does not have to wait until save.
+        validate_title(title)
+
         original_title = self.title
         self.title = title
         self.add_log(
@@ -2825,7 +2829,7 @@ class PrivateLink(StoredObject):
     def to_json(self):
         return {
             "id": self._id,
-            "date_created": self.date_created.strftime('%m/%d/%Y %I:%M %p UTC'),
+            "date_created": iso8601format(self.date_created),
             "key": self.key,
             "name": self.name,
             "creator": {'fullname': self.creator.fullname, 'url': self.creator.profile_url},
