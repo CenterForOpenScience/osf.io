@@ -266,8 +266,8 @@ BaseViewModel.prototype.handleError = function(response) {
     var msg = response.message_long || defaultMsg;
 
     for(var i = 0 ;i<this.contents().length; i++){
-        if(this.contents()[i]['institution']() === ""){
-            msg = "Missing required field";
+        if(this.contents()[i].institution() === ''){
+            msg = 'Missing required field';
         }
     }
 
