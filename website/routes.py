@@ -676,6 +676,25 @@ def make_url_map(app):
             json_renderer
         ),
 
+        Rule(
+            [
+                '/settings/blog/',
+                '/settings/blog/<uid>/',
+            ],
+            'get',
+            profile_views.serialize_blog,
+            json_renderer,
+        ),
+
+        Rule(
+            [
+                '/settings/blog/',
+                '/settings/blog/<uid>/',
+            ],
+            'put',
+            profile_views.unserialize_blog,
+            json_renderer
+        ),
     ], prefix='/api/v1',)
 
     ### Search ###

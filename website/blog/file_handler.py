@@ -2,28 +2,22 @@ import requests
 
 class FileHandler:
 
-    def __init__(self, pid, user, password):
+    def __init__(self, pid):
         self.pid = pid
-        self.user = user
-        self.password = password
+
 
     def get_file_list(self):
         uri = "http://localhost:8000"
         path = "/v2/nodes/" + self.pid + "/files/?provider=osfstorage&format=json"
-        return requests.get(uri+path, auth=(self.user, self.password)).json()
+        return requests.get(uri+path).json()
 
-    def get_file_url(self, file):
-        file = file.replace(".", "%2E")
-        uri = "http://staging2.osf.io"
-        path = "/api/v2/nodes/" + self.pid + "/files/?name=" + file + "&provider=osfstorage"
-        data = requests.get(uri+path, auth=(self.user, self.password)).json()
-        return data['data'][0]['links'].get('self')
 
     def read_file(self, file):
         #url = self.get_file_url(file.get('name'))
         url = file['links'].get('self')
-        response = requests.get(url, auth=(self.user, self.password))
+        response = requests.get(url)
         return response._content
+
 
     def get_posts(self, file):
         blog = self.get_file_list()['data']

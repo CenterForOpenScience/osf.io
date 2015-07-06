@@ -38,6 +38,7 @@
                 <li><a href="#social" data-toggle="tab">Social</a></li>
                 <li><a href="#jobs" data-toggle="tab">Employment</a></li>
                 <li><a href="#schools" data-toggle="tab">Education</a></li>
+                <li><a href="#blog" data-toggle="tab">Blog</a></li>
             </ul>
 
             <div class="tab-content" id="containDrag">
@@ -56,6 +57,10 @@
 
                 <div class="tab-pane" id="schools">
                     <div data-bind="template: {name: 'profileSchools'}"></div>
+                </div>
+
+                <div class="tab-pane" id="blog">
+                    <div data-bind="template: {name: 'profileBlog'}"></div>
                 </div>
 
             </div>
@@ -79,6 +84,7 @@
 <%include file="include/profile/social.mako" />
 <%include file="include/profile/jobs.mako" />
 <%include file="include/profile/schools.mako" />
+<%include file="include/profile/blog.mako" />
 </%def>
 
 <%def name="javascript_bottom()">
@@ -98,6 +104,9 @@
     };
     window.contextVars.schoolsUrls = {
         crud: '${ api_url_for('serialize_schools') }'
+    };
+    window.contextVars.blogUrls = {
+        crud: '${ api_url_for('serialize_blog') }'
     };
 </script>
 <script src=${"/static/public/js/profile-settings-page.js" | webpack_asset}></script>

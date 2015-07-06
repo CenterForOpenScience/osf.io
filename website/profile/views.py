@@ -648,6 +648,14 @@ def serialize_school(school):
     }
 
 
+@collect_auth
+def serialize_blog(auth, uid=None, **kwargs):
+    target = get_target_user(auth, uid)
+    ret = target.blog
+    append_editable(ret, auth, uid)
+    return ret
+
+
 def serialize_contents(field, func, auth, uid=None):
     target = get_target_user(auth, uid)
     ret = {
@@ -736,6 +744,32 @@ def unserialize_school(school):
         'endYear': school.get('endYear'),
         'ongoing': school.get('ongoing'),
     }
+
+@must_be_logged_in
+def unserialize_blog(auth, **kwargs):
+
+    verify_user_match(auth, **kwargs)
+
+    user = auth.user
+    json_data = escape_html(request.get_json())
+
+    json_blog_dict = json_data.get('blog_dict')
+
+    if json_blog_dict is not None:
+        for field in user.blog['blog_dict'].keys():
+            user.blog['blog_dict'][field] = json_data.get('blog_dict')[field]
+
+    for field in user.blog.keys():
+        data = json_data.get(field)
+        if data is not None:
+            user.blog[field] = json_data.get(field)
+
+    try:
+        user.save()
+    except ValidationError as exc:
+        raise HTTPError(http.BAD_REQUEST, data=dict(
+            message_long=exc.args[0]
+        ))
 
 
 def unserialize_contents(field, func, auth):

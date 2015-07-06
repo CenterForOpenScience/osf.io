@@ -1,8 +1,9 @@
 import markdown2
 from file_handler import FileHandler
+import requests
 
-def parse_blog(posts, guid, user, password):
-    blog = parse_header(posts[1], guid, user, password)
+def parse_blog(posts, guid):
+    blog = parse_header(posts[1], guid)
     prev_ = posts[0]
     next_ = posts[2]
     blog_dict = {
@@ -25,7 +26,7 @@ def parse_blog(posts, guid, user, password):
         }]
     }
     if next_ is not None:
-        next = parse_header(next_, guid, user, password)
+        next = parse_header(next_, guid)
         blog_dict['next_post'] =  {
             'title': next.get('title'),
             'content':  next.get('content'),
@@ -34,7 +35,7 @@ def parse_blog(posts, guid, user, password):
             'author': next.get('author')
         },
     if prev_ is not None:
-        prev = parse_header(prev_, guid, user, password)
+        prev = parse_header(prev_, guid)
         blog_dict['prev_post'] =  {
             'title': prev.get('title'),
             'content':  prev.get('content'),
@@ -44,14 +45,15 @@ def parse_blog(posts, guid, user, password):
         }
     return blog_dict
 
-def parse_header(blog_, guid, user, password):
-    file_handler = FileHandler(guid, user, password)
+def parse_header(blog_, guid):
+    file_handler = FileHandler(guid)
     blog = file_handler.read_file(blog_)
     blog_dict = {
         'title': '',
         'post_class': '',
         'date': '',
-        'file': ''
+        'file': '',
+        'author': ''
     }
     meta = blog[blog.find("/**")+3:blog.find("**/")]
     for line in meta.split("\n"):
@@ -60,7 +62,9 @@ def parse_header(blog_, guid, user, password):
             blog_dict[key] = value
     content = markdown2.markdown(blog[blog.find("**/")+3:])
     blog_dict['content'] = content
+    id = blog_dict['author']
     blog_dict['author'] = {
+            'id': id,
             'name': 'Jo Bloggs',
             'bio': 'test bio',
             'url': '/author/1',
@@ -70,9 +74,9 @@ def parse_header(blog_, guid, user, password):
         }
     return blog_dict
 
-def parse_posts(posts, guid, user, password):
+def parse_posts(posts, guid):
     index = []
     for post in posts:
-        post_dict = parse_header(post, guid, user, password)
+        post_dict = parse_header(post, guid)
         index.append(post_dict)
     return index
