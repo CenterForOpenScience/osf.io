@@ -48,11 +48,9 @@ def process_additional_query_params(include, obj_type):
         query = {}
         for sub_query in reversed(sub_query_list):
             query = {sub_query: query}
-        for sub_query_test in sub_query_list:
-            try:
-                allowed_keys = allowed_keys[sub_query_test]
-            except:
-                raise NotFound('{} is not a valid property of the Node object.'.format(query))
+
+        # todo process query
+
         query_params[sub_query_list[0]] = query[sub_query_list[0]]
     return query_params
 
