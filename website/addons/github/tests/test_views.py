@@ -301,7 +301,7 @@ class TestGithubViews(OsfTestCase):
             self.project.api_url_for('github_create_repo'),
             {
                 'external_account_id': self.account._id,
-                'repo_name': fake_name,
+                'folder_name': fake_name,
             },
             auth=self.user.auth,
 

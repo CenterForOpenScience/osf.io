@@ -38,5 +38,5 @@ GET_HGRID_DATA = views.hgrid.github_hgrid_data
 MAX_FILE_SIZE = 100
 
 HERE = os.path.dirname(os.path.abspath(__file__))
-NODE_SETTINGS_TEMPLATE = os.path.join(TEMPLATES_PATH, 'project', 'addon', 'flat_node_settings_default.mako');
+NODE_SETTINGS_TEMPLATE = os.path.join(TEMPLATES_PATH, 'project', 'addon', 'flat_node_settings_default.mako')
 USER_SETTINGS_TEMPLATE = None

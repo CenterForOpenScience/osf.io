@@ -14,7 +14,6 @@ from website.addons.base import exceptions
 from website.addons.base import AddonOAuthNodeSettingsBase
 from website.addons.base import AddonOAuthUserSettingsBase
 from website.addons.base import GuidFile
-from website.addons.base import AddonUserSettingsBase, AddonNodeSettingsBase
 from website.addons.base import StorageAddonBase
 
 from website.addons.github import utils
@@ -129,13 +128,8 @@ class GitHubUserSettings(AddonOAuthUserSettingsBase):
 
 class GitHubNodeSettings(StorageAddonBase, AddonOAuthNodeSettingsBase):
 
-#<<<<<<< HEAD
     oauth_provider = GitHubProvider
     serializer = GitHubSerializer
-#=======
-#class AddonGitHubNodeSettings(StorageAddonBase, AddonNodeSettingsBase):
-#>>>>>>> c59853a0281e0cf630b9438126957b9353701f2a
-
     user = fields.StringField()
     repo = fields.StringField()
     hook_id = fields.StringField()

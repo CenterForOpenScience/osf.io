@@ -41,11 +41,7 @@ from website.util import rubeus
 from website.project.views.node import _view_project, abbrev_authors, _should_show_wiki_widget
 from website.project.views.comment import serialize_comment
 from website.project.decorators import check_can_access
-<<<<<<< HEAD
-=======
-from website.addons.github.model import AddonGitHubOauthSettings
 from website.archiver import utils as archiver_utils
->>>>>>> c59853a0281e0cf630b9438126957b9353701f2a
 
 from tests.base import (
     OsfTestCase,

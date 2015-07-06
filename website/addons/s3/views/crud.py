@@ -6,18 +6,13 @@ from boto import exception
 from website.addons.s3 import utils
 from website.project.decorators import must_have_addon
 from website.project.decorators import must_have_permission
-#from website.addons.s3.api import create_folder
-from website.addons.s3 import utils
 from website.project.decorators import must_be_contributor_or_public
 
 
 @must_be_contributor_or_public
 @must_have_addon('s3', 'node')
 @must_have_permission('write')
-
 def create_bucket(node_addon, **kwargs):
-    user = kwargs['auth'].user
-    user_settings = user.get_addon('s3')
 
     bucket_name = request.json.get('folder_name', '')
 
