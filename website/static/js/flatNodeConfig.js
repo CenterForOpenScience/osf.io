@@ -65,10 +65,10 @@ var flatAddonViewModel = function(url, selector, addonName, folderType, opts) {
 
     var defaults = {
     	formatFolders : function(response) {
-    		return response
+    		return response;
     	},
     	formatFolderName : function(folderName) {
-    		return folderName
+    		return folderName;
     	},
     	fixBadName : function(newName, folderName, self) {
     		bootbox.confirm({
@@ -82,10 +82,10 @@ var flatAddonViewModel = function(url, selector, addonName, folderType, opts) {
     		});
     	},
         attemptRetrieval : function(self) {
-            return
+            return;
         },
         findFolder : function(settings) {
-            return settings.folder
+            return settings.folder;
         },
         dataGetSettings: function(data) {
             return data;
@@ -245,7 +245,7 @@ flatAddonViewModel.prototype.updateFromData = function(data) {
         self.userHasAuth(settings.userHasAuth);
         self.userIsOwner(settings.userIsOwner);
         self.ownerName(settings.owner);
-        if (typeof settings.valid_credentials != 'undefined'){
+        if (typeof settings.valid_credentials !== 'undefined'){
             self.validCredentials(settings.valid_credentials);
         }
         if (settings.urls) {
@@ -354,7 +354,7 @@ flatAddonViewModel.prototype.openCreateFolder = function(folderName) {
 			return;
 		} else {
 			var newName = self.options.formatFolderName(folderName);
-			if (newName != folderName) {
+			if (newName !== folderName) {
 				self.options.fixBadName(newName, folderName, self);
 			} else {
 				self.createFolder(folderName);
@@ -405,7 +405,7 @@ flatAddonViewModel.prototype.importAuth = function() {
 //For flat addons with multiple possible connected accounts
 flatAddonViewModel.prototype.updateAccounts = function() {
     var self = this;
-    if (typeof self.urls().accounts === "undefined") {
+    if (typeof self.urls().accounts === 'undefined') {
         return $.Deferred().resolve();
     } else {
         return self.fetchAccounts()
