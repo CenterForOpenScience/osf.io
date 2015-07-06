@@ -531,7 +531,7 @@ def make_url_map(app):
         ),
 
         Rule(
-            '/@<uid>/',
+            '/@<twitter_handle>/',
             'get',
             profile_views.redirect_to_twitter,
             OsfWebRenderer('error.mako', render_mako_string)
