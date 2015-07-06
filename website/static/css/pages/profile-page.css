@@ -39,3 +39,8 @@ table.table.table-plain th, table.table.table-plain td {
     width:70px;
     height:70px;
 }
+.component-overflow {
+    word-wrap: break-word;
+    max-width: 90%;
+    display: inline-block;
+}
