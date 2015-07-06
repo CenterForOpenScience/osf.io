@@ -437,6 +437,12 @@ class TestNodeDetail(ApiTestCase):
         assert_equal(res.status_code, 403)
 
 
+class TestNodeFeatureDetail(ApiTestCase):
+
+    def setUp(self):
+        pass
+
+
 class TestNodeUpdate(ApiTestCase):
 
     def setUp(self):
