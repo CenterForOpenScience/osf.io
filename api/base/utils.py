@@ -38,8 +38,7 @@ def process_additional_query_params(include):
         sub_query_list = raw_parameter.split('.')
         query = {}
         for sub_query in reversed(sub_query_list):
-            query = {sub_query: query}
-        query_params[sub_query_list[0]] = sub_query_list
+            query_params = {sub_query: query}
     return query_params
 
 
