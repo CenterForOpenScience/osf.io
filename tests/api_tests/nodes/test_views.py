@@ -906,6 +906,7 @@ class TestNodeDraftRegistrationList(ApiTestCase):
         assert_equal(res.status_code, 200)
         assert_equal(source['title'], self.public_project.title)
 
+    # TODO schema not persisting
     def test_return_public_registrations_logged_in(self):
         res = self.app.get(self.public_url, auth=self.basic_auth)
         source = eval(res.json['data'][0]['branched_from'])
@@ -918,6 +919,7 @@ class TestNodeDraftRegistrationList(ApiTestCase):
         res = self.app.get(self.private_url, expect_errors=True)
         assert_equal(res.status_code, 403)
 
+    # TODO schema not persisting
     def test_return_private_registrations_logged_in_contributor(self):
         res = self.app.get(self.private_url, auth=self.basic_auth)
         assert_equal(res.status_code, 200)

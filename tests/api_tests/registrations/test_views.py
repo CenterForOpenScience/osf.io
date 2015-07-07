@@ -95,7 +95,7 @@ class TestRegistrationCreate(ApiTestCase):
     def test_create_public_registration_logged_out(self):
         res = self.app.post(self.public_url, expect_errors=True)
         assert_equal(res.status_code, 403)
-
+    # TODO schema not persisting
     def test_create_public_registration_logged_in(self):
         res = self.app.post(self.public_url, auth=self.basic_auth, expect_errors=True)
         token_url = res.json['data']['links']['confirm_register']
@@ -119,6 +119,7 @@ class TestRegistrationCreate(ApiTestCase):
         res = self.app.post(self.private_url, expect_errors=True)
         assert_equal(res.status_code, 403)
 
+    # TODO: schema not persisting
     def test_create_private_registration_logged_in_contributor(self):
         res = self.app.post(self.private_url, auth=self.basic_auth, expect_errors=True)
         token_url = res.json['data']['links']['confirm_register']
