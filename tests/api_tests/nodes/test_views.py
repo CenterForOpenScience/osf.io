@@ -846,6 +846,8 @@ class TestRemoveNodeContributor(ApiTestCase):
         self.project = ProjectFactory(is_public=True, creator=self.admin)
         self.project.add_contributor(contributor=self.user, save=True)
         self.url_contributor = '/{}nodes/{}/contributors/{}/'.format(API_BASE, self.project._id, self.user._id)
+        self.url_admin = '/{}nodes/{}/contributors/{}/'.format(API_BASE, self.project._id, self.admin._id)
+
 
     def test_admin_remove_contributor(self):
         res = self.app.delete(self.url_contributor, auth=self.admin_auth)
@@ -853,16 +855,26 @@ class TestRemoveNodeContributor(ApiTestCase):
         assert_not_in(self.user, self.project.contributors)
 
     def test_admin_remove_self(self):
-        url_admin = '/{}nodes/{}/contributors/{}/'.format(API_BASE, self.project._id, self.admin._id)
-        res = self.app.delete(url_admin, auth=self.admin_auth, expect_errors=False)
+        res = self.app.delete(self.url_admin, auth=self.admin_auth, expect_errors=False)
         assert_equal(res.status_code, 204)
         assert_not_in(self.admin, self.project.contributors)
 
     def test_admin_remove_all_contributors(self):
         res = self.app.delete(self.url_contributor, auth=self.admin_auth, expect_errors=False)
         assert_equal(res.status_code, 204)
-        url_admin = '/{}nodes/{}/contributors/{}/'.format(API_BASE, self.project._id, self.admin._id)
-        res = self.app.delete(url_admin, auth=self.admin_auth, expect_errors=True)
+        res = self.app.delete(self.url_admin, auth=self.admin_auth, expect_errors=True)
+        assert_equal(res.status_code, 403)
+        assert_in(self.admin, self.project.contributors)
+
+    def test_unique_admin_remove_other_contributor(self):
+        self.project.remove_permission(self.user, 'admin')
+        res = self.app.delete(self.url_contributor, auth=self.admin_auth)
+        assert_equal(res.status_code, 204)
+        assert_not_in(self.user, self.project.contributors)
+
+    def test_unique_admin_remove_self(self):
+        self.project.remove_permission(self.user, 'admin')
+        res = self.app.delete(self.url_admin, auth=self.admin_auth, expect_errors=True)
         assert_equal(res.status_code, 403)
         assert_in(self.admin, self.project.contributors)
 
