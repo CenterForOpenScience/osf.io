@@ -23,10 +23,15 @@ class UserMixin(object):
             self.check_object_permissions(self.request, obj)
         if 'include' in self.request.query_params:
             include = self.request.query_params['include']
-            obj.additional_query_params = process_additional_query_params(include, 'user')
+            params = process_additional_query_params(include)
+            obj.additional_query_params = self.get_params(params)
         else:
             obj.additional_query_params = {}
         return obj
+
+    def get_params(self, params):
+        query = params
+        return query
 
 
 class UserList(generics.ListAPIView, ODMFilterMixin):
