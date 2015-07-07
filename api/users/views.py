@@ -21,17 +21,32 @@ class UserMixin(object):
         if check_permissions:
             # May raise a permission denied
             self.check_object_permissions(self.request, obj)
-        if 'include' in self.request.query_params:
-            include = self.request.query_params['include']
-            params = process_additional_query_params(include)
-            obj.additional_query_params = self.get_params(params)
-        else:
-            obj.additional_query_params = {}
+        obj.additional_query_params = self.get_additional_query(obj)
         return obj
 
-    def get_params(self, params):
-        query = params
+    def get_additional_query(self, obj):
+        query = {}
+        if 'include' in self.request.query_params:
+            params = self.request.query_params['include']
+            if 'nodes' in params:
+                query['nodes'] = self.get_nodes(obj)
         return query
+
+    def get_nodes(self, obj):
+        nodes = {}
+        query = (
+            Q('contributors', 'eq', obj) &
+            Q('is_folder', 'ne', True) &
+            Q('is_deleted', 'ne', True)
+        )
+        node_list = Node.find(query)
+        for node in node_list:
+            nodes[node._id] = {
+                    'title': node.title,
+                    'description': node.description,
+                    'is_public': node.is_public
+            }
+        return nodes
 
 
 class UserList(generics.ListAPIView, ODMFilterMixin):
