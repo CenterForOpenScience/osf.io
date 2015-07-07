@@ -79,7 +79,7 @@ MIDDLEWARE_CLASSES = (
     # Needs to go before CommonMiddleware, so that transactions are always started,
     # even in the event of a redirect. CommonMiddleware may cause other middlewares'
     # process_request to be skipped, e.g. when a trailing slash is omitted
-    'api.base.middleware.FlaskRequestMiddleware',
+    'api.base.middleware.DjangoGlobalMiddleware',
     'api.base.middleware.TokuTransactionsMiddleware',
 
     # 'django.contrib.sessions.middleware.SessionMiddleware',
@@ -150,7 +150,7 @@ SWAGGER_SETTINGS = {
         <h3>Filtering</h3>
         <p>Collections can be filtered by adding a query parameter in the form:</p>
         <pre>filter[&lt;fieldname&gt;]=&lt;matching information&gt;</pre>
-        <p>For example, if you were trying to find <a href="http://en.wikipedia.org/wiki/Lise_Meitner">Lise Metiner</a>:</p>
+        <p>For example, if you were trying to find <a href="http://en.wikipedia.org/wiki/Lise_Meitner">Lise Meitner</a>:</p>
         <pre>/users?filter[fullname]=meitn</pre>
         <p>You can filter on multiple fields, or the same field in different ways, by &-ing the query parameters together.</p>
         <pre>/users?filter[fullname]=lise&filter[family_name]=mei</pre>
