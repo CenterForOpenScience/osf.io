@@ -5,7 +5,7 @@ from rest_framework import generics, permissions as drf_permissions
 from rest_framework.exceptions import PermissionDenied, ValidationError
 
 from framework.auth.core import Auth
-from website.models import Node, Pointer
+from website.models import Node, Pointer, User
 from api.users.serializers import ContributorSerializer
 from api.base.filters import ODMFilterMixin, ListFilterMixin
 from api.base.utils import get_object_or_404, waterbutler_url_for
@@ -29,13 +29,19 @@ class NodeMixin(object):
         if 'include' in self.request.query_params:
             include = self.request.query_params['include']
             params = process_additional_query_params(include)
-            obj.additional_query_params = self.get_params(params)
+            obj.additional_query_params = self.get_params(params, obj)
         else:
             obj.additional_query_params = {}
         return obj
 
-    def get_params(self, params):
+    def get_params(self, params, obj):
         query = params
+        if 'contributors' in params:
+            query['contributors'] = []
+            for contributor in obj.contributors:
+                repr_contrib = {}
+                repr_contrib['username'] = contributor.username
+                query['contributors'].append(repr_contrib)
         return query
 
 
