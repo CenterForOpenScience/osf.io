@@ -1,5 +1,4 @@
 # -*- coding: utf-8 -*-
-
 import os
 import glob
 import importlib
@@ -8,6 +7,7 @@ from bson import ObjectId
 from flask import request
 from modularodm import fields
 from mako.lookup import TemplateLookup
+from time import sleep
 
 import furl
 import requests
@@ -18,12 +18,16 @@ from framework.sessions import session
 from framework.mongo import StoredObject
 from framework.routing import process_rules
 from framework.guid.model import GuidStoredObject
-from framework.exceptions import PermissionsError
+from framework.exceptions import (
+    PermissionsError,
+    HTTPError,
+)
 
 from website import settings
 from website.addons.base import exceptions
 from website.addons.base import serializer
 from website.project.model import Node
+from website.util import waterbutler_url_for
 
 from website.oauth.signals import oauth_complete
 
@@ -51,7 +55,6 @@ STATUS_EXCEPTIONS = {
     410: exceptions.FileDeletedError,
     404: exceptions.FileDoesntExistError
 }
-
 
 def _is_image(filename):
     mtype, _ = mimetypes.guess_type(filename)
@@ -233,14 +236,6 @@ class GuidFile(GuidStoredObject):
         raise NotImplementedError
 
     @property
-    def version_identifier(self):
-        raise NotImplementedError
-
-    @property
-    def unique_identifier(self):
-        raise NotImplementedError
-
-    @property
     def waterbutler_path(self):
         '''The waterbutler formatted path of the specified file.
         Must being with a /
@@ -260,18 +255,19 @@ class GuidFile(GuidStoredObject):
             raise AttributeError('No attribute name')
 
     @property
+    def size(self):
+        try:
+            return self._metadata_cache['size']
+        except (TypeError, KeyError):
+            raise AttributeError('No attribute size')
+
+    @property
     def materialized(self):
         try:
             return self._metadata_cache['materialized']
         except (TypeError, KeyError):
             # If materialized is not in _metadata_cache or metadata_cache is None
             raise AttributeError('No attribute materialized')
-
-    @property
-    def file_name(self):
-        if self.revision:
-            return '{0}_{1}.html'.format(self._id, self.revision)
-        return '{0}_{1}.html'.format(self._id, self.unique_identifier)
 
     @property
     def joinable_path(self):
@@ -304,28 +300,20 @@ class GuidFile(GuidStoredObject):
         return url.url
 
     @property
-    def mfr_download_url(self):
-        url = self._base_butler_url
-        url.path.add('file')
-
-        url.args['mode'] = 'render'
-        url.args['action'] = 'download'
-
-        if self.revision:
-            url.args[self.version_identifier] = self.revision
-
-        if request.args.get('view_only'):
-            url.args['view_only'] = request.args['view_only']
-
+    def mfr_render_url(self):
+        url = furl.furl(settings.MFR_SERVER_URL)
+        url.path.add('render')
+        url.args['url'] = self.mfr_public_download_url
         return url.url
 
     @property
-    def public_download_url(self):
+    def mfr_public_download_url(self):
         url = furl.furl(settings.DOMAIN)
 
         url.path.add(self._id + '/')
         url.args['mode'] = 'render'
         url.args['action'] = 'download'
+        url.args['accept_url'] = 'false'
 
         if self.revision:
             url.args[self.version_identifier] = self.revision
@@ -341,25 +329,6 @@ class GuidFile(GuidStoredObject):
         url.path.add('data')
 
         return url.url
-
-    @property
-    def mfr_cache_path(self):
-        return os.path.join(
-            settings.MFR_CACHE_PATH,
-            self.node._id,
-            self.provider,
-            self.file_name,
-        )
-
-    @property
-    def mfr_temp_path(self):
-        return os.path.join(
-            settings.MFR_TEMP_PATH,
-            self.node._id,
-            self.provider,
-            # Attempt to keep the original extension of the file for MFR detection
-            self.file_name + os.path.splitext(self.name)[1]
-        )
 
     @property
     def deep_url(self):
@@ -701,9 +670,7 @@ class AddonOAuthUserSettingsBase(AddonUserSettingsBase):
             if node_addon and node_addon.user_settings == self:
                 node_addon.clear_auth()
 
-
 class AddonNodeSettingsBase(AddonSettingsBase):
-
     owner = fields.ForeignField('node', backref='addons')
 
     _meta = {
@@ -778,7 +745,6 @@ class AddonNodeSettingsBase(AddonSettingsBase):
         pass
 
     def before_make_public(self, node):
-
         """
 
         :param Node node:
@@ -864,6 +830,75 @@ class AddonNodeSettingsBase(AddonSettingsBase):
         """
         pass
 
+############
+# Archiver #
+############
+class GenericRootNode(object):
+    path = '/'
+    name = ''
+
+class StorageAddonBase(object):
+    """
+    Mixin class for traversing file trees of addons with files
+    """
+
+    root_node = GenericRootNode()
+
+    @property
+    def archive_folder_name(self):
+        name = "Archive of {addon}".format(addon=self.config.full_name)
+        folder_name = getattr(self, 'folder_name', '').lstrip('/').strip()
+        if folder_name:
+            name = name + ": {folder}".format(folder=folder_name)
+        return name
+
+    def _get_fileobj_child_metadata(self, filenode, user, cookie=None, version=None):
+        kwargs = dict(
+            provider=self.config.short_name,
+            path=filenode.get('path', ''),
+            node=self.owner,
+            user=user,
+            view_only=True,
+        )
+        if cookie:
+            kwargs['cookie'] = cookie
+        if version:
+            kwargs['version'] = version
+        metadata_url = waterbutler_url_for(
+            'metadata',
+            **kwargs
+        )
+        res = requests.get(metadata_url)
+        if res.status_code != 200:
+            raise HTTPError(res.status_code, data={
+                'error': res.json(),
+            })
+        # TODO: better throttling?
+        sleep(1.0 / 5.0)
+        return res.json().get('data', [])
+
+    def _get_file_tree(self, filenode=None, user=None, cookie=None, version=None):
+        """
+        Recursively get file metadata
+        """
+        filenode = filenode or {
+            'path': '/',
+            'kind': 'folder',
+            'name': self.root_node.name,
+        }
+        if filenode.get('kind') == 'file':
+            return filenode
+        elif 'size' in filenode:
+            return filenode
+        kwargs = {
+            'version': version,
+            'cookie': cookie,
+        }
+        filenode['children'] = [
+            self._get_file_tree(child, user, cookie=cookie)
+            for child in self._get_fileobj_child_metadata(filenode, user, **kwargs)
+        ]
+        return filenode
 
 class AddonOAuthNodeSettingsBase(AddonNodeSettingsBase):
     _meta = {

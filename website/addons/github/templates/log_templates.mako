@@ -9,7 +9,7 @@ GitHub repo
 
 <script type="text/html" id="github_folder_created">
 created folder
-<span class="overflow log-folder">{{ params.path }}</span> in
+<span class="overflow log-folder">{{ stripSlash(params.path) }}</span> in
 GitHub repo
 <span data-bind="text: params.github.user"></span> /
 <span data-bind="text: params.github.repo"></span> in

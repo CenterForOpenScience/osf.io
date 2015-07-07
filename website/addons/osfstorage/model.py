@@ -15,8 +15,7 @@ from framework.mongo import StoredObject
 from framework.mongo.utils import unique_on
 from framework.analytics import get_basic_counters
 
-from website.addons.base import AddonNodeSettingsBase, GuidFile
-
+from website.addons.base import AddonNodeSettingsBase, GuidFile, StorageAddonBase
 from website.addons.osfstorage import utils
 from website.addons.osfstorage import errors
 from website.addons.osfstorage import settings
@@ -25,7 +24,7 @@ from website.addons.osfstorage import settings
 logger = logging.getLogger(__name__)
 
 
-class OsfStorageNodeSettings(AddonNodeSettingsBase):
+class OsfStorageNodeSettings(StorageAddonBase, AddonNodeSettingsBase):
     complete = True
     has_auth = True
 
@@ -35,6 +34,10 @@ class OsfStorageNodeSettings(AddonNodeSettingsBase):
     # Temporary field to mark that a record has been migrated by the
     # migrate_from_oldels scripts
     _migrated_from_old_models = fields.BooleanField(default=False)
+
+    @property
+    def folder_name(self):
+        return self.root_node.name
 
     def on_add(self):
         if self.root_node:
@@ -57,6 +60,8 @@ class OsfStorageNodeSettings(AddonNodeSettingsBase):
         clone = self.clone()
         clone.owner = fork
         clone.save()
+        if not self.root_node:
+            self.on_add()
 
         clone.root_node = utils.copy_files(self.root_node, clone)
         clone.save()
@@ -66,9 +71,7 @@ class OsfStorageNodeSettings(AddonNodeSettingsBase):
     def after_register(self, node, registration, user, save=True):
         clone = self.clone()
         clone.owner = registration
-        clone.save()
-
-        clone.root_node = utils.copy_files(self.root_node, clone)
+        clone.on_add()
         clone.save()
 
         return clone, None
@@ -80,7 +83,6 @@ class OsfStorageNodeSettings(AddonNodeSettingsBase):
             'baseUrl': self.owner.api_url_for(
                 'osfstorage_get_metadata',
                 _absolute=True,
-                _offload=True
             )
         })
 
@@ -335,7 +337,7 @@ class OsfStorageFileNode(StoredObject):
             'path': self.path,
             'name': self.name,
             'kind': self.kind,
-            'size': self.versions[0].size if self.versions else None,
+            'size': self.versions[-1].size if self.versions else None,
             'version': len(self.versions),
             'downloads': self.get_download_count(),
         }
@@ -409,12 +411,14 @@ class OsfStorageFileVersion(StoredObject):
 
     def update_metadata(self, metadata):
         self.metadata.update(metadata)
-        self.content_type = self.metadata.get('contentType', None)
-        try:
-            self.size = self.metadata['size']
+        # metadata has no defined structure so only attempt to set attributes
+        # If its are not in this callback it'll be in the next
+        self.size = self.metadata.get('size', self.size)
+        self.content_type = self.metadata.get('contentType', self.content_type)
+        if 'modified' in self.metadata:
+            # TODO handle the timezone here the user that updates the file may see an
+            # Incorrect version
             self.date_modified = parse_date(self.metadata['modified'], ignoretz=True)
-        except KeyError as err:
-            raise errors.MissingFieldError(str(err))
         self.save()
 
 

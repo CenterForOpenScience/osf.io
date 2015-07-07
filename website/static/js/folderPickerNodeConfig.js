@@ -52,6 +52,8 @@ var FolderPickerViewModel = oop.defclass({
         self.ownerName = ko.observable('');
         // whether the auth token is valid
         self.validCredentials = ko.observable(true);
+        // whether import token has been clicked
+        self.loadingImport = ko.observable(false);
         // current folder
         self.folder = ko.observable({
             name: null,
@@ -141,7 +143,17 @@ var FolderPickerViewModel = oop.defclass({
             var userHasAuth = self.userHasAuth();
             var nodeHasAuth = self.nodeHasAuth();
             var loaded = self.loadedSettings();
-            return userHasAuth && !nodeHasAuth && loaded;
+            var onclick = self.loadingImport();
+            return userHasAuth && !nodeHasAuth && loaded && !onclick;
+        });
+
+        /** Whether or not show loading icon after import button */
+        self.showLoading = ko.pureComputed(function() {
+            var userHasAuth = self.userHasAuth();
+            var nodeHasAuth = self.nodeHasAuth();
+            var loaded = self.loadedSettings();
+            var onclick = self.loadingImport();
+            return userHasAuth && !nodeHasAuth && loaded && onclick;
         });
 
         /** Whether or not to show the full settings pane. */
@@ -339,6 +351,7 @@ var FolderPickerViewModel = oop.defclass({
             callback: function(confirmed) {
                 if (confirmed) {
                     self._importAuthConfirm();
+                    self.loadingImport(true);
                 }
             }
         });
@@ -382,6 +395,7 @@ var FolderPickerViewModel = oop.defclass({
             callback: function(confirmed) {
                 if (confirmed) {
                     self._deauthorizeConfirm();
+                    self.loadingImport(false);
                 }
             }
         });
