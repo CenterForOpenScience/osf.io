@@ -100,8 +100,8 @@ var BaseComment = function() {
     self.replyNotEmpty = ko.computed(function() {
         return notEmpty(self.replyContent());
     });
-    self.saveButtonText = ko.computed(function() {
-        return self.submittingReply() ? 'Saving' : 'Save';
+    self.commentButtonText = ko.computed(function() {
+        return self.submittingReply() ? 'Commenting' : 'Comment';
     });
 
 };
