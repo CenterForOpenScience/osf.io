@@ -280,7 +280,7 @@
                 <div class="panel panel-default">
                     <span id="configureWikiAnchor" class="anchor"></span>
 
-                    <div class="panel-heading">
+                    <div class="panel-heading clearfix">
                         <h3 class="panel-title">Configure Wiki</h3>
                     </div>
                     <div class="help-block" style="padding-left: 15px">
@@ -288,7 +288,7 @@
                     </div>
                     <form id="wikiSettings" class="osf-treebeard-minimal">
                         <div id="wgrid">
-                            <div class="notifications-loading"> <i class="fa fa-spinner notifications-spin"></i> <p class="m-t-sm fg-load-message"> Loading wiki settings...  </p> </div>
+                            <div class="wiki-settings-loading"> <i class="fa fa-spinner notifications-spin"></i> <p class="m-t-sm fg-load-message"> Loading wiki settings...  </p> </div>
                         </div>
                         <div class="help-block" style="padding-left: 15px">
                             <p id="configureWikiMessage"></p>
