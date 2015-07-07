@@ -116,9 +116,11 @@ session = LocalProxy(get_session)
 # NOTE: This gets attached in website.app.init_app to ensure correct callback
 # order
 def before_request():
-    from framework.auth import authenticate
-    from framework.auth.core import User
+    from framework import sentry
     from framework.auth import cas
+    from framework.auth.core import User
+    from framework.auth import authenticate
+    from framework.routing import json_renderer
 
     # Central Authentication Server Ticket Validation and Authentication
     ticket = request.args.get('ticket')
@@ -134,10 +136,11 @@ def before_request():
         client = cas.get_client()
         try:
             access_token = cas.parse_auth_header(authorization)
-        except cas.CasTokenError as err:
+            cas_resp = client.profile(access_token)
+        except cas.CasError as err:
+            sentry.log_exception()
             # NOTE: We assume that the request is an AJAX request
-            return jsonify({'message_short': 'Invalid Bearer token', 'message_long': err.args[0]}), http.UNAUTHORIZED
-        cas_resp = client.profile(access_token)
+            return json_renderer(err)
         if cas_resp.authenticated:
             user = User.load(cas_resp.user)
             return authenticate(user, access_token=access_token, response=None)
