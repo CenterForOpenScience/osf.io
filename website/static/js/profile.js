@@ -17,7 +17,7 @@ var socialRules = {
     researcherId: /researcherid\.com\/rid\/([-\w]+)/i,
     scholar: /scholar\.google\.com\/citations\?user=(\w+)/i,
     twitter: /twitter\.com\/(\w+)/i,
-    linkedIn: /linkedin\.com\/(\d+)/i,
+    linkedIn: /.*\/?(in\/.*|profile\/.*)/i,
     impactStory: /impactstory\.org\/([\w\.-]+)/i,
     github: /github\.com\/(\w+)/i
 };
@@ -446,6 +446,7 @@ var extendLink = function(obs, $parent, label, baseUrl) {
         // Prevent click from submitting form
         event && event.preventDefault();
         if (obs()) {
+            console.log(baseUrl + ' ' + obs());
             return baseUrl ? baseUrl + obs() : obs();
         }
         return '';
