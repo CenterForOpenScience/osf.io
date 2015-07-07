@@ -64,6 +64,10 @@ def dataverse_add_user_account(auth, **kwargs):
         user.add_addon('dataverse')
     user.save()
 
+    # Need to ensure that the user has dataverse enabled at this point
+    user.get_or_add_addon('dataverse', auth=auth)
+    user.save()
+
     return {}
 
 
