@@ -150,6 +150,12 @@ class TestS3ViewsConfig(OsfTestCase):
         assert_equals(self.user_settings.access_key, None)
         assert_equals(self.user_settings.secret_key, None)
 
+        # Last log has correct action and user
+        self.project.reload()
+        last_project_log = self.project.logs[-1]
+        assert_equal(last_project_log.action, 's3_node_deauthorized')
+        assert_equal(last_project_log.user, self.user)
+
     def test_s3_remove_user_settings_none(self):
         self.user_settings.access_key = None
         self.user_settings.secret_key = None
