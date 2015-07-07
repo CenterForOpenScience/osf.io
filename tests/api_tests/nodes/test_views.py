@@ -450,7 +450,7 @@ class TestNodeIncludeQueryParams(ApiTestCase):
         self.url = '/{}nodes/{}/'.format(API_BASE, self.public_project._id)
 
     def test_get_include_key(self):
-        self.url += '?include=contributors/'
+        self.url += '?include=contributors'
         res = self.app.get(self.url)
         assert_equal(res.status_code, 200)
         additional_query_params = res.json['data']['additional_query_params']
@@ -463,7 +463,7 @@ class TestNodeIncludeQueryParams(ApiTestCase):
     #     assert_equal(res.status_code, 404)
 
     def test_get_include_keys(self):
-        self.url += '?include=contributors,pointers/'
+        self.url += '?include=contributors,pointers'
         res = self.app.get(self.url)
         assert_equal(res.status_code, 200)
         additional_query_params = res.json['data']['additional_query_params']
@@ -471,15 +471,14 @@ class TestNodeIncludeQueryParams(ApiTestCase):
         assert_in('pointers', additional_query_params)
 
     def test_get_include_relationship_key(self):
-        self.url += '?include=contributors.count/'
+        self.url += '?include=contributors.count'
         res = self.app.get(self.url)
         assert_equal(res.status_code, 200)
         additional_query_params = res.json['data']['additional_query_params']
         assert_in('count', additional_query_params['contributors'])
 
-    # todo Comment out and refactor method when depth of possible query relationships increases
     # def test_get_include_sub_relationship_key(self):
-    #     self.url += '/?include=contributors.data.username/'
+    #     self.url += '/?include=contributors.data.username'
     #     res = self.app.get(self.url)
     #     assert_equal(res.status_code, 200)
     #     additional_query_params = res.json['data']['additional_query_params']
@@ -488,12 +487,12 @@ class TestNodeIncludeQueryParams(ApiTestCase):
     #     assert_not_in('username', additional_query_params['contributors'])
 
     def test_get_invalid_include_relationship_key(self):
-        self.url += '/?include=contributors.nope/'
+        self.url += '/?include=contributors.nope'
         res = self.app.get(self.url, expect_errors=True)
         assert_equal(res.status_code, 404)
 
     def test_get_include_and_relationship_keys(self):
-        self.url += '?include=contributors.count,pointers/'
+        self.url += '?include=contributors.count,pointers'
         res = self.app.get(self.url)
         assert_equal(res.status_code, 200)
         additional_query_params = res.json['data']['additional_query_params']
