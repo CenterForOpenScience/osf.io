@@ -34,7 +34,7 @@ class CasHTTPError(CasError):
 
 class CasTokenError(CasError):
     """Raised if an invalid token is passed by the client."""
-    def __init__(self, code, message):
+    def __init__(self, message):
         super(CasTokenError, self).__init__(http.BAD_REQUEST, message)
 
 
