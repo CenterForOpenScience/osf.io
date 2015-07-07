@@ -26,23 +26,26 @@ class NodeMixin(object):
         obj = get_object_or_404(Node, self.kwargs[self.node_lookup_url_kwarg])
         # May raise a permission denied
         self.check_object_permissions(self.request, obj)
-        if 'include' in self.request.query_params:
-            include = self.request.query_params['include']
-            params = process_additional_query_params(include)
-            obj.additional_query_params = self.get_params(params, obj)
-        else:
-            obj.additional_query_params = {}
+        obj.additional_query_params = self.get_additional_query(obj)
         return obj
 
-    def get_params(self, params, obj):
-        query = params
-        if 'contributors' in params:
-            query['contributors'] = []
-            for contributor in obj.contributors:
-                repr_contrib = {}
-                repr_contrib['username'] = contributor.username
-                query['contributors'].append(repr_contrib)
+    def get_additional_query(self, obj):
+        query = {}
+        if 'include' in self.request.query_params:
+            params = self.request.query_params['include']
+            if 'contributors' in params:
+                query['contributors'] = self.get_contributors(obj)
         return query
+
+    def get_contributors(self, obj):
+        contributors = {}
+        for contributor in obj.contributors:
+            contributors[contributor._id] = {
+                    'username': contributor.username,
+                    'bibliographic': obj.get_visible(contributor),
+                    'permissions': obj.get_permissions(contributor)
+            }
+        return contributors
 
 
 class NodeList(generics.ListCreateAPIView, ODMFilterMixin):
