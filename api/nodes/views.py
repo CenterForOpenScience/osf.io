@@ -188,11 +188,9 @@ class NodeDraftRegistrationsList(generics.ListCreateAPIView, NodeMixin):
         else:
             auth = Auth(user)
         drafts = DraftRegistration.find(
-            Q('branched_from', 'eq', node)
-              )
+            Q('branched_from', 'eq', node))
         draft_registrations = [reg for reg in drafts if reg.can_view(auth)]
         return draft_registrations
-
 
     # overrides ListCreateAPIView
     def perform_create(self, serializer):

@@ -57,7 +57,6 @@ class RegistrationCreate(generics.CreateAPIView, DraftRegistrationMixin):
 
     serializer_class = RegistrationCreateSerializer
 
-
     def create(self, request, registration_id):
         user = request.user
         draft = self.get_draft()
@@ -77,8 +76,3 @@ class RegistrationCreateWithToken(generics.CreateAPIView, NodeMixin):
     )
 
     serializer_class = RegistrationCreateSerializerWithToken
-
-
-
-
-

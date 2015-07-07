@@ -651,9 +651,9 @@ def node_register_template_page_post(auth, node, **kwargs):
     push_status_message('Files are being copied to the newly created registration, and you will receive an email notification containing a link to the registration when the copying is finished.')
 
     return {
-               'status': 'success',
-               'result': register.url,
-           }, http.CREATED
+        'status': 'success',
+        'result': register.url,
+    }, http.CREATED
 
 
 @must_be_valid_project
@@ -672,9 +672,9 @@ def node_draft_template_page_post(auth, node, **kwargs):
     draft = node.register_node(auth)
 
     return {
-               'status': 'success',
-               'result': draft.url,
-           }, http.CREATED
+        'status': 'success',
+        'result': draft.url,
+    }, http.CREATED
 
 
 def _build_ezid_metadata(node):

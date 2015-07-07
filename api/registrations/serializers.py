@@ -12,7 +12,8 @@ from website.project.model import DraftRegistration, Node
 class RegistrationCreateSerializer(JSONAPISerializer):
     id = ser.CharField(read_only=True, source='_id')
     class Meta:
-        type_='registrations'
+        type_ = 'registrations'
+
 
 class RegistrationCreateSerializerWithToken(NodeSerializer, DraftRegistrationMixin):
     id = ser.CharField(read_only=True, source='_id')

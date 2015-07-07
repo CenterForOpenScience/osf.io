@@ -19,7 +19,6 @@ class DraftRegistrationMixin(object):
     serializer_class = DraftRegSerializer
     draft_lookup_url_kwarg = 'registration_id'
 
-
     def get_draft(self):
         obj = get_object_or_404(DraftRegistration, self.kwargs[self.draft_lookup_url_kwarg])
         # May raise a permission denied
@@ -41,6 +40,7 @@ class DraftRegistrationList(generics.ListAPIView, ODMFilterMixin):
         if user.is_anonymous():
             raise NotAuthenticated("Must be logged in to view draft registrations")
         return DraftRegistration.find(Q('initiator', 'eq', user))
+
 
 class DraftRegistrationDetail(generics.RetrieveUpdateDestroyAPIView, DraftRegistrationMixin):
     """
@@ -72,4 +72,3 @@ class DraftRegistrationDetail(generics.RetrieveUpdateDestroyAPIView, DraftRegist
         draft = self.get_object()
         draft.remove_node(auth=auth)
         draft.save()
-

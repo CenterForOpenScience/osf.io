@@ -11,7 +11,7 @@ from rest_framework import serializers as ser
 class DraftRegSerializer(JSONAPISerializer):
     schema_choices = [schema['name'] for schema in OSF_META_SCHEMAS]
     id = ser.CharField(read_only=True, source='_id')
-    branched_from = ser.CharField(read_only = True, help_text="Source node")
+    branched_from = ser.CharField(read_only=True, help_text="Source node")
     initiator = ser.CharField(read_only=True)
     registration_schema = ser.CharField(read_only=True)
     registration_form = ser.ChoiceField(choices=schema_choices, required=True, write_only=True, help_text="Please select a registration form to initiate registration.")
@@ -22,8 +22,7 @@ class DraftRegSerializer(JSONAPISerializer):
     completion = ser.CharField(read_only=True)
 
     class Meta:
-        type_='draft-registrations'
-
+        type_ = 'draft-registrations'
 
     def update(self, instance, validated_data):
         """Update instance with the validated data. Requires

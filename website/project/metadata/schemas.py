@@ -17,7 +17,7 @@ def ensure_schema_structure(schema):
     schema['title'] = ' '.join(schema['name'].split('_'))
     # TODO better versioning
     schema['version'] = schema.get('version', 1)
-    
+
     for question in schema['pages']:
         if 'comments' not in question:
             question['comments'] = []

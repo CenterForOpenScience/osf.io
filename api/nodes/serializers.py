@@ -1,20 +1,16 @@
-import json
 import datetime
 
 from framework.auth.core import Auth
 from rest_framework import exceptions
 from rest_framework import serializers as ser
 
+import httplib as http
 from modularodm import Q
 from website.project.views import drafts
-from website.project.views import register
 from framework.exceptions import HTTPError
-from website.project.model import MetaSchema
 from website.models import Node, DraftRegistration
-from website.project.metadata.schemas import OSF_META_SCHEMAS
 from api.draft_registrations.serializers import DraftRegSerializer
 from api.base.serializers import JSONAPISerializer, LinksField, Link, WaterbutlerLink
-
 
 
 class NodeSerializer(JSONAPISerializer):
@@ -150,9 +146,9 @@ class DraftRegistrationSerializer(DraftRegSerializer):
 
         schema_version = int(validated_data.get('schema_version', 1))
         meta_schema = drafts.get_schema_or_fail(
-                Q('name', 'eq', schema_name) &
-                Q('schema_version', 'eq',  schema_version)
-            )
+            Q('name', 'eq', schema_name) &
+            Q('schema_version', 'eq', schema_version)
+        )
         questions = validated_data.get('registration_metadata', {})
         node = self.context['view'].get_node()
         user = request.user
