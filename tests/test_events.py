@@ -92,8 +92,8 @@ class TestAddonFileMoved(OsfTestCase):
         self.project = factories.ProjectFactory(creator=self.user_1)
         self.private_node = factories.NodeFactory(parent=self.project, is_public=False, creator=self.user_1)
         # Payload
-        file_moved_payload = file_move_payload(self.project, self.private_node)
-        self.event = Event.parse_event(self.user_2, self.project, 'addon_file_moved', payload=file_moved_payload)
+        file_moved_payload = file_move_payload(self.private_node, self.project)
+        self.event = Event.parse_event(self.user_2, self.private_node, 'addon_file_moved', payload=file_moved_payload)
         # Subscriptions
         self.sub = factories.NotificationSubscriptionFactory(
             _id=self.project._id + '_file_updated',
@@ -102,6 +102,12 @@ class TestAddonFileMoved(OsfTestCase):
         )
         self.sub.email_transactional.extend([self.user_1])
         self.sub.save()
+        self.private_sub = factories.NotificationSubscriptionFactory(
+            _id=self.private_node._id + '_file_updated',
+            owner=self.private_node,
+            event_name='file_updated'
+        )
+        self.private_sub.save()
         self.file_sub = factories.NotificationSubscriptionFactory(
             _id=self.project._id + '_' + self.event.source_guid._id + '_file_updated',
             owner=self.project,
@@ -115,6 +121,30 @@ class TestAddonFileMoved(OsfTestCase):
         self.event.perform()
         assert_false(mock_warn.called)  # No users subscribed.
         assert_true(mock_notify.called)
+
+    def test_warn_one_user(self):
+        self.project.add_contributor(self.user_3, permissions=['write', 'read'], auth=self.auth)
+        self.project.save()
+        self.private_node.add_contributor(self.user_3, permissions=['write', 'read'], auth=self.auth)
+        self.private_node.save()
+        self.sub.email_digest.append(self.user_3)
+        self.sub.save()
+        self.private_sub.none.append(self.user_3)
+        self.private_sub.save()
+        moved, warn, removed = self.event.categorize_users()
+        print warn
+
+    def test_dont_warn_same_user(self):
+        self.project.add_contributor(self.user_3, permissions=['write', 'read'], auth=self.auth)
+        self.project.save()
+        self.private_node.add_contributor(self.user_3, permissions=['write', 'read'], auth=self.auth)
+        self.private_node.save()
+        self.sub.email_digest.append(self.user_3)
+        self.sub.save()
+        self.private_sub.email_transactional.append(self.user_3)
+        self.private_sub.save()
+        moved, warn, removed = self.event.categorize_users()
+        print warn
 
     def test_remove_one_user_file(self):
         pass

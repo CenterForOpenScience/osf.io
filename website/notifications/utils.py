@@ -68,31 +68,47 @@ def remove_subscription(node):
         parent.save()
 
 
+def separate_users(node, user_ids):
+    """
+    Separates users into ones with permissions and ones without given a list.
+    :param node: Node to separate based on permissions
+    :param user_ids: List of ids, will also take and return User instances
+    :return: list of subbed, list of removed user ids
+    """
+    removed = []
+    subbed = []
+    for user_id in user_ids:
+        if not isinstance(user_id, User):
+            user = User.load(user_id)
+        else:
+            user = user_id
+        if node.has_permission(user, 'read'):
+            subbed.append(user_id)
+        else:
+            removed.append(user_id)
+    return subbed, removed
+
+
 def move_subscription(old_event_sub, old_node, new_event_sub, new_node):
+    removed_users = {'email_transactional': [], 'email_digest': [], 'none': []}
     if old_event_sub == new_event_sub or old_node == new_node:
-        return {}
+        return removed_users
     old_sub = NotificationSubscription.load(to_subscription_key(old_node._id, old_event_sub))
     old_node_sub = NotificationSubscription.load(to_subscription_key(old_node._id, '_'.join(old_event_sub.split('_')[-2:])))
     if not old_sub and not old_node_sub:
-        return {}
+        return removed_users
     elif old_sub:
         old_sub.update_fields(_id=to_subscription_key(new_node._id, new_event_sub), event_name=new_event_sub,
                               owner=new_node)
+    new_sub = old_sub
     # Remove users that don't have permission on the new node. Return user ids to send e-mail.
-    removed_users = {}
     for notification_type in constants.NOTIFICATION_TYPES:
-        if notification_type == 'none':
-            continue
-        removed_users[notification_type] = []
-        users = getattr(old_sub, notification_type, []) + getattr(old_node_sub, notification_type, [])
-        for user in users:
-            if not isinstance(user, User):
-                user = User.load(user)
-            if not new_node.has_permission(user, 'read'):
-                removed_users[notification_type].append(user._id)
-                if old_sub and user._id in getattr(old_sub, notification_type):
-                    old_sub.remove_user_from_subscription(user)
-                    old_sub.save()
+        users = getattr(new_sub, notification_type, []) + getattr(old_node_sub, notification_type, [])
+        subbed, removed_users[notification_type] = separate_users(new_node, users)
+        if new_sub:
+            for user_id in removed_users[notification_type]:
+                user = User.load(user_id)
+                new_sub.remove_user_from_subscription(user)
     return removed_users
 
 

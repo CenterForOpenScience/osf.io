@@ -7,9 +7,8 @@ from six import add_metaclass
 
 import website.notifications.emails as emails
 from website.notifications.constants import NOTIFICATION_TYPES
-from website.notifications.utils import move_subscription
+from website.notifications.utils import move_subscription, separate_users
 from website.models import Node
-from website.addons.base import GuidFile
 
 
 class _EventMeta(type):
@@ -270,8 +269,6 @@ class ComplexFileEvent(FileEvent):
             self._guid, created = addon.find_or_create_file_guid(path)
             self.source_node = Node.load(self.payload['source']['node']['_id'])
             addon = self.source_node.get_addon(self.payload['source']['provider'])
-            path = self.payload['source']['path']
-            path = path if path.startswith('/') else '/' + path
             self._source_guid, created = addon.find_or_create_file_guid(path)
 
 
@@ -287,22 +284,20 @@ class AddonFileMoved(ComplexFileEvent):
             rm_users = move_subscription(self.source_event, self.source_node,
                                          self.event, self.node)
             source_node_subs = emails.compile_subscriptions(self.source_node, 'file_updated')
-            new_node_subs = emails.compile_subscriptions(self.node, 'file_updated')
+            new_subs = emails.compile_subscriptions(self.node, 'file_updated', self.event)
             warn = {}
             for notifications in NOTIFICATION_TYPES:
                 if notifications == 'none':
                     continue
-                warn[notifications] = set(source_node_subs[notifications]).difference(set(new_node_subs[notifications]))
+                warn[notifications] = set(source_node_subs[notifications]).difference(set(new_subs[notifications]))
                 for nt in NOTIFICATION_TYPES:
                     if nt == 'none' or nt not in rm_users or len(rm_users[nt]) == 0:
                         continue
                     warn[notifications] = set(warn[notifications]).difference(set(rm_users[nt]))
+                    subbed, removed = separate_users(self.node, warn[notifications])
 
-            # warn = set(source_node_subs).diff(set(new_node_subs))
-            # for user in warn:
-            #  rm_users.append if user doesn't have permissions
-            # warn = new_file_sub.diff(set(warn))
-            # new_node_subs = new_node_subs.diff(set(new_file_sub))
+            # warn = new_file_sub.diff(set(warn)) # probably don't need.
+            # new_subs = new_subs.diff(set(new_file_sub))
             # Make temporary subs for
             #  Destination
             #  warn
@@ -315,6 +310,35 @@ class AddonFileMoved(ComplexFileEvent):
                                                      timestamp=self.timestamp, gravatar_url=self.gravatar_url,
                                                      message=message, url=self.source_url)
         super(AddonFileMoved, self).perform()
+
+    def categorize_users(self):
+        rm_users = move_subscription(self.source_event, self.source_node,
+                                     self.event, self.node)
+        source_node_subs = emails.compile_subscriptions(self.source_node, 'file_updated')
+        new_subs = emails.compile_subscriptions(self.node, 'file_updated', self.event)
+        warn = {}
+        for notifications in NOTIFICATION_TYPES:
+            if notifications == 'none':
+                continue
+            warn[notifications] = set(source_node_subs[notifications]).difference(set(new_subs[notifications]))
+            for nt in NOTIFICATION_TYPES:
+                if nt == 'none' or nt == notifications:
+                    continue
+                warn[notifications] = set(warn[notifications]).difference(set(new_subs[notifications]))
+            subbed, removed = separate_users(self.node, warn[notifications])
+            warn[notifications] = subbed
+            rm_users[notifications].extend(removed)
+            rm_users[notifications] = list(set(rm_users[notifications]))
+        just_move = None
+        return just_move, warn, rm_users
+
+
+                # warn = new_file_sub.diff(set(warn)) # probably don't need.
+                # new_subs = new_subs.diff(set(new_file_sub))
+                # Make temporary subs for
+                #  Destination
+                #  warn
+                #  rm_users
 
     def form_url(self):
         """Set source url for subscribers removed from subscription to files page view"""

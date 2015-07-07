@@ -107,6 +107,7 @@ def notify(uid, event, user, node, timestamp, **context):
     return sent_users
 
 
+# TODO: Remove
 def warn_users_removed_from_subscription(recipients, event, user, node, timestamp, **context):
     """
     Notify recipients that a subscription of theirs has been cancelled due to an action
@@ -154,18 +155,14 @@ def compile_subscriptions(node, event_type, event=None, level=0):
     else:
         parent_subscriptions = check_node(None, event_type)
     for notification_type in parent_subscriptions:
-        parent_subscriptions[notification_type].extend(subscriptions[notification_type])
+        p_sub_n = parent_subscriptions[notification_type]
+        p_sub_n.extend(subscriptions[notification_type])
         for nt in subscriptions:
             if notification_type != nt:
-                parent_subscriptions[notification_type] = \
-                    list(set(parent_subscriptions[notification_type]).difference(set(subscriptions[nt])))
+                p_sub_n = list(set(p_sub_n).difference(set(subscriptions[nt])))
         if level == 0:
-            permission = []
-            for user_id in parent_subscriptions[notification_type]:
-                user = website_models.User.load(user_id)
-                if node.has_permission(user, 'read'):
-                    permission.append(user_id)
-            parent_subscriptions[notification_type] = permission
+            p_sub_n, removed = utils.separate_users(node, p_sub_n)
+        parent_subscriptions[notification_type] = p_sub_n
     return parent_subscriptions
 
 
