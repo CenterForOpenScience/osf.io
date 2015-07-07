@@ -16,7 +16,6 @@ ko.bindingHandlers.osfUploader = {
             node.urls.api + 'files/grid/',
             {
                 onselectrow: function(item) {
-                    console.log(item);
                     self.preview_value = item.data;
                     this.path = item.data.path;
                     self.files = item.data;

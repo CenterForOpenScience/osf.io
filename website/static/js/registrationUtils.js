@@ -120,7 +120,6 @@ var Question = function(data, id) {
     });
 
     self.isComplete = ko.computed(function() {
-        console.log(self);
         return !isBlank(self.value());
     });
 
