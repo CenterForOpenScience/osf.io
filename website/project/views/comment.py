@@ -24,7 +24,6 @@ from website.addons.figshare.exceptions import FigshareIsDraftError
 from website.profile.utils import serialize_user
 
 
-
 @must_be_contributor_or_public
 def view_comments_project(auth, **kwargs):
     """

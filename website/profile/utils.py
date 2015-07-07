@@ -54,7 +54,7 @@ def serialize_user(user, node=None, admin=False, full=False, n_comments=None, an
     if node is not None:
         is_contributor = node.is_contributor(user)
         ret.update({
-                'isContributor': is_contributor
+            'isContributor': is_contributor
         })
         if is_contributor:
             if admin:

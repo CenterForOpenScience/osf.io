@@ -439,8 +439,8 @@ def addon_view_file(auth, node, node_addon, guid_file, extras):
         'file_name': getattr(guid_file, 'name', os.path.split(guid_file.waterbutler_path)[1]),
         'materialized_path': getattr(guid_file, 'materialized', guid_file.waterbutler_path),
         'file_id': guid_file._id,
-         # Note: Comments are allowed for all addons that support waterbutler
-         'allow_comment': True
+        # Note: Comments are allowed for all addons that support waterbutler
+        'allow_comment': True
     })
 
     ret.update(rubeus.collect_addon_assets(node))
