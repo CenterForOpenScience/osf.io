@@ -1,6 +1,6 @@
 <div class="col-md-12 col-sm-12">
     <span id="box" class="anchor"></span>
-    <h4>Box</h4>
+    <h4 class="m-t-lg f-w-lg">Box</h4>
     <p><a href="http://box.com/">Box</a> is an online file storage program. After linking your OSF project to Box, you can
         add files to your Box folder and those files can be accessed via the OSF. Likewise, files added to the Box folder
         in your OSF account will update your Box account with that file.</p>

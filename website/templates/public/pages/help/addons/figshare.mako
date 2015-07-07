@@ -1,6 +1,6 @@
 <div class="col-md-12 col-sm-12">
     <span id="figshare" class="anchor"></span>
-    <h4>Figshare</h4>
+    <h4 class="m-t-lg f-w-lg">Figshare</h4>
     <p><a href="http://figshare.com/">figshare</a> is an online digital repository that allows researchers to preserve and
         share their research outputs.</p>
     <p>Currently, the OSF only supports linking figshare projects to an OSF project-not individual files or articles.</p>

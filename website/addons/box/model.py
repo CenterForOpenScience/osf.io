@@ -6,7 +6,8 @@ from datetime import datetime
 import furl
 import pymongo
 import requests
-from modularodm import fields, StoredObject
+from modularodm import fields
+from framework.mongo import StoredObject
 from box import CredentialsV2, refresh_v2_token, BoxClientException
 
 from framework.auth import Auth
@@ -14,6 +15,7 @@ from framework.exceptions import HTTPError
 
 from website.addons.base import exceptions
 from website.addons.base import AddonUserSettingsBase, AddonNodeSettingsBase, GuidFile
+from website.addons.base import StorageAddonBase
 
 from website.addons.box import settings
 from website.addons.box.utils import BoxNodeLogger
@@ -219,7 +221,7 @@ class BoxUserSettings(AddonUserSettingsBase):
         return u'<BoxUserSettings(user={self.owner.username!r})>'.format(self=self)
 
 
-class BoxNodeSettings(AddonNodeSettingsBase):
+class BoxNodeSettings(StorageAddonBase, AddonNodeSettingsBase):
 
     user_settings = fields.ForeignField(
         'boxusersettings', backref='authorized'

@@ -38,9 +38,9 @@ var entry = {
     'sharing-page': staticPath('js/pages/sharing-page.js'),
     'conference-page': staticPath('js/pages/conference-page.js'),
     'view-file-tree-page': staticPath('js/pages/view-file-tree-page.js'),
-    'new-folder-page': staticPath('js/pages/new-folder-page.js'),
     'project-settings-page': staticPath('js/pages/project-settings-page.js'),
     'search-page': staticPath('js/pages/search-page.js'),
+    'registration-retraction-page': staticPath('js/pages/registration-retraction-page.js'),
     'share-search-page': staticPath('js/pages/share-search-page.js'),
     'profile-settings-addons-page': staticPath('js/pages/profile-settings-addons-page.js'),
     'twofactor-page': staticPath('js/pages/twofactor-page.js'),
@@ -90,7 +90,7 @@ addons.addons.forEach(function(addonName) {
 });
 
 var resolve = {
-    extensions: ['', '.es6.js', '.js'],
+    extensions: ['', '.es6.js', '.js', '.min.js'],
     root: root,
     // Look for required files in bower and npm directories
     modulesDirectories: ['./website/static/vendor/bower_components', 'node_modules'],
@@ -115,9 +115,13 @@ var resolve = {
         'pagedown-ace-editor': addonsPath('wiki/static/pagedown-ace/Markdown.Editor.js'),
         'wikiPage': addonsPath('wiki/static/wikiPage.js'),
         'highlight-css': nodePath('highlight.js/styles/default.css'),
+        'pikaday-css': nodePath('pikaday/css/pikaday.css'),
         // Also alias some internal libraries for easy access
         'addons': path.join(__dirname, 'website', 'addons'),
-        'tests': staticPath('js/tests')
+        'tests': staticPath('js/tests'),
+        // GASP Items not defined as main in its package.json
+        'TweenLite' : nodePath('gsap/src/minified/TweenLite.min.js'),
+        'EasePack' : nodePath('gsap/src/minified/easing/EasePack.min.js')
     }
 };
 

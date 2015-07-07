@@ -11,19 +11,19 @@ settings_routes = {
                 '/project/<pid>/node/<nid>/s3/newbucket/',
             ],
             'post',
-            views.crud.create_new_bucket,
+            views.crud.create_bucket,
             json_renderer
         ),
         Rule(
             '/settings/s3/',
             'post',
-            views.config.s3_authorize_user,
+            views.config.s3_post_user_settings,
             json_renderer
         ),
         Rule(
             '/settings/s3/',
             'delete',
-            views.config.s3_remove_user_settings,
+            views.config.s3_delete_user_settings,
             json_renderer,
         ),
         Rule(
@@ -32,7 +32,7 @@ settings_routes = {
                 '/project/<pid>/node/<nid>/s3/settings/',
             ],
             'post',
-            views.config.s3_node_settings,
+            views.config.s3_post_node_settings,
             json_renderer,
         ),
         Rule(
@@ -52,7 +52,7 @@ settings_routes = {
                 '/project/<pid>/node/<nid>/s3/config/',
             ],
             'delete',
-            views.config.s3_remove_node_settings,
+            views.config.s3_delete_node_settings,
             json_renderer,
         ),
         Rule(
@@ -79,7 +79,7 @@ settings_routes = {
                 '/project/<pid>/node/<nid>/s3/buckets/',
             ],
             'get',
-            views.config.s3_bucket_list,
+            views.config.s3_get_bucket_list,
             json_renderer,
         ),
     ],

@@ -335,13 +335,6 @@ class TestRegistrations(OsfTestCase):
         subnav = res.html.select('#projectSubnav')[0]
         assert_not_in('Registrations', subnav.text)
 
-    def test_settings_nav_not_seen(self):
-        # Goes to project's page
-        res = self.app.get(self.project.url, auth=self.auth).maybe_follow()
-        # Settings is not in the project navigation bar
-        subnav = res.html.select('#projectSubnav')[0]
-        assert_not_in('Settings', subnav.text)
-
 
 class TestComponents(OsfTestCase):
 

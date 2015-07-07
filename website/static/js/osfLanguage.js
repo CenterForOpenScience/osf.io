@@ -1,12 +1,20 @@
+var SUPPORT_EMAIL = 'support@osf.io';
+
 module.exports = {
     // TODO
     makePublic: null,
     makePrivate: null,
-
+    registrations: {
+        registrationFailed: 'Registration failed. If this problem persists, please contact ' + SUPPORT_EMAIL + '.',
+        invalidEmbargoTitle: 'Invalid embargo end date',
+        invalidEmbargoMessage: 'Please choose a date more than two days, but less than four years, from today.',
+        registerConfirm: 'Are you sure you want to register this project?',
+        registerSkipAddons: 'If you choose to continue with the registration at this time we will exclude the contents of any addons that are not copyable. These files will not appear in the final registration.'
+    },
     Addons: {
         dataverse: {
             userSettingsError: 'Could not retrieve settings. Please refresh the page or ' +
-                'contact <a href="mailto: support@osf.io">support@osf.io</a> if the ' +
+                'contact <a href="mailto: ' + SUPPORT_EMAIL + '">' + SUPPORT_EMAIL + '</a> if the ' +
                 'problem persists.',
             confirmUserDeauth: 'Are you sure you want to unlink your Dataverse ' +
                 'account? This will revoke access to Dataverse for all ' +
