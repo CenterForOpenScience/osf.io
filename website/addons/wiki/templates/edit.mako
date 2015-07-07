@@ -321,6 +321,10 @@
   </div>
 </div>
 
+<%def name="stylesheets()">
+    <link rel="stylesheet" href="/static/css/pages/wiki-page.css">
+</%def>
+
 <%def name="javascript_bottom()">
 <% import json %>
 ${parent.javascript_bottom()}

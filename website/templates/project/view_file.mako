@@ -184,6 +184,9 @@
     </script>
 
     <link href="/static/css/pages/file-view-page.css" rel="stylesheet">
+##  We need wiki css here because it uses the same Editor syntax. Need to refactor
+    <link href="/static/css/pages/wiki-page.css" rel="stylesheet">
+
     <link href="${urls['mfr']}/static/css/mfr.css" media="all" rel="stylesheet" />
     <script src="${urls['mfr']}/static/js/mfr.js"></script>
 
