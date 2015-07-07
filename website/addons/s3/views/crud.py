@@ -12,8 +12,9 @@ from website.project.decorators import must_be_contributor_or_public
 @must_be_contributor_or_public
 @must_have_addon('s3', 'node')
 @must_have_permission('write')
-def create_bucket(auth, node_addon, **kwargs):
-    bucket_name = request.json.get('bucket_name', '')
+def create_bucket(node_addon, **kwargs):
+
+    bucket_name = request.json.get('folder_name', '')
 
     if not utils.validate_bucket_name(bucket_name):
         return {

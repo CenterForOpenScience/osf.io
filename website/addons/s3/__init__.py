@@ -1,10 +1,15 @@
 import os
 
+from website.settings import TEMPLATES_PATH
 from . import model
 from . import routes
 from . import views
 
-MODELS = [model.AddonS3UserSettings, model.AddonS3NodeSettings, model.S3GuidFile]
+MODELS = [
+    model.AddonS3UserSettings,
+    model.AddonS3NodeSettings,
+    model.S3GuidFile,
+]
 USER_SETTINGS_MODEL = model.AddonS3UserSettings
 NODE_SETTINGS_MODEL = model.AddonS3NodeSettings
 
@@ -37,5 +42,5 @@ GET_HGRID_DATA = views.hgrid.s3_hgrid_data
 MAX_FILE_SIZE = 128  # MB
 
 HERE = os.path.dirname(os.path.abspath(__file__))
-NODE_SETTINGS_TEMPLATE = os.path.join(HERE, 'templates', 's3_node_settings.mako')
+NODE_SETTINGS_TEMPLATE = os.path.join(TEMPLATES_PATH, 'project', 'addon', 'flat_node_settings_default.mako')
 USER_SETTINGS_TEMPLATE = os.path.join(HERE, 'templates', 's3_user_settings.mako')

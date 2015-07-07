@@ -22,11 +22,13 @@ from website.addons.base import exceptions, GuidFile
 from website.project import new_private_link
 from website.project.views.node import _view_project as serialize_node
 from website.addons.base import AddonConfig, AddonNodeSettingsBase, views
-from website.addons.github.model import AddonGitHubOauthSettings
+from website.addons.github.tests.factories import (
+    GitHubAccountFactory,
+)
+
 from tests.base import OsfTestCase
 from tests.factories import AuthUserFactory, ProjectFactory
 from website.addons.github.exceptions import ApiError
-
 
 class DummyGuidFile(GuidFile):
 
@@ -101,28 +103,26 @@ class TestAddonAuth(OsfTestCase):
         super(TestAddonAuth, self).setUp()
         self.flask_app = SetEnvironMiddleware(self.app.app, REMOTE_ADDR='127.0.0.1')
         self.test_app = webtest.TestApp(self.flask_app)
-        self.user = AuthUserFactory()
-        self.auth_obj = Auth(user=self.user)
+        self.flask_app = SetEnvironMiddleware(self.app.app, REMOTE_ADDR='127.0.0.1')
+        self.test_app = webtest.TestApp(self.flask_app)
+        self.account = GitHubAccountFactory()
+        self.user = AuthUserFactory(external_accounts=[self.account])
+        self.user_settings = self.user.get_or_add_addon('github')
         self.node = ProjectFactory(creator=self.user)
+        self.node.add_addon('github', Auth(self.user))
+
+        self.node_addon = self.node.get_addon('github')
+        self.node_addon.user_settings = self.user_settings
+        self.node_addon.set_auth(external_account=self.account, user=self.user)
+        self.node_addon.user = 'Queen'
+        self.node_addon.repo = 'Sheer-Heart-Attack'
+        self.node_addon.save()
+        self.user_settings.save()
+        self.app.authenticate(*self.user.auth)
         self.session = Session(data={'auth_user_id': self.user._id})
         self.session.save()
         self.cookie = itsdangerous.Signer(settings.SECRET_KEY).sign(self.session._id)
-        self.configure_addon()
 
-    def configure_addon(self):
-        self.user.add_addon('github')
-        self.user_addon = self.user.get_addon('github')
-        self.oauth_settings = AddonGitHubOauthSettings(github_user_id='john')
-        self.oauth_settings.save()
-        self.user_addon.oauth_settings = self.oauth_settings
-        self.user_addon.oauth_access_token = 'secret'
-        self.user_addon.save()
-        self.node.add_addon('github', self.auth_obj)
-        self.node_addon = self.node.get_addon('github')
-        self.node_addon.user = 'john'
-        self.node_addon.repo = 'youre-my-best-friend'
-        self.node_addon.user_settings = self.user_addon
-        self.node_addon.save()
 
     def build_url(self, **kwargs):
         options = dict(
@@ -167,7 +167,6 @@ class TestAddonAuth(OsfTestCase):
         res = test_app.get(url, expect_errors=True)
         assert_equal(res.status_code, 403)
 
-
 class TestAddonLogs(OsfTestCase):
 
     def setUp(self):
@@ -185,9 +184,6 @@ class TestAddonLogs(OsfTestCase):
     def configure_addon(self):
         self.user.add_addon('github')
         self.user_addon = self.user.get_addon('github')
-        self.oauth_settings = AddonGitHubOauthSettings(github_user_id='john')
-        self.oauth_settings.save()
-        self.user_addon.oauth_settings = self.oauth_settings
         self.user_addon.oauth_access_token = 'secret'
         self.user_addon.save()
         self.node.add_addon('github', self.auth_obj)
@@ -367,31 +363,27 @@ class TestAddonFileViews(OsfTestCase):
 
     def setUp(self):
         super(TestAddonFileViews, self).setUp()
-        self.user = AuthUserFactory()
+        self.flask_app = SetEnvironMiddleware(self.app.app, REMOTE_ADDR='127.0.0.1')
+        self.test_app = webtest.TestApp(self.flask_app)
+        self.account = GitHubAccountFactory()
+        self.user = AuthUserFactory(external_accounts=[self.account])
+        self.user_settings = self.user.get_or_add_addon('github')
         self.project = ProjectFactory(creator=self.user)
+        self.project.add_addon('github', Auth(self.user))
 
-        self.user.add_addon('github')
-        self.project.add_addon('github', auth=Auth(self.user))
-
-        self.user_addon = self.user.get_addon('github')
         self.node_addon = self.project.get_addon('github')
-        self.oauth = AddonGitHubOauthSettings(
-            github_user_id='denbarell',
-            oauth_access_token='Truthy'
-        )
-
-        self.oauth.save()
-
-        self.user_addon.oauth_settings = self.oauth
-        self.user_addon.save()
-
-        self.node_addon.user_settings = self.user_addon
-        self.node_addon.repo = 'Truth'
-        self.node_addon.user = 'E'
+        self.node_addon.user_settings = self.user_settings
+        self.node_addon.set_auth(external_account=self.account, user=self.user)
+        self.node_addon.user = 'Queen'
+        self.node_addon.repo = 'Sheer-Heart-Attack'
         self.node_addon.save()
+        self.user_settings.save()
 
-        # self.node_addon.user_settings = 'Truthy'
-        # setattr(self.node_addon, 'has_auth', True)
+        self.session = Session(data={'auth_user_id': self.user._id})
+        self.session.save()
+        self.cookie = itsdangerous.Signer(settings.SECRET_KEY).sign(self.session._id)
+
+        self.app.authenticate(*self.user.auth)
 
     def get_mako_return(self):
         ret = serialize_node(self.project, Auth(self.user), primary=True)
@@ -467,7 +459,8 @@ class TestAddonFileViews(OsfTestCase):
         assert_in('?url=', guid.mfr_render_url)
 
     @mock.patch('website.addons.base.views.addon_view_file')
-    def test_action_view_calls_view_file(self, mock_view_file):
+    @mock.patch('website.addons.github.api.GitHub.repo')
+    def test_action_view_calls_view_file(self, mock_repo, mock_view_file):
         self.user.reload()
         self.project.reload()
 
@@ -485,7 +478,8 @@ class TestAddonFileViews(OsfTestCase):
         assert_equals(args[2], self.node_addon)
 
     @mock.patch('website.addons.base.views.addon_view_file')
-    def test_no_action_calls_view_file(self, mock_view_file):
+    @mock.patch('website.addons.github.api.GitHub.repo')
+    def test_no_action_calls_view_file(self, mock_repo, mock_view_file):
         self.user.reload()
         self.project.reload()
 
@@ -539,6 +533,7 @@ class TestAddonFileViews(OsfTestCase):
 
         assert_equals(resp.status_code, 401)
 
+
     def test_head_returns_url(self):
         path = 'the little engine that couldnt'
         guid, _ = self.node_addon.find_or_create_file_guid('/' + path)
@@ -546,7 +541,7 @@ class TestAddonFileViews(OsfTestCase):
         download_url = furl.furl(guid.download_url)
         download_url.args['accept_url'] = 'false'
 
-        resp = self.app.head(guid.guid_url, auth=self.user.auth)
+        resp = self.app.head(guid.guid_url)
 
         assert_urls_equal(resp.headers['Location'], download_url.url)
 
@@ -568,23 +563,6 @@ class TestAddonFileViews(OsfTestCase):
 
         assert_equals(resp.status_code, 400)
 
-    def test_unauth_addons_raise(self):
-        path = 'cloudfiles'
-        self.node_addon.user_settings = None
-        self.node_addon.save()
-
-        resp = self.app.get(
-            self.project.web_url_for(
-                'addon_view_or_download_file',
-                path=path,
-                provider='github',
-                action='download'
-            ),
-            auth=self.user.auth,
-            expect_errors=True
-        )
-
-        assert_equals(resp.status_code, 401)
 
 class TestLegacyViews(OsfTestCase):
 
