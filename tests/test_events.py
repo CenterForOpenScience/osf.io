@@ -81,9 +81,9 @@ class TestFileAdded(OsfTestCase):
     def tearDown(self):
         pass
 
-class TestAddonFileMoved(OsfTestCase):
+class TestFileMoved(OsfTestCase):
     def setUp(self):
-        super(TestAddonFileMoved, self).setUp()
+        super(TestFileMoved, self).setUp()
         self.user_1 = factories.AuthUserFactory()
         self.auth = Auth(user=self.user_1)
         self.user_2 = factories.AuthUserFactory()
@@ -115,12 +115,11 @@ class TestAddonFileMoved(OsfTestCase):
         )
         self.file_sub.save()
 
-    @mock.patch('website.notifications.events.model.notify')
-    @mock.patch('website.notifications.events.model.warn_users_removed_from_subscription')
-    def test_file_moved_no_users(self, mock_warn, mock_notify):
+    @mock.patch('website.notifications.emails.send')
+    def test_perform_one_user(self, mock_send):
+        """Tests that send is called once from perform"""
         self.event.perform()
-        assert_false(mock_warn.called)  # No users subscribed.
-        assert_true(mock_notify.called)
+        assert_true(mock_send.called)
 
     def test_warn_one_user(self):
         self.project.add_contributor(self.user_3, permissions=['write', 'read'], auth=self.auth)
@@ -132,7 +131,9 @@ class TestAddonFileMoved(OsfTestCase):
         self.private_sub.none.append(self.user_3)
         self.private_sub.save()
         moved, warn, removed = self.event.categorize_users()
-        print warn
+        assert_equal({'email_transactional': [], 'email_digest': [self.user_3._id]}, warn)
+        assert_equal({'email_transactional': [self.user_1._id], 'email_digest': []}, moved)
+        print (warn, moved, removed)
 
     def test_dont_warn_same_user(self):
         self.project.add_contributor(self.user_3, permissions=['write', 'read'], auth=self.auth)
@@ -144,7 +145,8 @@ class TestAddonFileMoved(OsfTestCase):
         self.private_sub.email_transactional.append(self.user_3)
         self.private_sub.save()
         moved, warn, removed = self.event.categorize_users()
-        print warn
+        assert_equal({'email_transactional': [], 'email_digest': []}, warn)
+        print (warn, moved, removed)
 
     def test_remove_one_user_file(self):
         pass

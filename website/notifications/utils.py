@@ -90,7 +90,15 @@ def separate_users(node, user_ids):
 
 
 def move_subscription(old_event_sub, old_node, new_event_sub, new_node):
-    removed_users = {'email_transactional': [], 'email_digest': [], 'none': []}
+    """
+    Moves subscription from old_node to new_node
+    :param old_event_sub: A specific guid event <guid>_file_updated
+    :param old_node: Instance of Node
+    :param new_event_sub: A specific guid event
+    :param new_node: Instance of Node
+    :return: Returns a NOTIFICATION_TYPES list of removed users without permissions
+    """
+    removed_users = {key: [] for key in constants.NOTIFICATION_TYPES}
     if old_event_sub == new_event_sub or old_node == new_node:
         return removed_users
     old_sub = NotificationSubscription.load(to_subscription_key(old_node._id, old_event_sub))

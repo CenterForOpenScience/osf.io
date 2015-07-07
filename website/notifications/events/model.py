@@ -280,65 +280,58 @@ class AddonFileMoved(ComplexFileEvent):
     def perform(self):
         """Sends a message to users who are removed from the file's subscription when it is moved"""
         if self.payload['destination']['kind'] != u'folder':
-            # if source_node != node
-            rm_users = move_subscription(self.source_event, self.source_node,
-                                         self.event, self.node)
-            source_node_subs = emails.compile_subscriptions(self.source_node, 'file_updated')
-            new_subs = emails.compile_subscriptions(self.node, 'file_updated', self.event)
-            warn = {}
-            for notifications in NOTIFICATION_TYPES:
-                if notifications == 'none':
+            moved, warn, rm_users = self.categorize_users()
+            warn_message = self.html_message + ' Your component-level subscription was not transferred.'
+            remove_message = self.html_message + ' Your subscription has been removed' \
+                                                 ' due to insufficient permissions in the new component.'
+            for notification in NOTIFICATION_TYPES:
+                if notification == 'none':
                     continue
-                warn[notifications] = set(source_node_subs[notifications]).difference(set(new_subs[notifications]))
-                for nt in NOTIFICATION_TYPES:
-                    if nt == 'none' or nt not in rm_users or len(rm_users[nt]) == 0:
-                        continue
-                    warn[notifications] = set(warn[notifications]).difference(set(rm_users[nt]))
-                    subbed, removed = separate_users(self.node, warn[notifications])
-
-            # warn = new_file_sub.diff(set(warn)) # probably don't need.
-            # new_subs = new_subs.diff(set(new_file_sub))
-            # Make temporary subs for
-            #  Destination
-            #  warn
-            #  rm_users
-
-            if len(rm_users) > 0:
-                message = self.html_message + ' Your subscription has been removed' \
-                                              ' due to insufficient permissions in the new component.'
-                emails.warn_users_removed_from_subscription(rm_users, self.source_event, self.user, self.source_node,
-                                                     timestamp=self.timestamp, gravatar_url=self.gravatar_url,
-                                                     message=message, url=self.source_url)
-        super(AddonFileMoved, self).perform()
+                if moved[notification]:
+                    emails.send(moved[notification], notification, self.node_id, self.event, self.user, self.node,
+                                self.timestamp, message=self.html_message, gravatar_url=self.gravatar_url,
+                                url=self.url)
+                if warn[notification]:
+                    emails.send(moved[notification], notification, self.node_id, self.event, self.user, self.node,
+                                self.timestamp, message=warn_message, gravatar_url=self.gravatar_url,
+                                url=self.url)
+                if rm_users[notification]:
+                    emails.send(moved[notification], notification, self.node_id, self.event, self.user,
+                                self.source_node, self.timestamp, message=remove_message,
+                                gravatar_url=self.gravatar_url, url=self.source_url)
+        else:
+            super(AddonFileMoved, self).perform()
 
     def categorize_users(self):
-        rm_users = move_subscription(self.source_event, self.source_node,
-                                     self.event, self.node)
+        """
+        Puts users in one of three bins: Those that are moved, those that need warned, those that are removed.
+        Could be generalized, not sure where move subscription would go.
+        """
+        remove = move_subscription(self.source_event, self.source_node, self.event, self.node)
         source_node_subs = emails.compile_subscriptions(self.source_node, 'file_updated')
         new_subs = emails.compile_subscriptions(self.node, 'file_updated', self.event)
         warn = {}
+        move = {}
         for notifications in NOTIFICATION_TYPES:
             if notifications == 'none':
                 continue
-            warn[notifications] = set(source_node_subs[notifications]).difference(set(new_subs[notifications]))
-            for nt in NOTIFICATION_TYPES:
-                if nt == 'none' or nt == notifications:
-                    continue
-                warn[notifications] = set(warn[notifications]).difference(set(new_subs[notifications]))
+            move[notifications] = list(set(source_node_subs[notifications]).union(set(new_subs[notifications])))
+            warn[notifications] = list(set(source_node_subs[notifications]).difference(set(new_subs[notifications])))
             subbed, removed = separate_users(self.node, warn[notifications])
             warn[notifications] = subbed
-            rm_users[notifications].extend(removed)
-            rm_users[notifications] = list(set(rm_users[notifications]))
-        just_move = None
-        return just_move, warn, rm_users
+            remove[notifications].extend(removed)
+            remove[notifications] = list(set(remove[notifications]))
 
+        for notifications in NOTIFICATION_TYPES:
+            for nt in NOTIFICATION_TYPES:
+                if notifications == 'none' or nt == 'none':
+                    continue
+                if nt != notifications:
+                    warn[notifications] = list(set(warn[notifications]).difference(set(new_subs[nt])))
+                    move[notifications] = list(set(move[notifications]).difference(set(new_subs[nt])))
+                move[notifications] = list(set(move[notifications]).difference(set(warn[nt])))
 
-                # warn = new_file_sub.diff(set(warn)) # probably don't need.
-                # new_subs = new_subs.diff(set(new_file_sub))
-                # Make temporary subs for
-                #  Destination
-                #  warn
-                #  rm_users
+        return move, warn, remove
 
     def form_url(self):
         """Set source url for subscribers removed from subscription to files page view"""

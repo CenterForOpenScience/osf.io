@@ -875,31 +875,6 @@ class TestMoveSubscription(OsfTestCase):
         )
         self.file_sub.save()
 
-    @mock.patch('website.notifications.emails.notify')
-    def test_removed_users_notified(self, mock_notify):
-        time_now = datetime.datetime.utcnow()
-        recipients = {'email_transactional': [self.user_2, self.user_3], 'email_digest': [], 'none': []}
-        emails.warn_users_removed_from_subscription(recipients, 'xyz42_file_updated', self.user_1,
-                                                    self.project, time_now)
-        mock_notify.assert_called_with(self.project._id, 'xyz42_file_updated', self.user_1, self.project, time_now)
-
-    @mock.patch('website.notifications.emails.notify')
-    def test_no_removed_users_to_notify(self, mock_notify):
-        time_now = datetime.datetime.utcnow()
-        recipients = {}
-        emails.warn_users_removed_from_subscription(recipients, 'xyz42_file_updated', self.user_1,
-                                                    self.project, time_now)
-        assert_false(mock_notify.called)
-
-    @mock.patch('website.notifications.emails.notify')
-    def test_old_sub_removed(self, mock_notify):
-        time_now = datetime.datetime.utcnow()
-        utils.move_subscription('xyz42_file_updated', self.project, 'abc42_file_updated', self.private_node)
-        recipients = {'email_transactional': [self.user_2, self.user_3], 'email_digest': [], 'none': []}
-        emails.warn_users_removed_from_subscription(recipients, 'xyz42_file_updated', self.user_1,
-                                                    self.project, time_now)
-        mock_notify.assert_called_with(self.project._id, 'xyz42_file_updated', self.user_1, self.project, time_now)
-
     def test_event_subs_same(self):
         self.file_sub.email_transactional.extend([self.user_2, self.user_3, self.user_4])
         self.file_sub.save()
