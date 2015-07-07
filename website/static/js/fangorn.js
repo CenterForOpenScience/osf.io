@@ -49,54 +49,26 @@ var OPERATIONS = {
         verb: 'Rename',
         status: 'rename',
         passed: 'renamed',
-        action: 'Renaming',
+        action: 'Renaming'
     },
     MOVE: {
         verb: 'Move',
         status: 'move',
         passed: 'moved',
-        action: 'Moving',
+        action: 'Moving'
     },
     COPY: {
         verb: 'Copy',
         status: 'copy',
         passed: 'copied',
-        action: 'Copying',
+        action: 'Copying'
     }
 };
 
-var EXTENSIONS = ['3gp', '7z', 'ace', 'ai', 'aif', 'aiff', 'amr', 'asf', 'asx', 'bat', 'bin', 'bmp', 'bup',
-    'cab', 'cbr', 'cda', 'cdl', 'cdr', 'chm', 'dat', 'divx', 'dll', 'dmg', 'doc', 'docx', 'dss', 'dvf', 'dwg',
-    'eml', 'eps', 'exe', 'fla', 'flv', 'gif', 'gz', 'hqx', 'htm', 'html', 'ifo', 'indd', 'iso', 'jar',
-    'jpeg', 'jpg', 'lnk', 'log', 'm4a', 'm4b', 'm4p', 'm4v', 'mcd', 'md', 'mdb', 'mid', 'mov', 'mp2', 'mp3', 'mp4',
-    'mpeg', 'mpg', 'msi', 'mswmm', 'ogg', 'pdf', 'png', 'pps', 'ps', 'psd', 'pst', 'ptb', 'pub', 'qbb',
-    'qbw', 'qxd', 'ram', 'rar', 'rm', 'rmvb', 'rtf', 'sea', 'ses', 'sit', 'sitx', 'ss', 'swf', 'tgz', 'thm',
-    'tif', 'tmp', 'torrent', 'ttf', 'txt', 'vcd', 'vob', 'wav', 'wma', 'wmv', 'wps', 'xls', 'xpi', 'zip',
-    'xlsx', 'py'];
-
-var EXTENSION_MAP = {};
-EXTENSIONS.forEach(function(extension) {
-    EXTENSION_MAP[extension] = extension;
-});
-$.extend(EXTENSION_MAP, {
-    gdoc: 'docx',
-    gsheet: 'xlsx'
-});
 // Cross browser key codes for the Command key
 var COMMAND_KEYS = [224, 17, 91, 93];
 var ESCAPE_KEY = 27;
 var ENTER_KEY = 13;
-
-var ICON_PATH = '/static/img/hgrid/fatcowicons/';
-
-var getExtensionIconClass = function (name) {
-    var extension = name.split('.').pop().toLowerCase();
-    var icon = EXTENSION_MAP[extension];
-    if (icon) {
-        return '_' + icon;
-    }
-    return null;
-};
 
 function findByTempID(parent, tmpID) {
     var child;
@@ -280,12 +252,7 @@ function _fangornResolveIcon(item) {
         if (item.data.icon) {
             return m('i.fa.' + item.data.icon, ' ');
         }
-
-        icon = getExtensionIconClass(item.data.name);
-        if (icon) {
-            return m('div.file-extension', { 'class': icon });
-        }
-        return m('i.fa.fa-file-text-o');
+        return m('div.file-extension', { 'class': '_' + item.data.name.split('.').pop().toLowerCase() });
     }
     return newIcon;
 }
@@ -433,7 +400,7 @@ function doItemOp(operation, to, from, rename, conflict) {
     if (to.data.provider === from.provider) {
         tb.pendingFileOps.push(from.id);
     }
-    _fangornOrderFolder.call(tb, from.parent());
+    orderFolder.call(tb, from.parent());
 
 
     $.ajax({
@@ -491,7 +458,7 @@ function doItemOp(operation, to, from, rename, conflict) {
             from.load = true;
         }
         // no need to redraw because fangornOrderFolder does it
-        _fangornOrderFolder.call(tb, from.parent());
+        orderFolder.call(tb, from.parent());
     }).fail(function(xhr, textStatus) {
         if (to.data.provider === from.provider) {
             tb.pendingFileOps.pop();
@@ -527,7 +494,7 @@ function doItemOp(operation, to, from, rename, conflict) {
             }
         });
 
-        _fangornOrderFolder.call(tb, from.parent());
+        orderFolder.call(tb, from.parent());
     });
 }
 
@@ -693,7 +660,7 @@ function _fangornDropzoneDrop(treebeard, event) {
 function _fangornComplete(treebeard, file) {
     var item = file.treebeardParent;
     resolveconfigOption.call(treebeard, item, 'onUploadComplete', [item]);
-    _fangornOrderFolder.call(treebeard, item);
+    orderFolder.call(treebeard, item);
 }
 
 /**
@@ -862,7 +829,7 @@ function _createFolder(event, dismissCallback, helpText) {
     }).then(function(item) {
         inheritFromParent({data: item}, parent, ['branch']);
         item = tb.createItem(item, parent.id);
-        _fangornOrderFolder.call(tb, parent);
+        orderFolder.call(tb, parent);
         item.notify.update('New folder created!', 'success', undefined, 1000);
         if(dismissCallback) {
             dismissCallback();
@@ -1072,7 +1039,7 @@ function _fangornLazyLoadOnLoad (tree, event) {
     reapplyTooltips();
 
     if (tree.depth > 1) {
-        _fangornOrderFolder.call(this, tree);
+        orderFolder.call(this, tree);
     }
 }
 
@@ -1082,13 +1049,16 @@ function _fangornLazyLoadOnLoad (tree, event) {
  * @this Treebeard.controller
  * @private
  */
-function _fangornOrderFolder(tree) {
+function orderFolder(tree) {
     // Checking if this column does in fact have sorting
+    var sortDirection = '';
     if (this.isSorted[0]) {
-        var sortDirection = this.isSorted[0].desc ? 'desc' : 'asc';
-        tree.sortChildren(this, sortDirection, 'text', 0, 1);
-        this.redraw();
+        sortDirection = this.isSorted[0].desc ? 'desc' : 'asc';
+    } else {
+        sortDirection = 'asc';
     }
+    tree.sortChildren(this, sortDirection, 'text', 0, 1);
+    this.redraw();
 }
 
 /**
@@ -1509,7 +1479,7 @@ var FGItemButtons = {
     }
 };
 
-var _dismissToolbar = function(){
+var dismissToolbar = function(){
     var tb = this;
     if (tb.toolbarMode() === toolbarModes.SEARCH){
         tb.resetFilter();
@@ -1529,7 +1499,7 @@ var FGToolbar = {
         self.mode = self.tb.toolbarMode;
         self.isUploading = args.treebeard.isUploading;
         self.helpText = m.prop('');
-        self.dismissToolbar = _dismissToolbar.bind(self.tb);
+        self.dismissToolbar = dismissToolbar.bind(self.tb);
         self.createFolder = function(event){
             _createFolder.call(self.tb, event, self.dismissToolbar, self.helpText );
         };
@@ -1730,7 +1700,7 @@ function filterRowsNotInParent(rows) {
  * @param {Object} item A Treebeard _item object.
  * @private
  */
-function _openParentFolders (item) {
+function openParentFolders (item) {
     var tb = this;
     // does it have a parent? If so change open
     var parent = item.parent();
@@ -1740,7 +1710,7 @@ function _openParentFolders (item) {
             parent.load = true;
             tb.toggleFolder(index);
         }
-        _openParentFolders.call(tb, parent);
+        openParentFolders.call(tb, parent);
     }
     return;
 }
@@ -1757,10 +1727,10 @@ function _openParentFolders (item) {
     var scrollToItem = false;
     filterRowsNotInParent.call(tb, tb.multiselected());
     if (tb.toolbarMode() === 'search') {
-        _dismissToolbar.call(tb);
+        dismissToolbar.call(tb);
         scrollToItem = true;
         // recursively open parents of the selected item but do not lazyload;
-        _openParentFolders.call(tb, row);
+        openParentFolders.call(tb, row);
     }
 
     if (tb.multiselected().length === 1){
@@ -2030,7 +2000,7 @@ tbOptions = {
                 return;
             }
             tb.clearMultiselect();
-            _dismissToolbar.call(tb);
+            dismissToolbar.call(tb);
         });
 
         $(window).on('beforeunload', function() {
@@ -2049,7 +2019,7 @@ tbOptions = {
         }
         $(window).on('keydown', function(event){
             if (event.keyCode === ESCAPE_KEY) {
-                _dismissToolbar.call(tb);
+                dismissToolbar.call(tb);
             }
         });
     },
@@ -2194,10 +2164,11 @@ Fangorn.Utils = {
     reapplyTooltips : reapplyTooltips,
     setCurrentFileID: setCurrentFileID,
     scrollToFile: scrollToFile,
-    openParentFolders : _openParentFolders,
-    dismissToolbar : _dismissToolbar,
+    openParentFolders : openParentFolders,
+    dismissToolbar : dismissToolbar,
     uploadRowTemplate : uploadRowTemplate,
-    resolveIconView: resolveIconView
+    resolveIconView: resolveIconView,
+    orderFolder: orderFolder
 };
 
 Fangorn.DefaultOptions = tbOptions;

@@ -2,22 +2,20 @@
 
 import furl
 
-from rest_framework.exceptions import NotFound
-from rest_framework.reverse import reverse
-from modularodm.exceptions import NoResultsFound
 from modularodm import Q
+from rest_framework.reverse import reverse
+from rest_framework.exceptions import NotFound
+from modularodm.exceptions import NoResultsFound
 
-from api.base import settings as api_settings
-from website import settings as website_settings
 from website import util as website_util  # noqa
+from website import settings as website_settings
 
 
 def absolute_reverse(view_name, query_kwargs=None, args=None, kwargs=None):
     """Like django's `reverse`, except returns an absolute URL. Also add query parameters."""
     relative_url = reverse(view_name, kwargs=kwargs)
 
-    url = website_util.api_v2_url(relative_url, params=query_kwargs,
-                                  base_prefix=api_settings.API_PATH)
+    url = website_util.api_v2_url(relative_url, params=query_kwargs)
     return url
 
 

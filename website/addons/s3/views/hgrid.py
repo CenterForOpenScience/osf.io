@@ -4,8 +4,8 @@ from website.util import rubeus
 
 
 def s3_hgrid_data(node_settings, auth, **kwargs):
-    # Quit if no bucket
-    if not node_settings.bucket or not node_settings.user_settings or not node_settings.user_settings.has_auth:
+    # Dont display if not properly configured
+    if not node_settings.complete:
         return
 
     node = node_settings.owner

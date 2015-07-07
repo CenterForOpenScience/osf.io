@@ -23,7 +23,7 @@ def clean_tag(data):
     :rtype: str
     """
     #TODO: make this a method of Tag?
-    return escape_html(data).replace('"', '&quot;').replace("'", '')
+    return escape_html(data).replace('"', '&quot;').replace("'", '&#39')
 
 def is_iterable_but_not_string(obj):
     """Return True if ``obj`` is an iterable object that isn't a string."""

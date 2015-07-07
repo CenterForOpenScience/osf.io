@@ -223,6 +223,7 @@ class User(GuidStoredObject, AddonModelMixin):
     # The primary email address for the account.
     # This value is unique, but multiple "None" records exist for:
     #   * unregistered contributors where an email address was not provided.
+    # TODO: Update mailchimp subscription on username change in user.save()
     username = fields.StringField(required=False, unique=True, index=True)
 
     # Hashed. Use `User.set_password` and `User.check_password`
@@ -298,10 +299,6 @@ class User(GuidStoredObject, AddonModelMixin):
     #   'list2: False,
     #    ...
     # }
-
-    # nicknames, or other names by which this used is known
-    # TODO: remove - unused
-    aka = fields.StringField(list=True)
 
     # the date this user was registered
     # TODO: consider removal - this can be derived from date_registered
@@ -871,6 +868,15 @@ class User(GuidStoredObject, AddonModelMixin):
         for node in self.node__contributed:
             node.update_search()
 
+    def update_search_nodes_contributors(self):
+        """
+        Bulk update contributor name on all nodes on which the user is
+        a contributor.
+        :return:
+        """
+        from website.search import search
+        search.update_contributors(self.visible_contributor_to)
+
     @property
     def is_confirmed(self):
         return bool(self.date_confirmed)
@@ -976,6 +982,23 @@ class User(GuidStoredObject, AddonModelMixin):
     def profile_url(self):
         return '/{}/'.format(self._id)
 
+    @property
+    def contributor_to(self):
+        return (
+            node for node in self.node__contributed
+            if not (
+                node.is_deleted
+                or node.is_dashboard
+            )
+        )
+
+    @property
+    def visible_contributor_to(self):
+        return (
+            node for node in self.contributor_to
+            if self._id in node.visible_contributor_ids
+        )
+
     def get_summary(self, formatter='long'):
         return {
             'user_fullname': self.fullname,
@@ -985,12 +1008,14 @@ class User(GuidStoredObject, AddonModelMixin):
         }
 
     def save(self, *args, **kwargs):
+        # TODO: Update mailchimp subscription on username change
         # Avoid circular import
         from framework.analytics import tasks as piwik_tasks
         self.username = self.username.lower().strip() if self.username else None
         ret = super(User, self).save(*args, **kwargs)
         if self.SEARCH_UPDATE_FIELDS.intersection(ret) and self.is_confirmed:
             self.update_search()
+            self.update_search_nodes_contributors()
         if settings.PIWIK_HOST and not self.piwik_token:
             piwik_tasks.update_user(self._id)
         return ret
@@ -1115,8 +1140,6 @@ class User(GuidStoredObject, AddonModelMixin):
             if system_tag not in self.system_tags:
                 self.system_tags.append(system_tag)
 
-        [self.aka.append(each) for each in user.aka if each not in self.aka]
-
         self.is_claimed = self.is_claimed or user.is_claimed
         self.is_invited = self.is_invited or user.is_invited
 
@@ -1142,9 +1165,11 @@ class User(GuidStoredObject, AddonModelMixin):
 
         for key, value in user.mailing_lists.iteritems():
             # subscribe to each list if either user was subscribed
-            self.mailing_lists[key] = value or self.mailing_lists.get(key)
-        # - clear subscriptions for merged user
-        user.mailing_lists = {}
+            subscription = value or self.mailing_lists.get(key)
+            signals.user_merged.send(self, list_name=key, subscription=subscription)
+
+            # clear subscriptions for merged user
+            signals.user_merged.send(user, list_name=key, subscription=False)
 
         for node_id, timestamp in user.comments_viewed_timestamp.iteritems():
             if not self.comments_viewed_timestamp.get(node_id):

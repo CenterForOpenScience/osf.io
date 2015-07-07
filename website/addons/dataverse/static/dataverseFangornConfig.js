@@ -31,7 +31,7 @@ var _dataverseItemButtons = {
         }
         function dataversePublish(event, item, col) {
             var both = !item.data.dataverseIsPublished;
-            var url = both ? item.data.urls.publishBoth : item.data.urls.publish;
+            var url = item.data.urls.publish;
             var toPublish = both ? 'Dataverse and dataset' : 'dataset';
             var modalContent = [
                 m('h3', 'Publish this ' + toPublish + '?'),
@@ -59,7 +59,7 @@ var _dataverseItemButtons = {
                 item.notify.update('Publishing ' + toPublish, 'info', 1, 1);
                 $.osf.putJSON(
                     url,
-                    {}
+                    {'publish_both': both}
                 ).done(function (data) {
                     item.notify.update();
                     var modalContent = [
@@ -73,6 +73,7 @@ var _dataverseItemButtons = {
                         }, 'Okay')
                     ];
                     tb.modal.update(modalContent, modalActions);
+                    item.data.dataverseIsPublished = true;
                     item.data.hasPublishedFiles = item.children.length > 0;
                     item.data.version = item.data.hasPublishedFiles ? 'latest-published' : 'latest';
                 }).fail(function (xhr, status, error) {
@@ -290,7 +291,6 @@ function _canDrop(item) {
     return item.data.provider &&
         item.kind === 'folder' &&
         item.data.permissions.edit &&
-//        item.data.state === 'draft'; Outdated with merge?
         item.data.version === 'latest';
 }
 

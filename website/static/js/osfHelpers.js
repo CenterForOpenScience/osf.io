@@ -169,7 +169,7 @@ var handleEditableError = function(response) {
     return 'Unexpected error: ' + response.statusText;
 };
 
-var block = function() {
+var block = function(message) {
     $.blockUI({
         css: {
             border: 'none',
@@ -180,7 +180,7 @@ var block = function() {
             opacity: 0.5,
             color: '#fff'
         },
-        message: 'Please wait'
+        message: message || 'Please wait'
     });
 };
 
@@ -189,14 +189,13 @@ var unblock = function() {
 };
 
 var joinPrompts = function(prompts, base) {
-    var prompt = base || '';
+    var prompt = base ? '<h4>'+ base +'</h4>': '';
     if (prompts.length !==0) {
-        prompt += '<hr />';
-        prompt += '<ul>';
+        prompt += '<div>';
         for (var i=0; i<prompts.length; i++) {
-            prompt += '<li>' + prompts[i] + '</li>';
+            prompt += '<div class="osf-box p-sm">' + prompts[i] + '</div>';
         }
-        prompt += '</ul>';
+        prompt += '</div>';
     }
     return prompt;
 };
@@ -658,6 +657,14 @@ var _confirmationString = function() {
 };
 
 /**
+*  Helper function to judge if the user browser is IE
+*/
+var isIE = function(userAgent) {
+    userAgent = userAgent || navigator.userAgent;
+    return userAgent.indexOf('MSIE ') > -1 || userAgent.indexOf('Trident/') > -1;
+};
+
+/**
   * Confirm a dangerous action by requiring the user to enter specific text
   *
   * This is an abstraction over bootbox, and passes most options through to
@@ -744,5 +751,6 @@ module.exports = window.$.osf = {
     htmlDecode: htmlDecode,
     tableResize: tableResize,
     humanFileSize: humanFileSize,
-    confirmDangerousAction: confirmDangerousAction
+    confirmDangerousAction: confirmDangerousAction,
+    isIE: isIE
 };

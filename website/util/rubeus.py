@@ -292,7 +292,7 @@ class NodeProjectCollector(object):
         try:
             user = node.logs[-1].user
             modified_by = user.family_name or user.given_name
-        except AttributeError:
+        except (AttributeError, IndexError):
             modified_by = ''
         child_nodes = node.nodes
         readable_children = []
@@ -366,6 +366,7 @@ class NodeProjectCollector(object):
             'registeredMeta': node.registered_meta,
             'childrenCount': children_count,
             'nodeType': node.project_or_component,
+            'archiving': node.archive_job and not node.archive_job.done,
         }
 
     def _collect_addons(self, node):
