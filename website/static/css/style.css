@@ -280,6 +280,10 @@ a {
     font-weight: 500;
 }
 
-.user-settings-addons-link {
+.user-settings-addon-auth {
     font-size: 13.5px;
+}
+
+.default-authorized-by {
+    font-weight: normal !important;
 }
