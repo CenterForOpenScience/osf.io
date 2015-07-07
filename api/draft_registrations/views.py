@@ -17,7 +17,7 @@ class DraftRegistrationMixin(object):
     """
 
     serializer_class = DraftRegSerializer
-    draft_lookup_url_kwarg = 'registration_id'
+    draft_lookup_url_kwarg = 'draft_id'
 
     def get_draft(self):
         obj = get_object_or_404(DraftRegistration, self.kwargs[self.draft_lookup_url_kwarg])

@@ -25,7 +25,7 @@ class RegistrationCreateSerializerWithToken(NodeSerializer, DraftRegistrationMix
         request = self.context['request']
         user = request.user
         view = self.context['view']
-        draft = get_object_or_404(DraftRegistration, view.kwargs['registration_id'])
+        draft = get_object_or_404(DraftRegistration, view.kwargs['draft_id'])
         given_token = view.kwargs['token']
         correct_token = token_creator(draft._id, user._id)
         if correct_token != given_token:
@@ -35,7 +35,7 @@ class RegistrationCreateSerializerWithToken(NodeSerializer, DraftRegistrationMix
     def create(self, validated_data):
         request = self.context['request']
         view = self.context['view']
-        draft = get_object_or_404(DraftRegistration, view.kwargs['registration_id'])
+        draft = get_object_or_404(DraftRegistration, view.kwargs['draft_id'])
         node = draft.branched_from
         schema = draft.registration_schema
         data = draft.registration_metadata

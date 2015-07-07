@@ -35,7 +35,8 @@ class DraftRegSerializer(JSONAPISerializer):
                 Q('schema_version', 'eq', schema_version)
             )
             instance.registration_schema = meta_schema
-            raise ser.ValidationError(instance.registration_schema)
+        else:
+            instance.registration_schema = instance.registration_schema
 
         if "registration_metadata" in validated_data.keys():
             instance.registration_metadata = validated_data.get('registration_metadata', {})

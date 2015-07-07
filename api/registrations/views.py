@@ -57,11 +57,11 @@ class RegistrationCreate(generics.CreateAPIView, DraftRegistrationMixin):
 
     serializer_class = RegistrationCreateSerializer
 
-    def create(self, request, registration_id):
+    def create(self, request, draft_id):
         user = request.user
         draft = self.get_draft()
         token = token_creator(draft._id, user._id)
-        url = absolute_reverse('registrations:registration-create', kwargs={'registration_id': draft._id, 'token': token})
+        url = absolute_reverse('registrations:registration-create', kwargs={'draft_id': draft._id, 'token': token})
         registration_warning = REGISTER_WARNING.format((draft.title))
         return Response({'data': {'id': draft._id, 'warning_message': registration_warning, 'links': {'confirm_register': url}}}, status=status.HTTP_202_ACCEPTED)
 
