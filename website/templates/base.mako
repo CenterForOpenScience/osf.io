@@ -146,6 +146,9 @@
                 waterbutlerURL: '${waterbutler_url if waterbutler_url.endswith('/') else waterbutler_url + '/' | js_str}',
             % if access_token:
                 accessToken: '${access_token | js_str}',
+                userId: '${user_id | js_str}',
+                authUrl: '${auth_url | js_str}',
+                profileUrl: '${profile_url | js_str}',
             % endif
                 cookieName: '${cookie_name}',
                 apiV2Prefix: '${api_v2_base | js_str }'

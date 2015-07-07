@@ -8,7 +8,7 @@ import os
 from dateutil.parser import parse as parse_date
 
 from flask import request
-from modularodm.exceptions import ValidationError, NoResultsFound
+from modularodm.exceptions import ValidationError, NoResultsFound, MultipleResultsFound
 from modularodm import Q
 
 from framework import sentry
@@ -786,31 +786,31 @@ def request_deactivation(auth):
     return {'message': 'Sent account deactivation request'}
 
 
-def redirect_to_twitter(uid):
-    """Redirect GET requests for /@uid/ to respective the Twitter account if a User
-    exists and has a Twitter handle associated with the account.
+def redirect_to_twitter(twitter_handle):
+    """Redirect GET requests for /@TwitterHandle/ to respective the OSF user
+    account if it associated with an active account
 
     :param uid: uid for requested User
     :return: Redirect to User's Twitter account page
     """
-    user = User.load(uid)
-
-    if user:
-        twitter_handle = user.social.get('twitter', None)
-    else:
+    try:
+        user = User.find_one(Q('social.twitter', 'iexact', twitter_handle))
+    except NoResultsFound:
         raise HTTPError(http.NOT_FOUND, data={
             'message_short': 'User Not Found',
-            'message_long': 'There is no active user associated with user id: {0}.'.format(uid)
+            'message_long': 'There is no active user associated with the Twitter handle: {0}.'.format(twitter_handle)
+        })
+    except MultipleResultsFound:
+        users = User.find(Q('social.twitter', 'iexact', twitter_handle))
+        message_long = 'There are multiple OSF accounts associated with the ' \
+                       'Twitter handle: <strong>{0}</strong>. <br /> Please ' \
+                       'select from the accounts below. <br /><ul>'.format(twitter_handle)
+        for user in users:
+            message_long += '<li><a href="{0}">{1}</a></li>'.format(user.url, user.fullname)
+        message_long += '</ul>'
+        raise HTTPError(http.MULTIPLE_CHOICES, data={
+            'message_short': 'Multiple Users Found',
+            'message_long': message_long
         })
 
-    if twitter_handle:
-        # TODO(hrybacki): Verify Twitter handle is for a real account.
-        # Requires authenticated access to Twitter API
-        redirect_url = "https://twitter.com/{0}".format(twitter_handle)
-    else:
-        raise HTTPError(http.BAD_REQUEST, data={
-            'message_short': 'Invalid Request',
-            'message_long': '{0} does not have a Twitter handle associated with their account.'.format(user.fullname)
-        })
-
-    return redirect(redirect_url)
+    return redirect(user.url)

@@ -28,7 +28,7 @@
             </div><!-- end modal-body -->
 
             <div class="modal-footer">
-                <a href="#" class="btn btn-default" data-dismiss="modal">Done</a>
+                <a href="#" class="btn btn-success" data-dismiss="modal">Done</a>
             </div><!-- end modal-footer -->
         </div><!-- end modal-content -->
     </div><!-- end modal-dialog -->
