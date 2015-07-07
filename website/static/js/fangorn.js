@@ -119,8 +119,8 @@ function cancelUploads (row) {
     for (var i = 0; i < filesArr.length; i++) {
         var j = filesArr[i];
         if(!row){
-            if (j.status !== "queued") {
-                j.status = "queued";
+            if (j.status !== 'queued') {
+                j.status = 'queued';
             }
             var parent = j.treebeardParent || tb.dropzoneItemCache;
             var item = findByTempID(parent, j.tmpID);
@@ -129,7 +129,7 @@ function cancelUploads (row) {
         } else {
             tb.deleteNode(row.parentID,row.id);
             if(row.data.tmpID === j.tmpID){
-                j.status = "queued";
+                j.status = 'queued';
                 tb.dropzone.removeFile(j);
                 tb.dropzone.processQueue();
             }
