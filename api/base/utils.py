@@ -30,19 +30,16 @@ def get_object_or_404(model_cls, query_or_pk):
         raise NotFound
 
 
-def process_additional_query_params(include, obj_type):
+def process_additional_query_params(include):
     # Checks and cuts off include value if '/' is found
-    include = include.split('/')[0]
     query_params = {}
-
     # Processes include string into ',' separated parameters with '.' marking relationships
     for raw_parameter in include.split(','):
         sub_query_list = raw_parameter.split('.')
         query = {}
         for sub_query in reversed(sub_query_list):
             query = {sub_query: query}
-        # todo process query
-        query_params[sub_query_list[0]] = query[sub_query_list[0]]
+        query_params[sub_query_list[0]] = sub_query_list
     return query_params
 
 
