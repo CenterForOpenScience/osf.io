@@ -30,18 +30,6 @@ def get_object_or_404(model_cls, query_or_pk):
         raise NotFound
 
 
-def process_additional_query_params(include):
-    # Checks and cuts off include value if '/' is found
-    query_params = {}
-    # Processes include string into ',' separated parameters with '.' marking relationships
-    for raw_parameter in include.split(','):
-        sub_query_list = raw_parameter.split('.')
-        query = {}
-        for sub_query in reversed(sub_query_list):
-            query_params = {sub_query: query}
-    return query_params
-
-
 def waterbutler_url_for(request_type, provider, path, node_id, token, obj_args=None, **query):
     """Reverse URL lookup for WaterButler routes
     :param str request_type: data or metadata
