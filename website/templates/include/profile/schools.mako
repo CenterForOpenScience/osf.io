@@ -8,7 +8,8 @@
                     data: contents,
                     options: {
                         handle: '.sort-handle',
-                        containment: '#containDrag'
+                        containment: '#containDrag',
+                        tolerance: 'pointer'
                     }
                 }">
 
@@ -100,7 +101,7 @@
                 </a>
             </div>
 
-            <div class="padded">
+            <div class="p-t-lg p-b-lg">
 
                 <button
                         type="button"
@@ -110,7 +111,7 @@
 
                 <button
                         type="submit"
-                        class="btn btn-primary"
+                        class="btn btn-success"
                     >Submit</button>
 
             </div>

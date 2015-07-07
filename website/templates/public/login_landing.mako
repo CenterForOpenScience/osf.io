@@ -16,11 +16,10 @@
                     "id": "signinForm",
                     "name": "signin",
                     "method_string": "POST",
-                    "action_string": "/login/?next=${next_url}",
+                    "action_string": "${login_url | h}",
                     "form_class": "form-stacked",
                     "submit_string": "Sign In",
                     "submit_btn_class": "btn-primary",
-                    "next_url": "${next_url}"
                 },
                 "replace": true
             }'></div>
@@ -54,7 +53,7 @@
                 </div>
                 <div class="modal-footer">
 
-                    <a href="#" class="btn btn-default" data-dismiss="modal">OK</a>
+                    <a href="#" class="btn btn-default" data-dismiss="modal"> Close </a>
                 </div>
             </div>
         </div>

@@ -56,7 +56,7 @@ function treebeardTitleColumn(item, col) {
     return m('span', {
         className: cls,
         onclick: onclick
-    }, item.data.name);
+    }, tb.options.decodeFolder(item.data.name));
 }
 
 /**
@@ -158,6 +158,10 @@ function treebeardLazyLoadOnLoad(item) {
     }
 }
 
+function treebeardDecodeFolder(item) {
+    return item;
+}
+
 // Default Treebeard options
 var defaults = {
     columnTitles: treebeardColumnTitle,
@@ -167,6 +171,7 @@ var defaults = {
     resolveToggle: treebeardResolveToggle,
     ondataload: treebeardOnload,
     lazyLoadOnLoad: treebeardLazyLoadOnLoad,
+    decodeFolder: treebeardDecodeFolder,
     // Disable uploads
     uploads: false,
     showFilter : false,

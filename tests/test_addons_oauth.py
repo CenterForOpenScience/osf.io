@@ -24,55 +24,21 @@ class MockUserSettings(AddonOAuthUserSettingsBase):
     oauth_provider = MockOAuth2Provider
 
 
-def init_mock_addon():
-    # TODO: Move to a base class, and have test cases inherit from that.
-    settings.ADDONS_REQUESTED.append(MockUserSettings.oauth_provider.short_name)
-
-    addon_config = AddonConfig(
-        short_name=MockUserSettings.oauth_provider.short_name,
-        full_name=MockUserSettings.oauth_provider.name,
-        owners=['User'],
-        categories=['Storage'],
-        user_settings_model=MockUserSettings,
-        node_settings_model=MockNodeSettings,
-        models=[MockUserSettings, MockNodeSettings],
-    )
-    # add this so we can remove the mocked addon later.
-    settings.MOCKED_ADDON = addon_config
-    settings.ADDONS_AVAILABLE_DICT[addon_config.short_name] = addon_config
-    settings.ADDONS_AVAILABLE.append(addon_config)
-
-
-def remove_mock_addon():
-    # TODO: Move to a base class, and have test cases inherit from that.
-    settings.ADDONS_AVAILABLE_DICT.pop(settings.MOCKED_ADDON.short_name, None)
-
-    try:
-        settings.ADDONS_AVAILABLE.remove(settings.MOCKED_ADDON)
-    except ValueError:
-        pass
-
-    try:
-        settings.ADDONS_REQUESTED.remove(settings.MOCKED_ADDON.short_name)
-    except ValueError:
-        pass
-
-    try:
-        del settings.MOCKED_ADDON
-    except ValueError:
-        pass
-
-
 class TestNodeSettings(OsfTestCase):
+
+    ADDONS_UNDER_TEST = {
+        MockOAuth2Provider.short_name: {
+            'user_settings': MockUserSettings,
+            'node_settings': MockNodeSettings,
+        }
+    }
 
     @classmethod
     def setUpClass(cls):
-        init_mock_addon()
         super(TestNodeSettings, cls).setUpClass()
 
     @classmethod
     def tearDownClass(cls):
-        remove_mock_addon()
         super(TestNodeSettings, cls).tearDownClass()
 
     def setUp(self):
@@ -150,14 +116,19 @@ class TestNodeSettings(OsfTestCase):
 
 class TestUserSettings(OsfTestCase):
 
+    ADDONS_UNDER_TEST = {
+        MockOAuth2Provider.short_name: {
+            'user_settings': MockUserSettings,
+            'node_settings': MockNodeSettings,
+        }
+    }
+
     @classmethod
     def setUpClass(cls):
-        init_mock_addon()
         super(TestUserSettings, cls).setUpClass()
 
     @classmethod
     def tearDownClass(cls):
-        remove_mock_addon()
         super(TestUserSettings, cls).tearDownClass()
 
     def setUp(self):

@@ -1,5 +1,7 @@
 # -*- coding: utf-8 -*-
 
+from requests.exceptions import SSLError
+
 from website.addons.dataverse.client import get_dataset, get_files, \
     get_dataverse, connect_from_settings
 
@@ -10,41 +12,47 @@ from website.util import rubeus
 
 def dataverse_hgrid_root(node_addon, auth, **kwargs):
     node = node_addon.owner
-    user_settings = node_addon.user_settings
 
-    default_state = 'published'
-    state = 'published' if not node.can_edit(auth) else default_state
+    default_version = 'latest-published'
+    version = 'latest-published' if not node.can_edit(auth) else default_version
 
     # Quit if no dataset linked
     if not node_addon.complete:
         return []
 
-    connection = connect_from_settings(user_settings)
-    dataverse = get_dataverse(connection, node_addon.dataverse_alias)
-    dataset = get_dataset(dataverse, node_addon.dataset_doi)
-
-    # Quit if doi does not produce a dataset
-    if dataset is None:
-        return []
-
-    published_files = get_files(dataset, published=True)
     can_edit = node.can_edit(auth)
-
-    # Produce draft version or quit if no published version is available
-    if not published_files:
-        if can_edit:
-            state = 'draft'
-        else:
-            return []
 
     permissions = {
         'edit': can_edit and not node.is_registration,
         'view': node.can_view(auth)
     }
 
+    try:
+        connection = connect_from_settings(node_addon)
+        dataverse = get_dataverse(connection, node_addon.dataverse_alias)
+        dataset = get_dataset(dataverse, node_addon.dataset_doi)
+    except SSLError:
+        return [rubeus.build_addon_root(
+            node_addon,
+            node_addon.dataset,
+            permissions=permissions
+        )]
+
+    # Quit if doi does not produce a dataset
+    if dataset is None:
+        return []
+
+    published_files = get_files(dataset, published=True)
+
+    # Produce draft version or quit if no published version is available
+    if not published_files:
+        if can_edit:
+            version = 'latest'
+        else:
+            return []
+
     urls = {
         'publish': node.api_url_for('dataverse_publish_dataset'),
-        'publishBoth': node.api_url_for('dataverse_publish_both')
     }
 
     return [rubeus.build_addon_root(
@@ -57,7 +65,7 @@ def dataverse_hgrid_root(node_addon, auth, **kwargs):
         dataverse=dataverse.title,
         hasPublishedFiles=bool(published_files),
         dataverseIsPublished=dataverse.is_published,
-        state=state,
+        version=version,
     )]
 
 

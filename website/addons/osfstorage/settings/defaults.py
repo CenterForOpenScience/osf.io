@@ -5,8 +5,6 @@ import os
 from website import settings
 
 
-REVISIONS_PAGE_SIZE = 10
-
 WATERBUTLER_CREDENTIALS = {
     'storage': {}
 }
@@ -19,3 +17,5 @@ WATERBUTLER_SETTINGS = {
 }
 
 WATERBUTLER_RESOURCE = 'folder'
+
+DISK_SAVING_MODE = settings.DISK_SAVING_MODE

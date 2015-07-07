@@ -8,33 +8,19 @@
 <div class="row">
     <div class="col-sm-7">
         <div>
-            <h3>Projects</h3>
+          <h3>Projects </h3>
             <hr />
         </div><!-- end div -->
 
         <div class="project-organizer" id="projectOrganizerScope">
-            <%include file="projectGridTemplates.html"/>
-            <div class="project-details">
-            </div>
-
-
             <div id="project-grid"></div>
-            <div id="organizer-legends">
-                <span class='organizer-legend'><img alt="Folder" src="/static/img/hgrid/folder.png">Folder</span>
-                <span class='organizer-legend'><img alt="Smart Folder" src="/static/img/hgrid/smart-folder.png">Smart Folder</span>
-                <span class='organizer-legend'><img alt="Project" src="/static/img/hgrid/project.png">Project</span>
-                <span class='organizer-legend'><img alt="Registration" src="/static/img/hgrid/reg-project.png">Registration</span>
-                <span class='organizer-legend'><img alt="Component" src="/static/img/hgrid/component.png">Component</span>
-                <span class='organizer-legend'><img alt="Registered Component" src="/static/img/hgrid/reg-component.png">Registered Component</span>
-                <span class='organizer-legend'><img alt="Link" src="/static/img/hgrid/pointer.png">Link</span>
-            </div>
         </div><!-- end project-organizer -->
     </div><!-- end col -->
 
     ## Knockout componenet templates
     <%include file="components/dashboard_templates.mako"/>
     <div class="col-sm-5">
-        <div class="ob-tab-head" id="obTabHead">
+        <div class="p-b-xs m-t-lg m-b-xs" id="obTabHead">
             <ul class="nav nav-tabs" role="tablist">
             <li class="active"><a href="#quicktasks" role="tab" data-toggle="tab">Quick Tasks</a></li>
             <li><a href="#watchlist" role="tab" data-toggle="tab">Watchlist</a></li>
@@ -45,30 +31,15 @@
 
         </div><!-- end #obTabHead -->
         <div class="tab-content" >
-            <div class="tab-pane active" id="quicktasks">
+            <div class="m-t-md tab-pane active" id="quicktasks">
                 <ul class="ob-widget-list"> <!-- start onboarding -->
                     <div id="obGoToProject">
                         <osf-ob-goto params="data: nodes"></osf-ob-goto>
                     </div>
-                    <div id="projectCreate">
-                        <li id="obNewProject" class="ob-list-item list-group-item">
-
-                            <div data-bind="click: toggle" class="ob-header pointer">
-                                <h3
-                                    class="ob-heading list-group-item-heading">
-                                    Create a project
-                                </h3>
-                                <i data-bind="css: {' fa-plus': !isOpen(), ' fa-minus': isOpen()}"
-                                    class="pointer ob-expand-icon fa-lg pull-right fa">
-                                </i>
-                            </div><!-- end ob-header -->
-                            <div data-bind="visible: isOpen()" id="obRevealNewProject">
-                                <osf-project-create-form
-                                    params="data: nodes, hasFocus: focus">
-                                </osf-project-create-form>
-                            </div>
-                        </li> <!-- end ob-list-item -->
+                    <div id="obCreateProject">
+                        <osf-ob-create params="data: nodes"></osf-ob-create>
                     </div>
+
                     % if not disk_saving_mode:
                     <div id="obRegisterProject">
                         <osf-ob-register params="data: nodes"></osf-ob-register>
@@ -78,10 +49,10 @@
                     </div>
                     % endif
                 </ul> <!-- end onboarding -->
-            </div><!-- end .tab-pane -->
-            <div class="tab-pane" id="watchlist">
+            </div>
+            <div class="m-t-md tab-pane" id="watchlist">
                 <%include file="log_list.mako" args="scripted=False"/>
-            </div><!-- end tab-pane -->
+            </div>
             ## %if 'badges' in addons_enabled:
                 ## <%include file="dashboard_badges.mako"/>
             ## %endif
@@ -110,8 +81,11 @@
 %endif
 </%def>
 
-<%def name="javascript_bottom()">
+<%def name="stylesheets()">
+    <link rel="stylesheet" href="/static/css/pages/dashboard-page.css">
+</%def>
 
+<%def name="javascript_bottom()">
 <script>
     window.contextVars = $.extend(true, {}, window.contextVars, {
         currentUser: {

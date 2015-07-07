@@ -294,12 +294,6 @@ height: 32px ;
     background-color: #fff;
 }
 
-.typeahead:focus {
-    -webkit-box-shadow: rgba(102, 175, 232, 0.576471) 0px 0px 7.668470859527588px 0px;
-    -moz-box-shadow: rgba(102, 175, 232, 0.576471) 0px 0px 7.668470859527588px 0px;
-    box-shadow: rgba(102, 175, 232, 0.576471) 0px 0px 7.668470859527588px 0px;
-}
-
 .tt-query {
     -webkit-box-shadow: inset 0 1px 1px rgba(0, 0, 0, 0.075);
     -moz-box-shadow: inset 0 1px 1px rgba(0, 0, 0, 0.075);
@@ -308,12 +302,12 @@ height: 32px ;
 /* rgb of glow 106 176 232
 */
 .tt-input, .typeahead {
-    padding: 0 12px;
+    padding: 4px 10px;
 }
 
 .tt-hint {
     color: #999;
-    padding: 2px 12px 0px 13px;
+    padding: 0px 12px 3px 8px
 }
 h3.category {
     font-size: 18px;
@@ -356,10 +350,11 @@ h3.category {
 }
 .tb-row {
     font-size: 13px;
+    line-height: 30px;
 }
 
 .po-hover {
-    background : #F4F5DF;
+    background : #E0EBF3;
 }
 
 .tb-td {
@@ -386,26 +381,28 @@ h3.category {
     vertical-align: bottom;
     margin-right: 4px;
 }
+.tb-h-success {
+    background: #B8ECC0;
+}
+.po-icon-registered {
+    color: #D4D4D4;
+}
+.po-icon {
+    color: #5E5E5E;
+}
+.fangorn-selected .po-icon-registered {
+    color: #CCCCCC;
+}
+.fangorn-selected .po-icon {
+    color: #FFFFFF;
+}
+.po-modal {
+    width: auto;
+}
+.smaller {
+    font-size: 75%;
+}
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+.registration-archiving {
+    cursor: default;
+}

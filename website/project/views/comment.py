@@ -160,24 +160,19 @@ def serialize_comment(comment, auth, anonymous=False):
     }
 
 
-def kwargs_to_comment(kwargs, owner=False):
-    comment = Comment.load(kwargs.get('cid'))
+def kwargs_to_comment(cid, auth, owner=False):
+    comment = Comment.load(cid)
     if comment is None:
-        raise HTTPError(http.BAD_REQUEST)
-
+        raise HTTPError(http.NOT_FOUND)
     if owner:
-        auth = kwargs['auth']
         if auth.user != comment.user:
             raise HTTPError(http.FORBIDDEN)
-
     return comment
 
 
 @must_be_logged_in
 @must_be_contributor_or_public
-def add_comment(**kwargs):
-    auth = kwargs['auth']
-    node = kwargs['node'] or kwargs['project']
+def add_comment(auth, node, **kwargs):
 
     if not node.comment_level:
         raise HTTPError(http.BAD_REQUEST)
@@ -289,8 +284,7 @@ def is_reply(target):
 
 
 @must_be_contributor_or_public
-def list_comments(auth, **kwargs):
-    node = kwargs['node'] or kwargs['project']
+def list_comments(auth, node, **kwargs):
     anonymous = has_anonymous_link(node, auth)
     page = request.args.get('page')
     guid = request.args.get('target')
@@ -360,8 +354,7 @@ def list_total_comments(node, auth, page):
 
 @must_be_logged_in
 @must_be_contributor_or_public
-def edit_comment(**kwargs):
-    auth = kwargs['auth']
+def edit_comment(auth, **kwargs):
 
     comment = kwargs_to_comment(kwargs, owner=True)
 
@@ -383,8 +376,7 @@ def edit_comment(**kwargs):
 
 @must_be_logged_in
 @must_be_contributor_or_public
-def delete_comment(**kwargs):
-    auth = kwargs['auth']
+def delete_comment(auth, **kwargs):
     comment = kwargs_to_comment(kwargs, owner=True)
     comment.delete(auth=auth, save=True)
 
@@ -393,8 +385,7 @@ def delete_comment(**kwargs):
 
 @must_be_logged_in
 @must_be_contributor_or_public
-def undelete_comment(**kwargs):
-    auth = kwargs['auth']
+def undelete_comment(auth, **kwargs):
     comment = kwargs_to_comment(kwargs, owner=True)
     comment.undelete(auth=auth, save=True)
 
@@ -465,8 +456,8 @@ def update_comments_timestamp(auth, **kwargs):
 
 @must_be_logged_in
 @must_be_contributor_or_public
-def report_abuse(**kwargs):
-    auth = kwargs['auth']
+def report_abuse(auth, **kwargs):
+
     user = auth.user
 
     comment = kwargs_to_comment(kwargs)
@@ -486,8 +477,7 @@ def report_abuse(**kwargs):
 
 @must_be_logged_in
 @must_be_contributor_or_public
-def unreport_abuse(**kwargs):
-    auth = kwargs['auth']
+def unreport_abuse(auth, **kwargs):
     user = auth.user
 
     comment = kwargs_to_comment(kwargs)

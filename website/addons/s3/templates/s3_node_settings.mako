@@ -1,4 +1,4 @@
-<div id="s3Scope" class="scripted">
+ <div id="s3Scope" class="scripted">
     <h4 class="addon-title">
         Amazon S3
         <small class="authorized-by">
@@ -24,7 +24,10 @@
       <div class="col-md-12">
         <p>
           <strong>Current Bucket:</strong>
-          <a data-bind="attr.href: urls().files">
+          <span data-bind="ifnot: currentBucket">
+            None
+          </span>
+          <a data-bind="if: currentBucket, attr.href: urls().files">
             {{currentBucket}}
           </a>
         </p>
@@ -47,7 +50,7 @@
           <div class="col-md-2">
             <button data-bind="click: selectBucket,
                                attr.disabled: !allowSelectBucket()"
-                    class="btn btn-primary">
+                    class="btn btn-success">
               Submit
             </button>
           </div>
@@ -65,7 +68,7 @@
         <input data-bind="value: secretKey" type="password" class="form-control" id="secret_key" name="secret_key" />
       </div>
       <button data-bind="click: createCredentials,
-                         attr.disabled: creatingCredentials" class="btn btn-primary addon-settings-submit">
+                         attr.disabled: creatingCredentials" class="btn btn-success addon-settings-submit">
         Submit
       </button>
     </div>

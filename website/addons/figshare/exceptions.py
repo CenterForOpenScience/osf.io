@@ -13,7 +13,7 @@ class FigshareIsDraftError(AddonEnrichmentError):
 
     @property
     def renderable_error(self):
-        return '''
+        return u'''
         <div class="alert alert-info" role="alert">
         The file "{name}" is still a draft on figshare. <br>
         To view it  on the OSF <a href="http://figshare.com/faqs">publish</a> it on figshare.

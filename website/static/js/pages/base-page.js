@@ -4,12 +4,11 @@
  */
 'use strict';
 // CSS used on every page
-require('../../vendor/bower_components/bootstrap/dist/css/bootstrap-theme.css');
 require('../../vendor/bootstrap-editable-custom/css/bootstrap-editable.css');
 require('../../vendor/bower_components/jquery-ui/themes/base/minified/jquery.ui.resizable.min.css');
 require('../../css/bootstrap-xl.css');
 require('../../css/animate.css');
-require('../../css/site.css');
+require('../../css/search-bar.css');
 require('font-awesome-webpack');
 
 var $ = require('jquery');
@@ -21,6 +20,13 @@ var NavbarControl = require('js/navbarControl');
 
 // Prevent IE from caching responses
 $.ajaxSetup({cache: false});
+
+// Polyfill for String.prototype.endsWith
+if (String.prototype.endsWith === undefined) {
+    String.prototype.endsWith = function(suffix) {
+        return this.indexOf(suffix, this.length - suffix.length) !== -1;
+    };
+}
 
 // Apply an empty view-model to the navbar, just so the tooltip bindingHandler
 // can be used
@@ -64,19 +70,22 @@ var SlideInViewModel = function (){
     };
 };
 
-$(document).on('click', '.project-toggle', function() {
-    var widget = $(this).closest('.addon-widget-container');
-    var up = $(this).find('.fa fa-angle-up');
-    var down = $(this).find('.fa fa-angle-down');
-    if(up.length > 0) {
-        up.removeClass('fa fa-angle-up').addClass('fa fa-angle-down');
-    }
-    if(down.length > 0) {
-        down.removeClass('fa fa-angle-down').addClass('fa fa-angle-up');
-    }
 
-    widget.find('.addon-widget-body').slideToggle();
-    return false;
+$(document).on('click', '.panel-heading', function(){
+    var toggle = $(this).find('.project-toggle');
+    if(toggle.length > 0){
+        var widget = $(this).closest('.panel');
+        var up = toggle.find('.fa.fa-angle-up');
+        var down = toggle.find('.fa.fa-angle-down');
+        if(up.length > 0) {
+            up.removeClass('fa fa-angle-up').addClass('fa fa-angle-down');
+        }
+        if(down.length > 0) {
+            down.removeClass('fa fa-angle-down').addClass('fa fa-angle-up');
+        }
+
+        widget.find('.panel-body').slideToggle();
+    }
 });
 
 $(function() {

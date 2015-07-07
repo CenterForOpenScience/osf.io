@@ -126,7 +126,8 @@ class CitationsAddonSerializer(OAuthAddonSerializer):
         addon_urls = self.addon_serialized_urls
         # Make sure developer returns set of needed urls
         for url in self.REQUIRED_URLS:
-            assert url in addon_urls, "addon_serilized_urls must include key '{0}'".format(url)
+            msg = "addon_serialized_urls must include key '{0}'".format(url)
+            assert url in addon_urls, msg
         ret.update(addon_urls)
         return ret
 

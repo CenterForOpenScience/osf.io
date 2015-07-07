@@ -12,15 +12,17 @@
     /* Handle starts under Bootstrap header */
     /* Note: Must be the same as #commentPane:padding-bottom */
     margin-top: 40px;
-    padding-top: 10px;
     width: 100px;
     height: 48px;
+    margin-left: -50px;
     text-align: center;
+    border-bottom-left-radius: 15px;
+    padding-top: 10px;    
 }
 
-.cp-handle:hover {
-    background-color: #d3d3d3;
-}
+/*.cp-handle:hover {*/
+    /*background-color: #d3d3d3;*/
+/*}*/
 
 .cp-bar {
     width: 1px;  /* Note: Should be the same as .cp-sidebar:margin-left */
@@ -50,4 +52,11 @@
     -moz-user-select: none;
     -ms-user-select: none;
     user-select: none;
+}
+
+.unread-comments-count {
+    font-size: medium;
+    color: #FFF;
+    position: absolute;
+    margin-left: 40px;
 }

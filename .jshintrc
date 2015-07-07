@@ -16,5 +16,6 @@
     "evil": true,
     "esnext": true,
     "predef": ["window", "document"],
-    "browser": true
+    "browser": true,
+    "validthis": true
 }

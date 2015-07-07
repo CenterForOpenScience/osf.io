@@ -1,5 +1,7 @@
 <%inherit file="project/project_base.mako"/>
 
+
+
 <%
     import json
     is_project = node['node_type'] == 'project'
@@ -9,7 +11,7 @@
     <header class="subhead" id="overview">
         <div class="row">
             <div class="col-sm-6 col-md-7 cite-container">
-                % if parent_node['id']:
+                % if parent_node['exists']:
                     % if parent_node['can_view'] or parent_node['is_public'] or parent_node['is_contributor']:
                         <h2 class="node-parent-title">
                             <a href="${parent_node['url']}">${parent_node['title']}</a> &nbsp;/
@@ -29,11 +31,11 @@
                     <div class="btn-group">
                     % if not node["is_public"]:
                         <button class='btn btn-default disabled'>Private</button>
-                        % if 'admin' in user['permissions']:
+                        % if 'admin' in user['permissions'] and not node['pending_embargo']:
                             <a class="btn btn-default" data-bind="click: makePublic">Make Public</a>
                         % endif
                     % else:
-                        % if 'admin' in user['permissions']:
+                        % if 'admin' in user['permissions'] and not node['is_registration']:
                             <a class="btn btn-default" data-bind="click: makePrivate">Make Private</a>
                         % endif
                         <button class="btn btn-default disabled">Public</button>
@@ -59,11 +61,15 @@
 
                     </div>
                     <!-- /ko -->
-                    <div class="btn-group">
+                    <div
+                        % if not user_name:
+                            data-bind="tooltip: {title: 'Log-in or create an account to watch/duplicate this project', placement: 'bottom'}"
+                        % endif
+                            class="btn-group">
                         <a
-                        % if user_name and (node['is_public'] or user['is_contributor']) and not node['is_registration']:
+                        % if user_name and (node['is_public'] or user['has_read_permissions']) and not node['is_registration']:
                             data-bind="click: toggleWatch, tooltip: {title: watchButtonAction, placement: 'bottom'}"
-                            class="btn btn-default"
+                            class="btn btn-default" data-container="body"
                         % else:
                             class="btn btn-default disabled"
                         % endif
@@ -72,7 +78,7 @@
                             <span data-bind="text: watchButtonDisplay" id="watchCount"></span>
                         </a>
                         <a
-                        % if is_project:
+                        % if user_name:
                             class="btn btn-default"
                             data-bind="tooltip: {title: 'Duplicate', placement: 'bottom'}"
                             data-target="#duplicateModal" data-toggle="modal"
@@ -95,7 +101,12 @@
         </div>
         <div id="contributors" class="row" style="line-height:25px">
             <div class="col-sm-12">
-                Contributors:
+                % if user['is_contributor']:
+                    <a class="link-dashed" href="${node['url']}contributors/">Contributors</a>:
+                % else:
+                    Contributors:
+                % endif
+
                 % if node['anonymous'] and not node['is_public']:
                     <ol>Anonymous Contributors</ol>
                 % else:
@@ -105,6 +116,7 @@
                             "uri": "${node["api_url"]}get_contributors/",
                             "replace": true
                         }'></div>
+
                     </ol>
                 % endif
                 % if node['is_fork']:
@@ -117,10 +129,16 @@
                         <a href="${node['url']}register/${meta['name_no_ext']}">${meta['name_clean']}</a>
                     % endfor
                 % endif
-                <br />Date Created:
-                <span data-bind="text: dateCreated.local, tooltip: {title: dateCreated.utc}" class="date node-date-created"></span>
-                | Last Updated:
-                <span data-bind="text: dateModified.local, tooltip: {title: dateModified.utc}" class="date node-last-modified-date"></span>
+                % if node['is_registration']:
+                    <br />Date Registered:
+                    <span data-bind="text: dateRegistered.local, tooltip: {title: dateRegistered.utc}" class="date node-date-registered"></span>
+                % endif
+                    <br />Date Created:
+                    <span data-bind="text: dateCreated.local, tooltip: {title: dateCreated.utc}" class="date node-date-created"></span>
+                % if not node['is_registration']:
+                    | Last Updated:
+                    <span data-bind="text: dateModified.local, tooltip: {title: dateModified.utc}" class="date node-last-modified-date"></span>
+                % endif
                 <span data-bind="if: hasIdentifiers()" class="scripted">
                   <br />
                     Identifiers:
@@ -139,9 +157,10 @@
                   <a data-bind="click: askCreateIdentifiers, visible: !idCreationInProgress()">Create DOI / ARK</a>
                   <!-- /ko -->
                 </span>
-                % if parent_node['id']:
-                    <br />Category: <span class="node-category">${node['category']}</span>
-                % elif node['description'] or 'write' in user['permissions']:
+                <br />Category: <span class="node-category">${node['category']}</span>
+                &nbsp;
+                <span data-bind="css: icon"></span>
+                % if node['description'] or 'write' in user['permissions']:
                     <br /><span id="description">Description:</span> <span id="nodeDescriptionEditable" class="node-description overflow" data-type="textarea">${node['description']}</span>
                 % endif
             </div>
@@ -155,51 +174,50 @@
 
 <%include file="project/modal_add_pointer.mako"/>
 
-% if node['node_type'] == 'project':
-    <%include file="project/modal_add_component.mako"/>
-% endif
+<%include file="project/modal_add_component.mako"/>
 
-% if user['can_comment'] or node['has_comments']:
-    <%include file="include/comment_pane_template.mako"/>
-% endif
+##% if user['can_comment'] or node['has_comments']:
+<%include file="include/comment_pane_template.mako"/>
+##% endif
 
 <div class="row">
 
     <div class="col-sm-6 osf-dash-col">
 
         %if user['show_wiki_widget']:
-            <div id="addonWikiWidget" class="addon-widget-container" mod-meta='{
+            <div id="addonWikiWidget" class="" mod-meta='{
             "tpl": "../addons/wiki/templates/wiki_widget.mako",
             "uri": "${node['api_url']}wiki/widget/"
         }'></div>
         %endif
 
         <!-- Files -->
-        <div class="addon-widget-container">
-            <div class="addon-widget-header clearfix">
-                <h4>Files</h4>
+        <div class="panel panel-default">
+            <div class="panel-heading clearfix">
+                <h3 class="panel-title">Files</h3>
                 <div class="pull-right">
-                   <a href="${node['url']}files/" class="btn"> <i class="fa fa-external-link"></i> </a>
+                   <a href="${node['url']}files/"> <i class="fa fa-external-link"></i> </a>
                 </div>
             </div>
-            <div class="addon-widget-body">
+            <div class="panel-body">
                 <div id="treeGrid">
-                    <div class="fangorn-loading">
-                        <i class="fa fa-spinner fangorn-spin"></i> <p class="m-t-sm fg-load-message"> Loading files...  </p>
+                    <div class="spinner-loading-wrapper">
+                        <div class="logo-spin text-center"><img src="/static/img/logo_spin.png" alt="loader"> </div> 
+                         <p class="m-t-sm fg-load-message"> Loading files...  </p>
                     </div>
                 </div>
             </div>
         </div>
 
         <!-- Discussions -->
-        <div id="commentsWidgetContainer" class="addon-widget-container">
-            <div class="addon-widget-header clearfix">
-                <h4>Recent discussions</h4>
+        <div id="commentsWidgetContainer" class="panel panel-default">
+            <div class="panel-heading clearfix">
+                <h3 class="panel-title">Recent discussions</h3>
                 <div class="pull-right">
-                    <a href="${node['url']}discussions/" class="btn"> <i class="fa fa-external-link"></i> </a>
+                    <a href="${node['url']}discussions/" class="btn"> <i class="fa fa-external-link"></i></a>
                 </div>
             </div>
-            <div class="addon-widget-body">
+            <div class="panel-body">
                 <div data-bind="if: commented">
                     <div data-bind="template: {name: 'commentTemplate', foreach: recentComments}"></div>
                 </div>
@@ -234,14 +252,14 @@
         <!-- Citations -->
         % if not node['anonymous']:
 
-         <div class="citations addon-widget-container">
-            <div class="addon-widget-header clearfix">
-                <h4>Citation</h4>
+         <div class="citations panel panel-default">
+            <div class="panel-heading clearfix">
+                <h3 class="panel-title">Citation</h3>
                 <div class="pull-right">
-                    <span class="permalink">${node['display_absolute_url']}</span><a href="#" class="btn project-toggle"><i class="fa fa-angle-down"></i></a>
+                    <span class="permalink">${node['display_absolute_url']}</span><a href="#" class="m-sm project-toggle"><i class="fa fa-angle-down"></i></a>
                 </div>
             </div>
-            <div class="addon-widget-body" style="display:none">
+            <div class="panel-body" style="display:none">
                 <dl id="citationList" class="citation-list">
                     <dt>APA</dt>
                         <dd class="citation-text" data-bind="text: apa"></dd>
@@ -266,13 +284,13 @@
 
 
         %if node['tags'] or 'write' in user['permissions']:
-         <div class="tags addon-widget-container">
-            <div class="addon-widget-header clearfix">
-                <h4>Tags </h4>
+         <div class="tags panel panel-default">
+            <div class="panel-heading clearfix">
+                <h3 class="panel-title">Tags </h3>
                 <div class="pull-right">
                 </div>
             </div>
-            <div class="addon-widget-body">
+            <div class="panel-body">
                 <input name="node-tags" id="node-tags" value="${','.join([tag for tag in node['tags']]) if node['tags'] else ''}" />
             </div>
         </div>
@@ -287,36 +305,36 @@
 </div>
 
 <%def name="children()">
-% if node['node_type'] == 'project':
-     <div class="components addon-widget-container">
-        <div class="addon-widget-header clearfix">
-            <h4>Components </h4>
+% if ('write' in user['permissions'] and not node['is_registration']) or node['children']:
+    <div class="components panel panel-default">
+        <div class="panel-heading clearfix">
+            <h3 class="panel-title">Components </h3>
             <div class="pull-right">
-              % if 'write' in user['permissions'] and not node['is_registration']:
+                % if 'write' in user['permissions'] and not node['is_registration']:
                     <a class="btn btn-sm btn-default" data-toggle="modal" data-target="#newComponent">Add Component</a>
                     <a class="btn btn-sm btn-default" data-toggle="modal" data-target="#addPointer">Add Links</a>
                 % endif
-
             </div>
-        </div>
-        <div class="addon-widget-body">
-              % if node['children']:
-                  <div id="containment">
-                      <div mod-meta='{
-                              "tpl": "util/render_nodes.mako",
-                              "uri": "${node["api_url"]}get_children/",
-                              "replace": true,
-                      "kwargs": {"sortable" : ${'true' if not node['is_registration'] else 'false'}}
-                          }'></div>
-                  </div>
-              % else:
-                <p>No components have been added to this project.</p>
-              % endif
-
-        </div>
-    </div>
-% endif
-
+        </div><!-- end addon-widget-header -->
+        <div class="panel-body">
+            % if node['children']:
+                <div id="containment">
+                    <div mod-meta='{
+                        "tpl": "util/render_nodes.mako",
+                        "uri": "${node["api_url"]}get_children/",
+                        "replace": true,
+                        "kwargs": {
+                          "sortable" : ${'true' if not node['is_registration'] else 'false'},
+                          "pluralized_node_type": "components"
+                        }
+                      }'></div>
+                </div><!-- end containment -->
+            % else:
+              <p>No components have been added to this ${node['node_type']}.</p>
+            % endif
+        </div><!-- end addon-widget-body -->
+    </div><!-- end components -->
+%endif
 % for name, capabilities in addon_capabilities.iteritems():
     <script id="capabilities-${name}" type="text/html">${capabilities}</script>
 % endfor
@@ -331,6 +349,9 @@
     % for stylesheet in tree_css:
     <link rel='stylesheet' href='${stylesheet}' type='text/css' />
     % endfor
+
+    <link rel="stylesheet" href="/static/css/pages/project-page.css">
+
 </%def>
 
 <%def name="javascript_bottom()">

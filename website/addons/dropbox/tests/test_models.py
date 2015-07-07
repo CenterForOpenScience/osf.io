@@ -333,10 +333,11 @@ class TestDropboxNodeSettingsModel(OsfTestCase):
         )
         assert_equal(
             self.project.logs[-1].params['path'],
-            os.path.join(self.node_settings.folder, path),
+            path,
         )
 
-    def test_does_not_get_copied_to_registrations(self):
+    @mock.patch('website.archiver.tasks.archive.si')
+    def test_does_not_get_copied_to_registrations(self, mock_archive):
         registration = self.project.register_node(
             schema=None,
             auth=Auth(user=self.project.creator),

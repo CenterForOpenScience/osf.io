@@ -8,11 +8,7 @@
         <form
                 id="logInForm"
                 class="form col-sm-4 col-sm-offset-4 m-t-xl"
-                % if next_url:
-                    action="${ web_url_for('auth_login') }?next=${ next_url }"
-                % else:
-                    action="${ web_url_for('auth_login') }"
-                % endif
+                action="${login_url}"
                 method="POST"
                 data-bind="submit: submit"
 
@@ -26,7 +22,7 @@
                         <input type="password" class="form-control" data-bind="value: password" name="password" placeholder="Enter your password">
 
                         <fieldset>
-                            <a class="forget-password m-t-md" href="${ web_url_for('_forgot_password') }">Forgot Your Password?</a>
+                            <a class="forget-password m-t-md" href="${ web_url_for('forgot_password_get') }">Forgot Your Password?</a>
                             <button type="submit" class="btn btn-success m-t-md pull-right">Sign In</button>
 
                         </fieldset>

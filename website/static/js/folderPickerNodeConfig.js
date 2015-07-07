@@ -52,6 +52,8 @@ var FolderPickerViewModel = oop.defclass({
         self.ownerName = ko.observable('');
         // whether the auth token is valid
         self.validCredentials = ko.observable(true);
+        // whether import token has been clicked
+        self.loadingImport = ko.observable(false);
         // current folder
         self.folder = ko.observable({
             name: null,
@@ -141,12 +143,22 @@ var FolderPickerViewModel = oop.defclass({
             var userHasAuth = self.userHasAuth();
             var nodeHasAuth = self.nodeHasAuth();
             var loaded = self.loadedSettings();
-            return userHasAuth && !nodeHasAuth && loaded;
+            var onclick = self.loadingImport();
+            return userHasAuth && !nodeHasAuth && loaded && !onclick;
+        });
+
+        /** Whether or not show loading icon after import button */
+        self.showLoading = ko.pureComputed(function() {
+            var userHasAuth = self.userHasAuth();
+            var nodeHasAuth = self.nodeHasAuth();
+            var loaded = self.loadedSettings();
+            var onclick = self.loadingImport();
+            return userHasAuth && !nodeHasAuth && loaded && onclick;
         });
 
         /** Whether or not to show the full settings pane. */
         self.showSettings = ko.pureComputed(function() {
-            return self.nodeHasAuth();
+            return self.nodeHasAuth() && self.validCredentials();
         });
 
         /** Whether or not to show the Create Access Token button */
@@ -209,11 +221,16 @@ var FolderPickerViewModel = oop.defclass({
         this.messageClass('text-info');
     },
     /**
+     * Abstract hook called after updateFromData, before the promise is resolved.
+     * - use to validate the VM state after update     
+     **/
+    afterUpdate: function() {},
+    /**
      * Abstract hook where subclasses can capture extra data from the API response
      *
      * @param {Object} settings Settings passed from server response in #updateFromData
      */
-    _updateCustomFields: function(settings){},  
+    _updateCustomFields: function(settings) {},  
     /**
      * Update the view model from data returned from the server or data passed explicitly.
      *
@@ -234,6 +251,7 @@ var FolderPickerViewModel = oop.defclass({
             });
             self.urls(settings.urls);
             self._updateCustomFields(settings);
+            self.afterUpdate();
             ret.resolve();
         };
         if (typeof data === 'undefined'){
@@ -333,6 +351,7 @@ var FolderPickerViewModel = oop.defclass({
             callback: function(confirmed) {
                 if (confirmed) {
                     self._importAuthConfirm();
+                    self.loadingImport(true);
                 }
             }
         });
@@ -376,6 +395,7 @@ var FolderPickerViewModel = oop.defclass({
             callback: function(confirmed) {
                 if (confirmed) {
                     self._deauthorizeConfirm();
+                    self.loadingImport(false);
                 }
             }
         });

@@ -1,6 +1,11 @@
 #!/bin/bash
 
-export HOME="/home"
+TEMPDIR=`mktemp -d`
+trap "rm -rf $TEMPDIR" EXIT
+
+export HOME=$TEMPDIR
 cd /opt/apps/osf
-source mathenv/bin/activate
-invoke analytics >> /var/log/osf/analytics.log 2>&1
+source /opt/data/envs/osf/bin/activate
+
+mkdir -p $HOME/.config/matplotlib
+invoke analytics >> /opt/data/log/analytics/output.log 2>&1

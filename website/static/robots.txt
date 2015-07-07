@@ -1,4 +1,7 @@
 # www.robotstxt.org/
 
 User-agent: *
-Disallow:
+Disallow: /piwik/
+
+User-agent: *
+Disallow: /api/*

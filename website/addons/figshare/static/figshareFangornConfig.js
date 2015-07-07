@@ -6,57 +6,64 @@ var Fangorn = require('js/fangorn');
 
 
 // Define Fangorn Button Actions
-function _fangornActionColumn (item, col) {
-    var self = this;  // jshint ignore:line
-    var buttons = [];
-
-    // If File and FileRead are not defined dropzone is not supported and neither is uploads
-    if (window.File && window.FileReader && item.data.permissions.edit && item.kind === 'folder') {
-        buttons.push({
-            'name' : '',
-            'tooltip' : 'Upload files',
-            'icon' : 'fa fa-upload',
-            'css' : 'fangorn-clickable btn btn-default btn-xs',
-            'onclick' : Fangorn.ButtonEvents._uploadEvent
-        });
+var _figshareItemButtons = {
+    view: function (ctrl, args, children) {
+        var buttons = [];
+        var tb = args.treebeard;
+        var item = args.item;
+        // If File and FileRead are not defined dropzone is not supported and neither is uploads
+        if (window.File && window.FileReader && item.data.permissions && item.data.permissions.edit && item.kind === 'folder') {
+            buttons.push(
+                m.component(Fangorn.Components.button, {
+                    onclick: function (event) {
+                        Fangorn.ButtonEvents._uploadEvent.call(tb, event, item);
+                    },
+                    icon: 'fa fa-upload',
+                    className: 'text-success'
+                }, 'Upload')
+            );
+        }
+        if (item.kind === 'file' && item.data.extra && item.data.extra.status === 'public') {
+            buttons.push(
+                m.component(Fangorn.Components.button, {
+                    onclick: function (event) {
+                        Fangorn.ButtonEvents._downloadEvent.call(tb, event, item);
+                    },
+                    icon: 'fa fa-download',
+                    className: 'text-info'
+                }, 'Download')
+            );
+        }
+        // Files can be deleted if private or if it is in a dataset that contains more than one file
+        var privateOrSiblings = (item.data.extra && item.data.extra.status !== 'public') ||
+            (!item.parent().data.isAddonRoot && item.parent().children.length > 1);
+        if (item.kind === 'file' && privateOrSiblings && item.data.permissions && item.data.permissions.edit) {
+            buttons.push(
+                m.component(Fangorn.Components.button, {
+                    onclick: function (event) {
+                        Fangorn.ButtonEvents._removeEvent.call(tb, event, tb.multiselected());
+                    },
+                    icon: 'fa fa-trash',
+                    className: 'text-danger'
+                }, 'Delete')
+            );
+        }
+        if (item.data.permissions && item.data.permissions.view) {
+            buttons.push(
+                m.component(Fangorn.Components.button, {
+                    onclick: function(event) {
+                        Fangorn.ButtonEvents._gotoFileEvent.call(tb, item);
+                    },
+                    icon: 'fa fa-external-link',
+                    className : 'text-info'
+                }, 'View'));
+        }
+        return m('span', buttons); // Tell fangorn this function is used.
     }
-    if (item.kind === 'file' && item.data.extra && item.data.extra.status === 'public') {
-        buttons.push({
-            'name' : '',
-            'tooltip' : 'Download file',
-            'icon' : 'fa fa-download',
-            'css' : 'btn btn-info btn-xs',
-            'onclick' : Fangorn.ButtonEvents._downloadEvent
-        });
-    }
+};
 
-    // Files can be deleted if private or if parent contains more than one child
-    var privateOrSiblings = (item.data.extra && item.data.extra.status !== 'public') ||
-        item.parent().children.length > 1;
-    if (item.kind === 'file' && privateOrSiblings) {
-        buttons.push({
-            'name' : '',
-            'icon' : 'fa fa-times',
-            'tooltip' : 'Delete',
-            'css' : 'm-l-lg text-danger fg-hover-hide',
-            'style' : 'display:none',
-            'onclick' : Fangorn.ButtonEvents._removeEvent
-        });
-    }
-
-    return buttons.map(function(btn) {
-        return m('span', { 'data-col' : item.id }, [ m('i',{
-            'class' : btn.css,
-            style : btn.style,
-            'data-toggle' : 'tooltip', title : btn.tooltip, 'data-placement': 'bottom',
-            onclick: function(event){ btn.onclick.call(self, event, item, col); }
-        },
-            [ m('span', { 'class' : btn.icon}, btn.name) ])
-        ]);
-    });
-}
 
 Fangorn.config.figshare = {
     // Fangorn options are called if functions, so return a thunk that returns the column builder
-    resolveActionColumn: function() {return _fangornActionColumn;}
+    itemButtons: _figshareItemButtons
 };
