@@ -11,6 +11,7 @@ from website import settings
 import website.search.search as search
 from website.search import elastic_search
 from website.search.util import build_query
+from website.search import util
 from website.search_migration.migrate import migrate
 
 from tests.base import OsfTestCase
@@ -666,41 +667,65 @@ class TestSearchMigration(SearchTestCase):
 
             migrate(delete=True, index=settings.ELASTIC_INDEX, app=self.app.app)
             var = self.es.indices.get_aliases()
-            assert_equal(var[settings.ELASTIC_INDEX + '_v{}'.format(n + 1)]['aliases'].keys()[0], settings.ELASTIC_INDEX)
+            assert_equal(var[settings.ELASTIC_INDEX + '_v{}'.format(n + 1)]['aliases'].keys()[0],
+                         settings.ELASTIC_INDEX)
             assert not var.get(settings.ELASTIC_INDEX + '_v{}'.format(n))
-
-
-from website.search import util
-
-def simple_search(term, doc_type='_all'):
-    q = {'query': util.build_query_string(term)}
-    return elastic_search.es.search(index=elastic_search.INDEX, doc_type=doc_type, body=q)['hits']['hits']
-
-def simple_child_search(term, doc_type='_all'):
-    q = {'query': util.build_has_child_query_string(term)}
-    return elastic_search.es.search(index=elastic_search.INDEX, doc_type=doc_type, body=q)['hits']['hits']
 
 
 class TestFiles(SearchTestCase):
     def setUp(self):
         super(TestFiles, self).setUp()
+
         self.project = ProjectFactory(title='The Spanish Inquisition')
+        self.project.set_privacy('public')
+
+        self.project_with_no_files = ProjectFactory(title='Something Completely Different')
+        self.project_with_no_files.set_privacy('public')
+
         self.file_ = {
             'name': 'unique_file.txt',
-            'path': '/12345',
+            'path': '/00001',
             'content': 'tea, earl gray, hot.',
         }
-        self.project.set_privacy('public')
         elastic_search.update_file(self.file_, self.project._id, index=elastic_search.INDEX)
-        time.sleep(1)
 
-    def test_can_find_indexed_file(self):
-        res = simple_search('"earl gray"', doc_type='file')
-        assert_equal(len(res), 1)
+        time.sleep(1)  # Allow elasticsearch to update
 
     def test_can_find_project_with_file_that_matches(self):
-        assert_equal(len(query('Spanish')['results']), 1)
-        assert_equal(len(query('earl gray', doc_type='project')['results']), 1)
+        self.project_with_no_files.set_privacy('public')
+        res = query('earl gray', doc_type='project')['results']
+        assert_equal(len(res), 1)
 
     def test_files_not_in_search_results(self):
-        assert_equal(len(query('earl gray')['results']), 1)
+        res = query('earl gray')['results']
+        assert_equal(len(res), 1)
+
+    def test_can_find_files_with_non_ascii_characters(self):
+        non_ascii_name_file = {
+            'name': 'nón_ascíí_named_file.txt',
+            'path': '/00002',
+            'content': 'Andorians are blue.',
+        }
+        elastic_search.update_file(non_ascii_name_file, self.project._id, index=elastic_search.INDEX)
+
+        non_ascii_content_file = {
+            'name': 'non_ascii_content_file.txt',
+            'path': '/00003',
+            'content': 'Fun Fact! The emoji for earth is \xF0\x9F\x8C\x8F.'
+        }
+        elastic_search.update_file(non_ascii_content_file, self.project._id, index=elastic_search.INDEX)
+        time.sleep(1)
+
+        res = query('Andorians')['results']
+        assert_equal(len(res), 1)
+
+        res = query('emoji')['results']
+        assert_equal(len(res), 1)
+
+    def test_project_with_file_cant_be_found_when_made_private(self):
+        res = query('earl gray')['results']
+        assert_equal(len(res), 1)
+
+        self.project.set_privacy('private')
+        res = query('earl gray')['results']
+        assert_equal(len(res), 0)
