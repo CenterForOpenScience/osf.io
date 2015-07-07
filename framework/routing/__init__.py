@@ -23,7 +23,8 @@ from website import settings
 logger = logging.getLogger(__name__)
 
 TEMPLATE_DIR = settings.TEMPLATES_PATH
-_tpl_lookup = TemplateLookup(
+
+_TPL_LOOKUP = TemplateLookup(
     directories=[
         TEMPLATE_DIR,
         os.path.join(settings.BASE_PATH, 'addons/'),
@@ -31,13 +32,13 @@ _tpl_lookup = TemplateLookup(
     module_directory='/tmp/mako_modules'
 )
 
-_tpl_lookup_safe = TemplateLookup(
+_TPL_LOOKUP_SAFE = TemplateLookup(
     directories=[
         TEMPLATE_DIR,
         os.path.join(settings.BASE_PATH, 'addons/'),
     ],
     module_directory='/tmp/mako_modules',
-    default_filters=['h']
+    default_filters=['unicode', 'h']  # unicode is a default filter; make sure it isn't dropped when overriding
 )
 
 REDIRECT_CODES = [
@@ -198,8 +199,8 @@ def render_jinja_string(tpl, data):
 
 mako_cache = {}
 def render_mako_string(tpldir, tplname, data, safe=False):
-    """Render a mako template. Optional safe argument to activate markup escaping"""
-    lookup_obj = _tpl_lookup_safe if safe is True else _tpl_lookup
+    """Render a mako template. Optional safe argument to activate markupsafe escaping"""
+    lookup_obj = _TPL_LOOKUP_SAFE if safe is True else _TPL_LOOKUP
 
     tpl = mako_cache.get(tplname)
     if tpl is None:
