@@ -19,7 +19,7 @@ var iterObject = function(obj) {
     return ret;
 };
 
-function isBlank(item) {    
+function isBlank(item) {
     return !item || /^\s*$/.test(item || '');
 }
 
@@ -49,8 +49,8 @@ var currentUser = window.contextVars.currentUser || {
 
 var Comment = function(data) {
     var self = this;
-    
-    self.saved = ko.observable(data ? true : false);   
+
+    self.saved = ko.observable(data ? true : false);
 
     data = data || {};
     self.user = data.user || currentUser;
@@ -91,9 +91,9 @@ $(document).keydown(function(e) {
 var Question = function(data, id) {
     var self = this;
 
-    self.id = id || -1;    
+    self.id = id || -1;
 
-    self.value = ko.observable(data.value || null);    
+    self.value = ko.observable(data.value || null);
     self.setValue = function(val) {
         self.value(val);
     };
@@ -107,8 +107,8 @@ var Question = function(data, id) {
     self.options = data.options || [];
     self.properties = data.properties || {};
 
-    self.showExample = ko.observable(false);    
-    
+    self.showExample = ko.observable(false);
+
     self.comments = ko.observableArray(
         $.map(data.comments || [], function(comment) {
             return new Comment(comment);
@@ -122,7 +122,7 @@ var Question = function(data, id) {
     self.isComplete = ko.computed(function() {
         return !isBlank(self.value());
     });
-    
+
     self.init();
 };
 Question.prototype.init = function() {
@@ -167,7 +167,7 @@ var MetaSchema = function(params) {
 
 var Draft = function(params, metaSchema) {
     var self = this;
-    
+
     self.pk = params.pk;
     self.metaSchema = metaSchema || new MetaSchema(params.registration_schema);
     self.schema = ko.pureComputed(function() {
@@ -202,7 +202,7 @@ var RegistrationEditor = function(urls, editorId, utils) {
     var self = this;
     self.utils = utils;
 
-    self.urls = urls; 
+    self.urls = urls;
 
     self.readonly = ko.observable(false);
 
@@ -210,27 +210,27 @@ var RegistrationEditor = function(urls, editorId, utils) {
 
     self.draft = ko.observable();
     self.currentSchema = ko.computed(function() {
-        var draft = self.draft();        
-        if (!draft || !draft.schema()) {            
+        var draft = self.draft();
+        if (!draft || !draft.schema()) {
             return {pages: []};
         }
         else {
             return draft.schema();
         }
-    });     
+    });
 
     self.currentQuestion = ko.observable();
     self.currentPages = ko.computed(function() {
         return self.currentSchema().pages;
     });
-    
+
     self.lastSaveTime = ko.observable();
     self.formattedDate = formattedDate;
 
     self.flatQuestions = ko.computed(function() {
         var flat = [];
         var schema = self.currentSchema();
-        
+
         $.each(schema.pages, function(i, page) {
             $.each(page.questions, function(qid, question) {
                 flat.push(question);
@@ -248,12 +248,12 @@ RegistrationEditor.prototype.init = function(draft) {
 
     self.draft(draft);
     var metaSchema = draft.metaSchema;
-    
+
     var schemaData = {};
     if(draft) {
         schemaData = draft.schemaData || {};
     }
-    
+
     var keys = Object.keys(metaSchema.schema.pages[0].questions);
     self.currentQuestion(metaSchema.schema.pages[0].questions[keys.shift()]);
 
@@ -305,12 +305,12 @@ RegistrationEditor.prototype.nextPage = function() {
 
     var currentQuestion = self.currentQuestion();
 
-    var questions = self.flatQuestions();   
+    var questions = self.flatQuestions();
     var index = indexOf(questions, function(q){
         return q.id === currentQuestion.id;
     });
     if(index + 1 === questions.length) {
-        self.currentQuestion(questions.shift());        
+        self.currentQuestion(questions.shift());
     }
     else {
         self.currentQuestion(questions[index + 1]);
@@ -321,25 +321,26 @@ RegistrationEditor.prototype.previousPage = function() {
 
     var currentQuestion = self.currentQuestion();
 
-    var questions = self.flatQuestions();   
+    var questions = self.flatQuestions();
     var index = indexOf(questions, function(q){
         return q.id === currentQuestion.id;
     });
     if(index - 1 < 0){
-        self.currentQuestion(questions.pop());        
+        self.currentQuestion(questions.pop());
     }
     else {
         self.currentQuestion(questions[index - 1]);
-    }   
+    }
 };
 RegistrationEditor.prototype.selectPage = function(page) {
     var self = this;
-    self.currentQuestion(page.questions[0]);
+	firstQuestion = page.questions[Object.keys(page.questions)[0]];
+    self.currentQuestion(firstQuestion);
 };
 RegistrationEditor.prototype.updateData = function(response) {
     var self = this;
 
-    self.draftPk(response.pk);    
+    self.draftPk(response.pk);
     self.lastSaveTime(new Date());
 };
 RegistrationEditor.prototype.create = function(schemaData) {
@@ -353,7 +354,7 @@ RegistrationEditor.prototype.create = function(schemaData) {
         schema_data: schemaData
     }).then(self.updateData.bind(self));
 };
-RegistrationEditor.prototype.save = function() {    
+RegistrationEditor.prototype.save = function() {
     var self = this;
 
     var metaSchema = self.draft().metaSchema;
@@ -361,7 +362,7 @@ RegistrationEditor.prototype.save = function() {
     var data = {};
     $.each(schema.pages, function(i, page) {
         $.each(page.questions, function(qid, question) {
-            if(question.type === 'object'){ 
+            if(question.type === 'object'){
                 var value = {};
                 $.each(question.properties, function(prop, subQuestion) {
                     value[prop] = {
@@ -378,7 +379,7 @@ RegistrationEditor.prototype.save = function() {
                 };
             }
         });
-    });    
+    });
 
     if (!self.draftPk()){
         return self.create(data);
@@ -413,13 +414,13 @@ var RegistrationManager = function(node, draftsSelector, editorSelector, control
     // self.registrations = ko.observable([]);
     self.drafts = ko.observableArray();
     /*
-    self.drafts.subscribe(function(changes) {
-        $.each(changes, function(i, change) {
-            if(change.status === 'deleted' && self.regEditor) {
-                self.regEditor.destroy();
-            }
-        });
-    }, null, 'arrayChange');
+     self.drafts.subscribe(function(changes) {
+     $.each(changes, function(i, change) {
+     if(change.status === 'deleted' && self.regEditor) {
+     self.regEditor.destroy();
+     }
+     });
+     }, null, 'arrayChange');
      */
 
     self.loading = ko.observable(true);
@@ -434,7 +435,7 @@ var RegistrationManager = function(node, draftsSelector, editorSelector, control
             return a.initiated > b.initiated;
         });
     });
-    
+
     self.controls.showManager();
 };
 RegistrationManager.prototype.init = function() {
@@ -472,9 +473,9 @@ RegistrationManager.prototype.blankDraft = function(metaSchema) {
 RegistrationManager.prototype.launchEditor = function(draft) {
     var self = this;
     var node = self.node;
-    
+
     bootbox.hideAll();
-    self.controls.showEditor();  
+    self.controls.showEditor();
 
     var newDraft;
     if (self.regEditor) {
@@ -502,7 +503,7 @@ RegistrationManager.prototype.launchEditor = function(draft) {
                 self.drafts.unshift(draft);
             }
         });
-        newDraft = self.regEditor.init(draft);    
+        newDraft = self.regEditor.init(draft);
         $osf.applyBindings(self.regEditor, self.editorSelector);
     }
 };
@@ -511,7 +512,7 @@ RegistrationManager.prototype.editDraft = function(draft) {
 };
 RegistrationManager.prototype.deleteDraft = function(draft) {
     var self = this;
-    
+
     bootbox.confirm('Are you sure you want to delete this draft registration?', function(confirmed) {
         if(confirmed) {
             $.ajax({
@@ -521,7 +522,7 @@ RegistrationManager.prototype.deleteDraft = function(draft) {
                 self.drafts.remove(function(item) {
                     return item.pk === draft.pk;
                 });
-            });            
+            });
         }
     });
 };
@@ -529,7 +530,7 @@ RegistrationManager.prototype.beforeRegister = function() {
     var self = this;
 
     var node = self.node;
-   
+
     var VM = {
         title: node.title,
         parentTitle: node.parentTitle,
