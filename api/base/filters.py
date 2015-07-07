@@ -4,6 +4,8 @@ import functools
 from modularodm import Q
 from rest_framework.filters import OrderingFilter
 from rest_framework import serializers as ser
+from api.users.serializers import JobsSerializer, SchoolsSerializer
+
 
 
 class ODMOrderingFilter(OrderingFilter):
@@ -17,14 +19,19 @@ class ODMOrderingFilter(OrderingFilter):
         return queryset
 
 query_pattern = re.compile(r'filter\[\s*(?P<field>\S*)\s*\]\s*')
+# query_pattern = re.compile(r'filter\[\s*(?P<field>\S*)\s*\]\s*')
 
 
 def query_params_to_fields(query_params):
-    return {
-        query_pattern.match(key).groupdict()['field']: value
+    yourmom = {query_pattern.match(key).groupdict()['field']: value
         for key, value in query_params.items()
-        if query_pattern.match(key)
-    }
+        if query_pattern.match(key)}
+    return yourmom
+    # return {
+    #     query_pattern.match(key).groupdict()['field']: value
+    #     for key, value in query_params.items()
+    #     if query_pattern.match(key)
+    # }
 
 
 # Used to make intersection "reduce-able"
@@ -49,24 +56,19 @@ class FilterMixin(object):
         #  foo.bar -> foo
         #  foo.bar.bas -> foo
 
-        base_key = key.strip().split('.')[0]
+        # base_key = key.strip().split('.')[0]
         try:
-            base_key in self.serializer_class.filterable_fields
+            return key.strip() in self.serializer_class.filterable_fields
         except AttributeError:
             return key.strip() in self.serializer_class._declared_fields
-        return key
+
 
     # Used so that that queries by _id, jobs, and schools, will work
     def convert_key(self, key):
         key = key.strip()
-        # If the field is a complex field, then break it apart to rebuild it better/stronger/faster.
-        if '.' in key:
-            key_base = key.strip().split('.')[0]
-            key_field = key.strip().split('.')[1]
-        else:
-            key_base = key
-        if self.serializer_class._declared_fields[key_base].source:
-            new_key = self.serializer_class._declared_fields[key_base].source + '.' + key_field
+        # # If the field is a complex field, then break it apart to rebuild it better/stronger/faster.
+        if self.serializer_class._declared_fields[key].source:
+            new_key = self.serializer_class._declared_fields[key].source
             return new_key
         return key
 
@@ -100,6 +102,8 @@ class ODMFilterMixin(FilterMixin):
     field_comparison_operators = {
         ser.CharField: 'icontains',
         ser.ListField: 'in',
+        JobsSerializer: 'icontains',
+        SchoolsSerializer: 'icontains'
     }
 
     def __init__(self, *args, **kwargs):
@@ -113,6 +117,7 @@ class ODMFilterMixin(FilterMixin):
             return self.field_comparison_operators[field_type]
         else:
             return self.DEFAULT_OPERATOR
+        # return self.DEFAULT_OPERATOR
 
     def get_default_odm_query(self):
         raise NotImplementedError('Must define get_default_odm_query')
@@ -133,13 +138,35 @@ class ODMFilterMixin(FilterMixin):
 
         query_parts = []
         fields_dict = query_params_to_fields(query_params)
+        # fields_dict = {u'jobs.institution': u'Major Lazer'}
         if fields_dict:
             for key, value in fields_dict.items():
-                if self.is_filterable_field(key=key):
+                if '.' in key:
+                    key_base = key.strip().split('.')[0]
+                    key_field = key.strip().split('.')[1]
+                    converted_key = self.convert_key(key=key_base) + '.' + key_field
+                    comparison_operator = self.get_comparison_operator(key=key_base)
+                    converted_value = self.convert_value(value=value, field=key_base)
+                else:
                     converted_key = self.convert_key(key=key)
-                    comparison_operator = self.get_comparison_operator(key=converted_key)
-                    converted_value = self.convert_value(value=value, field=converted_key)
-                    query_parts.append(Q(converted_key, comparison_operator, converted_value))
+                    comparison_operator = self.get_comparison_operator(key=key)
+                    converted_value = self.convert_value(value=value, field=key)
+            query_parts.append(Q(converted_key, comparison_operator, converted_value))
+            # query_parts = [
+            #     Q(converted_key, comparison_operator, converted_value)
+            #     # Q(key, self.get_comparison_operator(key=key), value)
+            #     # Q(u'jobs.institution', self.get_comparison_operator(key=key), u'Major Lazer')
+            #     # Q(u'jobs.institution', u'icontains', u'My House')
+            #     # Q(u'jobs.institution', u'icontains', u'House')
+            #     # for key, value in fields_dict.items() if self.is_filterable_field(key=key)
+            #     for key, value in fields_dict.items()
+            # ]
+            # for key, value in fields_dict.items():
+            #     if self.is_filterable_field(key=key):
+            #         converted_key = self.convert_key(key=key)
+            #         comparison_operator = self.get_comparison_operator(key=converted_key)
+            #         converted_value = self.convert_value(value=value, field=converted_key)
+            #         query_parts.append(Q(converted_key, comparison_operator, converted_value))
             # TODO Ensure that if you try to filter on an invalid field, it returns a useful error. Fix related test.
             try:
                 query = functools.reduce(intersect, query_parts)
