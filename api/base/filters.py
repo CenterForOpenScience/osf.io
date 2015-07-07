@@ -151,13 +151,13 @@ class ODMFilterMixin(FilterMixin):
                     converted_key = self.convert_key(key=key)
                     comparison_operator = self.get_comparison_operator(key=key)
                     converted_value = self.convert_value(value=value, field=key)
-            query_parts.append(Q(converted_key, comparison_operator, converted_value))
+                query_parts.append(Q(converted_key, comparison_operator, converted_value))
             # query_parts = [
-            #     Q(converted_key, comparison_operator, converted_value)
+            #     # Q(converted_key, comparison_operator, converted_value)
             #     # Q(key, self.get_comparison_operator(key=key), value)
             #     # Q(u'jobs.institution', self.get_comparison_operator(key=key), u'Major Lazer')
             #     # Q(u'jobs.institution', u'icontains', u'My House')
-            #     # Q(u'jobs.institution', u'icontains', u'House')
+            #     Q(u'jobs.ongoing', u'icontains', u'False')
             #     # for key, value in fields_dict.items() if self.is_filterable_field(key=key)
             #     for key, value in fields_dict.items()
             # ]
