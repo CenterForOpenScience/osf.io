@@ -36,7 +36,13 @@ ko.bindingHandlers.osfUploader = {
                     parallelUploads: 1,
                     acceptDirectories: false,
                     fallback: function(){}
-                }
+                },
+                // console.log(item);
+                // if (item.data.addonFullname !== undefined) {
+                //     if (item.data.addonFullname !== "OSF Storage") {
+                //         console.log("osf");
+                //     }
+                // }
             }
         );
         fw.init();
