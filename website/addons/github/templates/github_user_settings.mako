@@ -7,7 +7,7 @@
             % if authorized:
                     authorized by
                     <a href="https://github.com/${authorized_github_user}" target="_blank">
-                        ${authorized_github_user}
+                        <em>${authorized_github_user}</em>
                     </a>
                 <a id="githubDelKey" class="text-danger pull-right addon-auth">Disconnect Account</a>
             % else:

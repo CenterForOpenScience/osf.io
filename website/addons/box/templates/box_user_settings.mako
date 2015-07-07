@@ -8,7 +8,7 @@
         <small class="authorized-by">
             <span data-bind="if: userHasAuth() && loaded()">
                     authorized
-                    <span data-bind="if: boxName()">by {{ boxName }}</span>
+                    <span data-bind="if: boxName()">by <em>{{ boxName }}</em></span>
                     <a data-bind="click: deleteKey" class="text-danger pull-right addon-auth">Disconnect Account</a>
             </span>
 

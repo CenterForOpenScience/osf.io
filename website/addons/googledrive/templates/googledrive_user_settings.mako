@@ -8,7 +8,7 @@
         <!-- Delete Access Token Button-->
         <span data-bind="if: userHasAuth() && loaded()">
             authorized
-            <span data-bind="if: username()">by {{ username }}</span>
+            <span data-bind="if: username()">by <em>{{ username }}</em></span>
             <a data-bind="click:deleteKey" class="text-danger pull-right addon-auth">
                Disconnect Acount
             </a>
