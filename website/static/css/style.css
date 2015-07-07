@@ -279,3 +279,10 @@ a {
 .popover h3 {
     font-weight: 500;
 }
+
+/* In list group, not allow icon to be pushed down */
+.component-overflow {
+    word-wrap: break-word;
+    max-width: 90%;
+    display: inline-block;
+}
