@@ -79,7 +79,7 @@ def get_or_http_error(Model, pk):
         else:
             exc_options = {
                 'message_long': 'This resource has been deleted'
-                }
+            }
 
         raise HTTPError(http.GONE, data=exc_options)
 
