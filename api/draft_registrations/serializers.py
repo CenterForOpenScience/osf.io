@@ -8,6 +8,7 @@ from website.project.model import DraftRegistration
 from website.project.model import Q
 from website.project.metadata.schemas import OSF_META_SCHEMAS
 
+from rest_framework import serializers as ser
 
 
 class DraftRegSerializer(JSONAPISerializer):
@@ -31,19 +32,23 @@ class DraftRegSerializer(JSONAPISerializer):
         """Update instance with the validated data. Requires
         the request to be in the serializer context.
         """
-        assert isinstance(instance, DraftRegistration), 'instance must be a DraftRegistration'
-        schema_name = validated_data['registration_form']
+        updated = datetime.datetime.utcnow()
         schema_version = int(validated_data.get('schema_version', 1))
-        if schema_name:
+        instance.initiated = instance.initiated
+        if "registration_form" in validated_data.keys() and "schema_version" in validated_data.keys():
+            schema_name = validated_data['registration_form']
             meta_schema = drafts.get_schema_or_fail(
                 Q('name', 'eq', schema_name) &
                 Q('schema_version', 'eq', schema_version)
             )
-            existing_schema = instance.registration_schema
-            if existing_schema is None or (existing_schema.name, existing_schema.schema_version) != (meta_schema.name, meta_schema.schema_version):
-                instance.registration_schema = meta_schema
-        if not instance.registration_metadata:
+            instance.registration_schema = meta_schema
+            instance.updated = updated
+        else:
+            instance.registration_schema = instance.registration_schema
+
+        if "registration_metadata" in validated_data.keys():
             instance.registration_metadata = validated_data.get('registration_metadata', {})
-        instance.updated = datetime.datetime.utcnow()
+            instance.updated = updated
+
         instance.save()
         return instance

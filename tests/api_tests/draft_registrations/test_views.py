@@ -165,99 +165,112 @@ class TestRegistrationUpdate(ApiTestCase):
         assert_equal(res.status_code, 403)
 
 
-# class TestRegistrationPartialUpdate(ApiTestCase):
-#
-#     def setUp(self):
-#         super(TestRegistrationPartialUpdate, self).setUp()
-#         self.user = UserFactory.build()
-#         password = fake.password()
-#         self.password = password
-#         self.user.set_password(password)
-#         self.user.save()
-#         self.basic_auth = (self.user.username, password)
-#
-#         self.user_two = UserFactory.build()
-#         self.user_two.set_password(password)
-#         self.user_two.save()
-#         self.basic_auth_two = (self.user_two.username, password)
-#
-#         self.private_project = ProjectFactory(creator=self.user, is_private=True)
-#         self.private_registration = RegistrationFactory(creator=self.user, project=self.private_project)
-#         self.private_url = '/{}registrations/{}/'.format(API_BASE, self.private_registration._id)
-#
-#         self.public_registration_draft = NodeFactory(creator=self.user, is_registration_draft=True, is_public=True)
-#         self.public_reg_draft_url = '/{}registrations/{}/'.format(API_BASE, self.public_registration_draft._id)
-#
-#         self.private_registration_draft = NodeFactory(creator=self.user, is_registration_draft=True)
-#         self.private_reg_draft_url = '/{}registrations/{}/'.format(API_BASE, self.private_registration_draft._id)
-#
-#         self.new_title = "Updated registration title"
-#
-#     def test_partial_update_node_that_is_not_registration_draft(self):
-#         url = '/{}registrations/{}/'.format(API_BASE, self.private_project)
-#         res = self.app.patch(url, {
-#             'title': self.new_title,
-#         }, auth=self.basic_auth, expect_errors=True)
-#         assert_equal(res.status_code, 400)
-#
-#     def test_partial_update_registration(self):
-#         res = self.app.patch(self.private_url, {
-#             'title': self.new_title,
-#         }, auth=self.basic_auth, expect_errors=True)
-#         assert_equal(res.status_code, 403)
-#
-#     def test_partial_update_node_that_does_not_exist(self):
-#         url = '/{}registrations/{}/'.format(API_BASE, '12345')
-#         res = self.app.patch(url, {
-#             'title': self.new_title,
-#         }, auth=self.basic_auth, expect_errors=True)
-#         assert_equal(res.status_code, 404)
-#
-#     def test_partial_update_public_registration_draft_logged_out(self):
-#         res = self.app.patch(self.public_reg_draft_url, {
-#             'title': self.new_title,
-#         }, expect_errors=True)
-#         assert_equal(res.status_code, 403)
-#
-#     def test_partial_update_public_registration_draft_logged_in(self):
-#         res = self.app.patch(self.public_reg_draft_url, {
-#             'title': self.new_title,
-#         }, auth=self.basic_auth, expect_errors=True)
-#         assert_equal(res.status_code, 200)
-#         assert_equal(res.json['data']['id'], self.public_registration_draft._id)
-#
-#         res = self.app.patch(self.public_reg_draft_url, {
-#             'title': self.new_title,
-#         }, auth=self.basic_auth_two, expect_errors=True)
-#         assert_equal(res.status_code, 403)
-#
-#     def test_partial_update_private_registration_draft_logged_out(self):
-#         res = self.app.patch(self.private_reg_draft_url, {
-#             'title': self.new_title,
-#         }, expect_errors=True)
-#         assert_equal(res.status_code, 403)
-#
-#     def test_partial_update_private_registration_draft_logged_in_contributor(self):
-#         res = self.app.patch(self.private_reg_draft_url, {
-#             'title': self.new_title,
-#         }, auth=self.basic_auth)
-#         assert_equal(res.status_code, 200)
-#         assert_equal(res.json['data']['id'], self.private_registration_draft._id)
-#
-#     def test_partial_update_private_registration_draft_logged_in_non_contributor(self):
-#         res = self.app.patch(self.private_reg_draft_url, {
-#             'title': self.new_title,
-#         }, auth=self.basic_auth_two, expect_errors=True)
-#         assert_equal(res.status_code, 403)
-#
-#     def test_partial_update_private_registration_draft_logged_in_read_only_contributor(self):
-#         self.private_registration_draft.add_contributor(self.user_two, permissions=['read'])
-#         res = self.app.patch(self.private_reg_draft_url, {
-#             'title': self.new_title,
-#         }, auth=self.basic_auth_two, expect_errors=True)
-#         assert_equal(res.status_code, 403)
-#
-#
+class TestDraftRegistrationPartialUpdate(ApiTestCase):
+
+    def setUp(self):
+        super(TestDraftRegistrationPartialUpdate, self).setUp()
+        ensure_schemas()
+        self.user = UserFactory.build()
+        password = fake.password()
+        self.password = password
+        self.user.set_password(password)
+        self.user.save()
+        self.basic_auth = (self.user.username, password)
+
+        self.user_two = UserFactory.build()
+        self.user_two.set_password(password)
+        self.user_two.save()
+        self.basic_auth_two = (self.user_two.username, password)
+
+        self.private_project = ProjectFactory(creator=self.user, is_private=True)
+        self.private_draft = DraftRegistrationFactory(initiator=self.user, branched_from=self.private_project)
+        self.private_url = '/{}draft_registrations/{}/'.format(API_BASE, self.private_draft._id)
+
+        self.public_project = ProjectFactory(creator=self.user, is_public=True)
+        self.public_draft = DraftRegistrationFactory(initiator=self.user, branched_from=self.public_project)
+        self.public_url = '/{}draft_registrations/{}/'.format(API_BASE, self.public_draft._id)
+
+        self.registration_form = 'OSF-Standard Pre-Data Collection Registration'
+        self.registration_metadata = "{'Have you looked at the data?': 'No'}"
+        self.schema_version = 1
+
+    def test_partial_update_node_that_is_not_registration_draft(self):
+        url = '/{}draft_registrations/{}/'.format(API_BASE, self.private_project)
+        res = self.app.patch(url, {
+            'self.registration_form': self.registration_form,
+        }, auth=self.basic_auth, expect_errors=True)
+        assert_equal(res.status_code, 404)
+
+    def test_partial_update_node_that_does_not_exist(self):
+        url = '/{}draft_registrations/{}/'.format(API_BASE, '12345')
+        res = self.app.patch(url, {
+            'self.registration_form': self.registration_form,
+        }, auth=self.basic_auth, expect_errors=True)
+        assert_equal(res.status_code, 404)
+
+    def test_partial_update_registration_schema_public_draft_registration_logged_in(self):
+        res = self.app.patch(self.public_url, {
+            'registration_form': self.registration_form,
+        }, auth=self.basic_auth, expect_errors=True)
+        registration_schema = eval(res.json['data']['registration_schema'])
+        assert_equal(registration_schema['name'], 'Open-Ended Registration')
+        assert_equal(res.status_code, 200)
+
+        res = self.app.patch(self.public_url, {
+            'registration_form': self.registration_form,
+            'schema_version': self.schema_version
+        }, auth=self.basic_auth, expect_errors=True)
+        registration_schema = eval(res.json['data']['registration_schema'])
+        assert_equal(registration_schema['name'], self.registration_form)
+        assert_equal(res.status_code, 200)
+
+    def test_partial_update_public_draft_registration_logged_out(self):
+        res = self.app.patch(self.public_url, {
+            'registration_form': self.registration_form,
+        }, expect_errors=True)
+        assert_equal(res.status_code, 403)
+
+    def test_partial_update_public_draft_registration_logged_in(self):
+        res = self.app.patch(self.public_url, {
+            'registration_metadata': self.registration_metadata,
+        }, auth=self.basic_auth, expect_errors=True)
+        registration_metadata = res.json['data']['registration_metadata']
+        assert_equal(registration_metadata, self.registration_metadata)
+        assert_equal(res.status_code, 200)
+
+        res = self.app.patch(self.public_url, {
+             'registration_metadata': self.registration_metadata,
+        }, auth=self.basic_auth_two, expect_errors=True)
+        assert_equal(res.status_code, 403)
+
+    def test_partial_update_private_registration_draft_logged_out(self):
+        res = self.app.patch(self.private_url, {
+             'registration_metadata': self.registration_metadata,
+        }, expect_errors=True)
+        assert_equal(res.status_code, 403)
+
+    def test_partial_update_private_registration_draft_logged_in_contributor(self):
+        res = self.app.patch(self.private_url, {
+            'registration_metadata': self.registration_metadata,
+        }, auth=self.basic_auth)
+        registration_metadata = res.json['data']['registration_metadata']
+        assert_equal(registration_metadata, self.registration_metadata)
+        assert_equal(res.status_code, 200)
+
+    def test_partial_update_private_registration_draft_logged_in_non_contributor(self):
+        res = self.app.patch(self.private_url, {
+            'registration_metadata': self.registration_metadata,
+        }, auth=self.basic_auth_two, expect_errors=True)
+        assert_equal(res.status_code, 403)
+
+    def test_partial_update_private_registration_draft_logged_in_read_only_contributor(self):
+        self.private_draft.add_contributor(self.user_two, permissions=['read'])
+        res = self.app.patch(self.private_url, {
+            'registration_metadata': self.registration_metadata,
+        }, auth=self.basic_auth_two, expect_errors=True)
+        assert_equal(res.status_code, 403)
+
+
 # class TestRegistrationDelete(ApiTestCase):
 #
 #     def setUp(self):
