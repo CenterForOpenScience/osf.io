@@ -3,6 +3,15 @@
 <%def name="content()">
 <div class="nav-rows container">
     <div class="row">
+        <div id="side-menu" class="col-sm-3 hidden-xs">
+            <ul class="nav nav-pills nav-stacked m-t-xl affix" data-spy="affix">
+                <li class=""><a href="#about">About</a></li>
+                <li class=""><a href="#using">Using the OSF</a></li>
+                <li class=""><a href="#security">Privacy and Security</a></li>
+                <li class=""><a href="#common">Common Issues</a></li>
+            </ul>
+        </div>
+        
         <div class="col-xs-12 col-sm-9">
             <div class="page-header">
                 <h1>Frequently Asked Questions</h1>
@@ -141,16 +150,6 @@
 
                 </div>
             </div>
-        </div>
-
-
-        <div id="side-menu" class="col-sm-3 hidden-xs">
-            <ul class="nav nav-pills nav-stacked m-t-xl affix" data-spy="affix">
-                <li class=""><a href="#about">About</a></li>
-                <li class=""><a href="#using">Using the OSF</a></li>
-                <li class=""><a href="#security">Privacy and Security</a></li>
-                <li class=""><a href="#common">Common Issues</a></li>
-            </ul>
         </div>
     </div>
 </div>
