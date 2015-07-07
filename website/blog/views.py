@@ -4,7 +4,7 @@ import post
 from file_handler import FileHandler
 from render import Renderer
 from HTMLParser import HTMLParser
-from ghostpy._compiler import _ghostpy_
+import ghostpy._compiler as compiler
 
 from framework.auth.decorators import collect_auth
 from mako.template import Template
@@ -27,7 +27,8 @@ def blog_view_id(uid):
 
 
 def _blog_view(guid, is_profile=False):
-    _ghostpy_['context'].append('index')
+    compiler._ghostpy_ = compiler.reset()
+    compiler._ghostpy_['context'].append('index')
     if is_profile:
         uid = guid
         guid = get_blog_dir(guid)
@@ -42,8 +43,8 @@ def render_index(guid, uid):
     theme = user_.blog_theme
     renderer = Renderer(theme)
     hbs = theme + "/index.hbs"
-    _ghostpy_['theme'] = theme
-    _ghostpy_['base'] = "http://localhost:5000/%s/blog" % guid
+    compiler._ghostpy_['theme'] = theme
+    compiler._ghostpy_['base'] = "http://localhost:5000/%s/blog" % guid
     posts = get_posts(guid)
     post_list = post.parse_posts(posts, guid)
     blog_dict = user_.blog_dict()
@@ -51,12 +52,9 @@ def render_index(guid, uid):
     default_dict = {'body': output,
                     'date': '2015-09-04',
                     'body_class': 'post-template'}
-    html = renderer.render(theme + '/default.hbs', default_dict)
+    html = renderer.render(theme + '/default.hbs', blog_dict, default_dict)
     parser = HTMLParser()
     html = parser.unescape(html)
-    # html_file = open("post.html", "w")
-    # html_file.write(html.encode('utf-8'))
-    # html_file.close()
     return html
 
 
@@ -66,8 +64,8 @@ def render_post(guid, file, uid=None):
     renderer = Renderer(theme)
     file_handler = FileHandler(guid)
     hbs = theme + "/post.hbs"
-    _ghostpy_['theme'] = theme
-    _ghostpy_['base'] = "http://localhost:5000/%s/blog" % guid
+    compiler._ghostpy_['theme'] = theme
+    compiler._ghostpy_['base'] = "http://localhost:5000/%s/blog" % guid
     posts = file_handler.get_posts(file)
     post_dict = post.parse_blog(posts, guid)
     blog_dict = user_.blog_dict()
@@ -78,10 +76,6 @@ def render_post(guid, file, uid=None):
     mako = renderer.render(theme + '/default.hbs', default_dict)
     parser = HTMLParser()
     mako = Template(parser.unescape(mako))
-
-    # html_file = open("post.html", "w")
-    # html_file.write(html.encode('utf-8'))
-    # html_file.close()
     image = user_.gravatar_url
     context = {
         'image': image
@@ -90,7 +84,8 @@ def render_post(guid, file, uid=None):
 
 
 def _post_view(guid, bid, is_profile=False):
-    _ghostpy_['context'].append('post')
+    compiler._ghostpy_ = compiler.reset()
+    compiler._ghostpy_['context'].append('post')
     blog_file = url.unquote(bid).decode('utf8') + ".md"
     uid = None
     if is_profile:
