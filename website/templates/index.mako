@@ -317,6 +317,11 @@
 
 </%def>
 
+<%def name="stylesheets()">
+    <link rel="stylesheet" href="/static/css/pages/home-page.css">
+    <link rel="stylesheet" href="/static/css/front-page.css">
+</%def>
+
 <%def name="javascript_bottom()">
     ${parent.javascript_bottom()}
     <script src=${"/static/public/js/home-page.js" | webpack_asset}></script>

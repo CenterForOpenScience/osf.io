@@ -309,6 +309,14 @@ MEETING_DATA = {
         'admins': [],
         'public_projects': True,
     },
+    'R2RC': {
+        'name': 'Right to Research Coalition',
+        'info_url': None,
+        'logo_url': None,
+        'active': True,
+        'admins': [],
+        'public_projects': True,
+    },
 }
 
 
