@@ -13,7 +13,7 @@
     <table class="table">
         <thead>
             <tr>
-                <th>Authorized by <a data-bind="attr.href: profileUrl, text: name"></a></th>
+                <th>Authorized by <em><a data-bind="attr.href: profileUrl, text: name"></a></em></th>
                 <th><a data-bind="click: $root.askDisconnect" class="text-danger user-settings-addons-link">Disconnect Account</a></th>
             </tr>
         </thead>
