@@ -179,8 +179,8 @@ class NodeContributorDetail(generics.RetrieveUpdateDestroyAPIView, NodeMixin):
 
     '''
         Code review note: I created this method due to have trouble with using node.admin_contributor_ids not displaying the correct number of admins.
-
         I'm also wondering if this is a good spot for the method.  I kind of think it needs to be moved but I don't know where.
+        The reason why I made two methods is so that a user can still edit bibliographic but not remove the last admin contributor.
     '''
     def has_multiple_admin_contributors(self):
         node = self.get_node()
