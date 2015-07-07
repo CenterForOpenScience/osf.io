@@ -46,12 +46,12 @@ def view_comments_project(auth, **kwargs):
 
 
 @must_be_contributor_or_public
-def view_comments_single(auth, **kwargs):
+def view_comments_single(cid, auth, **kwargs):
     """
     Returns information needed to get a single comment and its replies
     """
     node = kwargs['node'] or kwargs['project']
-    comment = kwargs_to_comment(kwargs)
+    comment = kwargs_to_comment(cid, auth)
     serialized_comment = serialize_comment(comment, auth)
 
     from website.addons.wiki.model import NodeWikiPage
@@ -353,9 +353,9 @@ def list_total_comments(node, auth, page):
 
 @must_be_logged_in
 @must_be_contributor_or_public
-def edit_comment(auth, **kwargs):
+def edit_comment(cid, auth, **kwargs):
 
-    comment = kwargs_to_comment(kwargs, owner=True)
+    comment = kwargs_to_comment(cid, auth, owner=True)
 
     content = request.get_json().get('content').strip()
     content = sanitize(content)
@@ -375,8 +375,8 @@ def edit_comment(auth, **kwargs):
 
 @must_be_logged_in
 @must_be_contributor_or_public
-def delete_comment(auth, **kwargs):
-    comment = kwargs_to_comment(kwargs, owner=True)
+def delete_comment(cid, auth, **kwargs):
+    comment = kwargs_to_comment(cid, auth, owner=True)
     comment.delete(auth=auth, save=True)
 
     return {}
@@ -384,8 +384,8 @@ def delete_comment(auth, **kwargs):
 
 @must_be_logged_in
 @must_be_contributor_or_public
-def undelete_comment(auth, **kwargs):
-    comment = kwargs_to_comment(kwargs, owner=True)
+def undelete_comment(cid, auth, **kwargs):
+    comment = kwargs_to_comment(cid, auth, owner=True)
     comment.undelete(auth=auth, save=True)
 
     return {}
@@ -455,11 +455,11 @@ def update_comments_timestamp(auth, **kwargs):
 
 @must_be_logged_in
 @must_be_contributor_or_public
-def report_abuse(auth, **kwargs):
+def report_abuse(cid, auth, **kwargs):
 
     user = auth.user
 
-    comment = kwargs_to_comment(kwargs)
+    comment = kwargs_to_comment(cid, auth)
 
     category = request.get_json().get('category')
     text = request.get_json().get('text', '')
@@ -476,10 +476,10 @@ def report_abuse(auth, **kwargs):
 
 @must_be_logged_in
 @must_be_contributor_or_public
-def unreport_abuse(auth, **kwargs):
+def unreport_abuse(cid, auth, **kwargs):
     user = auth.user
 
-    comment = kwargs_to_comment(kwargs)
+    comment = kwargs_to_comment(cid, auth)
 
     try:
         comment.unreport_abuse(user, save=True)
