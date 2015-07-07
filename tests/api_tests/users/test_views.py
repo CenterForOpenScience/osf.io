@@ -156,7 +156,7 @@ class TestUserIncludeQueryParameters(ApiTestCase):
         additional_query_params = res.json['data']['additional_query_params']
         assert_in('relations', additional_query_params['nodes'])
 
-    def test_get_include_relationship_key(self):
+    def test_get_include_relationship_and_list_key(self):
         self.url += '?include=nodes.relations,registrations'
         res = self.app.get(self.url)
         assert_equal(res.status_code, 200)
