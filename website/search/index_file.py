@@ -32,9 +32,9 @@ def collect_from_addon(addon, tree):
             path, name = child['path'], child['name']
             if is_indexed(name):
                 file_, created = addon.find_or_create_file_guid(path)
-                to_render = addon_name == 'osfstorage'
+                to_render = (addon_name == 'osfstorage')
                 content = get_content_of_file_from_addon(file_, render=to_render)
-                yield {'name': name, 'content': content}
+                yield {'name': name, 'content': content, 'path': path}
 
 
 def collect_files(node):

@@ -27,8 +27,17 @@ DESCRIPTION_WEIGHT = 1.2
 
 
 def build_query(qs='*', start=0, size=10, sort=None):
+    hybrid_query_string = {
+        'bool': {
+            'should': [
+                build_query_string(qs),
+                build_has_child_query_string(qs),
+            ]
+        }
+    }
+
     query = {
-        'query': build_query_string(qs),
+        'query': hybrid_query_string,
         'from': start,
         'size': size,
     }
@@ -41,6 +50,21 @@ def build_query(qs='*', start=0, size=10, sort=None):
         ]
     return query
 
+
+def build_has_child_query_string(qs='*'):
+    return {
+        'has_child': {
+            'type': 'file',
+            'score_mode': 'avg',
+            'query': {
+                'query_string': {
+                    'default_field': '_all',
+                    'query': qs,
+                    'analyze_wildcard': True,
+                }
+            }
+        }
+    }
 
 # Match queryObject in search.js
 def build_query_string(qs):

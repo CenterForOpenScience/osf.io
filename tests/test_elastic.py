@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 import unittest
 import logging
+import time
 
 from nose.tools import *  # flake8: noqa (PEP8 asserts)
 import mock
@@ -38,8 +39,8 @@ class SearchTestCase(OsfTestCase):
         search.create_index(elastic_search.INDEX)
 
 
-def query(term):
-    results = search.search(build_query(term), index=elastic_search.INDEX)
+def query(term, doc_type=None):
+    results = search.search(build_query(term), index=elastic_search.INDEX, doc_type=doc_type)
     return results
 
 
@@ -166,8 +167,8 @@ class TestProject(SearchTestCase):
 
     def setUp(self):
         super(TestProject, self).setUp()
-        search.delete_index(elastic_search.INDEX)
-        search.create_index(elastic_search.INDEX)
+        # search.delete_index(elastic_search.INDEX)
+        # search.create_index(elastic_search.INDEX)
         self.user = UserFactory(fullname='John Deacon')
         self.project = ProjectFactory(title='Red Special', creator=self.user)
 
@@ -667,3 +668,37 @@ class TestSearchMigration(SearchTestCase):
             var = self.es.indices.get_aliases()
             assert_equal(var[settings.ELASTIC_INDEX + '_v{}'.format(n + 1)]['aliases'].keys()[0], settings.ELASTIC_INDEX)
             assert not var.get(settings.ELASTIC_INDEX + '_v{}'.format(n))
+
+
+from website.search import util
+
+def simple_search(term, doc_type='_all'):
+    q = {'query': util.build_query_string(term)}
+    return elastic_search.es.search(index=elastic_search.INDEX, doc_type=doc_type, body=q)['hits']['hits']
+
+def simple_child_search(term, doc_type='_all'):
+    q = {'query': util.build_has_child_query_string(term)}
+    return elastic_search.es.search(index=elastic_search.INDEX, doc_type=doc_type, body=q)['hits']['hits']
+
+
+class TestFileUpdate(SearchTestCase):
+    def setUp(self):
+        super(TestFileUpdate, self).setUp()
+        self.project = ProjectFactory(title='The Spanish Inquisition')
+        self.file_ = {
+            'name': 'unique_file.txt',
+            'path': '/12345',
+            'content': 'tea, earl gray, hot.',
+        }
+
+    def test_can_find_indexed_file(self):
+        elastic_search.update_file(self.file_, self.project._id, index=elastic_search.INDEX)
+        res = simple_search('"earl gray"', doc_type='file')
+        assert_equal(len(res), 1)
+
+    def test_can_find_project_with_file_that_matches(self):
+        self.project.set_privacy('public')
+        elastic_search.update_file(self.file_, self.project._id, index=elastic_search.INDEX)
+        time.sleep(1)
+        assert_equal(len(query('Spanish')['results']), 1)
+        assert_equal(len(query('earl gray', doc_type='project')['results']), 1)

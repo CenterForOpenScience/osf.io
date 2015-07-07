@@ -278,7 +278,7 @@ def update_node(node, index=None, files=True):
             'pending_embargo': node.pending_embargo,
             'registered_date': node.registered_date,
             'wikis': {},
-            'files': {},
+            # 'files': {},
             'parent_id': parent_id,
             'date_created': node.date_created,
             'boost': int(not node.is_registration) + 1,  # This is for making registered projects less relevant
@@ -292,8 +292,21 @@ def update_node(node, index=None, files=True):
                 elastic_document['wikis'][wiki.page_name] = wiki.raw_text(node)
             if files:
                 for file_ in index_file.collect_files(node):
-                    elastic_document['files'][file_['name']] = file_['content']
+                    update_file(file_, elastic_document_id, index)
+                    # elastic_document['files'][file_['name']] = file_['content']
         es.index(index=index, doc_type=category, id=elastic_document_id, body=elastic_document, refresh=True)
+
+
+@requires_search
+def update_file(file_, parent_id, index=None):
+    index = index or INDEX
+    file_document = {
+        'name': file_['name'],
+        'content': file_['content'],
+        'parent_id': parent_id,
+        'category': 'file'
+    }
+    es.index(index=index, doc_type='file', parent=parent_id, id=file_['path'], body=file_document, refresh=True)
 
 
 def bulk_update_contributors(nodes, index=INDEX):
@@ -398,6 +411,18 @@ def create_index(index=None):
             mapping['properties'].update(analyzers)
 
         es.indices.put_mapping(index=index, doc_type=type_, body=mapping, ignore=[400, 404])
+    create_file_mapping(index)
+
+
+@requires_search
+def create_file_mapping(index=None):
+    index = index or INDEX
+    mapping = {
+        '_parent': {
+            'type': 'project',
+        }
+    }
+    es.indices.put_mapping(index=index, doc_type='file', body=mapping, ignore=[400, 404])
 
 
 @requires_search
