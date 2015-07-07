@@ -10,7 +10,7 @@ import itsdangerous
 
 from werkzeug.local import LocalProxy
 from weakref import WeakKeyDictionary
-from flask import request, make_response, jsonify
+from flask import request, make_response
 from framework.flask import redirect
 
 from website import settings
