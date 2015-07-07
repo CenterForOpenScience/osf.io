@@ -861,7 +861,6 @@ class TestRemoveNodeContributor(ApiTestCase):
     def test_admin_remove_all_contributors(self):
         res = self.app.delete(self.url_contributor, auth=self.admin_auth, expect_errors=False)
         assert_equal(res.status_code, 204)
-
         url_admin = '/{}nodes/{}/contributors/{}/'.format(API_BASE, self.project._id, self.admin._id)
         res = self.app.delete(url_admin, auth=self.admin_auth, expect_errors=True)
         assert_equal(res.status_code, 403)
