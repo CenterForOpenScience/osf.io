@@ -117,12 +117,7 @@ class NodeSerializer(JSONAPISerializer):
     @staticmethod
     def get_additional_query_params(obj):
         if hasattr(obj, 'additional_query_params'):
-            additional_parameters = {}
-            if 'contributors' in obj.additional_query_params:
-                additional_parameters['contributors'] = []
-                for contributor in obj.additional_query_params['contributors']:
-                    additional_parameters['contributors'].append(contributor)
-            return additional_parameters
+            return obj.additional_query_params
 
     def create(self, validated_data):
         node = Node(**validated_data)
