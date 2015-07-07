@@ -55,8 +55,31 @@
 }
 
 .unread-comments-count {
-    font-size: medium;
+    font-size: small;
+    background-color: #428bca;
     color: #FFF;
     position: absolute;
     margin-left: 40px;
+    margin-top: -5px;
+    z-index:1000;
+}
+
+.comment-actions a:hover {
+    text-decoration: none !important;
+}
+
+.comment-link-icon a {
+    color: #999999;
+}
+
+.comment-link-icon a:hover {
+    color: #000000;
+    text-decoration: none;
+}
+
+.comment-content img{
+  vertical-align: middle;
+  display: block;
+  max-width: 100%;
+  height: auto;
 }

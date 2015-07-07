@@ -279,24 +279,3 @@ a {
 .popover h3 {
     font-weight: 500;
 }
-
-.comment-actions a:hover {
-    text-decoration: none !important;
-}
-
-
-.comment-link-icon a {
-    color: #999999;
-}
-
-.comment-link-icon a:hover {
-    color: #000000;
-    text-decoration: none;
-}
-
-.comment-content img{
-  vertical-align: middle;
-  display: block;
-  max-width: 100%;
-  height: auto;
-}

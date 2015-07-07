@@ -100,3 +100,7 @@
         max-width: 400px;
     }
 }
+
+#commentsWidgetContainer .comment-body {
+    border: none !important;
+}
