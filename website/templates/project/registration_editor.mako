@@ -4,7 +4,7 @@
             <div class="span8 col-md-2 columns eight large-8">
                 <ul class="nav nav-stacked list-group" data-bind="foreach: {data: currentPages, as: 'page'}">
                     <li class="re-navbar">
-                        <a class="registration-editor-page" style="text-align: left; font-weight:bold;" data-bind="text: title, click: $root.selectPage">
+                        <a class="registration-editor-page" id="top-nav" style="text-align: left; font-weight:bold;" data-bind="text: title, click: $root.selectPage">
                             <i class="fa fa-caret-right"></i>
                         </a>
                         <span class="btn-group-vertical" role="group">
@@ -41,7 +41,7 @@
                 </p>
                 <button data-bind="click: save" type="button" class="btn btn-success">Save
                 </button>
-                </div>                               
+                </div>
             </div>
         </div>
     </div>
