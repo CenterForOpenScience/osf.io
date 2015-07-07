@@ -37,6 +37,25 @@ ShareApp.ViewModel = function() {
                 return a.long_name.toUpperCase() > b.long_name.toUpperCase() ? 1: -1;
         });
     };
+
+    self.buildQuery = function() {
+        var must = $.map(utils.parseToTermQuery(self.requiredFilters));
+        var should = $.map(utils.parseToTermQuery(self.optionalFilters));
+        return {
+            'query': utils.bool_query(must, [], should),
+            'aggregations': {},  // TODO
+            'from': self.page * 10,
+            'size': 10,
+            'highlight': {
+                'fields': {
+                    'title': {'fragment_size': 2000},
+                    'description': {'fragment_size': 2000},
+                    'contributors.name': {'fragment_size': 2000}
+                }
+            }
+        };
+
+    };
 };
 
 

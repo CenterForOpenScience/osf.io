@@ -215,5 +215,68 @@ utils.loadStats = function(vm){
 
 };
 
+utils.filteredQuery = function(query, filter) {
+    ret = {
+        'filtered': {}
+    };
+    if (filter) {
+        ret.filtered.filter = filter;
+    }
+    if (query) {
+        ret.filtered.query = query;
+    }
+    return ret;
+};
+
+utils.termFilter = function(field, value) {
+    return {
+        'term': {
+            field: value
+        }
+    };
+};
+
+utils.exactQuery = function(field, value) {
+    return utils.filteredQuery(null, termFilter(field, value));
+};
+
+utils.fieldRange = function(field_name, gte, lte) {
+    return {
+        'range': {
+            field_name: {
+                'gte': gte,
+                'lte': lte
+            }
+        }
+    };
+};
+
+utils.boolQuery = function(must, must_not, should) {
+    return {
+        'bool': {
+            'must': (must || []),
+            'must_not': (must_not || []),
+            'should': (should || [])
+        }
+    };
+};
+
+utils.commonQuery = function(query_string, field) {
+    field = field || '_all';
+    return {
+        'common': {
+            field: {
+                'query': query_string
+            }
+        }
+    };
+};
+
+utils.parseToTermQuery = function(terms) {
+    $.map(function(term) {
+        items = term.split(':');
+        return utils.exactQuery(items[0], items[1]);
+    }, terms);
+};
 
 module.exports = utils;
