@@ -117,8 +117,8 @@ var BaseComment = function() {
     self.replyNotEmpty = ko.pureComputed(function() {
         return notEmpty(self.replyContent());
     });
-    self.saveButtonText = ko.pureComputed(function() {
-        return self.submittingReply() ? 'Saving' : 'Comment';
+    self.commentButtonText = ko.computed(function() {
+        return self.submittingReply() ? 'Commenting' : 'Comment';
     });
 
 };

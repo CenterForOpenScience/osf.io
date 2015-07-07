@@ -8,6 +8,31 @@
     padding-bottom: 88px; /* Note: Must be the same as .cp-bar:margin-top */
 }
 
+.comment-container {
+    margin-top: 10px;
+    margin-bottom: 10px;
+}
+
+.comment-body {
+    padding: 5px;
+    background-color: white;
+}
+
+.comment-author {
+    color: #999999;
+}
+
+.comment-date {
+    color: #999999;
+}
+.edit-comment {
+    background-color: #F3F3F3;
+}
+
+.comment-body i {
+    padding-right: 5px;
+}
+
 .cp-handle {
     /* Handle starts under Bootstrap header */
     /* Note: Must be the same as #commentPane:padding-bottom */
@@ -21,8 +46,10 @@
 }
 
 .comment-handle-icon {
-    padding-top: 4px;
-    color: #428bca
+    padding-top: 5px;
+    color: #428bca;
+    cursor: pointer;
+    position: relative;
 }
 
 .cp-bar {
@@ -67,6 +94,10 @@
 
 .comment-actions a:hover {
     text-decoration: none !important;
+}
+
+.comment-actions i {
+    cursor: pointer;
 }
 
 .comment-link-icon a {
