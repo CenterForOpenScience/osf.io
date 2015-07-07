@@ -28,6 +28,7 @@
 - [ ] Last saved: local time with GMT in hover
 - [ ] Time started the same ^
 - [ ] located on the editor page as well as the `Draft Registrations` tab
+- [ ] Show no text -- just show time i.e. get rid of "2 days ago" etc.
 
 # Radio buttons
 - [ ] Take out check -- make it look like a radio button
