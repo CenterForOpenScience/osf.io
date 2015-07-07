@@ -1,5 +1,8 @@
 <%inherit file="base.mako"/>
 <%def name="title()">${profile["fullname"]}</%def>
+<%def name="stylesheets()">
+   <link rel="stylesheet" href='/static/css/pages/profile-page.css'>;
+</%def>
 
 <%def name="javascript_bottom()">
 % if user['is_profile']:

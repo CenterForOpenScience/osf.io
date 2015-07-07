@@ -1,5 +1,11 @@
 <%inherit file="base.mako"/>
 <%def name="title()">Configure Add-ons</%def>
+
+<%def name="stylesheets()">
+   <link rel="stylesheet" href='/static/css/pages/account-setting-page.css'>;
+   <link rel="stylesheet" href='/static/css/user-addon-settings.css'>;
+</%def>
+
 <%def name="content()">
 <% from website import settings %>
 <h2 class="page-header">Configure Add-ons</h2>

@@ -3,6 +3,10 @@
 
 <%def name="title()">Account Settings</%def>
 
+<%def name="stylesheets()">
+   <link rel="stylesheet" href='/static/css/pages/account-setting-page.css'>;
+</%def>
+
 <%def name="content()">
     <% from website import settings %>
     <div id="accountSettings">
