@@ -4,6 +4,7 @@
 <%def name="title()">Account Settings</%def>
 
 <%def name="stylesheets()">
+   ${parent.stylesheets()}
    <link rel="stylesheet" href='/static/css/pages/account-setting-page.css'>;
 </%def>
 

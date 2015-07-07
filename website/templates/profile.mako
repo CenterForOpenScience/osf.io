@@ -1,6 +1,7 @@
 <%inherit file="base.mako"/>
 <%def name="title()">${profile["fullname"]}</%def>
 <%def name="stylesheets()">
+   ${parent.stylesheets()}
    <link rel="stylesheet" href='/static/css/pages/profile-page.css'>;
 </%def>
 
