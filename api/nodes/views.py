@@ -177,9 +177,12 @@ class NodeContributorDetail(generics.RetrieveUpdateDestroyAPIView, NodeMixin):
         node.remove_contributor(instance, auth)
         node.save()
 
-    #todo move this, combine with method in views?
+    '''
+        Code review note: I created this method due to have trouble with using node.admin_contributor_ids not displaying the correct number of admins.
+
+        I'm also wondering if this is a good spot for the method.  I kind of think it needs to be moved but I don't know where.
+    '''
     def has_multiple_admin_contributors(self):
-        #Created due to issues with admin contributors methods
         node = self.get_node()
         has_one_admin = False
         for contributor in node.contributors:
