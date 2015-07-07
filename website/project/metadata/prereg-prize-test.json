@@ -105,6 +105,7 @@
                     "nav": "Type",
                     "type": "choose",
                     "title": "What type of study is this?",
+                    "format": "list",
                     "options": [
                         "Experiment (A researcher randomly assigns treatments to study subjects, this includes field or lab experiments. This is also known as an intervention experiment or a randomized controlled trial.",
                         "Observational Study (Data is collected from study subjects that are not randomly assigned to a treatment. This includes surveys, _natural experiments,î and regression discontinuity designs.)",

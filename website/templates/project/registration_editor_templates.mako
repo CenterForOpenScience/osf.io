@@ -7,7 +7,7 @@
   <input data-bind="valueUpdate: 'keyup', value: value" type="text" class="form-control">          
 </script>
 <script type="text/html" id="textarea">  
-  <textarea data-bind="valueUpdate: 'keyup', html: value" class="form-control"> </textarea>         
+  <textarea data-bind="valueUpdate: 'keyup', html: value" type="text" class="form-control"> </textarea>         
 </script>
 <!-- Number Types -->
 <script type="text/html" id="number">  
@@ -63,7 +63,7 @@
           <br />
           <div class="row">
             <div class="col-md-12">
-              <div class="form-group" data-bind="css: {has-succes: $data.isComplete}">
+              <div class="form-group" data-bind="css: {has-success: $data.isComplete}">
                 <span data-bind="with: $root.context($data)">
                   <div data-bind="disable: $root.readonly, template: {data: $data, name: type}"></div>
                 </span>
