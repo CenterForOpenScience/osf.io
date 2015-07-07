@@ -1,13 +1,13 @@
 import datetime
+import httplib as http
 
 from framework.auth.core import Auth
 from rest_framework import exceptions
+from framework.exceptions import HTTPError
 from rest_framework import serializers as ser
 
-import httplib as http
 from modularodm import Q
 from website.project.views import drafts
-from framework.exceptions import HTTPError
 from website.models import Node, DraftRegistration
 from api.draft_registrations.serializers import DraftRegSerializer
 from api.base.serializers import JSONAPISerializer, LinksField, Link, WaterbutlerLink

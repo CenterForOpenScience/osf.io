@@ -1,11 +1,11 @@
 import datetime
 
+from rest_framework import serializers as ser
+
+from website.project.model import Q
 from website.project.views import drafts
 from api.base.serializers import JSONAPISerializer
-from website.project.model import Q
 from website.project.metadata.schemas import OSF_META_SCHEMAS
-
-from rest_framework import serializers as ser
 
 
 class DraftRegSerializer(JSONAPISerializer):

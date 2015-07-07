@@ -44,7 +44,7 @@ class DraftRegistrationList(generics.ListAPIView, ODMFilterMixin):
 
 class DraftRegistrationDetail(generics.RetrieveUpdateDestroyAPIView, DraftRegistrationMixin):
     """
-    Draft Registration details
+    Draft registration details
     """
     permission_classes = (
         ContributorOrPublic,
