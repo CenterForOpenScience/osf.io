@@ -294,12 +294,6 @@ height: 32px ;
     background-color: #fff;
 }
 
-.typeahead:focus {
-    -webkit-box-shadow: rgba(102, 175, 232, 0.576471) 0px 0px 7.668470859527588px 0px;
-    -moz-box-shadow: rgba(102, 175, 232, 0.576471) 0px 0px 7.668470859527588px 0px;
-    box-shadow: rgba(102, 175, 232, 0.576471) 0px 0px 7.668470859527588px 0px;
-}
-
 .tt-query {
     -webkit-box-shadow: inset 0 1px 1px rgba(0, 0, 0, 0.075);
     -moz-box-shadow: inset 0 1px 1px rgba(0, 0, 0, 0.075);

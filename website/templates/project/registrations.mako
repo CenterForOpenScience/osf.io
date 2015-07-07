@@ -9,7 +9,7 @@
 <div class="row">
   <div class="col-sm-9">
     % if node["registration_count"]:
-        <div mod-meta='{
+        <div class="m-md" mod-meta='{
             "tpl": "util/render_nodes.mako",
             "uri": "${node["api_url"]}get_registrations/",
             "replace": true,
@@ -23,9 +23,11 @@
     ##          There have been no registrations of the parent project (<a href="${parent_node['url']}">${parent_node['title']}</a>).
     ##      %endif
     % else:
-        There have been no registrations of this ${node['node_type']}.
-        For a list of the most viewed and most recent public registrations on the
-        Open Science Framework, click <a href="/explore/activity/#newPublicRegistrations">here</a>.
+        <div class="m-md">
+            There have been no registrations of this ${node['node_type']}.
+            For a list of the most viewed and most recent public registrations on the
+            Open Science Framework, click <a href="/explore/activity/#newPublicRegistrations">here</a>.
+        </div>
     % endif
     %if parent_node['exists'] and user['is_admin_parent']:
         <br />
@@ -35,9 +37,9 @@
 
   </div>
   <div class="col-sm-3">
-    <div>
+    <div class="m-md">
         % if 'admin' in user['permissions'] and not disk_saving_mode:
-          <a id="registerNode" href="${node['url']}register" class="btn btn-default" type="button">New Registration</a>
+          <a id="registerNode" href="${node['url']}register" class="btn btn-success" type="button">New Registration</a>
         % endif
     </div>
   </div>

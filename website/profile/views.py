@@ -8,7 +8,7 @@ import os
 from dateutil.parser import parse as parse_date
 
 from flask import request
-from modularodm.exceptions import ValidationError, NoResultsFound
+from modularodm.exceptions import ValidationError, NoResultsFound, MultipleResultsFound
 from modularodm import Q
 
 from framework import sentry
@@ -784,3 +784,33 @@ def request_deactivation(auth):
         user=auth.user,
     )
     return {'message': 'Sent account deactivation request'}
+
+
+def redirect_to_twitter(twitter_handle):
+    """Redirect GET requests for /@TwitterHandle/ to respective the OSF user
+    account if it associated with an active account
+
+    :param uid: uid for requested User
+    :return: Redirect to User's Twitter account page
+    """
+    try:
+        user = User.find_one(Q('social.twitter', 'iexact', twitter_handle))
+    except NoResultsFound:
+        raise HTTPError(http.NOT_FOUND, data={
+            'message_short': 'User Not Found',
+            'message_long': 'There is no active user associated with the Twitter handle: {0}.'.format(twitter_handle)
+        })
+    except MultipleResultsFound:
+        users = User.find(Q('social.twitter', 'iexact', twitter_handle))
+        message_long = 'There are multiple OSF accounts associated with the ' \
+                       'Twitter handle: <strong>{0}</strong>. <br /> Please ' \
+                       'select from the accounts below. <br /><ul>'.format(twitter_handle)
+        for user in users:
+            message_long += '<li><a href="{0}">{1}</a></li>'.format(user.url, user.fullname)
+        message_long += '</ul>'
+        raise HTTPError(http.MULTIPLE_CHOICES, data={
+            'message_short': 'Multiple Users Found',
+            'message_long': message_long
+        })
+
+    return redirect(user.url)
