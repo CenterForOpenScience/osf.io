@@ -90,7 +90,7 @@ class TestS3ViewsConfig(OsfTestCase):
             expect_errors=True
         )
         assert_equal(res.status_code, http.BAD_REQUEST)
-        
+
     def test_s3_set_bucket_no_auth(self):
 
         user = AuthUserFactory()
@@ -172,6 +172,12 @@ class TestS3ViewsConfig(OsfTestCase):
         assert_equals(self.user_settings.secret_key, None)
         assert_equals(mock_access.call_count, 1)
 
+        # Last log has correct action and user
+        self.project.reload()
+        last_project_log = self.project.logs[-1]
+        assert_equal(last_project_log.action, 's3_node_deauthorized')
+        assert_equal(last_project_log.user, self.user)
+
     @mock.patch('website.addons.s3.model.AddonS3UserSettings.remove_iam_user')
     def test_s3_remove_user_settings_none(self, mock_access):
         self.user_settings.access_key = None
@@ -243,7 +249,7 @@ class TestS3ViewsConfig(OsfTestCase):
     @mock.patch('website.addons.s3.api.has_access')
     def test_s3_get_node_settings_owner(self, mock_has_access):
         mock_has_access.return_value = True
-        
+
         url = self.node_settings.owner.api_url_for('s3_get_node_settings')
         res = self.app.get(url, auth=self.user.auth)
 
@@ -408,7 +414,6 @@ class TestCreateBucket(OsfTestCase):
         assert_true(validate_bucket_name('can-have-dashes'))
         assert_true(validate_bucket_name('kinda.name.spaced'))
 
-    
     @mock.patch('website.addons.s3.views.crud.create_bucket')
     @mock.patch('website.addons.s3.utils.get_bucket_drop_down')
     def test_create_bucket_pass(self, mock_make, mock_dropdown):
