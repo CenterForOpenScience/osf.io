@@ -280,6 +280,11 @@ a {
     font-weight: 500;
 }
 
+/* In list group, not allow icon to be pushed down */
+.component-overflow {
+    word-wrap: break-word;
+    max-width: 90%;
+    display: inline-block;
 
 /* Comments Panel */
 .comment-actions i {
