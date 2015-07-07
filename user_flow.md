@@ -14,15 +14,21 @@
 - [ ] When "Start registration" is clicked, create uid and redirect to new page using new route above
 
 # File picker
-- [ ] Only OSF storage
-- [ ] Upload button
-- [ ] Copy from OSF saved to root, upload to outer project
-- [ ] Save path, show what has been uploaded
+- [ ] Show only OSF storage
+- [ ] Have two options: 
+  * upload file
+  * select file from project
+- [ ] Copy from OSF saved to root (I'm not totally clear on what this means -Lauren)
+- [ ] If upload then upload to outer OSF storage of project
+- [ ] Show (or enable) upload/select button once a file has been selected
+- [ ] Save path to schema data
+- [ ] Display what file has been uploaded/selected
 
 # Time bugs
 - [ ] Last saved: local time with GMT in hover
 - [ ] Time started the same ^
+- [ ] located on the editor page as well as the `Draft Registrations` tab
 
 # Radio buttons
 - [ ] Take out check -- make it look like a radio button
-- [ ] Button to left
+- [ ] Button to left of option text
