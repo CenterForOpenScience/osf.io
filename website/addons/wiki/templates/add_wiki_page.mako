@@ -16,8 +16,8 @@
                     <p id="alert" class="text-danger"> </p>
                 </div><!-- end modal-body -->
                 <div class="modal-footer">
-                    <a id="close" href="#" class="btn btn-default" data-dismiss="modal">Close</a>
-                    <button id="add-wiki-submit" type="submit" class="btn btn-primary">OK</button>
+                    <a id="close" href="#" class="btn btn-default" data-dismiss="modal">Cancel</a>
+                    <button id="add-wiki-submit" type="submit" class="btn btn-success">Add</button>
                 </div><!-- end modal-footer -->
             </form>
         </div><!-- end modal- content -->

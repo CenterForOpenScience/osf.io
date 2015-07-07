@@ -67,7 +67,7 @@
                 params="data: data,
                         onSubmit: onRegisterSubmit,
                         enableComponents: false,
-                        submitText: 'Continue registration...'">
+                        submitText: 'Continue registration'">
                 </osf-project-search>
             </div><!-- end col-md -->
         </div><!-- end row -->
