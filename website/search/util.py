@@ -26,18 +26,17 @@ TITLE_WEIGHT = 4
 DESCRIPTION_WEIGHT = 1.2
 
 
-def build_query(qs='*', start=0, size=10, sort=None):
-    hybrid_query_string = {
-        'bool': {
-            'should': [
-                build_query_string(qs),
-                build_has_child_query_string(qs),
-            ]
+def build_query(qs='*', start=0, size=10, sort=None, hybrid=True):
+    q = build_query_string(qs)
+    if hybrid:
+        q = {
+            'bool': {
+                'should': [q, build_has_child_query_string(qs)]
+            }
         }
-    }
 
     query = {
-        'query': hybrid_query_string,
+        'query': q,
         'from': start,
         'size': size,
     }

@@ -135,14 +135,38 @@ var ViewModel = function(params) {
         };
     });
 
+    self.childQuery = ko.pureComputed(function(){
+            return {
+                'has_child': {
+                    'type': 'file',
+                    'score_mode': 'avg',
+                    'query': {
+                        'query_string': {
+                            'default_field': '_all',
+                            'query': self.query(),
+                            'analyze_wildcard': true,
+                        }
+                    }
+                }
+            };
+        });
+
 
     self.fullQuery = ko.pureComputed(function() {
         return {
             'filtered': {
-                'query': self.queryObject()
+                'query': {
+                    'bool': {
+                        'should': [
+                            self.queryObject(),
+                            self.childQuery()
+                        ]
+                    }
+                }
             }
         };
     });
+
 
     self.sortCategories = function(a, b) {
         if(a.name === 'Total') {

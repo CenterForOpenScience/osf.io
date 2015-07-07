@@ -420,6 +420,9 @@ def create_file_mapping(index=None):
     mapping = {
         '_parent': {
             'type': 'project',
+        },
+        'properties': {
+            'tags': NOT_ANALYZED_PROPERTY,
         }
     }
     es.indices.put_mapping(index=index, doc_type='file', body=mapping, ignore=[400, 404])
@@ -465,7 +468,7 @@ def search_contributor(query, page=0, size=10, exclude=None, current_user=None):
     query = "  AND ".join('{}*~'.format(re.escape(item)) for item in items) + \
             "".join(' NOT id:"{}"'.format(excluded._id) for excluded in exclude)
 
-    results = search(build_query(query, start=start, size=size), index=INDEX, doc_type='user')
+    results = search(build_query(query, start=start, size=size, hybrid=False), index=INDEX, doc_type='user')
     docs = results['results']
     pages = math.ceil(results['counts'].get('user', 0) / size)
 
