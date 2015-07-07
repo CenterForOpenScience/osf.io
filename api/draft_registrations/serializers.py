@@ -27,7 +27,6 @@ class DraftRegSerializer(JSONAPISerializer):
         """Update instance with the validated data. Requires
         the request to be in the serializer context.
         """
-        updated = datetime.datetime.utcnow()
         schema_version = int(validated_data.get('schema_version', 1))
         if "registration_form" in validated_data.keys():
             schema_name = validated_data['registration_form']
@@ -36,13 +35,10 @@ class DraftRegSerializer(JSONAPISerializer):
                 Q('schema_version', 'eq', schema_version)
             )
             instance.registration_schema = meta_schema
-            instance.updated = updated
-        else:
-            instance.registration_schema = instance.registration_schema
+            raise ser.ValidationError(instance.registration_schema)
 
         if "registration_metadata" in validated_data.keys():
             instance.registration_metadata = validated_data.get('registration_metadata', {})
-            instance.updated = updated
 
         instance.save()
         return instance
