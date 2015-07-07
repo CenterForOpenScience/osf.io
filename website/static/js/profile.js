@@ -446,7 +446,6 @@ var extendLink = function(obs, $parent, label, baseUrl) {
         // Prevent click from submitting form
         event && event.preventDefault();
         if (obs()) {
-            console.log(baseUrl + ' ' + obs());
             return baseUrl ? baseUrl + obs() : obs();
         }
         return '';
