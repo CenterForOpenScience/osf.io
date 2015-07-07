@@ -108,8 +108,12 @@ class TestWikiViews(OsfTestCase):
         # Check publicly editable
         wiki = self.project.get_addon('wiki')
         wiki.set_editing('public', self.consolidated_auth, self.project, True, True)
-        res = self.app.get(url, expect_errors=False)
+        res = self.app.get(url, auth=AuthUserFactory().auth, expect_errors=False)
         assert_equal(res.status_code, 200)
+
+        # Check publicly editable but not logged in
+        res = self.app.get(url, expect_errors=True)
+        assert_equal(res.status_code, 403)
 
     def test_wiki_url_for_pointer_returns_200(self):
         # TODO: explain how this tests a pointer
@@ -457,12 +461,16 @@ class TestWikiViews(OsfTestCase):
         res = self.app.get(url, auth=self.user.auth)
         assert_equal(res.status_code, 200)
         assert_in('data-osf-panel="Edit"', res.text)
-        # Publicly Editable
+        # Publicly editable
         wiki = self.project.get_addon('wiki')
         wiki.set_editing('public', self.consolidated_auth, self.project, True, True)
-        res = self.app.get(url, auth=AuthUserFactory())
+        res = self.app.get(url, auth=AuthUserFactory().auth)
         assert_equal(res.status_code, 200)
         assert_in('data-osf-panel="Edit"', res.text)
+        # Publicly editable but not logged in
+        res = self.app.get(url)
+        assert_equal(res.status_code, 200)
+        assert_not_in('data-osf-panel="Edit"', res.text)
 
 
 class TestViewHelpers(OsfTestCase):
