@@ -28,10 +28,14 @@ class NodeMixin(object):
         self.check_object_permissions(self.request, obj)
         if 'include' in self.request.query_params:
             include = self.request.query_params['include']
-            obj.additional_query_params = process_additional_query_params(include, 'node')
+            params = process_additional_query_params(include)
+            obj.additional_query_params = process_additional_query_params(include)
         else:
             obj.additional_query_params = {}
         return obj
+
+    def process_params(self):
+        pass
 
 
 class NodeList(generics.ListCreateAPIView, ODMFilterMixin):
