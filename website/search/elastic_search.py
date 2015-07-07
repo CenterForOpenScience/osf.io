@@ -49,6 +49,8 @@ ENGLISH_ANALYZER_PROPERTY = {'type': 'string', 'analyzer': 'english'}
 
 INDEX = settings.ELASTIC_INDEX
 
+SEARCHED_TYPES = ['project', 'component', 'registration', 'user']
+
 try:
     es = Elasticsearch(
         settings.ELASTIC_URI,
@@ -146,6 +148,8 @@ def search(query, index=None, doc_type='_all'):
     tags = get_tags(tag_query, index)
     counts = get_counts(count_query, index)
 
+    if doc_type == '_all' or doc_type is None:
+        doc_type = SEARCHED_TYPES
     # Run the real query and get the results
     raw_results = es.search(index=index, doc_type=doc_type, body=query)
 

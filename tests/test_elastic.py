@@ -681,9 +681,9 @@ def simple_child_search(term, doc_type='_all'):
     return elastic_search.es.search(index=elastic_search.INDEX, doc_type=doc_type, body=q)['hits']['hits']
 
 
-class TestFileUpdate(SearchTestCase):
+class TestFiles(SearchTestCase):
     def setUp(self):
-        super(TestFileUpdate, self).setUp()
+        super(TestFiles, self).setUp()
         self.project = ProjectFactory(title='The Spanish Inquisition')
         self.file_ = {
             'name': 'unique_file.txt',
