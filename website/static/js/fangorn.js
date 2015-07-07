@@ -115,7 +115,7 @@ function findByTempID(parent, tmpID) {
 
 function cancelUploads (row) {
     var tb = this;
-    var filesArr = tb.dropzone.getActiveFiles();
+    var filesArr = tb.dropzone.getActiveFiles() + tb.dropzone.getRejectedFiles();
     for (var i = 0; i < filesArr.length; i++) {
         var j = filesArr[i];
         if(!row){
@@ -173,7 +173,6 @@ var uploadRowTemplate = function(item){
                         },
                         'onclick' : function (e) {
                             e.stopImmediatePropagation();
-                            $(this).closest('.tb-row').remove(); //TODO: refactor this bit of logic
                             cancelUploads.call(tb, item);
                         }},
                      m('span.text-muted','×')
