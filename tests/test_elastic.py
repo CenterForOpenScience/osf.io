@@ -690,15 +690,17 @@ class TestFileUpdate(SearchTestCase):
             'path': '/12345',
             'content': 'tea, earl gray, hot.',
         }
+        self.project.set_privacy('public')
+        elastic_search.update_file(self.file_, self.project._id, index=elastic_search.INDEX)
+        time.sleep(1)
 
     def test_can_find_indexed_file(self):
-        elastic_search.update_file(self.file_, self.project._id, index=elastic_search.INDEX)
         res = simple_search('"earl gray"', doc_type='file')
         assert_equal(len(res), 1)
 
     def test_can_find_project_with_file_that_matches(self):
-        self.project.set_privacy('public')
-        elastic_search.update_file(self.file_, self.project._id, index=elastic_search.INDEX)
-        time.sleep(1)
         assert_equal(len(query('Spanish')['results']), 1)
         assert_equal(len(query('earl gray', doc_type='project')['results']), 1)
+
+    def test_files_not_in_search_results(self):
+        assert_equal(len(query('earl gray')['results']), 1)
