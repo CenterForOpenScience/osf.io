@@ -1,4 +1,3 @@
-import datetime
 import httplib as http
 
 from framework.auth.core import Auth
@@ -138,7 +137,6 @@ class NodeSerializer(JSONAPISerializer):
 class DraftRegistrationSerializer(DraftRegSerializer):
 
     def create(self, validated_data):
-        time = datetime.datetime.utcnow()
         request = self.context['request']
         schema_name = validated_data['registration_form']
         if not schema_name:

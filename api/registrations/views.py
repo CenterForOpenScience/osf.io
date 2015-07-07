@@ -5,19 +5,14 @@ from rest_framework import generics, permissions as drf_permissions
 
 from modularodm import Q
 from website.models import Node
+from api.nodes.views import NodeMixin
 from api.base.filters import ODMFilterMixin
 from website.language import REGISTER_WARNING
-from api.base.utils import token_creator, absolute_reverse
-from api.nodes.permissions import ContributorOrPublic, ReadOnlyIfRegistration
-from api.nodes.views import NodeMixin
-from api.draft_registrations.views import DraftRegistrationMixin
-from api.registrations.serializers import RegistrationCreateSerializer, RegistrationCreateSerializerWithToken
 from api.nodes.serializers import NodeSerializer
-
-
-# def registration_enforcer(node):
-#     if node.is_registration is False and node.is_registration_draft is False:
-#         raise ValidationError(_('Not a registration or registration draft.'))
+from api.base.utils import token_creator, absolute_reverse
+from api.draft_registrations.views import DraftRegistrationMixin
+from api.nodes.permissions import ContributorOrPublic, ReadOnlyIfRegistration
+from api.registrations.serializers import RegistrationCreateSerializer, RegistrationCreateSerializerWithToken
 
 
 class RegistrationList(generics.ListAPIView, ODMFilterMixin):

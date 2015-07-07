@@ -1748,7 +1748,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
             raise NodeStateError('Cannot register deleted node.')
 
         registered = original.clone()
-
+        registered.is_deleted = False
         registered.is_registration = True
         registered.registered_date = when
         registered.registered_user = auth.user
