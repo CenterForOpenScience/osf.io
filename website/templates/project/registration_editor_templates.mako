@@ -7,7 +7,7 @@
   <input data-bind="valueUpdate: 'keyup', value: value" type="text" class="form-control">          
 </script>
 <script type="text/html" id="textarea">  
-  <textarea data-bind="valueUpdate: 'keyup', html: value" type="text" class="form-control"> </textarea>         
+  <textarea data-bind="textInput: value" class="form-control"> </textarea>         
 </script>
 <!-- Number Types -->
 <script type="text/html" id="number">  
