@@ -163,8 +163,8 @@ def s3_remove_node_settings(auth, node_addon, **kwargs):
 
 @must_be_logged_in
 @must_have_addon('s3', 'user')
-def s3_remove_user_settings(user_addon, **kwargs):
-    success = user_addon.revoke_auth(save=True)
+def s3_remove_user_settings(user_addon, auth, **kwargs):
+    success = user_addon.revoke_auth(auth=auth, save=True)
     if not success:
         push_status_message(
             'Your Amazon credentials were removed from the OSF, but we were '
