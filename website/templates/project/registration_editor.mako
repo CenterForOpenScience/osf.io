@@ -8,20 +8,20 @@
                             <i class="fa fa-caret-right"></i>
                         </a>
                         <span class="btn-group-vertical" role="group">
-                  <ul class="list-group" data-bind="foreach: {data: Object.keys(page.questions), as: 'qid'}">
-                    <span data-bind="with: page.questions[qid]">
-                      <li data-bind="css: {
-                                       list-group-item-success: isComplete,
-                                       list-group-item-warning: !isComplete(),
-                                       registration-editor-question-current: $root.currentQuestion().id === $data.id
-                                     },
-                                     click: $root.currentQuestion.bind($root, $data),
-                                     text: nav"
-                          class="registration-editor-question list-group-item">
-                    </li>
-                    </span>
-                  </ul>
-                </span>
+							<ul class="list-group" data-bind="foreach: {data: Object.keys(page.questions), as: 'qid'}">
+								<span data-bind="with: page.questions[qid]">
+									<li data-bind="css: {
+												   list-group-item-success: isComplete,
+												   list-group-item-warning: !isComplete(),
+												   registration-editor-question-current: $root.currentQuestion().id === $data.id
+												   },
+												   click: $root.currentQuestion.bind($root, $data),
+												   text: nav"
+										class="registration-editor-question list-group-item">
+									</li>
+								</span>
+							</ul>
+						</span>
                     </li>
                 </ul>
             </div>
@@ -34,17 +34,22 @@
                 </a>
                 <!-- EDITOR -->
                 <div data-bind="if: currentQuestion">
-                  <div id="registrationEditor" data-bind="template: {data: currentQuestion, name: 'editor'}">
-                  </div>
+					<div id="registrationEditor" data-bind="template: {data: currentQuestion, name: 'editor'}">
+					</div>
                 </div>
                 <p>Last saved: <span data-bind="text: $root.lastSaved()"></span>
                 </p>
                 <button data-bind="click: save" type="button" class="btn btn-success">Save
                 </button>
-                </div>
+
+				<a data-bind="click: submit" id="submitForReview" class="btn btn-default" type="button">
+					<i class="fa fa-save"></i>
+					Submit for review
+				</a>
             </div>
         </div>
     </div>
+</div>
 </div>
 
 <%include file="registration_editor_templates.mako" />

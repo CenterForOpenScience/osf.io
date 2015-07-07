@@ -1,6 +1,6 @@
 # Autosaving and submit process
-- [ ] Show the Submit button to submit for approval
-- [ ] Show which fields are required on submit (if required fields are not filled in there will be an error)
+- [X] Show the Submit button to submit for approval
+- [X] Show which fields are required on submit (if required fields are not filled in there will be an error)
 - [ ] Autosaving functionality
 - [ ] Show no indication of which field have been completed (i.e. no green/yellow)
 
@@ -9,13 +9,13 @@
 
 # Preview tab
 - [ ] When "New Registration" is clicked on the `Draft Registration` taken to a `Preview` tab
-- [ ] `Preview` tab has a dropdown (or other select method) to choose a schema 
+- [ ] `Preview` tab has a dropdown (or other select method) to choose a schema
 - [ ] On schema selection, displays a "Start registration" button, a description at top, and the schema in read-only mode
 - [ ] When "Start registration" is clicked, create uid and redirect to new page using new route above
 
 # File picker
 - [ ] Show only OSF storage
-- [ ] Have two options: 
+- [ ] Have two options:
   * upload file
   * select file from project
 - [ ] Copy from OSF saved to root (I'm not totally clear on what this means -Lauren)

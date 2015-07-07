@@ -334,7 +334,8 @@ RegistrationEditor.prototype.previousPage = function() {
 };
 RegistrationEditor.prototype.selectPage = function(page) {
     var self = this;
-	firstQuestion = page.questions[Object.keys(page.questions)[0]];
+
+	var firstQuestion = page.questions[Object.keys(page.questions)[0]];
     self.currentQuestion(firstQuestion);
 };
 RegistrationEditor.prototype.updateData = function(response) {
@@ -353,6 +354,42 @@ RegistrationEditor.prototype.create = function(schemaData) {
         schema_version: metaSchema.version,
         schema_data: schemaData
     }).then(self.updateData.bind(self));
+};
+RegistrationEditor.prototype.submit = function() {
+	var self = this;
+
+	var currentNode = window.contextVars.node
+	var currentUser = window.contextVars.currentUser
+	var url = '/api/v1/project/' + currentNode.id +  '/draft/submit/' + currentUser.id + '/'
+
+	bootbox.dialog({
+		message: "Please verify that all required fields are filled out:<br><br>\
+			<strong>Required:</strong><br>\
+		Title<br> COI<br> Authors<br> Research<br> Certify<br> Data<br> Rationale<br> Sample<br> Type<br> Randomized?<br> \
+		Covariates<br> Design<br> Blind<br> Outcome<br> Predictor<br> Statistical Models<br> Multiple Hypostheses<br> \
+		Outcome Variables<br> Predictors<br> Incomplete<br> Exclusion<br><br> \
+			<strong>Optional:</strong><br>\
+		Script",
+		title: "Continue to submit this registration for review",
+		buttons: {
+			success: {
+				label: "Submit",
+				className: "btn-success",
+				callback: function() {
+					$.ajax({
+						method: "POST",
+						url: url,
+						data: {node: currentNode, uid: currentUser.id},
+						success: function(response) {
+							bootbox.alert("Registration submitted for review!", function(result) {
+								window.location.href = '/' + currentNode.id + '/registrations/';
+							});
+						}
+					})
+				}
+			}
+		}
+	});
 };
 RegistrationEditor.prototype.save = function() {
     var self = this;
@@ -402,6 +439,7 @@ var RegistrationManager = function(node, draftsSelector, editorSelector, control
 
     self.urls = {
         list: node.urls.api + 'draft/',
+		submit: node.urls.api + 'draft/submit/',
         get: node.urls.api + 'draft/{draft_pk}/',
         delete: node.urls.api + 'draft/{draft_pk}/',
         schemas: '/api/v1/project/schema/'
