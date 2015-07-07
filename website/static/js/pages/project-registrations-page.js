@@ -29,6 +29,10 @@ $(document).ready(function() {
     });
     draftManager.init();
 
+    $('#draftsControl').click(function(event) {
+        draftManager.refresh();
+    });
+
     $('#registerNode').click(function(event) {
         event.preventDefault();
         draftManager.beforeRegister();        

@@ -467,6 +467,33 @@ RegistrationManager.prototype.init = function() {
         self.loading(false);
     });
 };
+RegistrationManager.prototype.refresh = function() {
+    var self = this;
+
+    var getSchemas = self.getSchemas();
+
+    getSchemas.then(function(response) {
+        self.schemas(
+            $.map(response.meta_schemas, function(schema) {
+                return new MetaSchema(schema);
+            })
+        );
+    });
+
+    var getDraftRegistrations = self.getDraftRegistrations();
+
+    getDraftRegistrations.then(function(response) {
+        self.drafts(
+            $.map(response.drafts, function(draft) {
+                return new Draft(draft);
+            })
+        );
+    });
+
+    $.when(getSchemas, getDraftRegistrations).then(function() {
+        self.loading(false);
+    });
+};
 RegistrationManager.prototype.blankDraft = function(metaSchema) {
     return new Draft({}, metaSchema);
 };
