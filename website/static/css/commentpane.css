@@ -20,9 +20,10 @@
     padding-top: 10px;    
 }
 
-/*.cp-handle:hover {*/
-    /*background-color: #d3d3d3;*/
-/*}*/
+.comment-handle-icon {
+    padding-top: 4px;
+    color: #428bca
+}
 
 .cp-bar {
     width: 1px;  /* Note: Should be the same as .cp-sidebar:margin-left */
