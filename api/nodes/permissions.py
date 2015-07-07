@@ -33,13 +33,17 @@ class AdminOrPublic(permissions.BasePermission):
         elif request.method != 'DELETE' or self.has_multiple_admin_contributors(node):
             return node.has_permission(auth.user, 'admin')
         else:
-            return False
+            return node.has_permission(auth.user, 'admin') and obj != auth.user
 
-    #todo move this, combine with method in views?
+    '''
+        Just like in views, I had an issue with getting the number of admins from admin_contributor_ids method
+        I am also wondering if there is a way to combine this with the method in views
+    '''
     def has_multiple_admin_contributors(self, node):
-        #Created due to issues with admin contributors methods
         has_one_admin = False
         for contributor in node.contributors:
+
+            # Should I use this method or the is_admin_parent method?
             if node.has_permission(contributor, 'admin'):
                 if has_one_admin:
                     return True
