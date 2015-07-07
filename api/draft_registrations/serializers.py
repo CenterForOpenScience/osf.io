@@ -17,9 +17,8 @@ class DraftRegSerializer(JSONAPISerializer):
     registration_form = ser.ChoiceField(choices=schema_choices, required=True, write_only=True, help_text="Please select a registration form to initiate registration.")
     registration_metadata = ser.CharField(required=False, help_text="Responses to supplemental registration questions")
     schema_version = ser.IntegerField(help_text="Registration schema version", write_only=True, required=False)
-    initiated = ser.DateTimeField(read_only=True)
-    updated = ser.DateTimeField(read_only=True)
-    completion = ser.CharField(read_only=True)
+    datetime_initiated = ser.DateTimeField(read_only=True)
+    datetime_updated = ser.DateTimeField(read_only=True)
 
     class Meta:
         type_ = 'draft-registrations'
@@ -29,9 +28,7 @@ class DraftRegSerializer(JSONAPISerializer):
         the request to be in the serializer context.
         """
         updated = datetime.datetime.utcnow()
-        instance.initiated = instance.initiated
         schema_version = int(validated_data.get('schema_version', 1))
-        instance.initiated = instance.initiated
         if "registration_form" in validated_data.keys():
             schema_name = validated_data['registration_form']
             meta_schema = drafts.get_schema_or_fail(

@@ -912,7 +912,7 @@ class TestNodeDraftRegistrationList(ApiTestCase):
         assert_equal(res.status_code, 200)
         assert_equal(source['title'], self.public_project.title)
         assert_not_equal(res.json['data'][0]['registration_schema'], None)
-        assert_not_equal(res.json['data'][0]['initiated'], None)
+        assert_not_equal(res.json['data'][0]['datetime_initiated'], None)
 
     def test_return_private_registrations_logged_out(self):
         res = self.app.get(self.private_url, expect_errors=True)
@@ -923,7 +923,7 @@ class TestNodeDraftRegistrationList(ApiTestCase):
         assert_equal(res.status_code, 200)
         assert_equal((res.json['data'][0]['initiator']), self.user.given_name + ' ' + self.user.family_name)
         assert_not_equal(res.json['data'][0]['registration_schema'], None)
-        assert_not_equal(res.json['data'][0]['initiated'], None)
+        assert_not_equal(res.json['data'][0]['datetime_initiated'], None)
 
 
     def test_return_private_registrations_logged_in_non_contributor(self):

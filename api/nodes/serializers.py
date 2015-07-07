@@ -157,9 +157,6 @@ class DraftRegistrationSerializer(DraftRegSerializer):
             initiator=user,
             registration_schema=meta_schema,
             registration_metadata=questions,
-            initiated=time,
-            updated=time,
-            completion="TODO"
         )
         draft.save()
         return draft
