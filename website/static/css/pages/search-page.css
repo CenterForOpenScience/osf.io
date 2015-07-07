@@ -163,8 +163,6 @@ div.search-result  {
     overflow-x: hidden;
 }
 
-
-
 .search-results.search-result h5 small{
     color: white;
     font-size: 10pt;
@@ -176,10 +174,15 @@ div.search-result  {
 
 }
 /* Search Contributors */
-
 .search-contributor-result td {
     padding-right: 10px;
 }
 .search-contributor-links {
     padding-top: 10px;
+}
+
+/* Disable pointer events in page changing */
+.disabled {
+    cursor: default !important;
+    pointer-events: none;
 }
