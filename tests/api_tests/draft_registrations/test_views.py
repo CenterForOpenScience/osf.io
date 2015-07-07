@@ -1,12 +1,11 @@
 import mock
 from nose.tools import *  # flake8: noqa
 
-from framework.auth.core import Auth
 from api.base.settings.defaults import API_BASE
 
 from tests.base import ApiTestCase, fake
 from website.project.model import ensure_schemas
-from tests.factories import UserFactory, ProjectFactory, RegistrationFactory, NodeFactory, DraftRegistrationFactory
+from tests.factories import UserFactory, ProjectFactory, DraftRegistrationFactory
 
 class TestDraftRegistrationList(ApiTestCase):
     def setUp(self):
@@ -213,7 +212,7 @@ class TestDraftRegistrationPartialUpdate(ApiTestCase):
             'registration_form': self.registration_form,
         }, auth=self.basic_auth, expect_errors=True)
         registration_schema = eval(res.json['data']['registration_schema'])
-        assert_equal(registration_schema['name'], 'Open-Ended Registration')
+        assert_equal(registration_schema['name'], self.registration_form)
         assert_equal(res.status_code, 200)
 
         res = self.app.patch(self.public_url, {
