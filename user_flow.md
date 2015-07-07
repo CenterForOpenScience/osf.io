@@ -1,13 +1,17 @@
 # Autosaving and submit process
-- [ ] Show Submit button
-- [ ] Show which fields are required on submit
+- [ ] Show the Submit button to submit for approval
+- [ ] Show which fields are required on submit (if required fields are not filled in there will be an error)
 - [ ] Autosaving functionality
-- [ ] No more turning green
+- [ ] Show no indication of which field have been completed (i.e. no green/yellow)
 
-# Editing page
-- [ ] New route /asdfg/registrations/<uid>
-- [ ] Stay in the preview until hit "Start registration"
-- [ ] Sends to the route
+# Routes needed
+- [ ] Create new route `/asdfg/registrations/<uid>`
+
+# Preview tab
+- [ ] When "New Registration" is clicked on the `Draft Registration` taken to a `Preview` tab
+- [ ] `Preview` tab has a dropdown (or other select method) to choose a schema 
+- [ ] On schema selection, displays a "Start registration" button, a description at top, and the schema in read-only mode
+- [ ] When "Start registration" is clicked, create uid and redirect to new page using new route above
 
 # File picker
 - [ ] Only OSF storage
@@ -20,5 +24,5 @@
 - [ ] Time started the same ^
 
 # Radio buttos
-- [ ] Take out check
+- [ ] Take out check -- make it look like a radio button
 - [ ] Button to left
