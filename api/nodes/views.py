@@ -33,9 +33,23 @@ class NodeMixin(object):
         query = {}
         if 'include' in self.request.query_params:
             params = self.request.query_params['include']
+            if 'children' in params:
+                query['children'] = self.get_children(obj)
             if 'contributors' in params:
                 query['contributors'] = self.get_contributors(obj)
+            if 'pointers' in params:
+                query['pointers'] = self.get_pointers(obj)
         return query
+
+    def get_children(self, obj):
+        nodes = {}
+        for node in obj.nodes:
+            nodes[node._id] = {
+                    'title': node.title,
+                    'description': node.description,
+                    'is_public': node.is_public
+            }
+        return nodes
 
     def get_contributors(self, obj):
         contributors = {}
@@ -46,6 +60,14 @@ class NodeMixin(object):
                     'permissions': obj.get_permissions(contributor)
             }
         return contributors
+
+    def get_pointers(self, obj):
+        pointers = {}
+        for pointer in obj.nodes_pointer:
+            pointers[pointer._id] = {
+                    'title': pointer.title,
+            }
+        return pointers
 
 
 class NodeList(generics.ListCreateAPIView, ODMFilterMixin):
