@@ -23,6 +23,6 @@
 - [ ] Last saved: local time with GMT in hover
 - [ ] Time started the same ^
 
-# Radio buttos
+# Radio buttons
 - [ ] Take out check -- make it look like a radio button
 - [ ] Button to left
