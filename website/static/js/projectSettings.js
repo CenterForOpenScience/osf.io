@@ -47,11 +47,9 @@ var ProjectSettings = oop.extend(
         },
 
         /*success handler*/
-        //TODO - refactor success handler to display success message after reloading
-        //Alternatively, do not reload.
-        updateSuccess: function(newcategory) {
+        updateSuccess: function() {
             var self = this;
-            window.location.reload();
+            self.changeMessage(self.UPDATE_SUCCESS_MESSAGE, self.MESSAGE_SUCCESS_CLASS);
         },
 
         /*error handlers*/
@@ -80,6 +78,7 @@ var ProjectSettings = oop.extend(
                     category: self.selectedCategory()
                 })
                 .then(function(response) {
+                    self.category = self.selectedCategory();
                     return response.updated_fields.category;
                 })
                 .done(self.updateTitle.bind(self))
@@ -90,7 +89,10 @@ var ProjectSettings = oop.extend(
             return $osf.putJSON(self.titleDescriptionEditUrl, {
                     title: $osf.htmlEscape(self.title())
                 })
-                .done(self.updateDescription.bind(self))
+                .done(function() {
+                    self.decodedTitle = self.title();
+                },
+                self.updateDescription.bind(self))
                 .fail(self.updateTitleError.bind(self));
         },
         updateDescription: function() {
@@ -98,11 +100,14 @@ var ProjectSettings = oop.extend(
             return $osf.putJSON(self.titleDescriptionEditUrl, {
                     description: $osf.htmlEscape(self.description())
                 })
-                .done(self.updateSuccess.bind(self))
+                .done(function() {
+                    self.decodedDescription = self.description();
+                },
+                self.updateSuccess.bind(self))
                 .fail(self.updateDescriptionError.bind(self));
         },
 
-        /*cancel handlers*/
+        /*cancel handler*/
         cancelAll: function() {
             var self = this;
             self.selectedCategory(self.category);
