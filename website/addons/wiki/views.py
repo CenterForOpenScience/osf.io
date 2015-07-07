@@ -225,7 +225,6 @@ def project_wiki_delete(auth, wname, **kwargs):
     wiki_utils.broadcast_to_sharejs('delete', sharejs_uuid, node)
     return {}
 
-
 @must_be_valid_project  # returns project
 @must_be_contributor_or_public
 @must_have_addon('wiki', 'node')
@@ -237,8 +236,10 @@ def project_wiki_view(auth, wname, path=None, **kwargs):
     wiki_page = node.get_wiki_page(wiki_name)
     wiki_settings = node.get_addon('wiki')
     toc = _serialize_wiki_toc(node, auth=auth)
-    can_edit = (node.has_permission(auth.user, 'write')
-                or wiki_settings.is_publicly_editable) and not node.is_registration
+    can_edit = auth.logged_in and not node.is_registration and\
+               (node.has_permission(auth.user, 'write')or
+                wiki_settings.is_publicly_editable)
+
     versions = _get_wiki_versions(node, wiki_name, anonymous=anonymous)
 
     # Determine panels used in view
