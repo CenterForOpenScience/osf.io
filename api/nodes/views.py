@@ -5,13 +5,12 @@ from rest_framework import generics, permissions as drf_permissions
 from rest_framework.exceptions import PermissionDenied, ValidationError
 
 from framework.auth.core import Auth
-from website.models import Node, Pointer, User
+from website.models import Node, Pointer
 from api.users.serializers import ContributorSerializer
 from api.base.filters import ODMFilterMixin, ListFilterMixin
 from api.base.utils import get_object_or_404, waterbutler_url_for
 from .serializers import NodeSerializer, NodePointersSerializer, NodeFilesSerializer
 from .permissions import ContributorOrPublic, ReadOnlyIfRegistration, ContributorOrPublicForPointers
-from api.base.utils import process_additional_query_params
 
 
 class NodeMixin(object):
@@ -45,9 +44,9 @@ class NodeMixin(object):
         nodes = {}
         for node in obj.nodes:
             nodes[node._id] = {
-                    'title': node.title,
-                    'description': node.description,
-                    'is_public': node.is_public
+                'title': node.title,
+                'description': node.description,
+                'is_public': node.is_public
             }
         return nodes
 
@@ -55,9 +54,9 @@ class NodeMixin(object):
         contributors = {}
         for contributor in obj.contributors:
             contributors[contributor._id] = {
-                    'username': contributor.username,
-                    'bibliographic': obj.get_visible(contributor),
-                    'permissions': obj.get_permissions(contributor)
+                'username': contributor.username,
+                'bibliographic': obj.get_visible(contributor),
+                'permissions': obj.get_permissions(contributor)
             }
         return contributors
 
@@ -65,7 +64,7 @@ class NodeMixin(object):
         pointers = {}
         for pointer in obj.nodes_pointer:
             pointers[pointer._id] = {
-                    'title': pointer.title,
+                'title': pointer.title,
             }
         return pointers
 
