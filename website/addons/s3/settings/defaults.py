@@ -18,6 +18,7 @@ DEFAULT_BUCKET_LOCATION = {
     'value': '',
     'message': 'US Standard'
 }
+BUCKET_ENCRYPTION_DEFAULT_ON = True
 
 OSF_USER = 'osf-user{0}'
 OSF_USER_POLICY_NAME = 'osf-user-policy'

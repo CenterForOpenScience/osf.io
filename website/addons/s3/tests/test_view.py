@@ -419,3 +419,4 @@ class TestCreateBucket(OsfTestCase):
             expect_errors=True)
 
         assert_equals(ret.body, '{"message": "That bucket location is not valid.", "title": "Invalid bucket location"}')
+

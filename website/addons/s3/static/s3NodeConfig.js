@@ -201,14 +201,15 @@ ViewModel.prototype.createCredentials = function() {
     });
 };
 
-ViewModel.prototype.createBucket = function(bucketName, bucketLocation) {
+ViewModel.prototype.createBucket = function(bucketName, bucketLocation, encryptBucket) {
     var self = this;
     self.creating(true);
     bucketName = bucketName.toLowerCase();
     return $osf.postJSON(
         self.urls().create_bucket, {
             bucket_name: bucketName,
-            bucket_location: bucketLocation
+            bucket_location: bucketLocation,
+            encrypt_bucket: encryptBucket
         }
     ).done(function(response) {
         self.creating(false);
@@ -244,6 +245,13 @@ ViewModel.prototype.openCreateBucket = function() {
 
     var isValidBucket = /^(?!.*(\.\.|-\.))[^.][a-z0-9\d.-]{2,61}[^.]$/;
 
+    var checkbox_input;
+    if (window.contextVars.s3Settings.defaultBucketEncryption === true) {
+        checkbox_input = '<input id="encryptBucket" name="encryptBucket" type="checkbox" checked>';
+    } else {
+        checkbox_input = '<input id="encryptBucket" name="encryptBucket" type="checkbox">';
+    }
+
     bootbox.dialog({
         title: 'Create a new bucket',
         message:
@@ -272,6 +280,12 @@ ViewModel.prototype.openCreateBucket = function() {
                                     '</select>' +
                                 '</div>' +
                             '</div>' +
+                            '<div class="checkbox">' +
+                                '<div class="col-md-4"></div> ' +
+                                '<label> ' +
+                                    checkbox_input + 'Encrypt bucket contents' +
+                                '</label> ' +
+                            '</div> ' +
                         '</form>' +
                     '</div>' +
                 '</div>',
@@ -282,6 +296,7 @@ ViewModel.prototype.openCreateBucket = function() {
                 callback: function () {
                     var bucketName = $('#bucketName').val();
                     var bucketLocation = $('#bucketLocation').val();
+                    var encryptBucket = $('#encryptBucket').prop('checked');
 
                     if (!bucketName) {
                         return;
@@ -296,7 +311,7 @@ ViewModel.prototype.openCreateBucket = function() {
                             }
                         });
                     } else {
-                        self.createBucket(bucketName, bucketLocation);
+                        self.createBucket(bucketName, bucketLocation, encryptBucket);
                     }
                 }
             },
