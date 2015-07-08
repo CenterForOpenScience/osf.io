@@ -65,7 +65,7 @@
                     <br />
 
                     <button id="settings-submit" class="btn btn-success">
-                        Submit
+                        Save
                     </button>
 
                 </form>

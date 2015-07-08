@@ -40,10 +40,10 @@
                         </div>
                         <div class="p-t-md p-b-md">
                         <button
-                            type="submit"
+                            type="save"
                             class="btn btn-success"
                             data-bind="click: submit"
-                        >Submit</button>
+                        >Save</button>
                         </div>
 
                     </form>
