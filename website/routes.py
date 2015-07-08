@@ -77,8 +77,9 @@ def get_globals():
 
 
 class OsfWebRenderer(WebRenderer):
-    """
-    Render a Mako template with OSF context vars. Optional trust=True parameter deactivates markup safe rendering
+    """Render a Mako template with OSF context vars.
+
+    :param trust: Optional. If ``False``, markup-save escaping will be enabled
     """
     def __init__(self, *args, **kwargs):
         kwargs['data'] = get_globals
