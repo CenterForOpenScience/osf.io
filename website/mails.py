@@ -218,7 +218,7 @@ ARCHIVE_SUCCESS = Mail(
 
 OSFSTORAGE_MIGRATION_WARNING = Mail(
     'osfstorage_migration_warning',
-    subject=''
+    subject='OSF Storage update'
 )
 OSFSTORAGE_USAGE_WARNING = Mail(
     'osfstorage_usage_warning',
