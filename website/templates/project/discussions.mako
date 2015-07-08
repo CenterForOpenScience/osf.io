@@ -94,7 +94,7 @@
                 % if comment_target == 'total':
                     There are no comments on this project yet. Go to the
                     <a href="${node['url']}">Overview page,</a> open the comment pane and make the first one!
-                % elif comment_target == 'node':
+                % elif comment_target == 'overview':
                     There are no comments on the Overview page yet. Go to the
                     <a href="${node['url']}">Overview page,</a> open the comment pane and make the first one!
                 % else:
