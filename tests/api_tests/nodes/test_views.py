@@ -446,58 +446,57 @@ class TestNodeIncludeQueryParams(ApiTestCase):
         self.user.save()
         self.basic_auth = (self.user.username, 'justapoorboy')
 
-        self.public_project = ProjectFactory(title="Project One", is_public=True, creator=self.user)
-        self.url = '/{}nodes/{}/'.format(API_BASE, self.public_project._id)
+        self.contributor = UserFactory.build()
+        self.contributor.set_password('justapoorboy')
+        self.contributor.save()
 
-    def test_get_include_key(self):
+        self.project = ProjectFactory(title='Project One', is_public=True, creator=self.user)
+        self.project.add_contributor(self.contributor)
+        self.url = '/{}nodes/{}/'.format(API_BASE, self.project._id)
+
+        self.child = ProjectFactory(title='child', is_public=True, creator=self.user)
+        self.pointer = self.project.add_pointer(self.child, Auth(self.user))
+        self.project.save()
+
+    def test_get_built_in_keys(self):
+        self.url += '?include=children,contributors,pointers'
+        res = self.app.get(self.url)
+        assert_equal(res.status_code, 200)
+        additional_query_params = res.json['data']['additional_query_params']
+        assert_in('children', additional_query_params)
+        assert_in('contributors', additional_query_params)
+        assert_in('pointers', additional_query_params)
+
+    def test_get_invalid_key(self):
+        self.url += '?include=nah'
+        res = self.app.get(self.url, expect_errors=True)
+        assert_equal(res.status_code, 404)
+
+    # todo children params contains pointer id not child id.
+    # def test_get_include_child_id(self):
+    #     self.url += '?include=children'
+    #     res = self.app.get(self.url)
+    #     assert_equal(res.status_code, 200)
+    #     additional_query_params = res.json['data']['additional_query_params']
+    #     assert_in('children', additional_query_params)
+    #     assert_in(self.child._id, additional_query_params['children'])
+
+    def test_get_include_contributor_id(self):
         self.url += '?include=contributors'
         res = self.app.get(self.url)
         assert_equal(res.status_code, 200)
         additional_query_params = res.json['data']['additional_query_params']
         assert_in('contributors', additional_query_params)
+        assert_in(self.contributor._id, additional_query_params['contributors'])
 
-    # todo implement invalid key checks
-    # def test_get_invalid_include_key(self):
-    #     self.url += '?include=freddiemercury/'
-    #     res = self.app.get(self.url, expect_errors=True)
-    #     assert_equal(res.status_code, 404)
-
-    def test_get_include_keys(self):
-        self.url += '?include=contributors,pointers'
+    def test_get_include_pointer_id(self):
+        self.url += '?include=pointers'
         res = self.app.get(self.url)
         assert_equal(res.status_code, 200)
         additional_query_params = res.json['data']['additional_query_params']
-        assert_in('contributors', additional_query_params)
         assert_in('pointers', additional_query_params)
-
-    def test_get_include_relationship_key(self):
-        self.url += '?include=contributors.count'
-        res = self.app.get(self.url)
-        assert_equal(res.status_code, 200)
-        additional_query_params = res.json['data']['additional_query_params']
-        assert_in('count', additional_query_params['contributors'])
-
-    # def test_get_include_sub_relationship_key(self):
-    #     self.url += '/?include=contributors.data.username'
-    #     res = self.app.get(self.url)
-    #     assert_equal(res.status_code, 200)
-    #     additional_query_params = res.json['data']['additional_query_params']
-    #     assert_in('username', additional_query_params['contributors']['data'])
-    #     # Added due to error with sub relationships appearing on different levels
-    #     assert_not_in('username', additional_query_params['contributors'])
-
-    def test_get_invalid_include_relationship_key(self):
-        self.url += '/?include=contributors.nope'
-        res = self.app.get(self.url, expect_errors=True)
-        assert_equal(res.status_code, 404)
-
-    def test_get_include_and_relationship_keys(self):
-        self.url += '?include=contributors.count,pointers'
-        res = self.app.get(self.url)
-        assert_equal(res.status_code, 200)
-        additional_query_params = res.json['data']['additional_query_params']
-        assert_in('count', additional_query_params['contributors'])
-        assert_in('pointers', additional_query_params)
+        print additional_query_params
+        assert_in(self.pointer._id, additional_query_params['pointers'])
 
 
 class TestNodeUpdate(ApiTestCase):
