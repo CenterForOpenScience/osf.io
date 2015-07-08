@@ -139,8 +139,6 @@ function cancelUploads (row) {
     for (var m = 0; m < rejectedFilesArr.length; m++) {
         if(row) {
             tb.deleteNode(row.parentID, row.id);
-            var rejectedFile = rejectedFilesArr[i];
-            tb.dropzone.removeFile(rejectedFile);
         }
     }
     tb.isUploading(false);
