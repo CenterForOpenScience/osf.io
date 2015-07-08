@@ -21,7 +21,7 @@
 - [ ] Copy from OSF saved to root (I'm not totally clear on what this means -Lauren)
 - [x] If upload then upload to outer OSF storage of project (where the original focus is)
 - [x] Show (or enable) upload/select button once a file has been selected (currently selecting by clicking on row)
-- [ ] Save path to schema data
+- [x] Save path to schema data
 - [x] Display what file has been uploaded/selected
 
 # Time bugs
