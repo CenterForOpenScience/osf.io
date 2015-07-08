@@ -33,12 +33,15 @@ _TPL_LOOKUP = TemplateLookup(
 )
 
 _TPL_LOOKUP_SAFE = TemplateLookup(
+    default_filters=[
+        'unicode',  # default filter; must set explicitly when overriding
+        'h',
+    ],
     directories=[
         TEMPLATE_DIR,
         os.path.join(settings.BASE_PATH, 'addons/'),
     ],
     module_directory='/tmp/mako_modules',
-    default_filters=['unicode', 'h']  # unicode is a default filter; make sure it isn't dropped when overriding
 )
 
 REDIRECT_CODES = [
@@ -199,8 +202,17 @@ def render_jinja_string(tpl, data):
 
 mako_cache = {}
 def render_mako_string(tpldir, tplname, data, trust=True):
-    """Render a mako template. Optional trust=False argument will activate markupsafe escaping."""
-    # TODO: Once all templates are converted to render as Trust=False, remove the flag entirely. This is not a setitng we expect to be available forever.
+    """Render a mako template to a string.
+
+    :param tpldir:
+    :param tplname:
+    :param data:
+    :param trust: Optional. If ``False``, markup-save escaping will be enabled
+    """
+
+    # TODO: The "trust" flag is expected to be temporary, and should be removed
+    #       once all templates manually set it to False.
+
     lookup_obj = _TPL_LOOKUP_SAFE if trust is False else _TPL_LOOKUP
 
     tpl = mako_cache.get(tplname)
