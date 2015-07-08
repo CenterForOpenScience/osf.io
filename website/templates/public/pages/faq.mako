@@ -32,7 +32,7 @@
                         <p class="p-b-sm">The OSF is maintained and developed by the <a href="http://cos.io">Center for Open Science</a> (COS), a non-profit organization. COS is supported through grants from a variety of supporters, including <a href="http://centerforopenscience.org/about_sponsors/"> federal agencies, private foundations, and commercial entities</a>.</p>
 
                     <h4>How will the OSF be useful to my research?</h4>
-                        <p class="p-b-sm">The OSF integrates with the scientist's daily workflow. OSF helps document and archive study designs, materials, and data. OSF facilitates sharing of materials and data within a laboratory or across laboratories. OSF also facilitates transparency of laboratory research and provides a network design that details and credits individual contributions for all aspects of the research process. To see how it works, watch our short <a href="/getting-started">Getting Started</a> videos, see the <a href="/4znZP/wiki/home">OSF Features</a> page, or see how other scientists <a href="/svje2/">use the OSF.</a></p>
+                        <p class="p-b-sm">The OSF integrates with the scientist's daily workflow. The OSF helps document and archive study designs, materials, and data. The OSF facilitates sharing of materials and data within a laboratory or across laboratories. The OSF also facilitates transparency of laboratory research and provides a network design that details and credits individual contributions for all aspects of the research process. To see how it works, watch our short <a href="/getting-started">Getting Started</a> videos, see the <a href="/4znZP/wiki/home">OSF Features</a> page, or see how other scientists <a href="/svje2/">use the OSF.</a></p>
 
                     <h4>How can I help develop the OSF?</h4>
                         <p class="p-b-sm">If you are a developer, check out the source code for the OSF <a href="https://github.com/CenterForOpenScience/osf.io">on GitHub</a>.
@@ -55,7 +55,7 @@
                     <h4>How can I get started on using the OSF?</h4>
                         <p class="p-b-sm">OSF membership is open and free, so you can
                             just register and check out our <a href="/getting-started">Getting Started</a>
-                            page for a thorough run-down of how it works. This FAQ page will only cover a few of the most basic questions about the OSF, so it’s highly recommended to read through Getting Started if you have any issues.</p>
+                            page for a thorough run-down of how it works. This FAQ page will only cover a few of the most basic questions about the OSF, so it’s highly recommended that you read through Getting Started if you have any issues.</p>
 
                     <h4>How do I create a lab group/organizational group?</h4>
                         <p class="p-b-sm">The best way to create a lab or organizational group on the OSF is to create a project for that group. Then, individual projects within the lab can either be organized into components of the lab project or into their own projects which are linked to the lab group project. For an example, check out the <a href="https://osf.io/ezcuj/">Reproducibility Project: Psychology.</a></p>
@@ -70,13 +70,13 @@
                         <p class="p-b-sm">A registration is a frozen version of your project that can never be edited or deleted, but you can issue a retraction of it later, leaving behind basic metadata. When you create the registration, you have the option of either making it public immediately or making it private for up to four years through an embargo. A registration is useful for certifying what you did in a project in advance of data analysis, or for confirming the exact state of the project at important points of the lifecycle, such as manuscript submission or the onset of data collection.</p>
 
                     <h4>What if I don't want to register anything in the OSF?</h4>
-                        <p class="p-b-sm">Registering isan optional feature of the OSF.</p>
+                        <p class="p-b-sm">Registering is an optional feature of the OSF.</p>
 
                     <h4>What is the cap on data per user?</h4>
                         <p class="p-b-sm">There is a limit on the size of individual files uploaded to the OSF. This limit is 128 MB. If you have larger files to upload, you might consider utilizing add-ons. When archiving files during the registration process, there is a 1 GB total limit across all storage add-ons being archived.</p>
 
                     <h4>How do I get a DOI or ARK for my project?</h4>
-                        <p class="p-b-sm">DOIs and ARKs are available for <b>public registrations</b> of projects. To get a DOI or ARK for your project, first create a registration of your project, and make sure the registration is public. Then click "Create DOI / ARK" link, located in the block of text below the project title. A DOI and ARK will be automatically created. </p>
+                        <p class="p-b-sm">DOIs and ARKs are available for <b>public registrations</b> of projects. To get a DOI or ARK for your project, first create a registration of your project, and make sure the registration is public. Then click the "Create DOI / ARK" link, located in the block of text below the project title. A DOI and ARK will be automatically created. </p>
 
                 </div>
             </div>
@@ -97,10 +97,10 @@
                                 hash</a> of your password. This is a computation on your password that
                             cannot be reversed, but is the same every time it is computed from your
                             password. This provides extra security. No one but you can know your
-                            password. When you click "Forgot your password," OSF sends you a new random
+                            password. When you click "Forgot your password," the OSF sends you a new random
                             password because it neither stores nor has the ability to compute your password.
                             <br/><br/>
-                            Data and materials posted on OSF are not yet encrypted, unless you encrypt
+                            Data and materials posted on the OSF are not yet encrypted, unless you encrypt
                             them before uploading to the site. This means that if our servers were
                             compromised, the intruder would have access to raw data. While we have taken
                             technological measures to minimize this risk, the level of security can be
@@ -114,11 +114,11 @@
                         <p class="p-b-sm">If you’d like to attach a license to your materials hosted on the OSF, you can put this information in your project’s wiki or upload a README file. Typically, users wish to license their materials using Creative Commons licenses. Information about Creative Commons licenses can be found <a href="https://creativecommons.org/licenses/">here.</a> </p>
 
 
-                    <h4>How does OSF store and backup files that I upload to the site?</h4>
+                    <h4>How does the OSF store and backup files that I upload to the site?</h4>
                         <p class="p-b-sm">The OSF stores files with <a href="http://www.rackspace.com/">Rackspace</a>
                             via an open source sponsorship, and has backups on
                             <a href="http://aws.amazon.com/glacier/">Amazon's Glacier platform</a>.
-                            OSF maintains several backup schemes, including off-site backups and
+                            The OSF maintains several backup schemes, including off-site backups and
                             automated backups performed by our host every day, week, and fortnight.</p>
                 </div>
             </div>
