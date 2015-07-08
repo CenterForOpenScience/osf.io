@@ -336,3 +336,32 @@ a {
 .addon-auth {
     margin-top: 4.8px;
 }
+
+/* OSF-panel */
+.osf-panel {
+    border: 1px solid #ddd;
+    height: 750px;
+    overflow: auto;
+    display: block;
+    position: relative;
+    overflow-x: hidden;
+}
+
+@media (max-width: 991px) {
+    .osf-panel {
+        margin-bottom: 20px;
+    }
+}
+
+.osf-panel  .fa-angle-right, .osf-panel .fa-angle-left {
+    cursor: pointer;
+}
+.osf-panel .fa-list {
+    color: #808080;
+}
+
+.osf-panel .navbar-collapse {
+    background: #F5F5F5;
+    padding: 0px;
+}
+
