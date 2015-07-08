@@ -115,11 +115,12 @@ function findByTempID(parent, tmpID) {
 
 function cancelUploads (row) {
     var tb = this;
-    var filesArr = tb.dropzone.getActiveFiles() + tb.dropzone.getRejectedFiles();
+    var filesArr = tb.dropzone.getActiveFiles();
+    var rejectedFilesArr = tb.dropzone.getRejectedFiles();
     for (var i = 0; i < filesArr.length; i++) {
         var j = filesArr[i];
         if(!row){
-            if (j.status !== 'queued') {
+            if (j.status == 'uploading') {
                 j.status = 'queued';
             }
             var parent = j.treebeardParent || tb.dropzoneItemCache;
@@ -134,6 +135,14 @@ function cancelUploads (row) {
                 tb.dropzone.processQueue();
             }
         }
+    }
+    // Note: removes all rejected files, not just the row the user clicks
+    for (var i = 0; i < rejectedFilesArr.length; i++) {
+        var rejectFile = rejectedFilesArr[i];
+        var parent = rejectFile.treebeardParent || tb.dropzoneItemCache;
+        var item = findByTempID(parent, rejectFile.tmpID);
+        tb.dropzone.removeFile(rejectFile);
+        tb.deleteNode(parent.id,item.id);
     }
     tb.isUploading(false);
 }
@@ -751,8 +760,8 @@ function _fangornDropzoneSuccess(treebeard, file, response) {
                 }
             });
         }
-        treebeard.redraw();
     }
+    treebeard.redraw();
 }
 
 /**
