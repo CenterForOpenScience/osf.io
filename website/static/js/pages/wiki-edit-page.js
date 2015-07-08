@@ -13,7 +13,7 @@ require('ace-mode-markdown');
 require('ace-ext-language_tools');
 require('addons/wiki/static/ace-markdown-snippets.js');
 
-var Comment = require('js/comment');
+var CommentModel = require('js/comment');
 var $osf = require('js/osfHelpers');
 
 
@@ -157,5 +157,5 @@ if ($comments.length) {
         canComment: window.contextVars.currentUser.canComment,
         hasChildren: window.contextVars.node.hasChildren
     };
-    Comment.init('.comment-pane', options);
+    CommentModel.init('.comment-pane', options);
 }

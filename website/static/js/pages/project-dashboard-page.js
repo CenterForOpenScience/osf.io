@@ -218,8 +218,8 @@ $(document).ready(function () {
     }
 
     // Comment pane trigger
-    $(".open-comment-pane").click(function(){
-        $(".cp-handle").click();
+    $('.open-comment-pane').click(function(){
+        $('.cp-handle').click();
     });
 
 });

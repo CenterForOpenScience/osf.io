@@ -741,7 +741,11 @@ var onOpen = function(hostPage, hostName, nodeApiUrl) {
  *      thread_id: undefined }
  */
 var init = function(selector, options) {
-    new CommentPane(selector, options.mode, {onOpen: function(){return onOpen(options.hostPage, options.hostName, options.nodeApiUrl)}});
+    new CommentPane(selector, options.mode, {
+        onOpen: function(){
+            return onOpen(options.hostPage, options.hostName, options.nodeApiUrl);
+        }
+    });
     var viewModel = new CommentListModel(options);
     var $elm = $(selector);
     if (!$elm.length) {

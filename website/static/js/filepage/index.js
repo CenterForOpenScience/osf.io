@@ -9,7 +9,7 @@ var waterbutler = require('js/waterbutler');
 var utils = require('./util.js');
 var FileEditor = require('./editor.js');
 var FileRevisionsTable = require('./revisions.js');
-var Comment = require('js/comment');
+var CommentModel = require('js/comment');
 
 // Sanity
 var Panel = utils.Panel;
@@ -260,7 +260,7 @@ if ($comments.length) {
         canComment: window.contextVars.currentUser.canComment,
         hasChildren: window.contextVars.node.hasChildren
     };
-    Comment.init('.comment-pane', options);
+    CommentModel.init('.comment-pane', options);
 }
 
 

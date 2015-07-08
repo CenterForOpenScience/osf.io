@@ -1,6 +1,6 @@
 /** Initialization code for the project discussion page. */
 var $ = require('jquery');
-var Comment = require('js/comment');
+var CommentModel = require('js/comment');
 
 // Initialize comment pane w/ it's viewmodel
 var id = null;
@@ -21,4 +21,4 @@ var options = {
     thread_id: id
 };
 
-Comment.init('.discussion', options);
+CommentModel.init('.discussion', options);
