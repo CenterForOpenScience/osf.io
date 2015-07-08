@@ -4,7 +4,7 @@ from collections import namedtuple
 
 from framework.sessions import session
 
-Status = namedtuple('Status', ['message', 'css_class', 'dismissible'])
+Status = namedtuple('Status', ['message', 'css_class', 'dismissible', 'trust'])  # trust=True displays msg as raw HTML
 
 #: Status_type => bootstrap css class
 TYPE_MAP = {
@@ -16,12 +16,16 @@ TYPE_MAP = {
     'danger': 'danger',
 }
 
-def push_status_message(message, kind='warning', dismissible=True):
+def push_status_message(message, kind='warning', dismissible=True, trust=True):
+    # TODO: Change the default to trust=False once conversion to markupsafe rendering is complete
     statuses = session.data.get('status')
     if not statuses:
         statuses = []
     css_class = TYPE_MAP.get(kind, 'warning')
-    statuses.append(Status(message=message, css_class=css_class, dismissible=dismissible))
+    statuses.append(Status(message=message,
+                           css_class=css_class,
+                           dismissible=dismissible,
+                           trust=trust))
     session.data['status'] = statuses
 
 def pop_status_messages(level=0):
