@@ -33,12 +33,15 @@ _TPL_LOOKUP = TemplateLookup(
 )
 
 _TPL_LOOKUP_SAFE = TemplateLookup(
+    default_filters=[
+        'unicode',  # default filter; must set explicitly when overriding
+        'h',
+    ],
     directories=[
         TEMPLATE_DIR,
         os.path.join(settings.BASE_PATH, 'addons/'),
     ],
     module_directory='/tmp/mako_modules',
-    default_filters=['unicode', 'h']  # unicode is a default filter; make sure it isn't dropped when overriding
 )
 
 REDIRECT_CODES = [
@@ -198,9 +201,19 @@ def render_jinja_string(tpl, data):
     pass
 
 mako_cache = {}
-def render_mako_string(tpldir, tplname, data, safe=False):
-    """Render a mako template. Optional safe argument to activate markupsafe escaping"""
-    lookup_obj = _TPL_LOOKUP_SAFE if safe is True else _TPL_LOOKUP
+def render_mako_string(tpldir, tplname, data, trust=True):
+    """Render a mako template to a string.
+
+    :param tpldir:
+    :param tplname:
+    :param data:
+    :param trust: Optional. If ``False``, markup-save escaping will be enabled
+    """
+
+    # TODO: The "trust" flag is expected to be temporary, and should be removed
+    #       once all templates manually set it to False.
+
+    lookup_obj = _TPL_LOOKUP_SAFE if trust is False else _TPL_LOOKUP
 
     tpl = mako_cache.get(tplname)
     if tpl is None:
@@ -398,7 +411,7 @@ class WebRenderer(Renderer):
     def __init__(self, template_name,
                  renderer=None, error_renderer=None,
                  data=None, detect_render_nested=True,
-                 safe=False, template_dir=TEMPLATE_DIR):
+                 trust=True, template_dir=TEMPLATE_DIR):
         """Construct WebRenderer.
 
         :param template_name: Name of template file
@@ -409,14 +422,14 @@ class WebRenderer(Renderer):
                      to add to data from view function
         :param detect_render_nested: Auto-detect renderers for nested
             templates?
-        :param safe: Boolean: turn on markup-safe escaping?
+        :param trust: Boolean: If true, turn off markup-safe escaping
         :param template_dir: Path to template directory
 
         """
         self.template_name = template_name
         self.data = data or {}
         self.detect_render_nested = detect_render_nested
-        self.safe = safe
+        self.trust = trust
 
         self.template_dir = template_dir
         self.renderer = self.detect_renderer(renderer, template_name)
@@ -527,7 +540,7 @@ class WebRenderer(Renderer):
         # todo: add debug parameter
         try:
             # TODO: Seems like Jinja2 and handlebars renderers would not work with this call sig
-            rendered = renderer(self.template_dir, template_name, data, safe=self.safe)
+            rendered = renderer(self.template_dir, template_name, data, trust=self.trust)
         except IOError:
             return '<div>Template {} not found.</div>'.format(template_name)
 

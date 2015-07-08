@@ -77,8 +77,9 @@ def get_globals():
 
 
 class OsfWebRenderer(WebRenderer):
-    """
-    Render a Mako template with OSF context vars. Optional safe=True parameter activates markup safe rendering
+    """Render a Mako template with OSF context vars.
+
+    :param trust: Optional. If ``False``, markup-save escaping will be enabled
     """
     def __init__(self, *args, **kwargs):
         kwargs['data'] = get_globals
@@ -483,13 +484,11 @@ def make_url_map(app):
         Rule('/profile/',
              'get',
              profile_views.profile_view,
-             OsfWebRenderer('profile.mako', safe=True)),
+             OsfWebRenderer('profile.mako', trust=False)),
         Rule('/profile/<uid>/',
              'get',
              profile_views.profile_view_id,
-             OsfWebRenderer('profile.mako', safe=True)),
-        Rule('/settings/key_history/<kid>/', 'get', profile_views.user_key_history,
-             OsfWebRenderer('profile/key_history.mako')),
+             OsfWebRenderer('profile.mako', trust=False)),
         Rule(["/user/merge/"], 'get', auth_views.merge_user_get,
              OsfWebRenderer("merge_accounts.mako")),
         Rule(["/user/merge/"], 'post', auth_views.merge_user_post,
@@ -562,11 +561,6 @@ def make_url_map(app):
              profile_views.get_public_projects, json_renderer),
         Rule('/profile/<uid>/public_components/', 'get',
              profile_views.get_public_components, json_renderer),
-
-        Rule('/settings/keys/', 'get', profile_views.get_keys, json_renderer),
-        Rule('/settings/create_key/', 'post', profile_views.create_user_key, json_renderer),
-        Rule('/settings/revoke_key/', 'post', profile_views.revoke_user_key, json_renderer),
-        Rule('/settings/key_history/<kid>/', 'get', profile_views.user_key_history, json_renderer),
 
         Rule('/profile/<user_id>/summary/', 'get',
              profile_views.get_profile_summary, json_renderer),
@@ -731,11 +725,6 @@ def make_url_map(app):
         # Create a new subproject/component
         Rule('/project/<pid>/newnode/', 'post', project_views.node.project_new_node,
              OsfWebRenderer('', render_mako_string)),
-
-        Rule([
-            '/project/<pid>/key_history/<kid>/',
-            '/project/<pid>/node/<nid>/key_history/<kid>/',
-        ], 'get', project_views.key.node_key_history, OsfWebRenderer('project/key_history.mako')),
 
         # # TODO: Add API endpoint for tags
         # Rule('/tags/<tag>/', 'get', project_views.tag.project_tag, OsfWebRenderer('tags.mako')),
@@ -1149,20 +1138,6 @@ def make_url_map(app):
             project_views.node.component_remove,
             json_renderer,
         ),
-
-        # API keys
-        Rule([
-            '/project/<pid>/create_key/',
-            '/project/<pid>/node/<nid>/create_key/',
-        ], 'post', project_views.key.create_node_key, json_renderer),
-        Rule([
-            '/project/<pid>/revoke_key/',
-            '/project/<pid>/node/<nid>/revoke_key/'
-        ], 'post', project_views.key.revoke_node_key, json_renderer),
-        Rule([
-            '/project/<pid>/keys/',
-            '/project/<pid>/node/<nid>/keys/',
-        ], 'get', project_views.key.get_node_keys, json_renderer),
 
         # Reorder components
         Rule('/project/<pid>/reorder_components/', 'post',

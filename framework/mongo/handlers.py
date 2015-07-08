@@ -82,10 +82,10 @@ def set_up_storage(schemas, storage_class, prefix='', addons=None, **kwargs):
 
         >>> from pymongo import MongoClient
         >>> from modularodm.storage import MongoStorage
-        >>> from models import User, ApiKey, Node, Tag
+        >>> from models import User, Node, Tag
         >>> client = MongoClient(port=20771)
         >>> db = client['mydb']
-        >>> models = [User, ApiKey, Node, Tag]
+        >>> models = [User, Node, Tag]
         >>> set_up_storage(models, MongoStorage)
     '''
     _schemas = []
