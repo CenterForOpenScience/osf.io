@@ -214,7 +214,7 @@ var _githubItemButtons = {
                         onclick: function(event) {
                             gotoFile.call(tb, item);
                         },
-                        icon: 'fa fa-external-link',
+                        icon: 'fa fa-file-o',
                         className : 'text-info'
                     }, 'View'));
 

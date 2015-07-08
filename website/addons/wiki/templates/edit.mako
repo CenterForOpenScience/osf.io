@@ -1,6 +1,11 @@
 <%page expression_filter="h"/>
 <%inherit file="project/project_base.mako"/>
 <%def name="title()">${node['title'] | n} Wiki</%def>
+
+<%def name="stylesheets()">
+    ${parent.stylesheets()}
+    <link rel="stylesheet" href="/static/css/pages/wiki-page.css">
+</%def>
 ## Use full page width
 <%def name="container_class()">container-xxl</%def>
 

@@ -31,7 +31,7 @@ class TestS3ViewsConfig(OsfTestCase):
 
         self.user = AuthUserFactory()
         self.consolidated_auth = Auth(user=self.user)
-        self.auth = ('test', self.user.api_keys[0]._primary_key)
+        self.auth = self.user.auth
         self.project = ProjectFactory(creator=self.user)
 
         self.project.add_addon('s3', auth=self.consolidated_auth)
@@ -330,7 +330,7 @@ class TestCreateBucket(OsfTestCase):
 
         self.user = AuthUserFactory()
         self.consolidated_auth = Auth(user=self.user)
-        self.auth = ('test', self.user.api_keys[0]._primary_key)
+        self.auth = self.user.auth
         self.project = ProjectFactory(creator=self.user)
 
         self.project.add_addon('s3', auth=self.consolidated_auth)

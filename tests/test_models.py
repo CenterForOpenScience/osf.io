@@ -30,7 +30,7 @@ from website import filters, language, settings, mailchimp_utils
 from website.exceptions import NodeStateError
 from website.profile.utils import serialize_user
 from website.project.model import (
-    ApiKey, Comment, Node, NodeLog, Pointer, ensure_schemas, has_anonymous_link,
+    Comment, Node, NodeLog, Pointer, ensure_schemas, has_anonymous_link,
     get_pointer_parent, Embargo,
 )
 from website.util.permissions import CREATOR_PERMISSIONS
@@ -46,7 +46,7 @@ from website.addons.wiki.exceptions import (
 
 from tests.base import OsfTestCase, Guid, fake, capture_signals
 from tests.factories import (
-    UserFactory, ApiKeyFactory, NodeFactory, PointerFactory,
+    UserFactory, NodeFactory, PointerFactory,
     ProjectFactory, NodeLogFactory, WatchConfigFactory,
     NodeWikiFactory, RegistrationFactory, UnregUserFactory,
     ProjectWithAddonFactory, UnconfirmedUserFactory, CommentFactory, PrivateLinkFactory,
@@ -969,18 +969,6 @@ class TestGUID(OsfTestCase):
                 record_guid.referent,
                 record
             )
-
-
-class TestApiKey(OsfTestCase):
-
-    def test_factory(self):
-        super(TestApiKey, self).setUp()
-        key = ApiKeyFactory()
-        user = UserFactory()
-        user.api_keys.append(key)
-        user.save()
-        assert_equal(len(user.api_keys), 1)
-        assert_equal(ApiKey.find().count(), 1)
 
 
 class TestNodeWikiPage(OsfTestCase):
@@ -1907,7 +1895,6 @@ class TestProject(OsfTestCase):
         assert_true(hasattr(node, 'nodes'))
         assert_true(hasattr(node, 'forked_from'))
         assert_true(hasattr(node, 'registered_from'))
-        assert_true(hasattr(node, 'api_keys'))
         assert_equal(node.logs[-1].action, 'project_created')
 
     def test_log(self):
