@@ -498,6 +498,38 @@ class TestUserSettingsModel(StorageTestCase):
 
         assert_equals(self.user_addon.storage_limit, settings.DEFAULT_STORAGE_LIMIT * 2)
 
+    def test_warning_threadhold(self):
+        assert_false(self.user_addon.at_warning_threshold)
+        self.user_addon.storage_usage = self.user_addon.storage_limit
+        self.user_addon.save()
+        assert_true(self.user_addon.at_warning_threshold)
+
+    @mock.patch('website.addons.osfstorage.model.mails.send_mail')
+    def test_send_warning_email(self, mock_email):
+        assert_false(self.user_addon.recieved_warning)
+        self.user_addon.send_warning_email()
+        assert_true(self.user_addon.recieved_warning)
+
+        self.user_addon.send_warning_email()
+
+        assert_equals(mock_email.call_count, 1)
+
+        self.user_addon.send_warning_email(force=True)
+        assert_equals(mock_email.call_count, 2)
+
+    def test_update_storage_limit(self):
+        self.user_addon.recieved_warning = True
+        assert_true(self.user_addon.recieved_warning)
+        self.user_addon.update_storage_limit(1000000000000)
+        assert_false(self.user_addon.at_warning_threshold)
+        assert_false(self.user_addon.recieved_warning)
+
+    def test_update_storage_limit_still_over_threshold(self):
+        self.user_addon.recieved_warning = True
+        self.user_addon.storage_usage = 500
+        self.user_addon.update_storage_limit(300)
+        assert_true(self.user_addon.recieved_warning)
+
 
 class TestNodeSettingsModel(StorageTestCase):
 

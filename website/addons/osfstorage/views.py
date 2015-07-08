@@ -172,6 +172,9 @@ def osfstorage_create_child(file_node, payload, node_addon, **kwargs):
         version_id = None
         archive_exists = False
 
+        if user.get_addon('osfstorage').at_warning_threshold:
+            user.get_addon('osfstorage').send_warning_email()
+
     return {
         'status': 'success',
         'archive': not archive_exists,  # Should waterbutler also archive this file

@@ -6,6 +6,7 @@ import bson
 import logging
 
 import furl
+import hurry.filesize
 
 from modularodm import fields, Q
 from dateutil.parser import parse as parse_date
@@ -16,6 +17,7 @@ from framework.mongo import StoredObject
 from framework.mongo.utils import unique_on
 from framework.analytics import get_basic_counters
 
+from website import mails
 from website.addons.base import GuidFile
 from website.addons.base import StorageAddonBase
 from website.addons.base import AddonNodeSettingsBase
@@ -35,10 +37,51 @@ class OsfStorageUserSettings(AddonUserSettingsBase):
     # The max amount of storage this user may use
     # Overrides the property storage_limit if defined
     storage_limit_override = fields.IntegerField(default=None)
+    recieved_warning = fields.BooleanField(default=False)
 
     @property
     def storage_limit(self):
         return self.storage_limit_override or settings.DEFAULT_STORAGE_LIMIT
+
+    @property
+    def free_space(self):
+        """The amount of space the user has left to use. In bytes.
+        """
+        return self.storage_limit - self.storage_usage
+
+    @property
+    def at_warning_threshold(self):
+        """Returns True if the users free space is less than a threshold.
+        Used to see if a warning email should be sent to the end user.
+        """
+        return self.free_space < settings.WARNING_EMAIL_THRESHOLD
+
+    def send_warning_email(self, force=False, save=True):
+        """Send out a warning email to the user saying they only have X space left.
+        Will not send if recieved_warning is True to avoid spamming the user.
+        """
+        if force or not self.recieved_warning:
+            mails.send_mail(
+                self.owner,
+                mails.OSFSTORAGE_USAGE_WARNING,
+                fullname=self.owner.fullname,
+                used_space=hurry.filesize.size(self.storage_usage, system=hurry.filesize.alternative),
+                total_space=hurry.filesize.size(self.storage_limit, system=hurry.filesize.alternative)
+            )
+            self.recieved_warning = True
+            if save:
+                self.save()
+
+    def update_storage_limit(self, new_limit, save=True):
+        """Helper for updating storage_limit_override.
+        Use only in the shell, handles checking if the warning email
+        flag needs to be reset.
+        """
+        self.storage_limit_override = new_limit
+        if not self.at_warning_threshold:
+            self.recieved_warning = False
+        if save:
+            self.save()
 
     def merge(self, other_user_settings):
         """Merge other_user_settings into self.

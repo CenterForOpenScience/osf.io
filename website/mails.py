@@ -215,3 +215,12 @@ ARCHIVE_SUCCESS = Mail(
     'archive_success',
     subject="Registration of " + UNESCAPE + " complete"
 )
+
+OSFSTORAGE_MIGRATION_WARNING = Mail(
+    'osfstorage_migration_warning',
+    subject=''
+)
+OSFSTORAGE_USAGE_WARNING = Mail(
+    'osfstorage_usage_warning',
+    subject='Low on OSF storage space'
+)
