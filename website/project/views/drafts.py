@@ -1,4 +1,4 @@
-from flask import request
+from flask import request, redirect
 import httplib as http
 
 from modularodm import Q
@@ -107,9 +107,19 @@ def new_draft_registration(auth, node, *args, **kwargs):
         registration_metadata=schema_data
     )
     draft.save()
-    return {
-        serialize_draft_registration(draft, auth),
-    }
+
+    return redirect(node.web_url_for('edit_draft_registration', draft_id=draft._id))
+
+@must_have_permission(ADMIN)
+@must_be_valid_project
+def edit_draft_registration(auth, node, draft_id, **kwargs):
+    draft = DraftRegistration.load(draft_id)
+    if not draft:
+        raise HTTPError(http.NOT_FOUND)
+
+    ret = serialize_node(node, auth, primary=True)
+    ret['draft'] = serialize_draft_registration(draft, auth)
+    return ret
 
 @must_have_permission(ADMIN)
 @must_be_valid_project
