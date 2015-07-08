@@ -13,3 +13,9 @@
     font-weight: 900;
     font-size: 120%;
 }
+#selectedScript{
+    font-weight: 500;
+}
+#scriptName{
+	font-weight: 300;
+}
