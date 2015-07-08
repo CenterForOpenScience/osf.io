@@ -2,7 +2,7 @@
 - [X] Show the Submit button to submit for approval
 - [X] Show which fields are required on submit (if required fields are not filled in there will be an error)
 - [X] Autosaving functionality
-- [ ] Show no indication of which field have been completed (i.e. no green/yellow)
+- [X] Show no indication of which field have been completed (i.e. no green/yellow)
 
 # Routes needed
 - [ ] Create new route `/asdfg/registrations/<uid>`
