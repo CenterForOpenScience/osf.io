@@ -72,7 +72,7 @@
                     <div class="panel-heading">
                         <h3 id="configureNode" class="panel-title">Configure ${node['node_type'].capitalize()}</h3>
                     </div>
-                    <div id="nodeCategoryTitleDescriptionSettings" class="panel-body">
+                    <div id="projectSettings" class="panel-body">
                         <div class="form-group">
                             <label>Category:</label>
                             <select data-bind="attr.disabled: disabled,

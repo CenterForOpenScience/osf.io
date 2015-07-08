@@ -55,8 +55,8 @@ $(document).ready(function() {
     }
     var disableCategory = !window.contextVars.node.parentExists;
     // need check because node category doesn't exist for registrations
-    if ($('#nodeCategoryTitleDescriptionSettings').length) {
-        var categorySettingsVM = new ProjectSettings.ProjectSettings( {
+    if ($('#projectSettings').length) {
+        var projectSettingsVM = new ProjectSettings.ProjectSettings( {
             currentTitle: ctx.node.title,
             currentDescription: ctx.node.description,
             api_url: ctx.node.api_url,
@@ -65,7 +65,7 @@ $(document).ready(function() {
             updateUrl: ctx.node.urls.update,
             disabled: disableCategory
         });
-        ko.applyBindings(categorySettingsVM, $('#nodeCategoryTitleDescriptionSettings')[0]);
+        ko.applyBindings(projectSettingsVM, $('#projectSettings')[0]);
     }
 
     $(window).resize(function (){ fixAffixWidth(); });
