@@ -140,6 +140,11 @@ class TestUserIncludeQueryParameters(ApiTestCase):
         additional_query_params = res.json['data']['additional_query_params']
         assert_in('nodes', additional_query_params)
 
+    def test_get_invalid_key(self):
+        self.url += '?include=nah'
+        res = self.app.get(self.url, expect_errors=True)
+        assert_equal(res.status_code, 404)
+
     def test_get_include_values(self):
         self.url += '?include=nodes'
         res = self.app.get(self.url)
