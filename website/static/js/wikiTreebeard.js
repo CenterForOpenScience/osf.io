@@ -60,9 +60,10 @@ function before_change_permissions(item, permission){
     var title = item.parent().data.node.title;
     if(permission === 'public'){
         bootbox.confirm({
-            title: 'Make Wiki Publicly Editable',
+            title: 'Warning',
             message: 'Are you sure you want to make the wiki of '+title+
-                ' publicly editable? This will allow any logged in user to edit your wiki. ' +
+                ' publicly editable? This will allow any logged in user to edit the content of your wiki. ' +
+                + 'Non-contributor users will not be able to add or remove pages. '+
                 '<b>Note:</b> ' +title+ ' must be public for public editing to be available.',
             callback: function(confirm) {
             if (confirm) {
