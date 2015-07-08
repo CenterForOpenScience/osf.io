@@ -41,7 +41,7 @@ utils.errorState = function(vm){
 };
 
 utils.highlightField = function(result, field_name) {
-    return utils.scrubHTML(result.highlight[field_name] ? result.highlight[field_name][0] : result[field_name]);
+    return utils.scrubHTML(result.highlight[field_name] ? result.highlight[field_name][0] : result[field_name] || '');
 };
 
 utils.updateVM = function(vm, data) {
