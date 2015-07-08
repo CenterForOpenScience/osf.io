@@ -71,7 +71,7 @@ def get_or_http_error(Model, pk_or_query):
             instance = Model.find_one(pk_or_query)
         except NoResultsFound:
             raise HTTPError(http.NOT_FOUND, data=dict(
-                message_long="No {0} resource matching that query could be found".format(name=name)
+                message_long="No {name} resource matching that query could be found".format(name=name)
             ))
         return instance
     else:

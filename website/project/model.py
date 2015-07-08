@@ -17,7 +17,7 @@ from HTMLParser import HTMLParser
 from modularodm import Q
 from modularodm import fields
 from modularodm.validators import MaxLengthValidator
-from modularodm.exceptions import ValidationTypeError
+from modularodm.exceptions import ValidationTypeError, NoResultsFound
 from modularodm.exceptions import ValidationValueError
 
 from api.base.utils import absolute_reverse
@@ -92,25 +92,16 @@ class MetaSchema(StoredObject):
     schema_version = fields.IntegerField()
 
 
-def ensure_schemas(clear=True):
-    """Import meta-data schemas from JSON to database, optionally clearing
-    database first.
-
-    :param clear: Clear schema database before import
+def ensure_schemas():
+    """Import meta-data schemas from JSON to database if not already loaded
     """
-    if clear:
-        try:
-            MetaSchema.remove()
-        except AttributeError:
-            if not settings.DEBUG_MODE:
-                raise
     for schema in OSF_META_SCHEMAS:
         try:
             MetaSchema.find_one(
                 Q('name', 'eq', schema['name']) &
-                Q('schema_version', 'eq', schema['schema_version'])
+                Q('schema_version', 'eq', schema.get('version', 1))
             )
-        except:
+        except NoResultsFound:
             meta_schema = {
                 'name': schema['name'],
                 'schema_version': schema.get('version', 1),

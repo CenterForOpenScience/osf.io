@@ -11,6 +11,13 @@ var ctx = window.contextVars;
 var node = window.contextVars.node;
 
 $(document).ready(function() {
+
+    $('#registrationsTabs').tab();
+    $('#registrationsTabs a').click(function (e) {
+        e.preventDefault();
+        $(this).tab('show');
+    });
+
     var draftManager = new RegistrationManager(node, '#draftRegistrationScope', '#registrationEditorScope', {
         showEditor: function() {
             $('#editDraftsControl').removeClass('disabled');
@@ -28,6 +35,6 @@ $(document).ready(function() {
 
     $('#registerNode').click(function(event) {
         event.preventDefault();
-        draftManager.beforeRegister();
+        draftManager.beforeCreateDraft();        
     });
 });
