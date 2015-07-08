@@ -34,9 +34,13 @@ def search(query, raw=False, index='share'):
     # Run the real query and get the results
     results = share_es.search(index=index, doc_type=None, body=query)
 
+    for hit in results['hits']['hits']:
+        hit['_source']['highlight'] = hit.get('highlight', {})
     return results if raw else {
-        'results': [remove_key(hit['_source'], 'raw') for hit in results['hits']['hits']],
+        'results': [hit['_source'] for hit in results['hits']['hits']],
         'count': results['hits']['total'],
+        'aggregations': results.get('aggregations'),
+        'aggs': results.get('aggs')
     }
 
 def remove_key(d, k):
