@@ -10,8 +10,6 @@ import unicodedata
 
 import six
 
-import index_file
-
 from elasticsearch import (
     Elasticsearch,
     RequestError,
@@ -28,7 +26,7 @@ from website.models import User, Node
 from website.search import exceptions
 from website.search.util import build_query
 from website.util import sanitize
-
+from website.search import index_file
 logger = logging.getLogger(__name__)
 
 
@@ -282,7 +280,6 @@ def update_node(node, index=None, files=True):
             'pending_embargo': node.pending_embargo,
             'registered_date': node.registered_date,
             'wikis': {},
-            # 'files': {},
             'parent_id': parent_id,
             'date_created': node.date_created,
             'boost': int(not node.is_registration) + 1,  # This is for making registered projects less relevant
@@ -295,22 +292,43 @@ def update_node(node, index=None, files=True):
             ]:
                 elastic_document['wikis'][wiki.page_name] = wiki.raw_text(node)
             if files:
-                for file_ in index_file.collect_files(node):
-                    update_file(file_, elastic_document_id, index)
-                    # elastic_document['files'][file_['name']] = file_['content']
+                update_all_files(node, elastic_document_id, index=index)
         es.index(index=index, doc_type=category, id=elastic_document_id, body=elastic_document, refresh=True)
 
 
 @requires_search
 def update_file(file_, parent_id, index=None):
+    if index_file.is_indexed(file_['name']):
+        index = index or INDEX
+        file_document = {
+            'id': file_['path'],
+            'name': file_['name'],
+            'content': file_['content'],
+            'parent_id': parent_id,
+            'category': 'file'
+        }
+        es.index(index=index, doc_type='file', parent=parent_id, id=file_['path'], body=file_document, refresh=True)
+
+
+def update_all_files(node, parent_id, index=None):
     index = index or INDEX
-    file_document = {
-        'name': file_['name'],
-        'content': file_['content'],
-        'parent_id': parent_id,
-        'category': 'file'
-    }
-    es.index(index=index, doc_type='file', parent=parent_id, id=file_['path'], body=file_document, refresh=True)
+    for file_dict in index_file.collect_files(node):
+        update_file(file_dict, parent_id, index=index)
+
+
+def update_file_with_metadata(metadata, parent_id, addon):
+    name = metadata['name']
+    path = metadata['path']
+    file_, created = addon.find_or_create_file_guid(path)
+    content = index_file.get_content_of_file_from_addon(file_, addon)
+    file_dict = {'name': name, 'path': path, 'content': content}
+    update_file(file_dict, parent_id)
+
+
+@requires_search
+def delete_file(file_path, index=None):
+    index = index or INDEX
+    es.delete(index=index, doc_type='file', id=file_path, refresh=True, ignore=[404])
 
 
 def bulk_update_contributors(nodes, index=INDEX):
