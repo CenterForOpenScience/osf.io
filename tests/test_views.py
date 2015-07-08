@@ -52,7 +52,7 @@ from tests.base import (
     assert_datetime_equal,
 )
 from tests.factories import (
-    UserFactory, ApiKeyFactory, ProjectFactory, WatchConfigFactory,
+    UserFactory, ProjectFactory, WatchConfigFactory,
     NodeFactory, NodeLogFactory, AuthUserFactory, UnregUserFactory,
     RegistrationFactory, CommentFactory, PrivateLinkFactory, UnconfirmedUserFactory, DashboardFactory, FolderFactory,
     ProjectWithAddonFactory,
@@ -1481,9 +1481,9 @@ class TestUserAccount(OsfTestCase):
             'new_password': new_password,
             'confirm_password': confirm_password,
         }
-        res = self.app.post(url, post_data, auth=self.user.auth)
+        res = self.app.post(url, post_data, auth=(self.user.username, old_password))
         assert_true(302, res.status_code)
-        res = res.follow(auth=self.user.auth)
+        res = res.follow(auth=(self.user.username, new_password))
         assert_true(200, res.status_code)
         self.user.reload()
         assert_true(self.user.check_password(new_password))
@@ -1598,7 +1598,8 @@ class TestAddingContributorViews(OsfTestCase):
         assert_false(res[2]['user'].is_registered)
         assert_true(res[2]['user']._id)
 
-    def test_deserialize_contributors_sends_unreg_contributor_added_signal(self):
+    @mock.patch('website.project.views.contributor.mails.send_mail')
+    def test_deserialize_contributors_sends_unreg_contributor_added_signal(self, _):
         unreg = UnregUserFactory()
         from website.project.signals import unreg_contributor_added
         serialized = [serialize_unregistered(fake.name(), unreg.username)]
@@ -2123,9 +2124,7 @@ class TestClaimViews(OsfTestCase):
 
     def test_cannot_claim_user_with_user_who_is_already_contributor(self):
         # user who is already a contirbutor to the project
-        contrib = AuthUserFactory.build()
-        contrib.set_password('underpressure')
-        contrib.save()
+        contrib = AuthUserFactory()
         self.project.add_contributor(contrib, auth=Auth(self.project.creator))
         self.project.save()
         # Claiming user goes to claim url, but contrib is already logged in
@@ -2145,12 +2144,9 @@ class TestWatchViews(OsfTestCase):
 
     def setUp(self):
         super(TestWatchViews, self).setUp()
-        self.user = UserFactory.build()
-        api_key = ApiKeyFactory()
-        self.user.api_keys.append(api_key)
-        self.user.save()
-        self.consolidate_auth = Auth(user=self.user, api_key=api_key)
-        self.auth = ('test', self.user.api_keys[0]._id)  # used for requests auth
+        self.user = AuthUserFactory()
+        self.consolidate_auth = Auth(user=self.user)
+        self.auth = self.user.auth  # used for requests auth
         # A public project
         self.project = ProjectFactory(is_public=True)
         self.project.save()
@@ -2677,7 +2673,8 @@ class TestAuthViews(OsfTestCase):
             to_addr='fred@queen.com'
         ))
 
-    def test_register_ok(self):
+    @mock.patch('framework.auth.views.mails.send_mail')
+    def test_register_ok(self, _):
         url = api_url_for('register_user')
         name, email, password = fake.name(), fake.email(), 'underpressure'
         self.app.post_json(
@@ -2693,7 +2690,8 @@ class TestAuthViews(OsfTestCase):
         assert_equal(user.fullname, name)
 
     # Regression test for https://github.com/CenterForOpenScience/osf.io/issues/2902
-    def test_register_email_case_insensitive(self):
+    @mock.patch('framework.auth.views.mails.send_mail')
+    def test_register_email_case_insensitive(self, _):
         url = api_url_for('register_user')
         name, email, password = fake.name(), fake.email(), 'underpressure'
         self.app.post_json(
@@ -2708,8 +2706,8 @@ class TestAuthViews(OsfTestCase):
         user = User.find_one(Q('username', 'eq', email))
         assert_equal(user.fullname, name)
 
-    def test_register_scrubs_username(self):
-        """Usernames are scrubbed of malicious HTML when registering"""
+    @mock.patch('framework.auth.views.send_confirm_email')
+    def test_register_scrubs_username(self, _):
         url = api_url_for('register_user')
         name = "<i>Eunice</i> O' \"Cornwallis\"<script type='text/javascript' src='http://www.cornify.com/js/cornify.js'></script><script type='text/javascript'>cornify_add()</script>"
         email, password = fake.email(), 'underpressure'
@@ -2792,7 +2790,8 @@ class TestAuthViews(OsfTestCase):
         assert_true(new_user.check_password(password))
         assert_equal(new_user.fullname, real_name)
 
-    def test_register_sends_user_registered_signal(self):
+    @mock.patch('framework.auth.views.send_confirm_email')
+    def test_register_sends_user_registered_signal(self, mock_send_confirm_email):
         url = api_url_for('register_user')
         name, email, password = fake.name(), fake.email(), 'underpressure'
         with capture_signals() as mock_signals:
@@ -2806,8 +2805,10 @@ class TestAuthViews(OsfTestCase):
                 }
             )
         assert_equal(mock_signals.signals_sent(), set([auth.signals.user_registered]))
+        mock_send_confirm_email.assert_called()
 
-    def test_register_post_sends_user_registered_signal(self):
+    @mock.patch('framework.auth.views.send_confirm_email')
+    def test_register_post_sends_user_registered_signal(self, mock_send_confirm_email):
         url = web_url_for('auth_register_post')
         name, email, password = fake.name(), fake.email(), 'underpressure'
         with capture_signals() as mock_signals:
@@ -2819,6 +2820,7 @@ class TestAuthViews(OsfTestCase):
                 'register-password2': password
             })
         assert_equal(mock_signals.signals_sent(), set([auth.signals.user_registered]))
+        mock_send_confirm_email.assert_called()
 
     def test_resend_confirmation_get(self):
         res = self.app.get('/resend/')
