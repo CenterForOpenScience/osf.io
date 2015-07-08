@@ -826,7 +826,9 @@ class TestSendEmails(OsfTestCase):
             content='',
             target_user=None,
             parent_comment='',
-            url=self.node.absolute_url
+            url=self.node.absolute_url,
+            page_type='project',
+            page_title=''
         )
         try:
             emails.email_transactional(
@@ -850,7 +852,9 @@ class TestSendEmails(OsfTestCase):
             content='',
             target_user=None,
             parent_comment='',
-            url=self.node.absolute_url
+            url=self.node.absolute_url,
+            page_type='project',
+            page_title=''
         )
         try:
             emails.email_digest(

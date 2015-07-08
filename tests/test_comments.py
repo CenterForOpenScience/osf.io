@@ -182,7 +182,7 @@ class TestCommentViews(OsfTestCase):
         res = self._add_comment(self.project)
 
         assert_equal(res.status_code, 302)
-        assert_in('next=', res.headers.get('location'))
+        assert_in('login?', res.headers.get('location'))
 
     def test_add_comment_off(self):
 
