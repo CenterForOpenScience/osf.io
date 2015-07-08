@@ -5,7 +5,7 @@
 - [X] Show no indication of which field have been completed (i.e. no green/yellow)
 
 # Routes needed
-- [ ] Create new route `/asdfg/registrations/<uid>`
+- [X] Create new route `/asdfg/registrations/<uid>`
 
 # Preview tab
 - [ ] When "New Registration" is clicked on the `Draft Registration` taken to a `Preview` tab
