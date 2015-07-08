@@ -20,9 +20,9 @@
   * select file from project
 - [ ] Copy from OSF saved to root (I'm not totally clear on what this means -Lauren)
 - [x] If upload then upload to outer OSF storage of project (where the original focus is)
-- [ ] Show (or enable) upload/select button once a file has been selected
+- [x] Show (or enable) upload/select button once a file has been selected (currently selecting by clicking on row)
 - [ ] Save path to schema data
-- [ ] Display what file has been uploaded/selected
+- [x] Display what file has been uploaded/selected
 
 # Time bugs
 - [ ] Last saved: local time with GMT in hover
