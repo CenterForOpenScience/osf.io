@@ -79,7 +79,7 @@ def get_globals():
 class OsfWebRenderer(WebRenderer):
     """Render a Mako template with OSF context vars.
 
-    :param trust: Optional. If ``False``, markup-save escaping will be enabled
+    :param trust: Optional. If ``False``, markup-safe escaping will be enabled
     """
     def __init__(self, *args, **kwargs):
         kwargs['data'] = get_globals
@@ -123,10 +123,10 @@ def goodbye():
 
 
 def make_url_map(app):
-    '''Set up all the routes for the OSF app.
+    """Set up all the routes for the OSF app.
 
     :param app: A Flask/Werkzeug app to bind the rules to.
-    '''
+    """
 
     # Set default views to 404, using URL-appropriate renderers
     process_rules(app, [
@@ -481,26 +481,44 @@ def make_url_map(app):
     # Web
 
     process_rules(app, [
-        Rule('/profile/',
-             'get',
-             profile_views.profile_view,
-             OsfWebRenderer('profile.mako', trust=False)),
-        Rule('/profile/<uid>/',
-             'get',
-             profile_views.profile_view_id,
-             OsfWebRenderer('profile.mako', trust=False)),
-        Rule(["/user/merge/"], 'get', auth_views.merge_user_get,
-             OsfWebRenderer("merge_accounts.mako")),
-        Rule(["/user/merge/"], 'post', auth_views.merge_user_post,
-             OsfWebRenderer("merge_accounts.mako")),
+        Rule(
+            '/profile/',
+            'get',
+            profile_views.profile_view,
+            OsfWebRenderer('profile.mako', trust=False)
+        ),
+        Rule(
+            '/profile/<uid>/',
+            'get',
+            profile_views.profile_view_id,
+            OsfWebRenderer('profile.mako', trust=False)
+        ),
+        Rule(
+            ["/user/merge/"],
+            'get',
+            auth_views.merge_user_get,
+            OsfWebRenderer("merge_accounts.mako", trust=False)
+        ),
+        Rule(
+            ["/user/merge/"],
+            'post',
+            auth_views.merge_user_post,
+            OsfWebRenderer("merge_accounts.mako", trust=False)
+        ),
         # Route for claiming and setting email and password.
         # Verification token must be querystring argument
-        Rule(['/user/<uid>/<pid>/claim/'], ['get', 'post'],
-             project_views.contributor.claim_user_form, OsfWebRenderer('claim_account.mako')),
-        Rule(['/user/<uid>/<pid>/claim/verify/<token>/'], ['get', 'post'],
-             project_views.contributor.claim_user_registered,
-             OsfWebRenderer('claim_account_registered.mako')),
-
+        Rule(
+            ['/user/<uid>/<pid>/claim/'],
+            ['get', 'post'],
+            project_views.contributor.claim_user_form,
+            OsfWebRenderer('claim_account.mako', trust=False)
+        ),
+        Rule(
+            ['/user/<uid>/<pid>/claim/verify/<token>/'],
+            ['get', 'post'],
+            project_views.contributor.claim_user_registered,
+            OsfWebRenderer('claim_account_registered.mako', trust=False)
+        ),
 
         Rule(
             '/settings/',
