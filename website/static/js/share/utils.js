@@ -40,6 +40,10 @@ utils.errorState = function(vm){
     $osf.growl('Error', 'invalid query');
 };
 
+utils.highlightField = function(result, field_name) {
+    return utils.scrubHTML(result.highlight[field_name] ? result.highlight[field_name][0] : result[field_name]);
+};
+
 utils.updateVM = function(vm, data) {
     if (data === null) {
         return;
@@ -47,8 +51,8 @@ utils.updateVM = function(vm, data) {
     vm.time = data.time;
     vm.count = data.count;
     data.results.forEach(function(result) {
-        result.title = utils.scrubHTML(result.title);
-        result.description = utils.scrubHTML(result.description);
+        result.title = utils.highlightField(result, 'title');
+        result.description = utils.highlightField(result, 'description');
     });
     vm.results.push.apply(vm.results, data.results);
     m.redraw();
@@ -68,13 +72,14 @@ utils.loadMore = function(vm) {
 
         vm.resultsLoading(true);
         m.request({
-            method: 'get',
+            method: 'post',
             background: true,
+            data: vm.buildQuery(),
             url: '/api/v1/share/search/?' + $.param({
-                from: page,
-                q: utils.buildQuery(vm),
-                sort: sort,
-                v: 1
+                // from: page,
+                // q: vm.buildQuery(),
+                // sort: sort,
+                v: 2
             })
         }).then(function(data) {
             vm.resultsLoading(false);
@@ -229,54 +234,53 @@ utils.filteredQuery = function(query, filter) {
 };
 
 utils.termFilter = function(field, value) {
-    return {
-        'term': {
-            field: value
-        }
-    };
+    ret = {'term': {}};
+    ret.term[field] = value;
+    return ret;
 };
 
-utils.exactQuery = function(field, value) {
-    return utils.filteredQuery(null, termFilter(field, value));
+utils.matchQuery = function(field, value) {
+    ret = {'match': {}};
+    ret.match[field] = value;
+    return ret;
 };
 
 utils.fieldRange = function(field_name, gte, lte) {
-    return {
-        'range': {
-            field_name: {
-                'gte': gte,
-                'lte': lte
-            }
-        }
-    };
+    ret = {'range': {}};
+    ret.range[field_name] = {'gte': gte, 'lte': lte};
+    return ret;
 };
 
-utils.boolQuery = function(must, must_not, should) {
+utils.boolQuery = function(must, must_not, should, minimum) {
+    minimum = minimum || 1;
     return {
         'bool': {
             'must': (must || []),
             'must_not': (must_not || []),
-            'should': (should || [])
+            'should': (should || []),
+            'minimum_should_match': minimum
         }
     };
 };
 
 utils.commonQuery = function(query_string, field) {
     field = field || '_all';
+    ret = {'common': {}};
+    ret.common[field] = {
+        query: query_string
+    };
+    return ret;
+};
+
+utils.andFilter = function(filters) {
     return {
-        'common': {
-            field: {
-                'query': query_string
-            }
-        }
+        'and': filters
     };
 };
 
-utils.parseToTermQuery = function(terms) {
-    $.map(function(term) {
-        items = term.split(':');
-        return utils.exactQuery(items[0], items[1]);
-    }, terms);
+utils.parseToTermQuery = function(term) {
+    items = term.split(':');
+    return utils.matchQuery(items[0], items[1]);
 };
 
 module.exports = utils;
