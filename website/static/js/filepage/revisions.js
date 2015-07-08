@@ -17,6 +17,7 @@ var model = {
     errorMessage: undefined,
     hasUser: false,
     hasDate: false,
+    hasMd5: false,
     selectedRevision: 0
 };
 
@@ -30,6 +31,7 @@ var FileRevisionsTable = {
         self.enableEditing = enableEditing;
         self.baseUrl = (window.location.href).split('?')[0];
 
+        model.hasMd5 = self.file.provider === 'osfstorage' || 's3';
         model.hasDate = self.file.provider !== 'dataverse';
 
         self.reload = function() {
@@ -92,6 +94,7 @@ var FileRevisionsTable = {
                     m('th', 'Version ID'),
                     model.hasDate ? m('th', 'Date') : false,
                     model.hasUser ? m('th', 'User') : false,
+                    model.hasMd5 ? m('th', 'md5 hash') : false,
                     m('th[colspan=2]', 'Download'),
                 ].filter(TRUTHY))
             ]);
@@ -99,7 +102,7 @@ var FileRevisionsTable = {
 
         self.makeTableRow = function(revision, index) {
             var isSelected = index === model.selectedRevision;
-
+            //debugger;
             return m('tr' + (isSelected ? '.active' : ''), [
                 m('td',  isSelected ? revision.displayVersion :
                   m('a', {href: parseInt(revision.displayVersion) === model.revisions.length ? self.baseUrl : revision.osfViewUrl}, revision.displayVersion)
@@ -110,6 +113,7 @@ var FileRevisionsTable = {
                             m('a', {href: revision.extra.user.url}, revision.extra.user.name) :
                             revision.extra.user.name
                     ) : false,
+                model.hasMd5 ? m('td', revision.extra.md5) : false,
                 m('td', revision.extra.downloads > -1 ? m('.badge', revision.extra.downloads) : ''),
                 m('td',
                     m('a.btn.btn-primary.btn-sm.file-download', {
@@ -172,7 +176,6 @@ var FileRevisionsTable = {
                     'latest': 'Draft',
                     'latest-published': 'Published'
                 };
-
                 revision.displayVersion = revision.version in displayMap ?
                     displayMap[revision.version] : revision.version.substring(0, 8);
                 break;

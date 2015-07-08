@@ -24,7 +24,7 @@ from website import settings
 from website.project import decorators
 from website.addons.base import exceptions
 from website.models import User, Node, NodeLog
-from website.util import rubeus, waterbutler_url_for
+from website.util import rubeus
 from website.profile.utils import get_gravatar
 from website.project.decorators import must_be_valid_project, must_be_contributor_or_public
 from website.project.utils import serialize_node
@@ -366,11 +366,6 @@ def addon_view_or_download_file(auth, path, provider, **kwargs):
     if not path.startswith('/'):
         path = '/' + path
 
-    metadata_url = waterbutler_url_for('metadata', path=path, provider=provider, node=node, view_only=True)
-    res = requests.get(metadata_url)
-    if res.status_code == 200:
-        extras.update(res.json().get('data'))
-
     guid_file, created = node_addon.find_or_create_file_guid(path)
 
     if guid_file.guid_url != request.path:
@@ -440,7 +435,6 @@ def addon_view_file(auth, node, node_addon, guid_file, extras):
         },
         # Note: must be called after get_or_start_render. This is really only for github
         'size': size,
-        'extras': extras, #probably should be named something else
         'extra': json.dumps(getattr(guid_file, 'extra', {})),
         #NOTE: get_or_start_render must be called first to populate name
         'file_name': getattr(guid_file, 'name', os.path.split(guid_file.waterbutler_path)[1]),
