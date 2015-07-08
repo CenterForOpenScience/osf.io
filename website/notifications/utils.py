@@ -115,8 +115,9 @@ def move_subscription(old_event_sub, old_node, new_event_sub, new_node):
         subbed, removed_users[notification_type] = separate_users(new_node, users)
         if new_sub:
             for user_id in removed_users[notification_type]:
-                user = User.load(user_id)
-                new_sub.remove_user_from_subscription(user)
+                if user_id in getattr(new_sub, notification_type, []):
+                    user = User.load(user_id)
+                    new_sub.remove_user_from_subscription(user)
     return removed_users
 
 
@@ -170,7 +171,7 @@ def get_all_node_subscriptions(user, node, user_subscriptions=None):
     if not user_subscriptions:
         user_subscriptions = get_all_user_subscriptions(user)
     for subscription in user_subscriptions:
-        if subscription.owner == node:
+        if subscription and subscription.owner == node:
             yield subscription
 
 

@@ -57,6 +57,31 @@ class TestEventGet(OsfTestCase):
         pass
 
 
+class TestFileUpdated(OsfTestCase):
+    def setUp(self):
+        super(TestFileUpdated, self).setUp()
+        self.user = factories.UserFactory()
+        self.consolidate_auth = Auth(user=self.user)
+        self.project = factories.ProjectFactory()
+        self.project_subscription = factories.NotificationSubscriptionFactory(
+            _id=self.project._id + '_file_updated',
+            owner=self.project,
+            event_name='file_updated'
+        )
+        self.project_subscription.save()
+        self.user2 = factories.UserFactory()
+        self.event = Event.parse_event(self.user2, self.project, 'file_updated', payload=file_payload)
+
+    @mock.patch('website.notifications.emails.notify')
+    def test_file_updated(self, mock_notify):
+        self.event.perform()
+        # notify('exd', 'file_updated', 'user', self.project, datetime.utcnow())
+        assert_true(mock_notify.called)
+
+    def tearDown(self):
+        pass
+
+
 class TestFileAdded(OsfTestCase):
     def setUp(self):
         super(TestFileAdded, self).setUp()
@@ -72,7 +97,7 @@ class TestFileAdded(OsfTestCase):
         self.user2 = factories.UserFactory()
         self.event = Event.parse_event(self.user2, self.project, 'file_added', payload=file_payload)
 
-    @mock.patch('website.notifications.emails =.notify')
+    @mock.patch('website.notifications.emails.notify')
     def test_file_added(self, mock_notify):
         self.event.perform()
         # notify('exd', 'file_updated', 'user', self.project, datetime.utcnow())
@@ -80,6 +105,56 @@ class TestFileAdded(OsfTestCase):
 
     def tearDown(self):
         pass
+
+class TestFileRemoved(OsfTestCase):
+    def setUp(self):
+        super(TestFileRemoved, self).setUp()
+        self.user = factories.UserFactory()
+        self.consolidate_auth = Auth(user=self.user)
+        self.project = factories.ProjectFactory()
+        self.project_subscription = factories.NotificationSubscriptionFactory(
+            _id=self.project._id + '_file_updated',
+            owner=self.project,
+            event_name='file_updated'
+        )
+        self.project_subscription.save()
+        self.user2 = factories.UserFactory()
+        self.event = Event.parse_event(self.user2, self.project, 'file_removed', payload=file_deleted_payload)
+
+    @mock.patch('website.notifications.emails.notify')
+    def test_file_removed(self, mock_notify):
+        self.event.perform()
+        # notify('exd', 'file_updated', 'user', self.project, datetime.utcnow())
+        assert_true(mock_notify.called)
+
+    def tearDown(self):
+        pass
+
+
+class TestFolderCreated(OsfTestCase):
+    def setUp(self):
+        super(TestFolderCreated, self).setUp()
+        self.user = factories.UserFactory()
+        self.consolidate_auth = Auth(user=self.user)
+        self.project = factories.ProjectFactory()
+        self.project_subscription = factories.NotificationSubscriptionFactory(
+            _id=self.project._id + '_file_updated',
+            owner=self.project,
+            event_name='file_updated'
+        )
+        self.project_subscription.save()
+        self.user2 = factories.UserFactory()
+        self.event = Event.parse_event(self.user2, self.project, 'folder_created', payload=folder_created_payload)
+
+    @mock.patch('website.notifications.emails.notify')
+    def test_folder_added(self, mock_notify):
+        self.event.perform()
+        # notify('exd', 'file_updated', 'user', self.project, datetime.utcnow())
+        assert_true(mock_notify.called)
+
+    def tearDown(self):
+        pass
+
 
 class TestFileMoved(OsfTestCase):
     def setUp(self):
@@ -184,11 +259,20 @@ class TestFileMoved(OsfTestCase):
     def test_remove_one_user_file(self):
         self.project.add_contributor(self.user_3, permissions=['write', 'read'], auth=self.auth)
         self.project.save()
-        self.file_sub.email_digest.append(self.user_3)
+        self.file_sub.email_transactional.append(self.user_3)
         self.file_sub.save()
         moved, warn, removed = self.event.categorize_users()
-        assert_equal({'email_transactional': [], 'email_digest': [self.user_3._id], 'none': []}, removed)
-        # print (moved, warn, removed)
+        assert_equal({'email_transactional': [self.user_3._id], 'email_digest': [], 'none': []}, removed)
+        print (moved, warn, removed)
+
+    @mock.patch('website.notifications.emails.send')
+    def test_remove_user_sent_once(self, mock_send):
+        self.project.add_contributor(self.user_3, permissions=['write', 'read'], auth=self.auth)
+        self.project.save()
+        self.file_sub.email_digest.append(self.user_3)
+        self.file_sub.save()
+        self.event.perform()
+        assert_equal(1, mock_send.call_count)
 
     def tearDown(self):
         pass

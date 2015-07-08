@@ -9,6 +9,9 @@ import website.notifications.emails as emails
 from website.notifications.constants import NOTIFICATION_TYPES
 from website.notifications.utils import move_subscription, separate_users
 from website.models import Node
+from website.archiver.utils import aggregate_file_tree_metadata
+
+from pprint import pprint
 
 
 class _EventMeta(type):
@@ -209,6 +212,7 @@ class ComplexFileEvent(FileEvent):
     def __init__(self, user, node, event, payload=None):
         super(ComplexFileEvent, self).__init__(user, node, event, payload=payload)
         self.source_node = None
+        self.addon = None
         self.form_guid()
         self.form_event()
         self.form_url()
@@ -262,14 +266,14 @@ class ComplexFileEvent(FileEvent):
 
     def form_guid(self):
         """Produces both guids for source and destination"""
-        if self.payload['destination']['kind'] != u'folder':
-            addon = self.node.get_addon(self.payload['destination']['provider'])
-            path = self.payload['destination']['path']
-            path = path if path.startswith('/') else '/' + path
-            self._guid, created = addon.find_or_create_file_guid(path)
-            self.source_node = Node.load(self.payload['source']['node']['_id'])
-            addon = self.source_node.get_addon(self.payload['source']['provider'])
-            self._source_guid, created = addon.find_or_create_file_guid(path)
+        # if self.payload['destination']['kind'] != u'folder':
+        self.addon = self.node.get_addon(self.payload['destination']['provider'])
+        path = self.payload['destination']['path']
+        path = path if path.startswith('/') else '/' + path
+        self._guid, created = self.addon.find_or_create_file_guid(path)
+        self.source_node = Node.load(self.payload['source']['node']['_id'])
+        addon = self.source_node.get_addon(self.payload['source']['provider'])
+        self._source_guid, created = addon.find_or_create_file_guid(path)
 
 
 class AddonFileMoved(ComplexFileEvent):
@@ -288,24 +292,33 @@ class AddonFileMoved(ComplexFileEvent):
                 if notification == 'none':
                     continue
                 if moved[notification]:
-                    emails.send(moved[notification], notification, self.node_id, self.event, self.user, self.node,
+                    emails.send(moved[notification], notification, self.node_id, 'file_updated', self.user, self.node,
                                 self.timestamp, message=self.html_message, gravatar_url=self.gravatar_url,
                                 url=self.url)
                 if warn[notification]:
-                    emails.send(moved[notification], notification, self.node_id, self.event, self.user, self.node,
+                    emails.send(warn[notification], notification, self.node_id, 'file_updated', self.user, self.node,
                                 self.timestamp, message=warn_message, gravatar_url=self.gravatar_url,
                                 url=self.url)
                 if rm_users[notification]:
-                    emails.send(moved[notification], notification, self.node_id, self.event, self.user,
+                    emails.send(rm_users[notification], notification, self.node_id, 'file_updated', self.user,
                                 self.source_node, self.timestamp, message=remove_message,
                                 gravatar_url=self.gravatar_url, url=self.source_url)
         else:
+            file_tree = dict(
+                kind=self.payload['destination']['kind'],
+                path=self.payload['destination']['path'],
+                name=self.payload['destination']['name']
+            )
+            # TODO: Use the code in the comment below and then find the correct folder using the info above
+            # file_tree = self.addon._get_file_tree(user=self.user, version='latest-published')
+            result = aggregate_file_tree_metadata(self.payload['destination']['provider'], file_tree, self.user)
+            pprint(result)
             super(AddonFileMoved, self).perform()
 
     def categorize_users(self):
         """
         Puts users in one of three bins: Those that are moved, those that need warned, those that are removed.
-        Could be generalized, not sure where move subscription would go.
+        Could be generalized, not sure where move subscription would go if that is the case.
         """
         remove = move_subscription(self.source_event, self.source_node, self.event, self.node)
         source_node_subs = emails.compile_subscriptions(self.source_node, 'file_updated')
@@ -339,6 +352,8 @@ class AddonFileMoved(ComplexFileEvent):
                 if nt == 'none':
                     continue
                 move[notifications] = list(set(move[notifications]).difference(set(warn[nt])))
+                move[notifications] = list(set(move[notifications]).difference(set(remove[nt])))
+            # Remove the user who started this whole thing.
             user_id = self.user._id
             if user_id in warn[notifications]:
                 warn[notifications].remove(user_id)

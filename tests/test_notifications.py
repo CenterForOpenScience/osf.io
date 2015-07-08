@@ -900,6 +900,15 @@ class TestMoveSubscription(OsfTestCase):
         assert_equal(self.private_node, self.file_sub.owner)
         assert_equal(self.private_node._id + '_abc42_file_updated', self.file_sub._id)
 
+    def test_move_sub_with_none(self):
+        """Attempt to reproduce an error that is seen when moving files"""
+        self.project.add_contributor(self.user_2, permissions=['write', 'read'], auth=self.auth)
+        self.project.save()
+        self.file_sub.none.append(self.user_2)
+        self.file_sub.save()
+        results = utils.move_subscription('xyz42_file_updated', self.project, 'abc42_file_updated', self.private_node)
+        assert_equal({'email_transactional': [], 'email_digest': [], 'none': [self.user_2._id]}, results)
+
     def test_remove_one_user(self):
         """One user doesn't have permissions on the node the sub is moved to. Should be listed."""
         self.file_sub.email_transactional.extend([self.user_2, self.user_3, self.user_4])
