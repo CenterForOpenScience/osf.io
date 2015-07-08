@@ -336,3 +336,9 @@ a {
 .addon-auth {
     margin-top: 4.8px;
 }
+
+/* Disable pointer events in page changing */
+.disabled {
+    cursor: default !important;
+    pointer-events: none;
+}
