@@ -21,10 +21,12 @@
                 <div class="form-group">
                     <textarea class="form-control" placeholder="Add a comment" data-bind="value: replyContent, valueUpdate: 'input', attr: {maxlength: $root.MAXLENGTH}"></textarea>
                 </div>
-                <div data-bind="if: replyNotEmpty" class="form-inline">
-                    <a class="btn btn-success" data-bind="click: submitReply, css: {disabled: submittingReply}"><i class="fa fa-check-square-o"></i> {{commentButtonText}}</a>
-                    <a class="btn btn-default" data-bind="click: cancelReply, css: {disabled: submittingReply}"><i class="fa fa-undo"></i> Cancel</a>
-                    <span data-bind="text: replyErrorMessage" class="comment-error"></span>
+                <div class="clearfix">
+                    <div data-bind="if: replyNotEmpty" class="form-inline pull-right">
+                        <a class="btn btn-default" data-bind="click: cancelReply, css: {disabled: submittingReply}"> Cancel</a>
+                        <a class="btn btn-success" data-bind="click: submitReply, css: {disabled: submittingReply}"> {{commentButtonText}}</a>
+                        <span data-bind="text: replyErrorMessage" class="comment-error"></span>
+                    </div>
                 </div>
                 <div class="comment-error">{{errorMessage}}</div>
             </form>
@@ -110,10 +112,12 @@
                             <div class="form-group" style="padding-top: 10px">
                                 <textarea class="form-control" data-bind="value: content, valueUpdate: 'input', attr: {maxlength: $root.MAXLENGTH}"></textarea>
                             </div>
-                            <div class="form-inline">
-                                <a class="btn btn-success" data-bind="click: submitEdit, visible: editNotEmpty"><i class="fa fa-check-square-o"></i> Save</a>
-                                <a class="btn btn-default" data-bind="click: cancelEdit"><i class="fa fa-undo"></i> Cancel</a>
-                                <span data-bind="text: editErrorMessage" class="comment-error"></span>
+                            <div class="clearfix">
+                                <div class="form-inline pull-right">
+                                    <a class="btn btn-default" data-bind="click: cancelEdit"> Cancel</a>
+                                    <a class="btn btn-success" data-bind="click: submitEdit, visible: editNotEmpty"> Save</a>
+                                    <span data-bind="text: editErrorMessage" class="comment-error"></span>
+                                </div>
                             </div>
                         </div>
 
@@ -149,13 +153,13 @@
                             <select class="form-control" data-bind="options: abuseOptions, optionsText: abuseLabel, value: abuseCategory"></select>
                             <input class="form-control" data-bind="value: abuseText" placeholder="Describe abuse" />
                         </form>
-                        <a class="btn btn-danger btn-sm" data-bind="click: submitAbuse"><i class="fa fa-check-square-o"></i> Report</a>
-                        <a class="btn btn-default btn-sm" data-bind="click: cancelAbuse"><i class="fa fa-undo"></i> Cancel</a>
+                        <a class="btn btn-danger btn-sm" data-bind="click: submitAbuse"> Report</a>
+                        <a class="btn btn-default btn-sm" data-bind="click: cancelAbuse"> Cancel</a>
                     </div>
 
                     <div class="comment-delete" data-bind="if: deleting">
-                        <a class="btn btn-danger btn-sm" data-bind="click: submitDelete"><i class="fa fa-check-square-o"></i> Delete</a>
-                        <a class="btn btn-default btn-sm" data-bind="click: cancelDelete"><i class="fa fa-undo"></i> Cancel</a>
+                        <a class="btn btn-danger btn-sm" data-bind="click: submitDelete">Delete</a>
+                        <a class="btn btn-default btn-sm" data-bind="click: cancelDelete">Cancel</a>
                     </div>
 
                 </div>
@@ -173,10 +177,12 @@
                     <div class="form-group" style="padding-top: 10px">
                         <textarea class="form-control" placeholder="Add a comment" data-bind="value: replyContent, valueUpdate: 'input', attr: {maxlength: $root.MAXLENGTH}"></textarea>
                     </div>
-                    <div>
-                        <a class="btn btn-success" data-bind="click: submitReply, visible: replyNotEmpty, css: {disabled: submittingReply}"><i class="fa fa-check-square-o"></i> {{commentButtonText}}</a>
-                        <a class="btn btn-default" data-bind="click: cancelReply, css: {disabled: submittingReply}"><i class="fa fa-undo"></i> Cancel</a>
-                        <span data-bind="text: replyErrorMessage" class="comment-error"></span>
+                    <div class="clearfix">
+                        <div class="pull-right">
+                            <a class="btn btn-default" data-bind="click: cancelReply, css: {disabled: submittingReply}"> Cancel</a>
+                            <a class="btn btn-success" data-bind="click: submitReply, visible: replyNotEmpty, css: {disabled: submittingReply}"> {{commentButtonText}}</a>
+                            <span data-bind="text: replyErrorMessage" class="comment-error"></span>
+                        </div>
                     </div>
                 </div>
 
