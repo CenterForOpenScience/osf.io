@@ -84,8 +84,8 @@
                             "type": "choose",
                             "format": "list",
                             "options": [
-                                "I certify that none of the data that will be used in this upcoming study have yet been collected. Please enter your name and the phrase _I certifyî in the following box. Why is this necessary?",
-                                "I will be using pre-existing data in this study. I certify that I have no knowledge about any of its basic descriptive statistics, nor am I aware of any differences or relationships within the data that I will use. Please enter your name and the phrase _I certifyî in the following boxes."
+                                "I certify that none of the data that will be used in this upcoming study have yet been collected. Please enter your name and the phrase I certify in the following box. Why is this necessary?",
+                                "I will be using pre-existing data in this study. I certify that I have no knowledge about any of its basic descriptive statistics, nor am I aware of any differences or relationships within the data that I will use. Please enter your name and the phrase I certify in the following boxes."
                             ]
                         },
                         "certify": {
@@ -108,7 +108,7 @@
                     "format": "list",
                     "options": [
                         "Experiment (A researcher randomly assigns treatments to study subjects, this includes field or lab experiments. This is also known as an intervention experiment or a randomized controlled trial.",
-                        "Observational Study (Data is collected from study subjects that are not randomly assigned to a treatment. This includes surveys, _natural experiments,î and regression discontinuity designs.)",
+                        "Observational Study (Data is collected from study subjects that are not randomly assigned to a treatment. This includes surveys, natural experiments, and regression discontinuity designs.)",
                         "Meta-Analysis (a systematic review of published studies)",
                         "Other (please explain)"
                     ]
@@ -117,7 +117,7 @@
                     "nav": "Blind",
                     "type": "choose",
                     "format": "list",
-                    "title": "Are any aspects of your study _blindedî?",
+                    "title": "Are any aspects of your study blinded?",
                     "options": [
                         "Not applicable: This study will not assign treatments to subjects (e.g. observational studies or meta-analyses).",
                         "Yes, single blind: Human subjects of the study will not know if they are assigned to a treatment or control group. Experimenters will have that knowledge.",
@@ -195,7 +195,7 @@
                     "type": "string",
                     "format": "textarea",
                     "title": "How will you determine what data or samples (if any) to exclude from your analyses?",
-                    "description": "Are there specific criteria that must be met in order to include? How will outliers be handled? You may want to attach a decision tree with an _if, then” structure to easily formalize the way in which these decisions will be made.",
+                    "description": "Are there specific criteria that must be met in order to include? How will outliers be handled? You may want to attach a decision tree with an if, then” structure to easily formalize the way in which these decisions will be made.",
                     "help": "No checks will be performed to determine eligibility for inclusion besides verification that each subject answered each of the three tastiness indices. Outliers will be included in the analysis."
                 },
                 "q19": {
@@ -212,7 +212,7 @@
                     "format": "textarea",
                     "title": "What statistical model(s) will you use to test your hypothesis(ses).",
                     "description": "Please include the type of model (e.g. ANOVA, regression, SEM, etc) as well as the specification of the model (e.g. what variables will be included). If you are using a method other than null hypothesis significance testing, such as a Bayesian method, provide the criteria you will use for making an evidence-based conclusion. Include likely alternative analyses or data transformations. ",
-                    "help": "We will use a 1x4 ANOVA to analyze our results. The categorical independent variable is _sugar” whereas the dependent variable, _taste,” is continuous. If the the ANOVA indicates that the mean taste perceptions are significantly different (p<.05), then we will use a Tukey-Kramer HSD test to determine the differences between levels. We will test the assumption of the ANOVA on equal group variance using the Bartlett test and use a Kruskal-Wallis if p<.05."
+                    "help": "We will use a 1x4 ANOVA to analyze our results. The categorical independent variable is sugar” whereas the dependent variable, taste,” is continuous. If the the ANOVA indicates that the mean taste perceptions are significantly different (p<.05), then we will use a Tukey-Kramer HSD test to determine the differences between levels. We will test the assumption of the ANOVA on equal group variance using the Bartlett test and use a Kruskal-Wallis if p<.05."
                 },
                 "q21": {
                     "nav": "Multiple Hypostheses",

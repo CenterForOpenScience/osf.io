@@ -47,7 +47,7 @@
                     "statement": {
                         "type": "choose",
                         "format": "list",
-                        "options": ["I certify that none of the data that will be used in this upcoming study have yet been collected. Please enter your name and the phrase _I certifyî in the following box. Why is this necessary?", "I will be using pre-existing data in this study. I certify that I have no knowledge about any of its basic descriptive statistics, nor am I aware of any differences or relationships within the data that I will use. Please enter your name and the phrase _I certifyî in the following boxes."]
+                        "options": ["I certify that none of the data that will be used in this upcoming study have yet been collected. Please enter your name and the phrase I certify in the following box. Why is this necessary?", "I will be using pre-existing data in this study. I certify that I have no knowledge about any of its basic descriptive statistics, nor am I aware of any differences or relationships within the data that I will use. Please enter your name and the phrase I certify in the following boxes."]
                     },
                     "certify": {
                         "type": "string",
