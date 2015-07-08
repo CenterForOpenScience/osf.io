@@ -188,6 +188,25 @@ var unblock = function() {
     $.unblockUI();
 };
 
+var blockElement = function($el, message) {
+    $el.block({
+        message: message,
+        css: {
+            border: 'none',
+            padding: '15px',
+            backgroundColor: '#000',
+            '-webkit-border-radius': '10px',
+            '-moz-border-radius': '10px',
+            opacity: 0.5,
+            color: '#fff'
+        }
+    });
+};
+
+var unblockElement = function($el) {
+    $el.unblock();
+};
+
 var joinPrompts = function(prompts, base) {
     var prompt = base ? '<h4>'+ base +'</h4>': '';
     if (prompts.length !==0) {
@@ -726,6 +745,53 @@ var confirmDangerousAction = function (options) {
     bootbox.dialog(bootboxOptions);
 };
 
+var fullscreenModal = function(opts) {
+    var ret = $.Deferred();
+
+    opts = opts || {};
+    var style = $.extend({}, opts.style || {}, {
+        position: 'absolute',
+        top: '15px',
+        left: '15px',
+        right: '15px',
+        height: '96%',
+        zIndex: 1030,
+        backgroundColor: '#EEEEEE',
+        '-webkit-border-radius': '10px',
+        '-moz-border-radius': '10px'
+    });
+    var modal = $('<div>', {
+        'class': 'bg-color-light',
+        css: style
+    });
+    modal.append($('<a>', {
+        css: {
+            padding: '10px',
+            float: 'right',
+            zIndex: 1031,
+            fontSize: '150%'
+        },
+        'class': 'fa fa-times-circle text-bigger',
+        click: function() { 
+            modal.hide('slow', function() { modal.remove(); });
+        }
+    }));
+    var container = $('<div>', {
+        id: opts.id || '',
+        css: {
+            padding: '25px'
+        }
+    });
+    modal.append(container);
+    modal.hide();
+    $('body').append(modal);
+    modal.show('slow', function() {
+        ret.resolve(container);
+    });
+
+    return ret;
+};
+
 // Also export these to the global namespace so that these can be used in inline
 // JS. This is used on the /goodbye page at the moment.
 module.exports = window.$.osf = {
@@ -735,9 +801,11 @@ module.exports = window.$.osf = {
     handleJSONError: handleJSONError,
     handleEditableError: handleEditableError,
     block: block,
+    unblock: unblock,
+    blockElement: blockElement,
+    unblockElement: unblockElement,
     growl: growl,
     apiV2Url: apiV2Url,
-    unblock: unblock,
     joinPrompts: joinPrompts,
     mapByProperty: mapByProperty,
     isEmail: isEmail,
@@ -752,5 +820,6 @@ module.exports = window.$.osf = {
     tableResize: tableResize,
     humanFileSize: humanFileSize,
     confirmDangerousAction: confirmDangerousAction,
+    fullscreenModal: fullscreenModal,
     isIE: isIE
 };

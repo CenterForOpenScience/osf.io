@@ -27,12 +27,14 @@ from website.oauth.models import ExternalAccount
 from website.oauth.models import ExternalProvider
 from website.project.model import (
     ApiKey, Node, NodeLog, WatchConfig, Tag, Pointer, Comment, PrivateLink,
-    Retraction, Embargo,
+    Retraction, Embargo, DraftRegistration
 )
 from website.notifications.model import NotificationSubscription, NotificationDigest
 from website.archiver import utils as archiver_utils
 from website.archiver.model import ArchiveTarget, ArchiveJob
+from website.project.model import MetaSchema
 
+from modularodm import Q
 from website.addons.wiki.model import NodeWikiPage
 from tests.base import fake
 
@@ -215,6 +217,10 @@ class RegistrationFactory(AbstractNodeFactory):
                     reg.registered_user
                 )
                 return reg
+
+class DraftRegistrationFactory(ModularOdmFactory):
+    FACTORY_FOR = DraftRegistration
+    registration_schema = MetaSchema.find_one(Q('name', 'eq', 'Open-Ended Registration'))
 
 class PointerFactory(ModularOdmFactory):
     FACTORY_FOR = Pointer

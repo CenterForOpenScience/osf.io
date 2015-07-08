@@ -8,12 +8,14 @@ from website.util.sanitize import strip_html
 from api.base.settings.defaults import API_BASE
 
 from tests.base import ApiTestCase, fake
+from website.project.model import ensure_schemas
 from tests.factories import (
     DashboardFactory,
     FolderFactory,
     NodeFactory,
     ProjectFactory,
     RegistrationFactory,
+    DraftRegistrationFactory,
     UserFactory
 )
 
@@ -870,6 +872,138 @@ class TestNodeRegistrationList(ApiTestCase):
 
     def test_return_private_registrations_logged_in_non_contributor(self):
         res = self.app.get(self.private_url, auth=self.basic_auth_two, expect_errors=True)
+        assert_equal(res.status_code, 403)
+
+
+class TestNodeDraftRegistrationList(ApiTestCase):
+    def setUp(self):
+        super(TestNodeDraftRegistrationList, self).setUp()
+        self.user = UserFactory.build()
+        password = fake.password()
+        self.password = password
+        self.user.set_password(password)
+        self.user.save()
+        self.basic_auth = (self.user.username, password)
+
+        self.user_two = UserFactory.build()
+        self.user_two.set_password(password)
+        self.user_two.save()
+        self.basic_auth_two = (self.user_two.username, password)
+
+        self.private_project = ProjectFactory(is_public=False, creator=self.user)
+        self.private_draft = DraftRegistrationFactory(branched_from=self.private_project, initiator=self.user)
+        self.private_url = '/{}nodes/{}/draft_registrations/'.format(API_BASE, self.private_project._id)
+
+        self.public_project = ProjectFactory(is_public=True, creator=self.user)
+        self.public_draft = DraftRegistrationFactory(branched_from=self.public_project, initiator=self.user)
+        self.public_project.save()
+        self.public_url = '/{}nodes/{}/draft_registrations/'.format(API_BASE, self.public_project._id)
+
+    # TODO fix so doesn't require eval
+    def test_return_public_registrations_logged_out(self):
+        res = self.app.get(self.public_url)
+        source = eval(res.json['data'][0]['branched_from'])
+        assert_equal(res.status_code, 200)
+        assert_equal(source['title'], self.public_project.title)
+
+    # TODO schema not persisting
+    def test_return_public_registrations_logged_in(self):
+        res = self.app.get(self.public_url, auth=self.basic_auth)
+        source = eval(res.json['data'][0]['branched_from'])
+        assert_equal(res.status_code, 200)
+        assert_equal(source['title'], self.public_project.title)
+        assert_not_equal(res.json['data'][0]['registration_schema'], None)
+        assert_not_equal(res.json['data'][0]['datetime_initiated'], None)
+
+    def test_return_private_registrations_logged_out(self):
+        res = self.app.get(self.private_url, expect_errors=True)
+        assert_equal(res.status_code, 403)
+
+    # TODO schema not persisting
+    def test_return_private_registrations_logged_in_contributor(self):
+        res = self.app.get(self.private_url, auth=self.basic_auth)
+        assert_equal(res.status_code, 200)
+        assert_equal((res.json['data'][0]['initiator']), self.user.given_name + ' ' + self.user.family_name)
+        assert_not_equal(res.json['data'][0]['registration_schema'], None)
+        assert_not_equal(res.json['data'][0]['datetime_initiated'], None)
+
+
+    def test_return_private_registrations_logged_in_non_contributor(self):
+        res = self.app.get(self.private_url, auth=self.basic_auth_two, expect_errors=True)
+        assert_equal(res.status_code, 403)
+
+
+class TestCreateDraftRegistration(ApiTestCase):
+    def setUp(self):
+        super(TestCreateDraftRegistration, self).setUp()
+        ensure_schemas()
+        self.user = UserFactory.build()
+        password = fake.password()
+        self.password = password
+        self.user.set_password(password)
+        self.user.save()
+        self.basic_auth = (self.user.username, password)
+
+        self.user_two = UserFactory.build()
+        self.user_two.set_password(password)
+        self.user_two.save()
+        self.basic_auth_two = (self.user_two.username, password)
+
+        self.private_project = ProjectFactory(is_public=False, creator=self.user)
+        self.private_url = '/{}nodes/{}/draft_registrations/'.format(API_BASE, self.private_project._id)
+        self.payload = {'registration_form': 'Open-Ended Registration', 'schema_version': 1}
+
+        self.public_project = ProjectFactory(is_public=True, creator=self.user)
+        self.public_registration = RegistrationFactory(source=self.public_project)
+        self.public_project.save()
+        self.public_url = '/{}nodes/{}/draft_registrations/'.format(API_BASE, self.public_project._id)
+
+    # TODO fix so doesn't require eval
+    def test_create_public_registration_draft_node_does_not_exist(self):
+        url = '/{}nodes/{}/draft_registrations/'.format(API_BASE, '12345')
+        res = self.app.post(url, self.payload, expect_errors=True, auth=self.basic_auth)
+        assert_equal(res.status_code, 404)
+
+    def test_create_registration_of_registration(self):
+        url = '/{}nodes/{}/draft_registrations/'.format(API_BASE, self.public_registration._id)
+        res = self.app.post(url, expect_errors=True, auth=self.basic_auth)
+        assert_equal(res.status_code, 400)
+
+    def test_create_public_registration_draft_logged_out(self):
+        res = self.app.post(self.public_url, self.payload, expect_errors=True)
+        assert_equal(res.status_code, 403)
+
+    def test_create_public_registration_draft_logged_in(self):
+        res = self.app.post(self.public_url, self.payload, auth=self.basic_auth, expect_errors=True)
+        assert_equal(res.status_code, 201)
+        source = eval(res.json['data']['branched_from'])
+        schema = eval(res.json['data']['registration_schema'])
+        assert_equal(source['title'], self.public_project.title)
+        assert_equal(schema['name'], self.payload['registration_form'])
+        assert_not_equal(res.json['data']['registration_schema'], None)
+
+
+    def test_create_private_registration_draft_logged_out(self):
+        res = self.app.post(self.private_url, self.payload, expect_errors=True)
+        assert_equal(res.status_code, 403)
+
+    def test_create_private_registration_draft_logged_in_contributor(self):
+        res = self.app.post(self.private_url, self.payload, auth=self.basic_auth)
+        assert_equal(res.status_code, 201)
+        source = eval(res.json['data']['branched_from'])
+        schema = eval(res.json['data']['registration_schema'])
+        assert_equal(source['title'], self.private_project.title)
+        assert_equal(schema['name'], self.payload['registration_form'])
+        assert_not_equal(res.json['data']['registration_schema'], None)
+
+
+    def test_create_private_registration_draft_logged_in_non_contributor(self):
+        res = self.app.post(self.private_url, self.payload, auth=self.basic_auth_two, expect_errors=True)
+        assert_equal(res.status_code, 403)
+
+    def test_create_private_registration_draft_logged_in_read_only_contributor(self):
+        self.private_project.add_contributor(self.user_two, permissions=['read'])
+        res = self.app.post(self.private_url, self.payload, auth=self.basic_auth_two, expect_errors=True)
         assert_equal(res.status_code, 403)
 
 

@@ -265,7 +265,6 @@ def make_url_map(app):
             OsfWebRenderer('util/oauth_complete.mako'),
         ),
     ])
-
     process_rules(app, [
         Rule(
             [
@@ -792,7 +791,6 @@ def make_url_map(app):
             '/project/<pid>/node/<nid>/registrations/',
         ], 'get', project_views.node.node_registrations,
             OsfWebRenderer('project/registrations.mako')),
-
         Rule([
             '/project/<pid>/retraction/',
             '/project/<pid>/node/<nid>/retraction/',
@@ -919,9 +917,6 @@ def make_url_map(app):
             addon_views.addon_view_or_download_file_legacy,
             json_renderer
         ),
-
-
-
     ])
 
     # API
@@ -1049,6 +1044,31 @@ def make_url_map(app):
             '/project/<pid>/get_registrations/',
             '/project/<pid>/node/<nid>/get_registrations/',
         ], 'get', project_views.node.get_registrations, json_renderer),
+
+        # Draft Registrations
+        Rule([
+            '/project/<pid>/draft/',
+        ], 'get', project_views.drafts.get_draft_registrations, json_renderer),
+        Rule([
+            '/project/<pid>/draft/<draft_pk>/',
+        ], 'get', project_views.drafts.get_draft_registration, json_renderer),
+        Rule([
+            '/project/<pid>/draft/',
+        ], 'post', project_views.drafts.create_draft_registration, json_renderer),
+        Rule([
+            '/project/<pid>/draft/<draft_pk>/',
+        ], 'put', project_views.drafts.update_draft_registration, json_renderer),
+        Rule([
+            '/project/<pid>/draft/<draft_pk>/',
+        ], 'delete', project_views.drafts.delete_draft_registration, json_renderer),
+        # Meta Schemas
+        Rule([
+            '/project/schema/',
+        ], 'get', project_views.drafts.get_metaschemas, json_renderer),
+        Rule([
+            '/project/schema/<schema_name>/',
+            '/project/schema/<schema_name>/version/<schema_version>/',
+        ], 'get', project_views.drafts.get_metaschema, json_renderer),
 
         Rule('/log/<log_id>/', 'get', project_views.log.get_log, json_renderer),
 
@@ -1214,7 +1234,11 @@ def make_url_map(app):
                 '/project/<pid>/node/<nid>/pointer/fork/',
             ], 'post', project_views.node.fork_pointer, json_renderer,
         ),
-
+        # TODO
+        Rule([
+            '/project/<pid>/draft/<template>/',
+            '/project/<pid>/node/<nid>/draft/<template>/',
+        ], 'get', project_views.register.node_draft_template_page, json_renderer),
         # View forks
         Rule([
             '/project/<pid>/forks/',
@@ -1230,7 +1254,6 @@ def make_url_map(app):
             '/project/<pid>/register/<template>/',
             '/project/<pid>/node/<nid>/register/<template>/',
         ], 'get', project_views.register.node_register_template_page, json_renderer),
-
         Rule([
             '/project/<pid>/retraction/',
             '/project/<pid>/node/<nid>/retraction/'

@@ -1,8 +1,14 @@
-from rest_framework import serializers as ser
+import httplib as http
 
-from website.models import Node
 from framework.auth.core import Auth
 from rest_framework import exceptions
+from framework.exceptions import HTTPError
+from rest_framework import serializers as ser
+
+from modularodm import Q
+from website.project.views import drafts
+from website.models import Node, DraftRegistration
+from api.draft_registrations.serializers import DraftRegSerializer
 from api.base.serializers import JSONAPISerializer, LinksField, Link, WaterbutlerLink
 
 
@@ -18,6 +24,7 @@ class NodeSerializer(JSONAPISerializer):
     title = ser.CharField(required=True)
     description = ser.CharField(required=False, allow_blank=True, allow_null=True)
     category = ser.ChoiceField(choices=category_choices, help_text="Choices: " + category_choices_string)
+
     date_created = ser.DateTimeField(read_only=True)
     date_modified = ser.DateTimeField(read_only=True)
     tags = ser.SerializerMethodField(help_text='A dictionary that contains two lists of tags: '
@@ -125,6 +132,35 @@ class NodeSerializer(JSONAPISerializer):
             setattr(instance, attr, value)
         instance.save()
         return instance
+
+
+class DraftRegistrationSerializer(DraftRegSerializer):
+
+    def create(self, validated_data):
+        request = self.context['request']
+        schema_name = validated_data['registration_form']
+        if not schema_name:
+            raise HTTPError(http.BAD_REQUEST)
+
+        schema_version = int(validated_data.get('schema_version', 1))
+        meta_schema = drafts.get_schema_or_fail(
+            Q('name', 'eq', schema_name) &
+            Q('schema_version', 'eq', schema_version)
+        )
+        questions = validated_data.get('registration_metadata', {})
+        node = self.context['view'].get_node()
+        user = request.user
+        draft = DraftRegistration(
+            branched_from=node,
+            initiator=user,
+            registration_schema=meta_schema,
+            registration_metadata=questions,
+        )
+        draft.save()
+        return draft
+
+    class Meta:
+        type_ = "draft_registrations"
 
 
 class NodePointersSerializer(JSONAPISerializer):

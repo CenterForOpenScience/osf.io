@@ -11,6 +11,9 @@ module.exports = {
         registerConfirm: 'Are you sure you want to register this project?',
         registerSkipAddons: 'If you choose to continue with the registration at this time we will exclude the contents of any addons that are not copyable. These files will not appear in the final registration.'
     },
+    projects: {
+        filesArchiving: 'Widget unavailble while files are copied to this project.'
+    },
     Addons: {
         dataverse: {
             userSettingsError: 'Could not retrieve settings. Please refresh the page or ' +

@@ -4,8 +4,12 @@
  */
 var $ = require('jquery');
 var bootbox = require('bootbox');
+var $osf = require('js/osfHelpers');
 
+var registrationUtils = require('js/registrationUtils');
 
+var ctx = window.contextVars;
+var node = ctx.node;
 var preRegisterMessage =  function(title, parentTitle, parentUrl, category) {
     if (parentUrl) {
         return 'You are about to register the ' + category + ' <b>' + title +
@@ -38,12 +42,14 @@ $(document).ready(function() {
             category = 'component';
         }
 
+        registrationUtils.
+
         bootbox.confirm({
             title: bootboxTitle,
             message: preRegisterMessage(title, parentTitle, parentRegisterUrl, category),
             callback: function (confirmed) {
-                if(confirmed) {
-                    window.location.href = target;
+                if(confirmed) {                    
+                    //TODO
                 }
             }
         });

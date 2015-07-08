@@ -133,6 +133,7 @@ STATICFILES_DIRS = (
 SWAGGER_SETTINGS = {
     'info': {
         'api_path': '/',
+        "base_path": 'localhost:8000/v2/docs',
         'description':
         """
         <p>Welcome to the V2 Open Science Framework API. With this API you can programatically access users,

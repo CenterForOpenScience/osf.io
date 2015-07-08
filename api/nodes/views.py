@@ -1,15 +1,15 @@
 import requests
 
-from modularodm import Q
+from framework.auth.core import Auth
 from rest_framework import generics, permissions as drf_permissions
 from rest_framework.exceptions import PermissionDenied, ValidationError
 
-from framework.auth.core import Auth
-from website.models import Node, Pointer
+from modularodm import Q
+from website.models import Node, Pointer, DraftRegistration
 from api.users.serializers import ContributorSerializer
 from api.base.filters import ODMFilterMixin, ListFilterMixin
 from api.base.utils import get_object_or_404, waterbutler_url_for
-from .serializers import NodeSerializer, NodePointersSerializer, NodeFilesSerializer
+from .serializers import NodeSerializer, NodePointersSerializer, NodeFilesSerializer, DraftRegistrationSerializer
 from .permissions import ContributorOrPublic, ReadOnlyIfRegistration, ContributorOrPublicForPointers
 
 
@@ -165,6 +165,32 @@ class NodeRegistrationsList(generics.ListAPIView, NodeMixin):
             auth = Auth(user)
         registrations = [node for node in nodes if node.can_view(auth)]
         return registrations
+
+
+class NodeDraftRegistrationsList(generics.ListCreateAPIView, NodeMixin):
+    """
+    Draft registrations of the current node
+    """
+
+    permission_classes = (
+        ContributorOrPublic,
+        drf_permissions.IsAuthenticatedOrReadOnly,
+    )
+
+    serializer_class = DraftRegistrationSerializer
+
+    # overrides ListCreateAPIView
+    def get_queryset(self):
+        node = self.get_node()
+        user = self.request.user
+        if user.is_anonymous():
+            auth = Auth(None)
+        else:
+            auth = Auth(user)
+        drafts = DraftRegistration.find(
+            Q('branched_from', 'eq', node))
+        draft_registrations = [reg for reg in drafts if reg.can_view(auth)]
+        return draft_registrations
 
 
 class NodeChildrenList(generics.ListAPIView, NodeMixin):
