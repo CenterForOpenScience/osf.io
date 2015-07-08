@@ -128,9 +128,9 @@
 </div>
 
 <%def name="javascript_bottom()">
-${parent.javascript_bottom()}
+	${parent.javascript_bottom()}
 
-<script src=${"/static/public/js/project-registrations-page.js" | webpack_asset}> </script>
+	<script src=${"/static/public/js/project-registrations-page.js" | webpack_asset}> </script>
 </%def>
 
 <%include file="project/registration_preview.mako" />

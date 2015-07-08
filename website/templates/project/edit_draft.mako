@@ -1,4 +1,17 @@
-<script type="text/html" id="registrationEditor">
+<%inherit file="base.mako"/>
+<%def name="title()">Editing Draft registration</%def>
+
+<%def name="content()">
+	<div class="container">
+		<div class="row">
+			<H1 class="col-md-12">You are editing this registration</H1>
+		</div>
+		<div class="row">
+			<p>This is where the editor would go</p>
+		</div>
+	</div>
+</%def>
+
 <div id="registrationEditorScope">
     <div class="container">
         <div class="row">
@@ -9,20 +22,18 @@
                             <i class="fa fa-caret-right"></i>
                         </a>
                         <span class="btn-group-vertical" role="group">
-                  <ul class="list-group" data-bind="foreach: {data: Object.keys(page.questions), as: 'qid'}">
-                    <span data-bind="with: page.questions[qid]">
-                      <li data-bind="css: {
-                                       list-group-item-success: isComplete,
-                                       list-group-item-warning: !isComplete(),
-                                       registration-editor-question-current: $root.currentQuestion().id === $data.id
-                                     },
-                                     click: $root.currentQuestion.bind($root, $data),
-                                     text: nav"
-                          class="registration-editor-question list-group-item">
-                    </li>
-                    </span>
-                  </ul>
-                </span>
+							<ul class="list-group" data-bind="foreach: {data: Object.keys(page.questions), as: 'qid'}">
+								<span data-bind="with: page.questions[qid]">
+									<li data-bind="css: {
+												   registration-editor-question-current: $root.currentQuestion().id === $data.id
+												   },
+												   click: $root.currentQuestion.bind($root, $data),
+												   text: nav"
+										class="registration-editor-question list-group-item">
+									</li>
+								</span>
+							</ul>
+						</span>
                     </li>
                 </ul>
             </div>
@@ -35,8 +46,8 @@
                 </a>
                 <!-- EDITOR -->
                 <div data-bind="if: currentQuestion">
-                  <div id="registrationEditor" data-bind="template: {data: currentQuestion, name: 'editor'}">
-                  </div>
+					<div id="registrationEditor" data-bind="template: {data: currentQuestion, name: 'editor'}, valueUpdate: 'keyup', event: {'keyup': $root.save}">
+					</div>
                 </div>
                 <p>Last saved: <span data-bind="text: $root.lastSaved()"></span>
                 </p>
@@ -51,5 +62,15 @@
         </div>
     </div>
 </div>
-</script>
+	</div>
+
 <%include file="registration_editor_templates.mako" />
+
+<%def name="javascript_bottom()">
+	<script>
+	window.contextVars = $.extend(true, {}, window.contextVars, {
+		currentUser: {'id': '${user_id}'}
+	});
+	</script>
+	<script src="${'/static/public/js/register-page.js' | webpack_asset}"></script>
+</%def>
