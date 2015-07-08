@@ -807,3 +807,11 @@ class TestFiles(SearchTestCase):
         self.project.set_privacy('private')
         res = query('earl gray')['results']
         assert_equal(len(res), 0)
+
+    def test_project_not_in_results_after_file_deleted(self):
+        res = query('earl gray')['results']
+        assert_equal(len(res), 1)
+        elastic_search.delete_file('00001')
+        time.sleep(1)
+        res = query('earl gray')['results']
+        assert_equal(len(res), 0)

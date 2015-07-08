@@ -330,6 +330,7 @@ def update_file_with_metadata(metadata, parent_id, addon):
 @requires_search
 def delete_file(file_path, index=None):
     index = index or INDEX
+    file_path = ''.join(['/', file_path]) if not file_path[0] == '/' else file_path
     es.delete(index=index, doc_type='file', id=file_path, refresh=True, ignore=[404])
 
 
