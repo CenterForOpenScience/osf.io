@@ -46,7 +46,7 @@
                     </span>
                 </div>
                 <div data-bind="if: replyNotEmpty" class="form-group">
-                    <a class="btn btn-primary" data-bind="click: submitReply, css: {disabled: submittingReply}"><i class="fa fa-check-square-o"></i> {{saveButtonText}}</a>
+                    <a class="btn btn-primary" data-bind="click: submitReply, css: {disabled: submittingReply}"><i class="fa fa-check-square-o"></i> {{commentButtonText}}</a>
                     <a class="btn btn-default" data-bind="click: cancelReply, css: {disabled: submittingReply}"><i class="fa fa-undo"></i> Cancel</a>
                     <span data-bind="text: replyErrorMessage" class="text-danger"></span>
                 </div>
