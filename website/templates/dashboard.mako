@@ -82,6 +82,7 @@
 </%def>
 
 <%def name="stylesheets()">
+    ${parent.stylesheets()}
     <link rel="stylesheet" href="/static/css/pages/dashboard-page.css">
 </%def>
 

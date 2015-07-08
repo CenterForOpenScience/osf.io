@@ -285,6 +285,7 @@ a {
     word-wrap: break-word;
     max-width: 90%;
     display: inline-block;
+}
 
 /* Comments Panel */
 .comment-actions i {
