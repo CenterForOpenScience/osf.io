@@ -14,7 +14,7 @@
 - [ ] When "Start registration" is clicked, create uid and redirect to new page using new route above
 
 # File picker
-- [ ] Show only OSF storage
+- [x] Show only OSF storage
 - [ ] Have two options:
   * upload file
   * select file from project
