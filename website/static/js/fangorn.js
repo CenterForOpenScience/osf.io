@@ -120,7 +120,7 @@ function cancelUploads (row) {
     for (var i = 0; i < filesArr.length; i++) {
         var j = filesArr[i];
         if(!row){
-            if (j.status == 'uploading') {
+            if (j.status === 'uploading') {
                 j.status = 'queued';
             }
             var parent = j.treebeardParent || tb.dropzoneItemCache;
@@ -136,13 +136,12 @@ function cancelUploads (row) {
             }
         }
     }
-    // Note: removes all rejected files, not just the row the user clicks
-    for (var i = 0; i < rejectedFilesArr.length; i++) {
-        var rejectFile = rejectedFilesArr[i];
-        var parent = rejectFile.treebeardParent || tb.dropzoneItemCache;
-        var item = findByTempID(parent, rejectFile.tmpID);
-        tb.dropzone.removeFile(rejectFile);
-        tb.deleteNode(parent.id,item.id);
+    for (var m = 0; m < rejectedFilesArr.length; m++) {
+        if(row) {
+            tb.deleteNode(row.parentID, row.id);
+            var rejectedFile = rejectedFilesArr[i];
+            tb.dropzone.removeFile(rejectedFile);
+        }
     }
     tb.isUploading(false);
 }
