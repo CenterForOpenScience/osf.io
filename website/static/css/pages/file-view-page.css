@@ -45,3 +45,30 @@
 .mfr-file > img {
     max-width:100%
 }
+
+/* Style for Ace wiki editor */
+.wiki-editor {
+    position: relative;
+    border: solid;
+    border-width: 1px;
+    width: 100%;
+    margin: auto;
+    -webkit-box-flex: 3 0 auto;
+    -webkit-flex: 3 0 auto;
+    -ms-flex: 3 0 auto;
+    flex: 3 0 auto;
+    height: 500px; /* this will get overwritten by flex box */
+}
+
+.editor-pane{
+    padding-top: 0;
+}
+
+/*light color border for editor border*/
+.wmd-input
+{
+    border: 1px solid DarkGray;
+}
+
+
+

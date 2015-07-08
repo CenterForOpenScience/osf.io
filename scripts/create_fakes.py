@@ -235,7 +235,7 @@ class Sciencer(BaseProvider):
         return "".join(text)
 
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger('create_fakes')
 logging.basicConfig(level=logging.ERROR)
 fake = Factory.create()
 fake.add_provider(Sciencer)
@@ -305,5 +305,5 @@ def main():
 
 
 if __name__ == '__main__':
-    app = init_app('website.settings', set_backends=True, routes=True)
+    init_app(set_backends=True, routes=False)
     main()

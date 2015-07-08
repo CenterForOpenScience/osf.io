@@ -262,7 +262,7 @@ class GoogleDriveNodeSettings(StorageAddonBase, AddonNodeSettingsBase):
             return None
 
         if self.folder_path != '/':
-            return unquote(os.path.split(self.folder_path)[1])
+            return unquote(os.path.split(self.folder_path)[1].encode('utf-8')).decode('utf-8')
 
         return '/ (Full Google Drive)'
 
