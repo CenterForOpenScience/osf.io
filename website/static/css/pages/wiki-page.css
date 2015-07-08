@@ -11,6 +11,15 @@
     padding: 10px;
 }
 
+.osf-panel {
+    border: 1px solid #ddd;
+    height: 750px;
+    overflow: auto;
+    display: block;
+    position: relative;
+    overflow-x: hidden;
+}
+
 @media (max-width: 991px) {
     .osf-panel {
         margin-bottom: 20px;
@@ -64,6 +73,7 @@
     text-decoration: none !important;
 }
 
+/*Special for wiki panel */
 .osf-panel-flex {
     width: 100%;
     display: -webkit-box;
@@ -108,6 +118,39 @@
 .reset-height {
     height: auto;
 }
+
+
+.osf-panel  .fa-angle-right, .osf-panel .fa-angle-left {
+    cursor: pointer;
+}
+.osf-panel .fa-list {
+    color: #808080;
+}
+
+.osf-panel .superlist li {
+    display: block;
+    font-size: 20px;
+}
+
+.osf-panel .navbar-collapse {
+    background: #F5F5F5;
+    padding: 0px;
+}
+
+.superlist li {
+    display: inline-block;
+    float: none;
+}
+.superlist li a {
+    padding: 15px 10px;
+}
+
+@media (max-width: 768px) {
+ .superlist.navbar-nav {
+    margin: 0;
+ }
+}
+
 
 /* Style for Ace wiki editor */
 .wiki-editor {
