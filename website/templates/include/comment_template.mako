@@ -6,7 +6,7 @@
     </div>
     <div class="cp-bar"></div>
 
-    <div id="comments" class="cp-sidebar">
+    <div id="comments" class="cp-sidebar bg-color-light">
         <h4>
             <span>${node['title']} Discussion</span>
             <span data-bind="foreach: {data: discussion, afterAdd: setupToolTips}" class="pull-right">
@@ -22,8 +22,8 @@
                     <textarea class="form-control" placeholder="Add a comment" data-bind="value: replyContent, valueUpdate: 'input', attr: {maxlength: $root.MAXLENGTH}"></textarea>
                 </div>
                 <div data-bind="if: replyNotEmpty" class="form-inline">
-                    <a class="btn btn-default btn-default" data-bind="click: submitReply, css: {disabled: submittingReply}"><i class="fa fa-check-square-o"></i> {{saveButtonText}}</a>
-                    <a class="btn btn-default btn-default" data-bind="click: cancelReply, css: {disabled: submittingReply}"><i class="fa fa-undo"></i> Cancel</a>
+                    <a class="btn btn-success" data-bind="click: submitReply, css: {disabled: submittingReply}"><i class="fa fa-check-square-o"></i> {{commentButtonText}}</a>
+                    <a class="btn btn-default" data-bind="click: cancelReply, css: {disabled: submittingReply}"><i class="fa fa-undo"></i> Cancel</a>
                     <span data-bind="text: replyErrorMessage" class="comment-error"></span>
                 </div>
                 <div class="comment-error">{{errorMessage}}</div>
@@ -39,8 +39,7 @@
 <script type="text/html" id="commentTemplate">
     <div class="comment-container" data-bind="if: shouldShow">
 
-        <div class="comment-body">
-
+        <div class="comment-body m-b-sm p-sm osf-box">
             <div data-bind="if: isDeleted">
                 <div>
                     <span data-bind="if: hasChildren">
@@ -175,8 +174,8 @@
                         <textarea class="form-control" placeholder="Add a comment" data-bind="value: replyContent, valueUpdate: 'input', attr: {maxlength: $root.MAXLENGTH}"></textarea>
                     </div>
                     <div>
-                        <a class="btn btn-default btn-default" data-bind="click: submitReply, visible: replyNotEmpty, css: {disabled: submittingReply}"><i class="fa fa-check-square-o"></i> {{saveButtonText}}</a>
-                        <a class="btn btn-default btn-default" data-bind="click: cancelReply, css: {disabled: submittingReply}"><i class="fa fa-undo"></i> Cancel</a>
+                        <a class="btn btn-success" data-bind="click: submitReply, visible: replyNotEmpty, css: {disabled: submittingReply}"><i class="fa fa-check-square-o"></i> {{commentButtonText}}</a>
+                        <a class="btn btn-default" data-bind="click: cancelReply, css: {disabled: submittingReply}"><i class="fa fa-undo"></i> Cancel</a>
                         <span data-bind="text: replyErrorMessage" class="comment-error"></span>
                     </div>
                 </div>

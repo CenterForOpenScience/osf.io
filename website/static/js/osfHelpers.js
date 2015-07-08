@@ -189,14 +189,13 @@ var unblock = function() {
 };
 
 var joinPrompts = function(prompts, base) {
-    var prompt = base || '';
+    var prompt = base ? '<h4>'+ base +'</h4>': '';
     if (prompts.length !==0) {
-        prompt += '<hr />';
-        prompt += '<ul>';
+        prompt += '<div>';
         for (var i=0; i<prompts.length; i++) {
-            prompt += '<li>' + prompts[i] + '</li>';
+            prompt += '<div class="osf-box p-sm">' + prompts[i] + '</div>';
         }
-        prompt += '</ul>';
+        prompt += '</div>';
     }
     return prompt;
 };

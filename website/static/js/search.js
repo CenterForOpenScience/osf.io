@@ -118,11 +118,17 @@ var ViewModel = function(params) {
     self.queryObject = ko.pureComputed(function(){
         var TITLE_BOOST = '4';
         var DESCRIPTION_BOOST = '1.2';
+        var JOB_SCHOOL_BOOST = '1';
+        var ALL_JOB_SCHOOL_BOOST = '0.125';
 
         var fields = [
             '_all',
             'title^' + TITLE_BOOST,
             'description^' + DESCRIPTION_BOOST,
+            'job^' + JOB_SCHOOL_BOOST,
+            'school^' + JOB_SCHOOL_BOOST,
+            'all_jobs^' + ALL_JOB_SCHOOL_BOOST,
+            'all_schools^' + ALL_JOB_SCHOOL_BOOST
         ];
         return {
             'query_string': {
@@ -235,6 +241,11 @@ var ViewModel = function(params) {
     };
 
     self.search = function(noPush, validate) {
+
+        // Check for NOTs and ANDs put spaces before the ones that don't have spaces
+        var query = self.query().replace(/\s?NOT tags:/g, ' NOT tags:');
+        query = query.replace(/\s?AND tags:/g, ' AND tags:');
+        self.query(query);
 
         var jsonData = {'query': self.fullQuery(), 'from': self.currentIndex(), 'size': self.resultsPerPage()};
         var url = self.queryUrl + self.category().url();

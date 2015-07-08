@@ -29,7 +29,7 @@ from framework.mongo import database as database_proxy
 from framework.transactions import commands, messages, utils
 
 from website.project.model import (
-    ApiKey, Node, NodeLog, Tag, WatchConfig,
+    Node, NodeLog, Tag, WatchConfig,
 )
 from website import settings
 
@@ -64,7 +64,7 @@ for logger_name in SILENT_LOGGERS:
 fake = Factory.create()
 
 # All Models
-MODELS = (User, ApiKey, Node, NodeLog, NodeWikiPage,
+MODELS = (User, Node, NodeLog, NodeWikiPage,
           Tag, WatchConfig, Session, Guid)
 
 def teardown_database(client=None, database=None):
@@ -96,7 +96,6 @@ class DbTestCase(unittest.TestCase):
     #        'node_settings': <AddonNodeSettingsBase instance>,
     #}
 
-
     # list of AddonConfig instances of injected addons
     __ADDONS_UNDER_TEST = []
 
@@ -115,6 +114,9 @@ class DbTestCase(unittest.TestCase):
         settings.PIWIK_HOST = None
         cls._original_enable_email_subscriptions = settings.ENABLE_EMAIL_SUBSCRIPTIONS
         settings.ENABLE_EMAIL_SUBSCRIPTIONS = False
+
+        cls._original_bcrypt_log_rounds = settings.BCRYPT_LOG_ROUNDS
+        settings.BCRYPT_LOG_ROUNDS = 1
 
         teardown_database(database=database_proxy._get_current_object())
         # TODO: With `database` as a `LocalProxy`, we should be able to simply
@@ -137,6 +139,7 @@ class DbTestCase(unittest.TestCase):
         settings.DB_NAME = cls._original_db_name
         settings.PIWIK_HOST = cls._original_piwik_host
         settings.ENABLE_EMAIL_SUBSCRIPTIONS = cls._original_enable_email_subscriptions
+        settings.BCRYPT_LOG_ROUNDS = cls._original_bcrypt_log_rounds
 
 
 class AppTestCase(unittest.TestCase):

@@ -268,6 +268,11 @@
     </script>
 </%def>
 
+<%def name="stylesheets()">
+    <link rel="stylesheet" href="/static/css/pages/search-page.css">
+</%def>
+
+
 <%def name="javascript_bottom()">
     <script type="text/javascript">
         window.contextVars = $.extend(true, {}, window.contextVars, {

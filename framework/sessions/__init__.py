@@ -74,7 +74,7 @@ def prepare_private_key():
         key = None
 
     # Update URL and redirect
-    if key and not session:
+    if key and not session.is_authenticated:
         new_url = add_key_to_url(request.url, scheme, key)
         return redirect(new_url, code=http.TEMPORARY_REDIRECT)
 
@@ -144,35 +144,20 @@ def before_request():
         return make_response('', http.UNAUTHORIZED)
 
     if request.authorization:
-        # Create a session from the API key; if key is
-        # not valid, save the HTTP error code in the
-        # "auth_error_code" field of session.data
-
+        # TODO: Fix circular import
+        from framework.auth.core import get_user
+        user = get_user(
+            email=request.authorization.username,
+            password=request.authorization.password
+        )
         # Create empty session
+        # TODO: Shoudn't need to create a session for Basic Auth
         session = Session()
 
-        # Hack: Avoid circular import
-        from website.project.model import ApiKey
-
-        api_label = request.authorization.username
-        api_key_id = request.authorization.password
-        api_key = ApiKey.load(api_key_id)
-
-        if api_key:
-            user = api_key.user__keyed and api_key.user__keyed[0]
-            node = api_key.node__keyed and api_key.node__keyed[0]
-
-            session.data['auth_api_label'] = api_label
-            session.data['auth_api_key'] = api_key._primary_key
-            if user:
-                session.data['auth_user_username'] = user.username
-                session.data['auth_user_id'] = user._primary_key
-                session.data['auth_user_fullname'] = user.fullname
-            elif node:
-                session.data['auth_node_id'] = node._primary_key
-            else:
-                # Invalid key: Not attached to user or node
-                session.data['auth_error_code'] = http.FORBIDDEN
+        if user:
+            session.data['auth_user_username'] = user.username
+            session.data['auth_user_id'] = user._primary_key
+            session.data['auth_user_fullname'] = user.fullname
         else:
             # Invalid key: Not found in database
             session.data['auth_error_code'] = http.FORBIDDEN

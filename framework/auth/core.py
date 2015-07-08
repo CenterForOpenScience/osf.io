@@ -155,16 +155,14 @@ def get_user(email=None, password=None, verification_key=None):
 
 class Auth(object):
 
-    def __init__(self, user=None, api_key=None, api_node=None,
+    def __init__(self, user=None, api_node=None,
                  private_key=None):
         self.user = user
-        self.api_key = api_key
         self.api_node = api_node
         self.private_key = private_key
 
     def __repr__(self):
-        return ('<Auth(user="{self.user}", api_key={self.api_key}, '
-                'api_node={self.api_node}, '
+        return ('<Auth(user="{self.user}", '
                 'private_key={self.private_key})>').format(self=self)
 
     @property
@@ -174,14 +172,10 @@ class Auth(object):
     @classmethod
     def from_kwargs(cls, request_args, kwargs):
         user = request_args.get('user') or kwargs.get('user') or _get_current_user()
-        api_key = request_args.get('api_key') or kwargs.get('api_key')
-        api_node = request_args.get('api_node') or kwargs.get('api_node')
         private_key = request_args.get('view_only')
 
         return cls(
             user=user,
-            api_key=api_key,
-            api_node=api_node,
             private_key=private_key,
         )
 
@@ -300,10 +294,6 @@ class User(GuidStoredObject, AddonModelMixin):
     #    ...
     # }
 
-    # nicknames, or other names by which this used is known
-    # TODO: remove - unused
-    aka = fields.StringField(list=True)
-
     # the date this user was registered
     # TODO: consider removal - this can be derived from date_registered
     date_registered = fields.DateTimeField(auto_now_add=dt.datetime.utcnow,
@@ -360,8 +350,6 @@ class User(GuidStoredObject, AddonModelMixin):
     #     'personal': <personal site>,
     #     'twitter': <twitter id>,
     # }
-
-    api_keys = fields.ForeignField('apikey', list=True, backref='keyed')
 
     # hashed password used to authenticate to Piwik
     piwik_token = fields.StringField()
@@ -1144,8 +1132,6 @@ class User(GuidStoredObject, AddonModelMixin):
             if system_tag not in self.system_tags:
                 self.system_tags.append(system_tag)
 
-        [self.aka.append(each) for each in user.aka if each not in self.aka]
-
         self.is_claimed = self.is_claimed or user.is_claimed
         self.is_invited = self.is_invited or user.is_invited
 
@@ -1202,10 +1188,6 @@ class User(GuidStoredObject, AddonModelMixin):
             if account not in self.external_accounts:
                 self.external_accounts.append(account)
         user.external_accounts = []
-
-        for api_key in user.api_keys:
-            self.api_keys.append(api_key)
-        user.api_keys = []
 
         # - addons
         # Note: This must occur before the merged user is removed as a

@@ -2,7 +2,8 @@
     <div class="modal-dialog modal-lg">
         <div class="modal-content">
             <div class="modal-header">
-                <h3 data-bind="text:pageTitle"></h3>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                <h3 class="modal-title" data-bind="text:pageTitle"></h3>
             </div>
 
             <div class="modal-body">
@@ -15,7 +16,7 @@
                     <form class='form' data-bind="submit: startSearch">
                         <div class="row">
                             <div class="col-md-6">
-                                <div class="input-group">
+                                <div class="input-group m-b-sm">
                                     <input class='form-control'
                                             data-bind="value:query"
                                             placeholder='Search by name' autofocus/>
@@ -55,7 +56,7 @@
                             <div data-bind="html: notification().message, css: 'alert alert-' + notification().level"></div>
                             <!-- /ko -->
 
-                            <table>
+                            <table class=" table-condensed">
                                 <thead data-bind="visible: foundResults">
                                 </thead>
                                 <tbody data-bind="foreach:{data:results, as: 'contributor', afterRender:addTips}">
@@ -70,7 +71,7 @@
                                             <!-- height and width are explicitly specified for faster rendering -->
                                             <img data-bind="attr: {src: contributor.gravatar_url}" height=40 width=40 />
                                         </td>
-                                        <td >
+                                        <td width="75%">
                                             <a data-bind = "attr: {href: contributor.profile_url}" target="_blank">
                                                 <span data-bind= "text:contributor.fullname"></span>
                                             </a><br>
@@ -262,7 +263,7 @@
 
                 <span data-bind="if: page() == 'which'">
                     <a class="btn btn-primary" data-bind="click:selectWhom">Back</a>
-                    <a class="btn btn-success" data-bind="click:submit">Submit</a>
+                    <a class="btn btn-success" data-bind="click:submit">Add</a>
                 </span>
 
             </div><!-- end modal-footer -->

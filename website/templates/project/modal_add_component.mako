@@ -24,20 +24,9 @@
                 </div><!-- end modal-body -->
                 <div class="modal-footer">
                     <a id="confirm" href="#" class="btn btn-default" data-dismiss="modal">Close</a>
-                    <button id="add-component-submit" type="submit" class="btn btn-primary">OK</button>
+                    <button id="add-component-submit" type="submit" class="btn btn-success">Add</button>
                 </div><!-- end modal-footer -->
             </form>
         </div><!-- end modal- content -->
     </div><!-- end modal-dialog -->
 </div><!-- end modal -->
-
-<script type="text/javascript">
-        $(document).ready(function() {
-            $('#confirm').on('click', function () {
-                $("#alert").text("");
-                $("#title").val("");
-                $("#category").val("");
-
-            });
-        });
-</script>
