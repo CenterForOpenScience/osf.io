@@ -23,8 +23,8 @@
                 </div>
                 <div class="clearfix">
                     <div data-bind="if: replyNotEmpty" class="form-inline pull-right">
-                        <a class="btn btn-default" data-bind="click: cancelReply, css: {disabled: submittingReply}"> Cancel</a>
-                        <a class="btn btn-success" data-bind="click: submitReply, css: {disabled: submittingReply}"> {{commentButtonText}}</a>
+                        <a class="btn btn-default btn-sm" data-bind="click: cancelReply, css: {disabled: submittingReply}"> Cancel</a>
+                        <a class="btn btn-success btn-sm" data-bind="click: submitReply, css: {disabled: submittingReply}"> {{commentButtonText}}</a>
                         <span data-bind="text: replyErrorMessage" class="comment-error"></span>
                     </div>
                 </div>
@@ -52,8 +52,8 @@
                 <div data-bind="if: canEdit">
                     <a data-bind="click: startUndelete">Restore</a>
                     <div data-bind="if: undeleting">
-                        <a class="btn btn-default btn-sm" data-bind="click: submitUndelete">Submit</a>
                         <a class="btn btn-default btn-sm" data-bind="click: cancelUndelete">Cancel</a>
+                        <a class="btn btn-success btn-sm" data-bind="click: submitUndelete">Save</a>
                     </div>
                 </div>
             </div>
@@ -67,8 +67,8 @@
                 </div>
                 <a data-bind="click: startUnreportAbuse">Not abuse</a>
                 <div data-bind="if: unreporting">
-                    <a class="btn btn-primary btn-sm" data-bind="click: submitUnreportAbuse">Submit</a>
                     <a class="btn btn-default btn-sm" data-bind="click: cancelUnreportAbuse">Cancel</a>
+                    <a class="btn btn-primary btn-sm" data-bind="click: submitUnreportAbuse">Save</a>
                 </div>
             </div>
 
@@ -114,8 +114,8 @@
                             </div>
                             <div class="clearfix">
                                 <div class="form-inline pull-right">
-                                    <a class="btn btn-default" data-bind="click: cancelEdit"> Cancel</a>
-                                    <a class="btn btn-success" data-bind="click: submitEdit, visible: editNotEmpty"> Save</a>
+                                    <a class="btn btn-default btn-sm" data-bind="click: cancelEdit">Cancel</a>
+                                    <a class="btn btn-success btn-sm" data-bind="click: submitEdit, visible: editNotEmpty">Save</a>
                                     <span data-bind="text: editErrorMessage" class="comment-error"></span>
                                 </div>
                             </div>
@@ -153,13 +153,13 @@
                             <select class="form-control" data-bind="options: abuseOptions, optionsText: abuseLabel, value: abuseCategory"></select>
                             <input class="form-control" data-bind="value: abuseText" placeholder="Describe abuse" />
                         </form>
-                        <a class="btn btn-danger btn-sm" data-bind="click: submitAbuse"> Report</a>
                         <a class="btn btn-default btn-sm" data-bind="click: cancelAbuse"> Cancel</a>
+                        <a class="btn btn-danger btn-sm" data-bind="click: submitAbuse"> Report</a>
                     </div>
 
                     <div class="comment-delete" data-bind="if: deleting">
-                        <a class="btn btn-danger btn-sm" data-bind="click: submitDelete">Delete</a>
                         <a class="btn btn-default btn-sm" data-bind="click: cancelDelete">Cancel</a>
+                        <a class="btn btn-danger btn-sm" data-bind="click: submitDelete">Delete</a>
                     </div>
 
                 </div>
@@ -179,8 +179,8 @@
                     </div>
                     <div class="clearfix">
                         <div class="pull-right">
-                            <a class="btn btn-default" data-bind="click: cancelReply, css: {disabled: submittingReply}"> Cancel</a>
-                            <a class="btn btn-success" data-bind="click: submitReply, visible: replyNotEmpty, css: {disabled: submittingReply}"> {{commentButtonText}}</a>
+                            <a class="btn btn-default btn-sm" data-bind="click: cancelReply, css: {disabled: submittingReply}"> Cancel</a>
+                            <a class="btn btn-success btn-sm" data-bind="click: submitReply, visible: replyNotEmpty, css: {disabled: submittingReply}"> {{commentButtonText}}</a>
                             <span data-bind="text: replyErrorMessage" class="comment-error"></span>
                         </div>
                     </div>
