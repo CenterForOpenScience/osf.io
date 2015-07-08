@@ -170,7 +170,7 @@
                     // Note: Use cookies for global site ID; only one cookie
                     // will be used, so this won't overflow uwsgi header
                     // buffer.
-                    $.osf.trackPiwik(${ piwik_host | sjson, n}, ${ piwik_site_id | n }, cvars, true);
+                    $.osf.trackPiwik(${ piwik_host | sjson, n}, ${ piwik_site_id | sjson, n }, cvars, true);
                 });
             </script>
         % endif
