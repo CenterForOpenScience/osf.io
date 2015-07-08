@@ -79,7 +79,7 @@ MERGE_CONFIRMATION_REQUIRED_LONG = (
     '<p>This email is confirmed to another account. '
     'Would you like to merge <em>{user_to_merge.username}</em> with the account '
     '<em>{user.username}</em>?<p>'
-    '<a class="btn btn-success" href="?confirm_merge">Confirm merge</a> '
+    '<a class="btn btn-primary" href="?confirm_merge">Confirm merge</a> '
 )
 
 # Node Actions

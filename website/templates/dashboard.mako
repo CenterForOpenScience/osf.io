@@ -63,7 +63,7 @@
     <div class="row">
         <div class="col-sm-5">
             <div class="page-header">
-              <button class="btn btn-success pull-right" id="newBadge" type="button">New Badge</button>
+              <button class="btn btn-primary pull-right" id="newBadge" type="button">New Badge</button>
                 <h3>Your Badges</h3>
             </div>
             <div mod-meta='{
