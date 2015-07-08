@@ -1,4 +1,5 @@
 from rest_framework import generics, permissions as drf_permissions
+from rest_framework.exceptions import NotFound
 from modularodm import Q
 
 from website.models import User, Node
@@ -35,9 +36,13 @@ class IncludeAdditionalQuery(object):
     def get_additional_query(self):
         query = {}
         if 'include' in self.request.query_params:
-            params = self.request.query_params['include']
+            params = self.request.query_params['include'].split(',')
             if 'nodes' in params:
                 query['nodes'] = self.get_nodes()
+                params.remove('nodes')
+            if params != []:
+                params_string = ', '.join(params)
+                raise NotFound('The following arguments cannot be found: {}'.format(params_string))
         return query
 
     def get_nodes(self):
