@@ -408,22 +408,17 @@ var RegistrationManager = function(node, draftsSelector, editorSelector, control
     };
 
     self.schemas = ko.observableArray();
-    self.selectedSchema = ko.observable();
+    self.selectedSchema = ko.observable({
+        description: ''
+    });
 
     // TODO: convert existing registration UI to frontend impl.
     // self.registrations = ko.observable([]);
     self.drafts = ko.observableArray();
-    /*
-     self.drafts.subscribe(function(changes) {
-     $.each(changes, function(i, change) {
-     if(change.status === 'deleted' && self.regEditor) {
-     self.regEditor.destroy();
-     }
-     });
-     }, null, 'arrayChange');
-     */
 
     self.loading = ko.observable(true);
+    
+    self.preview = ko.observable(false);
 
     // bound functions
     self.formattedDate = formattedDate;
@@ -436,7 +431,15 @@ var RegistrationManager = function(node, draftsSelector, editorSelector, control
         });
     });
 
-    self.controls.showManager();
+    self.previewSchema = ko.computed(function() {
+        var schema = self.selectedSchema();
+        return {
+            schema: schema.schema,
+            readonly: true
+        };
+    });
+
+    self.controls.showManager();    
 };
 RegistrationManager.prototype.init = function() {
     var self = this;
@@ -553,27 +556,23 @@ RegistrationManager.prototype.deleteDraft = function(draft) {
         }
     });
 };
-RegistrationManager.prototype.beforeRegister = function() {
+RegistrationManager.prototype.beforeCreateDraft = function() {
     var self = this;
 
     var node = self.node;
 
-    var VM = {
-        title: node.title,
-        parentTitle: node.parentTitle,
-        parentUrl: node.parentRegisterUrl,
-        category: node.category === 'project' ? node.category : 'component',
-        schemas: self.schemas,
-        selectedSchema: self.selectedSchema,
-        cancel: bootbox.hideAll,
-        launchEditor: self.launchEditor.bind(self),
-        blankDraft: self.blankDraft.bind(self)
-    };
-    bootbox.dialog({
-        title: 'Register ' + node.title,
-        message: function() {
-            var preRegisterMessage = ko.renderTemplate('preRegisterMessageTemplate', VM, {}, this);
-        }
+    self.selectedSchema(self.schemas()[0]);
+    self.preview(true);    
+};
+RegistrationManager.prototype.createDraft = function() {
+    var self = this;
+
+    var node = self.node;
+
+    var schema = self.selectedSchema();
+    $osf.postJSON(node.urls.web + 'draft/', {
+        schema_name: schema.name,
+        schema_version: schema.version
     });
 };
 

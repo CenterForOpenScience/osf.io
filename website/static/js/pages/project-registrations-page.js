@@ -35,6 +35,6 @@ $(document).ready(function() {
 
     $('#registerNode').click(function(event) {
         event.preventDefault();
-        draftManager.beforeRegister();        
+        draftManager.beforeCreateDraft();        
     });
 });

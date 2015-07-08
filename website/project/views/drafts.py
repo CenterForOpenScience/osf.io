@@ -64,6 +64,34 @@ def create_draft_registration(auth, node, *args, **kwargs):
 
 @must_have_permission(ADMIN)
 @must_be_valid_project
+def new_draft_registration(auth, node, *args, **kwargs):
+
+    data = request.values
+
+    schema_name = data.get('schema_name')
+    if not schema_name:
+        raise HTTPError(http.BAD_REQUEST)
+
+    schema_version = data.get('schema_version', 1)
+    schema_data = data.get('schema_data', {})
+
+    meta_schema = get_schema_or_fail(
+        Q('name', 'eq', schema_name) &
+        Q('schema_version', 'eq', int(schema_version))
+    )
+    draft = DraftRegistration(
+        initiator=auth.user,
+        branched_from=node,
+        registration_schema=meta_schema,
+        registration_metadata=schema_data
+    )
+    draft.save()
+    return {
+        serialize_draft_registration(draft, auth),
+    }
+
+@must_have_permission(ADMIN)
+@must_be_valid_project
 def update_draft_registration(auth, node, draft_pk, *args, **kwargs):
     data = request.get_json()
 

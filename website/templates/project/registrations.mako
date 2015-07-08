@@ -8,9 +8,6 @@
   <li role="presentation">
     <a id="draftsControl" aria-controls="drafts" href="#drafts">Draft Registrations</a>
   </li>
-  <li role="presentation">
-    <a id="editDraftsControl" class="disabled" aria-controls="editDrafts" href="#editDrafts">Edit Draft</a>
-  </li>   
 </ul>
 <div class="tab-content registrations-view">
   <div role="tabpanel" class="tab-pane active" id="registrations">
@@ -49,51 +46,85 @@
   </div>
   <div role="tabpanel" class="tab-pane" id="drafts">
     <div id="draftRegistrationScope" class="row" style="min-height: 150px">
-      <h2> Draft Registrations </h2>
-      <div class="col-md-9">
-      <div>
-        % if 'admin' in user['permissions'] and not disk_saving_mode:
-        <a data-bind="css: {disabled: loading}" id="registerNode" class="btn btn-default" type="button">
-          <i class="fa fa-plus"></i>
-          New Draft Registration
-        </a>
-        % endif
-      </div>    
-      <br />
-      <div class="scripted" data-bind="foreach: drafts">
-        <li class="project list-group-item list-group-item-node">
-          <h4 class="list-group-item-heading">          
-            <div class="progress progress-bar-md">
-              <div class="progress-bar" role="progressbar" aria-valuemin="0" aria-valuemax="100"
-                   data-bind="attr.aria-completion: completion,
-                              style: {width: completion + '%'}">
-                <span class="sr-only"></span>
-              </div>
+      <div data-bind="visible: !preview()">
+        <h2> Draft Registrations </h2>
+        <div class="col-md-9">
+          <div>
+            % if 'admin' in user['permissions'] and not disk_saving_mode:
+            <a data-bind="css: {disabled: loading}" id="registerNode" class="btn btn-default" type="button">
+              <i class="fa fa-plus"></i>
+              New Draft Registration
+            </a>
+            % endif
+          </div>    
+          <br />
+          <div class="scripted" data-bind="foreach: drafts">
+            <li class="project list-group-item list-group-item-node">
+              <h4 class="list-group-item-heading">          
+                <div class="progress progress-bar-md">
+                  <div class="progress-bar" role="progressbar" aria-valuemin="0" aria-valuemax="100"
+                       data-bind="attr.aria-completion: completion,
+                                  style: {width: completion + '%'}">
+                    <span class="sr-only"></span>
+                  </div>
+                </div>
+                <p data-bind="text: schema.title"></p>
+                <p>initiated by <span data-bind="text: initiator.fullname"></span>
+                <p>started about <span data-bind="text: $root.formattedDate(initiated)"></span></p>
+                <p>last updated about <span data-bind="text: $root.formattedDate(updated)"></span></p>
+                <p>
+                  <button class="btn btn-success"
+                          data-bind="click: $root.editDraft"><i style="margin-right: 5px;" class="fa fa-pencil"></i>Edit</button>
+                  <button class="btn btn-danger"
+                          data-bind="click: $root.deleteDraft"><i style="margin-right: 5px;" class="fa fa-times"></i>Delete</button>
+                </p>
+              </h4>
+            </li>
+          </div>
+        </div>
+      </div>
+      <div data-bind="if: preview">
+        <button data-bind="click: preview.bind($root, false)"
+                class="btn btn-primary"><i class="fa fa-arrow-circle-o-left"></i>&nbsp;&nbsp;&nbsp;Back</button>
+        <br />
+        <br />
+        <p> Select a registration template to continue ... </p>
+        <div class="row">
+          <form name="createDraft" method="post">
+            <div class="col-md-9">
+              <div class="form-group">
+                <select class="form-control" data-bind="options: schemas,
+                                                        optionsText: 'name',
+                                                        value: selectedSchema">
+                </select>
+                <input type="hidden" name="schema_name" data-bind="value: selectedSchema().name" />
+                <input type="hidden" name="schema_version" data-bind="value: selectedSchema().version" />
+              </div>          
             </div>
-            <p data-bind="text: schema.title"></p>
-            <p>initiated by <span data-bind="text: initiator.fullname"></span>
-            <p>started about <span data-bind="text: $root.formattedDate(initiated)"></span></p>
-            <p>last updated about <span data-bind="text: $root.formattedDate(updated)"></span></p>
-            <p>
-              <button class="btn btn-success"
-                      data-bind="click: $root.editDraft"><i style="margin-right: 5px;" class="fa fa-pencil"></i>Edit</button>
-              <button class="btn btn-danger"
-                      data-bind="click: $root.deleteDraft"><i style="margin-right: 5px;" class="fa fa-times"></i>Delete</button>
+            <div class="col-md-3">
+              <button type="submit" class="btn btn-success"> Start </button>
+            </div>
+          </form>
+        </div>
+        <hr />
+        <div class="row" data-bind="if: selectedSchema">
+          <div class="col-md-12" data-bind="with: selectedSchema">
+            <h4> Fulfills: </h4 >
+            <p data-bind="foreach: schema.fulfills">
+              <span data-bind="text: $data + '|'"></span>
             </p>
-          </h4>
-        </li>
+            <h4> Description: </h4> 
+            <blockquote>
+              <p data-bind="html: schema.description"></p>
+            </blockquote>
+          </div>
+        </div>
+        <hr />
+        <div class="row" data-bind="template: {data: previewSchema, name: 'registrationPreview'}">
+        </div>
       </div>
-    </div>
-    </div>
-  </div>  
-  <div role="tabpanel" class="tab-pane" id="editDrafts">
-    <div class="row">
-      <h2> Edit Draft Registration </h2>
-      <div class="col-md-12">
-        <%include file="project/registration_editor.mako"/>
-      </div>
-    </div>
-  </div>
+    </div> 
+  </div> 
 </div>
 
 <%def name="javascript_bottom()">
@@ -101,9 +132,10 @@ ${parent.javascript_bottom()}
 
 <script src=${"/static/public/js/project-registrations-page.js" | webpack_asset}> </script>
 </%def>
+
+<%include file="project/registration_preview.mako" />
+<!--
 <script type="text/html" id="preRegisterMessageTemplate">
-  <div
-  <!-- if not a top-level Node -->
   <div data-bind="if: parentUrl">
     You are about to register the 
     <span data-bind="text: category"></span>  
@@ -113,7 +145,6 @@ ${parent.javascript_bottom()}
     <a data-bind="attr.href: parentUrl">here.</a>
     After selecting OK, you will next select a registration form.
   </div>
-  <!-- if root Node -->
   <div data-bind="ifnot: parentUrl">
     You are about to register <b data-bind="text: title"></b>
     including all components and data within it. Registration creates a permanent, 
@@ -147,20 +178,11 @@ ${parent.javascript_bottom()}
                                                                              attr.aria-labelledby: id">
             <h4> Fulfills: </h4>
             <div class="btn-group" data-bind="foreach: schema.fulfills">
-              <!-- TODO badges?; definitely improve UI here -->
               <span data-bind="text: $data"></span>
             </div>
             <hr />
             <h4> Description: </h4>
             <p data-bind="html: schema.description"></p>
-            <!--
-            <div data-bind="foreach: {data: schema.pages, as: 'page'}">
-              <h4 data-bind="text: page.title"></h4>
-              <ul data-bind="foreach: {data: page.questions, as: 'question'}">
-                <li data-bind="question.nav"></li>
-              </ul>
-            </div>
-            -->
           </div>
         </div>
       </div>
@@ -171,3 +193,4 @@ ${parent.javascript_bottom()}
     <button class="btn btn-default" data-bind="click: cancel">Cancel</button>
   </div>
 </script>
+-->

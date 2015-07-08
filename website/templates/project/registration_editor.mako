@@ -1,3 +1,4 @@
+<script type="text/html" id="registrationEditor">
 <div id="registrationEditorScope">
     <div class="container">
         <div class="row">
@@ -46,5 +47,5 @@
         </div>
     </div>
 </div>
-
+</script>
 <%include file="registration_editor_templates.mako" />

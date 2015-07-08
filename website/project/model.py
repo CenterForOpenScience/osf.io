@@ -99,7 +99,7 @@ def ensure_schemas():
         try:
             MetaSchema.find_one(
                 Q('name', 'eq', schema['name']) &
-                Q('schema_version', 'eq', schema['schema_version'])
+                Q('schema_version', 'eq', schema.get('version', 1))
             )
         except NoResultsFound:
             meta_schema = {
