@@ -3,6 +3,7 @@
 <%def name="title()">Public Activity</%def>
 
 <%def name="stylesheets()">
+    ${parent.stylesheets()}
     <link rel="stylesheet" href="/static/css/pages/public-activity-page.css">
 </%def>
 

@@ -2,6 +2,7 @@
 <%def name="title()">Getting Started</%def>
 
 <%def name="stylesheets()">
+    ${parent.stylesheets()}
     <link rel="stylesheet" href="/static/css/pages/getting-started-page.css">
 </%def>
 
