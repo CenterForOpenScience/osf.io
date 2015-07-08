@@ -58,7 +58,7 @@
           <span class="example-block">
             <a data-bind="click: toggleExample">Show Example</a>            
             <p data-bind="visible: showExample, text: help"></p>
-          </span>         
+          </span>       
           <br />
           <br />
           <div class="row">
