@@ -15,11 +15,11 @@
 
 # File picker
 - [x] Show only OSF storage
-- [ ] Have two options:
-  * upload file
+- [x] Have two options:
+  * upload file - focuses on osf storage originally
   * select file from project
 - [ ] Copy from OSF saved to root (I'm not totally clear on what this means -Lauren)
-- [ ] If upload then upload to outer OSF storage of project
+- [x] If upload then upload to outer OSF storage of project (where the original focus is)
 - [ ] Show (or enable) upload/select button once a file has been selected
 - [ ] Save path to schema data
 - [ ] Display what file has been uploaded/selected
