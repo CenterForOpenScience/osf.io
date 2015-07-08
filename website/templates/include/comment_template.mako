@@ -95,11 +95,11 @@
                     <div class="comment-content">
 
                         <div data-bind="ifnot: editing">
-                            <span data-bind="if: hasChildren">
+                            <span class="component-overflow"
+                              data-bind="html: contentDisplay, css: {'edit-comment': editHighlight}, event: {mouseenter: startHoverContent, mouseleave: stopHoverContent}"></span>
+                            <span class="pull-right" data-bind="if: hasChildren">
                                 <i data-bind="css: toggleIcon, click: toggle"></i>
                             </span>
-                            <span class="overflow"
-                              data-bind="html: contentDisplay, css: {'edit-comment': editHighlight}, event: {mouseenter: startHoverContent, mouseleave: stopHoverContent}"></span>
                         </div>
 
                         <!--
@@ -111,8 +111,8 @@
                                 <textarea class="form-control" data-bind="value: content, valueUpdate: 'input', attr: {maxlength: $root.MAXLENGTH}"></textarea>
                             </div>
                             <div class="form-inline">
-                                <a class="btn btn-default btn-default" data-bind="click: submitEdit, visible: editNotEmpty"><i class="fa fa-check-square-o"></i> Save</a>
-                                <a class="btn btn-default btn-default" data-bind="click: cancelEdit"><i class="fa fa-undo"></i> Cancel</a>
+                                <a class="btn btn-success" data-bind="click: submitEdit, visible: editNotEmpty"><i class="fa fa-check-square-o"></i> Save</a>
+                                <a class="btn btn-default" data-bind="click: cancelEdit"><i class="fa fa-undo"></i> Cancel</a>
                                 <span data-bind="text: editErrorMessage" class="comment-error"></span>
                             </div>
                         </div>
