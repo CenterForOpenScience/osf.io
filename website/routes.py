@@ -524,23 +524,24 @@ def make_url_map(app):
             '/settings/',
             'get',
             profile_views.user_profile,
-            OsfWebRenderer('profile/settings.mako'),
+            OsfWebRenderer('profile/settings.mako', trust=False),
         ),
 
         Rule(
             '/settings/account/',
             'get',
             profile_views.user_account,
-            OsfWebRenderer('profile/account.mako'),
+            OsfWebRenderer('profile/account.mako', trust=False),
         ),
 
         Rule(
             '/settings/account/password',
             'post',
             profile_views.user_account_password,
-            OsfWebRenderer('profile/account.mako'),
+            OsfWebRenderer('profile/account.mako', trust=False),
         ),
 
+        # TODO: Convert this view to markupsafe. Problem: with markupsafe active, embedded per-addon templates are renderered as text and not html. Couldn't turn off.
         Rule(
             '/settings/addons/',
             'get',
@@ -548,18 +549,19 @@ def make_url_map(app):
             OsfWebRenderer('profile/addons.mako'),
         ),
 
+        # TODO: Confirm that email subscriptions work; can't test locally
         Rule(
             '/settings/notifications/',
             'get',
             profile_views.user_notifications,
-            OsfWebRenderer('profile/notifications.mako'),
+            OsfWebRenderer('profile/notifications.mako', trust=False),
         ),
 
         Rule(
             '/@<twitter_handle>/',
             'get',
             profile_views.redirect_to_twitter,
-            OsfWebRenderer('error.mako', render_mako_string)
+            OsfWebRenderer('error.mako', render_mako_string, trust=False)
         ),
 
     ])
