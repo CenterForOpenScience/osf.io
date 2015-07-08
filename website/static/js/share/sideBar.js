@@ -30,11 +30,6 @@ SideBar.controller = function(vm) {
     var self = this;
     self.vm = vm;
 
-    self.vm.sortMap = {
-        'Date': 'dateUpdated',
-        Relevance: null
-    };
-
     self.renderSort = function(){
         return $.map(Object.keys(self.vm.sortMap), function(a) {
             return m('li',
@@ -62,16 +57,16 @@ SideBar.controller = function(vm) {
     };
 
     self.renderProvider = function(result, index) {
-        var checked = (self.vm.optionalFilters.indexOf('source:' + result.short_name) > -1 || self.vm.requiredFilters.indexOf('source:' + result.short_name) > -1) ? 'in-filter' : '';
+        var checked = (self.vm.optionalFilters.indexOf('shareProperties.source:' + result.short_name) > -1 || self.vm.requiredFilters.indexOf('shareProperties.source:' + result.short_name) > -1) ? 'in-filter' : '';
 
         return m('li',
             m('.provider-filter', {
                 'class': checked,
                 onclick: function(cb){
                     if (checked === 'in-filter') {
-                        utils.removeFilter(self.vm, 'source:' + result.short_name);
+                        utils.removeFilter(self.vm, 'shareProperties.source:' + result.short_name);
                     } else {
-                        utils.updateFilter(self.vm, 'source:' + result.short_name);
+                        utils.updateFilter(self.vm, 'shareProperties.source:' + result.short_name);
                     }
                 }
             }, [
