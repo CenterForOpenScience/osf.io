@@ -142,9 +142,9 @@ var Paginator = oop.defclass({
             this.fetchResults();
         }
     },
-    previousPage: function(){
+    previousPage: function() {
         this.pageToGet(this.currentPage() - 1);
-        if (this.pageToGet() >=0) {
+        if (this.pageToGet() >= 0) {
             this.fetchResults();
         }
     },
