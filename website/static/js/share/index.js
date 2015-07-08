@@ -30,6 +30,11 @@ ShareApp.ViewModel = function() {
     self.requiredFilters = $osf.urlParams().required ? $osf.urlParams().required.split('|') : [];
     self.optionalFilters = $osf.urlParams().optional ? $osf.urlParams().optional.split('|') : [];
 
+    self.sortMap = {
+        'Date': 'providerUpdatedDateTime',
+        Relevance: null
+    };
+
     self.sortProviders = function() {
         return $.map(Object.keys(self.ProviderMap), function(result, index){
             return self.ProviderMap[result];
@@ -39,13 +44,21 @@ ShareApp.ViewModel = function() {
     };
 
     self.buildQuery = function() {
-        var must = $.map(utils.parseToTermQuery(self.requiredFilters));
-        var should = $.map(utils.parseToTermQuery(self.optionalFilters));
+        var must = utils.commonQuery(self.query());
+        var should = $.map(self.optionalFilters.concat(self.requiredFilters), utils.parseToTermQuery);
+        var sort = {};
+        var minimum = (self.requiredFilters.length + (self.optionalFilters.length ? 1 : 0)) || 1;
+
+        if (self.sortMap[self.sort()]) {
+            sort[self.sortMap[self.sort()]] = 'desc';
+        }
+
         return {
-            'query': utils.bool_query(must, [], should),
+            'query': utils.boolQuery(must, [], should, minimum),
             'aggregations': {},  // TODO
-            'from': self.page * 10,
+            'from': (self.page - 1) * 10,
             'size': 10,
+            'sort': [sort],
             'highlight': {
                 'fields': {
                     'title': {'fragment_size': 2000},
