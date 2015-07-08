@@ -48,7 +48,17 @@ class UserSerializer(JSONAPISerializer):
         'linkedIn',
         'impactStory',
         'orcid',
-        'researcherId'
+        'researcherId',
+        'job_department',
+        'job_startYear',
+        'job_title',
+        'job_startMonth',
+        'job_endMonth',
+        'job_endYear',
+        'job_ongoing',
+        'job_department',
+        'job_institution'
+
     ])
     parser_classes = (JSONParser,)
     id = ser.CharField(read_only=True, source='_id')
@@ -63,6 +73,15 @@ class UserSerializer(JSONAPISerializer):
                                                                                                       'places the user has worked')
     educational_institutions = SchoolsSerializer(read_only=True, required=False, source='schools', help_text='An array of dictionaries representing the '
                                                                                                              'places the user has worked')
+    job_startYear = ser.CharField(read_only=False, required=False,  source='jobs.startYear', help_text='Start Year of the User Job')
+    job_title = ser.CharField(read_only=False, source='jobs.title', required=False, help_text='Department of the employer')
+    job_startMonth = ser.IntegerField(read_only=False, source='jobs.startMonth', required=False, allow_null=True)
+    job_endMonth = ser.IntegerField(read_only=False, max_value=12, source='jobs.endMonth', required=False, min_value=1, allow_null=True)
+    job_endYear = ser.CharField(read_only=False, allow_blank=True, source='jobs.endYear', required=False, allow_null=True)
+    job_ongoing = ser.BooleanField(read_only=False, required=False, source='jobs.ongoing', help_text='If the user is still has his job')
+    job_department = ser.CharField(read_only=False, required=False, source='jobs.department', help_text='Department of the employer')
+    job_institution = ser.CharField(read_only=False, required=False, source='jobs.institution', help_text='Department of the employer')
+
     # Social Fields are broken out to get around DRF complex object bug and to make API updating more user friendly.
     github = ser.CharField(required=False, source='social.github', help_text='Github Handle')
     scholar = ser.CharField(required=False, source='social.scholar', help_text='Google Scholar Account')
