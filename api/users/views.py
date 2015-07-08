@@ -21,21 +21,29 @@ class UserMixin(object):
         if check_permissions:
             # May raise a permission denied
             self.check_object_permissions(self.request, obj)
-        obj.additional_query_params = self.get_additional_query(obj)
+        additional_query = IncludeAdditionalQuery(obj, self.request)
+        obj.additional_query_params = additional_query.get_additional_query()
         return obj
 
-    def get_additional_query(self, obj):
+
+class IncludeAdditionalQuery(object):
+
+    def __init__(self, obj, request):
+        self.obj = obj
+        self.request = request
+
+    def get_additional_query(self):
         query = {}
         if 'include' in self.request.query_params:
             params = self.request.query_params['include']
             if 'nodes' in params:
-                query['nodes'] = self.get_nodes(obj)
+                query['nodes'] = self.get_nodes()
         return query
 
-    def get_nodes(self, obj):
+    def get_nodes(self):
         nodes = {}
         query = (
-            Q('contributors', 'eq', obj) &
+            Q('contributors', 'eq', self.obj) &
             Q('is_folder', 'ne', True) &
             Q('is_deleted', 'ne', True)
         )
