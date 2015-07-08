@@ -393,6 +393,7 @@ RegistrationEditor.prototype.submit = function() {
 };
 RegistrationEditor.prototype.save = function() {
     var self = this;
+    console.log(this);
 
     var metaSchema = self.draft().metaSchema;
     var schema = metaSchema.schema;

@@ -30,10 +30,11 @@ ko.bindingHandlers.osfUploader = {
                         redir.segment("files").segment(item.data.provider).segmentCoded(item.data.path.substring(1));
                         fileurl = redir.toString() + '/';
                         $("#scriptName").html(item.data.name);
-                        console.log(fileurl);
+                        viewModel.setValue(fileurl);
                     } else {
                         $("#scriptName").html("no file selected");
                         fileurl = "";
+                        viewModel.setValue(null);
                     }
                 },
                 dropzone: {                                           // All dropzone options.
@@ -57,16 +58,25 @@ ko.bindingHandlers.osfUploader = {
                             item.css = "text-muted";
                             item.data.permissions.edit = false;
                             item.data.permissions.view = false;
-                            if (!item.data.name.includes(" (Must upload from OSF Storage to ensure accurate versioning.)")) {
-                                item.data.name = item.data.name + " (Must upload from OSF Storage to ensure accurate versioning.)";
+                            if (!item.data.name.includes(" (Only OSF Storage supported to ensure accurate versioning.)")) {
+                                item.data.name = item.data.name + " (Only OSF Storage supported to ensure accurate versioning.)";
                             }
-                        } else if (item.depth === 2 && userClick === false) {
+                        } else if (item.depth === 2 && userClick === false && viewModel.value() === null) {
                             tb.multiselected([item]);
                         }
                     }
                     if (item.data.kind === "file" && item.data.provider !== "osfstorage") {
                         item.open = false;
                         item.load = false;
+                    }
+                    if (viewModel.value() !== null) {
+                        var fullPath = viewModel.value().split("/");
+                        var path = fullPath[fullPath.length - 2];
+                        var correctedPath = "/" + path;
+                        if (item.data.kind === "file" && item.data.path === correctedPath) {
+                            tb.multiselected([item]);
+                            $("#scriptName").html(item.data.name);
+                        }
                     }
                     if (tb.isMultiselected(item.id)) {
                         item.css = 'fangorn-selected';
