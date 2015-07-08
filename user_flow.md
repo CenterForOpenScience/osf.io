@@ -1,7 +1,7 @@
 # Autosaving and submit process
 - [X] Show the Submit button to submit for approval
 - [X] Show which fields are required on submit (if required fields are not filled in there will be an error)
-- [ ] Autosaving functionality
+- [X] Autosaving functionality
 - [ ] Show no indication of which field have been completed (i.e. no green/yellow)
 
 # Routes needed
@@ -33,3 +33,6 @@
 # Radio buttons
 - [ ] Take out check -- make it look like a radio button
 - [ ] Button to left of option text
+
+# Schema typos
+- [X] Fix typos and strange characters from showing up in schemas

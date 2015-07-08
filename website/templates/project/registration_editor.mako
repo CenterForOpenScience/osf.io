@@ -34,7 +34,7 @@
                 </a>
                 <!-- EDITOR -->
                 <div data-bind="if: currentQuestion">
-					<div id="registrationEditor" data-bind="template: {data: currentQuestion, name: 'editor'}">
+					<div id="registrationEditor" data-bind="template: {data: currentQuestion, name: 'editor'}, valueUpdate: 'keyup', event: {'keyup': $root.save}">
 					</div>
                 </div>
                 <p>Last saved: <span data-bind="text: $root.lastSaved()"></span>
