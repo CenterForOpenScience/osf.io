@@ -3,7 +3,7 @@ from modularodm import Q
 
 from website.models import User, Node
 from framework.auth.core import Auth
-from api.base.utils import get_object_or_404, process_additional_query_params
+from api.base.utils import get_object_or_404
 from api.base.filters import ODMFilterMixin
 from api.nodes.serializers import NodeSerializer
 from .serializers import UserSerializer
@@ -42,9 +42,9 @@ class UserMixin(object):
         node_list = Node.find(query)
         for node in node_list:
             nodes[node._id] = {
-                    'title': node.title,
-                    'description': node.description,
-                    'is_public': node.is_public
+                'title': node.title,
+                'description': node.description,
+                'is_public': node.is_public
             }
         return nodes
 
