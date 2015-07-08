@@ -86,7 +86,7 @@
     % if node['is_registration']:  ## Begin registration undismissable labels
 
         % if not node['is_retracted']:
-            <div class="alert alert-info">This ${node['node_type']} is a registration of <a class="link-solidk" href="${node['registered_from_url']}">this ${node['node_type']}</a>; the content of the ${node['node_type']} has been frozen and cannot be edited.
+            <div class="alert alert-info">This ${node['node_type']} is a registration of <a class="link-solid" href="${node['registered_from_url']}">this ${node['node_type']}</a>; the content of the ${node['node_type']} has been frozen and cannot be edited.
             </div>
             <style type="text/css">
             .watermarked {
