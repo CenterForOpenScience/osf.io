@@ -15,7 +15,6 @@
     </h2>
   </div>
   <div class="col-sm-7">
-
       % if extras.get('extra').get('md5'):
           <a id="md5" style="margin-top:20px" class="pull-right btn btn-sm btn-primary">
             md5: "${extras.get('extra').get('md5')}"

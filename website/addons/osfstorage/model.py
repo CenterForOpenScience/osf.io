@@ -340,6 +340,7 @@ class OsfStorageFileNode(StoredObject):
             'size': self.versions[-1].size if self.versions else None,
             'version': len(self.versions),
             'downloads': self.get_download_count(),
+            'md5': self.versions[-1].metadata['md5'] if self.versions else None
         }
         if include_full:
             data['fullPath'] = self.materialized_path()
