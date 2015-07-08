@@ -72,7 +72,7 @@ class TestFileAdded(OsfTestCase):
         self.user2 = factories.UserFactory()
         self.event = Event.parse_event(self.user2, self.project, 'file_added', payload=file_payload)
 
-    @mock.patch('website.notifications.events.model.notify')
+    @mock.patch('website.notifications.emails =.notify')
     def test_file_added(self, mock_notify):
         self.event.perform()
         # notify('exd', 'file_updated', 'user', self.project, datetime.utcnow())
@@ -95,19 +95,21 @@ class TestFileMoved(OsfTestCase):
         file_moved_payload = file_move_payload(self.private_node, self.project)
         self.event = Event.parse_event(self.user_2, self.private_node, 'addon_file_moved', payload=file_moved_payload)
         # Subscriptions
+        # for parent node
         self.sub = factories.NotificationSubscriptionFactory(
             _id=self.project._id + '_file_updated',
             owner=self.project,
             event_name='file_updated'
         )
-        self.sub.email_transactional.extend([self.user_1])
         self.sub.save()
+        # for private node
         self.private_sub = factories.NotificationSubscriptionFactory(
             _id=self.private_node._id + '_file_updated',
             owner=self.private_node,
             event_name='file_updated'
         )
         self.private_sub.save()
+        # for file subscription
         self.file_sub = factories.NotificationSubscriptionFactory(
             _id=self.project._id + '_' + self.event.source_guid._id + '_file_updated',
             owner=self.project,
@@ -116,12 +118,41 @@ class TestFileMoved(OsfTestCase):
         self.file_sub.save()
 
     @mock.patch('website.notifications.emails.send')
-    def test_perform_one_user(self, mock_send):
-        """Tests that send is called once from perform"""
+    def test_user_performing_action_no_email(self, mock_send):
+        """Makes sure user who performed the action is not included in the notifications"""
+        self.sub.email_digest.append(self.user_2)
+        self.sub.save()
         self.event.perform()
-        assert_true(mock_send.called)
+        assert_equal(0, mock_send.call_count)
+
+    @mock.patch('website.notifications.emails.send')
+    def test_perform_send_called_once(self, mock_send):
+        """Tests that send is called once from perform"""
+        self.sub.email_transactional.append(self.user_1)
+        self.sub.save()
+        self.event.perform()
+        assert_equal(1, mock_send.call_count)
+
+    @mock.patch('website.notifications.emails.send')
+    def test_perform_send_one_of_each(self, mock_send):
+        """Tests that send is called 3 times, one in each category"""
+        self.sub.email_transactional.append(self.user_1)
+        self.project.add_contributor(self.user_3, permissions=['write', 'read'], auth=self.auth)
+        self.project.save()
+        self.private_node.add_contributor(self.user_3, permissions=['write', 'read'], auth=self.auth)
+        self.private_node.save()
+        self.sub.email_digest.append(self.user_3)
+        self.sub.save()
+        self.project.add_contributor(self.user_4, permissions=['write', 'read'], auth=self.auth)
+        self.project.save()
+        self.file_sub.email_digest.append(self.user_4)
+        self.file_sub.save()
+        self.event.perform()
+        assert_equal(3, mock_send.call_count)
 
     def test_warn_one_user(self):
+        """Tests that a user with a sub in the origin node gets a warning that they are no longer tracking the file."""
+        self.sub.email_transactional.append(self.user_1)
         self.project.add_contributor(self.user_3, permissions=['write', 'read'], auth=self.auth)
         self.project.save()
         self.private_node.add_contributor(self.user_3, permissions=['write', 'read'], auth=self.auth)
@@ -133,9 +164,10 @@ class TestFileMoved(OsfTestCase):
         moved, warn, removed = self.event.categorize_users()
         assert_equal({'email_transactional': [], 'email_digest': [self.user_3._id]}, warn)
         assert_equal({'email_transactional': [self.user_1._id], 'email_digest': []}, moved)
-        print (warn, moved, removed)
+        # print (warn, moved, removed)
 
     def test_dont_warn_same_user(self):
+        """Doesn't warn a user with two different subs, but does send a moved email"""
         self.project.add_contributor(self.user_3, permissions=['write', 'read'], auth=self.auth)
         self.project.save()
         self.private_node.add_contributor(self.user_3, permissions=['write', 'read'], auth=self.auth)
@@ -146,24 +178,17 @@ class TestFileMoved(OsfTestCase):
         self.private_sub.save()
         moved, warn, removed = self.event.categorize_users()
         assert_equal({'email_transactional': [], 'email_digest': []}, warn)
-        print (warn, moved, removed)
+        assert_equal({'email_transactional': [self.user_3._id], 'email_digest': []}, moved)
+        # print (warn, moved, removed)
 
     def test_remove_one_user_file(self):
-        pass
-
-    def test_remove_one_warn_another_user_file(self):
-        pass
-
-    @mock.patch('website.notifications.emails.send')
-    @mock.patch('website.notifications.events.model.warn_users_removed_from_subscription')
-    def test_just_warn_project_subs(self, mock_warn, mock_send):
         self.project.add_contributor(self.user_3, permissions=['write', 'read'], auth=self.auth)
         self.project.save()
-        self.sub.email_digest.append(self.user_3)
-        self.sub.save()
-        self.event.perform()
-        assert_true(mock_warn.called)
-        assert_false(mock_send)
+        self.file_sub.email_digest.append(self.user_3)
+        self.file_sub.save()
+        moved, warn, removed = self.event.categorize_users()
+        assert_equal({'email_transactional': [], 'email_digest': [self.user_3._id], 'none': []}, removed)
+        # print (moved, warn, removed)
 
     def tearDown(self):
         pass

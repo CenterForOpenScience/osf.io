@@ -321,15 +321,31 @@ class AddonFileMoved(ComplexFileEvent):
             warn[notifications] = subbed
             remove[notifications].extend(removed)
             remove[notifications] = list(set(remove[notifications]))
-
+        # Remove duplicates in different types
         for notifications in NOTIFICATION_TYPES:
+            if notifications == 'none':
+                continue
             for nt in NOTIFICATION_TYPES:
-                if notifications == 'none' or nt == 'none':
+                if nt == 'none':
                     continue
                 if nt != notifications:
                     warn[notifications] = list(set(warn[notifications]).difference(set(new_subs[nt])))
                     move[notifications] = list(set(move[notifications]).difference(set(new_subs[nt])))
+        # Remove final duplicates in all types
+        for notifications in NOTIFICATION_TYPES:
+            if notifications == 'none':
+                continue
+            for nt in NOTIFICATION_TYPES:
+                if nt == 'none':
+                    continue
                 move[notifications] = list(set(move[notifications]).difference(set(warn[nt])))
+            user_id = self.user._id
+            if user_id in warn[notifications]:
+                warn[notifications].remove(user_id)
+            if user_id in move[notifications]:
+                move[notifications].remove(user_id)
+            if user_id in remove[notifications]:
+                remove[notifications].remove(user_id)
 
         return move, warn, remove
 
