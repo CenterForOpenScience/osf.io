@@ -119,11 +119,15 @@ class TestUserIncludeQueryParameters(ApiTestCase):
 
     def setUp(self):
         super(TestUserIncludeQueryParameters, self).setUp()
-        self.user_one = UserFactory.build()
-        self.user_one.set_password('justapoorboy')
-        self.user_one.save()
-        self.auth_one = (self.user_one.username, 'justapoorboy')
-        self.url = "/{}users/{}/".format(API_BASE, self.user_one._id)
+        self.user = UserFactory.build()
+        self.user.set_password('justapoorboy')
+        self.user.save()
+        self.auth_one = (self.user.username, 'justapoorboy')
+
+        self.project = ProjectFactory.build(title='project', is_public=True, creator=self.user)
+        self.project.save()
+
+        self.url = "/{}users/{}/".format(API_BASE, self.user._id)
 
     def tearDown(self):
         super(TestUserIncludeQueryParameters, self).tearDown()
@@ -136,38 +140,12 @@ class TestUserIncludeQueryParameters(ApiTestCase):
         additional_query_params = res.json['data']['additional_query_params']
         assert_in('nodes', additional_query_params)
 
-    # def test_get_invalid_include_key(self):
-    #     self.url += '?include=freddiemercury/'
-    #     res = self.app.get(self.url, expect_errors=True)
-    #     assert_equal(res.status_code, 404)
-
-    def test_get_include_list_key(self):
-        self.url += '?include=nodes,registrations'
+    def test_get_include_values(self):
+        self.url += '?include=nodes'
         res = self.app.get(self.url)
         assert_equal(res.status_code, 200)
         additional_query_params = res.json['data']['additional_query_params']
-        assert_in('nodes', additional_query_params)
-        assert_in('registrations', additional_query_params)
-
-    def test_get_include_relationship_key(self):
-        self.url += '?include=nodes.relations'
-        res = self.app.get(self.url)
-        assert_equal(res.status_code, 200)
-        additional_query_params = res.json['data']['additional_query_params']
-        assert_in('relations', additional_query_params['nodes'])
-
-    def test_get_include_relationship_and_list_key(self):
-        self.url += '?include=nodes.relations,registrations'
-        res = self.app.get(self.url)
-        assert_equal(res.status_code, 200)
-        additional_query_params = res.json['data']['additional_query_params']
-        assert_in('relations', additional_query_params['nodes'])
-        assert_in('registrations', additional_query_params)
-
-    # def test_get_invalid_include_relationship_key(self):
-    #     self.url += '/?include=nodes.nope'
-    #     res = self.app.get(self.url, expect_errors=True)
-    #     assert_equal(res.status_code, 404)
+        assert_in(self.project._id, additional_query_params['nodes'])
 
 
 class TestUserNodes(ApiTestCase):
