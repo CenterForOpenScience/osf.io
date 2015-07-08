@@ -2,9 +2,7 @@
 
 ## Use full page width
 <%def name="container_class()">container-xxl</%def>
-% if extras.get('extra').get('md5'):
-    ${extras.get('extra').get('md5')}
-% endif
+
 <%def name="title()">${file_name | h}</%def>
 
 <div class="row">
@@ -17,11 +15,18 @@
     </h2>
   </div>
   <div class="col-sm-7">
+
+      % if extras.get('extra').get('md5'):
+          <a id="md5" style="margin-top:20px" class="pull-right btn btn-sm btn-primary">
+            md5: "${extras.get('extra').get('md5')}"
+          </a>
+      % endif
     <div id="toggleBar" class="pull-right"></div>
   </div>
 </div>
 <hr>
 <div class="row">
+    <div
 
   <div id="file-navigation" class="panel-toggle col-sm-3 file-tree">
     <div class="osf-panel panel panel-default osf-panel-hide osf-panel-flex reset-height">
@@ -196,3 +201,4 @@
     <script src=${"/static/public/js/file-page.js" | webpack_asset}></script>
     <script src=${"/static/public/js/view-file-tree-page.js" | webpack_asset}></script>
 </%def>
+
