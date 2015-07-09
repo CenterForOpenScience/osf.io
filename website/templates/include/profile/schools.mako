@@ -22,16 +22,15 @@
                         </span>
                         <a
                                 class="text-danger pull-right"
-                                data-bind="click: $parent.removeContent,
-                                           visible: $parent.canRemove"
+                                data-bind="click: $parent.removeContent"
                             >Remove</a>
                     </div>
 
                     <div class="form-group">
                         <label>Institution</label>
-                        <input class="form-control" data-bind="value: institution" 
-                            placeholder="Required" />
-                        <div data-bind="visible: $parent.showMessages, css:'text-danger'">
+                       <input class="form-control" data-bind="value: institution"
+                            placeholder="Required"/>
+                         <div data-bind="visible: $parent.showMessages, css:'text-danger'">
                             <p data-bind="validationMessage: institution"></p>
                         </div>
                     </div>
@@ -96,7 +95,7 @@
             </div>
 
             <div>
-                <a class="btn btn-default" data-bind="click: addContent">
+                <a class="btn btn-default" data-bind="disable, click: addContent">
                     Add another
                 </a>
             </div>

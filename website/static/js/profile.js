@@ -1,5 +1,6 @@
 'use strict';
 
+/*global require */
 var $ = require('jquery');
 var ko = require('knockout');
 var bootbox = require('bootbox');
@@ -11,6 +12,8 @@ require('knockout-sortable');
 var $osf = require('./osfHelpers');
 var koHelpers = require('./koHelpers');
 require('js/objectCreateShim');
+var SCHOOLS = 1;
+var JOBS = 2;
 
 var socialRules = {
     orcid: /orcid\.org\/([-\d]+)/i,
@@ -206,12 +209,14 @@ var BaseViewModel = function(urls, modes, preventUnsaved) {
 
     // Must be set after isValid is defined in inherited view models
     self.hasValidProperty = ko.observable(false);
+    self.nameFieldEmpty = ko.observable(false);
+    self.extraFieldsEmpty = ko.observable(false);
 
     // Warn on URL change if dirty
     if (preventUnsaved !== false) {
         $(window).on('beforeunload', function() {
             if (self.dirty()) {
-                return 'There are unsaved changes to your settings.';
+                return 'You have unsaved changes to your settings.';
             }
         });
     }
@@ -219,7 +224,7 @@ var BaseViewModel = function(urls, modes, preventUnsaved) {
     // Warn on tab change if dirty
     $('body').on('show.bs.tab', function() {
         if (self.dirty()) {
-            $osf.growl('There are unsaved changes to your settings.',
+            $osf.growl('There are unsaved changes.',
                     'Please save or discard your changes before switching ' +
                     'tabs.');
             return false;
@@ -264,6 +269,9 @@ BaseViewModel.prototype.handleSuccess = function() {
 BaseViewModel.prototype.handleError = function(response) {
     var defaultMsg = 'Could not update settings';
     var msg = response.message_long || defaultMsg;
+
+ 
+
     this.changeMessage(
         msg,
         'text-danger',
@@ -283,7 +291,7 @@ BaseViewModel.prototype.fetch = function(callback) {
         url: this.urls.crud,
         dataType: 'json',
         success: [this.unserialize.bind(this), self.setOriginal.bind(self), callback.bind(self)],
-        error: this.handleError.bind(this, 'Could not fetch data')
+        error: this.handleError.bind(this, 'Could not retrieve your data')
     });
 };
 
@@ -295,7 +303,9 @@ BaseViewModel.prototype.edit = function() {
 
 BaseViewModel.prototype.cancel = function(data, event) {
     var self = this;
-    event && event.preventDefault();
+    if (event) {
+            event.preventDefault();
+    }
 
     if (this.dirty()) {
         bootbox.confirm({
@@ -320,19 +330,27 @@ BaseViewModel.prototype.cancel = function(data, event) {
 
 BaseViewModel.prototype.submit = function() {
     if (this.hasValidProperty() && this.isValid()) {
-        $osf.putJSON(
-            this.urls.crud,
-            this.serialize()
-        ).done(
-            this.handleSuccess.bind(this)
-        ).done(
-            this.setOriginal.bind(this)
-        ).fail(
-            this.handleError.bind(this)
-        );
-    } else {
-        this.showMessages(true);
+        // Name on Name view is empty
+        if (this.nameFieldEmpty()) {
+            $osf.growl('Please enter Full Name before pressing "Save"');
+        }
+          else {
+            $osf.putJSON(
+                this.urls.crud,
+                this.serialize()
+            ).done(
+                this.handleSuccess.bind(this)
+            ).done(
+                this.setOriginal.bind(this)
+            ).fail(
+                this.handleError.bind(this)
+            );
+        }
     }
+    else {
+            this.showMessages(true);
+    }
+
 };
 
 var NameViewModel = function(urls, modes, preventUnsaved, fetchCallback) {
@@ -359,6 +377,11 @@ var NameViewModel = function(urls, modes, preventUnsaved, fetchCallback) {
     self.isValid = ko.computed(function() {
         return validated.isValid();
     });
+
+    self.nameFieldEmpty = ko.computed(function () {
+        return (self.full() === '');
+    });
+    
     self.hasValidProperty(true);
 
     self.citations = ko.observable();
@@ -444,7 +467,9 @@ $.extend(NameViewModel.prototype, SerializeMixin.prototype, TrackedMixin.prototy
 var extendLink = function(obs, $parent, label, baseUrl) {
     obs.url = ko.computed(function($data, event) {
         // Prevent click from submitting form
-        event && event.preventDefault();
+        if (event) {
+            event.preventDefault();
+        }
         if (obs()) {
             return baseUrl ? baseUrl + obs() : obs();
         }
@@ -577,6 +602,39 @@ var ListViewModel = function(ContentModel, urls, modes) {
         }
         return true;
     });
+
+    self.institutionsEmpty = ko.computed(function() {
+        for (var i=0; i<self.contents().length; i++) {
+            if (self.contents()[i].institutionEmpty()) {
+                return true;
+            }
+        }
+        return false;
+    });
+
+    self.jobsOrSchools = ko.computed(function() {
+        if (urls.crud.indexOf('jobs') !== -1) { return JOBS; }
+        if (urls.crud.indexOf('schools') !== -1) { return SCHOOLS; }
+    });
+
+    self.extraFieldsEmpty = ko.computed(function() {
+        if (self.jobsOrSchools() === JOBS) {
+            for (var i=0; i<self.contents().length; i++) {
+                if (self.contents()[i].department() === '' && self.contents()[i].title() === '') {
+                    return true;
+                }
+            }
+        }
+        else if (self.jobsOrSchools() === SCHOOLS) {
+            for (var j=0; j<self.contents().length; j++) {
+                if (self.contents()[j].department() === '' && self.contents()[j].degree() === '') {
+                    return true;
+                }
+            }
+        }
+        return false;
+    });
+
     self.hasMultiple = ko.computed(function() {
         return self.contents().length > 1;
     });
@@ -641,7 +699,19 @@ ListViewModel.prototype.addContent = function() {
 
 ListViewModel.prototype.removeContent = function(content) {
     var idx = this.contents().indexOf(content);
-    this.contents.splice(idx, 1);
+    //  If there is more then one model, then delete it.  If there is only one, then delete it and add another.
+    if (this.hasMultiple()) {
+        this.contents.splice(idx, 1);
+    }
+    else {
+        this.contents.splice(idx, 1);
+        this.contents.push(new this.ContentModel(this));
+    }
+        this.changeMessage(
+            'Institution Removed',
+            'text-danger',
+            5000
+        );
 };
 
 ListViewModel.prototype.unserialize = function(data) {
@@ -665,16 +735,47 @@ ListViewModel.prototype.unserialize = function(data) {
 
 ListViewModel.prototype.serialize = function() {
     var contents = [];
-    if (this.contents().length !== 0 && typeof(this.contents()[0].serialize() !== undefined)) {
+    if (this.contents().length !== 0 && typeof(this.contents()[0].serialize()) !== 'undefined') {
         for (var i=0; i < this.contents().length; i++) {
-            contents.push(this.contents()[i].serialize());
+            // If the requiredField is empty, it will not save it and will delete the blank structure from the database.  
+            if (!( this.contents()[i].institutionEmpty() && this.hasMultiple() )) {
+                contents.push(this.contents()[i].serialize());
+            }
+            else  {
+                this.contents.splice(i, 1);
+            }
         }
     }
     else {
         contents = ko.toJS(this.contents);
     }
-
     return {contents: contents};
+};
+
+ListViewModel.prototype.submit = function() {
+    var self = this;
+    /* In Schools or Jobs, either institution field is empty but other data exists in the object or institution is empty and there is only one                  object.  If the whole object is empty and there are multiple, it will be automatically deleted in ListViewModel.prototype.serialize  */
+    if (self.hasValidProperty() && self.isValid()) {
+        if (self.institutionsEmpty() && !self.extraFieldsEmpty()) {
+            $osf.growl('Please enter Institution before pressing "Save"');            
+        }  
+          else {
+            $osf.putJSON(
+                self.urls.crud,
+                self.serialize()
+            ).done(
+                self.handleSuccess.bind(self)
+            ).done(
+                self.setOriginal.bind(self)
+            ).fail(
+                self.handleError.bind(self)
+            );
+        } 
+    } 
+    else {
+            self.showMessages(true);
+    }
+
 };
 
 var JobViewModel = function() {
@@ -682,7 +783,7 @@ var JobViewModel = function() {
     DateMixin.call(self);
     TrackedMixin.call(self);
 
-    self.institution = ko.observable('').extend({required: true, trimmed: true});
+    self.institution = ko.observable('').extend({trimmed: true});
     self.department = ko.observable('').extend({trimmed: true});
     self.title = ko.observable('').extend({trimmed: true});
 
@@ -700,6 +801,12 @@ var JobViewModel = function() {
     self.isValid = ko.computed(function() {
         return validated.isValid();
     });
+    
+    self.institutionEmpty = ko.computed(function() {
+        return (self.institution() === '');
+    });
+
+
 };
 $.extend(JobViewModel.prototype, DateMixin.prototype, TrackedMixin.prototype);
 
@@ -726,13 +833,17 @@ var SchoolViewModel = function() {
     self.isValid = ko.computed(function() {
         return validated.isValid();
     });
+    
+    self.institutionEmpty = ko.computed(function() {
+        return (self.institution() === '');
+    });
+
 };
 $.extend(SchoolViewModel.prototype, DateMixin.prototype, TrackedMixin.prototype);
 
 var JobsViewModel = function(urls, modes) {
     var self = this;
     ListViewModel.call(self, JobViewModel, urls, modes);
-
     self.fetch();
 };
 JobsViewModel.prototype = Object.create(ListViewModel.prototype);
@@ -768,6 +879,7 @@ var Schools = function(selector, urls, modes) {
     $osf.applyBindings(this.viewModel, selector);
 };
 
+/*global module */
 module.exports = {
     Names: Names,
     Social: Social,

@@ -13,14 +13,14 @@
     <div id="accountSettings">
         <h2 class="page-header">Account Settings</h2>
         <div class="row">
-            <div class="col-md-3">
-                <div class="panel panel-default">
-                    <ul class="nav nav-stacked nav-pills">
-                        <li><a href="${ web_url_for('user_profile') }">Profile Information</a></li>
-                        <li><a href="#">Account Settings</a></li>
-                        <li><a href="${ web_url_for('user_addons') }">Configure Add-ons</a></li>
-                        <li><a href="${ web_url_for('user_notifications') }">Notifications</a></li>
-                    </ul>
+            <div class="col-md-3 affix-parent">
+                    <div class="osf-affix profile-affix" data-spy="affix" data-offset-top="70" data-offset-bottom="268">
+                        <ul class="nav nav-stacked nav-pills">
+                            <li><a href="${ web_url_for('user_profile') }">Profile Information</a></li>
+                            <li class="active"><a href="#">Account Settings</a></li>
+                            <li><a href="${ web_url_for('user_addons') }">Configure Add-on Accounts</a></li>
+                            <li><a href="${ web_url_for('user_notifications') }">Notifications</a></li>
+                        </ul>
                 </div>
             </div>
             <div class="col-md-6">
@@ -94,19 +94,30 @@
                         <form id="changePasswordForm" role="form" action="${ web_url_for('user_account_password') }" method="post">
                             <div class="form-group">
                                 <label for="old_password">Old password</label>
-                                <input type="password" class="form-control" name="old_password">
+                                <input type="password" class="form-control" name="old_password" required>
                             </div>
                             <div class="form-group">
                                 <label for="new_password">New password</label>
-                                <input type="password" class="form-control" name="new_password">
+                                <input type="password" class="form-control" name="new_password" required>
                             </div>
                             <div class="form-group">
                                 <label for="confirm_password">Confirm new password</label>
-                                <input type="password" class="form-control" name="confirm_password">
+                                <input type="password" class="form-control" name="confirm_password" required>
                             </div>
                             <button type="submit" class="btn btn-primary">Update password</button>
                         </form>
                     </div>
+                </div>
+				<div class="panel panel-default">
+                  <div class="panel-heading"><h3 class="panel-title">Security Settings</h3></div>
+                  <div class="panel-body">                
+                    % for addon in addons:
+                    ${render_user_settings(addon) }
+                    % if not loop.last:
+                    <hr />
+                    % endif              
+                    % endfor              
+                  </div>
                 </div>
                 <div id="exportAccount" class="panel panel-default">
                     <div class="panel-heading clearfix"><h3 class="panel-title">Export Account Data</h3></div>
@@ -127,4 +138,26 @@
         </div>
     </div>
     <script src=${"/static/public/js/profile-account-settings-page.js" | webpack_asset}></script>
+</%def>
+
+<%def name="stylesheets()">
+  ${parent.stylesheets()}
+  % for stylesheet in addons_css:
+      <link rel="stylesheet" type="text/css" href="${stylesheet}">
+  % endfor
+</%def>
+
+<%def name="render_user_settings(config)">
+    <%
+       template = config['user_settings_template']
+       tpl = template.render(**config)
+    %>
+    ${tpl}
+</%def>
+
+<%def name="javascript_bottom()">
+    ## Webpack bundles
+    % for js_asset in addons_js:
+      <script src="${js_asset | webpack_asset}"></script>
+    % endfor
 </%def>

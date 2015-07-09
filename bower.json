@@ -10,6 +10,7 @@
     "MathJax": "^2.5",
     "jquery.tagsinput": "1.3.2",
     "jquery-autosize": "1.18.15",
+    "jquery-qrcode": "https://github.com/samanehsan/jquery-qrcode.git#5edbf81811b128a6df62bee4cff37892de3ac894",
     "reconnectingWebsocket": "#07669519f8",
     "truncate": "https://github.com/pathable/truncate.git#5da408e2325dd965e0c94c354622ad54645824b9",
     "xhook": "1.3.0",

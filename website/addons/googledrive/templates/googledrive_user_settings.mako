@@ -2,20 +2,21 @@
 
 <div id="googleDriveAddonScope" class="addon-settings scripted">
 <h4 class="addon-title">
+      <img class="addon-icon" src="${addon_icon_url}"></img>
     Google Drive
     <small>
         <!-- Delete Access Token Button-->
         <span data-bind="if: userHasAuth() && loaded()">
             authorized
-            <span data-bind="if: username()">by {{ username }}</span>
+            <span data-bind="if: username()">by <em>{{ username }}</em></span>
             <a data-bind="click:deleteKey" class="text-danger pull-right addon-auth">
-                Delete Access Token
+               Disconnect Acount
             </a>
         </span>
         <!-- Create Access Token Button -->
         <span data-bind="if: !userHasAuth() && loaded()">
             <a data-bind="attr.href: urls().create" class="text-primary pull-right addon-auth">
-                Create Access Token
+            Connect Account
             </a>
         </span>
     </small>
