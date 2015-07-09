@@ -455,7 +455,7 @@ var RegistrationManager = function(node, draftsSelector, editorSelector, control
     self.drafts = ko.observableArray();
 
     self.loading = ko.observable(true);
-    
+
     self.preview = ko.observable(false);
 
     // bound functions
@@ -477,7 +477,7 @@ var RegistrationManager = function(node, draftsSelector, editorSelector, control
         };
     });
 
-    self.controls.showManager();    
+    self.controls.showManager();
 };
 RegistrationManager.prototype.init = function() {
     var self = this;
@@ -600,7 +600,7 @@ RegistrationManager.prototype.beforeCreateDraft = function() {
     var node = self.node;
 
     self.selectedSchema(self.schemas()[0]);
-    self.preview(true);    
+    self.preview(true);
 };
 RegistrationManager.prototype.createDraft = function() {
     var self = this;

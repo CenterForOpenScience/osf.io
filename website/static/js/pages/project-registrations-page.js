@@ -23,7 +23,7 @@ $(document).ready(function() {
             $('#editDraftsControl').removeClass('disabled');
             $('#editDraftsControl').tab('show');
         },
-        showManager: function() {            
+        showManager: function() {
             $('#draftsControl').tab('show');
         }
     });
