@@ -117,7 +117,7 @@ var FileRevisionsTable = {
                     ) : false,
                 model.hasMd5 ? m('td',
                     m( self.buttonToText[revision.displayVersion] || 'a.btn.btn-primary.btn-sm', {
-                        style: {wordBreak: "break-all"},
+                        style: {wordBreak: 'break-all'},
                         onclick: function() {
                             if ((self.md5[revision.displayVersion] === 'MD5') ||
                                 (typeof self.md5[revision.displayVersion] === 'undefined')){
