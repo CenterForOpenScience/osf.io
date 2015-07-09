@@ -49,7 +49,7 @@ def serialize_revision(node, record, version, index, anon=False):
         'index': index + 1,
         'date': version.date_created.isoformat(),
         'downloads': record.get_download_count(version=index),
-        'md5': version.metadata['md5']
+        'md5': version.metadata.get('md5')
     }
 
 
