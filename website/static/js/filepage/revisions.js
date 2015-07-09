@@ -30,8 +30,10 @@ var FileRevisionsTable = {
         self.canEdit = canEdit;
         self.enableEditing = enableEditing;
         self.baseUrl = (window.location.href).split('?')[0];
+        self.md5 = 'MD5';
+        self.buttonToText = 'a.btn.btn-primary.btn-sm';
 
-        model.hasMd5 = self.file.provider === 'osfstorage' || 's3';
+        model.hasMd5 = (self.file.provider === 'osfstorage') || (self.file.provider === 's3');
         model.hasDate = self.file.provider !== 'dataverse';
 
         self.reload = function() {
@@ -94,7 +96,7 @@ var FileRevisionsTable = {
                     m('th', 'Version ID'),
                     model.hasDate ? m('th', 'Date') : false,
                     model.hasUser ? m('th', 'User') : false,
-                    model.hasMd5 ? m('th', 'md5 hash') : false,
+                    model.hasMd5 ? m('th', 'Hashes') : false,
                     m('th[colspan=2]', 'Download'),
                 ].filter(TRUTHY))
             ]);
@@ -113,7 +115,18 @@ var FileRevisionsTable = {
                             m('a', {href: revision.extra.user.url}, revision.extra.user.name) :
                             revision.extra.user.name
                     ) : false,
-                model.hasMd5 ? m('td', revision.extra.md5) : false,
+                model.hasMd5 ? m('td',
+                    m( self.buttonToText, {
+                        onclick: function() {
+                            if (self.md5 === 'MD5') {
+                                self.md5 = revision.extra.md5
+                                self.buttonToText = 'td'
+                            } else {
+                                self.md5 = 'MD5'
+                                self.buttonToText = 'a.btn.btn-primary.btn-sm'
+                            }
+                        }
+                    }, m('td', self.md5) )) : false,
                 m('td', revision.extra.downloads > -1 ? m('.badge', revision.extra.downloads) : ''),
                 m('td',
                     m('a.btn.btn-primary.btn-sm.file-download', {
