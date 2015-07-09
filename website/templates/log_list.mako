@@ -64,7 +64,7 @@
                                 <!-- /ko -->
                             <!-- /ko -->
 
-
+                        <script src="/website/static/js/responsive-paginate.js"></script>
                             <!-- For debugging purposes: If a log template for a the Log can't be found, show
                                 an error message with its log action. -->
                             <!-- ko ifnot: log.hasTemplate() -->
@@ -73,14 +73,16 @@
                         </dd>
                     </dl><!-- end foreach logs -->
                 </span>
+                <script>
+
+                </script>
                 <div class='help-block absolute-bottom'>
                     <ul class="pagination pagination-sm" data-bind="foreach: paginators">
-                        <li data-bind="css: style"><a href="#" data-bind="click: handler, html: text"></a></li>
+                        <li class="left-etc"data-bind="css: style"><a href="#" data-bind="click: handler, html: text"></a></li>
                     </ul>
                 </div>
-
             </div> 
         </div>
-</div>
+
 </div><!-- end #logScope -->
 <%include file="_log_templates.mako"/>

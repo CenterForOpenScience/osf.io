@@ -4,10 +4,8 @@
 'use strict';
 var ko = require('knockout');
 var oop = require('js/oop');
-var MAX_PAGES_ON_PAGINATOR = 18;
-var MAX_PAGES_ON_PAGINATOR_SIDE = 18;
-
-
+var MAX_PAGES_ON_PAGINATOR = 17;
+var MAX_PAGES_ON_PAGINATOR_SIDE = 15;
 
 
 var Paginator = oop.defclass({
@@ -16,7 +14,24 @@ var Paginator = oop.defclass({
         this.numberOfPages = ko.observable(0);
         this.currentPage = ko.observable(0);
         this.paginators = ko.observableArray([]);
+
     },
+
+    //addMakeResponsive: function() {
+    //    var self = this;
+    //    var i;
+    //    self.makeResponsive = function () {
+    //         $('#pagination-demo').twbsPagination({
+    //            totalPages: 35,
+    //            visiblePages: 7,
+    //            onPageClick: function (event, page) {
+    //        $('#page-content').text('Page ' + page);
+    //    }
+    //});
+    //    }
+    //
+    //},
+
     addNewPaginators: function() {
         var self = this;
         var i;
@@ -37,6 +52,7 @@ var Paginator = oop.defclass({
                     self.fetchResults();
                 }
             });
+
             if (self.numberOfPages() <= MAX_PAGES_ON_PAGINATOR) {
                 for (i = 1; i < self.numberOfPages() - 1; i++) {
                     self.paginators.push({
@@ -124,6 +140,7 @@ var Paginator = oop.defclass({
             });
         }
     },
+
     nextPage: function(){
         this.pageToGet(this.currentPage() + 1);
         this.fetchResults();
@@ -136,6 +153,5 @@ var Paginator = oop.defclass({
         throw new Error('Paginator subclass must define a "fetchResults" method.');
     }
 });
-
 
 module.exports = Paginator;

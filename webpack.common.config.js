@@ -69,6 +69,7 @@ var entry = {
         'js/fangorn',
         'js/citations',
         'js/osfHelpers',
+        'js/responsive-paginate',
         'mithril'
     ]
 };
