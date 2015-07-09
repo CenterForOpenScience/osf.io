@@ -7,14 +7,14 @@ from framework.auth import Auth
 
 from website.admin.model import Role
 
-def must_be_super(super_type):
+def must_be_super_on(group):
     def wrapper(func):
 
         @functools.wraps(func)
         def wrapped(*args, **kwargs):
 
             kwargs['auth'] = Auth.from_kwargs(request.args.to_dict(), kwargs)
-            user_role = Role.for_user(kwargs['auth'].user, type=super_type)
+            user_role = Role.for_user(kwargs['auth'].user, group=group)
             if not user_role or not user_role.is_super:
                 raise HTTPError(http.NOT_AUTHORIZED)
             return func(*args, **kwargs)
