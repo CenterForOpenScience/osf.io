@@ -5,7 +5,6 @@ import json
 import uuid
 import httplib
 import functools
-import requests
 
 import furl
 from flask import request
@@ -291,6 +290,7 @@ def create_waterbutler_log(payload, **kwargs):
 def addon_view_or_download_file_legacy(**kwargs):
     query_params = request.args.to_dict()
     node = kwargs.get('node') or kwargs['project']
+
     action = query_params.pop('action', 'view')
     provider = kwargs.get('provider', 'osfstorage')
 
@@ -335,7 +335,6 @@ def addon_view_or_download_file_legacy(**kwargs):
 @must_be_valid_project
 @must_be_contributor_or_public
 def addon_view_or_download_file(auth, path, provider, **kwargs):
-
     extras = request.args.to_dict()
     action = extras.get('action', 'view')
     node = kwargs.get('node') or kwargs['project']

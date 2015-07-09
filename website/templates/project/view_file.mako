@@ -4,7 +4,6 @@
 <%def name="container_class()">container-xxl</%def>
 
 <%def name="title()">${file_name | h}</%def>
-
 <div class="row">
   <div class="col-sm-5">
     <h2 class="break-word">
@@ -20,7 +19,6 @@
 </div>
 <hr>
 <div class="row">
-    <div
 
   <div id="file-navigation" class="panel-toggle col-sm-3 file-tree">
     <div class="osf-panel panel panel-default osf-panel-hide osf-panel-flex reset-height">
@@ -195,4 +193,3 @@
     <script src=${"/static/public/js/file-page.js" | webpack_asset}></script>
     <script src=${"/static/public/js/view-file-tree-page.js" | webpack_asset}></script>
 </%def>
-

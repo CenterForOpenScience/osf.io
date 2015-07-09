@@ -104,6 +104,7 @@ var FileRevisionsTable = {
 
         self.makeTableRow = function(revision, index) {
             var isSelected = index === model.selectedRevision;
+
             return m('tr' + (isSelected ? '.active' : ''), [
                 m('td',  isSelected ? revision.displayVersion :
                   m('a', {href: parseInt(revision.displayVersion) === model.revisions.length ? self.baseUrl : revision.osfViewUrl}, revision.displayVersion)
@@ -119,11 +120,11 @@ var FileRevisionsTable = {
                         onclick: function() {
                             if ((self.md5[revision.displayVersion] === 'MD5') ||
                                 (typeof self.md5[revision.displayVersion] === 'undefined')){
-                                self.md5[revision.displayVersion] = revision.displayMd5
-                                self.buttonToText[revision.displayVersion] = 'td'
+                                self.md5[revision.displayVersion] = revision.displayMd5;
+                                self.buttonToText[revision.displayVersion] = 'td';
                             } else {
-                                self.md5[revision.displayVersion] = 'MD5'
-                                self.buttonToText[revision.displayVersion] = 'a.btn.btn-primary.btn-sm'
+                                self.md5[revision.displayVersion] = 'MD5';
+                                self.buttonToText[revision.displayVersion] = 'a.btn.btn-primary.btn-sm';
                             }
                         }
                     }, m('td', self.md5[revision.displayVersion] || 'MD5') )) : false,
@@ -189,6 +190,7 @@ var FileRevisionsTable = {
                     'latest': 'Draft',
                     'latest-published': 'Published'
                 };
+                
                 revision.displayVersion = revision.version in displayMap ?
                     displayMap[revision.version] : revision.version.substring(0, 8);
                 break;
