@@ -30,8 +30,8 @@ var FileRevisionsTable = {
         self.canEdit = canEdit;
         self.enableEditing = enableEditing;
         self.baseUrl = (window.location.href).split('?')[0];
-        self.md5 = 'MD5';
-        self.buttonToText = 'a.btn.btn-primary.btn-sm';
+        self.md5 = [];
+        self.buttonToText = [];
 
         model.hasMd5 = (self.file.provider === 'osfstorage') || (self.file.provider === 's3');
         model.hasDate = self.file.provider !== 'dataverse';
@@ -104,7 +104,6 @@ var FileRevisionsTable = {
 
         self.makeTableRow = function(revision, index) {
             var isSelected = index === model.selectedRevision;
-            //debugger;
             return m('tr' + (isSelected ? '.active' : ''), [
                 m('td',  isSelected ? revision.displayVersion :
                   m('a', {href: parseInt(revision.displayVersion) === model.revisions.length ? self.baseUrl : revision.osfViewUrl}, revision.displayVersion)
@@ -116,17 +115,18 @@ var FileRevisionsTable = {
                             revision.extra.user.name
                     ) : false,
                 model.hasMd5 ? m('td',
-                    m( self.buttonToText, {
+                    m( self.buttonToText[revision.displayVersion] || 'a.btn.btn-primary.btn-sm', {
                         onclick: function() {
-                            if (self.md5 === 'MD5') {
-                                self.md5 = revision.extra.md5
-                                self.buttonToText = 'td'
+                            if ((self.md5[revision.displayVersion] === 'MD5') ||
+                                (typeof self.md5[revision.displayVersion] === 'undefined')){
+                                self.md5[revision.displayVersion] = revision.displayMd5
+                                self.buttonToText[revision.displayVersion] = 'td'
                             } else {
-                                self.md5 = 'MD5'
-                                self.buttonToText = 'a.btn.btn-primary.btn-sm'
+                                self.md5[revision.displayVersion] = 'MD5'
+                                self.buttonToText[revision.displayVersion] = 'a.btn.btn-primary.btn-sm'
                             }
                         }
-                    }, m('td', self.md5) )) : false,
+                    }, m('td', self.md5[revision.displayVersion] || 'MD5') )) : false,
                 m('td', revision.extra.downloads > -1 ? m('.badge', revision.extra.downloads) : ''),
                 m('td',
                     m('a.btn.btn-primary.btn-sm.file-download', {
@@ -204,6 +204,7 @@ var FileRevisionsTable = {
                 options.displayName = parts.slice(0, parts.length - 1).join('') + '-' + revision.modified + '.' + parts[parts.length - 1];
             }
         }
+        revision.displayMd5 = revision.extra.md5;
 
         revision.osfViewUrl = '?' + $.param(options);
         revision.osfDownloadUrl = '?' + $.param($.extend({action: 'download'}, options));

@@ -35,7 +35,6 @@ def serialize_revision(node, record, version, index, md5=None, anon=False):
     :param FileVersion version: The version to serialize
     :param int index: One-based index of version
     """
-
     if anon:
         user = None
     else:

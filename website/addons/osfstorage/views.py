@@ -75,11 +75,12 @@ def osfstorage_update_metadata(node_addon, payload, **kwargs):
 @decorators.autoload_filenode(must_be='file')
 def osfstorage_get_revisions(file_node, node_addon, payload, **kwargs):
     is_anon = has_anonymous_link(node_addon.owner, Auth(private_key=request.args.get('view_only')))
-
     # Return revisions in descending order
     return {
         'revisions': [
-            utils.serialize_revision(node_addon.owner, file_node, version, index=len(file_node.versions) - idx - 1, anon=is_anon, md5=version.metadata['md5'])
+            utils.serialize_revision(node_addon.owner, file_node, version, index=len(file_node.versions) - idx - 1,
+                                     md5=file_node.versions[len(file_node.versions) - idx - 1].metadata['md5'],
+                                     anon=is_anon)
             for idx, version in enumerate(reversed(file_node.versions))
         ]
     }
