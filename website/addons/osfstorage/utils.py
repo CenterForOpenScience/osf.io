@@ -27,7 +27,7 @@ def update_analytics(node, file_id, version_idx):
     update_counter(u'download:{0}:{1}:{2}'.format(node._id, file_id, version_idx))
 
 
-def serialize_revision(node, record, version, index, md5=None, anon=False):
+def serialize_revision(node, record, version, index, anon=False):
     """Serialize revision for use in revisions table.
 
     :param Node node: Root node
@@ -49,7 +49,7 @@ def serialize_revision(node, record, version, index, md5=None, anon=False):
         'index': index + 1,
         'date': version.date_created.isoformat(),
         'downloads': record.get_download_count(version=index),
-        'md5': md5
+        'md5': version.metadata['md5']
     }
 
 

@@ -78,9 +78,7 @@ def osfstorage_get_revisions(file_node, node_addon, payload, **kwargs):
     # Return revisions in descending order
     return {
         'revisions': [
-            utils.serialize_revision(node_addon.owner, file_node, version, index=len(file_node.versions) - idx - 1,
-                                     md5=file_node.versions[len(file_node.versions) - idx - 1].metadata['md5'],
-                                     anon=is_anon)
+            utils.serialize_revision(node_addon.owner, file_node, version, index=len(file_node.versions) - idx - 1, anon=is_anon)
             for idx, version in enumerate(reversed(file_node.versions))
         ]
     }

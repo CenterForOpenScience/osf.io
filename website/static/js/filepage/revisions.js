@@ -33,7 +33,7 @@ var FileRevisionsTable = {
         self.md5 = [];
         self.buttonToText = [];
 
-        model.hasMd5 = (self.file.provider === 'osfstorage') || (self.file.provider === 's3');
+        model.hasMd5 = self.file.provider === 'osfstorage';
         model.hasDate = self.file.provider !== 'dataverse';
 
         self.reload = function() {
@@ -126,7 +126,8 @@ var FileRevisionsTable = {
                                 self.md5[revision.displayVersion] = 'MD5';
                                 self.buttonToText[revision.displayVersion] = 'a.btn.btn-primary.btn-sm';
                             }
-                        }
+                        },
+
                     }, m('td', self.md5[revision.displayVersion] || 'MD5') )) : false,
                 m('td', revision.extra.downloads > -1 ? m('.badge', revision.extra.downloads) : ''),
                 m('td',
@@ -190,7 +191,7 @@ var FileRevisionsTable = {
                     'latest': 'Draft',
                     'latest-published': 'Published'
                 };
-                
+
                 revision.displayVersion = revision.version in displayMap ?
                     displayMap[revision.version] : revision.version.substring(0, 8);
                 break;
