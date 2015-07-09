@@ -30,6 +30,7 @@ from website.profile import utils as profile_utils
 from website.util import web_url_for, paths
 from website.util.sanitize import escape_html
 from website.util.sanitize import strip_html
+from website.util.sanitize import safe_unescape_html_in_results
 from website.views import _render_nodes
 
 
@@ -556,6 +557,7 @@ def serialize_social(auth, uid=None, **kwargs):
     return ret
 
 
+@safe_unescape_html_in_results
 def serialize_job(job):
     return {
         'institution': job.get('institution'),
@@ -569,6 +571,7 @@ def serialize_job(job):
     }
 
 
+@safe_unescape_html_in_results
 def serialize_school(school):
     return {
         'institution': school.get('institution'),
