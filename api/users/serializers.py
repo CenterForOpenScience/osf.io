@@ -60,6 +60,7 @@ class UserSerializer(JSONAPISerializer):
         'job_institution'
 
     ])
+
     parser_classes = (JSONParser,)
     id = ser.CharField(read_only=True, source='_id')
     fullname = ser.CharField(help_text='Display name used in the general user interface')

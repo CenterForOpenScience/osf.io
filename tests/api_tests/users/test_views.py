@@ -13,6 +13,48 @@ class TestUsers(ApiTestCase):
         super(TestUsers, self).setUp()
         self.user_one = UserFactory.build()
         self.user_one.set_password('justapoorboy')
+        self.user_one.save()
+
+        self.user_two = UserFactory.build()
+        self.user_two.set_password('justapoorboy')
+        self.user_two.save()
+
+        self.auth_one = (self.user_one.username, 'justapoorboy')
+        self.auth_two = (self.user_two.username, 'justapoorboy')
+
+    def tearDown(self):
+        super(TestUsers, self).tearDown()
+        Node.remove()
+
+    def test_returns_200(self):
+        res = self.app.get('/{}users/'.format(API_BASE))
+        assert_equal(res.status_code, 200)
+
+    def test_find_user_in_users(self):
+        url = "/{}users/".format(API_BASE)
+
+        res = self.app.get(url)
+        user_son = res.json['data']
+
+        ids = [each['id'] for each in user_son]
+        assert_in(self.user_two._id, ids)
+
+    def test_all_users_in_users(self):
+        url = "/{}users/".format(API_BASE)
+
+        res = self.app.get(url)
+        user_son = res.json['data']
+
+        ids = [each['id'] for each in user_son]
+        assert_in(self.user_one._id, ids)
+        assert_in(self.user_two._id, ids)
+
+class TestUsersFiltering(ApiTestCase):
+
+    def setUp(self):
+        super(TestUsersFiltering, self).setUp()
+        self.user_one = UserFactory.build()
+        self.user_one.set_password('justapoorboy')
         self.user_one.fullname = 'Martin Luther King Jr.'
         self.user_one.given_name = 'Martin'
         self.user_one.family_name = 'King'
@@ -81,33 +123,6 @@ class TestUsers(ApiTestCase):
 
         self.auth_one = (self.user_one.username, 'justapoorboy')
         self.auth_two = (self.user_two.username, 'justapoorboy')
-
-    def tearDown(self):
-        super(TestUsers, self).tearDown()
-        Node.remove()
-
-    def test_returns_200(self):
-        res = self.app.get('/{}users/'.format(API_BASE))
-        assert_equal(res.status_code, 200)
-
-    def test_find_user_in_users(self):
-        url = "/{}users/".format(API_BASE)
-
-        res = self.app.get(url)
-        user_son = res.json['data']
-
-        ids = [each['id'] for each in user_son]
-        assert_in(self.user_two._id, ids)
-
-    def test_all_users_in_users(self):
-        url = "/{}users/".format(API_BASE)
-
-        res = self.app.get(url)
-        user_son = res.json['data']
-
-        ids = [each['id'] for each in user_son]
-        assert_in(self.user_one._id, ids)
-        assert_in(self.user_two._id, ids)
 
     def test_find_multiple_in_users(self):
         url = "/{}users/?filter[fullname]=Martin".format(API_BASE)
