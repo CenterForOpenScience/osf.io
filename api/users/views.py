@@ -1,13 +1,14 @@
 from rest_framework import generics, permissions as drf_permissions
-from rest_framework.exceptions import NotFound
 from modularodm import Q
 
+from api.users.utils import IncludeAdditionalQuery
 from website.models import User, Node
 from framework.auth.core import Auth
 from api.base.utils import get_object_or_404
 from api.base.filters import ODMFilterMixin
 from api.nodes.serializers import NodeSerializer
 from .serializers import UserSerializer
+
 
 class UserMixin(object):
     """Mixin with convenience methods for retrieving the current node based on the
@@ -25,41 +26,6 @@ class UserMixin(object):
         additional_query = IncludeAdditionalQuery(obj, self.request)
         obj.additional_query_params = additional_query.get_additional_query()
         return obj
-
-
-class IncludeAdditionalQuery(object):
-
-    def __init__(self, obj, request):
-        self.obj = obj
-        self.request = request
-
-    def get_additional_query(self):
-        query = {}
-        if 'include' in self.request.query_params:
-            params = self.request.query_params['include'].split(',')
-            if 'nodes' in params:
-                query['nodes'] = self.get_nodes()
-                params.remove('nodes')
-            if params != []:
-                params_string = ', '.join(params)
-                raise NotFound('The following arguments cannot be found: {}'.format(params_string))
-        return query
-
-    def get_nodes(self):
-        nodes = {}
-        query = (
-            Q('contributors', 'eq', self.obj) &
-            Q('is_folder', 'ne', True) &
-            Q('is_deleted', 'ne', True)
-        )
-        node_list = Node.find(query)
-        for node in node_list:
-            nodes[node._id] = {
-                'title': node.title,
-                'description': node.description,
-                'is_public': node.is_public
-            }
-        return nodes
 
 
 class UserList(generics.ListAPIView, ODMFilterMixin):
