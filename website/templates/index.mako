@@ -31,57 +31,6 @@
           <div class="circle" id="circle-7"><span></span></div>
           <div class="circle" id="circle-8"><span></span></div>
         </div>
-        <div id="signUp" class="anchor"></div>
-        <div id="signUpScope" class="col-sm-4 col-md-offset-1 img-rounded hpSignUp">
-            <form data-bind="submit: submit">
-              <div class="form-group"
-                data-bind="css: {'has-error': fullName() && !fullName.isValid(),
-                                'has-success': fullName() && fullName.isValid()}">
-                    <label class="placeholder-replace" style="display:none">Full Name</label>
-                    <input class="form-control" placeholder="Full Name" data-bind="
-                        value: fullName,
-                        disable: submitted(),
-                        event: {
-                            blur: trim.bind($data, fullName)
-                        }"/>
-                    <p class="help-block" data-bind="validationMessage: fullName"></p>
-                </div>
-                <div class="form-group"
-                  data-bind="css: {'has-error': email1() && !email1.isValid(),
-                                    'has-success': email1() && email1.isValid()}">
-                    <label class="placeholder-replace" style="display:none">Contact Email</label>
-                    <input class="form-control" placeholder="Contact Email" data-bind="
-                        value: email1,
-                        disable: submitted(),
-                        event: {
-                            blur: trim.bind($data, email1)
-                        }"/>
-                      <p class="help-block" data-bind="validationMessage: email1"></p>
-                </div>
-                <div class="form-group"
-                  data-bind="css: {'has-error': email2() && !email2.isValid(),
-                                  'has-success': email2() && email2.isValid()}">
-                    <label class="placeholder-replace" style="display:none">Confirm Email</label>
-                    <input class="form-control" placeholder="Confirm Email" data-bind="
-                        value: email2,
-                        disable: submitted(),
-                        event: {
-                            blur: trim.bind($data, email2)
-                        }"/>
-                    <p class="help-block" data-bind="validationMessage: email2"></p>
-                </div>
-                <div class="form-group"
-                  data-bind="css: {'has-error': password() && !password.isValid(),
-                                    'has-success': password() && password.isValid()}">
-                    <label class="placeholder-replace" style="display:none">Password</label>
-                    <input type="password" class="form-control" placeholder="Password (Must be 6 to 35 characters)" data-bind="
-                        value: password,
-                        disable: submitted(),
-                        event: {
-                            blur: trim.bind($data, password)
-                        }"/>
-                      <p class="help-block" data-bind="validationMessage: password"></p>
-                </div>
 
         <div id="hero-signup" class="container">
           <div class="row">
@@ -367,3 +316,4 @@
     ${parent.javascript_bottom()}
     <script src=${"/static/public/js/home-page.js" | webpack_asset}></script>
 </%def>
+
