@@ -13,7 +13,7 @@ logger = logging.getLogger(__name__)
 
 
 def main():
-    init_app(routes=False, set_backends=True, mfr=False)
+    init_app(routes=False, set_backends=True)
     update_comments_viewed_timestamp()
     update_comments()
 
