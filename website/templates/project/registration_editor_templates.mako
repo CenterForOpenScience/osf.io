@@ -1,20 +1,20 @@
 <!-- String Types -->
-<script type="text/html" id="string">  
+<script type="text/html" id="string">
   <span data-bind="template: {data: $data, name: format}"></span>
 </script>
 
-<script type="text/html" id="text">  
-  <input data-bind="valueUpdate: 'keyup', value: value" type="text" class="form-control" />          
+<script type="text/html" id="text">
+  <input data-bind="valueUpdate: 'keyup', event: {'keyup': $root.save}, value: value" type="text" class="form-control" />
 </script>
-<script type="text/html" id="match">  
-  <input data-bind="valueUpdate: 'keyup', value: value, attr.placeholder: match" type="text" class="form-control" />
+<script type="text/html" id="match">
+  <input data-bind="valueUpdate: 'keyup', event: {'keyup': $root.save}, value: value, attr.placeholder: match" type="text" class="form-control" />
 </script>
-<script type="text/html" id="textarea">  
-  <textarea data-bind="textInput: value" class="form-control"> </textarea>         
+<script type="text/html" id="textarea">
+  <textarea data-bind="textInput: value" class="form-control"> </textarea>
 </script>
 <!-- Number Types -->
-<script type="text/html" id="number">  
-  <input data-bind="valueUpdate: 'keyup', value: value" type="text" class="form-control">          
+<script type="text/html" id="number">
+  <input data-bind="valueUpdate: 'keyup', event: {'keyup': $root.save}, value: value" type="text" class="form-control">
 </script>
 <!-- Enum Types -->
 <script type="text/html" id="choose">
@@ -38,7 +38,7 @@
   </div>
 </script>
 
-<script type="text/html" id="object">  
+<script type="text/html" id="object">
   <span data-bind="foreach: {data: $root.iterObject($data.properties)}">
       <div data-bind="template: {data: value, name: value.type}"></div>
       <hr />
@@ -55,9 +55,9 @@
           <label class="control-label" data-bind="text: title"></label>
           <p class="help-block" data-bind="text: description"></p>
           <span class="example-block">
-            <a data-bind="click: toggleExample">Show Example</a>            
+            <a data-bind="click: toggleExample">Show Example</a>
             <p data-bind="visible: showExample, text: help"></p>
-          </span>       
+          </span>
           <br />
           <br />
           <div class="row">
@@ -100,7 +100,7 @@
                                 <button data-bind="enable: comment.canEdit,
                                    click: comment.saved.bind(null, false)" class="btn btn-info fa fa-pencil"></button>
                                 <button data-bind="enable: comment.canDelete,
-                                                   click: $parent.comments.remove" 
+                                                   click: $parent.comments.remove"
                                         class="btn btn-danger fa fa-times"></button>
                             </div>
                         </div>
@@ -116,7 +116,7 @@
         </li>
     </ul>
     <div class="input-group">
-      <input class="form-control registration-editor-comment" type="text" data-bind="value: nextComment, valueUpdate: 'keyup'" />
+      <input class="form-control registration-editor-comment" type="text" data-bind="value: nextComment, valueUpdate: 'keyup', event: {'keyup': $root.save}" />
       <span class="input-group-btn">
         <button class="btn btn primary" data-bind="click: $data.addComment,
                                                    enable: $data.allowAddNext">Add</button>
