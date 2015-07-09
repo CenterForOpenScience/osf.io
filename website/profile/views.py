@@ -731,16 +731,16 @@ def redirect_to_twitter(twitter_handle):
         user = User.find_one(Q('social.twitter', 'iexact', twitter_handle))
     except NoResultsFound:
         raise HTTPError(http.NOT_FOUND, data={
-            'message_short': 'User Not Found',
-            'message_long': 'There is no active user associated with the Twitter handle: {0}.'.format(twitter_handle)
+            u'message_short': 'User Not Found',
+            u'message_long': u'There is no active user associated with the Twitter handle: {0}.'.format(twitter_handle)
         })
     except MultipleResultsFound:
         users = User.find(Q('social.twitter', 'iexact', twitter_handle))
-        message_long = 'There are multiple OSF accounts associated with the ' \
-                       'Twitter handle: <strong>{0}</strong>. <br /> Please ' \
-                       'select from the accounts below. <br /><ul>'.format(twitter_handle)
+        message_long = u'There are multiple OSF accounts associated with the ' \
+                       u'Twitter handle: <strong>{0}</strong>. <br /> Please ' \
+                       u'select from the accounts below. <br /><ul>'.format(twitter_handle)
         for user in users:
-            message_long += '<li><a href="{0}">{1}</a></li>'.format(user.url, user.fullname)
+            message_long += u'<li><a href="{0}">{1}</a></li>'.format(user.url, user.fullname)
         message_long += '</ul>'
         raise HTTPError(http.MULTIPLE_CHOICES, data={
             'message_short': 'Multiple Users Found',
