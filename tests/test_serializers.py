@@ -170,7 +170,6 @@ class TestNodeLogSerializers(OsfTestCase):
         assert_in('contributors', d)
         assert_equal(d['user']['fullname'], log.user.fullname)
         assert_equal(d['user']['url'], log.user.url)
-        assert_in('api_key', d)
         assert_equal(d['params'], log.params)
         assert_equal(d['node']['title'], log.node.title)
 

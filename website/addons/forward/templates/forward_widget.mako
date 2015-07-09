@@ -12,8 +12,8 @@
         <p>You will be automatically forwarded in {{ timeLeft }} seconds.</p>
 
         <div class="spaced-buttons" data-bind="visible: redirecting">
-            <a class="btn btn-success" data-bind="click: doRedirect">Redirect</a>
-            <a class="btn btn-warning" data-bind="click: cancelRedirect">Cancel</a>
+            <a class="btn btn-default" data-bind="click: cancelRedirect">Cancel</a>
+            <a class="btn btn-primary" data-bind="click: doRedirect">Redirect</a>
         </div>
 
     </div>
@@ -25,8 +25,8 @@
             <a data-bind="attr.href: url" target="_blank">{{ linkDisplay }}</a>.
         </div>
 
-        <div class="spaced-buttons">
-            <a class="btn btn-success" data-bind="click: doRedirect">Redirect</a>
+        <div class="spaced-buttons m-t-sm">
+            <a class="btn btn-primary" data-bind="click: doRedirect">Redirect</a>
         </div>
 
     </div>
