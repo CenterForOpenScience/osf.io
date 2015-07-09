@@ -673,7 +673,9 @@ class TestCommentViews(OsfTestCase):
         res = _view_project(self.project, auth=Auth(user=self.user))
         assert_equal(res['user']['unread_comments']['node'], 1)
 
-    def test_n_unread_comments_files(self):
+    @mock.patch('website.project.views.node.check_file_exists')
+    def test_n_unread_comments_files(self, mock_check_file_exists):
+        mock_check_file_exists.return_value = True, 1
         self._add_comment_files(self.project, auth=self.project.creator.auth)
         self.project.reload()
         self._add_comment_files(
@@ -702,8 +704,9 @@ class TestCommentViews(OsfTestCase):
         res = _view_project(self.project, auth=Auth(user=self.user))
         assert_equal(res['user']['unread_comments']['wiki'], 2)
 
-    def test_n_unread_comments_total(self):
-
+    @mock.patch('website.project.views.node.check_file_exists')
+    def test_n_unread_comments_total(self, mock_check_file_exists):
+        mock_check_file_exists.return_value = True, 1
         self._add_comment_files(self.project, auth=self.project.creator.auth)
         self.project.reload()
 
