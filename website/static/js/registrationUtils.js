@@ -236,8 +236,8 @@ var Draft = function(params, metaSchema) {
     self.schemaData = params.registration_metadata || {};
 
     self.initiator = params.initiator;
-    self.initiated = params.initiated;
-    self.updated = params.updated;
+    self.initiated = new Date(params.initiated);
+    self.updated = new Date(params.updated);
     self.completion = 0.0;
     var total = 0;
     var complete = 0;
@@ -294,7 +294,10 @@ var RegistrationEditor = function(urls, editorId) {
         return self.currentSchema().pages;
     });
 
-    self.lastSaveTime = ko.computed(function() {
+    self.lastSaveTime = ko.computed(function() {        
+        if(!self.draft()) {
+            return null;
+        }
         return self.draft().updated;
     });
     self.formattedDate = formattedDate;
@@ -357,7 +360,7 @@ RegistrationEditor.prototype.init = function(draft) {
             }
         }
     });
-    self.currentQuestion(questions.unshift());
+    self.currentQuestion(questions.shift());
 };
 /**
  * Creates a template context for editor type subtemplates. Looks for the data type
@@ -435,9 +438,8 @@ RegistrationEditor.prototype.updateData = function(response) {
 
     var draft = self.draft();
     draft.pk = response.pk;
-    draft.updated = response.updated;
+    draft.updated = new Date(response.updated);
     self.draft(draft);
-    self.lastSaveTime(new Date());
 };
 RegistrationEditor.prototype.create = function(schemaData) {
     var self = this;
@@ -696,6 +698,7 @@ RegistrationManager.prototype.createDraft = function() {
 };
 
 module.exports = {
+    Draft: Draft,
     RegistrationEditor: RegistrationEditor,
     RegistrationManager: RegistrationManager
 };

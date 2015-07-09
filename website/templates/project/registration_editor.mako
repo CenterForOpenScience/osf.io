@@ -1,4 +1,3 @@
-<script type="text/html" id="registrationEditor">
 <div id="registrationEditorScope">
     <div class="container">
         <div class="row">
@@ -21,9 +20,9 @@
                           class="registration-editor-question list-group-item">
                     </li>
                     </span>
-                  </ul>
+                </ul>
                 </span>
-                    </li>
+                </li>
                 </ul>
             </div>
             <div class="span8 col-md-9 columns eight large-8">
@@ -35,21 +34,19 @@
                 </a>
                 <!-- EDITOR -->
                 <div data-bind="if: currentQuestion">
-                  <div id="registrationEditor" data-bind="template: {data: currentQuestion, name: 'editor'}">
-                  </div>
+                    <div id="registrationEditor" data-bind="template: {data: currentQuestion, name: 'editor'}">
+                    </div>
                 </div>
                 <p>Last saved: <span data-bind="text: $root.lastSaved()"></span>
                 </p>
                 <button data-bind="click: save" type="button" class="btn btn-success">Save
                 </button>
 
-				<a data-bind="click: submit" id="submitForReview" class="btn btn-default" type="button">
-					<i class="fa fa-save"></i>
-					Submit for review
-				</a>
+                <a data-bind="click: submit" id="submitForReview" class="btn btn-default" type="button">
+                    <i class="fa fa-save"></i> Submit for review
+                </a>
             </div>
         </div>
     </div>
 </div>
-</script>
 <%include file="registration_editor_templates.mako" />
