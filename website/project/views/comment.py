@@ -445,8 +445,7 @@ def _update_comments_timestamp_total(node, auth, page):
 
 @must_be_logged_in
 @must_be_contributor_or_public
-def update_comments_timestamp(auth, **kwargs):
-    node = kwargs['node'] or kwargs['project']
+def update_comments_timestamp(auth, node, **kwargs):
     timestamp_info = request.get_json()
     page = timestamp_info.get('page')
     root_id = timestamp_info.get('rootId')
