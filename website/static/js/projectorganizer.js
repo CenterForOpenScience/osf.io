@@ -193,7 +193,7 @@ function saveExpandState(item, callback) {
 }
 
 /**
- * Contributors have first person's name and then number of contributors. This functio nreturns the proper html
+ * Contributors have first person's name and then number of contributors. This function returns the proper html
  * @param {Object} item A Treebeard _item object for the row involved. Node information is inside item.data
  * @returns {Object} A Mithril virtual DOM template object
  * @private

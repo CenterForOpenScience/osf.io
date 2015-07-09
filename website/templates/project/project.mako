@@ -91,7 +91,7 @@
                     </div>
                     % if 'badges' in addons_enabled and badges and badges['can_award']:
                         <div class="btn-group">
-                            <button class="btn btn-success" id="awardBadge" style="border-bottom-right-radius: 4px;border-top-right-radius: 4px;">
+                            <button class="btn btn-primary" id="awardBadge" style="border-bottom-right-radius: 4px;border-top-right-radius: 4px;">
                                 <i class="fa fa-plus"></i> Award
                             </button>
                         </div>
@@ -331,7 +331,6 @@
     % endfor
 
     <link rel="stylesheet" href="/static/css/pages/project-page.css">
-
 </%def>
 
 <%def name="javascript_bottom()">
