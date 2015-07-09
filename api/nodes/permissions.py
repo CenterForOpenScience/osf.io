@@ -68,7 +68,6 @@ class ContributorOrPublicForPointers(permissions.BasePermission):
             has_auth = parent_node.can_edit(auth) and pointer_node.can_edit(auth)
             return has_auth
 
-
 class ReadOnlyIfRegistration(permissions.BasePermission):
     """Makes PUT and POST forbidden for registrations."""
 
