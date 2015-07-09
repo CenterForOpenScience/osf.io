@@ -540,7 +540,8 @@ var RegistrationManager = function(node, draftsSelector, editorSelector, control
 	submit: node.urls.api + 'draft/submit/',
         get: node.urls.api + 'draft/{draft_pk}/',
         delete: node.urls.api + 'draft/{draft_pk}/',
-        schemas: '/api/v1/project/schema/'
+        schemas: '/api/v1/project/schema/',
+        edit: node.urls.web + 'draft/{draft_pk}/'
     };
 
     self.schemas = ko.observableArray();
@@ -660,7 +661,7 @@ RegistrationManager.prototype.launchEditor = function(draft) {
     }
 };
 RegistrationManager.prototype.editDraft = function(draft) {
-    this.launchEditor(draft, draft.schema);
+    window.location = this.urls.edit.replace('{draft_pk}', draft.pk);
 };
 RegistrationManager.prototype.deleteDraft = function(draft) {
     var self = this;
