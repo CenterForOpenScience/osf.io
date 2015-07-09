@@ -22,6 +22,12 @@ class CasHTTPError(CasError):
         self.headers = headers
         self.content = content
 
+    def __repr__(self):
+        return ('CasHTTPError({self.message!r}, {self.status_code}, '
+                'headers={self.headers}, content={self.content!r})').format(self=self)
+
+    __str__ = __repr__
+
 
 class CasTokenError(CasError):
     """Raised if an invalid token is passed by the client."""

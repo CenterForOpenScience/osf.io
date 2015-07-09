@@ -7,7 +7,7 @@ from framework.guid.model import Guid, BlacklistGuid
 from framework.sessions.model import Session
 
 from website.project.model import (
-    ApiKey, ApiOAuth2Application, Node, NodeLog,
+    ApiOAuth2Application, Node, NodeLog,
     Tag, WatchConfig, MetaSchema, Pointer,
     Comment, PrivateLink, MetaData, Retraction,
     Embargo,
@@ -22,7 +22,7 @@ from website.archiver.model import ArchiveJob, ArchiveTarget
 
 # All models
 MODELS = (
-    User, ApiKey, ApiOAuth2Application, Node, NodeLog,
+    User, ApiOAuth2Application, Node, NodeLog,
     Tag, WatchConfig, Session, Guid, MetaSchema, Pointer,
     MailRecord, Comment, PrivateLink, MetaData, Conference,
     NotificationSubscription, NotificationDigest, CitationStyle,
