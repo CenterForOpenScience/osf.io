@@ -15,9 +15,9 @@
                                        list-group-item-warning: !isComplete(),
                                        registration-editor-question-current: $root.currentQuestion().id === $data.id
                                      },
-                                     click: $root.currentQuestion.bind($root, $data),
-                                     text: nav"
+                                     click: $root.currentQuestion.bind($root, $data)"
                           class="registration-editor-question list-group-item">
+                        <a data-bind="attr.href: '#' + id, text: nav"></a>
                     </li>
                     </span>
                 </ul>
