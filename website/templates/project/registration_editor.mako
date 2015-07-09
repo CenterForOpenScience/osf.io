@@ -47,4 +47,5 @@
         </div>
     </div>
 </div>
+
 <%include file="registration_editor_templates.mako" />

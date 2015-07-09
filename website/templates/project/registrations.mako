@@ -64,7 +64,7 @@
                 <div class="progress progress-bar-md">
                   <div class="progress-bar" role="progressbar" aria-valuemin="0" aria-valuemax="100"
                        data-bind="attr.aria-completion: completion,
-                                  style: {width: completion + '%'}">
+                                  style: {width: completion() + '%'}">
                     <span class="sr-only"></span>
                   </div>
                 </div>

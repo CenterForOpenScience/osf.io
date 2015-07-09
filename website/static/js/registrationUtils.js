@@ -141,6 +141,8 @@ var Question = function(data, id) {
         return !$osf.isBlank(self.value());
     });
 
+    self.valid = ko.observable(null);
+
     self.init();
 };
 /**
@@ -240,20 +242,24 @@ var Draft = function(params, metaSchema) {
     self.initiator = params.initiator;
     self.initiated = new Date(params.initiated);
     self.updated = new Date(params.updated);
-    self.completion = 0.0;
-    var total = 0;
-    var complete = 0;
-    if (self.schemaData) {
-        $.each(self.metaSchema.schema.pages, function(i, page) {
-            $.each(page.questions, function(qid, question) {
-                if (question.isComplete()) {
-                    complete++;
-                }
-                total++;
+    self.completion = ko.computed(function() {
+        var total = 0;
+        var complete = 0;        
+        if (self.schemaData) {
+            var schema = self.schema();
+            $.each(schema.pages, function(i, page) {
+                $.each(page.questions, function(qid, question) {
+                    var value = self.schemaData[qid].value;
+                    if(!$osf.isBlank(value)) {
+                        complete++;
+                    }
+                    total++;
+                });
             });
-        });
-        self.completion = 100 * (complete / total);
-    }
+           return Math.ceil(100 * (complete / total));
+        }
+        return 0;
+    });
 };
 
 /** 
