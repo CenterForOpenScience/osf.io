@@ -61,10 +61,10 @@ function before_change_permissions(item, permission){
     if(permission === 'public'){
         bootbox.confirm({
             title: 'Warning',
-            message: 'Are you sure you want to make the wiki of '+title+
+            message: 'Are you sure you want to make the wiki of ' + title +
                 ' publicly editable? This will allow any logged in user to edit the content of your wiki. ' +
-                + 'Non-contributor users will not be able to add or remove pages. '+
-                '<b>Note:</b> ' +title+ ' must be public for public editing to be available.',
+                'Non-contributor users will not be able to add or remove pages. ' +
+                '<b>Note:</b> ' + title + ' must be public for public editing to be available.',
             callback: function(confirm) {
             if (confirm) {
                 change_permissions(item, permission);
