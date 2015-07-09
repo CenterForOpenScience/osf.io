@@ -14,13 +14,13 @@
 
 <%def name="javascript_bottom()">
 	${parent.javascript_bottom()}
+	<script>
+	<% import json %>
+	window.contextVars = $.extend(true, {}, window.contextVars, {
+		draft: ${json.dumps(draft)},
 
-    // Mako variables accessible globally
-    window.contextVars = $.extend(true, {}, window.contextVars, {
-		draft: {
-			${node}
-		},
-    });
+	});
+	</script>
 
 	<script src=${"/static/public/js/registration-edit-page.js" | webpack_asset}> </script>
 </%def>

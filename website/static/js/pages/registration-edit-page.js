@@ -32,8 +32,9 @@ $(document).ready(function() {
             self.drafts.unshift(draft);
         }
     });
-	debugger;
-	newDraft = draftEditor.init(draft);
+	var draft = ko.observable(window.contextVars['draft']);
+	draft.schema = ko.observable();
+	var newDraft = draftEditor.init(draft);
 	$osf.applyBindings(draftEditor, '#draftRegistrationScope');
 
 });
