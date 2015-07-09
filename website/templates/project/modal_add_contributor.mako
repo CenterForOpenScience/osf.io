@@ -257,13 +257,13 @@
                 </span>
 
                 <span data-bind="if:selection().length && page() == 'whom'">
-                    <a class="btn btn-success" data-bind="visible:nodes().length==0, click:submit">Submit</a>
+                    <a class="btn btn-success" data-bind="visible:nodes().length==0, click:submit">Save</a>
                     <a class="btn btn-primary" data-bind="visible:nodes().length, click:selectWhich">Next</a>
                 </span>
 
                 <span data-bind="if: page() == 'which'">
                     <a class="btn btn-primary" data-bind="click:selectWhom">Back</a>
-                    <a class="btn btn-success" data-bind="click:submit">Submit</a>
+                    <a class="btn btn-success" data-bind="click:submit">Add</a>
                 </span>
 
             </div><!-- end modal-footer -->

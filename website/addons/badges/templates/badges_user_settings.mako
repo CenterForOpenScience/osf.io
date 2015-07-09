@@ -21,7 +21,7 @@ You have not created any Badges.
 
   <br />
 
-  <button class="btn btn-success" id="newBadge" type="button">
+  <button class="btn btn-primary" id="newBadge" type="button">
     New Badge
   </button>
 

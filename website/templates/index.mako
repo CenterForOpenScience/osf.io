@@ -318,6 +318,7 @@
 </%def>
 
 <%def name="stylesheets()">
+    ${parent.stylesheets()}
     <link rel="stylesheet" href="/static/css/pages/home-page.css">
     <link rel="stylesheet" href="/static/css/front-page.css">
 </%def>

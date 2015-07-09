@@ -14,7 +14,7 @@ from framework.auth import exceptions as auth_exc
 from framework.auth.core import Auth
 from tests.base import OsfTestCase, fake
 from tests.factories import (UserFactory, AuthUserFactory, ProjectFactory,
-                             WatchConfigFactory, ApiKeyFactory,
+                             WatchConfigFactory,
                              NodeFactory, NodeWikiFactory, RegistrationFactory,
                              UnregUserFactory, UnconfirmedUserFactory,
                              PrivateLinkFactory)
@@ -57,12 +57,7 @@ class TestAUser(OsfTestCase):
     def setUp(self):
         super(TestAUser, self).setUp()
         self.user = AuthUserFactory()
-        self.user.set_password('science')
-        # Add an API key for quicker authentication
-        api_key = ApiKeyFactory()
-        self.user.api_keys.append(api_key)
-        self.user.save()
-        self.auth = ('test', api_key._primary_key)
+        self.auth = self.user.auth
 
     def test_can_see_profile_url(self):
         res = self.app.get(self.user.url).maybe_follow()
@@ -107,12 +102,9 @@ class TestAUser(OsfTestCase):
     def test_sees_log_events_on_watched_projects(self):
         # Another user has a public project
         u2 = UserFactory(username='bono@u2.com', fullname='Bono')
-        key = ApiKeyFactory()
-        u2.api_keys.append(key)
-        u2.save()
         project = ProjectFactory(creator=u2, is_public=True)
         project.add_contributor(u2)
-        auth = Auth(user=u2, api_key=key)
+        auth = Auth(user=u2)
         project.save()
         # User watches the project
         watch_config = WatchConfigFactory(node=project)
@@ -274,12 +266,8 @@ class TestRegistrations(OsfTestCase):
     def setUp(self):
         super(TestRegistrations, self).setUp()
         ensure_schemas()
-        self.user = UserFactory()
-        # Add an API key for quicker authentication
-        api_key = ApiKeyFactory()
-        self.user.api_keys.append(api_key)
-        self.user.save()
-        self.auth = ('test', api_key._primary_key)
+        self.user = AuthUserFactory()
+        self.auth = self.user.auth
         self.original = ProjectFactory(creator=self.user, is_public=True)
         # A registration
         self.project = RegistrationFactory(
@@ -535,12 +523,8 @@ class TestSearching(OsfTestCase):
         super(TestSearching, self).setUp()
         import website.search.search as search
         search.delete_all()
-        self.user = UserFactory()
-        # Add an API key for quicker authentication
-        api_key = ApiKeyFactory()
-        self.user.api_keys.append(api_key)
-        self.user.save()
-        self.auth = ('test', api_key._primary_key)
+        self.user = AuthUserFactory()
+        self.auth = self.user.auth
 
     @unittest.skip(reason='¯\_(ツ)_/¯ knockout.')
     def test_a_user_from_home_page(self):
@@ -583,13 +567,9 @@ class TestShortUrls(OsfTestCase):
 
     def setUp(self):
         super(TestShortUrls, self).setUp()
-        self.user = UserFactory()
-        # Add an API key for quicker authentication
-        api_key = ApiKeyFactory()
-        self.user.api_keys.append(api_key)
-        self.user.save()
-        self.auth = ('test', api_key._primary_key)
-        self.consolidate_auth = Auth(user=self.user, api_key=api_key)
+        self.user = AuthUserFactory()
+        self.auth = self.user.auth
+        self.consolidate_auth = Auth(user=self.user)
         self.project = ProjectFactory(creator=self.user)
         # A non-project componenet
         self.component = NodeFactory(category='hypothesis', creator=self.user)
@@ -877,9 +857,7 @@ class TestClaimingAsARegisteredUser(OsfTestCase):
         self.project.save()
 
     def test_claim_user_registered_with_correct_password(self):
-        reg_user = AuthUserFactory()
-        reg_user.set_password('killerqueen')
-        reg_user.save()
+        reg_user = AuthUserFactory()  # NOTE: AuthUserFactory sets password as 'password'
         url = self.user.get_claim_url(self.project._primary_key)
         # Follow to password re-enter page
         res = self.app.get(url, auth=reg_user.auth).follow(auth=reg_user.auth)
@@ -888,7 +866,7 @@ class TestClaimingAsARegisteredUser(OsfTestCase):
         assert_in('Claim Contributor', res.body)
 
         form = res.forms['claimContributorForm']
-        form['password'] = 'killerqueen'
+        form['password'] = 'password'
         res = form.submit(auth=reg_user.auth).follow(auth=reg_user.auth)
 
         self.project.reload()

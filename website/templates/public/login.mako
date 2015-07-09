@@ -23,7 +23,7 @@
 
                         <fieldset>
                             <a class="forget-password m-t-md" href="${ web_url_for('forgot_password_get') }">Forgot Your Password?</a>
-                            <button type="submit" class="btn btn-success m-t-md pull-right">Sign In</button>
+                            <button type="submit" class="btn btn-primary m-t-md pull-right">Sign In</button>
 
                         </fieldset>
                     </div>
