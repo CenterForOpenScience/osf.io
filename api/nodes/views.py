@@ -8,8 +8,10 @@ from framework.auth.core import Auth
 from website.models import Node, Pointer, User
 from api.base.filters import ODMFilterMixin, ListFilterMixin
 from api.base.utils import get_object_or_404, waterbutler_url_for
-from .serializers import NodeSerializer, NodePointersSerializer, NodeFilesSerializer, ContributorSerializer, ContributorDetailSerializer
-from .permissions import ContributorOrPublic, ReadOnlyIfRegistration, ContributorOrPublicForPointers, AdminOrPublic
+from .serializers import NodeSerializer, NodePointersSerializer, NodeFilesSerializer, ContributorSerializer, \
+    ContributorDetailSerializer
+from .permissions import ContributorOrPublic, ReadOnlyIfRegistration, ContributorOrPublicForPointers, \
+    ContributorPermissions, AdminOrPublic
 
 
 class NodeMixin(object):
@@ -147,13 +149,13 @@ class NodeContributorsList(generics.ListCreateAPIView, ListFilterMixin, NodeMixi
 class NodeContributorDetail(generics.RetrieveUpdateDestroyAPIView, NodeMixin):
     """Detail of a contributor for a node.
 
-    Allows for a user to view and remove a contributor from a node.
+    Allows for a user to view, remove a contributor from, and change bibliographic and admin status for a node.
     """
     serializer_class = ContributorDetailSerializer
 
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
-        AdminOrPublic,
+        ContributorPermissions,
     )
 
     # overrides RetrieveAPIView
@@ -176,21 +178,6 @@ class NodeContributorDetail(generics.RetrieveUpdateDestroyAPIView, NodeMixin):
         auth = Auth(current_user)
         node.remove_contributor(instance, auth)
         node.save()
-
-    '''
-        Code review note: I created this method due to have trouble with using node.admin_contributor_ids not displaying the correct number of admins.
-        I'm also wondering if this is a good spot for the method.  I kind of think it needs to be moved but I don't know where.
-        The reason why I made two methods is so that a user can still edit bibliographic but not remove the last admin contributor.
-    '''
-    def has_multiple_admin_contributors(self):
-        node = self.get_node()
-        has_one_admin = False
-        for contributor in node.contributors:
-            if node.has_permission(contributor, 'admin'):
-                if has_one_admin:
-                    return True
-                has_one_admin = True
-        return False
 
 
 class NodeRegistrationsList(generics.ListAPIView, NodeMixin):
