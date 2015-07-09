@@ -1,6 +1,7 @@
 <div id="forwardScope" class="scripted">
 
     <h4 class="addon-title">
+        <i class="fa fa-external-link"></i>
         External Link
     </h4>
 

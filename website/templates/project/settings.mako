@@ -16,7 +16,6 @@
 </div>
 
 <div class="row project-page">
-
     <!-- Begin left column -->
     <div class="col-sm-3 affix-parent">
 
