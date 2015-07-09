@@ -746,52 +746,48 @@ var confirmDangerousAction = function (options) {
     bootbox.dialog(bootboxOptions);
 };
 
-var fullscreenModal = function(opts) {
-    var ret = $.Deferred();
-
-    opts = opts || {};
-    var style = $.extend({}, opts.style || {}, {
-        position: 'absolute',
-        top: '15px',
-        left: '15px',
-        right: '15px',
-        height: '96%',
-        zIndex: 1030,
-        backgroundColor: '#EEEEEE',
-        '-webkit-border-radius': '10px',
-        '-moz-border-radius': '10px'
+/**
+ * Maps an object to an array of {key: KEY, value: VALUE} pairs
+ *
+ * @param {Object} obj
+ * @returns {Array} array of key, value pairs
+**/
+var iterObject = function(obj) {
+    var ret = [];
+    $.each(obj, function(prop, value) {
+        ret.push({
+            key: prop,
+            value: value
+        });
     });
-    var modal = $('<div>', {
-        'class': 'bg-color-light',
-        css: style
-    });
-    modal.append($('<a>', {
-        css: {
-            padding: '10px',
-            float: 'right',
-            zIndex: 1031,
-            fontSize: '150%'
-        },
-        'class': 'fa fa-times-circle text-bigger',
-        click: function() { 
-            modal.hide('slow', function() { modal.remove(); });
-        }
-    }));
-    var container = $('<div>', {
-        id: opts.id || '',
-        css: {
-            padding: '25px'
-        }
-    });
-    modal.append(container);
-    modal.hide();
-    $('body').append(modal);
-    modal.show('slow', function() {
-        ret.resolve(container);
-    });
-
     return ret;
 };
+/** 
+ * Asserts that a value is falsey or an empty string
+ *
+ * @param {String} item
+ * @returns {Boolean} true if item is flasey or an empty string else false
+**/
+function isBlank(item) {
+    return !item || /^\s*$/.test(item || '');
+}
+/**
+ * Use a search function to get the index of an object in an array
+ *
+ * @param {Array} array
+ * @param {Function} searchFn: function that returns true when an item matching the search conditions is found
+ * @returns {Integer} index of matched item or -1 if no matching item is found
+ **/
+function indexOf(array, searchFn) {
+    var len = array.length;
+    for(var i = 0; i < len; i++) {
+        if(searchFn(array[i])) {
+            return i;
+        }
+    }
+    return -1;
+}
+
 
 // Also export these to the global namespace so that these can be used in inline
 // JS. This is used on the /goodbye page at the moment.
@@ -821,6 +817,8 @@ module.exports = window.$.osf = {
     tableResize: tableResize,
     humanFileSize: humanFileSize,
     confirmDangerousAction: confirmDangerousAction,
-    fullscreenModal: fullscreenModal,
-    isIE: isIE
+    isIE: isIE,
+    indexOf: indexOf,
+    iterObject: iterObject,
+    isBlank: isBlank
 };

@@ -8,31 +8,6 @@ var oop = require('js/oop');
 
 require('js/registrationEditorExtensions');
 
-var iterObject = function(obj) {
-    var ret = [];
-    $.each(obj, function(prop, value) {
-        ret.push({
-            key: prop,
-            value: value
-        });
-    });
-    return ret;
-};
-
-function isBlank(item) {
-    return !item || /^\s*$/.test(item || '');
-}
-
-function indexOf(array, searchFn) {
-    var len = array.length;
-    for(var i = 0; i < len; i++) {
-        if(searchFn(array[i])) {
-            return i;
-        }
-    }
-    return -1;
-}
-
 var formattedDate = function(dateString) {
     if (!dateString) {
         return 'never';
@@ -41,12 +16,25 @@ var formattedDate = function(dateString) {
     return moment(dateString).fromNow() + ' (' + d.toGMTString() + ')';
 };
 
-//######### Commentable ###########
 var currentUser = window.contextVars.currentUser || {
     id: null,
     name: 'Anonymous'
 };
 
+
+/** 
+ * @class Comment
+ * Model for storing/editing/deleting comments on form fields
+ * 
+ * @param {Object} data: optional data to instatiate model with
+ * @param {User} data.user
+ * @param {Date} data.lastModified
+ * @param {String} data.value
+ *
+ * @type User
+ * @property {String} id
+ * @property {String} name
+ **/
 var Comment = function(data) {
     var self = this;
 
@@ -57,6 +45,9 @@ var Comment = function(data) {
     self.lastModified = moment(data.lastModified || new Date());
     self.value = ko.observable(data.value || '');
 
+    /**
+     * Returns 'You' if the current user is the commenter, else the commenter's name
+     **/
     self.author = ko.pureComputed(function() {
         if (self.user.id === currentUser.id) {
             return 'You';
@@ -66,14 +57,20 @@ var Comment = function(data) {
         }
     });
 
+    /**
+     * Returns true if the current user is the comment creator
+     **/
     self.canDelete = ko.pureComputed(function() {
         return self.user.id === currentUser.id;
     });
+    /**
+     * Returns true if the comment is saved and the current user is the comment creator
+     **/
     self.canEdit = ko.pureComputed(function() {
         return self.saved() && self.user.id === currentUser.id;
     });
 };
-
+// Let ENTER keypresses add a comment if comment <input> is in focus
 $(document).keydown(function(e) {
     if (e.keyCode === 13) {
         $target = $(e.target);
@@ -86,8 +83,21 @@ $(document).keydown(function(e) {
     }
 });
 
-////////////////////
-
+/**
+ * @class Question
+ * Model for schema questions 
+ * 
+ * @param {Object} data: optional instantiation values
+ * @param {String} data.title
+ * @param {String} data.nav: short version of title
+ * @param {String} data.type: 'string' | 'number' | 'choose' | 'object'; data type
+ * @param {String} data.format: 'text' | 'textarea' | 'list'; format corresponding with data.type
+ * @param {String} data.description
+ * @param {String} data.help
+ * @param {String[]} data.options: array of options for 'choose' types
+ * @param {Object[]} data.properties: object of sub-Question properties for 'object' types
+ * @param {String} id: unique identifier
+ **/
 var Question = function(data, id) {
     var self = this;
 
@@ -115,16 +125,25 @@ var Question = function(data, id) {
         })
     );
     self.nextComment = ko.observable('');
+    /**
+     * @returns {Boolean} true if the nextComment <input> is not blank
+     **/
     self.allowAddNext = ko.computed(function() {
-        return !isBlank(self.nextComment());
+        return !$osf.isBlank(self.nextComment());
     });
 
+    /**
+     * @returns {Boolean} true if the value <input> is not blank
+     **/
     self.isComplete = ko.computed(function() {
-        return !isBlank(self.value());
+        return !$osf.isBlank(self.value());
     });
 
     self.init();
 };
+/**
+ * Maps 'object' type Questions's properties to sub-Questions
+ **/
 Question.prototype.init = function() {
     var self = this;
     if (self.type === 'object') {
@@ -133,6 +152,9 @@ Question.prototype.init = function() {
         });
     }
 };
+/**
+ * Creates a new comment from the current value of Question.nextComment and clears nextComment
+ **/
 Question.prototype.addComment = function() {
     var self = this;
 
@@ -142,11 +164,34 @@ Question.prototype.addComment = function() {
     self.nextComment('');
     self.comments.push(comment);
 };
+/**
+ * Shows/hides the Question example
+ **/
 Question.prototype.toggleExample = function(){
     this.showExample(!this.showExample());
 };
-/////////////////////
 
+/**
+ * Model for MetaSchema instances
+ *
+ * @param {Object} params: instantiation values
+ * @param {String} params.schema_name
+ * @param {Integer} params.schema_version
+ * @param {String} params.title: display title of schema
+ * @param {Schema} params.schema
+ *
+ * @type Schema
+ * @property {String} title
+ * @property {Integer} version
+ * @property {String} description
+ * @property {String[]} fulfills: array of requirements/goals that this schema fulfills
+ * @property {Page[]} pages
+ *
+ * @type Page
+ * @property {String} id
+ * @property {String} title
+ * @property {Question[]} questions
+ **/
 var MetaSchema = function(params) {
     var self = this;
 
@@ -165,6 +210,19 @@ var MetaSchema = function(params) {
     });
 };
 
+/** 
+ * @class Draft 
+ * Model for DraftRegistrations
+ * 
+ * @param {Object} params
+ * @param {String} params.pk: primary key of Draft
+ * @param {Object} params.registration_schema: data to be passed to MetaSchema constructor
+ * @param {Object} params.registration_metadata: saved Draft data
+ * @param {User} params.initiator
+ * @param {Date} params.initated
+ * @param {Date} params.updated
+ * @property {Float} completion: percent completion of schema
+**/
 var Draft = function(params, metaSchema) {
     var self = this;
 
@@ -184,29 +242,41 @@ var Draft = function(params, metaSchema) {
     var total = 0;
     var complete = 0;
     if (self.schemaData) {
-        for (var i = 0; i < self.metaSchema.schema.pages.length; i++) {
-            var page = self.metaSchema.schema.pages[i];
+        $.each(self.metaSchema.schema.pages, function(i, page) {
             $.each(page.questions, function(qid, question) {
-                if (self.schemaData[qid] && self.schemaData[qid].value) {
+                if (question.isComplete()) {
                     complete++;
                 }
                 total++;
             });
-        }
+        });
         self.completion = 100 * (complete / total);
     }
 };
 
-var RegistrationEditor = function(urls, editorId, utils) {
+/** 
+ * @class RegistrationEditor
+ * 
+ * @param {Object} urls
+ * @param {String} urls.update: endpoint to update a draft instance
+ * @param {String} editorID: id of editor DOM node
+ * @property {ko.observable[Boolean]} readonly
+ * @property {ko.observable[Draft]} draft
+ * @property {ko.observable[Question]} currentQuestion
+ * @property {Object} extensions: mapping of extenstion names to their view models
+ *
+ * Notes:
+ * - The editor can be extended by calling #extendEditor with a type and it's associated ViewModel. 
+ *   When the context for that type's schema template is built (see #context), that type's ViewModel
+ *   is instantiated with the current scope's data as an argument
+ **/
+var RegistrationEditor = function(urls, editorId) {
 
     var self = this;
-    self.utils = utils;
 
     self.urls = urls;
 
     self.readonly = ko.observable(false);
-
-    self.draftPk = ko.observable(false);
 
     self.draft = ko.observable();
     self.currentSchema = ko.computed(function() {
@@ -224,9 +294,14 @@ var RegistrationEditor = function(urls, editorId, utils) {
         return self.currentSchema().pages;
     });
 
-    self.lastSaveTime = ko.observable();
+    self.lastSaveTime = ko.computed(function() {
+        return self.draft().updated;
+    });
     self.formattedDate = formattedDate;
-
+    
+    /**
+     * @returns {Question[]} flat list of the current schema's questions
+     **/
     self.flatQuestions = ko.computed(function() {
         var flat = [];
         var schema = self.currentSchema();
@@ -239,10 +314,15 @@ var RegistrationEditor = function(urls, editorId, utils) {
         return flat;
     });
 
-    self.iterObject = iterObject;
+    self.iterObject = $osf.iterObject;
 
     self.extensions = {};
 };
+/**
+ * Load draft data into the editor
+ *
+ * @param {Draft} draft
+ **/
 RegistrationEditor.prototype.init = function(draft) {
     var self = this;
 
@@ -253,9 +333,6 @@ RegistrationEditor.prototype.init = function(draft) {
     if(draft) {
         schemaData = draft.schemaData || {};
     }
-
-    var keys = Object.keys(metaSchema.schema.pages[0].questions);
-    self.currentQuestion(metaSchema.schema.pages[0].questions[keys.shift()]);
 
     var questions = self.flatQuestions();
     $.each(questions, function(i, question) {
@@ -280,13 +357,28 @@ RegistrationEditor.prototype.init = function(draft) {
             }
         }
     });
+    self.currentQuestion(questions.unshift());
 };
+/**
+ * Creates a template context for editor type subtemplates. Looks for the data type
+ * in the extension map, and if found instantiates that type's ViewModel. Otherwise
+ * return the bare data Object
+ *
+ * @param {Object} data: data in current editor template scope
+ * @returns {Object|ViewModel}
+ **/
 RegistrationEditor.prototype.context = function(data) {
     if (this.extensions[data.type]) {
         return new this.extensions[data.type](data);
     }
     return data;
 };
+/**
+ * Extend the editor's recognized types
+ * 
+ * @param {String} type: unique type
+ * @param {Constructor} ViewModel
+ **/
 RegistrationEditor.prototype.extendEditor = function(type, ViewModel) {
     this.extensions[type] = ViewModel;
 };
@@ -306,7 +398,7 @@ RegistrationEditor.prototype.nextPage = function() {
     var currentQuestion = self.currentQuestion();
 
     var questions = self.flatQuestions();
-    var index = indexOf(questions, function(q){
+    var index = $osf.indexOf(questions, function(q){
         return q.id === currentQuestion.id;
     });
     if(index + 1 === questions.length) {
@@ -322,7 +414,7 @@ RegistrationEditor.prototype.previousPage = function() {
     var currentQuestion = self.currentQuestion();
 
     var questions = self.flatQuestions();
-    var index = indexOf(questions, function(q){
+    var index = $osf.indexOf(questions, function(q){
         return q.id === currentQuestion.id;
     });
     if(index - 1 < 0){
@@ -341,7 +433,10 @@ RegistrationEditor.prototype.selectPage = function(page) {
 RegistrationEditor.prototype.updateData = function(response) {
     var self = this;
 
-    self.draftPk(response.pk);
+    var draft = self.draft();
+    draft.pk = response.pk;
+    draft.updated = response.updated;
+    self.draft(draft);
     self.lastSaveTime(new Date());
 };
 RegistrationEditor.prototype.create = function(schemaData) {
@@ -356,19 +451,19 @@ RegistrationEditor.prototype.create = function(schemaData) {
     }).then(self.updateData.bind(self));
 };
 RegistrationEditor.prototype.submit = function() {
-	var self = this;
-
-	var currentNode = window.contextVars.node
-	var currentUser = window.contextVars.currentUser
-	var url = '/api/v1/project/' + currentNode.id +  '/draft/submit/' + currentUser.id + '/'
-
-	bootbox.dialog({
-		message: "Please verify that all required fields are filled out:<br><br>\
-			<strong>Required:</strong><br>\
-		Title<br> COI<br> Authors<br> Research<br> Certify<br> Data<br> Rationale<br> Sample<br> Type<br> Randomized?<br> \
-		Covariates<br> Design<br> Blind<br> Outcome<br> Predictor<br> Statistical Models<br> Multiple Hypostheses<br> \
-		Outcome Variables<br> Predictors<br> Incomplete<br> Exclusion<br><br> \
-			<strong>Optional:</strong><br>\
+    var self = this;
+    
+    var currentNode = window.contextVars.node
+    var currentUser = window.contextVars.currentUser
+    var url = '/api/v1/project/' + currentNode.id +  '/draft/submit/' + currentUser.id + '/'
+    
+    bootbox.dialog({
+	message: "Please verify that all required fields are filled out:<br><br>\
+	    <strong>Required:</strong><br>\
+	Title<br> COI<br> Authors<br> Research<br> Certify<br> Data<br> Rationale<br> Sample<br> Type<br> Randomized?<br> \
+	Covariates<br> Design<br> Blind<br> Outcome<br> Predictor<br> Statistical Models<br> Multiple Hypostheses<br> \
+	Outcome Variables<br> Predictors<br> Incomplete<br> Exclusion<br><br> \
+	    <strong>Optional:</strong><br>\
 		Script",
 		title: "Continue to submit this registration for review",
 		buttons: {
@@ -439,7 +534,7 @@ var RegistrationManager = function(node, draftsSelector, editorSelector, control
 
     self.urls = {
         list: node.urls.api + 'draft/',
-		submit: node.urls.api + 'draft/submit/',
+	submit: node.urls.api + 'draft/submit/',
         get: node.urls.api + 'draft/{draft_pk}/',
         delete: node.urls.api + 'draft/{draft_pk}/',
         schemas: '/api/v1/project/schema/'
@@ -556,21 +651,7 @@ RegistrationManager.prototype.launchEditor = function(draft) {
             create: node.urls.api + 'draft/',
             update: node.urls.api + 'draft/{draft_pk}/',
             get: node.urls.api + 'draft/{draft_pk}/'
-        }, 'registrationEditor', {
-            addDraft: function(draft) {
-                if (!self.drafts().filter(function(d) {
-                    return draft.pk === d.pk;
-                }).length) {
-                    self.drafts.unshift(draft);
-                }
-            },
-            updateDraft: function(draft) {
-                self.drafts.remove(function(d) {
-                    return d.pk === draft.pk;
-                });
-                self.drafts.unshift(draft);
-            }
-        });
+        }, 'registrationEditor');
         newDraft = self.regEditor.init(draft);
         $osf.applyBindings(self.regEditor, self.editorSelector);
     }
