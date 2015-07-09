@@ -35,6 +35,7 @@ $(".row-title").click(function(event) {
 	sortedDrafts(event.target.id);
 });
 
+//TODO
 var sortedDrafts = function(row) {
    return drafts.sort(function (left, right) { 
         return left.row.order() == right.row.order() ? 
