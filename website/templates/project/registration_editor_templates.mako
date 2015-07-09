@@ -4,7 +4,10 @@
 </script>
 
 <script type="text/html" id="text">  
-  <input data-bind="valueUpdate: 'keyup', value: value" type="text" class="form-control">          
+  <input data-bind="valueUpdate: 'keyup', value: value" type="text" class="form-control" />          
+</script>
+<script type="text/html" id="match">  
+  <input data-bind="valueUpdate: 'keyup', value: value, attr.placeholder: match" type="text" class="form-control" />
 </script>
 <script type="text/html" id="textarea">  
   <textarea data-bind="textInput: value" class="form-control"> </textarea>         
@@ -18,23 +21,19 @@
   <span data-bind="template: {data: $data, name: format}"></span>
 </script>
 
-<script type="text/html" id="list">
+<script type="text/html" id="singleselect">
   <div data-bind="foreach: {data: options, as: 'option'}">
-    <div class="row">
-    <div class="col-sm-9">
-      <blockquote>
-        <p style="font-size: 75%;" data-bind="text: $data"></p>
-      </blockquote>
-    </div>
-    <div class="col-sm-3">
-      <span style="font-size: 200%;" 
-         class="btn fa" 
-         data-bind="css: {
-                      fa-check-circle-o: $parent.value() === $index,
-                      fa-circle-o: $parent.value() !== $index
-                    },
-                    click: $parent.setValue.bind(null, $index)"></span>
-    </div>
+    <div class="radio">
+      <label>
+        <div class="row">
+          <div class="col-md-1">
+            <input type="radio" data-bind="attr.name: $parent.id, value: option" />
+          </div>
+          <div class="col-md-11">
+            <span data-bind="text: option"></span>
+          </div>
+        </div>
+      </label>
     </div>
   </div>
 </script>
@@ -101,7 +100,8 @@
                                 <button data-bind="enable: comment.canEdit,
                                    click: comment.saved.bind(null, false)" class="btn btn-info fa fa-pencil"></button>
                                 <button data-bind="enable: comment.canDelete,
-                                   click: $root.comments.remove" class="btn btn-danger fa fa-times"></button>
+                                                   click: $parent.comments.remove" 
+                                        class="btn btn-danger fa fa-times"></button>
                             </div>
                         </div>
                     </div>

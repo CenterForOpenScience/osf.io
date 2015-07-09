@@ -78,17 +78,20 @@
                 "type": "object",
                 "title": "Please check and certify one of the following statements.",
                 "properties": {
+                    "certify": {
+                        "id": "q8b",
+                        "type": "string",
+                        "format": "match",
+                        "match": "I certify"
+                    },
                     "statement": {
+                        "id:": "q8a",
                         "type": "choose",
-                        "format": "list",
+                        "format": "singleselect",
                         "options": [
                             "I certify that none of the data that will be used in this upcoming study have yet been collected. Please enter your name and the phrase I certify in the following box. Why is this necessary?",
                             "I will be using pre-existing data in this study. I certify that I have no knowledge about any of its basic descriptive statistics, nor am I aware of any differences or relationships within the data that I will use. Please enter your name and the phrase I certify in the following boxes."
                         ]
-                    },
-                    "certify": {
-                        "type": "string",
-                        "format": "text"
                     }
                 }
             }
@@ -102,7 +105,7 @@
                 "nav": "Type",
                 "type": "choose",
                 "title": "What type of study is this?",
-                "format": "list",
+                "format": "singleselect",
                 "options": [
                     "Experiment (A researcher randomly assigns treatments to study subjects, this includes field or lab experiments. This is also known as an intervention experiment or a randomized controlled trial.",
                     "Observational Study (Data is collected from study subjects that are not randomly assigned to a treatment. This includes surveys, natural experiments, and regression discontinuity designs.)",
@@ -113,7 +116,7 @@
             "q10": {
                 "nav": "Blind",
                 "type": "choose",
-                "format": "list",
+                "format": "singleselect",
                 "title": "Are any aspects of your study blinded?",
                 "options": [
                     "Not applicable: This study will not assign treatments to subjects (e.g. observational studies or meta-analyses).",
