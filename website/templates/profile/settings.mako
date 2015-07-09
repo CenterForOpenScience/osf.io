@@ -19,14 +19,7 @@
 <div class="row">
 
     <div class="col-sm-3">
-        <div class="panel panel-default">
-            <ul class="nav nav-stacked nav-pills">
-                <li><a href="#">Profile Information</a></li>
-                <li><a href="${ web_url_for('user_account') }">Account Settings</a></li>
-                <li><a href="${ web_url_for('user_addons') }">Configure Add-ons</a></li>
-                <li><a href="${ web_url_for('user_notifications') }">Notifications</a></li>
-            </ul>
-        </div><!-- end sidebar -->
+      <%include file="include/profile/settings_navpanel.mako" args="current_page='profile'"/>
     </div>
 
     <div class="col-sm-9 col-md-7">
