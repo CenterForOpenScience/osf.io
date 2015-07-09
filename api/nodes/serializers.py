@@ -197,3 +197,29 @@ class NodeFilesSerializer(JSONAPISerializer):
         # TODO
         pass
 
+
+class NodeLogsSerializer(JSONAPISerializer):
+    filterable_fields = frozenset([
+        'date',
+        'fullname',
+        'url',
+        'action',
+        'id',
+        'version',
+        'name',
+        'api_key',
+        'title',
+        ])
+
+    date = ser.DateTimeField(read_only=True)
+    id = ser.CharField(read_only=True, source='_id')
+    fullname = ser.CharField(read_only=True, source='user.fullname')
+    api_Key = ser.CharField(read_only=True, source='api_key')
+    user = ser.CharField(read_only=True)
+    action = ser.CharField(read_only=True)
+    version = ser.CharField(read_only=True, source='_version')
+    name = ser.CharField(read_only=True, source='_name')
+    url = ser.CharField(read_only=True, source='node_id')
+
+    class Meta:
+        type_ = 'logs'
