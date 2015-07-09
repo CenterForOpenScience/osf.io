@@ -61,7 +61,7 @@ class NodeSerializer(JSONAPISerializer):
                                                             'node have implicit read permissions for all child nodes',
                               )
 
-    additional_query_params = ser.DictField(required=False)
+    additional_query_params = ser.DictField(required=False, read_only=True)
 
     # TODO: finish me
 
