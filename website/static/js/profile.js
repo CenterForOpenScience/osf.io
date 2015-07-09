@@ -608,11 +608,6 @@ var ListViewModel = function(ContentModel, urls, modes) {
         return false;
     });
 
-   // Add enable/disable button css to use bootstrap and conform to style guide.
-   self.enablebtn = ko.computed(function(){
-        return this.institutionsEmpty() ? 'disabled':'enabled';
-    }, this);
-
     self.jobsOrSchools = ko.computed(function() {
         if (urls.crud.indexOf('jobs') !== -1) { return JOBS; }
         if (urls.crud.indexOf('schools') !== -1) { return SCHOOLS; }
