@@ -905,8 +905,20 @@ def n_unread_total_files(user, node, check=False):
     n_unread = 0
     if not file_timestamps:
         set_default_file_comment_timestamps(user, node)
+
+    removed_files = []
     for file_id in node.commented_files:
-        n_unread += n_unread_comments(node, user, 'files', file_id, check)
+        exists, _ = check_file_exists(node, file_id)
+        if not exists:
+            removed_files.append(file_id)
+
+    for file_id in removed_files:
+        del node.commented_files[file_id]
+        node.save()
+
+    for file_id in node.commented_files:
+        n_unread += n_unread_comments(node, user, 'files', file_id)
+
     return n_unread
 
 
@@ -924,8 +936,6 @@ def check_file_exists(node, file_id):
         file_guid = Guid.load(file_id).referent
         file_guid.enrich()
     except AddonEnrichmentError:
-        del node.commented_files[file_id]
-        node.save()
         return False, num_of_comments
     return True, num_of_comments
 
