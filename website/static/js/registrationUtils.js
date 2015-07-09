@@ -249,8 +249,8 @@ var Draft = function(params, metaSchema) {
             var schema = self.schema();
             $.each(schema.pages, function(i, page) {
                 $.each(page.questions, function(qid, question) {
-                    var value = self.schemaData[qid].value;
-                    if(!$osf.isBlank(value)) {
+                    var q = self.schemaData[qid];                    
+                    if(q && !$osf.isBlank(q.value)) {
                         complete++;
                     }
                     total++;
