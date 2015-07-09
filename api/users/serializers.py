@@ -1,4 +1,5 @@
 from rest_framework import serializers as ser
+from .utils import IncludeAdditionalQuery
 
 from api.base.serializers import JSONAPISerializer, LinksField, Link
 
@@ -33,10 +34,15 @@ class UserSerializer(JSONAPISerializer):
         }
     })
 
-    additional_query_params = ser.DictField(required=False)
+    additional_query_params = ser.SerializerMethodField(required=False)
 
     class Meta:
         type_ = 'users'
+
+    def get_additional_query_params(self, obj):
+        include = IncludeAdditionalQuery(obj, self.context['request'])
+        ret = include.get_additional_query()
+        return ret
 
     def absolute_url(self, obj):
         return obj.absolute_url

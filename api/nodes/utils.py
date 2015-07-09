@@ -26,6 +26,7 @@ class IncludeAdditionalQuery(object):
                 raise NotFound('The following arguments cannot be found: {}'.format(params_string))
         return query
 
+    # todo make simple serializer for children
     def get_children(self):
         nodes = {}
         for node in self.obj.nodes:
@@ -37,6 +38,7 @@ class IncludeAdditionalQuery(object):
                 }
         return nodes
 
+    # todo make simple serializer for contributors
     def get_contributors(self):
         contributors = {}
         for contributor in self.obj.contributors:
@@ -47,10 +49,13 @@ class IncludeAdditionalQuery(object):
             }
         return contributors
 
+    # todo make simple serializer for pointers
     def get_pointers(self):
         pointers = {}
         for pointer in self.obj.nodes_pointer:
             pointers[pointer._id] = {
                 'title': pointer.title,
+                'description': pointer.description,
+                'is_public': pointer.is_public
             }
         return pointers
