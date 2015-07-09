@@ -4,19 +4,63 @@ from nose.tools import *
 from collections import OrderedDict
 
 from website.notifications.events.model import *
-from website.notifications.emails import notify
+from website.notifications.events.utils import *
 
 from framework.auth import Auth
 from tests import factories
 from tests.base import OsfTestCase
 
 
-class TestEventGet(OsfTestCase):
+class TestListOfFiles(OsfTestCase):
+    """
+    List files given a list
+    """
+    def setUp(self):
+        super(TestListOfFiles, self).setUp()
+        self.tree = {
+            'kind': 'folder',
+            'path': 'a',
+            'children': [
+                {
+                    'kind': 'folder',
+                    'path': 'b',
+                    'children': [
+                        {
+                            'kind': 'file',
+                            'path': 'e'
+                        },
+                        {
+                            'kind': 'file',
+                            'path': 'f'
+                        }
+                    ]
+                },
+                {
+                    'kind': 'file',
+                    'path': 'c'
+                },
+                {
+                    'kind': 'file',
+                    'path': 'd'
+                }
+            ]
+        }
+
+    def test_list_of_files(self):
+        files = []
+        list_of_files(self.tree, files)
+        assert_equal(['e', 'f', 'c', 'd'], files)
+
+    def tearDown(self):
+        pass
+
+
+class TestParseEvent(OsfTestCase):
     """
     Add all possible called events here to ensure that the Event class can call them.
     """
     def setUp(self):
-        super(TestEventGet, self).setUp()
+        super(TestParseEvent, self).setUp()
         self.user = factories.UserFactory()
         self.consolidate_auth = Auth(user=self.user)
         self.node = factories.ProjectFactory(creator=self.user)
@@ -225,7 +269,56 @@ class TestFileMoved(OsfTestCase):
         self.event.perform()
         assert_equal(3, mock_send.call_count)
 
-    def test_warn_one_user(self):
+    @mock.patch('website.notifications.emails.send')
+    def test_remove_user_sent_once(self, mock_send):
+        self.project.add_contributor(self.user_3, permissions=['write', 'read'], auth=self.auth)
+        self.project.save()
+        self.file_sub.email_digest.append(self.user_3)
+        self.file_sub.save()
+        self.event.perform()
+        assert_equal(1, mock_send.call_count)
+
+    def tearDown(self):
+        pass
+
+class TestCategorizeUsers(OsfTestCase):
+    def setUp(self):
+        super(TestCategorizeUsers, self).setUp()
+        self.user_1 = factories.AuthUserFactory()
+        self.auth = Auth(user=self.user_1)
+        self.user_2 = factories.AuthUserFactory()
+        self.user_3 = factories.AuthUserFactory()
+        self.user_4 = factories.AuthUserFactory()
+        self.project = factories.ProjectFactory(creator=self.user_1)
+        self.private_node = factories.NodeFactory(parent=self.project, is_public=False, creator=self.user_1)
+        # Payload
+        file_moved_payload = file_move_payload(self.private_node, self.project)
+        self.event = Event.parse_event(self.user_2, self.private_node, 'addon_file_moved',
+                                       payload=file_moved_payload)
+        # Subscriptions
+        # for parent node
+        self.sub = factories.NotificationSubscriptionFactory(
+            _id=self.project._id + '_file_updated',
+            owner=self.project,
+            event_name='file_updated'
+        )
+        self.sub.save()
+        # for private node
+        self.private_sub = factories.NotificationSubscriptionFactory(
+            _id=self.private_node._id + '_file_updated',
+            owner=self.private_node,
+            event_name='file_updated'
+        )
+        self.private_sub.save()
+        # for file subscription
+        self.file_sub = factories.NotificationSubscriptionFactory(
+            _id=self.project._id + '_' + self.event.source_guid._id + '_file_updated',
+            owner=self.project,
+            event_name='xyz42_file_updated'
+        )
+        self.file_sub.save()
+
+    def test_warn_user(self):
         """Tests that a user with a sub in the origin node gets a warning that they are no longer tracking the file."""
         self.sub.email_transactional.append(self.user_1)
         self.project.add_contributor(self.user_3, permissions=['write', 'read'], auth=self.auth)
@@ -236,12 +329,13 @@ class TestFileMoved(OsfTestCase):
         self.sub.save()
         self.private_sub.none.append(self.user_3)
         self.private_sub.save()
-        moved, warn, removed = self.event.categorize_users()
-        assert_equal({'email_transactional': [], 'email_digest': [self.user_3._id]}, warn)
-        assert_equal({'email_transactional': [self.user_1._id], 'email_digest': []}, moved)
+        moved, warn, removed = categorize_users(self.event.user, self.event.source_event, self.event.source_node,
+                                                self.event.event, self.event.node)
+        assert_equal({'email_transactional': [], 'email_digest': [self.user_3._id], 'none': []}, warn)
+        assert_equal({'email_transactional': [self.user_1._id], 'email_digest': [], 'none': []}, moved)
         # print (warn, moved, removed)
 
-    def test_dont_warn_same_user(self):
+    def test_moved_user(self):
         """Doesn't warn a user with two different subs, but does send a moved email"""
         self.project.add_contributor(self.user_3, permissions=['write', 'read'], auth=self.auth)
         self.project.save()
@@ -251,28 +345,19 @@ class TestFileMoved(OsfTestCase):
         self.sub.save()
         self.private_sub.email_transactional.append(self.user_3)
         self.private_sub.save()
-        moved, warn, removed = self.event.categorize_users()
-        assert_equal({'email_transactional': [], 'email_digest': []}, warn)
-        assert_equal({'email_transactional': [self.user_3._id], 'email_digest': []}, moved)
-        # print (warn, moved, removed)
+        moved, warn, removed = categorize_users(self.event.user, self.event.source_event, self.event.source_node,
+                                                self.event.event, self.event.node)
+        assert_equal({'email_transactional': [], 'email_digest': [], 'none': []}, warn)
+        assert_equal({'email_transactional': [self.user_3._id], 'email_digest': [], 'none': []}, moved)
 
-    def test_remove_one_user_file(self):
+    def test_remove_user(self):
         self.project.add_contributor(self.user_3, permissions=['write', 'read'], auth=self.auth)
         self.project.save()
         self.file_sub.email_transactional.append(self.user_3)
         self.file_sub.save()
-        moved, warn, removed = self.event.categorize_users()
+        moved, warn, removed = categorize_users(self.event.user, self.event.source_event, self.event.source_node,
+                                                self.event.event, self.event.node)
         assert_equal({'email_transactional': [self.user_3._id], 'email_digest': [], 'none': []}, removed)
-        print (moved, warn, removed)
-
-    @mock.patch('website.notifications.emails.send')
-    def test_remove_user_sent_once(self, mock_send):
-        self.project.add_contributor(self.user_3, permissions=['write', 'read'], auth=self.auth)
-        self.project.save()
-        self.file_sub.email_digest.append(self.user_3)
-        self.file_sub.save()
-        self.event.perform()
-        assert_equal(1, mock_send.call_count)
 
     def tearDown(self):
         pass

@@ -284,7 +284,7 @@ class AddonFileMoved(ComplexFileEvent):
             return
         if self.payload['destination']['kind'] != u'folder':
             moved, warn, rm_users = utils.categorize_users(self.user, self.source_event, self.source_node,
-                                                            self.event, self.node)
+                                                           self.event, self.node)
             warn_message = self.html_message + ' Your component-level subscription was not transferred.'
             remove_message = self.html_message + ' Your subscription has been removed' \
                                                  ' due to insufficient permissions in the new component.'
@@ -323,9 +323,9 @@ class AddonFileMoved(ComplexFileEvent):
                 utils.categorize_users(self.user, source_guid.guid_url.strip('/') + '_file_updated', self.source_node,
                                        guid.guid_url.strip('/') + '_file_updated', self.node)
             for notification in NOTIFICATION_TYPES:
-                move[notification] = list(set(move[notification]).add(set(t_move[notification])))
-                warn[notification] = list(set(warn[notification]).add(set(t_warn[notification])))
-                remove[notification] = list(set(remove[notification]).add(set(t_remove[notification])))
+                move[notification] = list(set(move[notification]).union(set(t_move[notification])))
+                warn[notification] = list(set(warn[notification]).union(set(t_warn[notification])))
+                remove[notification] = list(set(remove[notification]).union(set(t_remove[notification])))
         return move, warn, remove
 
     def form_url(self):
