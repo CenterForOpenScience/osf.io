@@ -19,7 +19,7 @@
         <div class="col-md-1"><h5>Payment sent?</h5></div>
     </div>
     <div id="overview">
-        <div class="row" id="prereg-row">
+        <div class="row scripted" id="prereg-row">
             <span data-bind="foreach: drafts">
             	<%include file="admin/prereg-rows.mako" />
             </span>
