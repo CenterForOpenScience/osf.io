@@ -29,7 +29,7 @@
                     <div class="form-group">
                         <label>Institution</label>
                        <input class="form-control" data-bind="value: institution"
-                            required="required" placeholder="Required"/>
+                            placeholder="Required"/>
                          <div data-bind="visible: $parent.showMessages, css:'text-danger'">
                             <p data-bind="validationMessage: institution"></p>
                         </div>
