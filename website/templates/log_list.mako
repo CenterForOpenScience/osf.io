@@ -27,49 +27,52 @@
                     <span data-bind="text: tzname"></span>
                     <a href="http://en.wikipedia.org/wiki/Coordinated_Universal_Time" target="_blank">UTC</a> offset.
                 </p>
-                <p class="text-muted" data-bind="if: loading()">Loading logs...</p>
+                <span data-bind="if: loading()">
+                    <div class="spinner-loading-wrapper">
+		                <div class="logo-spin logo-lg "><img src="/static/img/logo_spin.png" alt="loader"> </div>
+	                	<p class="m-t-sm text-center"> Loading logs...  </p>
+	                </div>
+                </span>
                 <p data-bind="if: !logs().length && !loading()" class="help-block">
                     No logs to show. Click the watch icon (<i class="fa fa-eye"></i>) icon on a
                     project's page to get activity updates here.
                 </p>
-
-                <dl class="dl-horizontal activity-log" data-bind="foreach: {data: logs, as: 'log'}">
-                    <dt><span class="date log-date" data-bind="text: log.date.local, tooltip: {title: log.date.utc}"></span></dt>
-                    <dd class="log-content break-word">
-
-
+                <span data-bind="if: !loading()">
+                    <dl class="dl-horizontal activity-log" data-bind="foreach: {data: logs, as: 'log'}"  >
+                        <dt><span class="date log-date" data-bind="text: log.date.local, tooltip: {title: log.date.utc}"></span></dt>
+                        <dd class="log-content break-word">
                         <!-- ko if: log.hasTemplate() -->
                             <!-- ko if: log.hasUser() -->
                             <span data-bind="if:log.anonymous">
-                            <span class="contributor-anonymous">A user</span>
+                                <span class="contributor-anonymous">A user</span>
                             </span>
-                            <span data-bind="ifnot:log.anonymous">
-                                <span data-bind="if: log.userURL">
-                                    <a class="overflow" data-bind="text: log.userFullName || log.apiKey, attr: {href: log.userURL}"></a>
+                                <span data-bind="ifnot:log.anonymous">
+                                    <span data-bind="if: log.userURL">
+                                        <a class="overflow" data-bind="text: log.userFullName || log.apiKey, attr: {href: log.userURL}"></a>
+                                    </span>
+                                    <span data-bind="ifnot: log.userURL">
+                                        <span class="overflow" data-bind="text: log.userFullName"></span>
+                                    </span>
                                 </span>
-                                <span data-bind="ifnot: log.userURL">
-                                    <span class="overflow" data-bind="text: log.userFullName"></span>
-                                </span>
-                            </span>
-                            <!-- Log actions are the same as their template name -->
-                            <span data-bind="template: {name: log.action, data: log}"></span>
+                                <!-- Log actions are the same as their template name -->
+                                <span data-bind="template: {name: log.action, data: log}"></span>
+                                <!-- /ko -->
+
+                                <!-- ko ifnot: log.hasUser() -->
+                                    <!-- Log actions are the same as their template name  + no_user -->
+                                    <span data-bind="template: {name: log.action + '_no_user', data: log}"></span>
+                                <!-- /ko -->
                             <!-- /ko -->
 
-                            <!-- ko ifnot: log.hasUser() -->
-                                <!-- Log actions are the same as their template name  + no_user -->
-                                <span data-bind="template: {name: log.action + '_no_user', data: log}"></span>
+
+                            <!-- For debugging purposes: If a log template for a the Log can't be found, show
+                                an error message with its log action. -->
+                            <!-- ko ifnot: log.hasTemplate() -->
+                            <span class="text-warning">Could not render log: "<span data-bind="text: log.action"></span>"</span>
                             <!-- /ko -->
-                        <!-- /ko -->
-
-
-                        <!-- For debugging purposes: If a log template for a the Log can't be found, show
-                            an error message with its log action. -->
-                        <!-- ko ifnot: log.hasTemplate() -->
-                        <span class="text-warning">Could not render log: "<span data-bind="text: log.action"></span>"</span>
-                        <!-- /ko -->
-
-                    </dd>
-                </dl><!-- end foreach logs -->
+                        </dd>
+                    </dl><!-- end foreach logs -->
+                </span>
                 <div class='help-block absolute-bottom'>
                     <ul class="pagination pagination-sm" data-bind="foreach: paginators">
                         <li data-bind="css: style"><a href="#" data-bind="click: handler, html: text"></a></li>

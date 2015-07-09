@@ -3,16 +3,17 @@
 # PEP8 asserts
 from copy import deepcopy
 import httplib as http
-import time
 
 import mock
+import time
+
 from nose.tools import *  # noqa
 from modularodm.exceptions import ValidationValueError
 
 from tests.base import OsfTestCase, fake
 from tests.factories import (
-    UserFactory, NodeFactory, ProjectFactory, ApiKeyFactory,
-    AuthUserFactory, NodeWikiFactory, ProjectWithAddonFactory,
+    UserFactory, NodeFactory, ProjectFactory,
+    AuthUserFactory, NodeWikiFactory,
 )
 from website.addons.wiki import settings
 from website.addons.wiki.exceptions import InvalidVersionError
@@ -501,12 +502,11 @@ class TestWikiDelete(OsfTestCase):
     def setUp(self):
         super(TestWikiDelete, self).setUp()
 
-        self.project = ProjectFactory(is_public=True)
-        api_key = ApiKeyFactory()
-        self.project.creator.api_keys.append(api_key)
-        self.project.creator.save()
-        self.consolidated_auth = Auth(user=self.project.creator, api_key=api_key)
-        self.auth = ('test', api_key._primary_key)
+        creator = AuthUserFactory()
+
+        self.project = ProjectFactory(is_public=True, creator=creator)
+        self.consolidated_auth = Auth(user=self.project.creator)
+        self.auth = creator.auth
         self.project.update_node_wiki('Elephants', 'Hello Elephants', self.consolidated_auth)
         self.project.update_node_wiki('Lions', 'Hello Lions', self.consolidated_auth)
         self.elephant_wiki = self.project.get_wiki_page('Elephants')
@@ -551,12 +551,11 @@ class TestWikiRename(OsfTestCase):
     def setUp(self):
         super(TestWikiRename, self).setUp()
 
-        self.project = ProjectFactory(is_public=True)
-        api_key = ApiKeyFactory()
-        self.project.creator.api_keys.append(api_key)
-        self.project.creator.save()
-        self.consolidated_auth = Auth(user=self.project.creator, api_key=api_key)
-        self.auth = ('test', api_key._primary_key)
+        creator = AuthUserFactory()
+
+        self.project = ProjectFactory(is_public=True, creator=creator)
+        self.consolidated_auth = Auth(user=self.project.creator)
+        self.auth = creator.auth
         self.project.update_node_wiki('home', 'Hello world', self.consolidated_auth)
 
         self.page_name = 'page2'
