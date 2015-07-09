@@ -12,8 +12,8 @@
                 <div id="alert" style="padding-bottom:10px">Are you sure you want to delete this wiki page?</div>
             </div><!-- end modal-body -->
             <div class="modal-footer">
-                <a id="close" href="#" class="btn btn-default" data-dismiss="modal">Close</a>
-                <a id="delete-wiki" class="btn btn-primary">OK</a>
+                <a id="close" href="#" class="btn btn-default" data-dismiss="modal">Cancel</a>
+                <a id="delete-wiki" class="btn btn-danger">Delete</a>
             </div><!-- end modal-footer -->
         </div><!-- end modal- content -->
     </div><!-- end modal-dialog -->

@@ -1,6 +1,11 @@
 <%page expression_filter="h"/>
 <%inherit file="project/project_base.mako"/>
 <%def name="title()">${node['title'] | n} Wiki</%def>
+
+<%def name="stylesheets()">
+    ${parent.stylesheets()}
+    <link rel="stylesheet" href="/static/css/pages/wiki-page.css">
+</%def>
 ## Use full page width
 <%def name="container_class()">container-xxl</%def>
 
@@ -243,10 +248,10 @@
         <h3 class="modal-title">This wiki page has been deleted</h3>
       </div>
       <div class="modal-body">
-        <p>Press OK to return to the project wiki home page.</p>
+        <p>Press Confirm to return to the project wiki home page.</p>
       </div>
       <div class="modal-footer">
-          <button type="button" class="btn btn-primary" data-dismiss="modal">OK</button>
+          <button type="button" class="btn btn-success" data-dismiss="modal">Confirm</button>
       </div>
     </div>
   </div>

@@ -51,7 +51,7 @@
             <button data-bind="click: selectBucket,
                                attr.disabled: !allowSelectBucket()"
                     class="btn btn-success">
-              Submit
+              Save
             </button>
           </div>
         </div>        
