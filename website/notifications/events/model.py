@@ -7,11 +7,8 @@ from six import add_metaclass
 
 import website.notifications.emails as emails
 from website.notifications.constants import NOTIFICATION_TYPES
-from website.notifications.utils import move_subscription, separate_users
 from website.models import Node
-from website.archiver.utils import aggregate_file_tree_metadata
-
-from pprint import pprint
+from website.notifications.events import utils
 
 
 class _EventMeta(type):
@@ -268,12 +265,11 @@ class ComplexFileEvent(FileEvent):
         """Produces both guids for source and destination"""
         # if self.payload['destination']['kind'] != u'folder':
         self.addon = self.node.get_addon(self.payload['destination']['provider'])
-        path = self.payload['destination']['path']
-        path = path if path.startswith('/') else '/' + path
-        self._guid, created = self.addon.find_or_create_file_guid(path)
+        self._guid = utils.get_file_guid(self.node, self.payload['destination']['provider'],
+                                         self.payload['destination']['path'])
         self.source_node = Node.load(self.payload['source']['node']['_id'])
-        addon = self.source_node.get_addon(self.payload['source']['provider'])
-        self._source_guid, created = addon.find_or_create_file_guid(path)
+        self._source_guid = utils.get_file_guid(self.source_node, self.payload['source']['provider'],
+                                                self.payload['destination']['path'])
 
 
 class AddonFileMoved(ComplexFileEvent):
@@ -283,85 +279,53 @@ class AddonFileMoved(ComplexFileEvent):
     """
     def perform(self):
         """Sends a message to users who are removed from the file's subscription when it is moved"""
+        if self.node == self.source_node:
+            super(AddonFileMoved, self).perform()
+            return
         if self.payload['destination']['kind'] != u'folder':
-            moved, warn, rm_users = self.categorize_users()
+            moved, warn, rm_users = utils.categorize_users(self.user, self.source_event, self.source_node,
+                                                            self.event, self.node)
             warn_message = self.html_message + ' Your component-level subscription was not transferred.'
             remove_message = self.html_message + ' Your subscription has been removed' \
                                                  ' due to insufficient permissions in the new component.'
-            for notification in NOTIFICATION_TYPES:
-                if notification == 'none':
-                    continue
-                if moved[notification]:
-                    emails.send(moved[notification], notification, self.node_id, 'file_updated', self.user, self.node,
-                                self.timestamp, message=self.html_message, gravatar_url=self.gravatar_url,
-                                url=self.url)
-                if warn[notification]:
-                    emails.send(warn[notification], notification, self.node_id, 'file_updated', self.user, self.node,
-                                self.timestamp, message=warn_message, gravatar_url=self.gravatar_url,
-                                url=self.url)
-                if rm_users[notification]:
-                    emails.send(rm_users[notification], notification, self.node_id, 'file_updated', self.user,
-                                self.source_node, self.timestamp, message=remove_message,
-                                gravatar_url=self.gravatar_url, url=self.source_url)
         else:
-            file_tree = dict(
-                kind=self.payload['destination']['kind'],
-                path=self.payload['destination']['path'],
-                name=self.payload['destination']['name']
-            )
-            # TODO: Use the code in the comment below and then find the correct folder using the info above
-            # file_tree = self.addon._get_file_tree(user=self.user, version='latest-published')
-            result = aggregate_file_tree_metadata(self.payload['destination']['provider'], file_tree, self.user)
-            pprint(result)
-            super(AddonFileMoved, self).perform()
+            files = utils.get_file_subs_from_folder(self.addon, self.user, self.payload['destination']['kind'],
+                                                    self.payload['destination']['path'],
+                                                    self.payload['destination']['name'])
+            moved, warn, rm_users = self.compile_user_lists(files)
+            warn_message = self.html_message + ' Your component-level subscription was not transferred.'
+            remove_message = self.html_message + ' Your subscription has been removed for the folder or a file within' \
+                                                 ' due to insufficient permissions in the new component.'
+        for notification in NOTIFICATION_TYPES:
+            if notification == 'none':
+                continue
+            if moved[notification]:
+                emails.send(moved[notification], notification, self.node_id, 'file_updated', self.user, self.node,
+                            self.timestamp, message=self.html_message, gravatar_url=self.gravatar_url,
+                            url=self.url)
+            if warn[notification]:
+                emails.send(warn[notification], notification, self.node_id, 'file_updated', self.user, self.node,
+                            self.timestamp, message=warn_message, gravatar_url=self.gravatar_url,
+                            url=self.url)
+            if rm_users[notification]:
+                emails.send(rm_users[notification], notification, self.node_id, 'file_updated', self.user,
+                            self.source_node, self.timestamp, message=remove_message,
+                            gravatar_url=self.gravatar_url, url=self.source_url)
 
-    def categorize_users(self):
-        """
-        Puts users in one of three bins: Those that are moved, those that need warned, those that are removed.
-        Could be generalized, not sure where move subscription would go if that is the case.
-        """
-        remove = move_subscription(self.source_event, self.source_node, self.event, self.node)
-        source_node_subs = emails.compile_subscriptions(self.source_node, 'file_updated')
-        new_subs = emails.compile_subscriptions(self.node, 'file_updated', self.event)
-        warn = {}
-        move = {}
-        for notifications in NOTIFICATION_TYPES:
-            if notifications == 'none':
-                continue
-            move[notifications] = list(set(source_node_subs[notifications]).union(set(new_subs[notifications])))
-            warn[notifications] = list(set(source_node_subs[notifications]).difference(set(new_subs[notifications])))
-            subbed, removed = separate_users(self.node, warn[notifications])
-            warn[notifications] = subbed
-            remove[notifications].extend(removed)
-            remove[notifications] = list(set(remove[notifications]))
-        # Remove duplicates in different types
-        for notifications in NOTIFICATION_TYPES:
-            if notifications == 'none':
-                continue
-            for nt in NOTIFICATION_TYPES:
-                if nt == 'none':
-                    continue
-                if nt != notifications:
-                    warn[notifications] = list(set(warn[notifications]).difference(set(new_subs[nt])))
-                    move[notifications] = list(set(move[notifications]).difference(set(new_subs[nt])))
-        # Remove final duplicates in all types
-        for notifications in NOTIFICATION_TYPES:
-            if notifications == 'none':
-                continue
-            for nt in NOTIFICATION_TYPES:
-                if nt == 'none':
-                    continue
-                move[notifications] = list(set(move[notifications]).difference(set(warn[nt])))
-                move[notifications] = list(set(move[notifications]).difference(set(remove[nt])))
-            # Remove the user who started this whole thing.
-            user_id = self.user._id
-            if user_id in warn[notifications]:
-                warn[notifications].remove(user_id)
-            if user_id in move[notifications]:
-                move[notifications].remove(user_id)
-            if user_id in remove[notifications]:
-                remove[notifications].remove(user_id)
-
+    def compile_user_lists(self, files):
+        move = {key: [] for key in NOTIFICATION_TYPES}
+        warn = {key: [] for key in NOTIFICATION_TYPES}
+        remove = {key: [] for key in NOTIFICATION_TYPES}
+        for file_path in files:
+            guid = utils.get_file_guid(self.node, self.payload['destination']['provider'], file_path)
+            source_guid = utils.get_file_guid(self.source_node, self.payload['source']['provider'], file_path)
+            t_move, t_warn, t_remove = \
+                utils.categorize_users(self.user, source_guid.guid_url.strip('/') + '_file_updated', self.source_node,
+                                       guid.guid_url.strip('/') + '_file_updated', self.node)
+            for notification in NOTIFICATION_TYPES:
+                move[notification] = list(set(move[notification]).add(set(t_move[notification])))
+                warn[notification] = list(set(warn[notification]).add(set(t_warn[notification])))
+                remove[notification] = list(set(remove[notification]).add(set(t_remove[notification])))
         return move, warn, remove
 
     def form_url(self):
