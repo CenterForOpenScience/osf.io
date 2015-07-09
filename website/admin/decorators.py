@@ -16,8 +16,7 @@ def must_be_super_on(group):
             kwargs['auth'] = Auth.from_kwargs(request.args.to_dict(), kwargs)
             user_role = Role.for_user(kwargs['auth'].user, group=group)
             if not user_role or not user_role.is_super:
-                # not authorized is not an option for this 
-                raise HTTPError(http.NOT_ACCEPTABLE)
+                raise HTTPError(http.UNAUTHORIZED)
             return func(*args, **kwargs)
 
         return wrapped

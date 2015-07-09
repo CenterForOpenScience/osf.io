@@ -8,4 +8,5 @@ from website.admin.decorators import must_be_super_on
 @must_be_logged_in
 #@must_be_super_on(PREREG)
 def prereg(auth, *args, **kwargs):
-    return {}
+    user = auth.user
+    return {'id': user._id}

@@ -6,7 +6,7 @@ var $ = require('jquery');
 var Raven = require('raven-js');
 
 $(document).ready(function() {
-    var test = '/api/v1/drafts/' + window.contextVars.currentUser.id
+    var test = '/api/v1/drafts/' + window.contextVars.accessToken
 
     var request = $.ajax({
         url: test
