@@ -54,7 +54,7 @@ var _figshareItemButtons = {
                     onclick: function(event) {
                         Fangorn.ButtonEvents._gotoFileEvent.call(tb, item);
                     },
-                    icon: 'fa fa-external-link',
+                    icon: 'fa fa-file-o',
                     className : 'text-info'
                 }, 'View'));
         }

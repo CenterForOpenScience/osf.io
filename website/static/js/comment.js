@@ -248,7 +248,7 @@ var CommentModel = function(data, $parent, $root) {
     });
 
     self.toggleIcon = ko.computed(function() {
-            return self.showChildren() ? 'fa fa-minus-square-o' : 'fa fa-plus-square-o';
+            return self.showChildren() ? 'fa fa-minus' : 'fa fa-plus';
     });
     self.editHighlight = ko.computed(function() {
         return self.canEdit() && self.hoverContent();

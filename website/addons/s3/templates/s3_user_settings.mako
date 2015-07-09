@@ -26,7 +26,7 @@
         </div>
 
         <button class="btn btn-success addon-settings-submit">
-            Submit
+            Save
         </button>
     % endif
 

@@ -1,5 +1,12 @@
 <%inherit file="base.mako"/>
-<%def name="title()">Configure Add-on Accounts </%def>
+<%def name="title()">Configure Add-on Accounts</%def>
+
+<%def name="stylesheets()">
+   ${parent.stylesheets()}
+   <link rel="stylesheet" href='/static/css/pages/account-setting-page.css'>;
+   <link rel="stylesheet" href='/static/css/user-addon-settings.css'>;
+</%def>
+
 <%def name="content()">
 <style>
 .addon-icon {
