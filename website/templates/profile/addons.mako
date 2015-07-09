@@ -19,22 +19,14 @@
 
 
 <div id="addonSettings" class="row">
-
     <div class="col-sm-3 affix-parent">
-        <div class="osf-affix profile-affix" data-spy="affix" data-offset-top="70" data-offset-bottom="268">
-            <ul class="nav nav-stacked nav-pills">
-                <li><a href="${ web_url_for('user_profile') }">Profile Information</a></li>
-                <li><a href="${ web_url_for('user_account') }">Account Settings</a></li>
-                <li class="active"><a href="#">Configure Add-on Accounts</a></li>
-                <li><a href="${ web_url_for('user_notifications') }">Notifications</a></li>
-            </ul>
-        </div><!-- end sidebar -->
+        <%include file="include/profile/settings_navpanel.mako" args="current_page='addons'"/>
     </div>
 
     <div class="col-sm-9 col-md-7">
-      <div id="configureAddons" class="panel panel-default">
-        <div class="panel-heading clearfix"><h3 class="panel-title">Configure Add-on Accounts</h3></div>
-        <div class="panel-body">
+        <div id="configureAddons" class="panel panel-default">
+          <div class="panel-heading clearfix"><h3 class="panel-title">Configure Add-on Accounts</h3></div>
+          <div class="panel-body">
           % for addon in addon_settings:
             ${render_user_settings(addon) }
           % if not loop.last:
@@ -42,10 +34,10 @@
           % endif
 
           % endfor
-        </div>
-      </div>
-    </div>
-</div>
+        </div><!-- end panel-body-->
+        </div><!-- end panel -->
+    </div><!-- end-col -->
+</div><!-- end row -->
 
 
 % for name, capabilities in addon_capabilities.iteritems():

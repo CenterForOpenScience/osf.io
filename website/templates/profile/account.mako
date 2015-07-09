@@ -14,14 +14,7 @@
         <h2 class="page-header">Account Settings</h2>
         <div class="row">
             <div class="col-md-3 affix-parent">
-                    <div class="osf-affix profile-affix" data-spy="affix" data-offset-top="70" data-offset-bottom="268">
-                        <ul class="nav nav-stacked nav-pills">
-                            <li><a href="${ web_url_for('user_profile') }">Profile Information</a></li>
-                            <li class="active"><a href="#">Account Settings</a></li>
-                            <li><a href="${ web_url_for('user_addons') }">Configure Add-on Accounts</a></li>
-                            <li><a href="${ web_url_for('user_notifications') }">Notifications</a></li>
-                        </ul>
-                </div>
+              <%include file="include/profile/settings_navpanel.mako" args="current_page='account'"/>
             </div>
             <div class="col-md-6">
                 <div id="connectedEmails" class="panel panel-default scripted">
@@ -110,13 +103,13 @@
                 </div>
 				<div class="panel panel-default">
                   <div class="panel-heading"><h3 class="panel-title">Security Settings</h3></div>
-                  <div class="panel-body">                
+                  <div class="panel-body">
                     % for addon in addons:
                     ${render_user_settings(addon) }
                     % if not loop.last:
                     <hr />
-                    % endif              
-                    % endfor              
+                    % endif
+                    % endfor
                   </div>
                 </div>
                 <div id="exportAccount" class="panel panel-default">
