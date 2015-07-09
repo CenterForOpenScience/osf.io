@@ -71,7 +71,7 @@ class TestUsersFiltering(ApiTestCase):
         self.user_one.employment_institutions = [
             {
                 'startYear': '1954',
-                'title': '',
+                'title': 'Reverend',
                 'startMonth': 1,
                 'endMonth': None,
                 'endYear': 1968,
@@ -153,7 +153,7 @@ class TestUsersFiltering(ApiTestCase):
         assert_not_in(self.user_two._id, ids)
 
     def test_filter_using_complex_field(self):
-        url = "/{}users/?filter[employment_institutions.title]=Martin".format(API_BASE)
+        url = "/{}users/?filter[job_title]=Martin".format(API_BASE)
         res = self.app.get(url)
         user_json = res.json['data']
         ids = [each['id'] for each in user_json]
@@ -168,13 +168,13 @@ class TestUsersFiltering(ApiTestCase):
         assert_in(self.user_one._id, ids)
         assert_not_in(self.user_two._id, ids)
 
-    def test_filter_using_full_dictionary(self):
-        url = "/{}users/?filter[employment_institutions]=Martin".format(API_BASE)
+    def test_filter_job_title_for_second_job(self):
+        url = "/{}users/?filter[job_title]=Danza".format(API_BASE)
         res = self.app.get(url)
         user_json = res.json['data']
         ids = [each['id'] for each in user_json]
-        assert_in(self.user_one._id, ids)
-        assert_not_in(self.user_two._id, ids)
+        assert_not_in(self.user_one._id, ids)
+        assert_in(self.user_two._id, ids)
 
     def test_find_no_user_in_users(self):
         url = "/{}users/?filter[given_name]=notMartin".format(API_BASE)
