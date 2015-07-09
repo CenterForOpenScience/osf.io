@@ -1,6 +1,7 @@
 <div id="${addon_short_name}Scope" class="scripted">
     <h4 class="addon-title">
-    ${addon_full_name}        
+        <img class="addon-icon" src=${addon_icon_url}></img>
+        ${addon_full_name}
         <small class="authorized-by">
             <span data-bind="if: nodeHasAuth">
                 authorized by <a data-bind="attr.href: urls().owner">
