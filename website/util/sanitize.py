@@ -99,19 +99,6 @@ def safe_unescape_html(value):
     return value
 
 
-# TODO: Remove safe_unescape_html when mako html safe comes in
-def safe_unescape_html_in_results(func):
-    """ Return the functions results without escaped html
-
-    :param func: Function returning a dict, iterable, or string
-    :return: function
-    """
-    def wrapper(*args, **kwargs):
-        result = func(*args, **kwargs)
-        return safe_unescape_html(result)
-    return wrapper
-
-
 def safe_json(value):
     """
     Dump a string to JSON in a manner that can be used for JS strings in mako templates.
