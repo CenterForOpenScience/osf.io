@@ -68,7 +68,7 @@
     <div class="modal-content">
       <div class="modal-header">
         <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
-        <h3 class="modal-title">Connected to collaborative file editing</h3>
+        <h3 class="modal-title">Connected to Collaborative File Editing</h3>
       </div>
       <div class="modal-body">
         <p>
@@ -86,7 +86,7 @@
     <div class="modal-content">
       <div class="modal-header">
         <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
-        <h3 class="modal-title">Connecting to collaborative file editing</h3>
+        <h3 class="modal-title">Connecting to Collaborative File Editing</h3>
       </div>
       <div class="modal-body">
         <p>
@@ -103,7 +103,7 @@
     <div class="modal-content">
       <div class="modal-header">
         <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
-        <h3 class="modal-title">Collaborative file editing is unavailable</h3>
+        <h3 class="modal-title">Collaborative File Editing is Unavailable</h3>
       </div>
       <div class="modal-body">
         <p>
@@ -120,7 +120,7 @@
     <div class="modal-content">
       <div class="modal-header">
         <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
-        <h3 class="modal-title">Browser unsupported</h3>
+        <h3 class="modal-title">Browser Unsupported</h3>
       </div>
       <div class="modal-body">
         <p>
