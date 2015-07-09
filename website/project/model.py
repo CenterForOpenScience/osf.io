@@ -3072,6 +3072,7 @@ class DraftRegistration(AddonModelMixin, StoredObject):
 
     registration_metadata = fields.DictionaryField({})
     registration_schema = fields.ForeignField('metaschema')
+    registered_node = fields.ForeignField('node')
 
     is_pending_review = fields.BooleanField(default=False)
 
@@ -3085,3 +3086,4 @@ class DraftRegistration(AddonModelMixin, StoredObject):
             return self.__dict__[attr]
         except KeyError:
             return getattr(self.branched_from, attr, None)
+
