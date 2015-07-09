@@ -281,7 +281,7 @@
 }
 
 .wmd-button > span {
-    background-image: url(../../../addons/wiki/static/pagedown-ace/wmd-buttons.png);
+    background-image: url(/static/public/vendor/pagedown/wmd-buttons.png);
     background-repeat: no-repeat;
     background-position: 0px 0px;
     width: 20px;

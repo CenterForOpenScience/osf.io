@@ -40,7 +40,7 @@
                         </div>
                         <div class="p-t-md p-b-md">
                         <button
-                            type="save"
+                            type="submit"
                             class="btn btn-success"
                             data-bind="click: submit"
                         >Save</button>

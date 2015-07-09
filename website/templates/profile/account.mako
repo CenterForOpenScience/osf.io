@@ -76,7 +76,7 @@
                                             <div class="form-group">
                                               <input placeholder="Email address" data-bind="value: emailInput" class="form-control">
                                             </div>
-                                            <input type="submit" value="Add Email" class="btn btn-primary">
+                                            <input type="submit" value="Add Email" class="btn btn-success">
                                         </form>
                                         <div class="help-block">
                                             <p data-bind="html: message, attr: {class: messageClass}"></p>
