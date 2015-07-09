@@ -131,7 +131,8 @@ class NodeSerializer(JSONAPISerializer):
 class ContributorSerializer(UserSerializer):
 
     admin = ser.BooleanField(read_only=True, help_text='Whether the user will be able to add and remove contributors')
-    bibliographic = ser.BooleanField(read_only=True, help_text='Whether the user will be included in citations for this node or not')
+    bibliographic = ser.BooleanField(read_only=True, help_text='Whether the user will be included in citations for '
+                                                               'this node or not')
     local_filterable = frozenset(['admin', 'bibliographic'])
     filterable_fields = frozenset.union(UserSerializer.filterable_fields, local_filterable)
 
@@ -142,13 +143,17 @@ class ContributorSerializer(UserSerializer):
     family_name = ser.CharField(read_only=True, help_text='For bibliographic citations')
     suffix = ser.CharField(read_only=True, help_text='For bibliographic citations')
     date_registered = ser.DateTimeField(read_only=True)
-    gravatar_url = ser.CharField(read_only=True, help_text='URL for the icon used to identify the user. Relies on http://gravatar.com ')
-    employment_institutions = ser.ListField(read_only=True, source='jobs', help_text='An array of dictionaries representing the '
-                                                                     'places the user has worked')
-    educational_institutions = ser.ListField(read_only=True, source='schools', help_text='An array of dictionaries representing the '
-                                                                         'places the user has attended school')
-    social_accounts = ser.DictField(read_only=True, source='social', help_text='A dictionary of various social media account '
-                                                     'identifiers including an array of user-defined URLs')
+    gravatar_url = ser.CharField(read_only=True, help_text='URL for the icon used to identify the user. Relies on '
+                                                           'http://gravatar.com ')
+    employment_institutions = ser.ListField(read_only=True, source='jobs', help_text='An array of dictionaries '
+                                                                                     'representing the '
+                                                                                     'places the user has worked')
+    educational_institutions = ser.ListField(read_only=True, source='schools', help_text='An array of dictionaries '
+                                                                                         'representing the places the '
+                                                                                         'user has attended school')
+    social_accounts = ser.DictField(read_only=True, source='social', help_text='A dictionary of various social media '
+                                                                               'account identifiers including an array '
+                                                                               'of user-defined URLs')
     links = LinksField({
         'html': 'absolute_url',
         'nodes': {
@@ -178,7 +183,8 @@ class ContributorSerializer(UserSerializer):
 class ContributorDetailSerializer(ContributorSerializer):
 
     id = ser.CharField(source='_id', read_only=True)
-    admin = ser.BooleanField(help_text='Whether the user will be able to add and remove contributors')
+    admin = ser.BooleanField(help_text='Whether the user will be able to add and remove contributors.  '
+                              'Note: Only editable if multiple admins exist')
     bibliographic = ser.BooleanField(help_text='Whether the user will be included in citations for this node or not')
 
     def update(self, user, validated_data):
@@ -191,7 +197,7 @@ class ContributorDetailSerializer(ContributorSerializer):
             pass
         elif admin_field:
             node.add_permission(user, 'admin', save=True)
-        elif self.context['view'].has_multiple_admin_contributors():
+        elif self.can_change_admin_status(node, user):
             node.remove_permission(user, 'admin', save=True)
         else:
             raise PermissionDenied('User {} is the only admin.'.format(user))
@@ -204,6 +210,13 @@ class ContributorDetailSerializer(ContributorSerializer):
         'nodes': {
             'relation': Link('users:user-nodes', kwargs={'user_id': '<_id>'})},
     })
+
+    def can_change_admin_status(self, node, current_user):
+        if node.has_permission(current_user, 'admin'):
+            for contributor in node.contributors:
+                if node.has_permission(contributor, 'admin') and contributor is not current_user:
+                    return True
+        return False
 
 
 class NodePointersSerializer(JSONAPISerializer):
