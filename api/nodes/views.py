@@ -63,9 +63,7 @@ class NodeList(generics.ListCreateAPIView, ODMFilterMixin):
     # overrides ListCreateAPIView
     def get_queryset(self):
         query = self.get_query_from_request()
-        queryset = Node.find(query)
-        queryset.request = self.request
-        return queryset
+        return Node.find(query)
 
     # overrides ListCreateAPIView
     def perform_create(self, serializer):
