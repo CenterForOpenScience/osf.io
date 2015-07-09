@@ -25,29 +25,36 @@ class ContributorOrPublic(permissions.BasePermission):
 class AdminOrPublic(permissions.BasePermission):
 
     def has_object_permission(self, request, view, obj):
+        assert isinstance(obj, (Node, Pointer)), 'obj must be a Node or Pointer, got {}'.format(obj)
+        auth = get_user_auth(request)
+        if request.method in permissions.SAFE_METHODS:
+            return obj.is_public or obj.can_view(auth)
+        else:
+            return obj.has_permission(auth.user, 'admin')
+
+
+class ContributorPermissions(permissions.BasePermission):
+    '''
+        Permissions for contributor detail page.
+
+        Returns true if node is viewable and requests are save methods method is not delete or
+        exists other admin contributor
+    '''
+    def has_object_permission(self, request, view, obj):
         assert isinstance(obj, (Node, User)), 'obj must be a Node or User, got {}'.format(obj)
         auth = get_user_auth(request)
         node = Node.load(request.parser_context['kwargs']['node_id'])
         if request.method in permissions.SAFE_METHODS:
             return node.is_public or node.can_view(auth)
-        elif request.method != 'DELETE' or self.has_multiple_admin_contributors(node):
-            return node.has_permission(auth.user, 'admin')
+        elif request.method != 'DELETE' or self.has_other_admin_contributor(node, obj):
+            return True
         else:
-            return node.has_permission(auth.user, 'admin') and obj != auth.user
+            return False
 
-    '''
-        Just like in views, I had an issue with getting the number of admins from admin_contributor_ids method
-        I am also wondering if there is a way to combine this with the method in views
-    '''
-    def has_multiple_admin_contributors(self, node):
-        has_one_admin = False
+    def has_other_admin_contributor(self, node, current_user):
         for contributor in node.contributors:
-
-            # Should I use this method or the is_admin_parent method?
-            if node.has_permission(contributor, 'admin'):
-                if has_one_admin:
-                    return True
-                has_one_admin = True
+            if node.has_permission(contributor, 'admin') and contributor is not current_user:
+                return True
         return False
 
 
