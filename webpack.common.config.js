@@ -33,6 +33,7 @@ var entry = {
     'project-settings-page': staticPath('js/pages/project-settings-page.js'),
     'project-registrations-page': staticPath('js/pages/project-registrations-page.js'),
     'registration-retraction-page': staticPath('js/pages/registration-retraction-page.js'),
+    'registration-edit-page': staticPath('js/pages/registration-edit-page.js'),
     'register_1-page': staticPath('js/pages/register_1-page.js'),
     'wiki-edit-page': staticPath('js/pages/wiki-edit-page.js'),
     'file-page': staticPath('js/pages/file-page.js'),

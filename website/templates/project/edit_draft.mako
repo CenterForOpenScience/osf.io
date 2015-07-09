@@ -14,5 +14,13 @@
 
 <%def name="javascript_bottom()">
 	${parent.javascript_bottom()}
-	<script src=${"/static/public/js/project-registrations-page.js" | webpack_asset}> </script>
+
+    // Mako variables accessible globally
+    window.contextVars = $.extend(true, {}, window.contextVars, {
+		draft: {
+			${node}
+		},
+    });
+
+	<script src=${"/static/public/js/registration-edit-page.js" | webpack_asset}> </script>
 </%def>
