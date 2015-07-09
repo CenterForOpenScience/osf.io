@@ -19,9 +19,10 @@
         <div class="col-md-1"><h5>Payment sent?</h5></div>
     </div>
     <div id="overview">
-        <div class="row">
-            <div class="col-md-2">col</div>
-            <div class="col-md-1">col</div>
+        <div class="row" id="prereg-row">
+            <span data-bind: "foreach: drafts">
+            	<%include file="admin/prereg-rows.mako" />
+            </span>
         </div>
     </div>
 </div>
