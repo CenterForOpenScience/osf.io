@@ -51,9 +51,11 @@
                 </div>
                 <div data-bind="if: canEdit">
                     <a data-bind="click: startUndelete">Restore</a>
-                    <div data-bind="if: undeleting">
-                        <a class="btn btn-default btn-sm" data-bind="click: cancelUndelete">Cancel</a>
-                        <a class="btn btn-success btn-sm" data-bind="click: submitUndelete">Save</a>
+                    <div class="clearfix" data-bind="if: undeleting">
+                        <div class="pull-right">
+                            <a class="btn btn-default btn-sm" data-bind="click: cancelUndelete">Cancel</a>
+                            <a class="btn btn-success btn-sm" data-bind="click: submitUndelete">Save</a>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -66,9 +68,11 @@
                     Comment reported
                 </div>
                 <a data-bind="click: startUnreportAbuse">Not abuse</a>
-                <div data-bind="if: unreporting">
-                    <a class="btn btn-default btn-sm" data-bind="click: cancelUnreportAbuse">Cancel</a>
-                    <a class="btn btn-primary btn-sm" data-bind="click: submitUnreportAbuse">Save</a>
+                <div class="clearfix" data-bind="if: unreporting">
+                    <div class="pull-right">
+                        <a class="btn btn-default btn-sm" data-bind="click: cancelUnreportAbuse">Cancel</a>
+                        <a class="btn btn-primary btn-sm" data-bind="click: submitUnreportAbuse">Save</a>
+                    </div>
                 </div>
             </div>
 
@@ -148,18 +152,22 @@
 
                     </div>
 
-                    <div class="comment-report" data-bind="if: reporting">
+                    <div class="comment-report clearfix" data-bind="if: reporting">
                         <form class="form-inline">
                             <select class="form-control" data-bind="options: abuseOptions, optionsText: abuseLabel, value: abuseCategory"></select>
                             <input class="form-control" data-bind="value: abuseText" placeholder="Describe abuse" />
                         </form>
-                        <a class="btn btn-default btn-sm" data-bind="click: cancelAbuse"> Cancel</a>
-                        <a class="btn btn-danger btn-sm" data-bind="click: submitAbuse"> Report</a>
+                        <div class="pull-right m-t-xs">
+                            <a class="btn btn-default btn-sm" data-bind="click: cancelAbuse"> Cancel</a>
+                            <a class="btn btn-danger btn-sm" data-bind="click: submitAbuse"> Report</a>
+                        </div>
                     </div>
 
-                    <div class="comment-delete" data-bind="if: deleting">
-                        <a class="btn btn-default btn-sm" data-bind="click: cancelDelete">Cancel</a>
-                        <a class="btn btn-danger btn-sm" data-bind="click: submitDelete">Delete</a>
+                    <div class="comment-delete clearfix m-t-xs" data-bind="if: deleting">
+                        <div class="pull-right">
+                            <a class="btn btn-default btn-sm" data-bind="click: cancelDelete">Cancel</a>
+                            <a class="btn btn-danger btn-sm" data-bind="click: submitDelete">Delete</a>
+                        </div>
                     </div>
 
                 </div>
