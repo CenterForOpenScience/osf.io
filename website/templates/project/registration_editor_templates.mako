@@ -1,45 +1,44 @@
 <!-- String Types -->
-<script type="text/html" id="string">  
+<script type="text/html" id="string">
   <span data-bind="template: {data: $data, name: format}"></span>
 </script>
 
-<script type="text/html" id="text">  
-  <input data-bind="valueUpdate: 'keyup', value: value" type="text" class="form-control">          
+<script type="text/html" id="text">
+  <input data-bind="valueUpdate: 'keyup', event: {'keyup': $root.save}, value: value" type="text" class="form-control" />
 </script>
-<script type="text/html" id="textarea">  
-  <textarea data-bind="textInput: value" class="form-control"> </textarea>         
+<script type="text/html" id="match">
+  <input data-bind="valueUpdate: 'keyup', event: {'keyup': $root.save}, value: value, attr.placeholder: match" type="text" class="form-control" />
+</script>
+<script type="text/html" id="textarea">
+  <textarea data-bind="textInput: value" class="form-control"> </textarea>
 </script>
 <!-- Number Types -->
-<script type="text/html" id="number">  
-  <input data-bind="valueUpdate: 'keyup', value: value" type="text" class="form-control">          
+<script type="text/html" id="number">
+  <input data-bind="valueUpdate: 'keyup', event: {'keyup': $root.save}, value: value" type="text" class="form-control">
 </script>
 <!-- Enum Types -->
 <script type="text/html" id="choose">
   <span data-bind="template: {data: $data, name: format}"></span>
 </script>
 
-<script type="text/html" id="list">
+<script type="text/html" id="singleselect">
   <div data-bind="foreach: {data: options, as: 'option'}">
-    <div class="row">
-    <div class="col-sm-9">
-      <blockquote>
-        <p style="font-size: 75%;" data-bind="text: $data"></p>
-      </blockquote>
-    </div>
-    <div class="col-sm-3">
-      <span style="font-size: 200%;" 
-         class="btn fa" 
-         data-bind="css: {
-                      fa-check-circle-o: $parent.value() === $index,
-                      fa-circle-o: $parent.value() !== $index
-                    },
-                    click: $parent.setValue.bind(null, $index)"></span>
-    </div>
+    <div class="radio">
+      <label>
+        <div class="row">
+          <div class="col-md-1">
+            <input type="radio" data-bind="attr.name: $parent.id, value: option" />
+          </div>
+          <div class="col-md-11">
+            <span data-bind="text: option"></span>
+          </div>
+        </div>
+      </label>
     </div>
   </div>
 </script>
 
-<script type="text/html" id="object">  
+<script type="text/html" id="object">
   <span data-bind="foreach: {data: $root.iterObject($data.properties)}">
       <div data-bind="template: {data: value, name: value.type}"></div>
       <hr />
@@ -56,9 +55,9 @@
           <label class="control-label" data-bind="text: title"></label>
           <p class="help-block" data-bind="text: description"></p>
           <span class="example-block">
-            <a data-bind="click: toggleExample">Show Example</a>            
+            <a data-bind="click: toggleExample">Show Example</a>
             <p data-bind="visible: showExample, text: help"></p>
-          </span>       
+          </span>
           <br />
           <br />
           <div class="row">
@@ -101,7 +100,8 @@
                                 <button data-bind="enable: comment.canEdit,
                                    click: comment.saved.bind(null, false)" class="btn btn-info fa fa-pencil"></button>
                                 <button data-bind="enable: comment.canDelete,
-                                   click: $root.comments.remove" class="btn btn-danger fa fa-times"></button>
+                                                   click: $parent.comments.remove"
+                                        class="btn btn-danger fa fa-times"></button>
                             </div>
                         </div>
                     </div>
@@ -116,7 +116,7 @@
         </li>
     </ul>
     <div class="input-group">
-      <input class="form-control registration-editor-comment" type="text" data-bind="value: nextComment, valueUpdate: 'keyup'" />
+      <input class="form-control registration-editor-comment" type="text" data-bind="value: nextComment, valueUpdate: 'keyup', event: {'keyup': $root.save}" />
       <span class="input-group-btn">
         <button class="btn btn primary" data-bind="click: $data.addComment,
                                                    enable: $data.allowAddNext">Add</button>

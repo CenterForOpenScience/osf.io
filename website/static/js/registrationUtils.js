@@ -2,6 +2,7 @@ var $ = require('jquery');
 var ko = require('knockout');
 var bootbox = require('bootbox');
 var moment = require('moment');
+var URI = require('URIjs');
 
 var $osf = require('js/osfHelpers');
 var oop = require('js/oop');
@@ -116,6 +117,7 @@ var Question = function(data, id) {
     self.help = data.help || 'no help text provided';
     self.options = data.options || [];
     self.properties = data.properties || {};
+    self.match = data.match || '';
 
     self.showExample = ko.observable(false);
 
@@ -138,6 +140,8 @@ var Question = function(data, id) {
     self.isComplete = ko.computed(function() {
         return !$osf.isBlank(self.value());
     });
+
+    self.valid = ko.observable(null);
 
     self.init();
 };
@@ -236,22 +240,26 @@ var Draft = function(params, metaSchema) {
     self.schemaData = params.registration_metadata || {};
 
     self.initiator = params.initiator;
-    self.initiated = params.initiated;
-    self.updated = params.updated;
-    self.completion = 0.0;
-    var total = 0;
-    var complete = 0;
-    if (self.schemaData) {
-        $.each(self.metaSchema.schema.pages, function(i, page) {
-            $.each(page.questions, function(qid, question) {
-                if (question.isComplete()) {
-                    complete++;
-                }
-                total++;
+    self.initiated = new Date(params.initiated);
+    self.updated = new Date(params.updated);
+    self.completion = ko.computed(function() {
+        var total = 0;
+        var complete = 0;        
+        if (self.schemaData) {
+            var schema = self.schema();
+            $.each(schema.pages, function(i, page) {
+                $.each(page.questions, function(qid, question) {
+                    var q = self.schemaData[qid];                    
+                    if(q && !$osf.isBlank(q.value)) {
+                        complete++;
+                    }
+                    total++;
+                });
             });
-        });
-        self.completion = 100 * (complete / total);
-    }
+           return Math.ceil(100 * (complete / total));
+        }
+        return 0;
+    });
 };
 
 /** 
@@ -279,41 +287,28 @@ var RegistrationEditor = function(urls, editorId) {
     self.readonly = ko.observable(false);
 
     self.draft = ko.observable();
-    self.currentSchema = ko.computed(function() {
-        var draft = self.draft();
-        if (!draft || !draft.schema()) {
-            return {pages: []};
-        }
-        else {
-            return draft.schema();
-        }
-    });
 
     self.currentQuestion = ko.observable();
     self.currentPages = ko.computed(function() {
-        return self.currentSchema().pages;
+        var draft = self.draft();
+        if(!draft){
+            return [];
+        }
+        var schema = draft.schema();
+        if(!schema) {
+            return [];
+        }
+        return schema.pages;
     });
 
-    self.lastSaveTime = ko.computed(function() {
+    self.lastSaveTime = ko.computed(function() {        
+        if(!self.draft()) {
+            return null;
+        }
         return self.draft().updated;
     });
     self.formattedDate = formattedDate;
     
-    /**
-     * @returns {Question[]} flat list of the current schema's questions
-     **/
-    self.flatQuestions = ko.computed(function() {
-        var flat = [];
-        var schema = self.currentSchema();
-
-        $.each(schema.pages, function(i, page) {
-            $.each(page.questions, function(qid, question) {
-                flat.push(question);
-            });
-        });
-        return flat;
-    });
-
     self.iterObject = $osf.iterObject;
 
     self.extensions = {};
@@ -357,7 +352,22 @@ RegistrationEditor.prototype.init = function(draft) {
             }
         }
     });
-    self.currentQuestion(questions.unshift());
+    self.currentQuestion(questions.shift());
+};
+/**
+ * @returns {Question[]} flat list of the current schema's questions
+ **/
+RegistrationEditor.prototype.flatQuestions = function() {
+    var self = this;
+
+    var flat = [];
+    
+    $.each(self.currentPages(), function(i, page) {
+        $.each(page.questions, function(qid, question) {
+            flat.push(question);
+        });
+    });
+    return flat;
 };
 /**
  * Creates a template context for editor type subtemplates. Looks for the data type
@@ -435,9 +445,8 @@ RegistrationEditor.prototype.updateData = function(response) {
 
     var draft = self.draft();
     draft.pk = response.pk;
-    draft.updated = response.updated;
+    draft.updated = new Date(response.updated);
     self.draft(draft);
-    self.lastSaveTime(new Date());
 };
 RegistrationEditor.prototype.create = function(schemaData) {
     var self = this;
@@ -513,11 +522,11 @@ RegistrationEditor.prototype.save = function() {
         });
     });
 
-    if (!self.draftPk()){
+    if (!self.draft().pk){
         return self.create(data);
     }
 
-    return $osf.putJSON(self.urls.update.replace('{draft_pk}', self.draftPk()), {
+    return $osf.putJSON(self.urls.update.replace('{draft_pk}', self.draft().pk), {
         schema_name: metaSchema.name,
         schema_version: metaSchema.version,
         schema_data: data
@@ -537,7 +546,8 @@ var RegistrationManager = function(node, draftsSelector, editorSelector, control
 	submit: node.urls.api + 'draft/submit/',
         get: node.urls.api + 'draft/{draft_pk}/',
         delete: node.urls.api + 'draft/{draft_pk}/',
-        schemas: '/api/v1/project/schema/'
+        schemas: '/api/v1/project/schema/',
+        edit: node.urls.web + 'draft/{draft_pk}/'
     };
 
     self.schemas = ko.observableArray();
@@ -657,7 +667,7 @@ RegistrationManager.prototype.launchEditor = function(draft) {
     }
 };
 RegistrationManager.prototype.editDraft = function(draft) {
-    this.launchEditor(draft, draft.schema);
+    window.location = this.urls.edit.replace('{draft_pk}', draft.pk);
 };
 RegistrationManager.prototype.deleteDraft = function(draft) {
     var self = this;
@@ -696,6 +706,7 @@ RegistrationManager.prototype.createDraft = function() {
 };
 
 module.exports = {
+    Draft: Draft,
     RegistrationEditor: RegistrationEditor,
     RegistrationManager: RegistrationManager
 };
