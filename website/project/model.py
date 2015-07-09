@@ -16,7 +16,7 @@ from HTMLParser import HTMLParser
 from modularodm import Q
 from modularodm import fields
 from modularodm.validators import MaxLengthValidator
-from modularodm.exceptions import ValidationTypeError
+from modularodm.exceptions import ValidationTypeError, NoResultsFound
 from modularodm.exceptions import ValidationValueError
 
 from api.base.utils import absolute_reverse
@@ -91,27 +91,22 @@ class MetaSchema(StoredObject):
     schema_version = fields.IntegerField()
 
 
-def ensure_schemas(clear=True):
-    """Import meta-data schemas from JSON to database, optionally clearing
-    database first.
-
-    :param clear: Clear schema database before import
+def ensure_schemas():
+    """Import meta-data schemas from JSON to database if not already loaded
     """
-    if clear:
-        try:
-            MetaSchema.remove()
-        except AttributeError:
-            if not settings.DEBUG_MODE:
-                raise
     for schema in OSF_META_SCHEMAS:
         try:
             MetaSchema.find_one(
                 Q('name', 'eq', schema['name']) &
-                Q('schema_version', 'eq', schema['schema_version'])
+                Q('schema_version', 'eq', schema.get('version', 1))
             )
-        except:
-            schema['name'] = schema['name'].replace(' ', '_')
-            schema_obj = MetaSchema(**schema)
+        except NoResultsFound:
+            meta_schema = {
+                'name': schema['name'],
+                'schema_version': schema.get('version', 1),
+                'schema': schema,
+            }
+            schema_obj = MetaSchema(**meta_schema)
             schema_obj.save()
 
 
@@ -522,6 +517,8 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
     #: Whether this is a pointer or not
     primary = True
 
+    is_draft_registration = False
+
     # Node fields that trigger an update to Solr on save
     SOLR_UPDATE_FIELDS = {
         'title',
@@ -593,6 +590,8 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
     registered_meta = fields.DictionaryField()
     retraction = fields.ForeignField('retraction')
     embargo = fields.ForeignField('embargo')
+
+    draft_registrations = fields.ForeignField('draftregistration', backref='branched')
 
     is_fork = fields.BooleanField(default=False, index=True)
     forked_date = fields.DateTimeField(index=True)
@@ -3032,3 +3031,72 @@ class Embargo(StoredObject):
                 },
                 auth=Auth(user),
             )
+
+class DraftRegistration(AddonModelMixin, StoredObject):
+
+    is_draft_registration = True
+
+    _id = fields.StringField(primary=True, default=lambda: str(ObjectId()))
+
+    datetime_initiated = fields.DateTimeField(auto_now_add=True)
+    datetime_updated = fields.DateTimeField(auto_now=True)
+
+    branched_from = fields.ForeignField('node')
+
+    initiator = fields.ForeignField('user')
+
+    registration_metadata = fields.DictionaryField({})
+    registration_schema = fields.ForeignField('metaschema')
+    registered_node = fields.ForeignField('node')
+
+    is_pending_review = fields.BooleanField(default=False)
+
+    schema_name = fields.StringField()
+
+    storage = fields.ForeignField('osfstoragenodesettings')
+
+    # proxy fields from branched_from Node
+    def __getattr__(self, attr):
+        try:
+            return self.__dict__[attr]
+        except KeyError:
+            return getattr(self.branched_from, attr, None)
+
+    def get_comments(self):
+        """ Returns a list of all comments made on a draft in the format of :
+        [{
+            'page1': [{
+                user: 'user',
+                last_modified: 'Thu, 09 Jul 2015 21:45:56 GMT',
+                value: 'Comment text'
+            }],
+            'page2': [{
+                user: 'user',
+                last_modified: 'Thu, 09 Jul 2015 21:45:56 GMT',
+                value: 'Comment text'
+            },
+            {
+                user: 'user',
+                last_modified: 'Thu, 09 Jul 2015 21:45:56 GMT',
+                value: 'Comment text'
+            }]
+        }]
+        """
+        pages = self.registration_schema['schema']['pages']
+        all_comments = list()
+
+        # there has to be a more pythonic way to do this
+        page_num = 1
+        for page in pages:
+            comment_obj = dict()
+            comments = page['comments']
+
+            comment_obj['page{}'.format(page_num)] = list()
+
+            if comments:
+                for comment in comments:
+                    all_comments.append(comment)
+
+            page_num += 1
+
+        return all_comments

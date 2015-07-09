@@ -200,7 +200,8 @@
             </div>
             <div class="panel-body">
                 <div id="treeGrid">
-                    <div class="spinner-loading-wrapper">
+                  <p id="filesMessage" class=" p-xl"></p>
+                    <div class="fangorn-loading">
                         <div class="logo-spin text-center"><img src="/static/img/logo_spin.png" alt="loader"> </div> 
                          <p class="m-t-sm fg-load-message"> Loading files...  </p>
                     </div>

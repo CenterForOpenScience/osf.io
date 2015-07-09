@@ -272,6 +272,9 @@ class User(GuidStoredObject, AddonModelMixin):
     # verification key used for resetting password
     verification_key = fields.StringField()
 
+    # identifier for Prereg Prize admins
+    is_prereg_admin = fields.BooleanField(default=False)
+
     # confirmed emails
     #   emails should be stripped of whitespace and lower-cased before appending
     # TODO: Add validator to ensure an email address only exists once across
