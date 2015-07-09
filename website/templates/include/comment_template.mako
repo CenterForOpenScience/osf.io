@@ -68,7 +68,7 @@
                 <a data-bind="click: startUnreportAbuse">Not abuse</a>
                 <div data-bind="if: unreporting">
                     <a class="btn btn-default btn-sm" data-bind="click: cancelUnreportAbuse">Cancel</a>
-                    <a class="btn btn-primary btn-sm" data-bind="click: submitUnreportAbuse">Save</a>
+                    <a class="btn btn-success btn-sm" data-bind="click: submitUnreportAbuse">Save</a>
                 </div>
             </div>
 
