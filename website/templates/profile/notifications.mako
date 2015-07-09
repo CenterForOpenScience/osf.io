@@ -1,19 +1,25 @@
 <%inherit file="base.mako"/>
 <%def name="title()">Notifications</%def>
+
+<%def name="stylesheets()">
+   ${parent.stylesheets()}
+   <link rel="stylesheet" href='/static/css/pages/account-setting-page.css'>;
+</%def>
+
 <%def name="content()">
 <% import json %>
 <% from website import settings%>
 <h2 class="page-header">Notifications</h2>
 
-<div class="row">
+<div id="notificationSettings" class="row">
 
-    <div class="col-md-3">
-        <div class="panel panel-default">
+    <div class="col-md-3 affix-parent">
+        <div class="osf-affix profile-affix" data-spy="affix" data-offset-top="70" data-offset-bottom="268">
             <ul class="nav nav-stacked nav-pills">
                 <li><a href="${ web_url_for('user_profile') }">Profile Information</a></li>
                 <li><a href="${ web_url_for('user_account') }">Account Settings</a></li>
-                <li><a href="${ web_url_for('user_addons') }">Configure Add-ons</a></li>
-                <li><a href="#">Notifications</a></li>
+                <li><a href="${ web_url_for('user_addons') }">Configure Add-on Accounts</a></li>
+                <li class="active"><a href="#">Notifications</a></li>
             </ul>
         </div><!-- end sidebar -->
     </div>
@@ -34,10 +40,10 @@
                         </div>
                         <div class="p-t-md p-b-md">
                         <button
-                            type="submit"
+                            type="save"
                             class="btn btn-success"
                             data-bind="click: submit"
-                        >Submit</button>
+                        >Save</button>
                         </div>
 
                     </form>
@@ -51,9 +57,9 @@
                 <form id="selectNotifications" class="osf-treebeard-minimal">
                     <div id="grid">
                         <div class="spinner-loading-wrapper">
-		                    <div class="logo-spin text-center"><img src="/static/img/logo_spin.png" alt="loader"> </div>
-		                    <p class="m-t-sm fg-load-message"> Loading notification settings... </p>
-	                    </div>
+                            <div class="logo-spin text-center"><img src="/static/img/logo_spin.png" alt="loader"> </div>
+                            <p class="m-t-sm fg-load-message"> Loading notification settings... </p>
+                        </div>
                     </div>
                     <div class="help-block" style="padding-left: 15px">
                             <p id="configureNotificationsMessage"></p>

@@ -3,12 +3,11 @@
 import logging
 import httplib
 import httplib as http
-import os
 
 from dateutil.parser import parse as parse_date
 
 from flask import request
-from modularodm.exceptions import ValidationError, NoResultsFound
+from modularodm.exceptions import ValidationError, NoResultsFound, MultipleResultsFound
 from modularodm import Q
 
 from framework import sentry
@@ -26,13 +25,12 @@ from website import mails
 from website import mailchimp_utils
 from website import settings
 from website.models import User
-from website.models import ApiKey
 from website.profile import utils as profile_utils
 from website.util import web_url_for, paths
 from website.util.sanitize import escape_html
 from website.util.sanitize import strip_html
 from website.views import _render_nodes
-
+from website.addons.base import utils as addon_utils
 
 logger = logging.getLogger(__name__)
 
@@ -322,8 +320,13 @@ def user_profile(auth, **kwargs):
 @must_be_logged_in
 def user_account(auth, **kwargs):
     user = auth.user
+    user_addons = addon_utils.get_addons_by_config_type('user', user)
+
     return {
         'user_id': user._id,
+        'addons': user_addons,
+        'addons_js': collect_user_config_js([addon for addon in settings.ADDONS_AVAILABLE if 'user' in addon.configs]),
+        'addons_css': []
     }
 
 
@@ -350,40 +353,16 @@ def user_addons(auth, **kwargs):
 
     user = auth.user
 
-    ret = {}
-
-    addons = [addon.config for addon in user.get_addons()]
-    addons.sort(key=lambda addon: addon.full_name.lower(), reverse=False)
-    addons_enabled = []
-    addon_enabled_settings = []
-    user_addons_enabled = {}
-
-    # sort addon_enabled_settings alphabetically by category
-    for category in settings.ADDON_CATEGORIES:
-        for addon_config in addons:
-            if addon_config.categories[0] == category:
-                addons_enabled.append(addon_config.short_name)
-                if 'user' in addon_config.configs:
-                    short_name = addon_config.short_name
-                    addon_enabled_settings.append(short_name)
-                    user_addons_enabled[addon_config.short_name] = user.get_addon(short_name).to_json(user)
-                    # inject the MakoTemplateLookup into the template context
-                    # TODO inject only short_name and render fully client side
-                    user_addons_enabled[short_name]['template_lookup'] = addon_config.template_lookup
-                    user_addons_enabled[short_name]['user_settings_template'] = os.path.basename(addon_config.user_settings_template)
-
-    ret['addon_categories'] = settings.ADDON_CATEGORIES
-    ret['addons_available'] = [
-        addon
-        for addon in sorted(settings.ADDONS_AVAILABLE)
-        if 'user' in addon.owners and addon.short_name not in settings.SYSTEM_ADDED_ADDONS['user']
-    ]
-    ret['addons_available'].sort(key=lambda addon: addon.full_name.lower(), reverse=False)
-    ret['addons_enabled'] = addons_enabled
-    ret['addon_enabled_settings'] = addon_enabled_settings
-    ret['user_addons_enabled'] = user_addons_enabled
-    ret['addon_js'] = collect_user_config_js(user.get_addons())
-    ret['addon_capabilities'] = settings.ADDON_CAPABILITIES
+    ret = {
+        'addon_settings': addon_utils.get_addons_by_config_type('accounts', user),
+    }
+    accounts_addons = [addon for addon in settings.ADDONS_AVAILABLE if 'accounts' in addon.configs]
+    ret.update({
+        'addon_enabled_settings': [addon.short_name for addon in accounts_addons],
+        'addons_js': collect_user_config_js(accounts_addons),
+        'addon_capabilities': settings.ADDON_CAPABILITIES,
+        'addons_css': []
+    })
     return ret
 
 @must_be_logged_in
@@ -394,18 +373,19 @@ def user_notifications(auth, **kwargs):
     }
 
 
-def collect_user_config_js(addons):
+def collect_user_config_js(addon_configs):
     """Collect webpack bundles for each of the addons' user-cfg.js modules. Return
     the URLs for each of the JS modules to be included on the user addons config page.
 
     :param list addons: List of user's addon config records.
     """
     js_modules = []
-    for addon in addons:
-        js_path = paths.resolve_addon_path(addon.config, 'user-cfg.js')
+    for addon_config in addon_configs:
+        js_path = paths.resolve_addon_path(addon_config, 'user-cfg.js')
         if js_path:
             js_modules.append(js_path)
     return js_modules
+
 
 @must_be_logged_in
 def user_choose_addons(**kwargs):
@@ -494,71 +474,6 @@ def sync_data_from_mailchimp(**kwargs):
         # sentry.log_exception()
         # sentry.log_message("Unauthorized request to the OSF.")
         raise HTTPError(http.UNAUTHORIZED)
-
-@must_be_logged_in
-def get_keys(**kwargs):
-    user = kwargs['auth'].user
-    return {
-        'keys': [
-            {
-                'key': key._id,
-                'label': key.label,
-            }
-            for key in user.api_keys
-        ]
-    }
-
-
-@must_be_logged_in
-def create_user_key(**kwargs):
-
-    # Generate key
-    api_key = ApiKey(label=request.form['label'])
-    api_key.save()
-
-    # Append to user
-    user = kwargs['auth'].user
-    user.api_keys.append(api_key)
-    user.save()
-
-    # Return response
-    return {
-        'response': 'success',
-    }
-
-
-@must_be_logged_in
-def revoke_user_key(**kwargs):
-
-    # Load key
-    api_key = ApiKey.load(request.form['key'])
-
-    # Remove from user
-    user = kwargs['auth'].user
-    user.api_keys.remove(api_key)
-    user.save()
-
-    # Return response
-    return {'response': 'success'}
-
-
-@must_be_logged_in
-def user_key_history(**kwargs):
-
-    api_key = ApiKey.load(kwargs['kid'])
-    return {
-        'key': api_key._id,
-        'label': api_key.label,
-        'route': '/settings',
-        'logs': [
-            {
-                'lid': log._id,
-                'nid': log.node__logged[0]._id,
-                'route': log.node__logged[0].url,
-            }
-            for log in api_key.nodelog__created
-        ]
-    }
 
 
 @must_be_logged_in
@@ -786,31 +701,31 @@ def request_deactivation(auth):
     return {'message': 'Sent account deactivation request'}
 
 
-def redirect_to_twitter(uid):
-    """Redirect GET requests for /@uid/ to respective the Twitter account if a User
-    exists and has a Twitter handle associated with the account.
+def redirect_to_twitter(twitter_handle):
+    """Redirect GET requests for /@TwitterHandle/ to respective the OSF user
+    account if it associated with an active account
 
     :param uid: uid for requested User
     :return: Redirect to User's Twitter account page
     """
-    user = User.load(uid)
-
-    if user:
-        twitter_handle = user.social.get('twitter', None)
-    else:
+    try:
+        user = User.find_one(Q('social.twitter', 'iexact', twitter_handle))
+    except NoResultsFound:
         raise HTTPError(http.NOT_FOUND, data={
             'message_short': 'User Not Found',
-            'message_long': 'There is no active user associated with user id: {0}.'.format(uid)
+            'message_long': 'There is no active user associated with the Twitter handle: {0}.'.format(twitter_handle)
+        })
+    except MultipleResultsFound:
+        users = User.find(Q('social.twitter', 'iexact', twitter_handle))
+        message_long = 'There are multiple OSF accounts associated with the ' \
+                       'Twitter handle: <strong>{0}</strong>. <br /> Please ' \
+                       'select from the accounts below. <br /><ul>'.format(twitter_handle)
+        for user in users:
+            message_long += '<li><a href="{0}">{1}</a></li>'.format(user.url, user.fullname)
+        message_long += '</ul>'
+        raise HTTPError(http.MULTIPLE_CHOICES, data={
+            'message_short': 'Multiple Users Found',
+            'message_long': message_long
         })
 
-    if twitter_handle:
-        # TODO(hrybacki): Verify Twitter handle is for a real account.
-        # Requires authenticated access to Twitter API
-        redirect_url = "https://twitter.com/{0}".format(twitter_handle)
-    else:
-        raise HTTPError(http.BAD_REQUEST, data={
-            'message_short': 'Invalid Request',
-            'message_long': '{0} does not have a Twitter handle associated with their account.'.format(user.fullname)
-        })
-
-    return redirect(redirect_url)
+    return redirect(user.url)

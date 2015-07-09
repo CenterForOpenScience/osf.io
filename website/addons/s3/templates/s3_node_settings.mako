@@ -1,5 +1,6 @@
  <div id="s3Scope" class="scripted">
     <h4 class="addon-title">
+        <img class="addon-icon" src="${addon_icon_url}"></img>
         Amazon S3
         <small class="authorized-by">
             <span data-bind="if: nodeHasAuth">
@@ -51,7 +52,7 @@
             <button data-bind="click: selectBucket,
                                attr.disabled: !allowSelectBucket()"
                     class="btn btn-success">
-              Submit
+              Save
             </button>
           </div>
         </div>        

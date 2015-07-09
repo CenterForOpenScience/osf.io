@@ -16,13 +16,12 @@
 </div>
 
 <div class="row project-page">
-
     <!-- Begin left column -->
-    <div class="col-sm-3 affix-parent">
+    <div class="col-sm-3 affix-parent scrollspy">
 
         % if 'write' in user['permissions']:
 
-            <div class="panel panel-default" data-spy="affix" data-offset-top="60" data-offset-bottom="268"><!-- Begin sidebar -->
+            <div class="osf-affix" data-spy="affix" data-offset-top="0" data-offset-bottom="268"><!-- Begin sidebar -->
                 <ul class="nav nav-stacked nav-pills">
 
                     % if not node['is_registration']:
@@ -138,7 +137,7 @@
                                 </label>
                             </div>
 
-                            <button class="btn btn-success">Submit</button>
+                            <button class="btn btn-success">Save</button>
 
                             <!-- Flashed Messages -->
                             <div class="help-block">
@@ -202,7 +201,7 @@
                             <br />
 
                             <button id="settings-submit" class="btn btn-success">
-                                Submit
+                                Apply
                             </button>
                             <div class="addon-settings-message text-success" style="padding-top: 10px;"></div>
 
@@ -277,7 +276,7 @@
                     <div class="panel panel-default">
                         <span id="retractRegistrationAnchor" class="anchor"></span>
 
-                        <div class="panel-heading">
+                        <div class="panel-heading clearfix">
                             <h3 class="panel-title">Retract Registration</h3>
                         </div>
 
