@@ -2,7 +2,7 @@ import requests
 
 from modularodm import Q
 from rest_framework import generics, permissions as drf_permissions
-from rest_framework.exceptions import PermissionDenied, ValidationError, NotFound
+from rest_framework.exceptions import PermissionDenied, ValidationError
 
 from framework.auth.core import Auth
 from website.models import Node, Pointer
@@ -25,63 +25,7 @@ class NodeMixin(object):
         obj = get_object_or_404(Node, self.kwargs[self.node_lookup_url_kwarg])
         # May raise a permission denied
         self.check_object_permissions(self.request, obj)
-        additional_query = IncludeAdditionalQuery(obj, self.request)
-        obj.additional_query_params = additional_query.get_additional_query()
         return obj
-
-
-class IncludeAdditionalQuery(object):
-
-    def __init__(self, obj, request):
-        self.obj = obj
-        self.request = request
-
-    def get_additional_query(self):
-        query = {}
-        if 'include' in self.request.query_params:
-            params = self.request.query_params['include'].split(',')
-            if 'children' in params:
-                query['children'] = self.get_children()
-                params.remove('children')
-            if 'contributors' in params:
-                query['contributors'] = self.get_contributors()
-                params.remove('contributors')
-            if 'pointers' in params:
-                query['pointers'] = self.get_pointers()
-                params.remove('pointers')
-            if params != []:
-                params_string = ', '.join(params)
-                raise NotFound('The following arguments cannot be found: {}'.format(params_string))
-        return query
-
-    def get_children(self):
-        nodes = {}
-        for node in self.obj.nodes:
-            if node.can_view(Auth(self.request.user)) and node.primary:
-                nodes[node._id] = {
-                    'title': node.title,
-                    'description': node.description,
-                    'is_public': node.is_public
-                }
-        return nodes
-
-    def get_contributors(self):
-        contributors = {}
-        for contributor in self.obj.contributors:
-            contributors[contributor._id] = {
-                'username': contributor.username,
-                'bibliographic': self.obj.get_visible(contributor),
-                'permissions': self.obj.get_permissions(contributor)
-            }
-        return contributors
-
-    def get_pointers(self):
-        pointers = {}
-        for pointer in self.obj.nodes_pointer:
-            pointers[pointer._id] = {
-                'title': pointer.title,
-            }
-        return pointers
 
 
 class NodeList(generics.ListCreateAPIView, ODMFilterMixin):
@@ -119,7 +63,9 @@ class NodeList(generics.ListCreateAPIView, ODMFilterMixin):
     # overrides ListCreateAPIView
     def get_queryset(self):
         query = self.get_query_from_request()
-        return Node.find(query)
+        queryset = Node.find(query)
+        queryset.request = self.request
+        return queryset
 
     # overrides ListCreateAPIView
     def perform_create(self, serializer):
