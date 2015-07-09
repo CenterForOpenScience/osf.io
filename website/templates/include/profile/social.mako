@@ -79,7 +79,7 @@
                 </div>
             </div>
 
-            <div class="p-t-lg p-b-lg">
+            <div class="padded">
 
                 <button
                         type="button"

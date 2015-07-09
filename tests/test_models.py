@@ -130,9 +130,10 @@ class TestUserValidation(OsfTestCase):
         self.user.save()
 
     def test_validate_jobs_institution_empty(self):
-        self.user.jobs = [{'institution': ''}]
-        with assert_raises(ValidationError):
-            self.user.save()
+        self.user.jobs = []
+        self.user.save()
+        assert_equal(self.user.jobs, [])
+
 
     def test_validate_jobs_bad_end_date(self):
         # end year is < start year
