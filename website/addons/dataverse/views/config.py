@@ -73,22 +73,22 @@ def dataverse_add_user_account(auth, **kwargs):
 
 @must_be_logged_in
 @decorators.must_be_valid_project
-@decorators.must_have_addon('dataverse', 'node')
-def dataverse_get_config(node_addon, auth, **kwargs):
+def dataverse_get_config(auth, node, **kwargs):
     """API that returns the serialized node settings."""
+
     result = DataverseSerializer(
         user_settings=auth.user.get_addon('dataverse'),
-        node_settings=node_addon,
+        node_settings=node.get_addon('dataverse', 'node'),
     ).serialized_node_settings
     return {'result': result}, http.OK
 
 
 @decorators.must_have_permission('write')
 @decorators.must_have_addon('dataverse', 'user')
-@decorators.must_have_addon('dataverse', 'node')
-def dataverse_get_datasets(node_addon, **kwargs):
+def dataverse_get_datasets(auth, node, **kwargs):
     """Get list of datasets from provided Dataverse alias"""
     alias = request.json.get('alias')
+    node_addon = node.get_addon('dataverse', 'node')
 
     connection = client.connect_from_settings(node_addon)
     dataverse = client.get_dataverse(connection, alias)
@@ -102,12 +102,15 @@ def dataverse_get_datasets(node_addon, **kwargs):
 
 @decorators.must_have_permission('write')
 @decorators.must_have_addon('dataverse', 'user')
-@decorators.must_have_addon('dataverse', 'node')
-def dataverse_set_config(node_addon, auth, **kwargs):
+def dataverse_set_config(auth, node, **kwargs):
     """Saves selected Dataverse and dataset to node settings"""
+    node_addon = node.get_addon('dataverse', 'node')
 
     user_settings = node_addon.user_settings
     user = auth.user
+
+    node.add_addon('datavserse', auth)
+    node.save()
 
     if user_settings and user_settings.owner != user:
         raise HTTPError(http.FORBIDDEN)

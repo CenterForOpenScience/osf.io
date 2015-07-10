@@ -9,10 +9,10 @@ from website.util import api_url_for
 
 
 @decorators.must_have_permission('write')
-@decorators.must_have_addon('dataverse', 'node')
 @decorators.must_not_be_registration
-def dataverse_add_user_auth(auth, node_addon, **kwargs):
+def dataverse_add_user_auth(auth, node, **kwargs):
     """Allows for importing existing auth to AddonDataverseNodeSettings"""
+    node_addon = node.get_addon('dataverse', 'node')
 
     provider = DataverseProvider()
     external_account_id = request.get_json().get('external_account_id')
@@ -20,11 +20,10 @@ def dataverse_add_user_auth(auth, node_addon, **kwargs):
 
 
 @decorators.must_have_permission('write')
-@decorators.must_have_addon('dataverse', 'node')
 @decorators.must_not_be_registration
-def dataverse_remove_user_auth(auth, node_addon, **kwargs):
+def dataverse_remove_user_auth(auth, node, **kwargs):
     """Remove Dataverse authorization and settings from node"""
-
+    node_addon = node.get_addon('dataverse', 'node')
     provider = DataverseProvider()
     return provider.remove_user_auth(node_addon, auth.user)
 
