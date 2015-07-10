@@ -31,15 +31,16 @@ $(document).ready(function() {
 });
 
 $(".row-title").click(function(event) {
-	console.log(event.target.id);
+	//console.log(event.target.id);
 	sortedDrafts(event.target.id);
 });
 
 //TODO
-var sortedDrafts = function(row) {
-   return drafts.sort(function (left, right) { 
-        return left.row.order() == right.row.order() ? 
-             0 : 
-             (left.row.order() < right.row.order() ? -1 : 1); 
+var sortedDrafts = function(row) { 
+    return drafts.sort(function (left, right) { 
+    	var a = left[row].toLowerCase()
+		var b = right[row].toLowerCase()
+        return a == b ? 0 : 
+            (a < b ? -1 : 1); 
    });
 };
