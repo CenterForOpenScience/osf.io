@@ -25,10 +25,10 @@ var currentUser = window.contextVars.currentUser || {
 };
 
 
-/** 
+/**
  * @class Comment
  * Model for storing/editing/deleting comments on form fields
- * 
+ *
  * @param {Object} data: optional data to instatiate model with
  * @param {User} data.user
  * @param {Date} data.lastModified
@@ -56,7 +56,7 @@ var Comment = function(data) {
             return 'You';
         }
         else {
-            return self.user.name;
+            return self.user.fullname;
         }
     });
 
@@ -88,8 +88,8 @@ $(document).keydown(function(e) {
 
 /**
  * @class Question
- * Model for schema questions 
- * 
+ * Model for schema questions
+ *
  * @param {Object} data: optional instantiation values
  * @param {String} data.title
  * @param {String} data.nav: short version of title
@@ -216,10 +216,10 @@ var MetaSchema = function(params) {
     });
 };
 
-/** 
- * @class Draft 
+/**
+ * @class Draft
  * Model for DraftRegistrations
- * 
+ *
  * @param {Object} params
  * @param {String} params.pk: primary key of Draft
  * @param {Object} params.registration_schema: data to be passed to MetaSchema constructor
@@ -246,12 +246,12 @@ var Draft = function(params, metaSchema) {
     self.updated = new Date(params.updated);
     self.completion = ko.computed(function() {
         var total = 0;
-        var complete = 0;        
+        var complete = 0;
         if (self.schemaData) {
             var schema = self.schema();
             $.each(schema.pages, function(i, page) {
                 $.each(page.questions, function(qid, question) {
-                    var q = self.schemaData[qid];                    
+                    var q = self.schemaData[qid];
                     if(q && !$osf.isBlank(q.value)) {
                         complete++;
                     }
@@ -264,9 +264,9 @@ var Draft = function(params, metaSchema) {
     });
 };
 
-/** 
+/**
  * @class RegistrationEditor
- * 
+ *
  * @param {Object} urls
  * @param {String} urls.update: endpoint to update a draft instance
  * @param {String} editorID: id of editor DOM node
@@ -276,7 +276,7 @@ var Draft = function(params, metaSchema) {
  * @property {Object} extensions: mapping of extenstion names to their view models
  *
  * Notes:
- * - The editor can be extended by calling #extendEditor with a type and it's associated ViewModel. 
+ * - The editor can be extended by calling #extendEditor with a type and it's associated ViewModel.
  *   When the context for that type's schema template is built (see #context), that type's ViewModel
  *   is instantiated with the current scope's data as an argument
  **/
@@ -303,14 +303,14 @@ var RegistrationEditor = function(urls, editorId) {
         return schema.pages;
     });
 
-    self.lastSaveTime = ko.computed(function() {        
+    self.lastSaveTime = ko.computed(function() {
         if(!self.draft()) {
             return null;
         }
         return self.draft().updated;
     });
     self.formattedDate = formattedDate;
-    
+
     self.iterObject = $osf.iterObject;
 
     self.extensions = {};
@@ -363,7 +363,7 @@ RegistrationEditor.prototype.flatQuestions = function() {
     var self = this;
 
     var flat = [];
-    
+
     $.each(self.currentPages(), function(i, page) {
         $.each(page.questions, function(qid, question) {
             flat.push(question);
@@ -387,7 +387,7 @@ RegistrationEditor.prototype.context = function(data) {
 };
 /**
  * Extend the editor's recognized types
- * 
+ *
  * @param {String} type: unique type
  * @param {Constructor} ViewModel
  **/
@@ -463,11 +463,11 @@ RegistrationEditor.prototype.create = function(schemaData) {
 };
 RegistrationEditor.prototype.submit = function() {
     var self = this;
-    
+
     var currentNode = window.contextVars.node
     var currentUser = window.contextVars.currentUser
     var url = '/api/v1/project/' + currentNode.id +  '/draft/submit/' + currentUser.id + '/'
-    
+
     bootbox.dialog({
 	message: "Please verify that all required fields are filled out:<br><br>\
 	    <strong>Required:</strong><br>\
