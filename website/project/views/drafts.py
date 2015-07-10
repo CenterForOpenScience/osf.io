@@ -21,10 +21,10 @@ get_draft_or_fail = lambda pk: get_or_http_error(DraftRegistration, pk)
 get_schema_or_fail = lambda query: get_or_http_error(MetaSchema, query)
 ADMIN_USERNAMES = ['vndqr', 'szj4b']
 
+@must_have_permission(ADMIN)
 @must_be_valid_project
-def submit_for_review(node, uid, *args, **kwargs):
-    user = User.load(uid)
-    auth = Auth(user)
+def submit_for_review(auth, node, did, *args, **kwargs):
+    user = auth.user
 
     node.is_pending_review = True
 

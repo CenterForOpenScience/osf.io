@@ -315,14 +315,14 @@ var RegistrationEditor = function(urls, editorId) {
 
     self.extensions = {};
 };
-// Here's my data model
+
+// View model for binding to templates
 var Submission = function() {
 	var self = this;
 
 
 };
 
-//$osf.applyBindings(new Submission());
 /**
  * Load draft data into the editor
  *
@@ -474,42 +474,39 @@ RegistrationEditor.prototype.submit = function() {
 
     var currentNode = window.contextVars.node
     var currentUser = window.contextVars.currentUser
-    var url = '/api/v1/project/' + currentNode.id +  '/draft/submit/' + currentUser.id + '/'
 
 	bootbox.confirm(function(){
-		// Confirm message
-		ko.renderTemplate("preSubmission", Submission, {}, this,  "replaceNode");
-	}, function(){
-		$.ajax({
-			method: "POST",
-			url: url,
-			data: {node: currentNode, uid: currentUser.id},
-			success: function(response) {
-				bootbox.dialog({
-					message: function() {
-						ko.renderTemplate("postSubmission", Submission, {}, this, "replaceNode");
+		ko.renderTemplate("preSubmission", Submission, {}, this, "replaceNode")
+	}, function() {
+		//debugger;
+		$osf.postJSON(self.urls.submit.replace('{draft_pk}', self.draft().pk), {
+			node: currentNode,
+			auth: currentUser
+		}).then(
+			bootbox.dialog({
+				message: function() {
+					ko.renderTemplate("postSubmission", Submission, {}, this, "replaceNode");
+				},
+				title: "Pre-Registration Prize Submission",
+				buttons: {
+					dashboard: {
+						label: "Go to your OSF Dashboard",
+						className: "btn-primary pull-right",
+						callback: function() {
+							window.location.href = '/';
+						}
 					},
-					title: "Pre-Registration Prize Submission",
-					buttons: {
-						dashboard: {
-							label: "Go to your OSF Dashboard",
-							className: "btn-primary pull-right",
-							callback: function() {
-								window.location.href = '/';
-							}
-						},
-						info: {
-							label: "Go to Prereg Prize info page",
-							className: "btn-primary pull-left",
-							callback: function() {
-								window.location.href = 'http://centerforopenscience.org/prereg/';
+					info: {
+						label: "Go to Prereg Prize info page",
+						className: "btn-primary pull-left",
+						callback: function() {
+							window.location.href = 'http://centerforopenscience.org/prereg/';
 
-							}
 						}
 					}
-				})
-			}
-		})
+				}
+			})
+		);
 	});
 };
 RegistrationEditor.prototype.save = function() {
@@ -560,7 +557,7 @@ var RegistrationManager = function(node, draftsSelector, editorSelector, control
 
     self.urls = {
         list: node.urls.api + 'draft/',
-		submit: node.urls.api + 'draft/submit/',
+		submit: node.urls.api + 'draft/submit/{draft_pk}/',
         get: node.urls.api + 'draft/{draft_pk}/',
         delete: node.urls.api + 'draft/{draft_pk}/',
         schemas: '/api/v1/project/schema/',
@@ -663,13 +660,14 @@ RegistrationManager.prototype.blankDraft = function(metaSchema) {
 RegistrationManager.prototype.launchEditor = function(draft) {
     var self = this;
     var node = self.node;
+	debugger;
 
     bootbox.hideAll();
     self.controls.showEditor();
 
     var newDraft;
     if (self.regEditor) {
-        //self.regEditor.destroy();
+        self.regEditor.destroy();
         newDraft = self.regEditor.init(draft);
     }
     else {
@@ -677,7 +675,8 @@ RegistrationManager.prototype.launchEditor = function(draft) {
             schemas: '/api/v1/project/schema/',
             create: node.urls.api + 'draft/',
             update: node.urls.api + 'draft/{draft_pk}/',
-            get: node.urls.api + 'draft/{draft_pk}/'
+            get: node.urls.api + 'draft/{draft_pk}/',
+			submit: node.urls.api + 'draft/submit/{draft_pk}/',
         }, 'registrationEditor');
         newDraft = self.regEditor.init(draft);
         $osf.applyBindings(self.regEditor, self.editorSelector);
