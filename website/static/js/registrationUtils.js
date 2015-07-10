@@ -313,6 +313,14 @@ var RegistrationEditor = function(urls, editorId) {
 
     self.extensions = {};
 };
+// Here's my data model
+var Submission = function() {
+	var self = this;
+
+
+};
+
+//$osf.applyBindings(new Submission());
 /**
  * Load draft data into the editor
  *
@@ -466,61 +474,40 @@ RegistrationEditor.prototype.submit = function() {
     var currentUser = window.contextVars.currentUser
     var url = '/api/v1/project/' + currentNode.id +  '/draft/submit/' + currentUser.id + '/'
 
-    bootbox.dialog({
-		message: "Please verify that all required fields are filled out:<br><br>\
-			<strong>Required:</strong><br>\
-		Title<br> COI<br> Authors<br> Research<br> Certify<br> Data<br> Rationale<br> Sample<br> Type<br> Randomized?<br> \
-		Covariates<br> Design<br> Blind<br> Outcome<br> Predictor<br> Statistical Models<br> Multiple Hypostheses<br> \
-		Outcome Variables<br> Predictors<br> Incomplete<br> Exclusion<br><br> \
-			<strong>Optional:</strong><br>\
-		Script",
-		title: "Continue to submit this registration for review",
-		buttons: {
-			success: {
-				label: "Submit",
-				className: "btn-success",
-				callback: function() {
-					$.ajax({
-						method: "POST",
-						url: url,
-						data: {node: currentNode, uid: currentUser.id},
-						success: function(response) {
-							bootbox.dialog({
-								message: " <img src=\"https://i.imgur.com/0aCtj3b.png\"><br>\
-								You have successfully submitted your study and analysis plans. The plans are not yet fully registered. \
-								Next, staff from the Center for Open Science will have the plans reviewed to assure that enough detail was included. \
-								Reviewers may accept your plans or request revisions. Remember, in order to be eligible for the prize, your plans must be accepted\
-								through this review process. We will contact you within five business days with a status update. \
-								If you have any questions, please contact <a href=\"mailto:prereg@cos.io\">prereg@cos.io</a> and we will be happy to help you.",
-								title: "Pre-Registration Prize Submission",
-								buttons: {
-									dashboard: {
-										label: "Go to your OSF Dashboard",
-										className: "btn-primary pull-right",
-										callback: function() {
-											window.location.href = '/';
+	bootbox.confirm(function(){
+		// Confirm message
+		ko.renderTemplate("preSubmission", Submission, {}, this,  "replaceNode");
+	}, function(){
+		$.ajax({
+			method: "POST",
+			url: url,
+			data: {node: currentNode, uid: currentUser.id},
+			success: function(response) {
+				bootbox.dialog({
+					message: function() {
+						ko.renderTemplate("postSubmission", Submission, {}, this, "replaceNode");
+					},
+					title: "Pre-Registration Prize Submission",
+					buttons: {
+						dashboard: {
+							label: "Go to your OSF Dashboard",
+							className: "btn-primary pull-right",
+							callback: function() {
+								window.location.href = '/';
+							}
+						},
+						info: {
+							label: "Go to Prereg Prize info page",
+							className: "btn-primary pull-left",
+							callback: function() {
+								window.location.href = 'http://centerforopenscience.org/prereg/';
 
-										}
-
-									},
-									info: {
-										label: "Go to Prereg Prize info page",
-										className: "btn-primary pull-left",
-										callback: function() {
-											window.location.href = 'http://centerforopenscience.org/prereg/';
-
-										}
-
-									}
-								}
-
-							});
-
+							}
 						}
-					});
-				}
+					}
+				})
 			}
-		}
+		})
 	});
 };
 RegistrationEditor.prototype.save = function() {
