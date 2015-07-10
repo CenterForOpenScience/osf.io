@@ -167,8 +167,6 @@ class NodeContributorDetail(generics.RetrieveUpdateDestroyAPIView, NodeMixin):
         self.check_object_permissions(self.request, user)
         if user not in node.contributors:
             raise NotFound('{} cannot be found in the list of contributors.'.format(user))
-        user.bibliographic = user._id in node.visible_contributor_ids
-        user.admin = node.has_permission(user, 'admin')
         return user
 
     # overrides DestroyAPIView
