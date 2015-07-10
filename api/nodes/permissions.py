@@ -37,7 +37,7 @@ class ContributorPermissions(permissions.BasePermission):
     '''
         Permissions for contributor detail page.
 
-        Returns true if node is viewable and requests are save methods method is not delete or
+        Returns true if node is viewable and requests are safe methods method is not delete or
         exists other admin contributor
     '''
     def has_object_permission(self, request, view, obj):
