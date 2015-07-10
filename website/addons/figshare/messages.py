@@ -1,9 +1,11 @@
 # MODEL MESSAGES :model.py
-BEFORE_PAGE_LOAD_PRIVATE_NODE_MIXED_FS = 'Warning: This OSF {category} is private but figshare project {project_id} may contain some public files or filesets. The files in this figshare project can be viewed <a href="https://http://figshare.com/articles/{project_id}/{figshare_id}">here</a>'
+BEFORE_PAGE_LOAD_PRIVATE_NODE_MIXED_FS = 'Warning: This OSF {category} is private but ' + FIGSHARE + ' project {project_id} may contain some public files or filesets. The files in this ' + FIGSHARE + ' project can be viewed on figshare ' + \
+                                         '<a href="https://figshare.com/articles/{encoded_folder_name}/{project_id}">here</a>. '
 
 BEFORE_PAGE_LOAD_PUBLIC_NODE_MIXED_FS = 'Warning: This OSF {category} is public but figshare project {project_id} may contain some private files or filesets. The files in this figshare project can be viewed <a href="https://http://figshare.com/articles/{project_id}/{figshare_id}">here</a>'
 
-BEFORE_PAGE_LOAD_PERM_MISMATCH = 'Warning: This OSF {category} is {node_perm}, but the figshare article {figshare_id} is {figshare_perm}. '
+BEFORE_PAGE_LOAD_PERM_MISMATCH = 'Warning: This OSF {category} is {node_perm}, but the ' + FIGSHARE + ' article {figshare_id} is {figshare_perm}. The files in this ' + FIGSHARE + ' project can be viewed on figshare ' + \
+                                 '<a href="https://figshare.com/articles/{encoded_folder_name}/{figshare_id}">here</a>. '
 
 BEFORE_PAGE_LOAD_PUBLIC_NODE_PRIVATE_FS = 'Users can view the contents of this private fishare article. '
 
