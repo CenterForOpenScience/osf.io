@@ -315,14 +315,6 @@ var RegistrationEditor = function(urls, editorId) {
 
     self.extensions = {};
 };
-
-// View model for binding to templates
-var Submission = function() {
-	var self = this;
-
-
-};
-
 /**
  * Load draft data into the editor
  *
@@ -476,7 +468,7 @@ RegistrationEditor.prototype.submit = function() {
     var currentUser = window.contextVars.currentUser
 
 	bootbox.confirm(function(){
-		ko.renderTemplate("preSubmission", Submission, {}, this, "replaceNode")
+		ko.renderTemplate("preSubmission", {}, {}, this, "replaceNode")
 	}, function() {
 		//debugger;
 		$osf.postJSON(self.urls.submit.replace('{draft_pk}', self.draft().pk), {
@@ -485,7 +477,7 @@ RegistrationEditor.prototype.submit = function() {
 		}).then(
 			bootbox.dialog({
 				message: function() {
-					ko.renderTemplate("postSubmission", Submission, {}, this, "replaceNode");
+					ko.renderTemplate("postSubmission", {}, {}, this, "replaceNode");
 				},
 				title: "Pre-Registration Prize Submission",
 				buttons: {
