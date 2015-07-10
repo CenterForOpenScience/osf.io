@@ -499,10 +499,6 @@ var hasTimeComponent = function(dateString) {
     return dateString.indexOf('T') !== -1;
 };
 
-var forceUTC = function(dateTimeString) {
-    return dateTimeString.slice(-1) === 'Z' ? dateTimeString : dateTimeString + 'Z';
-};
-
 /**
   * A date object with two formats: local time or UTC time.
   * @param {String} date The original date as a string. Should be an standard
