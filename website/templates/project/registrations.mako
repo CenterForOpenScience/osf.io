@@ -110,9 +110,14 @@
         <div class="row" data-bind="if: selectedSchema">
           <div class="col-md-12" data-bind="with: selectedSchema">
             <h4> Fulfills: </h4 >
-            <p data-bind="foreach: schema.fulfills">
-              <span data-bind="text: $data + '|'"></span>
-            </p>
+            <div class="row">
+              <div class="col-md-12 schema-fulfillment" data-bind="foreach: schema.fulfills">
+                <span class="well">
+                  <span data-bind="text: name"></span>&nbsp;&nbsp;
+                  <a class="fa fa-info-circle" target="_blank" data-bind="attr.href: info"></a>
+                </span>
+              </div>
+            </div>
             <h4> Description: </h4> 
             <blockquote>
               <p data-bind="html: schema.description"></p>

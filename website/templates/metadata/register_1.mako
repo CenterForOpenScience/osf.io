@@ -45,7 +45,7 @@
         % endif
 
         % if not registered:
-            <button id="register-submit" class="btn btn-success" data-bind="visible:$root.continueFlag, focus:$root.continueFlag">
+            <button id="register-submit" class="btn btn-primary" data-bind="visible:$root.continueFlag, focus:$root.continueFlag">
                 Register Now
             </button>
         % endif

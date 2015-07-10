@@ -34,7 +34,7 @@ class TestViewsConfig(OsfTestCase):
 
         self.user = AuthUserFactory()
         self.consolidated_auth = Auth(user=self.user)
-        self.auth = ('test', self.user.api_keys[0]._primary_key)
+        self.auth = self.user.auth
         self.project = ProjectFactory(creator=self.user)
 
         self.non_authenticator = AuthUserFactory()
@@ -212,7 +212,7 @@ class TestUtils(OsfTestCase):
 
         self.user = AuthUserFactory()
         self.consolidated_auth = Auth(user=self.user)
-        self.auth = ('test', self.user.api_keys[0]._primary_key)
+        self.auth = self.user.auth
         self.project = ProjectFactory(creator=self.user)
 
         self.non_authenticator = AuthUserFactory()
@@ -291,7 +291,7 @@ class TestViewsAuth(OsfTestCase):
 
         self.user = AuthUserFactory()
         self.consolidated_auth = Auth(user=self.user)
-        self.auth = ('test', self.user.api_keys[0]._primary_key)
+        self.auth = self.user.auth
         self.project = ProjectFactory(creator=self.user)
 
         self.non_authenticator = AuthUserFactory()

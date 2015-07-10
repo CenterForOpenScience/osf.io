@@ -50,8 +50,8 @@
           <div class="col-md-2">
             <button data-bind="click: selectBucket,
                                attr.disabled: !allowSelectBucket()"
-                    class="btn btn-primary">
-              Submit
+                    class="btn btn-success">
+              Save
             </button>
           </div>
         </div>        
@@ -68,8 +68,8 @@
         <input data-bind="value: secretKey" type="password" class="form-control" id="secret_key" name="secret_key" />
       </div>
       <button data-bind="click: createCredentials,
-                         attr.disabled: creatingCredentials" class="btn btn-primary addon-settings-submit">
-        Submit
+                         attr.disabled: creatingCredentials" class="btn btn-success addon-settings-submit">
+        Save
       </button>
     </div>
     <!-- Flashed Messages -->

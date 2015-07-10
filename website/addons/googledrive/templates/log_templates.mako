@@ -39,6 +39,13 @@ deauthorized the Google Drive addon for
     data-bind="attr: {href: nodeUrl}">{{ nodeTitle }}</a>
 </script>
 
+<script type="text/html" id="googledrive_node_deauthorized">
+Google Drive addon for
+<a class="log-node-title-link overflow"
+    data-bind="attr: {href: nodeUrl}">{{ nodeTitle }}</a>
+    deauthorized
+</script>
+
 
 <script type="text/html" id="googledrive_node_authorized">
 authorized the Google Drive addon for
