@@ -23,16 +23,17 @@ ko.bindingHandlers.osfUploader = {
                     this.path = item.data.path;
                     self.files = item.data;
 
+                    console.log(viewModel);
                     var tb = this;
                     var fileurl = "";
                     if (item.data.kind === "file") {
                         var redir = new URI(item.data.nodeUrl);
                         redir.segment("files").segment(item.data.provider).segmentCoded(item.data.path.substring(1));
                         fileurl = redir.toString() + '/';
-                        $("#fileName").html(item.data.name);
+                        viewModel.selectedFileName(item.data.name);
                         viewModel.setValue(fileurl);
                     } else {
-                        $("#fileName").html("no file selected");
+                        viewModel.selectedFileName("no file selected");
                         fileurl = "";
                         viewModel.setValue(null);
                     }
@@ -49,7 +50,6 @@ ko.bindingHandlers.osfUploader = {
                 resolveRows: function(item) {
                     var tb = this;
                     item.css = '';
-                    userClick 
 
                     if (item.data.addonFullname !== undefined) {
                         if (item.data.addonFullname !== "OSF Storage") {
@@ -115,5 +115,11 @@ var Uploader = function(data) {
     
     var self = this;
 
+    self.selectedFileName = ko.observable('no file selected');
+
     $.extend(self, data);
+};
+
+module.exports = {
+    Uploader: Uploader
 };
