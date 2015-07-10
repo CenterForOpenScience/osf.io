@@ -3,6 +3,7 @@ from rest_framework import serializers as ser
 from api.base.serializers import JSONAPISerializer, LinksField, Link, WaterbutlerLink
 from website.models import Node
 from framework.auth.core import Auth
+from rest_framework import exceptions
 
 
 class NodeSerializer(JSONAPISerializer):
@@ -26,23 +27,23 @@ class NodeSerializer(JSONAPISerializer):
     links = LinksField({
         'html': 'get_absolute_url',
         'children': {
-            'related': Link('nodes:node-children', kwargs={'pk': '<pk>'}),
+            'related': Link('nodes:node-children', kwargs={'node_id': '<pk>'}),
             'count': 'get_node_count',
         },
         'contributors': {
-            'related': Link('nodes:node-contributors', kwargs={'pk': '<pk>'}),
+            'related': Link('nodes:node-contributors', kwargs={'node_id': '<pk>'}),
             'count': 'get_contrib_count',
         },
         'pointers': {
-            'related': Link('nodes:node-pointers', kwargs={'pk': '<pk>'}),
+            'related': Link('nodes:node-pointers', kwargs={'node_id': '<pk>'}),
             'count': 'get_pointers_count',
         },
         'registrations': {
-            'related': Link('nodes:node-registrations', kwargs={'pk': '<pk>'}),
+            'related': Link('nodes:node-registrations', kwargs={'node_id': '<pk>'}),
             'count': 'get_registration_count',
         },
         'files': {
-            'related': Link('nodes:node-files', kwargs={'pk': '<pk>'})
+            'related': Link('nodes:node-files', kwargs={'node_id': '<pk>'})
         },
     })
     properties = ser.SerializerMethodField(help_text='A dictionary of read-only booleans: registration, collection,'
@@ -150,12 +151,16 @@ class NodePointersSerializer(JSONAPISerializer):
         auth = Auth(user)
         node = self.context['view'].get_node()
         pointer_node = Node.load(validated_data['node']['_id'])
-        pointer = node.add_pointer(pointer_node, auth, save=True)
-        return pointer
+        if not pointer_node:
+            raise exceptions.NotFound('Node not found.')
+        try:
+            pointer = node.add_pointer(pointer_node, auth, save=True)
+            return pointer
+        except ValueError:
+            raise exceptions.ValidationError('Pointer to node {} already in list'.format(pointer_node._id))
 
     def update(self, instance, validated_data):
         pass
-
 
 class NodeFilesSerializer(JSONAPISerializer):
 
@@ -172,7 +177,7 @@ class NodeFilesSerializer(JSONAPISerializer):
     links = LinksField({
         'self': WaterbutlerLink(kwargs={'node_id': '<node_id>'}),
         'self_methods': 'valid_self_link_methods',
-        'related': Link('nodes:node-files', kwargs={'pk': '<node_id>'},
+        'related': Link('nodes:node-files', kwargs={'node_id': '<node_id>'},
                         query_kwargs={'path': '<path>', 'provider': '<provider>'}),
     })
 

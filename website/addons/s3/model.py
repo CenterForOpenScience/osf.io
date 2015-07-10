@@ -8,6 +8,7 @@ from framework.auth.core import Auth
 
 from website.addons.base import exceptions
 from website.addons.base import AddonUserSettingsBase, AddonNodeSettingsBase, GuidFile
+from website.addons.base import StorageAddonBase
 
 from website.addons.s3.utils import remove_osf_user
 from website.addons.s3 import api
@@ -76,9 +77,9 @@ class AddonS3UserSettings(AddonUserSettingsBase):
                 return False
             raise
 
-    def revoke_auth(self, save=False):
+    def revoke_auth(self, auth=None, save=False):
         for node_settings in self.addons3nodesettings__authorized:
-            node_settings.deauthorize(save=True)
+            node_settings.deauthorize(auth=auth, save=True)
         ret = self.remove_iam_user() if self.has_auth else True
         self.s3_osf_user, self.access_key, self.secret_key = None, None, None
 
@@ -91,13 +92,17 @@ class AddonS3UserSettings(AddonUserSettingsBase):
         super(AddonS3UserSettings, self).delete(save=save)
 
 
-class AddonS3NodeSettings(AddonNodeSettingsBase):
+class AddonS3NodeSettings(StorageAddonBase, AddonNodeSettingsBase):
 
     registration_data = fields.DictionaryField()
     bucket = fields.StringField()
     user_settings = fields.ForeignField(
         'addons3usersettings', backref='authorized'
     )
+
+    @property
+    def folder_name(self):
+        return self.bucket
 
     def find_or_create_file_guid(self, path):
         path = path.lstrip('/')

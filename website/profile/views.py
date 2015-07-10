@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 
 import logging
-import operator
 import httplib
 import httplib as http
 import os
@@ -18,6 +17,7 @@ from framework.auth.decorators import collect_auth
 from framework.auth.decorators import must_be_logged_in
 from framework.auth.exceptions import ChangePasswordError
 from framework.auth.views import send_confirm_email
+from framework.auth.signals import user_merged
 from framework.exceptions import HTTPError, PermissionsError
 from framework.flask import redirect  # VOL-aware redirect
 from framework.status import push_status_message
@@ -26,7 +26,6 @@ from website import mails
 from website import mailchimp_utils
 from website import settings
 from website.models import User
-from website.models import ApiKey
 from website.profile import utils as profile_utils
 from website.util import web_url_for, paths
 from website.util.sanitize import escape_html
@@ -205,6 +204,11 @@ def update_user(auth):
                             mails.PRIMARY_EMAIL_CHANGED,
                             user=user,
                             new_address=username)
+
+            # Remove old primary email from subscribed mailing lists
+            for list_name, subscription in user.mailing_lists.iteritems():
+                if subscription:
+                    mailchimp_utils.unsubscribe_mailchimp(list_name, user._id, username=user.username)
             user.username = username
 
     ###################
@@ -222,6 +226,12 @@ def update_user(auth):
             user.timezone = data['timezone']
 
     user.save()
+
+    # Update subscribed mailing lists with new primary email
+    # TODO: move to user.save()
+    for list_name, subscription in user.mailing_lists.iteritems():
+        if subscription:
+            mailchimp_utils.subscribe_mailchimp(list_name, user._id)
 
     return _profile_view(user)
 
@@ -342,7 +352,7 @@ def user_addons(auth, **kwargs):
     ret = {}
 
     addons = [addon.config for addon in user.get_addons()]
-    addons.sort(key=operator.attrgetter("full_name"), reverse=False)
+    addons.sort(key=lambda addon: addon.full_name.lower(), reverse=False)
     addons_enabled = []
     addon_enabled_settings = []
     user_addons_enabled = {}
@@ -367,7 +377,7 @@ def user_addons(auth, **kwargs):
         for addon in sorted(settings.ADDONS_AVAILABLE)
         if 'user' in addon.owners and addon.short_name not in settings.SYSTEM_ADDED_ADDONS['user']
     ]
-    ret['addons_available'].sort(key=operator.attrgetter("full_name"), reverse=False)
+    ret['addons_available'].sort(key=lambda addon: addon.full_name.lower(), reverse=False)
     ret['addons_enabled'] = addons_enabled
     ret['addon_enabled_settings'] = addon_enabled_settings
     ret['user_addons_enabled'] = user_addons_enabled
@@ -427,6 +437,7 @@ def user_choose_mailing_lists(auth, **kwargs):
     return {'message': 'Successfully updated mailing lists', 'result': user.mailing_lists}, 200
 
 
+@user_merged.connect
 def update_subscription(user, list_name, subscription):
     """ Update mailing list subscription in mailchimp.
 
@@ -438,7 +449,7 @@ def update_subscription(user, list_name, subscription):
         mailchimp_utils.subscribe_mailchimp(list_name, user._id)
     else:
         try:
-            mailchimp_utils.unsubscribe_mailchimp(list_name, user._id)
+            mailchimp_utils.unsubscribe_mailchimp(list_name, user._id, username=user.username)
         except mailchimp_utils.mailchimp.ListNotSubscribedError:
             raise HTTPError(http.BAD_REQUEST,
                 data=dict(message_short="ListNotSubscribedError",
@@ -482,71 +493,6 @@ def sync_data_from_mailchimp(**kwargs):
         # sentry.log_exception()
         # sentry.log_message("Unauthorized request to the OSF.")
         raise HTTPError(http.UNAUTHORIZED)
-
-@must_be_logged_in
-def get_keys(**kwargs):
-    user = kwargs['auth'].user
-    return {
-        'keys': [
-            {
-                'key': key._id,
-                'label': key.label,
-            }
-            for key in user.api_keys
-        ]
-    }
-
-
-@must_be_logged_in
-def create_user_key(**kwargs):
-
-    # Generate key
-    api_key = ApiKey(label=request.form['label'])
-    api_key.save()
-
-    # Append to user
-    user = kwargs['auth'].user
-    user.api_keys.append(api_key)
-    user.save()
-
-    # Return response
-    return {
-        'response': 'success',
-    }
-
-
-@must_be_logged_in
-def revoke_user_key(**kwargs):
-
-    # Load key
-    api_key = ApiKey.load(request.form['key'])
-
-    # Remove from user
-    user = kwargs['auth'].user
-    user.api_keys.remove(api_key)
-    user.save()
-
-    # Return response
-    return {'response': 'success'}
-
-
-@must_be_logged_in
-def user_key_history(**kwargs):
-
-    api_key = ApiKey.load(kwargs['kid'])
-    return {
-        'key': api_key._id,
-        'label': api_key.label,
-        'route': '/settings',
-        'logs': [
-            {
-                'lid': log._id,
-                'nid': log.node__logged[0]._id,
-                'route': log.node__logged[0].url,
-            }
-            for log in api_key.nodelog__created
-        ]
-    }
 
 
 @must_be_logged_in

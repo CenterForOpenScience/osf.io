@@ -15,6 +15,7 @@
                     <li><a href="http://cos.io">Home</a></li>
                     <li><a href="/ezcuj/wiki/home/">Reproducibility Project: Psychology</a></li>
                     <li><a href="/e81xl/wiki/home/">Reproducibility Project: Cancer Biology</a></li>
+                    <li><a href="http://cos.io/top/">TOP Guidelines</a></li>
                      <li><a href="https://www.givinglibrary.org/organizations/center-for-open-science">Donate</a></li>
                </ul>
             </div>
@@ -38,13 +39,3 @@
         </div>
     </div>
 </footer><!-- end footer -->
-<div class="container copyright">
-    <div class="row">
-        <div class="col-md-12">
-            <p>Copyright &copy; 2011-2015 <a href="http://centerforopenscience.org">Center for Open Science</a> |
-                <a href="https://github.com/CenterForOpenScience/centerforopenscience.org/blob/master/TERMS_OF_USE.md">Terms of Use</a> |
-                <a href="https://github.com/CenterForOpenScience/centerforopenscience.org/blob/master/PRIVACY_POLICY.md">Privacy Policy</a>
-            </p>
-        </div>
-    </div>
-</div><!-- end container copyright -->

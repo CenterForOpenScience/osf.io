@@ -29,6 +29,18 @@ waterbutler_action_map = {
     'create_folder': 'file',
 }
 
+def conjunct(words, conj='and'):
+    words = list(words)
+    num_words = len(words)
+    if num_words == 0:
+        return ''
+    elif num_words == 1:
+        return words[0]
+    elif num_words == 2:
+        return ' {0} '.format(conj).join(words)
+    elif num_words > 2:
+        return ', '.join(words[:-1]) + ', {0} {1}'.format(conj, words[-1])
+
 def _get_guid_url_for(url):
     """URL Post-processor transforms specific `/project/<pid>` or `/project/<pid>/node/<nid>`
     urls into guid urls. Ex: `<nid>/wiki/home`.
@@ -38,7 +50,7 @@ def _get_guid_url_for(url):
     guid_url = guid_url_profile_pattern.sub('', guid_url, count=1)
     return guid_url
 
-def api_url_for(view_name, _absolute=False, _offload=False, _xml=False, *args, **kwargs):
+def api_url_for(view_name, _absolute=False, _xml=False, *args, **kwargs):
     """Reverse URL lookup for API routes (that use the JSONRenderer or XMLRenderer).
     Takes the same arguments as Flask's url_for, with the addition of
     `_absolute`, which will make an absolute URL with the correct HTTP scheme
@@ -51,8 +63,7 @@ def api_url_for(view_name, _absolute=False, _offload=False, _xml=False, *args, *
     if _absolute:
         # We do NOT use the url_for's _external kwarg because app.config['SERVER_NAME'] alters
         # behavior in an unknown way (currently breaks tests). /sloria /jspies
-        domain = website_settings.OFFLOAD_DOMAIN if _offload else website_settings.DOMAIN
-        return urlparse.urljoin(domain, url)
+        return urlparse.urljoin(website_settings.DOMAIN, url)
     return url
 
 
@@ -82,7 +93,7 @@ def api_v2_url(path_str,
     return str(base_url)
 
 
-def web_url_for(view_name, _absolute=False, _offload=False, _guid=False, *args, **kwargs):
+def web_url_for(view_name, _absolute=False, _guid=False, *args, **kwargs):
     """Reverse URL lookup for web routes (those that use the OsfWebRenderer).
     Takes the same arguments as Flask's url_for, with the addition of
     `_absolute`, which will make an absolute URL with the correct HTTP scheme
@@ -95,8 +106,7 @@ def web_url_for(view_name, _absolute=False, _offload=False, _guid=False, *args, 
     if _absolute:
         # We do NOT use the url_for's _external kwarg because app.config['SERVER_NAME'] alters
         # behavior in an unknown way (currently breaks tests). /sloria /jspies
-        domain = website_settings.OFFLOAD_DOMAIN if _offload else website_settings.DOMAIN
-        return urlparse.urljoin(domain, url)
+        return urlparse.urljoin(website_settings.DOMAIN, url)
     return url
 
 
@@ -106,7 +116,7 @@ def is_json_request():
     return content_type and ('application/json' in content_type)
 
 
-def waterbutler_url_for(route, provider, path, node, user=None, **query):
+def waterbutler_url_for(route, provider, path, node, user=None, **kwargs):
     """Reverse URL lookup for WaterButler routes
     :param str route: The action to preform, upload, download, delete...
     :param str provider: The name of the requested provider
@@ -129,8 +139,13 @@ def waterbutler_url_for(route, provider, path, node, user=None, **query):
     elif website_settings.COOKIE_NAME in request.cookies:
         url.args['cookie'] = request.cookies[website_settings.COOKIE_NAME]
 
-    if 'view_only' in request.args:
-        url.args['view_only'] = request.args['view_only']
+    view_only = False
+    if 'view_only' in kwargs:
+        view_only = kwargs.get('view_only')
+    else:
+        view_only = request.args.get('view_only')
 
-    url.args.update(query)
+    url.args['view_only'] = view_only
+
+    url.args.update(kwargs)
     return url.url

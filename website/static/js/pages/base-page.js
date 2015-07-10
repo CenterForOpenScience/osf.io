@@ -10,6 +10,7 @@ require('../../vendor/bower_components/jquery-ui/themes/base/minified/jquery.ui.
 require('../../css/bootstrap-xl.css');
 require('../../css/animate.css');
 require('../../css/site.css');
+require('../../css/navbar.css');
 require('font-awesome-webpack');
 
 var $ = require('jquery');
@@ -23,7 +24,7 @@ var NavbarControl = require('js/navbarControl');
 $.ajaxSetup({cache: false});
 
 // Polyfill for String.prototype.endsWith
-if (String.prototype.endsWith == undefined) {
+if (String.prototype.endsWith === undefined) {
     String.prototype.endsWith = function(suffix) {
         return this.indexOf(suffix, this.length - suffix.length) !== -1;
     };

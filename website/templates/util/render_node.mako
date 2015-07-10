@@ -9,7 +9,7 @@
         ">
 
         <h4 class="list-group-item-heading">
-            <span class="component-overflow">
+            <span class="component-overflow" style="line-height: 1.5;">
             % if not summary['primary']:
               <i class="fa fa-link" data-toggle="tooltip" title="Linked ${summary['node_type']}"></i>
             % endif
@@ -17,15 +17,36 @@
             % if not summary['is_public']:
                 <span class="fa fa-lock" data-toggle="tooltip" title="This project is private"></span>
             % endif
-            
+                <span class="project-statuses-lg">
+                  % if summary['is_retracted']:
+                  <span class="label label-danger"><strong>Retracted</strong></span> |
+                  % elif summary['pending_retraction']:
+                  <span class="label label-info"><strong>Pending Retraction</strong></span> |
+                  % elif summary['embargo_end_date']:
+                  <span class="label label-info"><strong>Embargoed</strong></span> |
+                  % elif summary['pending_embargo']:
+                  <span class="label label-info"><strong>Pending Embargo</strong></span> |
+                  % endif
+                  % if summary['archiving']:
+                  <span class="label label-primary"><strong>Archiving</strong></span> |
+                  % endif
+                </span>
             <span data-bind="getIcon: '${summary['category']}'"></span>
-            <a href="${summary['url']}">${summary['title']}</a>
+            % if not summary['archiving']:
+                <a href="${summary['url']}">${summary['title']}</a>
+            % endif
+            % if summary['archiving']:
+                <span>${summary['title']}</span>
+            % endif
+
 
             % if summary['is_registration']:
                 | Registered: ${summary['registered_date']}
             % endif
             </span>
 
+            <!-- Show/Hide recent activity log -->
+            % if not summary['archiving']:
             <div class="pull-right">
                 % if not summary['primary'] and 'admin' in user['permissions']:
                     <i class="fa fa-times remove-pointer" data-id="${summary['id']}" data-toggle="tooltip" title="Remove link"></i>
@@ -33,6 +54,7 @@
                 % endif
                 <i id="icon-${summary['id']}" class="pointer fa fa-plus" onclick="NodeActions.openCloseNode('${summary['id']}');" data-toggle="tooltip" title="More"></i>
             </div>
+            % endif
         </h4>
 
         % if summary['show_path'] and summary['node_type'] == 'component':
@@ -69,6 +91,7 @@
             </div>
             <span class="text-muted">${summary['nlogs']} contributions</span>
         % endif
+        % if not summary['archiving']:
         <div class="body hide" id="body-${summary['id']}" style="overflow:hidden;">
             <hr />
             Recent Activity
@@ -90,7 +113,7 @@
             </div>
             <!-- /ko -->
          </div>
-
+        % endif
     </li>
 
 % else:

@@ -14,7 +14,6 @@ from modularodm.validators import URLValidator
 from modularodm.exceptions import NoResultsFound
 from modularodm.exceptions import ValidationError, ValidationValueError
 
-from api.base.utils import absolute_reverse
 import framework
 from framework import analytics
 from framework.sessions import session
@@ -156,16 +155,14 @@ def get_user(email=None, password=None, verification_key=None):
 
 class Auth(object):
 
-    def __init__(self, user=None, api_key=None, api_node=None,
+    def __init__(self, user=None, api_node=None,
                  private_key=None):
         self.user = user
-        self.api_key = api_key
         self.api_node = api_node
         self.private_key = private_key
 
     def __repr__(self):
-        return ('<Auth(user="{self.user}", api_key={self.api_key}, '
-                'api_node={self.api_node}, '
+        return ('<Auth(user="{self.user}", '
                 'private_key={self.private_key})>').format(self=self)
 
     @property
@@ -175,14 +172,10 @@ class Auth(object):
     @classmethod
     def from_kwargs(cls, request_args, kwargs):
         user = request_args.get('user') or kwargs.get('user') or _get_current_user()
-        api_key = request_args.get('api_key') or kwargs.get('api_key')
-        api_node = request_args.get('api_node') or kwargs.get('api_node')
         private_key = request_args.get('view_only')
 
         return cls(
             user=user,
-            api_key=api_key,
-            api_node=api_node,
             private_key=private_key,
         )
 
@@ -224,6 +217,7 @@ class User(GuidStoredObject, AddonModelMixin):
     # The primary email address for the account.
     # This value is unique, but multiple "None" records exist for:
     #   * unregistered contributors where an email address was not provided.
+    # TODO: Update mailchimp subscription on username change in user.save()
     username = fields.StringField(required=False, unique=True, index=True)
 
     # Hashed. Use `User.set_password` and `User.check_password`
@@ -361,8 +355,6 @@ class User(GuidStoredObject, AddonModelMixin):
     #     'twitter': <twitter id>,
     # }
 
-    api_keys = fields.ForeignField('apikey', list=True, backref='keyed')
-
     # hashed password used to authenticate to Piwik
     piwik_token = fields.StringField()
 
@@ -414,7 +406,8 @@ class User(GuidStoredObject, AddonModelMixin):
 
     @property
     def absolute_api_v2_url(self):
-        return absolute_reverse('users:user-detail', kwargs={'pk': self.pk})
+        from api.base.utils import absolute_reverse  # Avoid circular dependency
+        return absolute_reverse('users:user-detail', kwargs={'user_id': self.pk})
 
     # used by django and DRF
     def get_absolute_url(self):
@@ -985,6 +978,7 @@ class User(GuidStoredObject, AddonModelMixin):
         }
 
     def save(self, *args, **kwargs):
+        # TODO: Update mailchimp subscription on username change
         # Avoid circular import
         from framework.analytics import tasks as piwik_tasks
         self.username = self.username.lower().strip() if self.username else None
@@ -1142,9 +1136,11 @@ class User(GuidStoredObject, AddonModelMixin):
 
         for key, value in user.mailing_lists.iteritems():
             # subscribe to each list if either user was subscribed
-            self.mailing_lists[key] = value or self.mailing_lists.get(key)
-        # - clear subscriptions for merged user
-        user.mailing_lists = {}
+            subscription = value or self.mailing_lists.get(key)
+            signals.user_merged.send(self, list_name=key, subscription=subscription)
+
+            # clear subscriptions for merged user
+            signals.user_merged.send(user, list_name=key, subscription=False)
 
         for node_id, timestamp in user.comments_viewed_timestamp.iteritems():
             if not self.comments_viewed_timestamp.get(node_id):
@@ -1171,10 +1167,6 @@ class User(GuidStoredObject, AddonModelMixin):
             if account not in self.external_accounts:
                 self.external_accounts.append(account)
         user.external_accounts = []
-
-        for api_key in user.api_keys:
-            self.api_keys.append(api_key)
-        user.api_keys = []
 
         # - addons
         # Note: This must occur before the merged user is removed as a

@@ -6,14 +6,15 @@ var Footer = {};
 
 Footer.view = function(ctrl) {
     return m('', [
-        m(
-            'ul.provider-footer.col-xs-12.col-lg-10.col-lg-offset-1',
-            {
-                style: {
-                    'list-style-type': 'none'
-                }
-            },
-            ctrl.renderProviders()
+        m('.col-xs-12.col-lg-10.col-lg-offset-1',
+            m('ul.provider-footer',
+                {
+                    style: {
+                        'list-style-type': 'none'
+                    }
+                },
+                ctrl.renderProviders()
+            )
         ),
         m('.row', m('.col-md-12', {style: 'padding-top: 30px;'}, m('span', m.trust(MESSAGES.ABOUTSHARE))))
     ]);

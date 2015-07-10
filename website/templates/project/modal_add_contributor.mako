@@ -193,8 +193,7 @@
                     <hr />
 
                     <div style="margin-bottom:10px;">
-                        Would you like to add these contributor(s) to any children of
-                        the current component?
+                        Select any other components to which you would like to apply these settings.
                     </div>
 
                     <div class="row">

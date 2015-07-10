@@ -1,4 +1,3 @@
-
 # -*- coding: utf-8 -*-
 '''Unit tests for models and their factories.'''
 import mock
@@ -22,13 +21,15 @@ from framework.sessions.model import Session
 from framework.auth import exceptions as auth_exc
 from framework.auth.exceptions import ChangePasswordError, ExpiredTokenError
 from framework.auth.utils import impute_names_model
+from framework.auth.signals import user_merged
+from framework.tasks import handlers
 from framework.bcrypt import check_password_hash
-from website import filters, language, settings
+from website import filters, language, settings, mailchimp_utils
 from website.exceptions import NodeStateError
 from website.profile.utils import serialize_user
 from website.project.model import (
-    ApiKey, Comment, Node, NodeLog, Pointer, ensure_schemas, has_anonymous_link,
-    get_pointer_parent,
+    Comment, Node, NodeLog, Pointer, ensure_schemas, has_anonymous_link,
+    get_pointer_parent, Embargo,
 )
 from website.util.permissions import CREATOR_PERMISSIONS
 from website.util import web_url_for, api_url_for
@@ -41,9 +42,9 @@ from website.addons.wiki.exceptions import (
     PageNotFoundError,
 )
 
-from tests.base import OsfTestCase, Guid, fake
+from tests.base import OsfTestCase, Guid, fake, capture_signals
 from tests.factories import (
-    UserFactory, ApiKeyFactory, NodeFactory, PointerFactory,
+    UserFactory, NodeFactory, PointerFactory,
     ProjectFactory, NodeLogFactory, WatchConfigFactory,
     NodeWikiFactory, RegistrationFactory, UnregUserFactory,
     ProjectWithAddonFactory, UnconfirmedUserFactory, CommentFactory, PrivateLinkFactory,
@@ -847,6 +848,9 @@ class TestMergingUsers(OsfTestCase):
 
     def setUp(self):
         super(TestMergingUsers, self).setUp()
+        with self.context:
+            handlers.celery_before_request()
+
         self.master = UserFactory(
             fullname='Joe Shmo',
             is_registered=True,
@@ -877,6 +881,29 @@ class TestMergingUsers(OsfTestCase):
     def test_dupe_email_is_appended(self):
         self._merge_dupe()
         assert_in('joseph123@hotmail.com', self.master.emails)
+
+    def test_send_user_merged_signal(self):
+        self.dupe.mailing_lists['foo'] = True
+        self.dupe.save()
+
+        with capture_signals() as mock_signals:
+            self._merge_dupe()
+            assert_equal(mock_signals.signals_sent(), set([user_merged]))
+
+    @mock.patch('website.mailchimp_utils.get_mailchimp_api')
+    def test_merged_user_unsubscribed_from_mailing_lists(self, mock_get_mailchimp_api):
+        list_name = 'foo'
+        username = self.dupe.username
+        self.dupe.mailing_lists[list_name] = True
+        self.dupe.save()
+        mock_client = mock.MagicMock()
+        mock_get_mailchimp_api.return_value = mock_client
+        mock_client.lists.list.return_value = {'data': [{'id': 2, 'list_name': list_name}]}
+        list_id = mailchimp_utils.get_list_id_from_name(list_name)
+        self._merge_dupe()
+        handlers.celery_teardown_request()
+        mock_client.lists.unsubscribe.assert_called_with(id=list_id, email={'email': username})
+        assert_false(self.dupe.mailing_lists[list_name])
 
     def test_inherits_projects_contributed_by_dupe(self):
         project = ProjectFactory()
@@ -940,18 +967,6 @@ class TestGUID(OsfTestCase):
                 record_guid.referent,
                 record
             )
-
-
-class TestApiKey(OsfTestCase):
-
-    def test_factory(self):
-        super(TestApiKey, self).setUp()
-        key = ApiKeyFactory()
-        user = UserFactory()
-        user.api_keys.append(key)
-        user.save()
-        assert_equal(len(user.api_keys), 1)
-        assert_equal(ApiKey.find().count(), 1)
 
 
 class TestNodeWikiPage(OsfTestCase):
@@ -1272,20 +1287,8 @@ class TestNode(OsfTestCase):
         )
 
     def test_web_url_for_absolute(self):
-        orig_offload_domain = settings.OFFLOAD_DOMAIN
-        settings.OFFLOAD_DOMAIN = 'http://localhost:5001/'
         result = self.parent.web_url_for('view_project', _absolute=True)
         assert_in(settings.DOMAIN, result)
-        assert_not_in(settings.OFFLOAD_DOMAIN, result)
-        settings.OFFLOAD_DOMAIN = orig_offload_domain
-
-    def test_web_url_for_absolute_offload(self):
-        orig_offload_domain = settings.OFFLOAD_DOMAIN
-        settings.OFFLOAD_DOMAIN = 'http://localhost:5001/'
-        result = self.parent.web_url_for('view_project', _absolute=True, _offload=True)
-        assert_in(settings.OFFLOAD_DOMAIN, result)
-        assert_not_in(settings.DOMAIN, result)
-        settings.OFFLOAD_DOMAIN = orig_offload_domain
 
     def test_category_display(self):
         node = NodeFactory(category='hypothesis')
@@ -1313,20 +1316,8 @@ class TestNode(OsfTestCase):
         )
 
     def test_api_url_for_absolute(self):
-        orig_offload_domain = settings.OFFLOAD_DOMAIN
-        settings.OFFLOAD_DOMAIN = 'http://localhost:5001/'
         result = self.parent.api_url_for('view_project', _absolute=True)
         assert_in(settings.DOMAIN, result)
-        assert_not_in(settings.OFFLOAD_DOMAIN, result)
-        settings.OFFLOAD_DOMAIN = orig_offload_domain
-
-    def test_api_url_for_absolute_offload(self):
-        orig_offload_domain = settings.OFFLOAD_DOMAIN
-        settings.OFFLOAD_DOMAIN = 'http://localhost:5001/'
-        result = self.parent.api_url_for('view_project', _absolute=True, _offload=True)
-        assert_in(settings.OFFLOAD_DOMAIN, result)
-        assert_not_in(settings.DOMAIN, result)
-        settings.OFFLOAD_DOMAIN = orig_offload_domain
 
     def test_node_factory(self):
         node = NodeFactory()
@@ -1851,7 +1842,8 @@ class TestAddonCallbacks(OsfTestCase):
                 self.node, fork, self.user
             )
 
-    def test_register_callback(self):
+    @mock.patch('website.archiver.tasks.archive.si')
+    def test_register_callback(self, mock_archive):
         registration = self.node.register_node(
             None, self.consolidate_auth, '', '',
         )
@@ -1902,7 +1894,6 @@ class TestProject(OsfTestCase):
         assert_true(hasattr(node, 'nodes'))
         assert_true(hasattr(node, 'forked_from'))
         assert_true(hasattr(node, 'registered_from'))
-        assert_true(hasattr(node, 'api_keys'))
         assert_equal(node.logs[-1].action, 'project_created')
 
     def test_log(self):
@@ -2365,14 +2356,16 @@ class TestProject(OsfTestCase):
         project = ProjectFactory()
         assert_false(project.is_fork_of(self.project))
 
-    def test_is_registration_of(self):
+    @mock.patch('website.archiver.tasks.archive.si')
+    def test_is_registration_of(self, mock_archive):
         project = ProjectFactory()
         reg1 = project.register_node(None, Auth(user=project.creator), '', None)
         reg2 = reg1.register_node(None, Auth(user=project.creator), '', None)
         assert_true(reg1.is_registration_of(project))
         assert_true(reg2.is_registration_of(project))
 
-    def test_is_registration_of_false(self):
+    @mock.patch('website.archiver.tasks.archive.si')
+    def test_is_registration_of_false(self, mock_archive):
         project = ProjectFactory()
         to_reg = ProjectFactory()
         reg = to_reg.register_node(None, Auth(user=to_reg.creator), '', None)
@@ -2384,7 +2377,8 @@ class TestProject(OsfTestCase):
         with assert_raises(PermissionsError):
             project.register_node(None, Auth(user=user), '', None)
 
-    def test_admin_can_register_private_children(self):
+    @mock.patch('website.archiver.tasks.archive.si')
+    def test_admin_can_register_private_children(self, mock_archive):
         user = UserFactory()
         project = ProjectFactory(creator=user)
         project.set_permissions(user, ['admin', 'write', 'read'])
@@ -2464,6 +2458,42 @@ class TestProject(OsfTestCase):
         self.project.save()
         assert_false(self.project.is_public)
         assert_equal(self.project.logs[-1].action, NodeLog.MADE_PRIVATE)
+
+    def test_set_privacy_can_not_cancel_pending_embargo_for_registration(self):
+        registration = RegistrationFactory(project=self.project)
+        registration.embargo_registration(
+            self.user,
+            datetime.datetime.utcnow() + datetime.timedelta(days=10)
+        )
+        assert_false(registration.embargo_end_date)
+        assert_true(registration.pending_embargo)
+
+        func = lambda: registration.set_privacy('public', auth=self.consolidate_auth)
+        assert_raises(NodeStateError, func)
+        assert_false(registration.is_public)
+
+    def test_set_privacy_cancels_active_embargo_for_registration(self):
+        registration = RegistrationFactory(project=self.project)
+        registration.embargo_registration(
+            self.user,
+            datetime.datetime.utcnow() + datetime.timedelta(days=10)
+        )
+        registration.save()
+        assert_false(registration.embargo_end_date)
+        assert_true(registration.pending_embargo)
+
+        approval_token = registration.embargo.approval_state[self.user._id]['approval_token']
+        registration.embargo.approve_embargo(self.user, approval_token)
+        assert_true(registration.embargo_end_date)
+        assert_false(registration.pending_embargo)
+
+        registration.set_privacy('public', auth=self.consolidate_auth)
+        registration.save()
+        assert_false(registration.embargo_end_date)
+        assert_false(registration.pending_embargo)
+        assert_equal(registration.embargo.state, Embargo.CANCELLED)
+        assert_true(registration.is_public)
+        assert_equal(self.project.logs[-1].action, NodeLog.EMBARGO_APPROVED)
 
     def test_set_description(self):
         old_desc = self.project.description
@@ -3118,7 +3148,6 @@ class TestRegisterNode(OsfTestCase):
     def test_registration_list(self):
         assert_in(self.registration._id, self.project.node__registrations)
 
-
 class TestNodeLog(OsfTestCase):
 
     def setUp(self):
@@ -3322,7 +3351,8 @@ class TestPointer(OsfTestCase):
         registered = self.pointer.fork_node()
         self._assert_clone(self.pointer, registered)
 
-    def test_register_with_pointer_to_registration(self):
+    @mock.patch('website.archiver.tasks.archive.si')
+    def test_register_with_pointer_to_registration(self, mock_archive):
         pointee = RegistrationFactory()
         project = ProjectFactory()
         auth = Auth(user=project.creator)

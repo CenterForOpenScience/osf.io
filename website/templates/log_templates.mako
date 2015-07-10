@@ -4,6 +4,51 @@
 ## log templates. An addon's log templates are located in
 ## website/addons/<addon_name>/templates/log_templates.mako.
 
+<script type="text/html" id="embargo_approved">
+approved embargo of
+<a class="log-node-title-link overflow" data-bind="text: nodeTitle, attr: {href: nodeUrl}"></a>
+</script>
+
+<script type="text/html" id="embargo_approved_no_user">
+Embargo for
+<a class="log-node-title-link overflow" data-bind="text: nodeTitle, attr: {href: nodeUrl}"></a> approved
+</script>
+
+<script type="text/html" id="embargo_cancelled">
+cancelled embargo of
+<a class="log-node-title-link overflow" data-bind="text: nodeTitle, attr: {href: nodeUrl}"></a>
+</script>
+
+<script type="text/html" id="embargo_completed">
+completed embargo of
+<a class="log-node-title-link overflow" data-bind="text: nodeTitle, attr: {href: nodeUrl}"></a>
+</script>
+
+<script type="text/html" id="embargo_completed_no_user">
+Embargo for
+<a class="log-node-title-link overflow" data-bind="text: nodeTitle, attr: {href: nodeUrl}"></a> completed
+</script>
+
+<script type="text/html" id="embargo_initiated">
+initiated embargo of
+<a class="log-node-title-link overflow" data-bind="text: nodeTitle, attr: {href: nodeUrl}"></a>
+</script>
+
+<script type="text/html" id="retraction_approved">
+approved retraction of
+<a class="log-node-title-link overflow" data-bind="text: nodeTitle, attr: {href: nodeUrl}"></a>
+</script>
+
+<script type="text/html" id="retraction_cancelled">
+cancelled retraction of
+<a class="log-node-title-link overflow" data-bind="text: nodeTitle, attr: {href: nodeUrl}"></a>
+</script>
+
+<script type="text/html" id="retraction_initiated">
+initiated retraction of
+<a class="log-node-title-link overflow" data-bind="text: nodeTitle, attr: {href: nodeUrl}"></a>
+</script>
+
 <script type="text/html" id="project_created">
 created
 <a class="log-node-title-link overflow" data-bind="text: nodeTitle, attr: {href: nodeUrl}"></a>
@@ -56,6 +101,10 @@ changed permissions for
 <script type="text/html" id="made_public">
 made
 <a class="log-node-title-link overflow" data-bind="attr: {href: nodeUrl}, text: nodeTitle"></a> public
+</script>
+
+<script type="text/html" id="made_public_no_user">
+    <a class="log-node-title-link overflow" data-bind="attr: {href: nodeUrl}, text: nodeTitle"></a> made public
 </script>
 
 <script type="text/html" id="made_private">

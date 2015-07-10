@@ -28,6 +28,7 @@ var FileRevisionsTable = {
         self.file = file;
         self.canEdit = canEdit;
         self.enableEditing = enableEditing;
+        self.baseUrl = (window.location.href).split('?')[0];
 
         model.hasDate = self.file.provider !== 'dataverse';
 
@@ -102,7 +103,7 @@ var FileRevisionsTable = {
             return m('tr' + (isSelected ? '.active' : ''), [
                 m('td',  isSelected ?
                   revision.displayVersion :
-                  m('a', {href: revision.osfViewUrl}, revision.displayVersion)
+                  m('a', {href: parseInt(revision.displayVersion) === model.revisions.length ? self.baseUrl : revision.osfViewUrl}, revision.displayVersion)
                 ),
                 model.hasDate ? m('td', revision.displayDate) : false,
                 model.hasUser ?
@@ -123,7 +124,9 @@ var FileRevisionsTable = {
             ].filter(TRUTHY));
         };
 
-        if (!model.loaded()) self.reload();
+        if (!model.loaded()) {
+            self.reload();
+        }
         $(document).on('fileviewpage:reload', self.reload);
         return self;
     },
@@ -131,8 +134,12 @@ var FileRevisionsTable = {
         return m('#revisionsPanel', [
             m('.osf-panel-header', 'Revisions'),
             m('', (function() {
-                if (!model.loaded()) return util.Spinner;
-                if (model.errorMessage) return m('.alert.alert-warning', {style:{margin: '10px'}}, model.errorMessage);
+                if (!model.loaded()) {
+                    return util.Spinner;
+                }
+                if (model.errorMessage) {
+                    return m('.alert.alert-warning', {style:{margin: '10px'}}, model.errorMessage);
+                }
 
                 return m('table.table', [
                     ctrl.getTableHead(),

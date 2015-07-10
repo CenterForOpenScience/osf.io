@@ -88,6 +88,7 @@ utils.loadMore = function(vm) {
 };
 
 utils.search = function(vm) {
+    vm.showFooter = false;
     var ret = m.deferred();
     if (!vm.query() || vm.query().length === 0){
         vm.query = m.prop('');
