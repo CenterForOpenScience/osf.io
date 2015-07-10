@@ -1,6 +1,7 @@
 <script id="profileSchools" type="text/html">
 
     <div data-bind="if: mode() === 'edit'">
+        <pre>{{ko.toJSON($data)}}</pre>
 
         <form role="form" data-bind="submit: submit, validationOptions: {insertMessages: false, messagesOnModified: false}">
 
@@ -22,9 +23,8 @@
                         </span>
                         <a
                                 class="text-danger pull-right"
-                                data-bind="click: $parent.removeContent,
-                                           visible: $parent.canRemove"
-                            >Remove</a>
+                                data-bind="click: $parent.removeContent"
+                                >Remove</a>
                     </div>
 
                     <div class="form-group">
@@ -96,7 +96,7 @@
             </div>
 
             <div>
-                <a class="btn btn-default" data-bind="click: addContent">
+                <a class="btn btn-default" data-bind="disable, click: addContent">
                     Add another
                 </a>
             </div>
