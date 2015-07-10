@@ -23,10 +23,10 @@ var currentUser = window.contextVars.currentUser || {
 };
 
 
-/** 
+/**
  * @class Comment
  * Model for storing/editing/deleting comments on form fields
- * 
+ *
  * @param {Object} data: optional data to instatiate model with
  * @param {User} data.user
  * @param {Date} data.lastModified
@@ -86,8 +86,8 @@ $(document).keydown(function(e) {
 
 /**
  * @class Question
- * Model for schema questions 
- * 
+ * Model for schema questions
+ *
  * @param {Object} data: optional instantiation values
  * @param {String} data.title
  * @param {String} data.nav: short version of title
@@ -214,10 +214,10 @@ var MetaSchema = function(params) {
     });
 };
 
-/** 
- * @class Draft 
+/**
+ * @class Draft
  * Model for DraftRegistrations
- * 
+ *
  * @param {Object} params
  * @param {String} params.pk: primary key of Draft
  * @param {Object} params.registration_schema: data to be passed to MetaSchema constructor
@@ -226,7 +226,7 @@ var MetaSchema = function(params) {
  * @param {Date} params.initated
  * @param {Date} params.updated
  * @property {Float} completion: percent completion of schema
-**/
+ **/
 var Draft = function(params, metaSchema) {
     var self = this;
 
@@ -244,27 +244,27 @@ var Draft = function(params, metaSchema) {
     self.updated = new Date(params.updated);
     self.completion = ko.computed(function() {
         var total = 0;
-        var complete = 0;        
+        var complete = 0;
         if (self.schemaData) {
             var schema = self.schema();
             $.each(schema.pages, function(i, page) {
                 $.each(page.questions, function(qid, question) {
-                    var q = self.schemaData[qid];                    
+                    var q = self.schemaData[qid];
                     if(q && !$osf.isBlank(q.value)) {
                         complete++;
                     }
                     total++;
                 });
             });
-           return Math.ceil(100 * (complete / total));
+			return Math.ceil(100 * (complete / total));
         }
         return 0;
     });
 };
 
-/** 
+/**
  * @class RegistrationEditor
- * 
+ *
  * @param {Object} urls
  * @param {String} urls.update: endpoint to update a draft instance
  * @param {String} editorID: id of editor DOM node
@@ -274,7 +274,7 @@ var Draft = function(params, metaSchema) {
  * @property {Object} extensions: mapping of extenstion names to their view models
  *
  * Notes:
- * - The editor can be extended by calling #extendEditor with a type and it's associated ViewModel. 
+ * - The editor can be extended by calling #extendEditor with a type and it's associated ViewModel.
  *   When the context for that type's schema template is built (see #context), that type's ViewModel
  *   is instantiated with the current scope's data as an argument
  **/
@@ -301,14 +301,14 @@ var RegistrationEditor = function(urls, editorId) {
         return schema.pages;
     });
 
-    self.lastSaveTime = ko.computed(function() {        
+    self.lastSaveTime = ko.computed(function() {
         if(!self.draft()) {
             return null;
         }
         return self.draft().updated;
     });
     self.formattedDate = formattedDate;
-    
+
     self.iterObject = $osf.iterObject;
 
     self.extensions = {};
@@ -361,7 +361,7 @@ RegistrationEditor.prototype.flatQuestions = function() {
     var self = this;
 
     var flat = [];
-    
+
     $.each(self.currentPages(), function(i, page) {
         $.each(page.questions, function(qid, question) {
             flat.push(question);
@@ -385,7 +385,7 @@ RegistrationEditor.prototype.context = function(data) {
 };
 /**
  * Extend the editor's recognized types
- * 
+ *
  * @param {String} type: unique type
  * @param {Constructor} ViewModel
  **/
@@ -461,18 +461,18 @@ RegistrationEditor.prototype.create = function(schemaData) {
 };
 RegistrationEditor.prototype.submit = function() {
     var self = this;
-    
+
     var currentNode = window.contextVars.node
     var currentUser = window.contextVars.currentUser
     var url = '/api/v1/project/' + currentNode.id +  '/draft/submit/' + currentUser.id + '/'
-    
+
     bootbox.dialog({
-	message: "Please verify that all required fields are filled out:<br><br>\
-	    <strong>Required:</strong><br>\
-	Title<br> COI<br> Authors<br> Research<br> Certify<br> Data<br> Rationale<br> Sample<br> Type<br> Randomized?<br> \
-	Covariates<br> Design<br> Blind<br> Outcome<br> Predictor<br> Statistical Models<br> Multiple Hypostheses<br> \
-	Outcome Variables<br> Predictors<br> Incomplete<br> Exclusion<br><br> \
-	    <strong>Optional:</strong><br>\
+		message: "Please verify that all required fields are filled out:<br><br>\
+			<strong>Required:</strong><br>\
+		Title<br> COI<br> Authors<br> Research<br> Certify<br> Data<br> Rationale<br> Sample<br> Type<br> Randomized?<br> \
+		Covariates<br> Design<br> Blind<br> Outcome<br> Predictor<br> Statistical Models<br> Multiple Hypostheses<br> \
+		Outcome Variables<br> Predictors<br> Incomplete<br> Exclusion<br><br> \
+			<strong>Optional:</strong><br>\
 		Script",
 		title: "Continue to submit this registration for review",
 		buttons: {
@@ -485,11 +485,39 @@ RegistrationEditor.prototype.submit = function() {
 						url: url,
 						data: {node: currentNode, uid: currentUser.id},
 						success: function(response) {
-							bootbox.alert("Registration submitted for review!", function(result) {
-								window.location.href = '/' + currentNode.id + '/registrations/';
+							bootbox.dialog({
+								message: " <img src=\"https://i.imgur.com/0aCtj3b.png\"><br>\
+								You have successfully submitted your study and analysis plans. The plans are not yet fully registered. \
+								Next, staff from the Center for Open Science will have the plans reviewed to assure that enough detail was included. \
+								Reviewers may accept your plans or request revisions. Remember, in order to be eligible for the prize, your plans must be accepted\
+								through this review process. We will contact you within five business days with a status update. \
+								If you have any questions, please contact <a href=\"mailto:prereg@cos.io\">prereg@cos.io</a> and we will be happy to help you.",
+								title: "Pre-Registration Prize Submission",
+								buttons: {
+									dashboard: {
+										label: "Go to your OSF Dashboard",
+										className: "btn-primary pull-right",
+										callback: function() {
+											window.location.href = '/';
+
+										}
+
+									},
+									info: {
+										label: "Go to Prereg Prize info page",
+										className: "btn-primary pull-left",
+										callback: function() {
+											window.location.href = 'http://centerforopenscience.org/prereg/';
+
+										}
+
+									}
+								}
+
 							});
+
 						}
-					})
+					});
 				}
 			}
 		}
@@ -543,7 +571,7 @@ var RegistrationManager = function(node, draftsSelector, editorSelector, control
 
     self.urls = {
         list: node.urls.api + 'draft/',
-	submit: node.urls.api + 'draft/submit/',
+		submit: node.urls.api + 'draft/submit/',
         get: node.urls.api + 'draft/{draft_pk}/',
         delete: node.urls.api + 'draft/{draft_pk}/',
         schemas: '/api/v1/project/schema/',
