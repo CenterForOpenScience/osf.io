@@ -17,7 +17,7 @@ function FileViewTreebeard(data) {
     }
 
     var fangornOpts = {
-        divID: 'grid',
+        divID: 'treeGrid',
         filesData: data.data,
         uploads: false,
         showFilter: false,
