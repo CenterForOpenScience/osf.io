@@ -29,10 +29,10 @@ ko.bindingHandlers.osfUploader = {
                         var redir = new URI(item.data.nodeUrl);
                         redir.segment("files").segment(item.data.provider).segmentCoded(item.data.path.substring(1));
                         fileurl = redir.toString() + '/';
-                        $("#scriptName").html(item.data.name);
+                        $("#fileName").html(item.data.name);
                         viewModel.setValue(fileurl);
                     } else {
-                        $("#scriptName").html("no file selected");
+                        $("#fileName").html("no file selected");
                         fileurl = "";
                         viewModel.setValue(null);
                     }

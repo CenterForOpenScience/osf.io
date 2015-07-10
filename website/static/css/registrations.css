@@ -13,9 +13,9 @@
     font-weight: 900;
     font-size: 120%;
 }
-#selectedScript{
+#selectedFile{
     font-weight: 500;
 }
-#scriptName{
+#fileName{
 	font-weight: 300;
 }

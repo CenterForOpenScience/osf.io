@@ -7,7 +7,7 @@ var URI = require('URIjs');
 var $osf = require('js/osfHelpers');
 var oop = require('js/oop');
 
-require('js/registrationEditorExtensions');
+var editorExtensions = require('js/registrationEditorExtensions');
 
 var formattedDate = function(dateString) {
     if (!dateString) {
@@ -120,6 +120,7 @@ var Question = function(data, id) {
     self.match = data.match || '';
 
     self.showExample = ko.observable(false);
+    self.showUploader = ko.observable(false);
 
     self.comments = ko.observableArray(
         $.map(data.comments || [], function(comment) {
@@ -173,6 +174,13 @@ Question.prototype.addComment = function() {
  **/
 Question.prototype.toggleExample = function(){
     this.showExample(!this.showExample());
+};
+
+/**
+ * Shows/hides the Question uploader
+ **/
+Question.prototype.toggleUploader = function(){
+    this.showUploader(!this.showUploader());
 };
 
 /**
@@ -311,7 +319,9 @@ var RegistrationEditor = function(urls, editorId) {
     
     self.iterObject = $osf.iterObject;
 
-    self.extensions = {};
+    self.extensions = {
+        'osf-upload': editorExtensions.Uploader
+    };
 };
 /**
  * Load draft data into the editor

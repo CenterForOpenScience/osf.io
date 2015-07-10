@@ -23,7 +23,6 @@ var FilesWidget = oop.defclass({
             filesData: filesUrl,
             uploads: true,
             showFilter: true,
-            placement: 'dashboard',
             title: undefined,
             filterFullWidth: true, // Make the filter span the entire row for this view
             xhrconfig: $osf.setXHRAuthorization,

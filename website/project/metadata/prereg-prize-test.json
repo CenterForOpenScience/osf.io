@@ -37,11 +37,21 @@
             },
             "q4": {
                 "nav": "Research",
-                "type": "string",
-                "format": "textarea",
+                "type": "object",
                 "title": "Research questions and hypotheses",
                 "description": "What are your research questions and hypotheses?",
-                "help": "There is strong evidence to suggest that sugar affects taste preferences, but the effect has never been demonstrated in brownies. Therefore, we will measure taste preference for four different levels of sugar concentration in a standard brownie recipe. If taste effects preferences, then mean preference indices will be higher with higher concentrations of sugar."
+                "help": "There is strong evidence to suggest that sugar affects taste preferences, but the effect has never been demonstrated in brownies. Therefore, we will measure taste preference for four different levels of sugar concentration in a standard brownie recipe. If taste effects preferences, then mean preference indices will be higher with higher concentrations of sugar.",
+                "properties": {
+                    "question": {
+                        "id": "q4a",
+                        "type": "string",
+                        "format": "textarea"
+                    },
+                    "uploader": {
+                        "id": "q4b",
+                        "format": "osf-upload" 
+                    }
+                }  
             }
         }
     }, {
