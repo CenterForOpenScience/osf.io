@@ -313,12 +313,12 @@ class AddonFigShareNodeSettings(StorageAddonBase, AddonNodeSettingsBase):
             return []
         figshare = node.get_addon('figshare')
         # Quit if no user authorization
-
+        encoded_folder_name = figshare.folder_name.replace(' ', '_')
         node_permissions = 'public' if node.is_public else 'private'
 
         if figshare.figshare_type == 'project':
             if node_permissions == 'private':
-                message = messages.BEFORE_PAGE_LOAD_PRIVATE_NODE_MIXED_FS.format(category=node.project_or_component, project_id=figshare.figshare_id)
+                message = messages.BEFORE_PAGE_LOAD_PRIVATE_NODE_MIXED_FS.format(category=node.project_or_component, project_id=figshare.figshare_id, encoded_folder_name=encoded_folder_name)
                 return [message]
             else:
                 message = messages.BEFORE_PAGE_LOAD_PUBLIC_NODE_MIXED_FS.format(category=node.project_or_component, project_id=figshare.figshare_id)
@@ -334,6 +334,7 @@ class AddonFigShareNodeSettings(StorageAddonBase, AddonNodeSettingsBase):
                 node_perm=node_permissions,
                 figshare_perm=article_permissions,
                 figshare_id=self.figshare_id,
+                encoded_folder_name=encoded_folder_name,
             )
             if article_permissions == 'private' and node_permissions == 'public':
                 message += messages.BEFORE_PAGE_LOAD_PUBLIC_NODE_PRIVATE_FS
