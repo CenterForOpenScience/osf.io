@@ -1,6 +1,8 @@
+<%page args="extra_css=''" />
+
 <div id="alert-container">
 % for message, css_class, dismissible, trust in status:
-      <div class='alert alert-block alert-${css_class} fade in'>
+      <div class='alert alert-block alert-${css_class} fade in ${extra_css}'>
         % if dismissible:
         <button type="button" class="close" data-dismiss="alert" aria-label="Close">
           <span aria-hidden="true">&times;</span>
