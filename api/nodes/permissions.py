@@ -25,12 +25,16 @@ class ContributorOrPublic(permissions.BasePermission):
 class AdminOrPublic(permissions.BasePermission):
 
     def has_object_permission(self, request, view, obj):
-        assert isinstance(obj, (Node, Pointer)), 'obj must be a Node or Pointer, got {}'.format(obj)
+        assert isinstance(obj, (Node, User)), 'obj must be a Node or Pointer, got {}'.format(obj)
+        if isinstance(obj, Node):
+            node = obj
+        else:
+            node = Node.load(request.parser_context['kwargs']['node_id'])
         auth = get_user_auth(request)
         if request.method in permissions.SAFE_METHODS:
-            return obj.is_public or obj.can_view(auth)
+            return node.is_public or node.can_view(auth)
         else:
-            return obj.has_permission(auth.user, 'admin')
+            return node.has_permission(auth.user, 'admin')
 
 
 class ContributorPermissions(permissions.BasePermission):
@@ -44,18 +48,15 @@ class ContributorPermissions(permissions.BasePermission):
         assert isinstance(obj, (Node, User)), 'obj must be a Node or User, got {}'.format(obj)
         auth = get_user_auth(request)
         node = Node.load(request.parser_context['kwargs']['node_id'])
+        is_admin = node.has_permission(auth.user, 'admin')
+        is_current_user = obj._id == auth.user._id
         if request.method in permissions.SAFE_METHODS:
             return node.is_public or node.can_view(auth)
-        elif request.method != 'DELETE' or self.has_other_admin_contributor(node, obj):
-            return True
+        elif request.method == 'DELETE' and len(node.contributors) > 1:
+            return is_admin or is_current_user
         else:
-            return False
-
-    def has_other_admin_contributor(self, node, current_user):
-        for contributor in node.contributors:
-            if node.has_permission(contributor, 'admin') and contributor is not current_user:
-                return True
-        return False
+            is_visible = node.get_visible(auth.user)
+            return is_admin or (is_current_user and is_visible)
 
 
 class ContributorOrPublicForPointers(permissions.BasePermission):

@@ -189,20 +189,23 @@ class ContributorDetailSerializer(ContributorSerializer):
 
     def update(self, user, validated_data):
         node = self.context['view'].get_node()
+        current_user = self.context['request'].user
         bibliographic = (validated_data['bibliographic'] == "True")
-        if bibliographic != node.get_visible(user):
-            node.set_visible(user, bibliographic, save=True)
         admin_field = (validated_data['admin'] == "True")
-        if admin_field == node.has_permission(user, 'admin'):
-            pass
-        elif admin_field:
-            node.add_permission(user, 'admin', save=True)
-        elif self.can_change_admin_status(node, user):
-            node.remove_permission(user, 'admin', save=True)
+        is_admin = node.has_permission(current_user, 'admin')
+        is_current = user is current_user
+        if is_admin or (not bibliographic and is_current):
+            node.set_visible(user, bibliographic, save=True)
         else:
-            raise PermissionDenied('User {} is the only admin.'.format(user))
-        user.bibliographic = bibliographic
-        user.admin = admin_field
+            raise PermissionDenied('User {} is cannot change the bibliographic status for user {}.'
+                                   .format(current_user)
+                                   .format(user))
+        if admin_field and not node.has_permission(user, 'admin') and is_admin:
+            node.add_permission(user, 'admin')
+        elif not admin_field and node.has_permission(user, 'admin'):
+            node.remove_permission(user, 'admin')
+        user.bibliographic = node.get_visible(user)
+        user.admin = node.has_permission(user, 'admin')
         return user
 
     links = LinksField({
@@ -210,13 +213,6 @@ class ContributorDetailSerializer(ContributorSerializer):
         'nodes': {
             'relation': Link('users:user-nodes', kwargs={'user_id': '<_id>'})},
     })
-
-    def can_change_admin_status(self, node, current_user):
-        if node.has_permission(current_user, 'admin'):
-            for contributor in node.contributors:
-                if node.has_permission(contributor, 'admin') and contributor is not current_user:
-                    return True
-        return False
 
 
 class NodePointersSerializer(JSONAPISerializer):
