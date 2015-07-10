@@ -38,6 +38,8 @@ from website.views import _render_nodes, find_dashboard, validate_page_num
 from website.profile import utils
 from website.project import new_folder
 from website.util.sanitize import strip_html
+from website.addons.base import utils as addon_utils
+
 
 logger = logging.getLogger(__name__)
 
@@ -274,34 +276,17 @@ def node_forks(auth, node, **kwargs):
 def node_setting(auth, node, **kwargs):
 
     ret = _view_project(node, auth, primary=True)
+    ret['addon_settings'] = addon_utils.get_addons_by_config_type('node', auth.user)
 
-    addons_enabled = []
-    addon_enabled_settings = []
-
-    for addon in node.get_addons():
-        addons_enabled.append(addon.config.short_name)
-        if 'node' in addon.config.configs:
-            config = addon.to_json(auth.user)
-            # inject the MakoTemplateLookup into the template context
-            # TODO inject only short_name and render fully client side
-            config['template_lookup'] = addon.config.template_lookup
-            config['addon_icon_url'] = addon.config.icon_url
-            addon_enabled_settings.append(config)
-    addon_enabled_settings = sorted(addon_enabled_settings, key=lambda addon: addon['addon_full_name'].lower())
-
+    accounts_addons = ([addon for addon in settings.ADDONS_AVAILABLE if 'node' in addon.owners
+                        and addon.short_name not in settings.SYSTEM_ADDED_ADDONS['node']])
     ret['addon_categories'] = settings.ADDON_CATEGORIES
-    ret['addons_available'] = sorted([
-        addon
-        for addon in settings.ADDONS_AVAILABLE
-        if 'node' in addon.owners
-        and addon.short_name not in settings.SYSTEM_ADDED_ADDONS['node']
-    ], key=lambda addon: addon.full_name.lower())
-
-    ret['addons_enabled'] = addons_enabled
-    ret['addon_enabled_settings'] = addon_enabled_settings
+    ret['addons_available'] = accounts_addons
+    ret['addons_enabled'] = [addon.config.short_name for addon in node.get_addons()]
+    ret['addon_enabled_settings'] = [addon.short_name for addon in accounts_addons]
     ret['addon_capabilities'] = settings.ADDON_CAPABILITIES
 
-    ret['addon_js'] = collect_node_config_js(node.get_addons())
+    ret['addon_js'] = collect_node_config_js(accounts_addons)
 
     ret['comments'] = {
         'level': node.comment_level,
@@ -313,6 +298,8 @@ def node_setting(auth, node, **kwargs):
     })
 
     return ret
+
+
 def collect_node_config_js(addons):
     """Collect webpack bundles for each of the addons' node-cfg.js modules. Return
     the URLs for each of the JS modules to be included on the node addons config page.
@@ -321,7 +308,7 @@ def collect_node_config_js(addons):
     """
     js_modules = []
     for addon in addons:
-        js_path = paths.resolve_addon_path(addon.config, 'node-cfg.js')
+        js_path = paths.resolve_addon_path(addon, 'node-cfg.js')
         if js_path:
             js_modules.append(js_path)
     return js_modules
