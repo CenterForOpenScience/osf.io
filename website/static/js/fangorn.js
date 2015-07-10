@@ -2197,7 +2197,8 @@ Fangorn.Utils = {
     openParentFolders : _openParentFolders,
     dismissToolbar : _dismissToolbar,
     uploadRowTemplate : uploadRowTemplate,
-    resolveIconView: resolveIconView
+    resolveIconView: resolveIconView,
+    orderFolder: _fangornOrderFolder
 };
 
 Fangorn.DefaultOptions = tbOptions;

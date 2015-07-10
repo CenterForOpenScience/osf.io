@@ -76,7 +76,6 @@ ko.bindingHandlers.osfUploader = {
                         if (item.data.kind === "file" && item.data.path === correctedPath) {
                             tb.multiselected([item]);
                             viewModel.selectedFileName(item.data.name);
-                            //$("#scriptName").html(item.data.name);
                         }
                     }
                     if (tb.isMultiselected(item.id)) {
@@ -101,6 +100,18 @@ ko.bindingHandlers.osfUploader = {
 
                     var configOption = Fangorn.Utils.resolveconfigOption.call(this, item, 'resolveRows', [item]);
                     return configOption || defaultColumns;
+                },
+                lazyLoadOnLoad: function (tree, event) {
+                    tree.children.forEach(function(item) {
+                        console.log(item);
+                        Fangorn.Utils.inheritFromParent(item, tree);
+                    });
+                    Fangorn.Utils.resolveconfigOption.call(this, tree, 'lazyLoadOnLoad', [tree, event]);
+                    Fangorn.Utils.reapplyTooltips();
+
+                    if (tree.depth > 1) {
+                        Fangorn.Utils.orderFolder.call(this, tree);
+                    }
                 }
   
             }

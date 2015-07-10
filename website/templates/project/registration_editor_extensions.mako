@@ -1,6 +1,6 @@
 <!-- OSF Upload -->
 <script type="text/html" id="osf-upload">
-  <a data-bind="click: toggleUploader">Upload File</a>
+  <a data-bind="click: toggleUploader">Attach File</a>
   <span data-bind="visible: showUploader">
     <div id="selectedFile">File selected for upload:  
       <span id="fileName" data-bind="text: selectedFileName">no file selected</span>
