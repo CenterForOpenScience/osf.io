@@ -108,7 +108,7 @@ Results.controller = function(vm) {
                     m('span.pull-right', [
                         m('img', {src: self.vm.ProviderMap[result.shareProperties.source].favicon, style: {width: '16px', height: '16px'}}),
                         ' ',
-                        m('a', {onclick: function() {utils.updateFilter(self.vm, 'source:' + result.source);}}, self.vm.ProviderMap[result.shareProperties.source].long_name)
+                        m('a', {onclick: function() {utils.updateFilter(self.vm, 'shareProperties.source:' + result.shareProperties.source);}}, self.vm.ProviderMap[result.shareProperties.source].long_name)
                     ])
                 ])
             ]),
