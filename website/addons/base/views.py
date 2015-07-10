@@ -292,7 +292,7 @@ def update_search(node, addon, payload):
     metadata = payload['metadata']
     if action in ['create', 'update']:
         try:
-            elastic_search.update_file_with_metadata(metadata, node._id, addon)
+            elastic_search.update_file_with_metadata(metadata, addon)
         except KeyError:
             pass
 
