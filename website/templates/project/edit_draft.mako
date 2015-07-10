@@ -4,6 +4,11 @@
 <div id="draftRegistrationScope"> 
   <div class="row">
     <h3>Edit draft registration</h3>
+    <span class="btn-group">
+      <a data-bind="click: submit" id="submitForReview" class="btn btn-default" type="button">
+        <i class="fa fa-save"></i> Submit for review
+      </a>
+    </span>
     <div class="col-md-12">
       <%include file="project/registration_editor.mako"/>
     </div>

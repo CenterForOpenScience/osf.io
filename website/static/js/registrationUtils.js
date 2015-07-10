@@ -1,3 +1,5 @@
+require('css/registrations.css');
+
 var $ = require('jquery');
 var ko = require('knockout');
 var bootbox = require('bootbox');
