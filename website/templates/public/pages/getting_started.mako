@@ -2,6 +2,7 @@
 <%def name="title()">Getting Started</%def>
 
 <%def name="stylesheets()">
+    ${parent.stylesheets()}
     <link rel="stylesheet" href="/static/css/pages/getting-started-page.css">
 </%def>
 
@@ -95,7 +96,7 @@
                 <h3 class="text-center">Collaborate with your colleagues</h3>
                 <p>Keep yourself and your collaborators on point while collecting data by using the OSF. Add
                     contributors to your project so that everyone has access to the same files. Use our pre-formatted
-                    citations and URLs to make credit is given where credit is due.  </p>
+                    citations and URLs to make sure credit is given where credit is due.  </p>
                 <div class="row">
                     <div class="col-md-10 col-md-offset-1">
                         <div class="gs-video embed-responsive embed-responsive-16by9">
