@@ -71,7 +71,7 @@ def assert_clean(data):
 # TODO: Remove safe_unescape_html when mako html safe comes in
 def safe_unescape_html(value):
     """
-    Return data without html escape characters.
+    Return data without certain html escape characters. Deliberately leave < and > untouched.
 
     :param value: A string, dict, or list
     :return: A string or list or dict without html escape characters
@@ -79,8 +79,6 @@ def safe_unescape_html(value):
     """
     safe_characters = {
         '&amp;': '&',
-        '&lt;': '<',
-        '&gt;': '>',
     }
 
     if isinstance(value, dict):
