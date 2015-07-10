@@ -968,7 +968,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         elif not visible and user._id in self.visible_contributor_ids:
             if len(self.visible_contributor_ids) == 1:
                 raise ValueError(
-                    'Must have at least one registered admin contributor'
+                    'Must have at least one visible contributor'
                 )
             self.visible_contributor_ids.remove(user._id)
         else:
