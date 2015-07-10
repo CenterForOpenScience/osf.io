@@ -245,10 +245,19 @@ def preregAdmin(auth):
             'dashboard_id': dashboard_id,
             }
 
+def validate_page_num(page, pages):
+    if page < 0 or (pages and page >= pages):
+        raise HTTPError(http.BAD_REQUEST, data=dict(
+            message_long='Invalid value for "page".'
+        ))
+
+
 def paginate(items, total, page, size):
+    pages = math.ceil(total / float(size))
+    validate_page_num(page, pages)
+
     start = page * size
     paginated_items = itertools.islice(items, start, start + size)
-    pages = math.ceil(total / float(size))
 
     return paginated_items, pages
 
@@ -289,7 +298,6 @@ def serialize_log(node_log, auth=None, anonymous=False):
         if isinstance(node_log.user, User)
         else {'fullname': node_log.foreign_user},
         'contributors': [node_log._render_log_contributor(c) for c in node_log.params.get("contributors", [])],
-        'api_key': node_log.api_key.label if node_log.api_key else '',
         'action': node_log.action,
         'params': sanitize.safe_unescape_html(node_log.params),
         'date': utils.iso8601format(node_log.date),

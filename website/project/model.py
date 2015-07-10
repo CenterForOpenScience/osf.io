@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 import os
 import re
-import uuid
 import urllib
 import logging
 import datetime
@@ -257,25 +256,6 @@ class Comment(GuidStoredObject):
             self.save()
 
 
-class ApiKey(StoredObject):
-
-    # The key is also its primary key
-    _id = fields.StringField(
-        primary=True,
-        default=lambda: str(ObjectId()) + str(uuid.uuid4())
-    )
-    # A display name
-    label = fields.StringField()
-
-    @property
-    def user(self):
-        return self.user__keyed[0] if self.user__keyed else None
-
-    @property
-    def node(self):
-        return self.node__keyed[0] if self.node__keyed else None
-
-
 @unique_on(['params.node', '_id'])
 class NodeLog(StoredObject):
 
@@ -289,7 +269,6 @@ class NodeLog(StoredObject):
     was_connected_to = fields.ForeignField('node', list=True)
 
     user = fields.ForeignField('user', backref='created')
-    api_key = fields.ForeignField('apikey', backref='created')
     foreign_user = fields.StringField()
 
     DATE_FORMAT = '%m/%d/%Y %H:%M UTC'
@@ -648,8 +627,6 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
 
     # The node (if any) used as a template for this node's creation
     template_node = fields.ForeignField('node', backref='template_node', index=True)
-
-    api_keys = fields.ForeignField('apikey', list=True, backref='keyed')
 
     piwik_site_id = fields.StringField()
 
@@ -1820,13 +1797,11 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
 
     def add_log(self, action, params, auth, foreign_user=None, log_date=None, save=True):
         user = auth.user if auth else None
-        api_key = auth.api_key if auth else None
         params['node'] = params.get('node') or params.get('project')
         log = NodeLog(
             action=action,
             user=user,
             foreign_user=foreign_user,
-            api_key=api_key,
             params=params,
         )
         if log_date:
@@ -3087,41 +3062,29 @@ class DraftRegistration(AddonModelMixin, StoredObject):
         except KeyError:
             return getattr(self.branched_from, attr, None)
 
+
+    def find_question(self, qid):
+        for page in self.registration_schema.schema['pages']:
+            for question_id, question in page['questions'].iteritems():
+                if question_id == qid and 'description' in question:
+                    return question['description']
+
     def get_comments(self):
         """ Returns a list of all comments made on a draft in the format of :
         [{
-            'page1': [{
-                user: 'user',
-                last_modified: 'Thu, 09 Jul 2015 21:45:56 GMT',
-                value: 'Comment text'
-            }],
-            'page2': [{
-                user: 'user',
-                last_modified: 'Thu, 09 Jul 2015 21:45:56 GMT',
-                value: 'Comment text'
-            },
-            {
-                user: 'user',
-                last_modified: 'Thu, 09 Jul 2015 21:45:56 GMT',
-                value: 'Comment text'
-            }]
-        }]
+          [QUESTION_ID]: {
+            'question': [QUESTION],
+            'comments': [LIST_OF_COMMENTS]
+            }
+        },]
         """
-        pages = self.registration_schema['schema']['pages']
+
         all_comments = list()
-
-        # there has to be a more pythonic way to do this
-        page_num = 1
-        for page in pages:
-            comment_obj = dict()
-            comments = page['comments']
-
-            comment_obj['page{}'.format(page_num)] = list()
-
-            if comments:
-                for comment in comments:
-                    all_comments.append(comment)
-
-            page_num += 1
-
+        for question_id, value in self.registration_metadata.iteritems():
+            all_comments.append({
+                question_id: {
+                    'question': self.find_question(question_id),
+                    'comments': value['comments'] if 'comments' in value else ''
+                }
+            })
         return all_comments

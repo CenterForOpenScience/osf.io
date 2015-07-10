@@ -32,3 +32,10 @@ deauthorized the figshare addon for
 <a class="log-node-title-link overflow"
     data-bind="attr: {href: nodeUrl}">{{ nodeTitle }}</a>
 </script>
+
+<script type="text/html" id="figshare_node_deauthorized_no_user">
+figshare addon for
+<a class="log-node-title-link overflow"
+    data-bind="attr: {href: nodeUrl}">{{ nodeTitle }}</a>
+    deauthorized
+</script>

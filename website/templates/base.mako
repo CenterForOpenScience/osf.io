@@ -1,4 +1,3 @@
-<% import json %>
 <% from website import settings %>
 
 <!DOCTYPE html>
@@ -18,7 +17,7 @@
     <script src="/static/vendor/bower_components/raven-js/dist/raven.min.js"></script>
     <script src="/static/vendor/bower_components/raven-js/plugins/jquery.js"></script>
     <script>
-        Raven.config('${ sentry_dsn_js }', {}).install();
+        Raven.config(${ sentry_dsn_js | sjson, n }, {}).install();
     </script>
     % else:
     <script>
@@ -98,7 +97,7 @@
     <%include file="copyright.mako"/>
         % if settings.PINGDOM_ID:
             <script>
-            var _prum = [['id', '${settings.PINGDOM_ID}'],
+            var _prum = [['id', ${ settings.PINGDOM_ID | sjson, n }],
                             ['mark', 'firstbyte', (new Date()).getTime()]];
             (function() {
                 var s = document.getElementsByTagName('script')[0]
@@ -117,7 +116,7 @@
             m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
             })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
 
-            ga('create', '${settings.GOOGLE_ANALYTICS_ID}', 'auto', {'allowLinker': true});
+            ga('create', ${ settings.GOOGLE_ANALYTICS_ID | sjson, n }, 'auto', {'allowLinker': true});
             ga('require', 'linker');
             ga('linker:autoLink', ['centerforopenscience.org'] );
             ga('send', 'pageview');
@@ -143,12 +142,12 @@
         <script>
             // Mako variables accessible globally
             window.contextVars = $.extend(true, {}, window.contextVars, {
-                waterbutlerURL: '${waterbutler_url if waterbutler_url.endswith('/') else waterbutler_url + '/' | js_str}',
+                waterbutlerURL: ${ waterbutler_url if waterbutler_url.endswith('/') else waterbutler_url + '/' | sjson, n },
             % if access_token:
-                accessToken: '${access_token | js_str}',
+                accessToken: ${ access_token | sjson, n },
             % endif
-                cookieName: '${cookie_name}',
-                apiV2Prefix: '${api_v2_base | js_str }'
+                cookieName: ${ cookie_name | sjson, n },
+                apiV2Prefix: ${ api_v2_base | sjson, n }
             });
         </script>
 
@@ -159,19 +158,19 @@
                 $(function() {
                     var cvars = [];
                     % if user_id:
-                        cvars.push([1, "User ID", "${ user_id }", "visit"])
-                        cvars.push([2, "User Name", "${ user_full_name }", "visit"])
+                        cvars.push([1, "User ID", ${ user_id | sjson, n }, "visit"]);
+                        cvars.push([2, "User Name", ${ user_full_name | sjson, n }, "visit"]);
                     % endif
                     % if node:
                         <% parent_project = parent_node.get('id') or node.get('id') %>
-                        cvars.push([2, "Project ID", "${ parent_project }", "page"]);
-                        cvars.push([3, "Node ID", "${ node.get('id') }", "page"]);
-                        cvars.push([4, "Tags", ${ json.dumps(','.join(node.get('tags', []))) }, "page"]);
+                        cvars.push([2, "Project ID", ${ parent_project | sjson, n }, "page"]);
+                        cvars.push([3, "Node ID", ${ node.get('id') | sjson, n }, "page"]);
+                        cvars.push([4, "Tags", ${ ','.join(node.get('tags', [])) | sjson , n }, "page"]);
                     % endif
                     // Note: Use cookies for global site ID; only one cookie
                     // will be used, so this won't overflow uwsgi header
                     // buffer.
-                    $.osf.trackPiwik("${ piwik_host }", ${ piwik_site_id }, cvars, true);
+                    $.osf.trackPiwik(${ piwik_host | sjson, n}, ${ piwik_site_id | sjson, n }, cvars, true);
                 });
             </script>
         % endif
@@ -247,6 +246,8 @@
     ## TODO: Get fontawesome and select2 to play nicely with webpack
     <link rel="stylesheet" href="/static/vendor/bower_components/bootstrap/dist/css/bootstrap.min.css">
     <link rel="stylesheet" href="/static/vendor/bower_components/select2/select2.css">
+    <link rel="stylesheet" href="/static/vendor/bower_components/osf-style/css/base.css">
+    <link rel="stylesheet" href="/static/css/style.css">
 
     % if settings.USE_CDN_FOR_CLIENT_LIBS:
         <script src="//code.jquery.com/jquery-1.11.2.min.js"></script>
@@ -261,6 +262,6 @@
     ## NOTE: We load vendor bundle  at the top of the page because contains
     ## the webpack runtime and a number of necessary stylesheets which should be loaded before the user sees
     ## content.
-    <script src="${"/static/public/js/vendor.js" | webpack_asset}"></script>
+    <script src="${'/static/public/js/vendor.js' | webpack_asset}"></script>
 
 </%def>

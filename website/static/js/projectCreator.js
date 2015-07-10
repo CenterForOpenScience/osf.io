@@ -81,9 +81,9 @@ function ProjectCreatorViewModel(params) {
         var template;
         //select behavior differently in IE from all other browser. The input tag is 1 in other browser but 3 in IE
         if($osf.isIE()){
-            template = $('.createNodeTemplates')[3].value;
+            template = $('.create-node-templates')[3].value;
         } else {
-            template = $('.createNodeTemplates')[1].value;
+            template = $('.create-node-templates')[1].value;
         }
         return {
             title: self.title(),

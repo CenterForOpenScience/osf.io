@@ -39,10 +39,6 @@
                 </p>
                 <button data-bind="click: save" type="button" class="btn btn-success">Save
                 </button>
-
-                <a data-bind="click: submit" id="submitForReview" class="btn btn-default" type="button">
-                    <i class="fa fa-save"></i> Submit for review
-                </a>
             </div>
         </div>
     </div>

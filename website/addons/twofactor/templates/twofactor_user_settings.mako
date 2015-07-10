@@ -34,7 +34,7 @@
                 <label class="control-label" for="TfaCode">Enter your verification code:</label>
                 <div>
                     <input data-bind="value: tfaCode" type="text" name='TfaCode' id="TfaCode" class="form-control" />
-                    <input type="submit" value="Submit" class="btn btn-primary">
+                    <input type="submit" value="Save" class="btn btn-success">
                 </div>
                 <div class="help-block">
                     <p data-bind="html: message, attr.class: messageClass"></p>
