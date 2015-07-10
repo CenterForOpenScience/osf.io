@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 import os
 import re
-import uuid
 import urllib
 import logging
 import datetime
@@ -163,7 +162,6 @@ class Comment(GuidStoredObject):
 
     @classmethod
     def create(cls, auth, **kwargs):
-
         comment = cls(**kwargs)
         comment.save()
 
@@ -263,25 +261,6 @@ class Comment(GuidStoredObject):
             self.save()
 
 
-class ApiKey(StoredObject):
-
-    # The key is also its primary key
-    _id = fields.StringField(
-        primary=True,
-        default=lambda: str(ObjectId()) + str(uuid.uuid4())
-    )
-    # A display name
-    label = fields.StringField()
-
-    @property
-    def user(self):
-        return self.user__keyed[0] if self.user__keyed else None
-
-    @property
-    def node(self):
-        return self.node__keyed[0] if self.node__keyed else None
-
-
 @unique_on(['params.node', '_id'])
 class NodeLog(StoredObject):
 
@@ -295,7 +274,6 @@ class NodeLog(StoredObject):
     was_connected_to = fields.ForeignField('node', list=True)
 
     user = fields.ForeignField('user', backref='created')
-    api_key = fields.ForeignField('apikey', backref='created')
     foreign_user = fields.StringField()
 
     DATE_FORMAT = '%m/%d/%Y %H:%M UTC'
@@ -502,7 +480,7 @@ def get_pointer_parent(pointer):
     # of the pointed-at `Node`, not the parents of the `Pointer`; use the
     # back-reference syntax to find the parents of the `Pointer`.
     parent_refs = pointer.node__parent
-    assert len(parent_refs) == 1, 'Pointer must have exactly one parent'
+    assert len(parent_refs) == 1, 'Pointer must have exactly one parent.'
     return parent_refs[0]
 
 
@@ -516,12 +494,15 @@ def validate_category(value):
 
 
 def validate_title(value):
-    """Validator for Node#title. Makes sure that the value exists.
+    """Validator for Node#title. Makes sure that the value exists and is not
+    above 200 characters.
     """
     if value is None or not value.strip():
         raise ValidationValueError('Title cannot be blank.')
-    return True
 
+    if len(value) > 200:
+        raise ValidationValueError('Title cannot exceed 200 characters.')
+    return True
 
 def validate_user(value):
     if value != {}:
@@ -647,8 +628,6 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
 
     # The node (if any) used as a template for this node's creation
     template_node = fields.ForeignField('node', backref='template_node', index=True)
-
-    api_keys = fields.ForeignField('apikey', list=True, backref='keyed')
 
     piwik_site_id = fields.StringField()
 
@@ -1066,10 +1045,10 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
 
     def save(self, *args, **kwargs):
         update_piwik = kwargs.pop('update_piwik', True)
-
         self.adjust_permissions()
 
         first_save = not self._is_loaded
+
         if first_save and self.is_dashboard:
             existing_dashboards = self.creator.node__contributed.find(
                 Q('is_dashboard', 'eq', True)
@@ -1500,8 +1479,9 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         :param str title: The new title.
         :param auth: All the auth information including user, API key.
         """
-        if title is None or not title.strip():
-            raise ValidationValueError('Title cannot be blank.')
+        #Called so validation does not have to wait until save.
+        validate_title(title)
+
         original_title = self.title
         self.title = title
         self.add_log(
@@ -1818,13 +1798,11 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
 
     def add_log(self, action, params, auth, foreign_user=None, log_date=None, save=True):
         user = auth.user if auth else None
-        api_key = auth.api_key if auth else None
         params['node'] = params.get('node') or params.get('project')
         log = NodeLog(
             action=action,
             user=user,
             foreign_user=foreign_user,
-            api_key=api_key,
             params=params,
         )
         if log_date:

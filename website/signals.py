@@ -11,4 +11,5 @@ ALL_SIGNALS = [
     auth.user_confirmed,
     auth.user_email_removed,
     auth.user_registered,
+    auth.user_merged
 ]

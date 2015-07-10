@@ -23,7 +23,7 @@
                     % if parent_node['id']:
 
                         % if parent_node['can_view'] or parent_node['is_public'] or parent_node['is_contributor']:
-                            <li><a href="${parent_node['url']}" data-toggle="tooltip" title="${parent_node['title']}" data-placement="bottom" style="padding: 13px 17px;"> <i class="fa fa-level-down fa-rotate-180"></i>  </a></li>
+                            <li><a href="${parent_node['url']}" data-toggle="tooltip" title="${parent_node['title']}" data-placement="bottom" style="padding: 12px 17px;"> <i class="fa fa-level-down fa-rotate-180"></i>  </a></li>
 
                         % else:
                             <li><a href="#" data-toggle="tooltip" title="Parent project is private" data-placement="bottom" style="cursor: default"> <i class="fa fa-level-down fa-rotate-180 text-muted"></i>  </a></li>
@@ -63,7 +63,7 @@
                             <li><a href="${node['url']}contributors/">Sharing</a></li>
                         % endif
 
-                        % if not node['is_registration'] or (node['is_registration'] and 'admin' in user['permissions']):
+                        % if user['has_read_permissions'] and not node['is_registration'] or (node['is_registration'] and 'admin' in user['permissions']):
                             <li><a href="${node['url']}settings/">Settings</a></li>
                         % endif
 
@@ -86,7 +86,7 @@
     % if node['is_registration']:  ## Begin registration undismissable labels
 
         % if not node['is_retracted']:
-            <div class="alert alert-info">This ${node['node_type']} is a registration of <a class="alert-link" href="${node['registered_from_url']}">this ${node['node_type']}</a>; the content of the ${node['node_type']} has been frozen and cannot be edited.
+            <div class="alert alert-info">This ${node['node_type']} is a registration of <a class="link-solid" href="${node['registered_from_url']}">this ${node['node_type']}</a>; the content of the ${node['node_type']} has been frozen and cannot be edited.
             </div>
             <style type="text/css">
             .watermarked {
@@ -101,7 +101,7 @@
         % endif
 
         % if  node['is_retracted']:
-            <div class="alert alert-danger">This ${node['node_type']} is a retracted registration of <a class="alert-link" href="${node['registered_from_url']}">this ${node['node_type']}</a>; the content of the ${node['node_type']} has been taken down for the reason(s) stated below.</div>
+            <div class="alert alert-danger">This ${node['node_type']} is a retracted registration of <a class="link-solid" href="${node['registered_from_url']}">this ${node['node_type']}</a>; the content of the ${node['node_type']} has been taken down for the reason(s) stated below.</div>
         % endif
 
         % if  node['pending_embargo']:
@@ -115,7 +115,7 @@
     % endif  ## End registration undismissable labels
 
     % if node['anonymous'] and user['is_contributor']:
-        <div class="alert alert-info">This ${node['node_type']} is being viewed through an anonymized, view-only link. If you want to view it as a contributor, click <a class="alert-link" href="${node['redirect_url']}">here</a>.</div>
+        <div class="alert alert-info">This ${node['node_type']} is being viewed through an anonymized, view-only link. If you want to view it as a contributor, click <a class="link-solid" href="${node['redirect_url']}">here</a>.</div>
     % endif
 
     % if node['link'] and not node['is_public'] and not user['is_contributor']:

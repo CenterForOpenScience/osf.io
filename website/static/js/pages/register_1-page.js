@@ -16,7 +16,10 @@ require('pikaday-css');
     */
 function registrationFailed() {
     $osf.unblock();
-    bootbox.alert('Registration failed');
+    bootbox.alert({
+        title : 'Registration failed',
+        message : 'There was a problem completing your registration right now. Please try again later. If this should not have occurred and the issue persists, please report it to <a href=\"mailto:support@osf.io\">support@osf.io</a> '
+    } );
 }
 
 function registerNode(data) {
@@ -102,10 +105,14 @@ $(document).ready(function() {
             success: function(response) {
                 var preRegisterWarnings = function() {
                     bootbox.confirm(
-                        $osf.joinPrompts(response.prompts, language.registerConfirm),
-                        function(result) {
-                            if (result) {
-                                registerNode(data);
+                        {
+                            size: 'large',
+                            title : language.registerConfirm,
+                            message : $osf.joinPrompts(response.prompts),
+                            callback: function(result) {
+                                if (result) {
+                                    registerNode(data);
+                                }
                             }
                         }
                     );

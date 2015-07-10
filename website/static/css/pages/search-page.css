@@ -1,0 +1,182 @@
+.add-query
+{
+    width: 190px;
+    margin-left: 10px;
+    display: inline-block;
+    font-weight: normal;
+}
+.navigate
+{
+    padding:25px;
+    font-size: 18px;
+}
+.remove-button
+{
+    color: #ffffff;
+}
+.search-types a
+{
+    font-size: 16px;
+}
+.tag-cloud
+{
+    word-break: break-all;
+}
+
+.tag-cloud .cloud-tag
+{
+    font-size: 11pt;
+    display: inline-block;
+    word-break: break-all;
+    margin: 5px;
+    padding: 5px;
+    border-radius: 5px;
+}
+.tag-cloud .cloud-tag:hover
+{
+    background-color: #337ab7;
+}
+.tag-cloud .cloud-tag:hover > .cloud-text
+{
+    color: #E0EBF3;
+}
+.tag-cloud .cloud-tag:hover > .remove-tag
+{
+    visibility: visible;
+}
+.tag-cloud .tag-big
+{
+    font-size: 13pt;
+    background-color: #AABBDD;
+}
+
+.tag-cloud .tag-med
+{
+    font-size: 11pt;
+    background-color: #CCDDEE;
+}
+
+.tag-cloud .tag-sm
+{
+    font-size: 9pt;
+    background-color: #DDEEFF;
+}
+
+.tag-cloud h3
+{
+    margin: 0;
+}
+
+.tag-container
+{
+    position: relative;
+}
+
+.remove-tag
+{
+    visibility: hidden;
+    position: absolute;
+    top: -5px;
+    right: -5px;
+    color: #AAAAAA;
+}
+
+.remove-tag.big
+{
+    top: -8px;
+    right: -8px;
+}
+
+.remove-tag.med
+{
+    top: -6px;
+    right: -6px;
+}
+
+.registration a {
+    color: #666;
+}
+
+.registration small{
+    color: #000000;
+}
+
+.registration .tag-cloud .cloud-tag {
+    background-color: #AAA;
+    color: #ffffff;
+}
+
+.query-label
+{
+    margin-right: .5em;
+}
+.result
+{
+    margin-bottom: 10px;
+    overflow: hidden;
+}
+.title h4
+{
+    padding: 0;
+    padding-bottom: 5px;
+    margin: 0;
+}
+.private-title
+{
+    font-weight: normal;
+    font-style: italic;
+}
+.search-field
+{
+    padding: 0;
+    padding-top: 2px;
+    padding-bottom: 2px;
+    margin: 0;
+    line-height: 16px;
+}
+.search-field p
+{
+    margin: 0;
+}
+.description h5
+{
+    padding: 0;
+    padding-bottom: 4px;
+    margin: 0;
+    font-weight: normal;
+    line-height: 16px;
+}
+.search-tags
+{
+    padding-top: 2px;
+    line-height: 24px;
+}
+.search-tags a
+{
+    margin-right: .5em;
+}
+
+div.search-result  {
+    margin-bottom: 10pt;
+    padding: 10px;
+    border-bottom: 1px solid #d3d3d3;
+    overflow-x: hidden;
+}
+
+.search-results.search-result h5 small{
+    color: white;
+    font-size: 10pt;
+}
+
+
+.search-results.search-result {
+    overflow-x: hidden;
+
+}
+/* Search Contributors */
+.search-contributor-result td {
+    padding-right: 10px;
+}
+.search-contributor-links {
+    padding-top: 10px;
+}

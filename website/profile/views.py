@@ -8,7 +8,7 @@ import os
 from dateutil.parser import parse as parse_date
 
 from flask import request
-from modularodm.exceptions import ValidationError, NoResultsFound
+from modularodm.exceptions import ValidationError, NoResultsFound, MultipleResultsFound
 from modularodm import Q
 
 from framework import sentry
@@ -17,6 +17,7 @@ from framework.auth.decorators import collect_auth
 from framework.auth.decorators import must_be_logged_in
 from framework.auth.exceptions import ChangePasswordError
 from framework.auth.views import send_confirm_email
+from framework.auth.signals import user_merged
 from framework.exceptions import HTTPError, PermissionsError
 from framework.flask import redirect  # VOL-aware redirect
 from framework.status import push_status_message
@@ -25,7 +26,6 @@ from website import mails
 from website import mailchimp_utils
 from website import settings
 from website.models import User
-from website.models import ApiKey
 from website.profile import utils as profile_utils
 from website.util import web_url_for, paths
 from website.util.sanitize import escape_html
@@ -204,6 +204,11 @@ def update_user(auth):
                             mails.PRIMARY_EMAIL_CHANGED,
                             user=user,
                             new_address=username)
+
+            # Remove old primary email from subscribed mailing lists
+            for list_name, subscription in user.mailing_lists.iteritems():
+                if subscription:
+                    mailchimp_utils.unsubscribe_mailchimp(list_name, user._id, username=user.username)
             user.username = username
 
     ###################
@@ -221,6 +226,12 @@ def update_user(auth):
             user.timezone = data['timezone']
 
     user.save()
+
+    # Update subscribed mailing lists with new primary email
+    # TODO: move to user.save()
+    for list_name, subscription in user.mailing_lists.iteritems():
+        if subscription:
+            mailchimp_utils.subscribe_mailchimp(list_name, user._id)
 
     return _profile_view(user)
 
@@ -426,6 +437,7 @@ def user_choose_mailing_lists(auth, **kwargs):
     return {'message': 'Successfully updated mailing lists', 'result': user.mailing_lists}, 200
 
 
+@user_merged.connect
 def update_subscription(user, list_name, subscription):
     """ Update mailing list subscription in mailchimp.
 
@@ -437,7 +449,7 @@ def update_subscription(user, list_name, subscription):
         mailchimp_utils.subscribe_mailchimp(list_name, user._id)
     else:
         try:
-            mailchimp_utils.unsubscribe_mailchimp(list_name, user._id)
+            mailchimp_utils.unsubscribe_mailchimp(list_name, user._id, username=user.username)
         except mailchimp_utils.mailchimp.ListNotSubscribedError:
             raise HTTPError(http.BAD_REQUEST,
                 data=dict(message_short="ListNotSubscribedError",
@@ -481,71 +493,6 @@ def sync_data_from_mailchimp(**kwargs):
         # sentry.log_exception()
         # sentry.log_message("Unauthorized request to the OSF.")
         raise HTTPError(http.UNAUTHORIZED)
-
-@must_be_logged_in
-def get_keys(**kwargs):
-    user = kwargs['auth'].user
-    return {
-        'keys': [
-            {
-                'key': key._id,
-                'label': key.label,
-            }
-            for key in user.api_keys
-        ]
-    }
-
-
-@must_be_logged_in
-def create_user_key(**kwargs):
-
-    # Generate key
-    api_key = ApiKey(label=request.form['label'])
-    api_key.save()
-
-    # Append to user
-    user = kwargs['auth'].user
-    user.api_keys.append(api_key)
-    user.save()
-
-    # Return response
-    return {
-        'response': 'success',
-    }
-
-
-@must_be_logged_in
-def revoke_user_key(**kwargs):
-
-    # Load key
-    api_key = ApiKey.load(request.form['key'])
-
-    # Remove from user
-    user = kwargs['auth'].user
-    user.api_keys.remove(api_key)
-    user.save()
-
-    # Return response
-    return {'response': 'success'}
-
-
-@must_be_logged_in
-def user_key_history(**kwargs):
-
-    api_key = ApiKey.load(kwargs['kid'])
-    return {
-        'key': api_key._id,
-        'label': api_key.label,
-        'route': '/settings',
-        'logs': [
-            {
-                'lid': log._id,
-                'nid': log.node__logged[0]._id,
-                'route': log.node__logged[0].url,
-            }
-            for log in api_key.nodelog__created
-        ]
-    }
 
 
 @must_be_logged_in
@@ -771,3 +718,33 @@ def request_deactivation(auth):
         user=auth.user,
     )
     return {'message': 'Sent account deactivation request'}
+
+
+def redirect_to_twitter(twitter_handle):
+    """Redirect GET requests for /@TwitterHandle/ to respective the OSF user
+    account if it associated with an active account
+
+    :param uid: uid for requested User
+    :return: Redirect to User's Twitter account page
+    """
+    try:
+        user = User.find_one(Q('social.twitter', 'iexact', twitter_handle))
+    except NoResultsFound:
+        raise HTTPError(http.NOT_FOUND, data={
+            'message_short': 'User Not Found',
+            'message_long': 'There is no active user associated with the Twitter handle: {0}.'.format(twitter_handle)
+        })
+    except MultipleResultsFound:
+        users = User.find(Q('social.twitter', 'iexact', twitter_handle))
+        message_long = 'There are multiple OSF accounts associated with the ' \
+                       'Twitter handle: <strong>{0}</strong>. <br /> Please ' \
+                       'select from the accounts below. <br /><ul>'.format(twitter_handle)
+        for user in users:
+            message_long += '<li><a href="{0}">{1}</a></li>'.format(user.url, user.fullname)
+        message_long += '</ul>'
+        raise HTTPError(http.MULTIPLE_CHOICES, data={
+            'message_short': 'Multiple Users Found',
+            'message_long': message_long
+        })
+
+    return redirect(user.url)

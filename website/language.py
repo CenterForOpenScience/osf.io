@@ -79,7 +79,7 @@ MERGE_CONFIRMATION_REQUIRED_LONG = (
     '<p>This email is confirmed to another account. '
     'Would you like to merge <em>{user_to_merge.username}</em> with the account '
     '<em>{user.username}</em>?<p>'
-    '<a class="btn btn-success" href="?confirm_merge">Confirm merge</a> '
+    '<a class="btn btn-primary" href="?confirm_merge">Confirm merge</a> '
 )
 
 # Node Actions
@@ -132,12 +132,11 @@ registration is to retract it. Retractions show only the registration title,
 contributors, and description to indicate that a registration was made and
 later retracted.</p>
 
-<p>When you register, a notification will be sent to all other project
-contributors. Other administrators will have 48 hours to approve or reject
-creating the registration. If any other administrator rejects the
+<p>If you choose to embargo your registration, a notification will be sent to
+all other project contributors. Other administrators will have 48 hours to
+approve or cancel creating the registration. If any other administrator rejects the
 registration, it will be canceled. If all other administrators approve or do
-nothing, the registration will be confirmed and released or enter its embargo
-period.</p>
+nothing, the registration will be confirmed and enter its embargo period.</p>
 '''
 
 BEFORE_REGISTRATION_INFO = '''

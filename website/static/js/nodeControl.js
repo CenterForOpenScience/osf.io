@@ -19,10 +19,11 @@ var iconmap = require('js/iconmap');
 
 // Modal language
 var MESSAGES = {
-    makeProjectPublicWarning: 'Once a project is made public, there is no way to guarantee that ' +
-                        'access to its data can be completely prevented. You ' +
-                        'should assume that once a project is made public, it will always ' +
-                        'be public. <b>Review your project for sensitive or restricted information before making it public</b>. Are you absolutely sure you would like to continue?',
+    makeProjectPublicWarning: 'Once a project is made public, you should assume that it will always be ' +
+                        'public.  You can return it to private later, but search engines or others ' +
+                        'may access the files before you do so.  <b>Please review your project for ' +
+                        'sensitive or restricted information before making it public</b>.  Are you sure ' +
+                        'you would like to continue?',
 
     makeProjectPrivateWarning: 'Making a project private will prevent users from viewing it on this site, ' +
                         'but will have no impact on external sites, including Google\'s cache. ' +
@@ -37,11 +38,12 @@ var MESSAGES = {
     makeComponentPrivateWarning: 'Making a component private will prevent users from viewing it on this site, ' +
                         'but will have no impact on external sites, including Google\'s cache. ' +
                         'Would you like to continue?',
-    makeRegistrationPublicWarning: 'Once a registration is made public, there is no way to guarantee that ' +
-                        'access to its data can be completely prevented. <b>Once this action has been taken, you will not be able to make ' +
-                        'the registration private again.</b> A public registration, however, may be retracted, leaving behind a ' +
-                        'record of its existence along with basic metadata related to the project and its ' +
-                        'contributors.',
+    makeRegistrationPublicWarning: 'Once a registration is made public, you will not be able to make the ' +
+                        'registration private again.  After making the registration public, if you '  +
+                        'discover material in it that should have remained private, your only option ' +
+                        'will be to retract the registration.  This will eliminate the registration, ' +
+                        'leaving only basic information of the project title, description, and '  +
+                        'contributors with a notice of retraction.'
 };
 
 // TODO(sloria): Fix this external dependency on nodeApiUrl
@@ -58,7 +60,6 @@ var COMPONENT = 'component';
 function setPermissions(permissions, nodeType) {
 
     var msgKey;
-    // TODO(hrybacki): Remove once Retraction/Embargoes goes is merged into production
     var isRegistration = window.contextVars.node.isRegistration;
 
     if (permissions === PUBLIC && isRegistration) { msgKey = 'makeRegistrationPublicWarning'; }
@@ -68,22 +69,34 @@ function setPermissions(permissions, nodeType) {
     else { msgKey = 'makeComponentPrivateWarning'; }
 
     var urlKey = permissions === PUBLIC ? 'makePublic' : 'makePrivate';
+    var buttonText = permissions === PUBLIC ? 'Make Public' : 'Make Private';
+
     var message = MESSAGES[msgKey];
 
     var confirmModal = function (message) {
-        bootbox.confirm({
+        bootbox.dialog({
             title: 'Warning',
             message: message,
-            callback: function(result) {
-                if (result) {
-                    osfHelpers.postJSON(
-                        URLS[urlKey],
-                        {permissions: permissions}
-                    ).done(function() {
-                        window.location.reload();
-                    }).fail(
-                        osfHelpers.handleJSONError
-                    );
+            buttons: {
+                cancel : {
+                    label : 'Cancel',
+                    className : 'btn-default',
+                    callback : function() {
+                    }
+                },
+                success: {
+                    label: buttonText,
+                    className: 'btn-primary',
+                    callback: function() {
+                        osfHelpers.postJSON(
+                            URLS[urlKey],
+                            {permissions: permissions}
+                        ).done(function() {
+                                window.location.reload();
+                        }).fail(
+                            osfHelpers.handleJSONError
+                        );
+                    }
                 }
             }
         });
@@ -186,9 +199,13 @@ var ProjectViewModel = function(data) {
         $('#nodeTitleEditable').editable($.extend({}, editableOptions, {
             name: 'title',
             title: 'Edit Title',
+            tpl: '<input type="text" maxlength="200">',
             validate: function (value) {
                 if ($.trim(value) === '') {
                     return 'Title cannot be blank.';
+                }
+                else if(value.length > 200){
+                    return 'Title cannot exceed 200 characters.';
                 }
             }
         }));
