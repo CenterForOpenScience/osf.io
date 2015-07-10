@@ -47,9 +47,9 @@
                                attr.disabled: !loadedBucketList(),
                                options: bucketList"> </select>
           </div>
-          <div class="col-m2-4 checkbox-inline">
+          <div class="col-md-3">
             <input type="checkbox" id="encryptUploads" name="encryptUploads"
-                   data-bind="checked: encryptUploads" />Encrypt file uploads
+                   data-bind="checked: encryptUploads" />  Encrypt file uploads
           </div>
           <div class="col-md-2">
             <button data-bind="click: selectBucket,
