@@ -70,5 +70,9 @@
     border: 1px solid DarkGray;
 }
 
+#file-navigation #tb-tbody {
+    max-height: 500px;
+    height: inherit;
+}
 
 

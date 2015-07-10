@@ -371,3 +371,6 @@ a {
     padding: 0px;
 }
 
+.reset-height {
+    height: auto;
+}
