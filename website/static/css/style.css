@@ -337,7 +337,7 @@ a {
     margin-top: 4.8px;
 }
 
-/* Disable pointer events in page changing */
+/* bootstrap disable doesn't disable pointer event. This disable class adds pointer event disable. */
 .disabled {
     cursor: default !important;
     pointer-events: none;
