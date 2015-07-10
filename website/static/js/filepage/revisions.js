@@ -31,9 +31,11 @@ var FileRevisionsTable = {
         self.enableEditing = enableEditing;
         self.baseUrl = (window.location.href).split('?')[0];
         self.md5 = [];
+        self.sha256 = [];
         self.buttonToText = [];
+        self.buttonToText2 = [];
 
-        model.hasMd5 = self.file.provider === 'osfstorage';
+        model.hasHashes = self.file.provider === 'osfstorage';
         model.hasDate = self.file.provider !== 'dataverse';
 
         self.reload = function() {
@@ -96,7 +98,7 @@ var FileRevisionsTable = {
                     m('th', 'Version ID'),
                     model.hasDate ? m('th', 'Date') : false,
                     model.hasUser ? m('th', 'User') : false,
-                    model.hasMd5 ? m('th', 'Hashes') : false,
+                    model.hasHashes ? m('th', 'Hashes') : false,
                     m('th[colspan=2]', 'Download'),
                 ].filter(TRUTHY))
             ]);
@@ -115,7 +117,7 @@ var FileRevisionsTable = {
                             m('a', {href: revision.extra.user.url}, revision.extra.user.name) :
                             revision.extra.user.name
                     ) : false,
-                model.hasMd5 ? m('td',
+                model.hasHashes ? m('td',
                     m( self.buttonToText[revision.displayVersion] || 'a.btn.btn-primary.btn-sm', {
                         style: {wordBreak: 'break-all'},
                         onclick: function() {
@@ -127,9 +129,23 @@ var FileRevisionsTable = {
                                 self.md5[revision.displayVersion] = 'MD5';
                                 self.buttonToText[revision.displayVersion] = 'a.btn.btn-primary.btn-sm';
                             }
-                        },
-
-                    }, m('td', self.md5[revision.displayVersion] || 'MD5') )) : false,
+                        }
+                    }, m('td', self.md5[revision.displayVersion] || 'MD5') ),
+                    m('br'),
+                    m( self.buttonToText2[revision.displayVersion] || 'a.btn.btn-primary.btn-sm', {
+                        style: {wordBreak: 'break-all'},
+                        onclick: function() {
+                            if ((self.sha256[revision.displayVersion] === 'SHA256') ||
+                                (typeof self.sha256[revision.displayVersion] === 'undefined')){
+                                self.sha256[revision.displayVersion] = revision.displaySHA256;
+                                self.buttonToText2[revision.displayVersion] = 'td';
+                            } else {
+                                self.sha256[revision.displayVersion] = 'SHA256';
+                                self.buttonToText2[revision.displayVersion] = 'a.btn.btn-primary.btn-sm';
+                            }
+                        }
+                    }, m('td', self.sha256[revision.displayVersion] || 'SHA256') )
+                ) : false,
                 m('td', revision.extra.downloads > -1 ? m('.badge', revision.extra.downloads) : ''),
                 m('td',
                     m('a.btn.btn-primary.btn-sm.file-download', {
@@ -209,6 +225,7 @@ var FileRevisionsTable = {
             }
         }
         revision.displayMd5 = revision.extra.md5;
+        revision.displaySHA256 = revision.extra.sha256;
 
         revision.osfViewUrl = '?' + $.param(options);
         revision.osfDownloadUrl = '?' + $.param($.extend({action: 'download'}, options));
