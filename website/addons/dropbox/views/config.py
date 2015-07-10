@@ -22,9 +22,9 @@ from dropbox.rest import ErrorResponse
 
 @collect_auth
 @must_be_valid_project
-@must_have_addon('dropbox', 'node')
-def dropbox_config_get(node_addon, auth, **kwargs):
+def dropbox_config_get(auth, node, **kwargs):
     """API that returns the serialized node settings."""
+    node_addon = node.get_addon('dropbox', 'node')
     return {'result': serialize_settings(node_addon, auth.user)}
 
 
@@ -122,14 +122,19 @@ def serialize_settings(node_settings, current_user, client=None):
 @must_have_permission('write')
 @must_not_be_registration
 @must_have_addon('dropbox', 'user')
-@must_have_addon('dropbox', 'node')
 @must_be_addon_authorizer('dropbox')
-def dropbox_config_put(node_addon, user_addon, auth, **kwargs):
+def dropbox_config_put(auth, node, **kwargs):
     """View for changing a node's linked dropbox folder."""
     folder = request.json.get('selected')
     path = folder['path']
+
+    node_addon = node.get_addon('dropbox', 'node')
     node_addon.set_folder(path, auth=auth)
     node_addon.save()
+
+    node.add_addon('dropbox', auth)
+    node.save()
+
     return {
         'result': {
             'folder': {
