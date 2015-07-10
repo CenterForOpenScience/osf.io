@@ -1,4 +1,4 @@
-<footer class="footer">
+<footer class="footer m-t-lg m-b-lg p-lg bg-color-light">
     <div class="container">
         <div class="row">
             <div class="col-sm-2 col-md-2 col-md-offset-1">

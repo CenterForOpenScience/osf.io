@@ -60,7 +60,7 @@
             </tbody>
         </table>
 
-        <div class="padded">
+        <div class="p-t-lg p-b-lg">
 
             <button
                     type="button"
@@ -70,8 +70,8 @@
 
             <button
                     type="submit"
-                    class="btn btn-primary"
-                >Submit</button>
+                    class="btn btn-success"
+                >Save</button>
 
         </div>
 

@@ -32,7 +32,7 @@ You have not created any Badges.
               title: 'Create a New Badge',
               buttons: {
                 submit: {
-                  label: "Submit",
+                  label: "Save",
                   className: "btn-success",
                   callback: function() {
                     var data = AddonHelper.formToObj('#badgeForm');
