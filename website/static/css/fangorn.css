@@ -10,7 +10,7 @@ color: #F00;
 text-align: center;
 }
 
-#treeGrid span {
+.tb-row span {
     vertical-align: middle;
 }
 
@@ -62,7 +62,7 @@ text-align: center;
     height: inherit;
     padding-top: 6px;
 }
-#treeGrid .tb-td {
+.tb-row .tb-td {
     padding-top: 2px;
     padding-bottom: 4px;
 }
@@ -112,7 +112,7 @@ text-align: center;
 .tb-expand-icon-holder {
 	cursor: default;
 }
-#treeGrid .tb-expand-icon-holder div {
+.tb-row  .tb-expand-icon-holder div {
     vertical-align: middle;
 }
 
@@ -326,6 +326,7 @@ text-align: center;
 .file-extension._vcd {background: url('/static/img/hgrid/fatcowicons/file_extension_vcd.png');	}
 .file-extension._vob {background: url('/static/img/hgrid/fatcowicons/file_extension_vob.png');	}
 .file-extension._wav {background: url('/static/img/hgrid/fatcowicons/file_extension_wav.png');	}
+.file-extension._webm {background: url('/static/img/hgrid/fatcowicons/file_extension_mp4.png'); }
 .file-extension._wma {background: url('/static/img/hgrid/fatcowicons/file_extension_wma.png');	}
 .file-extension._wmv {background: url('/static/img/hgrid/fatcowicons/file_extension_wmv.png');	}
 .file-extension._wps {background: url('/static/img/hgrid/fatcowicons/file_extension_wps.png');	}
