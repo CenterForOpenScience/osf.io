@@ -326,6 +326,7 @@ text-align: center;
 .file-extension._vcd {background: url('/static/img/hgrid/fatcowicons/file_extension_vcd.png');	}
 .file-extension._vob {background: url('/static/img/hgrid/fatcowicons/file_extension_vob.png');	}
 .file-extension._wav {background: url('/static/img/hgrid/fatcowicons/file_extension_wav.png');	}
+.file-extension._webm {background: url('/static/img/hgrid/fatcowicons/file_extension_mp4.png'); }
 .file-extension._wma {background: url('/static/img/hgrid/fatcowicons/file_extension_wma.png');	}
 .file-extension._wmv {background: url('/static/img/hgrid/fatcowicons/file_extension_wmv.png');	}
 .file-extension._wps {background: url('/static/img/hgrid/fatcowicons/file_extension_wps.png');	}
