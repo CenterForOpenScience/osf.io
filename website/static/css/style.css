@@ -83,6 +83,10 @@ a {
     position: relative;
 }
 
+.osf-project-navbar .navbar-nav li > a:focus {
+    background-color: inherit;
+}
+
 .anchor {
     margin-top: -60px;
     padding-top: 60px;
