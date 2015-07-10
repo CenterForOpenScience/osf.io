@@ -37,19 +37,19 @@ class TestSanitize(unittest.TestCase):
     def test_unescape_html(self):
         assert_equal(
             sanitize.safe_unescape_html('&lt;&gt; diamonds &amp; diamonds &lt;&gt;'),
-            '<> diamonds & diamonds <>'
+            '&lt;&gt; diamonds & diamonds &lt;&gt;'
         )
         assert_equal(
             sanitize.safe_unescape_html(['&lt;&gt;&amp;'])[0],
-            '<>&'
+            '&lt;&gt;&'
         )
         assert_equal(
             sanitize.safe_unescape_html(('&lt;&gt;&amp;', ))[0],
-            '<>&'
+            '&lt;&gt;&'
         )
         assert_equal(
             sanitize.safe_unescape_html({'key': '&lt;&gt;&amp;'})['key'],
-            '<>&'
+            '&lt;&gt;&'
         )
 
     def test_safe_json(self):
