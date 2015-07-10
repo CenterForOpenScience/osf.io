@@ -40,9 +40,10 @@ class UserSerializer(JSONAPISerializer):
         type_ = 'users'
 
     def get_additional_query_params(self, obj):
-        include = IncludeAdditionalQuery(obj, self.context['request'])
-        ret = include.get_additional_query()
-        return ret
+        if 'request' in self.context:
+            include = IncludeAdditionalQuery(obj, self.context['request'])
+            ret = include.get_additional_query()
+            return ret
 
     def absolute_url(self, obj):
         return obj.absolute_url
