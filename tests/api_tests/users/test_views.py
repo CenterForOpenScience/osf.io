@@ -71,12 +71,12 @@ class TestUsersFiltering(ApiTestCase):
         self.user_one.employment_institutions = [
             {
                 'startYear': '1954',
-                'title': '',
+                'title': 'Reverend',
                 'startMonth': 1,
                 'endMonth': None,
                 'endYear': 1968,
                 'ongoing': False,
-                'department': '',
+                'department': 'Civil Disobedience',
                 'institution': 'Dexter Avenue Baptist Church'
             },
         ]
@@ -152,14 +152,6 @@ class TestUsersFiltering(ApiTestCase):
         assert_in(self.user_one._id, ids)
         assert_not_in(self.user_two._id, ids)
 
-    def test_filter_using_job_endYear(self):
-        url = "/{}users/?filter[job_endYear]=1968".format(API_BASE)
-        res = self.app.get(url)
-        user_json = res.json['data']
-        ids = [each['id'] for each in user_json]
-        assert_in(self.user_one._id, ids)
-        assert_not_in(self.user_two._id, ids)
-
     def test_filter_using_job_startYear(self):
         url = "/{}users/?filter[job_startYear]=1900".format(API_BASE)
         res = self.app.get(url)
@@ -192,8 +184,40 @@ class TestUsersFiltering(ApiTestCase):
         assert_in(self.user_one._id, ids)
         assert_not_in(self.user_two._id, ids)
 
-    def test_filter_using_complex_field(self):
-        url = "/{}users/?filter[job_endYear]=1968".format(API_BASE)
+    def test_filter_using_job_endYear(self):
+        url = "/{}users/?filter[job_ongoing]=True".format(API_BASE)
+        res = self.app.get(url)
+        user_json = res.json['data']
+        ids = [each['id'] for each in user_json]
+        assert_in(self.user_one._id, ids)
+        assert_not_in(self.user_two._id, ids)
+
+    def test_filter_using_job_department(self):
+        url = "/{}users/?filter[job_department]=Civil Disobedience".format(API_BASE)
+        res = self.app.get(url)
+        user_json = res.json['data']
+        ids = [each['id'] for each in user_json]
+        assert_in(self.user_one._id, ids)
+        assert_not_in(self.user_two._id, ids)
+
+    def test_filter_using_job_institution(self):
+        url = "/{}users/?filter[job_institution]=Church".format(API_BASE)
+        res = self.app.get(url)
+        user_json = res.json['data']
+        ids = [each['id'] for each in user_json]
+        assert_in(self.user_one._id, ids)
+        assert_not_in(self.user_two._id, ids)
+
+    def test_filter_using_jobs_dot_institution(self):
+        url = "/{}users/?filter[jobs.institution]=Church".format(API_BASE)
+        res = self.app.get(url)
+        user_json = res.json['data']
+        ids = [each['id'] for each in user_json]
+        assert_in(self.user_one._id, ids)
+        assert_not_in(self.user_two._id, ids)
+
+    def test_filter_test_filter_using_employment_institutions_dot_institution(self):
+        url = "/{}users/?filter[employment_institutions.institution]=Church".format(API_BASE)
         res = self.app.get(url)
         user_json = res.json['data']
         ids = [each['id'] for each in user_json]
@@ -209,7 +233,7 @@ class TestUsersFiltering(ApiTestCase):
         assert_not_in(self.user_two._id, ids)
 
     def test_filter_using_full_dictionary(self):
-        url = "/{}users/?filter[employment_institutions]=Martin".format(API_BASE)
+        url = "/{}users/?filter[employment_institutions.institution]=Church".format(API_BASE)
         res = self.app.get(url)
         user_json = res.json['data']
         ids = [each['id'] for each in user_json]
