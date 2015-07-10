@@ -2,6 +2,9 @@
     <div class="container">
         <div class="row">
             <div class="span8 col-md-2 columns eight large-8">
+                <a data-bind="click: submit" id="submitForReview" class="btn btn-default" type="button">
+                    Submit for review
+                </a>
                 <ul class="nav nav-stacked list-group" data-bind="foreach: {data: currentPages, as: 'page'}">
                     <li class="re-navbar">
                         <a class="registration-editor-page" id="top-nav" style="text-align: left; font-weight:bold;" data-bind="text: title, click: $root.selectPage">
@@ -40,9 +43,6 @@
                 <button data-bind="click: save" type="button" class="btn btn-success">Save
                 </button>
 
-                <a data-bind="click: submit" id="submitForReview" class="btn btn-default" type="button">
-                    <i class="fa fa-save"></i> Submit for review
-                </a>
             </div>
         </div>
     </div>
