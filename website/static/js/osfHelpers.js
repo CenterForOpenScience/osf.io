@@ -51,7 +51,9 @@ var apiV2Url = function (path, options){
 
     var apiUrl = URI(opts.prefix);
     var pathSegments = URI(path).segment();
-    pathSegments.forEach(function(el){apiUrl.segment(el);});  // Hack to prevent double slashes when joining base + path
+    pathSegments.forEach(function(el){
+        apiUrl.segment(el);
+    });  // Hack to prevent double slashes when joining base + path
     apiUrl.query(opts.query);
 
     return apiUrl.toString();
@@ -466,26 +468,49 @@ var applyBindings = function(viewModel, selector) {
     ko.applyBindings(viewModel, $elem[0]);
 };
 
+/**
+ * A function that checks if a datestring is an ISO 8601 datetime string
+ * that lacks an offset. A datetime without a time offset should default
+ * to UTC according to JS standards, but Firefox implemented date parsing
+ * according to the ISO spec, meaning in Firefox it will default to local
+ * time
+ * @param {String} dateString The original date or datetime as an ISO date/
+ *                            datetime string
+ */
+var dateTimeWithoutOffset = function(dateString) {
+    if (dateString.indexOf('T') === -1) {
+        return false;
+    }
+    var time = dateString.split('T')[1];
+    return !((time.indexOf('+') !== -1) || (time.indexOf('-') !== -1));
+};
+
+/**
+ * A function that coerces a Datetime with no offset to a Datetime with
+ * an offset of UTC +00 (equivalent to Z)
+ * @param {String} dateTimeString The original Datetime string, which may or may not
+ *                                have a terminating Z implying UTC +00
+ */
+var forceUTC = function(dateTimeString) {
+    return dateTimeString.slice(-1) === 'Z' ? dateTimeString : dateTimeString + 'Z';
+};
 
 var hasTimeComponent = function(dateString) {
     return dateString.indexOf('T') !== -1;
 };
 
-var forceUTC = function(dateTimeString) {
-    return dateTimeString.slice(-1) === 'Z' ? dateTimeString : dateTimeString + 'Z';
-};
-
 /**
   * A date object with two formats: local time or UTC time.
   * @param {String} date The original date as a string. Should be an standard
-  *                      format such as RFC or ISO.
+  *                      format such as RFC or ISO. If the date is a datetime string
+  *                      with no offset, an offset of UTC +00:00 will be assumed
   */
 var LOCAL_DATEFORMAT = 'YYYY-MM-DD hh:mm A';
 var UTC_DATEFORMAT = 'YYYY-MM-DD HH:mm UTC';
 var FormattableDate = function(date) {
 
     if (typeof date === 'string') {
-        this.date = new Date(hasTimeComponent(date) ? forceUTC(date) : date);
+        this.date = moment.utc(dateTimeWithoutOffset(date) ? forceUTC(date) : date).toDate();
     } else {
         this.date = date;
     }
