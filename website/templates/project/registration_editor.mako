@@ -39,7 +39,6 @@
                 </p>
                 <button data-bind="click: save" type="button" class="btn btn-success">Save
                 </button>
-
             </div>
         </div>
     </div>
