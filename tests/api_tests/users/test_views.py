@@ -152,6 +152,46 @@ class TestUsersFiltering(ApiTestCase):
         assert_in(self.user_one._id, ids)
         assert_not_in(self.user_two._id, ids)
 
+    def test_filter_using_job_endYear(self):
+        url = "/{}users/?filter[job_endYear]=1968".format(API_BASE)
+        res = self.app.get(url)
+        user_json = res.json['data']
+        ids = [each['id'] for each in user_json]
+        assert_in(self.user_one._id, ids)
+        assert_not_in(self.user_two._id, ids)
+
+    def test_filter_using_job_startYear(self):
+        url = "/{}users/?filter[job_startYear]=1900".format(API_BASE)
+        res = self.app.get(url)
+        user_json = res.json['data']
+        ids = [each['id'] for each in user_json]
+        assert_in(self.user_one._id, ids)
+        assert_not_in(self.user_two._id, ids)
+
+    def test_filter_using_job_startMonth(self):
+        url = "/{}users/?filter[job_startMonth]=1".format(API_BASE)
+        res = self.app.get(url)
+        user_json = res.json['data']
+        ids = [each['id'] for each in user_json]
+        assert_in(self.user_one._id, ids)
+        assert_not_in(self.user_two._id, ids)
+
+    def test_filter_using_job_endMonth(self):
+        url = "/{}users/?filter[job_endMonth]=1968".format(API_BASE)
+        res = self.app.get(url)
+        user_json = res.json['data']
+        ids = [each['id'] for each in user_json]
+        assert_in(self.user_one._id, ids)
+        assert_not_in(self.user_two._id, ids)
+
+    def test_filter_using_job_endYear(self):
+        url = "/{}users/?filter[job_endYear]=1968".format(API_BASE)
+        res = self.app.get(url)
+        user_json = res.json['data']
+        ids = [each['id'] for each in user_json]
+        assert_in(self.user_one._id, ids)
+        assert_not_in(self.user_two._id, ids)
+
     def test_filter_using_complex_field(self):
         url = "/{}users/?filter[job_endYear]=1968".format(API_BASE)
         res = self.app.get(url)
