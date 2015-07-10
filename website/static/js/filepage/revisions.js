@@ -17,7 +17,7 @@ var model = {
     errorMessage: undefined,
     hasUser: false,
     hasDate: false,
-    hasMd5: false,
+    hasHashes: false,
     selectedRevision: 0
 };
 
