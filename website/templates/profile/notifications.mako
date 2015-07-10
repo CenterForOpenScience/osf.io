@@ -12,11 +12,11 @@
 <h2 class="page-header">Notifications</h2>
 
 <div id="notificationSettings" class="row">
-    <div class="col-md-3 affix-parent">
+    <div class="col-sm-3 affix-parent">
       <%include file="include/profile/settings_navpanel.mako" args="current_page='notifications'"/>
     </div>
 
-    <div class="col-md-6">
+    <div class="col-sm-9 col-md-7">
         <div class="panel panel-default scripted" id="selectLists">
             <div class="panel-heading clearfix"><h3 class="panel-title">Configure Email Preferences</h3></div>
             <div class="panel-body">
