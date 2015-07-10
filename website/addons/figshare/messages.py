@@ -1,9 +1,9 @@
 FIGSHARE = 'figshare'
 
 # MODEL MESSAGES :model.py
-BEFORE_PAGE_LOAD_PRIVATE_NODE_MIXED_FS = 'Warning: This OSF {category} is private but ' + FIGSHARE + ' project {project_id} may contain some public files or filesets. '
+BEFORE_PAGE_LOAD_PRIVATE_NODE_MIXED_FS = 'Warning: This OSF {category} is private but ' + FIGSHARE + ' project {project_id} may contain some public files or filesets. The files in this Figshare project can be viewed <a href="https://http://figshare.com/articles/{project_id}/{figshare_id}">here</a>'
 
-BEFORE_PAGE_LOAD_PUBLIC_NODE_MIXED_FS = 'Warning: This OSF {category} is public but ' + FIGSHARE + ' project {project_id} may contain some private files or filesets. '
+BEFORE_PAGE_LOAD_PUBLIC_NODE_MIXED_FS = 'Warning: This OSF {category} is public but ' + FIGSHARE + ' project {project_id} may contain some private files or filesets. The files in this Figshare project can be viewed <a href="https://http://figshare.com/articles/{project_id}/{figshare_id}">here</a>'
 
 BEFORE_PAGE_LOAD_PERM_MISMATCH = 'Warning: This OSF {category} is {node_perm}, but the ' + FIGSHARE + ' article {figshare_id} is {figshare_perm}. '
 
