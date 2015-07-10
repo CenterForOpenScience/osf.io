@@ -113,13 +113,13 @@
                                     <ul class="pagination pagination-sm" data-bind="foreach: paginators">
                                         <li data-bind="css: style"><a href="#" data-bind="click: handler, html: text"></a></li>
                                     </ul>
-                                    <p><strong>
-                                        <a href="#"data-bind="click:gotoInvite">Add <em>{{query}}</em> as an unregistered contributor</a>.
-                                    </strong></p>
+                                    <p>
+                                        <a href="#"data-bind="click:gotoInvite">Add <strong><em>{{query}}</em></strong> as an unregistered contributor</a>.
+                                    </p>
                                 </div>
                                 <div data-bind="if: noResults">
-                                    No results found. Try a more specific search or <strong><a href="#"
-                                    data-bind="click:gotoInvite">add <em>{{query}}</em> as an unregistered contributor</a>.</strong>
+                                    No results found. Try a more specific search or  <a href="#"
+                                    data-bind="click:gotoInvite">add <strong><em>{{query}}</em></strong> as an unregistered contributor</a>.
                                 </div>
                             </div>
                         </div><!-- ./col-md -->

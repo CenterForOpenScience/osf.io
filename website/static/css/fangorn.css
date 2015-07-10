@@ -10,7 +10,7 @@ color: #F00;
 text-align: center;
 }
 
-#treeGrid span {
+.tb-row span {
     vertical-align: middle;
 }
 
@@ -62,7 +62,7 @@ text-align: center;
     height: inherit;
     padding-top: 6px;
 }
-#treeGrid .tb-td {
+.tb-row .tb-td {
     padding-top: 2px;
     padding-bottom: 4px;
 }
@@ -112,7 +112,7 @@ text-align: center;
 .tb-expand-icon-holder {
 	cursor: default;
 }
-#treeGrid .tb-expand-icon-holder div {
+.tb-row  .tb-expand-icon-holder div {
     vertical-align: middle;
 }
 
