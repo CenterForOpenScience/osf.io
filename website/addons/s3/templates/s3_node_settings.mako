@@ -41,11 +41,15 @@
         <br />
         <br />
         <div class="row" data-bind="if: showSelect">
-          <div class="col-md-8">
+          <div class="col-md-6">
             <select class="form-control" id="s3_bucket" name="s3_bucket"
                     data-bind="value: selectedBucket,
                                attr.disabled: !loadedBucketList(),
                                options: bucketList"> </select>
+          </div>
+          <div class="col-m2-4 checkbox-inline">
+            <input type="checkbox" id="encryptUploads" name="encryptUploads"
+                   data-bind="checked: encryptUploads" />Encrypt file uploads
           </div>
           <div class="col-md-2">
             <button data-bind="click: selectBucket,
@@ -54,7 +58,7 @@
               Save
             </button>
           </div>
-        </div>        
+        </div>
       </div>
       </div>
     </div>
@@ -82,12 +86,13 @@
     // Make s3 settings variables globally accessible for relevant JS
     <%
         import json
-        from website.addons.s3.settings import DEFAULT_BUCKET_LOCATION
+        from website.addons.s3.settings import DEFAULT_BUCKET_LOCATION, ENCRYPT_UPLOADS_DEFAULT
     %>
     window.contextVars = $.extend(true, {}, window.contextVars, {
         s3Settings: {
             defaultBucketLocationValue: ${json.dumps(DEFAULT_BUCKET_LOCATION['value'])},
-            defaultBucketLocationMessage: ${json.dumps(DEFAULT_BUCKET_LOCATION['message'])}
+            defaultBucketLocationMessage: ${json.dumps(DEFAULT_BUCKET_LOCATION['message'])},
+            defaultEncryptUploads: ${json.dumps(ENCRYPT_UPLOADS_DEFAULT)}
         }
     })
  </script>

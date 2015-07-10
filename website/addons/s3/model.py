@@ -10,6 +10,7 @@ from website.addons.base import AddonUserSettingsBase, AddonNodeSettingsBase, Gu
 from website.addons.base import StorageAddonBase
 
 from website.addons.s3 import utils
+from website.addons.s3.settings import ENCRYPT_UPLOADS_DEFAULT
 
 class S3GuidFile(GuidFile):
     __indices__ = [
@@ -73,6 +74,7 @@ class AddonS3UserSettings(AddonUserSettingsBase):
 class AddonS3NodeSettings(StorageAddonBase, AddonNodeSettingsBase):
 
     bucket = fields.StringField()
+    encrypt_uploads = fields.BooleanField(defaul=ENCRYPT_UPLOADS_DEFAULT)
     user_settings = fields.ForeignField(
         'addons3usersettings', backref='authorized'
     )
@@ -136,7 +138,10 @@ class AddonS3NodeSettings(StorageAddonBase, AddonNodeSettingsBase):
     def serialize_waterbutler_settings(self):
         if not self.bucket:
             raise exceptions.AddonError('Cannot serialize settings for S3 addon')
-        return {'bucket': self.bucket}
+        return {
+            'bucket': self.bucket,
+            'encrypt_uploads': self.encrypt_uploads
+        }
 
     def create_waterbutler_log(self, auth, action, metadata):
         url = self.owner.web_url_for('addon_view_or_download_file', path=metadata['path'], provider='s3')
@@ -163,6 +168,7 @@ class AddonS3NodeSettings(StorageAddonBase, AddonNodeSettingsBase):
 
         ret.update({
             'bucket': self.bucket or '',
+            'encrypt_uploads': self.encrypt_uploads,
             'has_bucket': self.bucket is not None,
             'user_is_owner': (
                 self.user_settings and self.user_settings.owner == user

@@ -27,6 +27,7 @@ var ViewModel = function(url, selector) {
     self.loadedBucketList = ko.observable(false);
     self.currentBucket = ko.observable('');
     self.selectedBucket = ko.observable('');
+    self.encryptUploads = ko.observable(window.contextVars.s3Settings.defaultEncryptUploads);
 
     self.accessKey = ko.observable('');
     self.secretKey = ko.observable('');
@@ -83,7 +84,8 @@ ViewModel.prototype.selectBucket = function() {
     self.loading(true);
     return $osf.postJSON(
             self.urls().set_bucket, {
-                's3_bucket': self.selectedBucket()
+                's3_bucket': self.selectedBucket(),
+                'encrypt_uploads': self.encryptUploads()
             }
         )
         .done(function(response) {
