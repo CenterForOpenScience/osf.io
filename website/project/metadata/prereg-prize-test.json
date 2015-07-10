@@ -49,7 +49,7 @@
                     },
                     "uploader": {
                         "id": "q4b",
-                        "format": "osf-upload" 
+                        "type": "osf-upload" 
                     }
                 }  
             }

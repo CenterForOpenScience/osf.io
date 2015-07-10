@@ -75,7 +75,8 @@ ko.bindingHandlers.osfUploader = {
                         var correctedPath = "/" + path;
                         if (item.data.kind === "file" && item.data.path === correctedPath) {
                             tb.multiselected([item]);
-                            $("#scriptName").html(item.data.name);
+                            viewModel.selectedFileName(item.data.name);
+                            //$("#scriptName").html(item.data.name);
                         }
                     }
                     if (tb.isMultiselected(item.id)) {
