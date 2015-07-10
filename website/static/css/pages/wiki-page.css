@@ -101,10 +101,6 @@
     overflow: auto;
 }
 
-.reset-height {
-    height: auto;
-}
-
 .osf-panel .superlist li {
     display: block;
     font-size: 20px;

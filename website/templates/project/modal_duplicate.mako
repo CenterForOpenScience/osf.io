@@ -14,7 +14,7 @@
                                     ${ node['points'] }
                                 </a>
                             % else:
-                                 <span class="btn btn-default  pull-right">
+                                 <span class="btn btn-default disabled  pull-right">
                                     ${ node['points'] }
                                 </span>
                             % endif
@@ -23,7 +23,7 @@
                     </div>
                     <div class="col-md-4">
                         <h4 class="f-w-lg">Templated From
-                            <span class="btn btn-default  pull-right">
+                            <span class="btn btn-default disabled pull-right">
                                 ${ node['templated_count'] }
                             </span>
                         </h4>

@@ -74,4 +74,9 @@
     margin-top: 5px;
 }
 
+#file-navigation #tb-tbody {
+    max-height: 500px;
+    height: inherit;
+}
+
 
