@@ -3087,41 +3087,29 @@ class DraftRegistration(AddonModelMixin, StoredObject):
         except KeyError:
             return getattr(self.branched_from, attr, None)
 
+
+    def find_question(self, qid):
+        for page in self.registration_schema.schema['pages']:
+            for question_id, question in page['questions'].iteritems():
+                if question_id == qid and 'description' in question:
+                    return question['description']
+
     def get_comments(self):
         """ Returns a list of all comments made on a draft in the format of :
         [{
-            'page1': [{
-                user: 'user',
-                last_modified: 'Thu, 09 Jul 2015 21:45:56 GMT',
-                value: 'Comment text'
-            }],
-            'page2': [{
-                user: 'user',
-                last_modified: 'Thu, 09 Jul 2015 21:45:56 GMT',
-                value: 'Comment text'
-            },
-            {
-                user: 'user',
-                last_modified: 'Thu, 09 Jul 2015 21:45:56 GMT',
-                value: 'Comment text'
-            }]
-        }]
+          [QUESTION_ID]: {
+            'question': [QUESTION],
+            'comments': [LIST_OF_COMMENTS]
+            }
+        },]
         """
-        pages = self.registration_schema['schema']['pages']
+
         all_comments = list()
-
-        # there has to be a more pythonic way to do this
-        page_num = 1
-        for page in pages:
-            comment_obj = dict()
-            comments = page['comments']
-
-            comment_obj['page{}'.format(page_num)] = list()
-
-            if comments:
-                for comment in comments:
-                    all_comments.append(comment)
-
-            page_num += 1
-
+        for question_id, value in self.registration_metadata.iteritems():
+            all_comments.append({
+                question_id: {
+                    'question': self.find_question(question_id),
+                    'comments': value['comments'] if 'comments' in value else ''
+                }
+            })
         return all_comments
