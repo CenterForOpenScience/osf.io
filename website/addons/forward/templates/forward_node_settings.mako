@@ -55,8 +55,8 @@
                 </div>
                 <div class="col-md-2">
                     <input type="submit"
-                           class="btn btn-primary pull-right"
-                           value="Submit"
+                           class="btn btn-success pull-right"
+                           value="Save"
                            data-bind="disable: !validators.isValid()"
                     />
                 </div>

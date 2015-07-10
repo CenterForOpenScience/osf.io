@@ -54,9 +54,9 @@
 
             % if is_owner and not is_registration:
                 <div class="col-md-6">
-                    <a id="githubCreateRepo" class="btn btn-default">Create Repo</a>
-                    <button class="btn btn-primary addon-settings-submit pull-right">
-                        Submit
+                    <a id="githubCreateRepo" class="btn btn-primary">Create Repo</a>
+                    <button class="btn btn-success addon-settings-submit pull-right">
+                        Save
                     </button>
                 </div>
             % endif

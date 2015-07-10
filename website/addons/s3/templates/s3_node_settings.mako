@@ -70,7 +70,7 @@
       </div>
       <button data-bind="click: createCredentials,
                          attr.disabled: creatingCredentials" class="btn btn-success addon-settings-submit">
-        Submit
+        Save
       </button>
     </div>
     <!-- Flashed Messages -->
