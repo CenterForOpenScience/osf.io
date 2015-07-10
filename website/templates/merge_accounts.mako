@@ -17,7 +17,7 @@
                 "form_class": "form",
                 "submit_string": "Merge Accounts",
                 "field_name_prefix": "merged_",
-                "submit_btn_class": "btn-success"
+                "submit_btn_class": "btn-primary"
             },
             "replace": true
             }'>

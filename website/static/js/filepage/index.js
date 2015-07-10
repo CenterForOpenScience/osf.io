@@ -75,11 +75,11 @@ var FileViewPage = {
                     m('i.fa.fa-pencil-square-o'),
                     ' Edit',
                     m('.pull-right', [
-                        m('.progress.progress-no-margin.pointer', {
+                        m('.progress.no-margin.pointer', {
                             'data-toggle': 'modal',
                             'data-target': '#' + self.shareJSObservables.status() + 'Modal'
                         }, [
-                            m('.progress-bar.progress-bar-success', {
+                            m('.progress-bar.p-h-sm.progress-bar-success', {
                                 connected: {
                                     style: 'width: 100%',
                                     class: 'progress-bar progress-bar-success'
@@ -135,7 +135,7 @@ var FileViewPage = {
         //Hack to polyfill the Panel interface
         //Ran into problems with mithrils caching messing up with multiple "Panels"
         self.revisions = m.component(FileRevisionsTable, self.file, self.node, self.enableEditing, self.canEdit);
-        self.revisions.selected = true;
+        self.revisions.selected = false;
         self.revisions.title = 'Revisions';
 
         // inform the mfr of a change in display size performed via javascript,
@@ -204,7 +204,7 @@ var FileViewPage = {
                 m('.btn.btn-sm.btn-danger.file-delete', {onclick: $(document).trigger.bind($(document), 'fileviewpage:delete')}, 'Delete')
             ]) : '',
             m('.btn-group', [
-                m('.btn.btn-sm.btn-success.file-download', {onclick: $(document).trigger.bind($(document), 'fileviewpage:download')}, 'Download')
+                m('.btn.btn-sm.btn-primary.file-download', {onclick: $(document).trigger.bind($(document), 'fileviewpage:download')}, 'Download')
             ]),
             m('.btn-group.btn-group-sm', [
                 m('.btn.btn-default.disabled', 'Toggle view: ')

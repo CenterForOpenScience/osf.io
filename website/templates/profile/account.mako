@@ -3,6 +3,11 @@
 
 <%def name="title()">Account Settings</%def>
 
+<%def name="stylesheets()">
+   ${parent.stylesheets()}
+   <link rel="stylesheet" href='/static/css/pages/account-setting-page.css'>;
+</%def>
+
 <%def name="content()">
     <% from website import settings %>
     <div id="accountSettings">
@@ -20,7 +25,7 @@
             </div>
             <div class="col-md-6">
                 <div id="connectedEmails" class="panel panel-default scripted">
-                    <div class="panel-heading"><h3 class="panel-title">Connected Emails</h3></div>
+                    <div class="panel-heading clearfix"><h3 class="panel-title">Connected Emails</h3></div>
                     <div class="panel-body">
                         <table class="table">
                             <thead>
@@ -71,7 +76,7 @@
                                             <div class="form-group">
                                               <input placeholder="Email address" data-bind="value: emailInput" class="form-control">
                                             </div>
-                                            <input type="submit" value="Add Email" class="btn btn-default">
+                                            <input type="submit" value="Add Email" class="btn btn-success">
                                         </form>
                                         <div class="help-block">
                                             <p data-bind="html: message, attr: {class: messageClass}"></p>
@@ -84,7 +89,7 @@
                     </div>
                 </div>
                 <div id="changePassword" class="panel panel-default">
-                    <div class="panel-heading"><h3 class="panel-title">Change Password</h3></div>
+                    <div class="panel-heading clearfix"><h3 class="panel-title">Change Password</h3></div>
                     <div class="panel-body">
                         <form id="changePasswordForm" role="form" action="${ web_url_for('user_account_password') }" method="post">
                             <div class="form-group">
@@ -99,19 +104,19 @@
                                 <label for="confirm_password">Confirm new password</label>
                                 <input type="password" class="form-control" name="confirm_password">
                             </div>
-                            <button type="submit" class="btn btn-default">Update password</button>
+                            <button type="submit" class="btn btn-primary">Update password</button>
                         </form>
                     </div>
                 </div>
                 <div id="exportAccount" class="panel panel-default">
-                    <div class="panel-heading"><h3 class="panel-title">Export Account Data</h3></div>
+                    <div class="panel-heading clearfix"><h3 class="panel-title">Export Account Data</h3></div>
                     <div class="panel-body">
                         <p>Exporting your account data allows you to keep a permanent copy of the current state of your account. Keeping a copy of your account data can provide peace of mind or assist in transferring your information to another provider.</p>
-                        <a class="btn btn-default" data-bind="click: submit, css: success() === true ? 'disabled' : ''">Request Export</a>
+                        <a class="btn btn-primary" data-bind="click: submit, css: success() === true ? 'disabled' : ''">Request Export</a>
                     </div>
                 </div>
                 <div id="deactivateAccount" class="panel panel-default">
-                    <div class="panel-heading"><h3 class="panel-title">Deactivate Account</h3></div>
+                    <div class="panel-heading clearfix"><h3 class="panel-title">Deactivate Account</h3></div>
                     <div class="panel-body">
                         <p class="alert alert-warning"><strong>Warning:</strong> This action is irreversible.</p>
                         <p>Deactivating your account will remove you from all public projects to which you are a contributor. Your account will no longer be associated with OSF projects, and your work on the OSF will be inaccessible.</p>

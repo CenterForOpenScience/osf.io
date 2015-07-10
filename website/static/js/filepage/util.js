@@ -19,9 +19,9 @@ Panel.controller = function(title, header, inner, args) {
 
 
 Panel.view = function(ctrl) {
-    return m('#' + ctrl.title.toLowerCase() + 'Panel', [
+    return m('#' + ctrl.title.toLowerCase() + 'Panel.panel.panel-default', [
         !ctrl.header ? '' :
-            m('.osf-panel-header', $.isFunction(ctrl.header) ? ctrl.header() : ctrl.header),
+            m('.panel-heading', $.isFunction(ctrl.header) ? ctrl.header() : ctrl.header),
         m('', ctrl.inner)
     ]);
 };
@@ -30,7 +30,7 @@ Panel.view = function(ctrl) {
 var Spinner = m.component({
     controller: function(){},
     view: function() {
-        return m('.fangorn-loading', [
+        return m('.spinner-loading-wrapper', [
             m('.logo-spin.text-center', [
                 m('img[src=/static/img/logo_spin.png][alt=loader]')
             ]),

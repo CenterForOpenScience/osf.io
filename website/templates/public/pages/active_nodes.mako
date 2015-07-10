@@ -2,6 +2,11 @@
 
 <%def name="title()">Public Activity</%def>
 
+<%def name="stylesheets()">
+    ${parent.stylesheets()}
+    <link rel="stylesheet" href="/static/css/pages/public-activity-page.css">
+</%def>
+
 <%def name="content()">
     <%
         from framework.auth import get_user
@@ -21,27 +26,27 @@
             <h1 class="page-header">Public Activity</h1>
             <section id='newPublicProjects'>
                 <h3>Newest Public Projects</h3>
-                <ul class='project-list list-group'>
+                <div class='project-list'>
                     ${node_list(recent_public_projects, prefix='newest_public', metric='date_created')}
-                </ul>
+                </div>
             </section>
             <section id='newPublicRegistrations'>
                 <h3>Newest Public Registrations</h3>
-                <ul class='project-list list-group'>
+                <div class='project-list'>
                     ${node_list(recent_public_registrations, prefix='newest_public', metric='registered_date')}
-                </ul>
+                </div>
             </section>
             <section id='popularPublicProjects'>
                 <h3>Popular Public Projects</h3>
-                <ul class='project-list list-group'>
+                <div class='project-list'>
                     ${node_list(popular_public_projects, prefix='most_viewed', metric='hits')}
-                </ul>
+                </div>
             </section>
             <section id='popularPublicRegistrations'>
                 <h3>Popular Public Registrations</h3>
-                <ul class='project-list list-group'>
+                <div class='project-list'>
                     ${node_list(popular_public_registrations, prefix='most_viewed', metric='hits')}
-                </ul>
+                </div>
             </section>
         </div>
     </div>
@@ -63,10 +68,10 @@
                 )
 
             %>
-            <li class="project list-group-item list-group-item-node">
+            <div class="project osf-box p-sm m-b-sm">
                 <div class="row">
                     <div class="col-md-10">
-                        <h4 class="list-group-item-heading overflow" style="width:85%">
+                        <h4 class="f-w-md overflow" style="width:85%">
                             <a href="${node.url}">${node.title}</a>
                         </h4>
                     </div>
@@ -95,7 +100,7 @@
                     },
                     "replace": true
                 }'></div>
-            </li>
+            </div>
         % endfor
     </%def>
 </%def>

@@ -75,7 +75,7 @@ function initTypeahead(element, nodes, viewModel, params){
         templates: {
             suggestion: function(data) {
                 return '<p>' + data.value.name + '</p> ' +
-                        '<p><small class="ob-suggestion-date text-muted">' +
+                        '<p><small class="m-l-md text-muted">' +
                         'modified ' + data.value.dateModified.local + '</small></p>';
             }
         },
@@ -669,4 +669,21 @@ function OBGoToViewModel(params) {
 ko.components.register('osf-ob-goto', {
     viewModel: OBGoToViewModel,
     template: {element: 'osf-ob-goto'}
+});
+
+
+function ProjectCreateViewModel(response) {
+    var self = this;
+    self.isOpen = ko.observable(false);
+    self.focus = ko.observable(false);
+    self.toggle = function() {
+        self.isOpen(!self.isOpen());
+        self.focus(self.isOpen());
+    };
+    self.nodes = response.data;
+}
+
+ko.components.register('osf-ob-create', {
+    viewModel: ProjectCreateViewModel,
+    template: {element: 'osf-ob-create'}
 });

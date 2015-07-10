@@ -112,7 +112,7 @@ var PrivateLinkViewModel = function(url) {
         }).fail(function() {
             $osf.growl('Error:','Failed to create a view-only link.');
             self.disableSubmit(false);
-            self.submitText('Submit');
+            self.submitText('Generate');
         });
     };
 
