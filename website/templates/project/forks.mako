@@ -20,9 +20,9 @@
     % endif
     </div>
         <div class="col-xs-3 col-sm-4 p-lg">
-                <div>
+                <div class="m-md">
                     % if user_name and (user['is_contributor'] or node['is_public']) and not disk_saving_mode:
-                        <a class="btn btn-primary" type="button" onclick="NodeActions.forkNode();">New Fork</a>
+                        <a class="btn btn-success" type="button" onclick="NodeActions.forkNode();">New Fork</a>
                     % endif
                 </div>
         </div>
