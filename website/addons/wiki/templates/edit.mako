@@ -219,7 +219,7 @@
   <div class="modal-dialog">
     <div class="modal-content">
       <div class="modal-header">
-        <h3 class="modal-title">The permissions for this page have changed</h3>
+        <h3 class="modal-title">The Permissions for This Page Have Changed</h3>
       </div>
       <div class="modal-body">
         <p>Your browser should refresh shortly&hellip;</p>
@@ -232,7 +232,7 @@
   <div class="modal-dialog">
     <div class="modal-content">
       <div class="modal-header">
-        <h3 class="modal-title">The content of this wiki has been moved to a different page</h3>
+        <h3 class="modal-title">The Content of This Wiki Has Been Moved to a Different Page</h3>
       </div>
       <div class="modal-body">
         <p>Your browser should refresh shortly&hellip;</p>
@@ -245,7 +245,7 @@
   <div class="modal-dialog">
     <div class="modal-content">
       <div class="modal-header">
-        <h3 class="modal-title">This wiki page has been deleted</h3>
+        <h3 class="modal-title">This Wiki Page Has Been Deleted</h3>
       </div>
       <div class="modal-body">
         <p>Press Confirm to return to the project wiki home page.</p>
@@ -262,7 +262,7 @@
     <div class="modal-content">
       <div class="modal-header">
         <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
-        <h3 class="modal-title">Connected to the collaborative wiki</h3>
+        <h3 class="modal-title">Connected to the Collaborative Wiki</h3>
       </div>
       <div class="modal-body">
         <p>
@@ -280,7 +280,7 @@
     <div class="modal-content">
       <div class="modal-header">
         <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
-        <h3 class="modal-title">Connecting to the collaborative wiki</h3>
+        <h3 class="modal-title">Connecting to the Collaborative Wiki</h3>
       </div>
       <div class="modal-body">
         <p>
@@ -297,7 +297,7 @@
     <div class="modal-content">
       <div class="modal-header">
         <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
-        <h3 class="modal-title">Collaborative wiki is unavailable</h3>
+        <h3 class="modal-title">Collaborative Wiki is Unavailable</h3>
       </div>
       <div class="modal-body">
         <p>
@@ -314,7 +314,7 @@
     <div class="modal-content">
       <div class="modal-header">
         <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
-        <h3 class="modal-title">Browser unsupported</h3>
+        <h3 class="modal-title">Browser Unsupported</h3>
       </div>
       <div class="modal-body">
         <p>
