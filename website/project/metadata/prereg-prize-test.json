@@ -61,27 +61,57 @@
         "questions": {
             "q5": {
                 "nav": "Data",
-                "type": "string",
-                "format": "textarea",
+                "type": "object",
                 "title": "Data collection procedures",
                 "description": "Please describe your data collection procedures. This may include the population from which you obtain subjects, recruitment efforts, how subjects will be selected for eligibility from the initial pool (e.g. inclusion and exclusion rules), and your study timeline.",
-                "help": "Participants will be recruited through advertisements at local pastry shops. Participants will be paid $10 for agreeing to  participating (raised to $30 if our sample size is not reached within 15 days of beginning recruitment). Participants must be at least 18 years old and be able to eat the ingredients of the pastries."
+                "help": "Participants will be recruited through advertisements at local pastry shops. Participants will be paid $10 for agreeing to  participating (raised to $30 if our sample size is not reached within 15 days of beginning recruitment). Participants must be at least 18 years old and be able to eat the ingredients of the pastries.",
+                "properties": {
+                    "question": {
+                        "id": "q5a",
+                        "type": "string",
+                        "format": "textarea"
+                    },
+                    "uploader": {
+                        "id": "q5b",
+                        "type": "osf-upload" 
+                    }
+                }
             },
             "q6": {
                 "nav": "Sample",
-                "type": "string",
-                "format": "text",
+                "type": "object",
                 "title": "Sample Size",
                 "description": "How many units will be analyzed in the study? This could be the number of people, birds, classrooms, plots, interactions, or countries included. If the units are not individuals, then describe the size requirements for each unit.",
-                "help": "Our target sample size is 280 participants. We will attempt to recruit up to 320, assuming that not all will complete the total task."
+                "help": "Our target sample size is 280 participants. We will attempt to recruit up to 320, assuming that not all will complete the total task.",
+                "properties": {
+                    "question": {
+                        "id": "q6a",
+                        "type": "string",
+                        "format": "text"
+                    },
+                    "uploader": {
+                        "id": "q6b",
+                        "type": "osf-upload" 
+                    }
+                }
             },
             "q7": {
                 "nav": "Rationale",
-                "type": "string",
-                "format": "textarea",
+                "type": "object",
                 "title": "Please describe your rationale for picking this sample size.",
                 "description": "This could include a power analysis or an arbitrary constraint such as resource availability. Include a stopping rule that is not dependent on investigating the data as it is collected.",
-                "help": "We used the software program G*Power to conduct a power analysis. Our goal was to obtain .95 power to detect a medium effect size of .25 at the standard .05 alpha error probability. We will stop recruiting participants at 320 (to account for incomplete data) or after 30 days, whichever comes first."
+                "help": "We used the software program G*Power to conduct a power analysis. Our goal was to obtain .95 power to detect a medium effect size of .25 at the standard .05 alpha error probability. We will stop recruiting participants at 320 (to account for incomplete data) or after 30 days, whichever comes first.",
+                "properties": {
+                    "question": {
+                        "id": "q7a",
+                        "type": "string",
+                        "format": "textarea"
+                    },
+                    "uploader": {
+                        "id": "q7b",
+                        "type": "osf-upload" 
+                    }
+                }
             },
             "q8": {
                 "nav": "Certify",
@@ -139,43 +169,93 @@
             },
             "q11": {
                 "nav": "Design",
-                "type": "string",
-                "format": "text",
+                "type": "object",
                 "title": "Describe your study design.",
                 "description": "Examples include two-group, factorial, randomized block, and repeated measures. Is it a between or within-subject design? Describe any counterbalancing required. Typical study designs for observation studies include cohort, cross sectional, and case-control studies. You will be asked to define your variables in detail in the upcoming sections.",
-                "help": "In our between-subject design, each of the 280 expected participants will taste one of the four levels of brownies (1X4)"
+                "help": "In our between-subject design, each of the 280 expected participants will taste one of the four levels of brownies (1X4)",
+                "properties": {
+                    "question": {
+                        "id": "q11a",
+                        "type": "string",
+                        "format": "text"
+                    },
+                    "uploader": {
+                        "id": "q11b",
+                        "type": "osf-upload" 
+                    }
+                }
             },
             "q12": {
                 "nav": "Predictor",
-                "type": "string",
-                "format": "textarea",
+                "type": "object",
                 "title": "Define your predictor variable(s).",
                 "description": "If applicable, describe the levels for each predictor. If your predictor variables are constructed from multiple measurements, you will be asked later on to describe how they are created. ",
-                "help": "Our predictor is the amount of sugar added per brownie. The dry ingredients for each brownie will contain 15%, 20%, 25%, or 40% cane sugar by mass."
+                "help": "Our predictor is the amount of sugar added per brownie. The dry ingredients for each brownie will contain 15%, 20%, 25%, or 40% cane sugar by mass.",
+                "properties": {
+                    "question": {
+                        "id": "q12a",
+                        "type": "string",
+                        "format": "textarea"
+                    },
+                    "uploader": {
+                        "id": "q12b",
+                        "type": "osf-upload" 
+                    }
+                }
             },
             "q13": {
                 "nav": "Outcome",
-                "type": "string",
-                "format": "textarea",
+                "type": "object",
                 "title": "Define your outcome variable(s).",
                 "description": "If your outcome measurements are constructed from multiple measurements, you will be asked later on to describe how they are created.",
-                "help": "The single outcome variable will be the perceived tastiness of the single brownie each participant will eat."
+                "help": "The single outcome variable will be the perceived tastiness of the single brownie each participant will eat.",
+                "properties": {
+                    "question": {
+                        "id": "q13a",
+                        "type": "string",
+                        "format": "textarea"
+                    },
+                    "uploader": {
+                        "id": "q13b",
+                        "type": "osf-upload" 
+                    }
+                }
             },
             "q14": {
                 "nav": "Covariates",
-                "type": "string",
-                "format": "textarea",
+                "type": "object",
                 "title": "Covariates.",
                 "description": "If applicable, and not mentioned above, what covariates, controls, or other independent variables will you measure?",
-                "help": "We will be collecting basic demographic information from each participant (age, household income, education level, housing zipcode, and marital status) and use that information for exploratory data investigation to determine if taste perception may be easily predicted. Any suggestive correlations may be the subject of future, confirmatory investigations."
+                "help": "We will be collecting basic demographic information from each participant (age, household income, education level, housing zipcode, and marital status) and use that information for exploratory data investigation to determine if taste perception may be easily predicted. Any suggestive correlations may be the subject of future, confirmatory investigations.",
+                "properties": {
+                    "question": {
+                        "id": "q14a",
+                        "type": "string",
+                        "format": "textarea"
+                    },
+                    "uploader": {
+                        "id": "q14b",
+                        "type": "osf-upload" 
+                    }
+                }
             },
             "q15": {
-                "nav": "Randmoized?",
-                "type": "string",
-                "format": "textarea",
+                "nav": "Randomized?",
+                "type": "object",
                 "title": "If you are doing a randomized study, how will you randomize, and at what level?",
                 "description": "There are many different randomization techniques. The appropriateness of each will depend on the specifics of your study.",
-                "help": "We will use block randomization, where each participant will be randomly assigned to one of the four equally sized, predetermined blocks. The random number list used to create these four blocks will e created using the web applications available at http://random.org."
+                "help": "We will use block randomization, where each participant will be randomly assigned to one of the four equally sized, predetermined blocks. The random number list used to create these four blocks will e created using the web applications available at http://random.org.",
+                "properties": {
+                    "question": {
+                        "id": "q15a",
+                        "type": "string",
+                        "format": "textarea"
+                    },
+                    "uploader": {
+                        "id": "q15b",
+                        "type": "osf-upload" 
+                    }
+                }
             }
         }
     }, {
@@ -185,51 +265,111 @@
         "questions": {
             "q16": {
                 "nav": "Predictors",
-                "type": "string",
-                "format": "textarea",
+                "type": "object",
                 "title": "Constructing predictor variables",
                 "description": "Often, a main predictor will not be a single measurement, but an index made from several other measurements. What measures will you use and how will they be combined to make your outcome variable(s).",
-                "help": "The predictor variable (percent sugar) will not be constructed from multiple measures."
+                "help": "The predictor variable (percent sugar) will not be constructed from multiple measures.",
+                "properties": {
+                    "question": {
+                        "id": "q16a",
+                        "type": "string",
+                        "format": "textarea"
+                    },
+                    "uploader": {
+                        "id": "q16b",
+                        "type": "osf-upload" 
+                    }
+                }
             },
             "q17": {
                 "nav": "Outcome Variables",
-                "type": "string",
-                "format": "textarea",
+                "type": "object",
                 "title": "Constructing outcome variables",
                 "description": "Just as with the previous question, how will specific measures be combined to create your predictor variable(s)?",
-                "help": "As taste perception is a complex variable, we will measure it by taking each users geometric mean response from three widely used indices of tastiness: the Tasty Measure Index of Sweetness (1-100 scale), the Yum Scale of Enjoyability (1-10 scale), and the Aural Pleasure Rating of Foods (1-20 scale). A geometric mean will be used because of the scale variation between each of the three indices."
+                "help": "As taste perception is a complex variable, we will measure it by taking each users geometric mean response from three widely used indices of tastiness: the Tasty Measure Index of Sweetness (1-100 scale), the Yum Scale of Enjoyability (1-10 scale), and the Aural Pleasure Rating of Foods (1-20 scale). A geometric mean will be used because of the scale variation between each of the three indices.",
+                "properties": {
+                    "question": {
+                        "id": "q17a",
+                        "type": "string",
+                        "format": "textarea"
+                    },
+                    "uploader": {
+                        "id": "q17b",
+                        "type": "osf-upload" 
+                    }
+                }
             },
             "q18": {
                 "nav": "Exclusion",
-                "type": "string",
-                "format": "textarea",
+                "type": "object",
                 "title": "How will you determine what data or samples (if any) to exclude from your analyses?",
                 "description": "Are there specific criteria that must be met in order to include? How will outliers be handled? You may want to attach a decision tree with an if, then” structure to easily formalize the way in which these decisions will be made.",
-                "help": "No checks will be performed to determine eligibility for inclusion besides verification that each subject answered each of the three tastiness indices. Outliers will be included in the analysis."
+                "help": "No checks will be performed to determine eligibility for inclusion besides verification that each subject answered each of the three tastiness indices. Outliers will be included in the analysis.",
+                "properties": {
+                    "question": {
+                        "id": "q18a",
+                        "type": "string",
+                        "format": "textarea"
+                    },
+                    "uploader": {
+                        "id": "q18b",
+                        "type": "osf-upload" 
+                    }
+                }
             },
             "q19": {
-                "nav": "Incoplete",
-                "type": "string",
-                "format": "textarea",
+                "nav": "Incomplete",
+                "type": "object",
                 "title": "How will you deal with incomplete or missing data?",
                 "description": "Almost every study will have missing data points. How you cope with these missing points is important because it can affect the result of your analysis.",
-                "help": "If any of the three indices of tastiness are not completed by a subject, that subject will not be included in the analysis."
+                "help": "If any of the three indices of tastiness are not completed by a subject, that subject will not be included in the analysis.",
+                "properties": {
+                    "question": {
+                        "id": "q19a",
+                        "type": "string",
+                        "format": "textarea"
+                    },
+                    "uploader": {
+                        "id": "q19b",
+                        "type": "osf-upload" 
+                    }
+                }
             },
             "q20": {
                 "nav": "Statistical Models",
-                "type": "string",
-                "format": "textarea",
+                "type": "object",
                 "title": "What statistical model(s) will you use to test your hypothesis(ses).",
                 "description": "Please include the type of model (e.g. ANOVA, regression, SEM, etc) as well as the specification of the model (e.g. what variables will be included). If you are using a method other than null hypothesis significance testing, such as a Bayesian method, provide the criteria you will use for making an evidence-based conclusion. Include likely alternative analyses or data transformations. ",
-                "help": "We will use a 1x4 ANOVA to analyze our results. The categorical independent variable is sugar” whereas the dependent variable, taste,” is continuous. If the the ANOVA indicates that the mean taste perceptions are significantly different (p<.05), then we will use a Tukey-Kramer HSD test to determine the differences between levels. We will test the assumption of the ANOVA on equal group variance using the Bartlett test and use a Kruskal-Wallis if p<.05."
+                "help": "We will use a 1x4 ANOVA to analyze our results. The categorical independent variable is sugar” whereas the dependent variable, taste,” is continuous. If the the ANOVA indicates that the mean taste perceptions are significantly different (p<.05), then we will use a Tukey-Kramer HSD test to determine the differences between levels. We will test the assumption of the ANOVA on equal group variance using the Bartlett test and use a Kruskal-Wallis if p<.05.",
+                "properties": {
+                    "question": {
+                        "id": "q20a",
+                        "type": "string",
+                        "format": "textarea"
+                    },
+                    "uploader": {
+                        "id": "q20b",
+                        "type": "osf-upload" 
+                    }
+                }
             },
             "q21": {
                 "nav": "Multiple Hypostheses",
-                "type": "string",
-                "format": "textarea",
+                "type": "object",
                 "title": "If you are comparing multiple conditions or testing multiple hypotheses, how will you account for this?",
                 "description": "When you conduct multiple comparisons, the odds of finding one statistically significant result because of random chance, instead of true relationships, increases. Click here for some more information.",
-                "help": "The only possible instance of requiring adjustment or acknowledgement of multiple comparisons would be the six combinations among the four levels of the independent variable tested in the ANOVA, which will only be investigated if indicated by the ANOVA results by a Tukey HSD."
+                "help": "The only possible instance of requiring adjustment or acknowledgement of multiple comparisons would be the six combinations among the four levels of the independent variable tested in the ANOVA, which will only be investigated if indicated by the ANOVA results by a Tukey HSD.",
+                "properties": {
+                    "question": {
+                        "id": "q21a",
+                        "type": "string",
+                        "format": "textarea"
+                    },
+                    "uploader": {
+                        "id": "q21b",
+                        "type": "osf-upload" 
+                    }
+                }
             }
         }
     }, {
