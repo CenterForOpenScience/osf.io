@@ -138,7 +138,7 @@
                                 </label>
                             </div>
 
-                            <button class="btn btn-success">Submit</button>
+                            <button class="btn btn-success">Save</button>
 
                             <!-- Flashed Messages -->
                             <div class="help-block">
@@ -202,7 +202,7 @@
                             <br />
 
                             <button id="settings-submit" class="btn btn-success">
-                                Submit
+                                Apply
                             </button>
                             <div class="addon-settings-message text-success" style="padding-top: 10px;"></div>
 
@@ -277,7 +277,7 @@
                     <div class="panel panel-default">
                         <span id="retractRegistrationAnchor" class="anchor"></span>
 
-                        <div class="panel-heading">
+                        <div class="panel-heading clearfix">
                             <h3 class="panel-title">Retract Registration</h3>
                         </div>
 

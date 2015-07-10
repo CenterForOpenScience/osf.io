@@ -11,11 +11,6 @@
     padding: 10px;
 }
 
-@media (max-width: 991px) {
-    .osf-panel {
-        margin-bottom: 20px;
-    }
-}
 .panel-collapsed {
     background: #F5F5F5;
 }
@@ -64,6 +59,7 @@
     text-decoration: none !important;
 }
 
+/*Special for wiki panel */
 .osf-panel-flex {
     width: 100%;
     display: -webkit-box;
@@ -107,6 +103,25 @@
 
 .reset-height {
     height: auto;
+}
+
+.osf-panel .superlist li {
+    display: block;
+    font-size: 20px;
+}
+
+.superlist li {
+    display: inline-block;
+    float: none;
+}
+.superlist li a {
+    padding: 15px 10px;
+}
+
+@media (max-width: 768px) {
+ .superlist.navbar-nav {
+    margin: 0;
+ }
 }
 
 /* Style for Ace wiki editor */
@@ -266,7 +281,7 @@
 }
 
 .wmd-button > span {
-    background-image: url(../../../addons/wiki/static/pagedown-ace/wmd-buttons.png);
+    background-image: url(/static/public/vendor/pagedown/wmd-buttons.png);
     background-repeat: no-repeat;
     background-position: 0px 0px;
     width: 20px;

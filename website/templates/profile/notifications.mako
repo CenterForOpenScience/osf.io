@@ -1,5 +1,11 @@
 <%inherit file="base.mako"/>
 <%def name="title()">Notifications</%def>
+
+<%def name="stylesheets()">
+   ${parent.stylesheets()}
+   <link rel="stylesheet" href='/static/css/pages/account-setting-page.css'>;
+</%def>
+
 <%def name="content()">
 <% import json %>
 <% from website import settings%>
@@ -37,7 +43,7 @@
                             type="submit"
                             class="btn btn-success"
                             data-bind="click: submit"
-                        >Submit</button>
+                        >Save</button>
                         </div>
 
                     </form>

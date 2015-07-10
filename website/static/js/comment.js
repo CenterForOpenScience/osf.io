@@ -100,8 +100,8 @@ var BaseComment = function() {
     self.replyNotEmpty = ko.computed(function() {
         return notEmpty(self.replyContent());
     });
-    self.saveButtonText = ko.computed(function() {
-        return self.submittingReply() ? 'Saving' : 'Save';
+    self.commentButtonText = ko.computed(function() {
+        return self.submittingReply() ? 'Commenting' : 'Comment';
     });
 
 };
@@ -248,7 +248,7 @@ var CommentModel = function(data, $parent, $root) {
     });
 
     self.toggleIcon = ko.computed(function() {
-            return self.showChildren() ? 'fa fa-minus-square-o' : 'fa fa-plus-square-o';
+            return self.showChildren() ? 'fa fa-minus' : 'fa fa-plus';
     });
     self.editHighlight = ko.computed(function() {
         return self.canEdit() && self.hoverContent();

@@ -179,7 +179,7 @@ var _dataverseItemButtons = {
                         onclick: function(event) {
                             gotoFile(item);
                         },
-                        icon: 'fa fa-external-link',
+                        icon: 'fa fa-file-o',
                         className : 'text-info'
                     }, 'View'));
 
