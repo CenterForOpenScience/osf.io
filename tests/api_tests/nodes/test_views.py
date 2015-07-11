@@ -844,11 +844,10 @@ class TestRemoveNodeContributor(ApiTestCase):
         self.user_auth = (self.user.username, self.user.password)
 
         self.project = ProjectFactory(is_public=True, creator=self.admin)
-        self.project.add_contributor(contributor=self.user, save=True)
+        self.project.add_contributor(contributor=self.user)
 
         self.url_contributor = '/{}nodes/{}/contributors/{}/'.format(API_BASE, self.project._id, self.user._id)
         self.url_admin = '/{}nodes/{}/contributors/{}/'.format(API_BASE, self.project._id, self.admin._id)
-
 
     def test_admin_remove_contributor(self):
         res = self.app.delete(self.url_contributor, auth=self.admin_auth)
@@ -856,8 +855,8 @@ class TestRemoveNodeContributor(ApiTestCase):
         assert_not_in(self.user, self.project.contributors)
 
     def test_non_admin_contributor_remove_self(self):
-        self.project.remove_permission(self.admin, 'admin')
-        res = self.app.delete(self.url_admin, auth=self.admin_auth, expect_errors=False)
+        self.project.remove_permission(self.user, 'admin')
+        res = self.app.delete(self.url_contributor, auth=self.user_auth, expect_errors=False)
         assert_equal(res.status_code, 204)
         assert_not_in(self.admin, self.project.contributors)
 
@@ -892,6 +891,11 @@ class TestRemoveNodeContributor(ApiTestCase):
         self.url_non_contributor = '/{}nodes/{}/contributors/{}/'.format(API_BASE, self.project._id, self.non_admin._id)
         res = self.app.delete(self.url_non_contributor, auth=self.admin_auth, expect_errors=True)
         assert_equal(res.status_code, 404)
+
+    def test_non_creator_admin_remove_contributor(self):
+        res = self.app.delete(self.url_admin, auth=self.user_auth, expect_errors=True)
+        assert_equal(res.status_code, 204)
+        assert_in(self.admin, self.project.contributors)
 
     def test_non_admin_remove_contributor(self):
         res = self.app.delete(self.url_admin, auth=self.user_auth, expect_errors=True)
