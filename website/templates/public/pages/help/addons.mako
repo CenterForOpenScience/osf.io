@@ -24,7 +24,7 @@
 
 
 <div class="row">
-    <h3 class="text-center" style="padding-top: 20px;">Storage Options</h3>
+    <h3 class="text-center m-t-xl "">Storage Options</h3>
     <div class="col-md-12">
         <%include file="/public/pages/help/addons/dropbox.mako"/>
         <%include file="/public/pages/help/addons/github.mako"/>
@@ -34,7 +34,7 @@
         <%include file="/public/pages/help/addons/box.mako"/>
         <%include file="/public/pages/help/addons/drive.mako"/>
 
-    <h3 class= "text-center" style="padding-top: 20px;">Citation Managers</h3>
+    <h3 class= "text-center m-t-xl" ">Citation Managers</h3>
         <%include file="/public/pages/help/addons/mendeley.mako"/>
         <%include file="/public/pages/help/addons/zotero.mako"/>
 
