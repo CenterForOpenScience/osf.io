@@ -52,7 +52,7 @@ class ContributorPermissions(permissions.BasePermission):
         is_current_user = obj._id == auth.user._id
         if request.method in permissions.SAFE_METHODS:
             return node.is_public or node.can_view(auth)
-        elif request.method == 'DELETE' and len(node.contributors) > 1:
+        elif request.method == 'DELETE':
             return is_admin or is_current_user
         elif request.method == 'PUT':
             is_visible = node.get_visible(auth.user)
