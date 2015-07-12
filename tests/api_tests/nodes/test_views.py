@@ -872,6 +872,13 @@ class TestRemoveNodeContributor(ApiTestCase):
         assert_equal(res.status_code, 403)
         assert_in(self.admin, self.project.contributors)
 
+    def test_admin_remove_contributor_twice(self):
+        res = self.app.delete(self.url_contributor, auth=self.admin_auth, expect_errors=False)
+        assert_equal(res.status_code, 204)
+        assert_not_in(self.user, self.project.contributors)
+        res = self.app.delete(self.url_contributor, auth=self.admin_auth, expect_errors=True)
+        assert_equal(res.status_code, 404)
+
     def test_unique_admin_remove_other_contributor(self):
         self.project.remove_permission(self.user, 'admin')
         res = self.app.delete(self.url_contributor, auth=self.admin_auth)
