@@ -392,3 +392,6 @@ a {
     max-height: 140px;
     overflow-y: hidden;
 }
+select {
+    word-wrap: normal;
+}
