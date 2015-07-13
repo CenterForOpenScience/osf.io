@@ -10,10 +10,6 @@ color: #F00;
 text-align: center;
 }
 
-.tb-row span {
-    vertical-align: middle;
-}
-
 .tb-head {
 	background: #EFEFEF;
   margin: 0 0 5px 0;
