@@ -107,8 +107,7 @@ $(document).ready(function() {
                     bootbox.confirm(
                         {
                             size: 'large',
-                            title : language.registerConfirm,
-                            message : $osf.joinPrompts(response.prompts),
+                            message : $osf.joinPrompts(response.prompts, '<h4>'+ language.registerConfirm + '</h4>'),
                             callback: function(result) {
                                 if (result) {
                                     registerNode(data);

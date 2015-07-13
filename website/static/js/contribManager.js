@@ -116,10 +116,9 @@ var ContributorModel = function(contributor, currentUserCanEdit, pageOwner, isRe
             window.contextVars.node.urls.api + 'beforeremovecontributors/',
             payload
         ).done(function(response) {
-            var prompt = $osf.joinPrompts(response.prompts, 'Remove <strong>' + name + '</strong> from contributor list?');
             bootbox.confirm({
-                title: 'Delete Contributor?',
-                message: prompt,
+                title: 'Delete contributor?',
+                message: ('Are you sure you want to remove yourself (<strong>' + name + '</strong>) from contributor list?'),
                 callback: function(result) {
                     if (result) {
                         $osf.postJSON(
