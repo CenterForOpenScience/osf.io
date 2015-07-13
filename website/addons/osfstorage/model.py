@@ -4,6 +4,7 @@ from __future__ import unicode_literals
 import os
 import bson
 import logging
+from datetime import datetime
 
 import furl
 import hurry.filesize
@@ -33,11 +34,32 @@ logger = logging.getLogger(__name__)
 
 class OsfStorageUserSettings(AddonUserSettingsBase):
     # The current storage being used by this user (in osfstorage) in bytes
-    storage_usage = fields.IntegerField(default=0)
+    _storage_usage = fields.IntegerField(default=0)
     # The max amount of storage this user may use
     # Overrides the property storage_limit if defined
     storage_limit_override = fields.IntegerField(default=None)
-    recieved_warning = fields.BooleanField(default=False)
+
+    warning_sent = fields.BooleanField(default=False)
+    warning_last_sent = fields.DateTimeField(default=None)
+
+    @property
+    def storage_usage(self):
+        return self._storage_usage
+
+    @storage_usage.setter
+    def storage_usage(self, val):
+        """Wraps _storage_usage to keep compatablity w/ the Nodes implementation.
+        When _storage_usage goes below the threshold warning_sent will be changed to reflect that.
+
+        Handles Users that keep going above and below their threshold
+            1. User exceeds threshold
+            2. User recieves warning email
+            3. User deletes files; goes below threshold
+            4. User exceeds threshold again (within a week)
+            5. User should NOT recieve an email
+        """
+        self._storage_usage = val
+        self.warning_sent = self.warning_sent and self.at_warning_threshold
 
     @property
     def storage_limit(self):
@@ -47,7 +69,7 @@ class OsfStorageUserSettings(AddonUserSettingsBase):
     def free_space(self):
         """The amount of space the user has left to use. In bytes.
         """
-        return self.storage_limit - self.storage_usage
+        return self.storage_limit - self._storage_usage
 
     @property
     def at_warning_threshold(self):
@@ -58,9 +80,11 @@ class OsfStorageUserSettings(AddonUserSettingsBase):
 
     def send_warning_email(self, force=False, save=True):
         """Send out a warning email to the user saying they only have X space left.
-        Will not send if recieved_warning is True to avoid spamming the user.
+        Will not send if recieved_warning is True or warning_last_sent less than a week ago to avoid spamming the user.
         """
-        if force or not self.recieved_warning:
+        sent_within_week = self.warning_last_sent is not None and datetime.now() - self.warning_last_sent < settings.WARNING_EMAIL_WAITING_PERIOD
+
+        if force or (not self.warning_sent and not sent_within_week):
             mails.send_mail(
                 self.owner,
                 mails.OSFSTORAGE_USAGE_WARNING,
@@ -68,7 +92,8 @@ class OsfStorageUserSettings(AddonUserSettingsBase):
                 used_space=hurry.filesize.size(self.storage_usage, system=hurry.filesize.alternative),
                 total_space=hurry.filesize.size(self.storage_limit, system=hurry.filesize.alternative)
             )
-            self.recieved_warning = True
+            self.warning_sent = True
+            self.warning_last_sent = datetime.now()
             if save:
                 self.save()
 
@@ -79,7 +104,7 @@ class OsfStorageUserSettings(AddonUserSettingsBase):
         """
         self.storage_limit_override = new_limit
         if not self.at_warning_threshold:
-            self.recieved_warning = False
+            self.warning_sent = False
         if save:
             self.save()
 
