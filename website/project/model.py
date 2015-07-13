@@ -3051,7 +3051,7 @@ class DraftRegistration(AddonModelMixin, StoredObject):
 
     is_pending_review = fields.BooleanField(default=False)
 
-    admin_notes = fields.stringField()
+    admin_notes = fields.StringField()
 
     storage = fields.ForeignField('osfstoragenodesettings')
 
@@ -3097,6 +3097,42 @@ class DraftRegistration(AddonModelMixin, StoredObject):
                 }
             })
         return all_comments
+
+    def get_flat_comments(self):
+        """ Returns a flat list of all comments made on a draft
+        """
+        flat_comments = list()
+        for question_id, value in self.registration_metadata.iteritems():
+            if 'comments' in value:
+                for comment in value['comments']:
+                    flat_comments.append(comment)
+        return flat_comments
+
+    def get_new_comments(self):
+        """ Returns a list of all comments admins haven't seen
+        In the same format as get_comments
+        """
+        comments = self.get_comments()
+
+        if comments:
+            for question_id, value in comments.iteritems():
+                for comment in value['comments']:
+                    if comment['adminHasSeen'] is False:
+                       comments.remove(question_id)
+
+        return comments
+
+    def has_new_comments(self):
+        """ Checks is a draft has comments that an admin hasn't seen
+        """
+        comments = self.get_flat_comments()
+
+        if comments:
+            for comment in comments:
+                if comment['adminHasSeen'] is False:
+                    return True
+
+        return False
 
     def register(self, auth):
 
