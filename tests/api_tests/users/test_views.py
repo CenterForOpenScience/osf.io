@@ -160,6 +160,14 @@ class TestUsersFiltering(ApiTestCase):
         assert_in(self.user_one._id, ids)
         assert_not_in(self.user_two._id, ids)
 
+    def test_filter_using_job_title(self):
+        url = "/{}users/?filter[job_title]=Reverend".format(API_BASE)
+        res = self.app.get(url)
+        user_json = res.json['data']
+        ids = [each['id'] for each in user_json]
+        assert_in(self.user_one._id, ids)
+        assert_not_in(self.user_two._id, ids)
+
     def test_filter_using_job_startMonth(self):
         url = "/{}users/?filter[job_startMonth]=1".format(API_BASE)
         res = self.app.get(url)
@@ -208,32 +216,24 @@ class TestUsersFiltering(ApiTestCase):
         assert_in(self.user_one._id, ids)
         assert_not_in(self.user_two._id, ids)
 
-    def test_filter_using_jobs_dot_institution(self):
-        url = "/{}users/?filter[jobs.institution]=Church".format(API_BASE)
-        res = self.app.get(url)
-        user_json = res.json['data']
-        ids = [each['id'] for each in user_json]
-        assert_in(self.user_one._id, ids)
-        assert_not_in(self.user_two._id, ids)
-
-    def test_filter_test_filter_using_employment_institutions_dot_institution(self):
-        url = "/{}users/?filter[employment_institutions.institution]=Church".format(API_BASE)
-        res = self.app.get(url)
-        user_json = res.json['data']
-        ids = [each['id'] for each in user_json]
-        assert_in(self.user_one._id, ids)
-        assert_not_in(self.user_two._id, ids)
-
+    # def test_filter_using_jobs_dot_institution(self):
+    #     url = "/{}users/?filter[jobs.institution]=Church".format(API_BASE)
+    #     res = self.app.get(url)
+    #     user_json = res.json['data']
+    #     ids = [each['id'] for each in user_json]
+    #     assert_in(self.user_one._id, ids)
+    #     assert_not_in(self.user_two._id, ids)
+    #
+    # def test_filter_test_filter_using_employment_institutions_dot_institution(self):
+    #     url = "/{}users/?filter[employment_institutions.institution]=Church".format(API_BASE)
+    #     res = self.app.get(url)
+    #     user_json = res.json['data']
+    #     ids = [each['id'] for each in user_json]
+    #     assert_in(self.user_one._id, ids)
+    #     assert_not_in(self.user_two._id, ids)
+    #
     def test_filter_by_social_field(self):
         url = "/{}users/?filter[github]=userOneGithub".format(API_BASE)
-        res = self.app.get(url)
-        user_json = res.json['data']
-        ids = [each['id'] for each in user_json]
-        assert_in(self.user_one._id, ids)
-        assert_not_in(self.user_two._id, ids)
-
-    def test_filter_using_full_dictionary(self):
-        url = "/{}users/?filter[employment_institutions.institution]=Church".format(API_BASE)
         res = self.app.get(url)
         user_json = res.json['data']
         ids = [each['id'] for each in user_json]
