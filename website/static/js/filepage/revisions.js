@@ -176,7 +176,7 @@ var FileRevisionsTable = {
                         return m('.alert.alert-warning', {style:{margin: '10px'}}, model.errorMessage);
                     }
 
-                    return m('table.table', {style:{'table-layout': 'fixed'}}, [
+                    return m('table.table', [
                         ctrl.getTableHead(),
                         m('tbody', model.revisions.map(ctrl.makeTableRow))
                     ]);

@@ -83,6 +83,10 @@ a {
     position: relative;
 }
 
+.osf-project-navbar .navbar-nav li > a:focus {
+    background-color: inherit;
+}
+
 .anchor {
     margin-top: -60px;
     padding-top: 60px;
@@ -346,7 +350,7 @@ a {
 /* OSF-panel */
 .osf-panel {
     border: 1px solid #ddd;
-    height: 750px;
+    height: 764px;
     overflow: auto;
     display: block;
     position: relative;
@@ -371,3 +375,23 @@ a {
     padding: 0px;
 }
 
+.reset-height {
+    height: auto;
+}
+
+.alert-notify-success {
+    padding: 5px;
+    color: #3C763D;
+}
+.alert-notify-danger {
+    padding: 5px;
+    color: #A94442;
+}
+
+.table-less {
+    max-height: 140px;
+    overflow-y: hidden;
+}
+select {
+    word-wrap: normal;
+}
