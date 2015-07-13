@@ -112,3 +112,7 @@
 #addPointer td {
     vertical-align: middle;
 }
+
+.affix-bottom {
+    position: relative;
+}
