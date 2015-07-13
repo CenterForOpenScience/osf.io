@@ -400,3 +400,8 @@ a {
 select {
     word-wrap: normal;
 }
+
+/* list group node item display*/
+.list-group-item-node.unavailable {
+    background-color: #EEEEEE;
+}
