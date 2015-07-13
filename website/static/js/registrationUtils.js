@@ -48,6 +48,8 @@ function Comment(data) {
     self.lastModified = new Date(data.lastModified)|| new Date();
     self.value = ko.observable(data.value || '');
 
+	self.adminHasSeen = ko.observable(false);
+
     /**
      * Returns 'You' if the current user is the commenter, else the commenter's name
      **/
