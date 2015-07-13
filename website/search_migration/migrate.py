@@ -25,6 +25,7 @@ def migrate_nodes(index):
     nodes = Node.find(Q('is_public', 'eq', True) & Q('is_deleted', 'eq', False))
     for node in nodes:
         search.update_node(node, index=index)
+        search.update_all_files(node, index=index)
         n_iter += 1
 
     logger.info('Nodes migrated: {}'.format(n_iter))

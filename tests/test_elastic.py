@@ -11,7 +11,6 @@ from website import settings
 import website.search.search as search
 from website.search import elastic_search
 from website.search.util import build_query
-from website.search import util
 from website.search_migration.migrate import migrate
 
 from tests.base import OsfTestCase

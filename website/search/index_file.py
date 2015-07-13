@@ -4,12 +4,25 @@ import mimetypes
 from framework.exceptions import HTTPError
 
 
-def is_indexed(filename):
-    INDEXED_TYPES = [
+INDEXED_TYPES = [
         'text/plain',
     ]
+
+def is_indexed(filename):
     mime_type, _ = mimetypes.guess_type(filename)
     return mime_type and mime_type in INDEXED_TYPES
+
+
+def build_file_document(name, path, addon):
+    file_, created = addon.find_or_create_file_guid(path)
+    parent_id = file_.node._id
+    content = get_content_of_file_from_addon(file_, addon)
+    return {
+        'name': name,
+        'path': path,
+        'content': content,
+        'parent_id': parent_id,
+    }
 
 
 def get_content_of_file_from_addon(file_, addon):
@@ -27,13 +40,14 @@ def get_content_of_file_from_addon(file_, addon):
     return content
 
 
-def collect_files_from_addon(addon, tree):
+def collect_files_from_addon(addon, tree=None):
     """ Generate the file dicts for all files in an addon.
 
     :param addon: the addon objct
     :param tree: the addons file tree as a dict.
     :return: generator returning file dicts.
     """
+    tree = tree or addon._get_file_tree()
     children = tree['children']
     for child in children:
         if child.get('children'):
@@ -42,9 +56,7 @@ def collect_files_from_addon(addon, tree):
         else:
             path, name = child['path'], child['name']
             if is_indexed(name):
-                file_, created = addon.find_or_create_file_guid(path)
-                content = get_content_of_file_from_addon(file_, addon)
-                yield {'name': name, 'content': content, 'path': path}
+                yield build_file_document(name, path, addon)
 
 
 def collect_files(node):
@@ -56,8 +68,7 @@ def collect_files(node):
     addons = node.get_addons()
     for addon in addons:
         try:
-            file_tree = addon._get_file_tree()
+            for file_dict in collect_files_from_addon(addon):
+                yield file_dict
         except (AttributeError, HTTPError):
             continue
-        for file_ in collect_files_from_addon(addon, file_tree):
-            yield file_

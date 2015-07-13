@@ -232,7 +232,7 @@ def get_doctype_from_node(node):
 
 
 @requires_search
-def update_node(node, index=None, files=True):
+def update_node(node, index=None):
     index = index or INDEX
     from website.addons.wiki.model import NodeWikiPage
 
@@ -293,8 +293,6 @@ def update_node(node, index=None, files=True):
                 for x in node.wiki_pages_current.values()
             ]:
                 elastic_document['wikis'][wiki.page_name] = wiki.raw_text(node)
-            if files:
-                update_all_files(node, index=index)
         es.index(index=index, doc_type=category, id=elastic_document_id, body=elastic_document, refresh=True)
 
 
@@ -324,11 +322,8 @@ def update_file_with_metadata(metadata, addon, index=None):
     index = index or INDEX
     name = metadata['name']
     path = metadata['path']
-    file_, created = addon.find_or_create_file_guid(path)
-    parent_id = file_.node._id
-    content = index_file.get_content_of_file_from_addon(file_, addon)
-    file_dict = {'name': name, 'path': path, 'content': content}
-    update_file(file_dict, parent_id=parent_id, index=index)
+    file_dict = index_file.build_file_document(name, path, addon)
+    update_file(file_dict, parent_id=file_dict['parent_id'], index=index)
 
 
 @requires_search

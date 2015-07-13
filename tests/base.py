@@ -36,7 +36,6 @@ from website import settings
 from website.addons.wiki.model import NodeWikiPage
 
 import website.models
-from website.search import elastic_search
 from website.signals import ALL_SIGNALS
 from website.app import init_app
 from website.addons.base import AddonConfig
