@@ -183,7 +183,7 @@ class ContributorSerializer(UserSerializer):
 class ContributorDetailSerializer(ContributorSerializer):
 
     id = ser.CharField(source='_id', read_only=True)
-    permission = ser.ChoiceField(choices=['read', 'write', 'admin'])
+    permission = ser.ChoiceField(choices=['read', 'write', 'admin'], allow_blank=True)
     bibliographic = ser.BooleanField(help_text='Whether the user will be included in citations for this node or not')
 
     def update(self, user, validated_data):
@@ -196,27 +196,28 @@ class ContributorDetailSerializer(ContributorSerializer):
         if is_admin_current or (not bibliographic and is_current):
             node.set_visible(user, bibliographic, save=True)
         else:
-            raise PermissionDenied('User {} is cannot change the bibliographic status for user {}.'
-                                   .format(current_user)
-                                   .format(user))
-        self.change_permissions(permission_field, user, node, is_admin_current)
+            raise PermissionDenied()
+        if permission_field != '':
+            self.change_permissions(permission_field, user, node, is_admin_current)
         user.permission = node.get_permissions(user)[-1]
         user.bibliographic = node.get_visible(user)
         return user
 
     def change_permissions(self, field, user, node, is_admin):
-        if field == 'admin' and is_admin:
-            node.set_permissions(user, ['read','write','admin'])
-        elif field == 'write' and is_admin:
-            node.set_permissions(user, ['read','write'])
-        elif field == 'write' and node.has_permission(user, 'admin'):
-            node.set_permissions(user, ['read','write'])
-        elif field == 'read' and is_admin:
-            node.set_permissions(user, ['read'])
+        if is_admin:
+            if self.context['view'].has_multiple_admins(node):
+                if field == 'admin':
+                    node.set_permissions(user, ['read','write','admin'])
+                elif field == 'write':
+                    node.set_permissions(user, ['read','write'])
+                elif field == 'read':
+                    node.set_permissions(user, ['read'])
+            else:
+                raise ValidationError('Must have at least one admin contributor')
         elif field == 'read' and node.has_permission(user, 'write'):
             node.set_permissions(user, ['read'])
         else:
-            raise PermissionDenied('Permission {} could not be changed due to user permission limitations.'.format(field))
+            raise PermissionDenied()
         node.save()
 
     links = LinksField({
