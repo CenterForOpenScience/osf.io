@@ -21,7 +21,7 @@ var ViewModel = function(selector, settings) {
 
     self.url = settings.url;
     self.selector = selector;
-    self.settings = settings;
+    self.settings = $.extend({}, defaultSettings, settings);
 
     self.nodeHasAuth = ko.observable(false);
     self.userHasAuth = ko.observable(false);
@@ -435,12 +435,9 @@ ViewModel.prototype.changeMessage = function(text, css, timeout) {
 };
 
 var S3Config = function(selector, settings) {
-    var self = this;
-    self.settings = $.extend({}, defaultSettings, settings);
-
-    this.viewModel = new ViewModel(selector, self.settings);
+    var viewModel = new ViewModel(selector, settings);
     $osf.applyBindings(this.viewModel, selector);
-    this.viewModel.updateFromData();
+    viewModel.updateFromData();
 };
 
 module.exports = {

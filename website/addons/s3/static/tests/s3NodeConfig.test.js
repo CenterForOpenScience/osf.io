@@ -62,12 +62,41 @@ var APITestCases = function(test, cases) {
 
 var s3ViewModelSettings = {
     url: '/api/v1/12345/s3/settings/',
-    encryptUploads: true,
-    defaultBucketLocationValue: '',
-    defaultBucketLocationMessage: 'US Standard'
+    encryptUploads: false,
+    defaultBucketLocationValue: 'testValue',
+    defaultBucketLocationMessage: 'Test Message'
 };
 
 describe('s3NodeConfigViewModel', () => {
+    describe('ViewModel', () => {
+        it('imports default settings if not given during instantiation', (done) => {
+            // Default settings defined in s3NodeConfig.js
+            var defaultSettings = {
+                url: '',
+                encryptUploads: true,
+                defaultBucketLocationValue: '',
+                defaultBucketLocationMessage: 'US Standard'
+            };
+            var vm = new s3NodeConfigVM('', {});
+            vm.updateFromData().always(function() {
+                assert.equal(vm.settings.url, defaultSettings.url);
+                assert.equal(vm.settings.encryptUploads, defaultSettings.encryptUploads);
+                assert.equal(vm.settings.defaultBucketLocationValue, defaultSettings.defaultBucketLocationValue);
+                assert.equal(vm.settings.defaultBucketLocationMessage, defaultSettings.defaultBucketLocationMessage);
+                done();
+            });
+        });
+        it('uses settings provided during instantiation', (done) => {
+           var vm = new s3NodeConfigVM('', s3ViewModelSettings);
+            vm.updateFromData().always(function() {
+                assert.equal(vm.settings.url, s3ViewModelSettings.url);
+                assert.equal(vm.settings.encryptUploads, s3ViewModelSettings.encryptUploads);
+                assert.equal(vm.settings.defaultBucketLocationValue, s3ViewModelSettings.defaultBucketLocationValue);
+                assert.equal(vm.settings.defaultBucketLocationMessage, s3ViewModelSettings.defaultBucketLocationMessage);
+                done();
+            });
+        });
+    });
     describe('#fetchFromServer', () => {
         new APITestCases(
             function(tc) {
