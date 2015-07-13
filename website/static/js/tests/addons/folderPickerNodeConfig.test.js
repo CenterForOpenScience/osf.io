@@ -363,7 +363,8 @@ describe('FolderPickerNodeConfigViewModel', () => {
 
             it('can be called if folder picker is not initialized', () => {
                 vm.folderpicker = null;
-                assert.ok(vm.destroyPicker());
+                // No errors when destoryPicker is called
+                vm.destroyPicker();
             });
         });
 
