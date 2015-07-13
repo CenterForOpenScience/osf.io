@@ -355,6 +355,7 @@ ViewModel.prototype.sendAuth = function() {
     ).done(function() {
         self.clearModal();
         $modal.modal('hide');
+        self.userHasAuth(true);
         self.importAuth();
     }).fail(function(xhr, textStatus, error) {
         var errorMessage = (xhr.status === 401) ? self.messages.authInvalid : self.messages.authError;
