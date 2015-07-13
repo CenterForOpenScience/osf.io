@@ -3073,6 +3073,8 @@ class DraftRegistration(AddonModelMixin, StoredObject):
     registration_metadata = fields.DictionaryField({})
     registration_schema = fields.ForeignField('metaschema')
 
+    admin_notes = fields.stringField()
+
     storage = fields.ForeignField('osfstoragenodesettings')
 
     # proxy fields from branched_from Node
