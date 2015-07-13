@@ -2177,6 +2177,7 @@ Fangorn.Utils = {
     uploadRowTemplate : uploadRowTemplate,
     resolveIconView: resolveIconView,
     orderFolder: orderFolder
+
 };
 
 Fangorn.DefaultOptions = tbOptions;
