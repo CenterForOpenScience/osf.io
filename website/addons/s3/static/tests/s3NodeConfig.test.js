@@ -60,6 +60,13 @@ var APITestCases = function(test, cases) {
     }
 };
 
+var s3ViewModelSettings = {
+    url: '/api/v1/12345/s3/settings/',
+    encryptUploads: true,
+    defaultBucketLocationValue: '',
+    defaultBucketLocationMessage: 'US Standard'
+};
+
 describe('s3NodeConfigViewModel', () => {
     describe('#fetchFromServer', () => {
         new APITestCases(
@@ -69,7 +76,7 @@ describe('s3NodeConfigViewModel', () => {
                     before(tc.before);
                     after(tc.after);
                     it('fetches data from the server and updates its state', (done) => {
-                        var vm = new s3NodeConfigVM('/api/v1/12345/s3/settings/', '', '/12345');
+                        var vm = new s3NodeConfigVM('', s3ViewModelSettings);
                         vm.updateFromData()
                             .always(function() {
                                 // VM is updated with data from the fake server
@@ -84,7 +91,7 @@ describe('s3NodeConfigViewModel', () => {
                     });
                     describe('... and after updating computed values work as expected', () => {
                         it('shows settings if Node has auth and credentials are valid', (done) => {
-                            var vm = new s3NodeConfigVM('/api/v1/12345/s3/settings/', '', '/12345');
+                            var vm = new s3NodeConfigVM('', s3ViewModelSettings);
                             vm.updateFromData()
                                 .always(function() {
                                     assert.equal(vm.showSettings(), expected.showSettings);
@@ -92,7 +99,7 @@ describe('s3NodeConfigViewModel', () => {
                                 });
                         });
                         it('disables settings in User dosen\'t have auth and is not auth owner', (done) => {
-                            var vm = new s3NodeConfigVM('/api/v1/12345/s3/settings/', '', '/12345');
+                            var vm = new s3NodeConfigVM('', s3ViewModelSettings);
                             vm.updateFromData()
                                 .always(function() {
                                     assert.equal(vm.disableSettings(), expected.disableSettings);
@@ -100,7 +107,7 @@ describe('s3NodeConfigViewModel', () => {
                                 });
                         });
                         it('shows the new bucket button if User has auth and is auth owner', (done) => {
-                            var vm = new s3NodeConfigVM('/api/v1/12345/s3/settings/', '', '/12345');
+                            var vm = new s3NodeConfigVM('', s3ViewModelSettings);
                             vm.updateFromData()
                                 .always(function() {
                                     assert.equal(vm.showNewBucket(), expected.showNewBucket);
@@ -108,7 +115,7 @@ describe('s3NodeConfigViewModel', () => {
                                 });
                         });
                         it('shows the import auth link if User has auth and Node is unauthorized', (done) => {
-                            var vm = new s3NodeConfigVM('/api/v1/12345/s3/settings/', '', '/12345');
+                            var vm = new s3NodeConfigVM('', s3ViewModelSettings);
                             vm.updateFromData()
                                 .always(function() {
                                     assert.equal(vm.showImport(), expected.showImportAuth);
@@ -116,7 +123,7 @@ describe('s3NodeConfigViewModel', () => {
                                 });
                         });
                         it('shows the create credentials link if User is unauthorized and Node is unauthorized ', (done) => {
-                            var vm = new s3NodeConfigVM('/api/v1/12345/s3/settings/', '', '/12345');
+                            var vm = new s3NodeConfigVM('', s3ViewModelSettings);
                             vm.updateFromData()
                                 .always(function() {
                                     assert.equal(vm.showCreateCredentials(), expected.showCreateCredentials);
@@ -124,7 +131,7 @@ describe('s3NodeConfigViewModel', () => {
                                 });
                         });
                         it('lets User see change bucket UI if they are auth owner and Node has auth', (done) => {
-                            var vm = new s3NodeConfigVM('/api/v1/12345/s3/settings/', '', '/12345');
+                            var vm = new s3NodeConfigVM('', s3ViewModelSettings);
                             vm.updateFromData()
                                 .always(function() {
                                     assert.equal(vm.canChange(), expected.canChange);
@@ -132,7 +139,7 @@ describe('s3NodeConfigViewModel', () => {
                                 });
                         });
                         it('allows User to change buckets if there are buckets to be seleted and buckets are not currently being loaded ', (done) => {
-                            var vm = new s3NodeConfigVM('/api/v1/12345/s3/settings/', '', '/12345');
+                            var vm = new s3NodeConfigVM('', s3ViewModelSettings);
                             vm.updateFromData()
                                 .always(function() {
                                     assert.equal(vm.allowSelectBucket(), expected.allowSelectBucket);
@@ -237,7 +244,7 @@ describe('s3NodeConfigViewModel', () => {
             server.restore();
         });
         it('shows the bucket selector when disabled and if buckets aren\'t loaded fetches the list of buckets', (done) => {
-            var vm = new s3NodeConfigVM('/api/v1/12345/s3/settings/', '', '/12345');
+            var vm = new s3NodeConfigVM('', s3ViewModelSettings);
             vm.updateFromData()
                 .always(function() {
                     vm.showSelect(false);
@@ -273,7 +280,7 @@ describe('s3NodeConfigViewModel', () => {
             server.restore();
         });
         it('submits the selected bucket to the server, and updates data on success', (done) => {
-            var vm = new s3NodeConfigVM('/api/v1/12345/s3/settings/', '', '/12345');
+            var vm = new s3NodeConfigVM('', s3ViewModelSettings);
             vm.updateFromData()
                 .always(function() {
                     vm.selectedBucket(bucket);
@@ -334,7 +341,7 @@ describe('s3NodeConfigViewModel', () => {
         describe('#_deauthorizeNodeConfirm', () => {
             it('makes a DELETE request to the server and updates settings on success', (done) => {
                 var expected = endpoints[1].response;
-                var vm = new s3NodeConfigVM('/api/v1/12345/s3/settings/', '', '/12345');
+                var vm = new s3NodeConfigVM('', s3ViewModelSettings);
                 vm.updateFromData()
                     .always(function() {
                         var promise = vm._deauthorizeNodeConfirm();
@@ -355,7 +362,7 @@ describe('s3NodeConfigViewModel', () => {
             });
             it('makes a POST request to import auth and updates settings on success', (done) => {
                 var expected = endpoints[2].response;
-                var vm = new s3NodeConfigVM('/api/v1/12345/s3/settings/', '', '/12345');
+                var vm = new s3NodeConfigVM('', s3ViewModelSettings);
                 vm.updateFromData()
                     .always(function() {
                         var promise = vm._importAuthConfirm();
@@ -382,7 +389,7 @@ describe('s3NodeConfigViewModel', () => {
             });
             var expected = endpoints[0].response;
             it('makes a POST request to create auth and updates settings on success', (done) => {
-                var vm = new s3NodeConfigVM('/api/v1/12345/s3/settings/', '', '/12345');
+                var vm = new s3NodeConfigVM('', s3ViewModelSettings);
                 vm.updateFromData()
                     .always(function() {
                         var promise = vm.createCredentials();
@@ -426,7 +433,7 @@ describe('s3NodeConfigViewModel', () => {
         });
 
         it('sends a POST to create bucket and on success updates the bucket list', (done) => {
-            var vm = new s3NodeConfigVM('/api/v1/12345/s3/settings/', '', '/12345');
+            var vm = new s3NodeConfigVM('', s3ViewModelSettings);
             vm.updateFromData()
                 .always(function() {
                     vm.createBucket(name)

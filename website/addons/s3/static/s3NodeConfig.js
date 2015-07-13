@@ -9,11 +9,19 @@ var $osf = require('js/osfHelpers');
 
 ko.punches.enableAll();
 
-var ViewModel = function(url, selector) {
+var defaultSettings = {
+    url: '',
+    encryptUploads: true,
+    defaultBucketLocationValue: '',
+    defaultBucketLocationMessage: 'US Standard'
+};
+
+var ViewModel = function(selector, settings) {
     var self = this;
 
-    self.url = url;
+    self.url = settings.url;
     self.selector = selector;
+    self.settings = settings;
 
     self.nodeHasAuth = ko.observable(false);
     self.userHasAuth = ko.observable(false);
@@ -27,7 +35,7 @@ var ViewModel = function(url, selector) {
     self.loadedBucketList = ko.observable(false);
     self.currentBucket = ko.observable('');
     self.selectedBucket = ko.observable('');
-    self.encryptUploads = ko.observable(window.contextVars.s3Settings.defaultEncryptUploads);
+    self.encryptUploads = ko.observable(settings.defaultEncryptUploads);
 
     self.accessKey = ko.observable('');
     self.secretKey = ko.observable('');
@@ -262,8 +270,8 @@ ViewModel.prototype.openCreateBucket = function() {
                                 '<label class="col-md-4 control-label" for="bucketLocation">Bucket Location</label> ' +
                                 '<div class="col-md-4"> ' +
                                     '<select id="bucketLocation" name="bucketLocation" class="form-control"> ' +
-                                        '<option value="' + window.contextVars.s3Settings.defaultBucketLocationValue + '' +
-                                            '" selected>' + window.contextVars.s3Settings.defaultBucketLocationMessage + '</option> ' +
+                                        '<option value="' + self.settings.defaultBucketLocationValue + '' +
+                                            '" selected>' + self.settings.defaultBucketLocationMessage + '</option> ' +
                                         '<option value="EU">Europe Standard</option> ' +
                                         '<option value="us-west-1">California</option> ' +
                                         '<option value="us-west-2">Oregon</option> ' +
@@ -426,10 +434,13 @@ ViewModel.prototype.changeMessage = function(text, css, timeout) {
     }
 };
 
-var S3Config = function(selector, url) {
-    var viewModel = new ViewModel(url, selector);
-    $osf.applyBindings(viewModel, selector);
-    viewModel.updateFromData();
+var S3Config = function(selector, settings) {
+    var self = this;
+    self.settings = $.extend({}, defaultSettings, settings);
+
+    this.viewModel = new ViewModel(selector, self.settings);
+    $osf.applyBindings(this.viewModel, selector);
+    this.viewModel.updateFromData();
 };
 
 module.exports = {
