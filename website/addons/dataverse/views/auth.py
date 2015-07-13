@@ -20,10 +20,10 @@ def dataverse_add_user_auth(auth, node, **kwargs):
 
 
 @decorators.must_have_permission('write')
+@decorators.must_have_addon('dataverse', 'node')
 @decorators.must_not_be_registration
-def dataverse_remove_user_auth(auth, node, **kwargs):
+def dataverse_remove_user_auth(auth, node_addon, **kwargs):
     """Remove Dataverse authorization and settings from node"""
-    node_addon = node.get_addon('dataverse', 'node')
     provider = DataverseProvider()
     return provider.remove_user_auth(node_addon, auth.user)
 

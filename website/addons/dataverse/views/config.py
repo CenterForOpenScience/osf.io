@@ -90,10 +90,10 @@ def dataverse_get_config(node, **kwargs):
 
 @decorators.must_have_permission('write')
 @decorators.must_have_addon('dataverse', 'user')
-def dataverse_get_datasets(auth, node, **kwargs):
+@decorators.must_have_addon('dataverse', 'node')
+def dataverse_get_datasets(node_addon, **kwargs):
     """Get list of datasets from provided Dataverse alias"""
     alias = request.json.get('alias')
-    node_addon = node.get_addon('dataverse', 'node')
 
     connection = client.connect_from_settings(node_addon)
     dataverse = client.get_dataverse(connection, alias)
