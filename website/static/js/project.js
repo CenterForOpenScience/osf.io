@@ -131,7 +131,7 @@ $(function() {
 
         if ($.trim($('#title').val()) === '') {
 
-            $('#newComponent .modal-alert').text('The new component title cannot be empty.');
+            $('#newComponent .modal-alert').text('Title cannot be empty.');
 
             $('#add-component-submit')
                 .removeAttr('disabled', 'disabled')
