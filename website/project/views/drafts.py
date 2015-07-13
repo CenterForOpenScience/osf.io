@@ -92,7 +92,6 @@ def create_draft_registration(auth, node, *args, **kwargs):
         branched_from=node,
         registration_schema=meta_schema,
         registration_metadata=schema_data,
-        schema_name = schema_name
     )
     draft.save()
     return serialize_draft_registration(draft, auth), http.CREATED

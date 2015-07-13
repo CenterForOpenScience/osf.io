@@ -3051,8 +3051,6 @@ class DraftRegistration(AddonModelMixin, StoredObject):
 
     is_pending_review = fields.BooleanField(default=False)
 
-    schema_name = fields.StringField()
-
     storage = fields.ForeignField('osfstoragenodesettings')
 
     # proxy fields from branched_from Node
@@ -3061,7 +3059,6 @@ class DraftRegistration(AddonModelMixin, StoredObject):
             return self.__dict__[attr]
         except KeyError:
             return getattr(self.branched_from, attr, None)
-
 
     def find_question(self, qid):
         for page in self.registration_schema.schema['pages']:
