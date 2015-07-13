@@ -937,6 +937,8 @@ class TestEditNodeContributor(ApiTestCase):
         self.project = ProjectFactory(is_public=True, creator=self.admin)
         self.project.add_contributor(contributor=self.user, save=True)
         self.url_contributor = '/{}nodes/{}/contributors/{}/'.format(API_BASE, self.project._id, self.user._id)
+        self.url_admin = '/{}nodes/{}/contributors/{}/'.format(API_BASE, self.project._id, self.admin._id)
+
 
         self.default_data = {
             'bibliographic': True,
@@ -1009,21 +1011,29 @@ class TestEditNodeContributor(ApiTestCase):
         assert_false(self.project.has_permission(self.user, 'admin'))
 
     def test_admin_change_own_permissions(self):
-        url_admin = '/{}nodes/{}/contributors/{}/'.format(API_BASE, self.project._id, self.admin._id)
-        res = self.app.put(url_admin, {'permission': 'write'}, auth=self.admin_auth, expect_errors=False)
+        res = self.app.put(self.url_admin, {'permission': 'write'}, auth=self.admin_auth, expect_errors=False)
         assert_equal(res.status_code, 200)
         assert_false(self.project.has_permission(self.admin, 'admin'))
-        res = self.app.put(url_admin, {'permission': 'read'}, auth=self.admin_auth, expect_errors=False)
+        res = self.app.put(self.url_admin, {'permission': 'read'}, auth=self.admin_auth, expect_errors=False)
         assert_equal(res.status_code, 200)
         assert_false(self.project.has_permission(self.admin, 'write'))
-        res = self.app.put(url_admin, {'permission': 'admin'}, auth=self.admin_auth, expect_errors=True)
+        res = self.app.put(self.url_admin, {'permission': 'admin'}, auth=self.admin_auth, expect_errors=True)
         assert_equal(res.status_code, 403)
         assert_false(self.project.has_permission(self.admin, 'write'))
 
     def test_admin_remove_all_admin_privileges(self):
         self.project.remove_contributor(self.user, Auth(self.admin))
-        url_admin = '/{}nodes/{}/contributors/{}/'.format(API_BASE, self.project._id, self.admin._id)
-        res = self.app.put(url_admin, {'permission': 'write'}, auth=self.admin_auth, expect_errors=True)
+        res = self.app.put(self.url_admin, {'permission': 'write'}, auth=self.admin_auth, expect_errors=True)
+        assert_equal(res.status_code, 400)
+        assert_true(self.project.has_permission(self.admin, 'admin'))
+
+    def test_admin_remove_all_bibliographic_privileges(self):
+        self.project.remove_contributor(self.user, Auth(self.admin))
+        data = {
+            'permission': '',
+            'bibliographic': False
+        }
+        res = self.app.put(self.url_admin, data, auth=self.admin_auth, expect_errors=True)
         assert_equal(res.status_code, 400)
         assert_true(self.project.has_permission(self.admin, 'admin'))
 

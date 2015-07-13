@@ -189,27 +189,35 @@ class ContributorDetailSerializer(ContributorSerializer):
     def update(self, user, validated_data):
         node = self.context['view'].get_node()
         current_user = self.context['request'].user
-        bibliographic = (validated_data['bibliographic'] == "True")
+        bibliographic = validated_data['bibliographic'] == "True"
         permission_field = validated_data['permission']
         is_admin_current = node.has_permission(current_user, 'admin')
         is_current = user is current_user
-        if is_admin_current or (not bibliographic and is_current):
-            node.set_visible(user, bibliographic, save=True)
-        else:
-            raise PermissionDenied()
+        self.change_visibility(bibliographic, user, node, is_admin_current, is_current)
         if permission_field != '':
             self.change_permissions(permission_field, user, node, is_admin_current)
         user.permission = node.get_permissions(user)[-1]
         user.bibliographic = node.get_visible(user)
         return user
 
+    def change_visibility(self, bibliographic, user, node, is_admin_current, is_current):
+        if is_admin_current and bibliographic:
+            node.set_visible(user, True, save=True)
+        elif not bibliographic:
+            if len(node.visible_contributors) == 1:
+                raise ValidationError('Must have at least one visible contributor')
+            elif is_admin_current or is_current:
+                node.set_visible(user, False, save=True)
+        else:
+            raise PermissionDenied()
+
     def change_permissions(self, field, user, node, is_admin):
         if is_admin:
             if self.context['view'].has_multiple_admins(node):
                 if field == 'admin':
-                    node.set_permissions(user, ['read','write','admin'])
+                    node.set_permissions(user, ['read', 'write', 'admin'])
                 elif field == 'write':
-                    node.set_permissions(user, ['read','write'])
+                    node.set_permissions(user, ['read', 'write'])
                 elif field == 'read':
                     node.set_permissions(user, ['read'])
             else:
