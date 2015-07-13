@@ -395,3 +395,7 @@ a {
 select {
     word-wrap: normal;
 }
+
+tr a {
+    word-break: break-all;
+}
