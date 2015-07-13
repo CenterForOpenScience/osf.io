@@ -469,36 +469,37 @@ RegistrationEditor.prototype.submit = function() {
 
 	bootbox.confirm(function(){
 		ko.renderTemplate("preSubmission", {}, {}, this, "replaceNode")
-	}, function() {
-		//debugger;
-		$osf.postJSON(self.urls.submit.replace('{draft_pk}', self.draft().pk), {
-			node: currentNode,
-			auth: currentUser
-		}).then(
-			bootbox.dialog({
-				message: function() {
-					ko.renderTemplate("postSubmission", {}, {}, this, "replaceNode");
-				},
-				title: "Pre-Registration Prize Submission",
-				buttons: {
-					dashboard: {
-						label: "Go to your OSF Dashboard",
-						className: "btn-primary pull-right",
-						callback: function() {
-							window.location.href = '/';
-						}
+	}, function(result) {
+		if(result) {
+			$osf.postJSON(self.urls.submit.replace('{draft_pk}', self.draft().pk), {
+				node: currentNode,
+				auth: currentUser
+			}).then(
+				bootbox.dialog({
+					message: function() {
+						ko.renderTemplate("postSubmission", {}, {}, this, "replaceNode");
 					},
-					info: {
-						label: "Go to Prereg Prize info page",
-						className: "btn-primary pull-left",
-						callback: function() {
-							window.location.href = 'http://centerforopenscience.org/prereg/';
+					title: "Pre-Registration Prize Submission",
+					buttons: {
+						dashboard: {
+							label: "Go to your OSF Dashboard",
+							className: "btn-primary pull-right",
+							callback: function() {
+								window.location.href = '/';
+							}
+						},
+						info: {
+							label: "Go to Prereg Prize info page",
+							className: "btn-primary pull-left",
+							callback: function() {
+								window.location.href = 'http://centerforopenscience.org/prereg/';
 
+							}
 						}
 					}
-				}
-			})
-		);
+				})
+			);
+		}
 	});
 };
 RegistrationEditor.prototype.save = function() {
