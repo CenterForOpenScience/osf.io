@@ -1063,7 +1063,7 @@ def make_url_map(app):
             '/drafts/<uid>/',
         ], 'get', project_views.drafts.get_all_draft_registrations, json_renderer),
         Rule([
-            '/project/<pid>/draft/submit/<uid>/',
+            '/project/<pid>/draft/submit/<did>/',
         ], 'post', project_views.drafts.submit_for_review, json_renderer),
         Rule([
             '/project/<pid>/draft/',
