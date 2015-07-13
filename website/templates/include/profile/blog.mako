@@ -25,6 +25,11 @@
                 <input class="form-control" data-bind="value: description" placeholder="My Blog Description"/>
             </div>
 
+            <div class="form-group">
+                <label>Blog Cover Photo</label>
+
+            </div>
+
             <div class="padded">
 
                 <button

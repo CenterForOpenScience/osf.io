@@ -483,7 +483,12 @@ def make_url_map(app):
         Rule('/project/<pid>/blog/', 'get', blog_views.blog_view_pid,
             OsfWebRenderer('blog.mako')),
         Rule('/project/<pid>/blog/post/<path:bid>/', 'get', blog_views.post_view_pid,
+             OsfWebRenderer('post.mako')),
+        Rule('/profile/<uid>/blog/new/', 'get', blog_views.new_post,
+             OsfWebRenderer('add_blog_post.mako')),
+        Rule('/profile/<uid>/blog/new/save/', 'post', blog_views.save_post,
              OsfWebRenderer('post.mako'))
+
     ])
 
     ### Profile ###
