@@ -130,10 +130,10 @@ class NodeSerializer(JSONAPISerializer):
 
 class ContributorSerializer(UserSerializer):
 
-    admin = ser.BooleanField(read_only=True, help_text='Whether the user will be able to add and remove contributors')
+    permissions = ser.ListField(read_only=True)
     bibliographic = ser.BooleanField(read_only=True, help_text='Whether the user will be included in citations for '
                                                                'this node or not')
-    local_filterable = frozenset(['admin', 'bibliographic'])
+    local_filterable = frozenset(['permission', 'bibliographic'])
     filterable_fields = frozenset.union(UserSerializer.filterable_fields, local_filterable)
 
     id = ser.CharField(source='_id')
@@ -183,7 +183,7 @@ class ContributorSerializer(UserSerializer):
 class ContributorDetailSerializer(ContributorSerializer):
 
     id = ser.CharField(source='_id', read_only=True)
-    permission = ser.ChoiceField(choices=['read', 'write', 'admin'], allow_blank=True)
+    permission = ser.ChoiceField(choices=['read', 'write', 'admin'], allow_blank=True, write_only=True)
     bibliographic = ser.BooleanField(help_text='Whether the user will be included in citations for this node or not')
 
     def update(self, user, validated_data):
@@ -193,7 +193,8 @@ class ContributorDetailSerializer(ContributorSerializer):
         permission_field = validated_data['permission']
         is_admin_current = node.has_permission(current_user, 'admin')
         is_current = user is current_user
-        self.change_visibility(bibliographic, user, node, is_admin_current, is_current)
+        if node.get_visible(user) != bibliographic:
+            self.change_visibility(bibliographic, user, node, is_admin_current, is_current)
         if permission_field != '':
             self.change_permissions(permission_field, user, node, is_admin_current)
         user.permission = node.get_permissions(user)[-1]

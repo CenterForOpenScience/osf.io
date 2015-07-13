@@ -134,7 +134,7 @@ class NodeContributorsList(generics.ListCreateAPIView, ListFilterMixin, NodeMixi
         for contributor in node.contributors:
             contributor.bibliographic = contributor._id in node.visible_contributor_ids
             contributor.node_id = node._id
-            contributor.admin = node.has_permission(contributor, 'admin')
+            contributor.permissions = node.get_permissions(contributor)
             contributors.append(contributor)
         return contributors
 
@@ -167,7 +167,7 @@ class NodeContributorDetail(generics.RetrieveUpdateDestroyAPIView, NodeMixin):
         self.check_object_permissions(self.request, user)
         if user not in node.contributors:
             raise NotFound('{} cannot be found in the list of contributors.'.format(user))
-        user.permission = node.get_permissions(user)[-1]
+        user.permissions = node.get_permissions(user)
         user.bibliographic = node.get_visible(user)
         return user
 
