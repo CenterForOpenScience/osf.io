@@ -2091,6 +2091,9 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         if contributor._id in self.visible_contributor_ids:
             self.visible_contributor_ids.remove(contributor._id)
 
+        if not self.visible_contributor_ids:
+            return False
+
         # Node must have at least one registered admin user
         # TODO: Move to validator or helper
         admins = [
