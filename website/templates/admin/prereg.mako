@@ -7,20 +7,20 @@
         <H1 class="col-md-12">Pre-Registration Prize Admin View - Overview</H1>
     </div>
     <div class="row">
-        <div class="col-md-2"><h5>Submission Title</h5></div>
-        <div class="col-md-1"><h5>Name</h5></div>
-        <div class="col-md-2"><h5>Email</h5></div>
-        <div class="col-md-1"><h5>Begun</h5></div>
-        <div class="col-md-1"><h5>Submitted</h5></div>
-        <div class="col-md-1"><h5>Comments sent?</h5></div>
-        <div class="col-md-1"><h5>Approved?</h5></div>
-        <div class="col-md-1"><h5>Registered?</h5></div>
-        <div class="col-md-1"><h5>Proof of pub?</h5></div>
-        <div class="col-md-1"><h5>Payment sent?</h5></div>
+        <div class="col-md-2 row-title"><a id="title">Submission Title</a></div>
+        <div class="col-md-1 row-title"><a id="initiator.fullname">Name</a></div>
+        <div class="col-md-2 row-title"><a id="initiator.username">Email</a></div>
+        <div class="col-md-1 row-title"><a id="initiated">Begun</a></div>
+        <div class="col-md-1 row-title"><a id="updated">Submitted</a></div>
+        <div class="col-md-1 row-title"><a id="comments_sent">Comments sent?</a></div>
+        <div class="col-md-1 row-title"><a id="approved">Approved?</a></div>
+        <div class="col-md-1 row-title"><a id="registered">Registered?</a></div>
+        <div class="col-md-1 row-title"><a id="proof_of_pub">Proof of pub?</a></div>
+        <div class="col-md-1 row-title"><a id="payment_sent">Payment sent?</a></div>
     </div>
     <div id="overview">
-        <div class="row" id="prereg-row">
-            <span data-bind: "foreach: drafts">
+        <div class="row scripted" id="prereg-row">
+            <span data-bind="foreach: drafts">
             	<%include file="admin/prereg-rows.mako" />
             </span>
         </div>

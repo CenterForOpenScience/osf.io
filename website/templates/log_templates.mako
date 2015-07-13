@@ -30,7 +30,7 @@ Embargo for
 </script>
 
 <script type="text/html" id="embargo_initiated">
-initiated embargo of
+initiated an embargoed registration of
 <a class="log-node-title-link overflow" data-bind="text: nodeTitle, attr: {href: nodeUrl}"></a>
 </script>
 

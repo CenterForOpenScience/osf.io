@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 import os
 import re
-import uuid
 import urllib
 import logging
 import datetime
@@ -257,25 +256,6 @@ class Comment(GuidStoredObject):
             self.save()
 
 
-class ApiKey(StoredObject):
-
-    # The key is also its primary key
-    _id = fields.StringField(
-        primary=True,
-        default=lambda: str(ObjectId()) + str(uuid.uuid4())
-    )
-    # A display name
-    label = fields.StringField()
-
-    @property
-    def user(self):
-        return self.user__keyed[0] if self.user__keyed else None
-
-    @property
-    def node(self):
-        return self.node__keyed[0] if self.node__keyed else None
-
-
 @unique_on(['params.node', '_id'])
 class NodeLog(StoredObject):
 
@@ -289,7 +269,6 @@ class NodeLog(StoredObject):
     was_connected_to = fields.ForeignField('node', list=True)
 
     user = fields.ForeignField('user', backref='created')
-    api_key = fields.ForeignField('apikey', backref='created')
     foreign_user = fields.StringField()
 
     DATE_FORMAT = '%m/%d/%Y %H:%M UTC'
@@ -648,8 +627,6 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
 
     # The node (if any) used as a template for this node's creation
     template_node = fields.ForeignField('node', backref='template_node', index=True)
-
-    api_keys = fields.ForeignField('apikey', list=True, backref='keyed')
 
     piwik_site_id = fields.StringField()
 
@@ -1705,7 +1682,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
 
         return forked
 
-    def register_node(self, schema, auth, template, data, parent=None):
+    def register_node(self, schema, auth, data, parent=None):
         """Make a frozen copy of a node.
 
         :param schema: Schema object
@@ -1722,9 +1699,6 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
             )
         if self.is_folder:
             raise NodeStateError("Folders may not be registered")
-
-        template = urllib.unquote_plus(template)
-        template = to_mongo(template)
 
         when = datetime.datetime.utcnow()
 
@@ -1770,7 +1744,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         for node_contained in original.nodes:
             if not node_contained.is_deleted:
                 child_registration = node_contained.register_node(
-                    schema, auth, template, data, parent=registered
+                    schema, auth, data, parent=registered
                 )
                 if child_registration and not child_registration.primary:
                     registered.nodes.append(child_registration)
@@ -1820,13 +1794,11 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
 
     def add_log(self, action, params, auth, foreign_user=None, log_date=None, save=True):
         user = auth.user if auth else None
-        api_key = auth.api_key if auth else None
         params['node'] = params.get('node') or params.get('project')
         log = NodeLog(
             action=action,
             user=user,
             foreign_user=foreign_user,
-            api_key=api_key,
             params=params,
         )
         if log_date:
@@ -3072,10 +3044,27 @@ class DraftRegistration(AddonModelMixin, StoredObject):
 
     registration_metadata = fields.DictionaryField({})
     registration_schema = fields.ForeignField('metaschema')
+    registered_node = fields.ForeignField('node')
+
+    fulfills = fields.StringField(list=True)
+    approved = fields.BooleanField(default=False)
+
+    is_pending_review = fields.BooleanField(default=False)
 
     admin_notes = fields.stringField()
 
     storage = fields.ForeignField('osfstoragenodesettings')
+
+    def __init__(self, *args, **kwargs):
+        super(DraftRegistration, self).__init__(*args, **kwargs)
+
+        meta_schema = kwargs.get('registration_schema')
+        if meta_schema:
+            self.fulfills(meta_schema.schema.get('fulfills'))
+            if not kwargs['approved']:
+                if not meta_schema.schema.get('requires_approval', False):
+                    self.approved(True)
+        self.save()
 
     # proxy fields from branched_from Node
     def __getattr__(self, attr):
@@ -3083,3 +3072,39 @@ class DraftRegistration(AddonModelMixin, StoredObject):
             return self.__dict__[attr]
         except KeyError:
             return getattr(self.branched_from, attr, None)
+
+    def find_question(self, qid):
+        for page in self.registration_schema.schema['pages']:
+            for question_id, question in page['questions'].iteritems():
+                if question_id == qid and 'description' in question:
+                    return question['description']
+
+    def get_comments(self):
+        """ Returns a list of all comments made on a draft in the format of :
+        [{
+          [QUESTION_ID]: {
+            'question': [QUESTION],
+            'comments': [LIST_OF_COMMENTS]
+            }
+        },]
+        """
+
+        all_comments = list()
+        for question_id, value in self.registration_metadata.iteritems():
+            all_comments.append({
+                question_id: {
+                    'question': self.find_question(question_id),
+                    'comments': value['comments'] if 'comments' in value else ''
+                }
+            })
+        return all_comments
+
+    def register(self, auth):
+
+        node = self.branched_from
+
+        # Create the registration
+        register = node.register_node(
+            self.registration_schema, auth, self.registration_metadata
+        )
+        return register

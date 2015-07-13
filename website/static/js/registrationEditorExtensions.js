@@ -11,7 +11,12 @@ var node = window.contextVars.node;
 
 ko.bindingHandlers.osfUploader = {
     init: function(element, valueAccessor, allBindings, viewModel, bindingContext) {
-        var userClick = false;
+        var filePicker = bindingContext.$root.filePicker;
+        if (filePicker !== undefined) {
+            bindingContext.$root.filePicker.destroy();
+            bindingContext.$root.filePicker = undefined;
+        }
+        
         var fw = new FilesWidget(
             element.id,
             node.urls.api + 'files/grid/',
@@ -24,22 +29,22 @@ ko.bindingHandlers.osfUploader = {
                     self.files = item.data;
 
                     var tb = this;
-                    var fileurl = "";
-                    if (item.data.kind === "file") {
+                    var fileurl = '';
+                    if (item.data.kind === 'file') {
                         var redir = new URI(item.data.nodeUrl);
-                        redir.segment("files").segment(item.data.provider).segmentCoded(item.data.path.substring(1));
+                        redir.segment('files').segment(item.data.provider).segmentCoded(item.data.path.substring(1));
                         fileurl = redir.toString() + '/';
-                        $("#scriptName").html(item.data.name);
+                        $('#scriptName').html(item.data.name);
                         viewModel.setValue(fileurl);
                     } else {
-                        $("#scriptName").html("no file selected");
-                        fileurl = "";
+                        $('#scriptName').html('no file selected');
+                        fileurl = '';
                         viewModel.setValue(null);
                     }
                 },
                 dropzone: {                                           // All dropzone options.
                     url: function(files) {return files[0].url;},
-                    clickable : "#" + element.id,
+                    clickable : '#' + element.id,
                     addRemoveLinks: false,
                     previewTemplate: '<div></div>',
                     parallelUploads: 1,
@@ -49,33 +54,33 @@ ko.bindingHandlers.osfUploader = {
                 resolveRows: function(item) {
                     var tb = this;
                     item.css = '';
-                    userClick 
+                    userClick;
 
                     if (item.data.addonFullname !== undefined) {
-                        if (item.data.addonFullname !== "OSF Storage") {
+                        if (item.data.addonFullname !== 'OSF Storage') {
                             item.open = false;
                             item.load = false;
-                            item.css = "text-muted";
+                            item.css = 'text-muted';
                             item.data.permissions.edit = false;
                             item.data.permissions.view = false;
-                            if (!item.data.name.includes(" (Only OSF Storage supported to ensure accurate versioning.)")) {
-                                item.data.name = item.data.name + " (Only OSF Storage supported to ensure accurate versioning.)";
+                            if (!item.data.name.includes(' (Only OSF Storage supported to ensure accurate versioning.)')) {
+                                item.data.name = item.data.name + ' (Only OSF Storage supported to ensure accurate versioning.)';
                             }
                         } else if (item.depth === 2 && userClick === false && viewModel.value() === null) {
                             tb.multiselected([item]);
                         }
                     }
-                    if (item.data.kind === "file" && item.data.provider !== "osfstorage") {
+                    if (item.data.kind === 'file' && item.data.provider !== 'osfstorage') {
                         item.open = false;
                         item.load = false;
                     }
                     if (viewModel.value() !== null) {
-                        var fullPath = viewModel.value().split("/");
+                        var fullPath = viewModel.value().split('/');
                         var path = fullPath[fullPath.length - 2];
-                        var correctedPath = "/" + path;
-                        if (item.data.kind === "file" && item.data.path === correctedPath) {
+                        var correctedPath = '/' + path;
+                        if (item.data.kind === 'file' && item.data.path === correctedPath) {
                             tb.multiselected([item]);
-                            $("#scriptName").html(item.data.name);
+                            $('#scriptName').html(item.data.name);
                         }
                     }
                     if (tb.isMultiselected(item.id)) {
@@ -100,11 +105,52 @@ ko.bindingHandlers.osfUploader = {
 
                     var configOption = Fangorn.Utils.resolveconfigOption.call(this, item, 'resolveRows', [item]);
                     return configOption || defaultColumns;
+                },
+                lazyLoadOnLoad: function (tree, event) {
+                    var tb = this;
+                    if (tree.data.addonFullname !== undefined) {
+                        if (tree.data.addonFullname !== "OSF Storage") {
+                            tree.open = false;
+                            tree.load = false;
+                            tree.css = "text-muted";
+                            tree.data.permissions.edit = false;
+                            tree.data.permissions.view = false;
+                            if (!tree.data.name.includes(" (Only OSF Storage supported to ensure accurate versioning.)")) {
+                                tree.data.name = tree.data.name + " (Only OSF Storage supported to ensure accurate versioning.)";
+                            }
+                        } else if (tree.depth === 2 && viewModel.value() === null) {
+                            tb.multiselected([tree]);
+                        }
+                    }
+                    tree.children.forEach(function(item) {
+                        if (item.data.kind === "file" && item.data.provider !== "osfstorage") {
+                            item.open = false;
+                            item.load = false;
+                        } else if (viewModel.value() !== null) {
+                            var fullPath = viewModel.value().split("/");
+                            var path = fullPath[fullPath.length - 2];
+                            var correctedPath = "/" + path;
+                            if (item.data.kind === "file" && item.data.path === correctedPath) {
+                                tb.multiselected([item]);
+                                viewModel.selectedFileName(item.data.name);
+                            }
+                        }
+
+                        Fangorn.Utils.inheritFromParent(item, tree);
+                    });
+                    Fangorn.Utils.resolveconfigOption.call(this, tree, 'lazyLoadOnLoad', [tree, event]);
+                    Fangorn.Utils.reapplyTooltips();
+
+                    if (tree.depth > 1) {
+                        Fangorn.Utils.orderFolder.call(this, tree);
+                    }
                 }
-  
+
             }
         );
+        bindingContext.$root.filePicker = fw;
         fw.init();
+        
     },
     update: function(element, valueAccessor, allBindings, viewModel, bindingContext) {
 
@@ -112,8 +158,14 @@ ko.bindingHandlers.osfUploader = {
 };
 
 var Uploader = function(data) {
-    
+
     var self = this;
 
+    self.selectedFileName = ko.observable('no file selected');
+
     $.extend(self, data);
+};
+
+module.exports = {
+    Uploader: Uploader
 };

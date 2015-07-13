@@ -3,6 +3,9 @@ from raven.contrib.django.raven_compat.models import sentry_exception_handler
 
 from framework.transactions import commands, messages, utils
 
+from .api_globals import api_globals
+
+
 # TODO: Verify that a transaction is being created for every
 # individual request.
 class TokuTransactionsMiddleware(object):
@@ -49,4 +52,21 @@ class TokuTransactionsMiddleware(object):
             else:
                 raise err
         commands.disconnect()
+        return response
+
+
+class DjangoGlobalMiddleware(object):
+    """
+    Store request object on a thread-local variable for use in database caching mechanism.
+    """
+    def process_request(self, request):
+        api_globals.request = request
+
+    def process_exception(self, request, exception):
+        sentry_exception_handler(request=request)
+        api_globals.request = None
+        return None
+
+    def process_response(self, request, response):
+        api_globals.request = None
         return response

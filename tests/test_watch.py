@@ -6,10 +6,11 @@ import unittest
 import datetime as dt
 
 from pytz import utc
-from nose.tools import *  # PEP8 asserts
+from nose.tools import *  # flake8: noqa (PEP8 asserts)
 from framework.auth import Auth
+from framework.exceptions import HTTPError
 from tests.base import OsfTestCase
-from tests.factories import (UserFactory, ProjectFactory, ApiKeyFactory,
+from tests.factories import (UserFactory, ProjectFactory,
                              WatchConfigFactory)
 from website.views import paginate
 import math
@@ -21,10 +22,7 @@ class TestWatching(OsfTestCase):
         self.user = UserFactory()
         self.project = ProjectFactory(creator=self.user)
         # add some log objects
-        api_key = ApiKeyFactory()
-        self.user.api_keys.append(api_key)
-        self.user.save()
-        self.consolidate_auth = Auth(user=self.user, api_key=api_key)
+        self.consolidate_auth = Auth(user=self.user)
         # Clear project logs
         self.project.logs = []
         self.project.save()
@@ -109,6 +107,25 @@ class TestWatching(OsfTestCase):
         page_num = math.ceil(total / float(size))
         assert_equal(len(list(paginated_logs)), total)
         assert_equal(page_num, pages)
+
+    def test_paginate_no_negative_page_num(self):
+        self._watch_project(self.project)
+        logs = list(self.user.get_recent_log_ids())
+        size = 10
+        page = -1
+        total = len(logs)
+        with assert_raises(HTTPError):
+            paginate(self.user.get_recent_log_ids(), total, page, size)
+
+    def test_paginate_not_go_beyond_limit(self):
+        self._watch_project(self.project)
+        logs = list(self.user.get_recent_log_ids())
+        size = 10
+        total = len(logs)
+        pages_num = math.ceil(total / float(size))
+        page = pages_num
+        with assert_raises(HTTPError):
+            paginate(self.user.get_recent_log_ids(), total, page, size)
 
 if __name__ == '__main__':
     unittest.main()

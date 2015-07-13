@@ -13,9 +13,15 @@
     font-weight: 900;
     font-size: 120%;
 }
-#selectedScript{
+#selectedFile{
     font-weight: 500;
 }
-#scriptName{
+#fileName{
 	font-weight: 300;
+}
+.row-title{
+	font-weight: 300;
+}
+.schema-fulfillment{
+    margin: 20px;
 }
