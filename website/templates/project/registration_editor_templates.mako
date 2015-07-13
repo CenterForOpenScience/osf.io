@@ -4,8 +4,8 @@
 </script>
 
 <script type="text/html" id="text">
-  <input data-bind="disabled: readonly, 
-                    valueUpdate: 'keyup', 
+  <input data-bind="disabled: readonly,
+                    valueUpdate: 'keyup',
                     event: {'keyup': save},
                     value: value"
          type="text" class="form-control" />
@@ -105,7 +105,7 @@
 <!-- Commnetable -->
 <script type="text/html" id="commentable">
     <h4> Comments </h4>
-    <ul class="list-group" data-bind="foreach: {data: comments, as: 'comment'}">
+    <ul class="list-group" id="commentList" data-bind="foreach: {data: comments, as: 'comment'}">
         <li class="list-group-item">
             <div class="row">
                 <div class="col-md-12">
@@ -120,7 +120,7 @@
                                 <button data-bind="enable: comment.canEdit,
                                    click: comment.saved.bind(null, false)" class="btn btn-info fa fa-pencil"></button>
                                 <button data-bind="enable: comment.canDelete,
-                                                   click: $parent.comments.remove"
+                                                   click: $parent.deleteComment.bind(null, comment)"
                                         class="btn btn-danger fa fa-times"></button>
                             </div>
                         </div>
@@ -143,5 +143,22 @@
       </span>
     </div>
 </script>
+
+<script type="text/html" id="deleted">
+	<% from datetime import datetime %>
+	<li class="list-group-item">
+		<div class="row">
+			<div class="col-md-12">
+				<div class="row">
+					<div class="col-sm-9">
+						<span><em>The author deleted this comment at ${datetime.now().strftime("%Y-%m-%d %H:%M")}<em></span>
+					</div>
+				</div>
+			</div>
+		</div>
+	</li>
+
+</script>
+
 
 <%include file="registration_editor_extensions.mako" />

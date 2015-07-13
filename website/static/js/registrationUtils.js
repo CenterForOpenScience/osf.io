@@ -152,6 +152,14 @@ var Question = function(data, id) {
             return new Comment(comment);
         })
     );
+	self.deleteComment = function(comment) {
+		self.comments.remove(comment);
+		var commentList = document.getElementById('commentList');
+		var div = document.createElement('div');
+		div.style.display = 'none';
+		commentList.appendChild(div);
+		ko.renderTemplate('deleted', {}, {}, div, "replaceNode");
+	};
     self.nextComment = ko.observable('');
     /**
      * @returns {Boolean} true if the nextComment <input> is not blank
@@ -254,7 +262,7 @@ MetaSchema.prototype.flatQuestions = function() {
     var self = this;
 
     var flat = [];
-    
+
     $.each(self.schema.pages, function(i, page) {
         $.each(page.questions, function(qid, question) {
             flat.push(question);
@@ -263,8 +271,8 @@ MetaSchema.prototype.flatQuestions = function() {
     return flat;
 };
 
-/** 
- * @class Draft 
+/**
+ * @class Draft
  * Model for DraftRegistrations
  *
  * @param {Object} params
@@ -409,7 +417,7 @@ RegistrationEditor.prototype.init = function(draft) {
  **/
 RegistrationEditor.prototype.flatQuestions = function() {
     var self = this;
-    
+
     return self.draft().metaSchema.flatQuestions();
 };
 /**
