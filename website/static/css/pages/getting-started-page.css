@@ -60,6 +60,7 @@
     margin-left: auto;
     margin-right: auto;
     border: solid 1px #ddd;
+    z-index: 99;
 }
 
 /* phase number counters */
