@@ -25,15 +25,20 @@ def mendeley_get_user_accounts(auth):
 
 
 @must_have_permission('read')
-@must_have_addon('mendeley', 'node')
-def mendeley_get_config(auth, node_addon, **kwargs):
+def mendeley_get_config(node, **kwargs):
     """ Serialize node addon settings and relevant urls
     (see serialize_settings/serialize_urls)
     """
+    auth = kwargs.get('auth')
     provider = MendeleyCitationsProvider()
+    node_addon = node.get_addon('mendeley', 'node')
+    if not node_addon:
+        node.add_addon('mendeley', auth)
+        node.save()
+
     return {
         'result': provider.serializer(
-            node_addon,
+            node.get_addon('mendeley', 'node'),
             auth.user.get_addon('mendeley')
         ).serialized_node_settings
     }
