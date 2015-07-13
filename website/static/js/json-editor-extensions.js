@@ -68,7 +68,7 @@ JSONEditor.defaults.options.upload = function(type, file, cbs) {
             if (tick < 100) {
                 cbs.updateProgress(tick);
                 window.setTimeout(tickFunction, 50);
-            } else if (tick == 100) {
+            } else if (tick === 100) {
                 cbs.updateProgress();
                 window.setTimeout(tickFunction, 500);
             } else {
@@ -189,7 +189,7 @@ JSONEditor.defaults.editors.myUpload = JSONEditor.defaults.editors.upload.extend
         uploadButton.addEventListener('click', function(event) {
             event.preventDefault();
 
-            uploadButton.setAttribute("disabled", "disabled");
+            uploadButton.setAttribute('disabled', 'disabled');
             self.theme.removeInputError(self.uploader);
 
             if (self.theme.getProgressBar) {
@@ -235,8 +235,8 @@ JSONEditor.defaults.editors.myUpload = JSONEditor.defaults.editors.upload.extend
 
 // add for single select of check boxes
 JSONEditor.defaults.resolvers.unshift(function(schema) {
-    if (schema.type === "array" && schema.items && !(Array.isArray(schema.items)) && schema.uniqueItems && schema.items["enum"] && ['string', 'number', 'integer'].indexOf(schema.items.type) >= 0) {
-        return "singleselect";
+    if (schema.type === 'array' && schema.items && !(Array.isArray(schema.items)) && schema.uniqueItems && schema.items['enum'] && ['string', 'number', 'integer'].indexOf(schema.items.type) >= 0) {
+        return 'singleselect';
     }
 });
 JSONEditor.defaults.editors.singleselect = JSONEditor.defaults.editors.multiselect.extend({
@@ -247,7 +247,7 @@ JSONEditor.defaults.editors.singleselect = JSONEditor.defaults.editors.multisele
         if (!this.options.compact) this.header = this.label = this.theme.getFormInputLabel(this.getTitle());
         if (this.schema.description) this.description = this.theme.getFormInputDescription(this.schema.description);
 
-        if ((!this.schema.format && this.option_keys.length < 8) || this.schema.format === "checkbox") {
+        if ((!this.schema.format && this.option_keys.length < 8) || this.schema.format === 'checkbox') {
             this.input_type = 'checkboxes';
 
             this.inputs = {};
@@ -281,7 +281,7 @@ JSONEditor.defaults.editors.singleselect = JSONEditor.defaults.editors.multisele
         this.container.appendChild(this.control);
 
         var previous;
-        this.control.addEventListener("mouseover", function(e) {
+        this.control.addEventListener('mouseover', function(e) {
             var new_value = [];
             for (i = 0; i < self.option_keys.length; i++) {
                 if (self.select_options[self.option_keys[i]].selected || self.select_options[self.option_keys[i]].checked) {
@@ -302,7 +302,7 @@ JSONEditor.defaults.editors.singleselect = JSONEditor.defaults.editors.multisele
 
                     var str = '"' + self.select_values[self.option_keys[i]] + '"';
                     var blah = self.select_values[self.option_keys[i]];
-                    if (previous.indexOf(blah) != -1) {
+                    if (previous.indexOf(blah) !== -1) {
                         self.select_options[self.option_keys[i]].checked = false;
                     } else {
                         new_value.push(self.select_values[self.option_keys[i]]);
@@ -321,7 +321,7 @@ function osfExtend(editor) {
         build: function() {
             var self = this;
             this._super();
-            
+
             if (this.schema.help) {
                 this.help = this.theme.getFormInputHelp(this.schema.help);
                 $(this.input.previousSibling).after(this.help);
@@ -338,7 +338,7 @@ var editors = Object.keys(JSONEditor.defaults.editors);
 for (var i = 0; i < editors.length; i++) {
     var editor = editors[i];
     JSONEditor.defaults.editors['osf-' + editor] = osfExtend(JSONEditor.defaults.editors[editor]);
-    
+
     /*
     var resolvers = JSONEditor.defaults.resolvers.length;
     for(var j = 0; j < resolvers; j++) {
@@ -350,7 +350,7 @@ for (var i = 0; i < editors.length; i++) {
                 altSchema.type = parts.pop();
                 if (resolver(altSchema)) {
                     return 'osf-' + editor;
-                }                
+                }
             }
         });
     }*/
