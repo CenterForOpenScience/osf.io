@@ -781,7 +781,6 @@ ListViewModel.prototype.submit = function() {
     else {
             self.showMessages(true);
     }
-
 };
 
 var JobViewModel = function() {
