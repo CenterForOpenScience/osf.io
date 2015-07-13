@@ -30,7 +30,7 @@
         
         link: "Hyperlink <a>",
         linkdescription: "enter link description here",
-        linkdialog: "<p><b>Insert Hyperlink</b></p><p>http://example.com/ \"optional title\"</p>",
+        linkdialog: "<h4 class='modal-title'>Insert Hyperlink</h3><p>http://example.com/ \"optional title\"</p>",
         
         quote: "Blockquote <blockquote>",
         quoteexample: "Blockquote",
@@ -40,7 +40,7 @@
         
         image: "Image <img>",
         imagedescription: "enter image description here",
-        imagedialog: "<p><b>Insert Image</b></p><p>http://example.com/images/diagram.jpg \"optional title\"<br><br>Need <a href='http://www.google.com/search?q=free+image+hosting' target='_blank'>free image hosting?</a></p>",
+        imagedialog: "<h4 class='modal-title'>Insert Image</h3><p>http://example.com/images/diagram.jpg \"optional title\"<br><br>Need <a href='http://www.google.com/search?q=free+image+hosting' target='_blank'>free image hosting?</a></p>",
         
         olist: "Numbered List <ol>",
         ulist: "Bulleted List <ul>",
@@ -1285,22 +1285,23 @@
 
             // The input text box
             input = doc.createElement("input");
+            input.className = "form-control";
             input.type = "text";
             input.value = defaultInputText;
             style = input.style;
             style.display = "block";
-            style.width = "80%";
+            style.width = "90%";
             style.marginLeft = style.marginRight = "auto";
             form.appendChild(input);
 
             // The ok button
             var okButton = doc.createElement("input");
             okButton.type = "button";
-            okButton.className = "btn btn-success";
+            okButton.className = "btn btn-success pull-right";
             okButton.onclick = function () { return close(false); };
             okButton.value = "Apply";
             style = okButton.style;
-            style.margin = "10px";
+            style.margin = "20px 3px";
             style.display = "inline";
             style.width = "7em";
 
@@ -1308,11 +1309,11 @@
             // The cancel button
             var cancelButton = doc.createElement("input");
             cancelButton.type = "button";
-            cancelButton.className = "btn btn-default";
+            cancelButton.className = "btn btn-default pull-right";
             cancelButton.onclick = function () { return close(true); };
             cancelButton.value = "Cancel";
             style = cancelButton.style;
-            style.margin = "10px";
+            style.margin = "20px 3px";
             style.display = "inline";
             style.width = "7em";
 
