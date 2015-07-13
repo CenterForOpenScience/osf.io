@@ -6,7 +6,7 @@
     <div class="row">
         <H1 class="col-md-12">Pre-Registration Prize Admin View - Overview</H1>
     </div>
-    <div class="row">
+    <div class="row row-title">
         <div class="col-md-1 row-title"><a id="registration_metadata.q1.value" data-bind="click: setSort">Submission Title</a></div>
         <div class="col-md-1 row-title"><a id="initiator.fullname" data-bind="click: setSort">Name</a></div>
         <div class="col-md-1 row-title"><a id="initiator.username" data-bind="click: setSort">Email</a></div>

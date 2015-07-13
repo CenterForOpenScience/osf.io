@@ -1,4 +1,4 @@
-<div class="row" data-bind="attr: {id: $index}">
+<div class="row" data-bind="attr: {id: $index}, event: {mouseover: highlightRow}">
     <div data-bind="text: $data.registration_metadata.q1.value" class="col-md-1" id="submission_title"></div>
     <div data-bind="text: $data.initiator.fullname" class="col-md-1" id="name"></div>
     <div data-bind="text: $data.initiator.username" class="col-md-1" id="email"></div>

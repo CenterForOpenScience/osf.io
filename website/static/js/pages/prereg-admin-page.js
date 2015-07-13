@@ -17,12 +17,15 @@ var adminView = function(data) {
             return a == b ? 0 : 
                 (a < b ? -1 : 1); 
         });
-        //return sortedDrafts(self.data, self.sortBy());
     }, this);
     self.sortBy = ko.observable('registration_metadata.q1.value');
 
     self.setSort = function(data, event) {
         self.sortBy(event.target.id);
+    };
+
+    self.highlightRow = function(data, event) {
+        $(event.target.id).css("background-color", "yellow");
     };
 };
 
