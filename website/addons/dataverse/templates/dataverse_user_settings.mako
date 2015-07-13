@@ -8,7 +8,7 @@
     <h4 class="addon-title">{{ properName }}</h4>
 
     <!-- ko foreach: accounts -->
-    <table class="table">
+    <table class="table table-hover">
         <thead>
             <tr>
                 <th>Authorized on <a data-bind="attr.href: dataverseUrl"><em>{{ dataverseHost }}</em></a></th>

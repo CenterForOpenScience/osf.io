@@ -70,10 +70,10 @@ function subscribe(item, notification_type) {
         '/api/v1/subscriptions/',
         payload
     ).done(function(){
-        item.notify.update('Settings updated', 'notify-success', 1, 2000);
+        item.notify.update('Settings updated', 'success', 1, 2000);
         item.data.event.notificationType = notification_type;
     }).fail(function() {
-        item.notify.update('Could not update settings', 'notify-danger', 1, 2000);
+        item.notify.update('Could not update settings', 'danger', 1, 2000);
     });
 }
 
