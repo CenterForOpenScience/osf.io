@@ -20,12 +20,15 @@ from website.addons.box.client import get_node_client
 from website.addons.box.client import get_client_from_user_settings
 
 
-@must_have_addon('box', 'node')
 @must_have_permission(permissions.WRITE)
-def box_config_get(node_addon, auth, **kwargs):
+def box_config_get(auth, node, **kwargs):
     """API that returns the serialized node settings."""
+    node_addon = node.get_addon('box', 'node')
+    if not node_addon:
+        node.add_addon('box', auth)
+        node.save()
     return {
-        'result': serialize_settings(node_addon, auth.user),
+        'result': serialize_settings(node.get_addon('box', 'node'), auth.user),
     }
 
 
