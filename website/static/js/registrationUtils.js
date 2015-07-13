@@ -601,8 +601,7 @@ var RegistrationManager = function(node, draftsSelector, editorSelector, control
 };
 RegistrationManager.prototype.init = function() {
     var self = this;
-    console.log(self);
-    console.log(self.draftsSelector);
+    
     $osf.applyBindings(self, self.draftsSelector);
 
     var getSchemas = self.getSchemas();
