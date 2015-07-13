@@ -191,21 +191,33 @@ class ContributorDetailSerializer(ContributorSerializer):
         current_user = self.context['request'].user
         bibliographic = (validated_data['bibliographic'] == "True")
         permission_field = validated_data['permission']
-        user_permissions = node.get_permissions(user)
-        current_user_permissions = node.get_permissions(current_user)
         is_admin_current = node.has_permission(current_user, 'admin')
         is_current = user is current_user
-        # if is_admin_current or (not bibliographic and is_current):
-        #     node.set_visible(user, bibliographic, save=True)
-        # else:
-        #     raise PermissionDenied('User {} is cannot change the bibliographic status for user {}.'
-        #                            .format(current_user)
-        #                            .format(user))
-        # if permission_field and not node.has_permission(user, 'admin') and is_admin_current:
-        #     node.add_permission(user, 'admin')
-        # elif not permission_field and node.has_permission(user, 'admin'):
-        #     node.remove_permission(user, 'admin')
+        if is_admin_current or (not bibliographic and is_current):
+            node.set_visible(user, bibliographic, save=True)
+        else:
+            raise PermissionDenied('User {} is cannot change the bibliographic status for user {}.'
+                                   .format(current_user)
+                                   .format(user))
+        self.change_permissions(permission_field, user, node, is_admin_current)
+        user.permission = node.get_permissions(user)[-1]
+        user.bibliographic = node.get_visible(user)
         return user
+
+    def change_permissions(self, field, user, node, is_admin):
+        if field == 'admin' and is_admin:
+            node.set_permissions(user, ['read','write','admin'])
+        elif field == 'write' and is_admin:
+            node.set_permissions(user, ['read','write'])
+        elif field == 'write' and node.has_permission(user, 'admin'):
+            node.set_permissions(user, ['read','write'])
+        elif field == 'read' and is_admin:
+            node.set_permissions(user, ['read'])
+        elif field == 'read' and node.has_permission(user, 'write'):
+            node.set_permissions(user, ['read'])
+        else:
+            raise PermissionDenied('Permission {} could not be changed due to user permission limitations.'.format(field))
+        node.save()
 
     links = LinksField({
         'html': 'absolute_url',

@@ -53,8 +53,15 @@ class ContributorPermissions(permissions.BasePermission):
         elif request.method == 'DELETE':
             return is_admin or is_current_user
         elif request.method == 'PUT':
-            is_visible = node.get_visible(user)
-            return is_admin or (is_current_user and is_visible)
+            return self.put_permission_check(node, user, is_admin, is_current_user)
+        else:
+            return False
+
+    def put_permission_check(self, node, user, is_admin, is_current):
+        if is_admin:
+            return True
+        elif len(node.get_permissions(user)) > 1 and is_current:
+            return True
         else:
             return False
 
