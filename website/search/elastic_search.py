@@ -432,7 +432,7 @@ def create_index(index=None):
     all of which are applied to all projects, components, and registrations.
     '''
     index = index or INDEX
-    document_types = ['project', 'component', 'registration', 'user']
+    document_types = ['project', 'component', 'registration', 'user', 'file']
     project_like_types = ['project', 'component', 'registration']
     analyzed_fields = ['title', 'description']
 
@@ -464,22 +464,10 @@ def create_index(index=None):
                 },
             }
             mapping['properties'].update(fields)
+
+        if type_ == 'file':
+            mapping.update({'_parent': {'type': 'project'}})
         es.indices.put_mapping(index=index, doc_type=type_, body=mapping, ignore=[400, 404])
-    create_file_mapping(index)
-
-
-@requires_search
-def create_file_mapping(index=None):
-    index = index or INDEX
-    mapping = {
-        '_parent': {
-            'type': 'project',
-        },
-        'properties': {
-            'tags': NOT_ANALYZED_PROPERTY,
-        }
-    }
-    es.indices.put_mapping(index=index, doc_type='file', body=mapping, ignore=[400, 404])
 
 
 @requires_search
