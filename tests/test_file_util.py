@@ -72,6 +72,11 @@ class TestCollectFiles(OsfTestCase, IndexFileTestCase):
         super(TestCollectFiles, self).setUp()
         self.fake_project_with_addon = factories.ProjectWithAddonFactory()
 
+    def test_collect_no_filed(self):
+        for file_ in collect_files(self.fake_project_with_addon):
+            assert_true(False)
+        assert_true(True)
+
     def test_collect_single_file(self):
         self._add_file('file_one.txt', '/file_one')
         for file_ in collect_files(self.fake_project_with_addon):
@@ -86,6 +91,22 @@ class TestCollectFiles(OsfTestCase, IndexFileTestCase):
                 assert_equal(file_['name'], 'file_one.txt')
                 assert_equal(file_['content'], FILE_CONTENTS)
             if i == 1:
+                assert_equal(file_['name'], 'file_two.txt')
+                assert_equal(file_['content'], FILE_CONTENTS)
+
+    def test_collect_nested_files(self):
+        self._add_file('file_one.txt', '/file_one')
+        self._add_file('file_two.txt', '/file_two')
+        self.FILE_TREE['children'].append({
+            'name': 'sub_tree',
+            'children': self.FILE_TREE['children'][:]
+        })
+        self.FILE_TREE['children']
+        for i, file_ in enumerate(collect_files(self.fake_project_with_addon)):
+            if i % 2 == 0:
+                assert_equal(file_['name'], 'file_one.txt')
+                assert_equal(file_['content'], FILE_CONTENTS)
+            if i % 2 == 1:
                 assert_equal(file_['name'], 'file_two.txt')
                 assert_equal(file_['content'], FILE_CONTENTS)
 

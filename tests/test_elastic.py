@@ -31,6 +31,7 @@ class SearchTestCase(OsfTestCase):
         super(SearchTestCase, self).tearDown()
         search.delete_index(elastic_search.INDEX)
         search.create_index(elastic_search.INDEX)
+
     def setUp(self):
         super(SearchTestCase, self).setUp()
         elastic_search.INDEX = TEST_INDEX
@@ -147,7 +148,6 @@ class TestUserUpdate(SearchTestCase):
 
         docs = query_user(institution)['results']
         assert_equal(len(docs), 1)
-
 
     def test_name_fields(self):
         names = ['Bill Nye', 'William', 'the science guy', 'Sanford', 'the Great']
@@ -476,7 +476,6 @@ class TestAddContributor(SearchTestCase):
         contribs = search.search_contributor(unreg.fullname)
         assert_equal(len(contribs['users']), 0)
 
-
     def test_unreg_users_do_show_on_projects(self):
         unreg = UnregUserFactory(fullname='Robert Paulson')
         self.project = ProjectFactory(
@@ -486,7 +485,6 @@ class TestAddContributor(SearchTestCase):
         )
         results = query(unreg.fullname)['results']
         assert_equal(len(results), 1)
-
 
     def test_search_fullname(self):
         # Searching for full name yields exactly one result.
@@ -539,6 +537,7 @@ class TestAddContributor(SearchTestCase):
 
         contribs = search.search_contributor(self.name4.split(' ')[0][:-1])
         assert_equal(len(contribs['users']), 0)
+
 
 @requires_search
 class TestProjectSearchResults(SearchTestCase):
@@ -749,9 +748,9 @@ class TestSearchMigration(SearchTestCase):
             assert not var.get(settings.ELASTIC_INDEX + '_v{}'.format(n))
 
 
-class TestFiles(SearchTestCase):
+class TestSearchFiles(SearchTestCase):
     def setUp(self):
-        super(TestFiles, self).setUp()
+        super(TestSearchFiles, self).setUp()
 
         self.project = ProjectFactory(title='The Spanish Inquisition')
         self.project.set_privacy('public')
@@ -768,13 +767,12 @@ class TestFiles(SearchTestCase):
 
         time.sleep(1)  # Allow elasticsearch to update
 
-    def test_can_find_project_with_file_that_matches(self):
-        self.project_with_no_files.set_privacy('public')
+    def test_can_find_project_with_file_that_matches_content(self):
         res = query('earl gray', doc_type='project')['results']
         assert_equal(len(res), 1)
 
-    def test_files_not_in_search_results(self):
-        res = query('earl gray')['results']
+    def test_can_find_project_with_file_that_matches_name(self):
+        res = query('unique_file.txt', doc_type='project')['results']
         assert_equal(len(res), 1)
 
     def test_can_find_files_with_non_ascii_characters(self):
@@ -788,7 +786,7 @@ class TestFiles(SearchTestCase):
         non_ascii_content_file = {
             'name': 'non_ascii_content_file.txt',
             'path': '/00003',
-            'content': 'Fun Fact! The emoji for earth is \xF0\x9F\x8C\x8F.'
+            'content': u'Fun Fact! The emoji for earth is \xF0\x9F\x8C\x8F.'
         }
         search.update_file(non_ascii_content_file, self.project._id, index=elastic_search.INDEX)
         time.sleep(1)
