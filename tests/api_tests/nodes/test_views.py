@@ -1068,6 +1068,28 @@ class TestEditNodeContributor(ApiTestCase):
         assert_equal(res.status_code, 403)
         assert_false(self.project.get_visible(self.user))
 
+    def test_create_one_admin_one_different_bibliographic_user(self):
+        data_one = {
+            'bibliographic': False,
+            'permission':'admin'
+        }
+        res = self.app.put(self.url_contributor, data_one, auth=self.user_auth, expect_errors=False)
+        assert_equal(res.status_code, 200)
+        assert_false(self.project.get_visible(self.user))
+        data_two = {
+            'bibliographic': True,
+            'permission':'write'
+        }
+        res = self.app.put(self.url_admin, data_two, auth=self.user_auth, expect_errors=False)
+        assert_equal(res.status_code, 200)
+        assert_false(self.project.has_permission(self.admin, 'admin'))
+        res = self.app.put(self.url_admin, data_one, auth=self.user_auth, expect_errors=True)
+        assert_equal(res.status_code, 400)
+        assert_true(self.project.get_visible(self.admin))
+        res = self.app.put(self.url_contributor, data_two, auth=self.user_auth, expect_errors=True)
+        assert_equal(res.status_code, 400)
+        assert_true(self.project.has_permission(self.user, 'admin'))
+
     def test_not_logged_in_change_contributor_status(self):
         res = self.app.put(self.url_contributor, self.default_data, expect_errors=True)
         assert_equal(res.status_code, 403)
