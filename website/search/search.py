@@ -24,10 +24,37 @@ def search(query, index=None, doc_type=None):
     index = index or settings.ELASTIC_INDEX
     return search_engine.search(query, index=index, doc_type=doc_type)
 
+
 @requires_search
 def update_node(node, index=None):
     index = index or settings.ELASTIC_INDEX
     search_engine.update_node(node, index=index)
+
+
+@requires_search
+def update_file(file_, index=None):
+    index = index or settings.ELASTIC_INDEX
+    parent_id = file_.node._id
+    search_engine.update_file(file_, parent_id, index=index)
+
+
+@requires_search
+def update_all_files(node, index=None):
+    index = index or settings.ELASTIC_INDEX
+    search_engine.update_all_files(node, index=index)
+
+
+@requires_search
+def update_file_with_metadata(metadata, addon, index=None):
+    index = index or settings.ELASTIC_INDEX
+    search_engine.update_file_with_metadata(metadata, addon, index=index)
+
+
+@requires_search
+def delete_file(file_path, index=None):
+    index = index or settings.ELASTIC_INDEX
+    search_engine.delete_file(file_path, index=index)
+
 
 @requires_search
 def delete_node(node, index=None):
@@ -36,6 +63,7 @@ def delete_node(node, index=None):
     if node.is_registration:
         doc_type = 'registration'
     search_engine.delete_doc(node._id, node, index=index, category=doc_type)
+
 
 def update_contributors(nodes):
     search_engine.bulk_update_contributors(nodes)
@@ -51,9 +79,11 @@ def update_user(user, index=None):
 def delete_all():
     search_engine.delete_all()
 
+
 @requires_search
 def delete_index(index):
     search_engine.delete_index(index)
+
 
 @requires_search
 def create_index(index=None):
@@ -68,15 +98,19 @@ def search_contributor(query, page=0, size=10, exclude=None, current_user=None):
                                               exclude=exclude, current_user=current_user)
     return result
 
+
 def search_share(query, raw=False, index='share'):
     return share_search.search(query, raw=raw, index=index)
+
 
 def count_share(query, index='share'):
     return share_search.count(query, index=index)
 
+
 def share_stats(query=None):
     query = query or {}
     return share_search.stats(query=query)
+
 
 def share_providers():
     return share_search.providers()

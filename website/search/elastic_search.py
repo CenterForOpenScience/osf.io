@@ -312,20 +312,23 @@ def update_file(file_, parent_id, index=None):
         es.index(index=index, doc_type='file', parent=parent_id, id=file_['path'], body=file_document, refresh=True)
 
 
+@requires_search
 def update_all_files(node, index=None):
     index = index or INDEX
     for file_dict in index_file.collect_files(node):
         update_file(file_dict, node._id, index=index)
 
 
-def update_file_with_metadata(metadata, addon):
+@requires_search
+def update_file_with_metadata(metadata, addon, index=None):
+    index = index or INDEX
     name = metadata['name']
     path = metadata['path']
     file_, created = addon.find_or_create_file_guid(path)
     parent_id = file_.node._id
     content = index_file.get_content_of_file_from_addon(file_, addon)
     file_dict = {'name': name, 'path': path, 'content': content}
-    update_file(file_dict, parent_id=parent_id)
+    update_file(file_dict, parent_id=parent_id, index=index)
 
 
 @requires_search
