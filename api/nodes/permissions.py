@@ -40,16 +40,14 @@ class AdminOrPublic(permissions.BasePermission):
 class ContributorPermissions(permissions.BasePermission):
     '''
         Permissions for contributor detail page.
-
-        Returns true if node is viewable and requests are safe methods method is not delete or
-        exists other admin contributor
     '''
     def has_object_permission(self, request, view, obj):
         assert isinstance(obj, (Node, User)), 'obj must be a Node or User, got {}'.format(obj)
         auth = get_user_auth(request)
         node = Node.load(request.parser_context['kwargs']['node_id'])
         is_admin = node.has_permission(auth.user, 'admin')
-        is_current_user = obj._id == auth.user._id
+        user = User.load(request.parser_context['kwargs']['user_id'])
+        is_current_user = auth.user == user
         if request.method in permissions.SAFE_METHODS:
             return node.is_public or node.can_view(auth)
         elif request.method == 'DELETE':

@@ -841,7 +841,7 @@ class TestRemoveNodeContributor(ApiTestCase):
         self.user = UserFactory.build()
         self.user.set_password(self.password)
         self.user.save()
-        self.user_auth = (self.user.username, self.user.password)
+        self.user_auth = (self.user.username, self.password)
 
         self.project = ProjectFactory(is_public=True, creator=self.admin)
         self.project.add_contributor(contributor=self.user)
@@ -858,7 +858,7 @@ class TestRemoveNodeContributor(ApiTestCase):
         self.project.remove_permission(self.user, 'admin')
         res = self.app.delete(self.url_contributor, auth=self.user_auth, expect_errors=False)
         assert_equal(res.status_code, 204)
-        assert_not_in(self.admin, self.project.contributors)
+        assert_not_in(self.user, self.project.contributors)
 
     def test_admin_remove_self(self):
         res = self.app.delete(self.url_admin, auth=self.admin_auth, expect_errors=False)
@@ -869,21 +869,10 @@ class TestRemoveNodeContributor(ApiTestCase):
         res = self.app.delete(self.url_contributor, auth=self.admin_auth, expect_errors=False)
         assert_equal(res.status_code, 204)
         res = self.app.delete(self.url_admin, auth=self.admin_auth, expect_errors=True)
-        assert_equal(res.status_code, 400)
+        assert_equal(res.status_code, 403)
         assert_in(self.admin, self.project.contributors)
 
-    def test_admin_remove_contributor_twice_with_two_contributors(self):
-        res = self.app.delete(self.url_contributor, auth=self.admin_auth, expect_errors=False)
-        assert_equal(res.status_code, 204)
-        assert_not_in(self.user, self.project.contributors)
-        res = self.app.delete(self.url_contributor, auth=self.admin_auth, expect_errors=True)
-        assert_equal(res.status_code, 404)
-
-    def test_admin_remove_contributor_twice_with_more_than_two_contributors(self):
-        user_two = UserFactory.build()
-        user_two.set_password(self.password)
-        user_two.save()
-        self.project.add_contributor(user_two)
+    def test_admin_remove_contributor_twice(self):
         res = self.app.delete(self.url_contributor, auth=self.admin_auth, expect_errors=False)
         assert_equal(res.status_code, 204)
         assert_not_in(self.user, self.project.contributors)
@@ -896,11 +885,11 @@ class TestRemoveNodeContributor(ApiTestCase):
         assert_equal(res.status_code, 204)
         assert_not_in(self.user, self.project.contributors)
 
-    def test_unique_admin_with_other_contributor_remove_self(self):
+    def test_unique_admin_remove_self(self):
         self.project.remove_permission(self.user, 'admin')
         res = self.app.delete(self.url_admin, auth=self.admin_auth, expect_errors=True)
         assert_equal(res.status_code, 403)
-        assert_not_in(self.admin, self.project.contributors)
+        assert_in(self.admin, self.project.contributors)
 
     def test_admin_remove_non_contributor(self):
         self.non_admin = UserFactory.build()
@@ -913,9 +902,10 @@ class TestRemoveNodeContributor(ApiTestCase):
     def test_non_creator_admin_remove_contributor(self):
         res = self.app.delete(self.url_admin, auth=self.user_auth, expect_errors=True)
         assert_equal(res.status_code, 204)
-        assert_in(self.admin, self.project.contributors)
+        assert_not_in(self.admin, self.project.contributors)
 
     def test_non_admin_remove_contributor(self):
+        self.project.remove_permission(self.user, 'admin')
         res = self.app.delete(self.url_admin, auth=self.user_auth, expect_errors=True)
         assert_equal(res.status_code, 403)
         assert_in(self.admin, self.project.contributors)
