@@ -22,7 +22,6 @@ def zotero_list_accounts_user(auth):
 
 
 @must_have_permission('write')
-# @must_have_addon('zotero', 'node')
 def zotero_get_config(node, **kwargs):
     """Serialize node addon settings and relevant urls
     (see serialize_settings/serialize_urls)
