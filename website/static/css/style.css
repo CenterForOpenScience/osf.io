@@ -389,8 +389,13 @@ a {
 }
 
 .table-less {
+    max-height: 140px;
     overflow-y: hidden;
 }
 select {
     word-wrap: normal;
+}
+
+tr a {
+    word-break: break-all;
 }
