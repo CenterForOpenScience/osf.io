@@ -395,3 +395,16 @@ a {
 select {
     word-wrap: normal;
 }
+
+tr a {
+    word-break: break-all;
+}
+
+.btn-link.project-toggle {
+    padding-top: 0;
+    padding-bottom:0;
+}
+
+.btn-link.project-toggle:focus {
+    outline: none;
+}
