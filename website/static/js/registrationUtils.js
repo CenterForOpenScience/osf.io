@@ -9,7 +9,7 @@ var URI = require('URIjs');
 var $osf = require('js/osfHelpers');
 var oop = require('js/oop');
 
-require('js/registrationEditorExtensions');
+var editorExtensions = require('js/registrationEditorExtensions');
 
 var formattedDate = function(dateString) {
     if (!dateString) {
@@ -146,6 +146,7 @@ var Question = function(data, id) {
     self.match = data.match || '';
 
     self.showExample = ko.observable(false);
+    self.showUploader = ko.observable(false);
 
     self.comments = ko.observableArray(
         $.map(data.comments || [], function(comment) {
@@ -207,6 +208,13 @@ Question.prototype.addComment = function() {
  **/
 Question.prototype.toggleExample = function(){
     this.showExample(!this.showExample());
+};
+
+/**
+ * Shows/hides the Question uploader
+ **/
+Question.prototype.toggleUploader = function(){
+    this.showUploader(!this.showUploader());
 };
 
 /**
@@ -339,9 +347,9 @@ var RegistrationEditor = function(urls, editorId) {
     self.draft = ko.observable();
 
     self.currentQuestion = ko.observable();
-    self.currentQuestion.subscribe(function() {
-        ko.cleanNode(document.getElementById(editorId));
-    });
+
+    self.filePicker = undefined;
+
     self.currentPages = ko.computed(function() {
         var draft = self.draft();
         if(!draft){
@@ -361,10 +369,12 @@ var RegistrationEditor = function(urls, editorId) {
         return self.draft().updated;
     });
     self.formattedDate = formattedDate;
-
+    
     self.iterObject = $osf.iterObject;
 
-    self.extensions = {};
+    self.extensions = {
+        'osf-upload': editorExtensions.Uploader
+    };
 };
 /**
  * Load draft data into the editor
@@ -642,7 +652,7 @@ var RegistrationManager = function(node, draftsSelector, editorSelector, control
 };
 RegistrationManager.prototype.init = function() {
     var self = this;
-
+    
     $osf.applyBindings(self, self.draftsSelector);
 
     var getSchemas = self.getSchemas();
