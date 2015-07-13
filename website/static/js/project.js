@@ -86,8 +86,7 @@ NodeActions.beforeTemplate = function(url, done) {
         bootbox.confirm(
             $osf.joinPrompts(response.prompts,
                 ('<h4>Are you sure you want to create a new project using this project as a template?</h4>' +
-                '<p class="text-info"><div class="fangorn-toolbar-icon"><i class="fa fa-info"></i></div> ' +
-                'Any add-ons configured for this project will not be authenticated in the new project.</p>')),
+                '<p>Any add-ons configured for this project will not be authenticated in the new project.</p>')),
                 //('Are you sure you want to create a new project using this project as a template? ' +
                 //  'Any add-ons configured for this project will not be authenticated in the new project.')),
             function (result) {

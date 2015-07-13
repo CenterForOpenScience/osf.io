@@ -272,6 +272,11 @@ a {
     font-weight: normal;
 }
 
+/* sub-header for modal*/
+.modal-subheader {
+    font-size: 20px;
+}
+
 .log-node-title-link {
     font-weight: 700;
 }
@@ -407,4 +412,9 @@ tr a {
 
 .btn-link.project-toggle:focus {
     outline: none;
+}
+
+/* list group node item display*/
+.list-group-item-node.unavailable {
+    background-color: #EEEEEE;
 }
