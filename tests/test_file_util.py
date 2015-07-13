@@ -5,7 +5,7 @@ import mock
 from nose.tools import *  # flake8: noqa (PEP8 asserts)
 
 from tests.base import OsfTestCase
-from website.search.index_file import collect_files
+from website.search.file_util import collect_files
 
 
 FILE_CONTENTS = 'The contents of a file.'
@@ -54,7 +54,7 @@ class IndexFileTestCase(unittest.TestCase):
                                           self.get_fake_file_tree)
         self.download_url_patch = mock.patch('website.addons.base.GuidFile.download_url',
                                              self.fake_download_url)
-        self.request_patch = mock.patch('website.search.index_file.requests.get',
+        self.request_patch = mock.patch('website.search.file_util.requests.get',
                                         self.make_fake_request_get)
 
         self.file_tree_patch.start()

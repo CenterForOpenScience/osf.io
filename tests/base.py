@@ -197,7 +197,7 @@ class MockUpdateNodeCase(unittest.TestCase):
     """
     def setUp(self):
         super(MockUpdateNodeCase, self).setUp()
-        self.search_patch = mock.patch('website.search.index_file.collect_files',
+        self.search_patch = mock.patch('website.search.file_util.collect_files',
                                        side_effect=return_empty_list)
         self.search_patch.start()
 

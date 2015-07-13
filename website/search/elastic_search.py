@@ -26,7 +26,7 @@ from website.models import User, Node
 from website.search import exceptions
 from website.search.util import build_query
 from website.util import sanitize
-from website.search import index_file
+from website.search import file_util
 from website.views import validate_page_num
 
 logger = logging.getLogger(__name__)
@@ -298,7 +298,7 @@ def update_node(node, index=None):
 
 @requires_search
 def update_file(file_, parent_id, index=None):
-    if index_file.is_indexed(file_['name']):
+    if file_util.is_indexed(file_['name']):
         index = index or INDEX
         file_document = {
             'id': file_['path'],
@@ -313,7 +313,7 @@ def update_file(file_, parent_id, index=None):
 @requires_search
 def update_all_files(node, index=None):
     index = index or INDEX
-    for file_dict in index_file.collect_files(node):
+    for file_dict in file_util.collect_files(node):
         update_file(file_dict, node._id, index=index)
 
 
@@ -322,7 +322,7 @@ def update_file_with_metadata(metadata, addon, index=None):
     index = index or INDEX
     name = metadata['name']
     path = metadata['path']
-    file_dict = index_file.build_file_document(name, path, addon)
+    file_dict = file_util.build_file_document(name, path, addon)
     update_file(file_dict, parent_id=file_dict['parent_id'], index=index)
 
 
@@ -336,7 +336,7 @@ def delete_file(file_path, index=None):
 @requires_search
 def delete_all_files(node, index=None):
     index = index or INDEX
-    for file_dict in index_file.collect_files(node):
+    for file_dict in file_util.collect_files(node):
         file_path = file_dict['path']
         delete_file(file_path, index)
 
