@@ -107,4 +107,8 @@
   margin: 5px 0 0;
   width: auto;
   white-space: normal;
-  }
+}
+
+#addPointer td {
+    vertical-align: middle;
+}
