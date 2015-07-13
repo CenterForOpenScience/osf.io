@@ -660,7 +660,7 @@ RegistrationManager.prototype.launchEditor = function(draft) {
 
     var newDraft;
     if (self.regEditor) {
-        self.regEditor.destroy();
+        //self.regEditor.destroy();
         newDraft = self.regEditor.init(draft);
     }
     else {
