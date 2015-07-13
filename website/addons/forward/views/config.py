@@ -16,10 +16,11 @@ from website.project.decorators import (
 from website.addons.forward.utils import serialize_settings
 
 
+@must_have_permission('write')
 @must_be_valid_project
-@must_have_addon('forward', 'node')
-def forward_config_get(node_addon, **kwargs):
-    return serialize_settings(node_addon)
+def forward_config_get(node, **kwargs):
+    node_addon = node.get_or_add_addon('forward', **kwargs)
+    return serialize_settings(node.get_addon('forward', 'node'))
 
 
 @must_have_permission('write')
