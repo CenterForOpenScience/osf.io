@@ -348,8 +348,8 @@ describe('FolderPickerNodeConfigViewModel', () => {
                         vm._importAuthConfirm()
                             .always(function() {
                                 assert.calledWith(
-                                    putJSONSpy, 
-                                    importAuthUrl, 
+                                    putJSONSpy,
+                                    importAuthUrl,
                                     {}
                                 );
                                 assert.calledOnce(activatePickerSpy);
@@ -358,6 +358,15 @@ describe('FolderPickerNodeConfigViewModel', () => {
                     });
             });
         });
+
+        describe('#destroyPicker', () => {
+
+            it('can be called if folder picker is not initialized', () => {
+                vm.folderpicker = null;
+                assert.ok(vm.destroyPicker());
+            });
+        });
+
         describe('#_deauthorizeConfirm', () => {
             var deleteUrl = faker.internet.ip();
             var endpoints = [{
