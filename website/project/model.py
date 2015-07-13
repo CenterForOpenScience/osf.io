@@ -3058,13 +3058,12 @@ class DraftRegistration(AddonModelMixin, StoredObject):
     def __init__(self, *args, **kwargs):
         super(DraftRegistration, self).__init__(*args, **kwargs)
 
-        meta_schema = kwargs.get('registration_schema')
-        if meta_schema:
-            self.fulfills(meta_schema.schema.get('fulfills'))
-            if not kwargs['approved']:
-                if not meta_schema.schema.get('requires_approval', False):
-                    self.approved(True)
-        self.save()
+        if kwargs.get('registration_schema'):
+            meta_schema = self.registration_schema
+            self.fulfills = [item['name'] for item in meta_schema.schema.get('fulfills', [])]
+            if not kwargs.get('approved'):
+                if not meta_schema.schema.get('requires_approval'):
+                    self.approved = True
 
     # proxy fields from branched_from Node
     def __getattr__(self, attr):
