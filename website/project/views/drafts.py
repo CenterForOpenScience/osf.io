@@ -94,7 +94,8 @@ def get_all_draft_registrations(auth, *args, **kwargs):
             raise HTTPError(http.FORBIDDEN)
         query = query & Q('fullfills', 'in', group)
 
-    all_drafts = DraftRegistration.find(query)[:count]
+    #all_drafts = DraftRegistration.find(query)[:count]
+    all_drafts = DraftRegistration.find()
 
     return {
         'drafts': [serialize_draft_registration(d, auth) for d in all_drafts]

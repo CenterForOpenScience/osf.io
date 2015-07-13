@@ -30,7 +30,7 @@ var adminView = function(data) {
 };
 
 $(document).ready(function() {
-    var test = '/api/v1/drafts/' + window.contextVars.accessToken;
+    var test = '/api/v1/drafts/';
     var request = $.ajax({
         url: test
     });
