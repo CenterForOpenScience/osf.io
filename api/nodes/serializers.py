@@ -183,29 +183,28 @@ class ContributorSerializer(UserSerializer):
 class ContributorDetailSerializer(ContributorSerializer):
 
     id = ser.CharField(source='_id', read_only=True)
-    admin = ser.BooleanField(help_text='Whether the user will be able to add and remove contributors.  '
-                              'Note: Only editable if multiple admins exist')
+    permission = ser.ChoiceField(choices=['read', 'write', 'admin'])
     bibliographic = ser.BooleanField(help_text='Whether the user will be included in citations for this node or not')
 
     def update(self, user, validated_data):
         node = self.context['view'].get_node()
         current_user = self.context['request'].user
         bibliographic = (validated_data['bibliographic'] == "True")
-        admin_field = (validated_data['admin'] == "True")
-        is_admin = node.has_permission(current_user, 'admin')
+        permission_field = validated_data['permission']
+        user_permissions = node.get_permissions(user)
+        current_user_permissions = node.get_permissions(current_user)
+        is_admin_current = node.has_permission(current_user, 'admin')
         is_current = user is current_user
-        if is_admin or (not bibliographic and is_current):
-            node.set_visible(user, bibliographic, save=True)
-        else:
-            raise PermissionDenied('User {} is cannot change the bibliographic status for user {}.'
-                                   .format(current_user)
-                                   .format(user))
-        if admin_field and not node.has_permission(user, 'admin') and is_admin:
-            node.add_permission(user, 'admin')
-        elif not admin_field and node.has_permission(user, 'admin'):
-            node.remove_permission(user, 'admin')
-        user.bibliographic = node.get_visible(user)
-        user.admin = node.has_permission(user, 'admin')
+        # if is_admin_current or (not bibliographic and is_current):
+        #     node.set_visible(user, bibliographic, save=True)
+        # else:
+        #     raise PermissionDenied('User {} is cannot change the bibliographic status for user {}.'
+        #                            .format(current_user)
+        #                            .format(user))
+        # if permission_field and not node.has_permission(user, 'admin') and is_admin_current:
+        #     node.add_permission(user, 'admin')
+        # elif not permission_field and node.has_permission(user, 'admin'):
+        #     node.remove_permission(user, 'admin')
         return user
 
     links = LinksField({
