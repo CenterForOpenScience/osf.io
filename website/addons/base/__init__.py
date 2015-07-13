@@ -779,11 +779,9 @@ class AddonNodeSettingsBase(AddonSettingsBase):
         :returns Alert message
         """
 
-        category = node.project_or_component
-
         if hasattr(self, "user_settings"):
             if self.user_settings is None:
-                  return (
+                return (
                     u'Because you have not configured the authorization for this {addon} add-on this '
                     u'{category} will not transfer your authentication token to '
                     u'the new forked {category}.'

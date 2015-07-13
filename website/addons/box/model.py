@@ -357,8 +357,6 @@ class BoxNodeSettings(StorageAddonBase, AddonNodeSettingsBase):
     # backwards compatibility
     before_register = before_register_message
 
-
-
     def before_remove_contributor_message(self, node, removed):
         """Return warning text to display if removed contributor is the user
         who authorized the Box addon
