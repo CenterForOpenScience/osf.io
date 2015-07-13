@@ -1,7 +1,7 @@
 'use strict';
 
-var viewModels = require('../apiApplication.js');
+var viewModels = require('../apiApplication');
 
 var ctx = window.contextVars;
-var apiApplication = new viewModels.ApplicationsList('#app-list', ctx.urls);
+var apiApplication = new viewModels.ApplicationsList('#appList', ctx.urls);
 ctx.apiApplication = apiApplication;

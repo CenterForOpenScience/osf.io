@@ -4,7 +4,6 @@
 <style type="text/css">
     .border-box {
         padding: 15px 10px;
-        border-radius: 4px;
         border: solid #DDD;
         border-width: 1px 0;
         line-height: 1.1;
@@ -33,7 +32,7 @@
 
     <div class="col-sm-9 col-md-7">
 
-        <div id="app-detail" data-bind="with: content()">
+        <div id="appDetail" data-bind="with: content()">
             <div id="app-keys" class="border-box text-right text-muted"
                  data-bind="visible: $root.dataUrl">
                 <p><span><strong>Client ID</strong>:</span> <br><span data-bind="text: clientId"></span></p>
@@ -90,21 +89,21 @@
                     </div>
                 </form>
             </div>
-        </div> <!-- End app-detail section -->
+        </div> <!-- End appDetail section -->
     </div>
 </div>
 </%def>
 
 <%def name="javascript_bottom()">
 <script type="text/javascript">
-   ## Store mako variables on window so they are accessible from JS
-   ## modules. Not sure if this is a good idea.
-   window.contextVars = window.contextVars || {};
-   window.contextVars.urls = {
-       dataUrl: ${detail_url},
-       submitUrl: ${submit_url},
-       listPageUrl: "${ web_url_for('oauth_application_list') }"
-   };
+    ## Store mako variables on window so they are accessible from JS
+    ## modules. Not sure if this is a good idea.
+    window.contextVars = window.contextVars || {};
+    window.contextVars.urls = {
+        dataUrl: ${ detail_url | sjson, n },
+        submitUrl: ${ submit_url | sjson, n },
+        listPageUrl: ${ web_url_for('oauth_application_list') | sjson, n }
+    };
 </script>
 <script src=${"/static/public/js/profile-settings-applications-detail-page.js" | webpack_asset}></script>
 </%def>

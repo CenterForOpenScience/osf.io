@@ -101,7 +101,7 @@ class CasClient(object):
         if resp.status_code == 200:
             return self._parse_service_validation(resp.content)
         else:
-            self.handle_error(resp)
+            self._handle_error(resp)
 
     def profile(self, access_token):
         """Send request to get profile information, given an access token.
@@ -119,9 +119,9 @@ class CasClient(object):
         if resp.status_code == 200:
             return self._parse_profile(resp.content)
         else:
-            self.handle_error(resp)
+            self._handle_error(resp)
 
-    def handle_error(self, response, message='Unexpected response from CAS server'):
+    def _handle_error(self, response, message='Unexpected response from CAS server'):
         """Handle an error response from CAS."""
         raise CasHTTPError(
             message,
@@ -164,7 +164,7 @@ class CasClient(object):
         if resp.status_code == 204:
             return True
         else:
-            self.handle_error(resp)
+            self._handle_error(resp)
 
 
 def get_client():

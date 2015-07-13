@@ -290,7 +290,7 @@ class ApiOAuth2Application(StoredObject):
     name = fields.StringField(index=True, required=True)
     description = fields.StringField(required=False)
 
-    create_date = fields.DateTimeField(auto_now_add=datetime.datetime.utcnow,
+    date_created = fields.DateTimeField(auto_now_add=datetime.datetime.utcnow,
                                        editable=False)
 
     home_url = fields.StringField(required=True,

@@ -13,9 +13,7 @@ def user_validator(user):
     if isinstance(user, User):
         return True
     elif isinstance(user, basestring):
-        try:
-            User.load(user)
-        except:
+        if User.load(user) is None:
             raise ser.ValidationError("Must specify a valid user ID")
     else:
         raise ser.ValidationError("Must provide valid user object or ID string")
@@ -90,8 +88,8 @@ class ApiOAuth2ApplicationSerializer(JSONAPISerializer):
                                 required=False,
                                 allow_blank=True)
 
-    create_date = ser.DateTimeField(help_text="The date this application was generated (automatically filled in)",
-                                    read_only=True)
+    date_created = ser.DateTimeField(help_text="The date this application was generated (automatically filled in)",
+                                     read_only=True)
 
     home_url = ser.CharField(help_text="The full URL to this application's homepage.",
                              required=True,

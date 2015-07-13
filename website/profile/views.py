@@ -3,7 +3,6 @@
 import logging
 import httplib
 import httplib as http  # TODO: Inconsistent usage of aliased import
-import json
 import os
 
 from dateutil.parser import parse as parse_date
@@ -397,10 +396,10 @@ def user_notifications(auth, **kwargs):
 @dev_only
 @must_be_logged_in
 def oauth_application_list(auth, **kwargs):
-    """Return app creation page with list of known apps"""
+    """Return app creation page with list of known apps. API is responsible for tying list to current user."""
     app_list_url = api_v2_url("users/{}/applications/".format(auth.user._id))
     return {
-        "app_list_url": json.dumps(app_list_url)
+        "app_list_url": app_list_url
     }
 
 @dev_only
@@ -408,8 +407,8 @@ def oauth_application_list(auth, **kwargs):
 def oauth_application_register(auth, **kwargs):
     """Register an API application: blank form view"""
     submit_url = api_v2_url("users/{}/applications/".format(auth.user._id))  # POST request to this url
-    return {"submit_url": json.dumps(submit_url),
-            "detail_url": json.dumps(None)}
+    return {"submit_url": submit_url,
+            "detail_url": None}
 
 @dev_only
 @must_be_logged_in
@@ -419,12 +418,12 @@ def oauth_application_detail(auth, **kwargs):
 
     try:
         ApiOAuth2Application.find_one(Q('client_id', 'eq', client_id))
-    except:
+    except NoResultsFound:
         raise HTTPError(http.NOT_FOUND)
 
     detail_url = api_v2_url("users/{}/applications/{}/".format(auth.user._id, client_id))  # Send request to this URL
-    return {"submit_url": json.dumps(None),
-            "detail_url": json.dumps(detail_url)}
+    return {"submit_url": None,
+            "detail_url": detail_url}
 
 def collect_user_config_js(addons):
     """Collect webpack bundles for each of the addons' user-cfg.js modules. Return

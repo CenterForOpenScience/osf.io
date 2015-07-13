@@ -21,7 +21,7 @@
 
     <div class="col-sm-9 col-md-7">
         <a href="${web_url_for('oauth_application_register')}" role="button" class="btn btn-default pull-right"><i class="fa fa-plus"></i> Register new application</a>
-        <div id="app-list">
+        <div id="appList">
 
             <p data-bind="visible: (content().length == 0)">You have not registered any applications that can connect to the OSF.</p>
             <div id="if-apps" data-bind="visible: (content().length > 0)">
@@ -52,7 +52,7 @@
                     </tbody>
                 </table>
             </div>
-        </div>
+        </div> <!-- End appList section -->
     </div>
 
 </div>
@@ -66,7 +66,7 @@
     ## modules. Not sure if this is a good idea.
     window.contextVars = window.contextVars || {};
     window.contextVars.urls = {
-        dataUrl: ${app_list_url}
+        dataUrl: ${app_list_url | sjson, n}
     };
 </script>
 <script src=${"/static/public/js/profile-settings-applications-list-page.js" | webpack_asset}></script>

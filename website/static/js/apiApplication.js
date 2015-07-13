@@ -44,13 +44,13 @@ var ApplicationData = function (data){
 
     // Unchanging properties
     self.clientId = null;
-    self.create_date = null;
+    self.date_created = null;
     self.detailUrl = null;
     self.apiUrl = null;
 
     // Load in data
     if (data){
-        self.fromJSON(data);
+        self.deserialize(data);
     }
 
     // Enable value validation in form
@@ -62,7 +62,7 @@ var ApplicationData = function (data){
 };
 
 // Serialize data for POST request
-ApplicationData.prototype.toJSON = function () {
+ApplicationData.prototype.serialize = function () {
     var self = this;
     return {
         client_id: self.clientId,
@@ -76,12 +76,12 @@ ApplicationData.prototype.toJSON = function () {
     };
 
 // Load data from JSON
-ApplicationData.prototype.fromJSON = function (data) {
+ApplicationData.prototype.deserialize = function (data) {
     var self = this;
     data = data || {};
     self.clientId = data.client_id;
     self.clientSecret(data.client_secret);
-    self.create_date = data.create_date;
+    self.date_created = data.date_created;
 
     self.owner(data.owner);
     self.name(data.name);
@@ -161,12 +161,12 @@ ApplicationViewModel.prototype.updateApplication = function () {
 
     var url = self.dataUrl;
 
-    var payload = self.content().toJSON();
+    var payload = self.content().serialize();
 
     var request = $osf.ajaxJSON('PATCH', url, {isCors: true, data: payload});
 
     request.done(function (data) {
-        self.content().fromJSON(data.data);  // Update the data with what request returns- reflect server side cleaning
+        self.content().deserialize(data.data);  // Update the data with what request returns- reflect server side cleaning
         self.changeMessage(
             'Application data submitted',  // TODO: Some pages (eg profile) show a one-line message for updates; others use a growl box. Current best practices?
             'text-success',
@@ -195,14 +195,14 @@ ApplicationViewModel.prototype.createApplication = function () {
         return;
     }
 
-    var payload = self.content().toJSON();
+    var payload = self.content().serialize();
 
     var url = self.submitUrl;
 
     var request = $osf.ajaxJSON('POST', url, {isCors: true, data: payload});
 
     request.done(function (data) {
-        self.content().fromJSON(data.data);  // Update the data with what request returns- reflect server side cleaning
+        self.content().deserialize(data.data);  // Update the data with what request returns- reflect server side cleaning
 
         // TODO: Window.location refreshes anyway, rendering some of this KO.js code possibly unnecessary. Either reload seamlessly in-page, or refresh; doing both is architecturally awkward.
         // pushState is an alternative (and used in OSF search page), but not supported uniformly in older browsers

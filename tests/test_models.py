@@ -1001,7 +1001,7 @@ class TestApiOAuth2Application(OsfTestCase):
 
     def test_cant_edit_creation_date(self):
         with assert_raises(AttributeError):
-            self.api_app.create_date = datetime.datetime.utcnow()
+            self.api_app.date_created = datetime.datetime.utcnow()
 
     def test_invalid_home_url_raises_exception(self):
         with assert_raises(ValidationError):
