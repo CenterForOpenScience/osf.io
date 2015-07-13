@@ -88,10 +88,6 @@ $(document).on('click', '.panel-heading', function(){
     }
 });
 
-$(document).on('click', 'a[href="#"]', function(e) {
-    e.preventDefault();
-});
-
 $(function() {
     if(/MSIE 9.0/.test(window.navigator.userAgent) ||
        /MSIE 8.0/.test(window.navigator.userAgent) ||
