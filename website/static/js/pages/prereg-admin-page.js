@@ -8,10 +8,22 @@ var Raven = require('raven-js');
 var drafts;
 
 var adminView = function(data) {
+    self.data = data.drafts;
     self.drafts = ko.pureComputed(function() {
-        return sortedDrafts(data.drafts, self.sortBy());
+        var row = self.sortBy();
+        return data.drafts.sort(function (left, right) { 
+            var a = deep_value(left, row).toLowerCase()
+            var b = deep_value(right, row).toLowerCase()
+            return a == b ? 0 : 
+                (a < b ? -1 : 1); 
+        });
+        //return sortedDrafts(self.data, self.sortBy());
     }, this);
     self.sortBy = ko.observable('registration_metadata.q1.value');
+
+    self.setSort = function(data, event) {
+        self.sortBy(event.target.id);
+    };
 };
 
 $(document).ready(function() {
@@ -30,21 +42,6 @@ $(document).ready(function() {
         });
     });
 });
-
-$(".row-title").click(function(event) {
-	console.log(sortedDrafts(event.target.id));
-	adminView.sortBy(sortedDrafts(event.target.id));
-});
-
-//TODO
-var sortedDrafts = function(drafts, row) { 
-    return drafts.sort(function (left, right) { 
-    	var a = deep_value(left, row).toLowerCase()
-		var b = deep_value(right, row).toLowerCase()
-        return a == b ? 0 : 
-            (a < b ? -1 : 1); 
-   });
-};
 
 var deep_value = function(obj, path){
     for (var i=0, path=path.split('.'), len=path.length; i<len; i++){
