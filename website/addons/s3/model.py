@@ -240,31 +240,6 @@ class AddonS3NodeSettings(StorageAddonBase, AddonNodeSettingsBase):
 
         return clone, message
 
-    def before_fork(self, node, user):
-        """
-
-        :param Node node:
-        :param User user:
-        :return str: Alert message
-
-        """
-
-        if self.user_settings and self.user_settings.owner == user:
-            return (
-                'Because you have authenticated the S3 add-on for this '
-                '{cat}, forking it will also transfer your authorization to '
-                'the forked {cat}.'
-            ).format(
-                cat=node.project_or_component,
-            )
-        return (
-            'Because this S3 add-on has been authenticated by a different '
-            'user, forking it will not transfer authentication to the forked '
-            '{cat}.'
-        ).format(
-            cat=node.project_or_component,
-        )
-
     def before_remove_contributor(self, node, removed):
         """
 
