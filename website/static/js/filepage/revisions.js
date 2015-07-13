@@ -3,6 +3,7 @@ var $ = require('jquery');
 var $osf = require('js/osfHelpers');
 var waterbutler = require('js/waterbutler');
 var bootbox = require('bootbox');
+var makeClient = require('js/clipboard.js');
 
 var util = require('./util.js');
 
@@ -90,10 +91,17 @@ var FileRevisionsTable = {
         };
 
         self.showModal = function(hashName, index, hash) {
-            bootbox.alert({
+            var showModal = bootbox.alert({
                 title: 'Version ' + index + ' ' + hashName + ' hash',
-                message: hash
+                message:'<div class="container"><div class="row"><div class="col-sm-4"><p class="text-left">' + hash +
+                '</p></div>' +'<div class="text-right col-sm-2"><a class="btn-sm btn-primary" id="copyBtn" data-clipboard-text="' +
+                hash + '">Copy</a></div></div>'
             });
+            showModal.on('show.bs.modal', function() {
+                var $copyBtn = $('#copyBtn');
+                new makeClient($copyBtn);
+            });
+            showModal.modal('show');
         };
 
         self.getTableHead = function() {
