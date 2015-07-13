@@ -21,7 +21,7 @@
              <!-- Import Access Token Button -->
             <span data-bind="if: showImport">
                 <a data-bind="click: importAuth" href="#" class="text-primary pull-right addon-auth">
-                    Import Access Token
+                    Import Account From Profile
                 </a>
             </span>
 
