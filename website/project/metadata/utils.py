@@ -23,6 +23,8 @@ def serialize_draft_registration(draft, auth=None):
         'registration_schema': serialize_meta_schema(draft.registration_schema),
         'initiated': str(draft.datetime_initiated),
         'updated': str(draft.datetime_updated),
-        'completion': 50  # TODO
+        'is_pending_review': draft.is_pending_review,
+        'fulfills': draft.fulfills,
+        'approved': draft.approved,
     })
     return ret
