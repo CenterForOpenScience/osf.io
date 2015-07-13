@@ -22,7 +22,7 @@
 
         % if 'write' in user['permissions']:
 
-            <div class="panel panel-default" data-spy="affix" data-offset-top="60" data-offset-bottom="268"><!-- Begin sidebar -->
+            <div class="panel panel-default" data-spy="affix" data-offset-top="60" ><!-- Begin sidebar -->
                 <ul class="nav nav-stacked nav-pills">
 
                     % if not node['is_registration']:
