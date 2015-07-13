@@ -93,9 +93,12 @@ var FileRevisionsTable = {
         self.showModal = function(hashName, index, hash) {
             var showModal = bootbox.alert({
                 title: 'Version ' + index + ' ' + hashName + ' hash',
-                message:'<div class="container"><div class="row"><div class="col-sm-4"><p class="text-left">' + hash +
-                '</p></div>' +'<div class="text-right col-sm-2"><a class="btn-sm btn-primary" id="copyBtn" data-clipboard-text="' +
-                hash + '">Copy</a></div></div>'
+                message: '<div class="row">  ' +
+                    '<div class="col-md-12">' +
+                    '<div class="control-group">' +'<p class="col-xs-10">' + hash + '</p>' +
+                    '<a class="btn-md btn-primary text-center col-xs-2" id="copyBtn" data-clipboard-text="' +
+                    hash + '"> Copy </a>'+
+                    '</div></div></div>'
             });
             showModal.on('show.bs.modal', function() {
                 var $copyBtn = $('#copyBtn');
@@ -219,8 +222,8 @@ var FileRevisionsTable = {
                 options.displayName = parts.slice(0, parts.length - 1).join('') + '-' + revision.modified + '.' + parts[parts.length - 1];
             }
         }
-        revision.displayMd5 = revision.extra.md5;
-        revision.displaySha256 = revision.extra.sha256;
+        revision.displayMd5 = revision.extra.hashes.md5;
+        revision.displaySha256 = revision.extra.hashes.sha256;
 
         revision.osfViewUrl = '?' + $.param(options);
         revision.osfDownloadUrl = '?' + $.param($.extend({action: 'download'}, options));
