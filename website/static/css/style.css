@@ -272,6 +272,11 @@ a {
     font-weight: normal;
 }
 
+/* sub-header for modal*/
+.modal-subheader {
+    font-size: 20px;
+}
+
 .log-node-title-link {
     font-weight: 700;
 }
