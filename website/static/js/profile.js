@@ -614,15 +614,6 @@ var ListViewModel = function(ContentModel, urls, modes) {
         return true;
     });
 
-    self.institutionsEmpty = ko.computed(function() {
-        for (var i=0; i<self.contents().length; i++) {
-            if (self.contents()[i].institutionEmpty()) {
-                return true;
-            }
-        }
-        return false;
-    });
-
     self.missingRequiredfield = ko.computed(function() {
         for (var i=0; i<self.contents().length; i++) {
             if (self.jobsOrSchools() === JOBS) {
