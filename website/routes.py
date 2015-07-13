@@ -1059,7 +1059,7 @@ def make_url_map(app):
         ], 'get', project_views.node.get_registrations, json_renderer),
 
         # Draft Registrations
-         Rule([
+        Rule([
             '/drafts/<uid>/',
         ], 'get', project_views.drafts.get_all_draft_registrations, json_renderer),
         Rule([
