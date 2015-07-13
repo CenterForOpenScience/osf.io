@@ -631,7 +631,7 @@ var ListViewModel = function(ContentModel, urls, modes) {
                 }
             }
             else if (self.jobsOrSchools() === SCHOOLS) {
-                if (self.contents()[i].institutionEmpty() && !(self.contents()[i].department() === '' && self.contents()[i].title() === '')) {
+                if (self.contents()[i].institutionEmpty() && !(self.contents()[i].department() === '' && self.contents()[i].degree() === '')) {
                     return true;
                 }
             }
