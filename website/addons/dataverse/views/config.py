@@ -76,11 +76,14 @@ def dataverse_add_user_account(auth, **kwargs):
 def dataverse_get_config(node, **kwargs):
     """API that returns the serialized node settings."""
     auth = kwargs.get('auth')
-    node_addon = node.get_or_add_addon('dataverse', **kwargs)
+    node_addon = node.get_addon('dataverse', 'node')
+    if not node_addon:
+        node.add_addon('dataverse', auth)
+        node.save()
 
     result = DataverseSerializer(
         user_settings=auth.user.get_addon('dataverse'),
-        node_settings=node_addon
+        node_settings=node.get_addon('dataverse', 'node')
     ).serialized_node_settings
     return {'result': result}, http.OK
 

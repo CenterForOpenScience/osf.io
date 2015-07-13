@@ -18,8 +18,11 @@ from website.addons.forward.utils import serialize_settings
 
 @must_have_permission('write')
 @must_be_valid_project
-def forward_config_get(node, **kwargs):
-    node_addon = node.get_or_add_addon('forward', **kwargs)
+def forward_config_get(auth, node, **kwargs):
+    node_addon = node.get_addon('forward', 'node')
+    if not node_addon:
+        node.add_addon('forward', auth)
+        node.save()
     return serialize_settings(node.get_addon('forward', 'node'))
 
 

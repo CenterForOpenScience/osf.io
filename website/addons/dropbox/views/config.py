@@ -25,8 +25,11 @@ from dropbox.rest import ErrorResponse
 def dropbox_config_get(node, **kwargs):
     """API that returns the serialized node settings."""
     auth = kwargs['auth']
-    node_addon = node.get_or_add_addon('dropbox', **kwargs)
-    return {'result': serialize_settings(node_addon, auth.user)}
+    node_addon = node.get_addon('dropbox', 'node')
+    if not node_addon:
+        node.add_addon('dropbox', auth)
+        node.save()
+    return {'result': serialize_settings(node.get_addon('dropbox', 'node'), auth.user)}
 
 
 def serialize_folder(metadata):
