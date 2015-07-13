@@ -22,16 +22,20 @@ def zotero_list_accounts_user(auth):
 
 
 @must_have_permission('write')
-@must_have_addon('zotero', 'node')
-def zotero_get_config(auth, node_addon, **kwargs):
+# @must_have_addon('zotero', 'node')
+def zotero_get_config(node, **kwargs):
     """Serialize node addon settings and relevant urls
     (see serialize_settings/serialize_urls)
     """
-
+    auth = kwargs.get('auth')
+    node_addon = node.get_addon('zotero', 'node')
+    if not node_addon:
+        node.add_addon('zotero', auth)
+        node.save()
     provider = ZoteroCitationsProvider()
     return {
         'result': provider.serializer(
-            node_settings=node_addon,
+            node_settings=node.get_addon('zotero', 'node'),
             user_settings=auth.user.get_addon('zotero'),
         ).serialized_node_settings
     }
