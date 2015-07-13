@@ -50,7 +50,6 @@ if (!ctx.node.anonymous && !ctx.node.isRetracted) {
     new CitationList('#citationList');
     new CitationWidget('#citationStyleInput', '#citationText');
 }
-
 $(document).ready(function () {
 
     if (!ctx.node.isRetracted) {
@@ -157,6 +156,11 @@ $(document).ready(function () {
             $('#title').focus();
         }
     });
+
+    $('#newComponent').on('hidden.bs.modal', function(){
+        $('#newComponent .modal-alert').text('');
+    });
+
     $('#addPointer').on('shown.bs.modal', function(){
         if(!$osf.isIE()){
             $('#addPointer input').focus();

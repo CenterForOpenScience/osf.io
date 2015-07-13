@@ -1605,6 +1605,10 @@ class TestNode(OsfTestCase):
             )
         assert_equal(err.exception.message, 'Cannot register deleted node.')
 
+    def test_set_visible_contributor_with_only_one_contributor(self):
+        with assert_raises(ValueError) as e:
+            self.node.set_visible(user=self.user, visible=False, auth=None)
+            assert_equal(e.exception.message, 'Must have at least one visible contributor')
 
 class TestNodeTraversals(OsfTestCase):
 
