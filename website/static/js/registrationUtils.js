@@ -299,6 +299,9 @@ var RegistrationEditor = function(urls, editorId) {
     self.draft = ko.observable();
 
     self.currentQuestion = ko.observable();
+
+    self.editorId = editorId;
+
     self.currentPages = ko.computed(function() {
         var draft = self.draft();
         if(!draft){
@@ -658,6 +661,7 @@ RegistrationManager.prototype.blankDraft = function(metaSchema) {
 RegistrationManager.prototype.launchEditor = function(draft) {
     var self = this;
     var node = self.node;
+    console.log("launch editor");
 
     bootbox.hideAll();
     self.controls.showEditor();
@@ -675,6 +679,7 @@ RegistrationManager.prototype.launchEditor = function(draft) {
             get: node.urls.api + 'draft/{draft_pk}/'
         }, 'registrationEditor');
         newDraft = self.regEditor.init(draft);
+        console.log(self.editorSelector);
         $osf.applyBindings(self.regEditor, self.editorSelector);
     }
 };
