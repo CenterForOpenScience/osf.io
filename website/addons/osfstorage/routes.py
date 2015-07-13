@@ -12,25 +12,6 @@ api_routes = {
     'rules': [
         Rule(
             [
-                '/project/<pid>/osfstorage/usage/',
-                '/project/<pid>/node/<nid>/osfstorage/usage/',
-            ],
-            'get',
-            views.osfstorage_get_node_storage_usage,
-            json_renderer,
-        ),
-        Rule(
-            [
-                '/osfstorage/usage/',
-            ],
-            'get',
-            views.osfstorage_get_user_storage_usage,
-            json_renderer,
-        ),
-
-
-        Rule(
-            [
                 '/project/<pid>/osfstorage/',
                 '/project/<pid>/node/<nid>/osfstorage/',
                 '/project/<pid>/osfstorage/<fid>/',

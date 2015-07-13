@@ -11,7 +11,6 @@ from flask import request
 from framework.auth import Auth
 from framework.exceptions import HTTPError
 from framework.auth.decorators import must_be_signed
-from framework.auth.decorators import must_be_logged_in
 
 from website.util import rubeus
 from website.models import User
@@ -40,30 +39,8 @@ def osf_storage_root(node_settings, auth, **kwargs):
         user=auth.user,
         nodeUrl=node.url,
         nodeApiUrl=node.api_url,
-        size=node_settings.storage_usage
     )
     return [root]
-
-
-@must_have_addon('osfstorage', 'node')
-def osfstorage_get_node_storage_usage(node_addon, **kwargs):
-    return {
-        'storageUsage': node_addon.storage_usage,
-    }
-
-
-@must_be_logged_in
-@must_have_addon('osfstorage', 'user')
-def osfstorage_get_user_storage_usage(auth, user_addon, **kwargs):
-    return {
-        'user': {
-            'storageUsage': user_addon.storage_usage,
-            'storageLimit': user_addon.storage_limit
-        },
-        'contributed': {
-            'storageUsage': sum(node.get_addon('osfstorage').storage_usage for node in auth.user.node__contributed)
-        }
-    }
 
 
 def make_error(code, message_short=None, message_long=None):

@@ -28,7 +28,7 @@ ADDED_DEFAULT = ['node', 'user']
 ADDED_MANDATORY = ['node', 'user']
 
 VIEWS = []
-CONFIGS = ['node', 'user']
+CONFIGS = []
 
 CATEGORIES = ['storage']
 
@@ -46,4 +46,4 @@ HIGH_MAX_FILE_SIZE = 5 * 1024  # 5 GB
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 NODE_SETTINGS_TEMPLATE = None  # no node settings view
-USER_SETTINGS_TEMPLATE = os.path.join(HERE, 'templates', 'osfstorage_user_settings.mako')
+USER_SETTINGS_TEMPLATE = None  # no user settings view

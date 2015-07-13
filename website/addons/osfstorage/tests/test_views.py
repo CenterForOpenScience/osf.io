@@ -4,7 +4,6 @@ from __future__ import unicode_literals
 import datetime
 from nose.tools import *  # noqa
 
-from tests.factories import AuthUserFactory
 from framework.auth.core import Auth
 from website.addons.osfstorage.tests.utils import (
     StorageTestCase, Delta, AssertDeltas,
@@ -14,13 +13,11 @@ from website.addons.osfstorage.tests import factories
 
 from framework.auth import signing
 from website.util import rubeus
-from website.util import api_url_for
 
 from website.addons.osfstorage import model
 from website.addons.osfstorage import utils
 from website.addons.osfstorage import views
 from website.addons.base.views import make_auth
-from website.addons.osfstorage import settings
 from website.addons.osfstorage import settings as storage_settings
 
 
@@ -30,116 +27,6 @@ def create_record_with_version(path, node_settings, **kwargs):
     record.versions.append(version)
     record.save()
     return record
-
-
-class TestOsfStorageUsage(StorageTestCase):
-
-    def setUp(self):
-        super(TestOsfStorageUsage, self).setUp()
-        self.app.authenticate(*self.user.auth)
-
-    def test_user_initial_usage(self):
-        url = api_url_for('osfstorage_get_user_storage_usage')
-        resp = self.app.get(url)
-
-        assert_equal(resp.status_code, 200)
-        assert_equal(resp.json, {
-            'user': {
-                'storageUsage': 0,
-                'storageLimit': storage_settings.DEFAULT_STORAGE_LIMIT
-            },
-            'contributed': {
-                'storageUsage': 0
-            }
-        })
-
-    def test_node_initial_usage(self):
-        url = self.project.api_url_for('osfstorage_get_node_storage_usage')
-        resp = self.app.get(url)
-
-        assert_equal(resp.status_code, 200)
-        assert_equal(resp.json, {'storageUsage': 0})
-
-    def test_node_usage(self):
-        url = self.project.api_url_for('osfstorage_get_node_storage_usage')
-        child = self.node_settings.root_node.append_file('Test')
-
-        child.create_version(self.user, {
-            'service': 'cloud',
-            settings.WATERBUTLER_RESOURCE: 'osf',
-            'object': 'd077f2',
-        }, metadata={'size': 400})
-
-        resp = self.app.get(url)
-
-        assert_equal(resp.status_code, 200)
-        assert_equal(resp.json, {'storageUsage': 400})
-
-    def test_storage_limit_override(self):
-        url = api_url_for('osfstorage_get_user_storage_usage')
-        self.user_addon.storage_limit_override = 5
-        self.user_addon.save()
-
-        assert_equal(self.user_addon.storage_limit, 5)
-
-        resp = self.app.get(url)
-
-        assert_equal(resp.status_code, 200)
-        assert_equal(resp.json, {
-            'user': {
-                'storageUsage': 0,
-                'storageLimit': 5,
-            },
-            'contributed': {
-                'storageUsage': 0,
-            }
-        })
-
-    def test_user_usage(self):
-        url = api_url_for('osfstorage_get_user_storage_usage')
-
-        child = self.node_settings.root_node.append_file('Test')
-        child.create_version(self.user, {
-            'service': 'cloud',
-            settings.WATERBUTLER_RESOURCE: 'osf',
-            'object': 'd077f2',
-        }, metadata={'size': 400})
-
-        resp = self.app.get(url)
-
-        assert_equal(resp.status_code, 200)
-        assert_equal(resp.json, {
-            'user': {
-                'storageUsage': 400,
-                'storageLimit': storage_settings.DEFAULT_STORAGE_LIMIT
-            },
-            'contributed': {
-                'storageUsage': 400
-            }
-        })
-
-    def test_user_usage_plus_others(self):
-        url = self.project.api_url_for('osfstorage_get_node_storage_usage')
-
-        child = self.node_settings.root_node.append_file('Test')
-        child.create_version(self.user, {
-            'service': 'cloud',
-            settings.WATERBUTLER_RESOURCE: 'osf',
-            'object': 'd077f2',
-        }, metadata={'size': 400})
-
-        child = self.node_settings.root_node.append_file('Test2')
-        child.create_version(AuthUserFactory(), {
-            'service': 'cloud',
-            settings.WATERBUTLER_RESOURCE: 'osf',
-            'object': 'd07kj2',
-        }, metadata={'size': 400})
-
-        resp = self.app.get(url)
-
-        assert_equal(resp.status_code, 200)
-        assert_equal(resp.json, {'storageUsage': 800})
-        assert_equal(self.user_addon.calculate_storage_usage(), 400)
 
 
 class HookTestCase(StorageTestCase):
