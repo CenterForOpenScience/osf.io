@@ -228,6 +228,10 @@ function ViewModel(url) {
             error: error
         });
     });
+
+    self.selectionChanged = function() {
+        self.changeMessage('','');
+    };
 }
 
 /**
