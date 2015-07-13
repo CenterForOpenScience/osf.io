@@ -115,7 +115,7 @@ function ViewModel(url) {
         bootbox.confirm({
             title: 'Delete account?',
             message: '<p class="overflow">' +
-                'Are you sure you want to delete account <strong>' +
+                'Your Dataverse API token is invalid. you want to delete account <strong>' +
                 account.name + '</strong>?' +
                 '</p>',
             callback: function (confirm) {
@@ -180,6 +180,10 @@ function ViewModel(url) {
                 error: error
             });
         });
+    };
+
+    self.selectionChanged = function() {
+        self.changeMessage('','');
     };
 
 }
