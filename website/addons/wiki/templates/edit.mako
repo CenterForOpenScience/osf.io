@@ -15,46 +15,52 @@
     </div>
     <div class="col-sm-6">
         <div class="pull-right">
-            % if user['can_edit']:
-                <a href="#" class="btn btn-sm btn-success" data-toggle="modal" data-target="#newWiki">New</a>
-                % if wiki_name != 'home':
-                    <a href="#" class="btn btn-sm btn-danger" data-toggle="modal" data-target="#deleteWiki">Delete</a>
-                % endif
-            % endif
-            <div class="switch" style="display: inline-block"></div>
+            <div class="switch"></div>
         </div>
     </div>
 </div>
 
     <div class="row wiki-wrapper">
-    <div class="panel-toggle col-sm-${'3' if 'menu' in panels_used else '1' | n}">
-        <!-- Menu with toggle normal -->
-        <div class="osf-panel panel panel-default reset-height ${'' if 'menu' in panels_used else 'hidden' | n}" data-bind="css: {  'osf-panel-flex': !$root.singleVis() }">
-            <div class="panel-heading clearfix" data-bind="css: {  'osf-panel-header-flex': !$root.singleVis()}"> 
-                <h3 class="panel-title"><i class="fa fa-list"> </i>  Menu </h3>
-                <div class="pull-right hidden-xs">
-                    <div class="panel-collapse"> <i class="fa fa-angle-left pointer"> </i> </div>
+        <div class="panel-toggle col-sm-${'3' if 'menu' in panels_used else '1' | n}">
+
+            <!-- Menu with toggle normal -->
+            <div class="osf-panel panel panel-default reset-height ${'' if 'menu' in panels_used else 'hidden' | n}" data-bind="css: {  'osf-panel-flex': !$root.singleVis() }">
+                <div class="panel-heading clearfix" data-bind="css: {  'osf-panel-heading-flex': !$root.singleVis()}">
+                    % if user['can_edit']:
+                        <div class="wiki-toolbar-icon text-success" data-toggle="modal" data-target="#newWiki">
+                            <i class="fa fa-plus text-success"></i><span>New</span>
+                        </div>
+                        % if wiki_name is not 'home':
+                            <div class="wiki-toolbar-icon text-danger" data-toggle="modal" data-target="#deleteWiki">
+                                <i class="fa fa-trash-o text-danger"></i><span>Delete</span>
+                            </div>
+                        % endif
+                    % else:
+                        <h3 class="panel-title"> <i class="fa fa-list"></i>  Menu </h3>
+                    % endif
+                    <div id="toggleIcon" class="pull-right hidden-xs">
+                        <div class="panel-collapse"><i class="fa fa-angle-left"></i></div>
+                    </div>
                 </div>
-            </div>
-            <div class="osf-panel-body" data-bind="css: {  'osf-panel-body-flex': !$root.singleVis()}">
                 <div id="grid">
-                    <div class="fangorn-loading">
-                        <div class="logo-spin text-center"><img src="/static/img/logo_spin.png" alt="loader"></div>
-                        <p class="m-t-sm fg-load-message">Loading wiki pages... </p>
+                    <div class="spinner-loading-wrapper">
+                        <div class="logo-spin text-center"><img src="/static/img/logo_spin.png" alt="loader"> </div>
+                        <p class="m-t-sm fg-load-message"> Loading wiki pages...  </p>
                     </div>
                 </div>
             </div>
-        </div>
 
-        <!-- Menu with toggle collapsed -->
-        <div class="osf-panel panel panel-default panel-collapsed text-center ${'hidden' if 'menu' in panels_used else '' | n}" >
-          <div class="panel-header pointer">
-            <i class="fa fa-list"> </i>
-            <i class="fa fa-angle-right"> </i>
-          </div>
+            <!-- Menu with toggle collapsed -->
+            <div class="osf-panel panel panel-default panel-collapsed text-center ${'hidden' if 'menu' in panels_used else '' | n}" >
+                <div class="panel-heading pointer">
+                    <i class="fa fa-list"> </i>
+                    <i class="fa fa-angle-right"> </i>
+                </div>
+                <div class="panel-body">
+                    <%include file="wiki/templates/nav.mako"/>
+                </div>
+            </div>
         </div>
-
-    </div>
 
     <div class="wiki" id="wikiPageContext">
     <div class="panel-expand col-sm-${'9' if 'menu' in panels_used else '11' | n}">

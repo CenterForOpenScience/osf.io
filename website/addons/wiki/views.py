@@ -469,7 +469,7 @@ def format_home_wiki_page(node):
     home_wiki_page = {
         'page': {
             'url': node.web_url_for('project_wiki_home'),
-            'name': 'home',
+            'name': 'Home',
             'id': 'None',
             'wiki_content': ''
         },
@@ -479,7 +479,7 @@ def format_home_wiki_page(node):
         home_wiki_page = {
             'page': {
                 'url': node.web_url_for('project_wiki_view', wname='home', _guid=True),
-                'name': home_wiki.page_name,
+                'name': 'Home',
                 'id': home_wiki._primary_key,
                 'wiki_content': wiki_page_content(home_wiki.page_name, node=node).get('wiki_content')
             },
@@ -513,6 +513,17 @@ def format_component_wiki_pages(node, auth):
     component_wiki_pages = _serialize_wiki_toc(node, auth)
     for wiki_page in component_wiki_pages:
         children = []
+        component_home_wiki = {
+            'page': {
+                'url': wiki_page['url'],
+                'name': 'Home',
+                'id': wiki_page['id'],
+                'wiki_content': wiki_page['wiki_content'].get('wiki_content')
+            },
+            'children': []
+        }
+        children.append(component_home_wiki)
+
         for component_page in wiki_page['pages_current']:
             if component_page['name'] != 'home':
                 child = {
@@ -522,21 +533,17 @@ def format_component_wiki_pages(node, auth):
                         'id': component_page['wiki_id'],
                         'wiki_content': component_page['wiki_content'].get('wiki_content')
                     },
-                    'kind': 'component',
                     'children': [],
                 }
                 children.append(child)
 
-        page = {
+        component_page = {
             'page': {
-                'url': wiki_page['url'],
                 'name': wiki_page['title'],
-                'id': wiki_page['id'],
-                'wiki_content': wiki_page['wiki_content'].get('wiki_content')
             },
             'kind': 'component',
             'category': wiki_page['category'],
             'children': children,
         }
-        pages.append(page)
+        pages.append(component_page)
     return pages

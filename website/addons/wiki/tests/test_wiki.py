@@ -1110,17 +1110,16 @@ class TestWikiMenu(OsfTestCase):
     def setUp(self):
         super(TestWikiMenu, self).setUp()
         self.user = UserFactory()
-        self.api_key = ApiKeyFactory()
         self.project = ProjectFactory(creator=self.user, is_public=True)
         self.component = NodeFactory(creator=self.user, parent=self.project, is_public=True)
-        self.consolidate_auth = Auth(user=self.user, api_key=self.api_key)
+        self.consolidate_auth = Auth(user=self.project.creator)
 
     def test_format_home_wiki_page_no_content(self):
         data = views.format_home_wiki_page(self.project)
         expected = {
             'page': {
                 'url': self.project.web_url_for('project_wiki_home'),
-                'name': 'home',
+                'name': 'Home',
                 'id': 'None',
                 'wiki_content': ''
             },
@@ -1136,7 +1135,7 @@ class TestWikiMenu(OsfTestCase):
             {
                 'page': {
                     'url': self.project.web_url_for('project_wiki_view', wname='home', _guid=True),
-                    'name': 'home',
+                    'name': 'Home',
                     'id': page._primary_key,
                     'wiki_content': 'content here'
                 },
@@ -1151,12 +1150,17 @@ class TestWikiMenu(OsfTestCase):
         expected = [
             {
                 'page': {
-                    'url': self.component.web_url_for('project_wiki_view', wname='home', _guid=True),
                     'name': 'The meaning of life',
-                    'id': self.component._primary_key,
-                    'wiki_content': 'home content'
                 },
-                'children': [],
+                'children': [{
+                    'page': {
+                        'url': self.component.web_url_for('project_wiki_view', wname='home', _guid=True),
+                        'name': 'Home',
+                        'id': self.component._primary_key,
+                        'wiki_content': 'home content'
+                    },
+                    'children': [],
+                }],
                 'kind': 'component',
                 'category': self.component.category,
             }
@@ -1167,16 +1171,21 @@ class TestWikiMenu(OsfTestCase):
         self.component.update_node_wiki('home', 'home content', self.consolidate_auth)
         self.component.update_node_wiki('inner', 'inner content', self.consolidate_auth)
         component_inner_page = self.component.get_wiki_page(name='inner')
-        data = views.format_component_wiki_pages(node=self.project, auth=self.consolidate_auth)
         expected = [
             {
                 'page': {
-                    'url': self.component.web_url_for('project_wiki_view', wname='home', _guid=True),
                     'name': 'The meaning of life',
-                    'id': self.component._primary_key,
-                    'wiki_content': 'home content'
                 },
                 'children': [
+                    {
+                        'page': {
+                            'url': self.component.web_url_for('project_wiki_view', wname='home', _guid=True),
+                            'name': 'Home',
+                            'id': self.component._primary_key,
+                            'wiki_content': 'home content'
+                        },
+                        'children': []
+                    },
                     {
                         'page': {
                             'url': self.component.web_url_for('project_wiki_view', wname='inner', _guid=True),
@@ -1185,13 +1194,13 @@ class TestWikiMenu(OsfTestCase):
                             'wiki_content': 'inner content'
                         },
                         'children': [],
-                        'kind': 'component',
                     }
                 ],
                 'kind': 'component',
                 'category': self.component.category,
             }
         ]
+        data = views.format_component_wiki_pages(node=self.project, auth=self.consolidate_auth)
         assert_equal(data, expected)
 
     def test_format_component_wiki_page_no_content(self):
@@ -1199,14 +1208,19 @@ class TestWikiMenu(OsfTestCase):
         expected = [
             {
                 'page': {
-                    'url': self.component.web_url_for('project_wiki_view', wname='home', _guid=True),
                     'name': 'The meaning of life',
-                    'id': self.component._primary_key,
-                    'wiki_content': ''
                 },
-                'children': [],
+                'children': [{
+                    'page': {
+                        'url': self.component.web_url_for('project_wiki_view', wname='home', _guid=True),
+                        'name': 'Home',
+                        'id': self.component._primary_key,
+                        'wiki_content': ''
+                    },
+                    'children': [],
+                }],
                 'kind': 'component',
-                'category': self.component.category
+                'category': self.component.category,
             }
         ]
         assert_equal(data, expected)
