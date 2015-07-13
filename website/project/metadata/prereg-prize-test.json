@@ -50,7 +50,7 @@
                         "type": "string",
                         "format": "textarea"
                     },
-                    "uploader": {
+                    "uploader4": {
                         "id": "q4b",
                         "type": "osf-upload" 
                     }
@@ -74,7 +74,7 @@
                         "type": "string",
                         "format": "textarea"
                     },
-                    "uploader": {
+                    "uploader5": {
                         "id": "q5b",
                         "type": "osf-upload" 
                     }
@@ -92,7 +92,7 @@
                         "type": "string",
                         "format": "text"
                     },
-                    "uploader": {
+                    "uploader6": {
                         "id": "q6b",
                         "type": "osf-upload" 
                     }
@@ -110,7 +110,7 @@
                         "type": "string",
                         "format": "textarea"
                     },
-                    "uploader": {
+                    "uploader7": {
                         "id": "q7b",
                         "type": "osf-upload" 
                     }
@@ -182,7 +182,7 @@
                         "type": "string",
                         "format": "text"
                     },
-                    "uploader": {
+                    "uploader11": {
                         "id": "q11b",
                         "type": "osf-upload" 
                     }
@@ -200,7 +200,7 @@
                         "type": "string",
                         "format": "textarea"
                     },
-                    "uploader": {
+                    "uploader12": {
                         "id": "q12b",
                         "type": "osf-upload" 
                     }
@@ -218,7 +218,7 @@
                         "type": "string",
                         "format": "textarea"
                     },
-                    "uploader": {
+                    "uploader13": {
                         "id": "q13b",
                         "type": "osf-upload" 
                     }
@@ -236,7 +236,7 @@
                         "type": "string",
                         "format": "textarea"
                     },
-                    "uploader": {
+                    "uploader14": {
                         "id": "q14b",
                         "type": "osf-upload" 
                     }
@@ -254,7 +254,7 @@
                         "type": "string",
                         "format": "textarea"
                     },
-                    "uploader": {
+                    "uploader15": {
                         "id": "q15b",
                         "type": "osf-upload" 
                     }
@@ -278,7 +278,7 @@
                         "type": "string",
                         "format": "textarea"
                     },
-                    "uploader": {
+                    "uploader16": {
                         "id": "q16b",
                         "type": "osf-upload" 
                     }
@@ -296,7 +296,7 @@
                         "type": "string",
                         "format": "textarea"
                     },
-                    "uploader": {
+                    "uploader17": {
                         "id": "q17b",
                         "type": "osf-upload" 
                     }
@@ -314,7 +314,7 @@
                         "type": "string",
                         "format": "textarea"
                     },
-                    "uploader": {
+                    "uploader18": {
                         "id": "q18b",
                         "type": "osf-upload" 
                     }
@@ -332,7 +332,7 @@
                         "type": "string",
                         "format": "textarea"
                     },
-                    "uploader": {
+                    "uploader19": {
                         "id": "q19b",
                         "type": "osf-upload" 
                     }
@@ -350,7 +350,7 @@
                         "type": "string",
                         "format": "textarea"
                     },
-                    "uploader": {
+                    "uploader20": {
                         "id": "q20b",
                         "type": "osf-upload" 
                     }
@@ -368,7 +368,7 @@
                         "type": "string",
                         "format": "textarea"
                     },
-                    "uploader": {
+                    "uploader21": {
                         "id": "q21b",
                         "type": "osf-upload" 
                     }
