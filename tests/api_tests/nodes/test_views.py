@@ -869,7 +869,7 @@ class TestRemoveNodeContributor(ApiTestCase):
         res = self.app.delete(self.url_contributor, auth=self.admin_auth, expect_errors=False)
         assert_equal(res.status_code, 204)
         res = self.app.delete(self.url_admin, auth=self.admin_auth, expect_errors=True)
-        assert_equal(res.status_code, 403)
+        assert_equal(res.status_code, 400)
         assert_in(self.admin, self.project.contributors)
 
     def test_admin_remove_contributor_twice_with_two_contributors(self):
@@ -877,8 +877,7 @@ class TestRemoveNodeContributor(ApiTestCase):
         assert_equal(res.status_code, 204)
         assert_not_in(self.user, self.project.contributors)
         res = self.app.delete(self.url_contributor, auth=self.admin_auth, expect_errors=True)
-        # Raises 403 due there only being one contributor
-        assert_equal(res.status_code, 403)
+        assert_equal(res.status_code, 404)
 
     def test_admin_remove_contributor_twice_with_more_than_two_contributors(self):
         user_two = UserFactory.build()
@@ -900,7 +899,7 @@ class TestRemoveNodeContributor(ApiTestCase):
     def test_unique_admin_with_other_contributor_remove_self(self):
         self.project.remove_permission(self.user, 'admin')
         res = self.app.delete(self.url_admin, auth=self.admin_auth, expect_errors=True)
-        assert_equal(res.status_code, 204)
+        assert_equal(res.status_code, 403)
         assert_not_in(self.admin, self.project.contributors)
 
     def test_admin_remove_non_contributor(self):
