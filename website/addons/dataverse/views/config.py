@@ -73,12 +73,14 @@ def dataverse_add_user_account(auth, **kwargs):
 
 @must_be_logged_in
 @decorators.must_be_valid_project
-def dataverse_get_config(auth, node, **kwargs):
+def dataverse_get_config(node, **kwargs):
     """API that returns the serialized node settings."""
+    auth = kwargs.get('auth')
+    node_addon = node.get_or_add_addon('dataverse', **kwargs)
 
     result = DataverseSerializer(
         user_settings=auth.user.get_addon('dataverse'),
-        node_settings=node.get_addon('dataverse', 'node'),
+        node_settings=node_addon
     ).serialized_node_settings
     return {'result': result}, http.OK
 

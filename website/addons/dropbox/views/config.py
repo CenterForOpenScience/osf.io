@@ -22,9 +22,10 @@ from dropbox.rest import ErrorResponse
 
 @collect_auth
 @must_be_valid_project
-def dropbox_config_get(auth, node, **kwargs):
+def dropbox_config_get(node, **kwargs):
     """API that returns the serialized node settings."""
-    node_addon = node.get_addon('dropbox', 'node')
+    auth = kwargs['auth']
+    node_addon = node.get_or_add_addon('dropbox', **kwargs)
     return {'result': serialize_settings(node_addon, auth.user)}
 
 
