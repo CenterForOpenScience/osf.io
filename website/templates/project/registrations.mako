@@ -30,9 +30,7 @@
         </div>
     % endif
     %if parent_node['exists'] and user['is_admin_parent']:
-        <br />
-        <br />
-        <div class="m-md">To register the entire project "${parent_node['title']}" instead, click <a href="${parent_node['registrations_url']}">here.</a></div>
+        <div class="m-l-md">To register the entire project "${parent_node['title']}" instead, click <a href="${parent_node['registrations_url']}">here.</a></div>
     %endif 
 
   </div>
