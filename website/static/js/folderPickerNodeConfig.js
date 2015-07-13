@@ -26,14 +26,14 @@ ko.punches.enableAll();
  * @param {String} selector CSS selector for containing div
  * @param {String} folderPicker CSS selector for folderPicker div
  *
- * Notes: 
+ * Notes:
  * - Subclasses of this VM can be created using the oop module like: oop.extend(FolderPickerViewModel, { ... });
  * - Subclasses must:
  *   - provide a VM.messages.submitSettingsSuccess()
  *   - override VM.treebeardOptions.onPickFolder and VM.treebeardOptions.resolveLazyloadUrl
  * - Subclasses can:
  *   - implement an _updateCustomFields method to capture additional parameters in updateFromData
- */    
+ */
 var FolderPickerViewModel = oop.defclass({
     constructor: function(addonName, url, selector, folderpickerSelector) {
         var self = this;
@@ -185,7 +185,7 @@ var FolderPickerViewModel = oop.defclass({
         });
 
         self.treebeardOptions = {
-            lazyLoadPreprocess: function(data) { 
+            lazyLoadPreprocess: function(data) {
                 return data;
             },
             onPickFolder: function() {
@@ -196,8 +196,8 @@ var FolderPickerViewModel = oop.defclass({
             }
         };
     },
-    /** 
-     * Change the flashed message. 
+    /**
+     * Change the flashed message.
      *
      * @param {String} text Text to show
      * @param {String} css CSS class of text to be show, defaults to 'text-info'
@@ -222,7 +222,7 @@ var FolderPickerViewModel = oop.defclass({
     },
     /**
      * Abstract hook called after updateFromData, before the promise is resolved.
-     * - use to validate the VM state after update     
+     * - use to validate the VM state after update
      **/
     afterUpdate: function() {},
     /**
@@ -230,7 +230,7 @@ var FolderPickerViewModel = oop.defclass({
      *
      * @param {Object} settings Settings passed from server response in #updateFromData
      */
-    _updateCustomFields: function(settings) {},  
+    _updateCustomFields: function(settings) {},
     /**
      * Update the view model from data returned from the server or data passed explicitly.
      *
@@ -292,7 +292,7 @@ var FolderPickerViewModel = oop.defclass({
     },
     /**
      * Send a PUT request to change the linked folder.
-     */    
+     */
     submitSettings: function() {
         var self = this;
         function onSubmitSuccess(response) {
@@ -329,7 +329,7 @@ var FolderPickerViewModel = oop.defclass({
             xhr: xhr,
             status: status,
             error: error
-        });    
+        });
     },
     _importAuthPayload: function() {
         return {};
@@ -370,7 +370,7 @@ var FolderPickerViewModel = oop.defclass({
             self.nodeHasAuth(false);
             self.cancelSelection();
             self.currentDisplay(null);
-            self.changeMessage(self.messages.deauthorizeSuccess(), 'text-warning', 3000);     
+            self.changeMessage(self.messages.deauthorizeSuccess(), 'text-warning', 3000);
             self.loadedFolders(false);
             self.destroyPicker();
         });
@@ -383,7 +383,7 @@ var FolderPickerViewModel = oop.defclass({
             });
         });
         return request;
-    },    
+    },
     /** Pop up a confirmation to deauthorize addon from this node.
      *  Send DELETE request if confirmed.
      */
@@ -402,7 +402,7 @@ var FolderPickerViewModel = oop.defclass({
     },
     /**
      * Must be used to update radio buttons and knockout view model simultaneously
-     */    
+     */
     cancelSelection: function() {
         this.selected(null);
     },
@@ -420,14 +420,16 @@ var FolderPickerViewModel = oop.defclass({
             this.cancelSelection();
         }
     },
-    destroyPicker: function() {        
-        this.folderpicker.destroy();
+    destroyPicker: function() {
+        if (this.folderpicker) {
+            this.folderpicker.destroy();
+        }
     },
     doActivatePicker: function(opts) {
         var self = this;
         // Show loading indicator
         self.loading(true);
-        self.folderpicker = new FolderPicker(self.folderpickerSelector, opts);        
+        self.folderpicker = new FolderPicker(self.folderpickerSelector, opts);
     },
     /**
      *  Activates the HGrid folder picker.
@@ -468,7 +470,7 @@ var FolderPickerViewModel = oop.defclass({
         if (!self.loadedFolders()) {
             self.doActivatePicker(opts);
         }
-    }    
+    }
 });
 
 module.exports = FolderPickerViewModel;

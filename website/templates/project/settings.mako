@@ -22,7 +22,7 @@
 
         % if 'write' in user['permissions']:
 
-            <div class="panel panel-default" data-spy="affix" data-offset-top="60" data-offset-bottom="268"><!-- Begin sidebar -->
+            <div class="panel panel-default" data-spy="affix" data-offset-top="60" ><!-- Begin sidebar -->
                 <ul class="nav nav-stacked nav-pills">
 
                     % if not node['is_registration']:
@@ -249,7 +249,7 @@
                         <h3 class="panel-title">Configure Notifications</h3>
                     </div>
                     <div class="help-block" style="padding-left: 15px">
-                        <p class="text-success">These notification settings only apply to you. They do NOT affect any other contributor on this project.</p>
+                        <p class="text-info">These notification settings only apply to you. They do NOT affect any other contributor on this project.</p>
                     </div>
                     <form id="notificationSettings" class="osf-treebeard-minimal">
                         <div id="grid">

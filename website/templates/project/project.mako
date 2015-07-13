@@ -236,7 +236,7 @@
             <div class="panel-heading clearfix">
                 <h3 class="panel-title"  style="padding-top: 3px">Citation</h3>
                 <div class="pull-right">
-                    <span class="permalink">${node['display_absolute_url']}</span><a href="#" class="m-sm project-toggle"><i class="fa fa-angle-down"></i></a>
+                    <span class="permalink">${node['display_absolute_url']}</span><button class="btn btn-link project-toggle"><i class="fa fa-angle-down"></i></button>
                 </div>
             </div>
             <div class="panel-body" style="display:none">
