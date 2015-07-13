@@ -262,7 +262,7 @@ MetaSchema.prototype.flatQuestions = function() {
     var self = this;
 
     var flat = [];
-    
+
     $.each(self.schema.pages, function(i, page) {
         $.each(page.questions, function(qid, question) {
             flat.push(question);
@@ -271,8 +271,8 @@ MetaSchema.prototype.flatQuestions = function() {
     return flat;
 };
 
-/** 
- * @class Draft 
+/**
+ * @class Draft
  * Model for DraftRegistrations
  *
  * @param {Object} params
@@ -369,7 +369,7 @@ var RegistrationEditor = function(urls, editorId) {
         return self.draft().updated;
     });
     self.formattedDate = formattedDate;
-    
+
     self.iterObject = $osf.iterObject;
 
     self.extensions = {
@@ -422,7 +422,7 @@ RegistrationEditor.prototype.init = function(draft) {
  **/
 RegistrationEditor.prototype.flatQuestions = function() {
     var self = this;
-    
+
     return self.draft().metaSchema.flatQuestions();
 };
 /**
@@ -523,11 +523,11 @@ RegistrationEditor.prototype.create = function(schemaData) {
 RegistrationEditor.prototype.submit = function() {
     var self = this;
 
-    var currentNode = window.contextVars.node
-    var currentUser = window.contextVars.currentUser
+    var currentNode = window.contextVars.node;
+    var currentUser = window.contextVars.currentUser;
 
 	bootbox.confirm(function(){
-		ko.renderTemplate("preSubmission", {}, {}, this, "replaceNode")
+		ko.renderTemplate('preSubmission', {}, {}, this, 'replaceNode');
 	}, function(result) {
 		if(result) {
 			$osf.postJSON(self.urls.submit.replace('{draft_pk}', self.draft().pk), {
@@ -536,20 +536,20 @@ RegistrationEditor.prototype.submit = function() {
 			}).then(
 				bootbox.dialog({
 					message: function() {
-						ko.renderTemplate("postSubmission", {}, {}, this, "replaceNode");
+						ko.renderTemplate('postSubmission', {}, {}, this, 'replaceNode');
 					},
-					title: "Pre-Registration Prize Submission",
+					title: 'Pre-Registration Prize Submission',
 					buttons: {
 						dashboard: {
-							label: "Go to your OSF Dashboard",
-							className: "btn-primary pull-right",
+							label: 'Go to your OSF Dashboard',
+							className: 'btn-primary pull-right',
 							callback: function() {
 								window.location.href = '/';
 							}
 						},
 						info: {
-							label: "Go to Prereg Prize info page",
-							className: "btn-primary pull-left",
+							label: 'Go to Prereg Prize info page',
+							className: 'btn-primary pull-left',
 							callback: function() {
 								window.location.href = 'http://centerforopenscience.org/prereg/';
 
