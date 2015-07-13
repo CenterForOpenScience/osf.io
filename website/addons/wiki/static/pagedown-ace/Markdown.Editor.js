@@ -1257,7 +1257,7 @@
 
             // The main dialog box.
             dialog = doc.createElement("div");
-            dialog.className = "wmd-prompt-dialog";
+            dialog.className = "modal-content p-md";
             dialog.style.padding = "10px;";
             dialog.style.position = "fixed";
             dialog.style.width = "400px";
@@ -1268,6 +1268,8 @@
             question.innerHTML = text;
             question.style.padding = "5px";
             dialog.appendChild(question);
+            question.className = "modal-body";
+
 
             // The web form container for the text box and buttons.
             var form = doc.createElement("form"),
@@ -1294,8 +1296,9 @@
             // The ok button
             var okButton = doc.createElement("input");
             okButton.type = "button";
+            okButton.className = "btn btn-success";
             okButton.onclick = function () { return close(false); };
-            okButton.value = "OK";
+            okButton.value = "Apply";
             style = okButton.style;
             style.margin = "10px";
             style.display = "inline";
@@ -1305,6 +1308,7 @@
             // The cancel button
             var cancelButton = doc.createElement("input");
             cancelButton.type = "button";
+            cancelButton.className = "btn btn-default";
             cancelButton.onclick = function () { return close(true); };
             cancelButton.value = "Cancel";
             style = cancelButton.style;
@@ -1312,8 +1316,8 @@
             style.display = "inline";
             style.width = "7em";
 
-            form.appendChild(okButton);
             form.appendChild(cancelButton);
+            form.appendChild(okButton);
 
             util.addEvent(doc.body, "keydown", checkEscape);
             dialog.style.top = "50%";
