@@ -4,17 +4,32 @@
 </script>
 
 <script type="text/html" id="text">
-  <input data-bind="valueUpdate: 'keyup', event: {'keyup': $root.save}, value: value" type="text" class="form-control" />
+  <input data-bind="disabled: readonly, 
+                    valueUpdate: 'keyup', 
+                    event: {'keyup': save},
+                    value: value"
+         type="text" class="form-control" />
 </script>
 <script type="text/html" id="match">
-  <input data-bind="valueUpdate: 'keyup', event: {'keyup': $root.save}, value: value, attr.placeholder: match" type="text" class="form-control" />
+  <input data-bind="disabled: readonly,
+                    valueUpdate: 'keyup',
+                    event: {'keyup': save},
+                    value: value,
+                    attr.placeholder: match" type="text" class="form-control" />
 </script>
 <script type="text/html" id="textarea">
-  <textarea data-bind="textInput: value" class="form-control"> </textarea>
+  <textarea data-bind="disabled: readonly,
+                       valueUpdate: 'keyup',
+                       event: {'keyup': save},
+                       textInput: value"
+            class="form-control"> </textarea>
 </script>
 <!-- Number Types -->
 <script type="text/html" id="number">
-  <input data-bind="valueUpdate: 'keyup', event: {'keyup': $root.save}, value: value" type="text" class="form-control">
+  <input data-bind="disabled: readonly,
+                    valueUpdate: 'keyup',
+                    event: {'keyup': save},
+                    value: value" type="text" class="form-control">
 </script>
 <!-- Enum Types -->
 <script type="text/html" id="choose">
@@ -27,7 +42,12 @@
       <label>
         <div class="row">
           <div class="col-md-1">
-            <input type="radio" data-bind="attr.name: $parent.id, value: option" />
+            <input type="radio" data-bind="disable: readonly,
+                                           event: {
+                                             'click': save
+                                           },
+                                           attr.name: $parent.id,
+                                           value: option" />
           </div>
           <div class="col-md-11">
             <span data-bind="text: option"></span>
@@ -40,7 +60,7 @@
 
 <script type="text/html" id="object">
   <span data-bind="foreach: {data: $root.iterObject($data.properties)}">
-      <div data-bind="template: {data: value, name: value.type}"></div>
+      <div data-bind="template: {data: $root.context(value), name: value.type}"></div>
       <hr />
     </span>
   </span>
@@ -64,7 +84,7 @@
             <div class="col-md-12">
               <div class="form-group" data-bind="css: {has-success: $data.isComplete}">
                 <span data-bind="with: $root.context($data)">
-                  <div data-bind="disable: $root.readonly, template: {data: $data, name: type}"></div>
+                  <div data-bind="template: {data: $data, name: type}"></div>
                 </span>
               </div>
           </div>
