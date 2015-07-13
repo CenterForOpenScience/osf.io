@@ -402,7 +402,7 @@ select {
 }
 
 tr a {
-    word-break: break-all;
+    word-break: break-word;
 }
 
 .btn-link.project-toggle {
