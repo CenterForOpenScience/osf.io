@@ -8,7 +8,7 @@ var Raven = require('raven-js');
 var drafts;
 
 $(document).ready(function() {
-    var test = '/api/v1/drafts/' + window.contextVars.accessToken
+    var test = '/api/v1/drafts/' + window.contextVars.accessToken;
     var adminView = {};
 
     var request = $.ajax({

@@ -1682,7 +1682,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
 
         return forked
 
-    def register_node(self, schema, auth, template, data, parent=None):
+    def register_node(self, schema, auth, data, parent=None):
         """Make a frozen copy of a node.
 
         :param schema: Schema object
@@ -1699,9 +1699,6 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
             )
         if self.is_folder:
             raise NodeStateError("Folders may not be registered")
-
-        template = urllib.unquote_plus(template)
-        template = to_mongo(template)
 
         when = datetime.datetime.utcnow()
 
@@ -1747,7 +1744,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         for node_contained in original.nodes:
             if not node_contained.is_deleted:
                 child_registration = node_contained.register_node(
-                    schema, auth, template, data, parent=registered
+                    schema, auth, data, parent=registered
                 )
                 if child_registration and not child_registration.primary:
                     registered.nodes.append(child_registration)
@@ -3049,11 +3046,23 @@ class DraftRegistration(AddonModelMixin, StoredObject):
     registration_schema = fields.ForeignField('metaschema')
     registered_node = fields.ForeignField('node')
 
+    fulfills = fields.StringField(list=True)
+    approved = fields.BooleanField(default=False)
+
     is_pending_review = fields.BooleanField(default=False)
 
-    schema_name = fields.StringField()
-
     storage = fields.ForeignField('osfstoragenodesettings')
+
+    def __init__(self, *args, **kwargs):
+        super(DraftRegistration, self).__init__(*args, **kwargs)
+
+        meta_schema = kwargs.get('registration_schema')
+        if meta_schema:
+            self.fulfills(meta_schema.schema.get('fulfills'))
+            if not kwargs['approved']:
+                if not meta_schema.schema.get('requires_approval', False):
+                    self.approved(True)
+        self.save()
 
     # proxy fields from branched_from Node
     def __getattr__(self, attr):
@@ -3061,7 +3070,6 @@ class DraftRegistration(AddonModelMixin, StoredObject):
             return self.__dict__[attr]
         except KeyError:
             return getattr(self.branched_from, attr, None)
-
 
     def find_question(self, qid):
         for page in self.registration_schema.schema['pages']:
@@ -3088,3 +3096,13 @@ class DraftRegistration(AddonModelMixin, StoredObject):
                 }
             })
         return all_comments
+
+    def register(self, auth):
+
+        node = self.branched_from
+
+        # Create the registration
+        register = node.register_node(
+            self.registration_schema, auth, self.registration_metadata
+        )
+        return register

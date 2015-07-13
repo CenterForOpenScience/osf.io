@@ -7,7 +7,7 @@ var faker = require('faker');
 window.contextVars.currentUser = {
     name: faker.name.findName(),
     id: 1
-}; 
+};
 var registrationUtils = require('js/registrationUtils');
 
 var utilities = registrationUtils.utilities;
@@ -26,7 +26,7 @@ var mkMetaSchema = function() {
         questions[qid] = {
             type: 'string',
             format: 'text'
-        }; 
+        };
     });
 
     var params = {
@@ -48,7 +48,7 @@ var mkMetaSchema = function() {
         },
         id: 'asdfg'
     };
-    
+
     var ms = new MetaSchema(params);
     return [qid, params, ms];
 };
@@ -94,7 +94,7 @@ describe('Comment', () => {
             var user = {
                 name: faker.name.findName(),
                 id: 2
-            };             
+            };
             var data = {
                 user: user,
                 lastModified: faker.date.past(),
@@ -114,11 +114,11 @@ describe('Comment', () => {
         it('is true if the global currentUser is the same as comment.user', () => {
             var comment = new Comment();
             assert.isTrue(comment.canDelete());
-            
+
             var user = {
                 name: faker.name.findName(),
                 id: 2
-            };             
+            };
             var data = {
                 user: user,
                 lastModified: faker.date.past(),
@@ -134,11 +134,11 @@ describe('Comment', () => {
             assert.isFalse(comment.canEdit());
             comment.saved(true);
             assert.isTrue(comment.canEdit());
-            
+
             var user = {
                 name: faker.name.findName(),
                 id: 2
-            };             
+            };
             var data = {
                 user: user,
                 lastModified: faker.date.past(),
@@ -149,7 +149,7 @@ describe('Comment', () => {
             comment.saved(true);
             assert.isFalse(comment.canEdit());
         });
-    });    
+    });
 });
 
 describe('Question', () => {
@@ -167,7 +167,7 @@ describe('Question', () => {
         };
         q = new Question(question, id);
     });
-    
+
     describe('#constructor', () => {
         it('loads in optional instantiation data', () => {
             assert.equal(q.id, id);
@@ -182,21 +182,21 @@ describe('Question', () => {
         });
     });
     describe('#allowAddNext', () => {
-        it("is true if the Question's nextComment is not blank", () => {            
+        it('is true if the Question\'s nextComment is not blank', () => {
             assert.isFalse(q.allowAddNext());
             q.nextComment('not blank');
             assert.isTrue(q.allowAddNext());
         });
     });
     describe('#isComplete', () => {
-        it("is true if the Question's value is not blank", () => {
+        it('is true if the Question\'s value is not blank', () => {
             assert.isFalse(q.isComplete());
             q.value('not blank');
             assert.isTrue(q.isComplete());
         });
     });
     describe('#valid', () => {
-        it("is true if the Question's value passes the corresponding validator's checks", () => {
+        it('is true if the Question\'s value passes the corresponding validator\'s checks', () => {
             // q is string type
             assert.isFalse(q.valid());
             q.value('not blank');
@@ -204,7 +204,7 @@ describe('Question', () => {
         });
     });
     describe('#init', () => {
-        it("maps object-type Question's properties property to sub-Questions", () => {
+        it('maps object-type Question\'s properties property to sub-Questions', () => {
             var props = {
                 foo: {
                     type: 'number'
@@ -281,14 +281,14 @@ describe('Draft', () => {
                 registration_metadata: {},
                 initiator: {
                     name: faker.name.findName(),
-                    id: faker.internet.ip()                   
+                    id: faker.internet.ip()
                 },
                 initiated: faker.date.past(),
-                updated: faker.date.past()                    
+                updated: faker.date.past()
             };
 
             var draft = new Draft(params, ms);
- 
+
             assert.equal(draft.metaSchema.name, ms.name);
             assert.equal(draft.initiator.id, params.initiator.id);
             assert.equal(draft.updated.toString(), params.updated.toString());
@@ -303,16 +303,16 @@ describe('Draft', () => {
                     value: 'value'
                 };
             });
-            
+
             var params = {
                 pk: faker.random.number(),
                 registration_metadata: data,
                 initiator: {
                     name: faker.name.findName(),
-                    id: faker.internet.ip()                   
+                    id: faker.internet.ip()
                 },
                 initiated: faker.date.past(),
-                updated: faker.date.past()                    
+                updated: faker.date.past()
             };
 
             var draft = new Draft(params, ms);
@@ -323,5 +323,5 @@ describe('Draft', () => {
 });
 
 describe('RegistrationEditor', () => {
-    
+
 });
