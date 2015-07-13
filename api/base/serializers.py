@@ -53,7 +53,7 @@ class LinksField(ser.Field):
         })
     """
 
-    def  __init__(self, links, *args, **kwargs):
+    def __init__(self, links, *args, **kwargs):
         ser.Field.__init__(self, read_only=True, *args, **kwargs)
         self.links = links
 

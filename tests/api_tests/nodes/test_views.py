@@ -1320,3 +1320,7 @@ class TestDeleteNodePointer(ApiTestCase):
     def test_deletes_private_node_pointer_logged_in_non_contributor(self):
         res = self.app.delete(self.private_url, auth=self.basic_auth_two, expect_errors=True)
         assert_equal(res.status_code, 403)
+
+# class NodeLogList(ApiTestCase):
+#     def setUp(self):
+

@@ -1,6 +1,6 @@
 /**
- * Paginator model
- */
+* Paginator model
+*/
 'use strict';
 var ko = require('knockout');
 var oop = require('js/oop');
@@ -16,21 +16,6 @@ var Paginator = oop.defclass({
         this.paginators = ko.observableArray([]);
 
     },
-
-    //addMakeResponsive: function() {
-    //    var self = this;
-    //    var i;
-    //    self.makeResponsive = function () {
-    //         $('#pagination-demo').twbsPagination({
-    //            totalPages: 35,
-    //            visiblePages: 7,
-    //            onPageClick: function (event, page) {
-    //        $('#page-content').text('Page ' + page);
-    //    }
-    //});
-    //    }
-    //
-    //},
 
     addNewPaginators: function() {
         var self = this;
@@ -154,4 +139,17 @@ var Paginator = oop.defclass({
     }
 });
 
+//var pageModel = function() {
+//	this.paginators = ko.observableArray(Paginator.paginators);
+//	this.makeResponsive = function(element) {
+//
+//		if ($(element).length > 0) {
+//			$(element[0]).parent().find('> ul').rPage();
+//		}
+//
+//	}
+//};
+//
+//ko.applyBindings(new pageModel());
+//
 module.exports = Paginator;

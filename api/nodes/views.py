@@ -9,7 +9,7 @@ from website.models import Node, Pointer
 from api.users.serializers import ContributorSerializer
 from api.base.filters import ODMFilterMixin, ListFilterMixin
 from api.base.utils import get_object_or_404, waterbutler_url_for
-from .serializers import NodeSerializer, NodePointersSerializer, NodeFilesSerializer, NodeLogsSerializer
+from .serializers import NodeSerializer, NodePointersSerializer, NodeFilesSerializer
 from .permissions import ContributorOrPublic, ReadOnlyIfRegistration, ContributorOrPublicForPointers
 from website.project.model import NodeLog
 
@@ -364,25 +364,3 @@ class NodeFilesList(generics.ListAPIView, NodeMixin):
         return files
 
 
-class NodeLogsList(generics.ListAPIView,  NodeMixin):
-    """ Recent Log Activity
-
-    This allows users to be able to get log information. This will allow more interesting
-    use cases for the API. Also this will be necessary if we want to be able to use the
-     v2 api for the project summary page.
-    """
-    serializer_class = NodeLogsSerializer
-    log_lookup_url_kwarg = 'node_id'
-
-    permission_classes = (
-        drf_permissions.IsAuthenticatedOrReadOnly,
-        ContributorOrPublic,
-    )
-
-    def get_queryset(self):
-
-        log_id = [self.get_node()._id]
-
-        query = Q('__backrefs.logged.node.logs', 'in', log_id)
-        logs = NodeLog.find(query).sort('-_id')
-        return logs
