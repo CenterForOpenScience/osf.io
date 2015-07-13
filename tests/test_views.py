@@ -152,6 +152,28 @@ class TestProjectViews(OsfTestCase):
         self.project.add_contributor(self.user2, auth=Auth(self.user1))
         self.project.save()
 
+    def test_cannot_remove_only_visible_contributor(self):
+        self.project.visible_contributor_ids.remove(self.user1._id)
+        self.project.save()
+
+        url = self.project.api_url_for('project_before_remove_contributor')
+        res = self.app.post_json(
+            url, {'id': self.user2._id}, auth=self.auth, expect_errors=True
+        )
+        assert_equal(res.status_code, http.FORBIDDEN)
+
+        url = self.project.api_url_for('project_removecontributor')
+        res = self.app.post_json(
+            url, {'id': self.user2._id}, auth=self.auth, expect_errors=True
+        )
+        assert_equal(res.status_code, http.FORBIDDEN)
+        assert_true(self.project.is_contributor(self.user2))
+
+        ret = self.project.remove_contributor(contributor=self.user2, auth=self.consolidate_auth1)
+        assert_false(ret)
+        assert_true(self.project.is_contributor(self.user2))
+
+
     def test_can_view_nested_project_as_admin(self):
         self.parent_project = NodeFactory(
             title='parent project',
