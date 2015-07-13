@@ -1203,12 +1203,27 @@ class User(GuidStoredObject, AddonModelMixin):
             # Skip dashboard node
             if node.is_dashboard:
                 continue
-            node.add_contributor(
-                contributor=self,
-                permissions=node.get_permissions(user),
-                visible=node.get_visible(user),
-                log=False,
-            )
+            # if both accounts are contributor of the same project
+            if node.is_contributor(self) and node.is_contributor(user):
+                if node.permissions[user._id] > node.permissions[self._id]:
+                    permissions = node.permissions[user._id]
+                else:
+                    permissions = node.permissions[self._id]
+                node.set_permissions(user=self, permissions=permissions)
+
+                visible1 = self._id in node.visible_contributor_ids
+                visible2 = user._id in node.visible_contributor_ids
+                if visible1 != visible2:
+                    node.set_visible(user=self, visible=True, log=True, auth=Auth(user=self))
+
+            else:
+                node.add_contributor(
+                    contributor=self,
+                    permissions=node.get_permissions(user),
+                    visible=node.get_visible(user),
+                    log=False,
+                )
+
             try:
                 node.remove_contributor(
                     contributor=user,
