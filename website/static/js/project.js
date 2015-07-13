@@ -20,7 +20,7 @@ NodeActions.beforeForkNode = function(url, done) {
         contentType: 'application/json'
     }).done(function(response) {
         bootbox.confirm(
-            $osf.joinPrompts(response.prompts, 'Are you sure you want to fork this project?'),
+            $osf.joinPrompts(response.prompts, ('<h4>Are you sure you want to fork this project?</h4>')),
             function(result) {
                 if (result) {
                     done && done();

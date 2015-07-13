@@ -350,7 +350,7 @@ a {
 /* OSF-panel */
 .osf-panel {
     border: 1px solid #ddd;
-    height: 750px;
+    height: 764px;
     overflow: auto;
     display: block;
     position: relative;
@@ -391,4 +391,7 @@ a {
 .table-less {
     max-height: 140px;
     overflow-y: hidden;
+}
+select {
+    word-wrap: normal;
 }
