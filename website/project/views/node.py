@@ -276,7 +276,7 @@ def node_forks(auth, node, **kwargs):
 def node_setting(auth, node, **kwargs):
 
     ret = _view_project(node, auth, primary=True)
-    ret['addon_settings'] = addon_utils.get_addons_by_config_type('node', auth.user)
+    ret['addon_settings'] = addon_utils.get_addons_by_config_type('node', auth.user, node)
 
     accounts_addons = ([addon for addon in settings.ADDONS_AVAILABLE if 'node' in addon.owners
                         and addon.short_name not in settings.SYSTEM_ADDED_ADDONS['node']])
