@@ -79,8 +79,8 @@ def teardown_database(client=None, database=None):
     client.drop_database(database)
 
 
-def mock_search_update(node, index=None, files=None):
-    elastic_search.update_node(node, index=index, files=False)
+def return_empty_list(*args, **kwargs):
+    return []
 
 
 class DbTestCase(unittest.TestCase):
@@ -198,8 +198,8 @@ class MockUpdateNodeCase(unittest.TestCase):
     """
     def setUp(self):
         super(MockUpdateNodeCase, self).setUp()
-        self.search_patch = mock.patch('website.search.search.update_node',
-                                       side_effect=mock_search_update)
+        self.search_patch = mock.patch('website.search.index_file.collect_files',
+                                       side_effect=return_empty_list)
         self.search_patch.start()
 
     def tearDown(self):

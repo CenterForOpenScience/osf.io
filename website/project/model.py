@@ -1102,6 +1102,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
             need_update = False
         if need_update:
             self.update_search()
+            self.update_search_files()
 
         # This method checks what has changed.
         if settings.PIWIK_HOST and update_piwik:
@@ -1530,6 +1531,18 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         except search.exceptions.SearchUnavailableError as e:
             logger.exception(e)
             log_exception()
+
+    def update_search_files(self):
+        from website import search
+        try:
+            if self.is_public:
+                search.search.update_all_files(self)
+            else:
+                search.search.delete_all_files(self)
+        except search.exceptions.SearchUnavailableError as e:
+            logger.exception(e)
+            log_exception()
+
 
     def delete_search_entry(self):
         from website import search

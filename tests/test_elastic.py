@@ -765,7 +765,7 @@ class TestFiles(SearchTestCase):
             'path': '/00001',
             'content': 'tea, earl gray, hot.',
         }
-        elastic_search.update_file(self.file_, self.project._id, index=elastic_search.INDEX)
+        search.update_file(self.file_, self.project._id, index=elastic_search.INDEX)
 
         time.sleep(1)  # Allow elasticsearch to update
 
@@ -784,14 +784,14 @@ class TestFiles(SearchTestCase):
             'path': '/00002',
             'content': 'Andorians are blue.',
         }
-        elastic_search.update_file(non_ascii_name_file, self.project._id, index=elastic_search.INDEX)
+        search.update_file(non_ascii_name_file, self.project._id, index=elastic_search.INDEX)
 
         non_ascii_content_file = {
             'name': 'non_ascii_content_file.txt',
             'path': '/00003',
             'content': 'Fun Fact! The emoji for earth is \xF0\x9F\x8C\x8F.'
         }
-        elastic_search.update_file(non_ascii_content_file, self.project._id, index=elastic_search.INDEX)
+        search.update_file(non_ascii_content_file, self.project._id, index=elastic_search.INDEX)
         time.sleep(1)
 
         res = query('Andorians')['results']
@@ -811,7 +811,7 @@ class TestFiles(SearchTestCase):
     def test_project_not_in_results_after_file_deleted(self):
         res = query('earl gray')['results']
         assert_equal(len(res), 1)
-        elastic_search.delete_file('00001')
+        search.delete_file('00001')
         time.sleep(1)
         res = query('earl gray')['results']
         assert_equal(len(res), 0)

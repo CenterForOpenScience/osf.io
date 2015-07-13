@@ -32,9 +32,8 @@ def update_node(node, index=None):
 
 
 @requires_search
-def update_file(file_, index=None):
+def update_file(file_, parent_id, index=None):
     index = index or settings.ELASTIC_INDEX
-    parent_id = file_.node._id
     search_engine.update_file(file_, parent_id, index=index)
 
 
@@ -54,6 +53,12 @@ def update_file_with_metadata(metadata, addon, index=None):
 def delete_file(file_path, index=None):
     index = index or settings.ELASTIC_INDEX
     search_engine.delete_file(file_path, index=index)
+
+
+@requires_search
+def delete_all_files(node, index=None):
+    index = index or settings.ELASTIC_INDEX
+    search_engine.delete_all_files(node, index=index)
 
 
 @requires_search

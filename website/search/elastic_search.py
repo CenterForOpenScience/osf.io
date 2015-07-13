@@ -294,7 +294,7 @@ def update_node(node, index=None, files=True):
             ]:
                 elastic_document['wikis'][wiki.page_name] = wiki.raw_text(node)
             if files:
-                update_all_files(node, elastic_document_id, index=index)
+                update_all_files(node, index=index)
         es.index(index=index, doc_type=category, id=elastic_document_id, body=elastic_document, refresh=True)
 
 
@@ -336,6 +336,14 @@ def delete_file(file_path, index=None):
     index = index or INDEX
     file_path = ''.join(['/', file_path]) if not file_path[0] == '/' else file_path
     es.delete(index=index, doc_type='file', id=file_path, refresh=True, ignore=[404])
+
+
+@requires_search
+def delete_all_files(node, index=None):
+    index = index or INDEX
+    for file_dict in index_file.collect_files(node):
+        file_path = file_dict['path']
+        delete_file(file_path, index)
 
 
 def bulk_update_contributors(nodes, index=INDEX):
