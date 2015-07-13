@@ -49,7 +49,7 @@
                             </thead>
                             <tbody data-bind="foreach: profile().alternateEmails()">
                                 <tr>
-                                    <td style="width:100%">{{ $data.address }}</td>
+                                    <td style="word-break: break-all;">{{ $data.address }}</td>
                                     <td><a data-bind="click: $parent.makeEmailPrimary">make&nbsp;primary</a></td>
                                     <td><a data-bind="click: $parent.removeEmail"><i class="fa fa-times text-danger"></i></a></td>
                                 </tr>
@@ -65,7 +65,7 @@
                             <tbody>
                                 <!-- ko foreach: profile().unconfirmedEmails() -->
                                 <tr>
-                                    <td style="width:100%">{{ $data.address }}</td>
+                                    <td style="word-break: break-all;">{{ $data.address }}</td>
                                     <td><a data-bind="click: $parent.resendConfirmation">resend&nbsp;confirmation</a></td>
                                     <td><a data-bind="click: $parent.removeEmail"><i class="fa fa-times text-danger"></i></a></td>
                                 </tr>

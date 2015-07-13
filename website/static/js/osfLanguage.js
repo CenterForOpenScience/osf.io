@@ -26,7 +26,10 @@ module.exports = {
                 'page.',
             deauthError: 'Could not unlink Dataverse at this time.',
             deauthSuccess: 'Unlinked your Dataverse account.',
-            authError: 'There was a problem connecting to the Dataverse.',
+            authError: 'Sorry, but there was a problem connecting to that instance of Dataverse. It ' +
+                'is likely that the instance hasn\'t been upgraded to Dataverse 4.0. If you ' +
+                'have any questions or believe this to be an error, please contact ' +
+                'support@osf.io.',
             authInvalid: 'Your Dataverse API token is invalid.',
             authSuccess: 'Your Dataverse account was linked.',
             datasetDeaccessioned: 'This dataset has already been deaccessioned on the Dataverse ' +
