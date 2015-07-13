@@ -27,21 +27,25 @@ DESCRIPTION_WEIGHT = 1.2
 JOB_SCHOOL_BOOST = 1
 ALL_JOB_SCHOOL_BOOST = 0.125
 
-def build_query(qs='*', start=0, size=10, sort=None, hybrid=True):
-    q = build_query_string(qs)
-    if hybrid:
-        q = {
-            'bool': {
-                'should': [q, build_has_child_query_string(qs)]
+
+def build_query(qs='*', start=0, size=10, sort=None, has_child=True):
+    if has_child:
+        query = {
+            'query': {
+                'bool': {
+                    'should': [
+                        build_query_string(qs),
+                        build_has_child_query_string(qs),
+                    ]
+                }
             }
         }
-
-    query = {
-        'query': q,
-        'from': start,
-        'size': size,
-    }
-
+    else:
+        query = {
+            'query': build_query_string(qs),
+        }
+    query['from'] = start
+    query['size'] = size
     if sort:
         query['sort'] = [
             {

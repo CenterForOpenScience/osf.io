@@ -508,7 +508,7 @@ def search_contributor(query, page=0, size=10, exclude=None, current_user=None):
     query = "  AND ".join('{}*~'.format(re.escape(item)) for item in items) + \
             "".join(' NOT id:"{}"'.format(excluded._id) for excluded in exclude)
 
-    results = search(build_query(query, start=start, size=size, hybrid=False), index=INDEX, doc_type='user')
+    results = search(build_query(query, start=start, size=size, has_child=False), index=INDEX, doc_type='user')
     docs = results['results']
     pages = math.ceil(results['counts'].get('user', 0) / size)
     validate_page_num(page, pages)
