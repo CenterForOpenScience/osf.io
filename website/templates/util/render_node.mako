@@ -9,7 +9,7 @@
         ">
 
         <h4 class="list-group-item-heading">
-            <span class="component-overflow" style="line-height: 1.5;">
+            <span class="component-overflow f-w-lg" style="line-height: 1.5;">
             % if not summary['primary']:
               <i class="fa fa-link" data-toggle="tooltip" title="Linked ${summary['node_type']}"></i>
             % endif
@@ -120,7 +120,7 @@
     <li
         node_reference="${summary['id']}:${'node' if summary['primary'] else 'pointer'}"
         class="project list-group-item list-group-item-node unavailable">
-        <h4 class="list-group-item-heading">
+        <h4 class="list-group-item-heading f-w-lg">
             %if summary['is_registration']:
                 Private Registration
             %elif summary['is_fork']:

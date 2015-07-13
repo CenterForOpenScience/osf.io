@@ -147,7 +147,7 @@
         </div>
 
         <div id="addons" class="row" style="padding-top: 40px;">
-            <h2 class="text-center anchor">OSF Add-ons</h2>
+            <h2 class="text-center anchor m-b-lg">OSF Add-ons</h2>
             <div class="col-md-12">
                 <%include file="/public/pages/help/addons.mako"/>
             </div>
