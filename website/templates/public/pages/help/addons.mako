@@ -24,8 +24,10 @@
 
 
 <div class="row">
-    <h3 class="text-center" style="padding-top: 20px;">Storage Options</h3>
     <div class="col-md-12">
+        <div class="col-md-12">
+            <h3 class="text-center m-t-xl f-w-lg">Storage Options</h3>
+        </div>
         <%include file="/public/pages/help/addons/dropbox.mako"/>
         <%include file="/public/pages/help/addons/github.mako"/>
         <%include file="/public/pages/help/addons/amazons3.mako"/>
@@ -34,11 +36,15 @@
         <%include file="/public/pages/help/addons/box.mako"/>
         <%include file="/public/pages/help/addons/drive.mako"/>
 
-    <h3 class= "text-center" style="padding-top: 20px;">Citation Managers</h3>
+        <div class="col-md-12">
+            <h3 class= "text-center m-t-xl f-w-lg">Citation Managers</h3>
+        </div>
         <%include file="/public/pages/help/addons/mendeley.mako"/>
         <%include file="/public/pages/help/addons/zotero.mako"/>
 
-    <h3 class="text-center" style="padding-top: 20px;">Security</h3>
+        <div class="col-md-12">
+            <h3 class="text-center m-t-xl f-w-lg" >Security</h3>
+        </div>
         <%include file="/public/pages/help/addons/two-factor.mako"/>
     </div>
 </div>

@@ -1829,6 +1829,10 @@ function _dropLogic(event, items, folder) {
         return;
     }
 
+    if (folder.data.kind === 'file') {
+        folder = folder.parent();
+    }
+
     // if (items[0].data.kind === 'folder' && ['github', 'figshare', 'dataverse'].indexOf(folder.data.provider) !== -1) { return; }
 
     if (!folder.open) {
@@ -1877,6 +1881,10 @@ function getCopyMode(folder, items) {
     var canMove = true;
     var mustBeIntra = (folder.data.provider === 'github');
     var cannotBeFolder = (folder.data.provider === 'figshare' || folder.data.provider === 'dataverse');
+
+    if (folder.data.kind === 'file') {
+        folder = folder.parent();
+    }
 
     if (folder.parentId === 0 ||
         folder.data.kind !== 'folder' ||
