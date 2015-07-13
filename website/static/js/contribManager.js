@@ -37,7 +37,7 @@ var sortMap = {
 
 // TODO: We shouldn't need both pageOwner (the current user) and currentUserCanEdit. Separate
 // out the permissions-related functions and remove currentUserCanEdit.
-var ContributorModel = function(contributor, currentUserCanEdit, pageOwner, isRegistration, isAdmin) {
+var ContributorModel = function(contributor, currentUserCanEdit, pageOwner, isRegistration, validVisible, messages, isAdmin) {
 
     var self = this;
     $.extend(self, contributor);
@@ -58,7 +58,9 @@ var ContributorModel = function(contributor, currentUserCanEdit, pageOwner, isRe
 
     self.currentUserCanEdit = currentUserCanEdit;
     self.isAdmin = isAdmin;
+    self.messages = messages;
     self.visible = ko.observable(contributor.visible);
+    self.validVisible = validVisible;
     self.permission = ko.observable(contributor.permission);
     self.curPermission = ko.observable(self.getPermission(self.permission()));
     self.deleteStaged = ko.observable(contributor.deleteStaged || false);
@@ -112,34 +114,46 @@ var ContributorModel = function(contributor, currentUserCanEdit, pageOwner, isRe
             id: id,
             name: self.fullname
         };
-        $osf.postJSON(
-            window.contextVars.node.urls.api + 'beforeremovecontributors/',
-            payload
-        ).done(function(response) {
-            bootbox.confirm({
-                title: 'Delete contributor?',
-                message: ('Are you sure you want to remove yourself (<strong>' + name + '</strong>) from contributor list?'),
-                callback: function(result) {
-                    if (result) {
-                        $osf.postJSON(
-                            window.contextVars.node.urls.api + 'removecontributors/',
-                            payload
-                        ).done(function(response) {
-                            if (response.redirectUrl) {
-                                window.location.href = response.redirectUrl;
-                            } else {
-                                window.location.reload();
+        console.log(self.validVisible());
+        console.log(self.visible());
+        console.log(self.messages)
+        if (self.validVisible() === 1 && self.visible()){
+            self.messages.push(
+                new MessageModel(
+                    'Must have at least one registered admin contributor',
+                    'error'
+                )
+            );
+        } else {
+            $osf.postJSON(
+                window.contextVars.node.urls.api + 'beforeremovecontributors/',
+                payload
+            ).done(function (response) {
+                    bootbox.confirm({
+                        title: 'Delete contributor?',
+                        message: ('Are you sure you want to remove yourself (<strong>' + name + '</strong>) from contributor list?'),
+                        callback: function (result) {
+                            if (result) {
+                                $osf.postJSON(
+                                    window.contextVars.node.urls.api + 'removecontributors/',
+                                    payload
+                                ).done(function (response) {
+                                        if (response.redirectUrl) {
+                                            window.location.href = response.redirectUrl;
+                                        } else {
+                                            window.location.reload();
+                                        }
+                                    }).fail(
+                                    $osf.handleJSONError
+                                );
                             }
-                        }).fail(
-                            $osf.handleJSONError
-                        );
-                    }
-                }
-            });
-        }).fail(
-            $osf.handleJSONError
-        );
-        return false;
+                        }
+                    });
+                }).fail(
+                $osf.handleJSONError
+            );
+            return false;
+        }
     };
 
 };
@@ -217,6 +231,7 @@ var ContributorsViewModel = function(contributors, adminContributors, user, isRe
             return !item.deleteStaged();
         });
     });
+
     self.validAdmin = ko.computed(function() {
         var admins = ko.utils.arrayFilter(self.retainedContributors(), function(item) {
             return item.permission() === 'admin' &&
@@ -263,10 +278,10 @@ var ContributorsViewModel = function(contributors, adminContributors, user, isRe
     self.init = function() {
         self.messages([]);
         self.contributors(self.original().map(function(item) {
-            return new ContributorModel(item, self.canEdit(), self.user(), isRegistration);
+            return new ContributorModel(item, self.canEdit(), self.user(), isRegistration, self.validVisible, self.messages);
         }));
         self.adminContributors = adminContributors.map(function(contributor) {
-          return new ContributorModel(contributor, self.canEdit(), self.user(), isRegistration, true);
+          return new ContributorModel(contributor, self.canEdit(), self.user(), isRegistration, self.validVisible, self.messages, true);
         });
     };
 
