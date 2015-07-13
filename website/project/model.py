@@ -3048,12 +3048,17 @@ class DraftRegistration(AddonModelMixin, StoredObject):
 
     fulfills = fields.StringField(list=True)
     approved = fields.BooleanField(default=False)
+    comments_sent = fields.BooleanField(default=False)
+    registered = fields.BooleanField(default=False)
+    proof_of_pub = fields.BooleanField(default=False)
+    payment_sent = fields.BooleanField(default=False)
 
     is_pending_review = fields.BooleanField(default=False)
 
     admin_notes = fields.StringField()
 
     storage = fields.ForeignField('osfstoragenodesettings')
+
 
     def __init__(self, *args, **kwargs):
         super(DraftRegistration, self).__init__(*args, **kwargs)
