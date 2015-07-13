@@ -2,6 +2,7 @@ var m = require('mithril');
 var $ = require('jquery');
 var $osf = require('js/osfHelpers');
 var waterbutler = require('js/waterbutler');
+var bootbox = require('bootbox');
 
 var util = require('./util.js');
 
@@ -30,10 +31,6 @@ var FileRevisionsTable = {
         self.canEdit = canEdit;
         self.enableEditing = enableEditing;
         self.baseUrl = (window.location.href).split('?')[0];
-        self.md5 = [];
-        self.sha256 = [];
-        self.buttonToText = [];
-        self.buttonToText2 = [];
 
         model.hasHashes = self.file.provider === 'osfstorage';
         model.hasDate = self.file.provider !== 'dataverse';
@@ -92,6 +89,13 @@ var FileRevisionsTable = {
             });
         };
 
+        self.showModal = function(hashName, index, hash) {
+            bootbox.alert({
+                title: 'Version ' + index + ' ' + hashName + ' hash',
+                message: hash
+            });
+        };
+
         self.getTableHead = function() {
             return m('thead', [
                 m('tr', [
@@ -118,33 +122,16 @@ var FileRevisionsTable = {
                             revision.extra.user.name
                     ) : false,
                 model.hasHashes ? m('td',
-                    m( self.buttonToText[revision.displayVersion] || 'a.btn.btn-primary.btn-sm', {
-                        style: {wordBreak: 'break-all'},
+                    m( 'a.btn.btn-primary.btn-xs', {
                         onclick: function() {
-                            if ((self.md5[revision.displayVersion] === 'MD5') ||
-                                (typeof self.md5[revision.displayVersion] === 'undefined')){
-                                self.md5[revision.displayVersion] = revision.displayMd5;
-                                self.buttonToText[revision.displayVersion] = 'td';
-                            } else {
-                                self.md5[revision.displayVersion] = 'MD5';
-                                self.buttonToText[revision.displayVersion] = 'a.btn.btn-primary.btn-sm';
-                            }
+                            self.showModal('MD5', revision.displayVersion, revision.displayMd5);
                         }
-                    }, m('td', self.md5[revision.displayVersion] || 'MD5') ),
-                    m('br'),
-                    m( self.buttonToText2[revision.displayVersion] || 'a.btn.btn-primary.btn-sm', {
-                        style: {wordBreak: 'break-all'},
+                    }, m('td', 'MD5') ),
+                    m( 'a.btn.btn-primary.btn-xs', {
                         onclick: function() {
-                            if ((self.sha256[revision.displayVersion] === 'SHA256') ||
-                                (typeof self.sha256[revision.displayVersion] === 'undefined')){
-                                self.sha256[revision.displayVersion] = revision.displaySHA256;
-                                self.buttonToText2[revision.displayVersion] = 'td';
-                            } else {
-                                self.sha256[revision.displayVersion] = 'SHA256';
-                                self.buttonToText2[revision.displayVersion] = 'a.btn.btn-primary.btn-sm';
-                            }
+                            self.showModal('SHA256', revision.displayVersion, revision.displaySha256);
                         }
-                    }, m('td', self.sha256[revision.displayVersion] || 'SHA256') )
+                    }, m('td', 'SHA2') )
                 ) : false,
                 m('td', revision.extra.downloads > -1 ? m('.badge', revision.extra.downloads) : ''),
                 m('td',
@@ -225,7 +212,7 @@ var FileRevisionsTable = {
             }
         }
         revision.displayMd5 = revision.extra.md5;
-        revision.displaySHA256 = revision.extra.sha256;
+        revision.displaySha256 = revision.extra.sha256;
 
         revision.osfViewUrl = '?' + $.param(options);
         revision.osfDownloadUrl = '?' + $.param($.extend({action: 'download'}, options));
