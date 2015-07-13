@@ -48,13 +48,13 @@ var _figshareItemButtons = {
                 }, 'Delete')
             );
         }
-        if (item.data.permissions && item.data.permissions.view) {
+        if (item.kind === 'file' && item.data.permissions && item.data.permissions.view) {
             buttons.push(
                 m.component(Fangorn.Components.button, {
                     onclick: function(event) {
                         Fangorn.ButtonEvents._gotoFileEvent.call(tb, item);
                     },
-                    icon: 'fa fa-external-link',
+                    icon: 'fa fa-file-o',
                     className : 'text-info'
                 }, 'View'));
         }

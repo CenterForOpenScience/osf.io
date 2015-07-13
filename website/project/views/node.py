@@ -34,7 +34,7 @@ from website.project.model import has_anonymous_link, get_pointer_parent, NodeUp
 from website.project.forms import NewNodeForm
 from website.models import Node, Pointer, WatchConfig, PrivateLink
 from website import settings
-from website.views import _render_nodes, find_dashboard
+from website.views import _render_nodes, find_dashboard, validate_page_num
 from website.profile import utils
 from website.project import new_folder
 from website.util.sanitize import strip_html
@@ -362,7 +362,6 @@ def configure_comments(node, **kwargs):
 def view_project(auth, node, **kwargs):
     primary = '/api/v1' not in request.path
     ret = _view_project(node, auth, primary=primary)
-    ret['post_register'] = request.args.get('post_register', False)
 
     ret['addon_capabilities'] = settings.ADDON_CAPABILITIES
     # Collect the URIs to the static assets for addons that have widgets
@@ -1107,6 +1106,7 @@ def search_node(auth, **kwargs):
     nodes = Node.find(odm_query)
     count = nodes.count()
     pages = math.ceil(count / size)
+    validate_page_num(page, pages)
 
     return {
         'nodes': [

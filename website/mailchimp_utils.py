@@ -79,7 +79,7 @@ def unsubscribe_mailchimp(list_name, user_id, username=None):
     user = User.load(user_id)
     m = get_mailchimp_api()
     list_id = get_list_id_from_name(list_name=list_name)
-    m.lists.unsubscribe(id=list_id, email={'email': user.username if user else username})
+    m.lists.unsubscribe(id=list_id, email={'email': username or user.username})
 
     # Update mailing_list user field
     if user.mailing_lists is None:

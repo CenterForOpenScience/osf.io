@@ -31,7 +31,7 @@ class TestS3ViewsConfig(OsfTestCase):
 
         self.user = AuthUserFactory()
         self.consolidated_auth = Auth(user=self.user)
-        self.auth = ('test', self.user.api_keys[0]._primary_key)
+        self.auth = self.user.auth
         self.project = ProjectFactory(creator=self.user)
 
         self.project.add_addon('s3', auth=self.consolidated_auth)
@@ -149,6 +149,12 @@ class TestS3ViewsConfig(OsfTestCase):
         self.user_settings.reload()
         assert_equals(self.user_settings.access_key, None)
         assert_equals(self.user_settings.secret_key, None)
+
+        # Last log has correct action and user
+        self.project.reload()
+        last_project_log = self.project.logs[-1]
+        assert_equal(last_project_log.action, 's3_node_deauthorized')
+        assert_equal(last_project_log.user, self.user)
 
     def test_s3_remove_user_settings_none(self):
         self.user_settings.access_key = None
@@ -324,7 +330,7 @@ class TestCreateBucket(OsfTestCase):
 
         self.user = AuthUserFactory()
         self.consolidated_auth = Auth(user=self.user)
-        self.auth = ('test', self.user.api_keys[0]._primary_key)
+        self.auth = self.user.auth
         self.project = ProjectFactory(creator=self.user)
 
         self.project.add_addon('s3', auth=self.consolidated_auth)

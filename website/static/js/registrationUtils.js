@@ -1,3 +1,5 @@
+require('css/registrations.css');
+
 var $ = require('jquery');
 var ko = require('knockout');
 var bootbox = require('bootbox');
@@ -36,14 +38,14 @@ var currentUser = window.contextVars.currentUser || {
  * @property {String} id
  * @property {String} name
  **/
-var Comment = function(data) {
+function Comment(data) {
     var self = this;
 
     self.saved = ko.observable(data ? true : false);
 
     data = data || {};
     self.user = data.user || currentUser;
-    self.lastModified = moment(data.lastModified || new Date());
+    self.lastModified = new Date(data.lastModified)|| new Date();
     self.value = ko.observable(data.value || '');
 
     /**
@@ -70,7 +72,7 @@ var Comment = function(data) {
     self.canEdit = ko.pureComputed(function() {
         return self.saved() && self.user.id === currentUser.id;
     });
-};
+}
 // Let ENTER keypresses add a comment if comment <input> is in focus
 $(document).keydown(function(e) {
     if (e.keyCode === 13) {
@@ -83,6 +85,30 @@ $(document).keydown(function(e) {
         }
     }
 });
+
+var not = function(any) {
+    return function() {
+        try {
+            return !any.apply(this, arguments);
+        }
+        catch(err) {
+            return !any;
+        }
+    };
+};
+
+var validate = function(checks, value) {
+    var valid = true;
+    $.each(checks, function(i, check) {
+        valid = valid && check(value);
+    });
+    return valid;
+};
+
+var validators = {
+    string: validate.bind(null, [not($osf.isBlank)]),
+    number: validate.bind(null, [not($osf.isBlank), not(isNaN.bind(parseFloat))])
+};
 
 /**
  * @class Question
@@ -141,7 +167,15 @@ var Question = function(data, id) {
         return !$osf.isBlank(self.value());
     });
 
-    self.valid = ko.observable(null);
+    /**
+     * @returns {Boolean} true if the validator matching the question's type returns true,
+     * if no validator matches also return true
+     **/
+    self.valid = ko.computed(function() {
+        var value = self.value();
+        var isValid = validators[self.type] || function(){ return true; };
+        return isValid(value);
+    });
 
     self.init();
 };
@@ -213,6 +247,21 @@ var MetaSchema = function(params) {
         self.schema.pages[i].questions = mapped;
     });
 };
+/**
+ * @returns {Question[]} a flat list of the schema's questions
+ **/
+MetaSchema.prototype.flatQuestions = function() {
+    var self = this;
+
+    var flat = [];
+    
+    $.each(self.schema.pages, function(i, page) {
+        $.each(page.questions, function(qid, question) {
+            flat.push(question);
+        });
+    });
+    return flat;
+};
 
 /** 
  * @class Draft 
@@ -235,8 +284,6 @@ var Draft = function(params, metaSchema) {
     self.schema = ko.pureComputed(function() {
         return self.metaSchema.schema;
     });
-    self.schemaName = self.metaSchema.name;
-    self.schemaVersion = self.metaSchema.version;
     self.schemaData = params.registration_metadata || {};
 
     self.initiator = params.initiator;
@@ -289,6 +336,9 @@ var RegistrationEditor = function(urls, editorId) {
     self.draft = ko.observable();
 
     self.currentQuestion = ko.observable();
+    self.currentQuestion.subscribe(function() {
+        ko.cleanNode(document.getElementById(editorId));
+    });
     self.currentPages = ko.computed(function() {
         var draft = self.draft();
         if(!draft){
@@ -359,15 +409,8 @@ RegistrationEditor.prototype.init = function(draft) {
  **/
 RegistrationEditor.prototype.flatQuestions = function() {
     var self = this;
-
-    var flat = [];
     
-    $.each(self.currentPages(), function(i, page) {
-        $.each(page.questions, function(qid, question) {
-            flat.push(question);
-        });
-    });
-    return flat;
+    return self.draft().metaSchema.flatQuestions();
 };
 /**
  * Creates a template context for editor type subtemplates. Looks for the data type
@@ -378,6 +421,11 @@ RegistrationEditor.prototype.flatQuestions = function() {
  * @returns {Object|ViewModel}
  **/
 RegistrationEditor.prototype.context = function(data) {
+    $.extend(data, {
+        save: this.save.bind(this),
+        readonly: this.readonly
+    });
+
     if (this.extensions[data.type]) {
         return new this.extensions[data.type](data);
     }
@@ -706,6 +754,14 @@ RegistrationManager.prototype.createDraft = function() {
 };
 
 module.exports = {
+    utilities: {
+        not: not,
+        validators: validators,
+        validate: validate
+    },
+    Comment: Comment,
+    Question: Question,
+    MetaSchema: MetaSchema,
     Draft: Draft,
     RegistrationEditor: RegistrationEditor,
     RegistrationManager: RegistrationManager

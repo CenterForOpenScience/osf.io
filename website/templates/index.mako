@@ -5,18 +5,7 @@
 <%def name="content_wrap()">
     <div class="watermarked">
             % if status:
-                <div id="alert-container">
-                % for message, css_class, dismissible in status:
-                      <div class='alert alert-block alert-${css_class} fade in alert-front text-center'>
-                        % if dismissible:
-                        <button type="button" class="close" data-dismiss="alert" aria-label="Close">
-                          <span aria-hidden="true">&times;</span>
-                        </button>
-                        % endif
-                        <p>${message}</p>
-                      </div>
-                % endfor
-                </div>
+                <%include file="alert.mako" args="extra_css='alert-front text-center'"/>
             % endif
             ${self.content()}
     </div><!-- end watermarked -->
@@ -315,6 +304,12 @@
 
 <%def name="footer()">
 
+</%def>
+
+<%def name="stylesheets()">
+    ${parent.stylesheets()}
+    <link rel="stylesheet" href="/static/css/pages/home-page.css">
+    <link rel="stylesheet" href="/static/css/front-page.css">
 </%def>
 
 <%def name="javascript_bottom()">

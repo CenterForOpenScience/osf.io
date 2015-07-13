@@ -17,7 +17,7 @@ var socialRules = {
     researcherId: /researcherid\.com\/rid\/([-\w]+)/i,
     scholar: /scholar\.google\.com\/citations\?user=(\w+)/i,
     twitter: /twitter\.com\/(\w+)/i,
-    linkedIn: /linkedin\.com\/profile\/view\?id=(\d+)/i,
+    linkedIn: /.*\/?(in\/.*|profile\/.*|pub\/.*)/i,
     impactStory: /impactstory\.org\/([\w\.-]+)/i,
     github: /github\.com\/(\w+)/i
 };
@@ -499,7 +499,7 @@ var SocialViewModel = function(urls, modes) {
     );
     self.linkedIn = extendLink(
         ko.observable().extend({trimmed: true, cleanup: cleanByRule(socialRules.linkedIn)}),
-        self, 'linkedIn', 'https://www.linkedin.com/profile/view?id='
+        self, 'linkedIn', 'https://www.linkedin.com/'
     );
     self.impactStory = extendLink(
         ko.observable().extend({trimmed: true, cleanup: cleanByRule(socialRules.impactStory)}),
