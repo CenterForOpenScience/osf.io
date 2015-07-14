@@ -1448,14 +1448,28 @@ class TestUserProfile(OsfTestCase):
         user2.social['twitter'] = self.user.social['twitter']
         user2.save()
 
-        expected_error = 'There are multiple OSF accounts associated with the Twitter handle: <strong>{0}</strong>.'.format(self.user.social['twitter'])
-        res = self.app.get(
-            web_url_for(
-                'redirect_to_twitter',
-                twitter_handle=self.user.social['twitter'],
-                expect_error=True
-            )
-        )
+        twitter_url = web_url_for('redirect_to_twitter', twitter_handle=self.user.social['twitter'])
+        expected_error = 'There are multiple OSF accounts associated with the Twitter handle: ' \
+                         '<strong>{0}</strong>.'.format(self.user.social['twitter'])
+
+        res = self.app.get(twitter_url)
+        assert_equal(res.status_code, http.MULTIPLE_CHOICES)
+        assert_true(expected_error in res.body)
+        assert_true(self.user.url in res.body)
+        assert_true(user2.url in res.body)
+
+    def test_twitter_redirect_handle_disambiguation_page_fine_with_unicode(self):
+        self.user.social['twitter'] = fake.last_name()
+        self.user.save()
+        user2 = AuthUserFactory(fullname=u'Sam Pull string_with_unicode_(͡° ͜ʖ ͡°)')
+        user2.social['twitter'] = self.user.social['twitter']
+        user2.save()
+
+        twitter_url = web_url_for('redirect_to_twitter', twitter_handle=self.user.social['twitter'])
+        expected_error = 'There are multiple OSF accounts associated with the Twitter handle: ' \
+                         '<strong>{0}</strong>.'.format(self.user.social['twitter'])
+
+        res = self.app.get(twitter_url)
         assert_equal(res.status_code, http.MULTIPLE_CHOICES)
         assert_true(expected_error in res.body)
         assert_true(self.user.url in res.body)
