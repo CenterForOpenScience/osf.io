@@ -1,6 +1,4 @@
 'use strict';
-require('css/user-addon-settings.css');
-require('../../css/pages/account-setting-page.css');
 
 var $ = require('jquery');
 var ko = require('knockout');
@@ -119,3 +117,4 @@ $('.addon-oauth').each(function(index, elem) {
     ko.applyBindings(viewModel, elem);
     viewModel.updateAccounts();
 });
+

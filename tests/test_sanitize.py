@@ -51,3 +51,10 @@ class TestSanitize(unittest.TestCase):
             sanitize.safe_unescape_html({'key': '&lt;&gt;&amp;'})['key'],
             '<>&'
         )
+
+    def test_safe_json(self):
+        """Add escaping of forward slashes, but only where string literal contains closing markup"""
+        assert_equal(
+            sanitize.safe_json("I'm a string with / containing </closingtags>"),
+                               '"I\'m a string with / containing <\\/closingtags>"'
+        )

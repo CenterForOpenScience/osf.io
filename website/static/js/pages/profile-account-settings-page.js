@@ -1,5 +1,4 @@
 'use strict';
-require('../../css/pages/account-setting-page.css');
 
 var $ = require('jquery');
 var $osf = require('js/osfHelpers.js');

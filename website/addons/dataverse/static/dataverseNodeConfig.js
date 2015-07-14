@@ -91,9 +91,10 @@ function ViewModel(url) {
             return 'The API token provided for ' + self.host() + ' is invalid.';
         }),
         authError: ko.pureComputed(function() {
-            return 'There was a problem connecting to the Dataverse. Please refresh the page or ' +
-                'contact <a href="mailto: support@osf.io">support@osf.io</a> if the ' +
-                'problem persists.';
+            return 'Sorry, but there was a problem connecting to that instance of Dataverse. It ' +
+                'is likely that the instance hasn\'t been upgraded to Dataverse 4.0. If you ' +
+                'have any questions or believe this to be an error, please contact ' +
+                'support@osf.io.';
         }),
         tokenImportSuccess: ko.pureComputed(function() {
             return 'Successfully imported access token from profile.';
@@ -227,6 +228,10 @@ function ViewModel(url) {
             error: error
         });
     });
+
+    self.selectionChanged = function() {
+        self.changeMessage('','');
+    };
 }
 
 /**
@@ -354,6 +359,7 @@ ViewModel.prototype.sendAuth = function() {
     ).done(function() {
         self.clearModal();
         $modal.modal('hide');
+        self.userHasAuth(true);
         self.importAuth();
     }).fail(function(xhr, textStatus, error) {
         var errorMessage = (xhr.status === 401) ? self.messages.authInvalid : self.messages.authError;
@@ -463,7 +469,11 @@ ViewModel.prototype.importAuth = function() {
                         }
                     ),
                     value: self.accounts()[0].id,
-                    callback: (self.connectExistingAccount.bind(self))
+                    callback: function(accountId) {
+                        if (accountId) {
+                            self.connectExistingAccount.call(self, (accountId));
+                        }
+                    }
                 });
             } else {
                 bootbox.confirm({

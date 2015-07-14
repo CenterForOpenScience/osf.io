@@ -72,8 +72,7 @@ var FileViewPage = {
         self.editHeader = function() {
             return m('.row', [
                 m('.col-sm-12', m('span[style=display:block;]', [
-                    m('i.fa.fa-pencil-square-o'),
-                    ' Edit',
+                    m('h3.panel-title',[m('i.fa.fa-pencil-square-o'), '   Edit ']),
                     m('.pull-right', [
                         m('.progress.no-margin.pointer', {
                             'data-toggle': 'modal',
@@ -204,7 +203,7 @@ var FileViewPage = {
                 m('.btn.btn-sm.btn-danger.file-delete', {onclick: $(document).trigger.bind($(document), 'fileviewpage:delete')}, 'Delete')
             ]) : '',
             m('.btn-group', [
-                m('.btn.btn-sm.btn-success.file-download', {onclick: $(document).trigger.bind($(document), 'fileviewpage:download')}, 'Download')
+                m('.btn.btn-sm.btn-primary.file-download', {onclick: $(document).trigger.bind($(document), 'fileviewpage:download')}, 'Download')
             ]),
             m('.btn-group.btn-group-sm', [
                 m('.btn.btn-default.disabled', 'Toggle view: ')

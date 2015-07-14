@@ -30,14 +30,19 @@ def dataverse_remove_user_auth(auth, node_addon, **kwargs):
 
 
 @must_be_logged_in
-@decorators.must_have_addon('dataverse', 'user')
-def dataverse_user_config_get(user_addon, **kwargs):
+def dataverse_user_config_get(auth, **kwargs):
     """View for getting a JSON representation of the logged-in user's
     Dataverse user settings.
     """
+
+    user_addon = auth.user.get_addon('dataverse')
+    user_has_auth = False
+    if user_addon:
+        user_has_auth = user_addon.has_auth
+
     return {
         'result': {
-            'userHasAuth': user_addon.has_auth,
+            'userHasAuth': user_has_auth,
             'urls': {
                 'create': api_url_for('dataverse_add_user_account'),
                 'accounts': api_url_for('dataverse_get_user_accounts'),
