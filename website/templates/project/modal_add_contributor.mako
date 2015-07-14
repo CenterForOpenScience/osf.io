@@ -63,9 +63,9 @@
                                     <tr data-bind="if:!($root.selected($data))">
                                         <td style="padding-right: 10px;">
                                             <a
-                                                    class="btn btn-default contrib-button btn-mini"
+                                                    class="btn btn-success contrib-button btn-mini"
                                                     data-bind="click:$root.add, tooltip: {title: 'Add contributor'}"
-                                                >+</a>
+                                                ><i class="fa fa-plus"></i></a>
                                         </td>
                                         <td>
                                             <!-- height and width are explicitly specified for faster rendering -->
@@ -152,7 +152,7 @@
                                             <a
                                                     class="btn btn-default contrib-button btn-mini"
                                                     data-bind="click:$root.remove, tooltip: {title: 'Remove contributor'}"
-                                                >-</a>
+                                                ><i class="fa fa-minus"></i></a>
                                         </td>
                                         <td>
                                             <img data-bind="attr: {src: contributor.gravatar_url}" />
