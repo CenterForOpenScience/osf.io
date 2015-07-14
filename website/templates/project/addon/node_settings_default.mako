@@ -50,7 +50,7 @@
                 <!-- Folder buttons -->
                 <div class="btn-group" data-bind="visible: userIsOwner() && validCredentials()">
                     <button data-bind="click: togglePicker,
-                                       css: {active: currentDisplay() === PICKER}" class="btn btn-sm btn-addon"><i class="icon-edit"></i> Change</button>
+                                       css: {active: currentDisplay() === PICKER}" class="btn btn-sm btn-primary">Change</button>
                 </div>
                 <!-- Folder picker -->
                 <div class="addon-folderpicker-widget ${addon_short_name}-widget">
