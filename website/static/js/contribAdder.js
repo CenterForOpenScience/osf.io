@@ -14,7 +14,7 @@ var Paginator = require('./paginator');
 
 var NODE_OFFSET = 25;
 // Max number of recent/common contributors to show
-var MAX_RECENT = 5;
+var RESULTS_PER_PAGE = 7;
 
 // TODO: Remove dependency on contextVars
 var nodeApiUrl = window.contextVars.node.urls.api;
