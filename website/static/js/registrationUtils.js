@@ -49,6 +49,12 @@ function Comment(data) {
     self.value = ko.observable(data.value || '');
 
 	self.isDeleted = ko.observable(false);
+	self.isDeleted.subscribe(function(isDeleted) {
+		if (isDeleted) {
+			self.value('this comment was deleted');
+
+		}
+	});
 
 	self.seenBy = ko.observableArray([]);
 
@@ -78,32 +84,32 @@ function Comment(data) {
     });
 }
 Comment.prototype.formatSeenBy = function() {
-	var self = this;
+  var self = this;
 
-	var seen = self.seenBy();
-	var ret = '';
+  var seen = self.seenBy();
+  var ret = '';
 
-	if( seen.length >= 5 ) {
-		for(var i = 0; i < 6; i++) {
-			if (seen[i] === currentUser.fullname) {
-				ret += 'You, ';
-			}
-			else {
-				ret += seen[i] + ', ';
-			}
-		}
+  if( seen.length >= 5 ) {
+	for(var i = 0; i < 6; i++) {
+	  if (seen[i] === currentUser.fullname) {
+		ret += 'You, ';
+	  }
+	  else {
+		ret += seen[i] + ', ';
+	  }
 	}
-	else {
-		for(var j = 0; j < seen.length; j++) {
-			if (seen[j] === currentUser.fullname) {
-				seen.length === 1 ? ret += 'You' : ret += 'You, ';
-			}
-			else {
-				ret += seen[j] + ', ';
-			}
-		}
+  }
+  else {
+	for(var j = 0; j < seen.length; j++) {
+	  if (seen[j] === currentUser.fullname) {
+		seen.length === 1 ? ret += 'You' : ret += 'You, ';
+	  }
+	  else {
+		ret += seen[j] + ', ';
+	  }
 	}
-	return ret;
+  }
+  return ret;
 };
 // Let ENTER keypresses add a comment if comment <input> is in focus
 $(document).keydown(function(e) {
@@ -185,17 +191,6 @@ var Question = function(data, id) {
             return new Comment(comment);
         })
     );
-	self.deleteComment = function(comment) {
-		self.comments.remove(comment);
-		comment.isDeleted = true;
-
-		var commentList = document.getElementById('commentList');
-		var div = document.createElement('div');
-		div.style.display = 'none';
-		commentList.appendChild(div);
-
-		ko.renderTemplate('deleted', {}, {}, div, 'replaceNode');
-	};
     self.nextComment = ko.observable('');
     /**
      * @returns {Boolean} true if the nextComment <input> is not blank
@@ -514,34 +509,30 @@ RegistrationEditor.prototype.lastSaved = function() {
     }
 };
 RegistrationEditor.prototype.viewComments = function() {
-	var self = this;
+  var self = this;
 
-	var comments = self.currentQuestion().comments();
-	var match = ko.utils.arrayFirst(seenBy(), function(user) {
-		return currentUser.fullname === user;
-	});
-	for (var i = 0; i < comments.length; i++ ) {
-		var seenBy = comments[i].seenBy;
-		if (!match && comments[i].user.fullname !== currentUser.fullname) {
-			seenBy.push(currentUser.fullname);
-		}
-	}
+  var comments = self.currentQuestion().comments();
+  $.each(comments, function(index, comment) {
+    if (comment.seenBy().indexOf(currentUser.id) === -1) {
+      comment.seenBy.push(currentUser.id);
+    }
+  }) 
 };
 RegistrationEditor.prototype.getUnseenComments = function(qid) {
-	var self = this;
+  var self = this;
 
-	var question = self.draft().schemaData[qid];
-	var comments = [];
-	for (var key in question) {
-		if (key === 'comments') {
-			for (var i = 0; i < question[key].length - 1; i++) {
-				if (question[key][i].indexOf(currentUser.fullname) === -1) {
-					comments.push(question[key][i]);
-				}
-			}
+  var question = self.draft().schemaData[qid];
+  var comments = [];
+  for (var key in question) {
+	if (key === 'comments') {
+	  for (var i = 0; i < question[key].length - 1; i++) {
+		if (question[key][i].indexOf(currentUser.fullname) === -1) {
+		  comments.push(question[key][i]);
 		}
+	  }
 	}
-	return comments.length !== 0 ? comments.length : '';
+  }
+  return comments.length !== 0 ? comments.length : '';
 };
 RegistrationEditor.prototype.nextPage = function() {
     var self = this;
@@ -672,13 +663,10 @@ RegistrationEditor.prototype.save = function() {
             }
         });
     });
-	console.log(self.draft());
 
     if (!self.draft().pk){
         return self.create(data);
     }
-
-	console.log(self.draft());
 
     return $osf.putJSON(self.urls.update.replace('{draft_pk}', self.draft().pk), {
         schema_name: metaSchema.name,

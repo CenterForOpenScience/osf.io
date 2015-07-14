@@ -113,9 +113,6 @@
                         <div class="col-sm-9">
                             <strong><span data-bind="text: comment.author"></span></strong> said ...
                         </div>
-						<div class="col-sm-3">
-							<em>Seen by: <span data-bind="text: comment.formatSeenBy()"></span></em>
-						</div>
                         <div class="col-sm-3">
                             <div style="text-align: right;" class="btn-group">
                                 <button data-bind="disable: comment.saved,
@@ -123,7 +120,7 @@
                                 <button data-bind="enable: comment.canEdit,
                                    click: comment.saved.bind(null, false)" class="btn btn-info fa fa-pencil"></button>
                                 <button data-bind="enable: comment.canDelete,
-                                                   click: $parent.deleteComment.bind(null, comment)"
+                                                   click: comment.isDeleted.bind(null, true) "
                                         class="btn btn-danger fa fa-times"></button>
                             </div>
                         </div>
@@ -146,22 +143,5 @@
       </span>
     </div>
 </script>
-
-<script type="text/html" id="deleted">
-	<% from datetime import datetime %>
-	<li class="list-group-item">
-		<div class="row">
-			<div class="col-md-12">
-				<div class="row">
-					<div class="col-sm-9">
-						<span><em>The author deleted this comment at ${datetime.now().strftime("%Y-%m-%d %H:%M")}<em></span>
-					</div>
-				</div>
-			</div>
-		</div>
-	</li>
-
-</script>
-
 
 <%include file="registration_editor_extensions.mako" />
