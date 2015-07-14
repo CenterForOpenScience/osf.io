@@ -67,7 +67,7 @@
                                     <td colspan="2">
                                         <form data-bind="submit: addEmail">
                                             <div class="form-group">
-                                              <input placeholder="Email address" data-bind="value: emailInput" class="form-control">
+                                              <input placeholder="Email address" pattern='/^([\w-]+(?:\.[\w-]+)*)@((?:[\w-]+\.)*\w[\w-]{0,66})\.([a-z]{2,6}(?:\.[a-z]{2})?)$/i' data-bind="value: emailInput" class="form-control" required maxlength="254">
                                             </div>
                                             <input type="submit" value="Add Email" class="btn btn-success">
                                         </form>
