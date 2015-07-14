@@ -434,3 +434,7 @@ tr a {
 .list-group-item-node.unavailable {
     background-color: #EEEEEE;
 }
+
+button.close {
+    line-height: 0.9;
+}
