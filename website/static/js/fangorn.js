@@ -614,9 +614,9 @@ function _fangornAddedFile(treebeard, file) {
         return;
     }
 
-    if (SYNC_UPLOAD_ADDONS.indexof(item.data.provider) !== -1) {
+    if (SYNC_UPLOAD_ADDONS.indexOf(item.data.provider) !== -1) {
         this.syncFileCache = this.syncFileCache || {};
-        this.syncFileCache[item.data.provider] = this.syncFileCache[item.data.provider] || {};
+        this.syncFileCache[item.data.provider] = this.syncFileCache[item.data.provider] || [];
 
         var files = this.getActiveFiles().filter(function(f) {return f.isSync;});
         if (files.length > 0) {
@@ -2109,7 +2109,7 @@ tbOptions = {
         clickable : '#treeGrid',
         addRemoveLinks: false,
         previewTemplate: '<div></div>',
-        parallelUploads: 10,
+        parallelUploads: 5,
         acceptDirectories: false,
         createImageThumbnails: false,
         fallback: function(){},
