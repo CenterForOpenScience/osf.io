@@ -106,7 +106,18 @@ var AddContributorViewModel = oop.extend(Paginator, {
     goToPage: function(page) {
         this.page(page);
     },
-    /**
+
+    pageCollator: function(result) {
+        var self = this;
+        self.currentPage(self.pageToGet());
+        var start = self.currentPage()*RESULTS_PER_PAGE;
+        var end = start+RESULTS_PER_PAGE > result.length ?
+            result.length : start+RESULTS_PER_PAGE;
+        self.results(result.slice(start, end));
+        self.numberOfPages(Math.ceil(result.length/RESULTS_PER_PAGE));
+
+    },
+     /**
      * A simple Contributor model that receives data from the
      * contributor search endpoint. Adds an addiitonal displayProjectsinCommon
      * attribute which is the human-readable display of the number of projects the
