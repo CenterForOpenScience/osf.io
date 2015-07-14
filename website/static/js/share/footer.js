@@ -30,7 +30,7 @@ Footer.controller = function(vm) {
                 onclick: function(cb){
                     self.vm.query(self.vm.query() === '' ? '*' : self.vm.query());
                     self.vm.showFooter = false;
-                    utils.updateFilter(self.vm, 'source:' + result.short_name);
+                    utils.updateFilter(self.vm, 'shareProperties.source:' + result.short_name);
                 }
             },
             m('', [

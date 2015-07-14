@@ -41,16 +41,16 @@ Results.controller = function(vm) {
         return m( '.animated.fadeInUp', [
             m('div', [
                 m('h4', [
-                    m('a[href=' + result.id.url + ']', result.title || 'No title provided'),
+                    m('a[href=' + result.uris.canonicalUri + ']', m.trust(result.title) || 'No title provided'),
                     m('br'),
                     (function(){
-                        if (result.description.length > 350) {
+                        if ((result.description || '').length > 350) {
                             return m('p.readable.pointer',
                                 {onclick:function(){result.showAll = result.showAll ? false : true;}},
-                                result.showAll ? result.description : $.trim(result.description.substring(0, 350)) + '...'
+                                m.trust(result.showAll ? result.description : $.trim(result.description.substring(0, 350)) + '...')
                             );
                         }
-                        return m('p.readable', result.description);
+                        return m('p.readable', m.trust(result.description));
                     }()),
                 ]),
                 m('.row', [
@@ -61,9 +61,10 @@ Results.controller = function(vm) {
                                     m('span', index !== 0 ? ' · ' : ''),
                                     m('a', {
                                         onclick: function() {
-                                            utils.updateFilter(self.vm, '(contributors.family:' + person.family + ' AND contributors.given:' + person.given + ')', true);
+                                            utils.updateFilter(self.vm, 'contributors.familyName:' + person.familyName, true);
+                                            utils.updateFilter(self.vm, 'contributors.givenName:' + person.givenName, true);
                                         }
-                                    }, person.given + ' ' + person.family)
+                                    }, person.name)
                                 ]);
                             });
                         };
@@ -81,33 +82,33 @@ Results.controller = function(vm) {
                     m('.col-md-5',
                         m('.pull-right', {style: {'text-align': 'right'}},
                             (function(){
-                                var renderTag = function(tag) {
+                                var rendersubject = function(subject) {
                                     return [
                                         m('.badge.pointer', {onclick: function(){
-                                            utils.updateFilter(self.vm, 'tags:"' + tag + '"', true);
-                                        }}, tag.length < 50 ? tag : tag.substring(0, 47) + '...'),
+                                            utils.updateFilter(self.vm, 'subjects:"' + subject + '"', true);
+                                        }}, subject.length < 50 ? subject : subject.substring(0, 47) + '...'),
                                         ' '
                                     ];
                                 };
 
-                                if (result.showAllTags || result.tags.length < 5) {
-                                    return $.map(result.tags, renderTag);
+                                if (result.showAllsubjects || (result.subjects || []).length < 5) {
+                                    return $.map((result.subjects || []), rendersubject);
                                 }
                                 return m('span', [
-                                    $.map(result.tags.slice(0, 5), renderTag),
+                                    $.map((result.subjects || []).slice(0, 5), rendersubject),
                                     m('br'),
-                                    m('div', m('a', {onclick: function() {result.showAllTags = result.showAllTags ? false : true;}},'See All'))
+                                    m('div', m('a', {onclick: function() {result.showAllsubjects = result.showAllsubjects ? false : true;}},'See All'))
                                 ]);
                             }())))
                 ]),
                 m('br'),
                 m('br'),
                 m('div', [
-                    m('span', 'Released on ' + new $osf.FormattableDate(result.dateUpdated).local),
+                    m('span', 'Released on ' + new $osf.FormattableDate(result.providerUpdatedDateTime).local),
                     m('span.pull-right', [
-                        m('img', {src: self.vm.ProviderMap[result.source].favicon, style: {width: '16px', height: '16px'}}),
+                        m('img', {src: self.vm.ProviderMap[result.shareProperties.source].favicon, style: {width: '16px', height: '16px'}}),
                         ' ',
-                        m('a', {onclick: function() {utils.updateFilter(self.vm, 'source:' + result.source);}}, self.vm.ProviderMap[result.source].long_name)
+                        m('a', {onclick: function() {utils.updateFilter(self.vm, 'shareProperties.source:' + result.shareProperties.source);}}, self.vm.ProviderMap[result.shareProperties.source].long_name)
                     ])
                 ])
             ]),
