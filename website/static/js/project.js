@@ -130,7 +130,7 @@ $(function() {
 
         if ($.trim($('#title').val()) === '') {
 
-            $('#newComponent .modal-alert').text('Title cannot be empty.');
+            $('#newComponent .modal-alert').text('This field is required.');
 
             $('#add-component-submit')
                 .removeAttr('disabled', 'disabled')
