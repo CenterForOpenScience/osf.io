@@ -1073,6 +1073,13 @@ function _fangornUploadMethod(item) {
     return configOption || 'PUT';
 }
 
+function gotoNode(item) {
+    var tb = this;
+    var redir = item.data.nodeID;
+    var loc = window.location.origin;
+    var fileurl = loc + '/' + redir.toString() + '/';
+    window.open(fileurl, '_self');
+}
 
 function gotoFileEvent (item) {
     var tb = this;
@@ -1100,6 +1107,14 @@ function _fangornTitleColumn(item, col) {
             onclick: function(event) {
                 event.stopImmediatePropagation();
                 gotoFileEvent.call(tb, item);
+            }
+        }, item.data.name);
+    }
+    else if ((item.data.nodeType === 'project') || (item.data.nodeType ==='component')) {
+        return m('span.fg-file-links',{
+            onclick: function(event) {
+                event.stopImmediatePropagation();
+                gotoNode.call(tb, item);
             }
         }, item.data.name);
     }
