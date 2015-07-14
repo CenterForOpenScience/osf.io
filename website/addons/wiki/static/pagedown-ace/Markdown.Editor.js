@@ -40,7 +40,7 @@
         
         image: "Image <img>",
         imagedescription: "enter image description here",
-        imagedialog: "<h4 class='modal-title f-w-lg'>Insert Image</h4><hr><p>http://example.com/images/diagram.jpg \"optional title\"<br><br>Need <a href='http://www.google.com/search?q=free+image+hosting' target='_blank'>free image hosting?</a></p>",
+        imagedialog: "<div class='modal-header'> <h4 class='modal-title f-w-lg'>Insert Image</h4></div><div class='modal-body'><p>http://example.com/images/diagram.jpg \"optional title\"<br><br>Need <a href='http://www.google.com/search?q=free+image+hosting' target='_blank'>free image hosting?</a></p></div>",
         
         olist: "Numbered List <ol>",
         ulist: "Bulleted List <ul>",
