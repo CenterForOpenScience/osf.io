@@ -40,7 +40,7 @@ def test_reduce_permissions_with_unknown_permission_raises_error():
 
 def test_default_contributor_permissions():
     assert_equal(permissions.DEFAULT_CONTRIBUTOR_PERMISSIONS,
-        ['read', 'write', 'admin'])
+        ['read', 'write'])
 
 
 if __name__ == '__main__':
