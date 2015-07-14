@@ -16,17 +16,14 @@
       <ul class="nav navbar-nav">
         % if user_name:
             <li><a href="/dashboard/">My Dashboard</a></li>
-       % else:
-            <li><a href="/explore/activity/">Browse New Projects</a></li>
         % endif
         <li class="dropdown">
-          <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-expanded="false">Explore <span class="caret hidden-xs"></span></a>
+          <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-expanded="false">Browse <span class="caret hidden-xs"></span></a>
           <ul class="dropdown-menu" role="menu">
               <li><a href="/search/?q=*&amp;filter=registration">Registry</a></li>
               <li><a href="/meetings/">Meetings</a></li>
-                % if user_name:
-                    <li><a href="/explore/activity/">Browse</a></li>
-                % endif
+              <li><a href="/explore/activity/">New Projects</a></li>
+
 
           </ul>
         </li>
