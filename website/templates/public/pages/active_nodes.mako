@@ -77,15 +77,15 @@
                     </div>
                     <div class="col-md-2">
                         % if metric == 'hits':
-                            <span class="project-meta pull-right text-primary" rel='tooltip' data-original-title='${ hits[node._id].get('hits') } views (${ hits[node._id].get('visits') } visits)'>
+                            <span class="project-meta pull-right" rel='tooltip' data-original-title='${ hits[node._id].get('hits') } views (${ hits[node._id].get('visits') } visits)'>
                                 ${ hits[node._id].get('hits') }&nbsp;views (last&nbsp;week)
                             </span>
                         % elif metric == 'date_created':
-                            <span class="project-meta pull-right text-primary" rel='tooltip' data-original-title='Created: ${explicit_date}'>
+                            <span class="project-meta pull-right" rel='tooltip' data-original-title='Created: ${explicit_date}'>
                                 ${node.date_created.date()}
                             </span>
                         % elif metric == 'registered_date':
-                            <span class="project-meta pull-right text-primary" rel='tooltip' data-original-title='Registered: ${explicit_date}'>
+                            <span class="project-meta pull-right" rel='tooltip' data-original-title='Registered: ${explicit_date}'>
                                 ${node.registered_date.date()}
                             </span>
                         % endif
