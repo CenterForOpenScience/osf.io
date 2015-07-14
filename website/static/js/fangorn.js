@@ -236,7 +236,7 @@ function _fangornResolveIcon(item) {
 
         if (item.kind === 'folder') {
             if (item.data.iconUrl) {
-                return m('span', {style: {width:'16px', height:'16px', background:'url(' + item.data.iconUrl+ ')', display:'block'}}, '');
+                return m('div', {style: {width:'16px', height:'16px', background:'url(' + item.data.iconUrl+ ')', display:'inline-block'}}, '');
             }
             if (!item.data.permissions.view) {
                 return privateFolder;
@@ -353,9 +353,9 @@ function checkConflicts(tb, item, folder, cb) {
                 m('h3.break-word', 'An item named "' + item.data.name + '" already exists in this location.'),
                 m('p', 'Do you want to replace it?')
             ]), m('', [
-                m('span.tb-modal-btn.text-default', {onclick: cb.bind(tb, 'keep')}, 'Keep Both'),
+                m('span.tb-modal-btn.text-primary', {onclick: cb.bind(tb, 'keep')}, 'Keep Both'),
                 m('span.tb-modal-btn.text-default', {onclick: function() {tb.modal.dismiss();}}, 'Cancel'), //jshint ignore:line
-                m('span.tb-modal-btn.text-default', {onclick: cb.bind(tb, 'replace')},'Replace'),
+                m('span.tb-modal-btn.text-primary', {onclick: cb.bind(tb, 'replace')},'Replace'),
             ]));
             return;
         }
@@ -372,9 +372,9 @@ function checkConflictsRename(tb, item, name, cb) {
                 m('h3.break-word', 'An item named "' + name + '" already exists in this location.'),
                 m('p', 'Do you want to replace it?')
             ]), m('', [
-                m('span.tb-modal-btn.text-default', {onclick: cb.bind(tb, 'keep')}, 'Keep Both'),
+                m('span.tb-modal-btn.text-primary', {onclick: cb.bind(tb, 'keep')}, 'Keep Both'),
                 m('span.tb-modal-btn.text-default', {onclick: function() {tb.modal.dismiss();}}, 'Cancel'), // jshint ignore:line
-                m('span.tb-modal-btn.text-default', {onclick: cb.bind(tb, 'replace')},'Replace'),
+                m('span.tb-modal-btn.text-primary', {onclick: cb.bind(tb, 'replace')},'Replace'),
             ]));
             return;
         }
@@ -427,7 +427,7 @@ function doItemOp(operation, to, from, rename, conflict) {
                 m('p', 'In the mean time you can leave this page; your ' + operation.status + ' will still be completed.')
             ]);
             var mithrilButtons = m('div', [
-                m('span.tb-modal-btn', { 'class' : 'text-default', onclick : function() { tb.modal.dismiss(); }}, 'OK')
+                m('span.tb-modal-btn', { 'class' : 'text-default', onclick : function() { tb.modal.dismiss(); }}, 'Close')
             ]);
             tb.modal.update(mithrilContent, mithrilButtons);
             return;
@@ -891,7 +891,7 @@ function _removeEvent (event, items, col) {
                         m('p.text-danger', 'This folder and ALL its contents will be deleted. This action is irreversible.')
                     ]);
                 var mithrilButtons = m('div', [
-                        m('span.tb-modal-btn', { 'class' : 'text-primary', onclick : function() { cancelDelete.call(tb); } }, 'Cancel'),
+                        m('span.tb-modal-btn', { 'class' : 'text-default', onclick : function() { cancelDelete.call(tb); } }, 'Cancel'),
                         m('span.tb-modal-btn', { 'class' : 'text-danger', onclick : function() { runDelete(folder); }  }, 'Delete')
                     ]);
                 tb.modal.update(mithrilContent, mithrilButtons);
@@ -908,7 +908,7 @@ function _removeEvent (event, items, col) {
                 m('p', 'This action is irreversible.')
             ]);
             var mithrilButtonsSingle = m('div', [
-                m('span.tb-modal-btn', { 'class' : 'text-primary', onclick : function() { cancelDelete(); } }, 'Cancel'),
+                m('span.tb-modal-btn', { 'class' : 'text-default', onclick : function() { cancelDelete(); } }, 'Cancel'),
                 m('span.tb-modal-btn', { 'class' : 'text-danger', onclick : function() { runDelete(items[0]); }  }, 'Delete')
             ]);
             // This is already being checked before this step but will keep this edit permission check
@@ -957,7 +957,7 @@ function _removeEvent (event, items, col) {
                     })
                 ]);
             mithrilButtonsMultiple =  m('div', [
-                    m('span.tb-modal-btn', { 'class' : 'text-primary', onclick : function() { tb.modal.dismiss(); } }, 'Cancel'),
+                    m('span.tb-modal-btn', { 'class' : 'text-default', onclick : function() { tb.modal.dismiss(); } }, 'Cancel'),
                     m('span.tb-modal-btn', { 'class' : 'text-danger', onclick : function() { runDeleteMultiple.call(tb, deleteList); }  }, 'Delete All')
                 ]);
         } else {
@@ -977,7 +977,7 @@ function _removeEvent (event, items, col) {
                     })
                 ]);
             mithrilButtonsMultiple =  m('div', [
-                    m('span.tb-modal-btn', { 'class' : 'text-primary', onclick : function() {  tb.modal.dismiss(); } }, 'Cancel'),
+                    m('span.tb-modal-btn', { 'class' : 'text-default', onclick : function() {  tb.modal.dismiss(); } }, 'Cancel'),
                     m('span.tb-modal-btn', { 'class' : 'text-danger', onclick : function() { runDeleteMultiple.call(tb, deleteList); }  }, 'Delete Some')
                 ]);
         }
@@ -1410,14 +1410,14 @@ var FGItemButtons = {
                 m.component(FGButton, {
                     onclick: function(event) {_uploadEvent.call(tb, event, item); },
                     icon: 'fa fa-upload',
-                    className : 'text-primary'
+                    className : 'text-success'
                 }, 'Upload'),
                 m.component(FGButton, {
                     onclick: function() {
                         mode(toolbarModes.ADDFOLDER);
                     },
                     icon: 'fa fa-plus',
-                    className : 'text-primary'
+                    className : 'text-success'
                 }, 'Create Folder'));
             if(item.data.path){
                 rowButtons.push(
@@ -1443,7 +1443,7 @@ var FGItemButtons = {
                 m.component(FGButton, {
                     onclick: function(event) { _downloadEvent.call(tb, event, item); },
                     icon: 'fa fa-download',
-                    className : 'text-success'
+                    className : 'text-primary'
                 }, 'Download')
             );
             if (item.data.permissions && item.data.permissions.edit) {
@@ -1460,7 +1460,7 @@ var FGItemButtons = {
                 m.component(FGButton, {
                     onclick: function(event) { _downloadZipEvent.call(tb, event, item); },
                     icon: 'fa fa-download',
-                    className : 'text-success'
+                    className : 'text-primary'
                 }, 'Download as zip')
             );
         }

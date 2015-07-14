@@ -48,6 +48,18 @@ describe('Paginator', () => {
         assert.equal(paginator.pageToGet() + 1, currentPage);
     });
 
+    it('previousPage doesnot fetchResult when pageNum is 0', () => {
+        numberOfPages = 5;
+        currentPage = 0;
+        paginator.configure(function(p){
+            p.numberOfPages(numberOfPages);
+            p.currentPage(currentPage);
+        });
+        paginator.previousPage();
+        assert.isFalse(paginator.fetchResults.called);
+        assert.equal(paginator.pageToGet() + 1, currentPage);
+    });
+
     it('nextPage', () => {
         numberOfPages = 5;
         paginator.configure(function(p){
@@ -55,6 +67,18 @@ describe('Paginator', () => {
         });
         paginator.nextPage();
         assert.calledOnce(paginator.fetchResults);
+        assert.equal(paginator.pageToGet() - 1, currentPage);
+    });
+
+    it('nextPage doesnot fetchResult when pageNum is at the end', () => {
+        numberOfPages = 5;
+        currentPage = 4;
+        paginator.configure(function(p){
+            p.numberOfPages(numberOfPages);
+            p.currentPage(currentPage);
+        });
+        paginator.nextPage();
+        assert.isFalse(paginator.fetchResults.called);
         assert.equal(paginator.pageToGet() - 1, currentPage);
     });
 

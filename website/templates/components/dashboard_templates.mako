@@ -44,9 +44,7 @@
         </div><!-- end .form-group -->
         <!-- /ko -->
     </div> <!-- end .ob-search -->
-    <button type="submit" data-bind="visible: showSubmit(), html: submitText"
-            class="btn btn-primary pull-right" >
-    </button>
+    <button type="submit" data-bind="visible: showSubmit(), html: submitText,  attr: {class: btnClass}"> </button>
 </form>
 </template>
 
@@ -56,7 +54,7 @@
     <div data-bind="click: toggle" class="panel-heading clearfix pointer">
         <h3 class="panel-title">Register a project</h3>
         <div class="pull-right" >
-            <a href="#" class="project-toggle"><i class="fa fa-angle-down"></i></a>
+            <button class="btn btn-link project-toggle"><i class="fa fa-angle-down"></i></button>
         </div>
     </div><!-- end ob-header -->
 
@@ -80,7 +78,7 @@
         <div class="panel-heading clearfix pointer">
             <h3 class="panel-title">Create a project</h3>
            <div class="pull-right" >
-                <a href="#" class="project-toggle"><i class="fa fa-angle-down"></i></a>
+                <button class="btn btn-link project-toggle"><i class="fa fa-angle-down"></i></button>
            </div>
         </div><!-- end ob-header -->
         <div style="display:none" class="panel-body" id="obRevealNewProject">
@@ -97,7 +95,7 @@
     <div class="pointer panel-heading clearfix ">
         <h3 class="panel-title">Upload file(s)</h3>
         <div class="pull-right" >
-            <a href="#" class="project-toggle"><i class="fa fa-angle-up"></i></a>
+            <button class="btn btn-link project-toggle"><i class="fa fa-angle-up"></i></button>
         </div>
     </div><!-- end ob-header -->
 
@@ -132,6 +130,7 @@
                         onClear: showCreateAndUpload,
                         onSelected: hideCreateAndUpload,
                         submitText: 'Upload',
+                        btnClass: 'btn btn-success pull-right';
                         ">
                 </osf-project-search>
             </div>
@@ -153,7 +152,7 @@
             <div class="row">
                 <div class="col-md-12">
                     <br>
-                    <button  class="btn btn-primary pull-right" type="submit">Create</button>
+                    <button  class="btn btn-success pull-right" type="submit">Upload</button>
                 </div>
             </div>
         </form>
@@ -208,7 +207,7 @@
     <div class="panel-heading clearfix pointer">
         <h3 class="panel-title">Go to my project</h3>
         <div class="pull-right" >
-            <a href="#" class="project-toggle"><i class="fa fa-angle-up"></i></a>
+            <button class="btn btn-link project-toggle"><i class="fa fa-angle-up"></i></button>
         </div>
     </div><!-- end ob-header -->
     <div class="row panel-body">

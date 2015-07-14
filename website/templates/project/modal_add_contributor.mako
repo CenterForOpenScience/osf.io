@@ -63,13 +63,13 @@
                                     <tr data-bind="if:!($root.selected($data))">
                                         <td style="padding-right: 10px;">
                                             <a
-                                                    class="btn btn-default contrib-button btn-mini"
+                                                    class="btn btn-success contrib-button btn-mini"
                                                     data-bind="click:$root.add, tooltip: {title: 'Add contributor'}"
-                                                >+</a>
+                                                ><i class="fa fa-plus"></i></a>
                                         </td>
                                         <td>
                                             <!-- height and width are explicitly specified for faster rendering -->
-                                            <img data-bind="attr: {src: contributor.gravatar_url}" height=40 width=40 />
+                                            <img data-bind="attr: {src: contributor.gravatar_url}" height=35 width=35 />
                                         </td>
                                         <td width="75%">
                                             <a data-bind = "attr: {href: contributor.profile_url}" target="_blank">
@@ -113,13 +113,13 @@
                                     <ul class="pagination pagination-sm" data-bind="foreach: paginators">
                                         <li data-bind="css: style"><a href="#" data-bind="click: handler, html: text"></a></li>
                                     </ul>
-                                    <p><strong>
-                                        <a href="#"data-bind="click:gotoInvite">Add <em>{{query}}</em> as an unregistered contributor</a>.
-                                    </strong></p>
+                                    <p>
+                                        <a href="#"data-bind="click:gotoInvite">Add <strong><em>{{query}}</em></strong> as an unregistered contributor</a>.
+                                    </p>
                                 </div>
                                 <div data-bind="if: noResults">
-                                    No results found. Try a more specific search or <strong><a href="#"
-                                    data-bind="click:gotoInvite">add <em>{{query}}</em> as an unregistered contributor</a>.</strong>
+                                    No results found. Try a more specific search or  <a href="#"
+                                    data-bind="click:gotoInvite">add <strong><em>{{query}}</em></strong> as an unregistered contributor</a>.
                                 </div>
                             </div>
                         </div><!-- ./col-md -->
@@ -152,10 +152,10 @@
                                             <a
                                                     class="btn btn-default contrib-button btn-mini"
                                                     data-bind="click:$root.remove, tooltip: {title: 'Remove contributor'}"
-                                                >-</a>
+                                                ><i class="fa fa-minus"></i></a>
                                         </td>
                                         <td>
-                                            <img data-bind="attr: {src: contributor.gravatar_url}" />
+                                            <img class="m-v-xs" data-bind="attr: {src: contributor.gravatar_url}" width=35 height=35/>
                                         </td>
 
                                         <td>

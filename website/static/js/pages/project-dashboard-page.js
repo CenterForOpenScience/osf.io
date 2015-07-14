@@ -54,7 +54,6 @@ if (!ctx.node.anonymous && !ctx.node.isRetracted) {
     new CitationList('#citationList');
     new CitationWidget('#citationStyleInput', '#citationText');
 }
-
 $(document).ready(function () {
 
     var qs = $osf.urlParams();
@@ -127,6 +126,11 @@ $(document).ready(function () {
             $('#title').focus();
         }
     });
+
+    $('#newComponent').on('hidden.bs.modal', function(){
+        $('#newComponent .modal-alert').text('');
+    });
+
     $('#addPointer').on('shown.bs.modal', function(){
         if(!$osf.isIE()){
             $('#addPointer input').focus();
@@ -168,4 +172,7 @@ $(document).ready(function () {
     if (window.contextVars.node.isRegistration && window.contextVars.node.tags.length === 0) {
         $('div.tags').remove();
     }
+    $('a.btn').mouseup(function(){
+        $(this).blur();
+    });
 });

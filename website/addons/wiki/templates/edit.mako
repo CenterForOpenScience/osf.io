@@ -14,7 +14,7 @@
         <%include file="wiki/templates/status.mako"/>
     </div>
     <div class="col-sm-6">
-        <div class="pull-right">
+        <div class="pull-right m-t-md">
           <div class="switch"></div>
           </div>
     </div>

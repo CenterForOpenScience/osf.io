@@ -1,5 +1,6 @@
  <div id="s3Scope" class="scripted">
     <h4 class="addon-title">
+        <img class="addon-icon" src="${addon_icon_url}"></img>
         Amazon S3
         <small class="authorized-by">
             <span data-bind="if: nodeHasAuth">
@@ -31,12 +32,11 @@
             {{currentBucket}}
           </a>
         </p>
-        <div class="btn-group"
-             data-bind="attr.disabled: creating">
+        <div data-bind="attr.disabled: creating">
           <button data-bind="visible: canChange, click: toggleSelect,
-                             css: {active: showSelect}" class="btn btn-sm btn-addon"><i class="icon-edit"></i> Change</button>
+                             css: {active: showSelect}" class="btn btn-sm btn-primary">Change</button>
           <button data-bind="visible: showNewBucket, click: openCreateBucket,
-                             attr.disabled: creating" class="btn btn-sm btn-addon" id="newBucket">Create Bucket</button>
+                             attr.disabled: creating" class="btn btn-sm btn-success" id="newBucket">Create Bucket</button>
         </div>
         <br />
         <br />
