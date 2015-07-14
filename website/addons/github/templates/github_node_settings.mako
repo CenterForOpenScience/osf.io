@@ -2,6 +2,7 @@
 
     <div>
         <h4 class="addon-title">
+            <img class="addon-icon" src="${addon_icon_url}"></img>
             GitHub
             <small class="authorized-by">
                 % if node_has_auth:
@@ -10,16 +11,18 @@
                             ${auth_osf_name}
                         </a>
                     % if not is_registration:
-                        <a id="githubRemoveToken" class="text-danger pull-right addon-auth" >Deauthorize</a>
+                        <a id="githubRemoveToken" class="text-danger pull-right addon-auth" >
+                          Disconnect Account
+                        </a>
                     % endif
                 % else:
                     % if user_has_auth:
                         <a id="githubImportToken" class="text-primary pull-right addon-auth">
-                            Import Access Token
+                           Import Account From Profile
                         </a>
                     % else:
                         <a id="githubCreateToken" class="text-primary pull-right addon-auth">
-                            Create Access Token
+                           Connect Account
                         </a>
                     % endif
                 % endif

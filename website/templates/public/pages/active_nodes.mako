@@ -25,25 +25,25 @@
         <div class="col-sm-8 col-md-9" role="main">
             <h1 class="page-header">Public Activity</h1>
             <section id='newPublicProjects'>
-                <h3>Newest Public Projects</h3>
+                <h3 class='anchor'>Newest Public Projects</h3>
                 <div class='project-list'>
                     ${node_list(recent_public_projects, prefix='newest_public', metric='date_created')}
                 </div>
             </section>
             <section id='newPublicRegistrations'>
-                <h3>Newest Public Registrations</h3>
+                <h3 class='anchor'>Newest Public Registrations</h3>
                 <div class='project-list'>
                     ${node_list(recent_public_registrations, prefix='newest_public', metric='registered_date')}
                 </div>
             </section>
             <section id='popularPublicProjects'>
-                <h3>Popular Public Projects</h3>
+                <h3 class='anchor'>Popular Public Projects</h3>
                 <div class='project-list'>
                     ${node_list(popular_public_projects, prefix='most_viewed', metric='hits')}
                 </div>
             </section>
             <section id='popularPublicRegistrations'>
-                <h3>Popular Public Registrations</h3>
+                <h3 class='anchor'>Popular Public Registrations</h3>
                 <div class='project-list'>
                     ${node_list(popular_public_registrations, prefix='most_viewed', metric='hits')}
                 </div>
