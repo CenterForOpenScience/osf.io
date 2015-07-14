@@ -130,13 +130,14 @@ class NodeSerializer(JSONAPISerializer):
 
 class NodeContributorsSerializer(UserSerializer):
 
+    id = ser.CharField(source='_id')
     permissions = ser.ListField(read_only=True)
-    bibliographic = ser.BooleanField(read_only=True, help_text='Whether the user will be included in citations for '
+    bibliographic = ser.BooleanField(initial=True, help_text='Whether the user will be included in citations for '
                                                                'this node or not')
+    permission = ser.ChoiceField(choices=['read', 'write', 'admin'], initial='write', write_only=True)
     local_filterable = frozenset(['permission', 'bibliographic'])
     filterable_fields = frozenset.union(UserSerializer.filterable_fields, local_filterable)
 
-    id = ser.CharField(source='_id')
     fullname = ser.CharField(read_only=True, help_text='Display name used in the general user interface')
     given_name = ser.CharField(read_only=True, help_text='For bibliographic citations')
     middle_name = ser.CharField(read_only=True, source='middle_names', help_text='For bibliographic citations')
@@ -156,68 +157,52 @@ class NodeContributorsSerializer(UserSerializer):
                                                                                'of user-defined URLs')
     links = LinksField({
         'html': 'absolute_url',
+        'details': Link('nodes:node-contributor-detail', kwargs={'user_id': '<_id>', 'node_id': '<node_id>'}),
         'nodes': {
-            'relation': Link('users:user-nodes', kwargs={'user_id': '<_id>'})
+            'relation': Link('users:user-nodes', kwargs={'user_id': '<_id>'}),
         },
-        'edit contributor': Link('nodes:node-contributor-detail', kwargs={'user_id': '<_id>', 'node_id': '<node_id>'})
     })
 
     def absolute_url(self, obj):
         return obj.absolute_url
 
     def create(self, validated_data):
-        user = self.context['request'].user
-        auth = Auth(user)
-        node = self.context['view'].get_node()
-        contributor = User.load(validated_data['_id'])
-        if not contributor:
-            raise NotFound('User with id {} cannot be found.'.format(validated_data['_id']))
-        elif contributor in node.contributors:
-            raise ValidationError('User {} already is a contributor.'.format(contributor.username))
-        else:
-            node.add_contributor(contributor=contributor, auth=auth, save=True)
-            contributor.node_id = node._id
-        return contributor
-
-
-class NodeContributorsDetailSerializer(NodeContributorsSerializer):
-
-    id = ser.CharField(source='_id', read_only=True)
-    permission = ser.ChoiceField(choices=['read', 'write', 'admin'], allow_blank=True, write_only=True)
-    bibliographic = ser.BooleanField(help_text='Whether the user will be included in citations for this node or not')
-
-    def update(self, user, validated_data):
-        node = self.context['view'].get_node()
         current_user = self.context['request'].user
+        auth = Auth(current_user)
+        node = self.context['view'].get_node()
+        user = User.load(validated_data['_id'])
+        is_admin_current = node.has_permission(current_user, 'admin')
+        if not user:
+            raise NotFound('User with id {} cannot be found.'.format(validated_data['_id']))
+        elif user in node.contributors:
+            raise ValidationError('User {} already is a contributor.'.format(user.username))
         bibliographic = validated_data['bibliographic'] == "True"
         permission_field = validated_data['permission']
-        is_admin_current = node.has_permission(current_user, 'admin')
-        is_current = user is current_user
-        if node.get_visible(user) != bibliographic:
-            self.change_visibility(bibliographic, user, node, is_admin_current, is_current)
+        node.add_contributor(contributor=user, auth=auth, save=True)
+        self.set_visibility(bibliographic, user, node, is_admin_current)
         if permission_field != '':
-            self.change_permissions(permission_field, user, node, is_admin_current)
-        user.permission = node.get_permissions(user)[-1]
+            self.set_permissions(permission_field, user, node, is_admin_current)
+        user.node_id = node._id
         user.bibliographic = node.get_visible(user)
         return user
 
-    def change_visibility(self, bibliographic, user, node, is_admin_current, is_current):
+    def set_visibility(self, bibliographic, user, node, is_admin_current, is_current=None):
         if is_admin_current and bibliographic:
             node.set_visible(user, True, save=True)
         elif not bibliographic:
-            if len(node.visible_contributors) == 1:
+            if len(node.visible_contributors) == 1 and is_current:
                 raise ValidationError('Must have at least one visible contributor')
             elif is_admin_current or is_current:
                 node.set_visible(user, False, save=True)
         else:
             raise PermissionDenied()
 
-    def change_permissions(self, field, user, node, is_admin):
-        if is_admin:
-            if self.context['view'].has_multiple_admins(node):
-                if field == 'admin':
+    def set_permissions(self, field, user, node, is_admin, edit=None):
+        if is_admin or edit:
+            if field == 'admin':
                     node.set_permissions(user, ['read', 'write', 'admin'])
-                elif field == 'write':
+            if self.has_multiple_admins(node) or not edit:
+                if field == 'write':
                     node.set_permissions(user, ['read', 'write'])
                 elif field == 'read':
                     node.set_permissions(user, ['read'])
@@ -229,11 +214,45 @@ class NodeContributorsDetailSerializer(NodeContributorsSerializer):
             raise PermissionDenied()
         node.save()
 
+    def has_multiple_admins(self, node):
+        has_one_admin = False
+        for contributor in node.contributors:
+            if node.has_permission(contributor, 'admin'):
+                if has_one_admin:
+                    return True
+                has_one_admin = True
+        return False
+
+
+class NodeContributorDetailSerializer(NodeContributorsSerializer):
+
+    id = ser.CharField(read_only=True, source='_id')
+
+    # Overridden to allow blank for user to not change status
+    permission = ser.ChoiceField(choices=['admin', 'read', 'write'], write_only=True, allow_blank=True)
+
+    # Overridden to remove contributor detail link
     links = LinksField({
         'html': 'absolute_url',
         'nodes': {
-            'relation': Link('users:user-nodes', kwargs={'user_id': '<_id>'})},
+            'relation': Link('users:user-nodes', kwargs={'user_id': '<_id>'}),
+        },
     })
+
+    def update(self, user, validated_data):
+        node = self.context['view'].get_node()
+        current_user = self.context['request'].user
+        bibliographic = validated_data['bibliographic'] == "True"
+        permission_field = validated_data['permission']
+        is_admin_current = node.has_permission(current_user, 'admin')
+        is_current = user is current_user
+        if node.get_visible(user) != bibliographic:
+            self.set_visibility(bibliographic, user, node, is_admin_current, is_current)
+        if permission_field != '':
+            self.set_permissions(permission_field, user, node, is_admin_current, edit=True)
+        user.permission = node.get_permissions(user)[-1]
+        user.bibliographic = node.get_visible(user)
+        return user
 
 
 class NodePointersSerializer(JSONAPISerializer):

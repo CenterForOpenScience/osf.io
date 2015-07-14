@@ -8,8 +8,8 @@ from framework.auth.core import Auth
 from website.models import Node, Pointer, User
 from api.base.filters import ODMFilterMixin, ListFilterMixin
 from api.base.utils import get_object_or_404, waterbutler_url_for
-from .serializers import NodeSerializer, NodePointersSerializer, NodeFilesSerializer, NodeContributorsSerializer, \
-    NodeContributorsDetailSerializer
+from .serializers import NodeSerializer, NodePointersSerializer, NodeFilesSerializer, NodeContributorsSerializer,\
+    NodeContributorDetailSerializer
 from .permissions import ContributorOrPublic, ReadOnlyIfRegistration, ContributorOrPublicForPointers, \
     Contributor, AdminOrPublic
 
@@ -132,7 +132,7 @@ class NodeContributorsList(generics.ListCreateAPIView, ListFilterMixin, NodeMixi
         node = self.get_node()
         contributors = []
         for contributor in node.contributors:
-            contributor.bibliographic = contributor._id in node.visible_contributor_ids
+            contributor.bibliographic = node.get_visible(contributor)
             contributor.node_id = node._id
             contributor.permissions = node.get_permissions(contributor)
             contributors.append(contributor)
@@ -151,7 +151,7 @@ class NodeContributorDetail(generics.RetrieveUpdateDestroyAPIView, NodeMixin):
 
     Allows for a user to view, remove a contributor from, and change bibliographic and admin status for a node.
     """
-    serializer_class = NodeContributorsDetailSerializer
+    serializer_class = NodeContributorDetailSerializer
 
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
