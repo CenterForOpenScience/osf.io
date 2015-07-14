@@ -161,7 +161,7 @@ class TestProjectViews(OsfTestCase):
             url, {'id': self.user2._id}, auth=self.auth, expect_errors=True
         )
         assert_equal(res.status_code, http.FORBIDDEN)
-        assert_equal(res.json['message_short'], 'Must have at least one bibliographic contributor')
+        assert_equal(res.json['message_long'], 'Must have at least one bibliographic contributor')
 
     def test_cannot_remove_only_visible_contributor_remove_contributor(self):
         self.project.visible_contributor_ids.remove(self.user1._id)
@@ -171,7 +171,7 @@ class TestProjectViews(OsfTestCase):
             url, {'id': self.user2._id}, auth=self.auth, expect_errors=True
         )
         assert_equal(res.status_code, http.FORBIDDEN)
-        assert_equal(res.json['message_short'], 'Must have at least one bibliographic contributor')
+        assert_equal(res.json['message_long'], 'Must have at least one bibliographic contributor')
         assert_true(self.project.is_contributor(self.user2))
 
     def test_remove_only_visible_contributor_return_false(self):
