@@ -43,7 +43,7 @@ INCLUDE_CSS = {
 HAS_HGRID_FILES = True
 GET_HGRID_DATA = utils.box_addon_folder
 
-# MAX_FILE_SIZE = 5  # MB
+MAX_FILE_SIZE = 250  # MB
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 NODE_SETTINGS_TEMPLATE = None  # use default node settings template
