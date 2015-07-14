@@ -10,7 +10,6 @@ Changelog
 - Site-wide style changes which implement the new OSF Style Guidelines (https://github.com/CenterForOpenScience/osf-style)
 - Improve look and feel of FAQ page.
 - Can upload files to a new project from the Dashboard.
-- Add Twitter handle redirection, e.g. https://osf.io/@twittername will redirect corresponding OSF profile page.
 - Dev: Remove legacy API key-related code.
 - Dev: Fix spurious session creation.
 - Many UI bug fixes.
