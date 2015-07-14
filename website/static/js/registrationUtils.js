@@ -147,6 +147,8 @@ var Question = function(data, id) {
     self.properties = data.properties || {};
     self.match = data.match || '';
 
+    self.extra = {};
+
     self.showExample = ko.observable(false);
     self.showUploader = ko.observable(false);
 
@@ -808,7 +810,7 @@ RegistrationManager.prototype.launchEditor = function(draft) {
             create: node.urls.api + 'draft/',
             update: node.urls.api + 'draft/{draft_pk}/',
             get: node.urls.api + 'draft/{draft_pk}/',
-			submit: node.urls.api + 'draft/submit/{draft_pk}/',
+	    submit: node.urls.api + 'draft/submit/{draft_pk}/',
         }, 'registrationEditor');
         newDraft = self.regEditor.init(draft);
         $osf.applyBindings(self.regEditor, self.editorSelector);
