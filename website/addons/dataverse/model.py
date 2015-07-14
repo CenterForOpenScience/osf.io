@@ -91,7 +91,7 @@ class AddonDataverseNodeSettings(StorageAddonBase, AddonOAuthNodeSettingsBase):
     study_hdl = fields.StringField()    # Now dataset_doi
     study = fields.StringField()        # Now dataset
 
-    user_settings = fields.ForeignField(
+    foreign_user_settings = fields.ForeignField(
         'addondataverseusersettings', backref='authorized'
     )
 

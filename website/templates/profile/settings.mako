@@ -16,20 +16,10 @@
 ##    </div>
 ##</div>
 
-<div class="row">
+<div id="profileSettings" class="row">
 
-    <div class="col-sm-3">
-        <div class="panel panel-default">
-            <ul class="nav nav-stacked nav-pills">
-                <li><a href="#">Profile Information</a></li>
-                <li><a href="${ web_url_for('user_account') }">Account Settings</a></li>
-                <li><a href="${ web_url_for('user_addons') }">Configure Add-ons</a></li>
-                <li><a href="${ web_url_for('user_notifications') }">Notifications</a></li>
-                % if dev_mode:
-                    <li><a href="${ web_url_for('oauth_application_list') }">Developer apps</a> </li>
-                %endif
-            </ul>
-        </div><!-- end sidebar -->
+    <div class="col-sm-3 affix-parent">
+      <%include file="include/profile/settings_navpanel.mako" args="current_page='profile'"/>
     </div>
 
     <div class="col-sm-9 col-md-7">

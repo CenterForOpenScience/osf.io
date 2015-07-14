@@ -16,13 +16,12 @@
 </div>
 
 <div class="row project-page">
-
     <!-- Begin left column -->
-    <div class="col-sm-3 affix-parent">
+    <div class="col-sm-3 affix-parent scrollspy">
 
         % if 'write' in user['permissions']:
 
-            <div class="panel panel-default" data-spy="affix" data-offset-top="60" data-offset-bottom="268"><!-- Begin sidebar -->
+            <div class="panel panel-default osf-affix" data-spy="affix" data-offset-top="60" data-offset-bottom="263"><!-- Begin sidebar -->
                 <ul class="nav nav-stacked nav-pills">
 
                     % if not node['is_registration']:
@@ -333,6 +332,14 @@
 % for name, capabilities in addon_capabilities.iteritems():
     <script id="capabilities-${name}" type="text/html">${capabilities}</script>
 % endfor
+
+
+<%def name="stylesheets()">
+    ${parent.stylesheets()}
+
+    <link rel="stylesheet" href="/static/css/pages/project-page.css">
+</%def>
+
 
 <%def name="javascript_bottom()">
     <% import json %>
