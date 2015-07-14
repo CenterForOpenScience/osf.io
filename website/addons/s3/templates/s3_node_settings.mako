@@ -32,8 +32,7 @@
             {{currentBucket}}
           </a>
         </p>
-        <div class="btn-group"
-             data-bind="attr.disabled: creating">
+        <div data-bind="attr.disabled: creating">
           <button data-bind="visible: canChange, click: toggleSelect,
                              css: {active: showSelect}" class="btn btn-primary">Change</button>
           <button data-bind="visible: showNewBucket, click: openCreateBucket,

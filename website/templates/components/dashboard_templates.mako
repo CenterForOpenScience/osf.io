@@ -44,9 +44,7 @@
         </div><!-- end .form-group -->
         <!-- /ko -->
     </div> <!-- end .ob-search -->
-    <button type="submit" data-bind="visible: showSubmit(), html: submitText"
-            class="btn btn-primary pull-right" >
-    </button>
+    <button type="submit" data-bind="visible: showSubmit(), html: submitText,  attr: {class: btnClass}"> </button>
 </form>
 </template>
 
@@ -132,6 +130,7 @@
                         onClear: showCreateAndUpload,
                         onSelected: hideCreateAndUpload,
                         submitText: 'Upload',
+                        btnClass: 'btn btn-success pull-right';
                         ">
                 </osf-project-search>
             </div>
@@ -153,7 +152,7 @@
             <div class="row">
                 <div class="col-md-12">
                     <br>
-                    <button  class="btn btn-primary pull-right" type="submit">Create</button>
+                    <button  class="btn btn-success pull-right" type="submit">Upload</button>
                 </div>
             </div>
         </form>
