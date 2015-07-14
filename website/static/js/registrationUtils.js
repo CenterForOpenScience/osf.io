@@ -48,6 +48,10 @@ function Comment(data) {
     self.lastModified = new Date(data.lastModified)|| new Date();
     self.value = ko.observable(data.value || '');
 
+	self.isDeleted = ko.observable(false);
+
+	self.seenBy = ko.observableArray([]);
+
     /**
      * Returns 'You' if the current user is the commenter, else the commenter's name
      **/
@@ -72,7 +76,35 @@ function Comment(data) {
     self.canEdit = ko.pureComputed(function() {
         return self.saved() && self.user.id === currentUser.id;
     });
-}
+};
+Comment.prototype.formatSeenBy = function() {
+	var self = this;
+
+	var seen = self.seenBy();
+	var ret = '';
+
+	if( seen.length >= 5 ) {
+		for(var i = 0; i < 6; i++) {
+			if (seen[i] === currentUser.fullname) {
+				ret += 'You, ';
+			}
+			else {
+				ret += seen[i] + ', ';
+			}
+		}
+	}
+	else {
+		for(var i = 0; i < seen.length; i++) {
+			if (seen[i] === currentUser.fullname) {
+				seen.length === 1 ? ret += 'You' : ret += 'You, ';
+			}
+			else {
+				ret += seen[i] + ', ';
+			}
+		}
+	}
+	return ret;
+};
 // Let ENTER keypresses add a comment if comment <input> is in focus
 $(document).keydown(function(e) {
     if (e.keyCode === 13) {
@@ -155,10 +187,13 @@ var Question = function(data, id) {
     );
 	self.deleteComment = function(comment) {
 		self.comments.remove(comment);
+		comment.isDeleted = true;
+
 		var commentList = document.getElementById('commentList');
 		var div = document.createElement('div');
 		div.style.display = 'none';
 		commentList.appendChild(div);
+
 		ko.renderTemplate('deleted', {}, {}, div, "replaceNode");
 	};
     self.nextComment = ko.observable('');
@@ -208,6 +243,7 @@ Question.prototype.addComment = function() {
     var comment = new Comment({
         value: self.nextComment()
     });
+	comment.seenBy.push(currentUser.fullname);
     self.nextComment('');
     self.comments.push(comment);
 };
@@ -383,6 +419,7 @@ var RegistrationEditor = function(urls, editorId) {
     self.extensions = {
         'osf-upload': editorExtensions.Uploader
     };
+
 };
 /**
  * Load draft data into the editor
@@ -433,6 +470,11 @@ RegistrationEditor.prototype.flatQuestions = function() {
 
     return self.draft().metaSchema.flatQuestions();
 };
+RegistrationEditor.prototype.numQuestions = function() {
+	var self = this;
+
+	return self.flatQuestions().length;
+};
 /**
  * Creates a template context for editor type subtemplates. Looks for the data type
  * in the extension map, and if found instantiates that type's ViewModel. Otherwise
@@ -471,6 +513,21 @@ RegistrationEditor.prototype.lastSaved = function() {
         return 'never';
     }
 };
+RegistrationEditor.prototype.viewComments = function() {
+	var self = this;
+
+	var comments = self.currentQuestion().comments();
+	for (var i = 0; i < comments.length; i++ ) {
+		var seenBy = comments[i].seenBy;
+		var match = ko.utils.arrayFirst(seenBy(), function(user) {
+			return currentUser.fullname === user;
+		});
+
+		if (!match && comments[i].user.fullname !== currentUser.fullname) {
+			seenBy.push(currentUser.fullname);
+		}
+	}
+};
 RegistrationEditor.prototype.nextPage = function() {
     var self = this;
 
@@ -482,10 +539,12 @@ RegistrationEditor.prototype.nextPage = function() {
     });
     if(index + 1 === questions.length) {
         self.currentQuestion(questions.shift());
+		self.viewComments();
     }
     else {
         self.currentQuestion(questions[index + 1]);
-    }
+		self.viewComments();
+	}
 };
 RegistrationEditor.prototype.previousPage = function() {
     var self = this;
@@ -498,9 +557,11 @@ RegistrationEditor.prototype.previousPage = function() {
     });
     if(index - 1 < 0){
         self.currentQuestion(questions.pop());
+		self.viewComments();
     }
     else {
         self.currentQuestion(questions[index - 1]);
+		self.viewComments();
     }
 };
 RegistrationEditor.prototype.selectPage = function(page) {
@@ -508,6 +569,7 @@ RegistrationEditor.prototype.selectPage = function(page) {
 
 	var firstQuestion = page.questions[Object.keys(page.questions)[0]];
     self.currentQuestion(firstQuestion);
+	self.viewComments();
 };
 RegistrationEditor.prototype.updateData = function(response) {
     var self = this;
@@ -600,6 +662,8 @@ RegistrationEditor.prototype.save = function() {
         return self.create(data);
     }
 
+	console.log(self.draft());
+
     return $osf.putJSON(self.urls.update.replace('{draft_pk}', self.draft().pk), {
         schema_name: metaSchema.name,
         schema_version: metaSchema.version,
@@ -660,7 +724,7 @@ var RegistrationManager = function(node, draftsSelector, editorSelector, control
 };
 RegistrationManager.prototype.init = function() {
     var self = this;
-    
+
     $osf.applyBindings(self, self.draftsSelector);
 
     var getSchemas = self.getSchemas();
@@ -686,6 +750,7 @@ RegistrationManager.prototype.init = function() {
     $.when(getSchemas, getDraftRegistrations).then(function() {
         self.loading(false);
     });
+
 };
 RegistrationManager.prototype.refresh = function() {
     var self = this;

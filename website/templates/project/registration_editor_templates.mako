@@ -113,6 +113,9 @@
                         <div class="col-sm-9">
                             <strong><span data-bind="text: comment.author"></span></strong> said ...
                         </div>
+						<div class="col-sm-3">
+							<em>Seen by: <span data-bind="text: comment.formatSeenBy()"></span></em>
+						</div>
                         <div class="col-sm-3">
                             <div style="text-align: right;" class="btn-group">
                                 <button data-bind="disable: comment.saved,
