@@ -134,7 +134,7 @@ $(function() {
 
             $('#add-component-submit')
                 .removeAttr('disabled', 'disabled')
-                .text('OK');
+                .text('Add');
 
             e.preventDefault();
         } else if ($(e.target).find('#title').val().length > 200) {
@@ -142,7 +142,7 @@ $(function() {
 
             $('#add-component-submit')
                 .removeAttr('disabled', 'disabled')
-                .text('OK');
+                .text('Add');
 
             e.preventDefault();
 

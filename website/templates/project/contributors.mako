@@ -128,9 +128,9 @@
                             </div>
 
                             <div class="btn-group">
-                                <button class="btn btn-default btn-sm m-r-xs copy-button" data-trigger="manual"
-                                        data-bind="attr: {data-clipboard-text: linkUrl}, tooltip: {title: 'Click to copy'}" >
-                                    <span class="fa fa-copy" ></span>
+                                <button class="btn btn-default btn-sm m-r-xs copy-button"
+                                        data-bind="attr: {data-clipboard-text: linkUrl}" >
+                                    Copy
                                 </button>
                                 <input class="link-url" type="text" data-bind="value: linkUrl, attr:{readonly: readonly}"  />
                             </div>

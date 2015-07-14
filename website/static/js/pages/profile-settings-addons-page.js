@@ -117,3 +117,4 @@ $('.addon-oauth').each(function(index, elem) {
     ko.applyBindings(viewModel, elem);
     viewModel.updateAccounts();
 });
+
