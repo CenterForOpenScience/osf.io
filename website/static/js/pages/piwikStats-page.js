@@ -3,7 +3,10 @@ var c3 = require('c3');
 require('c3/c3.css');
 
 $(document).ready(function() {
-    $.getJSON('/api/v1/project/a9sq6/piwikStats', function (data) {
+
+    var nodeID = window.contextVars.node.id;
+    console.log(nodeID);
+    $.getJSON('http://localhost:6969/'+nodeID+'/piwikStats', function (data) {
         console.log(data);
         $('.piwikChart').height(200);
         visualize(data);
