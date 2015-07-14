@@ -177,9 +177,9 @@ class NodeContributorDetail(generics.RetrieveUpdateDestroyAPIView, NodeMixin):
         current_user = self.request.user
         auth = Auth(current_user)
         if not self.has_multiple_admins(node) and node.has_permission(instance, 'admin'):
-            raise PermissionDenied("Must have at least one registered admin contributor")
+            raise ValidationError("Must have at least one registered admin contributor")
         if node.get_visible(instance) and len(node.visible_contributors) == 1:
-            raise PermissionDenied("Must have at least one visible contributor")
+            raise ValidationError("Must have at least one visible contributor")
         node.remove_contributor(instance, auth)
 
     def has_multiple_admins(self, node):
