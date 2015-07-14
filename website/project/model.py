@@ -294,7 +294,7 @@ class ApiOAuth2Application(StoredObject):
     client_id = fields.StringField(default=lambda: uuid.uuid4().hex,  # Not *guaranteed* unique, but very unlikely
                                    unique=True,
                                    index=True)
-    client_secret = fields.StringField(default=lambda: generate_client_secret)
+    client_secret = fields.StringField(default=generate_client_secret)
 
     active = fields.BooleanField(default=True,  # Set to False if application is deactivated
                                  index=True)
