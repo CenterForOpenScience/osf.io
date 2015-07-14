@@ -1076,9 +1076,9 @@ function _fangornUploadMethod(item) {
 function gotoNode(item) {
     var tb = this;
     var redir = item.data.nodeID;
-    var loc = window.location.origin;
-    var fileurl = loc + '/' + redir.toString() + '/';
-    window.open(fileurl, '_self');
+    var baseurl = window.location.origin;
+    var nodeurl = baseurl + '/' + redir.toString() + '/';
+    window.open(nodeurl, '_self');
 }
 
 function gotoFileEvent (item) {
