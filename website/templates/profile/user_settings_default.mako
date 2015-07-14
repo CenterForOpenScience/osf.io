@@ -14,7 +14,7 @@
         <thead>
             <tr class="user-settings-addon-auth">
                 <th class="text-muted default-authorized-by">Authorized by <em><a data-bind="attr.href: profileUrl, text: name"></a></em></th>
-                <th><a data-bind="click: $root.askDisconnect" class="text-danger">Disconnect Account</a></th>
+                <th><a data-bind="click: $root.askDisconnect" class="text-danger pull-right default-authorized-by">Disconnect Account</a></th>
             </tr>
         </thead>
         <!-- ko if: connectedNodes().length > 0 -->
@@ -26,7 +26,7 @@
                 </td>
                 <td>
                     <a data-bind="click: $parent.deauthorizeNode">
-                        <i class="fa fa-times text-danger" title="disconnect Project"></i>
+                        <i class="fa fa-times text-danger pull-right" title="disconnect Project"></i>
                     </a>
                 </td>
             </tr>

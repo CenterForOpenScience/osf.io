@@ -5,7 +5,7 @@
 
 <%def name="stylesheets()">
    ${parent.stylesheets()}
-   <link rel="stylesheet" href='/static/css/pages/account-setting-page.css'>;
+   <link rel="stylesheet" href='/static/css/pages/account-setting-page.css'>
 </%def>
 
 <%def name="content()">
@@ -102,7 +102,7 @@
                     </div>
                 </div>
 				<div class="panel panel-default">
-                  <div class="panel-heading"><h3 class="panel-title">Security Settings</h3></div>
+                  <div class="panel-heading clearfix"><h3 class="panel-title">Security Settings</h3></div>
                   <div class="panel-body">
                     % for addon in addons:
                     ${render_user_settings(addon) }

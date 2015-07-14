@@ -199,13 +199,13 @@ var FileViewPage = {
         $('.file-view-panels').removeClass().addClass('file-view-panels').addClass(fileViewPanelsLayout);
 
         m.render(document.getElementById('toggleBar'), m('.btn-toolbar.m-t-md', [
-            ctrl.canEdit() ? m('.btn-group', {style: 'margin-left: 0;'}, [
+            ctrl.canEdit() ? m('.btn-group.m-l-xs.m-t-xs', [
                 m('.btn.btn-sm.btn-danger.file-delete', {onclick: $(document).trigger.bind($(document), 'fileviewpage:delete')}, 'Delete')
             ]) : '',
-            m('.btn-group', [
+            m('.btn-group.m-t-xs', [
                 m('.btn.btn-sm.btn-primary.file-download', {onclick: $(document).trigger.bind($(document), 'fileviewpage:download')}, 'Download')
             ]),
-            m('.btn-group.btn-group-sm', [
+            m('.btn-group.btn-group-sm.m-t-xs', [
                 m('.btn.btn-default.disabled', 'Toggle view: ')
             ].concat(
                 m('.btn' + (ctrl.mfrIframeParent.is(':visible') ? '.btn-primary' : '.btn-default'), {
