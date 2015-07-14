@@ -128,7 +128,7 @@ class NodeSerializer(JSONAPISerializer):
         return instance
 
 
-class ContributorSerializer(UserSerializer):
+class NodeContributorsSerializer(UserSerializer):
 
     permissions = ser.ListField(read_only=True)
     bibliographic = ser.BooleanField(read_only=True, help_text='Whether the user will be included in citations for '
@@ -180,7 +180,7 @@ class ContributorSerializer(UserSerializer):
         return contributor
 
 
-class ContributorDetailSerializer(ContributorSerializer):
+class NodeContributorsDetailSerializer(NodeContributorsSerializer):
 
     id = ser.CharField(source='_id', read_only=True)
     permission = ser.ChoiceField(choices=['read', 'write', 'admin'], allow_blank=True, write_only=True)
