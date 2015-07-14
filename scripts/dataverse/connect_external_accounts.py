@@ -13,23 +13,26 @@ from website.addons.dataverse.model import AddonDataverseNodeSettings
 logger = logging.getLogger(__name__)
 
 
-def do_migration(records, dry=True):
-    with TokuTransaction():
-        for node_addon in AddonDataverseNodeSettings.find(Q('foreign_user_settings', 'ne', None)):
-            user_addon = node_addon.foreign_user_settings
-            if not user_addon.external_accounts:
-                logger.warning('User {0} has not dataverse external account'.format(user_addon.owner._id))
-            account = user_addon.external_account[0]
-            if not dry:
-                node_addon.set_auth(account, user_addon.owner)
-            logger.info('Added external account {0} to node {1}'.format(
-                account._id, node_addon.owner._id,
-            ))
+def do_migration():
+    for node_addon in AddonDataverseNodeSettings.find(Q('foreign_user_settings', 'ne', None)):
+        user_addon = node_addon.foreign_user_settings
+        # import ipdb; ipdb.set_trace()
+        if not user_addon.external_accounts:
+            logger.warning('User {0} has no dataverse external account'.format(user_addon.owner._id))
+            continue
+        account = user_addon.external_accounts[0]
+        node_addon.set_auth(account, user_addon.owner)
+        logger.info('Added external account {0} to node {1}'.format(
+            account._id, node_addon.owner._id,
+        ))
 
 
 def main(dry=True):
-    init_app(set_backends=True, routes=False, mfr=False)  # Sets the storage backends on all models
-    do_migration(dry=dry)
+    init_app(set_backends=True, routes=False)  # Sets the storage backends on all models
+    with TokuTransaction():
+        do_migration()
+        if dry:
+            raise Exception('Abort Transaction - Dry Run')
 
 
 if __name__ == '__main__':
