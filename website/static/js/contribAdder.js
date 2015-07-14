@@ -14,7 +14,7 @@ var Paginator = require('./paginator');
 
 var NODE_OFFSET = 25;
 // Max number of recent/common contributors to show
-var MAX_RECENT = 5;
+var RESULTS_PER_PAGE = 5;
 
 // TODO: Remove dependency on contextVars
 var nodeApiUrl = window.contextVars.node.urls.api;
@@ -60,7 +60,7 @@ var AddContributorViewModel = oop.extend(Paginator, {
         self.selection = ko.observableArray();
         self.notification = ko.observable('');
         self.inviteError = ko.observable('');
-        self.totalPages = ko.observable(0);
+
         self.nodes = ko.observableArray([]);
         self.nodesToChange = ko.observableArray();
         $.getJSON(
@@ -73,7 +73,7 @@ var AddContributorViewModel = oop.extend(Paginator, {
             }
         );
         self.foundResults = ko.pureComputed(function() {
-            return self.query() && self.results().length;
+            return self.results().length;
         });
 
         self.noResults = ko.pureComputed(function() {
@@ -106,7 +106,18 @@ var AddContributorViewModel = oop.extend(Paginator, {
     goToPage: function(page) {
         this.page(page);
     },
-    /**
+
+    pageCollator: function(result) {
+        var self = this;
+        self.currentPage(self.pageToGet());
+        var start = self.currentPage()*RESULTS_PER_PAGE;
+        var end = start+RESULTS_PER_PAGE > result.length ?
+            result.length : start+RESULTS_PER_PAGE;
+        self.results(result.slice(start, end));
+        self.numberOfPages(Math.ceil(result.length/RESULTS_PER_PAGE));
+
+    },
+     /**
      * A simple Contributor model that receives data from the
      * contributor search endpoint. Adds an addiitonal displayProjectsinCommon
      * attribute which is the human-readable display of the number of projects the
@@ -114,9 +125,10 @@ var AddContributorViewModel = oop.extend(Paginator, {
      */
     startSearch: function() {
         this.pageToGet(0);
+        this.fetchResults = this.contribSearch;
         this.fetchResults();
     },
-    fetchResults: function() {
+    contribSearch: function() {
         var self = this;
         self.notification(false);
         if (self.query()) {
@@ -139,13 +151,20 @@ var AddContributorViewModel = oop.extend(Paginator, {
         } else {
             self.results([]);
             self.currentPage(0);
-            self.totalPages(0);
         }
+    },
+    startImport: function() {
+        this.pageToGet(0);
+        this.currentPage(0);
+        //function redefination for Pagninator
+        this.fetchResults = this.importFromParent;
+        this.fetchResults();
+
     },
     importFromParent: function() {
         var self = this;
         self.notification(false);
-        $.getJSON(
+        return $.getJSON(
             nodeApiUrl + 'get_contributors_from_parent/', {},
             function(result) {
                 if (!result.contributors.length) {
@@ -154,14 +173,16 @@ var AddContributorViewModel = oop.extend(Paginator, {
                         'level': 'info'
                     });
                 }
-                self.results(result.contributors);
+                self.pageCollator(result.contributors);
+                self.addNewPaginators();
+
             }
         );
     },
     recentlyAdded: function() {
         var self = this;
         self.notification(false);
-        var url = nodeApiUrl + 'get_recently_added_contributors/?max=' + MAX_RECENT.toString();
+        var url = nodeApiUrl + 'get_recently_added_contributors/?max=' + RESULTS_PER_PAGE.toString();
         return $.getJSON(
             url, {},
             function(result) {
@@ -177,6 +198,7 @@ var AddContributorViewModel = oop.extend(Paginator, {
                     contribs.push(new Contributor(result.contributors[i]));
                 }
                 self.results(contribs);
+                self.paginators([]);
                 self.numberOfPages(1);
             }
         ).fail(function(xhr, textStatus, error) {
@@ -195,7 +217,7 @@ var AddContributorViewModel = oop.extend(Paginator, {
     mostInCommon: function() {
         var self = this;
         self.notification(false);
-        var url = nodeApiUrl + 'get_most_in_common_contributors/?max=' + MAX_RECENT.toString();
+        var url = nodeApiUrl + 'get_most_in_common_contributors/?max=' + RESULTS_PER_PAGE.toString();
         return $.getJSON(
             url, {},
             function(result) {
@@ -211,6 +233,7 @@ var AddContributorViewModel = oop.extend(Paginator, {
                     contribs.push(new Contributor(result.contributors[i]));
                 }
                 self.results(contribs);
+                self.paginators([]);
                 self.numberOfPages(1);
             }
         ).fail(function(xhr, textStatus, error) {
