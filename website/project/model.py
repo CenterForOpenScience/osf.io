@@ -1,7 +1,9 @@
 # -*- coding: utf-8 -*-
+import functools
 import os
 import re
 import urllib
+import uuid
 import logging
 import datetime
 import random
@@ -79,7 +81,7 @@ def has_anonymous_link(node, auth):
         if link.key == view_only_link
     )
 
-def generate_client_secret(length=40, chars=None):
+def generate_token(length=40, chars=None):
     """Generate a random string of the specified length. See:
     https://github.com/idan/oauthlib/blob/master/oauthlib/common.py#L220
 
@@ -93,6 +95,8 @@ def generate_client_secret(length=40, chars=None):
     chars = chars or 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz1234567890'
     rng = random.SystemRandom()
     return ''.join(rng.choice(chars) for i in xrange(length))
+
+generate_client_secret = functools.partial(generate_token, length=40)
 
 
 class MetaSchema(StoredObject):
@@ -287,10 +291,10 @@ class ApiOAuth2Application(StoredObject):
     )
 
     # Client ID and secret. Use separate ID field so ID format doesn't have to be restricted to database internals.
-    client_id = fields.StringField(default=lambda: str(ObjectId()),
+    client_id = fields.StringField(default=lambda: uuid.uuid4().hex,  # Not *guaranteed* unique, but very unlikely
                                    unique=True,
                                    index=True)
-    client_secret = fields.StringField(default=lambda: generate_client_secret(length=40))
+    client_secret = fields.StringField(default=lambda: generate_client_secret)
 
     active = fields.BooleanField(default=True,  # Set to False if application is deactivated
                                  index=True)

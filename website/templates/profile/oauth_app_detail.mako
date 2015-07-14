@@ -14,24 +14,12 @@
 
 <h2 class="page-header">OAuth Application Settings</h2>
 
-<div class="row">
-
-    <div class="col-sm-3">
-        <div class="panel panel-default">
-            <ul class="nav nav-stacked nav-pills">
-                <li><a href="${ web_url_for('user_profile') }">Profile Information</a></li>
-                <li><a href="${ web_url_for('user_account') }">Account Settings</a></li>
-                <li><a href="${ web_url_for('user_addons') }">Configure Add-ons</a></li>
-                <li><a href="${ web_url_for('user_notifications') }">Notifications</a></li>
-                % if dev_mode:
-                    <li><a href="${ web_url_for('oauth_application_list') }">Developer apps</a> </li>
-                %endif
-            </ul>
-        </div><!-- end sidebar -->
+<div id="applicationDetailPage" class="row">
+    <div class="col-sm-3 affix-parent">
+      <%include file="include/profile/settings_navpanel.mako"/>
     </div>
 
     <div class="col-sm-9 col-md-7">
-
         <div id="appDetail" data-bind="with: content()">
             <div id="app-keys" class="border-box text-right text-muted"
                  data-bind="visible: $root.dataUrl">
