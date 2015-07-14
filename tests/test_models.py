@@ -2766,7 +2766,7 @@ class TestTemplateNode(OsfTestCase):
         self.read.save()
 
         self.write = NodeFactory(creator=self.user, parent=self.project)
-        self.write.add_contributor(other_user, permissions=['read', 'write', ])
+        self.write.add_contributor(other_user, permissions=['read', 'write'])
         self.write.save()
 
         self.admin = NodeFactory(creator=self.user, parent=self.project)
@@ -3140,9 +3140,9 @@ class TestRegisterNode(OsfTestCase):
 
         # Share the project and some nodes
         user2 = UserFactory()
-        self.project.add_contributor(user2)
-        self.shared_component.add_contributor(user2)
-        self.shared_subproject.add_contributor(user2)
+        self.project.add_contributor(user2, permissions=('read', 'write', 'admin'))
+        self.shared_component.add_contributor(user2, permissions=('read', 'write', 'admin'))
+        self.shared_subproject.add_contributor(user2, permissions=('read', 'write', 'admin'))
 
         # Partial contributor registers the node
         registration = RegistrationFactory(project=self.project, user=user2)
@@ -3175,7 +3175,7 @@ class TestRegisterNode(OsfTestCase):
     def test_registered_user(self):
         # Add a second contributor
         user2 = UserFactory()
-        self.project.add_contributor(user2)
+        self.project.add_contributor(user2, permissions=('read', 'write', 'admin'))
         # Second contributor registers project
         registration = RegistrationFactory(parent=self.project, user=user2)
         assert_equal(registration.registered_user, user2)
