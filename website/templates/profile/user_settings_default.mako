@@ -1,29 +1,32 @@
 <!-- Authorization -->
 <div class="addon-oauth"
      data-addon-short-name="${ addon_short_name }"
-     data-addon-name="${ addon_full_name }">
-    <a data-bind="click: connectAccount" class="pull-right text-primary">Connect an account</a>
-    <h4 class="addon-title">{{ properName }}</h4>
+     data-addon-name="${ addon_full_name }">  
+    <h4 class="addon-title">
+      <img class="addon-icon" src="${addon_icon_url}"></img>
+      <span data-bind="text:properName"></span>
+      <small>
+        <a data-bind="click: connectAccount" class="pull-right text-primary">Connect Account</a>
+      </small>
+    </h4>
     <!-- ko foreach: accounts -->
-
-
     <table class="table">
         <thead>
-            <tr>
-                <th>Authorized as <a href="{{ profileUrl }}"><em>{{ name }}</em></a></th>
-                <th><a data-bind="click: $root.askDisconnect" class="text-danger">Delete Access Token</a></th>
+            <tr class="user-settings-addon-auth">
+                <th class="text-muted default-authorized-by">Authorized by <em><a data-bind="attr.href: profileUrl, text: name"></a></em></th>
+                <th><a data-bind="click: $root.askDisconnect" class="text-danger">Disconnect Account</a></th>
             </tr>
         </thead>
         <!-- ko if: connectedNodes().length > 0 -->
         <tbody data-bind="foreach: connectedNodes()">
             <tr>
                 <td class="authorized-nodes">
-                    <!-- ko if: title --><a href="{{ urls.view }}">{{ title }}</a><!-- /ko -->
+                    <!-- ko if: title --><a data-bind="attr.href: urls.view, text: title"></a><!-- /ko -->
                     <!-- ko if: !title --><em>Private project</em><!-- /ko -->
                 </td>
                 <td>
                     <a data-bind="click: $parent.deauthorizeNode">
-                        <i class="fa fa-times text-danger" title="Deauthorize Project"></i>
+                        <i class="fa fa-times text-danger" title="disconnect Project"></i>
                     </a>
                 </td>
             </tr>

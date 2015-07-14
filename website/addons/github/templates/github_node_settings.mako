@@ -1,5 +1,6 @@
 <div id="githubScope" class="scripted">
     <h4 class="addon-title">
+        <img class="addon-icon" src="${addon_icon_url}"></img>
         Github
         <small class="authorized-by">
             <span data-bind="if: nodeHasAuth">
@@ -8,18 +9,18 @@
                 </a>
                 % if not is_registration:
                     <a data-bind="click: deauthorizeNode" class="text-danger pull-right addon-auth">
-                      Deauthorize
+                      Disconnect Account
                     </a>
                 % endif
             </span>
             <span data-bind="if: showImport">
                 <a data-bind="click: importAuth" class="text-primary pull-right addon-auth">
-                  Import Access Token
+                  Import Account From Profile
                 </a>
             </span>
              <span data-bind="if: showCreateCredentials">
                 <a data-bind="click: connectAccount" id="githubAddKey" class="text-primary pull-right addon-auth">
-                    Create Access Token
+                    Connect Account
                 </a>
              </span>
         </small>
@@ -36,11 +37,12 @@
         <div class="btn-group" role="group" data-bind="attr.disabled: creating">
 
             <button data-bind="if: canChange, click: toggleSelect,
-                               css: {active: showSelect}" class="btn btn-sm btn-addon"><i class="icon-edit"></i> Change</button>
+                               css: {active: showSelect}" class="btn btn-primary btn-sm btn-addon"><i class="icon-edit"></i>Change</button>
 
             <button data-bind="if: showNewRepo, click: openCreateRepo,
-                               attr.disabled: creating" class="btn btn-sm btn-addon" id="newRepo">Create Repo</button>
+                               attr.disabled: creating" class="btn btn-success btn-sm btn-addon" id="newRepo">Create Repo</button>
           </div>
+        <br />
         <br />
         <div class="row" data-bind="if: showSelect">
           <div class="col-md-6">
@@ -52,8 +54,8 @@
           <div class="col-md-2">
             <button data-bind="click: selectRepo,
                                attr.disabled: !allowSelectRepo()"
-                    class="btn btn-primary">
-              Submit
+                    class="btn btn-success">
+              Save
             </button> 
           </div>
 

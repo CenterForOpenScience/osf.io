@@ -49,54 +49,26 @@ var OPERATIONS = {
         verb: 'Rename',
         status: 'rename',
         passed: 'renamed',
-        action: 'Renaming',
+        action: 'Renaming'
     },
     MOVE: {
         verb: 'Move',
         status: 'move',
         passed: 'moved',
-        action: 'Moving',
+        action: 'Moving'
     },
     COPY: {
         verb: 'Copy',
         status: 'copy',
         passed: 'copied',
-        action: 'Copying',
+        action: 'Copying'
     }
 };
 
-var EXTENSIONS = ['3gp', '7z', 'ace', 'ai', 'aif', 'aiff', 'amr', 'asf', 'asx', 'bat', 'bin', 'bmp', 'bup',
-    'cab', 'cbr', 'cda', 'cdl', 'cdr', 'chm', 'dat', 'divx', 'dll', 'dmg', 'doc', 'docx', 'dss', 'dvf', 'dwg',
-    'eml', 'eps', 'exe', 'fla', 'flv', 'gif', 'gz', 'hqx', 'htm', 'html', 'ifo', 'indd', 'iso', 'jar',
-    'jpeg', 'jpg', 'lnk', 'log', 'm4a', 'm4b', 'm4p', 'm4v', 'mcd', 'md', 'mdb', 'mid', 'mov', 'mp2', 'mp3', 'mp4',
-    'mpeg', 'mpg', 'msi', 'mswmm', 'ogg', 'pdf', 'png', 'pps', 'ps', 'psd', 'pst', 'ptb', 'pub', 'qbb',
-    'qbw', 'qxd', 'ram', 'rar', 'rm', 'rmvb', 'rtf', 'sea', 'ses', 'sit', 'sitx', 'ss', 'swf', 'tgz', 'thm',
-    'tif', 'tmp', 'torrent', 'ttf', 'txt', 'vcd', 'vob', 'wav', 'wma', 'wmv', 'wps', 'xls', 'xpi', 'zip',
-    'xlsx', 'py'];
-
-var EXTENSION_MAP = {};
-EXTENSIONS.forEach(function(extension) {
-    EXTENSION_MAP[extension] = extension;
-});
-$.extend(EXTENSION_MAP, {
-    gdoc: 'docx',
-    gsheet: 'xlsx'
-});
 // Cross browser key codes for the Command key
 var COMMAND_KEYS = [224, 17, 91, 93];
 var ESCAPE_KEY = 27;
 var ENTER_KEY = 13;
-
-var ICON_PATH = '/static/img/hgrid/fatcowicons/';
-
-var getExtensionIconClass = function (name) {
-    var extension = name.split('.').pop().toLowerCase();
-    var icon = EXTENSION_MAP[extension];
-    if (icon) {
-        return '_' + icon;
-    }
-    return null;
-};
 
 function findByTempID(parent, tmpID) {
     var child;
@@ -280,12 +252,7 @@ function _fangornResolveIcon(item) {
         if (item.data.icon) {
             return m('i.fa.' + item.data.icon, ' ');
         }
-
-        icon = getExtensionIconClass(item.data.name);
-        if (icon) {
-            return m('div.file-extension', { 'class': icon });
-        }
-        return m('i.fa.fa-file-text-o');
+        return m('div.file-extension', { 'class': '_' + item.data.name.split('.').pop().toLowerCase() });
     }
     return newIcon;
 }
@@ -386,9 +353,9 @@ function checkConflicts(tb, item, folder, cb) {
                 m('h3.break-word', 'An item named "' + item.data.name + '" already exists in this location.'),
                 m('p', 'Do you want to replace it?')
             ]), m('', [
-                m('span.tb-modal-btn.text-default', {onclick: cb.bind(tb, 'keep')}, 'Keep Both'),
+                m('span.tb-modal-btn.text-primary', {onclick: cb.bind(tb, 'keep')}, 'Keep Both'),
                 m('span.tb-modal-btn.text-default', {onclick: function() {tb.modal.dismiss();}}, 'Cancel'), //jshint ignore:line
-                m('span.tb-modal-btn.text-default', {onclick: cb.bind(tb, 'replace')},'Replace'),
+                m('span.tb-modal-btn.text-primary', {onclick: cb.bind(tb, 'replace')},'Replace'),
             ]));
             return;
         }
@@ -405,9 +372,9 @@ function checkConflictsRename(tb, item, name, cb) {
                 m('h3.break-word', 'An item named "' + name + '" already exists in this location.'),
                 m('p', 'Do you want to replace it?')
             ]), m('', [
-                m('span.tb-modal-btn.text-default', {onclick: cb.bind(tb, 'keep')}, 'Keep Both'),
+                m('span.tb-modal-btn.text-primary', {onclick: cb.bind(tb, 'keep')}, 'Keep Both'),
                 m('span.tb-modal-btn.text-default', {onclick: function() {tb.modal.dismiss();}}, 'Cancel'), // jshint ignore:line
-                m('span.tb-modal-btn.text-default', {onclick: cb.bind(tb, 'replace')},'Replace'),
+                m('span.tb-modal-btn.text-primary', {onclick: cb.bind(tb, 'replace')},'Replace'),
             ]));
             return;
         }
@@ -460,7 +427,7 @@ function doItemOp(operation, to, from, rename, conflict) {
                 m('p', 'In the mean time you can leave this page; your ' + operation.status + ' will still be completed.')
             ]);
             var mithrilButtons = m('div', [
-                m('span.tb-modal-btn', { 'class' : 'text-default', onclick : function() { tb.modal.dismiss(); }}, 'OK')
+                m('span.tb-modal-btn', { 'class' : 'text-default', onclick : function() { tb.modal.dismiss(); }}, 'Close')
             ]);
             tb.modal.update(mithrilContent, mithrilButtons);
             return;
@@ -924,7 +891,7 @@ function _removeEvent (event, items, col) {
                         m('p.text-danger', 'This folder and ALL its contents will be deleted. This action is irreversible.')
                     ]);
                 var mithrilButtons = m('div', [
-                        m('span.tb-modal-btn', { 'class' : 'text-primary', onclick : function() { cancelDelete.call(tb); } }, 'Cancel'),
+                        m('span.tb-modal-btn', { 'class' : 'text-default', onclick : function() { cancelDelete.call(tb); } }, 'Cancel'),
                         m('span.tb-modal-btn', { 'class' : 'text-danger', onclick : function() { runDelete(folder); }  }, 'Delete')
                     ]);
                 tb.modal.update(mithrilContent, mithrilButtons);
@@ -941,7 +908,7 @@ function _removeEvent (event, items, col) {
                 m('p', 'This action is irreversible.')
             ]);
             var mithrilButtonsSingle = m('div', [
-                m('span.tb-modal-btn', { 'class' : 'text-primary', onclick : function() { cancelDelete(); } }, 'Cancel'),
+                m('span.tb-modal-btn', { 'class' : 'text-default', onclick : function() { cancelDelete(); } }, 'Cancel'),
                 m('span.tb-modal-btn', { 'class' : 'text-danger', onclick : function() { runDelete(items[0]); }  }, 'Delete')
             ]);
             // This is already being checked before this step but will keep this edit permission check
@@ -990,7 +957,7 @@ function _removeEvent (event, items, col) {
                     })
                 ]);
             mithrilButtonsMultiple =  m('div', [
-                    m('span.tb-modal-btn', { 'class' : 'text-primary', onclick : function() { tb.modal.dismiss(); } }, 'Cancel'),
+                    m('span.tb-modal-btn', { 'class' : 'text-default', onclick : function() { tb.modal.dismiss(); } }, 'Cancel'),
                     m('span.tb-modal-btn', { 'class' : 'text-danger', onclick : function() { runDeleteMultiple.call(tb, deleteList); }  }, 'Delete All')
                 ]);
         } else {
@@ -1010,7 +977,7 @@ function _removeEvent (event, items, col) {
                     })
                 ]);
             mithrilButtonsMultiple =  m('div', [
-                    m('span.tb-modal-btn', { 'class' : 'text-primary', onclick : function() {  tb.modal.dismiss(); } }, 'Cancel'),
+                    m('span.tb-modal-btn', { 'class' : 'text-default', onclick : function() {  tb.modal.dismiss(); } }, 'Cancel'),
                     m('span.tb-modal-btn', { 'class' : 'text-danger', onclick : function() { runDeleteMultiple.call(tb, deleteList); }  }, 'Delete Some')
                 ]);
         }
@@ -1443,14 +1410,14 @@ var FGItemButtons = {
                 m.component(FGButton, {
                     onclick: function(event) {_uploadEvent.call(tb, event, item); },
                     icon: 'fa fa-upload',
-                    className : 'text-primary'
+                    className : 'text-success'
                 }, 'Upload'),
                 m.component(FGButton, {
                     onclick: function() {
                         mode(toolbarModes.ADDFOLDER);
                     },
                     icon: 'fa fa-plus',
-                    className : 'text-primary'
+                    className : 'text-success'
                 }, 'Create Folder'));
             if(item.data.path){
                 rowButtons.push(
@@ -1476,7 +1443,7 @@ var FGItemButtons = {
                 m.component(FGButton, {
                     onclick: function(event) { _downloadEvent.call(tb, event, item); },
                     icon: 'fa fa-download',
-                    className : 'text-success'
+                    className : 'text-primary'
                 }, 'Download')
             );
             if (item.data.permissions && item.data.permissions.edit) {
@@ -1493,7 +1460,7 @@ var FGItemButtons = {
                 m.component(FGButton, {
                     onclick: function(event) { _downloadZipEvent.call(tb, event, item); },
                     icon: 'fa fa-download',
-                    className : 'text-success'
+                    className : 'text-primary'
                 }, 'Download as zip')
             );
         }
@@ -1684,7 +1651,7 @@ var FGToolbar = {
             }, '')
         );
 
-        templates[toolbarModes.DEFAULT] =  m('.col-xs-12', m('.pull-right', [finalRowButtons, generalButtons]));
+        templates[toolbarModes.DEFAULT] =  m('.col-xs-12', m('.pull-right', [finalRowButtons,  m('span', generalButtons)]));
         return m('.row.tb-header-row', [
             m('#folderRow', { config : function () {
                 $('#folderRow input').focus();
@@ -1862,6 +1829,10 @@ function _dropLogic(event, items, folder) {
         return;
     }
 
+    if (folder.data.kind === 'file') {
+        folder = folder.parent();
+    }
+
     // if (items[0].data.kind === 'folder' && ['github', 'figshare', 'dataverse'].indexOf(folder.data.provider) !== -1) { return; }
 
     if (!folder.open) {
@@ -1910,6 +1881,10 @@ function getCopyMode(folder, items) {
     var canMove = true;
     var mustBeIntra = (folder.data.provider === 'github');
     var cannotBeFolder = (folder.data.provider === 'figshare' || folder.data.provider === 'dataverse');
+
+    if (folder.data.kind === 'file') {
+        folder = folder.parent();
+    }
 
     if (folder.parentId === 0 ||
         folder.data.kind !== 'folder' ||

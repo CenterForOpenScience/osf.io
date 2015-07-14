@@ -16,17 +16,10 @@
 ##    </div>
 ##</div>
 
-<div class="row">
+<div id="profileSettings" class="row">
 
-    <div class="col-sm-3">
-        <div class="panel panel-default">
-            <ul class="nav nav-stacked nav-pills">
-                <li><a href="#">Profile Information</a></li>
-                <li><a href="${ web_url_for('user_account') }">Account Settings</a></li>
-                <li><a href="${ web_url_for('user_addons') }">Configure Add-ons</a></li>
-                <li><a href="${ web_url_for('user_notifications') }">Notifications</a></li>
-            </ul>
-        </div><!-- end sidebar -->
+    <div class="col-sm-3 affix-parent">
+      <%include file="include/profile/settings_navpanel.mako" args="current_page='profile'"/>
     </div>
 
     <div class="col-sm-9 col-md-7">
@@ -42,19 +35,19 @@
 
             <div class="tab-content" id="containDrag">
 
-                <div class="tab-pane active" id="names">
+                <div class="m-t-md tab-pane active" id="names">
                     <div data-bind="template: {name: 'profileName'}"></div>
                 </div>
 
-                <div class="tab-pane" id="social">
+                <div class="m-t-md tab-pane" id="social">
                     <div data-bind="template: {name: 'profileSocial'}"></div>
                 </div>
 
-                <div class="tab-pane" id="jobs">
+                <div class="m-t-md tab-pane" id="jobs">
                     <div data-bind="template: {name: 'profileJobs'}"></div>
                 </div>
 
-                <div class="tab-pane" id="schools">
+                <div class="m-t-md tab-pane" id="schools">
                     <div data-bind="template: {name: 'profileSchools'}"></div>
                 </div>
 

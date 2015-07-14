@@ -34,7 +34,7 @@ from website.project.model import has_anonymous_link, get_pointer_parent, NodeUp
 from website.project.forms import NewNodeForm
 from website.models import Node, Pointer, WatchConfig, PrivateLink
 from website import settings
-from website.views import _render_nodes, find_dashboard
+from website.views import _render_nodes, find_dashboard, validate_page_num
 from website.profile import utils
 from website.project import new_folder
 from website.util.sanitize import strip_html
@@ -285,6 +285,7 @@ def node_setting(auth, node, **kwargs):
             # inject the MakoTemplateLookup into the template context
             # TODO inject only short_name and render fully client side
             config['template_lookup'] = addon.config.template_lookup
+            config['addon_icon_url'] = addon.config.icon_url
             addon_enabled_settings.append(config)
     addon_enabled_settings = sorted(addon_enabled_settings, key=lambda addon: addon['addon_full_name'].lower())
 
@@ -1104,6 +1105,7 @@ def search_node(auth, **kwargs):
     nodes = Node.find(odm_query)
     count = nodes.count()
     pages = math.ceil(count / size)
+    validate_page_num(page, pages)
 
     return {
         'nodes': [

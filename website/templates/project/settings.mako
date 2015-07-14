@@ -16,13 +16,12 @@
 </div>
 
 <div class="row project-page">
-
     <!-- Begin left column -->
-    <div class="col-sm-3 affix-parent">
+    <div class="col-sm-3 affix-parent scrollspy">
 
         % if 'write' in user['permissions']:
 
-            <div class="panel panel-default" data-spy="affix" data-offset-top="60" data-offset-bottom="268"><!-- Begin sidebar -->
+            <div class="panel panel-default osf-affix" data-spy="affix" data-offset-top="60" data-offset-bottom="263"><!-- Begin sidebar -->
                 <ul class="nav nav-stacked nav-pills">
 
                     % if not node['is_registration']:
@@ -68,30 +67,29 @@
 
                 <div class="panel panel-default">
                     <span id="configureNodeAnchor" class="anchor"></span>
-
-                    <div class="panel-heading">
+                    <div class="panel-heading clearfix">
                         <h3 id="configureNode" class="panel-title">Configure ${node['node_type'].capitalize()}</h3>
                     </div>
                     <div id="nodeCategorySettings" class="panel-body">
-                      <h5>
-                        Category: <select data-bind="attr.disabled: disabled,
-                                                     options: categories,
-                                                     optionsValue: 'value',
-                                                     optionsText: 'label',
-                                                     value: selectedCategory"></select>
-                      </h5>
-                      <p data-bind="if: !disabled">
-                        <button data-bind="css: {disabled: !dirty()},
-                                           click: updateCategory"
-                                class="btn btn-primary">Change</button>
-                        <button data-bind="css: {disabled: !dirty()},
-                                           click: cancelUpdateCategory"
-                                class="btn btn-default">Cancel</button>
-                      </p>
-                      <span data-bind="css: messageClass, html: message"></span>
-                      <span data-bind="if: disabled" class="help-block">
-                        A top-level project's category cannot be changed
-                      </span>
+                        <h5>
+                            Category: <select data-bind="attr.disabled: disabled,
+                                                        options: categories,
+                                                        optionsValue: 'value',
+                                                        optionsText: 'label',
+                                                        value: selectedCategory"></select>
+                        </h5>
+                        <p data-bind="if: !disabled">
+                            <button data-bind="css: {disabled: !dirty()},
+                                               click: updateCategory"
+                                    class="btn btn-primary">Change</button>
+                            <button data-bind="css: {disabled: !dirty()},
+                                               click: cancelUpdateCategory"
+                                    class="btn btn-default">Cancel</button>
+                        </p>
+                        <span data-bind="css: messageClass, html: message"></span>
+                        <span data-bind="if: disabled" class="help-block">
+                            A top-level project's category cannot be changed
+                        </span>
                     </div>
 
                     % if 'admin' in user['permissions']:
@@ -118,8 +116,7 @@
 
                 <div class="panel panel-default">
                     <span id="configureCommentingAnchor" class="anchor"></span>
-
-                    <div class="panel-heading">
+                    <div class="panel-heading clearfix">
                         <h3 class="panel-title">Configure Commenting</h3>
                     </div>
 
@@ -140,7 +137,7 @@
                                 </label>
                             </div>
 
-                            <button class="btn btn-success">Submit</button>
+                            <button class="btn btn-success">Save</button>
 
                             <!-- Flashed Messages -->
                             <div class="help-block">
@@ -163,7 +160,7 @@
 
                 <div class="panel panel-default">
                     <span id="selectAddonsAnchor" class="anchor"></span>
-                    <div class="panel-heading">
+                    <div class="panel-heading clearfix">
                         <h3 class="panel-title">Select Add-ons</h3>
                     </div>
                     <div class="panel-body">
@@ -204,11 +201,11 @@
                             <br />
 
                             <button id="settings-submit" class="btn btn-success">
-                                Submit
+                                Apply
                             </button>
                             <div class="addon-settings-message text-success" style="padding-top: 10px;"></div>
 
-                     </form>
+                        </form>
 
                     </div>
                 </div>
@@ -218,10 +215,9 @@
 
                     <div id="configureAddons" class="panel panel-default">
 
-                        <div class="panel-heading">
+                        <div class="panel-heading clearfix">
                             <h3 class="panel-title">Configure Add-ons</h3>
                         </div>
-
                         <div class="panel-body">
 
                         % for node_settings_dict in addon_enabled_settings or []:
@@ -248,16 +244,18 @@
 
                 <div class="panel panel-default">
                     <span id="configureNotificationsAnchor" class="anchor"></span>
-
-                    <div class="panel-heading">
+                    <div class="panel-heading clearfix">
                         <h3 class="panel-title">Configure Notifications</h3>
                     </div>
                     <div class="help-block" style="padding-left: 15px">
-                        <p>These notification settings only apply to you. They do NOT affect any other contributor on this project.</p>
+                        <p class="text-info">These notification settings only apply to you. They do NOT affect any other contributor on this project.</p>
                     </div>
                     <form id="notificationSettings" class="osf-treebeard-minimal">
                         <div id="grid">
-                            <div class="notifications-loading"> <i class="fa fa-spinner notifications-spin"></i> <p class="m-t-sm fg-load-message"> Loading notification settings...  </p> </div>
+                            <div class="notifications-loading">
+                                <i class="fa fa-spinner notifications-spin"></i>
+                                <p class="m-t-sm fg-load-message"> Loading notification settings...  </p>
+                            </div>
                         </div>
                         <div class="help-block" style="padding-left: 15px">
                             <p id="configureNotificationsMessage"></p>
@@ -278,7 +276,7 @@
                     <div class="panel panel-default">
                         <span id="retractRegistrationAnchor" class="anchor"></span>
 
-                        <div class="panel-heading">
+                        <div class="panel-heading clearfix">
                             <h3 class="panel-title">Retract Registration</h3>
                         </div>
 
@@ -334,6 +332,14 @@
 % for name, capabilities in addon_capabilities.iteritems():
     <script id="capabilities-${name}" type="text/html">${capabilities}</script>
 % endfor
+
+
+<%def name="stylesheets()">
+    ${parent.stylesheets()}
+
+    <link rel="stylesheet" href="/static/css/pages/project-page.css">
+</%def>
+
 
 <%def name="javascript_bottom()">
     <% import json %>

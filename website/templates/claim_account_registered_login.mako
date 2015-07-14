@@ -19,7 +19,7 @@
                     "form_class": "form-stacked",
                     "submit_string": "Create Account",
                     "field_name_prefix": "register_",
-                    "submit_btn_class": "btn-success",
+                    "submit_btn_class": "btn-primary",
                     "next_url": "${next}"
                 },
                 "replace": true

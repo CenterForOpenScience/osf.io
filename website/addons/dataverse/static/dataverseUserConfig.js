@@ -182,6 +182,10 @@ function ViewModel(url) {
         });
     };
 
+    self.selectionChanged = function() {
+        self.changeMessage('','');
+    };
+
 }
 
 function DataverseUserConfig(selector, url) {

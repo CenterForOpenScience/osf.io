@@ -268,7 +268,7 @@ class GitHubNodeSettings(AddonOAuthNodeSettingsBase, StorageAddonBase):
         repo_permissions = 'private' if repo.private else 'public'
         if repo_permissions != node_permissions:
             message = (
-                'Warnings: This OSF {category} is {node_perm}, but the GitHub '
+                'Warning: This OSF {category} is {node_perm}, but the GitHub '
                 'repo {user} / {repo} is {repo_perm}.'.format(
                     category=node.project_or_component,
                     node_perm=node_permissions,
