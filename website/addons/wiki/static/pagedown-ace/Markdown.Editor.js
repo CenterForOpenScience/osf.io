@@ -30,7 +30,7 @@
         
         link: "Hyperlink <a>",
         linkdescription: "enter link description here",
-        linkdialog: "<h4 class='modal-title'>Insert Hyperlink</h3><p>http://example.com/ \"optional title\"</p>",
+        linkdialog: "<div class='modal-header'> <h4 class='modal-title f-w-lg'>Insert Hyperlink</h4></div><div class='modal-body'> <p>http://example.com/ \"optional title\"</p></div>",
         
         quote: "Blockquote <blockquote>",
         quoteexample: "Blockquote",
@@ -40,7 +40,7 @@
         
         image: "Image <img>",
         imagedescription: "enter image description here",
-        imagedialog: "<h4 class='modal-title'>Insert Image</h3><p>http://example.com/images/diagram.jpg \"optional title\"<br><br>Need <a href='http://www.google.com/search?q=free+image+hosting' target='_blank'>free image hosting?</a></p>",
+        imagedialog: "<h4 class='modal-title f-w-lg'>Insert Image</h4><hr><p>http://example.com/images/diagram.jpg \"optional title\"<br><br>Need <a href='http://www.google.com/search?q=free+image+hosting' target='_blank'>free image hosting?</a></p>",
         
         olist: "Numbered List <ol>",
         ulist: "Bulleted List <ul>",
@@ -1257,7 +1257,7 @@
 
             // The main dialog box.
             dialog = doc.createElement("div");
-            dialog.className = "modal-content p-md";
+            dialog.className = "modal-content ";
             dialog.style.padding = "10px;";
             dialog.style.position = "fixed";
             dialog.style.width = "400px";
@@ -1266,9 +1266,8 @@
             // The dialog text.
             var question = doc.createElement("div");
             question.innerHTML = text;
-            question.style.padding = "5px";
             dialog.appendChild(question);
-            question.className = "modal-body";
+            question.className = "";
 
 
             // The web form container for the text box and buttons.
@@ -1297,28 +1296,30 @@
             // The ok button
             var okButton = doc.createElement("input");
             okButton.type = "button";
-            okButton.className = "btn btn-success pull-right";
+            okButton.className = "btn btn-success ";
             okButton.onclick = function () { return close(false); };
             okButton.value = "Apply";
             style = okButton.style;
-            style.margin = "20px 3px";
             style.display = "inline";
-            style.width = "7em";
 
 
             // The cancel button
             var cancelButton = doc.createElement("input");
             cancelButton.type = "button";
-            cancelButton.className = "btn btn-default pull-right";
+            cancelButton.className = "btn btn-default ";
             cancelButton.onclick = function () { return close(true); };
             cancelButton.value = "Cancel";
             style = cancelButton.style;
-            style.margin = "20px 3px";
             style.display = "inline";
-            style.width = "7em";
 
-            form.appendChild(cancelButton);
-            form.appendChild(okButton);
+            // Modal footer
+            var modalFooter = doc.createElement("div");
+            modalFooter.className = 'modal-footer';
+
+            modalFooter.appendChild(cancelButton);
+            modalFooter.appendChild(okButton);
+
+            form.appendChild(modalFooter);
 
             util.addEvent(doc.body, "keydown", checkEscape);
             dialog.style.top = "50%";
