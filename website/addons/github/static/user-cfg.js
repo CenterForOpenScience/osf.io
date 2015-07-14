@@ -1,3 +1,5 @@
+// File no longer being used, keeping it for future reference in case user settings want to be routed through here
+// if for example, a githubUserConfig needs to be used.
 var bootbox = require('bootbox');
 var $ = require('jquery');
 

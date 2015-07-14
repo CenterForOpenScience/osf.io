@@ -23,6 +23,7 @@ function deleteToken() {
     var $this = $(this),
     addon = $this.attr('data-addon'),
     msgElm = $this.find('.addon-settings-message');
+    var message;
     $.ajax({
         type: 'DELETE',
         url: '/api/v1/settings/s3/',

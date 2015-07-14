@@ -101,6 +101,10 @@ class AddonDataverseNodeSettings(StorageAddonBase, AddonOAuthNodeSettingsBase):
         return self.dataset
 
     @property
+    def selected_folder_name(self):
+        return self.dataset
+
+    @property
     def dataset_id(self):
         if self._dataset_id is None:
             connection = connect_from_settings_or_401(self.user_settings)

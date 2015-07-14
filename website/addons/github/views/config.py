@@ -10,37 +10,38 @@ from framework.exceptions import HTTPError
 from website.project.decorators import must_have_permission
 from website.project.decorators import must_not_be_registration
 from website.project.decorators import must_have_addon
+from website.addons.github.utils import get_repo_dropdown
+from website.addons.github.serializer import GitHubSerializer
 
 from ..api import GitHub
 
-
 @must_be_logged_in
-def github_set_user_config(**kwargs):
-    return {}
-
+def github_get_user_accounts(auth):
+    """View for getting a JSON representation of the logged-in user's
+    GitHub user settings.
+    """
+    user_settings = auth.user.get_addon('github')
+    return GitHubSerializer(user_settings=user_settings).serialized_user_settings
 
 @must_have_permission('write')
 @must_have_addon('github', 'node')
 @must_not_be_registration
-def github_set_config(**kwargs):
-
-    auth = kwargs['auth']
+def github_set_config(auth, node_addon, **kwargs):
     user = auth.user
 
-    node_settings = kwargs['node_addon']
-    node = node_settings.owner
-    user_settings = node_settings.user_settings
+    node = node_addon.owner
+    user_settings = node_addon.user_settings
 
     # If authorized, only owner can change settings
     if user_settings and user_settings.owner != user:
         raise HTTPError(http.BAD_REQUEST)
 
     # Parse request
-    github_user_name = request.json.get('github_user', '')
-    github_repo_name = request.json.get('github_repo', '')
+    github_user_name = request.json.get('github_repo', '').split('/')[0].strip()
+    github_repo_name = request.json.get('github_repo', '').split('/')[1].strip()
 
     # Verify that repo exists and that user can access
-    connection = GitHub.from_settings(user_settings)
+    connection = GitHub.from_settings(node_addon.api.account)
     repo = connection.repo(github_user_name, github_repo_name)
     if repo is None:
         if user_settings:
@@ -58,19 +59,19 @@ def github_set_config(**kwargs):
         raise HTTPError(http.BAD_REQUEST)
 
     changed = (
-        github_user_name != node_settings.user or
-        github_repo_name != node_settings.repo
+        github_user_name != node_addon.user or
+        github_repo_name != node_addon.repo
     )
 
     # Update hooks
     if changed:
 
         # Delete existing hook, if any
-        node_settings.delete_hook()
+        node_addon.delete_hook()
 
         # Update node settings
-        node_settings.user = github_user_name
-        node_settings.repo = github_repo_name
+        node_addon.user = github_user_name
+        node_addon.repo = github_repo_name
 
         # Log repo select
         node.add_log(
@@ -87,24 +88,44 @@ def github_set_config(**kwargs):
         )
 
         # Add new hook
-        if node_settings.user and node_settings.repo:
-            node_settings.add_hook(save=False)
+        if node_addon.user and node_addon.repo:
+            node_addon.add_hook(save=False)
 
-        node_settings.save()
+        node_addon.save()
 
-    return {}
+    return GitHubSerializer(
+        node_settings=node_addon,
+        user_settings=auth.user.get_addon('github'),
+    ).serialized_node_settings
 
-
-@must_have_permission('write')
 @must_have_addon('github', 'node')
-def github_set_privacy(**kwargs):
+@must_have_permission('read')
+def github_get_config(auth, node_addon, **kwargs):
+    return GitHubSerializer(
+        node_settings=node_addon,
+        user_settings=auth.user.get_addon('github')
+    ).serialized_node_settings
 
-    github = kwargs['node_addon']
-    private = request.form.get('private')
 
-    if private is None:
-        raise HTTPError(http.BAD_REQUEST)
+@must_be_logged_in
+@must_have_addon('github', 'node')
+@must_have_permission('write')
+@must_not_be_registration
+def github_repo_list(auth, node_addon, **kwargs):
+    user = auth.user
+    return get_repo_dropdown(user, node_addon)
 
-    connection = GitHub.from_settings(github.user_settings)
-
-    connection.set_privacy(github.user, github.repo, private)
+#
+# @must_have_permission('write')
+# @must_have_addon('github', 'node')
+# def github_set_privacy(node_addon, **kwargs):
+#
+#     github = kwargs['node_addon']
+#     private = request.form.get('private')
+#
+#     if private is None:
+#         raise HTTPError(http.BAD_REQUEST)
+#
+#     connection = GitHub.from_settings(node_addon.api.account)
+#
+#     connection.set_privacy(github.user, github.repo, private)

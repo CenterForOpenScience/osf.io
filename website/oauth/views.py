@@ -34,7 +34,6 @@ def oauth_disconnect(external_account_id, auth):
 @must_be_logged_in
 def oauth_connect(service_name, auth):
     service = get_service(service_name)
-
     return redirect(service.auth_url)
 
 
