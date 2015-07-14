@@ -30,7 +30,7 @@
         
         link: "Hyperlink <a>",
         linkdescription: "enter link description here",
-        linkdialog: "<p><b>Insert Hyperlink</b></p><p>http://example.com/ \"optional title\"</p>",
+        linkdialog: "<div class='modal-header'> <h4 class='modal-title f-w-lg'>Add Hyperlink</h4></div><div class='modal-body'> <p><b>Example:</b><br>http://example.com/ \"optional title\"</p></div>",
         
         quote: "Blockquote <blockquote>",
         quoteexample: "Blockquote",
@@ -40,8 +40,8 @@
         
         image: "Image <img>",
         imagedescription: "enter image description here",
-        imagedialog: "<p><b>Insert Image</b></p><p>http://example.com/images/diagram.jpg \"optional title\"<br><br>Need <a href='http://www.google.com/search?q=free+image+hosting' target='_blank'>free image hosting?</a></p>",
-        
+        imagedialog: "<div class='modal-header'> <h4 class='modal-title f-w-lg'>Add Image</h4></div><div class='modal-body'><p><b>Example:</b><br>http://example.com/images/diagram.jpg \"optional title\"</p></div>",
+
         olist: "Numbered List <ol>",
         ulist: "Bulleted List <ul>",
         litem: "List item",
@@ -1257,7 +1257,7 @@
 
             // The main dialog box.
             dialog = doc.createElement("div");
-            dialog.className = "wmd-prompt-dialog";
+            dialog.className = "modal-content ";
             dialog.style.padding = "10px;";
             dialog.style.position = "fixed";
             dialog.style.width = "400px";
@@ -1266,8 +1266,9 @@
             // The dialog text.
             var question = doc.createElement("div");
             question.innerHTML = text;
-            question.style.padding = "5px";
             dialog.appendChild(question);
+            question.className = "";
+
 
             // The web form container for the text box and buttons.
             var form = doc.createElement("form"),
@@ -1283,37 +1284,42 @@
 
             // The input text box
             input = doc.createElement("input");
+            input.className = "form-control";
             input.type = "text";
             input.value = defaultInputText;
             style = input.style;
             style.display = "block";
-            style.width = "80%";
+            style.width = "90%";
             style.marginLeft = style.marginRight = "auto";
             form.appendChild(input);
 
             // The ok button
             var okButton = doc.createElement("input");
             okButton.type = "button";
+            okButton.className = "btn btn-success ";
             okButton.onclick = function () { return close(false); };
-            okButton.value = "OK";
+            okButton.value = "Add";
             style = okButton.style;
-            style.margin = "10px";
             style.display = "inline";
-            style.width = "7em";
 
 
             // The cancel button
             var cancelButton = doc.createElement("input");
             cancelButton.type = "button";
+            cancelButton.className = "btn btn-default ";
             cancelButton.onclick = function () { return close(true); };
             cancelButton.value = "Cancel";
             style = cancelButton.style;
-            style.margin = "10px";
             style.display = "inline";
-            style.width = "7em";
 
-            form.appendChild(okButton);
-            form.appendChild(cancelButton);
+            // Modal footer
+            var modalFooter = doc.createElement("div");
+            modalFooter.className = 'modal-footer';
+
+            modalFooter.appendChild(cancelButton);
+            modalFooter.appendChild(okButton);
+
+            form.appendChild(modalFooter);
 
             util.addEvent(doc.body, "keydown", checkEscape);
             dialog.style.top = "50%";

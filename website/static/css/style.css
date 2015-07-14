@@ -361,7 +361,7 @@ a {
 
 .default-authorized-by {
     font-weight: normal !important;
-
+}
 /* bootstrap disable doesn't disable pointer event. This disable class adds pointer event disable. */
 .disabled {
     cursor: default !important;

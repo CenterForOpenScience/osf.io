@@ -139,7 +139,7 @@ var _dataverseItemButtons = {
                         dataversePublish.call(tb, event, item);
                     },
                     icon: 'fa fa-globe',
-                    className: 'text-success'
+                    className: 'text-primary'
                 }, 'Publish')
             );
         } else if (item.kind === 'folder' && !item.data.addonFullname) {
@@ -159,7 +159,7 @@ var _dataverseItemButtons = {
                         _downloadEvent.call(tb, event, item);
                     },
                     icon: 'fa fa-download',
-                    className: 'text-info'
+                    className: 'text-primary'
                 }, 'Download')
             );
             if (item.parent().data.version === 'latest' && item.data.permissions.edit) {
