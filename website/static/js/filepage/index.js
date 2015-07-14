@@ -198,7 +198,7 @@ var FileViewPage = {
         $('#mfrIframeParent').removeClass().addClass(mfrIframeParentLayout);
         $('.file-view-panels').removeClass().addClass('file-view-panels').addClass(fileViewPanelsLayout);
 
-        m.render(document.getElementById('toggleBar'), m('.btn-toolbar[style=margin-top:20px]', [
+        m.render(document.getElementById('toggleBar'), m('.btn-toolbar.m-t-md', [
             ctrl.canEdit() ? m('.btn-group', {style: 'margin-left: 0;'}, [
                 m('.btn.btn-sm.btn-danger.file-delete', {onclick: $(document).trigger.bind($(document), 'fileviewpage:delete')}, 'Delete')
             ]) : '',
