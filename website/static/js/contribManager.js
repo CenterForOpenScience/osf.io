@@ -116,7 +116,7 @@ var ContributorModel = function(contributor, currentUserCanEdit, pageOwner, isRe
         if (parent.validVisible() === 1 && self.visible()){
             parent.messages.push(
                 new MessageModel(
-                    'Must have at least one visible contributor',
+                    'Must have at least one bibliographic contributor',
                     'error'
                 )
             );
@@ -264,7 +264,7 @@ var ContributorsViewModel = function(contributors, adminContributors, user, isRe
         if (!value) {
             self.messages.push(
                 new MessageModel(
-                    'Must have at least one visible contributor',
+                    'Must have at least one bibliographic contributor',
                     'error'
                 )
             );
