@@ -2,7 +2,7 @@
 Changelog
 *********
 
-0.42.0 (unreleased)
+0.42.0 (2015-07-13)
 ===================
 
 - File renderer: Support for rendering .ppt, .pptx, .xlt, .svg, and many more formats.
