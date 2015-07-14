@@ -159,14 +159,14 @@ var AddContributorViewModel = oop.extend(Paginator, {
     importFromParent: function() {
         this.pageToGet(0);
         this.searchUrl =  nodeApiUrl + 'get_contributors_from_parent/';
-        this.searchParams = {}
+        this.searchParams = {};
         this.fetchResults();
 
     },
     recentlyAdded: function() {
         this.pageToGet(0);
         this.searchUrl =  nodeApiUrl + 'get_recently_added_contributors/';
-        this.searchParams = {}
+        this.searchParams = {};
         this.fetchResults();
 
     },
@@ -174,7 +174,7 @@ var AddContributorViewModel = oop.extend(Paginator, {
         this.pageToGet(0);
         var self = this;
         this.searchUrl =  nodeApiUrl + 'get_most_in_common_contributors/';
-        this.searchParams = {}
+        this.searchParams = {};
         this.fetchResults();
 
     },

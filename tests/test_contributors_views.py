@@ -115,7 +115,7 @@ class TestContributorViews(OsfTestCase):
         # Should be one contributor to the parent who is both visible and
         # not a contributor on the component
         assert_equal(
-            len(res.json['contributors']),
+            len(res.json['users']),
             1,
         )
 
@@ -142,8 +142,8 @@ class TestContributorViews(OsfTestCase):
         url = project_2.api_url_for('get_most_in_common_contributors')
         res = self.app.get(url, auth=self.user.auth)
         project_2.reload()
-        res_contribs = res.json['contributors']
-        assert_equal(len(res.json['contributors']), 2)
+        res_contribs = res.json['users']
+        assert_equal(len(res.json['users']), 2)
         assert_equal(contributor_1._id, res_contribs[0]['id'])
         assert_equal(res_contribs[0]['n_projects_in_common'], 2)
         assert_equal(contributor_2._id, res_contribs[1]['id'])
@@ -164,7 +164,7 @@ class TestContributorViews(OsfTestCase):
         res = self.app.get(url, auth=self.user.auth)
         project.reload()
         recent = [c for c in self.user.recently_added if c.is_active]
-        assert_equal(len(res.json['contributors']), len(recent))
+        assert_equal(len(res.json['users']), len(recent))
 
     def test_get_recently_added_contributors_with_limit(self):
         project = ProjectFactory(creator=self.user)
@@ -174,4 +174,4 @@ class TestContributorViews(OsfTestCase):
         url = self.project.api_url_for('get_recently_added_contributors', max=4)
         res = self.app.get(url, auth=self.user.auth)
         project.reload()
-        assert_equal(len(res.json['contributors']), 4)
+        assert_equal(len(res.json['users']), 4)
