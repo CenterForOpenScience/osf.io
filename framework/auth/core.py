@@ -1119,7 +1119,11 @@ class User(GuidStoredObject, AddonModelMixin):
 
     def merge_user(self, user):
         """Merge a registered user into this account. This user will be
-        a contributor on any project
+        a contributor on any project. if the registered user and this account
+        are both contributors of the same project. Then it will remove the
+        registered user and set this account to the highest permission of the two
+        and set this account to be visible if either of the two are visible on
+        the project.
 
         :param user: A User object to be merged.
         """
