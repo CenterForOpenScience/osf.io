@@ -91,12 +91,13 @@ var FileRevisionsTable = {
         };
 
         self.showModal = function(hashName, index, hash) {
-            var showModal = bootbox.alert({
+            var showModal = bootbox.dialog({
                 title: 'Version ' + index + ' ' + hashName + ' hash',
                 message: '<div class="row">  ' +
                     '<div class="col-md-12">' +
                     '<div class="control-group">' +'<p class="col-xs-10">' + hash + '</p>' +
-                    '<a class="btn-md btn-primary text-center col-xs-2" id="copyBtn" data-clipboard-text="' +
+                    '<a class="btn-sm btn-primary col-xs-2" style="align: right; text-align: center; ' +
+                    'padding: 5px; width: 80px" id="copyBtn" data-clipboard-text="' +
                     hash + '"> Copy </a>'+
                     '</div></div></div>'
             });
@@ -166,7 +167,7 @@ var FileRevisionsTable = {
     view: function(ctrl) {
         return m('#revisionsPanel.panel.panel-default', [
                 m('.panel-heading.clearfix', m('h3.panel-title', 'Revisions')),
-                m('.panel-body', {style:{'padding-right': '0px','padding-left':'0px'}}, (function() {
+                m('.panel-body', {style:{'padding-right': '0','padding-left':'0', 'padding-bottom' : '0'}}, (function() {
                     if (!model.loaded()) {
                         return util.Spinner;
                     }
@@ -174,7 +175,7 @@ var FileRevisionsTable = {
                         return m('.alert.alert-warning', {style:{margin: '10px'}}, model.errorMessage);
                     }
 
-                    return m('table.table', [
+                    return m('table.table',{style:{'margin-bottom': '0'}}, [
                         ctrl.getTableHead(),
                         m('tbody', model.revisions.map(ctrl.makeTableRow))
                     ]);

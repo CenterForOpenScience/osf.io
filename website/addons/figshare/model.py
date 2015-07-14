@@ -78,6 +78,8 @@ class AddonFigShareUserSettings(AddonUserSettingsBase):
         ret = super(AddonFigShareUserSettings, self).to_json(user)
         ret.update({
             'authorized': self.has_auth,
+            'name': self.owner.display_full_name(),
+            'profile_url': self.owner.profile_url,
         })
         return ret
 
