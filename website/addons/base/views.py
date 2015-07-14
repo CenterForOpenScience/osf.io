@@ -288,8 +288,7 @@ def create_waterbutler_log(payload, **kwargs):
             name = payload['metadata']['name']
             path = payload['metadata']['path']
             node.update_search_file(action, node_addon, name, path)
-        except KeyError as e:
-            raise HTTPError('Missing key in metadata: {}'.format(e))
+        except KeyError:
             pass
 
     return {'status': 'success'}

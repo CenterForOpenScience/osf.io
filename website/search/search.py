@@ -30,6 +30,7 @@ def update_node(node, index=None):
     index = index or settings.ELASTIC_INDEX
     search_engine.update_node(node, index=index)
 
+
 @requires_search
 def update_file(name, path, addon, index=None):
     index = index or settings.ELASTIC_INDEX

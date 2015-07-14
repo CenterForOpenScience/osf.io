@@ -752,6 +752,7 @@ def update_file(file_doc, parent_id, index=None):
     es = elastic_search.es
     es.index(index=index, doc_type='file', parent=parent_id, id=file_doc['path'], body=file_doc, refresh=True)
 
+
 class TestSearchFiles(SearchTestCase):
     def setUp(self):
         super(TestSearchFiles, self).setUp()
@@ -771,15 +772,15 @@ class TestSearchFiles(SearchTestCase):
 
         time.sleep(1)  # Allow elasticsearch to update
 
-    def test_can_find_project_with_file_that_matches_content(self):
+    def test_project_with_file_match_content(self):
         res = query('earl gray', doc_type='project')['results']
         assert_equal(len(res), 1)
 
-    def test_can_find_project_with_file_that_matches_name(self):
+    def test_project_with_file_that_match_name(self):
         res = query('unique_file.txt', doc_type='project')['results']
         assert_equal(len(res), 1)
 
-    def test_can_find_files_with_non_ascii_characters(self):
+    def test_files_with_non_ascii_characters(self):
         non_ascii_name_file = {
             'name': 'nón_ascíí_named_file.txt',
             'path': '/00002',
@@ -801,18 +802,18 @@ class TestSearchFiles(SearchTestCase):
         res = query('emoji')['results']
         assert_equal(len(res), 1)
 
-    def test_project_with_file_cant_be_found_when_made_private(self):
-        res = query('earl gray')['results']
-        assert_equal(len(res), 1)
-
-        self.project.set_privacy('private')
-        res = query('earl gray')['results']
-        assert_equal(len(res), 0)
-
     def test_project_not_in_results_after_file_deleted(self):
         res = query('earl gray')['results']
         assert_equal(len(res), 1)
         search.delete_file('00001')
         time.sleep(1)
+        res = query('earl gray')['results']
+        assert_equal(len(res), 0)
+
+    def test_project_with_file_cant_be_found_when_made_private(self):
+        res = query('earl gray')['results']
+        assert_equal(len(res), 1)
+
+        self.project.set_privacy('private')
         res = query('earl gray')['results']
         assert_equal(len(res), 0)

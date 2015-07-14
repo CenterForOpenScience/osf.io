@@ -1102,7 +1102,6 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
             need_update = False
         if need_update:
             self.update_search()
-            self.update_search_files()
 
         # This method checks what has changed.
         if settings.PIWIK_HOST and update_piwik:
@@ -2409,11 +2408,14 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
                     self.embargo.state = Embargo.CANCELLED
                     self.embargo.save()
             self.is_public = True
+            self.update_search_files()
         elif permissions == 'private' and self.is_public:
             if self.is_registration and not self.pending_embargo:
                 raise NodeStateError("Public registrations must be retracted, not made private.")
             else:
                 self.is_public = False
+                self.update_search_files()
+
         else:
             return False
 

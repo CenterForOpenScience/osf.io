@@ -1,17 +1,19 @@
 import requests
-import mimetypes
 
 from framework.exceptions import HTTPError
 
 
 INDEXED_TYPES = [
-        'text/plain',
+        'txt',
+        'md',
+        'rtf',
     ]
 
 
 def is_indexed(filename):
-    mime_type, _ = mimetypes.guess_type(filename)
-    return mime_type and mime_type in INDEXED_TYPES
+    extension = filename.rsplit('.')[-1]
+    indexed = extension in INDEXED_TYPES
+    return indexed
 
 
 def build_file_document(name, path, addon, include_content=True):
