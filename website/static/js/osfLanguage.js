@@ -11,7 +11,8 @@ module.exports = {
         invalidEmbargoMessage: 'Please choose a date more than two days, but less than four years, from today.',
         registerConfirm: 'Are you sure you want to register this project?',
         registerSkipAddons: 'If you choose to continue with the registration at this time we will exclude the contents of any addons that are not copyable. These files will not appear in the final registration.',
-        registerFail: 'There was a problem completing your registration right now. Please try again later. If this should not have occurred and the issue persists, please report it to ' + SUPPORT_EMAIL_MAILTO
+        registerFail: 'There was a problem completing your registration right now. Please try again later. If this should not have occurred and the issue persists, please report it to ' + SUPPORT_EMAIL_MAILTO,
+        submitForReviewFail: 'There was a problem submitting this draft for review right now. Please try again later. If this should not have occurred and the issue persists, please report it to ' + SUPPORT_EMAIL_MAILTO
     },
     projects: {
         filesArchiving: 'Widget unavailble while files are copied to this project.'

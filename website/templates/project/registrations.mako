@@ -131,7 +131,7 @@
           <div class="col-md-12" data-bind="with: selectedSchema">
             <h4> Fulfills: </h4 >
             <div class="row">
-              <div class="col-md-12 schema-fulfillment" data-bind="foreach: schema.fulfills">
+              <div class="col-md-12 schema-fulfillment" data-bind="foreach: schema.config.fulfills">
                 <span class="well">
                   <span data-bind="text: name"></span>&nbsp;&nbsp;
                   <a class="fa fa-info-circle" target="_blank" data-bind="attr.href: info"></a>

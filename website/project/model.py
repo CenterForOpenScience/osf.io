@@ -3045,22 +3045,22 @@ class DraftRegistration(AddonModelMixin, StoredObject):
     registration_schema = fields.ForeignField('metaschema')
     registered_node = fields.ForeignField('node')
 
-    fulfills = fields.StringField(list=True)
-    approved = fields.BooleanField(default=False)
-
-    is_pending_review = fields.BooleanField(default=False)
-
     storage = fields.ForeignField('osfstoragenodesettings')
+
+    config = fields.DictionaryField()
+    flags = fields.DictionaryField()
 
     def __init__(self, *args, **kwargs):
         super(DraftRegistration, self).__init__(*args, **kwargs)
 
-        if kwargs.get('registration_schema'):
-            meta_schema = self.registration_schema
-            self.fulfills = [item['name'] for item in meta_schema.schema.get('fulfills', [])]
-            if not kwargs.get('approved'):
-                if not meta_schema.schema.get('requires_approval'):
-                    self.approved = True
+        meta_schema = self.registration_schema or kwargs.get('registration_schema')
+        if meta_schema:
+            schema = meta_schema.schema
+            config = schema.get('config', {})
+            self.config = config
+            flags = schema.get('flags', {})
+            for flag, value in flags.iteritems():
+                self.flags[flag] = value
 
     # proxy fields from branched_from Node
     def __getattr__(self, attr):
@@ -3085,7 +3085,7 @@ class DraftRegistration(AddonModelMixin, StoredObject):
         },]
         """
 
-        all_comments = list()
+        all_comments = []
         for question_id, value in self.registration_metadata.iteritems():
             all_comments.append({
                 question_id: {

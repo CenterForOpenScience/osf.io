@@ -3,14 +3,32 @@
 
 <div id="draftRegistrationScope"> 
   <div class="row">
-    <h3>Edit draft registration</h3>
-    <span class="btn-group">
-      <a data-bind="click: submit" id="submitForReview" class="btn btn-default" type="button">
-        <i class="fa fa-save"></i> Submit for review
-      </a>
-    </span>
-    <div class="col-md-12">
-      <%include file="project/registration_editor.mako"/>
+    <h3>
+      <div class="row">
+        <div class="col-md-9">
+          Edit draft registration
+        </div>
+        <div class="col-md-3" data-bind="with: draft">
+          <span class="btn-group" data-bind="if: requiresApproval">
+            <a data-bind="click: $root.submit,
+                          css: {
+                            'disable': isPendingReview
+                          },
+                          tooltip: {
+                            position: 'top',
+                            title: isPendingReview ? 'Request for review already sent' : 'Submit for review'
+                          }" class="btn btn-default" type="button">
+              <i class="fa fa-save"></i> Submit for review
+            </a>
+          </span>   
+        </div>   
+      </div>
+    </h3>
+    <hr />
+    <div class="row">
+      <div class="col-md-12">
+        <%include file="project/registration_editor.mako"/>
+      </div>
     </div>
   </div>
 </div>

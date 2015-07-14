@@ -308,10 +308,15 @@ var Draft = function(params, metaSchema) {
     self.initiator = params.initiator;
     self.initiated = new Date(params.initiated);
     self.updated = new Date(params.updated);
-    self.fulfills = params.fulfills || [];
-    self.is_pending_review = params.is_pending_review || false;
-    self.approved = params.approved;
-    self.urls = params.urls;
+
+    self.urls = params.urls || {};
+
+    $.each(params.config || {}, function(key, value) {
+        self[key] = value;
+    });
+    $.each(params.flags || {}, function(key, value) {
+        self[key] = value;
+    });
     
     self.completion = ko.computed(function() {
         var total = 0;
@@ -609,40 +614,29 @@ RegistrationEditor.prototype.submit = function() {
     var currentNode = window.contextVars.node;
     var currentUser = window.contextVars.currentUser;
 
-	bootbox.confirm(function(){
-		ko.renderTemplate('preSubmission', {}, {}, this, 'replaceNode');
-	}, function(result) {
-		if(result) {
-			$osf.postJSON(self.urls.submit.replace('{draft_pk}', self.draft().pk), {
-				node: currentNode,
-				auth: currentUser
-			}).then(
-				bootbox.dialog({
-					message: function() {
-						ko.renderTemplate('postSubmission', {}, {}, this, 'replaceNode');
-					},
-					title: 'Pre-Registration Prize Submission',
-					buttons: {
-						dashboard: {
-							label: 'Go to your OSF Dashboard',
-							className: 'btn-primary pull-right',
-							callback: function() {
-								window.location.href = '/';
-							}
-						},
-						info: {
-							label: 'Go to Prereg Prize info page',
-							className: 'btn-primary pull-left',
-							callback: function() {
-								window.location.href = 'http://centerforopenscience.org/prereg/';
-
-							}
-						}
-					}
-				})
-			);
-		}
-	});
+    var messages = self.draft().messages;
+    bootbox.confirm(messages.beforeSubmitForApproval, function(result) {
+	if(result) {
+	    $osf.postJSON(self.urls.submit.replace('{draft_pk}', self.draft().pk), {
+		node: currentNode,
+		auth: currentUser
+	    }).then(function() {
+		bootbox.dialog({
+		    message: messages.afterSubmitForApproval,
+		    title: 'Pre-Registration Prize Submission',
+		    buttons: {
+                        registrations: {
+                            label: 'Return to registrations page',
+                            className: 'btn-primary pull-right',
+                            callback: function() {
+                                window.location.href = self.draft().urls.registrations;
+                            }
+                        }
+		    }
+		});
+            }).fail($osf.growl.bind(null, 'Error submitting for review', language.submitForReviewFail));
+	}
+    });
 };
 RegistrationEditor.prototype.save = function() {
     var self = this;
@@ -810,7 +804,7 @@ RegistrationManager.prototype.launchEditor = function(draft) {
             create: node.urls.api + 'draft/',
             update: node.urls.api + 'draft/{draft_pk}/',
             get: node.urls.api + 'draft/{draft_pk}/',
-	    submit: node.urls.api + 'draft/submit/{draft_pk}/',
+	    submit: node.urls.api + 'draft/submit/{draft_pk}/'
         }, 'registrationEditor');
         newDraft = self.regEditor.init(draft);
         $osf.applyBindings(self.regEditor, self.editorSelector);
