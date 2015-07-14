@@ -76,7 +76,7 @@ function Comment(data) {
     self.canEdit = ko.pureComputed(function() {
         return self.saved() && self.user.id === currentUser.id;
     });
-};
+}
 Comment.prototype.formatSeenBy = function() {
 	var self = this;
 
@@ -94,12 +94,12 @@ Comment.prototype.formatSeenBy = function() {
 		}
 	}
 	else {
-		for(var i = 0; i < seen.length; i++) {
-			if (seen[i] === currentUser.fullname) {
+		for(var j = 0; j < seen.length; j++) {
+			if (seen[j] === currentUser.fullname) {
 				seen.length === 1 ? ret += 'You' : ret += 'You, ';
 			}
 			else {
-				ret += seen[i] + ', ';
+				ret += seen[j] + ', ';
 			}
 		}
 	}
@@ -194,7 +194,7 @@ var Question = function(data, id) {
 		div.style.display = 'none';
 		commentList.appendChild(div);
 
-		ko.renderTemplate('deleted', {}, {}, div, "replaceNode");
+		ko.renderTemplate('deleted', {}, {}, div, 'replaceNode');
 	};
     self.nextComment = ko.observable('');
     /**
@@ -517,16 +517,31 @@ RegistrationEditor.prototype.viewComments = function() {
 	var self = this;
 
 	var comments = self.currentQuestion().comments();
+	var match = ko.utils.arrayFirst(seenBy(), function(user) {
+		return currentUser.fullname === user;
+	});
 	for (var i = 0; i < comments.length; i++ ) {
 		var seenBy = comments[i].seenBy;
-		var match = ko.utils.arrayFirst(seenBy(), function(user) {
-			return currentUser.fullname === user;
-		});
-
 		if (!match && comments[i].user.fullname !== currentUser.fullname) {
 			seenBy.push(currentUser.fullname);
 		}
 	}
+};
+RegistrationEditor.prototype.getUnseenComments = function(qid) {
+	var self = this;
+
+	var question = self.draft().schemaData[qid];
+	var comments = [];
+	for (var key in question) {
+		if (key === 'comments') {
+			for (var i = 0; i < question[key].length - 1; i++) {
+				if (question[key][i].indexOf(currentUser.fullname) === -1) {
+					comments.push(question[key][i]);
+				}
+			}
+		}
+	}
+	return comments.length !== 0 ? comments.length : '';
 };
 RegistrationEditor.prototype.nextPage = function() {
     var self = this;
@@ -657,6 +672,7 @@ RegistrationEditor.prototype.save = function() {
             }
         });
     });
+	console.log(self.draft());
 
     if (!self.draft().pk){
         return self.create(data);
