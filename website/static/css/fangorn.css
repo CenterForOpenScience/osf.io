@@ -19,6 +19,17 @@ text-align: center;
 	margin-right: 5px;
 }
 
+#treeGrid span {
+    vertical-align: middle;
+}
+#treeGrid .tb-td {
+    padding-top: 2px;
+    padding-bottom: 4px;
+}
+#treeGrid .tb-expand-icon-holder div {
+    vertical-align: middle;
+}
+
 .fangorn-hover {
     background: #E0EBF3;
 }
