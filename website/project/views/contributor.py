@@ -210,7 +210,7 @@ def project_before_remove_contributor(auth, node, **kwargs):
     if len(node.visible_contributor_ids) == 1 \
             and node.visible_contributor_ids[0] == contributor._id:
         raise HTTPError(http.FORBIDDEN, data={
-            'message_short': 'Must has at least one bibliographic contributor'
+            'message_short': 'Must have at least one bibliographic contributor'
         })
 
     prompts = node.callback(
@@ -243,7 +243,7 @@ def project_removecontributor(auth, node, **kwargs):
     if len(node.visible_contributor_ids) == 1 \
             and node.visible_contributor_ids[0] == contributor._id:
         raise HTTPError(http.FORBIDDEN, data={
-            'message_short': 'Must has at least one bibliographic contributor'
+            'message_short': 'Must have at least one bibliographic contributor'
         })
 
     outcome = node.remove_contributor(
