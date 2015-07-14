@@ -43,6 +43,8 @@ var STATE_MAP = {
     }
 };
 
+var SYNC_UPLOAD_ADDONS = ['github', 'dataverse'];
+
 
 var OPERATIONS = {
     RENAME: {
@@ -587,6 +589,18 @@ function _fangornAddedFile(treebeard, file) {
     if (!_fangornCanDrop(treebeard, item)) {
         return;
     }
+    if (SYNC_UPLOAD_ADDONS.indexof(item.data.provider) !== -1) {
+        this.syncFileCache = this.syncFileCache || {};
+        this.syncFileCache[item.data.provider] = this.syncFileCache[item.data.provider] || {};
+
+        var files = this.getActiveFiles().filter(function(f) {return f.isSync;});
+        if (files.length > 0) {
+            this.syncFileCache[item.data.provider].push(file);
+            this.files.splice(this.files.indexOf(files), 1);
+        }
+        file.isSync = true;
+    }
+
     var configOption = resolveconfigOption.call(treebeard, item, 'uploadAdd', [file, item]);
 
     var tmpID = tempCounter++;
@@ -661,6 +675,12 @@ function _fangornComplete(treebeard, file) {
     var item = file.treebeardParent;
     resolveconfigOption.call(treebeard, item, 'onUploadComplete', [item]);
     orderFolder.call(treebeard, item);
+
+    if (file.isSync) {
+        if (this.syncFileCache[item.data.provider].length > 0) {
+            this.processFile(this.syncFileCache[item.data.provider].pop());
+        }
+    }
 }
 
 /**
