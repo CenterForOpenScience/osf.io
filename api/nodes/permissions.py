@@ -37,7 +37,7 @@ class AdminOrPublic(permissions.BasePermission):
             return node.has_permission(auth.user, 'admin')
 
 
-class ContributorPermissions(permissions.BasePermission):
+class Contributor(permissions.BasePermission):
     '''
         Permissions for contributor detail page.
     '''

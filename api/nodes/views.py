@@ -11,7 +11,7 @@ from api.base.utils import get_object_or_404, waterbutler_url_for
 from .serializers import NodeSerializer, NodePointersSerializer, NodeFilesSerializer, ContributorSerializer, \
     ContributorDetailSerializer
 from .permissions import ContributorOrPublic, ReadOnlyIfRegistration, ContributorOrPublicForPointers, \
-    ContributorPermissions, AdminOrPublic
+    Contributor, AdminOrPublic
 
 
 class NodeMixin(object):
@@ -155,7 +155,7 @@ class NodeContributorDetail(generics.RetrieveUpdateDestroyAPIView, NodeMixin):
 
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
-        ContributorPermissions,
+        Contributor,
     )
 
     # overrides RetrieveAPIView
@@ -181,7 +181,6 @@ class NodeContributorDetail(generics.RetrieveUpdateDestroyAPIView, NodeMixin):
         if node.get_visible(instance) and len(node.visible_contributors) == 1:
             raise PermissionDenied("Must have at least one visible contributor")
         node.remove_contributor(instance, auth)
-        node.save()
 
     def has_multiple_admins(self, node):
         has_one_admin = False
