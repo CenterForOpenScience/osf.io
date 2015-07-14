@@ -748,6 +748,10 @@ class TestSearchMigration(SearchTestCase):
             assert not var.get(settings.ELASTIC_INDEX + '_v{}'.format(n))
 
 
+def update_file(file_doc, parent_id, index=None):
+    es = elastic_search.es
+    es.index(index=index, doc_type='file', parent=parent_id, id=file_doc['path'], body=file_doc, refresh=True)
+
 class TestSearchFiles(SearchTestCase):
     def setUp(self):
         super(TestSearchFiles, self).setUp()
@@ -763,7 +767,7 @@ class TestSearchFiles(SearchTestCase):
             'path': '/00001',
             'content': 'tea, earl gray, hot.',
         }
-        search.update_file(self.file_, self.project._id, index=elastic_search.INDEX)
+        update_file(self.file_, self.project._id, index=elastic_search.INDEX)
 
         time.sleep(1)  # Allow elasticsearch to update
 
@@ -781,14 +785,14 @@ class TestSearchFiles(SearchTestCase):
             'path': '/00002',
             'content': 'Andorians are blue.',
         }
-        search.update_file(non_ascii_name_file, self.project._id, index=elastic_search.INDEX)
+        update_file(non_ascii_name_file, self.project._id, index=elastic_search.INDEX)
 
         non_ascii_content_file = {
             'name': 'non_ascii_content_file.txt',
             'path': '/00003',
             'content': u'Fun Fact! The emoji for earth is \xF0\x9F\x8C\x8F.'
         }
-        search.update_file(non_ascii_content_file, self.project._id, index=elastic_search.INDEX)
+        update_file(non_ascii_content_file, self.project._id, index=elastic_search.INDEX)
         time.sleep(1)
 
         res = query('Andorians')['results']

@@ -283,21 +283,16 @@ def create_waterbutler_log(payload, **kwargs):
 
         node_addon.create_waterbutler_log(auth, action, metadata)
 
-        update_search(node, node_addon, payload)
-
-    return {'status': 'success'}
-
-def update_search(node, addon, payload):
-    action = payload['action']
-    metadata = payload['metadata']
-    if action in ['create', 'update']:
         try:
-            search.update_file_with_metadata(metadata, addon)
-        except KeyError:
+            action = payload['action']
+            name = payload['metadata']['name']
+            path = payload['metadata']['path']
+            node.update_search_file(action, node_addon, name, path)
+        except KeyError as e:
+            raise HTTPError('Missing key in metadata: {}'.format(e))
             pass
 
-    if action == 'delete':
-        search.delete_file(metadata['path'])
+    return {'status': 'success'}
 
 @must_be_valid_project
 def addon_view_or_download_file_legacy(**kwargs):

@@ -8,19 +8,22 @@ INDEXED_TYPES = [
         'text/plain',
     ]
 
+
 def is_indexed(filename):
     mime_type, _ = mimetypes.guess_type(filename)
     return mime_type and mime_type in INDEXED_TYPES
 
 
-def build_file_document(name, path, addon):
+def build_file_document(name, path, addon, include_content=True):
     file_, created = addon.find_or_create_file_guid(path)
     parent_id = file_.node._id
-    content = get_content_of_file_from_addon(file_, addon)
+    file_content = None
+    if include_content:
+        file_content = get_content_of_file_from_addon(file_, addon)
     return {
         'name': name,
         'path': path,
-        'content': content,
+        'content': file_content,
         'parent_id': parent_id,
     }
 
@@ -56,7 +59,7 @@ def collect_files_from_addon(addon, tree=None):
         else:
             path, name = child['path'], child['name']
             if is_indexed(name):
-                yield build_file_document(name, path, addon)
+                yield {'name': name, 'path': path, 'addon': addon}
 
 
 def collect_files(node):

@@ -1543,6 +1543,14 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
             logger.exception(e)
             log_exception()
 
+    def update_search_file(self, action, addon, name, path):
+        from website import search
+        if action in ('update', 'create'):
+            search.search.update_file(name, path, addon)
+        elif action in ('delete',):
+            search.search.delete_file(path)
+        else:
+            raise ValueError('{} is not a valid action'.format(action))
 
     def delete_search_entry(self):
         from website import search

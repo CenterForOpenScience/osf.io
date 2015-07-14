@@ -30,23 +30,16 @@ def update_node(node, index=None):
     index = index or settings.ELASTIC_INDEX
     search_engine.update_node(node, index=index)
 
-
 @requires_search
-def update_file(file_, parent_id, index=None):
+def update_file(name, path, addon, index=None):
     index = index or settings.ELASTIC_INDEX
-    search_engine.update_file(file_, parent_id, index=index)
+    search_engine.update_file(name, path, addon, index=index)
 
 
 @requires_search
 def update_all_files(node, index=None):
     index = index or settings.ELASTIC_INDEX
     search_engine.update_all_files(node, index=index)
-
-
-@requires_search
-def update_file_with_metadata(metadata, addon, index=None):
-    index = index or settings.ELASTIC_INDEX
-    search_engine.update_file_with_metadata(metadata, addon, index=index)
 
 
 @requires_search

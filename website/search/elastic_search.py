@@ -297,33 +297,21 @@ def update_node(node, index=None):
 
 
 @requires_search
-def update_file(file_, parent_id, index=None):
-    if file_util.is_indexed(file_['name']):
-        index = index or INDEX
-        file_document = {
-            'id': file_['path'],
-            'name': file_['name'],
-            'content': file_['content'],
-            'parent_id': parent_id,
-            'category': 'file'
-        }
-        es.index(index=index, doc_type='file', parent=parent_id, id=file_['path'], body=file_document, refresh=True)
+def update_file(name, path, addon, index=None):
+    if file_util.is_indexed(name):
+        index = index or settings.ELASTIC_INDEX
+        file_doc = file_util.build_file_document(name, path, addon, include_content=True)
+        file_doc.update({'category': 'file'})
+        file_doc.update({'id': file_doc['path']})
+        parent_id = file_doc['parent_id']
+        es.index(index=index, doc_type='file', parent=parent_id, id=file_doc['path'], body=file_doc, refresh=True)
 
 
 @requires_search
 def update_all_files(node, index=None):
     index = index or INDEX
     for file_dict in file_util.collect_files(node):
-        update_file(file_dict, node._id, index=index)
-
-
-@requires_search
-def update_file_with_metadata(metadata, addon, index=None):
-    index = index or INDEX
-    name = metadata['name']
-    path = metadata['path']
-    file_dict = file_util.build_file_document(name, path, addon)
-    update_file(file_dict, parent_id=file_dict['parent_id'], index=index)
+        update_file(index=index, **file_dict)
 
 
 @requires_search
