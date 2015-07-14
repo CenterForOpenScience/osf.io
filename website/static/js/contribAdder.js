@@ -73,7 +73,7 @@ var AddContributorViewModel = oop.extend(Paginator, {
             }
         );
         self.foundResults = ko.pureComputed(function() {
-            return self.query() && self.results().length;
+            return self.results().length;
         });
 
         self.noResults = ko.pureComputed(function() {
@@ -112,119 +112,71 @@ var AddContributorViewModel = oop.extend(Paginator, {
      * attribute which is the human-readable display of the number of projects the
      * currently logged-in user has in common with the contributor.
      */
-    startSearch: function() {
-        this.pageToGet(0);
-        this.fetchResults();
-    },
+
     fetchResults: function() {
         var self = this;
         self.notification(false);
-        if (self.query()) {
             return $.getJSON(
-                '/api/v1/user/search/', {
-                    query: self.query(),
-                    excludeNode: nodeId,
-                    page: self.pageToGet
-                },
+                this.searchUrl,
+                this.searchParams,
                 function(result) {
                     var contributors = result.users.map(function(userData) {
                         return new Contributor(userData);
                     });
-                    self.results(contributors);
-                    self.currentPage(result.page);
-                    self.numberOfPages(result.pages);
-                    self.addNewPaginators();
+                    if (!contributors.length) {
+                    self.notification({
+                        'message': 'No Contributors Found.',
+                        'level': 'info'
+                    });
+                }
+                self.pageCollator(contributors);
                 }
             );
-        } else {
-            self.results([]);
-            self.currentPage(0);
-            self.totalPages(0);
-        }
+
+    },
+    pageCollator: function(result) {
+        var self = this;
+        self.currentPage(self.pageToGet());
+        var start = self.currentPage()*RESULTS_PER_PAGE;
+        var end = start+RESULTS_PER_PAGE > result.length ?
+            result.length : start+RESULTS_PER_PAGE;
+        self.results(result.slice(start, end));
+        self.numberOfPages(Math.ceil(result.length/RESULTS_PER_PAGE));
+        self.addNewPaginators();
+
+    },
+    startSearch: function() {
+        this.pageToGet(0);
+        this.searchUrl = '/api/v1/user/search/';
+        this.searchParams = {
+                query: this.query(),
+                excludeNode: nodeId,
+                size: 100,
+                page: this.pageToGet()
+                };
+        this.fetchResults();
     },
     importFromParent: function() {
-        var self = this;
-        self.notification(false);
-        $.getJSON(
-            nodeApiUrl + 'get_contributors_from_parent/', {},
-            function(result) {
-                if (!result.contributors.length) {
-                    self.notification({
-                        'message': 'All contributors from parent already included.',
-                        'level': 'info'
-                    });
-                }
-                self.results(result.contributors);
-            }
-        );
+        this.pageToGet(0);
+        this.searchUrl =  nodeApiUrl + 'get_contributors_from_parent/';
+        this.searchParams = {}
+        this.fetchResults();
+
     },
     recentlyAdded: function() {
-        var self = this;
-        self.notification(false);
-        var url = nodeApiUrl + 'get_recently_added_contributors/?max=' + MAX_RECENT.toString();
-        return $.getJSON(
-            url, {},
-            function(result) {
-                if (!result.contributors.length) {
-                    self.notification({
-                        'message': 'All recent collaborators already included.',
-                        'level': 'info'
-                    });
-                }
-                var contribs = [];
-                var numToDisplay = result.contributors.length;
-                for (var i = 0; i < numToDisplay; i++) {
-                    contribs.push(new Contributor(result.contributors[i]));
-                }
-                self.results(contribs);
-                self.numberOfPages(1);
-            }
-        ).fail(function(xhr, textStatus, error) {
-            self.notification({
-                'message': 'OSF was unable to resolve your request. If this issue persists, ' +
-                    'please report it to <a href="mailto:support@osf.io">support@osf.io</a>.',
-                'level': 'warning'
-            });
-            Raven.captureMessage('Could not GET recentlyAdded contributors.', {
-                url: url,
-                textStatus: textStatus,
-                error: error
-            });
-        });
+        this.pageToGet(0);
+        this.searchUrl =  nodeApiUrl + 'get_recently_added_contributors/';
+        this.searchParams = {}
+        this.fetchResults();
+
     },
     mostInCommon: function() {
+        this.pageToGet(0);
         var self = this;
-        self.notification(false);
-        var url = nodeApiUrl + 'get_most_in_common_contributors/?max=' + MAX_RECENT.toString();
-        return $.getJSON(
-            url, {},
-            function(result) {
-                if (!result.contributors.length) {
-                    self.notification({
-                        'message': 'All frequent collaborators already included.',
-                        'level': 'info'
-                    });
-                }
-                var contribs = [];
-                var numToDisplay = result.contributors.length;
-                for (var i = 0; i < numToDisplay; i++) {
-                    contribs.push(new Contributor(result.contributors[i]));
-                }
-                self.results(contribs);
-                self.numberOfPages(1);
-            }
-        ).fail(function(xhr, textStatus, error) {
-            self.notification({
-                'message': 'OSF was unable to resolve your request. If this issue persists, ' +
-                    'please report it to <a href="mailto:support@osf.io">support@osf.io</a>.',
-                'level': 'warning'
-            });
-            Raven.captureMessage('Could not GET mostInCommon contributors.', {
-                url: url,
-                textStatus: textStatus,
-                error: error
-            });
-        });
+        this.searchUrl =  nodeApiUrl + 'get_most_in_common_contributors/';
+        this.searchParams = {}
+        this.fetchResults();
+
     },
     addTips: function(elements) {
         elements.forEach(function(element) {
