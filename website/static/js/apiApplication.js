@@ -5,19 +5,16 @@
 
 'use strict';
 
-// TODO: Some of these may not be actually required. Dependency list ripped from profile view
 var $ = require('jquery');
 var ko = require('knockout');
 var bootbox = require('bootbox');
 require('knockout.validation');
 require('knockout.punches');
 ko.punches.enableAll();
-require('knockout-sortable');
 
 var $osf = require('./osfHelpers');
-var koHelpers = require('./koHelpers');
+var koHelpers = require('./koHelpers');  // URL validators etc
 var Raven = require('raven-js');
-require('js/objectCreateShim');
 
 
 /*
@@ -228,8 +225,9 @@ ApplicationViewModel.prototype.createApplication = function () {
 };
 
 ApplicationViewModel.prototype.cancelChange = function(){
-    var self = this;
     // TODO: Add change tracking features/ confirm to exit dialog a la profile.js (hinging on refactoring profile.js behaviors into common base file that works with apiv2 return vals)
+
+    // FIXME: self.listPageUrl is undefined, but shouldn't be (it's recognized in constructor)
     window.location = self.listPageUrl;
 };
 

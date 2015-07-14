@@ -1,11 +1,10 @@
 # -*- coding: utf-8 -*-
-import base64
 import os
 import re
-import uuid
 import urllib
 import logging
 import datetime
+import random
 import urlparse
 from collections import OrderedDict
 import warnings
@@ -79,6 +78,22 @@ def has_anonymous_link(node, auth):
         for link in node.private_links_active
         if link.key == view_only_link
     )
+
+def generate_client_secret(length=40, chars=None):
+    """Generate a random string of the specified length. See:
+    https://github.com/idan/oauthlib/blob/master/oauthlib/common.py#L220
+
+    Prefer this over uuid4 because we control length, and some chars in uuid4 aren't random
+
+    :param length int: The desired secret key length
+    :param chars str: The default sequence of characters to use. Recommend limiting to ASCII set.
+    :rtype str: A randomized string
+    """
+    # TODO: Is there a better place for this utility function?
+    chars = chars or 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz1234567890'
+    rng = random.SystemRandom()
+    return ''.join(rng.choice(chars) for i in xrange(length))
+
 
 class MetaSchema(StoredObject):
 
@@ -266,17 +281,16 @@ class Comment(GuidStoredObject):
 
 class ApiOAuth2Application(StoredObject):
     """Registration and key for user-created OAuth API applications"""
-
-    # Client ID
     _id = fields.StringField(
         primary=True,
         default=lambda: str(ObjectId())
     )
 
-    # Client ID and secret
-    client_id = fields.StringField(default=lambda: uuid.uuid4().hex,
+    # Client ID and secret. Use separate ID field so ID format doesn't have to be restricted to database internals.
+    client_id = fields.StringField(default=lambda: str(ObjectId()),
+                                   unique=True,
                                    index=True)
-    client_secret = fields.StringField(default=lambda: base64.b64encode(uuid.uuid4().hex).replace('=', ''))
+    client_secret = fields.StringField(default=lambda: generate_client_secret(length=40))
 
     active = fields.BooleanField(default=True,  # Set to False if application is deactivated
                                  index=True)
@@ -291,7 +305,7 @@ class ApiOAuth2Application(StoredObject):
     description = fields.StringField(required=False)
 
     date_created = fields.DateTimeField(auto_now_add=datetime.datetime.utcnow,
-                                       editable=False)
+                                        editable=False)
 
     home_url = fields.StringField(required=True,
                                   validate=URLValidator())

@@ -537,21 +537,21 @@ def make_url_map(app):
             '/settings/applications/',
             'get',
             profile_views.oauth_application_list,
-            OsfWebRenderer('profile/oauth_app_list.mako')
+            OsfWebRenderer('profile/oauth_app_list.mako', trust=False)
         ),
 
         Rule(
             '/settings/applications/create/',
             'get',
             profile_views.oauth_application_register,
-            OsfWebRenderer('profile/oauth_app_detail.mako')
+            OsfWebRenderer('profile/oauth_app_detail.mako', trust=False)
         ),
 
         Rule(
             '/settings/applications/<client_id>/',
             'get',
             profile_views.oauth_application_detail,
-            OsfWebRenderer('profile/oauth_app_detail.mako')
+            OsfWebRenderer('profile/oauth_app_detail.mako', trust=False)
         ),
         Rule(
             '/@<twitter_handle>/',

@@ -1,7 +1,7 @@
 <%inherit file="base.mako"/>
-<%def name="title()">OAuth Application settings</%def>
+<%def name="title()">OAuth Application Settings</%def>
 <%def name="content()">
-<h2 class="page-header">OAuth application settings</h2>
+<h2 class="page-header">OAuth Application Settings</h2>
 
 <div class="row">
 
