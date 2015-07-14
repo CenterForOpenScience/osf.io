@@ -24,7 +24,7 @@ ko.bindingHandlers.enterkey = {
 function adminView(data) {
     var self = this;
     self.data = data.drafts;
-    console.log(self.data);
+
     self.drafts = ko.pureComputed(function() {
         var row = self.sortBy();
         return data.drafts.sort(function (left, right) { 
@@ -68,16 +68,6 @@ function adminView(data) {
             var path = "/project/" + data.branched_from.node.id + "/draft/" + data.pk;
             location.href = path;
         }
-    };
-
-    self.selectValue = function(data, event) {
-        var path = "/project/" + data.branched_from.node.id + "/draft/" + data.pk;
-        console.log(path);
-    };
-
-    self.addNotes = function(data, event) {
-        var path = "/project/" + data.branched_from.node.id + "/draft/" + data.pk;
-        console.log(path);
     };
 
     self.enlargeIcon = function(data, event) {
