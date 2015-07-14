@@ -7,7 +7,22 @@ var Raven = require('raven-js');
 
 var drafts;
 
-var adminView = function(data) {
+ko.bindingHandlers.enterkey = {
+    init: function (element, valueAccessor, allBindings, viewModel) {
+        var callback = valueAccessor();
+        $(element).keypress(function (event) {
+            var keyCode = (event.which ? event.which : event.keyCode);
+            if (keyCode === 13) {
+                callback.call(viewModel);
+                return false;
+            }
+            return true;
+        });
+    }
+};
+
+function adminView(data) {
+    var self = this;
     self.data = data.drafts;
     console.log(self.data);
     self.drafts = ko.pureComputed(function() {
@@ -22,8 +37,12 @@ var adminView = function(data) {
     self.sortBy = ko.observable('registration_metadata.q1.value');
 
     // variables for editing items in row
-    self.editing = ko.observable(false);
+    self.edit = ko.observable(false);
     self.item = ko.observable();
+    self.commentsSent = ko.observable('no');
+    self.proofOfPub = ko.observable('no');
+    self.paymentSent = ko.observable('no');
+    self.notes = ko.observable('none');
 
     self.setSort = function(data, event) {
         self.sortBy(event.target.id);
@@ -33,6 +52,7 @@ var adminView = function(data) {
         var row = event.currentTarget;
         $(row).css("background","#E0EBF3"); 
     };
+
     self.unhighlightRow = function(data, event) {
         var row = event.currentTarget;
         $(row).css("background",""); 
@@ -44,8 +64,10 @@ var adminView = function(data) {
     };
 
     self.goToDraft = function(data, event) {
-        var path = "/project/" + data.branched_from.node.id + "/draft/" + data.pk;
-        location.href = path;
+        if (self.edit() === false) {
+            var path = "/project/" + data.branched_from.node.id + "/draft/" + data.pk;
+            location.href = path;
+        }
     };
 
     self.selectValue = function(data, event) {
@@ -68,15 +90,19 @@ var adminView = function(data) {
         $(icon).removeClass("fa-2x");
     };
 
-    self.editItem = function(target) {
-        self.editing(true);
+    self.editItem = function(item) {
+        self.edit(true);
+        $('.'+item).hide();
+        $('.input_' + item).show();
+        $('.input_' + item).focus();
     };
 
-    self.stopEditing = function(target) {
-        self.editing(false);
+    self.stopEditing = function(item) {
+        $('.'+item).show();
+        $('.input_' + item).hide();
     };
 
-};
+}
 
 $(document).ready(function() {
     var test = '/api/v1/drafts/';
@@ -84,7 +110,7 @@ $(document).ready(function() {
         url: test
     });
     request.done(function(data) {
-    	$osf.applyBindings(adminView(data), '#prereg-row');
+    	$osf.applyBindings(new adminView(data), '#prereg-row');
     });
     request.fail(function(xhr, textStatus, error) {
         Raven.captureMessage('Failed to populate data', {
