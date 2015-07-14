@@ -109,7 +109,7 @@ var AddContributorViewModel = oop.extend(Paginator, {
 
     pageCollator: function(result) {
         var self = this;
-        self.currentPage(self.pageToGet())
+        self.currentPage(self.pageToGet());
         var start = self.currentPage()*RESULTS_PER_PAGE;
         var end = start+RESULTS_PER_PAGE > result.length ?
             result.length : start+RESULTS_PER_PAGE;
