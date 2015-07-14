@@ -174,7 +174,6 @@ def make_url_map(app):
 
         Rule('/dashboard/', 'get', website_views.dashboard, OsfWebRenderer('dashboard.mako')),
         #TODO
-        Rule('/preregAdmin/', 'get', website_views.preregAdmin, OsfWebRenderer('preregAdmin.mako')),
         Rule('/reproducibility/', 'get',
              website_views.reproducibility, OsfWebRenderer('', render_mako_string)),
 
@@ -1267,11 +1266,6 @@ def make_url_map(app):
             '/project/<pid>/retraction/',
             '/project/<pid>/node/<nid>/retraction/'
         ], 'post', project_views.register.node_registration_retraction_post, json_renderer),
-
-        Rule([
-            '/project/<pid>/register/<template>/',
-            '/project/<pid>/node/<nid>/register/<template>/',
-        ], 'post', project_views.register.node_register_template_page_post, json_renderer),
 
         Rule(
             [
