@@ -142,7 +142,7 @@ $(function() {
 
             $('#add-component-submit')
                 .removeAttr('disabled', 'disabled')
-                .text('OK');
+                .text('Add');
 
             e.preventDefault();
 
