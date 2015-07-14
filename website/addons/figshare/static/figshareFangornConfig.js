@@ -30,7 +30,7 @@ var _figshareItemButtons = {
                         Fangorn.ButtonEvents._downloadEvent.call(tb, event, item);
                     },
                     icon: 'fa fa-download',
-                    className: 'text-info'
+                    className: 'text-primary'
                 }, 'Download')
             );
         }
