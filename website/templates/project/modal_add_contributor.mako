@@ -30,7 +30,7 @@
                             <div class="col-md-12">
                                 <div>
                                     <!-- ko if:parentId -->
-                                        <a data-bind="click:importFromParent, html:'Import contributors from <i>' + parentTitle + '</i>'"></a>
+                                        <a data-bind="click:startImport, html:'Import contributors from <i>' + parentTitle + '</i>'"></a>
                                     <!-- /ko -->
                                 </div>
                                 <div>
