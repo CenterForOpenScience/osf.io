@@ -43,6 +43,8 @@ var STATE_MAP = {
     }
 };
 
+var SYNC_UPLOAD_ADDONS = ['github', 'dataverse'];
+
 
 var OPERATIONS = {
     RENAME: {
@@ -612,14 +614,16 @@ function _fangornAddedFile(treebeard, file) {
         return;
     }
 
-    if (item.data.provider === 'github') {
-        this.githubFileCache = this.githubFileCache || [];
-        var files = this.getActiveFiles().filter(function(f) {return f.isGithub;});
+    if (SYNC_UPLOAD_ADDONS.indexof(item.data.provider) !== -1) {
+        this.syncFileCache = this.syncFileCache || {};
+        this.syncFileCache[item.data.provider] = this.syncFileCache[item.data.provider] || {};
+
+        var files = this.getActiveFiles().filter(function(f) {return f.isSync;});
         if (files.length > 0) {
-            this.githubFileCache.push(file);
+            this.syncFileCache[item.data.provider].push(file);
             this.files.splice(this.files.indexOf(files), 1);
         }
-        file.isGithub = true;
+        file.isSync = true;
     }
 
     var configOption = resolveconfigOption.call(treebeard, item, 'uploadAdd', [file, item]);
@@ -698,9 +702,9 @@ function _fangornComplete(treebeard, file) {
     resolveconfigOption.call(treebeard, item, 'onUploadComplete', [item]);
     orderFolder.call(treebeard, item);
 
-    if (file.isGithub) {
-        if (this.githubFileCache.length > 0) {
-            this.processFile(this.githubFileCache.pop());
+    if (file.isSync) {
+        if (this.syncFileCache[item.data.provider].length > 0) {
+            this.processFile(this.syncFileCache[item.data.provider].pop());
         }
     }
 }
