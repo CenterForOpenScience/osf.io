@@ -1,6 +1,7 @@
 <div id="${addon_short_name}Scope" class="scripted">
     <h4 class="addon-title">
-    ${addon_full_name}        
+        <img class="addon-icon" src=${addon_icon_url}></img>
+        ${addon_full_name}
         <small class="authorized-by">
             <span data-bind="if: nodeHasAuth">
                 authorized by <a data-bind="attr.href: urls().owner">
@@ -8,14 +9,14 @@
                 </a>
                 % if not is_registration:
                     <a data-bind="click: deauthorize"
-                        class="text-danger pull-right addon-auth">Deauthorize</a>
+                        class="text-danger pull-right addon-auth">Disconnect Account</a>
                 % endif
             </span>
 
              <!-- Import Access Token Button -->
             <span data-bind="if: showImport">
                 <a data-bind="click: importAuth" href="#" class="text-primary pull-right addon-auth">
-                    Import Access Token
+                    Import Account From Profile
                 </a>
             </span>
 
@@ -29,7 +30,7 @@
             <!-- Oauth Start Button -->
             <span data-bind="if: showTokenCreateButton">
                 <a data-bind="click: connectAccount" class="text-primary pull-right addon-auth">
-                    Create Access Token
+                  Connect Account
                 </a>
             </span>
         </small>
@@ -50,7 +51,7 @@
                 <!-- Folder buttons -->
                 <div class="btn-group" data-bind="visible: userIsOwner() && validCredentials()">
                     <button data-bind="click: togglePicker,
-                                       css: {active: currentDisplay() === PICKER}" class="btn btn-sm btn-addon"><i class="icon-edit"></i> Change</button>
+                                       css: {active: currentDisplay() === PICKER}" class="btn btn-sm btn-primary">Change</button>
                 </div>
                 <!-- Folder picker -->
                 <div class="addon-folderpicker-widget ${addon_short_name}-widget">
@@ -71,7 +72,7 @@
                                 <button class="btn btn-default" data-bind="click: cancelSelection">
                                     Cancel
                                 </button>
-                                <input type="submit" class="btn btn-primary" value="Submit" />
+                                <input type="submit" class="btn btn-success" value="Save" />
                             </div>
                         </form>
                     </div>         

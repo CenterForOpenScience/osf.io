@@ -56,7 +56,7 @@
     <div data-bind="click: toggle" class="panel-heading clearfix pointer">
         <h3 class="panel-title">Register a project</h3>
         <div class="pull-right" >
-            <a href="#" class="project-toggle"><i class="fa fa-angle-down"></i></a>
+            <button class="btn btn-link project-toggle"><i class="fa fa-angle-down"></i></button>
         </div>
     </div><!-- end ob-header -->
 
@@ -67,7 +67,7 @@
                 params="data: data,
                         onSubmit: onRegisterSubmit,
                         enableComponents: false,
-                        submitText: 'Continue registration...'">
+                        submitText: 'Continue registration'">
                 </osf-project-search>
             </div><!-- end col-md -->
         </div><!-- end row -->
@@ -80,7 +80,7 @@
         <div class="panel-heading clearfix pointer">
             <h3 class="panel-title">Create a project</h3>
            <div class="pull-right" >
-                <a href="#" class="project-toggle"><i class="fa fa-angle-down"></i></a>
+                <button class="btn btn-link project-toggle"><i class="fa fa-angle-down"></i></button>
            </div>
         </div><!-- end ob-header -->
         <div style="display:none" class="panel-body" id="obRevealNewProject">
@@ -97,7 +97,7 @@
     <div class="pointer panel-heading clearfix ">
         <h3 class="panel-title">Upload file(s)</h3>
         <div class="pull-right" >
-            <a href="#" class="project-toggle"><i class="fa fa-angle-up"></i></a>
+            <button class="btn btn-link project-toggle"><i class="fa fa-angle-up"></i></button>
         </div>
     </div><!-- end ob-header -->
 
@@ -208,7 +208,7 @@
     <div class="panel-heading clearfix pointer">
         <h3 class="panel-title">Go to my project</h3>
         <div class="pull-right" >
-            <a href="#" class="project-toggle"><i class="fa fa-angle-up"></i></a>
+            <button class="btn btn-link project-toggle"><i class="fa fa-angle-up"></i></button>
         </div>
     </div><!-- end ob-header -->
     <div class="row panel-body">

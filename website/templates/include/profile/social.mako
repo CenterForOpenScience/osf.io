@@ -58,8 +58,8 @@
             <div class="form-group">
                 <label>LinkedIn</label>
                 <div class="input-group">
-                <span class="input-group-addon">https://www.linkedin.com/profile/view?id=</span>
-                <input class="form-control" data-bind="value: linkedIn" placeholder="profileID"/>
+                <span class="input-group-addon">https://www.linkedin.com/</span>
+                <input class="form-control" data-bind="value: linkedIn" placeholder="in/userID, profile/view?id=profileID, or pub/pubID"/>
                 </div>
             </div>
 
@@ -90,7 +90,7 @@
                 <button
                         type="submit"
                         class="btn btn-success"
-                    >Submit</button>
+                    >Save</button>
 
             </div>
 

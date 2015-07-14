@@ -63,9 +63,9 @@
                                     <tr data-bind="if:!($root.selected($data))">
                                         <td style="padding-right: 10px;">
                                             <a
-                                                    class="btn btn-default contrib-button btn-mini"
+                                                    class="btn btn-success contrib-button btn-mini"
                                                     data-bind="click:$root.add, tooltip: {title: 'Add contributor'}"
-                                                >+</a>
+                                                ><i class="fa fa-plus"></i></a>
                                         </td>
                                         <td>
                                             <!-- height and width are explicitly specified for faster rendering -->
@@ -113,13 +113,13 @@
                                     <ul class="pagination pagination-sm" data-bind="foreach: paginators">
                                         <li data-bind="css: style"><a href="#" data-bind="click: handler, html: text"></a></li>
                                     </ul>
-                                    <p><strong>
-                                        <a href="#"data-bind="click:gotoInvite">Add <em>{{query}}</em> as an unregistered contributor</a>.
-                                    </strong></p>
+                                    <p>
+                                        <a href="#"data-bind="click:gotoInvite">Add <strong><em>{{query}}</em></strong> as an unregistered contributor</a>.
+                                    </p>
                                 </div>
                                 <div data-bind="if: noResults">
-                                    No results found. Try a more specific search or <strong><a href="#"
-                                    data-bind="click:gotoInvite">add <em>{{query}}</em> as an unregistered contributor</a>.</strong>
+                                    No results found. Try a more specific search or  <a href="#"
+                                    data-bind="click:gotoInvite">add <strong><em>{{query}}</em></strong> as an unregistered contributor</a>.
                                 </div>
                             </div>
                         </div><!-- ./col-md -->
@@ -152,7 +152,7 @@
                                             <a
                                                     class="btn btn-default contrib-button btn-mini"
                                                     data-bind="click:$root.remove, tooltip: {title: 'Remove contributor'}"
-                                                >-</a>
+                                                ><i class="fa fa-minus"></i></a>
                                         </td>
                                         <td>
                                             <img data-bind="attr: {src: contributor.gravatar_url}" />
@@ -257,13 +257,13 @@
                 </span>
 
                 <span data-bind="if:selection().length && page() == 'whom'">
-                    <a class="btn btn-success" data-bind="visible:nodes().length==0, click:submit">Submit</a>
+                    <a class="btn btn-success" data-bind="visible:nodes().length==0, click:submit">Save</a>
                     <a class="btn btn-primary" data-bind="visible:nodes().length, click:selectWhich">Next</a>
                 </span>
 
                 <span data-bind="if: page() == 'which'">
                     <a class="btn btn-primary" data-bind="click:selectWhom">Back</a>
-                    <a class="btn btn-success" data-bind="click:submit">Submit</a>
+                    <a class="btn btn-success" data-bind="click:submit">Add</a>
                 </span>
 
             </div><!-- end modal-footer -->

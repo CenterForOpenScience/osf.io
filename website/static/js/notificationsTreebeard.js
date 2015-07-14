@@ -70,6 +70,7 @@ function subscribe(item, notification_type) {
         '/api/v1/subscriptions/',
         payload
     ).done(function(){
+        //'notfiy-success' is to override default class 'success' in treebeard
         item.notify.update('Settings updated', 'notify-success', 1, 2000);
         item.data.event.notificationType = notification_type;
     }).fail(function() {

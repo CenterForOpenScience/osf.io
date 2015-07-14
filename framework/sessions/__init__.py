@@ -10,7 +10,7 @@ import itsdangerous
 
 from werkzeug.local import LocalProxy
 from weakref import WeakKeyDictionary
-from flask import request, make_response, jsonify
+from flask import request, make_response
 from framework.flask import redirect
 
 from website import settings
@@ -116,9 +116,11 @@ session = LocalProxy(get_session)
 # NOTE: This gets attached in website.app.init_app to ensure correct callback
 # order
 def before_request():
-    from framework.auth import authenticate
-    from framework.auth.core import User
+    from framework import sentry
     from framework.auth import cas
+    from framework.auth.core import User
+    from framework.auth import authenticate
+    from framework.routing import json_renderer
 
     # Central Authentication Server Ticket Validation and Authentication
     ticket = request.args.get('ticket')
@@ -134,45 +136,31 @@ def before_request():
         client = cas.get_client()
         try:
             access_token = cas.parse_auth_header(authorization)
-        except cas.CasTokenError as err:
+            cas_resp = client.profile(access_token)
+        except cas.CasError as err:
+            sentry.log_exception()
             # NOTE: We assume that the request is an AJAX request
-            return jsonify({'message_short': 'Invalid Bearer token', 'message_long': err.args[0]}), http.UNAUTHORIZED
-        cas_resp = client.profile(access_token)
+            return json_renderer(err)
         if cas_resp.authenticated:
             user = User.load(cas_resp.user)
             return authenticate(user, access_token=access_token, response=None)
         return make_response('', http.UNAUTHORIZED)
 
     if request.authorization:
-        # Create a session from the API key; if key is
-        # not valid, save the HTTP error code in the
-        # "auth_error_code" field of session.data
-
+        # TODO: Fix circular import
+        from framework.auth.core import get_user
+        user = get_user(
+            email=request.authorization.username,
+            password=request.authorization.password
+        )
         # Create empty session
+        # TODO: Shoudn't need to create a session for Basic Auth
         session = Session()
 
-        # Hack: Avoid circular import
-        from website.project.model import ApiKey
-
-        api_label = request.authorization.username
-        api_key_id = request.authorization.password
-        api_key = ApiKey.load(api_key_id)
-
-        if api_key:
-            user = api_key.user__keyed and api_key.user__keyed[0]
-            node = api_key.node__keyed and api_key.node__keyed[0]
-
-            session.data['auth_api_label'] = api_label
-            session.data['auth_api_key'] = api_key._primary_key
-            if user:
-                session.data['auth_user_username'] = user.username
-                session.data['auth_user_id'] = user._primary_key
-                session.data['auth_user_fullname'] = user.fullname
-            elif node:
-                session.data['auth_node_id'] = node._primary_key
-            else:
-                # Invalid key: Not attached to user or node
-                session.data['auth_error_code'] = http.FORBIDDEN
+        if user:
+            session.data['auth_user_username'] = user.username
+            session.data['auth_user_id'] = user._primary_key
+            session.data['auth_user_fullname'] = user.fullname
         else:
             # Invalid key: Not found in database
             session.data['auth_error_code'] = http.FORBIDDEN

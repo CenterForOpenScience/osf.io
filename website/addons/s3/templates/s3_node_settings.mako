@@ -1,5 +1,6 @@
  <div id="s3Scope" class="scripted">
     <h4 class="addon-title">
+        <img class="addon-icon" src="${addon_icon_url}"></img>
         Amazon S3
         <small class="authorized-by">
             <span data-bind="if: nodeHasAuth">
@@ -34,9 +35,9 @@
         <div class="btn-group"
              data-bind="attr.disabled: creating">
           <button data-bind="visible: canChange, click: toggleSelect,
-                             css: {active: showSelect}" class="btn btn-sm btn-addon"><i class="icon-edit"></i> Change</button>
+                             css: {active: showSelect}" class="btn btn-sm btn-primary">Change</button>
           <button data-bind="visible: showNewBucket, click: openCreateBucket,
-                             attr.disabled: creating" class="btn btn-sm btn-addon" id="newBucket">Create Bucket</button>
+                             attr.disabled: creating" class="btn btn-sm btn-success" id="newBucket">Create Bucket</button>
         </div>
         <br />
         <br />
@@ -51,7 +52,7 @@
             <button data-bind="click: selectBucket,
                                attr.disabled: !allowSelectBucket()"
                     class="btn btn-success">
-              Submit
+              Save
             </button>
           </div>
         </div>        
@@ -69,7 +70,7 @@
       </div>
       <button data-bind="click: createCredentials,
                          attr.disabled: creatingCredentials" class="btn btn-success addon-settings-submit">
-        Submit
+        Save
       </button>
     </div>
     <!-- Flashed Messages -->

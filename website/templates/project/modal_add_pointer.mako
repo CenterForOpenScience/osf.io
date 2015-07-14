@@ -39,9 +39,9 @@
                                 <tr data-bind="if:!($root.selected($data))">
                                     <td>
                                         <a
-                                                class="btn btn-default contrib-button"
+                                                class="btn btn-success contrib-button"
                                                 data-bind="click:$root.add, tooltip: {title: 'Add link'}"
-                                            >+</a>
+                                            ><i class="fa fa-plus"></i></a>
                                     </td>
                                     <td data-bind="text:title" class="overflow"></td>
                                     <td data-bind="text:$root.authorText($data)"></td>
@@ -69,7 +69,7 @@
                                         <a
                                                 class="btn btn-default contrib-button"
                                                 data-bind="click:$root.remove, tooltip: {title: 'Remove link'}"
-                                            >-</a>
+                                            ><i class="fa fa-minus"></i></a>
                                     </td>
                                     <td data-bind="text:title" class="overflow"></td>
                                     <td data-bind="text:$root.authorText($data)"></td>
@@ -87,7 +87,7 @@
                 <a class="btn btn-default" data-dismiss="modal">Cancel</a>
 
                 <span data-bind="if:selection().length">
-                    <a class="btn btn-success" data-bind="click:submit, css: {disabled: !submitEnabled() }">Submit</a>
+                    <a class="btn btn-success" data-bind="click:submit, css: {disabled: !submitEnabled() }">Add</a>
                 </span>
                 <div class="help-block">
                     <span class="text-danger" data-bind="html: submitWarningMsg"></span>

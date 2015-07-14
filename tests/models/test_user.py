@@ -231,9 +231,6 @@ class TestUserMerging(base.OsfTestCase):
         today = datetime.datetime.now()
         yesterday = today - datetime.timedelta(days=1)
 
-        self.user.api_keys = [factories.ApiKeyFactory()]
-        other_user.api_keys = [factories.ApiKeyFactory()]
-
         self.user.comments_viewed_timestamp['shared_gt'] = today
         other_user.comments_viewed_timestamp['shared_gt'] = yesterday
         self.user.comments_viewed_timestamp['shared_lt'] = yesterday
@@ -308,10 +305,6 @@ class TestUserMerging(base.OsfTestCase):
         ]
 
         calculated_fields = {
-            'api_keys': [
-                self.user.api_keys[0]._id,
-                other_user.api_keys[0]._id,
-            ],
             'comments_viewed_timestamp': {
                 'user': yesterday,
                 'other': yesterday,
@@ -410,7 +403,6 @@ class TestUserMerging(base.OsfTestCase):
         # TODO: test watched
         # TODO: test external_accounts
 
-        # TODO: test api_keys
         assert_equal(self.unconfirmed.email_verifications, {})
         assert_is_none(self.unconfirmed.username)
         assert_is_none(self.unconfirmed.password)

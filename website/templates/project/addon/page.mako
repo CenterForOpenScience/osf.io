@@ -30,13 +30,10 @@
 <script id="capabilities" type="text/html">${addon_capabilities}</script>
 
 <%def name="stylesheets()">
-
     ${parent.stylesheets()}
-
     % for style in addon_page_css or []:
         <link rel="stylesheet" href="${style}" />
     % endfor
-
 </%def>
 
 <%def name="javascript_bottom()">

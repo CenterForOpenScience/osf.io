@@ -30,7 +30,7 @@ from website import filters, language, settings, mailchimp_utils
 from website.exceptions import NodeStateError
 from website.profile.utils import serialize_user
 from website.project.model import (
-    ApiKey, Comment, Node, NodeLog, Pointer, ensure_schemas, has_anonymous_link,
+    Comment, Node, NodeLog, Pointer, ensure_schemas, has_anonymous_link,
     get_pointer_parent, Embargo,
 )
 from website.util.permissions import CREATOR_PERMISSIONS
@@ -46,7 +46,7 @@ from website.addons.wiki.exceptions import (
 
 from tests.base import OsfTestCase, Guid, fake, capture_signals
 from tests.factories import (
-    UserFactory, ApiKeyFactory, NodeFactory, PointerFactory,
+    UserFactory, NodeFactory, PointerFactory,
     ProjectFactory, NodeLogFactory, WatchConfigFactory,
     NodeWikiFactory, RegistrationFactory, UnregUserFactory,
     ProjectWithAddonFactory, UnconfirmedUserFactory, CommentFactory, PrivateLinkFactory,
@@ -971,18 +971,6 @@ class TestGUID(OsfTestCase):
             )
 
 
-class TestApiKey(OsfTestCase):
-
-    def test_factory(self):
-        super(TestApiKey, self).setUp()
-        key = ApiKeyFactory()
-        user = UserFactory()
-        user.api_keys.append(key)
-        user.save()
-        assert_equal(len(user.api_keys), 1)
-        assert_equal(ApiKey.find().count(), 1)
-
-
 class TestNodeWikiPage(OsfTestCase):
 
     def setUp(self):
@@ -1617,6 +1605,10 @@ class TestNode(OsfTestCase):
             )
         assert_equal(err.exception.message, 'Cannot register deleted node.')
 
+    def test_set_visible_contributor_with_only_one_contributor(self):
+        with assert_raises(ValueError) as e:
+            self.node.set_visible(user=self.user, visible=False, auth=None)
+            assert_equal(e.exception.message, 'Must have at least one visible contributor')
 
 class TestNodeTraversals(OsfTestCase):
 
@@ -1907,7 +1899,6 @@ class TestProject(OsfTestCase):
         assert_true(hasattr(node, 'nodes'))
         assert_true(hasattr(node, 'forked_from'))
         assert_true(hasattr(node, 'registered_from'))
-        assert_true(hasattr(node, 'api_keys'))
         assert_equal(node.logs[-1].action, 'project_created')
 
     def test_log(self):
@@ -2755,7 +2746,7 @@ class TestTemplateNode(OsfTestCase):
         self.read.save()
 
         self.write = NodeFactory(creator=self.user, parent=self.project)
-        self.write.add_contributor(other_user, permissions=['read', 'write', ])
+        self.write.add_contributor(other_user, permissions=['read', 'write'])
         self.write.save()
 
         self.admin = NodeFactory(creator=self.user, parent=self.project)
@@ -3129,9 +3120,9 @@ class TestRegisterNode(OsfTestCase):
 
         # Share the project and some nodes
         user2 = UserFactory()
-        self.project.add_contributor(user2)
-        self.shared_component.add_contributor(user2)
-        self.shared_subproject.add_contributor(user2)
+        self.project.add_contributor(user2, permissions=('read', 'write', 'admin'))
+        self.shared_component.add_contributor(user2, permissions=('read', 'write', 'admin'))
+        self.shared_subproject.add_contributor(user2, permissions=('read', 'write', 'admin'))
 
         # Partial contributor registers the node
         registration = RegistrationFactory(project=self.project, user=user2)
@@ -3164,7 +3155,7 @@ class TestRegisterNode(OsfTestCase):
     def test_registered_user(self):
         # Add a second contributor
         user2 = UserFactory()
-        self.project.add_contributor(user2)
+        self.project.add_contributor(user2, permissions=('read', 'write', 'admin'))
         # Second contributor registers project
         registration = RegistrationFactory(parent=self.project, user=user2)
         assert_equal(registration.registered_user, user2)
