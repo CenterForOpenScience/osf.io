@@ -1,5 +1,12 @@
 <%inherit file="base.mako"/>
 <%def name="title()">Configure Add-ons</%def>
+
+<%def name="stylesheets()">
+   ${parent.stylesheets()}
+   <link rel="stylesheet" href='/static/css/pages/account-setting-page.css'>
+   <link rel="stylesheet" href='/static/css/user-addon-settings.css'>
+</%def>
+
 <%def name="content()">
 <% from website import settings %>
 <h2 class="page-header">Configure Add-ons</h2>
@@ -22,7 +29,7 @@
     <div class="col-sm-9 col-md-7">
 
         <div id="selectAddons" class="panel panel-default">
-            <div class="panel-heading"><h3 class="panel-title">Select Add-ons</h3></div>
+            <div class="panel-heading clearfix"><h3 class="panel-title">Select Add-ons</h3></div>
             <div class="panel-body">
 
                 <form id="selectAddonsForm">
@@ -58,7 +65,7 @@
                     <br />
 
                     <button id="settings-submit" class="btn btn-success">
-                        Submit
+                        Save
                     </button>
 
                 </form>
@@ -67,7 +74,7 @@
         </div>
         % if addon_enabled_settings:
             <div id="configureAddons" class="panel panel-default">
-                <div class="panel-heading"><h3 class="panel-title">Configure Add-ons</h3></div>
+                <div class="panel-heading clearfix"><h3 class="panel-title">Configure Add-ons</h3></div>
                 <div class="panel-body">
 
                     % for name in addon_enabled_settings:

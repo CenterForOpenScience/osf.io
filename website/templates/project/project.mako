@@ -1,5 +1,7 @@
 <%inherit file="project/project_base.mako"/>
 
+
+
 <%
     import json
     is_project = node['node_type'] == 'project'
@@ -59,7 +61,11 @@
 
                     </div>
                     <!-- /ko -->
-                    <div class="btn-group">
+                    <div
+                        % if not user_name:
+                            data-bind="tooltip: {title: 'Log-in or create an account to watch/duplicate this project', placement: 'bottom'}"
+                        % endif
+                            class="btn-group">
                         <a
                         % if user_name and (node['is_public'] or user['has_read_permissions']) and not node['is_registration']:
                             data-bind="click: toggleWatch, tooltip: {title: watchButtonAction, placement: 'bottom'}"
@@ -71,16 +77,21 @@
                             <i class="fa fa-eye"></i>
                             <span data-bind="text: watchButtonDisplay" id="watchCount"></span>
                         </a>
-                        <a class="btn btn-default"
-                           data-bind="tooltip: {title: 'Duplicate', placement: 'bottom'}"
-                           data-target="#duplicateModal" data-toggle="modal"
-                           href="#">
-                          <span class="glyphicon glyphicon-share"></span>&nbsp; ${ node['templated_count'] + node['fork_count'] + node['points'] }
+                        <a
+                        % if user_name:
+                            class="btn btn-default"
+                            data-bind="tooltip: {title: 'Duplicate', placement: 'bottom'}"
+                            data-target="#duplicateModal" data-toggle="modal"
+                        % else:
+                            class="btn btn-default disabled"
+                        % endif
+                            href="#">
+                            <span class="glyphicon glyphicon-share"></span>&nbsp; ${ node['templated_count'] + node['fork_count'] + node['points'] }
                         </a>
                     </div>
                     % if 'badges' in addons_enabled and badges and badges['can_award']:
                         <div class="btn-group">
-                            <button class="btn btn-success" id="awardBadge" style="border-bottom-right-radius: 4px;border-top-right-radius: 4px;">
+                            <button class="btn btn-primary" id="awardBadge" style="border-bottom-right-radius: 4px;border-top-right-radius: 4px;">
                                 <i class="fa fa-plus"></i> Award
                             </button>
                         </div>
@@ -91,7 +102,7 @@
         <div id="contributors" class="row" style="line-height:25px">
             <div class="col-sm-12">
                 % if user['is_contributor']:
-                    <a class="dotted-underline" href="${node['url']}contributors/">Contributors</a>:
+                    <a class="link-dashed" href="${node['url']}contributors/">Contributors</a>:
                 % else:
                     Contributors:
                 % endif
@@ -174,22 +185,22 @@
     <div class="col-sm-6 osf-dash-col">
 
         %if user['show_wiki_widget']:
-            <div id="addonWikiWidget" class="addon-widget-container" mod-meta='{
+            <div id="addonWikiWidget" class="" mod-meta='{
             "tpl": "../addons/wiki/templates/wiki_widget.mako",
             "uri": "${node['api_url']}wiki/widget/"
         }'></div>
         %endif
 
-        <div class="addon-widget-container">
-            <div class="addon-widget-header clearfix">
-                <h4>Files</h4>
+        <div class="panel panel-default">
+            <div class="panel-heading clearfix">
+                <h3 class="panel-title">Files</h3>
                 <div class="pull-right">
-                   <a href="${node['url']}files/" class="btn"> <i class="fa fa-external-link"></i> </a>
+                   <a href="${node['url']}files/"> <i class="fa fa-external-link"></i> </a>
                 </div>
             </div>
-            <div class="addon-widget-body">
+            <div class="panel-body">
                 <div id="treeGrid">
-                    <div class="fangorn-loading">
+                    <div class="spinner-loading-wrapper">
                         <div class="logo-spin text-center"><img src="/static/img/logo_spin.png" alt="loader"> </div> 
                          <p class="m-t-sm fg-load-message"> Loading files...  </p>
                     </div>
@@ -221,14 +232,14 @@
         <!-- Citations -->
         % if not node['anonymous']:
 
-         <div class="citations addon-widget-container">
-            <div class="addon-widget-header clearfix">
-                <h4>Citation</h4>
+         <div class="citations panel panel-default">
+            <div class="panel-heading clearfix">
+                <h3 class="panel-title"  style="padding-top: 3px">Citation</h3>
                 <div class="pull-right">
-                    <span class="permalink">${node['display_absolute_url']}</span><a href="#" class="btn project-toggle"><i class="fa fa-angle-down"></i></a>
+                    <span class="permalink">${node['display_absolute_url']}</span><button class="btn btn-link project-toggle"><i class="fa fa-angle-down"></i></button>
                 </div>
             </div>
-            <div class="addon-widget-body" style="display:none">
+            <div class="panel-body" style="display:none">
                 <dl id="citationList" class="citation-list">
                     <dt>APA</dt>
                         <dd class="citation-text" data-bind="text: apa"></dd>
@@ -253,13 +264,13 @@
 
 
         %if node['tags'] or 'write' in user['permissions']:
-         <div class="tags addon-widget-container">
-            <div class="addon-widget-header clearfix">
-                <h4>Tags </h4>
+         <div class="tags panel panel-default">
+            <div class="panel-heading clearfix">
+                <h3 class="panel-title">Tags </h3>
                 <div class="pull-right">
                 </div>
             </div>
-            <div class="addon-widget-body">
+            <div class="panel-body">
                 <input name="node-tags" id="node-tags" value="${','.join([tag for tag in node['tags']]) if node['tags'] else ''}" />
             </div>
         </div>
@@ -275,9 +286,9 @@
 
 <%def name="children()">
 % if ('write' in user['permissions'] and not node['is_registration']) or node['children']:
-    <div class="components addon-widget-container">
-        <div class="addon-widget-header clearfix">
-            <h4>Components </h4>
+    <div class="components panel panel-default">
+        <div class="panel-heading clearfix">
+            <h3 class="panel-title" style="padding-bottom: 5px; padding-top: 5px;">Components </h3>
             <div class="pull-right">
                 % if 'write' in user['permissions'] and not node['is_registration']:
                     <a class="btn btn-sm btn-default" data-toggle="modal" data-target="#newComponent">Add Component</a>
@@ -285,7 +296,7 @@
                 % endif
             </div>
         </div><!-- end addon-widget-header -->
-        <div class="addon-widget-body">
+        <div class="panel-body">
             % if node['children']:
                 <div id="containment">
                     <div mod-meta='{
@@ -318,6 +329,8 @@
     % for stylesheet in tree_css:
     <link rel='stylesheet' href='${stylesheet}' type='text/css' />
     % endfor
+
+    <link rel="stylesheet" href="/static/css/pages/project-page.css">
 </%def>
 
 <%def name="javascript_bottom()">

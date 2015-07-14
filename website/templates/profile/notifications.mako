@@ -1,5 +1,11 @@
 <%inherit file="base.mako"/>
 <%def name="title()">Notifications</%def>
+
+<%def name="stylesheets()">
+   ${parent.stylesheets()}
+   <link rel="stylesheet" href='/static/css/pages/account-setting-page.css'>;
+</%def>
+
 <%def name="content()">
 <% import json %>
 <% from website import settings%>
@@ -20,7 +26,7 @@
 
     <div class="col-md-6">
         <div class="panel panel-default scripted" id="selectLists">
-            <div class="panel-heading"><h3 class="panel-title">Configure Email Preferences</h3></div>
+            <div class="panel-heading clearfix"><h3 class="panel-title">Configure Email Preferences</h3></div>
             <div class="panel-body">
                  <h3>Emails</h3>
                     </br>
@@ -32,12 +38,12 @@
                             <label data-bind="text: list"></label>
                             <p class="text-muted" style="padding-left: 15px">Receive general notifications about the OSF every 2-3 weeks.</p>
                         </div>
-                        <div class="padded">
+                        <div class="p-t-md p-b-md">
                         <button
                             type="submit"
                             class="btn btn-success"
                             data-bind="click: submit"
-                        >Submit</button>
+                        >Save</button>
                         </div>
 
                     </form>
@@ -47,10 +53,13 @@
             </div><!--view model scope ends -->
         </div>
         <div class="panel panel-default">
-            <div class="panel-heading"><h3 class="panel-title">Configure Notification Preferences</h3></div>
+            <div class="panel-heading clearfix"><h3 class="panel-title">Configure Notification Preferences</h3></div>
                 <form id="selectNotifications" class="osf-treebeard-minimal">
                     <div id="grid">
-                            <div class="notifications-loading"> <i class="fa fa-spinner notifications-spin"></i> <p class="m-t-sm fg-load-message"> Loading notification settings...  </p> </div>
+                        <div class="spinner-loading-wrapper">
+		                    <div class="logo-spin text-center"><img src="/static/img/logo_spin.png" alt="loader"> </div>
+		                    <p class="m-t-sm fg-load-message"> Loading notification settings... </p>
+	                    </div>
                     </div>
                     <div class="help-block" style="padding-left: 15px">
                             <p id="configureNotificationsMessage"></p>

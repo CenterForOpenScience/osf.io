@@ -8,6 +8,7 @@ import json
 import datetime as dt
 import mock
 import httplib as http
+import math
 
 from nose.tools import *  # noqa PEP8 asserts
 from tests.test_features import requires_search
@@ -24,7 +25,7 @@ from framework.tasks import handlers
 
 from website import mailchimp_utils
 from website.views import _rescale_ratio
-from website.util import permissions
+from website.util import permissions, sanitize
 from website.models import Node, Pointer, NodeLog
 from website.project.model import ensure_schemas, has_anonymous_link
 from website.project.views.contributor import (
@@ -473,24 +474,21 @@ class TestProjectViews(OsfTestCase):
         assert_true(self.project.is_public)
 
     def test_add_tag(self):
-        url = "/api/v1/project/{0}/addtag/{tag}/".format(
-            self.project._primary_key,
-            tag="footag",
-        )
-        self.app.post_json(url, {}, auth=self.auth)
+        url = self.project.api_url_for('project_add_tag')
+        self.app.post_json(url, {'tag': "foo'ta#@%#%^&g?"}, auth=self.auth)
         self.project.reload()
-        assert_in("footag", self.project.tags)
+        assert_in("foo'ta#@%#%^&g?", self.project.tags)
+        assert_equal("foo'ta#@%#%^&g?", self.project.logs[-1].params['tag'])
 
     def test_remove_tag(self):
-        self.project.add_tag("footag", auth=self.consolidate_auth1, save=True)
-        assert_in("footag", self.project.tags)
-        url = "/api/v1/project/{0}/removetag/{tag}/".format(
-            self.project._primary_key,
-            tag="footag",
-        )
-        self.app.post_json(url, {}, auth=self.auth)
+        self.project.add_tag("foo'ta#@%#%^&g?", auth=self.consolidate_auth1, save=True)
+        assert_in("foo'ta#@%#%^&g?", self.project.tags)
+        url = self.project.api_url_for("project_remove_tag")
+        self.app.delete_json(url, {"tag": "foo'ta#@%#%^&g?"}, auth=self.auth)
         self.project.reload()
-        assert_not_in("footag", self.project.tags)
+        assert_not_in("foo'ta#@%#%^&g?", self.project.tags)
+        assert_equal("tag_removed", self.project.logs[-1].action)
+        assert_equal("foo'ta#@%#%^&g?", self.project.logs[-1].params['tag'])
 
     @mock.patch('website.archiver.tasks.archive.si')
     def test_register_template_page(self, mock_archive):
@@ -609,6 +607,31 @@ class TestProjectViews(OsfTestCase):
         invalid_input = 'invalid page'
         res = self.app.get(
             url, {'page': invalid_input}, auth=self.auth, expect_errors=True
+        )
+        assert_equal(res.status_code, 400)
+        assert_equal(
+            res.json['message_long'],
+            'Invalid value for "page".'
+        )
+
+    def test_get_logs_negative_page_num(self):
+        url = self.project.api_url_for('get_logs')
+        invalid_input = -1
+        res = self.app.get(
+            url, {'page': invalid_input}, auth=self.auth, expect_errors=True
+        )
+        assert_equal(res.status_code, 400)
+        assert_equal(
+            res.json['message_long'],
+            'Invalid value for "page".'
+        )
+
+    def test_get_logs_page_num_beyond_limit(self):
+        url = self.project.api_url_for('get_logs')
+        size = 10
+        page_num = math.ceil(len(self.project.logs)/ float(size))
+        res = self.app.get(
+            url, {'page': page_num}, auth=self.auth, expect_errors=True
         )
         assert_equal(res.status_code, 400)
         assert_equal(
@@ -1390,6 +1413,53 @@ class TestUserProfile(OsfTestCase):
         assert_equal(mock_client.lists.unsubscribe.call_count, 0)
         assert_equal(mock_client.lists.subscribe.call_count, 0)
         handlers.celery_teardown_request()
+
+    def test_twitter_redirect_success(self):
+        self.user.social['twitter'] = fake.last_name()
+        self.user.save()
+
+        res = self.app.get(web_url_for('redirect_to_twitter', twitter_handle=self.user.social['twitter']))
+        assert_equals(res.status_code, http.FOUND)
+        assert_in(self.user.url, res.location)
+
+    def test_twitter_redirect_is_case_insensitive(self):
+        self.user.social['twitter'] = fake.last_name()
+        self.user.save()
+
+        res1 = self.app.get(web_url_for('redirect_to_twitter', twitter_handle=self.user.social['twitter']))
+        res2 = self.app.get(web_url_for('redirect_to_twitter', twitter_handle=self.user.social['twitter'].lower()))
+        assert_equal(res1.location, res2.location)
+
+    def test_twitter_redirect_unassociated_twitter_handle_returns_404(self):
+        unassociated_handle = fake.last_name()
+        expected_error = 'There is no active user associated with the Twitter handle: {0}.'.format(unassociated_handle)
+
+        res = self.app.get(
+            web_url_for('redirect_to_twitter', twitter_handle=unassociated_handle),
+            expect_errors=True
+        )
+        assert_equal(res.status_code, http.NOT_FOUND)
+        assert_true(expected_error in res.body)
+
+    def test_twitter_redirect_handle_with_multiple_associated_accounts_redirects_to_selection_page(self):
+        self.user.social['twitter'] = fake.last_name()
+        self.user.save()
+        user2 = AuthUserFactory()
+        user2.social['twitter'] = self.user.social['twitter']
+        user2.save()
+
+        expected_error = 'There are multiple OSF accounts associated with the Twitter handle: <strong>{0}</strong>.'.format(self.user.social['twitter'])
+        res = self.app.get(
+            web_url_for(
+                'redirect_to_twitter',
+                twitter_handle=self.user.social['twitter'],
+                expect_error=True
+            )
+        )
+        assert_equal(res.status_code, http.MULTIPLE_CHOICES)
+        assert_true(expected_error in res.body)
+        assert_true(self.user.url in res.body)
+        assert_true(user2.url in res.body)
 
 
 class TestUserAccount(OsfTestCase):
@@ -4091,6 +4161,16 @@ class TestProjectCreation(OsfTestCase):
         node = Node.load(res.json['projectUrl'].replace('/', ''))
         assert_true(node)
         assert_true(node.title, 'Im a real title')
+
+    def test_new_project_returns_serialized_node_data(self):
+        payload = {
+            'title': 'Im a real title'
+        }
+        res = self.app.post_json(self.url, payload, auth=self.creator.auth)
+        assert_equal(res.status_code, 201)
+        node = res.json['newNode']
+        assert_true(node)
+        assert_equal(node['title'], 'Im a real title')
 
     def test_description_works(self):
         payload = {

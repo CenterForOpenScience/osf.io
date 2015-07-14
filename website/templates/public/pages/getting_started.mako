@@ -1,5 +1,11 @@
 <%inherit file="base.mako"/>
 <%def name="title()">Getting Started</%def>
+
+<%def name="stylesheets()">
+    ${parent.stylesheets()}
+    <link rel="stylesheet" href="/static/css/pages/getting-started-page.css">
+</%def>
+
 <%def name="content()">
     <div href="#start">
         <div class="col-sm-4 col-md-3 nav-list-spy">
@@ -141,7 +147,7 @@
         </div>
 
         <div id="addons" class="row" style="padding-top: 40px;">
-            <h2 class="text-center anchor">OSF Add-ons</h2>
+            <h2 class="text-center anchor m-b-lg">OSF Add-ons</h2>
             <div class="col-md-12">
                 <%include file="/public/pages/help/addons.mako"/>
             </div>

@@ -50,7 +50,6 @@ if (!ctx.node.anonymous && !ctx.node.isRetracted) {
     new CitationList('#citationList');
     new CitationWidget('#citationStyleInput', '#citationText');
 }
-
 $(document).ready(function () {
 
     if (!ctx.node.isRetracted) {
@@ -117,12 +116,9 @@ $(document).ready(function () {
         interactive: window.contextVars.currentUser.canEdit,
         maxChars: 128,
         onAddTag: function(tag){
-            var url = window.contextVars.node.urls.api + 'addtag/' + tag + '/';
-            var request = $.ajax({
-                url: url,
-                type: 'POST',
-                contentType: 'application/json'
-            });
+            var url = nodeApiUrl + 'tags/';
+            var data = {tag: tag};
+            var request = $osf.postJSON(url, data);
             request.fail(function(xhr, textStatus, error) {
                 Raven.captureMessage('Failed to add tag', {
                     tag: tag, url: url, textStatus: textStatus, error: error
@@ -130,17 +126,44 @@ $(document).ready(function () {
             });
         },
         onRemoveTag: function(tag){
-            var url = window.contextVars.node.urls.api + 'removetag/' + tag + '/';
+            var url = nodeApiUrl + 'tags/';
+            var data = JSON.stringify({tag: tag});
             var request = $.ajax({
                 url: url,
-                type: 'POST',
-                contentType: 'application/json'
+                type: 'DELETE',
+                contentType: 'application/json',
+                dataType: 'JSON',
+                data: data
             });
             request.fail(function(xhr, textStatus, error) {
                 Raven.captureMessage('Failed to remove tag', {
                     tag: tag, url: url, textStatus: textStatus, error: error
                 });
             });
+        }
+    });
+
+    //Clear input fields on Add Component Modal
+    $('#confirm').on('click', function () {
+        $('#alert').text('');
+        $('#title').val('');
+        $('#category').val('');
+    });
+
+    // only focus input field on modals when not IE
+    $('#newComponent').on('shown.bs.modal', function(){
+        if(!$osf.isIE()){
+            $('#title').focus();
+        }
+    });
+
+    $('#newComponent').on('hidden.bs.modal', function(){
+        $('#newComponent .modal-alert').text('');
+    });
+
+    $('#addPointer').on('shown.bs.modal', function(){
+        if(!$osf.isIE()){
+            $('#addPointer input').focus();
         }
     });
 

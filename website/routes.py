@@ -68,6 +68,7 @@ def get_globals():
         'api_v2_base': util.api_v2_url(''),  # Base url used by JS api helper
         'sanitize': sanitize,
         'js_str': lambda x: x.replace("'", r"\'").replace('"', r'\"'),
+        'sjson': lambda s: sanitize.safe_json(s),
         'webpack_asset': paths.webpack_asset,
         'waterbutler_url': settings.WATERBUTLER_URL,
         'login_url': cas.get_login_url(request.url, auto=True),
@@ -76,7 +77,10 @@ def get_globals():
 
 
 class OsfWebRenderer(WebRenderer):
+    """Render a Mako template with OSF context vars.
 
+    :param trust: Optional. If ``False``, markup-save escaping will be enabled
+    """
     def __init__(self, *args, **kwargs):
         kwargs['data'] = get_globals
         super(OsfWebRenderer, self).__init__(*args, **kwargs)
@@ -526,6 +530,13 @@ def make_url_map(app):
             'get',
             profile_views.user_notifications,
             OsfWebRenderer('profile/notifications.mako'),
+        ),
+
+        Rule(
+            '/@<twitter_handle>/',
+            'get',
+            profile_views.redirect_to_twitter,
+            OsfWebRenderer('error.mako', render_mako_string)
         ),
 
     ])
@@ -1133,15 +1144,19 @@ def make_url_map(app):
             '/project/<pid>/node/<nid>/edit/',
         ], 'post', project_views.node.edit_node, json_renderer),
 
-        # Tags
+        # Add / remove tags
         Rule([
-            '/project/<pid>/addtag/<tag>/',
-            '/project/<pid>/node/<nid>/addtag/<tag>/',
-        ], 'post', project_views.tag.project_addtag, json_renderer),
+            '/project/<pid>/tags/',
+            '/project/<pid>/node/<nid>/tags/',
+            '/project/<pid>/tags/<tag>/',
+            '/project/<pid>/node/<nid>/tags/<tag>/',
+        ], 'post', project_views.tag.project_add_tag, json_renderer),
         Rule([
-            '/project/<pid>/removetag/<tag>/',
-            '/project/<pid>/node/<nid>/removetag/<tag>/',
-        ], 'post', project_views.tag.project_removetag, json_renderer),
+            '/project/<pid>/tags/',
+            '/project/<pid>/node/<nid>/tags/',
+            '/project/<pid>/tags/<tag>/',
+            '/project/<pid>/node/<nid>/tags/<tag>/',
+        ], 'delete', project_views.tag.project_remove_tag, json_renderer),
 
         # Add / remove contributors
         Rule([

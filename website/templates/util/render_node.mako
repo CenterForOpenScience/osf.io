@@ -9,7 +9,7 @@
         ">
 
         <h4 class="list-group-item-heading">
-            <span class="component-overflow" style="line-height: 1.5;">
+            <span class="component-overflow f-w-lg" style="line-height: 1.5;">
             % if not summary['primary']:
               <i class="fa fa-link" data-toggle="tooltip" title="Linked ${summary['node_type']}"></i>
             % endif
@@ -36,7 +36,7 @@
                 <a href="${summary['url']}">${summary['title']}</a>
             % endif
             % if summary['archiving']:
-                <span>${summary['title']}</span>
+                <span class="f-w-lg">${summary['title']}</span>
             % endif
 
 
@@ -81,7 +81,7 @@
         <!--Stacked bar to visualize user activity level against total activity level of a project -->
         <!--Length of the stacked bar is normalized over all projects -->
         % if not summary['anonymous']:
-            <div class="progress progress-user-activity">
+            <div class="progress progress-bar-sm progress-user-activity">
                 % if summary['ua']:
                     <div class="progress-bar progress-bar-success ${'last' if not summary['non_ua'] else ''}" style="width: ${summary['ua']}%"  data-toggle="tooltip" title="${user_full_name} made ${summary['ua_count']} contributions"></div>
                 % endif
@@ -120,7 +120,7 @@
     <li
         node_reference="${summary['id']}:${'node' if summary['primary'] else 'pointer'}"
         class="project list-group-item list-group-item-node unavailable">
-        <h4 class="list-group-item-heading">
+        <h4 class="list-group-item-heading f-w-lg">
             %if summary['is_registration']:
                 Private Registration
             %elif summary['is_fork']:
