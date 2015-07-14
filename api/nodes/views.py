@@ -1,15 +1,15 @@
 import requests
 
+from modularodm import Q
 from rest_framework import generics, permissions as drf_permissions
 from rest_framework.exceptions import PermissionDenied, ValidationError
-from modularodm import Q
 
 from framework.auth.core import Auth
 from website.models import Node, Pointer
-from api.base.utils import get_object_or_404, waterbutler_url_for
-from api.base.filters import ODMFilterMixin, ListFilterMixin
-from .serializers import NodeSerializer, NodePointersSerializer, NodeFilesSerializer
 from api.users.serializers import ContributorSerializer
+from api.base.filters import ODMFilterMixin, ListFilterMixin
+from api.base.utils import get_object_or_404, waterbutler_url_for
+from .serializers import NodeSerializer, NodePointersSerializer, NodeFilesSerializer
 from .permissions import ContributorOrPublic, ReadOnlyIfRegistration, ContributorOrPublicForPointers
 
 
@@ -19,7 +19,7 @@ class NodeMixin(object):
     """
 
     serializer_class = NodeSerializer
-    node_lookup_url_kwarg = 'pk'
+    node_lookup_url_kwarg = 'node_id'
 
     def get_node(self):
         obj = get_object_or_404(Node, self.kwargs[self.node_lookup_url_kwarg])
@@ -79,7 +79,7 @@ class NodeList(generics.ListCreateAPIView, ODMFilterMixin):
         serializer.save(creator=user)
 
 
-class NodeDetail(generics.RetrieveUpdateAPIView, NodeMixin):
+class NodeDetail(generics.RetrieveUpdateDestroyAPIView, NodeMixin):
     """Projects and component details.
 
     On the front end, nodes are considered 'projects' or 'components'. The difference between a project and a component
@@ -92,16 +92,25 @@ class NodeDetail(generics.RetrieveUpdateAPIView, NodeMixin):
         ContributorOrPublic,
         ReadOnlyIfRegistration,
     )
+
     serializer_class = NodeSerializer
 
-    # overrides RetrieveUpdateAPIView
+    # overrides RetrieveUpdateDestroyAPIView
     def get_object(self):
         return self.get_node()
 
-    # overrides RetrieveUpdateAPIView
+    # overrides RetrieveUpdateDestroyAPIView
     def get_serializer_context(self):
         # Serializer needs the request in order to make an update to privacy
         return {'request': self.request}
+
+    # overrides RetrieveUpdateDestroyAPIView
+    def perform_destroy(self, instance):
+        user = self.request.user
+        auth = Auth(user)
+        node = self.get_object()
+        node.remove_node(auth=auth)
+        node.save()
 
 
 class NodeContributorsList(generics.ListAPIView, ListFilterMixin, NodeMixin):
@@ -335,7 +344,7 @@ class NodeFilesList(generics.ListAPIView, NodeMixin):
                         'metadata': {},
                     })
         else:
-            url = waterbutler_url_for('data', provider, path, self.kwargs['pk'], cookie, obj_args)
+            url = waterbutler_url_for('data', provider, path, self.kwargs['node_id'], cookie, obj_args)
             waterbutler_request = requests.get(url)
             if waterbutler_request.status_code == 401:
                 raise PermissionDenied

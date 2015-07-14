@@ -30,13 +30,13 @@ var growl = function(title, message, type) {
 /**
  * Generate OSF absolute URLs, including prefix and arguments. Assumes access to mako globals for pieces of URL.
  * Can optionally pass in an object with params (name:value) to be appended to URL. Calling as:
- *   apiV2Url("users/4urxt/applications",
+ *   apiV2Url('users/4urxt/applications',
  *      {query:
- *          {"a":1, "filter[fullname]": "lawrence"},
- *       prefix: "https://staging2.osf.io/api/v2/"})
+ *          {'a':1, 'filter[fullname]': 'lawrence'},
+ *       prefix: 'https://staging2.osf.io/api/v2/'})
  * would yield the result:
- *  "https://staging2.osf.io/api/v2/users/4urxt/applications?a=1&filter%5Bfullname%5D=lawrence"
- * @param {String} path The string to be appended to the absolute base path, eg "users/4urxt"
+ *  'https://staging2.osf.io/api/v2/users/4urxt/applications?a=1&filter%5Bfullname%5D=lawrence'
+ * @param {String} path The string to be appended to the absolute base path, eg 'users/4urxt'
  * @param {Object} options (optional)
  */
 var apiV2Url = function (path, options){
@@ -51,7 +51,9 @@ var apiV2Url = function (path, options){
 
     var apiUrl = URI(opts.prefix);
     var pathSegments = URI(path).segment();
-    pathSegments.forEach(function(el){apiUrl.segment(el)});  // Hack to prevent double slashes when joining base + path
+    pathSegments.forEach(function(el){
+        apiUrl.segment(el);
+    });  // Hack to prevent double slashes when joining base + path
     apiUrl.query(opts.query);
 
     return apiUrl.toString();
@@ -169,7 +171,7 @@ var handleEditableError = function(response) {
     return 'Unexpected error: ' + response.statusText;
 };
 
-var block = function() {
+var block = function(message) {
     $.blockUI({
         css: {
             border: 'none',
@@ -180,7 +182,7 @@ var block = function() {
             opacity: 0.5,
             color: '#fff'
         },
-        message: 'Please wait'
+        message: message || 'Please wait'
     });
 };
 
@@ -352,7 +354,7 @@ var trackPiwik = function(host, siteId, cvars, useCookies) {
  * Tooltip data binder. The value accessor should be an object containing
  * parameters for the tooltip.
  * Example:
- * <span data-bind="tooltip: {title: 'Tooltip text here'}"></span>
+ * <span data-bind='tooltip: {title: 'Tooltip text here'}'></span>
  */
 ko.bindingHandlers.tooltip = {
     init: function(elem, valueAccessor) {
@@ -364,7 +366,7 @@ ko.bindingHandlers.tooltip = {
 /**
  * Takes over anchor scrolling and scrolls to anchor positions within elements
  * Example:
- * <span data-bind="anchorScroll"></span>
+ * <span data-bind='anchorScroll'></span>
  */
 ko.bindingHandlers.anchorScroll = {
     init: function(elem, valueAccessor) {
@@ -466,28 +468,56 @@ var applyBindings = function(viewModel, selector) {
     ko.applyBindings(viewModel, $elem[0]);
 };
 
+/**
+ * A function that checks if a datestring is an ISO 8601 datetime string
+ * that lacks an offset. A datetime without a time offset should default
+ * to UTC according to JS standards, but Firefox implemented date parsing
+ * according to the ISO spec, meaning in Firefox it will default to local
+ * time
+ * @param {String} dateString The original date or datetime as an ISO date/
+ *                            datetime string
+ */
+var dateTimeWithoutOffset = function(dateString) {
+    if (dateString.indexOf('T') === -1) {
+        return false;
+    }
+    var time = dateString.split('T')[1];
+    return !((time.indexOf('+') !== -1) || (time.indexOf('-') !== -1));
+};
+
+/**
+ * A function that coerces a Datetime with no offset to a Datetime with
+ * an offset of UTC +00 (equivalent to Z)
+ * @param {String} dateTimeString The original Datetime string, which may or may not
+ *                                have a terminating Z implying UTC +00
+ */
+var forceUTC = function(dateTimeString) {
+    return dateTimeString.slice(-1) === 'Z' ? dateTimeString : dateTimeString + 'Z';
+};
+
+var hasTimeComponent = function(dateString) {
+    return dateString.indexOf('T') !== -1;
+};
 
 /**
   * A date object with two formats: local time or UTC time.
   * @param {String} date The original date as a string. Should be an standard
-  *                      format such as RFC or ISO.
+  *                      format such as RFC or ISO. If the date is a datetime string
+  *                      with no offset, an offset of UTC +00:00 will be assumed
   */
 var LOCAL_DATEFORMAT = 'YYYY-MM-DD hh:mm A';
 var UTC_DATEFORMAT = 'YYYY-MM-DD HH:mm UTC';
 var FormattableDate = function(date) {
+
     if (typeof date === 'string') {
-        // If Firefox, add 'Z' to the date string (Z is timezone for UTC)
-        if(navigator.userAgent.toLowerCase().indexOf('firefox') > -1 && date.slice(-1) !== 'Z') {
-           date = date + 'Z';
-        }
-        // The date as a Date object
-        this.date = new Date(date);
+        this.date = moment.utc(dateTimeWithoutOffset(date) ? forceUTC(date) : date).toDate();
     } else {
         this.date = date;
     }
     this.local = moment(this.date).format(LOCAL_DATEFORMAT);
     this.utc = moment.utc(this.date).format(UTC_DATEFORMAT);
 };
+
 
 /**
  * Escapes html characters in a string.
@@ -653,6 +683,14 @@ var _confirmationString = function() {
 };
 
 /**
+*  Helper function to judge if the user browser is IE
+*/
+var isIE = function(userAgent) {
+    userAgent = userAgent || navigator.userAgent;
+    return userAgent.indexOf('MSIE ') > -1 || userAgent.indexOf('Trident/') > -1;
+};
+
+/**
   * Confirm a dangerous action by requiring the user to enter specific text
   *
   * This is an abstraction over bootbox, and passes most options through to
@@ -739,5 +777,6 @@ module.exports = window.$.osf = {
     htmlDecode: htmlDecode,
     tableResize: tableResize,
     humanFileSize: humanFileSize,
-    confirmDangerousAction: confirmDangerousAction
+    confirmDangerousAction: confirmDangerousAction,
+    isIE: isIE
 };

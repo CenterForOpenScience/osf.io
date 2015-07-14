@@ -12,7 +12,7 @@ ${self.on_submit()}
 
 <%def name="submit_btn()">
     <button class="btn btn-success addon-settings-submit">
-        Submit
+        Save
     </button>
 </%def>
 

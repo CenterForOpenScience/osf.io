@@ -52,12 +52,6 @@ var GithubConfigHelper = (function() {
         });
     };
 
-
-    var isIE = function (userAgent) {
-        userAgent = userAgent || navigator.userAgent;
-        return userAgent.indexOf("MSIE ") > -1 || userAgent.indexOf("Trident/") > -1;
-    }
-
     $(document).ready(function() {
         $('#githubSelectRepo').on('change', function() {
             var value = $(this).val();
@@ -75,7 +69,7 @@ var GithubConfigHelper = (function() {
                 nodeApiUrl + 'github/user_auth/',
                 {}
             ).done(function() {
-                    if(isIE()){
+                    if($osf.isIE()){
                         window.location.hash = "#configureAddonsAnchor";
                     }
                     window.location.reload();

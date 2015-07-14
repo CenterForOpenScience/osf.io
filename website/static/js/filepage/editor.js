@@ -30,7 +30,9 @@ var FileEditor = {
         $osf.throttle(self.observables.status, 4000, {leading: false});
 
         self.bindAce = function(element, isInitialized, context) {
-            if (isInitialized) return;
+            if (isInitialized) {
+                return;
+            }
             model.editor = ace.edit(element.id);
             model.editor.setValue(self.initialText, -1);
             new ShareJSDoc(shareWSUrl, self.editorMeta, model.editor, self.observables);
@@ -118,9 +120,10 @@ var FileEditor = {
         return self;
     },
     view: function(ctrl) {
-        if (!ctrl.loaded) return util.Spinner;
-
-        return m('.editor-pane', [
+        if (!ctrl.loaded) {
+            return util.Spinner;
+        }
+        return m('.editor-pane.panel-body', [
             m('.wiki-connected-users', m('.row', m('.col-sm-12', [
                 m('.ul.list-inline', {style: {'margin-top': '10px'}}, [
                     ctrl.observables.activeUsers().map(function(user) {
@@ -142,7 +145,7 @@ var FileEditor = {
                 m('.wmd-input.wiki-editor#editor', {config: ctrl.bindAce})
             ]),
             m('br'),
-            m('.osf-panel-footer[style=position:inherit]', [
+            m('[style=position:inherit]', [
                 m('.row', m('.col-sm-12', [
                     m('.pull-right', [
                         m('button#fileEditorRevert.btn.btn-sm.btn-danger', {onclick: function(){ctrl.reloadFile();}}, 'Revert'),

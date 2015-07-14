@@ -8,38 +8,43 @@
 <p>Most Add-Ons require both account authentication as well as project application. The easiest way to do this is
     directly from the project page. First, navigate to the project's settings. Then select the Add-Ons that you want to
     incorporate into your project. A pop-up with information about the Add-On will show up, click okay, and then click
-    submit. After clicking submit, you will notice a box labled "Configure Add-Ons" beneath the "Select Add-Ons" box.
+    submit. After clicking submit, you will notice a box labeled "Configure Add-Ons" beneath the "Select Add-Ons" box.
     Go to the "Configure Add-Ons" box and create an access token for the Add-On, this authorizes the Add-On for the
     entire OSF account. Then configure the Add-On and click submit to apply the Add-On to the individual project.
     Once you've authorized an Add-On, you never have to do it again. However, you always need to apply the Add-On to
     your individual projects. </p>
 
-<div class="col-md-8 col-md-offset-2 col-sm-12">
-    <div class="gs-video embed-responsive embed-responsive-16by9">
-        <div class="embed-responsive-item youtube-loader" id="h1hJkm2FE7U"></div>
+<div class="row">
+    <div class="col-md-offset-2 col-md-8">
+        <div class="gs-video embed-responsive embed-responsive-16by9">
+            <div class="embed-responsive-item youtube-loader" id="h1hJkm2FE7U"></div>
+        </div>
     </div>
 </div>
 
 
-<div class="row col-md-12">
-    <h3 class="text-center" style="padding-top: 20px;">Storage Options</h3>
-        <div class="row">
-            <%include file="/public/pages/help/addons/dropbox.mako"/>
-            <%include file="/public/pages/help/addons/github.mako"/>
-            <%include file="/public/pages/help/addons/amazons3.mako"/>
-            <%include file="/public/pages/help/addons/figshare.mako"/>
-            <%include file="/public/pages/help/addons/dataverse.mako"/>
-            <%include file="/public/pages/help/addons/box.mako"/>
-            <%include file="/public/pages/help/addons/drive.mako"/>
+<div class="row">
+    <div class="col-md-12">
+        <div class="col-md-12">
+            <h3 class="text-center m-t-xl f-w-lg">Storage Options</h3>
         </div>
-    <h3 class="text-center" style="padding-top: 20px;">Citation Managers</h3>
-        <div class="row">
-            <%include file="/public/pages/help/addons/mendeley.mako"/>
-            <%include file="/public/pages/help/addons/zotero.mako"/>
-        </div>
+        <%include file="/public/pages/help/addons/dropbox.mako"/>
+        <%include file="/public/pages/help/addons/github.mako"/>
+        <%include file="/public/pages/help/addons/amazons3.mako"/>
+        <%include file="/public/pages/help/addons/figshare.mako"/>
+        <%include file="/public/pages/help/addons/dataverse.mako"/>
+        <%include file="/public/pages/help/addons/box.mako"/>
+        <%include file="/public/pages/help/addons/drive.mako"/>
 
-    <h3 class="text-center" style="padding-top: 20px;">Security</h3>
-        <div class="row">
-            <%include file="/public/pages/help/addons/two-factor.mako"/>
+        <div class="col-md-12">
+            <h3 class= "text-center m-t-xl f-w-lg">Citation Managers</h3>
         </div>
+        <%include file="/public/pages/help/addons/mendeley.mako"/>
+        <%include file="/public/pages/help/addons/zotero.mako"/>
+
+        <div class="col-md-12">
+            <h3 class="text-center m-t-xl f-w-lg" >Security</h3>
+        </div>
+        <%include file="/public/pages/help/addons/two-factor.mako"/>
+    </div>
 </div>

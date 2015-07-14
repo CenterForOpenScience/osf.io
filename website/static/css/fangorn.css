@@ -1,30 +1,3 @@
-
-.fangorn-spin {
-	-webkit-animation: spin 2s infinite linear;
-	animation: spin 2s infinite linear;
-}
-
-@-moz-keyframes spin {
-    from { -moz-transform: rotate(0deg); }
-    to { -moz-transform: rotate(360deg); }
-}
-@-webkit-keyframes spin {
-    from { -webkit-transform: rotate(0deg); }
-    to { -webkit-transform: rotate(360deg); }
-}
-@keyframes spin {
-    from {transform:rotate(0deg);}
-    to {transform:rotate(360deg);}
-}
-
-.fangorn-loading {
-	text-align: center;
-	font-size: 16px;
-	font-weight: 200;
-	background: white;
-	padding: 20px;
-	border-radius: 4px;
-}
 .fangorn-dz-hover {
   background: #337AB7;
   color: #FFF;
@@ -85,6 +58,10 @@ text-align: center;
     height: inherit;
     padding-top: 6px;
 }
+.tb-row .tb-td {
+    padding-top: 2px;
+    padding-bottom: 4px;
+}
 .tb-toggle-icon {
 	font-size: 10px;
 	width: 15px;
@@ -130,6 +107,9 @@ text-align: center;
 }
 .tb-expand-icon-holder {
 	cursor: default;
+}
+.tb-row  .tb-expand-icon-holder div {
+    vertical-align: middle;
 }
 
 .tb-expand-icon-holder > i {
@@ -241,14 +221,6 @@ text-align: center;
 }
 
 /* File icons */
-.file-extension {
-	width: 16px;
-	height: 16px;
-    display: inline-block;
-}
-
-
-
 .file-extension._3gp {background: url('/static/img/hgrid/fatcowicons/file_extension_3gp.png');	}
 .file-extension._7z  {background: url('/static/img/hgrid/fatcowicons/file_extension_7z.png'); 	}
 .file-extension._ace {background: url('/static/img/hgrid/fatcowicons/file_extension_ace.png');	}
@@ -282,6 +254,11 @@ text-align: center;
 .file-extension._exe {background: url('/static/img/hgrid/fatcowicons/file_extension_exe.png');	}
 .file-extension._fla {background: url('/static/img/hgrid/fatcowicons/file_extension_fla.png');	}
 .file-extension._flv {background: url('/static/img/hgrid/fatcowicons/file_extension_flv.png');	}
+.file-extension._gdoc {background: url('/static/img/hgrid/googledrive/icon_1_document_x16.png');	}
+.file-extension._gdraw {background: url('/static/img/hgrid/googledrive/icon_1_drawing_x16.png');	}
+.file-extension._gform {background: url('/static/img/hgrid/googledrive/icon_1_form_x16.png');	}
+.file-extension._gslides {background: url('/static/img/hgrid/googledrive/icon_1_presentation_x16.png');	}
+.file-extension._gsheet {background: url('/static/img/hgrid/googledrive/icon_1_spreadsheet_x16.png');	}
 .file-extension._gif {background: url('/static/img/hgrid/fatcowicons/file_extension_gif.png');	}
 .file-extension._gz  {background: url('/static/img/hgrid/fatcowicons/file_extension_gz.png');	}
 .file-extension._hqx {background: url('/static/img/hgrid/fatcowicons/file_extension_hqx.png');	}
@@ -345,6 +322,7 @@ text-align: center;
 .file-extension._vcd {background: url('/static/img/hgrid/fatcowicons/file_extension_vcd.png');	}
 .file-extension._vob {background: url('/static/img/hgrid/fatcowicons/file_extension_vob.png');	}
 .file-extension._wav {background: url('/static/img/hgrid/fatcowicons/file_extension_wav.png');	}
+.file-extension._webm {background: url('/static/img/hgrid/fatcowicons/file_extension_mp4.png'); }
 .file-extension._wma {background: url('/static/img/hgrid/fatcowicons/file_extension_wma.png');	}
 .file-extension._wmv {background: url('/static/img/hgrid/fatcowicons/file_extension_wmv.png');	}
 .file-extension._wps {background: url('/static/img/hgrid/fatcowicons/file_extension_wps.png');	}
@@ -356,3 +334,10 @@ text-align: center;
 .file-extension._folder_delete {background: url('/static/img/hgrid/fatcowicons/folder_delete.png');	}
 .file-extension._folder_horizontal_closed {background: url('/static/img/hgrid/fatcowicons/folder_horizontal_closed.png');	}
 .file-extension._delete {background: url('/static/img/hgrid/fatcowicons/delete.png');	}
+
+.file-extension {
+	width: 16px;
+	height: 16px;
+    display: inline-block;
+    background: url('/static/img/hgrid/fontawesome/file-text-o.png');
+}

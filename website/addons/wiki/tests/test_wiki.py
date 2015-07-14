@@ -12,7 +12,7 @@ from modularodm.exceptions import ValidationValueError
 
 from tests.base import OsfTestCase, fake
 from tests.factories import (
-    UserFactory, NodeFactory, ProjectFactory, ApiKeyFactory,
+    UserFactory, NodeFactory, ProjectFactory,
     AuthUserFactory, NodeWikiFactory,
 )
 
@@ -482,12 +482,11 @@ class TestWikiDelete(OsfTestCase):
     def setUp(self):
         super(TestWikiDelete, self).setUp()
 
-        self.project = ProjectFactory(is_public=True)
-        api_key = ApiKeyFactory()
-        self.project.creator.api_keys.append(api_key)
-        self.project.creator.save()
-        self.consolidate_auth = Auth(user=self.project.creator, api_key=api_key)
-        self.auth = ('test', api_key._primary_key)
+        creator = AuthUserFactory()
+
+        self.project = ProjectFactory(is_public=True, creator=creator)
+        self.consolidate_auth = Auth(user=self.project.creator)
+        self.auth = creator.auth
         self.project.update_node_wiki('Elephants', 'Hello Elephants', self.consolidate_auth)
         self.project.update_node_wiki('Lions', 'Hello Lions', self.consolidate_auth)
         self.elephant_wiki = self.project.get_wiki_page('Elephants')
@@ -532,12 +531,11 @@ class TestWikiRename(OsfTestCase):
     def setUp(self):
         super(TestWikiRename, self).setUp()
 
-        self.project = ProjectFactory(is_public=True)
-        api_key = ApiKeyFactory()
-        self.project.creator.api_keys.append(api_key)
-        self.project.creator.save()
-        self.consolidate_auth = Auth(user=self.project.creator, api_key=api_key)
-        self.auth = ('test', api_key._primary_key)
+        creator = AuthUserFactory()
+
+        self.project = ProjectFactory(is_public=True, creator=creator)
+        self.consolidate_auth = Auth(user=self.project.creator)
+        self.auth = creator.auth
         self.project.update_node_wiki('home', 'Hello world', self.consolidate_auth)
 
         self.page_name = 'page2'
