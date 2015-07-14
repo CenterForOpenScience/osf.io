@@ -471,6 +471,7 @@ class TestPrivateLinkView(OsfTestCase):
             res.body
         )
 
+
 class TestMergingAccounts(OsfTestCase):
 
     def setUp(self):
@@ -509,21 +510,6 @@ class TestMergingAccounts(OsfTestCase):
         # indicating that the user is merged
         res = self.app.get('/profile/{0}/'.format(self.dupe._primary_key)).maybe_follow()
         assert_in('This account has been merged', res)
-
-    def test_merged_user_with_two_account_on_same_project_with_different_visibility_and_permissions(self):
-        project = ProjectFactory(is_public=True)
-        # Both the master and dupe are contributors
-        project.add_contributor(self.dupe, log=False)
-        project.add_contributor(self.user, log=False)
-        project.set_permissions(user=self.user, permissions=['read'])
-        project.set_visible(user=self.user, visible=False)
-        project.save()
-        self.user.merge_user(self.dupe)
-        self.user.save()
-
-        assert_true('admin' in project.permissions[self.user._id])
-        assert_true(self.user._id in project.visible_contributor_ids)
-        assert_false(project.is_contributor(self.dupe))
 
 
 # FIXME: These affect search in development environment. So need to migrate solr after running.
