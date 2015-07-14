@@ -15,6 +15,8 @@ def serialize_draft_registration(draft, auth=None):
         key: getattr(draft, key)
         for key in ['title', 'description']
     }
+    node = draft.branched_from
+
     ret.update({
         'pk': draft._id,
         'branched_from': serialize_node(draft.branched_from, auth),
@@ -26,5 +28,10 @@ def serialize_draft_registration(draft, auth=None):
         'is_pending_review': draft.is_pending_review,
         'fulfills': draft.fulfills,
         'approved': draft.approved,
+        'urls': {
+            'edit': node.web_url_for('edit_draft_registration', draft_id=draft._id),
+            'before_register': node.api_url_for('draft_before_register', draft_id=draft._id),
+            'register': node.api_url_for('register_draft_registration', draft_id=draft._id)
+        }
     })
     return ret

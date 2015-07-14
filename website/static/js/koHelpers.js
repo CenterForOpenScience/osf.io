@@ -205,6 +205,29 @@ ko.bindingHandlers.fadeVisible = {
     }
 };
 
+// Run Bootstrap tooltip JS automagically
+// http://getbootstrap.com/javascript/#tooltips
+ko.bindingHandlers.tooltip = {
+    init: function(el, valueAccessor) {
+        var params = valueAccessor();
+        var position = 'top';
+        var title;        
+        if(typeof params === 'object') {
+            if(params.position) {
+                position = params.position;
+            }
+            title =  params.title;
+        }
+        else {
+            title = params;
+        }
+        $(el).attr('data-toggle', 'tooltip');
+        $(el).attr('data-placement', params.position);
+        $(el).attr('title', params.title);
+        $(el).tooltip();
+    }
+};
+
 
 // Expose public utilities
 

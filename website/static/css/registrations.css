@@ -22,3 +22,9 @@
 .schema-fulfillment{
     margin: 20px;
 }
+.draft-status-badge{
+    padding: 8px;
+    border-radius: 2px;
+    display: inline-block;
+    margin-bottom: 10px;
+}

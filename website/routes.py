@@ -801,9 +801,14 @@ def make_url_map(app):
             OsfWebRenderer('project/draft_registration.mako')),
         Rule([
             '/project/<pid>/draft/<draft_id>/',
-            '/project/<pid>/node/<nidB>/draft/<draft_id>',
+            '/project/<pid>/node/<nidB>/draft/<draft_id>/',
         ], 'get', project_views.drafts.edit_draft_registration,
             OsfWebRenderer('project/edit_draft.mako')),
+        Rule([
+            '/project/<pid>/draft/<draft_id>/register/',
+            '/project/<pid>/node/<nid>/draft/<draft_id>/register/',
+        ], 'get', project_views.drafts.draft_before_register_page,
+            OsfWebRenderer('project/register_draft.mako')),
         Rule([
             '/project/<pid>/retraction/',
             '/project/<pid>/node/<nid>/retraction/',
@@ -1063,7 +1068,7 @@ def make_url_map(app):
             '/drafts/',
         ], 'get', project_views.drafts.get_all_draft_registrations, json_renderer),
         Rule([
-            '/project/<pid>/draft/submit/<did>/',
+            '/project/<pid>/draft/submit/<draft_id>/',
         ], 'post', project_views.drafts.submit_for_review, json_renderer),
         Rule([
             '/project/<pid>/draft/',
@@ -1247,9 +1252,13 @@ def make_url_map(app):
 
         # Registrations
         Rule([
-            '/project/<pid>/beforeregister/',
-            '/project/<pid>/node/<nid>/beforeregister',
-        ], 'get', project_views.register.project_before_register, json_renderer),
+            '/project/<pid>/draft/<draft_id>/beforeregister/',
+            '/project/<pid>/node/<nid>/draft/<draft_id>/beforeregister',
+        ], 'get', project_views.drafts.draft_before_register, json_renderer),
+        Rule([
+            '/project/<pid>/draft/<draft_id>/register/',
+            '/project/<pid>/node/<nid>/draft/<draft_id>/register/',
+        ], 'post', project_views.drafts.register_draft_registration, json_renderer),
         Rule([
             '/project/<pid>/register/<template>/',
             '/project/<pid>/node/<nid>/register/<template>/',

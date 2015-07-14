@@ -6,8 +6,10 @@ var bootbox = require('bootbox');
 var moment = require('moment');
 var URI = require('URIjs');
 
+require('js/koHelpers');
+
 var $osf = require('js/osfHelpers');
-var oop = require('js/oop');
+var language = require('js/osfLanguage').registrations;
 
 var editorExtensions = require('js/registrationEditorExtensions');
 
@@ -282,6 +284,13 @@ MetaSchema.prototype.flatQuestions = function() {
  * @param {User} params.initiator
  * @param {Date} params.initated
  * @param {Date} params.updated
+ * @param {Boolean} params.is_pending_review
+ * @param {Boolean} params.approved
+ * @param {Date} params.updated
+ * @param {Object} params.urls
+ * @param {String} params.urls.edit
+ * @param {String} params.urls.before_register
+ * @param {String} params.urls.register
  * @property {Float} completion: percent completion of schema
  **/
 var Draft = function(params, metaSchema) {
@@ -299,7 +308,9 @@ var Draft = function(params, metaSchema) {
     self.updated = new Date(params.updated);
     self.fulfills = params.fulfills || [];
     self.is_pending_review = params.is_pending_review || false;
-    self.approved = params.approved || true;
+    self.approved = params.approved;
+    self.urls = params.urls;
+    
     self.completion = ko.computed(function() {
         var total = 0;
         var complete = 0;
@@ -314,11 +325,81 @@ var Draft = function(params, metaSchema) {
                     total++;
                 });
             });
-			return Math.ceil(100 * (complete / total));
+	    return Math.ceil(100 * (complete / total));
         }
         return 0;
     });
 };
+Draft.prototype.beforeRegister = function(data) {
+    var self = this;
+
+    $osf.block();
+
+    $.getJSON(self.urls.before_register).then(function(response) {
+        var preRegisterWarnings = function() {
+            bootbox.confirm(
+                {
+                    size: 'large',
+                    title : language.registerConfirm,
+                    message : $osf.joinPrompts(response.prompts),
+                    callback: function(result) {
+                        if (result) {
+                            self.register(data);
+                        }
+                    }
+                }
+            );
+        };
+        var preRegisterErrors = function(confirm, reject) {
+            bootbox.confirm(
+                $osf.joinPrompts(
+                    response.errors, 
+                    'Before you continue...'
+                ) + '<br /><hr /> ' + language.registerSkipAddons,
+                function(result) {
+                    if(result) {
+                        confirm();
+                    }
+                }
+            );
+        };
+        
+        if (response.errors && response.errors.length) {
+            preRegisterErrors(preRegisterWarnings);
+        }
+        else if (response.prompts && response.prompts.length) {
+            preRegisterWarnings();
+        } 
+        else {
+            self.register(data);
+        }
+    }).always($osf.unblock);
+};
+Draft.prototype.onRegisterFail =  bootbox.alert.bind(null, {
+    title : 'Registration failed',
+    message : language.registerFail
+});
+Draft.prototype.register = function(data) {
+    var self = this;
+
+    $osf.block();
+
+    $.ajax({
+        url:  self.urls.register,
+        type: 'POST',
+        data: JSON.stringify(data),
+        contentType: 'application/json',
+        dataType: 'json'
+    }).done(function(response) {
+        if (response.status === 'initiated') {            
+            window.location.assign(response.urls.registrations);
+        }
+        else if (response.status === 'error') {
+            self.onRegisterFail();
+        }
+    }).always($osf.unblock).fail(self.onRegisterFail);
+};
+
 
 /**
  * @class RegistrationEditor
@@ -609,7 +690,7 @@ var RegistrationManager = function(node, draftsSelector, editorSelector, control
 
     self.urls = {
         list: node.urls.api + 'draft/',
-		submit: node.urls.api + 'draft/submit/{draft_pk}/',
+	submit: node.urls.api + 'draft/submit/{draft_pk}/',
         get: node.urls.api + 'draft/{draft_pk}/',
         delete: node.urls.api + 'draft/{draft_pk}/',
         schemas: '/api/v1/project/schema/',

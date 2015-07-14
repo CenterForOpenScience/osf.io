@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 import os
 import re
-import urllib
 import logging
 import datetime
 import urlparse
@@ -30,7 +29,7 @@ from framework.exceptions import PermissionsError
 from framework.guid.model import GuidStoredObject
 from framework.auth.utils import privacy_info_handle
 from framework.analytics import tasks as piwik_tasks
-from framework.mongo.utils import to_mongo, to_mongo_key, unique_on
+from framework.mongo.utils import to_mongo_key, unique_on
 from framework.analytics import (
     get_basic_counters, increment_user_activity_counters
 )
@@ -1721,7 +1720,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         registered.registered_from = original
         if not registered.registered_meta:
             registered.registered_meta = {}
-        registered.registered_meta[template] = data
+        registered.registered_meta = data
 
         registered.contributors = self.contributors
         registered.forked_from = self.forked_from

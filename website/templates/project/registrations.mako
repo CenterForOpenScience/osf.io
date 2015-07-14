@@ -60,6 +60,7 @@
           <br />
           <div class="scripted" data-bind="foreach: drafts">
             <li class="project list-group-item list-group-item-node">
+              <h4 data-bind="text: schema().title" ></h4>
               <h4 class="list-group-item-heading">          
                 <div class="progress progress-bar-md">
                   <div class="progress-bar" role="progressbar" aria-valuemin="0" aria-valuemax="100"
@@ -68,16 +69,35 @@
                     <span class="sr-only"></span>
                   </div>
                 </div>
-                <p data-bind="text: schema.title"></p>
-                <p>initiated by <span data-bind="text: initiator.fullname"></span>
-                <p>started about <span data-bind="text: $root.formattedDate(initiated)"></span></p>
-                <p>last updated about <span data-bind="text: $root.formattedDate(updated)"></span></p>
-                <p>
-                  <button class="btn btn-success"
-                          data-bind="click: $root.editDraft"><i style="margin-right: 5px;" class="fa fa-pencil"></i>Edit</button>
-                  <button class="btn btn-danger"
-                          data-bind="click: $root.deleteDraft"><i style="margin-right: 5px;" class="fa fa-times"></i>Delete</button>
-                </p>
+                <small>
+                <p>initiated by: <span data-bind="text: initiator.fullname"></span>
+                <p>started: <span data-bind="text: initiated"></span></p>
+                <p>last updated: <span data-bind="text: updated"></span></p>
+                <div data-bind="if: approved">
+                  <div class="draft-status-badge bg-success"> Approved</div>                       
+                </div>
+                <div data-bind="ifnot: approved">
+                  <div class="draft-status-badge bg-warning"> Pending Approval </div>
+                </div>  
+                <div class="draft-status-badge bg-warning"
+                     data-bind="visible: is_pending_review"> Pending Review</div>
+                </small>
+                <div class="row">
+                  <div class="col-md-10">
+                    <a class="btn btn-info"
+                            data-bind="attr.href: urls.edit"><i style="margin-right: 5px;" class="fa fa-pencil"></i>Edit</a>
+                    <button class="btn btn-danger"
+                            data-bind="click: $root.deleteDraft"><i style="margin-right: 5px;" class="fa fa-times"></i>Delete</button>
+                  </div>
+                  <div class="col-md-1">
+                    <a class="btn btn-success" data-bind="attr.href: urls.register,
+                                                          tooltip: {
+                                                            placement: top, 
+                                                            title: approved ? 'Finialize this draft' : 'This draft must be approved before it can be registered'
+                                                          },
+                                                          css: {'disabled': !approved}">Register</a>
+                  </div>
+                </div>                
               </h4>
             </li>
           </div>

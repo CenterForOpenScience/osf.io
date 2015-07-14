@@ -27,6 +27,7 @@ from website.project.decorators import (
     must_be_valid_project,
     must_have_permission,
     must_not_be_registration,
+    http_error_if_disk_saving_mode
 )
 from website.util.permissions import ADMIN, READ, WRITE
 from website.util.rubeus import collect_addon_js
@@ -240,12 +241,8 @@ def project_before_template(auth, node, **kwargs):
 
 @must_be_logged_in
 @must_be_valid_project
+@http_error_if_disk_saving_mode
 def node_fork_page(auth, node, **kwargs):
-    if settings.DISK_SAVING_MODE:
-        raise HTTPError(
-            http.METHOD_NOT_ALLOWED,
-            redirect_url=node.url
-        )
     try:
         fork = node.fork_node(auth)
     except PermissionsError:

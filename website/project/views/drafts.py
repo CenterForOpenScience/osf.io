@@ -16,13 +16,13 @@ from website.project.decorators import (
     must_have_permission,
     http_error_if_disk_saving_mode
 )
-
 from website import settings
 from website.admin.model import Role
 from website.mails import Mail, send_mail
 from website.project import utils as project_utils
 from website.project.model import MetaSchema, DraftRegistration
 from website.project.metadata.utils import serialize_meta_schema, serialize_draft_registration
+from website.project.utils import serialize_node
 
 get_draft_or_fail = lambda pk: get_or_http_error(DraftRegistration, pk)
 get_schema_or_fail = lambda query: get_or_http_error(MetaSchema, query)
@@ -44,12 +44,30 @@ def submit_for_review(auth, node, did, *args, **kwargs):
 
 @must_have_permission(ADMIN)
 @must_be_valid_project
+def draft_before_register_page(auth, node, draft_id, *args, **kwargs):
+    ret = serialize_node(node, auth, primary=True)
+
+    draft = get_draft_or_fail(draft_id)
+    ret['draft'] = serialize_draft_registration(draft, auth)
+    return ret
+
+@must_have_permission(ADMIN)
+@must_be_valid_project
+def draft_before_register(auth, node, draft_id, *args, **kwargs):
+    ret = serialize_node(node, auth, primary=True)
+
+    draft = get_draft_or_fail(draft_id)
+    ret['draft'] = serialize_draft_registration(draft, auth)
+    return ret
+
+@must_have_permission(ADMIN)
+@must_be_valid_project
 @http_error_if_disk_saving_mode
-def register_draft_registration(auth, node, did, *args, **kwargs):
+def register_draft_registration(auth, node, draft_id, *args, **kwargs):
 
     data = request.get_json()
 
-    draft = get_draft_or_fail(did)
+    draft = get_draft_or_fail(draft_id)
     register = draft.register(auth)
 
     if data.get('registrationChoice', 'immediate') == 'embargo':
@@ -77,8 +95,10 @@ def register_draft_registration(auth, node, did, *args, **kwargs):
     push_status_message('Files are being copied to the newly created registration, and you will receive an email notification containing a link to the registration when the copying is finished.')
 
     return {
-        'status': 'success',
-        'result': register.url,
+        'status': 'initiated',
+        'urls': {
+            'registrations': node.web_url_for('node_registrations')
+        }
     }, http.CREATED
 
 @must_be_logged_in

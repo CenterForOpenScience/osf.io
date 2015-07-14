@@ -327,6 +327,7 @@ def must_have_permission(permission):
 
 def http_error_if_disk_saving_mode(func):
 
+    @functools.wraps(func)
     def wrapper(*args, **kwargs):
         _inject_nodes(kwargs)
         node = kwargs['node']
