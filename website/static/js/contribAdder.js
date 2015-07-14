@@ -73,7 +73,7 @@ var AddContributorViewModel = oop.extend(Paginator, {
             }
         );
         self.foundResults = ko.pureComputed(function() {
-            return self.query() && self.results().length;
+            return self.results().length;
         });
 
         self.noResults = ko.pureComputed(function() {
