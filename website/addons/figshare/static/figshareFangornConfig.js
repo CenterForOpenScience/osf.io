@@ -19,7 +19,7 @@ var _figshareItemButtons = {
                         Fangorn.ButtonEvents._uploadEvent.call(tb, event, item);
                     },
                     icon: 'fa fa-upload',
-                    className: 'text-primary'
+                    className: 'text-success'
                 }, 'Upload')
             );
         }
@@ -30,13 +30,13 @@ var _figshareItemButtons = {
                         Fangorn.ButtonEvents._downloadEvent.call(tb, event, item);
                     },
                     icon: 'fa fa-download',
-                    className: 'text-success'
+                    className: 'text-primary'
                 }, 'Download')
             );
         }
-        // Files can be deleted if private or if parent contains more than one child
+        // Files can be deleted if private or if it is in a dataset that contains more than one file
         var privateOrSiblings = (item.data.extra && item.data.extra.status !== 'public') ||
-            item.parent().children.length > 1;
+            (!item.parent().data.isAddonRoot && item.parent().children.length > 1);
         if (item.kind === 'file' && privateOrSiblings && item.data.permissions && item.data.permissions.edit) {
             buttons.push(
                 m.component(Fangorn.Components.button, {
@@ -48,7 +48,7 @@ var _figshareItemButtons = {
                 }, 'Delete')
             );
         }
-        if (item.data.permissions && item.data.permissions.view) {
+        if (item.kind === 'file' && item.data.permissions && item.data.permissions.view) {
             buttons.push(
                 m.component(Fangorn.Components.button, {
                     onclick: function(event) {
@@ -57,16 +57,14 @@ var _figshareItemButtons = {
                     icon: 'fa fa-file-o',
                     className : 'text-info'
                 }, 'View'));
-            if (item.kind === 'file') {
-                buttons.push(
-                    m.component(Fangorn.Components.button, {
-                        onclick: function(event) {
-                            Fangorn.ButtonEvents._externalViewEvent.call(tb, item);
-                        },
-                        icon: 'fa fa-external-link',
-                        className : 'text-info'
-                    }, 'Go to figshare'));
-            }
+            buttons.push(
+                m.component(Fangorn.Components.button, {
+                    onclick: function(event) {
+                        Fangorn.ButtonEvents._externalViewEvent.call(tb, item);
+                    },
+                    icon: 'fa fa-external-link',
+                    className : 'text-info'
+                }, 'Go to figshare'));
         }
         return m('span', buttons); // Tell fangorn this function is used.
     }

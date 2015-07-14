@@ -1,6 +1,7 @@
 <div id="forwardScope" class="scripted">
 
     <h4 class="addon-title">
+        <i class="fa fa-external-link"></i>
         External Link
     </h4>
 
@@ -15,15 +16,17 @@
                         id="forwardUrl"
                         class="form-control"
                         data-bind="value: url"
-                    />
+                        placeholder="Required"
+                        required />
             </div>
-	    
+
             <div class="form-group">
                     <label for="forwardLabel">Label</label>
                     <input
                             id="forwardLabel"
                             class="form-control"
                             data-bind="value: label"
+                            placeholder="Optional"
                         />
                 </div>
 
@@ -52,8 +55,8 @@
                 </div>
                 <div class="col-md-2">
                     <input type="submit"
-                           class="btn btn-primary pull-right"
-                           value="Submit"
+                           class="btn btn-success pull-right"
+                           value="Save"
                            data-bind="disable: !validators.isValid()"
                     />
                 </div>

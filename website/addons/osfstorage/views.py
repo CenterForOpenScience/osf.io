@@ -74,7 +74,7 @@ def osfstorage_update_metadata(node_addon, payload, **kwargs):
 @must_be_signed
 @decorators.autoload_filenode(must_be='file')
 def osfstorage_get_revisions(file_node, node_addon, payload, **kwargs):
-    is_anon = has_anonymous_link(node_addon.owner, Auth(private_key=payload.get('view_only')))
+    is_anon = has_anonymous_link(node_addon.owner, Auth(private_key=request.args.get('view_only')))
 
     # Return revisions in descending order
     return {

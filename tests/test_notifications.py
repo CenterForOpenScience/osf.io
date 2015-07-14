@@ -818,6 +818,54 @@ class TestSendEmails(OsfTestCase):
         )
         self.node_subscription.save()
 
+    def test_email_transactional_sent_without_errors(self):
+
+        users = [factories.UserFactory() for i in range(5)]
+        context = dict(
+            gravatar_url=self.user.gravatar_url,
+            content='',
+            target_user=None,
+            parent_comment='',
+            url=self.node.absolute_url
+        )
+        try:
+            emails.email_transactional(
+                [u._id for u in users],
+                self.node._id,
+                'comments',
+                self.user,
+                self.project,
+                datetime.datetime.utcnow(),
+                **context
+            )
+            assert(True)
+        except Exception:
+            assert(False)
+
+    def test_email_digest_sent_without_errors(self):
+
+        users = [factories.UserFactory() for i in range(5)]
+        context = dict(
+            gravatar_url=self.user.gravatar_url,
+            content='',
+            target_user=None,
+            parent_comment='',
+            url=self.node.absolute_url
+        )
+        try:
+            emails.email_digest(
+                [u._id for u in users],
+                self.node._id,
+                'comments',
+                self.user,
+                self.project,
+                datetime.datetime.utcnow(),
+                **context
+            )
+            assert(True)
+        except Exception:
+            assert(False)
+
     @mock.patch('website.notifications.emails.send')
     def test_notify_no_subscription(self, send):
         node = factories.NodeFactory()
@@ -1246,3 +1294,5 @@ class TestSendDigest(OsfTestCase):
         remove_sent_digest_notifications(digest_notification_ids=[digest_id])
         with assert_raises(NoResultsFound):
             NotificationDigest.find_one(Q('_id', 'eq', digest_id))
+
+            

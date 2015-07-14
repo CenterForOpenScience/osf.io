@@ -20,7 +20,7 @@ from website import settings
 from website.util import api_url_for, rubeus
 from website.addons.base import exceptions, GuidFile
 from website.project import new_private_link
-from website.project.utils import serialize_node
+from website.project.views.node import _view_project as serialize_node
 from website.addons.base import AddonConfig, AddonNodeSettingsBase, views
 from website.addons.github.model import AddonGitHubOauthSettings
 from tests.base import OsfTestCase
