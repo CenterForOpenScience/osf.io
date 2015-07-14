@@ -118,3 +118,8 @@
     word-break: break-all;
     word-break: break-word; /* Non standard for webkit*/
 }
+
+/* modal for add link and contributor */
+.icon-width-td {
+    width: 50px;
+}

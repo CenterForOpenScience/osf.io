@@ -37,7 +37,7 @@
                         <table class="table table-striped">
                             <tbody data-bind="foreach:{data:results, afterRender:addTips}">
                                 <tr data-bind="if:!($root.selected($data))">
-                                    <td style="width: 50px">
+                                    <td class="icon-width-td">
                                         <a
                                                 class="btn btn-success contrib-button"
                                                 data-bind="click:$root.add, tooltip: {title: 'Add link'}"
@@ -65,7 +65,7 @@
                         <table class="table table-striped">
                             <tbody data-bind="foreach:{data:selection, afterRender:addTips}">
                                 <tr>
-                                    <td style="width: 50px">
+                                    <td class="icon-width-td">
                                         <a
                                                 class="btn btn-default contrib-button"
                                                 data-bind="click:$root.remove, tooltip: {title: 'Remove link'}"
