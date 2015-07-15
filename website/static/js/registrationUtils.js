@@ -48,13 +48,12 @@ function Comment(data) {
     self.lastModified = new Date(data.lastModified)|| new Date();
     self.value = ko.observable(data.value || '');
 
-	self.isDeleted = ko.observable(false);
-	self.isDeleted.subscribe(function(isDeleted) {
-		if (isDeleted) {
-			self.value('this comment was deleted');
-
-		}
-	});
+    self.isDeleted = ko.observable(false);
+    self.isDeleted.subscribe(function(isDeleted) {
+      if (isDeleted) {
+        self.value('this comment was deleted');
+      }
+    });
 
 	self.seenBy = ko.observableArray([]);
 
