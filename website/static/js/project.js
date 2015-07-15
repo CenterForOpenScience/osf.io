@@ -130,11 +130,11 @@ $(function() {
 
         if ($.trim($('#title').val()) === '') {
 
-            $('#newComponent .modal-alert').text('Title cannot be empty.');
+            $('#newComponent .modal-alert').text('This field is required.');
 
             $('#add-component-submit')
                 .removeAttr('disabled', 'disabled')
-                .text('OK');
+                .text('Add');
 
             e.preventDefault();
         } else if ($(e.target).find('#title').val().length > 200) {
@@ -142,7 +142,7 @@ $(function() {
 
             $('#add-component-submit')
                 .removeAttr('disabled', 'disabled')
-                .text('OK');
+                .text('Add');
 
             e.preventDefault();
 
