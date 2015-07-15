@@ -136,7 +136,7 @@ def get_contributors_from_parent(auth, node, **kwargs):
         if contrib._id not in node.visible_contributor_ids
     ]
 
-    size = int(request.args.get('size', 0))
+    size = int(request.args.get('size', len(contribs)))
     page = int(request.args.get('page', 0))
 
     contribs, pages = paginate(contribs,
@@ -177,7 +177,7 @@ def get_most_in_common_contributors(auth, node, **kwargs):
         for most_contrib, count in sorted(contrib_objs, key=lambda t: (-t[1], t[0].fullname))
     ]
 
-    size = int(request.args.get('size', 0))
+    size = int(request.args.get('size', len(contribs)))
     page = int(request.args.get('page', 0))
 
     contribs, pages = paginate(contribs,
@@ -216,7 +216,7 @@ def get_recently_added_contributors(auth, node, **kwargs):
         utils.add_contributor_json(contrib, auth.user)
         for contrib in limited_contribs
     ]
-    size = int(request.args.get('size', 0))
+    size = int(request.args.get('size', len(contribs)))
     page = int(request.args.get('page', 0))
 
     contribs, pages = paginate(contribs,

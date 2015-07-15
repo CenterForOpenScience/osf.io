@@ -441,7 +441,7 @@ def search_contributor(query, exclude=None, current_user=None, **kwargs):
 
     """
     page = int(request.args.get('page', 0))
-    size = int(request.args.get('size', 0))
+    size = int(request.args.get('size', 5))
 
     start = (page * size)
     items = re.split(r'[\s-]+', query)
