@@ -966,6 +966,10 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
             self.visible_contributor_ids.append(user._id)
             self.update_visible_ids(save=False)
         elif not visible and user._id in self.visible_contributor_ids:
+            if len(self.visible_contributor_ids) == 1:
+                raise ValueError(
+                    'Must have at least one visible contributor'
+                )
             self.visible_contributor_ids.remove(user._id)
         else:
             return
@@ -1154,7 +1158,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
 
         # set attributes which may NOT be overridden by `changes`
         new.creator = auth.user
-        new.add_contributor(contributor=auth.user, log=False, save=False)
+        new.add_contributor(contributor=auth.user, permissions=('read', 'write', 'admin'), log=False, save=False)
         new.template_node = self
         new.is_fork = False
         new.is_registration = False
@@ -2086,6 +2090,9 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         self.clear_permission(contributor)
         if contributor._id in self.visible_contributor_ids:
             self.visible_contributor_ids.remove(contributor._id)
+
+        if not self.visible_contributor_ids:
+            return False
 
         # Node must have at least one registered admin user
         # TODO: Move to validator or helper

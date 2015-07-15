@@ -61,7 +61,7 @@ function _removeEvent (event, items) {
             parent.children.length < 2 ? m('p', 'If a folder in Github has no children it will automatically be removed.') : ''
         ]);
         var mithrilButtonsSingle = m('div', [
-            m('span.tb-modal-btn', { 'class' : 'text-primary', onclick : function() { cancelDelete(); } }, 'Cancel'),
+            m('span.tb-modal-btn', { 'class' : 'text-default', onclick : function() { cancelDelete(); } }, 'Cancel'),
             m('span.tb-modal-btn', { 'class' : 'text-danger', onclick : function() { runDelete(items[0]); }  }, 'Delete')
         ]);
         // This is already being checked before this step but will keep this edit permission check
@@ -93,7 +93,7 @@ function _removeEvent (event, items) {
                     })
                 ]);
             mithrilButtonsMultiple =  m('div', [
-                    m('span.tb-modal-btn', { 'class' : 'text-primary', onclick : function() { cancelDelete(); } }, 'Cancel'),
+                    m('span.tb-modal-btn', { 'class' : 'text-default', onclick : function() { cancelDelete(); } }, 'Cancel'),
                     m('span.tb-modal-btn', { 'class' : 'text-danger', onclick : function() { runDeleteMultiple.call(tb, deleteList); }  }, 'Delete All')
                 ]);
         } else {
@@ -108,7 +108,7 @@ function _removeEvent (event, items) {
                     })
                 ]);
             mithrilButtonsMultiple =  m('div', [
-                    m('span.tb-modal-btn', { 'class' : 'text-primary', onclick : function() { cancelDelete(); } }, 'Cancel'),
+                    m('span.tb-modal-btn', { 'class' : 'text-default', onclick : function() { cancelDelete(); } }, 'Cancel'),
                     m('span.tb-modal-btn', { 'class' : 'text-danger', onclick : function() { runDeleteMultiple.call(tb, deleteList); }  }, 'Delete Some')
                 ]);
         }
@@ -157,7 +157,7 @@ var _githubItemButtons = {
                             tb.toolbarMode(Fangorn.Components.toolbarModes.ADDFOLDER);
                         },
                         icon: 'fa fa-plus',
-                        className: 'text-primary'
+                        className: 'text-success'
                     }, 'Create Folder')
                 );
             }
@@ -168,7 +168,7 @@ var _githubItemButtons = {
                             window.location = item.data.urls.zip;
                         },
                         icon: 'fa fa-download',
-                        className: 'text-success'
+                        className: 'text-primary'
                     }, 'Download'),
                     m.component(Fangorn.Components.button, {
                         onclick: function (event) {
@@ -194,7 +194,7 @@ var _githubItemButtons = {
                         _downloadEvent.call(tb, event, item);
                     },
                     icon: 'fa fa-download',
-                    className: 'text-info'
+                    className: 'text-primary'
                 }, 'Download')
             );
             if (item.data.permissions && item.data.permissions.edit) {
@@ -214,7 +214,7 @@ var _githubItemButtons = {
                         onclick: function(event) {
                             gotoFile.call(tb, item);
                         },
-                        icon: 'fa fa-external-link',
+                        icon: 'fa fa-file-o',
                         className : 'text-info'
                     }, 'View'));
 

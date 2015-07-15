@@ -34,7 +34,9 @@ var Paginator = oop.defclass({
                 text: '1',
                 handler: function() {
                     self.pageToGet(0);
-                    self.fetchResults();
+                    if (self.pageToGet() !== self.currentPage()) {
+                        self.fetchResults();
+                    }
                 }
             });
             if (self.numberOfPages() <= MAX_PAGES_ON_PAGINATOR) {
@@ -44,7 +46,9 @@ var Paginator = oop.defclass({
                         text: i + 1,
                         handler: function() {
                             self.pageToGet(parseInt(this.text) - 1);
-                            self.fetchResults();
+                            if (self.pageToGet() !== self.currentPage()) {
+                                self.fetchResults();
+                            }
                         }
                     });/* jshint ignore:line */
                     // function defined inside loop
@@ -56,7 +60,9 @@ var Paginator = oop.defclass({
                         text: i + 1,
                         handler: function() {
                             self.pageToGet(parseInt(this.text) - 1);
-                            self.fetchResults();
+                            if (self.pageToGet() !== self.currentPage()) {
+                                self.fetchResults();
+                            }
                         }
                     });/* jshint ignore:line */
                     // functions defined inside loop
@@ -79,7 +85,9 @@ var Paginator = oop.defclass({
                         text: i + 1,
                         handler: function() {
                             self.pageToGet(parseInt(this.text) - 1);
-                            self.fetchResults();
+                            if (self.pageToGet() !== self.currentPage()) {
+                                self.fetchResults();
+                            }
                         }
                     });/* jshint ignore:line */
                     // function defined inside loop
@@ -97,7 +105,9 @@ var Paginator = oop.defclass({
                         text: i + 1,
                         handler: function() {
                             self.pageToGet(parseInt(this.text) - 1);
-                            self.fetchResults();
+                            if (self.pageToGet() !== self.currentPage()) {
+                                self.fetchResults();
+                            }
                         }
                     });/* jshint ignore:line */
                     // functions defined inside loop
@@ -114,7 +124,9 @@ var Paginator = oop.defclass({
                 text: self.numberOfPages(),
                 handler: function() {
                     self.pageToGet(self.numberOfPages() - 1);
-                    self.fetchResults();
+                    if (self.pageToGet() !== self.currentPage()) {
+                        self.fetchResults();
+                    }
                 }
             });
             self.paginators.push({
@@ -124,13 +136,17 @@ var Paginator = oop.defclass({
             });
         }
     },
-    nextPage: function(){
+    nextPage: function() {
         this.pageToGet(this.currentPage() + 1);
-        this.fetchResults();
+        if (this.pageToGet() < this.numberOfPages()){
+            this.fetchResults();
+        }
     },
-    previousPage: function(){
+    previousPage: function() {
         this.pageToGet(this.currentPage() - 1);
-        this.fetchResults();
+        if (this.pageToGet() >= 0) {
+            this.fetchResults();
+        }
     },
     fetchResults: function() {
         throw new Error('Paginator subclass must define a "fetchResults" method.');

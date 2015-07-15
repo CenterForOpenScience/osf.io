@@ -101,10 +101,10 @@ var ContributorModel = function(contributor, currentUserCanEdit, pageOwner, isRe
         var currentValue = self.curPermission().value;
         return currentValue === self.original;
     });
-
     // TODO: copied-and-pasted from nodeControl. When nodeControl
     // gets refactored, update this to use global method.
-    self.removeSelf = function() {
+    self.removeSelf = function(parent) {
+        parent.messages([]);
 
         var id = self.id,
             name = self.fullname;
@@ -112,35 +112,44 @@ var ContributorModel = function(contributor, currentUserCanEdit, pageOwner, isRe
             id: id,
             name: self.fullname
         };
-        $osf.postJSON(
-            window.contextVars.node.urls.api + 'beforeremovecontributors/',
-            payload
-        ).done(function(response) {
-            var prompt = $osf.joinPrompts(response.prompts, 'Remove <strong>' + name + '</strong> from contributor list?');
-            bootbox.confirm({
-                title: 'Delete Contributor?',
-                message: prompt,
-                callback: function(result) {
-                    if (result) {
-                        $osf.postJSON(
-                            window.contextVars.node.urls.api + 'removecontributors/',
-                            payload
-                        ).done(function(response) {
-                            if (response.redirectUrl) {
-                                window.location.href = response.redirectUrl;
-                            } else {
-                                window.location.reload();
+
+        if (parent.validVisible() === 1 && self.visible()){
+            parent.messages.push(
+                new MessageModel(
+                    'Must have at least one bibliographic contributor',
+                    'error'
+                )
+            );
+        } else {
+            $osf.postJSON(
+                window.contextVars.node.urls.api + 'beforeremovecontributors/',
+                payload
+            ).done(function (response) {
+                    bootbox.confirm({
+                        title: 'Delete contributor?',
+                        message: ('Are you sure you want to remove yourself (<strong>' + name + '</strong>) from contributor list?'),
+                        callback: function (result) {
+                            if (result) {
+                                $osf.postJSON(
+                                    window.contextVars.node.urls.api + 'removecontributors/',
+                                    payload
+                                ).done(function (response) {
+                                        if (response.redirectUrl) {
+                                            window.location.href = response.redirectUrl;
+                                        } else {
+                                            window.location.reload();
+                                        }
+                                    }).fail(
+                                    $osf.handleJSONError
+                                );
                             }
-                        }).fail(
-                            $osf.handleJSONError
-                        );
-                    }
-                }
-            });
-        }).fail(
-            $osf.handleJSONError
-        );
-        return false;
+                        }
+                    });
+                }).fail(
+                $osf.handleJSONError
+            );
+            return false;
+        }
     };
 
 };
@@ -218,6 +227,7 @@ var ContributorsViewModel = function(contributors, adminContributors, user, isRe
             return !item.deleteStaged();
         });
     });
+
     self.validAdmin = ko.computed(function() {
         var admins = ko.utils.arrayFilter(self.retainedContributors(), function(item) {
             return item.permission() === 'admin' &&
@@ -254,7 +264,7 @@ var ContributorsViewModel = function(contributors, adminContributors, user, isRe
         if (!value) {
             self.messages.push(
                 new MessageModel(
-                    'Must have at least one visible contributor',
+                    'Must have at least one bibliographic contributor',
                     'error'
                 )
             );

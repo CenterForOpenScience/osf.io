@@ -91,7 +91,7 @@
                     </div>
                     % if 'badges' in addons_enabled and badges and badges['can_award']:
                         <div class="btn-group">
-                            <button class="btn btn-success" id="awardBadge" style="border-bottom-right-radius: 4px;border-top-right-radius: 4px;">
+                            <button class="btn btn-primary" id="awardBadge" style="border-bottom-right-radius: 4px;border-top-right-radius: 4px;">
                                 <i class="fa fa-plus"></i> Award
                             </button>
                         </div>
@@ -234,9 +234,9 @@
 
          <div class="citations panel panel-default">
             <div class="panel-heading clearfix">
-                <h3 class="panel-title">Citation</h3>
+                <h3 class="panel-title"  style="padding-top: 3px">Citation</h3>
                 <div class="pull-right">
-                    <span class="permalink">${node['display_absolute_url']}</span><a href="#" class="m-sm project-toggle"><i class="fa fa-angle-down"></i></a>
+                    <span class="permalink">${node['display_absolute_url']}</span><button class="btn btn-link project-toggle"><i class="fa fa-angle-down"></i></button>
                 </div>
             </div>
             <div class="panel-body" style="display:none">
@@ -288,7 +288,7 @@
 % if ('write' in user['permissions'] and not node['is_registration']) or node['children']:
     <div class="components panel panel-default">
         <div class="panel-heading clearfix">
-            <h3 class="panel-title">Components </h3>
+            <h3 class="panel-title" style="padding-bottom: 5px; padding-top: 5px;">Components </h3>
             <div class="pull-right">
                 % if 'write' in user['permissions'] and not node['is_registration']:
                     <a class="btn btn-sm btn-default" data-toggle="modal" data-target="#newComponent">Add Component</a>

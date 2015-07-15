@@ -22,7 +22,7 @@
             <span class='help-text'>
                 <a id="signOutLink" href='${signOutUrl}'>I am <strong>not</strong> <em>${user.fullname}</em>.</a>
             </span>
-            <button type='submit' class="btn btn-submit btn-primary pull-right">Submit</button>
+            <button type='submit' class="btn btn-submit btn-primary pull-right">Continue</button>
         </form>
 
     </div>

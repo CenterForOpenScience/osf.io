@@ -20,7 +20,7 @@
             %if next_url:
                 <input type='hidden' name='next_url' value='${next_url}'>
             %endif
-            <button type='submit' class="btn btn-submit btn-primary pull-right">Submit</button>
+            <button type='submit' class="btn btn-success pull-right">Save</button>
         </form>
 
         <div class='help-block'>
