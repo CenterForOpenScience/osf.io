@@ -292,6 +292,11 @@ MetaSchema.prototype.flatQuestions = function() {
 var Draft = function(params, metaSchema) {
     var self = this;
 
+    // TODO
+    self.approved = false || params.flags.isApproved;
+    self.is_pending_review = false || params.flags.isPendingReview;
+    self.is_payment_sent = false || params.flags.paymentSent;
+
     self.pk = params.pk;
     self.metaSchema = metaSchema || new MetaSchema(params.registration_schema);
     self.schema = ko.pureComputed(function() {
