@@ -27,7 +27,7 @@ function resolveIcon(item) {
     if (item.data.kind === 'component' && item.parent().data.title === 'Component Wiki Pages') {
         return returnView(item.data.category);
     }
-    if (item.data.type === 'heading' && item.data.children.length > 0 ) {
+    if (item.data.type === 'heading') {
         if (item.open) {
             return m('i.fa.fa-folder-open', ' ');
         }
@@ -67,14 +67,12 @@ function WikiMenu(data, wikiID, canEdit) {
             var tb = this;
             var columns = [];
             if(item.data.type === 'heading') {
-                if(item.data.children.length >  0) {
-                    columns.push({
-                        folderIcons: true,
-                        custom: function() {
-                            return m('b', item.data.title);
-                        }
-                    });
-                }
+                columns.push({
+                    folderIcons: true,
+                    custom: function() {
+                        return m('b', item.data.title);
+                    }
+                });
             } else {
                 if(item.data.page.id === wikiID) {
                     item.css = 'fangorn-selected';
@@ -85,13 +83,6 @@ function WikiMenu(data, wikiID, canEdit) {
                     custom: function() {
                         if(item.data.kind === 'component') {
                             return m('h', item.data.page.name);
-                        } else if(item.data.page.wiki_content === '' && !canEdit) {
-                            return [
-                                m('h', item.data.page.name),
-                                m('span',
-                                    [m('i', {class: 'text-muted', style: 'padding-left: 10px'}, 'No wiki content')]
-                                )
-                            ];
                         } else {
                             return m('a', {href: item.data.page.url}, item.data.page.name);
                         }

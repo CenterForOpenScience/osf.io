@@ -447,21 +447,25 @@ def project_wiki_validate_name(wname, **kwargs):
 @must_be_valid_project
 @must_be_contributor_or_public
 def project_wiki_grid_data(auth, node, **kwargs):
-    ret = [
-        {
-            'title': 'Project Wiki Pages',
-            'kind': 'folder',
-            'type': 'heading',
-            'children': format_project_wiki_pages(node)
-        },
-        {
+    pages = []
+    project_wiki_pages = {
+        'title': 'Project Wiki Pages',
+        'kind': 'folder',
+        'type': 'heading',
+        'children': format_project_wiki_pages(node, auth)
+    }
+    pages.append(project_wiki_pages)
+
+    if len(node.nodes) > 0:
+        component_wiki_pages = {
             'title': 'Component Wiki Pages',
             'kind': 'folder',
             'type': 'heading',
             'children': format_component_wiki_pages(node, auth)
         }
-    ]
-    return ret
+        pages.append(component_wiki_pages)
+
+    return pages
 
 
 def format_home_wiki_page(node):
@@ -472,8 +476,7 @@ def format_home_wiki_page(node):
             'name': 'Home',
             'id': 'None',
             'wiki_content': ''
-        },
-        'children': []
+        }
     }
     if home_wiki:
         home_wiki_page = {
@@ -482,60 +485,64 @@ def format_home_wiki_page(node):
                 'name': 'Home',
                 'id': home_wiki._primary_key,
                 'wiki_content': wiki_page_content(home_wiki.page_name, node=node).get('wiki_content')
-            },
-            'children': []
+            }
         }
     return home_wiki_page
 
 
-def format_project_wiki_pages(node):
+def format_project_wiki_pages(node, auth):
     pages = []
+    can_edit = node.has_permission(auth.user, 'write') and not node.is_registration
     project_wiki_pages = _get_wiki_pages_current(node)
     home_wiki_page = format_home_wiki_page(node)
     pages.append(home_wiki_page)
     for wiki_page in project_wiki_pages:
         if wiki_page['name'] != 'home':
+            wiki_content = wiki_page['wiki_content'].get('wiki_content')
             page = {
                 'page': {
                     'url': wiki_page['url'],
                     'name': wiki_page['name'],
                     'id': wiki_page['wiki_id'],
-                    'wiki_content': wiki_page['wiki_content'].get('wiki_content')
-                },
-                'children': [],
+                    'wiki_content': wiki_content
+                }
             }
-            pages.append(page)
+            if can_edit or wiki_content is not '':
+                pages.append(page)
     return pages
 
 
 def format_component_wiki_pages(node, auth):
     pages = []
+    can_edit = node.has_permission(auth.user, 'write') and not node.is_registration
     component_wiki_pages = _serialize_wiki_toc(node, auth)
     for wiki_page in component_wiki_pages:
         children = []
+        wiki_content = wiki_page['wiki_content'].get('wiki_content')
         component_home_wiki = {
             'page': {
                 'url': wiki_page['url'],
                 'name': 'Home',
                 'id': wiki_page['id'],
-                'wiki_content': wiki_page['wiki_content'].get('wiki_content')
-            },
-            'children': []
+                'wiki_content': wiki_content
+            }
         }
-        children.append(component_home_wiki)
+        if can_edit or wiki_content is not '':
+            children.append(component_home_wiki)
 
         for component_page in wiki_page['pages_current']:
             if component_page['name'] != 'home':
+                nested_wiki_content = component_page['wiki_content'].get('wiki_content')
                 child = {
                     'page': {
                         'url': component_page['url'],
                         'name': component_page['name'],
                         'id': component_page['wiki_id'],
-                        'wiki_content': component_page['wiki_content'].get('wiki_content')
-                    },
-                    'children': [],
+                        'wiki_content': nested_wiki_content
+                    }
                 }
-                children.append(child)
+                if can_edit or nested_wiki_content is not '':
+                    children.append(child)
 
         component_page = {
             'page': {
@@ -545,5 +552,6 @@ def format_component_wiki_pages(node, auth):
             'category': wiki_page['category'],
             'children': children,
         }
-        pages.append(component_page)
+        if len(component_page['children']) > 0:
+            pages.append(component_page)
     return pages

@@ -1113,6 +1113,7 @@ class TestWikiMenu(OsfTestCase):
         self.project = ProjectFactory(creator=self.user, is_public=True)
         self.component = NodeFactory(creator=self.user, parent=self.project, is_public=True)
         self.consolidate_auth = Auth(user=self.project.creator)
+        self.non_contributor = UserFactory()
 
     def test_format_home_wiki_page_no_content(self):
         data = views.format_home_wiki_page(self.project)
@@ -1122,55 +1123,57 @@ class TestWikiMenu(OsfTestCase):
                 'name': 'Home',
                 'id': 'None',
                 'wiki_content': ''
-            },
-            'children': [],
+            }
         }
         assert_equal(data, expected)
 
-    def test_format_project_wiki_pages(self):
+    def test_format_project_wiki_pages_contributor(self):
         self.project.update_node_wiki('home', 'content here', self.consolidate_auth)
-        page = self.project.get_wiki_page(name='home')
-        data = views.format_project_wiki_pages(self.project)
+        self.project.update_node_wiki('zoo', 'koala', self.consolidate_auth)
+        home_page = self.project.get_wiki_page(name='home')
+        zoo_page = self.project.get_wiki_page(name='zoo')
+        data = views.format_project_wiki_pages(self.project, self.consolidate_auth)
         expected = [
             {
                 'page': {
                     'url': self.project.web_url_for('project_wiki_view', wname='home', _guid=True),
                     'name': 'Home',
-                    'id': page._primary_key,
+                    'id': home_page._primary_key,
                     'wiki_content': 'content here'
-                },
-                'children': [],
+                }
+            },
+            {
+                'page': {
+                    'url': self.project.web_url_for('project_wiki_view', wname='zoo', _guid=True),
+                    'name': 'zoo',
+                    'id': zoo_page._primary_key,
+                    'wiki_content': 'koala'
+                }
             }
         ]
         assert_equal(data, expected)
 
-    def test_format_component_wiki_pages(self):
-        self.component.update_node_wiki('home', 'home content', self.consolidate_auth)
-        data = views.format_component_wiki_pages(node=self.project, auth=self.consolidate_auth)
+    def test_format_project_wiki_pages_no_content_non_contributor(self):
+        self.project.update_node_wiki('home', 'content here', self.consolidate_auth)
+        self.project.update_node_wiki('zoo', '', self.consolidate_auth)
+        home_page = self.project.get_wiki_page(name='home')
+        data = views.format_project_wiki_pages(self.project, auth=Auth(self.non_contributor))
         expected = [
             {
                 'page': {
-                    'name': 'The meaning of life',
-                },
-                'children': [{
-                    'page': {
-                        'url': self.component.web_url_for('project_wiki_view', wname='home', _guid=True),
-                        'name': 'Home',
-                        'id': self.component._primary_key,
-                        'wiki_content': 'home content'
-                    },
-                    'children': [],
-                }],
-                'kind': 'component',
-                'category': self.component.category,
+                    'url': self.project.web_url_for('project_wiki_view', wname='home', _guid=True),
+                    'name': 'Home',
+                    'id': home_page._primary_key,
+                    'wiki_content': 'content here'
+                }
             }
         ]
         assert_equal(data, expected)
 
-    def test_format_nested_component_wiki_pages(self):
+    def test_format_component_wiki_pages_contributor(self):
         self.component.update_node_wiki('home', 'home content', self.consolidate_auth)
-        self.component.update_node_wiki('inner', 'inner content', self.consolidate_auth)
-        component_inner_page = self.component.get_wiki_page(name='inner')
+        self.component.update_node_wiki('zoo', 'koala', self.consolidate_auth)
+        zoo_page = self.component.get_wiki_page(name='zoo')
         expected = [
             {
                 'page': {
@@ -1183,17 +1186,15 @@ class TestWikiMenu(OsfTestCase):
                             'name': 'Home',
                             'id': self.component._primary_key,
                             'wiki_content': 'home content'
-                        },
-                        'children': []
+                        }
                     },
                     {
                         'page': {
-                            'url': self.component.web_url_for('project_wiki_view', wname='inner', _guid=True),
-                            'name': 'inner',
-                            'id': component_inner_page._primary_key,
-                            'wiki_content': 'inner content'
+                            'url': self.component.web_url_for('project_wiki_view', wname='zoo', _guid=True),
+                            'name': 'zoo',
+                            'id': zoo_page._primary_key,
+                            'wiki_content': 'koala'
                         },
-                        'children': [],
                     }
                 ],
                 'kind': 'component',
@@ -1203,26 +1204,9 @@ class TestWikiMenu(OsfTestCase):
         data = views.format_component_wiki_pages(node=self.project, auth=self.consolidate_auth)
         assert_equal(data, expected)
 
-    def test_format_component_wiki_page_no_content(self):
-        data = views.format_component_wiki_pages(node=self.project, auth=self.consolidate_auth)
-        expected = [
-            {
-                'page': {
-                    'name': 'The meaning of life',
-                },
-                'children': [{
-                    'page': {
-                        'url': self.component.web_url_for('project_wiki_view', wname='home', _guid=True),
-                        'name': 'Home',
-                        'id': self.component._primary_key,
-                        'wiki_content': ''
-                    },
-                    'children': [],
-                }],
-                'kind': 'component',
-                'category': self.component.category,
-            }
-        ]
+    def test_format_component_wiki_pages_no_content_non_contributor(self):
+        data = views.format_component_wiki_pages(node=self.project, auth=Auth(self.non_contributor))
+        expected = []
         assert_equal(data, expected)
 
     def test_project_wiki_grid_data(self):
@@ -1234,7 +1218,7 @@ class TestWikiMenu(OsfTestCase):
                 'title': 'Project Wiki Pages',
                 'kind': 'folder',
                 'type': 'heading',
-                'children': views.format_project_wiki_pages(node=self.project),
+                'children': views.format_project_wiki_pages(node=self.project, auth=self.consolidate_auth),
             },
             {
                 'title': 'Component Wiki Pages',
