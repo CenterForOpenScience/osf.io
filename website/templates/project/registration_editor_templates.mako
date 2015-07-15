@@ -4,8 +4,8 @@
 </script>
 
 <script type="text/html" id="text">
-  <input data-bind="disabled: readonly, 
-                    valueUpdate: 'keyup', 
+  <input data-bind="disabled: readonly,
+                    valueUpdate: 'keyup',
                     event: {'keyup': save},
                     value: value"
          type="text" class="form-control" />
@@ -105,13 +105,13 @@
 <!-- Commnetable -->
 <script type="text/html" id="commentable">
     <h4> Comments </h4>
-    <ul class="list-group" data-bind="foreach: {data: comments, as: 'comment'}">
+    <ul class="list-group" id="commentList" data-bind="foreach: {data: comments, as: 'comment'}">
         <li class="list-group-item">
             <div class="row">
                 <div class="col-md-12">
                     <div class="row">
                         <div class="col-sm-9">
-                            <span data-bind="text: comment.author"></span> said ...
+                            <strong><span data-bind="text: comment.getAuthor"></span></strong> said ...
                         </div>
                         <div class="col-sm-3">
                             <div style="text-align: right;" class="btn-group">
@@ -120,7 +120,7 @@
                                 <button data-bind="enable: comment.canEdit,
                                    click: comment.saved.bind(null, false)" class="btn btn-info fa fa-pencil"></button>
                                 <button data-bind="enable: comment.canDelete,
-                                                   click: $parent.comments.remove"
+                                                   click: comment.isDeleted.bind(null, true) "
                                         class="btn btn-danger fa fa-times"></button>
                             </div>
                         </div>

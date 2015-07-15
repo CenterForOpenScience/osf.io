@@ -42,18 +42,32 @@ function Comment(data) {
     self.lastModified = new Date(data.lastModified)|| new Date();
     self.value = ko.observable(data.value || '');
 
-	self.adminHasSeen = ko.observable(false);
+    self.isDeleted = ko.observable(false);
+    self.isDeleted.subscribe(function(isDeleted) {
+      if (isDeleted) {
+        self.value('this comment was deleted');
+      }
+    });
+
+	self.seenBy = ko.observableArray([]);
+
+    /**
+     * Returns the author as the actual user, not 'You' 
+     **/
+    self.author = ko.pureComputed(function() {
+      return self.user.fullname;
+    });
 
     /**
      * Returns 'You' if the current user is the commenter, else the commenter's name
-     **/
-    self.author = ko.pureComputed(function() {
-        if (self.user.id === currentUser.id) {
-            return 'You';
-        }
-        else {
-            return self.user.name;
-        }
+     */
+    self.getAuthor = ko.pureComputed(function() {
+      if (self.user.id === currentUser.id) {
+        return 'You';
+      }
+      else {
+        return self.user.fullname;
+      }
     });
 
     /**
@@ -182,13 +196,14 @@ Question.prototype.init = function() {
  * Creates a new comment from the current value of Question.nextComment and clears nextComment
  **/
 Question.prototype.addComment = function() {
-    var self = this;
+  var self = this;
 
-    var comment = new Comment({
-        value: self.nextComment()
-    });
-    self.nextComment('');
-    self.comments.push(comment);
+  var comment = new Comment({
+    value: self.nextComment()
+  });
+  comment.seenBy.push(currentUser.id);
+  self.nextComment('');
+  self.comments.push(comment);
 };
 /**
  * Shows/hides the Question example
@@ -281,11 +296,6 @@ MetaSchema.prototype.flatQuestions = function() {
 var Draft = function(params, metaSchema) {
     var self = this;
 
-    // TODO
-    self.approved = false || params.flags.isApproved;
-    self.is_pending_review = false || params.flags.isPendingReview;
-    self.is_payment_sent = false || params.flags.paymentSent;
-
     self.pk = params.pk;
     self.metaSchema = metaSchema || new MetaSchema(params.registration_schema);
     self.schema = ko.pureComputed(function() {
@@ -297,6 +307,9 @@ var Draft = function(params, metaSchema) {
     self.initiated = new Date(params.initiated);
     self.updated = new Date(params.updated);
 
+	self.fulfills = params.fulfills || [];
+    self.is_pending_review = params.is_pending_review || false;
+    self.approved = params.approved || true;
     self.urls = params.urls || {};
 
     $.each(params.config || {}, function(key, value) {
@@ -536,44 +549,74 @@ RegistrationEditor.prototype.context = function(data) {
 RegistrationEditor.prototype.extendEditor = function(type, ViewModel) {
     this.extensions[type] = ViewModel;
 };
+RegistrationEditor.prototype.viewComments = function() {
+  var self = this;
 
+  var comments = self.currentQuestion().comments();
+  $.each(comments, function(index, comment) {
+    if (comment.seenBy().indexOf(currentUser.id) === -1) {
+      comment.seenBy.push(currentUser.id);
+    }
+  });
+};
+RegistrationEditor.prototype.getUnseenComments = function(qid) {
+  var self = this;
+
+  var question = self.draft().schemaData[qid];
+  var comments = question.comments || [];
+  for (var key in question) {
+	if (key === 'comments') {
+	  for (var i = 0; i < question[key].length - 1; i++) {
+		if (question[key][i].indexOf(currentUser.id) === -1) {
+		  comments.push(question[key][i]);
+		}
+	  }
+	}
+  }
+  return comments.length !== 0 ? comments.length : '';
+};
 RegistrationEditor.prototype.nextQuestion = function() {
     var self = this;
 
-    var currentQuestion = self.currentQuestion();
+  var currentQuestion = self.currentQuestion();
 
-    var questions = self.flatQuestions();
-    var index = $osf.indexOf(questions, function(q){
-        return q.id === currentQuestion.id;
-    });
-    if(index + 1 === questions.length) {
-        self.currentQuestion(questions.shift());
-    }
-    else {
-        self.currentQuestion(questions[index + 1]);
-    }
+  var questions = self.flatQuestions();
+  var index = $osf.indexOf(questions, function(q) {
+    return q.id === currentQuestion.id;
+  });
+  if(index + 1 === questions.length) {
+    self.currentQuestion(questions.shift());
+	self.viewComments();
+  }
+  else {
+    self.currentQuestion(questions[index + 1]);
+	self.viewComments();
+  }
 };
-RegistrationEditor.prototype.previousQuestion = function() {
-    var self = this;
+RegistrationEditor.prototype.previousPage = function() {
+  var self = this;
 
-    var currentQuestion = self.currentQuestion();
+  var currentQuestion = self.currentQuestion();
 
-    var questions = self.flatQuestions();
-    var index = $osf.indexOf(questions, function(q){
-        return q.id === currentQuestion.id;
-    });
-    if(index - 1 < 0){
-        self.currentQuestion(questions.pop());
-    }
-    else {
-        self.currentQuestion(questions[index - 1]);
-    }
+  var questions = self.flatQuestions();
+  var index = $osf.indexOf(questions, function(q) {
+    return q.id === currentQuestion.id;
+  });
+  if(index - 1 < 0){
+    self.currentQuestion(questions.pop());
+	self.viewComments();
+  }
+  else {
+    self.currentQuestion(questions[index - 1]);
+	self.viewComments();
+  }
 };
 RegistrationEditor.prototype.selectPage = function(page) {
-    var self = this;
+  var self = this;
 
-	var firstQuestion = page.questions[Object.keys(page.questions)[0]];
-    self.currentQuestion(firstQuestion);
+  var firstQuestion = page.questions[Object.keys(page.questions)[0]];
+  self.currentQuestion(firstQuestion);
+  self.viewComments();
 };
 RegistrationEditor.prototype.updateData = function(response) {
     var self = this;
@@ -704,7 +747,7 @@ var RegistrationManager = function(node, draftsSelector, editorSelector, urls) {
 };
 RegistrationManager.prototype.init = function() {
     var self = this;
-    
+
     $osf.applyBindings(self, self.draftsSelector);
 
     var getSchemas = self.getSchemas();
