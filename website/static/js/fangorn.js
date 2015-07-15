@@ -1442,16 +1442,6 @@ var FGItemButtons = {
             }
         }
         if (item.kind === 'file'){
-            if (item.data.permissions && item.data.permissions.view) {
-                rowButtons.push(
-                    m.component(FGButton, {
-                        onclick: function(event) {
-                            gotoFileEvent.call(tb, item);
-                        },
-                        icon: 'fa fa-file-o',
-                        className : 'text-info'
-                    }, 'View'));
-            }
             rowButtons.push(
                 m.component(FGButton, {
                     onclick: function(event) { _downloadEvent.call(tb, event, item); },
@@ -1467,6 +1457,16 @@ var FGItemButtons = {
                         className : 'text-danger'
                     }, 'Delete'));
 
+            }
+            if (item.data.permissions && item.data.permissions.view) {
+                rowButtons.push(
+                    m.component(FGButton, {
+                        onclick: function(event) {
+                            gotoFileEvent.call(tb, item);
+                        },
+                        icon: 'fa fa-file-o',
+                        className : 'text-info'
+                    }, 'View'));
             }
         } else if(item.data.provider && item.children.length !== 0) {
             rowButtons.push(
