@@ -2,7 +2,7 @@ import requests
 
 from modularodm import Q
 from rest_framework import generics, permissions as drf_permissions
-from rest_framework.exceptions import PermissionDenied, ValidationError
+from rest_framework.exceptions import PermissionDenied, ValidationError, NotFound
 
 from framework.auth.core import Auth
 from website.models import Node, Pointer
@@ -11,6 +11,7 @@ from api.base.filters import ODMFilterMixin, ListFilterMixin
 from api.base.utils import get_object_or_404, waterbutler_url_for
 from .serializers import NodeSerializer, NodePointersSerializer, NodeFilesSerializer
 from .permissions import ContributorOrPublic, ReadOnlyIfRegistration, ContributorOrPublicForPointers
+
 
 
 class NodeMixin(object):
@@ -25,7 +26,11 @@ class NodeMixin(object):
         obj = get_object_or_404(Node, self.kwargs[self.node_lookup_url_kwarg])
         # May raise a permission denied
         self.check_object_permissions(self.request, obj)
-        return obj
+
+        if obj.is_deleted:
+            raise NotFound
+        else:
+            return obj
 
 
 class NodeList(generics.ListCreateAPIView, ODMFilterMixin):
