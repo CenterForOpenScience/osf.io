@@ -55,20 +55,6 @@ var mkMetaSchema = function() {
 
 
 describe('Utilites', () => {
-    describe('not', () => {
-        it('returns a partial function that negates the return value of callables', () => {
-            var I = function(cond){
-                return !!cond;
-            };
-            var notI = utilities.not(I);
-            assert.isTrue(notI(false));
-            assert.isFalse(notI(true));
-        });
-        it('returns a partial function that negates the value of non callables', () => {
-            assert.isTrue(utilities.not(false)());
-            assert.isFalse(utilities.not(true)());
-        });
-    });
     describe('validators', () => {
         describe('#string', () => {
             it('is valid if the string is not blank', () => {

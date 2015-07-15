@@ -82,17 +82,6 @@ $(document).keydown(function(e) {
     }
 });
 
-var not = function(any) {
-    return function() {
-        try {
-            return !any.apply(this, arguments);
-        }
-        catch(err) {
-            return !any;
-        }
-    };
-};
-
 var validate = function(checks, value) {
     var valid = true;
     $.each(checks, function(i, check) {
@@ -102,8 +91,8 @@ var validate = function(checks, value) {
 };
 
 var validators = {
-    string: validate.bind(null, [not($osf.isBlank)]),
-    number: validate.bind(null, [not($osf.isBlank), not(isNaN.bind(parseFloat))])
+    string: validate.bind(null, [$osf.not($osf.isBlank)]),
+    number: validate.bind(null, [$osf.not($osf.isBlank), $osf.not(isNaN.bind(parseFloat))])
 };
 
 /**
@@ -772,9 +761,9 @@ RegistrationManager.prototype.beforeCreateDraft = function() {
     self.selectedSchema(self.schemas()[0]);
     self.preview(true);
 };
+
 module.exports = {
     utilities: {
-        not: not,
         validators: validators,
         validate: validate
     },

@@ -401,4 +401,19 @@ describe('osfHelpers', () => {
             assert.equal(-1, found);
         });
     });
+    
+    describe('not', () => {
+        it('returns a partial function that negates the return value of callables', () => {
+            var I = function(cond){
+                return !!cond;
+            };
+            var notI = $osf.not(I);
+            assert.isTrue(notI(false));
+            assert.isFalse(notI(true));
+        });
+        it('returns a partial function that negates the value of non callables', () => {
+            assert.isTrue($osf.not(false)());
+            assert.isFalse($osf.not(true)());
+        });
+    });
 });

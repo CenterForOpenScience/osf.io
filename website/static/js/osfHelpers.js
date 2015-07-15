@@ -826,7 +826,22 @@ function indexOf(array, searchFn) {
     }
     return -1;
 }
-
+/**
+ * Create a function that negates the passed value
+ *
+ * @param {Any} any: either a function or some other value; for function values the return value of the function is negated
+ * @returns {Function}: a function that returns the negated value of any (or the return value of any when called with the same arguments)
+ **/
+function not(any) {
+    return function() {
+        try {
+            return !any.apply(this, arguments);
+        }
+        catch(err) {
+            return !any;
+        }
+    };
+}
 
 // Also export these to the global namespace so that these can be used in inline
 // JS. This is used on the /goodbye page at the moment.
@@ -860,5 +875,6 @@ module.exports = window.$.osf = {
     isIE: isIE,
     indexOf: indexOf,
     iterObject: iterObject,
-    isBlank: isBlank
+    isBlank: isBlank,
+    not: not
 };
