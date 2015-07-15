@@ -25,6 +25,9 @@ function adminView(data) {
     var self = this;
     self.data = data.drafts;
 
+    // REMOVE
+    console.log(self.data);
+
     self.drafts = ko.pureComputed(function() {
         var row = self.sortBy();
         return data.drafts.sort(function (left, right) { 
@@ -38,10 +41,9 @@ function adminView(data) {
 
     // variables for editing items in row
     self.edit = ko.observable(false);
-    self.item = ko.observable();
     self.commentsSent = ko.observable('no');
     self.proofOfPub = ko.observable('no');
-    self.paymentSent = ko.observable('no');
+    self.paymentSent = ko.observable();
     self.notes = ko.observable('none');
 
     self.setSort = function(data, event) {
@@ -82,12 +84,16 @@ function adminView(data) {
 
     self.editItem = function(item) {
         self.edit(true);
+        var itemIndex = item[item.length - 1];
+        var itemType = item.substring(0, item.length - 1);
+        self.paymentSent(self.data[itemIndex].flags[itemType]);
         $('.'+item).hide();
         $('.input_' + item).show();
         $('.input_' + item).focus();
     };
 
     self.stopEditing = function(item) {
+        self.edit(false);
         $('.'+item).show();
         $('.input_' + item).hide();
     };
