@@ -21,11 +21,15 @@ from ..utils import options_to_hgrid
 ###### AJAX Config
 @must_be_logged_in
 @must_be_valid_project
-@must_have_addon('figshare', 'node')
-def figshare_config_get(node_addon, auth, **kwargs):
+def figshare_config_get(node, **kwargs):
     """API that returns the serialized node settings."""
+    auth = kwargs.get('auth')
+    node_addon = node.get_addon('figshare', 'node')
+    if not node_addon:
+        node.add_addon('figshare', auth)
+        node.save()
     return {
-        'result': serialize_settings(node_addon, auth.user),
+        'result': serialize_settings(node.get_addon('figshare', 'node'), auth.user),
     }
 
 

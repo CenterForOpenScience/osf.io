@@ -21,14 +21,14 @@
              <!-- Import Access Token Button -->
             <span data-bind="if: showImport">
                 <a data-bind="click: importAuth" href="#" class="text-primary pull-right addon-auth">
-                    Import Access Token
+                    Import Account From Profile
                 </a>
             </span>
 
             <!-- Show Token Create Button -->
             <span data-bind="if: showTokenCreateButton">
                 <a href="#dataverseInputCredentials" data-toggle="modal" class="pull-right text-primary addon-auth">
-                    Connect an account
+                    Connect Account
                 </a>
             </span>
 

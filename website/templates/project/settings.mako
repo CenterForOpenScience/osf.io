@@ -172,7 +172,7 @@
                                     addons = [
                                         addon
                                         for addon in addons_available
-                                        if category in addon.categories
+                                        if category in addon.categories and category == 'documentation'
                                     ]
                                 %>
 
@@ -210,7 +210,6 @@
                     </div>
                 </div>
 
-                % if addon_enabled_settings:
                     <span id="configureAddonsAnchor" class="anchor"></span>
 
                     <div id="configureAddons" class="panel panel-default">
@@ -220,8 +219,8 @@
                         </div>
                         <div class="panel-body">
 
-                        % for node_settings_dict in addon_enabled_settings or []:
-                            ${render_node_settings(node_settings_dict)}
+                        % for addon in addon_settings or []:
+                            ${render_node_settings(addon)}
 
                                 % if not loop.last:
                                     <hr />
@@ -231,8 +230,6 @@
 
                         </div>
                     </div>
-
-                % endif
 
             % endif
 
@@ -324,7 +321,7 @@
 <%def name="render_node_settings(data)">
     <%
        template_name = data['node_settings_template']
-       tpl = data['template_lookup'].get_template(template_name).render(**data)
+       tpl = template_name.render(**data)
     %>
     ${tpl}
 </%def>

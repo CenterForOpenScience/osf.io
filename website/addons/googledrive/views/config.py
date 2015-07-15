@@ -17,12 +17,15 @@ from website.addons.googledrive.utils import serialize_settings
 
 
 @must_be_logged_in
-@must_have_addon('googledrive', 'node')
 @must_have_permission(permissions.WRITE)
-def googledrive_config_get(node_addon, auth, **kwargs):
+def googledrive_config_get(auth, node, **kwargs):
     """API that returns the serialized node settings."""
+    node_addon = node.get_addon('googledrive', 'node')
+    if not node_addon:
+        node.add_addon('googledrive', auth)
+        node.save()
     return {
-        'result': serialize_settings(node_addon, auth.user),
+        'result': serialize_settings(node.get_addon('googledrive', 'node'), auth.user),
     }
 
 

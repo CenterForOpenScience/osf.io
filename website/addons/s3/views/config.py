@@ -112,10 +112,15 @@ def s3_post_node_settings(node, auth, user_addon, node_addon, **kwargs):
 
 
 @must_be_logged_in
-@must_have_addon('s3', 'node')
 @must_have_permission('write')
 @must_not_be_registration
-def s3_get_node_settings(auth, node_addon, **kwargs):
+def s3_get_node_settings(node, **kwargs):
+    auth = kwargs.get('auth')
+    node_addon = node.get_addon('s3', 'node')
+    if not node_addon:
+        node.add_addon('s3', auth)
+        node.save()
+    node_addon = node.get_addon('s3', 'node')
     result = node_addon.to_json(auth.user)
     result['urls'] = utils.serialize_urls(node_addon, auth.user)
 

@@ -15,7 +15,7 @@
             </span>
             <span data-bind="if: showImport">
                 <a data-bind="click: importAuth" class="text-primary pull-right addon-auth">
-                  Import Access Token
+                  Import Account From Profile
                 </a>
             </span>
         </small>

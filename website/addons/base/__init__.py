@@ -700,7 +700,6 @@ class AddonNodeSettingsBase(AddonSettingsBase):
                 'url': self.owner.url,
                 'is_registration': self.owner.is_registration,
             },
-            'node_settings_template': os.path.basename(self.config.node_settings_template),
         })
         return ret
 

@@ -50,7 +50,8 @@ def github_oauth_start(auth, **kwargs):
     user_settings = user.get_addon('github')
 
     if node:
-        github_node = node.get_addon('github')
+        node.add_addon('github', auth)
+        github_node = node.get_addon('github', 'node')
         github_node.user_settings = user_settings
         github_node.save()
 
