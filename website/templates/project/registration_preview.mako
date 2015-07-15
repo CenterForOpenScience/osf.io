@@ -19,7 +19,6 @@
         </ul>
       </div>
       <div class="span8 col-md-9 columns eight large-8" style="padding-left: 30px">
-        <!-- EDITOR -->
         <div data-bind="foreach: {data: schema.pages, as: 'page'}">
           <h3 data-bind="attr.id: page.id, text: page.title"></h3>
           <div class="row">
@@ -35,4 +34,3 @@
     </div>
   </div>
 </script>
-<%include file="registration_editor_templates.mako" />
