@@ -18,7 +18,7 @@
         <thead>
             <tr class="user-settings-addon-auth">
                 <th class="text-muted default-authorized-by">Authorized on <a data-bind="attr.href: dataverseUrl"><em>{{ dataverseHost }}</em></a></th>
-                <th><a data-bind="click: $root.askDisconnect" class="text-danger">Disconnect Account</a></th>
+                <th><a data-bind="click: $root.askDisconnect" class="text-danger pull-right default-authorized-by">Disconnect Account</a></th>
             </tr>
         </thead>
         <!-- ko if: connectedNodes().length > 0 -->
@@ -30,7 +30,7 @@
                 </td>
                 <td>
                     <a data-bind="click: $parent.deauthorizeNode">
-                        <i class="fa fa-times text-danger" title="Deauthorize Project"></i>
+                        <i class="fa fa-times text-danger pull-right" title="Deauthorize Project"></i>
                     </a>
                 </td>
             </tr>
