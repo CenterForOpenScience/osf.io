@@ -23,8 +23,6 @@ from website.project import utils as project_utils
 from website.project.model import MetaSchema, DraftRegistration
 from website.project.metadata.utils import serialize_meta_schema, serialize_draft_registration
 from website.project.utils import serialize_node
-from website.admin import PREREG
-from website.admin.decorators import must_be_super_on
 
 get_draft_or_fail = lambda pk: get_or_http_error(DraftRegistration, pk)
 get_schema_or_fail = lambda query: get_or_http_error(MetaSchema, query)
@@ -104,7 +102,6 @@ def register_draft_registration(auth, node, draft_id, *args, **kwargs):
     }, http.CREATED
 
 @must_be_logged_in
-#@must_be_super_on(PREREG)
 def get_all_draft_registrations(auth, *args, **kwargs):
 
     group = request.args.get('group')
@@ -117,8 +114,7 @@ def get_all_draft_registrations(auth, *args, **kwargs):
             raise HTTPError(http.FORBIDDEN)
         query = query & Q('fullfills', 'in', group)
 
-    #all_drafts = DraftRegistration.find(query)[:count]
-    all_drafts = DraftRegistration.find()
+    all_drafts = DraftRegistration.find(query)[:count]
 
     return {
         'drafts': [serialize_draft_registration(d, auth) for d in all_drafts]

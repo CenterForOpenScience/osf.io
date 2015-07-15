@@ -19,7 +19,6 @@ from website.conferences.model import Conference, MailRecord
 from website.notifications.model import NotificationDigest
 from website.notifications.model import NotificationSubscription
 from website.archiver.model import ArchiveJob, ArchiveTarget
-from website.admin.model import Role
 
 # All models
 MODELS = (
@@ -29,7 +28,6 @@ MODELS = (
     NotificationSubscription, NotificationDigest, CitationStyle,
     CitationStyle, ExternalAccount, Identifier, Retraction,
     Embargo, ArchiveJob, ArchiveTarget, BlacklistGuid, DraftRegistration,
-    Role,
 )
 
 GUID_MODELS = (User, Node, Comment, MetaData)

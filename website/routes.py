@@ -28,7 +28,6 @@ from website.util import paths
 from website.util import sanitize
 from website import landing_pages as landing_page_views
 from website import views as website_views
-from website.admin import views as admin_views
 from website.citations import views as citation_views
 from website.search import views as search_views
 from website.oauth import views as oauth_views
@@ -223,15 +222,6 @@ def make_url_map(app):
         ),
 
         Rule('/news/', 'get', {}, OsfWebRenderer('public/pages/news.mako')),
-    ])
-
-    # Admin routes
-
-    process_rules(app, [
-        Rule('/admin/prereg/',
-             'get',
-             admin_views.prereg,
-             OsfWebRenderer('admin/prereg.mako')),
     ])
 
     # Site-wide API routes
@@ -1066,6 +1056,8 @@ def make_url_map(app):
         ], 'get', project_views.node.get_registrations, json_renderer),
 
         # Draft Registrations
+
+        # TODO delete this route when we switch to Django admin appp
         Rule([
             '/drafts/',
         ], 'get', project_views.drafts.get_all_draft_registrations, json_renderer),
