@@ -169,6 +169,7 @@ class NodeContributorDetail(generics.RetrieveUpdateDestroyAPIView, NodeMixin):
             raise NotFound('{} cannot be found in the list of contributors.'.format(user))
         user.permissions = node.get_permissions(user)
         user.bibliographic = node.get_visible(user)
+        user.node_id = node._id
         return user
 
     # overrides DestroyAPIView

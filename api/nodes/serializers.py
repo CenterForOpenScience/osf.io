@@ -157,7 +157,7 @@ class NodeContributorsSerializer(UserSerializer):
                                                                                'of user-defined URLs')
     links = LinksField({
         'html': 'absolute_url',
-        'details': Link('nodes:node-contributor-detail', kwargs={'user_id': '<_id>', 'node_id': '<node_id>'}),
+        'contributor-self': Link('nodes:node-contributor-detail', kwargs={'user_id': '<_id>', 'node_id': '<node_id>'}),
         'nodes': {
             'relation': Link('users:user-nodes', kwargs={'user_id': '<_id>'}),
         },
@@ -230,14 +230,6 @@ class NodeContributorDetailSerializer(NodeContributorsSerializer):
     # Overridden to allow blank for user to not change status
     permission = ser.ChoiceField(choices=['admin', 'read', 'write'], write_only=True, allow_blank=True)
 
-    # Overridden to remove contributor detail link
-    links = LinksField({
-        'html': 'absolute_url',
-        'nodes': {
-            'relation': Link('users:user-nodes', kwargs={'user_id': '<_id>'}),
-        },
-    })
-
     def update(self, user, validated_data):
         node = self.context['view'].get_node()
         current_user = self.context['request'].user
@@ -251,6 +243,7 @@ class NodeContributorDetailSerializer(NodeContributorsSerializer):
             self.set_permissions(permission_field, user, node, is_admin_current, edit=True)
         user.permission = node.get_permissions(user)[-1]
         user.bibliographic = node.get_visible(user)
+        user.node_id = node._id
         return user
 
 
