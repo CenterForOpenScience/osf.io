@@ -326,7 +326,7 @@
                 "nav": "Exclusion",
                 "type": "object",
                 "title": "Data exclusion",
-                "description": "How will you determine what data or samples (if any) to exclude from your analyses? How will outliers be handled? You may want to attach a decision tree with an "if, then" structure to easily formalize the way in which these decisions will be made.",
+                "description": "How will you determine what data or samples (if any) to exclude from your analyses? How will outliers be handled? You may want to attach a decision tree with an 'if, then' structure to easily formalize the way in which these decisions will be made.",
                 "help": "No checks will be performed to determine eligibility for inclusion besides verification that each subject answered each of the three tastiness indices. Outliers will be included in the analysis.",
                 "properties": {
                     "question": {
