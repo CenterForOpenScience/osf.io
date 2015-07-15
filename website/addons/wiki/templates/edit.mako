@@ -39,7 +39,7 @@
                         <h3 class="panel-title"> <i class="fa fa-list"></i>  Menu </h3>
                     % endif
                     <div id="toggleIcon" class="pull-right hidden-xs">
-                        <div class="panel-collapse"><i class="fa fa-angle-left"></i></div>
+                        <div class="panel-collapse pointer"><i class="fa fa-angle-left"></i></div>
                     </div>
                 </div>
                 <div id="grid">

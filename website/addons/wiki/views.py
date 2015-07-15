@@ -475,7 +475,6 @@ def format_home_wiki_page(node):
             'url': node.web_url_for('project_wiki_home'),
             'name': 'Home',
             'id': 'None',
-            'wiki_content': ''
         }
     }
     if home_wiki:
@@ -484,7 +483,6 @@ def format_home_wiki_page(node):
                 'url': node.web_url_for('project_wiki_view', wname='home', _guid=True),
                 'name': 'Home',
                 'id': home_wiki._primary_key,
-                'wiki_content': wiki_page_content(home_wiki.page_name, node=node).get('wiki_content')
             }
         }
     return home_wiki_page
@@ -498,16 +496,15 @@ def format_project_wiki_pages(node, auth):
     pages.append(home_wiki_page)
     for wiki_page in project_wiki_pages:
         if wiki_page['name'] != 'home':
-            wiki_content = wiki_page['wiki_content'].get('wiki_content')
+            has_content = bool(wiki_page['wiki_content'].get('wiki_content'))
             page = {
                 'page': {
                     'url': wiki_page['url'],
                     'name': wiki_page['name'],
                     'id': wiki_page['wiki_id'],
-                    'wiki_content': wiki_content
                 }
             }
-            if can_edit or wiki_content is not '':
+            if can_edit or has_content:
                 pages.append(page)
     return pages
 
@@ -518,30 +515,28 @@ def format_component_wiki_pages(node, auth):
     component_wiki_pages = _serialize_wiki_toc(node, auth)
     for wiki_page in component_wiki_pages:
         children = []
-        wiki_content = wiki_page['wiki_content'].get('wiki_content')
+        home_has_content = bool(wiki_page['wiki_content'].get('wiki_content'))
         component_home_wiki = {
             'page': {
                 'url': wiki_page['url'],
                 'name': 'Home',
                 'id': wiki_page['id'],
-                'wiki_content': wiki_content
             }
         }
-        if can_edit or wiki_content is not '':
+        if can_edit or home_has_content:
             children.append(component_home_wiki)
 
         for component_page in wiki_page['pages_current']:
             if component_page['name'] != 'home':
-                nested_wiki_content = component_page['wiki_content'].get('wiki_content')
+                has_content = bool(component_page['wiki_content'].get('wiki_content'))
                 child = {
                     'page': {
                         'url': component_page['url'],
                         'name': component_page['name'],
                         'id': component_page['wiki_id'],
-                        'wiki_content': nested_wiki_content
                     }
                 }
-                if can_edit or nested_wiki_content is not '':
+                if can_edit or has_content:
                     children.append(child)
 
         component_page = {

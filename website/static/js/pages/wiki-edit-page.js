@@ -14,7 +14,7 @@ require('addons/wiki/static/ace-markdown-snippets.js');
 
 var $osf = require('js/osfHelpers');
 
-var wikiMenu = require('../wikiMenu');
+var WikiMenu = require('../wikiMenu');
 
 var ctx = window.contextVars.wiki;  // mako context variables
 
@@ -93,7 +93,7 @@ $(document).ready(function () {
         url: ctx.urls.grid
     })
     .done(function (data) {
-        new wikiMenu(data, ctx.wikiID, ctx.canEdit);
+        new WikiMenu(data, ctx.wikiID, ctx.canEdit);
     });
 
     var bodyElement = $('body');

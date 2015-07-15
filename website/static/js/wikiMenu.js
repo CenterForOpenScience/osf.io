@@ -5,8 +5,8 @@ var Treebeard = require('treebeard');
 require('../css/fangorn.css');
 
 function resolveToggle(item) {
-    var toggleMinus = m('i.fa.fa-minus', ' '),
-        togglePlus = m('i.fa.fa-plus', ' ');
+    var toggleMinus = m('i.fa.fa-minus', ' ');
+    var togglePlus = m('i.fa.fa-plus', ' ');
 
     if (item.children.length > 0) {
         if (item.open) {
@@ -82,7 +82,7 @@ function WikiMenu(data, wikiID, canEdit) {
                     folderIcons: true,
                     custom: function() {
                         if(item.data.kind === 'component') {
-                            return m('h', item.data.page.name);
+                            return m('span', item.data.page.name);
                         } else {
                             return m('a', {href: item.data.page.url}, item.data.page.name);
                         }
