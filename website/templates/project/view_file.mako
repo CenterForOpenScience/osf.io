@@ -42,7 +42,6 @@
     <!-- Menu toggle closed -->
     <div class="panel panel-default osf-panel-show text-center reset-height"  style="display: none">
       <div class="panel-heading">
-        <i class="fa fa-file"></i>
         <i class="fa fa-angle-right"></i>
       </div>
     </div>
