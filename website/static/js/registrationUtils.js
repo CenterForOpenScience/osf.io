@@ -48,13 +48,12 @@ function Comment(data) {
     self.lastModified = new Date(data.lastModified)|| new Date();
     self.value = ko.observable(data.value || '');
 
-	self.isDeleted = ko.observable(false);
-	self.isDeleted.subscribe(function(isDeleted) {
-		if (isDeleted) {
-			self.value('this comment was deleted');
-
-		}
-	});
+    self.isDeleted = ko.observable(false);
+    self.isDeleted.subscribe(function(isDeleted) {
+      if (isDeleted) {
+        self.value('this comment was deleted');
+      }
+    });
 
 	self.seenBy = ko.observableArray([]);
 
@@ -513,9 +512,9 @@ RegistrationEditor.prototype.nextPage = function() {
   var currentQuestion = self.currentQuestion();
 
   var questions = self.flatQuestions();
-  var index = $osf.indexOf(questions, function(q){
-                return q.id === currentQuestion.id;
-              });
+  var index = $osf.indexOf(questions, function(q) {
+    return q.id === currentQuestion.id;
+  });
   if(index + 1 === questions.length) {
     self.currentQuestion(questions.shift());
 	self.viewComments();
@@ -531,9 +530,9 @@ RegistrationEditor.prototype.previousPage = function() {
   var currentQuestion = self.currentQuestion();
 
   var questions = self.flatQuestions();
-  var index = $osf.indexOf(questions, function(q){
-                return q.id === currentQuestion.id;
-              });
+  var index = $osf.indexOf(questions, function(q) {
+    return q.id === currentQuestion.id;
+  });
   if(index - 1 < 0){
     self.currentQuestion(questions.pop());
 	self.viewComments();
