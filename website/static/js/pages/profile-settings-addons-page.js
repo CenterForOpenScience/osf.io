@@ -21,14 +21,19 @@ $('.addon-select').on('change', function() {
         var name = $that.attr('name');
         var capabilities = $('#capabilities-' + name).html();
         if (capabilities) {
-            bootbox.confirm(
-                capabilities,
-                function(result) {
+            bootbox.confirm({
+                message: capabilities,
+                callback: function(result) {
                     if (!result) {
                         $that.attr('checked', false);
                     }
+                },
+                buttons:{
+                    confirm:{
+                        label:'Confirm'
+                    }
                 }
-            );
+        });
         }
     }
 });
@@ -83,6 +88,12 @@ $('#selectAddonsForm').on('submit', function() {
                     submit();
                 } else{
                     unchecked.each(function(i, el){ $(el).prop('checked', true); });
+                }
+            },
+            buttons:{
+                confirm:{
+                    label:'Remove',
+                    className:'btn-danger'
                 }
             }
         });

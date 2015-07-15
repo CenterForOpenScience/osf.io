@@ -141,14 +141,19 @@ $(document).ready(function() {
             var name = $that.attr('name');
             var capabilities = $('#capabilities-' + name).html();
             if (capabilities) {
-                bootbox.confirm(
-                    capabilities,
-                    function(result) {
+                bootbox.confirm({
+                    message: capabilities,
+                    callback: function(result) {
                         if (!result) {
                             $(that).attr('checked', false);
                         }
+                    },
+                    buttons:{
+                        confirm:{
+                            label:'Confirm'
+                        }
                     }
-                );
+               });
             }
         }
     });
