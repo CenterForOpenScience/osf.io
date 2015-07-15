@@ -367,13 +367,3 @@ def resolve_guid(guid, suffix=None):
 
     # GUID not found
     raise HTTPError(http.NOT_FOUND)
-
-@must_be_logged_in
-def edit_draft(auth):
-    user = auth.user
-    dashboard_folder = find_dashboard(user)
-    dashboard_id = dashboard_folder._id
-    return {
-        'addons_enabled': user.get_addon_names(),
-        'dashboard_id': dashboard_id,
-    }

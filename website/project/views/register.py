@@ -340,6 +340,8 @@ def node_register_template_page(auth, node, **kwargs):
 def project_before_register(auth, node, **kwargs):
     """Returns prompt informing user that addons, if any, won't be registered."""
 
+    # NOTE: This route is deprecated and left only for backwards compatiblity
+
     messages = {
         'full': {
             'addons': set(),

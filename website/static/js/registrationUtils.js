@@ -456,8 +456,6 @@ var RegistrationEditor = function(urls, editorId, readonly) {
         return self.draft().updated;
     });
     self.lastSaved = ko.computed(function() {
-        var self = this;
-        
         var t = self.lastSaveTime();
         if (t) {
             return t.toGMTString();

@@ -14,9 +14,6 @@ module.exports = {
         registerFail: 'There was a problem completing your registration right now. Please try again later. If this should not have occurred and the issue persists, please report it to ' + SUPPORT_EMAIL_MAILTO,
         submitForReviewFail: 'There was a problem submitting this draft for review right now. Please try again later. If this should not have occurred and the issue persists, please report it to ' + SUPPORT_EMAIL_MAILTO
     },
-    projects: {
-        filesArchiving: 'Widget unavailble while files are copied to this project.'
-    },
     Addons: {
         dataverse: {
             userSettingsError: 'Could not retrieve settings. Please refresh the page or ' +

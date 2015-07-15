@@ -174,7 +174,6 @@ def make_url_map(app):
     process_rules(app, [
 
         Rule('/dashboard/', 'get', website_views.dashboard, OsfWebRenderer('dashboard.mako')),
-        #TODO
         Rule('/reproducibility/', 'get',
              website_views.reproducibility, OsfWebRenderer('', render_mako_string)),
 
@@ -1245,6 +1244,11 @@ def make_url_map(app):
         ], 'get', project_views.node.node_forks, json_renderer),
 
         # Registrations
+        # NOTE: This route is deprecated and left only for backwards compatiblity
+        Rule([
+            '/project/<pid>/beforeregister/',
+            '/project/<pid>/node/<nid>/beforeregister',
+        ], 'get', project_views.register.project_before_register, json_renderer),
         Rule([
             '/project/<pid>/draft/<draft_id>/beforeregister/',
             '/project/<pid>/node/<nid>/draft/<draft_id>/beforeregister',

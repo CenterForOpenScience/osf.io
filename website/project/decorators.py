@@ -110,7 +110,13 @@ def must_not_be_registration(func):
         node = kwargs['node']
 
         if node.is_registration and not node.is_draft:
-            raise HTTPError(http.BAD_REQUEST)
+            raise HTTPError(
+                http.BAD_REQUEST,
+                data={
+                    'message_short': 'Registered Nodes are immutable',
+                    'message_long': "The operation you're trying to do cannot be applied to registered Nodes, which are immutable",
+                }
+            )
         return func(*args, **kwargs)
 
     return wrapped

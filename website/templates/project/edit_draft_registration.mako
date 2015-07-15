@@ -83,9 +83,7 @@
         <%
         import json %>
             window.contextVars = $.extend(true, {}, window.contextVars, {
-                draft: $ {
-                    json.dumps(draft)
-                },
+                draft: ${json.dumps(draft)}
 
             });
     </script>
@@ -93,4 +91,4 @@
     </script>
 </%def>
 
-<%include file="registration_editor_templates.mako" />
+<%include file="project/registration_editor_templates.mako" />

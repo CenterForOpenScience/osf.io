@@ -66,15 +66,9 @@ $(document).ready(function () {
     }
 
     if (!ctx.node.isRetracted) {
-        if (!ctx.node.archiving){
-            // Treebeard Files view
-            var filesWidget = new FilesWidget('treeGrid', nodeApiUrl + 'files/grid/');
-            filesWidget.init();
-        }
-        else {
-            $('#treeGrid').find('.fangorn-loading').remove();
-            $osf.blockElement($('#filesMessage'), language.filesArchiving);
-        }
+        // Treebeard Files view
+        var filesWidget = new FilesWidget('treeGrid', nodeApiUrl + 'files/grid/');
+        filesWidget.init();
     }
 
     // Tooltips
