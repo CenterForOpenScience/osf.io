@@ -24,7 +24,7 @@ var PrivateLinkViewModel = function(url) {
     self.nodes = ko.observableArray([]);
     self.nodesToChange = ko.observableArray();
     self.disableSubmit = ko.observable(false);
-    self.submitText = ko.observable('Submit');
+    self.submitText = ko.observable('Generate');
 
     self.isChildVisible = function(data) {
         return (self.nodesToChange().indexOf(data.parent_id) !== -1 ||  data.parent_id === self.id());

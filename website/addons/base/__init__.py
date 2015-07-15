@@ -40,8 +40,7 @@ NODE_SETTINGS_TEMPLATE_DEFAULT = os.path.join(
 
 USER_SETTINGS_TEMPLATE_DEFAULT = os.path.join(
     settings.TEMPLATES_PATH,
-    'project',
-    'addon',
+    'profile',
     'user_settings_default.mako',
 )
 

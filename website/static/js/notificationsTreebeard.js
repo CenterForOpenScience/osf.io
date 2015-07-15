@@ -70,6 +70,7 @@ function subscribe(item, notification_type) {
         '/api/v1/subscriptions/',
         payload
     ).done(function(){
+        //'notfiy-success' is to override default class 'success' in treebeard
         item.notify.update('Settings updated', 'notify-success', 1, 2000);
         item.data.event.notificationType = notification_type;
     }).fail(function() {
@@ -259,7 +260,7 @@ function ProjectNotifications(data) {
         },
         showFilter : false,     // Gives the option to filter by showing the filter box.
         allowMove : false,       // Turn moving on or off.
-        hoverClass : 'fangorn-hover',
+        hoverClass : '',
         resolveRefreshIcon : function() {
           return m('i.fa.fa-refresh.fa-spin');
         }

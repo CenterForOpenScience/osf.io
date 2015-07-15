@@ -226,7 +226,7 @@ var FileRevisionsTable = {
     view: function(ctrl) {
         return m('', [ctrl.subscriptions(), m('#revisionsPanel.panel.panel-default', [
             m('.panel-heading.clearfix', m('h3.panel-title', 'Revisions')),
-            m('.panel-body', {style:{'padding-right': '0px','padding-left':'0px'}}, (function() {
+            m('.panel-body', {style:{'padding-right': '0','padding-left':'0', 'padding-bottom' : '0'}}, (function() {
                 if (!model.loaded()) {
                     return util.Spinner;
                 }
