@@ -59,15 +59,22 @@ function Comment(data) {
 	self.seenBy = ko.observableArray([]);
 
     /**
-     * Returns 'You' if the current user is the commenter, else the commenter's name
+     * Saves the author as the actual user, not you 
      **/
     self.author = ko.pureComputed(function() {
-        if (self.user.id === currentUser.id) {
-            return 'You';
-        }
-        else {
-            return self.user.fullname;
-        }
+      return self.user.fullname;
+    });
+
+    /**
+     * Returns 'You' if the current user is the commenter, else the commenter's name
+     */
+    self.getAuthor = ko.pureComputed(function() {
+      if (self.user.id === currentUser.id) {
+        return 'You';
+      }
+      else {
+        return self.user.fullname;
+      }
     });
 
     /**
@@ -516,7 +523,7 @@ RegistrationEditor.prototype.viewComments = function() {
     if (comment.seenBy().indexOf(currentUser.id) === -1) {
       comment.seenBy.push(currentUser.id);
     }
-  }) 
+  });
 };
 RegistrationEditor.prototype.getUnseenComments = function(qid) {
   var self = this;
@@ -663,6 +670,8 @@ RegistrationEditor.prototype.save = function() {
             }
         });
     });
+
+  console.log(self.draft().schemaData);
 
     if (!self.draft().pk){
         return self.create(data);
