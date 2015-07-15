@@ -4,10 +4,10 @@ from framework.exceptions import HTTPError
 
 
 INDEXED_TYPES = [
-        'txt',
-        'md',
-        'rtf',
-    ]
+    'txt',
+    'md',
+    'rtf',
+]
 
 
 def is_indexed(filename):

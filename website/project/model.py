@@ -1544,6 +1544,8 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
 
     def update_search_file(self, action, addon, name, path):
         from website import search
+        if not self.is_public:
+            return
         if action in ('update', 'create'):
             search.search.update_file(name, path, addon)
         elif action in ('delete',):

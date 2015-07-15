@@ -12,7 +12,6 @@ import website.search.search as search
 from website.search import elastic_search
 from website.search.util import build_query
 from website.search_migration.migrate import migrate
-
 from tests.base import OsfTestCase
 from tests.test_features import requires_search
 from tests.factories import (
@@ -753,67 +752,151 @@ def update_file(file_doc, parent_id, index=None):
     es.index(index=index, doc_type='file', parent=parent_id, id=file_doc['path'], body=file_doc, refresh=True)
 
 
-class TestSearchFiles(SearchTestCase):
+class TestUpdateFiles(SearchTestCase):
     def setUp(self):
-        super(TestSearchFiles, self).setUp()
-
-        self.project = ProjectFactory(title='The Spanish Inquisition')
-        self.project.set_privacy('public')
-
-        self.project_with_no_files = ProjectFactory(title='Something Completely Different')
-        self.project_with_no_files.set_privacy('public')
-
-        self.file_ = {
-            'name': 'unique_file.txt',
+        super(TestUpdateFiles, self).setUp()
+        self.parent_project = ProjectFactory()
+        self.parent_project.set_privacy('public')
+        self.fake_file_doc_one = {
+            'name': 'test_file_one.txt',
             'path': '/00001',
-            'content': 'tea, earl gray, hot.',
+            'content': 'this is a test file.',
+            'parent_id': self.parent_project._id
         }
-        update_file(self.file_, self.project._id, index=elastic_search.INDEX)
 
-        time.sleep(1)  # Allow elasticsearch to update
-
-    def test_project_with_file_match_content(self):
-        res = query('earl gray', doc_type='project')['results']
-        assert_equal(len(res), 1)
-
-    def test_project_with_file_that_match_name(self):
-        res = query('unique_file.txt', doc_type='project')['results']
-        assert_equal(len(res), 1)
-
-    def test_files_with_non_ascii_characters(self):
-        non_ascii_name_file = {
-            'name': 'nón_ascíí_named_file.txt',
+        self.fake_file_doc_two = {
+            'name': 'test_file_two.txt',
             'path': '/00002',
-            'content': 'Andorians are blue.',
+            'content': 'the rain in spain rains mainly on the plain',
+            'parent_id': self.parent_project._id
         }
-        update_file(non_ascii_name_file, self.project._id, index=elastic_search.INDEX)
 
-        non_ascii_content_file = {
-            'name': 'non_ascii_content_file.txt',
-            'path': '/00003',
-            'content': u'Fun Fact! The emoji for earth is \xF0\x9F\x8C\x8F.'
+    def test_file_indexed(self):
+        with mock.patch('website.search.file_util.build_file_document', return_value=self.fake_file_doc_one):
+            elastic_search.update_file(self.fake_file_doc_one['name'],
+                                       self.fake_file_doc_one['path'],
+                                       'addon')
+            time.sleep(1)
+            res = query('test file')['results']
+            assert_equal(len(res), 1)
+
+    def test_update_file_does_not_index_images(self):
+        with mock.patch('website.search.file_util.build_file_document', return_value=self.fake_file_doc_one):
+            self.fake_file_doc_one['name'] = 'test_file.png'
+            elastic_search.update_file(self.fake_file_doc_one['name'],
+                                       self.fake_file_doc_one['path'],
+                                       'addon')
+            time.sleep(1)
+            res = query('test file')['results']
+            assert_equal(len(res), 0)
+
+    def test_update_all_files(self):
+        file_list = [self.fake_file_doc_one, self.fake_file_doc_two]
+        file_dict_list = []
+        for f in file_list:
+            f_dict = f.copy()
+            del f_dict['content']
+            del f_dict['parent_id']
+            f_dict.update({'addon': 'some_addon'})
+            file_dict_list.append(f_dict)
+
+        with mock.patch('website.search.file_util.collect_files', return_value=file_dict_list):
+            with mock.patch('website.search.file_util.build_file_document', side_effect=file_list):
+                elastic_search.update_all_files(self.parent_project)
+
+        time.sleep(1)
+        res_one = query('test file')['results']
+        res_two = query('spain rains')['results']
+        assert_equal(len(res_one), 1)
+        assert_equal(len(res_two), 1)
+
+
+class TestDeleteFiles(SearchTestCase):
+    def setUp(self):
+        super(TestDeleteFiles, self).setUp()
+        self.parent_project = ProjectFactory()
+        self.parent_project.set_privacy('public')
+        self.fake_file_doc_one = {
+            'name': 'test_file_one.txt',
+            'path': '/00001',
+            'content': 'this is a test file.',
+            'parent_id': self.parent_project._id
         }
-        update_file(non_ascii_content_file, self.project._id, index=elastic_search.INDEX)
-        time.sleep(1)
+        self.fake_file_doc_two = {
+            'name': 'test_file_two.txt',
+            'path': '/00002',
+            'content': 'the rain in spain rains mainly on the plain',
+            'parent_id': self.parent_project._id
+        }
+        update_file(self.fake_file_doc_one, self.parent_project, elastic_search.INDEX)
+        update_file(self.fake_file_doc_two, self.parent_project, elastic_search.INDEX)
 
-        res = query('Andorians')['results']
+    def test_remove_file(self):
+        res = query('test file')['results']
         assert_equal(len(res), 1)
-
-        res = query('emoji')['results']
-        assert_equal(len(res), 1)
-
-    def test_project_not_in_results_after_file_deleted(self):
-        res = query('earl gray')['results']
-        assert_equal(len(res), 1)
-        search.delete_file('00001')
-        time.sleep(1)
-        res = query('earl gray')['results']
+        elastic_search.delete_file(self.fake_file_doc_one['path'])
+        res = query('test file')['results']
         assert_equal(len(res), 0)
 
-    def test_project_with_file_cant_be_found_when_made_private(self):
-        res = query('earl gray')['results']
-        assert_equal(len(res), 1)
+    def test_remove_all_file(self):
+        res_one = query('test file')['results']
+        res_two = query('spain rains')['results']
+        assert_equal(len(res_one), 1)
+        assert_equal(len(res_two), 1)
 
+        file_list = [self.fake_file_doc_one, self.fake_file_doc_two]
+        file_dict_list = []
+        for f in file_list:
+            f_dict = f.copy()
+            del f_dict['content']
+            del f_dict['parent_id']
+            f_dict.update({'addon': 'some_addon'})
+            file_dict_list.append(f_dict)
+
+        with mock.patch('website.search.file_util.collect_files', return_value=file_dict_list):
+            elastic_search.delete_all_files(self.parent_project)
+        time.sleep(1)
+
+        res_one = query('test file')['results']
+        res_two = query('spain rains')['results']
+        assert_equal(len(res_one), 0)
+        assert_equal(len(res_two), 0)
+
+
+class TestSearchUpdate(SearchTestCase):
+    def setUp(self):
+        super(TestSearchUpdate, self).setUp()
+        self.project = ProjectFactory()
+
+    @mock.patch('website.project.model.Node.update_search_files')
+    def test_update_called_on_make_public(self, mock_update_search_files):
+        assert_false(mock_update_search_files.called)
+        self.project.set_privacy('public')
+        assert_true(mock_update_search_files.called)
+
+    @mock.patch('website.project.model.Node.update_search_files')
+    def test_update_called_on_make_private(self, mock_update_search_files):
+        self.project.set_privacy('public')
+        mock_update_search_files.reset_mock()
+
+        assert_false(mock_update_search_files.called)
         self.project.set_privacy('private')
-        res = query('earl gray')['results']
-        assert_equal(len(res), 0)
+        assert_true(mock_update_search_files.called)
+
+    @mock.patch('website.search.search.update_file')
+    def test_update_called_on_file_created(self, mock_update_file):
+        assert_false(mock_update_file.called)
+        self.project.update_search_file('create', 'some addon', 'some name', 'some path')
+        assert_true(mock_update_file.called)
+
+    @mock.patch('website.project.model.Node.update_search_file')
+    def test_update_called_on_file_update(self, mock_update_file):
+        assert_false(mock_update_file.called)
+        self.project.update_search_file('update', 'some addon', 'some name', 'some path')
+        assert_true(mock_update_file.called)
+
+    @mock.patch('website.project.model.Node.update_search_file')
+    def test_remove_called_on_file_delete(self, mock_remove_file):
+        assert_false(mock_remove_file.called)
+        self.project.update_search_file('delete', 'some addon', 'some name', 'some path')
+        assert_true(mock_remove_file.called)
