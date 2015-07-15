@@ -184,25 +184,24 @@ class NodeContributorsSerializer(UserSerializer):
         user.bibliographic = node.get_visible(user)
         return user
 
-    def set_visibility(self, bibliographic, user, node, is_admin=True, is_current=None):
+    def set_visibility(self, bibliographic, user, node, is_admin=True, is_current=False):
         if is_admin and bibliographic:
             node.set_visible(user, True, save=True)
         elif not bibliographic:
-            if len(node.visible_contributors) == 1 and is_current:
+            if len(node.visible_contributors) == 1 and node.get_visible(user):
                 raise ValidationError('Must have at least one visible contributor')
             elif is_admin or is_current:
                 node.set_visible(user, False, save=True)
         else:
             raise PermissionDenied()
 
-    def set_permissions(self, field, user, node, is_admin=True, edit=None):
+    def set_permissions(self, field, user, node, is_admin=True, is_current=False):
         if field == '':
             pass
-        #todo fix bug where user is not admin but also not current user for editing
-        elif is_admin or edit:
+        elif is_admin or not is_current:
             if field == 'admin':
                     node.set_permissions(user, ['read', 'write', 'admin'])
-            elif self.has_multiple_admins(node) or not edit:
+            elif self.has_multiple_admins(node) or not is_current:
                 if field == 'write':
                     node.set_permissions(user, ['read', 'write'])
                 elif field == 'read':
@@ -242,8 +241,9 @@ class NodeContributorDetailSerializer(NodeContributorsSerializer):
         if node.get_visible(user) != bibliographic:
             self.set_visibility(bibliographic, user, node, is_admin_current, is_current)
         if permission_field != '':
-            self.set_permissions(permission_field, user, node, is_admin_current, edit=True)
+            self.set_permissions(permission_field, user, node, is_admin_current, is_current=is_current)
         user.bibliographic = node.get_visible(user)
+        user.permissions = node.get_permissions(user)
         return user
 
 
