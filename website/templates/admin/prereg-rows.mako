@@ -24,11 +24,11 @@
         </div>
     </div>
     <!-- payment sent -->
-    <div class="col-md-1" id="payment_sent">
-        <span data-bind="text: $data.flags.paymentSent, attr: {class: 'payment_sent' + $index()}"></span><i data-bind="click: $parent.editItem.bind($data, 'payment_sent' + $index()), clickBubble: false, event: {mouseover: $parent.enlargeIcon, mouseout: $parent.shrinkIcon}, attr: {class: 'payment_sent' + $index() + ' fa fa-pencil'}" style="margin-left: 10px"></i>
-        <div data-bind="attr: {class: 'input_payment_sent' + $index()}, valueUpdate: 'afterkeydown', enterkey: $parent.stopEditing.bind($data, 'payment_sent' + $index())" style="display: none">
-            <div><input type="radio" data-bind="value: 'no', attr: {class: 'input_payment_sent' + $index()}, checked: $data.flags.paymentSent"/>No</div>
-            <div><input type="radio" data-bind="value: 'yes', attr: {class: 'input_payment_sent' + $index()}"/>Yes</div>
+    <div class="col-md-1" id="paymentSent">
+        <span data-bind="text: $data.flags.paymentSent, attr: {class: 'paymentSent' + $index()}"></span><i data-bind="click: $parent.editItem.bind($data, 'paymentSent' + $index()), clickBubble: false, event: {mouseover: $parent.enlargeIcon, mouseout: $parent.shrinkIcon}, attr: {class: 'paymentSent' + $index() + ' fa fa-pencil'}" style="margin-left: 10px"></i>
+        <div data-bind="attr: {class: 'input_paymentSent' + $index()}, valueUpdate: 'afterkeydown', enterkey: $parent.stopEditing.bind($data, 'paymentSent' + $index())" style="display: none">
+            <div><input type="radio" data-bind="attr: {class: 'input_paymentSent' + $index(), name: 'input_paymentSent' + $index()}, checked: $parent.paymentSent, checkedValue: true"/>True</div>
+            <div><input type="radio" data-bind="attr: {class: 'input_paymentSent' + $index(), name: 'input_paymentSent' + $index()}, checked: $parent.paymentSent, checkedValue: false"/>False</div>
         </div>
     </div>
     <!-- notes -->
