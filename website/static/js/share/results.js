@@ -120,11 +120,20 @@ Results.controller = function(vm) {
                             (function(){
                                 return m('span', [
                                     m('br'),
-                                    m('div', m('a', {onclick: function() {result.showRawNormed = result.showRawNormed ? false : true;}},'More')),
+                                    m('div', m('a', {
+                                        onclick: function() {
+                                            result.showRawNormed = result.showRawNormed ? false : true;
+                                            if (!result.raw) {
+                                                utils.loadRawNormalized(result)
+                                            }
+                                        }},'More')
+                                    ),
                                     m('br'),
-                                    result.showRawNormed ? m('div', [
-                                        m('p', 'raaaaaaw for' + result.shareProperties.docID),
-                                        m('p', 'noooorrrmmeeedddd for ' + result.shareProperties.docID)
+                                    result.showRawNormed && result.raw ? m('div', [
+                                        m('.col-md-6',
+                                            m('p', result.raw),
+                                            m('p', result.normalized)
+                                        )
                                     ]) : m('span')
                                 ]);
                             }())
