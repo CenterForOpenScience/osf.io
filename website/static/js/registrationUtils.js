@@ -59,7 +59,7 @@ function Comment(data) {
 	self.seenBy = ko.observableArray([]);
 
     /**
-     * Saves the author as the actual user, not you 
+     * Returns the author as the actual user, not 'You' 
      **/
     self.author = ko.pureComputed(function() {
       return self.user.fullname;
@@ -212,14 +212,14 @@ Question.prototype.init = function() {
  * Creates a new comment from the current value of Question.nextComment and clears nextComment
  **/
 Question.prototype.addComment = function() {
-    var self = this;
+  var self = this;
 
-    var comment = new Comment({
-        value: self.nextComment()
-    });
-	comment.seenBy.push(currentUser.fullname);
-    self.nextComment('');
-    self.comments.push(comment);
+  var comment = new Comment({
+    value: self.nextComment()
+  });
+  comment.seenBy.push(currentUser.id);
+  self.nextComment('');
+  self.comments.push(comment);
 };
 /**
  * Shows/hides the Question example
@@ -508,47 +508,47 @@ RegistrationEditor.prototype.getUnseenComments = function(qid) {
   return comments.length !== 0 ? comments.length : '';
 };
 RegistrationEditor.prototype.nextPage = function() {
-    var self = this;
+  var self = this;
 
-    var currentQuestion = self.currentQuestion();
+  var currentQuestion = self.currentQuestion();
 
-    var questions = self.flatQuestions();
-    var index = $osf.indexOf(questions, function(q){
-        return q.id === currentQuestion.id;
-    });
-    if(index + 1 === questions.length) {
-        self.currentQuestion(questions.shift());
-		self.viewComments();
-    }
-    else {
-        self.currentQuestion(questions[index + 1]);
-		self.viewComments();
-	}
+  var questions = self.flatQuestions();
+  var index = $osf.indexOf(questions, function(q){
+                return q.id === currentQuestion.id;
+              });
+  if(index + 1 === questions.length) {
+    self.currentQuestion(questions.shift());
+	self.viewComments();
+  }
+  else {
+    self.currentQuestion(questions[index + 1]);
+	self.viewComments();
+  }
 };
 RegistrationEditor.prototype.previousPage = function() {
-    var self = this;
+  var self = this;
 
-    var currentQuestion = self.currentQuestion();
+  var currentQuestion = self.currentQuestion();
 
-    var questions = self.flatQuestions();
-    var index = $osf.indexOf(questions, function(q){
-        return q.id === currentQuestion.id;
-    });
-    if(index - 1 < 0){
-        self.currentQuestion(questions.pop());
-		self.viewComments();
-    }
-    else {
-        self.currentQuestion(questions[index - 1]);
-		self.viewComments();
-    }
+  var questions = self.flatQuestions();
+  var index = $osf.indexOf(questions, function(q){
+                return q.id === currentQuestion.id;
+              });
+  if(index - 1 < 0){
+    self.currentQuestion(questions.pop());
+	self.viewComments();
+  }
+  else {
+    self.currentQuestion(questions[index - 1]);
+	self.viewComments();
+  }
 };
 RegistrationEditor.prototype.selectPage = function(page) {
-    var self = this;
+  var self = this;
 
-	var firstQuestion = page.questions[Object.keys(page.questions)[0]];
-    self.currentQuestion(firstQuestion);
-	self.viewComments();
+  var firstQuestion = page.questions[Object.keys(page.questions)[0]];
+  self.currentQuestion(firstQuestion);
+  self.viewComments();
 };
 RegistrationEditor.prototype.updateData = function(response) {
     var self = this;
