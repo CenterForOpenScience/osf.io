@@ -438,3 +438,8 @@ tr a {
 button.close {
     line-height: 0.9;
 }
+
+/* table for add link and contributor */
+.osf-icon-td {
+    width: 50px;
+}
