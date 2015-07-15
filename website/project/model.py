@@ -3122,7 +3122,7 @@ class DraftRegistration(AddonModelMixin, StoredObject):
             for question_id, value in comments.iteritems():
                 for comment in value['comments']:
                     if comment['adminHasSeen'] is False:
-                       comments.remove(question_id)
+                        comments.remove(question_id)
 
         return comments
 

@@ -20,7 +20,7 @@ $(document).ready(function() {
 
     var draftManager = new RegistrationManager(node, '#draftRegistrationScope', '#registrationEditorScope', {
         list: node.urls.api + 'draft/',
-	submit: node.urls.api + 'draft/submit/{draft_pk}/',
+	submit: node.urls.api + 'draft/{draft_pk}/submit/',
         get: node.urls.api + 'draft/{draft_pk}/',
         delete: node.urls.api + 'draft/{draft_pk}/',
         schemas: '/api/v1/project/schema/',

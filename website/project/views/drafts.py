@@ -29,11 +29,12 @@ get_schema_or_fail = lambda query: get_or_http_error(MetaSchema, query)
 
 @must_have_permission(ADMIN)
 @must_be_valid_project
-def submit_for_review(auth, node, did, *args, **kwargs):
+def submit_draft_for_review(auth, node, draft_pk, *args, **kwargs):
     user = auth.user
 
-    draft = get_draft_or_fail(did)
+    draft = get_draft_or_fail(draft_pk)
     draft.is_pending_review = True
+    draft.save()
 
     REVIEW_EMAIL = Mail(tpl_prefix='prereg_review', subject='New Prereg Prize registration ready for review')
     send_mail(draft.initiator.email, REVIEW_EMAIL, user=user, src=node)

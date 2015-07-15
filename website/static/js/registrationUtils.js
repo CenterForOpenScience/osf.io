@@ -627,17 +627,12 @@ RegistrationEditor.prototype.updateData = function(response) {
 RegistrationEditor.prototype.submitForReview = function() {
     var self = this;
 
-    var currentNode = window.contextVars.node;
-    var currentUser = window.contextVars.currentUser;
-
     var messages = self.draft().messages;
     bootbox.confirm(messages.beforeSubmitForApproval, function(result) {
 	if(result) {
-	    $osf.postJSON(self.urls.submit.replace('{draft_pk}', self.draft().pk), {
-		node: currentNode,
-		auth: currentUser
-	    }).then(function() {
+	    $osf.postJSON(self.urls.submit.replace('{draft_pk}', self.draft().pk), {}).then(function() {
 		bootbox.dialog({
+                    closeButton: false,
 		    message: messages.afterSubmitForApproval,
 		    title: 'Pre-Registration Prize Submission',
 		    buttons: {
@@ -797,6 +792,22 @@ RegistrationManager.prototype.refresh = function() {
 
     $.when(getSchemas, getDraftRegistrations).then(function() {
         self.loading(false);
+    });
+};
+RegistrationManager.prototype.deleteDraft = function(draft) {
+    var self = this;
+
+    bootbox.confirm('Are you sure you want to delete this draft registration?', function(confirmed) {
+        if(confirmed) {
+            $.ajax({
+                url: self.urls.delete.replace('{draft_pk}', draft.pk),
+                method: 'DELETE'
+            }).then(function() {
+                self.drafts.remove(function(item) {
+                    return item.pk === draft.pk;
+                });
+            });
+        }
     });
 };
 RegistrationManager.prototype.beforeCreateDraft = function() {
