@@ -1,5 +1,8 @@
 'use strict';
 
+require('../run_prettify.js');
+require('../vkbeautify.js');
+
 var $ = require('jquery');
 var m = require('mithril');
 var $osf = require('js/osfHelpers');
@@ -140,11 +143,11 @@ Results.controller = function(vm) {
                         m('div', {class: 'tab-content'},
                             m('div',
                                 {class: 'tab-pane active', id:'raw'},
-                                result.raw
+                                m('pre', {class:'prettyprint', {style: {'white-space': 'pre-wrap'}}}, result.raw)
                             ),
                             m('div',
                                 {class: 'tab-pane', id:'normalized'},
-                                result.normalized
+                                m('pre', {class: 'prettyprint'}, result.normalized)
                             )
                         )
                     ]) : m('span')
