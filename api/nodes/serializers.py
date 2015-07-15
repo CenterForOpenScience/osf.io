@@ -198,10 +198,11 @@ class NodeContributorsSerializer(UserSerializer):
     def set_permissions(self, field, user, node, is_admin=True, edit=None):
         if field == '':
             pass
+        #todo fix bug where user is not admin but also not current user for editing
         elif is_admin or edit:
             if field == 'admin':
                     node.set_permissions(user, ['read', 'write', 'admin'])
-            if self.has_multiple_admins(node) or not edit:
+            elif self.has_multiple_admins(node) or not edit:
                 if field == 'write':
                     node.set_permissions(user, ['read', 'write'])
                 elif field == 'read':
@@ -229,7 +230,7 @@ class NodeContributorDetailSerializer(NodeContributorsSerializer):
     id = ser.CharField(read_only=True, source='_id')
 
     # Overridden to allow blank for user to not change status
-    permission = ser.ChoiceField(choices=['admin', 'read', 'write'], write_only=True, allow_blank=True)
+    permission = ser.ChoiceField(choices=['read', 'write', 'admin'], write_only=True, allow_blank=True)
 
     def update(self, user, validated_data):
         node = self.context['view'].get_node()
@@ -242,9 +243,7 @@ class NodeContributorDetailSerializer(NodeContributorsSerializer):
             self.set_visibility(bibliographic, user, node, is_admin_current, is_current)
         if permission_field != '':
             self.set_permissions(permission_field, user, node, is_admin_current, edit=True)
-        user.permission = node.get_permissions(user)[-1]
         user.bibliographic = node.get_visible(user)
-        user.node_id = node._id
         return user
 
 
