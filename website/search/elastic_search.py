@@ -17,6 +17,7 @@ from elasticsearch import (
     ConnectionError,
     helpers,
 )
+from flask import request
 
 from framework import sentry
 
@@ -425,7 +426,7 @@ def delete_doc(elastic_document_id, node, index=None, category=None):
 
 
 @requires_search
-def search_contributor(query, page=0, size=10, exclude=None, current_user=None):
+def search_contributor(query, exclude=None, current_user=None, **kwargs):
     """Search for contributors to add to a project using elastic search. Request must
     include JSON data with a "query" field.
 
@@ -439,6 +440,9 @@ def search_contributor(query, page=0, size=10, exclude=None, current_user=None):
         most recent employment and education, gravatar URL of an OSF user
 
     """
+    page = int(request.args.get('page', 0))
+    size = int(request.args.get('size', 0))
+
     start = (page * size)
     items = re.split(r'[\s-]+', query)
     exclude = exclude or []

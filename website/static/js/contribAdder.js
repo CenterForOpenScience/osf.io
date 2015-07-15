@@ -59,6 +59,7 @@ var AddContributorViewModel = oop.extend(Paginator, {
         self.results = ko.observableArray([]);
         self.selection = ko.observableArray();
         self.notification = ko.observable('');
+        self.url = ko.observable('');
         self.inviteError = ko.observable('');
         self.totalPages = ko.observable(0);
         self.nodes = ko.observableArray([]);
@@ -117,7 +118,7 @@ var AddContributorViewModel = oop.extend(Paginator, {
         var self = this;
         self.notification(false);
             return $.getJSON(
-                this.searchUrl,
+                self.url() + '?size=' + RESULTS_PER_PAGE + '&page='+ this.pageToGet(),
                 this.searchParams,
                 function(result) {
                     var contributors = result.users.map(function(userData) {
@@ -129,51 +130,41 @@ var AddContributorViewModel = oop.extend(Paginator, {
                         'level': 'info'
                     });
                 }
-                self.pageCollator(contributors);
+                self.results(contributors);
+                self.currentPage(result.page);
+                self.numberOfPages(result.pages);
+                self.addNewPaginators();
                 }
-            );
 
-    },
-    pageCollator: function(result) {
-        var self = this;
-        self.currentPage(self.pageToGet());
-        var start = self.currentPage()*RESULTS_PER_PAGE;
-        var end = start+RESULTS_PER_PAGE > result.length ?
-            result.length : start+RESULTS_PER_PAGE;
-        self.results(result.slice(start, end));
-        self.numberOfPages(Math.ceil(result.length/RESULTS_PER_PAGE));
-        self.addNewPaginators();
+            );
 
     },
     startSearch: function() {
         this.pageToGet(0);
-        this.searchUrl = '/api/v1/user/search/';
+        this.url('/api/v1/user/search/');
         this.searchParams = {
                 query: this.query(),
                 excludeNode: nodeId,
-                size: 100,
-                page: this.pageToGet()
-                };
+        };
         this.fetchResults();
     },
     importFromParent: function() {
         this.pageToGet(0);
-        this.searchUrl =  nodeApiUrl + 'get_contributors_from_parent/';
+        this.url(nodeApiUrl + 'get_contributors_from_parent/');
         this.searchParams = {};
         this.fetchResults();
 
     },
     recentlyAdded: function() {
         this.pageToGet(0);
-        this.searchUrl =  nodeApiUrl + 'get_recently_added_contributors/';
+        this.url(nodeApiUrl + 'get_recently_added_contributors/');
         this.searchParams = {};
         this.fetchResults();
 
     },
     mostInCommon: function() {
         this.pageToGet(0);
-        var self = this;
-        this.searchUrl =  nodeApiUrl + 'get_most_in_common_contributors/';
+        this.url(nodeApiUrl + 'get_most_in_common_contributors/');
         this.searchParams = {};
         this.fetchResults();
 
