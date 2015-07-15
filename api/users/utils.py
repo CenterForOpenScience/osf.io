@@ -5,7 +5,7 @@ from website.project import Node
 __author__ = 'patrickgorman'
 
 
-class IncludeAdditionalQuery(object):
+class IncludeAdditionalQueryUser(object):
 
     def __init__(self, obj, request):
         self.obj = obj

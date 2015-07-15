@@ -2,7 +2,7 @@ from rest_framework.exceptions import NotFound
 from framework.auth.core import Auth
 
 
-class IncludeAdditionalQuery(object):
+class IncludeAdditionalQueryNode(object):
 
     def __init__(self, obj, request):
         self.obj = obj
@@ -18,12 +18,15 @@ class IncludeAdditionalQuery(object):
             if 'contributors' in params:
                 query['contributors'] = self.get_contributors()
                 params.remove('contributors')
-            if 'pointers' in params:
-                query['pointers'] = self.get_pointers()
-                params.remove('pointers')
             if 'files' in params:
                 query['files'] = self.get_files()
                 params.remove('files')
+            if 'pointers' in params:
+                query['pointers'] = self.get_pointers()
+                params.remove('pointers')
+            if 'registrations' in params:
+                query['registrations'] = self.get_registrations()
+                params.remove('registrations')
             if params != []:
                 params_string = ', '.join(params)
                 raise NotFound('The following arguments cannot be found: {}'.format(params_string))
@@ -52,6 +55,16 @@ class IncludeAdditionalQuery(object):
             }
         return contributors
 
+    # todo figure out how to get file data from providers
+    def get_files(self):
+        files = {'test': 'not yet functional'}
+        # for files in self.obj.files:
+        #     files[file.name] = {
+        #         'provider': file.proivider,
+        #         'size': file.size,
+        #     }
+        return files
+
     # todo make simple serializer for pointers
     def get_pointers(self):
         pointers = {}
@@ -63,13 +76,12 @@ class IncludeAdditionalQuery(object):
             }
         return pointers
 
-    # todo make simple serializer for files
-    def get_files(self):
-        files = {}
-        for files in self.obj.files:
-            files[file._id] = {
-                'title': file.title,
-                'description': file.description,
-                'is_public': file.is_public
+    def get_registrations(self):
+        registrations = {}
+        for registration in self.obj.node__registrations:
+            registrations[registration._id] = {
+                'title': registration.title,
+                'description': registration.description,
+                'is_public': registration.is_public
             }
-        return files
+        return registrations

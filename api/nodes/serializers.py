@@ -1,4 +1,4 @@
-from .utils import IncludeAdditionalQuery
+from .utils import IncludeAdditionalQueryNode
 from rest_framework import serializers as ser
 
 from website.models import Node
@@ -62,7 +62,7 @@ class NodeSerializer(JSONAPISerializer):
                                                             'node have implicit read permissions for all child nodes',
                               )
 
-    additional_query_params = ser.SerializerMethodField(required=False, read_only=True)
+    additional_query_params = ser.SerializerMethodField(read_only=True)
 
     # TODO: finish me
 
@@ -99,9 +99,10 @@ class NodeSerializer(JSONAPISerializer):
         return len(obj.nodes_pointer)
 
     def get_additional_query_params(self, obj):
-        include = IncludeAdditionalQuery(obj, self.context['request'])
-        ret = include.get_additional_query()
-        return ret
+        if 'request' in self.context:
+            include = IncludeAdditionalQueryNode(obj, self.context['request'])
+            ret = include.get_additional_query()
+            return None
 
     @staticmethod
     def get_properties(obj):

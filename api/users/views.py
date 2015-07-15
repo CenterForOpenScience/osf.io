@@ -1,7 +1,6 @@
 from rest_framework import generics, permissions as drf_permissions
 from modularodm import Q
 
-from api.users.utils import IncludeAdditionalQuery
 from website.models import User, Node
 from framework.auth.core import Auth
 from api.base.utils import get_object_or_404
@@ -23,8 +22,6 @@ class UserMixin(object):
         if check_permissions:
             # May raise a permission denied
             self.check_object_permissions(self.request, obj)
-        additional_query = IncludeAdditionalQuery(obj, self.request)
-        obj.additional_query_params = additional_query.get_additional_query()
         return obj
 
 

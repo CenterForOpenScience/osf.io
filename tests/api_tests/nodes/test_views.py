@@ -437,97 +437,10 @@ class TestNodeDetail(ApiTestCase):
         assert_equal(res.status_code, 403)
 
 
-class TestNodeListIncludeQueryParams(ApiTestCase):
+class TestNodeIncludeQueryParams(ApiTestCase):
 
     def setUp(self):
-        super(TestNodeListIncludeQueryParams, self).setUp()
-        self.user = UserFactory.build()
-        self.user.set_password('justapoorboy')
-        self.user.save()
-        self.basic_auth = (self.user.username, 'justapoorboy')
-
-        self.contributor = UserFactory.build()
-        self.contributor.set_password('justapoorboy')
-        self.contributor.save()
-
-        self.project = ProjectFactory(title='Project One', is_public=True, creator=self.user)
-        self.project.add_contributor(self.contributor)
-        self.url = '/{}nodes/'.format(API_BASE)
-
-        self.child = ProjectFactory(title='Project Two', is_public=True, creator=self.user)
-        self.pointer = self.project.add_pointer(self.child, Auth(self.user))
-        self.project.nodes.append(self.child)
-        self.project.save()
-
-        self.default_url = self.url+'?include=children,contributors,pointers'
-        self.default_res = self.app.get(url=self.default_url)
-        self.default_query_one = self.default_res.json['data'][0]['additional_query_params']
-        self.default_query_two = self.default_res.json['data'][1]['additional_query_params']
-
-    def test_defaults_keys(self):
-        assert_equal(self.default_res.status_code, 200)
-        assert_in('children', self.default_query_one)
-        assert_in('contributors', self.default_query_one)
-        assert_in('pointers', self.default_query_one)
-
-    def test_default_data_ids(self):
-        assert_in(self.child._id, self.default_query_one['children'] or self.default_query_two['children'])
-        if self.child._id in self.default_query_one['children']:
-            query = self.default_query_one
-        else:
-            query = self.default_query_two
-        assert_in(self.contributor._id, query['contributors'])
-        assert_in(self.pointer._id, query['pointers'])
-
-    def test_get_invalid_key(self):
-        self.url += '?include=nah'
-        res = self.app.get(self.url, expect_errors=True)
-        assert_equal(res.status_code, 404)
-
-    def test_get_built_in_keys_plus_invalid_key(self):
-        self.url += '?include=children,contributors,pointers,bruh'
-        res = self.app.get(self.url, expect_errors=True)
-        assert_equal(res.status_code, 404)
-
-    def test_get_include_child_id(self):
-        self.url += '?include=children'
-        res = self.app.get(self.url)
-        assert_equal(res.status_code, 200)
-        custom_query_one = res.json['data'][0]['additional_query_params']
-        custom_query_two = res.json['data'][1]['additional_query_params']
-        assert_in('children', custom_query_one or custom_query_two)
-        assert_in(self.child._id, custom_query_one['children'])
-
-
-    def test_get_include_contributor_id(self):
-        self.url += '?include=contributors'
-        res = self.app.get(self.url)
-        assert_equal(res.status_code, 200)
-        custom_query_one = res.json['data'][0]['additional_query_params']
-        custom_query_two = res.json['data'][1]['additional_query_params']
-        assert_in('contributors', custom_query_one or custom_query_two)
-        try:
-            assert_in(self.contributor._id, custom_query_one['contributors'])
-        except AssertionError:
-            assert_in(self.contributor._id, custom_query_two['contributors'])
-
-    def test_get_include_pointer_id(self):
-        self.url += '?include=pointers'
-        res = self.app.get(self.url)
-        assert_equal(res.status_code, 200)
-        custom_query_one = res.json['data'][0]['additional_query_params']
-        custom_query_two = res.json['data'][1]['additional_query_params']
-        assert_in('pointers', custom_query_one or custom_query_two)
-        try:
-            assert_in(self.pointer._id, custom_query_one['pointers'])
-        except AssertionError:
-            assert_in(self.pointer._id, custom_query_two['pointers'])
-
-
-class TestNodeDetailIncludeQueryParams(ApiTestCase):
-
-    def setUp(self):
-        super(TestNodeDetailIncludeQueryParams, self).setUp()
+        super(TestNodeIncludeQueryParams, self).setUp()
         self.user = UserFactory.build()
         self.user.set_password('justapoorboy')
         self.user.save()
