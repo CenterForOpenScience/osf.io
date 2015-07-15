@@ -99,7 +99,9 @@ Results.controller = function(vm) {
                                     m('br'),
                                     m('div', m('a', {onclick: function() {result.showAllsubjects = result.showAllsubjects ? false : true;}},'See All'))
                                 ]);
-                            }())))
+                            }())
+                        )
+                    )
                 ]),
                 m('br'),
                 m('br'),
@@ -108,8 +110,26 @@ Results.controller = function(vm) {
                     m('span.pull-right', [
                         m('img', {src: self.vm.ProviderMap[result.shareProperties.source].favicon, style: {width: '16px', height: '16px'}}),
                         ' ',
-                        m('a', {onclick: function() {utils.updateFilter(self.vm, 'shareProperties.source:' + result.shareProperties.source);}}, self.vm.ProviderMap[result.shareProperties.source].long_name)
-                    ])
+                        m('a', {onclick: function() {utils.updateFilter(self.vm, 'shareProperties.source:' + result.shareProperties.source);}}, self.vm.ProviderMap[result.shareProperties.source].long_name),
+                        m('br')
+                    ]),
+                ]),
+                m('.row', [
+                    m('.col-md-5',
+                        m('.pull-right', {style: {'text-align': 'right'}},
+                            (function(){
+                                return m('span', [
+                                    m('br'),
+                                    m('div', m('a', {onclick: function() {result.showRawNormed = result.showRawNormed ? false : true;}},'More')),
+                                    m('br'),
+                                    result.showRawNormed ? m('div', [
+                                        m('p', 'raaaaaaw for' + result.shareProperties.docID),
+                                        m('p', 'noooorrrmmeeedddd for ' + result.shareProperties.docID)
+                                    ]) : m('span')
+                                ]);
+                            }())
+                        )
+                    )
                 ])
             ]),
             m('hr')
