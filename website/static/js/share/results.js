@@ -115,33 +115,42 @@ Results.controller = function(vm) {
                     ]),
                 ]),
                 m('.row', [
-                    m('.col-md-5',
-                        m('.pull-right', {style: {'text-align': 'right'}},
-                            (function(){
-                                return m('span', [
-                                    m('br'),
-                                    m('div', m('a', {
-                                        onclick: function() {
-                                            result.showRawNormed = result.showRawNormed ? false : true;
-                                            if (!result.raw) {
-                                                utils.loadRawNormalized(result)
-                                            }
-                                        }},'More')
-                                    ),
-                                    m('br'),
-                                    result.showRawNormed && result.raw ? m('div', [
-                                        m('.col-md-6',
-                                            m('p', result.raw),
-                                            m('p', result.normalized)
-                                        )
-                                    ]) : m('span')
-                                ]);
-                            }())
-                        )
+                    m('.pull-right', {style: {'text-align': 'right'}},
+                        (function(){
+                            return m('span', [
+                                m('br'),
+                                m('div', m('a', {
+                                    onclick: function() {
+                                        result.showRawNormed = result.showRawNormed ? false : true;
+                                        if (!result.raw) {
+                                            utils.loadRawNormalized(result);
+                                        }
+                                    }
+                                },'More'))
+                            ]);
+                        }())
                     )
-                ])
-            ]),
-            m('hr')
+                ]),
+                m('.row', [
+                    result.showRawNormed && result.raw ? m('div', [
+                        m('ul', {class: 'nav nav-tabs'}, [
+                            m('li', m('a', {href: '#raw', 'data-toggle': 'tab'}, 'Raw')),
+                            m('li', m('a', {href: '#normalized', 'data-toggle': 'tab'}, 'Normalized'))
+                        ]),
+                        m('div', {class: 'tab-content'},
+                            m('div',
+                                {class: 'tab-pane active', id:'raw'},
+                                result.raw
+                            ),
+                            m('div',
+                                {class: 'tab-pane', id:'normalized'},
+                                result.normalized
+                            )
+                        )
+                    ]) : m('span')
+                ]),
+                m('hr')
+            ])
         ]);
     };
 
