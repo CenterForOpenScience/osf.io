@@ -805,7 +805,7 @@ def make_url_map(app):
             '/project/<pid>/draft/<draft_id>/',
             '/project/<pid>/node/<nidB>/draft/<draft_id>/',
         ], 'get', project_views.drafts.edit_draft_registration,
-            OsfWebRenderer('project/edit_draft.mako')),
+            OsfWebRenderer('project/edit_draft_registration.mako')),
         Rule([
             '/project/<pid>/draft/<draft_id>/register/',
             '/project/<pid>/node/<nid>/draft/<draft_id>/register/',
