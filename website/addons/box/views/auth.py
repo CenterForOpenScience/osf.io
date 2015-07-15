@@ -173,8 +173,7 @@ def box_oauth_delete_user(user_addon, auth, **kwargs):
 
 
 @must_be_logged_in
-@must_have_addon('box', 'user')
-def box_user_config_get(user_addon, auth, **kwargs):
+def box_user_config_get(auth, **kwargs):
     """View for getting a JSON representation of the logged-in user's
     Box user settings.
     """
@@ -184,19 +183,29 @@ def box_user_config_get(user_addon, auth, **kwargs):
     }
     valid_credentials = True
 
-    if user_addon.has_auth:
+    user_addon = auth.user.get_addon('box')
+
+    if user_addon and user_addon.has_auth:
         try:
             client = get_client_from_user_settings(user_addon)
             client.get_user_info()
         except BoxClientException:
             valid_credentials = False
 
+    username = ''
+    n_nodes_authorized = 0
+    user_has_auth = False
+    if user_addon:
+        username = user_addon.username
+        n_nodes_authorized = len(user_addon.nodes_authorized)
+        user_has_auth = user_addon.has_auth
+
     return {
         'result': {
             'urls': urls,
-            'boxName': user_addon.username,
-            'userHasAuth': user_addon.has_auth,
+            'boxName': username,
+            'userHasAuth': user_has_auth,
             'validCredentials': valid_credentials,
-            'nNodesAuthorized': len(user_addon.nodes_authorized),
+            'nNodesAuthorized': n_nodes_authorized,
         },
     }

@@ -30,7 +30,7 @@ var _figshareItemButtons = {
                         Fangorn.ButtonEvents._downloadEvent.call(tb, event, item);
                     },
                     icon: 'fa fa-download',
-                    className: 'text-info'
+                    className: 'text-primary'
                 }, 'Download')
             );
         }
@@ -48,7 +48,7 @@ var _figshareItemButtons = {
                 }, 'Delete')
             );
         }
-        if (item.data.permissions && item.data.permissions.view) {
+        if (item.kind === 'file' && item.data.permissions && item.data.permissions.view) {
             buttons.push(
                 m.component(Fangorn.Components.button, {
                     onclick: function(event) {

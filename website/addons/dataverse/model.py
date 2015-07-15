@@ -91,7 +91,7 @@ class AddonDataverseNodeSettings(StorageAddonBase, AddonOAuthNodeSettingsBase):
     study_hdl = fields.StringField()    # Now dataset_doi
     study = fields.StringField()        # Now dataset
 
-    user_settings = fields.ForeignField(
+    foreign_user_settings = fields.ForeignField(
         'addondataverseusersettings', backref='authorized'
     )
 
@@ -117,11 +117,6 @@ class AddonDataverseNodeSettings(StorageAddonBase, AddonOAuthNodeSettingsBase):
     @property
     def complete(self):
         return bool(self.has_auth and self.dataset_doi is not None)
-
-    @property
-    def has_auth(self):
-        """Whether a dataverse account is associated with this node."""
-        return bool(self.user_settings and self.user_settings.has_auth)
 
     def _get_fileobj_child_metadata(self, filenode, user, cookie=None, version=None):
         kwargs = dict(

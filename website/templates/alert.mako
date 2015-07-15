@@ -1,6 +1,6 @@
 <%page args="extra_css=''" />
 
-<div id="alert-container">
+<div id="alert-container" class="m-t-md">
 % for message, css_class, dismissible, trust in status:
       <div class='alert alert-block alert-${css_class} fade in ${extra_css}'>
         % if dismissible:
