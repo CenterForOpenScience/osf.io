@@ -54,23 +54,31 @@ $script.ready('hgrid', function() {
 
         $('.revoke-badge').click(function() {
             var $self = $(this);
-            bootbox.confirm('Revoke this badge?', function(result) {
-                var bid = $self.attr('aid');
-                var url = $self.attr('url');
-                if(result && bid) {
-                    $.ajax({
-                        url: url + 'badges/revoke/',
-                        method: 'POST',
-                        dataType: 'json',
-                        contentType: 'application/json',
-                        data: JSON.stringify({reason: '', id: bid}),
-                        success: function(data) {
-                            location.reload();
-                        },
-                        error: function(xhr, status, error) {
-                            $.osf.growl('Could not revoke badge','');
-                        }
-                    });
+            bootbox.confirm({
+                message: 'Revoke this badge?',
+                callback: function(result) {
+                    var bid = $self.attr('aid');
+                    var url = $self.attr('url');
+                    if (result && bid) {
+                        $.ajax({
+                            url: url + 'badges/revoke/',
+                            method: 'POST',
+                            dataType: 'json',
+                            contentType: 'application/json',
+                            data: JSON.stringify({reason: '', id: bid}),
+                            success: function (data) {
+                                location.reload();
+                            },
+                            error: function (xhr, status, error) {
+                                $.osf.growl('Could not revoke badge', '');
+                            }
+                        });
+                    }
+                },
+                buttons:{
+                    confirm:{
+                        label:'Revoke'
+                    }
                 }
             });
         });
