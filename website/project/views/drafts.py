@@ -104,7 +104,7 @@ def register_draft_registration(auth, node, draft_id, *args, **kwargs):
     }, http.CREATED
 
 @must_be_logged_in
-@must_be_super_on(PREREG)
+#@must_be_super_on(PREREG)
 def get_all_draft_registrations(auth, *args, **kwargs):
 
     group = request.args.get('group')
