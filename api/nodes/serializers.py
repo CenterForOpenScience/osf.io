@@ -179,8 +179,7 @@ class NodeContributorsSerializer(UserSerializer):
         permission_field = validated_data['permission']
         node.add_contributor(contributor=user, auth=auth, save=True)
         self.set_visibility(bibliographic, user, node)
-        if permission_field != '':
-            self.set_permissions(permission_field, user, node)
+        self.set_permissions(permission_field, user, node)
         user.node_id = node._id
         user.bibliographic = node.get_visible(user)
         return user
@@ -197,7 +196,9 @@ class NodeContributorsSerializer(UserSerializer):
             raise PermissionDenied()
 
     def set_permissions(self, field, user, node, is_admin=True, edit=None):
-        if is_admin or edit:
+        if field == '':
+            pass
+        elif is_admin or edit:
             if field == 'admin':
                     node.set_permissions(user, ['read', 'write', 'admin'])
             if self.has_multiple_admins(node) or not edit:
