@@ -494,11 +494,11 @@ RegistrationEditor.prototype.getUnseenComments = function(qid) {
   var self = this;
 
   var question = self.draft().schemaData[qid];
-  var comments = [];
+  var comments = question.comments || [];
   for (var key in question) {
 	if (key === 'comments') {
 	  for (var i = 0; i < question[key].length - 1; i++) {
-		if (question[key][i].indexOf(currentUser.fullname) === -1) {
+		if (question[key][i].indexOf(currentUser.id) === -1) {
 		  comments.push(question[key][i]);
 		}
 	  }
