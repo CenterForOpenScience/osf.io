@@ -125,7 +125,7 @@ describe('Comment', () => {
                 value: faker.lorem.sentence()
             };
             comment = new Comment(data);
-            assert.isFalse(comment.canDelete());
+           assert.isFalse(comment.canDelete());
         });
     });
     describe('#canEdit', () => {
@@ -148,6 +148,30 @@ describe('Comment', () => {
             assert.isFalse(comment.canEdit());
             comment.saved(true);
             assert.isFalse(comment.canEdit());
+        });
+    });
+    describe('#isDeleted', () => {
+        it('is true when a comment is deleted and sets the value to a deleted message', () => {
+            var comment = new Comment();
+            assert.isFalse(comment.isDeleted());
+            comment.isDeleted(true);
+            assert.isTrue(comment.isDeleted());
+            assert.equal(comment.value, 'this comment was deleted');
+            
+            var user = {
+                name: faker.name.findName(),
+                id: 2
+            };
+            var data = {
+                user: user,
+                lastModified: faker.date.past(),
+                value: faker.lorem.sentence()
+            };
+            comment = new Comment(data);
+            assert.isFalse(comment.isDeleted());
+            comment.isDeleted(true);
+            assert.isTrue(comment.isDeleted());
+            assert.equal(comment.value, 'this comment was deleted');        
         });
     });
 });
