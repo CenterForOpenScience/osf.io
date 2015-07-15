@@ -115,10 +115,44 @@ class TestUserDetail(ApiTestCase):
         assert_equal(user_json['fullname'], self.user_two.fullname)
 
 
-class TestUserIncludeQueryParameters(ApiTestCase):
+class TestUserListIncludeQueryParameters(ApiTestCase):
 
     def setUp(self):
-        super(TestUserIncludeQueryParameters, self).setUp()
+        super(TestUserListIncludeQueryParameters, self).setUp()
+        self.user = UserFactory.build()
+        self.user.set_password('justapoorboy')
+        self.user.save()
+        self.auth_one = (self.user.username, 'justapoorboy')
+
+        self.project = ProjectFactory.build(title='project', is_public=True, creator=self.user)
+        self.project.save()
+
+        self.url = "/{}users/".format(API_BASE, self.user._id)
+
+    def test_get_include_key(self):
+        self.url += '?include=nodes'
+        res = self.app.get(self.url)
+        assert_equal(res.status_code, 200)
+        additional_query_params = res.json['data'][0]['additional_query_params']
+        assert_in('nodes', additional_query_params)
+
+    def test_get_invalid_key(self):
+        self.url += '?include=nah'
+        res = self.app.get(self.url, expect_errors=True)
+        assert_equal(res.status_code, 404)
+
+    def test_get_include_values(self):
+        self.url += '?include=nodes'
+        res = self.app.get(self.url)
+        assert_equal(res.status_code, 200)
+        additional_query_params = res.json['data'][0]['additional_query_params']
+        assert_in(self.project._id, additional_query_params['nodes'])
+
+
+class TestUserDetailIncludeQueryParameters(ApiTestCase):
+
+    def setUp(self):
+        super(TestUserDetailIncludeQueryParameters, self).setUp()
         self.user = UserFactory.build()
         self.user.set_password('justapoorboy')
         self.user.save()
@@ -128,10 +162,6 @@ class TestUserIncludeQueryParameters(ApiTestCase):
         self.project.save()
 
         self.url = "/{}users/{}/".format(API_BASE, self.user._id)
-
-    def tearDown(self):
-        super(TestUserIncludeQueryParameters, self).tearDown()
-        Node.remove()
 
     def test_get_include_key(self):
         self.url += '?include=nodes'

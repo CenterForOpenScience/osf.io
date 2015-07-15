@@ -21,6 +21,9 @@ class IncludeAdditionalQuery(object):
             if 'pointers' in params:
                 query['pointers'] = self.get_pointers()
                 params.remove('pointers')
+            if 'files' in params:
+                query['files'] = self.get_files()
+                params.remove('files')
             if params != []:
                 params_string = ', '.join(params)
                 raise NotFound('The following arguments cannot be found: {}'.format(params_string))
@@ -59,3 +62,14 @@ class IncludeAdditionalQuery(object):
                 'is_public': pointer.is_public
             }
         return pointers
+
+    # todo make simple serializer for files
+    def get_files(self):
+        files = {}
+        for files in self.obj.files:
+            files[file._id] = {
+                'title': file.title,
+                'description': file.description,
+                'is_public': file.is_public
+            }
+        return files

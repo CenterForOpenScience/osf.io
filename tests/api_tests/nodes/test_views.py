@@ -496,10 +496,7 @@ class TestNodeListIncludeQueryParams(ApiTestCase):
         custom_query_one = res.json['data'][0]['additional_query_params']
         custom_query_two = res.json['data'][1]['additional_query_params']
         assert_in('children', custom_query_one or custom_query_two)
-        try:
-            assert_in(self.child._id, custom_query_one['children'])
-        except AssertionError:
-            assert_in(self.child._id, custom_query_two['children'])
+        assert_in(self.child._id, custom_query_one['children'])
 
 
     def test_get_include_contributor_id(self):
@@ -590,7 +587,6 @@ class TestNodeDetailIncludeQueryParams(ApiTestCase):
         assert_equal(res.status_code, 200)
         additional_query_params = res.json['data']['additional_query_params']
         assert_in('pointers', additional_query_params)
-        print additional_query_params
         assert_in(self.pointer._id, additional_query_params['pointers'])
 
     def test_get_all_ids(self):
