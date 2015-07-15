@@ -90,34 +90,6 @@ function Comment(data) {
         return self.saved() && self.user.id === currentUser.id;
     });
 }
-Comment.prototype.formatSeenBy = function() {
-  var self = this;
-
-  var seen = self.seenBy();
-  var ret = '';
-
-  if( seen.length >= 5 ) {
-	for(var i = 0; i < 6; i++) {
-	  if (seen[i] === currentUser.fullname) {
-		ret += 'You, ';
-	  }
-	  else {
-		ret += seen[i] + ', ';
-	  }
-	}
-  }
-  else {
-	for(var j = 0; j < seen.length; j++) {
-	  if (seen[j] === currentUser.fullname) {
-		seen.length === 1 ? ret += 'You' : ret += 'You, ';
-	  }
-	  else {
-		ret += seen[j] + ', ';
-	  }
-	}
-  }
-  return ret;
-};
 // Let ENTER keypresses add a comment if comment <input> is in focus
 $(document).keydown(function(e) {
     if (e.keyCode === 13) {
@@ -421,7 +393,6 @@ var RegistrationEditor = function(urls, editorId) {
     self.extensions = {
         'osf-upload': editorExtensions.Uploader
     };
-
 };
 /**
  * Load draft data into the editor
@@ -471,11 +442,6 @@ RegistrationEditor.prototype.flatQuestions = function() {
     var self = this;
 
     return self.draft().metaSchema.flatQuestions();
-};
-RegistrationEditor.prototype.numQuestions = function() {
-	var self = this;
-
-	return self.flatQuestions().length;
 };
 /**
  * Creates a template context for editor type subtemplates. Looks for the data type
@@ -671,8 +637,6 @@ RegistrationEditor.prototype.save = function() {
         });
     });
 
-  console.log(self.draft().schemaData);
-
     if (!self.draft().pk){
         return self.create(data);
     }
@@ -763,7 +727,6 @@ RegistrationManager.prototype.init = function() {
     $.when(getSchemas, getDraftRegistrations).then(function() {
         self.loading(false);
     });
-
 };
 RegistrationManager.prototype.refresh = function() {
     var self = this;

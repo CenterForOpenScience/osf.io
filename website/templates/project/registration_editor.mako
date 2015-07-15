@@ -15,7 +15,7 @@
                                      },
                                      click: $root.currentQuestion.bind($root, $data)"
                           class="registration-editor-question list-group-item">
-                        <a data-bind="attr.href: '#' + id, text: nav "></a><span class="pull-right" data-bind="text: $root.getUnseenComments($root.currentQuestion)"></span>
+                        <a data-bind="attr.href: '#' + id, text: nav"></a><span class="pull-right" data-bind="text: $root.getUnseenComments($root.currentQuestion)"></span>
                     </li>
                     </span>
                 </ul>
