@@ -8,6 +8,8 @@ from api.base.filters import ODMFilterMixin
 from api.nodes.serializers import NodeSerializer
 from .serializers import UserSerializer
 
+from rest_framework.exceptions import NotFound
+
 class UserMixin(object):
     """Mixin with convenience methods for retrieving the current node based on the
     current URL. By default, fetches the user based on the pk kwarg.
@@ -18,11 +20,14 @@ class UserMixin(object):
 
     def get_user(self, check_permissions=True):
         obj = get_object_or_404(User, self.kwargs[self.node_lookup_url_kwarg])
-        if check_permissions:
+
+        if check_permissions & obj.is_disabled == False:
+
             # May raise a permission denied
             self.check_object_permissions(self.request, obj)
-        return obj
-
+            return obj
+        else:
+            raise NotFound
 
 class UserList(generics.ListAPIView, ODMFilterMixin):
     """Users registered on the OSF.

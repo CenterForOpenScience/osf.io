@@ -204,3 +204,20 @@ class TestUserNodes(ApiTestCase):
         assert_not_in(self.private_project_user_two._id, ids)
         assert_not_in(self.folder._id, ids)
         assert_not_in(self.deleted_project_user_one._id, ids)
+
+class TestDeactivatedUser(ApiTestCase):
+
+    def setUp(self):
+        super(TestDeactivatedUser, self).setUp()
+        self.user_one = UserFactory.build()
+        self.user_one.set_password('justapoorboy')
+        self.user_one.social['twitter'] = 'howtopizza'
+        self.user_one.is_disabled = True  #a disabled user is the same as a deactivated user.
+        self.user_one.save()
+        self.auth_one = (self.user_one.username, 'justapoorboy')
+        self.user_one.edit_password = ('asdfasdf')
+
+    def test_return_deactivated_user(self):
+        self.url = '/{}users/{}/'.format(API_BASE, self.user_one._id)
+        res = self.app.get(self.url, auth = self.auth_one, expect_errors=True)
+        assert_equal(res.status_code, 404)
