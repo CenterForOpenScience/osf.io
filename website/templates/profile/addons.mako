@@ -51,7 +51,7 @@
        template = config['user_settings_template']
        tpl = template.render(**config)
     %>
-    ${tpl}
+    ${ tpl | n }
 </%def>
 
 <%def name="stylesheets()">

@@ -543,15 +543,13 @@ def make_url_map(app):
             OsfWebRenderer('profile/account.mako', trust=False),
         ),
 
-        # TODO: Convert this view to markupsafe. Problem: with markupsafe active, embedded per-addon templates are renderered as text and not html. Couldn't turn off.
         Rule(
             '/settings/addons/',
             'get',
             profile_views.user_addons,
-            OsfWebRenderer('profile/addons.mako'),
+            OsfWebRenderer('profile/addons.mako', trust=False),
         ),
 
-        # TODO: Confirm that email subscriptions work; can't test locally
         Rule(
             '/settings/notifications/',
             'get',
