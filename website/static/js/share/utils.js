@@ -220,6 +220,17 @@ utils.loadStats = function(vm){
 
 };
 
+utils.loadRawNormalized = function(result){
+
+    return m.request({
+        method: 'GET',
+        url: 'http://localhost:8000/documents/' + result.shareProperties.docID
+    }).then(function(data) {
+        result.raw = JSON.parse(data.raw).doc;
+        result.normalized = data.normalized;
+    });
+};
+
 utils.filteredQuery = function(query, filter) {
     ret = {
         'filtered': {}
