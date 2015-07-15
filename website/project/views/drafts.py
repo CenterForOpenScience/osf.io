@@ -123,13 +123,6 @@ def get_all_draft_registrations(auth, *args, **kwargs):
         'drafts': [serialize_draft_registration(d, auth) for d in all_drafts]
     }
 
-@must_be_logged_in
-@must_be_super_on
-def update_draft_registration(auth, draft_id, *args, **kwargs):
-
-    draft = get_draft_or_fail(draft_id)
-    # TODO
-
 @must_have_permission(ADMIN)
 @must_be_valid_project
 def get_draft_registration(auth, node, draft_pk, *args, **kwargs):

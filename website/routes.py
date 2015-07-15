@@ -1070,9 +1070,6 @@ def make_url_map(app):
             '/drafts/',
         ], 'get', project_views.drafts.get_all_draft_registrations, json_renderer),
         Rule([
-            '/drafts/<draft_id>/',
-        ], 'put', project_views.drafts.update_draft_registration, json_renderer),
-        Rule([
             '/project/<pid>/draft/submit/<draft_id>/',
         ], 'post', project_views.drafts.submit_for_review, json_renderer),
         Rule([
