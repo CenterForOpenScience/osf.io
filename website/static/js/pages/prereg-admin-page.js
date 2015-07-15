@@ -24,6 +24,9 @@ ko.bindingHandlers.enterkey = {
 function adminView(data) {
     var self = this;
     self.data = data.drafts;
+    
+    // REMOVE
+    console.log(self.data);
 
     self.drafts = ko.pureComputed(function() {
         var row = self.sortBy();
