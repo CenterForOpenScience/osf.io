@@ -228,7 +228,7 @@ class NodeContributorDetailSerializer(NodeContributorsSerializer):
 
     id = ser.CharField(read_only=True, source='_id')
 
-    # Overridden to allow blank for user to not change status
+    # Overridden to allow blank for user to not change status by using initial blank value
     permission = ser.ChoiceField(choices=['read', 'write', 'admin'], write_only=True, allow_blank=True)
 
     def update(self, user, validated_data):

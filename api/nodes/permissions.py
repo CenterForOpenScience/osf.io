@@ -25,7 +25,7 @@ class ContributorOrPublic(permissions.BasePermission):
 class AdminOrPublic(permissions.BasePermission):
 
     def has_object_permission(self, request, view, obj):
-        assert isinstance(obj, (Node, User)), 'obj must be a Node or Pointer, got {}'.format(obj)
+        assert isinstance(obj, (Node, User)), 'obj must be a Node or User, got {}'.format(obj)
         if isinstance(obj, Node):
             node = obj
         else:

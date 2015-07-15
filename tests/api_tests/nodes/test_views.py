@@ -1138,7 +1138,6 @@ class TestEditNodeContributor(ApiTestCase):
         assert_false(self.project.get_visible(self.user))
         assert_equal(self.project.get_permissions(self.user), ['read'])
 
-
     def test_admin_change_own_permissions(self):
         self.project.add_permission(self.user, 'admin', save=True)
 
@@ -1163,6 +1162,8 @@ class TestEditNodeContributor(ApiTestCase):
         self.project.remove_contributor(self.user, Auth(self.admin))
         res = self.app.put(self.url_admin, {'permission': 'write'}, auth=self.admin_auth, expect_errors=True)
         assert_equal(res.status_code, 400)
+
+        self.project.reload()
         assert_true(self.project.has_permission(self.admin, 'admin'))
 
     def test_admin_remove_all_bibliographic_privileges(self):
