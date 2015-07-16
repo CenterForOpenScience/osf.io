@@ -1085,7 +1085,6 @@ function _fangornUploadMethod(item) {
     return configOption || 'PUT';
 }
 
-
 function gotoFileEvent (item) {
     var tb = this;
     var redir = new URI(item.data.nodeUrl);
@@ -1114,6 +1113,10 @@ function _fangornTitleColumn(item, col) {
                 gotoFileEvent.call(tb, item);
             }
         }, item.data.name);
+    }
+    else if ((item.data.nodeType === 'project') || (item.data.nodeType ==='component')) {
+        return m('a.fg-file-links',{ href: '/' + item.data.nodeID.toString() + '/'},
+                item.data.name);
     }
     return m('span', item.data.name);
 }
