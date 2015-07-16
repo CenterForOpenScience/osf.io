@@ -226,8 +226,15 @@ utils.loadRawNormalized = function(result){
         method: 'GET',
         url: 'http://localhost:8000/documents/' + result.shareProperties.docID
     }).then(function(data) {
-        result.raw = JSON.parse(data.raw).doc;
-        result.normalized = data.normalized;
+
+        var normed = JSON.parse(data.normalized);
+        normed = JSON.stringify(normed, undefined, 2);
+
+        var all_raw = JSON.parse(data.raw);
+
+        result.raw = all_raw.doc;
+        result.rawfiletype = all_raw.filetype;
+        result.normalized = normed;
     });
 };
 
