@@ -542,6 +542,7 @@ def format_component_wiki_pages(node, auth):
         component_page = {
             'page': {
                 'name': wiki_page['title'],
+                'url': wiki_page['url']
             },
             'kind': 'component',
             'category': wiki_page['category'],

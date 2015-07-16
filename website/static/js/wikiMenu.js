@@ -20,9 +20,10 @@ function resolveToggle(item) {
 
 function resolveIcon(item) {
     var componentIcons = iconmap.componentIcons;
+    var projectIcons = iconmap.projectIcons;
     function returnView(category) {
-        var iconType = componentIcons[category];
-        return m('span', { 'class' : iconType});
+        var icons = componentIcons[category] ? componentIcons : projectIcons;
+        return m('span', { 'class' : icons[category]});
     }
     if (item.data.kind === 'component' && item.parent().data.title === 'Component Wiki Pages') {
         return returnView(item.data.category);
@@ -81,11 +82,7 @@ function WikiMenu(data, wikiID, canEdit) {
                 columns.push({
                     folderIcons: true,
                     custom: function() {
-                        if(item.data.kind === 'component') {
-                            return m('span', item.data.page.name);
-                        } else {
-                            return m('a', {href: item.data.page.url}, item.data.page.name);
-                        }
+                        return m('a.fg-file-links', {href: item.data.page.url}, item.data.page.name);
                     }
                 });
             }

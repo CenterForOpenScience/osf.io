@@ -1174,6 +1174,7 @@ class TestWikiMenu(OsfTestCase):
             {
                 'page': {
                     'name': 'The meaning of life',
+                    'url': self.component.web_url_for('project_wiki_view', wname='home', _guid=True),
                 },
                 'children': [
                     {
