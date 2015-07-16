@@ -10,7 +10,7 @@
             authorized
             <span data-bind="if: username()">by <em>{{ username }}</em></span>
             <a data-bind="click:deleteKey" class="text-danger pull-right addon-auth">
-               Disconnect Acount
+               Disconnect Account
             </a>
         </span>
         <!-- Create Access Token Button -->
