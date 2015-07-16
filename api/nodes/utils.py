@@ -10,6 +10,7 @@ class IncludeAdditionalQueryNode(object):
         self.obj = obj
         self.request = request
 
+    # todo: make simple serializers for parameters?
     def get_additional_query(self):
         query = {}
         if 'include' in self.request.query_params:
@@ -34,11 +35,10 @@ class IncludeAdditionalQueryNode(object):
                 raise NotFound('The following arguments cannot be found: {}'.format(params_string))
         return query
 
-    # todo make simple serializer for children
     def get_children(self):
         nodes = {}
         for node in self.obj.nodes:
-            if node.can_view(Auth(self.request.user)) and node.primary:
+            if node.can_view(Auth(self.request.user)) or node.is_public:
                 nodes[node._id] = {
                     'title': node.title,
                     'description': node.description,
@@ -46,7 +46,6 @@ class IncludeAdditionalQueryNode(object):
                 }
         return nodes
 
-    # todo make simple serializer for contributors
     def get_contributors(self):
         contributors = {}
         for contributor in self.obj.contributors:
@@ -57,7 +56,7 @@ class IncludeAdditionalQueryNode(object):
             }
         return contributors
 
-    # todo figure out how to get file data from providers
+    # todo edit once files are easier to locate
     def get_files(self):
         files = {}
         for file in self.get_file_list():
@@ -68,7 +67,6 @@ class IncludeAdditionalQueryNode(object):
             }
         return files
 
-    # todo make simple serializer for pointers
     def get_pointers(self):
         pointers = {}
         for pointer in self.obj.nodes_pointer:
@@ -89,13 +87,13 @@ class IncludeAdditionalQueryNode(object):
             }
         return registrations
 
-    # todo configure this; is it working in views?
+    # todo configure this after issue 3060 is resolved
+    # copied and slightly altered from views
     def get_file_list(self):
         query_params = self.request.query_params
 
         addons = self.obj.get_addons()
         user = self.request.user
-        cookie = None if self.request.user.is_anonymous() else user.get_or_create_cookie()
         obj_args = self.request.parser_context['args']
 
         provider = query_params.get('provider')
