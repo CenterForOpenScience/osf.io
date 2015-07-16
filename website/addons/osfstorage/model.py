@@ -435,8 +435,8 @@ class OsfStorageGuidFile(GuidFile):
     path = fields.StringField(required=True, index=True)
     provider = 'osfstorage'
     version_identifier = 'version'
-
     _path = fields.StringField(index=True)
+    is_rented = fields.BooleanField(default=False)
     premigration_path = fields.StringField(index=True)
     path = fields.StringField(required=True, index=True)
 

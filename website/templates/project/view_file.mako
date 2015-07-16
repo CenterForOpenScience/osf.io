@@ -14,7 +14,8 @@
     </h2>
   </div>
   <div class="col-sm-7">
-    <div id="toggleBar" class="pull-right"></div>
+    <div id="toggleBar" class="pull-right">
+    </div>
   </div>
 </div>
 <hr>
@@ -155,6 +156,15 @@
             provider: '${provider | js_str}',
             safeName: '${file_name | h,js_str}',
             materializedPath: '${materialized_path | js_str}',
+            %if provider == "osfstorage":
+                %if is_rented == True:
+                    rented: true,
+                %else:
+                    rented: false,
+                %endif
+            %else :
+                rented: false,
+            %endif
           urls: {
         %if error is None:
               render: '${urls['render']}',

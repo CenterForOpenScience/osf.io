@@ -26,7 +26,7 @@ var FileViewPage = {
         self.editorMeta = self.context.editor;
         //Force canEdit into a bool
         self.canEdit = m.prop(!!self.context.currentUser.canEdit);
-
+        self.isRented = self.file.rented;
         $.extend(self.file.urls, {
             delete: waterbutler.buildDeleteUrl(self.file.path, self.file.provider, self.node.id),
             metadata: waterbutler.buildMetadataUrl(self.file.path, self.file.provider, self.node.id),
@@ -57,7 +57,9 @@ var FileViewPage = {
                 }
             });
         });
-
+        $(document).on('fileviewpage:rent', function() {
+            self.context.file.rented == true ? false : true
+        });
         $(document).on('fileviewpage:download', function() {
             window.location = self.file.urls.content;
             return false;
@@ -120,6 +122,7 @@ var FileViewPage = {
                 m.redraw(true);
                 return;
             }
+            //Henrique
             var fileType = mime.lookup(self.file.name.toLowerCase());
             // Only allow files < 1MB to be editable
             if (self.file.size < 1048576 && fileType) { //May return false
@@ -150,7 +153,7 @@ var FileViewPage = {
         //it was removed and shoved here due to issues with mithrils caching and interacting
         //With other non-mithril components on the page
         var panels;
-        if (ctrl.editor) {
+        if (ctrl.editor && !ctrl.file.rented) {
             panels = [ctrl.editor, ctrl.revisions];
         } else {
             panels = [ctrl.revisions];
@@ -202,11 +205,14 @@ var FileViewPage = {
             ctrl.canEdit() ? m('.btn-group.m-l-xs.m-t-xs', [
                 m('.btn.btn-sm.btn-danger.file-delete', {onclick: $(document).trigger.bind($(document), 'fileviewpage:delete')}, 'Delete')
             ]) : '',
+            ctrl.canEdit() ? m('.btn-group.m-l-xs.m-t-xs', [
+                m('.btn.btn-sm.btn-primary', {onclick: $(document).trigger.bind($(document), 'fileviewpage:rent')}, 'Rent')
+            ]) : '',
             m('.btn-group.m-t-xs', [
                 m('.btn.btn-sm.btn-primary.file-download', {onclick: $(document).trigger.bind($(document), 'fileviewpage:download')}, 'Download')
             ]),
             m('.btn-group.btn-group-sm.m-t-xs', [
-                m('.btn.btn-default.disabled', 'Toggle view: ')
+                m('.btn.btn-default.disabled', ' Toggle view: ')
             ].concat(
                 m('.btn' + (ctrl.mfrIframeParent.is(':visible') ? '.btn-primary' : '.btn-default'), {
                     onclick: function (e) {

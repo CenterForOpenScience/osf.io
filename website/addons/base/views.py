@@ -438,6 +438,7 @@ def addon_view_file(auth, node, node_addon, guid_file, extras):
         #NOTE: get_or_start_render must be called first to populate name
         'file_name': getattr(guid_file, 'name', os.path.split(guid_file.waterbutler_path)[1]),
         'materialized_path': getattr(guid_file, 'materialized', guid_file.waterbutler_path),
+        'is_rented': getattr(guid_file, 'is_rented', False),
     })
 
     ret.update(rubeus.collect_addon_assets(node))
