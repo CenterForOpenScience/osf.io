@@ -55,7 +55,15 @@ ShareApp.ViewModel = function() {
 
         return {
             'query': utils.boolQuery(must, [], should, minimum),
-            'aggregations': {},  // TODO
+            'aggregations': {
+                "sources": {
+                    "terms": {
+                        "field": "_type",
+                        "size": 0,
+                        "min_doc_count": 0
+                    }
+                }
+            },  // TODO
             'from': (self.page - 1) * 10,
             'size': 10,
             'sort': [sort],

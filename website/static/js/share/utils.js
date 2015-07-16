@@ -11,6 +11,7 @@ utils.onSearch = function(fb) {
     callbacks.push(fb);
 };
 
+var COLORBREWER_COLORS = [[166, 206, 227], [31, 120, 180], [178, 223, 138], [51, 160, 44], [251, 154, 153], [227, 26, 28], [253, 191, 111], [255, 127, 0], [202, 178, 214], [106, 61, 154], [255, 255, 153], [177, 89, 40]]
 var tags = ['div', 'i', 'b', 'sup', 'p', 'span', 'sub', 'bold', 'strong', 'italic', 'a', 'small'];
 
 utils.scrubHTML = function(text) {
@@ -199,25 +200,35 @@ utils.arrayEqual = function(a, b) {
     return $(a).not(b).length === 0 && $(b).not(a).length === 0;
 };
 
-utils.loadStats = function(vm){
-    vm.statsLoaded(false);
-
-    return m.request({
-        method: 'GET',
-        url: '/api/v1/share/stats/?' + $.param({q: utils.buildQuery(vm)}),
-        background: true
-    }).then(function(data) {
-        vm.statsData = data;
-        $.map(Object.keys(vm.graphs), function(type) {
-            if(type === 'shareDonutGraph') {
-                var count = data.charts.shareDonutGraph.columns.filter(function(val){return val[1] > 0;}).length;
-                $('.c3-chart-arcs-title').text(count + ' Provider' + (count !== 1 ? 's' : ''));
-            }
-            vm.graphs[type].load(vm.statsData.charts[type]);
-        }, utils.errorState.bind(this, vm));
-        vm.statsLoaded(true);
-    }).then(m.redraw);
-
+utils.loadStats = function(vm) { //plug and play function to send elasticsearch agg and load in stats, and parse for chart
+    if (vm.statsQuerys) {
+        //For every aggregation required, perform a search
+        $.map(Object.keys(vm.statsQuerys), function (statQuery) {
+            vm.statsLoaded(false);
+            m.request({
+                method: 'POST', //TODO need to check if this is formed correctly!
+                data: vm.statsQuerys[statQuery],
+                url: '/api/v1/share/search/?' + $.param({v: 2}),
+                background: true
+            }).then(function (data) {
+                vm.statsData = {'charts': {}}; //TODO @bdyetton remove charts namespace if not needed later
+                if (data.aggregations) {
+                    $.map(Object.keys(data.aggregations), function (key) { //parse data and load correctly
+                        if (vm.statsParsers[key]) {
+                            var chartData = vm.statsParsers[key](data);
+                            vm.statsData.charts[chartData.name] = chartData;
+                            if (chartData.name in vm.graphs) {
+                                vm.graphs[chartData.name].load(chartData)
+                            }
+                        }
+                    });
+                }
+                vm.statsLoaded(true);
+            }).then(m.redraw, function () {
+                console.log('failure to load stats')
+            }); //TODO deal with this error correctly
+        });
+    }
 };
 
 utils.filteredQuery = function(query, filter) {
@@ -239,6 +250,16 @@ utils.termFilter = function(field, value) {
     return ret;
 };
 
+utils.termsFilter = function(field, value, min_doc_count) {
+    min_doc_count = min_doc_count || 0;
+    var ret = {'terms': {}};
+    ret.terms[field] = value;
+    ret.terms.size = 0;
+    ret.terms.exclude = 'of|and|or';
+    ret.terms.min_doc_count = min_doc_count; //TODO break this out @bdyetton?
+    return ret;
+};
+
 utils.matchQuery = function(field, value) {
     ret = {'match': {}};
     ret.match[field] = value;
@@ -246,6 +267,8 @@ utils.matchQuery = function(field, value) {
 };
 
 utils.fieldRange = function(field_name, gte, lte) {
+    lte = lte || new Date().getTime()
+    gte = gte || 0;
     ret = {'range': {}};
     ret.range[field_name] = {'gte': gte, 'lte': lte};
     return ret;
@@ -261,6 +284,36 @@ utils.boolQuery = function(must, must_not, should, minimum) {
             'minimum_should_match': minimum
         }
     };
+};
+
+utils.dateHistogramFilter = function(feild,gte,lte,interval){
+    //gte and lte in ms since epoch
+    lte = lte || new Date().getTime()
+    gte = gte || 0;
+
+    interval = interval || 'week';
+    return {
+        'date_histogram': {
+            'field': feild,
+            'interval': interval,
+            'min_doc_count': 0,
+            'extended_bounds': {
+                'min': gte,
+                'max': lte
+            }
+        }
+    }
+};
+
+utils.addAggtoQuery = function(query,agg)
+{
+    query['aggs'] = queryToAdd;
+    return query;
+};
+
+utils.updateAggs = function(vm,aggs)
+{
+    vm.query.aggs[name] = agg
 };
 
 utils.commonQuery = function(query_string, field) {
@@ -282,5 +335,45 @@ utils.parseToTermQuery = function(term) {
     items = term.split(':');
     return utils.matchQuery(items[0], items[1]);
 };
+
+
+utils.generateColors = function(numColors) {
+    var colorsToGenerate = COLORBREWER_COLORS.slice();
+    var colorsUsed = [];
+    var colorsOut = [];
+    var colorsNorm = [];
+
+    while (colorsOut.length < numColors) {
+        var color = colorsToGenerate.shift();
+        if (typeof color === 'undefined'){
+            colorsToGenerate = utils.getNewColors(colorsUsed);
+            colorsUsed = [];
+        } else {
+            colorsUsed.push(color);
+            colorsNorm.push(color);
+            colorsOut.push(rgbToHex(color))
+        }
+    }
+    return colorsOut
+};
+
+utils.getNewColors = function(colorsUsed) {
+    var newColors = [];
+    for (var i=0; i < colorsUsed.length-1; i++) {
+        newColors.push(calculateDistanceBetweenColors(colorsUsed[i], colorsUsed[i + 1]))
+    }
+    return newColors;
+};
+
+calculateDistanceBetweenColors = function(color1, color2) {
+    return [Math.floor((color1[0] + color2[0]) / 2),
+            Math.floor((color1[1] + color2[1]) / 2),
+            Math.floor((color1[2] + color2[2]) / 2)]
+};
+
+function rgbToHex(rgb) {
+        var rgb = rgb[2] + (rgb[1] << 8) + (rgb[0] << 16);
+        return  '#' + (0x1000000 + rgb).toString(16).substring(1);
+    }
 
 module.exports = utils;

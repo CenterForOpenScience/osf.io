@@ -193,10 +193,11 @@ def stats(query=None):
                               body=query)
     date_results = share_es.search(index=index,
                                    body=date_histogram_query)
+
     results['aggregations']['date_chunks'] = date_results['aggregations']['date_chunks']
 
-    chart_results = data_for_charts(results)
-    return chart_results
+    #chart_results = data_for_charts(results)
+    return results
 
 
 def data_for_charts(elastic_results):
@@ -210,11 +211,14 @@ def data_for_charts(elastic_results):
     r = generate_color()
     stats = {}
     colors = {}
+    colorsNorm = {}
     for bucket in elastic_results['aggregations']['sources']['buckets']:
         stats[bucket['key']] = {
             'doc_count': bucket['doc_count'],
         }
-        colors[bucket['key']] = r.next()
+        (colHex, colNorm) = r.next()
+        colors[bucket['key']] = colHex
+        colorsNorm[bucket['key']] = colNorm
 
     for bucket in elastic_results['aggregations']['earlier_documents']['sources']['buckets']:
         stats[bucket['key']]['earlier_documents'] = bucket['doc_count']

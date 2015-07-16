@@ -8,20 +8,9 @@ var utils = require('./utils');
 
 var Stats = {};
 
-function get_source_length(elastic_data) {
-
-    var sources = elastic_data.raw_aggregations.sources.buckets;
-    var source_names = [];
-    for (var i=0; i<sources.length; i++) {
-        source_names.push(sources[i]);
-    }
-
-    return source_names.length;
-}
-
 function donutGraph (data, vm) {
     data.charts.shareDonutGraph.onclick = function (d, element) {
-        utils.updateFilter(vm, 'shareProperties.source:' + d.name, true);
+        utils.updateFilter(vm, 'shareProperties.source:' + d.name, true); //TODO change this to subscription based filter?
     };
     return c3.generate({
         bindto: '#shareDonutGraph',
@@ -30,7 +19,7 @@ function donutGraph (data, vm) {
         },
         data: data.charts.shareDonutGraph,
         donut: {
-            title: get_source_length(data) + ' Providers',
+            title: data.charts.shareDonutGraph.title,
             label: {
                 format: function (value, ratio, id) {
                     return Math.round(ratio*100) + '%';
@@ -43,7 +32,7 @@ function donutGraph (data, vm) {
         tooltip: {
             format: {
                 name: function (name, ratio, id, index) {
-                    if (name === 'pubmed') {
+                    if (name === 'pubmed') { //TODO @fabianvf, can we get rid of this now? looks like pubmedcentral is already the name of one of the sources
                         name = 'pubmed central';
                     }
                     return name; 
@@ -53,25 +42,46 @@ function donutGraph (data, vm) {
     });
 }
 
-function timeGraph (data) {
+function timeGraph (data,vm) {
     return c3.generate({
         bindto: '#shareTimeGraph',
         size: {
-            height: 200
+            height: 250
         },
         data: data.charts.shareTimeGraph,
+        subchart: {
+            show: true,
+            size: {
+                height: 20
+            },
+            onbrush: function(zoomWin){
+                var xTick = (data.rawX.slice(-1)[0]-data.rawX[0])/data.rawX.length;
+                var xMin = data.rawX[0]+xTick*zoomWin[0];
+                var xMax = data.rawX[0]+xTick*zoomWin[1];
+                return [xMin, xMax]; //TODO here is where a range restriction filter is applied to the search query
+                //range restriction should influence donut, and donut should influence time graph. both should influence main query
+                //should come up with some form of filter subscription, where it is easy to subscribe to filters from graphs
+            }
+        },
         axis: {
             x: {
                 type: 'category',
                 label: {
-                   text: 'Last Three Months',
-                   position: 'outer-center',
+                    text: 'Last Three Months',
+                    position: 'outer-center'
+                },
+                tick: {
+                    format: function(d) {return Stats.timeSinceEpochInMsToMMYY(d)}
                 }
             },
             y: {
                 label: {
-                   text: 'Number of Events',
-                   position: 'outer-middle'
+                    text: 'Number of Events',
+                    position: 'outer-middle'
+                },
+                tick: {
+                    count: 8,
+                    format: function (d) {return parseInt(d).toFixed(0);}
                 }
             }
         },
@@ -91,6 +101,102 @@ function timeGraph (data) {
         }
     });
 }
+
+Stats.sourcesAgg = function(){
+    var sourcesQuery = {'query': {'match_all':{}}};
+    var sourcesAgg = {'sources': utils.termsFilter('field','_type')}
+    sourcesQuery['aggregations'] = sourcesAgg;
+    return sourcesQuery
+};
+
+Stats.sourcesByDatesAgg = function(){
+    var dateTemp = new Date(); //get current time
+    dateTemp.setMonth(dateTemp.getMonth() - 3);
+    var threeMonthsAgo = dateTemp.getTime();
+
+    //TODO spit this out to elasticserch via python
+    var dateHistogramQuery = {
+        'query': utils.filteredQuery(
+            {'match_all':{}},
+            utils.fieldRange('dateUpdated',threeMonthsAgo))
+    };
+
+    //Form up agg
+    var timeAgg = {'sourcesByTimes': utils.termsFilter('field','_type')};
+    timeAgg.sourcesByTimes['aggregations'] = {'articlesOverTime' : utils.dateHistogramFilter('dateUpdated',threeMonthsAgo)};
+    dateHistogramQuery['aggregations'] = timeAgg;
+
+    return dateHistogramQuery
+};
+
+Stats.timeSinceEpochInMsToMMYY = function(timeSinceEpochInMs)
+{
+    var d = new Date(0);
+    d.setUTCSeconds(timeSinceEpochInMs/1000);
+    return d.getMonth().toString() + '/' + d.getFullYear().toString().substring(2);
+
+};
+
+Stats.shareDonutGraphParser = function(data)
+{
+    var chartData = {};
+    chartData.name = 'shareDonutGraph';
+    chartData.columns = [];
+    chartData.colors = {};
+    chartData.type = 'donut';
+
+    var providerCount = 0;
+    var hexColors = utils.generateColors(data.aggregations.sources.buckets.length)
+    var i = 0;
+    data.aggregations.sources.buckets.forEach(
+        function (bucket) {
+            chartData.columns.push([bucket.key, bucket.doc_count]);
+            providerCount = providerCount + (bucket.doc_count ? 1 : 0);
+            chartData.colors[bucket.key] = hexColors[i];
+            i = i + 1;
+        }
+    );
+    chartData.title = providerCount.toString() + ' Provider' + (providerCount !== 1 ? 's' : '');
+    $('.c3-chart-arcs-title').text(chartData.title); //dynamically update chart title
+    return chartData
+};
+
+Stats.shareTimeGraphParser = function(data)
+{
+    var chartData = {};
+    chartData.name = 'shareTimeGraph';
+    chartData.columns = [];
+    chartData.colors = {};
+    chartData.type = 'area-spline';
+    chartData.x = 'x';
+    chartData.groups = [];
+    var grouping = [];
+    grouping.push('x');
+    var hexColors = utils.generateColors(data.aggregations.sourcesByTimes.buckets.length)
+    var i = 0;
+    var datesCol = ['x'];
+    data.aggregations.sourcesByTimes.buckets.forEach(
+        function (source) {
+            chartData.colors[source.key] = hexColors[i];
+            var column = [source.key];
+            grouping.push(source.key);
+            source.articlesOverTime.buckets.forEach(function(date){
+                column.push(date.doc_count);
+                if(i===0){
+                    //convert date to reable format
+                    datesCol.push(date.key);
+                }
+            });
+            chartData.columns.push(column);
+            i = i + 1;
+        }
+    );
+    chartData.groups.push(grouping);
+    chartData.columns.unshift(datesCol);
+    chartData.rawX = datesCol;
+    return chartData;
+};
+
 
 Stats.view = function(ctrl) {
     return [
@@ -125,8 +231,23 @@ Stats.controller = function(vm) {
     var self = this;
 
     self.vm = vm;
-
     self.vm.graphs = {};
+
+    //request these aggregations for charts
+    self.vm.statsQuerys= {
+        'shareTimeGraph' : Stats.sourcesByDatesAgg(),
+        'shareDonutGraph' : Stats.sourcesAgg()
+    };
+
+    //set each aggregation as the data source for each chart
+    self.vm.statsParsers = {
+        'sources' : Stats.shareDonutGraphParser,
+        'sourcesByTimes' : Stats.shareTimeGraphParser
+    };
+
+    self.vm.chartCallbackMap = {
+        //TODO map the callbacks from each graph to main search query and/or other aggs
+    };
 
     self.vm.totalCount = 0;
     self.vm.latestDate = undefined;
@@ -140,23 +261,24 @@ Stats.controller = function(vm) {
             self.vm.graphs[divId] = graphFunction(self.vm.statsData, self.vm);
         }});
     };
-
     self.loadStats = function(){
         return utils.loadStats(self.vm);
     };
 
     utils.onSearch(self.loadStats);
 
+    //Get all our initial agg values
     m.request({
         method: 'GET',
         background: true,
-        url: '/api/v1/share/search/?size=1&v=1',
+        url: '/api/v1/share/search/?size=1&v=1'
     }).then(function(data) {
         self.vm.totalCount = data.count;
         self.vm.latestDate = new $osf.FormattableDate(data.results[0].dateUpdated).local;
     }).then(m.redraw);
 
     self.loadStats();
+
 };
 
 module.exports = Stats;
