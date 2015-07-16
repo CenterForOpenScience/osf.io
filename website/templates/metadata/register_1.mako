@@ -9,7 +9,7 @@
             <div id="embargo-addon" data-bind="with: $root.embargoAddon, ">
                 <hr />
 
-                <p class="help-block">${language.REGISTRATION_EMBARGO_INFO}</p>
+                <p class="help-block">${ language.REGISTRATION_EMBARGO_INFO | n }</p>
                 <div class="form-group">
                     <label class="control-label">Registration Choice</label>
                     <select class="form-control" data-bind="options: registrationOptions,
@@ -30,7 +30,7 @@
 
                 <hr />
 
-                <p class="help-block">${language.BEFORE_REGISTRATION_INFO}</p>
+                <p class="help-block">${ language.BEFORE_REGISTRATION_INFO | n }</p>
 
                 <div class="form-group">
                     <label>
@@ -54,18 +54,17 @@
 
 </div><!-- end #registration_template -->
 
-<% import json %>
 <script type="text/javascript">
     ## Make Mako variables accessible to JS modules.
     ## TODO: This information should be fetched from a JSON endpoint.
     window.contextVars = window.contextVars || {};
     window.contextVars.node = window.contextVars.node || {};
     window.contextVars.node.urls = window.contextVars.node.urls || {};
-    window.contextVars.node.urls.api = ${json.dumps(node['api_url'])};
-    window.contextVars.node.id = ${json.dumps(str(node['id']))};
+    window.contextVars.node.urls.api = ${ node['api_url'] | sjson, n };
+    window.contextVars.node.id = ${ str(node['id']) | sjson, n };
     window.contextVars.node.children = ${[str(each) for each in children_ids]};
-    window.contextVars.regTemplate = ${json.dumps(template_name or '')};
-    window.contextVars.regSchema = ${schema};
-    window.contextVars.regPayload = ${json.dumps(payload)};
-    window.contextVars.registered = ${json.dumps(int(registered))};
+    window.contextVars.regTemplate = ${ template_name or '' | sjson, n };
+    window.contextVars.regSchema = ${ schema | n };
+    window.contextVars.regPayload = ${ payload | sjson, n };
+    window.contextVars.registered = ${ int(registered) | sjson, n };
 </script>

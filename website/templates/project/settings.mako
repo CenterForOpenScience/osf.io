@@ -331,7 +331,7 @@
        template_name = data['node_settings_template']
        tpl = data['template_lookup'].get_template(template_name).render(**data)
     %>
-    ${tpl}
+    ${ tpl | n }
 </%def>
 
 % for name, capabilities in addon_capabilities.iteritems():
@@ -347,13 +347,12 @@
 
 
 <%def name="javascript_bottom()">
-    <% import json %>
     ${parent.javascript_bottom()}
     <script>
       window.contextVars = window.contextVars || {};
       window.contextVars.node = window.contextVars.node || {};
-      window.contextVars.node.nodeType = '${node['node_type']}';
-      window.contextVars.nodeCategories = ${json.dumps(categories)};
+      window.contextVars.node.nodeType = ${ node['node_type'] | sjson, n };
+      window.contextVars.nodeCategories = ${ categories | sjson, n };
     </script>
 
     <script type="text/javascript" src=${"/static/public/js/project-settings-page.js" | webpack_asset}></script>
