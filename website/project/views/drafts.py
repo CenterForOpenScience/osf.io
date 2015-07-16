@@ -45,6 +45,7 @@ def submit_draft_for_review(auth, node, draft_pk, *args, **kwargs):
     return ret
 
 @must_have_permission(ADMIN)
+@must_be_valid_project
 def draft_before_register_page(auth, node, draft_id, *args, **kwargs):
     ret = serialize_node(node, auth, primary=True)
 
@@ -135,7 +136,8 @@ def get_draft_registrations(auth, node, *args, **kwargs):
 
     drafts = DraftRegistration.find(
         Q('branched_from', 'eq', node) &
-        Q('initiator', 'eq', auth.user)
+        Q('initiator', 'eq', auth.user) &
+        Q('registered_node', 'eq', None)
     )[:count]
     return {
         'drafts': [serialize_draft_registration(d, auth) for d in drafts]
