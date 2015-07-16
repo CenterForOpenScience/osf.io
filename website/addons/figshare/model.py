@@ -44,6 +44,10 @@ class FigShareGuidFile(GuidFile):
     def provider(self):
         return 'figshare'
 
+    @property
+    def external_url(self):
+        return self._metadata_cache['extra']['webView']
+
     def _exception_from_response(self, response):
         try:
             if response.json()['data']['extra']['status'] == 'drafts':

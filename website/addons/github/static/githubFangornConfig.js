@@ -197,6 +197,16 @@ var _githubItemButtons = {
                     className: 'text-primary'
                 }, 'Download')
             );
+            if (item.data.permissions && item.data.permissions.view) {
+                buttons.push(
+                    m.component(Fangorn.Components.button, {
+                        onclick: function(event) {
+                            gotoFile.call(tb, item);
+                        },
+                        icon: 'fa fa-file-o',
+                        className : 'text-info'
+                    }, 'View'));
+            }
             if (item.data.permissions && item.data.permissions.edit) {
                 buttons.push(
                     m.component(Fangorn.Components.button, {
@@ -208,16 +218,16 @@ var _githubItemButtons = {
                     }, 'Delete')
                 );
             }
-            if (item.data.permissions && item.data.permissions.view) {
+            if (item.data.permissions && item.data.permissions.view && !item.data.permissions.private) {
                 buttons.push(
                     m.component(Fangorn.Components.button, {
                         onclick: function(event) {
-                            gotoFile.call(tb, item);
+                            window.open(item.data.extra.webView, '_self');
                         },
-                        icon: 'fa fa-file-o',
+                        icon: 'fa fa-external-link',
                         className : 'text-info'
-                    }, 'View'));
-
+                    }, 'View on GitHub')
+                );
             }
         }
 

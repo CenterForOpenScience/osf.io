@@ -37,6 +37,16 @@ var _figshareItemButtons = {
         // Files can be deleted if private or if it is in a dataset that contains more than one file
         var privateOrSiblings = (item.data.extra && item.data.extra.status !== 'public') ||
             (!item.parent().data.isAddonRoot && item.parent().children.length > 1);
+        if (item.kind === 'file' && item.data.permissions && item.data.permissions.view) {
+            buttons.push(
+                m.component(Fangorn.Components.button, {
+                    onclick: function(event) {
+                        Fangorn.ButtonEvents._gotoFileEvent.call(tb, item);
+                    },
+                    icon: 'fa fa-file-o',
+                    className : 'text-info'
+                }, 'View'));
+        }
         if (item.kind === 'file' && privateOrSiblings && item.data.permissions && item.data.permissions.edit) {
             buttons.push(
                 m.component(Fangorn.Components.button, {
@@ -52,11 +62,12 @@ var _figshareItemButtons = {
             buttons.push(
                 m.component(Fangorn.Components.button, {
                     onclick: function(event) {
-                        Fangorn.ButtonEvents._gotoFileEvent.call(tb, item);
+                        window.open(item.data.extra.webView, '_self');
                     },
-                    icon: 'fa fa-file-o',
+                    icon: 'fa fa-external-link',
                     className : 'text-info'
-                }, 'View'));
+                }, 'View on figshare')
+            );
         }
         return m('span', buttons); // Tell fangorn this function is used.
     }

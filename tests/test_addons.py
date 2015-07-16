@@ -431,6 +431,7 @@ class TestAddonFileViews(OsfTestCase):
                 'sharejs': '',
                 'mfr': '',
                 'gravatar': '',
+                'external': '',
             },
             'size': '',
             'extra': '',

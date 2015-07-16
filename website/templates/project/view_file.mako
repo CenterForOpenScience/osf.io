@@ -50,6 +50,7 @@
   <div id="fileViewPanelLeft" class="col-sm-9 panel-expand">
     <div class="row">
       <div id="mfrIframeParent" class="col-sm-9">
+        <div id="externalView"></div>
         <div id="mfrIframe" class="mfr mfr-file"></div>
       </div>
 
@@ -153,12 +154,14 @@
             size: ${size},
             extra: ${extra},
             error: '${error | js_str}',
+            privateRepo: '${private or '' | js_str}',
             name: '${file_name | js_str}',
             path: '${file_path | js_str}',
             provider: '${provider | js_str}',
             safeName: '${file_name | h,js_str}',
             materializedPath: '${materialized_path | js_str}',
           urls: {
+              external: '${(urls['external'] or '') | js_str}',
         %if error is None:
               render: '${urls['render']}',
         %endif
