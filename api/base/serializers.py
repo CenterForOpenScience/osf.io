@@ -1,6 +1,9 @@
 import collections
 import re
 
+from collections import OrderedDict
+from rest_framework import pagination
+
 from rest_framework import serializers as ser
 from website.util.sanitize import strip_html
 from api.base.utils import absolute_reverse, waterbutler_url_for
@@ -173,6 +176,10 @@ class JSONAPISerializer(ser.Serializer):
         """
         ret = {}
         meta = getattr(self, 'Meta', None)
+        meta = OrderedDict([
+                    ('total', self.page.paginator.count),
+                    ('per_page', self.page.paginator.per_page),
+                ])
         type_ = getattr(meta, 'type_', None)
         assert type_ is not None, 'Must define Meta.type_'
         data = super(JSONAPISerializer, self).to_representation(obj)
@@ -191,4 +198,3 @@ class JSONAPISerializer(ser.Serializer):
         if clean_html is True:
             self._validated_data = _rapply(self.validated_data, strip_html)
         return ret
-

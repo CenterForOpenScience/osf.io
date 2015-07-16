@@ -7,7 +7,6 @@ from rest_framework import exceptions
 from api.base.serializers import JSONAPISerializer, LinksField, Link, WaterbutlerLink, LinksFieldNoSelfLink
 
 
-
 class NodeSerializer(JSONAPISerializer):
     # TODO: If we have to redo this implementation in any of the other serializers, subclass ChoiceField and make it
     # handle blank choices properly. Currently DRF ChoiceFields ignore blank options, which is incorrect in this
@@ -113,7 +112,7 @@ class NodeSerializer(JSONAPISerializer):
             ('date_created', obj.date_created),
             ('date_modifed', obj.date_modified),
             ('public', obj.is_public),
-            ('tags',  {
+            ('tags', {
                 'system': [tag._id for tag in obj.system_tags],
                 'user': [tag._id for tag in obj.tags],
             }),

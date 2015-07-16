@@ -13,6 +13,7 @@ from .serializers import NodeSerializer, NodePointersSerializer, NodeFilesSerial
 from .permissions import ContributorOrPublic, ReadOnlyIfRegistration, ContributorOrPublicForPointers
 
 
+
 class NodeMixin(object):
     """Mixin with convenience methods for retrieving the current node based on the
     current URL. By default, fetches the current node based on the pk kwarg.
