@@ -1,6 +1,5 @@
 from rest_framework import serializers as ser
 from .utils import IncludeAdditionalQueryUser
-from api.nodes.utils import IncludeAdditionalQueryNode
 
 from api.base.serializers import JSONAPISerializer, LinksField, Link
 
@@ -65,6 +64,6 @@ class ContributorSerializer(UserSerializer):
 
     def get_additional_query_params(self, obj):
         if 'request' in self.context:
-            include = IncludeAdditionalQueryNode(obj, self.context['request'])
+            include = IncludeAdditionalQueryUser(obj, self.context['request'])
             ret = include.get_additional_query()
             return ret
