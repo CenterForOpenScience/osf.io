@@ -102,7 +102,7 @@ class NodeSerializer(JSONAPISerializer):
         if 'request' in self.context:
             include = IncludeAdditionalQueryNode(obj, self.context['request'])
             ret = include.get_additional_query()
-            return None
+            return ret
 
     @staticmethod
     def get_properties(obj):
