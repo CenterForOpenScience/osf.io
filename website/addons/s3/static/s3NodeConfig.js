@@ -436,7 +436,7 @@ ViewModel.prototype.changeMessage = function(text, css, timeout) {
 
 var S3Config = function(selector, settings) {
     var viewModel = new ViewModel(selector, settings);
-    $osf.applyBindings(this.viewModel, selector);
+    $osf.applyBindings(viewModel, selector);
     viewModel.updateFromData();
 };
 
