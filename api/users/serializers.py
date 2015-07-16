@@ -1,6 +1,7 @@
 from collections import OrderedDict
 from rest_framework import serializers as ser
 
+from website.project.model import User
 from api.base.serializers import JSONAPISerializer, LinksField, Link, LinksFieldNoSelfLink
 
 
@@ -39,6 +40,8 @@ class UserSerializer(JSONAPISerializer):
             ('employment_institutions', obj.jobs),
             ('educational_institutions', obj.schools),
             ('social_accounts', obj.social)))
+        if hasattr(obj, 'bibliographic'):
+            ret['bibliographic'] = obj.bibliographic
         return ret
 
     def absolute_url(self, obj):
@@ -53,5 +56,3 @@ class ContributorSerializer(UserSerializer):
 
     local_filterable = frozenset(['bibliographic'])
     filterable_fields = frozenset.union(UserSerializer.filterable_fields, local_filterable)
-
-    bibliographic = ser.BooleanField(help_text='Whether the user will be included in citations for this node or not')
