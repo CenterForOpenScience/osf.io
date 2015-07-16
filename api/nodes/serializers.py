@@ -1,4 +1,5 @@
 from rest_framework import serializers as ser
+from collections import OrderedDict
 
 from website.models import Node
 from framework.auth.core import Auth
@@ -130,9 +131,8 @@ class NodeSerializer(JSONAPISerializer):
 class NodePointersSerializer(JSONAPISerializer):
 
     id = ser.CharField(read_only=True, source='_id')
-    node_id = ser.CharField(source='node._id', help_text='The ID of the node that this pointer points to')
-    title = ser.CharField(read_only=True, source='node.title', help_text='The title of the node that this pointer '
-                                                                         'points to')
+    node_id = ser.CharField(write_only=True, source='node._id', help_text='The ID of the node that this pointer points to')
+    attributes = ser.SerializerMethodField(help_text='A dictionary containing user properties')
 
     class Meta:
         type_ = 'pointers'
@@ -140,6 +140,13 @@ class NodePointersSerializer(JSONAPISerializer):
     links = LinksField({
         'html': 'get_absolute_url',
     })
+
+    @staticmethod
+    def get_attributes(obj):
+        ret = OrderedDict((
+            ('node_id', obj.node._id),
+            ('title', obj.node.title)))
+        return ret
 
     def get_absolute_url(self, obj):
         pointer_node = Node.load(obj.node._id)
@@ -161,6 +168,9 @@ class NodePointersSerializer(JSONAPISerializer):
 
     def update(self, instance, validated_data):
         pass
+
+
+
 
 
 class NodeFilesSerializer(JSONAPISerializer):
