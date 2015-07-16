@@ -19,23 +19,48 @@ class NodeSerializer(JSONAPISerializer):
     description = ser.CharField(required=False, allow_blank=True, allow_null=True, write_only=True)
     category = ser.ChoiceField(choices=category_choices, help_text="Choices: " + category_choices_string, write_only=True)
     attributes = ser.SerializerMethodField(help_text='A dictionary containing node properties')
-    links = LinksField({
-        'html': 'get_absolute_url',
+    relationships = ser.SerializerMethodField(help_text='A dictionary containing relationships')
+    links = LinksField({'html': 'get_absolute_url'})
+    relationships = LinksField({
         'children': {
-            'related': Link('nodes:node-children', kwargs={'node_id': '<pk>'}),
-            'count': 'get_node_count',
+            'links': {
+                'related': {
+                    'href': Link('nodes:node-children', kwargs={'node_id': '<pk>'}),
+                    'meta': {
+                        'count': 'get_node_count'
+                    }
+                }
+            },
         },
         'contributors': {
-            'related': Link('nodes:node-contributors', kwargs={'node_id': '<pk>'}),
-            'count': 'get_contrib_count',
+            'links': {
+                'related': {
+                    'href': Link('nodes:node-contributors', kwargs={'node_id': '<pk>'}),
+                    'meta': {
+                        'count': 'get_contrib_count'
+                    }
+                }
+            },
         },
         'pointers': {
-            'related': Link('nodes:node-pointers', kwargs={'node_id': '<pk>'}),
-            'count': 'get_pointers_count',
+            'links': {
+                'related': {
+                    'href': Link('nodes:node-pointers', kwargs={'node_id': '<pk>'}),
+                    'meta': {
+                        'count': 'get_pointers_count'
+                    }
+                }
+            },
         },
-        'registrations': {
-            'related': Link('nodes:node-registrations', kwargs={'node_id': '<pk>'}),
-            'count': 'get_registration_count',
+        'pointers': {
+            'links': {
+                'related': {
+                    'href': Link('nodes:node-registrations', kwargs={'node_id': '<pk>'}),
+                    'meta': {
+                        'count': 'get_registration_count'
+                    }
+                }
+            },
         },
         'files': {
             'related': Link('nodes:node-files', kwargs={'node_id': '<pk>'})
@@ -75,6 +100,26 @@ class NodeSerializer(JSONAPISerializer):
 
     def get_pointers_count(self, obj):
         return len(obj.nodes_pointer)
+
+    @staticmethod
+    def get_attributes(obj):
+        ret = {
+            'title': obj.title,
+            'description': obj.description,
+            'category': obj.category,
+            'date_created': obj.date_created,
+            'date_modifed': obj.date_modified,
+            'public': obj.is_public,
+            'tags':  {
+                'system': [tag._id for tag in obj.system_tags],
+                'user': [tag._id for tag in obj.tags],
+            },
+            'dashboard': obj.is_dashboard,
+            'collection': obj.is_folder,
+            'registration': obj.is_registration
+
+        }
+        return ret
 
     @staticmethod
     def get_attributes(obj):
