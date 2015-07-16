@@ -13,6 +13,7 @@
                 <form role='form'>
                     <div class="form-group">
                         <input class="form-control" placeholder="Search projects" style="margin-bottom: 8px;" data-bind="value:query" />
+
                         <div class="help-block">
                             <span class="text-danger" data-bind="html: searchWarningMsg"></span>
                         </div>
@@ -49,6 +50,13 @@
                             </tbody>
                         </table>
                         <div class='help-block'>
+                            <div data-bind='if: loadingResults'>
+                                <div class="spinner-loading-wrapper">
+                                    <div class="logo-spin text-center"><img src="/static/img/logo_spin.png" alt="loader"> </div>
+                                    <p class="m-t-sm fg-load-message"> Loading files...  </p>
+                                </div>
+                            </div>
+
                             <div data-bind='if: foundResults'>
                                 <ul class="pagination pagination-sm" data-bind="foreach: paginators">
                                     <li data-bind="css: style"><a href="#" data-bind="click: handler, html: text"></a></li>
