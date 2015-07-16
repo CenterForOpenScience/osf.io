@@ -17,6 +17,7 @@ var limitOsfStorage = function(item) {
         item.open = false;
         item.load = false;
         item.css = 'text-muted';
+        item.data.permissions = item.data.permissions || {};
         item.data.permissions.edit = false;
         item.data.permissions.view = false;
         if (item.data.name.indexOf(' (Only OSF Storage supported to ensure accurate versioning.)') === -1) {
