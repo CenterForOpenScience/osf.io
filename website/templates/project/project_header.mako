@@ -1,5 +1,4 @@
 <%
-    import json
     is_project = node['node_type'] == 'project'
 %>
 

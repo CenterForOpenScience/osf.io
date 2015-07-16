@@ -1,9 +1,6 @@
 <%inherit file="project/project_base.mako"/>
 
-
-
 <%
-    import json
     is_project = node['node_type'] == 'project'
 %>
 
@@ -336,7 +333,6 @@
 </%def>
 
 <%def name="javascript_bottom()">
-<% import json %>
 
 ${parent.javascript_bottom()}
 
@@ -348,14 +344,14 @@ ${parent.javascript_bottom()}
     // Hack to allow mako variables to be accessed to JS modules
     window.contextVars = $.extend(true, {}, window.contextVars, {
         currentUser: {
-            name: '${user_full_name | js_str}',
-            canComment: ${json.dumps(user['can_comment'])},
-            canEdit: ${json.dumps(user['can_edit'])}
+            name: ${ user_full_name | sjson, n },
+            canComment: ${ user['can_comment'] | sjson, n },
+            canEdit: ${ user['can_edit'] | sjson, n }
         },
         node: {
-            hasChildren: ${json.dumps(node['has_children'])},
-            isRegistration: ${json.dumps(node['is_registration'])},
-            tags: ${json.dumps(node['tags'])}
+            hasChildren: ${ node['has_children'] | sjson, n },
+            isRegistration: ${ node['is_registration'] | sjson, n },
+            tags: ${ node['tags'] | sjson, n }
         }
     });
 </script>
