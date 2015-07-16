@@ -20,7 +20,7 @@ NodeActions.beforeForkNode = function(url, done) {
         contentType: 'application/json'
     }).done(function(response) {
         bootbox.confirm(
-            $osf.joinPrompts(response.prompts, 'Are you sure you want to fork this project?'),
+            $osf.joinPrompts(response.prompts, ('<h4>Are you sure you want to fork this project?</h4>')),
             function(result) {
                 if (result) {
                     done && done();
@@ -85,8 +85,10 @@ NodeActions.beforeTemplate = function(url, done) {
     }).success(function(response) {
         bootbox.confirm(
             $osf.joinPrompts(response.prompts,
-                ('Are you sure you want to create a new project using this project as a template? ' +
-                  'Any add-ons configured for this project will not be authenticated in the new project.')),
+                ('<h4>Are you sure you want to create a new project using this project as a template?</h4>' +
+                '<p>Any add-ons configured for this project will not be authenticated in the new project.</p>')),
+                //('Are you sure you want to create a new project using this project as a template? ' +
+                //  'Any add-ons configured for this project will not be authenticated in the new project.')),
             function (result) {
                 if (result) {
                     done && done();
@@ -128,7 +130,7 @@ $(function() {
 
         if ($.trim($('#title').val()) === '') {
 
-            $('#newComponent .modal-alert').text('The new component title cannot be empty.');
+            $('#newComponent .modal-alert').text('Title cannot be empty.');
 
             $('#add-component-submit')
                 .removeAttr('disabled', 'disabled')

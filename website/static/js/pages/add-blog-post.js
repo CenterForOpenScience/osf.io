@@ -3,6 +3,7 @@ var ko = require('knockout');
 var $ = require('jquery');
 var $osf = require('js/osfHelpers');
 var Raven = require('raven-js');
+var waterbutler = require('js/waterbutler');
 require('ace-noconflict');
 require('ace-mode-markdown');
 require('ace-ext-language_tools');
@@ -15,48 +16,53 @@ var mdQuick = require('js/markdown').quick;
 
 
 var editor = ace.edit('editor');
-var vm = new ViewModel();
-var hvm = new hiddenViewModel();
-$osf.applyBindings(vm, '#wikiViewRender');
-$osf.applyBindings(hvm, '#hidden');
+var form = new formViewModel();
+var save = function () {
+    var title = $("input[name='title']").val();
+    var content = $("#hidden").val();
+    var ctx = window.contextVars;
+    var uid = ctx.uid;
+    var guid = ctx.guid;
+    var name = ctx.file.name;
+    var date = getDate();
+    var header = createHeader(title, uid, name, date);
+    var fileName = name + ".md";
+    var b = new Blob([header + content], {type: "text/plain", lastModified: date});
+    var xhr = new XMLHttpRequest();
+    var f = new File(b, fileName, xhr);
+    var url = waterbutler.buildUploadUrl('/', 'osfstorage', guid, f);
+
+    xhr.open("put", url, true);
+    xhr = $osf.setXHRAuthorization(xhr);
+    xhr.send(f);
+    window.location = "../post/" + name;
+};
+form.save = save;
+$osf.applyBindings(form, '#wiki-form');
 editor.focus();
 editor.getSession().setMode('ace/mode/markdown');
 editor.getSession().setUseSoftTabs(true);   // Replace tabs with spaces
 editor.getSession().setUseWrapMode(true);   // Wraps text
 editor.renderer.setShowGutter(false);       // Hides line number
 editor.setShowPrintMargin(false);           // Hides print margin
-//editor.setOptions({
-//    enableBasicAutocompletion: [LanguageTools.snippetCompleter],
-//    enableSnippets: true,
-//    enableLiveAutocompletion: true
-//});
 editor.getSession().on('change', function() {
-    updateView(editor.getValue(), vm, hvm);
+    updateView(editor.getValue(), form);
 });
 var mdConverter = Markdown.getSanitizingConverter();
 var mdEditor = new Markdown.Editor(mdConverter);
 mdEditor.run(editor);
 
-function updateView(rawText, vm, hvm){
-    //$('#wikiViewRender').html(mdQuick.render(rawText));
-    vm.renderedView(mdQuick.render(rawText));
-    hvm.currentText(rawText);
+function updateView(rawText, form){
+    form.renderedView(mdQuick.render(rawText));
+    form.currentText(rawText);
 }
 
-function ViewModel() {
+function formViewModel() {
     var self = this;
+    self.save = ko.observable('');
+    self.currentText = ko.observable('');
     self.renderedView = ko.observable('');
 }
-
-function hiddenViewModel() {
-    var self = this;
-    self.currentText = ko.observable('');
-}
-
-$("#Save").onclick = function() {
-    alert("test");
-};
-
 
 
 /**
@@ -100,112 +106,37 @@ ko.bindingHandlers.ace = {
     }
 };
 
-//var viewModel = {
-//    //var self = this;
-//    renderedView: ko.observable()
-//};
-//viewModel.renderedView()
+function createHeader(title, uid, name, date) {
+    var start = "/**\n";
+    date  = "date: " + date + "\n";
+    var author = "author: " + uid + "\n";
+    title = "title: " + title + "\n";
+    var post_class = "post_class: post\n";
+    var file = "file: " + name + "\n";
+    var end = "**/\n";
+    return start + date + author + title + post_class + file + end;
+};
 
-    //self.initText = ko.observable('');
-    //self.activeUsers = ko.observableArray([]);
-    //self.status = ko.observable('connecting');
-    //self.throttledStatus = ko.observable(self.status());
-    //
-    //self.displayCollaborators = ko.computed(function() {
-    //   return self.activeUsers().length > 1;
-    //});
-    //
-    //// Throttle the display when updating status.
-    //self.updateStatus = function() {
-    //    self.throttledStatus(self.status());
-    //};
-    //
-    //self.throttledUpdateStatus = $osf.throttle(self.updateStatus, 4000, {leading: false});
-    //
-    //self.status.subscribe(function (newValue) {
-    //    if (newValue !== 'connecting') {
-    //        self.updateStatus();
-    //    }
-    //
-    //    self.throttledUpdateStatus();
-    //});
-    //
-    //self.statusDisplay = ko.computed(function() {
-    //    switch(self.throttledStatus()) {
-    //        case 'connected':
-    //            return 'Live editing mode';
-    //        case 'connecting':
-    //            return 'Attempting to connect';
-    //        case 'unsupported':
-    //            return 'Unsupported browser';
-    //        default:
-    //            return 'Unavailable: Live editing';
-    //    }
-    //});
-    //
-    //self.progressBar = ko.computed(function() {
-    //    switch(self.throttledStatus()) {
-    //        case 'connected':
-    //            return {
-    //                class: 'progress-bar progress-bar-success',
-    //                style: 'width: 100%'
-    //            };
-    //
-    //        case 'connecting':
-    //            return {
-    //                class: 'progress-bar progress-bar-warning progress-bar-striped active',
-    //                style: 'width: 100%'
-    //            };
-    //        default:
-    //            return {
-    //                class: 'progress-bar progress-bar-danger',
-    //                style: 'width: 100%'
-    //            };
-    //    }
-    //});
-    //
-    //self.modalTarget = ko.computed(function() {
-    //    switch(self.throttledStatus()) {
-    //        case 'connected':
-    //            return '#connectedModal';
-    //        case 'connecting':
-    //            return '#connectingModal';
-    //        case 'unsupported':
-    //            return '#unsupportedModal';
-    //        default:
-    //            return '#disconnectedModal';
-    //    }
-    //});
-    //
-    //self.wikisDiffer = function(wiki1, wiki2) {
-    //    // Handle inconsistencies in newline notation
-    //    var clean1 = typeof wiki1 === 'string' ?
-    //        wiki1.replace(/(\r\n|\n|\r)/gm, '\n') : '';
-    //    var clean2 = typeof wiki2 === 'string' ?
-    //        wiki2.replace(/(\r\n|\n|\r)/gm, '\n') : '';
-    //
-    //    return clean1 !== clean2;
-    //};
-    //
-    //self.changed = function() {
-    //    return self.wikisDiffer(self.initText(), self.currentText());
-    //};
-    //
-    //
-    //// Revert to last saved version, even if draft is more recent
-    //self.revertChanges = function() {
-    //    return self.fetchData().then(function(response) {
-    //        // Dirty check now covers last saved version
-    //        self.initText(response.wiki_content);
-    //        self.currentText(response.wiki_content);
-    //    });
-    //};
-    //
-    //$(window).on('beforeunload', function() {
-    //    if (self.changed() && self.status() !== 'connected') {
-    //        return 'There are unsaved changes to your wiki. If you exit ' +
-    //            'the page now, those changes may be lost.';
-    //    }
-    //});
+function getDate() {
+    var today = new Date();
+    var dd = today.getDate();
+    var mm = today.getMonth() + 1;
+    var yyyy = today.getFullYear();
 
-//}
+    if(dd<10) {
+        dd='0'+dd;
+    }
+
+    if(mm<10) {
+        mm='0'+mm;
+    }
+
+    return yyyy + "-" + mm + "-" + dd;
+};
+
+function File(blob, name, xhr){
+    var self = blob;
+    self.name = name;
+    self.xhr = xhr;
+    return self;
+}

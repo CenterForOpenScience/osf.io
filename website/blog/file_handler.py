@@ -13,7 +13,6 @@ class FileHandler:
 
 
     def read_file(self, file):
-        #url = self.get_file_url(file.get('name'))
         url = file['links'].get('self')
         response = requests.get(url)
         return response._content

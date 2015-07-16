@@ -3,11 +3,13 @@
 ## Use full page width
 <%def name="container_class()">container-xxl</%def>
 
-<%def name="title()">${file_name | h}</%def>
+## <%def name="title()">${file_name | h}</%def>
+<%def name="title()">New Post</%def>
 <div class="row">
-  <div class="col-sm-5">
+  <div class="col-sm-12">
     <h2 class="break-word">
-      ${file_name | h}
+##       ${file_name | h}
+        New Post
     </h2>
   </div>
 </div>
@@ -15,17 +17,17 @@
 <div class="row">
 
   <div id="file-navigation" class="panel-toggle col-sm-3 file-tree">
-    <div class="osf-panel osf-panel-hide osf-panel-flex reset-height">
-      <div class="osf-panel-header osf-panel-header-flex" style="display:none">
+    <div class="osf-panel panel panel-default osf-panel-hide osf-panel-flex reset-height">
+      <div class="panel-heading clearfix osf-panel-header-flex" style="display:none">
         <div id="filesSearch"></div>
         <div id="toggleIcon" class="pull-right">
           <div class="panel-collapse"><i class="fa fa-angle-left"></i></div>
         </div>
       </div>
 
-      <div class="osf-panel-body osf-panel-body-flex file-page reset-height">
+      <div class="osf-panel-body-flex file-page reset-height">
         <div id="grid">
-          <div class="fangorn-loading">
+          <div class="spinner-loading-wrapper">
             <div class="logo-spin text-center"><img src="/static/img/logo_spin.png" alt="loader"> </div>
             <p class="m-t-sm fg-load-message"> Loading files...  </p>
           </div>
@@ -34,8 +36,8 @@
     </div>
 
     <!-- Menu toggle closed -->
-    <div class="osf-panel osf-panel-show text-center reset-height"  style="display: none">
-      <div class="osf-panel-header">
+    <div class="panel panel-default osf-panel-show text-center reset-height"  style="display: none">
+      <div class="panel-heading">
         <i class="fa fa-file"></i>
         <i class="fa fa-angle-right"></i>
       </div>
@@ -44,23 +46,27 @@
 
 
   <div id="fileViewPanelLeft" class="col-sm-9 panel-expand">
+    <form id="wiki-form" data-bind="submit: save">
+
+    <div class="row">
+        <div class="col-lg-6">
+            <input type="text" class="form-control" name="title" placeholder="Post Title">
+        </div>
+    </div>
     <div class="row">
 
         <!-- Edit panel -->
-        <div class="file-view-panels col-sm-6">
-            <div class="row">
-            <div
-                 data-osf-panel="Edit">
-                <div class="osf-panel panel panel-default osf-panel-default" data-bind="css: { 'no-border': $root.singleVis() === 'edit' }">
-                  <div class="osf-panel-header" data-bind="css : { 'bordered': $root.singleVis() === 'edit' }">
+        <div class="file-view-panels col-lg-6">
+            <div data-osf-panel="Edit">
+                <div class="osf-panel panel panel-default">
+                  <div class="panel-heading clearfix">
                     <div class="row">
                       <div class="col-md-12">
-                           <span class="wiki-panel-title" > <i class="fa fa-pencil-square-o"> </i>   Edit </span>
+                           <span class="panel-title" > <i class="fa fa-pencil-square-o"> </i>   Edit </span>
                       </div>
                     </div>
                   </div>
-                  <form id="wiki-form" action="save/" method="POST">
-                  <div class="osf-panel-body">
+                  <div class="panel-body">
                         <div class="row">
                         <div class="col-xs-12">
                           <div id="editPanel" class="form-group wmd-panel">
@@ -72,7 +78,7 @@
                         </div>
                       </div>
                   </div>
-                  <div class="osf-panel-footer">
+                  <div class="panel-footer">
                       <div class="row">
                         <div class="col-xs-12">
                            <div class="pull-right">
@@ -87,30 +93,31 @@
                                   data-bind="html: currentText"></textarea>
 
                       </div>
-                </form>
                 </div>
             </div>
-        </div>
             </div>
 
         <!-- View panel -->
         <div id="viewParent" class="col-sm-6">
-              <div class="osf-panel panel panel-default osf-panel-flex" data-bind="css: { 'no-border reset-height': $root.singleVis() === 'view', 'osf-panel-flex': $root.singleVis() !== 'view' }">
-                <div class="osf-panel-header" data-bind="css: { 'osf-panel-header-flex': $root.singleVis() !== 'view', 'bordered': $root.singleVis() === 'view' }">
+              <div class="osf-panel panel panel-default">
+                <div class="panel-heading clearfix">
                     <div class="row">
                         <div class="col-sm-12">
-                            <span class="wiki-panel-title" > <i class="fa fa-eye"> </i>  View</span>
+                            <span class="panel-title" > <i class="fa fa-eye"> </i>  View</span>
                         </div>
                     </div>
                 </div>
 
-                <div id="wikiViewPanel"  class="osf-panel-body osf-panel-body-flex" data-bind="css: { 'osf-panel-body-flex': $root.singleVis() !== 'view' }">
+                <div id="wikiViewPanel"  class="panel-body">
                   <div id="wikiViewRender" data-bind="html: renderedView, mathjaxify: renderedView, anchorScroll : { buffer: 50, elem : '#wikiViewPanel'}" class=" markdown-it-view">
                   </div>
                 </div>
               </div>
           </div>
+
+
     </div>
+        </form>
   </div>
 
 </div>
@@ -208,6 +215,7 @@
 ##             name: '${file_name | js_str}',
 ##             path: '${file_path | js_str}',
             provider: '${provider | js_str}',
+            name: '${name | js_str}',
 ##             safeName: '${file_name | h,js_str}',
 ##             materializedPath: '${materialized_path | js_str}',
 ##           urls: {
@@ -225,6 +233,8 @@
 ##             userUrl: '/${user['id']}/',
 ##             userGravatar: '${urls['gravatar']}'.replace('&amp;', '&')
 ##         },
+        uid: '${user['id'] | js_str}',
+        guid:'${node['root_id'] | js_str}',
         node: {
           urls: {
             files: '${urls['files'] | js_str}'
@@ -236,6 +246,8 @@
 ##         }
       });
     </script>
+
+    <link href="/static/css/pages/blog-creation.css" rel="stylesheet">
 
 ##     <link href="${urls['mfr']}/static/css/mfr.css" media="all" rel="stylesheet" />
 ##     <script src="${urls['mfr']}/static/js/mfr.js"></script>
