@@ -5,6 +5,7 @@ from dateutil.parser import parse as parse_date
 from modularodm import Q
 from modularodm.exceptions import ValidationValueError
 
+from framework import status
 from framework.mongo.utils import get_or_http_error
 from framework.exceptions import HTTPError
 from framework.status import push_status_message
@@ -134,6 +135,7 @@ def get_draft_registrations(auth, node, *args, **kwargs):
     count = request.args.get('count', 100)
 
     drafts = DraftRegistration.find(
+        Q('branched_from', 'eq', node) &
         Q('initiator', 'eq', auth.user)
     )[:count]
     return {
@@ -200,6 +202,10 @@ def edit_draft_registration(auth, node, draft_id, **kwargs):
     if not draft:
         raise HTTPError(http.NOT_FOUND)
 
+    messages = draft.before_edit(auth)
+    for message in messages:
+        status.push_status_message(message)
+
     ret = project_utils.serialize_node(node, auth, primary=True)
     ret['draft'] = serialize_draft_registration(draft, auth)
     return ret
@@ -224,8 +230,7 @@ def update_draft_registration(auth, node, draft_pk, *args, **kwargs):
         if (existing_schema.name, existing_schema.schema_version) != (meta_schema.name, meta_schema.schema_version):
             draft.registration_schema = meta_schema
 
-    draft.registration_metadata.update(schema_data)
-    draft.save()
+    draft.update_metadata(schema_data)
     return serialize_draft_registration(draft, auth), http.OK
 
 @must_have_permission(ADMIN)

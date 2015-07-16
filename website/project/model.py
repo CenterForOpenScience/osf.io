@@ -3065,16 +3065,61 @@ class DraftRegistration(AddonModelMixin, StoredObject):
             schema = meta_schema.schema
             config = schema.get('config', {})
             self.config = config
-            flags = schema.get('flags', {})
-            for flag, value in flags.iteritems():
-                self.flags[flag] = value
+            # TODO: uncomment to set flags
+            # if not self.registration_schema:
+            #    flags = schema.get('flags', {})
+            #    for flag, value in flags.iteritems():
+            #        self.flags[flag] = value
 
-    # proxy fields from branched_from Node
-    def __getattr__(self, attr):
-        try:
-            return self.__dict__[attr]
-        except KeyError:
-            return getattr(self.branched_from, attr, None)
+    # TODO: uncomment to expose approval/review properties
+    #    @property
+    #    def is_pending_review(self):
+    #        return self.flags.get('isPendingReview')
+    #
+    #    @is_pending_review.setter
+    #    def is_pending_review(self, value):
+    #        self.flags['isPendingReview'] = value
+    #
+    #    @property
+    #    def is_approved(self):
+    #        self.flags.get('isApproved')
+    #
+    #    @is_approved.setter
+    #    def is_approved(self, value):
+    #        self.flags['isApproved'] = value
+
+    def update_metadata(self, metadata, save=True):
+        # TODO: uncommnet to disallow editing drafts that are approved or pending approval
+        # if self.is_pending_review or self.is_approved:
+        #    raise HTTPError(http.BAD_REQUEST)
+        changes = []
+        for key, value in metadata.iteritems():
+            old_value = self.registration_metadata.get(key)
+            if not old_value or old_value.get('value') != value.get('value'):
+                changes.append(key)
+        self.registration_metadata.update(metadata)
+        if save:
+            self.save()
+        # TODO: uncomment to nullify approval state if edited
+        # self.after_edit(changes)
+
+    def before_edit(self, auth):
+        messages = []
+        # TODO: uncomment to provide pre-edit warnings for drafts that are approved or are pending approval
+        # if self.flags.get('isApproved'):
+        #     messages.append('The draft registration you are editing is currently approved. Please note that if you make any changes (excluding comments) this approval status will be revoked and you will need to submit for approval again.')
+        # if self.flags.get('isPendingReview'):
+        #     messages.append('The draft registration you are editing is currently pending review. Please note that if you make any changes (excluding comments) this request will be cancelled and you will need to submit for approval again.')
+        return messages
+
+    def after_edit(self, changes):
+        # revoke approval and review status if changed
+        if changes:
+            self.flags.update({
+                'isPendingReview': False,
+                'isApproved': False
+            })
+            self.save()
 
     def find_question(self, qid):
         for page in self.registration_schema.schema['pages']:

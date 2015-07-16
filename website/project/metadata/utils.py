@@ -11,13 +11,9 @@ def serialize_meta_schema(meta_schema):
     }
 
 def serialize_draft_registration(draft, auth=None):
-    ret = {
-        key: getattr(draft, key)
-        for key in ['title', 'description']
-    }
     node = draft.branched_from
 
-    ret.update({
+    return {
         'pk': draft._id,
         'branched_from': serialize_node(draft.branched_from, auth),
         'initiator': serialize_user(draft.initiator),
@@ -33,5 +29,4 @@ def serialize_draft_registration(draft, auth=None):
             'register': node.api_url_for('register_draft_registration', draft_id=draft._id),
             'registrations': node.web_url_for('node_registrations')
         }
-    })
-    return ret
+    }
