@@ -1,5 +1,6 @@
 from rest_framework import serializers as ser
 
+from collections import OrderedDict
 from website.models import Node
 from framework.auth.core import Auth
 from rest_framework import exceptions
@@ -103,42 +104,20 @@ class NodeSerializer(JSONAPISerializer):
 
     @staticmethod
     def get_attributes(obj):
-        ret = {
-            'title': obj.title,
-            'description': obj.description,
-            'category': obj.category,
-            'date_created': obj.date_created,
-            'date_modifed': obj.date_modified,
-            'public': obj.is_public,
-            'tags':  {
+        ret = OrderedDict((
+            ('title', obj.title),
+            ('description', obj.description),
+            ('category', obj.category),
+            ('date_created', obj.date_created),
+            ('date_modifed', obj.date_modified),
+            ('public', obj.is_public),
+            ('tags',  {
                 'system': [tag._id for tag in obj.system_tags],
                 'user': [tag._id for tag in obj.tags],
-            },
-            'dashboard': obj.is_dashboard,
-            'collection': obj.is_folder,
-            'registration': obj.is_registration
-
-        }
-        return ret
-
-    @staticmethod
-    def get_attributes(obj):
-        ret = {
-            'title': obj.title,
-            'description': obj.description,
-            'category': obj.category,
-            'date_created': obj.date_created,
-            'date_modifed': obj.date_modified,
-            'public': obj.is_public,
-            'tags':  {
-                'system': [tag._id for tag in obj.system_tags],
-                'user': [tag._id for tag in obj.tags],
-            },
-            'dashboard': obj.is_dashboard,
-            'collection': obj.is_folder,
-            'registration': obj.is_registration
-
-        }
+            }),
+            ('dashboard', obj.is_dashboard),
+            ('collection', obj.is_folder),
+            ('registration', obj.is_registration)))
         return ret
 
     def create(self, validated_data):
