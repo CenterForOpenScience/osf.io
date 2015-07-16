@@ -68,6 +68,11 @@ class LinksField(ser.Field):
             ret['self'] = obj.get_absolute_url()
         return ret
 
+class LinksFieldNoSelfLink(LinksField):
+    def to_representation(self, obj):
+        ret = _rapply(self.links, _url_val, obj=obj, serializer=self.parent)
+        return ret
+
 _tpl_pattern = re.compile(r'\s*<\s*(\S*)\s*>\s*')
 
 
