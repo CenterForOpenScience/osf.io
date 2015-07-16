@@ -15,15 +15,10 @@ class NodeSerializer(JSONAPISerializer):
     filterable_fields = frozenset(['title', 'description', 'public'])
 
     id = ser.CharField(read_only=True, source='_id')
-    title = ser.CharField(required=True)
-    description = ser.CharField(required=False, allow_blank=True, allow_null=True)
-    category = ser.ChoiceField(choices=category_choices, help_text="Choices: " + category_choices_string)
-    date_created = ser.DateTimeField(read_only=True)
-    date_modified = ser.DateTimeField(read_only=True)
-    tags = ser.SerializerMethodField(help_text='A dictionary that contains two lists of tags: '
-                                               'user and system. Any tag that a user will define in the UI will be '
-                                               'a user tag')
-    attributes = ser.SerializerMethodField(help_text='A dictionary that contains properties')
+    title = ser.CharField(required=True, write_only=True)
+    description = ser.CharField(required=False, allow_blank=True, allow_null=True, write_only=True)
+    category = ser.ChoiceField(choices=category_choices, help_text="Choices: " + category_choices_string, write_only=True)
+    attributes = ser.SerializerMethodField(help_text='A dictionary containing node properties')
     links = LinksField({
         'html': 'get_absolute_url',
         'children': {
@@ -46,21 +41,8 @@ class NodeSerializer(JSONAPISerializer):
             'related': Link('nodes:node-files', kwargs={'node_id': '<pk>'})
         },
     })
-    properties = ser.SerializerMethodField(help_text='A dictionary of read-only booleans: registration, collection,'
-                                                     'and dashboard. Collections are special nodes used by the Project '
-                                                     'Organizer to, as you would imagine, organize projects. '
-                                                     'A dashboard is a collection node that serves as the root of '
-                                                     'Project Organizer collections. Every user will always have '
-                                                     'one Dashboard')
-    # TODO: When we have 'admin' permissions, make this writable for admins
-    public = ser.BooleanField(source='is_public', read_only=True,
-                              help_text='Nodes that are made public will give read-only access '
-                                                            'to everyone. Private nodes require explicit read '
-                                                            'permission. Write and admin access are the same for '
-                                                            'public and private nodes. Administrators on a parent '
-                                                            'node have implicit read permissions for all child nodes',
-                              )
-    # TODO: finish me
+
+    # TODO: When we have 'admin' permissions, make public writable for admins
 
     class Meta:
         type_ = 'nodes'
@@ -111,23 +93,6 @@ class NodeSerializer(JSONAPISerializer):
             'collection': obj.is_folder,
             'registration': obj.is_registration
 
-        }
-        return ret
-
-    @staticmethod
-    def get_properties(obj):
-        ret = {
-            'registration': obj.is_registration,
-            'collection': obj.is_folder,
-            'dashboard': obj.is_dashboard,
-        }
-        return ret
-
-    @staticmethod
-    def get_tags(obj):
-        ret = {
-            'system': [tag._id for tag in obj.system_tags],
-            'user': [tag._id for tag in obj.tags],
         }
         return ret
 
