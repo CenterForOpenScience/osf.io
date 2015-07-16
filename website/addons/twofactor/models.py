@@ -51,7 +51,7 @@ class TwoFactorUserSettings(AddonUserSettingsBase):
 
     def on_add(self):
         push_status_message('Please <a href="#TfaVerify">activate your'
-                            ' device</a> before continuing.')
+                            ' device</a> before continuing.', 'info')
         super(TwoFactorUserSettings, self).on_add()
         self.totp_secret = _generate_seed()
         self.totp_drift = 0
@@ -61,7 +61,7 @@ class TwoFactorUserSettings(AddonUserSettingsBase):
         if self.is_confirmed:
             push_status_message('Successfully deauthorized two-factor'
                                 ' authentication. Please delete the'
-                                ' verification code on your device.')
+                                ' verification code on your device.', 'success')
         super(TwoFactorUserSettings, self).on_delete()
         self.totp_secret = None
         self.totp_drift = 0

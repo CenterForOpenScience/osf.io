@@ -343,7 +343,7 @@ def user_account_password(auth, **kwargs):
     except ChangePasswordError as error:
         push_status_message('<br />'.join(error.messages) + '.', kind='warning')
     else:
-        push_status_message('Password updated successfully.', kind='info')
+        push_status_message('Password updated successfully.', kind='success')
 
     return redirect(web_url_for('user_account'))
 
