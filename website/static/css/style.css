@@ -443,3 +443,8 @@ button.close {
 .osf-icon-td {
     width: 50px;
 }
+
+/* Override Select2 CSS*/
+.select2-search-choice-close {
+    margin-top: -3px;
+}
