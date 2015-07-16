@@ -45,6 +45,10 @@ def main(dry_run=True):
     embargoes.hour.on(0)
     embargoes.minute.on(0)  # Daily 12 a.m.
 
+    cleanup_failed_registrations = ensure_item(cron, 'bash {}'.format(app_prefix('scripts/cleanup_failed_registrations.sh')))
+    cleanup_failed_registrations.hour.on(0)
+    cleanup_failed_registrations.minute.on(0)  # Daily 12 a.m.
+
     files_audit = ensure_item(cron, 'bash {}'.format(app_prefix('scripts/osfstorage/files_audit.sh')))
     files_audit.dow.on(0)
     files_audit.hour.on(2)
