@@ -52,7 +52,7 @@ class NodeSerializer(JSONAPISerializer):
                 }
             },
         },
-        'pointers': {
+        'registrations': {
             'links': {
                 'related': {
                     'href': Link('nodes:node-registrations', kwargs={'node_id': '<pk>'}),
