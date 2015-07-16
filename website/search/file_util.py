@@ -7,6 +7,8 @@ INDEXED_TYPES = [
     'txt',
     'md',
     'rtf',
+    # 'docx',
+    # 'pdf',
 ]
 
 
@@ -16,33 +18,25 @@ def is_indexed(filename):
     return indexed
 
 
+def get_content_of_file(file_):
+    url = file_.mfr_public_download_url
+    response = requests.get(url)
+    content = response.text
+    return content
+
+
 def build_file_document(name, path, addon, include_content=True):
     file_, created = addon.find_or_create_file_guid(path)
     parent_id = file_.node._id
     file_content = None
     if include_content:
-        file_content = get_content_of_file_from_addon(file_, addon)
+        file_content = get_content_of_file(file_)
     return {
         'name': name,
         'path': path,
         'content': file_content,
         'parent_id': parent_id,
     }
-
-
-def get_content_of_file_from_addon(file_, addon):
-    """ Return the contents of a file as a string.
-
-    :param file_: A GuidFile object.
-    :param addon: The addon object containing the file.
-    :return: string.
-    """
-    url = file_.download_url
-    if addon.config.short_name in ('osfstorage',):
-        url += '&mode=render'
-    response = requests.get(url)
-    content = unicode(response.text).encode('utf-8')
-    return content
 
 
 def collect_files_from_addon(addon, tree=None):

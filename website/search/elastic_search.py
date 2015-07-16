@@ -298,7 +298,6 @@ def update_node(node, index=None):
 
 @requires_search
 def update_file(name, path, addon, index=None):
-
     if file_util.is_indexed(name):
         index = index or settings.ELASTIC_INDEX
         file_doc = file_util.build_file_document(name, path, addon, include_content=True)

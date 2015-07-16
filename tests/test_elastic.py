@@ -2,6 +2,7 @@
 import unittest
 import logging
 import time
+import os
 
 from nose.tools import *  # flake8: noqa (PEP8 asserts)
 import mock
@@ -900,3 +901,50 @@ class TestSearchUpdate(SearchTestCase):
         assert_false(mock_remove_file.called)
         self.project.update_search_file('delete', 'some addon', 'some name', 'some path')
         assert_true(mock_remove_file.called)
+
+
+class TestIndexFiles(SearchTestCase):
+    def setUp(self):
+        super(TestIndexFiles, self).setUp()
+        self.parent_project = ProjectFactory()
+        self.parent_project.set_privacy('public')
+        self.here = os.path.dirname(os.path.abspath(__file__))
+
+    def _local_file_doc(self, name, path, addon, include_content):
+            content = None
+            path = os.path.join(self.here, 'test_files', name)
+            if include_content:
+                with open(path, 'rb') as f:
+                    content = f.read()
+            return {
+                'name': name,
+                'path': path,
+                'content': content,
+                'parent_id': self.parent_project._id,
+            }
+
+    def test_index_txt_file(self):
+        with mock.patch('website.search.file_util.build_file_document', self._local_file_doc):
+            elastic_search.update_file('index_test.txt', 'some path', 'some addon')
+            res = query('diamond')['results']
+            assert_equal(len(res), 1)
+
+    def test_index_rtf_file(self):
+        with mock.patch('website.search.file_util.build_file_document', self._local_file_doc):
+            elastic_search.update_file('index_test.rtf', 'some path', 'some addon')
+            res = query('diamond')['results']
+            assert_equal(len(res), 1)
+
+    @unittest.skip('TODO: Index pdf files.')
+    def test_index_pdf_file(self):
+        with mock.patch('website.search.file_util.build_file_document', self._local_file_doc):
+            elastic_search.update_file('index_test.pdf', 'some path', 'some addon')
+            res = query('diamond')['results']
+            assert_equal(len(res), 1)
+
+    @unittest.skip('TODO: Index docx files.')
+    def test_index_docx_file(self):
+        with mock.patch('website.search.file_util.build_file_document', self._local_file_doc):
+            elastic_search.update_file('index_test.pdf', 'some path', 'some addon')
+            res = query('diamond')['results']
+            assert_equal(len(res), 1)
