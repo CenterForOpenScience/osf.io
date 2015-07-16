@@ -5,7 +5,7 @@ var $ = require('jquery');
 var faker = require('faker');
 
 window.contextVars.currentUser = {
-    name: faker.name.findName(),
+    fullname: faker.name.findName(),
     id: 1
 };
 var registrationUtils = require('js/registrationUtils');
@@ -92,7 +92,7 @@ describe('Comment', () => {
     describe('#constructor', () => {
         it('loads in optional instantiation data', () => {
             var user = {
-                name: faker.name.findName(),
+                fullname: faker.name.findName(),
                 id: 2
             };
             var data = {
@@ -110,13 +110,31 @@ describe('Comment', () => {
             assert.deepEqual(comment.user, window.contextVars.currentUser);
         });
     });
+    describe('#saved', () => {
+        it('is true if the comment has data', () => {
+            var comment = new Comment();
+            assert.isFalse(comment.saved());
+
+            var user = {
+                fullname: faker.name.findName(),
+                id: 2
+            };
+            var data = {
+                user: user,
+                lastModified: faker.date.past(),
+                value: faker.lorem.sentence()
+            };
+            var comment = new Comment(data);
+            assert.isTrue(comment.saved());
+        });
+    });
     describe('#canDelete', () => {
         it('is true if the global currentUser is the same as comment.user', () => {
             var comment = new Comment();
             assert.isTrue(comment.canDelete());
 
             var user = {
-                name: faker.name.findName(),
+                fullname: faker.name.findName(),
                 id: 2
             };
             var data = {
@@ -125,7 +143,59 @@ describe('Comment', () => {
                 value: faker.lorem.sentence()
             };
             comment = new Comment(data);
-           assert.isFalse(comment.canDelete());
+            assert.isFalse(comment.canDelete());
+        });
+    });
+    describe('#viewComment', () => {
+        it('adds a user id that is not the author to a the seenBy array', () => {
+            var comment = new Comment();
+            var currentUser = window.contextVars.currentUser
+
+            var user = {
+                fullname: faker.name.findName(),
+                id: 2
+            };
+            var data = {
+                user: user,
+                lastModified: faker.date.past(),
+                value: faker.lorem.sentence()
+            };
+            comment.viewComment(user);
+            assert.isTrue(comment.seenBy().length === 2);
+            assert.isTrue(comment.seenBy().indexOf(user.id) !== -1);
+            assert.isTrue(comment.seenBy().indexOf(currentUser.id) !== -1);
+
+            comment = new Comment(data);
+            comment.viewComment(currentUser);
+            assert.isTrue(comment.seenBy().length === 2);
+            assert.isTrue(comment.seenBy().indexOf(user.id) !== -1);
+            assert.isTrue(comment.seenBy().indexOf(currentUser.id) !== -1);
+        })
+    })
+    describe('#seenBy', () => {
+        it('is a list of all user ids that have seen the comment', () => {
+            var comment = new Comment();
+            var currentUser = window.contextVars.currentUser
+            assert.isTrue(comment.seenBy().length === 1);
+            assert.isTrue(comment.seenBy().indexOf(currentUser.id) !== -1);
+
+            var user = {
+                fullname: faker.name.findName(),
+                id: 2
+            };
+            var data = {
+                user: user,
+                lastModified: faker.date.past(),
+                value: faker.lorem.sentence()
+            };
+            comment = new Comment(data);
+            assert.isTrue(comment.seenBy().length === 1);
+            assert.isTrue(comment.seenBy().indexOf(user.id) !== -1);
+
+            comment.viewComment(currentUser);
+            assert.isTrue(comment.seenBy().length === 2);
+            assert.isTrue(comment.seenBy().indexOf(currentUser.id) !== -1);
+
         });
     });
     describe('#canEdit', () => {
@@ -136,7 +206,7 @@ describe('Comment', () => {
             assert.isTrue(comment.canEdit());
 
             var user = {
-                name: faker.name.findName(),
+                fullname: faker.name.findName(),
                 id: 2
             };
             var data = {
@@ -156,10 +226,10 @@ describe('Comment', () => {
             assert.isFalse(comment.isDeleted());
             comment.isDeleted(true);
             assert.isTrue(comment.isDeleted());
-            assert.equal(comment.value, 'this comment was deleted');
-            
+            assert.equal(comment.value(), 'this comment was deleted');
+
             var user = {
-                name: faker.name.findName(),
+                fullname: faker.name.findName(),
                 id: 2
             };
             var data = {
@@ -171,7 +241,44 @@ describe('Comment', () => {
             assert.isFalse(comment.isDeleted());
             comment.isDeleted(true);
             assert.isTrue(comment.isDeleted());
-            assert.equal(comment.value, 'this comment was deleted');        
+            assert.equal(comment.value(), 'this comment was deleted');
+        });
+    });
+    describe('#author', () => {
+        it('is always the user who creates the comment\'s fullname', () => {
+            var comment = new Comment();
+            assert.isTrue(comment.author() === window.contextVars.currentUser.fullname);
+
+            var user = {
+                fullname: faker.name.findName(),
+                id: 2
+            };
+            var data = {
+                user: user,
+                lastModified: faker.date.past(),
+                value: faker.lorem.sentence()
+            };
+            comment = new Comment(data);
+            assert.isFalse(comment.author() === window.contextVars.currentUser.fullname);
+            assert.isTrue(comment.author() === user.fullname);
+        });
+    });
+    describe('#getAuthor', () => {
+        it('returns You if the current user is the commenter else the commenter name', () => {
+            var comment = new Comment();
+            assert.isTrue(comment.getAuthor() === 'You');
+
+            var user = {
+                fullname: faker.name.findName(),
+                id: 2
+            };
+            var data = {
+                user: user,
+                lastModified: faker.date.past(),
+                value: faker.lorem.sentence()
+            };
+            comment = new Comment(data);
+            assert.isTrue(comment.getAuthor() === user.fullname);
         });
     });
 });

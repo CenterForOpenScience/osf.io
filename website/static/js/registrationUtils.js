@@ -57,7 +57,10 @@ function Comment(data) {
       }
     });
 
-	self.seenBy = ko.observableArray([]);
+    self.seenBy = ko.observableArray([self.user.id] || []);
+    self.viewComment = function(user) {
+        self.seenBy.push(user.id);
+    };
 
     /**
      * Returns the author as the actual user, not 'You' 
@@ -349,7 +352,7 @@ var Draft = function(params, metaSchema) {
                     total++;
                 });
             });
-	    return Math.ceil(100 * (complete / total));
+            return Math.ceil(100 * (complete / total));
         }
         return 0;
     });
@@ -574,68 +577,68 @@ RegistrationEditor.prototype.viewComments = function() {
   var comments = self.currentQuestion().comments();
   $.each(comments, function(index, comment) {
     if (comment.seenBy().indexOf(currentUser.id) === -1) {
-      comment.seenBy.push(currentUser.id);
+        comment.viewComment(currentUser);
     }
   });
 };
 RegistrationEditor.prototype.getUnseenComments = function(qid) {
-  var self = this;
+    var self = this;
 
-  var question = self.draft().schemaData[qid];
-  var comments = question.comments || [];
-  for (var key in question) {
-	if (key === 'comments') {
-	  for (var i = 0; i < question[key].length - 1; i++) {
-		if (question[key][i].indexOf(currentUser.id) === -1) {
-		  comments.push(question[key][i]);
-		}
-	  }
-	}
-  }
-  return comments.length !== 0 ? comments.length : '';
+    var question = self.draft().schemaData[qid];
+    var comments = question.comments || [];
+    for (var key in question) {
+        if (key === 'comments') {
+            for (var i = 0; i < question[key].length - 1; i++) {
+                if (question[key][i].indexOf(currentUser.id) === -1) {
+                    comments.push(question[key][i]);
+                }
+            }
+        }
+    }
+    return comments.length !== 0 ? comments.length : '';
 };
 RegistrationEditor.prototype.nextPage = function() {
-  var self = this;
+    var self = this;
 
-  var currentQuestion = self.currentQuestion();
+    var currentQuestion = self.currentQuestion();
 
-  var questions = self.flatQuestions();
-  var index = $osf.indexOf(questions, function(q) {
-    return q.id === currentQuestion.id;
-  });
-  if(index + 1 === questions.length) {
-    self.currentQuestion(questions.shift());
-	self.viewComments();
-  }
-  else {
-    self.currentQuestion(questions[index + 1]);
-	self.viewComments();
-  }
+    var questions = self.flatQuestions();
+    var index = $osf.indexOf(questions, function(q) {
+        return q.id === currentQuestion.id;
+    });
+    if(index + 1 === questions.length) {
+        self.currentQuestion(questions.shift());
+        self.viewComments();
+    }
+    else {
+        self.currentQuestion(questions[index + 1]);
+        self.viewComments();
+    }
 };
 RegistrationEditor.prototype.previousPage = function() {
-  var self = this;
+    var self = this;
 
-  var currentQuestion = self.currentQuestion();
+    var currentQuestion = self.currentQuestion();
 
-  var questions = self.flatQuestions();
-  var index = $osf.indexOf(questions, function(q) {
-    return q.id === currentQuestion.id;
-  });
-  if(index - 1 < 0){
-    self.currentQuestion(questions.pop());
-	self.viewComments();
-  }
-  else {
-    self.currentQuestion(questions[index - 1]);
-	self.viewComments();
-  }
+    var questions = self.flatQuestions();
+    var index = $osf.indexOf(questions, function(q) {
+        return q.id === currentQuestion.id;
+    });
+    if(index - 1 < 0){
+        self.currentQuestion(questions.pop());
+        self.viewComments();
+    }
+    else {
+        self.currentQuestion(questions[index - 1]);
+        self.viewComments();
+    }
 };
 RegistrationEditor.prototype.selectPage = function(page) {
-  var self = this;
+    var self = this;
 
-  var firstQuestion = page.questions[Object.keys(page.questions)[0]];
-  self.currentQuestion(firstQuestion);
-  self.viewComments();
+    var firstQuestion = page.questions[Object.keys(page.questions)[0]];
+    self.currentQuestion(firstQuestion);
+    self.viewComments();
 };
 RegistrationEditor.prototype.updateData = function(response) {
     var self = this;
@@ -664,15 +667,15 @@ RegistrationEditor.prototype.submit = function() {
 
     var messages = self.draft().messages;
     bootbox.confirm(messages.beforeSubmitForApproval, function(result) {
-	if(result) {
-	    $osf.postJSON(self.urls.submit.replace('{draft_pk}', self.draft().pk), {
-		node: currentNode,
-		auth: currentUser
-	    }).then(function() {
-		bootbox.dialog({
-		    message: messages.afterSubmitForApproval,
-		    title: 'Pre-Registration Prize Submission',
-		    buttons: {
+        if(result) {
+            $osf.postJSON(self.urls.submit.replace('{draft_pk}', self.draft().pk), {
+                node: currentNode,
+                auth: currentUser
+            }).then(function() {
+                bootbox.dialog({
+                    message: messages.afterSubmitForApproval,
+                    title: 'Pre-Registration Prize Submission',
+                    buttons: {
                         registrations: {
                             label: 'Return to registrations page',
                             className: 'btn-primary pull-right',
@@ -680,10 +683,10 @@ RegistrationEditor.prototype.submit = function() {
                                 window.location.href = self.draft().urls.registrations;
                             }
                         }
-		    }
-		});
+                    }
+                });
             }).fail($osf.growl.bind(null, 'Error submitting for review', language.submitForReviewFail));
-	}
+        }
     });
 };
 RegistrationEditor.prototype.save = function() {
@@ -734,7 +737,7 @@ var RegistrationManager = function(node, draftsSelector, editorSelector, control
 
     self.urls = {
         list: node.urls.api + 'draft/',
-	submit: node.urls.api + 'draft/submit/{draft_pk}/',
+        submit: node.urls.api + 'draft/submit/{draft_pk}/',
         get: node.urls.api + 'draft/{draft_pk}/',
         delete: node.urls.api + 'draft/{draft_pk}/',
         schemas: '/api/v1/project/schema/',
@@ -843,7 +846,6 @@ RegistrationManager.prototype.launchEditor = function(draft) {
 
     var newDraft;
     if (self.regEditor) {
-        //self.regEditor.destroy();
         newDraft = self.regEditor.init(draft);
     }
     else {
@@ -852,7 +854,7 @@ RegistrationManager.prototype.launchEditor = function(draft) {
             create: node.urls.api + 'draft/',
             update: node.urls.api + 'draft/{draft_pk}/',
             get: node.urls.api + 'draft/{draft_pk}/',
-	    submit: node.urls.api + 'draft/submit/{draft_pk}/'
+            submit: node.urls.api + 'draft/submit/{draft_pk}/'
         }, 'registrationEditor');
         newDraft = self.regEditor.init(draft);
         $osf.applyBindings(self.regEditor, self.editorSelector);
