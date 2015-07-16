@@ -1,3 +1,4 @@
+## TODO: Is this file used anywhere?
 <script type="text/javascript">
 
     // Asynchronous comment submission
