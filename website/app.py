@@ -26,7 +26,6 @@ def build_js_config_files(settings):
     with open(os.path.join(settings.STATIC_FOLDER, 'built', 'nodeCategories.json'), 'wb') as fp:
         json.dump(Node.CATEGORY_MAP, fp)
 
-
 def init_addons(settings, routes=True):
     """Initialize each addon in settings.ADDONS_REQUESTED.
 
