@@ -7,6 +7,7 @@ from rest_framework import exceptions
 from api.base.serializers import JSONAPISerializer, LinksField, Link, WaterbutlerLink, LinksFieldNoSelfLink
 
 
+
 class NodeSerializer(JSONAPISerializer):
     # TODO: If we have to redo this implementation in any of the other serializers, subclass ChoiceField and make it
     # handle blank choices properly. Currently DRF ChoiceFields ignore blank options, which is incorrect in this
@@ -63,7 +64,9 @@ class NodeSerializer(JSONAPISerializer):
             },
         },
         'files': {
-            'related': Link('nodes:node-files', kwargs={'node_id': '<pk>'})
+            'links': {
+                'related': Link('nodes:node-files', kwargs={'node_id': '<pk>'})
+            }
         },
     })
 
