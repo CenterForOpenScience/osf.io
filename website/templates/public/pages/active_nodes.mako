@@ -12,8 +12,8 @@
         from framework.auth import get_user
     %>
     <div class="row">
-        <div class="col-sm-4 col-md-3">
-            <div data-offset-bottom="215" class="panel panel-default m-t-lg hidden-print hidden-xs affix" role="complementary">
+        <div class="col-sm-4 col-md-3 affix-parent scrollspy">
+            <div data-spy="affix" data-offset-bottom="215"  data-offset-top="60" class="panel panel-default m-t-lg hidden-print hidden-xs affix" role="complementary">
                 <ul class="nav nav-stacked nav-pills">
                     <li><a href='#newPublicProjects'>Newest Public Projects</a></li>
                     <li><a href='#newPublicRegistrations'>Newest Public Registrations</a></li>
