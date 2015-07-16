@@ -70,8 +70,10 @@
                 </div>
                 <p>Last saved: <span data-bind="text: $root.lastSaved"></span>
                 </p>
-                <button data-bind="click: save" type="button" class="btn btn-success">Save
+                <button data-bind="click: save" type="button" class="btn btn-primary">Save
                 </button>
+                <a data-bind="attr.href: draft().urls.register_page" type="button" class="pull-right btn btn-success">Register
+                </a>
               </div>
             </div>
           </div>

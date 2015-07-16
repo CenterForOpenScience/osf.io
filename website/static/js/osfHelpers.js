@@ -370,19 +370,6 @@ var trackPiwik = function(host, siteId, cvars, useCookies) {
 //////////////////
 
 /**
- * Tooltip data binder. The value accessor should be an object containing
- * parameters for the tooltip.
- * Example:
- * <span data-bind='tooltip: {title: 'Tooltip text here'}'></span>
- */
-ko.bindingHandlers.tooltip = {
-    init: function(elem, valueAccessor) {
-        $(elem).tooltip(valueAccessor());
-    }
-};
-
-
-/**
  * Takes over anchor scrolling and scrolls to anchor positions within elements
  * Example:
  * <span data-bind='anchorScroll'></span>

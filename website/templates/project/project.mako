@@ -125,7 +125,7 @@
                 % endif
                 % if node['is_registration'] and node['registered_meta']:
                     <br />Registration Supplement:
-                    <a href="${node['url']}register/">${node['registered_schema']['title']}</a>
+                    <a href="${node['url']}register/">${node['registered_schema']['schema']['title']}</a>
                 % endif
                 % if node['is_registration']:
                     <br />Date Registered:
