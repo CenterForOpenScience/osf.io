@@ -217,7 +217,15 @@ var _githubItemButtons = {
                         icon: 'fa fa-file-o',
                         className : 'text-info'
                     }, 'View'));
-
+                buttons.push(
+                    m.component(Fangorn.Components.button, {
+                        onclick: function(event) {
+                            Fangorn.ButtonEvents._externalViewEvent.call(tb, item);
+                        },
+                        icon: 'fa fa-external-link',
+                        className: 'text-info'
+                    }, 'Go to GitHub')
+                );
             }
         }
 

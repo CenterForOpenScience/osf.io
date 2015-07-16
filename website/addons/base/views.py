@@ -84,6 +84,7 @@ permission_map = {
     'moveto': 'write',
     'copyfrom': 'read',
     'movefrom': 'write',
+    'webview': 'read',
 }
 
 

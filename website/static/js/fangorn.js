@@ -15,6 +15,7 @@ var $osf = require('js/osfHelpers');
 var waterbutler = require('js/waterbutler');
 
 var iconmap = require('js/iconmap');
+var storageAddons = require('json!storageAddons.json');
 
 // CSS
 require('css/fangorn.css');
@@ -1097,6 +1098,17 @@ function gotoFileEvent (item) {
         window.open(fileurl, '_self');
     }
 }
+
+function externalViewEvent (item) {
+    $.ajax({
+        url: waterbutler.buildTreebeardExternalView(item),
+        type: 'GET',
+        beforeSend: $osf.setXHRAuthorization
+    }).done(function(response) {
+        window.open(response.data, '_blank');
+    });
+}
+
 /**
  * Defines the contents of the title column (does not include the toggle and folder sections
  * @param {Object} item A Treebeard _item object for the row involved. Node information is inside item.data
@@ -1454,6 +1466,17 @@ var FGItemButtons = {
                         icon: 'fa fa-file-o',
                         className : 'text-info'
                     }, 'View'));
+                if(storageAddons[item.data.provider].externalView) {
+                    var providerFullName = storageAddons[item.data.provider].fullName;
+                    rowButtons.push(
+                        m.component(FGButton, {
+                            onclick: function(event) {
+                                externalViewEvent.call(tb, item);
+                            },
+                            icon: 'fa fa-external-link',
+                            className : 'text-info'
+                        }, 'Go to ' + providerFullName));
+                }
             }
             rowButtons.push(
                 m.component(FGButton, {
@@ -2178,7 +2201,8 @@ Fangorn.ButtonEvents = {
     _uploadEvent: _uploadEvent,
     _removeEvent: _removeEvent,
     createFolder: _createFolder,
-    _gotoFileEvent : gotoFileEvent
+    _gotoFileEvent : gotoFileEvent,
+    _externalViewEvent: externalViewEvent
 };
 
 Fangorn.DefaultColumns = {

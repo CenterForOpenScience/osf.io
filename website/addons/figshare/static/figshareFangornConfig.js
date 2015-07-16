@@ -57,6 +57,14 @@ var _figshareItemButtons = {
                     icon: 'fa fa-file-o',
                     className : 'text-info'
                 }, 'View'));
+            buttons.push(
+                m.component(Fangorn.Components.button, {
+                    onclick: function(event) {
+                        Fangorn.ButtonEvents._externalViewEvent.call(tb, item);
+                    },
+                    icon: 'fa fa-external-link',
+                    className : 'text-info'
+                }, 'Go to figshare'));
         }
         return m('span', buttons); // Tell fangorn this function is used.
     }

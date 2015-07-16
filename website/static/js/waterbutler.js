@@ -31,6 +31,7 @@ var buildMoveUrl = buildUrl.bind(this, 'move?');
 var buildMetadataUrl = buildUrl.bind(this, 'data?');
 var buildRevisionsUrl = buildUrl.bind(this, 'revisions?');
 var buildCreateFolderUrl = buildUrl.bind(this, 'folders?');
+var buildExternalViewUrl = buildUrl.bind(this, 'webview?');
 
 
 function buildUploadUrl(path, provider, nid, file, options) {
@@ -63,6 +64,7 @@ module.exports = {
     buildMetadataUrl: buildMetadataUrl,
     buildCreateFolderUrl: buildCrudUrl,
     buildRevisionsUrl: buildRevisionsUrl,
+    buildExternalViewUrl: buildExternalViewUrl,
     buildTreeBeardUpload: buildFromTreebeardFile,
     buildTreeBeardCopy: buildFromTreebeard.bind(this, 'copy?'),
     buildTreeBeardMove: buildFromTreebeard.bind(this, 'move?'),
@@ -74,6 +76,7 @@ module.exports = {
         return buildFromTreebeard('file?', item, options);
     },
     buildTreeBeardMetadata: buildFromTreebeard.bind(this, 'data?'),
+    buildTreebeardExternalView: buildFromTreebeard.bind(this, 'webview?'),
     buildTreeBeardDownloadZip: function(item, options) {
         if (window.contextVars.accessToken) {
             options = $.extend(options || {}, {token: window.contextVars.accessToken});
