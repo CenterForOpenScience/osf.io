@@ -2,99 +2,123 @@
 var c3 = require('c3');
 require('c3/c3.css');
 
+var statistics = {};
+
 $(document).ready(function() {
 
-    var nodeID = window.contextVars.node.id;
-    console.log(nodeID);
-    $.getJSON('http://localhost:6969/'+nodeID+'/piwikStats', function (data) {
-        console.log(data);
-        $('.piwikChart').height(200);
-        visualize(data);
-    });
+    $.when(
+        $.get('http://localhost:6969/'+nodeId+'/nodeData', function (data) {
+            return data;
+        }),
+
+        $.get('http://localhost:6969/fileData', {'files': nodeFiles}, function(data) {
+            return data;
+        })
+    ).then(function(nodeData, fileData){
+            statisticsSchema(nodeData[0], fileData[0]);
+            renderPiwikChart(statistics, 'visits');
+        },
+        function(){
+            console.log(arguments)
+        }
+    )
 });
 
-function visualize(data){
-    var visits = [];
-    var dates = [];
-    var highchartsdata = [];
+function statisticsSchema(nodeData, fileData){
 
-    $.each(data, function(val, key) {
-        console.log('i was called');
-        dates.push(val);
-        var dateNum = val.split('-');
-        if(typeof key.nb_pageviews === 'undefined'){
-            visits.push(0);
-            highchartsdata.push([Date.UTC(+dateNum[0], +dateNum[1], +dateNum[2]), 0]);
+    statistics = {
+        node: formatNodeData(nodeData['node']),
+        children: formatChildrenData(nodeData['children']),
+        files: formatFileData(fileData['files'])
+    };
+
+}
+
+function extractDataType(piwikType, piwikData) {
+    var data = [];
+
+    for (var date in piwikData){
+        if($.isPlainObject(piwikData[date])) {
+            data.push({date: date, data: piwikData[date][piwikType]})
         } else {
-            visits.push(key.nb_pageviews);
-            highchartsdata.push([Date.UTC(+dateNum[0], +dateNum[1], +dateNum[2]), key.nb_pageviews]);
+            data.push({date: date, data: 0})
         }
-    });
+    }
 
-    dates.unshift('x');
-    visits.unshift('Pageviews');
-    highchartsdata.sort(function(a, b) {
-            if (a[0] === b[0]) {
-                return 0;
-            }
-            else {
-                return (a[0] < b[0]) ? -1 : 1;
-            }
-     });
-    console.log(highchartsdata);
+    return data;
+}
 
-   $(function () {
-    $('.highchart').highcharts({
-        xAxis: {
-            type: 'datetime',
-            dateTimeLabelFormats: {
-                month: '%e. %b',
-                year: '%b'
-            }
-        },
-        yAxis: {
-            min: 0,
-            title: {
-                text: ""
-            }
-        },
-        series: [{
-            name: 'Pageviews',
-            data: highchartsdata
-        }],
-        chart: {
-            width: $('.highchart').width()
+function formatNodeData(nodeData) {
+    var node = {};
 
+    var visits = extractDataType('nb_visits', nodeData[nodeId]);
+    var uniqueVisitors = extractDataType('nb_uniq_visitors', nodeData[nodeId]);
+
+    node[nodeId] = {
+        visits: visits,
+        uniqueVisitors: uniqueVisitors
+    };
+
+    return node
+}
+
+function formatChildrenData(childrenData) {
+
+    if ($.isPlainObject(childrenData)){
+        var children = {};
+
+        for (var child in childrenData){
+            children[child] = {
+                visits: extractDataType('nb_visits', childrenData[child]),
+                uniqueVisitors: extractDataType('nb_uniq_visitors', childrenData[child])
+            }
         }
-    });
-});
+
+        return children;
+    }
+
+    return [];
+}
+
+function formatFileData(fileData) {
+
+    if($.isPlainObject(fileData)){
+        var files = {};
+
+        for (var file in fileData){
+            files[file] = {
+                visits: extractDataType('nb_visits', fileData[file]),
+                uniqueVisitors: extractDataType('nb_uniq_visitors', fileData[file])
+            }
+        }
+
+        return files;
+    }
+
+    return [];
+}
+
+function renderPiwikChart(dataSchema, dataType){
+
+    $('.piwikChart').height(200);
 
     var chart = c3.generate({
         bindto: '.piwikChart',
         data: {
-            x: 'x',
-            columns: [
-                dates,
-                visits
-            ]
+            json: dataSchema['node'][nodeId][dataType],
+            keys: {
+                x: 'date',
+                value: ['data']
+            }
         },
         axis: {
             x: {
                 type: 'timeseries',
                 tick: {
-                    format: '%b %d'
+                    format: '%Y-%m-%d'
                 }
             }
-        },
-        legend: {
-            show: false
-        },
-        padding: {
-            left: 50,
-            right: 50,
-            bottom: 20
         }
     });
-
 }
 

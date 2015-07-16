@@ -40,6 +40,8 @@ from website.profile import utils
 from website.project import new_folder
 from website.util.sanitize import strip_html
 
+from website.addons.osfstorage.model import OsfStorageGuidFile
+
 logger = logging.getLogger(__name__)
 
 @must_be_valid_project
@@ -447,7 +449,7 @@ def project_statistics(auth, node, **kwargs):
 @must_be_contributor_or_public
 def piwik_stats(auth, node, **kwargs):
     if not (node.can_edit(auth) or node.is_public):
-        raise  HTTPError(http.FORBIDDEN)
+        raise HTTPError(http.FORBIDDEN)
     return _view_project(node, auth, primary=True)
 
 @must_be_valid_project
@@ -765,6 +767,7 @@ def _view_project(node, auth, primary=False):
                 }
                 for meta in node.registered_meta or []
             ],
+            'files': [str(guid) for guid in OsfStorageGuidFile.find(Q('node', 'eq', node._id))],
             'registration_count': len(node.node__registrations),
             'is_fork': node.is_fork,
             'forked_from_id': node.forked_from._primary_key if node.is_fork else '',
