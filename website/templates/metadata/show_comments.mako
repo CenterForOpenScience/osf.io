@@ -1,3 +1,5 @@
+## TODO: Only seems to be referenced in comment_group.mako. Is this deprecated?
+
 % if comments:
 
     <div class="accordion-header">
