@@ -7,8 +7,8 @@ INDEXED_TYPES = [
     'txt',
     'md',
     'rtf',
-    # 'docx',
-    # 'pdf',
+    'docx',
+    'pdf',
 ]
 
 
@@ -21,7 +21,7 @@ def is_indexed(filename):
 def get_content_of_file(file_):
     url = file_.mfr_public_download_url
     response = requests.get(url)
-    content = response.text
+    content = response.content
     return content
 
 

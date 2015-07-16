@@ -7,6 +7,7 @@ import copy
 import math
 import logging
 import unicodedata
+import base64
 
 import six
 
@@ -301,6 +302,7 @@ def update_file(name, path, addon, index=None):
     if file_util.is_indexed(name):
         index = index or settings.ELASTIC_INDEX
         file_doc = file_util.build_file_document(name, path, addon, include_content=True)
+        file_doc.update({'attachment': base64.encodestring(file_doc.pop('content'))})
         file_doc.update({'category': 'file'})
         file_doc.update({'id': file_doc['path']})
         parent_id = file_doc['parent_id']
@@ -455,6 +457,7 @@ def create_index(index=None):
 
         if type_ == 'file':
             mapping.update({'_parent': {'type': 'project'}})
+            mapping['properties'].update({'attachment': {'type': 'attachment'}})
         es.indices.put_mapping(index=index, doc_type=type_, body=mapping, ignore=[400, 404])
 
 
