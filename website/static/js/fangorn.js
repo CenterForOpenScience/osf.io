@@ -1086,7 +1086,6 @@ function _fangornUploadMethod(item) {
     return configOption || 'PUT';
 }
 
-
 function gotoFileEvent (item) {
     var tb = this;
     var redir = new URI(item.data.nodeUrl);
@@ -1115,6 +1114,10 @@ function _fangornTitleColumn(item, col) {
                 gotoFileEvent.call(tb, item);
             }
         }, item.data.name);
+    }
+    else if ((item.data.nodeType === 'project') || (item.data.nodeType ==='component')) {
+        return m('a.fg-file-links',{ href: '/' + item.data.nodeID.toString() + '/'},
+                item.data.name);
     }
     return m('span', item.data.name);
 }
@@ -1442,16 +1445,6 @@ var FGItemButtons = {
             }
         }
         if (item.kind === 'file'){
-            if (item.data.permissions && item.data.permissions.view) {
-                rowButtons.push(
-                    m.component(FGButton, {
-                        onclick: function(event) {
-                            gotoFileEvent.call(tb, item);
-                        },
-                        icon: 'fa fa-file-o',
-                        className : 'text-info'
-                    }, 'View'));
-            }
             rowButtons.push(
                 m.component(FGButton, {
                     onclick: function(event) { _downloadEvent.call(tb, event, item); },
@@ -1467,6 +1460,16 @@ var FGItemButtons = {
                         className : 'text-danger'
                     }, 'Delete'));
 
+            }
+            if (item.data.permissions && item.data.permissions.view) {
+                rowButtons.push(
+                    m.component(FGButton, {
+                        onclick: function(event) {
+                            gotoFileEvent.call(tb, item);
+                        },
+                        icon: 'fa fa-file-o',
+                        className : 'text-info'
+                    }, 'View'));
             }
         } else if(item.data.provider && item.children.length !== 0) {
             rowButtons.push(
