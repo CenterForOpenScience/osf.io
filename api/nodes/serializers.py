@@ -1,6 +1,6 @@
+from collections import OrderedDict
 from rest_framework import serializers as ser
 
-from collections import OrderedDict
 from website.models import Node
 from framework.auth.core import Auth
 from rest_framework import exceptions
