@@ -125,7 +125,8 @@
                     },
                     "uploader7": {
                         "id": "q7b",
-                        "type": "osf-upload"
+                        "type": "osf-upload",
+                        "format": "osf-upload-toggle"
                     }
                 }
             },
