@@ -149,5 +149,6 @@ var Uploader = function(data) {
 module.exports = {
     Uploader: Uploader,
     osfUploader: filePicker,
-    limitOsfStorage: limitOsfStorage
+    limitOsfStorage: limitOsfStorage,
+    filePicker: filePicker
 };

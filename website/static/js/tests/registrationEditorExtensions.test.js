@@ -10,14 +10,6 @@ sinon.assert.expose(assert, {prefix: ''});
 
 
 describe('RegistrationEditor.osfUploader', () => {
-    var returnTrue = function() {
-        return true;
-    };
-
-    var returnFalse = function() {
-        return false;
-    };
-
     var itemIsOsfstorage = {
         data: {
             provider: 'osfstorage',
@@ -25,7 +17,9 @@ describe('RegistrationEditor.osfUploader', () => {
             permissions: {
                 edit: true,
                 view: true
-            }
+            },
+            open: true,
+            load: true
         }
     };
 
@@ -43,15 +37,46 @@ describe('RegistrationEditor.osfUploader', () => {
         }
     };
 
+    // variables to test the filePicker
+    // var element = {
+    //     id: 'testId'
+    // };
+
+    // var valueAccessor = "";
+    // var allBindings = "";
+    // var bindingContext = "";
+
     describe('limitOsfStorage', () => {
-        it('says provider is osfstorage', () => {
+        it('says provider is osfstorage and can edit', () => {
             RegistrationEditor.limitOsfStorage(itemIsOsfstorage);
             assert.isTrue(itemIsOsfstorage.data.permissions.edit);
         });
-        it('says provider is not osfstorage', () => {
+        it('says provider is osfstorage and can view', () => {
+            RegistrationEditor.limitOsfStorage(itemIsOsfstorage);
+            assert.isTrue(itemIsOsfstorage.data.permissions.view);
+        });
+        it('says provider is not osfstorage and cannot edit', () => {
             RegistrationEditor.limitOsfStorage(itemIsNotOsfstorage);
             assert.isFalse(itemIsNotOsfstorage.data.permissions.edit);
         });
+        it('says provider is not osfstorage and cannot view', () => {
+            RegistrationEditor.limitOsfStorage(itemIsNotOsfstorage);
+            assert.isFalse(itemIsNotOsfstorage.data.permissions.view);
+        });
     });
+
+    // TODO
+    // describe('filePicker', () => {
+    //     var vm;
+
+    //     beforeEach(() => {
+    //         vm = new RegistrationEditor.Uploader();
+    //     });
+
+    //     it('sets dropzone id to element id passed to handler', () => {
+    //         RegistrationEditor.filePicker(element, valueAccessor, allBindings, vm, bindingContext);
+    //         assert.isTrue(true);
+    //     });
+    // });    
 
 });
