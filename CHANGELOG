@@ -2,6 +2,18 @@
 Changelog
 *********
 
+0.42.0 (2015-07-13)
+===================
+
+- File renderer: Support for rendering .ppt, .pptx, .xlt, .svg, and many more formats.
+- Dataverse: Can select between different Dataverse repositories.
+- Site-wide style changes which implement the new OSF Style Guidelines (https://github.com/CenterForOpenScience/osf-style)
+- Improve look and feel of FAQ page.
+- Can upload files to a new project from the Dashboard.
+- Dev: Remove legacy API key-related code.
+- Dev: Fix spurious session creation.
+- Many UI bug fixes.
+
 0.41.0 (2015-06-24)
 ===================
 
@@ -10,7 +22,6 @@ Changelog
 - API: Add support for Sentry.
 - Dev: Add jshint to Travis builds.
 - Many UI bug fixes.
-
 
 0.40.0 (2015-06-22)
 ===================
