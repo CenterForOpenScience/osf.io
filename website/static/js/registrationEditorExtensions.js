@@ -22,7 +22,10 @@ var limitOsfStorage = function(item) {
         if (!item.data.name.includes(' (Only OSF Storage supported to ensure accurate versioning.)')) {
             item.data.name = item.data.name + ' (Only OSF Storage supported to ensure accurate versioning.)';
         }
-    }
+    } 
+    // else if (tree.depth === 2 && viewModel.value() === null) {
+    //     this.multiselected([tree]);
+    // }
 };
 
 var filePicker = function(element, valueAccessor, allBindings, viewModel, bindingContext) {
