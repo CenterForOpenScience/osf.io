@@ -23,7 +23,7 @@ class NodeSerializer(JSONAPISerializer):
     tags = ser.SerializerMethodField(help_text='A dictionary that contains two lists of tags: '
                                                'user and system. Any tag that a user will define in the UI will be '
                                                'a user tag')
-
+    attributes = ser.SerializerMethodField(help_text='A dictionary that contains properties')
     links = LinksField({
         'html': 'get_absolute_url',
         'children': {
@@ -93,6 +93,26 @@ class NodeSerializer(JSONAPISerializer):
 
     def get_pointers_count(self, obj):
         return len(obj.nodes_pointer)
+
+    @staticmethod
+    def get_attributes(obj):
+        ret = {
+            'title': obj.title,
+            'description': obj.description,
+            'category': obj.category,
+            'date_created': obj.date_created,
+            'date_modifed': obj.date_modified,
+            'public': obj.is_public,
+            'tags':  {
+                'system': [tag._id for tag in obj.system_tags],
+                'user': [tag._id for tag in obj.tags],
+            },
+            'dashboard': obj.is_dashboard,
+            'collection': obj.is_folder,
+            'registration': obj.is_registration
+
+        }
+        return ret
 
     @staticmethod
     def get_properties(obj):
