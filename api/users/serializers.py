@@ -14,6 +14,7 @@ class UserSerializer(JSONAPISerializer):
     ])
     id = ser.CharField(read_only=True, source='_id')
     attributes = ser.SerializerMethodField(help_text='A dictionary containing user properties')
+    links = LinksField({'html': 'absolute_url'})
     links = LinksField({
         'html': 'absolute_url',
         'nodes': {
