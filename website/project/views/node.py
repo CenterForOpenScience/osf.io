@@ -13,14 +13,14 @@ from framework.utils import iso8601format
 from framework.mongo import StoredObject
 from framework.auth.decorators import must_be_logged_in, collect_auth
 from framework.exceptions import HTTPError, PermissionsError
-from framework.mongo.utils import from_mongo, get_or_http_error
+from framework.mongo.utils import get_or_http_error
 
 from website import language
 
 from website.util import paths
 from website.util import rubeus
 from website.exceptions import NodeStateError
-from website.project import clean_template_name, new_node, new_private_link
+from website.project import new_node, new_private_link
 from website.project.decorators import (
     must_be_contributor_or_public,
     must_be_contributor,
@@ -29,6 +29,7 @@ from website.project.decorators import (
     must_not_be_registration,
     http_error_if_disk_saving_mode
 )
+from website.project.metadata.utils import serialize_meta_schema
 from website.util.permissions import ADMIN, READ, WRITE
 from website.util.rubeus import collect_addon_js
 from website.project.model import has_anonymous_link, get_pointer_parent, NodeUpdateError
@@ -728,13 +729,8 @@ def _view_project(node, auth, primary=False):
             'registered_from_url': node.registered_from.url if node.is_registration else '',
             'registered_date': iso8601format(node.registered_date) if node.is_registration else '',
             'root_id': node.root._id,
-            'registered_meta': [
-                {
-                    'name_no_ext': from_mongo(meta),
-                    'name_clean': clean_template_name(meta),
-                }
-                for meta in node.registered_meta or []
-            ],
+            'registered_meta': node.registered_meta,
+            'registered_schema': serialize_meta_schema(node.registered_schema),
             'registration_count': len(node.node__registrations),
             'is_fork': node.is_fork,
             'forked_from_id': node.forked_from._primary_key if node.is_fork else '',

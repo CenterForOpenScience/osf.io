@@ -1,6 +1,3 @@
-from website.profile.utils import serialize_user
-from website.project.utils import serialize_node
-
 def serialize_meta_schema(meta_schema):
     if not meta_schema:
         return None
@@ -11,6 +8,9 @@ def serialize_meta_schema(meta_schema):
     }
 
 def serialize_draft_registration(draft, auth=None):
+    from website.profile.utils import serialize_user  # noqa
+    from website.project.utils import serialize_node  # noqa
+
     node = draft.branched_from
 
     return {
@@ -27,6 +27,7 @@ def serialize_draft_registration(draft, auth=None):
             'edit': node.web_url_for('edit_draft_registration', draft_id=draft._id),
             'before_register': node.api_url_for('draft_before_register', draft_id=draft._id),
             'register': node.api_url_for('register_draft_registration', draft_id=draft._id),
+            'register_page': node.web_url_for('draft_before_register_page', draft_id=draft._id),
             'registrations': node.web_url_for('node_registrations')
         }
     }

@@ -3191,4 +3191,6 @@ class DraftRegistration(AddonModelMixin, StoredObject):
         register = node.register_node(
             self.registration_schema, auth, self.registration_metadata
         )
+        self.registered_node = register
+        self.save()
         return register

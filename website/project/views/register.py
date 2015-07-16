@@ -46,10 +46,13 @@ from .node import _view_project
 
 @must_be_valid_project
 @must_have_permission(ADMIN)
-@must_not_be_registration
 def node_register_page(auth, node, **kwargs):
-    status.push_status_message('You have been redirected to the project\'s registrations page .From here you can initiate a new Draft Registration to complete the registration process')
-    return redirect(node.web_url_for('node_registrations', view='draft'))
+
+    if node.is_registration:
+        return serialize_node(node, auth)
+    else:
+        status.push_status_message('You have been redirected to the project\'s registrations page .From here you can initiate a new Draft Registration to complete the registration process')
+        return redirect(node.web_url_for('node_registrations', view='draft'))
 
 @must_be_valid_project
 @must_have_permission(ADMIN)

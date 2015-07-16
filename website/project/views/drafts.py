@@ -45,7 +45,6 @@ def submit_draft_for_review(auth, node, draft_pk, *args, **kwargs):
     return ret
 
 @must_have_permission(ADMIN)
-@must_be_valid_project
 def draft_before_register_page(auth, node, draft_id, *args, **kwargs):
     ret = serialize_node(node, auth, primary=True)
 

@@ -103,7 +103,7 @@
                                                           },
                                                           css: {'disabled': !isApproved}">Register</a>
                     -->
-                    <a class="btn btn-success" data-bind="attr.href: urls.register">Register</a>
+                    <a class="btn btn-success" data-bind="attr.href: urls.register_page">Register</a>
                   </div>
                 </div>                
               </h4>

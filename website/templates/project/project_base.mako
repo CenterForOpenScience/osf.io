@@ -86,7 +86,9 @@
             category: '${node['category_short']}',
             parentTitle: ${json.dumps(parent_title) | n},
             parentRegisterUrl: '${parent_registration_url}',
-            parentExists: ${json.dumps(parent_exists)}
+            parentExists: ${json.dumps(parent_exists)},
+            registrationMetaSchema: ${json.dumps(node['registered_schema'])},
+            registrationMetaData: ${json.dumps(node['registered_meta'])}
         }
     });
 
