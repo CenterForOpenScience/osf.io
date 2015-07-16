@@ -753,7 +753,7 @@ def make_url_map(app):
             'post',
             project_views.node.project_new_node,
             notemplate
-            ),
+        ),
 
         # # TODO: Add API endpoint for tags
         # Rule('/tags/<tag>/', 'get', project_views.tag.project_tag, OsfWebRenderer('tags.mako')),
@@ -862,7 +862,7 @@ def make_url_map(app):
             ],
             'get',
             project_views.register.node_registration_retraction_disapprove,
-            OsfWebRenderer('error.mako',trust=False)
+            OsfWebRenderer('error.mako', trust=False)
         ),
         Rule(
             [
