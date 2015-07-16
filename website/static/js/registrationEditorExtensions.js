@@ -26,13 +26,13 @@ var limitOsfStorage = function(item) {
     }
 };
 
+var filePicker;
 ko.bindingHandlers.osfUploader = {
     init: function(element, valueAccessor, allBindings, viewModel, bindingContext) {
         viewModel.showUploader(true);       
-
+        
         var $root = bindingContext.$root;
         $root.currentQuestion.subscribe(function(question) {
-            var filePicker = question.extra.filePicker;
             if (filePicker) {
                 // A hack to flush the old mithril controller.
                 // It's unclear to me exactly why this is happening (after 3hrs), but seems
@@ -44,7 +44,7 @@ ko.bindingHandlers.osfUploader = {
                 m.mount(document.getElementById(filePicker.fangornOpts.divID), null);
 
                 filePicker.destroy();
-                delete question.extra.filePicker;
+                filePicker = null;
             }
         }, null, 'beforeChange');
 
@@ -127,7 +127,7 @@ ko.bindingHandlers.osfUploader = {
 
             }
         );
-        viewModel.extra.filePicker = fw;
+        filePicker = fw;
         fw.init();
         viewModel.showUploader(false);
     }
@@ -136,8 +136,10 @@ ko.bindingHandlers.osfUploader = {
 var Uploader = function(data) {
 
     var self = this;
+    self._orig = data;
 
     self.selectedFileName = ko.observable('no file selected');
+    self.filePicker = null;
 
     $.extend(self, data);
 };

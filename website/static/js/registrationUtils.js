@@ -603,7 +603,7 @@ RegistrationEditor.prototype.getUnseenComments = function(qid) {
     }
     return comments.length !== 0 ? comments.length : '';
 };
-RegistrationEditor.prototype.nextPage = function() {
+RegistrationEditor.prototype.nextQuestion = function() {
     var self = this;
 
     var currentQuestion = self.currentQuestion();
@@ -621,7 +621,7 @@ RegistrationEditor.prototype.nextPage = function() {
         self.viewComments();
     }
 };
-RegistrationEditor.prototype.previousPage = function() {
+RegistrationEditor.prototype.previousQuestion = function() {
     var self = this;
 
     var currentQuestion = self.currentQuestion();

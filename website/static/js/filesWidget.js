@@ -69,7 +69,7 @@ FilesWidget.prototype.init = function() {
 };
 FilesWidget.prototype.destroy = function() {
     this.filebrowser.grid.tbController.destroy();
-    delete this.filebrowser.tbController;
+    delete this.filebrowser.tbController;    
     delete this.filebrowser;
 };
 
