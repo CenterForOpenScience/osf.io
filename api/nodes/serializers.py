@@ -4,7 +4,7 @@ from collections import OrderedDict
 from website.models import Node
 from framework.auth.core import Auth
 from rest_framework import exceptions
-from api.base.serializers import JSONAPISerializer, LinksField, Link, WaterbutlerLink
+from api.base.serializers import JSONAPISerializer, LinksField, Link, WaterbutlerLink, LinksFieldNoSelfLink
 
 
 class NodeSerializer(JSONAPISerializer):
@@ -20,9 +20,8 @@ class NodeSerializer(JSONAPISerializer):
     description = ser.CharField(required=False, allow_blank=True, allow_null=True, write_only=True)
     category = ser.ChoiceField(choices=category_choices, help_text="Choices: " + category_choices_string, write_only=True)
     attributes = ser.SerializerMethodField(help_text='A dictionary containing node properties')
-    relationships = ser.SerializerMethodField(help_text='A dictionary containing relationships')
     links = LinksField({'html': 'get_absolute_url'})
-    relationships = LinksField({
+    relationships = LinksFieldNoSelfLink({
         'children': {
             'links': {
                 'related': {
