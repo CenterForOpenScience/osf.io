@@ -1,7 +1,7 @@
 from collections import OrderedDict
 from rest_framework import serializers as ser
 
-from api.base.serializers import JSONAPISerializer, LinksField, Link
+from api.base.serializers import JSONAPISerializer, LinksField, Link, LinksFieldNoSelfLink
 
 
 class UserSerializer(JSONAPISerializer):
@@ -15,11 +15,12 @@ class UserSerializer(JSONAPISerializer):
     id = ser.CharField(read_only=True, source='_id')
     attributes = ser.SerializerMethodField(help_text='A dictionary containing user properties')
     links = LinksField({'html': 'absolute_url'})
-    relationships = LinksField({
-        'html': 'absolute_url',
+    relationships = LinksFieldNoSelfLink({
         'nodes': {
-            'relation': Link('users:user-nodes', kwargs={'user_id': '<pk>'})
-        }
+            'links': {
+                'related': Link('users:user-nodes', kwargs={'user_id': '<pk>'})
+            }
+        },
     })
 
     class Meta:
