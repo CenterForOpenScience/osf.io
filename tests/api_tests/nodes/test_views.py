@@ -452,65 +452,131 @@ class TestNodeIncludeQueryParams(ApiTestCase):
 
         self.project = ProjectFactory(title='Project One', is_public=True, creator=self.user)
         self.project.add_contributor(self.contributor)
-        self.url = '/{}nodes/{}/'.format(API_BASE, self.project._id)
+        self.url_detail = '/{}nodes/{}/'.format(API_BASE, self.project._id)
 
         self.child = ProjectFactory(title='child', is_public=True, creator=self.user)
         self.pointer = self.project.add_pointer(self.child, Auth(self.user))
         self.project.nodes.append(self.child)
+
         self.project.save()
+        self.child.save()
+        self.pointer.save()
+        self.project.reload()
 
-    def test_get_built_in_keys(self):
-        self.url += '?include=children,contributors,pointers'
-        res = self.app.get(self.url)
+    def test_detail_get__keys(self):
+        self.url_detail += '?include=children,contributors,pointers'
+        res = self.app.get(self.url_detail)
         assert_equal(res.status_code, 200)
         additional_query_params = res.json['data']['additional_query_params']
         assert_in('children', additional_query_params)
         assert_in('contributors', additional_query_params)
         assert_in('pointers', additional_query_params)
 
-    def test_get_invalid_key(self):
-        self.url += '?include=nah'
-        res = self.app.get(self.url, expect_errors=True)
+    def test_detail_get_invalid_key(self):
+        self.url_detail += '?include=nah'
+        res = self.app.get(self.url_detail, expect_errors=True)
         assert_equal(res.status_code, 404)
 
-    def test_get_built_in_keys_plus_invalid_key(self):
-        self.url += '?include=children,contributors,pointers,bruh'
-        res = self.app.get(self.url, expect_errors=True)
+    def test_detail_get_built_in_keys_plus_invalid_key(self):
+        self.url_detail += '?include=children,contributors,pointers,bruh'
+        res = self.app.get(self.url_detail, expect_errors=True)
         assert_equal(res.status_code, 404)
 
-    def test_get_include_child_id(self):
-        self.url += '?include=children'
-        res = self.app.get(self.url)
+    def test_detail_get_include_child_id(self):
+        self.url_detail += '?include=children'
+        res = self.app.get(self.url_detail)
         assert_equal(res.status_code, 200)
         additional_query_params = res.json['data']['additional_query_params']
         assert_in('children', additional_query_params)
         assert_in(self.child._id, additional_query_params['children'])
 
-    def test_get_include_contributor_id(self):
-        self.url += '?include=contributors'
-        res = self.app.get(self.url)
+    def test_detail_get_include_contributor_id(self):
+        self.url_detail += '?include=contributors'
+        res = self.app.get(self.url_detail)
         assert_equal(res.status_code, 200)
         additional_query_params = res.json['data']['additional_query_params']
         assert_in('contributors', additional_query_params)
         assert_in(self.contributor._id, additional_query_params['contributors'])
 
-    def test_get_include_pointer_id(self):
-        self.url += '?include=pointers'
-        res = self.app.get(self.url)
+    def test_detail_get_include_pointer_id(self):
+        self.url_detail += '?include=pointers'
+        res = self.app.get(self.url_detail)
         assert_equal(res.status_code, 200)
         additional_query_params = res.json['data']['additional_query_params']
         assert_in('pointers', additional_query_params)
         assert_in(self.pointer._id, additional_query_params['pointers'])
 
-    def test_get_all_ids(self):
-        self.url += '?include=children,contributors,pointers'
-        res = self.app.get(self.url)
+    def test_detail_get_all_ids(self):
+        self.url_detail += '?include=children,contributors,pointers'
+        res = self.app.get(self.url_detail)
         assert_equal(res.status_code, 200)
         additional_query_params = res.json['data']['additional_query_params']
         assert_in(self.child._id, additional_query_params['children'])
         assert_in(self.contributor._id, additional_query_params['contributors'])
         assert_in(self.pointer._id, additional_query_params['pointers'])
 
+    def test_list_get_keys(self):
+        url_list = '/{}nodes/?include=children,contributors,pointers'.format(API_BASE, self.project._id)
+        res = self.app.get(url_list)
+        assert_equal(res.status_code, 200)
+        additional_query_params = res.json['data'][0]['additional_query_params']
+        assert_in('children', additional_query_params)
+        assert_in('contributors', additional_query_params)
+        assert_in('pointers', additional_query_params)
+
+        additional_query_params = res.json['data'][1]['additional_query_params']
+        assert_in('children', additional_query_params)
+        assert_in('contributors', additional_query_params)
+        assert_in('pointers', additional_query_params)
+
+    def test_list_get_all_ids(self):
+        url_list = '/{}nodes/?include=children,contributors,pointers'.format(API_BASE, self.project._id)
+        res = self.app.get(url_list)
+        assert_equal(res.status_code, 200)
+        additional_query_params_one = res.json['data'][0]['additional_query_params']
+        additional_query_params_two = res.json['data'][1]['additional_query_params']
+        assert_true(self.child._id in
+                    additional_query_params_one['children'] or
+                    additional_query_params_two['children'])
+        assert_true(self.contributor._id in
+                    additional_query_params_one['contributors'] or
+                    additional_query_params_two['contributors'])
+        assert_true(self.pointer._id in
+                    additional_query_params_one['pointers'] or
+                    additional_query_params_two['pointers'])
+
+    def test_contributor_node_list_get_keys(self):
+        url_contributor_node_list = '/{}users/{}/nodes/?include=children,contributors,pointers'\
+            .format(API_BASE, self.user._id)
+        res = self.app.get(url_contributor_node_list)
+        assert_equal(res.status_code, 200)
+        additional_query_params = res.json['data'][0]['additional_query_params']
+        print res.json
+        assert_in('children', additional_query_params)
+        assert_in('contributors', additional_query_params)
+        assert_in('pointers', additional_query_params)
+
+        additional_query_params = res.json['data'][1]['additional_query_params']
+        assert_in('children', additional_query_params)
+        assert_in('contributors', additional_query_params)
+        assert_in('pointers', additional_query_params)
+
+    def test_contributor_node_list_get_all_ids(self):
+        url_contributor_node_list = '/{}users/{}/nodes/?include=children,contributors,pointers'\
+            .format(API_BASE, self.user._id)
+        res = self.app.get(url_contributor_node_list)
+        assert_equal(res.status_code, 200)
+        additional_query_params_one = res.json['data'][0]['additional_query_params']
+        additional_query_params_two = res.json['data'][1]['additional_query_params']
+        assert_true(self.child._id in
+                    additional_query_params_one['children'] or
+                    additional_query_params_two['children'])
+        assert_true(self.contributor._id in
+                    additional_query_params_one['contributors'] or
+                    additional_query_params_two['contributors'])
+        assert_true(self.pointer._id in
+                    additional_query_params_one['pointers'] or
+                    additional_query_params_two['pointers'])
 
 class TestNodeUpdate(ApiTestCase):
 
