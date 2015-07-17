@@ -191,6 +191,7 @@ class NodeFilesSerializer(JSONAPISerializer):
     @staticmethod
     def get_attributes(obj):
         ret = OrderedDict((
+            ('provider', obj['provider']),
             ('path', obj['path']),
             ('item_type', obj['item_type']),
             ('name', obj['name']),
