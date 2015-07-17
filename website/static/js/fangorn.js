@@ -1650,7 +1650,7 @@ var FGToolbar = {
             m.component(FGButton, {
                 onclick: function(event){
                     var mithrilContent = m('div', [
-                        m('h4.break-word.m-b-lg', 'How to Use the File Browser'),
+                        m('h3.break-word.m-b-lg', 'How to Use the File Browser'),
                         m('p', [ m('b', 'Select Rows:'), m('span', ' Click on a row (outside the name) to show further actions in the toolbar.')]),
                         m('p', [ m('b', 'Select Multiple Files:'), m('span', ' Use Command or Shift keys to select multiple files.')]),
                         m('p', [ m('b', 'Open Files:'), m('span', ' Click a file name to go to the file.')]),
