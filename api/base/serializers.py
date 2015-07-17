@@ -177,15 +177,18 @@ class JSONAPISerializer(ser.Serializer):
         assert type_ is not None, 'Must define Meta.type_'
 
         attributes = super(JSONAPISerializer, self).to_representation(obj)
-        data = {}
-        data['id'] = attributes.get('id')
-        data['links'] = attributes.get('links')
-        data['relationships'] = attributes.get('relationships')
+        id = attributes.get('id')
+        links = attributes.get('links')
+        relationships = attributes.get('relationships')
         attributes.pop('id', None)
         attributes.pop('links', None)
         attributes.pop('relationships', None)
-        data['type'] = type_
-        data['attributes'] = attributes
+        data = collections.OrderedDict((
+            ('id', id),
+            ('type', type_),
+            ('attributes', attributes),
+            ('links', links),
+            ('relationships', relationships)))
         if envelope:
             ret[envelope] = data
         else:
