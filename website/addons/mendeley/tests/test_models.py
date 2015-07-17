@@ -284,7 +284,7 @@ class MendeleyNodeSettingsTestCase(OsfTestCase):
         self.node_settings.set_auth(external_account, self.user)
 
         contributor = UserFactory()
-        self.node.add_contributor(contributor)
+        self.node.add_contributor(contributor, permissions=['read', 'write', 'admin'])
         self.node.remove_contributor(self.node.creator, auth=Auth(user=contributor))
 
         assert_false(self.node_settings.has_auth)

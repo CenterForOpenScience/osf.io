@@ -1542,7 +1542,7 @@
                     }
 
                     state.restore();
-                    previewManager.refresh();
+                    //previewManager.refresh(); //OSF Note: removed for issue 3518
                 };
 
                 var noCleanup = button.textOp(chunks, fixupInputArea);
