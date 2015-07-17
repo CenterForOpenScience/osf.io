@@ -17,11 +17,16 @@ class NodeSerializer(JSONAPISerializer):
     filterable_fields = frozenset(['title', 'description', 'public'])
 
     id = ser.CharField(read_only=True, source='_id')
-    title = ser.CharField(required=True, write_only=True)
-    description = ser.CharField(required=False, allow_blank=True, allow_null=True, write_only=True)
-    category = ser.ChoiceField(choices=category_choices, help_text="Choices: " + category_choices_string, write_only=True)
-    attributes = ser.SerializerMethodField(help_text='A dictionary containing node properties')
+    title = ser.CharField(required=True)
+    description = ser.CharField(required=False, allow_blank=True, allow_null=True)
+    category = ser.ChoiceField(choices=category_choices, help_text="Choices: " + category_choices_string)
+    date_created = ser.DateTimeField(read_only=True)
+    date_modified = ser.DateTimeField(read_only=True)
+    tags = ser.SerializerMethodField(help_text='A dictionary that contains two lists of tags: '
+                                               'user and system. Any tag that a user will define in the UI will be '
+                                               'a user tag')
     links = LinksField({'html': 'get_absolute_url'})
+
     relationships = LinksFieldNoSelfLink({
         'children': {
             'links': {
@@ -105,21 +110,20 @@ class NodeSerializer(JSONAPISerializer):
         return len(obj.nodes_pointer)
 
     @staticmethod
-    def get_attributes(obj):
-        ret = OrderedDict((
-            ('title', obj.title),
-            ('description', obj.description),
-            ('category', obj.category),
-            ('date_created', obj.date_created),
-            ('date_modifed', obj.date_modified),
-            ('public', obj.is_public),
-            ('tags', {
-                'system': [tag._id for tag in obj.system_tags],
-                'user': [tag._id for tag in obj.tags],
-            }),
-            ('dashboard', obj.is_dashboard),
-            ('collection', obj.is_folder),
-            ('registration', obj.is_registration)))
+    def get_properties(obj):
+        ret = {
+            'registration': obj.is_registration,
+            'collection': obj.is_folder,
+            'dashboard': obj.is_dashboard,
+        }
+        return ret
+
+    @staticmethod
+    def get_tags(obj):
+        ret = {
+            'system': [tag._id for tag in obj.system_tags],
+            'user': [tag._id for tag in obj.tags],
+        }
         return ret
 
     def create(self, validated_data):
