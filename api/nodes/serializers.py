@@ -165,7 +165,6 @@ class NodePointersSerializer(JSONAPISerializer):
 
 
 class NodeFilesSerializer(JSONAPISerializer):
-
     id = ser.SerializerMethodField()
     attributes = ser.SerializerMethodField(help_text="A dictionary field containing folder properties")
 
@@ -185,7 +184,7 @@ class NodeFilesSerializer(JSONAPISerializer):
 
     @staticmethod
     def get_id(obj):
-        ret = obj['provider']
+        ret = obj['path'] + obj['provider']
         return ret
 
     @staticmethod
