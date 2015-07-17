@@ -4,7 +4,7 @@
     <p>Each project and component can have its own set of files. This allows you to organize your files into meaningful
         groups like datasets or background research.</p>
     <p>Each file is given a unique URL, meaning that it can be cited or linked to individually.</p>
-    <p>To upload a file, click on "Files" in the grey navigation bar under the Project/Component's title. 
+    <p id="version-control">To upload a file, click on "Files" in the grey navigation bar under the Project/Component's title. 
         Drag the file from your desktop onto the screen to upload, or select a storage add-on in the files pane and click the upload
         button. OSF Storage, the default storage add-on for every project, supports version control. 
         You can create new versions of a file by re-uploading the latest copy&mdash;no need to change the name. 
