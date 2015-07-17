@@ -83,11 +83,11 @@
                         </h5>
                         <p data-bind="if: !disabled">
                             <button data-bind="css: {disabled: !dirty()},
-                                               click: updateCategory"
-                                    class="btn btn-primary">Change</button>
-                            <button data-bind="css: {disabled: !dirty()},
                                                click: cancelUpdateCategory"
                                     class="btn btn-default">Cancel</button>
+                            <button data-bind="css: {disabled: !dirty()},
+                                               click: updateCategory"
+                                    class="btn btn-primary">Change</button>
                         </p>
                         <span data-bind="css: messageClass, html: message"></span>
                         <span data-bind="if: disabled" class="help-block">
