@@ -26,6 +26,14 @@ class NodeSerializer(JSONAPISerializer):
                                                'user and system. Any tag that a user will define in the UI will be '
                                                'a user tag')
     links = LinksField({'html': 'get_absolute_url'})
+    # TODO: When we have 'admin' permissions, make this writable for admins
+    public = ser.BooleanField(source='is_public', read_only=True,
+                              help_text='Nodes that are made public will give read-only access '
+                                                            'to everyone. Private nodes require explicit read '
+                                                            'permission. Write and admin access are the same for '
+                                                            'public and private nodes. Administrators on a parent '
+                                                            'node have implicit read permissions for all child nodes',
+                              )
 
     relationships = LinksFieldNoSelfLink({
         'children': {
@@ -75,8 +83,7 @@ class NodeSerializer(JSONAPISerializer):
         },
     })
 
-    # TODO: When we have 'admin' permissions, make public writable for admins
-
+    # TODO: finish me
     class Meta:
         type_ = 'nodes'
 
