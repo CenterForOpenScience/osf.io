@@ -10,7 +10,7 @@
       </small>
     </h4>
     <!-- ko foreach: accounts -->
-    <table class="table">
+    <table class="table table-hover">
         <thead>
             <tr class="user-settings-addon-auth">
                 <th class="text-muted default-authorized-by">Authorized by <em><a data-bind="attr.href: profileUrl, text: name"></a></em></th>
