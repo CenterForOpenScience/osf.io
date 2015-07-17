@@ -1650,16 +1650,17 @@ var FGToolbar = {
             m.component(FGButton, {
                 onclick: function(event){
                     var mithrilContent = m('div', [
-                        m('h3.break-word.m-b-lg', 'How to Use the File Browser'),
+                        m('h4.break-word.m-b-lg', 'How to Use the File Browser'),
                         m('p', [ m('b', 'Select Rows:'), m('span', ' Click on a row (outside the name) to show further actions in the toolbar.')]),
                         m('p', [ m('b', 'Select Multiple Files:'), m('span', ' Use Command or Shift keys to select multiple files.')]),
                         m('p', [ m('b', 'Open Files:'), m('span', ' Click a file name to go to the file.')]),
                         m('p', [ m('b', 'Open Files in New Tab:'), m('span',  ' Press Command (or Ctrl in Windows) and  click a file name to open it in a new tab.')]),
                         m('p', [ m('b', 'Copy Files:'), m('span', ' Press Option (or Alt in Windows) while dragging a file to a new folder or component.')])
                     ]);
-                    var mithrilButtons = m('div', [
-                        m('span.tb-modal-btn', { 'class' : 'text-primary', onclick : function(event) { ctrl.tb.modal.dismiss(); } }, 'Close'),
-                    ]);
+                    var mithrilButtons = m('button', {
+                            'type':'button',
+                            'class' : 'btn btn-default',
+                            onclick : function(event) { ctrl.tb.modal.dismiss(); } }, 'Close');
                     ctrl.tb.modal.update(mithrilContent, mithrilButtons);
                 },
                 icon: 'fa fa-info',
