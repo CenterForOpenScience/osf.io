@@ -34,7 +34,7 @@ class TestWelcomeToApi(ApiTestCase):
     def test_returns_current_user_info_when_logged_in(self):
         res = self.app.get(self.url, auth=self.basic_auth)
         assert_equal(res.status_code, 200)
-        assert_equal(res.json['meta']['current_user']['data']['given_name'], self.user.given_name)
+        assert_equal(res.json['meta']['current_user']['data']['attributes']['given_name'], self.user.given_name)
 
 
 class TestNodeList(ApiTestCase):
