@@ -116,6 +116,11 @@ class TestFileUpdated(OsfTestCase):
         self.user2 = factories.UserFactory()
         self.event = Event.parse_event(self.user2, self.project, 'file_updated', payload=file_payload)
 
+    def test_info_formed_correct(self):
+        assert_equal('{}_file_updated'.format(wb_path), self.event.event)
+        assert_equal('updated file "<b>{}</b>".'.format(materialized.lstrip('/')), self.event.html_message)
+        assert_equal('updated file "{}".'.format(materialized.lstrip('/')), self.event.text_message)
+
     @mock.patch('website.notifications.emails.notify')
     def test_file_updated(self, mock_notify):
         self.event.perform()
@@ -141,6 +146,11 @@ class TestFileAdded(OsfTestCase):
         self.user2 = factories.UserFactory()
         self.event = Event.parse_event(self.user2, self.project, 'file_added', payload=file_payload)
 
+    def test_info_formed_correct(self):
+        assert_equal('{}_file_updated'.format(wb_path), self.event.event)
+        assert_equal('added file "<b>{}</b>".'.format(materialized.lstrip('/')), self.event.html_message)
+        assert_equal('added file "{}".'.format(materialized.lstrip('/')), self.event.text_message)
+
     @mock.patch('website.notifications.emails.notify')
     def test_file_added(self, mock_notify):
         self.event.perform()
@@ -149,6 +159,7 @@ class TestFileAdded(OsfTestCase):
 
     def tearDown(self):
         pass
+
 
 class TestFileRemoved(OsfTestCase):
     def setUp(self):
@@ -164,6 +175,11 @@ class TestFileRemoved(OsfTestCase):
         self.project_subscription.save()
         self.user2 = factories.UserFactory()
         self.event = Event.parse_event(self.user2, self.project, 'file_removed', payload=file_deleted_payload)
+
+    def test_info_formed_correct(self):
+        assert_equal('file_updated', self.event.event)
+        assert_equal('removed file "<b>{}</b>".'.format(materialized.lstrip('/')), self.event.html_message)
+        assert_equal('removed file "{}".'.format(materialized.lstrip('/')), self.event.text_message)
 
     @mock.patch('website.notifications.emails.notify')
     def test_file_removed(self, mock_notify):
@@ -189,6 +205,11 @@ class TestFolderCreated(OsfTestCase):
         self.project_subscription.save()
         self.user2 = factories.UserFactory()
         self.event = Event.parse_event(self.user2, self.project, 'folder_created', payload=folder_created_payload)
+
+    def test_info_formed_correct(self):
+        assert_equal('file_updated', self.event.event)
+        assert_equal('created folder "<b>Three/</b>".', self.event.html_message)
+        assert_equal('created folder "Three/".', self.event.text_message)
 
     @mock.patch('website.notifications.emails.notify')
     def test_folder_added(self, mock_notify):
@@ -230,11 +251,16 @@ class TestFileMoved(OsfTestCase):
         self.private_sub.save()
         # for file subscription
         self.file_sub = factories.NotificationSubscriptionFactory(
-            _id=self.project._id + '_' + self.event.source_guid._id + '_file_updated',
+            _id=self.project._id + '_' + self.event.wbid + '_file_updated',
             owner=self.project,
             event_name='xyz42_file_updated'
         )
         self.file_sub.save()
+
+    def test_info_formed_correct(self):
+        assert_equal('{}_file_updated'.format(wb_path), self.event.event)
+        # assert_equal('moved file "<b>{}</b>".', self.event.html_message)
+        # assert_equal('created folder "Three/".', self.event.text_message)
 
     @mock.patch('website.notifications.emails.send')
     def test_user_performing_action_no_email(self, mock_send):
@@ -281,6 +307,7 @@ class TestFileMoved(OsfTestCase):
     def tearDown(self):
         pass
 
+
 class TestCategorizeUsers(OsfTestCase):
     def setUp(self):
         super(TestCategorizeUsers, self).setUp()
@@ -312,7 +339,7 @@ class TestCategorizeUsers(OsfTestCase):
         self.private_sub.save()
         # for file subscription
         self.file_sub = factories.NotificationSubscriptionFactory(
-            _id=self.project._id + '_' + self.event.source_guid._id + '_file_updated',
+            _id=self.project._id + '_' + self.event.wbid + '_file_updated',
             owner=self.project,
             event_name='xyz42_file_updated'
         )
@@ -329,7 +356,7 @@ class TestCategorizeUsers(OsfTestCase):
         self.sub.save()
         self.private_sub.none.append(self.user_3)
         self.private_sub.save()
-        moved, warn, removed = categorize_users(self.event.user, self.event.source_event, self.event.source_node,
+        moved, warn, removed = categorize_users(self.event.user, self.event.event, self.event.source_node,
                                                 self.event.event, self.event.node)
         assert_equal({'email_transactional': [], 'email_digest': [self.user_3._id], 'none': []}, warn)
         assert_equal({'email_transactional': [self.user_1._id], 'email_digest': [], 'none': []}, moved)
@@ -345,7 +372,7 @@ class TestCategorizeUsers(OsfTestCase):
         self.sub.save()
         self.private_sub.email_transactional.append(self.user_3)
         self.private_sub.save()
-        moved, warn, removed = categorize_users(self.event.user, self.event.source_event, self.event.source_node,
+        moved, warn, removed = categorize_users(self.event.user, self.event.event, self.event.source_node,
                                                 self.event.event, self.event.node)
         assert_equal({'email_transactional': [], 'email_digest': [], 'none': []}, warn)
         assert_equal({'email_transactional': [self.user_3._id], 'email_digest': [], 'none': []}, moved)
@@ -355,12 +382,18 @@ class TestCategorizeUsers(OsfTestCase):
         self.project.save()
         self.file_sub.email_transactional.append(self.user_3)
         self.file_sub.save()
-        moved, warn, removed = categorize_users(self.event.user, self.event.source_event, self.event.source_node,
+        moved, warn, removed = categorize_users(self.event.user, self.event.event, self.event.source_node,
                                                 self.event.event, self.event.node)
         assert_equal({'email_transactional': [self.user_3._id], 'email_digest': [], 'none': []}, removed)
 
     def tearDown(self):
         pass
+
+wb_path = u'5581cb50a24f710b0f4623f9'
+materialized = u'/One/Paper13.txt'
+provider = u'osfstorage'
+name = u'Paper13.txt'
+
 
 file_payload = OrderedDict([
     (u'action', u'update'),
@@ -373,33 +406,29 @@ file_payload = OrderedDict([
             (u'downloads', 0),
             (u'version', 30)])),
         (u'kind', u'file'),
-        (u'materialized', u'/One/Paper13.txt'),
+        (u'materialized', materialized),
         (u'modified', u'Wed, 24 Jun 2015 10:45:01 '),
-        (u'name', u'Paper13.txt'),
-        (u'path', u'5581cb50a24f710b0f4623f9'),
-        (u'provider', u'osfstorage'),
+        (u'name', name),
+        (u'path', wb_path),
+        (u'provider', provider),
         (u'size', 2008)])),
-    (u'provider', u'osfstorage'),
+    (u'provider', provider),
     (u'time', 1435157161.979904)])
 
 file_deleted_payload = OrderedDict([
     (u'action', u'delete'),
     (u'auth', OrderedDict([
-        (u'email', u'tgn6m@osf.io'),
-        (u'id', u'tgn6m'),
-        (u'name', u'aab')])),
+        (u'email', u'tgn6m@osf.io'), (u'id', u'tgn6m'), (u'name', u'aab')])),
     (u'metadata', OrderedDict([
-        (u'materialized', u'/Two/Paper13.txt'),
-        (u'path', u'Two/Paper13.txt')])),
+        (u'materialized', materialized),
+        (u'path', materialized)])),  # Deleted files don't get wb_paths
     (u'provider', u'osfstorage'),
     (u'time', 1435157876.690203)])
 
 folder_created_payload = OrderedDict([
     (u'action', u'create_folder'),
     (u'auth', OrderedDict([
-        (u'email', u'tgn6m@osf.io'),
-        (u'id', u'tgn6m'),
-        (u'name', u'aab')])),
+        (u'email', u'tgn6m@osf.io'), (u'id', u'tgn6m'), (u'name', u'aab')])),
     (u'metadata', OrderedDict([
         (u'etag', u'5caf8ab73c068565297e455ebce37fd64b6897a2284ec9d7ecba8b6093082bcd'),
         (u'extra', OrderedDict()),
@@ -416,9 +445,7 @@ def file_move_payload(new_node, old_node):
     return OrderedDict([
         (u'action', u'move'),
         (u'auth', OrderedDict([
-            (u'email', 'Bob'),
-            (u'id', 'bob2'),
-            (u'name', 'Bob')])),
+            (u'email', 'Bob'), (u'id', 'bob2'), (u'name', 'Bob')])),
         (u'destination', OrderedDict([
             (u'contentType', None),
             (u'etag', u'10485efa4069bb94d50588df2e7466a079d49d4f5fd7bf5b35e7c0d5b12d76b7'),
@@ -426,24 +453,24 @@ def file_move_payload(new_node, old_node):
                 (u'downloads', 0),
                 (u'version', 30)])),
             (u'kind', u'file'),
-            (u'materialized', u'Three/Paper13.txt'),
+            (u'materialized', materialized),
             (u'modified', None),
-            (u'name', u'Paper13.txt'),
-            (u'nid', str(old_node)),
-            (u'path', u'/a'),
-            (u'provider', u'osfstorage'),
+            (u'name', name),
+            (u'nid', str(new_node)),
+            (u'path', wb_path),
+            (u'provider', provider),
             (u'size', 2008),
             ('url', '/project/nhgts/files/osfstorage/5581cb50a24f710b0f4623f9/'),
-            ('node', {'url': '/nhgts/', '_id': new_node._id, 'title': u'Consolidate'}),
+            ('node', {'url': '/{}/'.format(new_node._id), '_id': new_node._id, 'title': u'Consolidate2'}),
             ('addon', 'OSF Storage')])),
         (u'source', OrderedDict([
-            (u'materialized', u'One/Paper13.txt'),
+            (u'materialized', materialized),
             (u'name', u'Paper13.txt'),
-            (u'nid', str(new_node)),
-            (u'path', u'One/Paper13.txt'),
-            (u'provider', u'osfstorage'),
+            (u'nid', str(old_node)),
+            (u'path', materialized),  # Not wb path
+            (u'provider', provider),
             ('url', '/project/nhgts/files/osfstorage/One/Paper13.txt/'),
-            ('node', {'url': '/nhgts/', '_id': old_node._id, 'title': u'Consolidate'}),
+            ('node', {'url': '/{}/'.format(old_node._id), '_id': old_node._id, 'title': u'Consolidate'}),
             ('addon', 'OSF Storage')])),
         (u'time', 1435158051.204264),
         ('node', u'nhgts'),

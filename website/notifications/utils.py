@@ -99,7 +99,7 @@ def move_subscription(source_event, source_node, new_event, new_node):
     :return: Returns a NOTIFICATION_TYPES list of removed users without permissions
     """
     removed_users = {key: [] for key in constants.NOTIFICATION_TYPES}
-    if source_event == new_event or source_node == new_node:
+    if source_node == new_node:
         return removed_users
     old_sub = NotificationSubscription.load(to_subscription_key(source_node._id, source_event))
     old_node_sub = NotificationSubscription.load(to_subscription_key(source_node._id,
@@ -256,10 +256,9 @@ def format_user_subscriptions(user):
 def format_file_subscription(user, node_id, path, provider):
     """Formats a single file event"""
     node = Node.load(node_id)
-    addon = node.get_addon(provider)
-    file_guid, created = addon.find_or_create_file_guid(path if path.startswith('/') else '/' + path)
+    wb_path = path.lstrip('/')
     for subscription in get_all_node_subscriptions(user, node):
-        if file_guid.guid_url.strip('/') in getattr(subscription, 'event_name'):
+        if wb_path in getattr(subscription, 'event_name'):
             return serialize_event(user, subscription, node)
     return serialize_event(user, node=node, event_description='file_updated')
 

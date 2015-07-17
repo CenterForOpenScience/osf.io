@@ -151,8 +151,8 @@ var FileRevisionsTable = {
 
         self.subscriptions = function() {
             var subscriptions = [
-                {text: 'Emails', value: 'email_transactional'},
-                {text: 'Email Digest', value: 'email_digest'},
+                {text: 'Immediate Emails', value: 'email_transactional'},
+                {text: 'Daily Email Digest', value: 'email_digest'},
                 {text: 'Adopt from Project', value: 'adopt_parent'},
                 {text: 'None', value: 'none'}
             ];

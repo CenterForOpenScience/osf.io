@@ -882,7 +882,7 @@ class TestMoveSubscription(OsfTestCase):
         self.private_node.add_contributor(self.user_3, permissions=['write', 'read'], auth=self.auth)
         self.private_node.save()
         results = utils.move_subscription('xyz42_file_updated', self.project, 'xyz42_file_updated', self.private_node)
-        assert_equal({'email_transactional': [], 'email_digest': [], 'none': []}, results)
+        assert_equal({'email_transactional': [self.user_4._id], 'email_digest': [], 'none': []}, results)
 
     def test_event_nodes_same(self):
         self.file_sub.email_transactional.extend([self.user_2, self.user_3, self.user_4])

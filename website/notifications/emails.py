@@ -1,8 +1,6 @@
 from babel import dates, core, Locale
 from mako.lookup import Template
 
-from modularodm import Q
-
 from website import mails
 from website import models as website_models
 from website.notifications import constants
@@ -118,10 +116,10 @@ def compile_subscriptions(node, event_type, event=None, level=0):
     subscriptions = check_node(node, event_type)
     if event:
         subscriptions = check_node(node, event)  # Gets particular event subscriptions
-        parent_subscriptions = compile_subscriptions(node, event_type, level=level+1)  # get node and parent subs
+        parent_subscriptions = compile_subscriptions(node, event_type, level=level + 1)  # get node and parent subs
     elif node.parent_id:
         parent_subscriptions = \
-            compile_subscriptions(website_models.Node.load(node.parent_id), event_type, level=level+1)
+            compile_subscriptions(website_models.Node.load(node.parent_id), event_type, level=level + 1)
     else:
         parent_subscriptions = check_node(None, event_type)
     for notification_type in parent_subscriptions:

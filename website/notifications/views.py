@@ -50,9 +50,8 @@ def configure_subscription(auth):
 
     node = Node.load(target_id)
     if 'file_updated' in event and path is not None and provider is not None:
-        addon = node.get_addon(provider)
-        file_guid, created = addon.find_or_create_file_guid(path if path.startswith('/') else '/' + path)
-        event = file_guid.guid_url.strip('/') + '_file_updated'
+        wb_path = path.lstrip('/')
+        event = wb_path + '_file_updated'
     event_id = utils.to_subscription_key(target_id, event)
 
     if not node:

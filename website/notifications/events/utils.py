@@ -2,12 +2,14 @@
 from website.notifications.emails import compile_subscriptions
 from website.notifications import utils, constants
 
+
 def get_file_subs_from_folder(addon, user, kind, path, name):
     folder = dict(kind=kind, path=path, name=name)
     file_tree = addon._get_file_tree(filenode=folder, user=user, version='latest-published')
     files = []
     list_of_files(file_tree, files)
     return files
+
 
 def list_of_files(file_object, files):
     if file_object['kind'] == 'file':
@@ -16,11 +18,13 @@ def list_of_files(file_object, files):
         for child in file_object['children']:
             list_of_files(child, files)
 
+
 def get_file_guid(node, provider, path):
     path = path if path.startswith('/') else '/' + path
     addon = node.get_addon(provider)
     guid, created = addon.find_or_create_file_guid(path)
     return guid
+
 
 def categorize_users(user, source_event, source_node, event, node):
     """

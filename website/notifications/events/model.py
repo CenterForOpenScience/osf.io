@@ -67,7 +67,7 @@ class Event(object):
             timestamp=self.timestamp,
             message=self.html_message,
             gravatar_url=self.gravatar_url,
-            url=self.url
+            url=self.url.url
         )
 
     @property
@@ -102,17 +102,17 @@ class Event(object):
 
 
 class FileEvent(Event):
-    _guid = None
+    _wbid = None  # waterbutler id/path
 
     """File event base class, should not be called directly"""
     def __init__(self, user, node, event, payload=None):
         super(FileEvent, self).__init__(user, node, event)
         self.payload = payload
-        self._guid = None
+        self._wbid = None
 
     @property
-    def guid(self):
-        return self._guid
+    def wbid(self):
+        return self._wbid
 
     def form_message(self):
         """Sets the message to 'action file/folder <location>' """
@@ -124,18 +124,12 @@ class FileEvent(Event):
     def form_event(self):
         """Simplest event set"""
         self._event = "file_updated"
+        self._wbid = self.payload['metadata']['path'].strip('/')
 
     def form_url(self):
         """Basis of making urls, this returns the url to the node."""
-        f_url = furl(self.node.absolute_url)
-        return f_url
-
-    def form_guid(self):
-        """Gets the UID for the file to use with self.event and self.url"""
-        addon = self.node.get_addon(self.payload['provider'])
-        path = self.payload['metadata']['path']
-        path = path if path.startswith('/') else '/' + path
-        self._guid, created = addon.find_or_create_file_guid(path)
+        self._url = furl(self.node.absolute_url)
+        self._url.path.segments = self.node.web_url_for('collect_file_trees').split('/')
 
 
 class UpdateFileEvent(FileEvent):
@@ -144,20 +138,14 @@ class UpdateFileEvent(FileEvent):
     """
     def __init__(self, user, node, event, payload=None):
         super(UpdateFileEvent, self).__init__(user, node, event, payload=payload)
-        self.form_guid()
         self.form_event()
         self.form_message()
         self.form_url()
 
     def form_event(self):
-        """Add guid to file_updated"""
-        self._event = self.guid.guid_url.strip('/') + '_file_updated'
-
-    def form_url(self):
-        """Build url to file view"""
-        f_url = super(UpdateFileEvent, self).form_url()
-        f_url.path = self.guid.guid_url
-        self._url = f_url.url
+        """Add waterbutler id to file_updated"""
+        super(UpdateFileEvent, self).form_event()
+        self._event = self.wbid + '_file_updated'
 
 
 class FileAdded(UpdateFileEvent):
@@ -180,12 +168,6 @@ class SimpleFileEvent(FileEvent):
         self.form_message()
         self.form_url()
 
-    def form_url(self):
-        """Forms a url that points at the files view, not the folder or deleted file."""
-        f_url = super(SimpleFileEvent, self).form_url()
-        f_url.path = self.node.web_url_for('collect_file_trees')
-        self._url = f_url.url
-
 
 class FileRemoved(SimpleFileEvent):
     """Actual class called when a file is removed"""
@@ -202,26 +184,19 @@ class ComplexFileEvent(FileEvent):
     Class for move and copy files. Users could be removed from subscription.
     - Essentially every method is redone for these more complex actions.
     """
-    _source_guid = None
-    _source_event = None
     _source_url = None
 
     def __init__(self, user, node, event, payload=None):
         super(ComplexFileEvent, self).__init__(user, node, event, payload=payload)
-        self.source_node = None
-        self.addon = None
-        self.form_guid()
+        self.source_node = Node.load(self.payload['source']['node']['_id'])
+        self.addon = self.node.get_addon(self.payload['destination']['provider'])
         self.form_event()
         self.form_url()
         self.form_message()
 
     @property
-    def source_guid(self):
-        return self._source_guid
-
-    @property
-    def source_event(self):
-        return self._source_event
+    def source_wbid(self):
+        return self._source_wbid
 
     @property
     def source_url(self):
@@ -245,31 +220,14 @@ class ComplexFileEvent(FileEvent):
 
     def form_event(self):
         """Sets event to be passed as well as the source event."""
+        self._wbid = self.payload['destination']['path'].strip('/')
         if self.payload['destination']['kind'] != u'folder':
-            self._event = self.guid.guid_url.strip('/') + '_file_updated'
-            self._source_event = self.source_guid.guid_url.strip('/') + '_file_updated'
-        else:
-            self._event = 'file_updated'
-            self._source_event = 'file_updated'
+            self._event = self.wbid + '_file_updated'
 
     def form_url(self):
-        f_url = super(ComplexFileEvent, self).form_url()
-        if self.payload['destination']['kind'] == u'folder':
-            f_url.path = self.node.web_url_for('collect_file_trees')
-        else:
-            f_url.path = self.guid.guid_url
-        self._url = f_url.url
-        return f_url
-
-    def form_guid(self):
-        """Produces both guids for source and destination"""
-        # if self.payload['destination']['kind'] != u'folder':
-        self.addon = self.node.get_addon(self.payload['destination']['provider'])
-        self._guid = utils.get_file_guid(self.node, self.payload['destination']['provider'],
-                                         self.payload['destination']['path'])
-        self.source_node = Node.load(self.payload['source']['node']['_id'])
-        self._source_guid = utils.get_file_guid(self.source_node, self.payload['source']['provider'],
-                                                self.payload['destination']['path'])
+        super(ComplexFileEvent, self).form_url()
+        self._source_url = furl(self.source_node.absolute_url)
+        self._source_url.path.segments = self.source_node.web_url_for('collect_file_trees').split('/')
 
 
 class AddonFileMoved(ComplexFileEvent):
@@ -283,7 +241,7 @@ class AddonFileMoved(ComplexFileEvent):
             super(AddonFileMoved, self).perform()
             return
         if self.payload['destination']['kind'] != u'folder':
-            moved, warn, rm_users = utils.categorize_users(self.user, self.source_event, self.source_node,
+            moved, warn, rm_users = utils.categorize_users(self.user, self.event, self.source_node,
                                                            self.event, self.node)
             warn_message = self.html_message + ' Your component-level subscription was not transferred.'
             remove_message = self.html_message + ' Your subscription has been removed' \
@@ -294,7 +252,8 @@ class AddonFileMoved(ComplexFileEvent):
                                                     self.payload['destination']['name'])
             moved, warn, rm_users = self.compile_user_lists(files)
             warn_message = self.html_message + ' Your component-level subscription was not transferred.'
-            remove_message = self.html_message + ' Your subscription has been removed for the folder or a file within' \
+            remove_message = self.html_message + ' Your subscription has been removed for the folder,' \
+                                                 ' or a file within,' \
                                                  ' due to insufficient permissions in the new component.'
         for notification in NOTIFICATION_TYPES:
             if notification == 'none':
@@ -302,37 +261,30 @@ class AddonFileMoved(ComplexFileEvent):
             if moved[notification]:
                 emails.send(moved[notification], notification, self.node_id, 'file_updated', self.user, self.node,
                             self.timestamp, message=self.html_message, gravatar_url=self.gravatar_url,
-                            url=self.url)
+                            url=self.url.url)
             if warn[notification]:
                 emails.send(warn[notification], notification, self.node_id, 'file_updated', self.user, self.node,
                             self.timestamp, message=warn_message, gravatar_url=self.gravatar_url,
-                            url=self.url)
+                            url=self.url.url)
             if rm_users[notification]:
                 emails.send(rm_users[notification], notification, self.node_id, 'file_updated', self.user,
                             self.source_node, self.timestamp, message=remove_message,
-                            gravatar_url=self.gravatar_url, url=self.source_url)
+                            gravatar_url=self.gravatar_url, url=self.source_url.url)
 
     def compile_user_lists(self, files):
         move = {key: [] for key in NOTIFICATION_TYPES}
         warn = {key: [] for key in NOTIFICATION_TYPES}
         remove = {key: [] for key in NOTIFICATION_TYPES}
         for file_path in files:
-            guid = utils.get_file_guid(self.node, self.payload['destination']['provider'], file_path)
-            source_guid = utils.get_file_guid(self.source_node, self.payload['source']['provider'], file_path)
+            path = file_path.strip('/')
             t_move, t_warn, t_remove = \
-                utils.categorize_users(self.user, source_guid.guid_url.strip('/') + '_file_updated', self.source_node,
-                                       guid.guid_url.strip('/') + '_file_updated', self.node)
+                utils.categorize_users(self.user, path + '_file_updated', self.source_node,
+                                       path + '_file_updated', self.node)
             for notification in NOTIFICATION_TYPES:
                 move[notification] = list(set(move[notification]).union(set(t_move[notification])))
                 warn[notification] = list(set(warn[notification]).union(set(t_warn[notification])))
                 remove[notification] = list(set(remove[notification]).union(set(t_remove[notification])))
         return move, warn, remove
-
-    def form_url(self):
-        """Set source url for subscribers removed from subscription to files page view"""
-        f_url = super(AddonFileMoved, self).form_url()
-        f_url.path = self.node.web_url_for('collect_file_trees')
-        self._source_url = f_url.url
 
 
 class AddonFileCopied(ComplexFileEvent):
@@ -346,12 +298,6 @@ class AddonFileCopied(ComplexFileEvent):
         self._html_message += ' You are not subscribed to the new file, follow link to add subscription.'
         self._text_message += ' You are not subscribed to the new file, follow link to add subscription.'
 
-    # TODO: Actually use this once the path from WB comes back properly
     def form_url(self):
         """Source url points to original file"""
-        f_url = super(AddonFileCopied, self).form_url()
-        # if self.payload['destination']['kind'] != u'folder':
-        #     f_url.path = self.source_guid.guid_url
-        # else:
-        #     f_url.path = self.source_node.web_url_for('collect_file_tree')
-        # self._source_url = f_url.url
+        super(AddonFileCopied, self).form_url()
