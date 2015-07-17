@@ -11,7 +11,7 @@ window.contextVars.currentUser = {
 var registrationUtils = require('js/registrationUtils');
 
 var utilities = registrationUtils.utilities;
-var Comment = registrationUtils.Comment;
+var Comment = registrationUtils.Comment; // jshint ignore:line
 var Question = registrationUtils.Question;
 var MetaSchema = registrationUtils.MetaSchema;
 var Draft = registrationUtils.Draft;
