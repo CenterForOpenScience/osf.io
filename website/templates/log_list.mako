@@ -33,7 +33,7 @@
 	                	<p class="m-t-sm text-center"> Loading logs...  </p>
 	                </div>
                 </span>
-                <p data-bind="if: !logs().length && !loading()" class="help-block">
+                <p data-bind="if: noLogs" class="help-block">
                     No logs to show. Click the watch icon (<i class="fa fa-eye"></i>) icon on a
                     project's page to get activity updates here.
                 </p>
