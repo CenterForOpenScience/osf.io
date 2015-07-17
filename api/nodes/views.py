@@ -2,7 +2,7 @@ import requests
 
 from modularodm import Q
 from rest_framework import generics, permissions as drf_permissions
-from rest_framework.exceptions import PermissionDenied, ValidationError, NotFound
+from rest_framework.exceptions import PermissionDenied, ValidationError
 
 from framework.auth.core import Auth
 from website.models import Node, Pointer
@@ -13,8 +13,6 @@ from .serializers import NodeSerializer, NodePointersSerializer, NodeFilesSerial
 from .permissions import ContributorOrPublic, ReadOnlyIfRegistration, ContributorOrPublicForPointers
 
 from api.base.exceptions import Gone
-from django.http import HttpResponseGone
-from django.core.exceptions import ObjectDoesNotExist
 
 class NodeMixin(object):
     """Mixin with convenience methods for retrieving the current node based on the
