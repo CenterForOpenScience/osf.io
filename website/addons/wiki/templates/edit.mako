@@ -30,7 +30,7 @@
                         <div class="wiki-toolbar-icon text-success" data-toggle="modal" data-target="#newWiki">
                             <i class="fa fa-plus text-success"></i><span>New</span>
                         </div>
-                        % if wiki_name is not 'home':
+                        % if wiki_id and wiki_name != 'home':
                             <div class="wiki-toolbar-icon text-danger" data-toggle="modal" data-target="#deleteWiki">
                                 <i class="fa fa-trash-o text-danger"></i><span>Delete</span>
                             </div>
