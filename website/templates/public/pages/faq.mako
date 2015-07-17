@@ -121,6 +121,7 @@
                             <a href="http://aws.amazon.com/glacier/">Amazon's Glacier platform</a>.
                             The OSF maintains several backup schemes, including off-site backups and
                             automated backups performed by our host every day, week, and fortnight.</p>
+                        <p>Rackspace and Amazon Glacier have their own methods to support data integrity (e.g., redundancy across 5+ locations), but the Open Science Framework takes the extra step of calculating multiple <a href="https://en.wikipedia.org/wiki/Checksum">checksums</a> and <a href="https://en.wikipedia.org/wiki/Parchive">parity archives</a> to account for even the most improbable errors.</p>
 
             </div>
 
