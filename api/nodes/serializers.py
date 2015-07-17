@@ -180,7 +180,11 @@ class NodePointersSerializer(JSONAPISerializer):
 
 class NodeFilesSerializer(JSONAPISerializer):
     id = ser.SerializerMethodField()
-    attributes = ser.SerializerMethodField(help_text="A dictionary field containing folder properties")
+    provider = ser.CharField(read_only=True)
+    path = ser.CharField(read_only=True)
+    item_type = ser.CharField(read_only=True)
+    name = ser.CharField(read_only=True)
+    metadata = ser.DictField(read_only=True)
 
     class Meta:
         type_ = 'files'
@@ -199,16 +203,6 @@ class NodeFilesSerializer(JSONAPISerializer):
     @staticmethod
     def get_id(obj):
         ret = obj['path'] + obj['provider']
-        return ret
-
-    @staticmethod
-    def get_attributes(obj):
-        ret = OrderedDict((
-            ('provider', obj['provider']),
-            ('path', obj['path']),
-            ('item_type', obj['item_type']),
-            ('name', obj['name']),
-            ('metadata', obj['metadata'])))
         return ret
 
     @staticmethod
