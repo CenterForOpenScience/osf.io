@@ -169,8 +169,15 @@ class JSONAPISerializer(ser.Serializer):
         meta = getattr(self, 'Meta', None)
         type_ = getattr(meta, 'type_', None)
         assert type_ is not None, 'Must define Meta.type_'
-        data = super(JSONAPISerializer, self).to_representation(obj)
+
+        attributes = super(JSONAPISerializer, self).to_representation(obj)
+        data = {}
+        data['id'] = attributes['id']
+        data['links'] = attributes['links']
+        del attributes['id']
+        del attributes['links']
         data['type'] = type_
+        data['attributes'] = attributes
         if envelope:
             ret[envelope] = data
         else:
