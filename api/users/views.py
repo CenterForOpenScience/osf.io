@@ -51,6 +51,7 @@ class UserList(generics.ListAPIView, ODMFilterMixin):
 
 
 class UserDetail(generics.RetrieveAPIView, UserMixin):
+
     """Details about a specific user.
     """
     serializer_class = UserSerializer
