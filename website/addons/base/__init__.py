@@ -595,14 +595,12 @@ class AddonOAuthUserSettingsBase(AddonUserSettingsBase):
         return (
             Node.load(node_id)
             for node_id, grants in self.oauth_grants.iteritems()
-            if external_account._id in grants.keys()
+            if (external_account._id in grants.keys() and not Node.load(node_id).is_deleted)
         )
 
     def get_attached_nodes(self, external_account):
         for node in self.get_nodes_with_oauth_grants(external_account):
             if node is None:
-                continue
-            if node.is_deleted:
                 continue
             node_settings = node.get_addon(self.oauth_provider.short_name)
 
