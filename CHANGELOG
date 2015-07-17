@@ -2,6 +2,12 @@
 Changelog
 *********
 
+0.42.6 (2015-07-14)
+===================
+
+- Enable parallel uploads for OSF Storage, figshare, Box.com, Dropbox, S3, and Google Drive.
+- Improve performance when uploading large files.
+
 0.42.0 (2015-07-13)
 ===================
 
