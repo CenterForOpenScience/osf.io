@@ -969,14 +969,14 @@ class TestNodePointersList(ApiTestCase):
         res_json = res.json['data']
         assert_equal(len(res_json), 1)
         assert_equal(res.status_code, 200)
-        assert_in(res_json[0]['node_id'], self.public_pointer_project._id)
+        assert_in(res_json[0]['attributes']['node_id'], self.public_pointer_project._id)
 
     def test_return_public_node_pointers_logged_in(self):
         res = self.app.get(self.public_url, auth=self.basic_auth_two)
         res_json = res.json['data']
         assert_equal(len(res_json), 1)
         assert_equal(res.status_code, 200)
-        assert_in(res_json[0]['node_id'], self.public_pointer_project._id)
+        assert_in(res_json[0]['attributes']['node_id'], self.public_pointer_project._id)
 
     def test_return_private_node_pointers_logged_out(self):
         res = self.app.get(self.private_url, expect_errors=True)
@@ -990,7 +990,7 @@ class TestNodePointersList(ApiTestCase):
         res_json = res.json['data']
         assert_equal(res.status_code, 200)
         assert_equal(len(res_json), 1)
-        assert_in(res_json[0]['node_id'], self.pointer_project._id)
+        assert_in(res_json[0]['attributes']['node_id'], self.pointer_project._id)
 
     def test_return_private_node_pointers_logged_in_non_contributor(self):
         res = self.app.get(self.private_url, auth=self.basic_auth_two, expect_errors=True)
@@ -1039,7 +1039,7 @@ class TestCreateNodePointer(ApiTestCase):
 
         res = self.app.post(self.public_url, self.public_payload, auth=self.basic_auth)
         assert_equal(res.status_code, 201)
-        assert_equal(res.json['data']['node_id'], self.public_pointer_project._id)
+        assert_equal(res.json['data']['attributes']['node_id'], self.public_pointer_project._id)
 
     def test_creates_private_node_pointer_logged_out(self):
         res = self.app.post(self.private_url, self.private_payload, expect_errors=True)
@@ -1051,7 +1051,7 @@ class TestCreateNodePointer(ApiTestCase):
     def test_creates_private_node_pointer_logged_in_contributor(self):
         res = self.app.post(self.private_url, self.private_payload, auth=self.basic_auth)
         assert_equal(res.status_code, 201)
-        assert_equal(res.json['data']['node_id'], self.pointer_project._id)
+        assert_equal(res.json['data']['attributes']['node_id'], self.pointer_project._id)
 
     def test_creates_private_node_pointer_logged_in_non_contributor(self):
         res = self.app.post(self.private_url, self.private_payload, auth=self.basic_auth_two, expect_errors=True)
@@ -1064,7 +1064,7 @@ class TestCreateNodePointer(ApiTestCase):
     def test_create_node_pointer_contributing_node_to_non_contributing_node(self):
         res = self.app.post(self.private_url, self.user_two_payload, auth=self.basic_auth)
         assert_equal(res.status_code, 201)
-        assert_equal(res.json['data']['node_id'], self.user_two_project._id)
+        assert_equal(res.json['data']['attributes']['node_id'], self.user_two_project._id)
 
     def test_create_pointer_non_contributing_node_to_fake_node(self):
         res = self.app.post(self.private_url, self.fake_payload, auth=self.basic_auth_two, expect_errors=True)
@@ -1087,12 +1087,12 @@ class TestCreateNodePointer(ApiTestCase):
 
         res = self.app.post(self.public_url, self.point_to_itself_payload, auth=self.basic_auth)
         assert_equal(res.status_code, 201)
-        assert_equal(res.json['data']['node_id'], self.public_project._id)
+        assert_equal(res.json['data']['attributes']['node_id'], self.public_project._id)
 
     def test_create_node_pointer_already_connected(self):
         res = self.app.post(self.public_url, self.public_payload, auth=self.basic_auth)
         assert_equal(res.status_code, 201)
-        assert_equal(res.json['data']['node_id'], self.public_pointer_project._id)
+        assert_equal(res.json['data']['attributes']['node_id'], self.public_pointer_project._id)
 
         res = self.app.post(self.public_url, self.public_payload, auth=self.basic_auth, expect_errors=True)
         assert_equal(res.status_code, 400)
@@ -1231,13 +1231,13 @@ class TestNodePointerDetail(ApiTestCase):
         res = self.app.get(self.public_url)
         assert_equal(res.status_code, 200)
         res_json = res.json['data']
-        assert_equal(res_json['node_id'], self.public_pointer_project._id)
+        assert_equal(res_json['attributes']['node_id'], self.public_pointer_project._id)
 
     def test_returns_public_node_pointer_detail_logged_in(self):
         res = self.app.get(self.public_url, auth=self.basic_auth)
         res_json = res.json['data']
         assert_equal(res.status_code, 200)
-        assert_equal(res_json['node_id'], self.public_pointer_project._id)
+        assert_equal(res_json['attributes']['node_id'], self.public_pointer_project._id)
 
     def test_returns_private_node_pointer_detail_logged_out(self):
         res = self.app.get(self.private_url, expect_errors=True)
@@ -1250,7 +1250,7 @@ class TestNodePointerDetail(ApiTestCase):
         res = self.app.get(self.private_url, auth=self.basic_auth)
         res_json = res.json['data']
         assert_equal(res.status_code, 200)
-        assert_equal(res_json['node_id'], self.pointer_project._id)
+        assert_equal(res_json['attributes']['node_id'], self.pointer_project._id)
 
     def returns_private_node_pointer_detail_logged_in_non_contributor(self):
         res = self.app.get(self.private_url, auth=self.basic_auth_two, expect_errors=True)
