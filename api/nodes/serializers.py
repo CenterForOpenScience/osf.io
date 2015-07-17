@@ -1,3 +1,4 @@
+from collections import OrderedDict
 from rest_framework import serializers as ser
 
 from website.models import Node
@@ -166,11 +167,7 @@ class NodePointersSerializer(JSONAPISerializer):
 class NodeFilesSerializer(JSONAPISerializer):
 
     id = ser.CharField(read_only=True, source='_id')
-    provider = ser.CharField(read_only=True)
-    path = ser.CharField(read_only=True)
-    item_type = ser.CharField(read_only=True)
-    name = ser.CharField(read_only=True)
-    metadata = ser.DictField(read_only=True)
+    attributes = ser.SerializerMethodField(help_text="A dictionary field containing folder properties")
 
     class Meta:
         type_ = 'files'
@@ -181,6 +178,16 @@ class NodeFilesSerializer(JSONAPISerializer):
         'related': Link('nodes:node-files', kwargs={'node_id': '<node_id>'},
                         query_kwargs={'path': '<path>', 'provider': '<provider>'}),
     })
+
+    @staticmethod
+    def get_attributes(obj):
+        ret = OrderedDict((
+            ('provider', obj['provider']),
+            ('path', obj['path']),
+            ('item_type', obj['item_type']),
+            ('name', obj['name']),
+            ('metadata', obj['metadata'])))
+        return ret
 
     @staticmethod
     def valid_self_link_methods(obj):
