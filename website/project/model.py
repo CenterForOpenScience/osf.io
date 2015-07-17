@@ -3125,7 +3125,7 @@ class DraftRegistration(AddonModelMixin, StoredObject):
         for page in self.registration_schema.schema['pages']:
             for question_id, question in page['questions'].iteritems():
                 if question_id == qid and 'description' in question:
-                    return question['description']
+                    return question
 
     def get_comments(self):
         """ Returns a list of all comments made on a draft in the format of :
@@ -3156,32 +3156,6 @@ class DraftRegistration(AddonModelMixin, StoredObject):
                 for comment in value['comments']:
                     flat_comments.append(comment)
         return flat_comments
-
-    def get_new_comments(self):
-        """ Returns a list of all comments admins haven't seen
-        In the same format as get_comments
-        """
-        comments = self.get_comments()
-
-        if comments:
-            for question_id, value in comments.iteritems():
-                for comment in value['comments']:
-                    if comment['adminHasSeen'] is False:
-                        comments.remove(question_id)
-
-        return comments
-
-    def has_new_comments(self):
-        """ Checks is a draft has comments that an admin hasn't seen
-        """
-        comments = self.get_flat_comments()
-
-        if comments:
-            for comment in comments:
-                if comment['adminHasSeen'] is False:
-                    return True
-
-        return False
 
     def register(self, auth):
 

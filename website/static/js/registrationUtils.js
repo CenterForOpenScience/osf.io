@@ -230,7 +230,6 @@ Question.prototype.addComment = function(save) {
     comment.seenBy.push(currentUser.id);
     self.nextComment('');
     self.comments.push(comment);
-    save();
 };
 /**
  * Shows/hides the Question example

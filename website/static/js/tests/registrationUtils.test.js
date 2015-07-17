@@ -212,7 +212,7 @@ describe('Comment', () => {
             assert.isFalse(comment.isDeleted());
             comment.isDeleted(true);
             assert.isTrue(comment.isDeleted());
-            assert.equal(comment.value(), 'this comment was deleted');
+            assert.equal(comment.value(), '');
 
             var user = {
                 fullname: faker.name.findName(),
@@ -227,7 +227,7 @@ describe('Comment', () => {
             assert.isFalse(comment.isDeleted());
             comment.isDeleted(true);
             assert.isTrue(comment.isDeleted());
-            assert.equal(comment.value(), 'this comment was deleted');
+            assert.equal(comment.value(), '');
         });
     });
     describe('#author', () => {
