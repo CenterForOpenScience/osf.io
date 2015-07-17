@@ -170,9 +170,6 @@ class NodePointersSerializer(JSONAPISerializer):
         pass
 
 
-
-
-
 class NodeFilesSerializer(JSONAPISerializer):
 
     id = ser.CharField(read_only=True, source='_id')
