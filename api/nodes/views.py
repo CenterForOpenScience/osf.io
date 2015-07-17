@@ -12,6 +12,9 @@ from api.base.utils import get_object_or_404, waterbutler_url_for
 from .serializers import NodeSerializer, NodePointersSerializer, NodeFilesSerializer
 from .permissions import ContributorOrPublic, ReadOnlyIfRegistration, ContributorOrPublicForPointers
 
+from api.base.exceptions import Gone
+from django.http import HttpResponseGone
+from django.core.exceptions import ObjectDoesNotExist
 
 
 class NodeMixin(object):
@@ -28,7 +31,7 @@ class NodeMixin(object):
         self.check_object_permissions(self.request, obj)
 
         if obj.is_deleted:
-            raise NotFound
+            raise Gone
         else:
             return obj
 

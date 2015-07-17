@@ -8,7 +8,8 @@ from api.base.filters import ODMFilterMixin
 from api.nodes.serializers import NodeSerializer
 from .serializers import UserSerializer
 
-from rest_framework.exceptions import NotFound
+from api.base.exceptions import Gone
+
 
 class UserMixin(object):
     """Mixin with convenience methods for retrieving the current node based on the
@@ -21,13 +22,12 @@ class UserMixin(object):
     def get_user(self, check_permissions=True):
         obj = get_object_or_404(User, self.kwargs[self.node_lookup_url_kwarg])
 
-        if check_permissions & obj.is_disabled == False:
-
+        if check_permissions & obj.is_disabled is False:
             # May raise a permission denied
             self.check_object_permissions(self.request, obj)
             return obj
         else:
-            raise NotFound
+            raise Gone
 
 class UserList(generics.ListAPIView, ODMFilterMixin):
     """Users registered on the OSF.
