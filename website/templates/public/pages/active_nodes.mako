@@ -13,7 +13,7 @@
     %>
     <div class="row">
         <div class="col-sm-4 col-md-3">
-            <div data-offset-bottom="215" class="sidebar hidden-print hidden-xs affix" role="complementary">
+            <div data-offset-bottom="215" class="panel panel-default m-t-lg hidden-print hidden-xs affix" role="complementary">
                 <ul class="nav nav-stacked nav-pills">
                     <li><a href='#newPublicProjects'>Newest Public Projects</a></li>
                     <li><a href='#newPublicRegistrations'>Newest Public Registrations</a></li>
@@ -77,15 +77,15 @@
                     </div>
                     <div class="col-md-2">
                         % if metric == 'hits':
-                            <span class="project-meta pull-right text-primary" rel='tooltip' data-original-title='${ hits[node._id].get('hits') } views (${ hits[node._id].get('visits') } visits)'>
+                            <span class="project-meta pull-right" rel='tooltip' data-original-title='${ hits[node._id].get('hits') } views (${ hits[node._id].get('visits') } visits)'>
                                 ${ hits[node._id].get('hits') }&nbsp;views (last&nbsp;week)
                             </span>
                         % elif metric == 'date_created':
-                            <span class="project-meta pull-right text-primary" rel='tooltip' data-original-title='Created: ${explicit_date}'>
+                            <span class="project-meta pull-right" rel='tooltip' data-original-title='Created: ${explicit_date}'>
                                 ${node.date_created.date()}
                             </span>
                         % elif metric == 'registered_date':
-                            <span class="project-meta pull-right text-primary" rel='tooltip' data-original-title='Registered: ${explicit_date}'>
+                            <span class="project-meta pull-right" rel='tooltip' data-original-title='Registered: ${explicit_date}'>
                                 ${node.registered_date.date()}
                             </span>
                         % endif

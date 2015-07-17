@@ -37,14 +37,14 @@
                         <table class="table table-striped">
                             <tbody data-bind="foreach:{data:results, afterRender:addTips}">
                                 <tr data-bind="if:!($root.selected($data))">
-                                    <td>
+                                    <td class="osf-icon-td">
                                         <a
                                                 class="btn btn-success contrib-button"
                                                 data-bind="click:$root.add, tooltip: {title: 'Add link'}"
                                             ><i class="fa fa-plus"></i></a>
                                     </td>
                                     <td data-bind="text:title" class="overflow"></td>
-                                    <td data-bind="text:$root.authorText($data)"></td>
+                                    <td style="width: 25%" data-bind="text:$root.authorText($data)"></td>
                                 </tr>
                             </tbody>
                         </table>
@@ -65,14 +65,14 @@
                         <table class="table table-striped">
                             <tbody data-bind="foreach:{data:selection, afterRender:addTips}">
                                 <tr>
-                                    <td>
+                                    <td class="osf-icon-td">
                                         <a
                                                 class="btn btn-default contrib-button"
                                                 data-bind="click:$root.remove, tooltip: {title: 'Remove link'}"
                                             ><i class="fa fa-minus"></i></a>
                                     </td>
-                                    <td data-bind="text:title" class="overflow"></td>
-                                    <td data-bind="text:$root.authorText($data)"></td>
+                                    <td  data-bind="text:title" class="overflow"></td>
+                                    <td style="width: 25%" data-bind="text:$root.authorText($data)"></td>
                                 </tr>
                             </tbody>
                         </table>
