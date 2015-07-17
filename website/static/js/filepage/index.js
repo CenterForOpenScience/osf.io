@@ -33,7 +33,7 @@ var FileViewPage = {
             revisions: waterbutler.buildRevisionsUrl(self.file.path, self.file.provider, self.node.id),
             content: waterbutler.buildDownloadUrl(self.file.path, self.file.provider, self.node.id, {accept_url: false, mode: 'render'})
         });
-
+        debugger;
         $(document).on('fileviewpage:delete', function() {
             bootbox.confirm({
                 title: 'Delete file?',
@@ -58,7 +58,11 @@ var FileViewPage = {
             });
         });
         $(document).on('fileviewpage:rent', function() {
-            self.context.file.rented == true ? false : true
+            $.ajax({
+               type: 'POST',
+                url: self.file.urls.metadata,
+                beforeSend: $osf.setXHRAuthorization
+            });
         });
         $(document).on('fileviewpage:download', function() {
             window.location = self.file.urls.content;
