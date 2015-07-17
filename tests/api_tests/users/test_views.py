@@ -220,4 +220,5 @@ class TestDeactivatedUser(ApiTestCase):
     def test_return_deactivated_user(self):
         self.url = '/{}users/{}/'.format(API_BASE, self.user_one._id)
         res = self.app.get(self.url, auth = self.auth_one, expect_errors=True)
-        assert_equal(res.status_code, 404)
+
+        assert_equal(res.status_code, 410)

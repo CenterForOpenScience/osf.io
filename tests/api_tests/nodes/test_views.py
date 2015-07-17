@@ -1348,12 +1348,12 @@ class TestReturnDeletedNode(ApiTestCase):
     def test_return_deleted_public_node(self):
         self.url = '/{}nodes/{}/'.format(API_BASE, self.public_deleted._id)
         res = self.app.get(self.url, expect_errors=True)
-        assert_equal(res.status_code, 404)
+        assert_equal(res.status_code, 410)
 
     def test_return_deleted_private_node(self):
         self.url = '/{}nodes/{}/'.format(API_BASE, self.private_deleted._id)
         res = self.app.get(self.url, auth=self.basic_auth, expect_errors=True)
-        assert_equal(res.status_code, 404)
+        assert_equal(res.status_code, 410)
 
     def test_edit_deleted_public_node(self):
         self.url = '/{}nodes/{}/'.format(API_BASE, self.public_deleted._id)
@@ -1361,7 +1361,7 @@ class TestReturnDeletedNode(ApiTestCase):
                                                                'node_id': self.public_deleted._id,
                                                                'category': self.public_deleted.category},
                                             auth=self.basic_auth, expect_errors=True)
-        assert_equal(res.status_code, 404)
+        assert_equal(res.status_code, 410)
         # assert_equal(res.json['data']['title'], self.public_deleted.title)
 
     def test_edit_deleted_private_node(self):
@@ -1370,15 +1370,16 @@ class TestReturnDeletedNode(ApiTestCase):
                                                                'node_id': self.private_deleted._id,
                                                                'category': self.private_deleted.category},
                                             auth=self.basic_auth, expect_errors=True)
-        assert_equal(res.status_code, 404)
+        assert_equal(res.status_code, 410)
         # assert_equal(res.json['data']['title'], self.public_deleted.title)
 
     def test_delete_deleted_public_node(self):
         self.url = '/{}nodes/{}/'.format(API_BASE, self.public_deleted._id)
         res = self.app.delete(self.url, auth = self.basic_auth, expect_errors=True)
-        assert_equal(res.status_code, 404)
+        assert_equal(res.status_code, 410)
 
     def test_delete_deleted_private_node(self):
         self.url = '/{}nodes/{}/'.format(API_BASE, self.private_deleted._id)
         res = self.app.delete(self.url, auth=self.basic_auth, expect_errors=True)
-        assert_equal(res.status_code, 404)
+        assert_equal(res.status_code, 410)
+
