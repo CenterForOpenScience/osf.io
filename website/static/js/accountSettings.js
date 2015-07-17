@@ -199,7 +199,7 @@ var UserProfileViewModel = oop.extend(ChangeMessageMixin, {
                 for (var i=0; i<emails.length; i++) {
                     if (emails[i].address() === email.address()) {
                         this.emailInput('');
-                        $osf.growl('<em>' + email.address()  + '<em> added to your account.','You will receive a confirmation email at <em>' + email.address()  + '<em>. Please check your email and confirm.', 'success');
+                        $osf.growl('<em>' + email.address()  + '</em> added to your account.','You will receive a confirmation email at <em>' + email.address()  + '</em>. Please check your email and confirm.', 'success');
                         return;
                     }
                 }
@@ -219,8 +219,8 @@ var UserProfileViewModel = oop.extend(ChangeMessageMixin, {
                 if (confirmed) {
                     self.client.update(self.profile(), email).done(function () {
                         $osf.growl(
-                            'Email confirmation resent to <em>' + email.address() + '<em>',
-                            'You will receive a new confirmation email at <em>' + email.address()  + '<em>. Please check your email and confirm.',
+                            'Email confirmation resent to <em>' + email.address() + '</em>',
+                            'You will receive a new confirmation email at <em>' + email.address()  + '</em>. Please check your email and confirm.',
                             'success');
                     });
                 }
@@ -238,7 +238,7 @@ var UserProfileViewModel = oop.extend(ChangeMessageMixin, {
                     if (confirmed) {
                         self.profile().emails.remove(email);
                         self.client.update(self.profile()).done(function () {
-                            $osf.growl('Email Removed', '<em>' + email.address() + '<em>', 'success');
+                            $osf.growl('Email Removed', '<em>' + email.address() + '</em>', 'success');
                         });
                     }
                 }
