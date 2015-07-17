@@ -882,14 +882,6 @@ class TestAddNodeContributor(ApiTestCase):
         res = self.app.post(self.url, params=self.default_user_data, auth=self.creator_auth, expect_errors=True)
         assert_equal(res.status_code, 400)
 
-    def test_creator_add_already_existing_contributor_with_non_default_conditions(self):
-        self.project.add_contributor(contributor=self.user,permissions=['read', 'write'], save=True)
-        res = self.app.post(self.url, params=self.default_user_data, auth=self.creator_auth, expect_errors=True)
-
-        self.project.reload()
-        assert_equal(res.status_code, 400)
-        assert_false(self.project.has_permission(self.user, 'admin'))
-
     def test_creator_add_non_existing_contributor(self):
         data = {
             'id': 'non_existent',
@@ -912,6 +904,26 @@ class TestAddNodeContributor(ApiTestCase):
 
         non_contributor_auth = (self.user.username, password)
         res = self.app.post(self.url, params=data, auth=non_contributor_auth, expect_errors=True)
+
+        self.project.reload()
+        assert_equal(res.status_code, 403)
+        assert_not_in(user_two, self.project.contributors)
+
+    def test_non_admin_contributor_add_contributor(self):
+        password = fake.password()
+        user_two = UserFactory.build()
+        user_two.set_password(password)
+        user_two.save()
+
+        self.project.add_contributor(self.user)
+
+        data = {
+            'id': user_two._id,
+            'permission': 'write',
+            'bibliographic': True
+        }
+
+        res = self.app.post(self.url, params=data, auth=self.user_auth, expect_errors=True)
 
         self.project.reload()
         assert_equal(res.status_code, 403)
@@ -961,7 +973,7 @@ class TestRemoveNodeContributor(ApiTestCase):
         self.project.reload()
         assert_not_in(self.user, self.project.contributors)
 
-    def test_admin_remove_self(self):
+    def test_admin_remove_self_with_other_admin(self):
         self.project.add_permission(self.user, 'admin', save=True)
 
         self.project.reload()
@@ -989,13 +1001,6 @@ class TestRemoveNodeContributor(ApiTestCase):
         res = self.app.delete(self.url_contributor, auth=self.admin_auth, expect_errors=True)
         assert_equal(res.status_code, 404)
 
-    def test_unique_admin_remove_other_contributor(self):
-        res = self.app.delete(self.url_contributor, auth=self.admin_auth)
-        assert_equal(res.status_code, 204)
-
-        self.project.reload()
-        assert_not_in(self.user, self.project.contributors)
-
     def test_unique_admin_remove_self(self):
         res = self.app.delete(self.url_admin, auth=self.admin_auth, expect_errors=True)
         assert_equal(res.status_code, 400)
@@ -1004,6 +1009,11 @@ class TestRemoveNodeContributor(ApiTestCase):
         assert_in(self.admin, self.project.contributors)
 
     def test_admin_remove_non_contributor(self):
+        url_fake = '/{}nodes/{}/contributors/fake/'.format(API_BASE, self.project._id)
+        res = self.app.delete(url_fake, auth=self.admin_auth, expect_errors=True)
+        assert_equal(res.status_code, 404)
+
+    def test_admin_remove_non_existent_contributor(self):
         self.non_admin = UserFactory.build()
         password = fake.password()
         self.non_admin.set_password(password)
@@ -1011,17 +1021,6 @@ class TestRemoveNodeContributor(ApiTestCase):
         self.url_non_contributor = '/{}nodes/{}/contributors/{}/'.format(API_BASE, self.project._id, self.non_admin._id)
         res = self.app.delete(self.url_non_contributor, auth=self.admin_auth, expect_errors=True)
         assert_equal(res.status_code, 404)
-
-    def test_non_creator_admin_remove_contributor(self):
-        self.project.add_permission(self.user, 'admin', save=True)
-
-        self.project.reload()
-        print self.project.get_permissions(self.user)
-        res = self.app.delete(self.url_admin, auth=self.user_auth, expect_errors=True)
-        assert_equal(res.status_code, 204)
-
-        self.project.reload()
-        assert_not_in(self.admin, self.project.contributors)
 
     def test_non_admin_remove_contributor(self):
         res = self.app.delete(self.url_admin, auth=self.user_auth, expect_errors=True)
@@ -1060,15 +1059,6 @@ class TestEditNodeContributor(ApiTestCase):
         self.project.add_contributor(contributor=self.user, save=True)
         self.url_contributor = '/{}nodes/{}/contributors/{}/'.format(API_BASE, self.project._id, self.user._id)
         self.url_admin = '/{}nodes/{}/contributors/{}/'.format(API_BASE, self.project._id, self.admin._id)
-
-        self.default_data = {
-            'bibliographic': True,
-            'permission': ''
-        }
-        self.change_defaults = {
-            'bibliographic': False,
-            'permission': 'read'
-        }
 
     def test_admin_change_contributor_admin_to_read_permission(self):
         res = self.app.put(self.url_contributor, {'permission': 'read'}, auth=self.admin_auth, expect_errors=False)
@@ -1109,7 +1099,11 @@ class TestEditNodeContributor(ApiTestCase):
 
         self.project.reload()
         assert_false(self.project.get_visible(self.user))
-        res = self.app.put(self.url_contributor, self.default_data, auth=self.admin_auth, expect_errors=False)
+        data = {
+            'bibliographic': True,
+            'permission': ''
+        }
+        res = self.app.put(self.url_contributor, data, auth=self.admin_auth, expect_errors=False)
         assert_equal(res.status_code, 200)
 
         self.project.reload()
@@ -1146,17 +1140,17 @@ class TestEditNodeContributor(ApiTestCase):
         assert_equal(res.status_code, 200)
 
         self.project.reload()
-        assert_false(self.project.has_permission(self.admin, 'admin'))
+        assert_equal(self.project.get_permissions(self.admin), ['read', 'write'])
         res = self.app.put(self.url_admin, {'permission': 'read'}, auth=self.admin_auth, expect_errors=False)
         assert_equal(res.status_code, 200)
 
         self.project.reload()
-        assert_false(self.project.has_permission(self.admin, 'write'))
+        assert_equal(self.project.get_permissions(self.admin), ['read'])
         res = self.app.put(self.url_admin, {'permission': 'admin'}, auth=self.admin_auth, expect_errors=True)
         assert_equal(res.status_code, 403)
 
         self.project.reload()
-        assert_false(self.project.has_permission(self.admin, 'write'))
+        assert_equal(self.project.get_permissions(self.admin), ['read'])
 
     def test_admin_remove_all_admin_privileges(self):
         self.project.remove_contributor(self.user, Auth(self.admin))
@@ -1167,7 +1161,7 @@ class TestEditNodeContributor(ApiTestCase):
         assert_true(self.project.has_permission(self.admin, 'admin'))
 
     def test_admin_remove_all_bibliographic_privileges(self):
-        self.project.remove_contributor(self.user, Auth(self.admin))
+        self.project.set_visible(self.user, False, save=True)
         data = {
             'permission': '',
             'bibliographic': False
@@ -1176,14 +1170,18 @@ class TestEditNodeContributor(ApiTestCase):
         assert_equal(res.status_code, 400)
 
         self.project.reload()
-        assert_true(self.project.has_permission(self.admin, 'admin'))
+        assert_true(self.project.get_visible(self.admin))
 
     def test_admin_change_non_contributor_status(self):
         non_contributor = UserFactory.build()
         non_contributor.set_password(self.password)
         non_contributor.save()
         self.url_non_contributor = '/{}nodes/{}/contributors/{}/'.format(API_BASE, self.project._id, non_contributor._id)
-        res = self.app.put(self.url_non_contributor, self.change_defaults, auth=self.admin_auth, expect_errors=True)
+        data = {
+            'bibliographic': False,
+            'permission': 'read'
+        }
+        res = self.app.put(self.url_non_contributor, data, auth=self.admin_auth, expect_errors=True)
         assert_equal(res.status_code, 404)
 
     def test_non_admin_change_contributor_status(self):
@@ -1194,11 +1192,15 @@ class TestEditNodeContributor(ApiTestCase):
         self.project.add_contributor(contributor)
 
         self.project.reload()
-        res = self.app.put(self.url_contributor, self.change_defaults, auth=contributor_auth, expect_errors=True)
+        data = {
+            'bibliographic': False,
+            'permission': 'read'
+        }
+        res = self.app.put(self.url_contributor, data, auth=contributor_auth, expect_errors=True)
         assert_equal(res.status_code, 403)
 
         self.project.reload()
-        assert_true(self.project.has_permission(self.user, 'write'))
+        assert_equal(self.project.get_permissions(self.user), ['read', 'write'])
 
     def test_non_admin_change_own_bibliographic_status(self):
         data = {
@@ -1241,7 +1243,7 @@ class TestEditNodeContributor(ApiTestCase):
         assert_equal(res.status_code, 200)
 
         self.project.reload()
-        assert_false(self.project.has_permission(self.admin, 'admin'))
+        assert_equal(self.project.get_permissions(self.admin), ['read', 'write'])
         res = self.app.put(self.url_admin, data_one, auth=self.user_auth, expect_errors=True)
         print res
         assert_equal(res.status_code, 400)
@@ -1250,14 +1252,18 @@ class TestEditNodeContributor(ApiTestCase):
         assert_true(self.project.get_visible(self.admin))
         res = self.app.put(self.url_contributor, data_two, auth=self.user_auth, expect_errors=True)
         assert_equal(res.status_code, 400)
-        assert_true(self.project.has_permission(self.user, 'admin'))
+        assert_equal(self.project.get_permissions(self.user), ['read', 'write', 'admin'])
 
     def test_not_logged_in_change_contributor_status(self):
-        res = self.app.put(self.url_contributor, self.default_data, expect_errors=True)
+        data = {
+            'bibliographic': True,
+            'permission': ''
+        }
+        res = self.app.put(self.url_contributor, data, expect_errors=True)
         assert_equal(res.status_code, 403)
 
         self.project.reload()
-        assert_true(self.project.has_permission(self.user, 'write'))
+        assert_equal(self.project.get_permissions(self.user), ['read', 'write'])
 
 
 class TestNodeContributorFiltering(ApiTestCase):
