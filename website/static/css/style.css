@@ -444,3 +444,9 @@ button.close {
 .select2-search-choice-close {
     margin-top: -3px;
 }
+
+.affix-bottom {
+    position: relative;
+    word-break: break-all;
+    word-break: break-word; /* Non standard for webkit*/
+}
