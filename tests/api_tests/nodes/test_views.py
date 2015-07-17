@@ -561,7 +561,7 @@ class TestNodeIncludeQueryParams(ApiTestCase):
         self.helper_test_keys_object(additional_query_params)
 
     def test_node_list_get_keys(self):
-        url_list = '/{}nodes/?include=children,contributors,pointers'.format(API_BASE)
+        url_list = '/{}nodes/?include=children,contributors,pointers,registrations'.format(API_BASE)
         res = self.app.get(url_list)
         assert_equal(res.status_code, 200)
         params_one = res.json['data'][0]['additional_query_params']
@@ -569,7 +569,7 @@ class TestNodeIncludeQueryParams(ApiTestCase):
         self.helper_test_keys_list(params_one, params_two)
 
     def test_node_list_get_all_ids(self):
-        url_list = '/{}nodes/?include=children,contributors,pointers'.format(API_BASE)
+        url_list = '/{}nodes/?include=children,contributors,pointers,registrations'.format(API_BASE)
         res = self.app.get(url_list)
         assert_equal(res.status_code, 200)
         params_one = res.json['data'][0]['additional_query_params']
@@ -606,13 +606,11 @@ class TestNodeIncludeQueryParams(ApiTestCase):
 
     def test_node_registration_get_values(self):
         url_registered_node_list = self.url_detail \
-                                   + 'registrations/?include=children,contributors,pointers'
+                                   + 'registrations/?include=children,contributors,pointers,registrations'
         res = self.app.get(url_registered_node_list)
         assert_equal(res.status_code, 200)
         additional_query_params = res.json['data'][0]['additional_query_params']
-        assert_equal(self.registration.node_ids, additional_query_params['children'].keys())
-        assert_in(self.contributor._id, additional_query_params['contributors'])
-        assert_in(self.pointer._id, additional_query_params['pointers'])
+        self.helper_test_keys_object(additional_query_params)
 
 class TestNodeUpdate(ApiTestCase):
 
