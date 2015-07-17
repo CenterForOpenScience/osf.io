@@ -200,18 +200,29 @@ utils.arrayEqual = function(a, b) {
     return $(a).not(b).length === 0 && $(b).not(a).length === 0;
 };
 
+utils.addFiltersToQuery = function(query,filters){
+    if (filters) {
+        filters.forEach(function (filter) {
+            query = utils.filteredQuery(query, filter)
+        });
+    }
+    return query
+};
+
 utils.loadStats = function(vm) { //plug and play function to send elasticsearch agg and load in stats, and parse for chart
     if (vm.statsQuerys) {
         //For every aggregation required, perform a search
         $.map(Object.keys(vm.statsQuerys), function (statQuery) {
             vm.statsLoaded(false);
+            //var queryToPost = utils.addFiltersToQuery(vm.statsQuerys[statQuery].query, vm.statsQuerys[statQuery].filters);
+            var queryToPost = utils.addFiltersToQuery(vm.buildQuery().query, vm.statsQuerys[statQuery].filters);
+            queryToPost = utils.addAggToQuery(queryToPost,vm.statsQuerys[statQuery].aggregations);
             m.request({
-                method: 'POST', //TODO need to check if this is formed correctly!
-                data: vm.statsQuerys[statQuery],
+                method: 'POST',
+                data: queryToPost,
                 url: '/api/v1/share/search/?' + $.param({v: 2}),
                 background: true
-            }).then(function (data) {
-                vm.statsData = {'charts': {}}; //TODO @bdyetton remove charts namespace if not needed later
+            }).then(function (data) { //TODO maybe this should be moved to the stats file?
                 if (data.aggregations) {
                     $.map(Object.keys(data.aggregations), function (key) { //parse data and load correctly
                         if (vm.statsParsers[key]) {
@@ -224,7 +235,7 @@ utils.loadStats = function(vm) { //plug and play function to send elasticsearch 
                     });
                 }
                 vm.statsLoaded(true);
-            }).then(m.redraw, function () {
+            }).then(m.redraw, function () { //Redraw is called everytime we get stats data, and will attempt to redraw every chart even if data for it is not availble for it yet.
                 console.log('failure to load stats')
             }); //TODO deal with this error correctly
         });
@@ -256,7 +267,7 @@ utils.termsFilter = function(field, value, min_doc_count) {
     ret.terms[field] = value;
     ret.terms.size = 0;
     ret.terms.exclude = 'of|and|or';
-    ret.terms.min_doc_count = min_doc_count; //TODO break this out @bdyetton?
+    ret.terms.min_doc_count = min_doc_count;
     return ret;
 };
 
@@ -267,7 +278,7 @@ utils.matchQuery = function(field, value) {
 };
 
 utils.fieldRange = function(field_name, gte, lte) {
-    lte = lte || new Date().getTime()
+    lte = lte || new Date().getTime();
     gte = gte || 0;
     ret = {'range': {}};
     ret.range[field_name] = {'gte': gte, 'lte': lte};
@@ -305,10 +316,12 @@ utils.dateHistogramFilter = function(feild,gte,lte,interval){
     }
 };
 
-utils.addAggtoQuery = function(query,agg)
+utils.addAggToQuery = function(query, agg)
 {
-    query['aggs'] = queryToAdd;
-    return query;
+    var ret = {};
+    ret.query = query;
+    if (agg){ret.aggregations = agg}
+    return ret;
 };
 
 utils.updateAggs = function(vm,aggs)

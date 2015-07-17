@@ -32,8 +32,11 @@ FRONTEND_VERSION = 1
 @requires_search
 def search(query, raw=False, index='share'):
     # Run the real query and get the results
+    if query.get('aggregations'):
+        if query['aggregations'].get('sourcesByTimes'):
+            #query = stats(query)
+            index = settings.SHARE_ELASTIC_INDEX_TEMPLATE.format(FRONTEND_VERSION)
     results = share_es.search(index=index, doc_type=None, body=query)
-
     for hit in results['hits']['hits']:
         hit['_source']['highlight'] = hit.get('highlight', {})
     return results if raw else {
@@ -152,20 +155,21 @@ def stats(query=None):
             }
         }
     }
-    date_histogram_query = {
-        'query': {
-            'filtered': {
-                'query': query['query'],
-                'filter': {
-                    'range': {
-                        'dateUpdated': {
-                            'gt': three_months_ago
-                        }
-                    }
-                }
-            }
-        }
-    }
+    # date_histogram_query = {
+    #     'query': {
+    #         'filtered': {
+    #             'query': query['query'],
+    #             'filter': {
+    #                 'range': {
+    #                     'dateUpdated': {
+    #                         'gt': three_months_ago
+    #                     }
+    #                 }
+    #             }
+    #         }
+    #     }
+    # }
+    date_histogram_query = query
     date_histogram_query['aggs'] = {
         "date_chunks": {
             "terms": {
@@ -197,7 +201,7 @@ def stats(query=None):
     results['aggregations']['date_chunks'] = date_results['aggregations']['date_chunks']
 
     #chart_results = data_for_charts(results)
-    return results
+    return date_histogram_query
 
 
 def data_for_charts(elastic_results):

@@ -6,6 +6,14 @@ var $ = require('jquery');
 var $osf = require('js/osfHelpers');
 var utils = require('./utils');
 
+//var mouseDown = 0;
+//document.body.onmousedown = function() {
+//  ++mouseDown;
+//};
+//document.body.onmouseup = function() {
+//  --mouseDown;
+//};
+
 var Stats = {};
 
 function donutGraph (data, vm) {
@@ -55,10 +63,12 @@ function timeGraph (data,vm) {
                 height: 20
             },
             onbrush: function(zoomWin){
-                var xTick = (data.rawX.slice(-1)[0]-data.rawX[0])/data.rawX.length;
-                var xMin = data.rawX[0]+xTick*zoomWin[0];
-                var xMax = data.rawX[0]+xTick*zoomWin[1];
-                return [xMin, xMax]; //TODO here is where a range restriction filter is applied to the search query
+                console.log(zoomWin)
+                var rawX = data.charts.shareTimeGraph.rawX;
+                var xTick = (rawX.slice(-1)[0]-rawX[0])/rawX.length;
+                var xMin = rawX[0]+xTick*zoomWin[0];
+                var xMax = rawX[0]+xTick*zoomWin[1];
+                //Stats.mapFilter(vm, utils.fieldRange('dateUpdated',xMin,xMax), 'shareTimeGraph');
                 //range restriction should influence donut, and donut should influence time graph. both should influence main query
                 //should come up with some form of filter subscription, where it is easy to subscribe to filters from graphs
             }
@@ -103,30 +113,22 @@ function timeGraph (data,vm) {
 }
 
 Stats.sourcesAgg = function(){
-    var sourcesQuery = {'query': {'match_all':{}}};
-    var sourcesAgg = {'sources': utils.termsFilter('field','_type')}
-    sourcesQuery['aggregations'] = sourcesAgg;
-    return sourcesQuery
+    var sourcesQuery = {'match_all':{}};
+    var sourcesAgg = {'sources': utils.termsFilter('field','_type')};
+    return {'query' : sourcesQuery, 'aggregations': sourcesAgg ,'filters' : []}
 };
 
 Stats.sourcesByDatesAgg = function(){
     var dateTemp = new Date(); //get current time
     dateTemp.setMonth(dateTemp.getMonth() - 3);
     var threeMonthsAgo = dateTemp.getTime();
+    
+    var dateHistogramQuery = {'match_all':{}};
+    var dateHistogramFilter = utils.fieldRange('dateUpdated',threeMonthsAgo);
+    var dateHistogramAgg = {'sourcesByTimes': utils.termsFilter('field','_type')};
+    dateHistogramAgg.sourcesByTimes['aggregations'] = {'articlesOverTime' : utils.dateHistogramFilter('dateUpdated',threeMonthsAgo)};
 
-    //TODO spit this out to elasticserch via python
-    var dateHistogramQuery = {
-        'query': utils.filteredQuery(
-            {'match_all':{}},
-            utils.fieldRange('dateUpdated',threeMonthsAgo))
-    };
-
-    //Form up agg
-    var timeAgg = {'sourcesByTimes': utils.termsFilter('field','_type')};
-    timeAgg.sourcesByTimes['aggregations'] = {'articlesOverTime' : utils.dateHistogramFilter('dateUpdated',threeMonthsAgo)};
-    dateHistogramQuery['aggregations'] = timeAgg;
-
-    return dateHistogramQuery
+    return {'query' : dateHistogramQuery, 'aggregations': dateHistogramAgg ,'filters' : []};//[dateHistogramFilter]}
 };
 
 Stats.timeSinceEpochInMsToMMYY = function(timeSinceEpochInMs)
@@ -146,7 +148,7 @@ Stats.shareDonutGraphParser = function(data)
     chartData.type = 'donut';
 
     var providerCount = 0;
-    var hexColors = utils.generateColors(data.aggregations.sources.buckets.length)
+    var hexColors = utils.generateColors(data.aggregations.sources.buckets.length);
     var i = 0;
     data.aggregations.sources.buckets.forEach(
         function (bucket) {
@@ -161,6 +163,17 @@ Stats.shareDonutGraphParser = function(data)
     return chartData
 };
 
+Stats.mapFilter = function(vm,filter,sourceOfFilter) //TODO
+{
+    vm.statsQuerys.shareDonutGraph.filters.push(filter);
+    utils.search(vm)//hack to force update
+    //TODO work out some way to add filters based on some mapping
+    //MUST BE ADDED to Querys somehow!
+    //add everything to main query for now...
+    //if ('main' in vm.filterCallbackMap[sourceOfFilter] ||  ~vm.filterCallbackMap[sourceOfFilter]){
+    //    utils.updateFilter(vm, filter, true)}
+};
+
 Stats.shareTimeGraphParser = function(data)
 {
     var chartData = {};
@@ -172,10 +185,10 @@ Stats.shareTimeGraphParser = function(data)
     chartData.groups = [];
     var grouping = [];
     grouping.push('x');
-    var hexColors = utils.generateColors(data.aggregations.sourcesByTimes.buckets.length)
+    var hexColors = utils.generateColors(data.aggregations.sourcesByTimes.buckets.length);
     var i = 0;
-    var datesCol = ['x'];
-    data.aggregations.sourcesByTimes.buckets.forEach(
+    var datesCol = [];
+    data.aggregations.sourcesByTimes.buckets.forEach( //TODO what would be nice is a helper function to do this for any agg returned by elastic
         function (source) {
             chartData.colors[source.key] = hexColors[i];
             var column = [source.key];
@@ -191,9 +204,10 @@ Stats.shareTimeGraphParser = function(data)
             i = i + 1;
         }
     );
-    chartData.groups.push(grouping);
-    chartData.columns.unshift(datesCol);
     chartData.rawX = datesCol;
+    chartData.groups.push(grouping);
+    chartData.columns.unshift('x'.concat(datesCol));
+
     return chartData;
 };
 
@@ -211,8 +225,8 @@ Stats.view = function(ctrl) {
             m('.col-md-12', [
                 m('.row', m('.col-md-12', [
                     m('.row', (ctrl.vm.statsData && ctrl.vm.count > 0) ? [
-                        m('.col-sm-3', ctrl.drawGraph('shareDonutGraph', donutGraph)),
-                        m('.col-sm-9', ctrl.drawGraph('shareTimeGraph', timeGraph))
+                        m('.col-sm-3', (ctrl.vm.statsData.charts.shareDonutGraph) ? [ctrl.drawGraph('shareDonutGraph', donutGraph)] : []),
+                        m('.col-sm-9', (ctrl.vm.statsData.charts.shareTimeGraph) ? [ctrl.drawGraph('shareTimeGraph', timeGraph)] : [])
                     ] : [])
                 ]))
             ]),
@@ -231,10 +245,11 @@ Stats.controller = function(vm) {
     var self = this;
 
     self.vm = vm;
-    self.vm.graphs = {};
+    self.vm.graphs = {}; //holds actual c3 chart objects
+    self.vm.statsData = {'charts': {}}; //holds data for charts
 
-    //request these aggregations for charts
-    self.vm.statsQuerys= {
+    //request these querys/aggregations for charts
+    self.vm.statsQuerys = {
         'shareTimeGraph' : Stats.sourcesByDatesAgg(),
         'shareDonutGraph' : Stats.sourcesAgg()
     };
@@ -245,8 +260,8 @@ Stats.controller = function(vm) {
         'sourcesByTimes' : Stats.shareTimeGraphParser
     };
 
-    self.vm.chartCallbackMap = {
-        //TODO map the callbacks from each graph to main search query and/or other aggs
+    self.vm.filterCallbackMap = { //Location : Query/Agg THESE ARE ONLY THE ONES NOT APPLIED TO ALL!
+        'shareTimeGraph' : ['main','shareDonutGraph'],
     };
 
     self.vm.totalCount = 0;
