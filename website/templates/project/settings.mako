@@ -67,6 +67,7 @@
         % if 'write' in user['permissions']:  ## Begin Configure Project
 
             % if not node['is_registration']:
+
                 <div class="panel panel-default">
                     <span id="configureNodeAnchor" class="anchor"></span>
                     <div class="panel-heading clearfix">
