@@ -98,21 +98,21 @@ class TestUserDetail(ApiTestCase):
         url = "/{}users/{}/".format(API_BASE, self.user_one._id)
         res = self.app.get(url)
         user_json = res.json['data']
-        assert_equal(user_json['fullname'], self.user_one.fullname)
-        assert_equal(user_json['social_accounts']['twitter'], 'howtopizza')
+        assert_equal(user_json['attributes']['fullname'], self.user_one.fullname)
+        assert_equal(user_json['attributes']['social_accounts']['twitter'], 'howtopizza')
 
     def test_get_incorrect_pk_user_logged_in(self):
         url = "/{}users/{}/".format(API_BASE, self.user_two._id)
         res = self.app.get(url)
         user_json = res.json['data']
-        assert_not_equal(user_json['fullname'], self.user_one.fullname)
+        assert_not_equal(user_json['attributes']['fullname'], self.user_one.fullname)
 
     def test_get_incorrect_pk_user_not_logged_in(self):
         url = "/{}users/{}/".format(API_BASE, self.user_two._id)
         res = self.app.get(url, auth=self.auth_one)
         user_json = res.json['data']
-        assert_not_equal(user_json['fullname'], self.user_one.fullname)
-        assert_equal(user_json['fullname'], self.user_two.fullname)
+        assert_not_equal(user_json['attributes']['fullname'], self.user_one.fullname)
+        assert_equal(user_json['attributes']['fullname'], self.user_two.fullname)
 
 
 class TestUserNodes(ApiTestCase):
