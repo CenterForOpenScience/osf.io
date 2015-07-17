@@ -119,8 +119,8 @@
 % else:
     <li
         node_reference="${summary['id']}:${'node' if summary['primary'] else 'pointer'}"
-        class="project list-group-item list-group-item-node unavailable">
-        <h4 class="list-group-item-heading f-w-lg">
+        class="project list-group-item list-group-item-node">
+        <p class="list-group-item-heading f-w-lg">
             %if summary['is_registration']:
                 Private Registration
             %elif summary['is_fork']:
@@ -130,7 +130,7 @@
             %else:
                 Private Component
             %endif
-        </h4>
+        </p>
     </li>
 
 % endif
