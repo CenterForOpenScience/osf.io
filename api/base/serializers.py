@@ -178,10 +178,12 @@ class JSONAPISerializer(ser.Serializer):
 
         attributes = super(JSONAPISerializer, self).to_representation(obj)
         data = {}
-        data['id'] = attributes['id']
-        data['links'] = attributes['links']
-        del attributes['id']
-        del attributes['links']
+        data['id'] = attributes.get('id')
+        data['links'] = attributes.get('links')
+        data['relationships'] = attributes.get('relationships')
+        attributes.pop('id', None)
+        attributes.pop('links', None)
+        attributes.pop('relationships', None)
         data['type'] = type_
         data['attributes'] = attributes
         if envelope:
