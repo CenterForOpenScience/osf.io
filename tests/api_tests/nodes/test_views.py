@@ -1122,12 +1122,12 @@ class TestNodeFilesList(ApiTestCase):
     def test_returns_public_files_logged_out(self):
         res = self.app.get(self.public_url, expect_errors=True)
         assert_equal(res.status_code, 200)
-        assert_equal(res.json['data'][0]['provider'], 'osfstorage')
+        assert_equal(res.json['data'][0]['attributes']['provider'], 'osfstorage')
 
     def test_returns_public_files_logged_in(self):
         res = self.app.get(self.public_url, auth=self.basic_auth)
         assert_equal(res.status_code, 200)
-        assert_equal(res.json['data'][0]['provider'], 'osfstorage')
+        assert_equal(res.json['data'][0]['attributes']['provider'], 'osfstorage')
 
     def test_returns_private_files_logged_out(self):
         res = self.app.get(self.private_url, expect_errors=True)
@@ -1140,7 +1140,7 @@ class TestNodeFilesList(ApiTestCase):
         res = self.app.get(self.private_url, auth=self.basic_auth)
         assert_equal(res.status_code, 200)
         assert_equal(len(res.json['data']), 1)
-        assert_equal(res.json['data'][0]['provider'], 'osfstorage')
+        assert_equal(res.json['data'][0]['attributes']['provider'], 'osfstorage')
 
     def test_returns_private_files_logged_in_non_contributor(self):
         res = self.app.get(self.private_url, auth=self.basic_auth_two, expect_errors=True)
@@ -1150,13 +1150,13 @@ class TestNodeFilesList(ApiTestCase):
         user_auth = Auth(self.user)
         res = self.app.get(self.private_url, auth=self.basic_auth)
         assert_equal(len(res.json['data']), 1)
-        assert_equal(res.json['data'][0]['provider'], 'osfstorage')
+        assert_equal(res.json['data'][0]['attributes']['provider'], 'osfstorage')
 
         self.project.add_addon('github', auth=user_auth)
         self.project.save()
         res = self.app.get(self.private_url, auth=self.basic_auth)
         data = res.json['data']
-        providers = [item['provider'] for item in data]
+        providers = [item['attributes']['provider'] for item in data]
         assert_equal(len(data), 2)
         assert_in('github', providers)
         assert_in('osfstorage', providers)
@@ -1181,8 +1181,8 @@ class TestNodeFilesList(ApiTestCase):
 
         url = '/{}nodes/{}/files/?path=%2F&provider=osfstorage'.format(API_BASE, self.project._id)
         res = self.app.get(url, auth=self.basic_auth)
-        assert_equal(res.json['data'][0]['name'], 'NewFile')
-        assert_equal(res.json['data'][0]['provider'], 'osfstorage')
+        assert_equal(res.json['data'][0]['attributes']['name'], 'NewFile')
+        assert_equal(res.json['data'][0]['attributes']['provider'], 'osfstorage')
 
     @mock.patch('api.nodes.views.requests.get')
     def test_handles_unauthenticated_waterbutler_request(self, mock_waterbutler_request):
