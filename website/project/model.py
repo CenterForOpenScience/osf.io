@@ -1574,7 +1574,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         for addon in self.get_addons():
             message = addon.after_delete(self, auth.user)
             if message:
-                status.push_status_message(message, 'info')
+                status.push_status_message(message, kind='info', trust=False)
 
         log_date = date or datetime.datetime.utcnow()
 
@@ -1688,7 +1688,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         for addon in original.get_addons():
             _, message = addon.after_fork(original, forked, user)
             if message:
-                status.push_status_message(message, 'info')
+                status.push_status_message(message, kind='info', trust=True)
 
         return forked
 
@@ -1699,7 +1699,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         :param auth: All the auth information including user, API key.
         :param template: Template name
         :param data: Form data
-        :param parent Node: parent registration of regitstration to be created
+        :param parent Node: parent registration of registration to be created
         """
         # NOTE: Admins can register child nodes even if they don't have write access them
         if not self.can_edit(auth=auth) and not self.is_admin_parent(user=auth.user):
@@ -1752,7 +1752,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         for addon in original.get_addons():
             _, message = addon.after_register(original, registered, auth.user)
             if message:
-                status.push_status_message(message, 'info')
+                status.push_status_message(message, kind='info', trust=False)
 
         for node_contained in original.nodes:
             if not node_contained.is_deleted:
@@ -2116,7 +2116,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         for addon in self.get_addons():
             message = addon.after_remove_contributor(self, contributor, auth)
             if message:
-                status.push_status_message(message, 'info')
+                status.push_status_message(message, kind='info', trust=True)
 
         if log:
             self.add_log(
@@ -2417,7 +2417,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         for addon in self.get_addons():
             message = addon.after_set_privacy(self, permissions)
             if message:
-                status.push_status_message(message, 'info')
+                status.push_status_message(message, kind='info', trust=False)
 
         if log:
             action = NodeLog.MADE_PUBLIC if permissions == 'public' else NodeLog.MADE_PRIVATE
