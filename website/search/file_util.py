@@ -32,6 +32,7 @@ def build_file_document(name, path, addon, include_content=True):
     if include_content:
         file_content = get_content_of_file(file_)
     return {
+        'id': file_.node._id,
         'name': name,
         'path': path,
         'content': file_content,

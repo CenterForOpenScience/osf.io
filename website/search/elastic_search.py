@@ -302,18 +302,23 @@ def update_file(name, path, addon, index=None):
     if file_util.is_indexed(name):
         index = index or settings.ELASTIC_INDEX
         file_doc = file_util.build_file_document(name, path, addon, include_content=True)
+        # elastic-search-mapper takes base64 encoded files.
         file_doc.update({'attachment': base64.encodestring(file_doc.pop('content'))})
         file_doc.update({'category': 'file'})
-        file_doc.update({'id': file_doc['path']})
         parent_id = file_doc['parent_id']
-        es.index(index=index, doc_type='file', parent=parent_id, id=file_doc['path'], body=file_doc, refresh=True)
+        es.index(index=index, doc_type='file', parent=parent_id, id=file_doc['id'], body=file_doc, refresh=True)
 
 
 @requires_search
 def update_all_files(node, index=None):
     index = index or INDEX
     for file_dict in file_util.collect_files(node):
-        update_file(index=index, **file_dict)
+        update_file(
+            name=file_dict['name'],
+            path=file_dict['path'],
+            addon=file_dict['addon'],
+            index=index,
+        )
 
 
 @requires_search
