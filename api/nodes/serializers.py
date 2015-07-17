@@ -1,9 +1,10 @@
+from collections import OrderedDict
 from rest_framework import serializers as ser
 
 from website.models import Node
 from framework.auth.core import Auth
 from rest_framework import exceptions
-from api.base.serializers import JSONAPISerializer, LinksField, Link, WaterbutlerLink
+from api.base.serializers import JSONAPISerializer, LinksField, Link, WaterbutlerLink, LinksFieldNoSelfLink
 
 
 class NodeSerializer(JSONAPISerializer):
@@ -15,52 +16,60 @@ class NodeSerializer(JSONAPISerializer):
     filterable_fields = frozenset(['title', 'description', 'public'])
 
     id = ser.CharField(read_only=True, source='_id')
-    title = ser.CharField(required=True)
-    description = ser.CharField(required=False, allow_blank=True, allow_null=True)
-    category = ser.ChoiceField(choices=category_choices, help_text="Choices: " + category_choices_string)
-    date_created = ser.DateTimeField(read_only=True)
-    date_modified = ser.DateTimeField(read_only=True)
-    tags = ser.SerializerMethodField(help_text='A dictionary that contains two lists of tags: '
-                                               'user and system. Any tag that a user will define in the UI will be '
-                                               'a user tag')
-
-    links = LinksField({
-        'html': 'get_absolute_url',
+    title = ser.CharField(required=True, write_only=True)
+    description = ser.CharField(required=False, allow_blank=True, allow_null=True, write_only=True)
+    category = ser.ChoiceField(choices=category_choices, help_text="Choices: " + category_choices_string, write_only=True)
+    attributes = ser.SerializerMethodField(help_text='A dictionary containing node properties')
+    links = LinksField({'html': 'get_absolute_url'})
+    relationships = LinksFieldNoSelfLink({
         'children': {
-            'related': Link('nodes:node-children', kwargs={'node_id': '<pk>'}),
-            'count': 'get_node_count',
+            'links': {
+                'related': {
+                    'href': Link('nodes:node-children', kwargs={'node_id': '<pk>'}),
+                    'meta': {
+                        'count': 'get_node_count'
+                    }
+                }
+            },
         },
         'contributors': {
-            'related': Link('nodes:node-contributors', kwargs={'node_id': '<pk>'}),
-            'count': 'get_contrib_count',
+            'links': {
+                'related': {
+                    'href': Link('nodes:node-contributors', kwargs={'node_id': '<pk>'}),
+                    'meta': {
+                        'count': 'get_contrib_count'
+                    }
+                }
+            },
         },
         'pointers': {
-            'related': Link('nodes:node-pointers', kwargs={'node_id': '<pk>'}),
-            'count': 'get_pointers_count',
+            'links': {
+                'related': {
+                    'href': Link('nodes:node-pointers', kwargs={'node_id': '<pk>'}),
+                    'meta': {
+                        'count': 'get_pointers_count'
+                    }
+                }
+            },
         },
         'registrations': {
-            'related': Link('nodes:node-registrations', kwargs={'node_id': '<pk>'}),
-            'count': 'get_registration_count',
+            'links': {
+                'related': {
+                    'href': Link('nodes:node-registrations', kwargs={'node_id': '<pk>'}),
+                    'meta': {
+                        'count': 'get_registration_count'
+                    }
+                }
+            },
         },
         'files': {
-            'related': Link('nodes:node-files', kwargs={'node_id': '<pk>'})
+            'links': {
+                'related': Link('nodes:node-files', kwargs={'node_id': '<pk>'})
+            }
         },
     })
-    properties = ser.SerializerMethodField(help_text='A dictionary of read-only booleans: registration, collection,'
-                                                     'and dashboard. Collections are special nodes used by the Project '
-                                                     'Organizer to, as you would imagine, organize projects. '
-                                                     'A dashboard is a collection node that serves as the root of '
-                                                     'Project Organizer collections. Every user will always have '
-                                                     'one Dashboard')
-    # TODO: When we have 'admin' permissions, make this writable for admins
-    public = ser.BooleanField(source='is_public', read_only=True,
-                              help_text='Nodes that are made public will give read-only access '
-                                                            'to everyone. Private nodes require explicit read '
-                                                            'permission. Write and admin access are the same for '
-                                                            'public and private nodes. Administrators on a parent '
-                                                            'node have implicit read permissions for all child nodes',
-                              )
-    # TODO: finish me
+
+    # TODO: When we have 'admin' permissions, make public writable for admins
 
     class Meta:
         type_ = 'nodes'
@@ -95,20 +104,21 @@ class NodeSerializer(JSONAPISerializer):
         return len(obj.nodes_pointer)
 
     @staticmethod
-    def get_properties(obj):
-        ret = {
-            'registration': obj.is_registration,
-            'collection': obj.is_folder,
-            'dashboard': obj.is_dashboard,
-        }
-        return ret
-
-    @staticmethod
-    def get_tags(obj):
-        ret = {
-            'system': [tag._id for tag in obj.system_tags],
-            'user': [tag._id for tag in obj.tags],
-        }
+    def get_attributes(obj):
+        ret = OrderedDict((
+            ('title', obj.title),
+            ('description', obj.description),
+            ('category', obj.category),
+            ('date_created', obj.date_created),
+            ('date_modifed', obj.date_modified),
+            ('public', obj.is_public),
+            ('tags', {
+                'system': [tag._id for tag in obj.system_tags],
+                'user': [tag._id for tag in obj.tags],
+            }),
+            ('dashboard', obj.is_dashboard),
+            ('collection', obj.is_folder),
+            ('registration', obj.is_registration)))
         return ret
 
     def create(self, validated_data):
