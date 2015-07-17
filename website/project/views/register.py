@@ -472,11 +472,10 @@ def node_register_template_page_post(auth, node, **kwargs):
         for child in register.get_descendants_recursive(lambda n: n.primary):
             child.set_privacy('public', auth, log=False)
 
-    push_status_message(
+    push_status_message((
         'Files are being copied to the newly created registration, '
         'and you will receive an email notification containing a link'
-        ' to the registration when the copying is finished.'
-        , 'info')
+        ' to the registration when the copying is finished.'), 'info')
 
     return {
         'status': 'initiated',

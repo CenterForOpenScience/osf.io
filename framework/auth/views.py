@@ -88,12 +88,10 @@ def forgot_password_post():
                 reset_link=reset_link
             )
         status.push_status_message(
-            'An email with instructions on how to reset the password for the '
-            'account associated with {0} has been sent. If you do not receive '
-            'an email and believe you should have please '
-            'contact OSF Support.'.format(email)
-            ,'success'
-        )
+            ('An email with instructions on how to reset the password '
+             'for the account associated with {0} has been sent. If you '
+             'do not receive an email and believe you should have please '
+             'contact OSF Support.').format(email), 'success')
 
     forms.push_errors_to_status(form.errors)
     return auth_login(forgot_password_form=form)
