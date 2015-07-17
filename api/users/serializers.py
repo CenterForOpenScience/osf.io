@@ -1,4 +1,3 @@
-from collections import OrderedDict
 from rest_framework import serializers as ser
 
 from api.base.serializers import JSONAPISerializer, LinksField, Link, LinksFieldNoSelfLink
