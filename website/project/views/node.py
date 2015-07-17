@@ -198,12 +198,13 @@ def project_new_node(auth, node, **kwargs):
             'Your component was created successfully. You can keep working on the component page below, '
             'or return to the <u><a href="{url}">project page</a></u>.'
         ).format(url=node.url)
-        status.push_status_message(message, 'info')
+        status.push_status_message(message, kind='info', trust=True)
 
         return {
             'status': 'success',
         }, 201, None, new_component.url
     else:
+        # TODO: This function doesn't seem to exist anymore?
         status.push_errors_to_status(form.errors)
     raise HTTPError(http.BAD_REQUEST, redirect_url=node.url)
 
@@ -595,7 +596,7 @@ def component_remove(auth, node, **kwargs):
     message = '{} deleted'.format(
         node.project_or_component.capitalize()
     )
-    status.push_status_message(message, 'success')
+    status.push_status_message(message, kind='success', trust=False)
     parent = node.parent_node
     if parent and parent.can_view(auth):
         redirect_url = node.node__parent[0].url
@@ -699,7 +700,7 @@ def _view_project(node, auth, primary=False):
         for addon in node.get_addons():
             messages = addon.before_page_load(node, user) or []
             for message in messages:
-                status.push_status_message(message, 'info', dismissible=False)
+                status.push_status_message(message, kind='info', dismissible=False, trust=True)
     data = {
         'node': {
             'id': node._primary_key,
@@ -1031,7 +1032,8 @@ def project_generate_private_link_post(auth, node, **kwargs):
     if anonymous and has_public_node:
         status.push_status_message(
             'Anonymized view-only links <b>DO NOT</b> '
-            'anonymize contributors of public project or component.'
+            'anonymize contributors of public project or component.',
+            trust=True
         )
 
     return new_link
