@@ -16,14 +16,15 @@ var GrowlBox = require('js/growlBox');
 
 /**
  * Convenience function to create a GrowlBox
- * Show a growl-style notification for messages. Defaults to an error type.
+ * Show a growl-style notification for messages. Defaults to an error type. Adds spaces to title to avoid overlapping
+ * upper right 'x' close button.
  * @param {String} title Shows in bold at the top of the box. Required or it looks foolish.
  * @param {String} message Shows a line below the title. This could be '' if there's nothing to say.
  * @param {String} type One of 'success', 'info', 'warning', or 'danger'. Defaults to danger.
  *
  */
 var growl = function(title, message, type) {
-    new GrowlBox(title, message, type || 'danger');
+    new GrowlBox(title + "&nbsp;&nbsp;&nbsp;&nbsp", message, type || 'danger');
 };
 
 
