@@ -596,7 +596,7 @@ def component_remove(auth, node, **kwargs):
     message = '{} deleted'.format(
         node.project_or_component.capitalize()
     )
-    status.push_status_message(message, trust=False)
+    status.push_status_message(message, kind='success', trust=False)
     parent = node.parent_node
     if parent and parent.can_view(auth):
         redirect_url = node.node__parent[0].url
@@ -700,7 +700,7 @@ def _view_project(node, auth, primary=False):
         for addon in node.get_addons():
             messages = addon.before_page_load(node, user) or []
             for message in messages:
-                status.push_status_message(message, dismissible=False, trust=True)
+                status.push_status_message(message, kind='info', dismissible=False, trust=True)
     data = {
         'node': {
             'id': node._primary_key,

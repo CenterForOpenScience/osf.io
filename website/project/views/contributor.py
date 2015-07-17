@@ -252,9 +252,9 @@ def project_removecontributor(auth, node, **kwargs):
 
     if outcome:
         if auth.user == contributor:
-            status.push_status_message('Removed self from project', kind='info', trust=False)
+            status.push_status_message('Removed self from project', kind='success', trust=False)
             return {'redirectUrl': web_url_for('dashboard')}
-        status.push_status_message('Contributor removed', kind='info', trust=False)
+        status.push_status_message('Contributor removed', kind='success', trust=False)
         return {}
 
     raise HTTPError(
@@ -391,7 +391,7 @@ def project_manage_contributors(auth, node, **kwargs):
     if not node.is_contributor(auth.user):
         status.push_status_message(
             'You have removed yourself as a contributor from this project',
-            kind='info',
+            kind='success',
             trust=False
         )
         if node.is_public:
@@ -402,7 +402,7 @@ def project_manage_contributors(auth, node, **kwargs):
     if not node.has_permission(auth.user, ADMIN):
         status.push_status_message(
             'You have removed your administrative privileges for this project',
-            kind='info',
+            kind='success',
             trust=False
         )
     # Else stay on current page
