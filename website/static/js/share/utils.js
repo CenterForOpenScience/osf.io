@@ -224,7 +224,8 @@ utils.loadRawNormalized = function(result){
 
     return m.request({
         method: 'GET',
-        url: '/api/v1/share/documents/' + result.shareProperties.docID  // TODO where will the postgres API live??
+        // url: 'http://localhost:8000/documents/' + result.shareProperties.docID
+        url: '/api/v1/share/documents' + result.shareProperties.docID  // TODO where will the postgres API live??
     }).then(function(data) {
 
         var normed = JSON.parse(data.normalized);
