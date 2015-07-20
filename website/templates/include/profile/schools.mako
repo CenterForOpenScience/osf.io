@@ -95,7 +95,7 @@
             </div>
 
             <div>
-                <a class="btn btn-default" data-bind="disable, click: addContent">
+                <a class="btn btn-default" data-bind="css: enablebtn, click: addContent">
                     Add another
                 </a>
             </div>

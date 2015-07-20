@@ -1,5 +1,5 @@
 <script id="profileJobs" type="text/html">
-
+{{ko.toJSON($data)}}
     <div data-bind="if: mode() === 'edit'">
 
         <form role="form" data-bind="submit: submit, validationOptions: {insertMessages: false, messagesOnModified: false}">
@@ -95,7 +95,7 @@
             </div>
 
             <div>
-                <a class="btn btn-default" data-bind="disable, click: addContent">
+                <a class="btn btn-default" data-bind="css: enablebtn, click: addContent">
                     Add another
                 </a>
             </div>
