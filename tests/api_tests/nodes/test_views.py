@@ -462,6 +462,10 @@ class TestNodeIncludeQueryParams(ApiTestCase):
         self.project.save()
         self.project.reload()
 
+    def tearDown(self):
+        super(TestNodeIncludeQueryParams, self).tearDown()
+        Node.remove()
+
     def test_node_detail_get__keys(self):
         self.url_detail += '?include=children,contributors,pointers,registrations'
         res = self.app.get(self.url_detail)
@@ -547,7 +551,7 @@ class TestNodeIncludeQueryParams(ApiTestCase):
         assert_equal(res.status_code, 200)
         query_params = None
         for param in res.json['data']:
-            if param['title'] == self.project.title:
+            if param['id'] == self.project._id:
                 query_params = param['additional_query_params']
         assert_in(self.child._id, query_params['children'])
         assert_in(self.contributor._id, query_params['contributors'])
@@ -578,7 +582,7 @@ class TestNodeIncludeQueryParams(ApiTestCase):
         assert_equal(res.status_code, 200)
         query_params = None
         for param in res.json['data']:
-            if param['title'] == self.project.title:
+            if param['id'] == self.project._id:
                 query_params = param['additional_query_params']
         assert_in(self.child._id, query_params['children'])
         assert_in(self.contributor._id, query_params['contributors'])
