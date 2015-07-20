@@ -1,11 +1,13 @@
 # -*- coding: utf-8 -*-
 import mock
+import urlparse
 from nose.tools import *  # flake8: noqa
 
 from website.models import Node
 from framework.auth.core import Auth
 from website.util.sanitize import strip_html
 from api.base.settings.defaults import API_BASE
+from website.settings import API_DOMAIN
 
 from tests.base import ApiTestCase, fake
 from tests.factories import (
@@ -436,6 +438,17 @@ class TestNodeDetail(ApiTestCase):
         res = self.app.get(self.private_url, auth=self.basic_auth_two, expect_errors=True)
         assert_equal(res.status_code, 403)
 
+    def test_top_level_project_has_no_parent(self):
+        res = self.app.get(self.public_url)
+        assert_equal(res.status_code, 200)
+        assert_equal(res.json['data']['links']['parent']['self'], None)
+
+    def test_child_project_has_parent(self):
+        public_component = NodeFactory(parent=self.public_project, creator=self.user, is_public=True)
+        public_component_url = '/{}nodes/{}/'.format(API_BASE, public_component._id)
+        res = self.app.get(public_component_url)
+        assert_equal(res.status_code, 200)
+        assert_equal(res.json['data']['links']['parent']['self'], urlparse.urljoin(API_DOMAIN, self.public_url))
 
 class TestNodeIncludeQueryParams(ApiTestCase):
 
