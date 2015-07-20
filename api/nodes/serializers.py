@@ -84,7 +84,9 @@ class NodeSerializer(JSONAPISerializer):
             }
         },
         'parent': {
-            'self': Link('nodes:node-detail', kwargs={'node_id': '<parent_id>'})
+            'links': {
+                'self': Link('nodes:node-detail', kwargs={'node_id': '<parent_id>'})
+            }
         }
     })
 
