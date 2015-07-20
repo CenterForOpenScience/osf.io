@@ -12,8 +12,8 @@
         <a href="${web_url_for('oauth_application_register')}" role="button" class="btn btn-primary pull-right"><i class="fa fa-plus"></i> Register new application</a>
         <div id="appList">
 
-            <p data-bind="visible: (content().length == 0)">You have not registered any applications that can connect to the OSF.</p>
-            <div id="if-apps" data-bind="visible: (content().length > 0)">
+            <p data-bind="visible: (appData().length == 0)">You have not registered any applications that can connect to the OSF.</p>
+            <div id="if-apps" data-bind="visible: (appData().length > 0)">
                 <p>You have registered the following applications that can connect to the OSF:</p>
 
                 <table class="table table-condensed">
@@ -31,7 +31,7 @@
                     <tbody data-bind="foreach: sortByName">
                         <tr>
                             <td>
-                                <a href="#" data-bind="attr: {href: detailUrl  }"><span data-bind="text: name"></span></a>
+                                <a href="#" data-bind="attr: {href: webDetailUrl  }"><span data-bind="text: name"></span></a>
                                 <p>Client ID: <span class="text-muted" data-bind="text: clientId"></span></p>
                             </td>
                             <td>
@@ -51,11 +51,9 @@
 <%def name="javascript_bottom()">
 
 <script type="text/javascript">
-    ## Store mako variables on window so they are accessible from JS
-    ## modules. Not sure if this is a good idea.
     window.contextVars = window.contextVars || {};
     window.contextVars.urls = {
-        dataUrl: ${app_list_url | sjson, n}
+        listUrl: ${app_list_url | sjson, n}
     };
 </script>
 <script src=${"/static/public/js/profile-settings-applications-list-page.js" | webpack_asset}></script>

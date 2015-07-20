@@ -65,7 +65,7 @@ var apiV2Url = function (path, options){
 var ajaxJSON = function(method, url, options) {
     var defaults = {
         data: {},  // Request body (required for PUT, PATCH, POST, etc)
-        isCors: false,  // Is this sending an authenticated cross-domain request?
+        isCors: false,  // Is this sending a cross-domain request? (if true, will also send any login credentials)
         fields: {}  // Additional fields (settings) for the JQuery AJAX call; overrides any defaults set by function
     };
     var opts = $.extend({}, defaults, options);
