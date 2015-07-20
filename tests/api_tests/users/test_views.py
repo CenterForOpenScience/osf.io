@@ -49,6 +49,7 @@ class TestUsers(ApiTestCase):
         assert_in(self.user_one._id, ids)
         assert_in(self.user_two._id, ids)
 
+
 class TestUsersFiltering(ApiTestCase):
 
     def setUp(self):
