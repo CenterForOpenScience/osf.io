@@ -57,7 +57,6 @@ def get_node_contributors_abbrev(auth, node, **kwargs):
     others_count = ''
 
     for index, user in enumerate(users[:max_count]):
-
         if index == max_count - 1 and len(users) > max_count:
             separator = ' &amp;'
             others_count = str(n_contributors - 3)
