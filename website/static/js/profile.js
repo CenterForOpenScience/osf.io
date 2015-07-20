@@ -615,6 +615,19 @@ var ListViewModel = function(ContentModel, urls, modes) {
         return self.contents().length > 1;
     });
 
+    self.institutionsEmpty = ko.computed(function() {
+        for (var i=0; i<self.contents().length; i++) {
+            if (self.contents()[i].institutionEmpty()) {
+                return true;
+            }
+        }
+        return false;
+    });
+
+    self.enablebtn = ko.computed(function(){
+        return self.institutionsEmpty() ? 'disabled':'enabled';
+    }, this);
+
     self.isValid = ko.computed(function() {
         for (var i=0; i<self.contents().length; i++) {
             if (! self.contents()[i].isValid()) {
