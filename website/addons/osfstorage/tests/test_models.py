@@ -14,11 +14,9 @@ import datetime
 
 from modularodm import exceptions as modm_errors
 
-from website.models import NodeLog
 
 from website.addons.osfstorage import utils
 from website.addons.osfstorage import model
-from website.addons.osfstorage import errors
 from website.addons.osfstorage import settings
 
 
@@ -237,6 +235,22 @@ class TestOsfstorageFileNode(StorageTestCase):
         assert_equal(copied.parent, copy_to)
         assert_equal(to_copy.parent, self.node_settings.root_node)
 
+    def test_move_nested(self):
+        new_project = ProjectFactory()
+        other_node_settings = new_project.get_addon('osfstorage')
+        move_to = other_node_settings.root_node.append_folder('Cloud')
+
+        to_move = self.node_settings.root_node.append_folder('Carp')
+        child = to_move.append_file('A dee um')
+
+        moved = to_move.move_under(move_to)
+        child.reload()
+
+        assert_equal(moved, to_move)
+        assert_equal(other_node_settings, to_move.node_settings)
+        assert_equal(other_node_settings, move_to.node_settings)
+        assert_equal(other_node_settings, child.node_settings)
+
     def test_copy_rename(self):
         to_copy = self.node_settings.root_node.append_file('Carp')
         copy_to = self.node_settings.root_node.append_folder('Cloud')
@@ -417,4 +431,3 @@ class TestOsfStorageFileVersion(OsfTestCase):
         version.reload()
         assert_in('archive', version.metadata)
         assert_equal(version.metadata['archive'], 'glacier')
-

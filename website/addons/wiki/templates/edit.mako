@@ -14,46 +14,55 @@
         <%include file="wiki/templates/status.mako"/>
     </div>
     <div class="col-sm-6">
-        <div class="pull-right">
+        <div class="pull-right m-t-md">
           <div class="switch"></div>
           </div>
     </div>
 </div>
 
-<div class="wiki" id="wikiPageContext">
-  <div class="row wiki-wrapper">
-    <div class="panel-toggle col-sm-${'3' if 'menu' in panels_used else '1' | n}">
-        <!-- Menu with toggle normal -->
-        <div class="osf-panel panel panel-default panel-default hidden-xs ${'' if 'menu' in panels_used else 'hidden' | n}" data-bind="css: {  'osf-panel-flex': !$root.singleVis(), reset-height : $root.singleVis() }">
-            <div class="panel-heading clearfix" data-bind="css: {  'osf-panel-heading-flex': !$root.singleVis()}">
-                <h3 class="panel-title"> <i class="fa fa-list"> </i>  Menu </h3>
-                <div class="pull-right"> <div class="panel-collapse"> <i class="fa fa-angle-left pointer"> </i> </div></div>
+    <div class="row wiki-wrapper">
+        <div class="panel-toggle col-sm-${'3' if 'menu' in panels_used else '1' | n}">
+
+            <!-- Menu with toggle normal -->
+            <div class="osf-panel panel panel-default reset-height ${'' if 'menu' in panels_used else 'hidden' | n}" data-bind="css: {  'osf-panel-flex': !$root.singleVis() }">
+                <div class="panel-heading clearfix" data-bind="css: {  'osf-panel-heading-flex': !$root.singleVis()}">
+                    % if user['can_edit']:
+                        <div class="wiki-toolbar-icon text-success" data-toggle="modal" data-target="#newWiki">
+                            <i class="fa fa-plus text-success"></i><span>New</span>
+                        </div>
+                        % if wiki_id and wiki_name != 'home':
+                            <div class="wiki-toolbar-icon text-danger" data-toggle="modal" data-target="#deleteWiki">
+                                <i class="fa fa-trash-o text-danger"></i><span>Delete</span>
+                            </div>
+                        % endif
+                    % else:
+                        <h3 class="panel-title"> <i class="fa fa-list"></i>  Menu </h3>
+                    % endif
+                    <div id="toggleIcon" class="pull-right hidden-xs">
+                        <div class="panel-collapse pointer"><i class="fa fa-angle-left"></i></div>
+                    </div>
+                </div>
+                <div id="grid">
+                    <div class="spinner-loading-wrapper">
+                        <div class="logo-spin text-center"><img src="/static/img/logo_spin.png" alt="loader"> </div>
+                        <p class="m-t-sm fg-load-message"> Loading wiki pages...  </p>
+                    </div>
+                </div>
             </div>
-            <div data-bind="css: {  'osf-panel-body-flex': !$root.singleVis()}">
-                <%include file="wiki/templates/toc.mako"/>
+
+            <!-- Menu with toggle collapsed -->
+            <div class="osf-panel panel panel-default panel-collapsed text-center ${'hidden' if 'menu' in panels_used else '' | n}" >
+                <div class="panel-heading pointer">
+                    <i class="fa fa-list"> </i>
+                    <i class="fa fa-angle-right"> </i>
+                </div>
+                <div class="panel-body">
+                    <%include file="wiki/templates/nav.mako"/>
+                </div>
             </div>
         </div>
 
-        <!-- Menu with toggle collapsed -->
-        <div class="osf-panel panel panel-default panel-collapsed hidden-xs text-center ${'hidden' if 'menu' in panels_used else '' | n}" >
-          <div class="panel-heading pointer">
-            <i class="fa fa-list"> </i>
-            <i class="fa fa-angle-right"> </i>
-          </div>
-          <div class="panel-body">
-              <%include file="wiki/templates/nav.mako"/>
-           </div>
-        </div>
-
-        <!-- Menu without toggle in XS size only -->
-        <div class="osf-panel panel panel-default visible-xs">
-            <div class="panel-heading"> <i class="fa fa-list"> </i>  Menu </div>
-            <div>
-                <%include file="wiki/templates/toc.mako"/>
-            </div>
-        </div>
-    </div>
-
+    <div class="wiki" id="wikiPageContext">
     <div class="panel-expand col-sm-${'9' if 'menu' in panels_used else '11' | n}">
 
       <div class="row">
@@ -272,6 +281,9 @@
             but not published until you click the "Save" button.
         </p>
       </div>
+      <div class="modal-footer">
+          <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+      </div>
     </div>
   </div>
 </div>
@@ -345,10 +357,12 @@ ${parent.javascript_bottom()}
         usePythonRender: ${json.dumps(use_python_render)},
         versionSettings: ${json.dumps(version_settings) | n},
         panelsUsed: ${json.dumps(panels_used) | n},
+        wikiID: '${wiki_id}',
         urls: {
             draft: '${urls['api']['draft']}',
             content: '${urls['api']['content']}',
             rename: '${urls['api']['rename']}',
+            grid: '${urls['api']['grid']}',
             page: '${urls['web']['page']}',
             base: '${urls['web']['base']}',
             sharejs: '${sharejs_url}'

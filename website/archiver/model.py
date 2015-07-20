@@ -15,6 +15,7 @@ from website.archiver import (
 from website.addons.base import StorageAddonBase
 from website import settings
 
+
 class ArchiveTarget(StoredObject):
     """Stores the results of archiving a single addon
     """
@@ -46,6 +47,7 @@ class ArchiveTarget(StoredObject):
             self.name,
             self.status
         )
+
 
 class ArchiveJob(StoredObject):
 

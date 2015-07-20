@@ -15,9 +15,10 @@ from tests.factories import (
     UserFactory, NodeFactory, ProjectFactory,
     AuthUserFactory, NodeWikiFactory,
 )
+
 from website.addons.wiki import settings
+from website.addons.wiki import views
 from website.addons.wiki.exceptions import InvalidVersionError
-from website.addons.wiki.views import _serialize_wiki_toc, _get_wiki_web_urls, _get_wiki_api_urls
 from website.addons.wiki.model import NodeWikiPage, render_content
 from website.addons.wiki.utils import (
     get_sharejs_uuid, generate_private_uuid, share_db, delete_share_doc,
@@ -26,7 +27,6 @@ from website.addons.wiki.utils import (
 from website.addons.wiki.tests.config import EXAMPLE_DOCS, EXAMPLE_OPS
 from framework.auth import Auth
 from framework.mongo.utils import to_mongo_key
-
 
 # forward slashes are not allowed, typically they would be replaced with spaces
 SPECIAL_CHARACTERS_ALL = u'`~!@#$%^*()-=_+ []{}\|/?.df,;:''"'
@@ -48,7 +48,7 @@ class TestWikiViews(OsfTestCase):
         super(TestWikiViews, self).setUp()
         self.user = AuthUserFactory()
         self.project = ProjectFactory(is_public=True, creator=self.user)
-        self.consolidated_auth = Auth(user=self.project.creator)
+        self.consolidate_auth = Auth(user=self.project.creator)
 
     def test_wiki_url_get_returns_200(self):
         url = self.project.web_url_for('project_wiki_view', wname='home')
@@ -108,7 +108,7 @@ class TestWikiViews(OsfTestCase):
 
         # Check publicly editable
         wiki = self.project.get_addon('wiki')
-        wiki.set_editing('public', self.consolidated_auth, self.project, True, True)
+        wiki.set_editing('public', self.consolidate_auth, self.project, True, True)
         res = self.app.get(url, auth=AuthUserFactory().auth, expect_errors=False)
         assert_equal(res.status_code, 200)
 
@@ -165,10 +165,10 @@ class TestWikiViews(OsfTestCase):
         no_wiki = NodeFactory(parent=project, creator=project.creator)
         project.save()
 
-        serialized = _serialize_wiki_toc(project, auth=auth)
+        serialized = views._serialize_wiki_toc(project, auth=auth)
         assert_equal(len(serialized), 2)
         no_wiki.delete_addon('wiki', auth=auth)
-        serialized = _serialize_wiki_toc(project, auth=auth)
+        serialized = views._serialize_wiki_toc(project, auth=auth)
         assert_equal(len(serialized), 1)
 
     def test_get_wiki_url_pointer_component(self):
@@ -183,7 +183,7 @@ class TestWikiViews(OsfTestCase):
         auth = Auth(user=user)
         project.add_pointer(pointed_node, auth=auth, save=True)
 
-        serialized = _serialize_wiki_toc(project, auth)
+        serialized = views._serialize_wiki_toc(project, auth)
         assert_equal(
             serialized[0]['url'],
             pointed_node.web_url_for('project_wiki_view', wname='home', _guid=True)
@@ -338,7 +338,7 @@ class TestWikiViews(OsfTestCase):
         res = self.app.get(url, auth=self.user.auth)
         assert_equal(res.status_code, 200)
         assert_not_in('capslock', self.project.wiki_pages_current)
-        self.project.update_node_wiki('CaPsLoCk', 'hello', self.consolidated_auth)
+        self.project.update_node_wiki('CaPsLoCk', 'hello', self.consolidate_auth)
         assert_in('capslock', self.project.wiki_pages_current)
 
     def test_project_wiki_validate_name_diplay_correct_capitalization(self):
@@ -351,7 +351,7 @@ class TestWikiViews(OsfTestCase):
         url = self.project.api_url_for('project_wiki_validate_name', wname='CAPSLOCK')
         res = self.app.get(url, auth=self.user.auth)
         assert_equal(res.status_code, 200)
-        self.project.update_node_wiki('CaPsLoCk', 'hello', self.consolidated_auth)
+        self.project.update_node_wiki('CaPsLoCk', 'hello', self.consolidate_auth)
         assert_in('capslock', self.project.wiki_pages_current)
         url = self.project.api_url_for('project_wiki_validate_name', wname='capslock')
         res = self.app.get(url, auth=self.user.auth, expect_errors=True)
@@ -464,7 +464,7 @@ class TestWikiViews(OsfTestCase):
         assert_in('data-osf-panel="Edit"', res.text)
         # Publicly editable
         wiki = self.project.get_addon('wiki')
-        wiki.set_editing('public', self.consolidated_auth, self.project, True, True)
+        wiki.set_editing('public', self.consolidate_auth, self.project, True, True)
         res = self.app.get(url, auth=AuthUserFactory().auth)
         assert_equal(res.status_code, 200)
         assert_in('data-osf-panel="Edit"', res.text)
@@ -483,19 +483,20 @@ class TestViewHelpers(OsfTestCase):
         self.project.update_node_wiki(self.wname, 'some content', Auth(self.project.creator))
 
     def test_get_wiki_web_urls(self):
-        urls = _get_wiki_web_urls(self.project, self.wname)
+        urls = views._get_wiki_web_urls(self.project, self.wname)
         assert_equal(urls['base'], self.project.web_url_for('project_wiki_home', _guid=True))
         assert_equal(urls['edit'], self.project.web_url_for('project_wiki_view', wname=self.wname, _guid=True))
         assert_equal(urls['home'], self.project.web_url_for('project_wiki_home', _guid=True))
         assert_equal(urls['page'], self.project.web_url_for('project_wiki_view', wname=self.wname, _guid=True))
 
     def test_get_wiki_api_urls(self):
-        urls = _get_wiki_api_urls(self.project, self.wname)
+        urls = views._get_wiki_api_urls(self.project, self.wname)
         assert_equal(urls['base'], self.project.api_url_for('project_wiki_home'))
         assert_equal(urls['delete'], self.project.api_url_for('project_wiki_delete', wname=self.wname))
         assert_equal(urls['rename'], self.project.api_url_for('project_wiki_rename', wname=self.wname))
         assert_equal(urls['content'], self.project.api_url_for('wiki_page_content', wname=self.wname))
         assert_equal(urls['set_permissions'], self.project.api_url_for('edit_wiki_permissions', permissions="public"))
+
 
 class TestWikiDelete(OsfTestCase):
 
@@ -505,10 +506,10 @@ class TestWikiDelete(OsfTestCase):
         creator = AuthUserFactory()
 
         self.project = ProjectFactory(is_public=True, creator=creator)
-        self.consolidated_auth = Auth(user=self.project.creator)
+        self.consolidate_auth = Auth(user=self.project.creator)
         self.auth = creator.auth
-        self.project.update_node_wiki('Elephants', 'Hello Elephants', self.consolidated_auth)
-        self.project.update_node_wiki('Lions', 'Hello Lions', self.consolidated_auth)
+        self.project.update_node_wiki('Elephants', 'Hello Elephants', self.consolidate_auth)
+        self.project.update_node_wiki('Lions', 'Hello Lions', self.consolidate_auth)
         self.elephant_wiki = self.project.get_wiki_page('Elephants')
         self.lion_wiki = self.project.get_wiki_page('Lions')
 
@@ -530,8 +531,8 @@ class TestWikiDelete(OsfTestCase):
     def test_project_wiki_delete_w_valid_special_characters(self, mock_sharejs):
         # TODO: Need to understand why calling update_node_wiki with failure causes transaction rollback issue later
         # with assert_raises(NameInvalidError):
-        #     self.project.update_node_wiki(SPECIAL_CHARACTERS_ALL, 'Hello Special Characters', self.consolidated_auth)
-        self.project.update_node_wiki(SPECIAL_CHARACTERS_ALLOWED, 'Hello Special Characters', self.consolidated_auth)
+        #     self.project.update_node_wiki(SPECIAL_CHARACTERS_ALL, 'Hello Special Characters', self.consolidate_auth)
+        self.project.update_node_wiki(SPECIAL_CHARACTERS_ALLOWED, 'Hello Special Characters', self.consolidate_auth)
         self.special_characters_wiki = self.project.get_wiki_page(SPECIAL_CHARACTERS_ALLOWED)
         assert_in(to_mongo_key(SPECIAL_CHARACTERS_ALLOWED), self.project.wiki_pages_current)
         url = self.project.api_url_for(
@@ -554,12 +555,12 @@ class TestWikiRename(OsfTestCase):
         creator = AuthUserFactory()
 
         self.project = ProjectFactory(is_public=True, creator=creator)
-        self.consolidated_auth = Auth(user=self.project.creator)
+        self.consolidate_auth = Auth(user=self.project.creator)
         self.auth = creator.auth
-        self.project.update_node_wiki('home', 'Hello world', self.consolidated_auth)
+        self.project.update_node_wiki('home', 'Hello world', self.consolidate_auth)
 
         self.page_name = 'page2'
-        self.project.update_node_wiki(self.page_name, 'content', self.consolidated_auth)
+        self.project.update_node_wiki(self.page_name, 'content', self.consolidate_auth)
         self.project.save()
         self.page = self.project.get_wiki_page(self.page_name)
 
@@ -602,7 +603,7 @@ class TestWikiRename(OsfTestCase):
         assert_true(old_wiki)
 
     def test_rename_wiki_page_duplicate(self):
-        self.project.update_node_wiki('away', 'Hello world', self.consolidated_auth)
+        self.project.update_node_wiki('away', 'Hello world', self.consolidate_auth)
         new_name = 'away'
         res = self.app.put_json(
             self.url,
@@ -636,7 +637,7 @@ class TestWikiRename(OsfTestCase):
         # attempt to rename 'page2' from setup to different case of 'away'.
         old_name = 'away'
         new_name = 'AwAy'
-        self.project.update_node_wiki(old_name, 'Hello world', self.consolidated_auth)
+        self.project.update_node_wiki(old_name, 'Hello world', self.consolidate_auth)
         res = self.app.put_json(
             self.url,
             {'value': new_name},
@@ -649,7 +650,7 @@ class TestWikiRename(OsfTestCase):
     def test_rename_wiki_page_same_name_different_casing(self, mock_sharejs):
         old_name = 'away'
         new_name = 'AWAY'
-        self.project.update_node_wiki(old_name, 'Hello world', self.consolidated_auth)
+        self.project.update_node_wiki(old_name, 'Hello world', self.consolidate_auth)
         url = self.project.api_url_for('project_wiki_rename', wname=old_name)
         res = self.app.put_json(
             url,
@@ -666,11 +667,11 @@ class TestWikiRename(OsfTestCase):
 
     @mock.patch('website.addons.wiki.utils.broadcast_to_sharejs')
     def test_can_rename_to_a_deleted_page(self, mock_sharejs):
-        self.project.delete_node_wiki(self.page_name, self.consolidated_auth)
+        self.project.delete_node_wiki(self.page_name, self.consolidate_auth)
         self.project.save()
 
         # Creates a new page
-        self.project.update_node_wiki('page3' ,'moarcontent', self.consolidated_auth)
+        self.project.update_node_wiki('page3' ,'moarcontent', self.consolidate_auth)
         self.project.save()
 
         # Renames the wiki to the deleted page
@@ -1129,7 +1130,7 @@ class TestPublicWiki(OsfTestCase):
     def setUp(self):
         super(TestPublicWiki, self).setUp()
         self.project = ProjectFactory()
-        self.consolidated_auth = Auth(user=self.project.creator)
+        self.consolidate_auth = Auth(user=self.project.creator)
         self.user = AuthUserFactory()
 
     def test_addon_on_children(self):
@@ -1138,9 +1139,9 @@ class TestPublicWiki(OsfTestCase):
         node = NodeFactory(parent=parent, category='project')
         sub_component = NodeFactory(parent=node)
 
-        parent.delete_addon('wiki', self.consolidated_auth)
-        node.delete_addon('wiki', self.consolidated_auth)
-        sub_component.delete_addon('wiki', self.consolidated_auth)
+        parent.delete_addon('wiki', self.consolidate_auth)
+        node.delete_addon('wiki', self.consolidate_auth)
+        sub_component.delete_addon('wiki', self.consolidate_auth)
 
         sub_component2 = NodeFactory(parent=node)
 
@@ -1150,9 +1151,9 @@ class TestPublicWiki(OsfTestCase):
 
     def test_check_user_has_addon_excludes_deleted_components(self):
         parent = ProjectFactory()
-        parent.delete_addon('wiki', self.consolidated_auth)
+        parent.delete_addon('wiki', self.consolidate_auth)
         node = NodeFactory(parent=parent, category='project')
-        node.delete_addon('wiki', self.consolidated_auth)
+        node.delete_addon('wiki', self.consolidate_auth)
         sub_component = NodeFactory(parent=node)
         sub_component.is_deleted = True
         sub_component.save()
@@ -1165,21 +1166,21 @@ class TestPublicWiki(OsfTestCase):
         parent = ProjectFactory()
         node = NodeFactory(parent=parent, category='project')
         wiki = node.get_addon('wiki')
-        wiki.set_editing('public', self.consolidated_auth, node, True, True)
+        wiki.set_editing('public', self.consolidate_auth, node, True, True)
         assert_true(wiki.is_publicly_editable)
         assert_equal(node.logs[-1].action, 'made_wiki_public')
-        wiki.set_editing('private', self.consolidated_auth, node, True, True)
+        wiki.set_editing('private', self.consolidate_auth, node, True, True)
         assert_false(wiki.is_publicly_editable)
         assert_equal(node.logs[-1].action, 'made_wiki_private')
 
         # If you try to set to private if it is already private
         assert_false(wiki.set_editing(
-            'private', self.consolidated_auth, node, True))
+            'private', self.consolidate_auth, node, True))
 
     def test_format_data(self):
         node = NodeFactory(parent=self.project, creator=self.user)
         node.get_addon('wiki').set_editing(
-            'public', self.consolidated_auth, None, True)
+            'public', self.consolidate_auth, None, True)
         data = format_data(self.user, [node._id])
         expected = [{
             'node': {
@@ -1205,8 +1206,127 @@ class TestPublicWiki(OsfTestCase):
 
     def test_format_data_no_wiki(self):
         node = NodeFactory(parent=self.project, creator=self.user)
-        node.delete_addon('wiki', self.consolidated_auth)
+        node.delete_addon('wiki', self.consolidate_auth)
         data = format_data(self.user, [node._id])
         expected = []
 
+        assert_equal(data, expected)
+
+class TestWikiMenu(OsfTestCase):
+
+    def setUp(self):
+        super(TestWikiMenu, self).setUp()
+        self.user = UserFactory()
+        self.project = ProjectFactory(creator=self.user, is_public=True)
+        self.component = NodeFactory(creator=self.user, parent=self.project, is_public=True)
+        self.consolidate_auth = Auth(user=self.project.creator)
+        self.non_contributor = UserFactory()
+
+    def test_format_home_wiki_page_no_content(self):
+        data = views.format_home_wiki_page(self.project)
+        expected = {
+            'page': {
+                'url': self.project.web_url_for('project_wiki_home'),
+                'name': 'Home',
+                'id': 'None',
+            }
+        }
+        assert_equal(data, expected)
+
+    def test_format_project_wiki_pages_contributor(self):
+        self.project.update_node_wiki('home', 'content here', self.consolidate_auth)
+        self.project.update_node_wiki('zoo', 'koala', self.consolidate_auth)
+        home_page = self.project.get_wiki_page(name='home')
+        zoo_page = self.project.get_wiki_page(name='zoo')
+        data = views.format_project_wiki_pages(self.project, self.consolidate_auth)
+        expected = [
+            {
+                'page': {
+                    'url': self.project.web_url_for('project_wiki_view', wname='home', _guid=True),
+                    'name': 'Home',
+                    'id': home_page._primary_key,
+                }
+            },
+            {
+                'page': {
+                    'url': self.project.web_url_for('project_wiki_view', wname='zoo', _guid=True),
+                    'name': 'zoo',
+                    'id': zoo_page._primary_key,
+                }
+            }
+        ]
+        assert_equal(data, expected)
+
+    def test_format_project_wiki_pages_no_content_non_contributor(self):
+        self.project.update_node_wiki('home', 'content here', self.consolidate_auth)
+        self.project.update_node_wiki('zoo', '', self.consolidate_auth)
+        home_page = self.project.get_wiki_page(name='home')
+        data = views.format_project_wiki_pages(self.project, auth=Auth(self.non_contributor))
+        expected = [
+            {
+                'page': {
+                    'url': self.project.web_url_for('project_wiki_view', wname='home', _guid=True),
+                    'name': 'Home',
+                    'id': home_page._primary_key,
+                }
+            }
+        ]
+        assert_equal(data, expected)
+
+    def test_format_component_wiki_pages_contributor(self):
+        self.component.update_node_wiki('home', 'home content', self.consolidate_auth)
+        self.component.update_node_wiki('zoo', 'koala', self.consolidate_auth)
+        zoo_page = self.component.get_wiki_page(name='zoo')
+        expected = [
+            {
+                'page': {
+                    'name': 'The meaning of life',
+                    'url': self.component.web_url_for('project_wiki_view', wname='home', _guid=True),
+                },
+                'children': [
+                    {
+                        'page': {
+                            'url': self.component.web_url_for('project_wiki_view', wname='home', _guid=True),
+                            'name': 'Home',
+                            'id': self.component._primary_key,
+                        }
+                    },
+                    {
+                        'page': {
+                            'url': self.component.web_url_for('project_wiki_view', wname='zoo', _guid=True),
+                            'name': 'zoo',
+                            'id': zoo_page._primary_key,
+                        },
+                    }
+                ],
+                'kind': 'component',
+                'category': self.component.category,
+            }
+        ]
+        data = views.format_component_wiki_pages(node=self.project, auth=self.consolidate_auth)
+        assert_equal(data, expected)
+
+    def test_format_component_wiki_pages_no_content_non_contributor(self):
+        data = views.format_component_wiki_pages(node=self.project, auth=Auth(self.non_contributor))
+        expected = []
+        assert_equal(data, expected)
+
+    def test_project_wiki_grid_data(self):
+        self.project.update_node_wiki('home', 'project content', self.consolidate_auth)
+        self.component.update_node_wiki('home', 'component content', self.consolidate_auth)
+        data = views.project_wiki_grid_data(auth=self.consolidate_auth, wname='home', node=self.project)
+        expected = [
+            {
+                'title': 'Project Wiki Pages',
+                'kind': 'folder',
+                'type': 'heading',
+                'children': views.format_project_wiki_pages(node=self.project, auth=self.consolidate_auth),
+            },
+            {
+                'title': 'Component Wiki Pages',
+                'kind': 'folder',
+                'type': 'heading',
+                'children': views.format_component_wiki_pages(node=self.project, auth=self.consolidate_auth)
+            }
+        ]
         assert_equal(data, expected)

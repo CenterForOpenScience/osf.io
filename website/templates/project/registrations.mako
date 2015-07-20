@@ -30,16 +30,14 @@
         </div>
     % endif
     %if parent_node['exists'] and user['is_admin_parent']:
-        <br />
-        <br />
-        To register the entire project "${parent_node['title']}" instead, click <a href="${parent_node['registrations_url']}">here.</a>
+        <div class="m-l-md">To register the entire project "${parent_node['title']}" instead, click <a href="${parent_node['registrations_url']}">here.</a></div>
     %endif 
 
   </div>
   <div class="col-sm-3">
     <div class="m-md">
         % if 'admin' in user['permissions'] and not disk_saving_mode:
-          <a id="registerNode" href="${node['url']}register" class="btn btn-primary" type="button">New Registration</a>
+          <a id="registerNode" href="${node['url']}register" class="btn btn-success" type="button">New Registration</a>
         % endif
     </div>
   </div>

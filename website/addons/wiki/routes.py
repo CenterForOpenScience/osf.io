@@ -68,6 +68,7 @@ page_routes = {
         ], 'post', views.project_wiki_edit_post, OsfWebRenderer(os.path.join(TEMPLATE_DIR, 'edit.mako'))),
 
     ]
+
 }
 
 api_routes = {
@@ -135,6 +136,12 @@ api_routes = {
             views.get_node_wiki_permissions,
             json_renderer,
         ),
+
+        # Wiki Menu : GET
+        Rule([
+            '/project/<pid>/wiki/<wname>/grid/',
+            '/project/<pid>/node/<nid>/wiki/<wname>/grid/'
+        ], 'get', views.project_wiki_grid_data, json_renderer),
 
     ],
 
