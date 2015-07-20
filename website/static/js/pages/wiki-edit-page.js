@@ -14,6 +14,7 @@ require('addons/wiki/static/ace-markdown-snippets.js');
 
 var $osf = require('js/osfHelpers');
 
+var WikiMenu = require('../wikiMenu');
 
 var ctx = window.contextVars.wiki;  // mako context variables
 
@@ -86,6 +87,15 @@ if (ctx.canEditPageName) {
 
 // Apply panels
 $(document).ready(function () {
+
+    // Treebeard Wiki Menu
+    $.ajax({
+        url: ctx.urls.grid
+    })
+    .done(function (data) {
+        new WikiMenu(data, ctx.wikiID, ctx.canEdit);
+    });
+
     var bodyElement = $('body');
 
     $('*[data-osf-panel]').osfPanel({
@@ -120,7 +130,7 @@ $(document).ready(function () {
     var panelExpand = $('.panel-expand');
     $('.panel-collapse').on('click', function () {
         var el = $(this).closest('.panel-toggle');
-        el.children('.osf-panel.hidden-xs').addClass('hidden');
+        el.children('.osf-panel').addClass('hidden');
         panelToggle.removeClass('col-sm-3').addClass('col-sm-1');
         panelExpand.removeClass('col-sm-9').addClass('col-sm-11');
         el.children('.panel-collapsed').removeClass('hidden');

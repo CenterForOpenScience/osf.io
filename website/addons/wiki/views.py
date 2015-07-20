@@ -90,7 +90,9 @@ def _get_wiki_pages_current(node):
     return [
         {
             'name': sorted_page.page_name,
-            'url': node.web_url_for('project_wiki_view', wname=sorted_page.page_name, _guid=True)
+            'url': node.web_url_for('project_wiki_view', wname=sorted_page.page_name, _guid=True),
+            'wiki_id': sorted_page._primary_key,
+            'wiki_content': wiki_page_content(sorted_page.page_name, node=node)
         }
         for sorted_page in [
             node.get_wiki_page(sorted_key)
@@ -107,6 +109,7 @@ def _get_wiki_api_urls(node, name, additional_urls=None):
         'delete': node.api_url_for('project_wiki_delete', wname=name),
         'rename': node.api_url_for('project_wiki_rename', wname=name),
         'content': node.api_url_for('wiki_page_content', wname=name),
+        'grid': node.api_url_for('project_wiki_grid_data', wname=name)
     }
     if additional_urls:
         urls.update(additional_urls)
@@ -134,7 +137,8 @@ def _serialize_wiki_toc(project, auth):
             'pages_current': _get_wiki_pages_current(child),
             'url': child.web_url_for('project_wiki_view', wname='home', _guid=True),
             'is_pointer': not child.primary,
-            'link': auth.private_key
+            'link': auth.private_key,
+            'wiki_content': wiki_page_content('home', node=child)
         }
         for child in project.nodes
         if not child.is_deleted
@@ -439,3 +443,111 @@ def project_wiki_validate_name(wname, **kwargs):
             message_long='A wiki page with that name already exists.'
         ))
     return {'message': wiki_name}
+
+@must_be_valid_project
+@must_be_contributor_or_public
+def project_wiki_grid_data(auth, node, **kwargs):
+    pages = []
+    project_wiki_pages = {
+        'title': 'Project Wiki Pages',
+        'kind': 'folder',
+        'type': 'heading',
+        'children': format_project_wiki_pages(node, auth)
+    }
+    pages.append(project_wiki_pages)
+
+    component_wiki_pages = {
+        'title': 'Component Wiki Pages',
+        'kind': 'folder',
+        'type': 'heading',
+        'children': format_component_wiki_pages(node, auth)
+    }
+    if len(component_wiki_pages['children']) > 0:
+        pages.append(component_wiki_pages)
+
+    return pages
+
+
+def format_home_wiki_page(node):
+    home_wiki = node.get_wiki_page('home')
+    home_wiki_page = {
+        'page': {
+            'url': node.web_url_for('project_wiki_home'),
+            'name': 'Home',
+            'id': 'None',
+        }
+    }
+    if home_wiki:
+        home_wiki_page = {
+            'page': {
+                'url': node.web_url_for('project_wiki_view', wname='home', _guid=True),
+                'name': 'Home',
+                'id': home_wiki._primary_key,
+            }
+        }
+    return home_wiki_page
+
+
+def format_project_wiki_pages(node, auth):
+    pages = []
+    can_edit = node.has_permission(auth.user, 'write') and not node.is_registration
+    project_wiki_pages = _get_wiki_pages_current(node)
+    home_wiki_page = format_home_wiki_page(node)
+    pages.append(home_wiki_page)
+    for wiki_page in project_wiki_pages:
+        if wiki_page['name'] != 'home':
+            has_content = bool(wiki_page['wiki_content'].get('wiki_content'))
+            page = {
+                'page': {
+                    'url': wiki_page['url'],
+                    'name': wiki_page['name'],
+                    'id': wiki_page['wiki_id'],
+                }
+            }
+            if can_edit or has_content:
+                pages.append(page)
+    return pages
+
+
+def format_component_wiki_pages(node, auth):
+    pages = []
+    can_edit = node.has_permission(auth.user, 'write') and not node.is_registration
+    component_wiki_pages = _serialize_wiki_toc(node, auth)
+    for wiki_page in component_wiki_pages:
+        children = []
+        home_has_content = bool(wiki_page['wiki_content'].get('wiki_content'))
+        component_home_wiki = {
+            'page': {
+                'url': wiki_page['url'],
+                'name': 'Home',
+                'id': wiki_page['id'],
+            }
+        }
+        if can_edit or home_has_content:
+            children.append(component_home_wiki)
+
+        for component_page in wiki_page['pages_current']:
+            if component_page['name'] != 'home':
+                has_content = bool(component_page['wiki_content'].get('wiki_content'))
+                child = {
+                    'page': {
+                        'url': component_page['url'],
+                        'name': component_page['name'],
+                        'id': component_page['wiki_id'],
+                    }
+                }
+                if can_edit or has_content:
+                    children.append(child)
+
+        component_page = {
+            'page': {
+                'name': wiki_page['title'],
+                'url': wiki_page['url']
+            },
+            'kind': 'component',
+            'category': wiki_page['category'],
+            'children': children,
+        }
+        if len(component_page['children']) > 0:
+            pages.append(component_page)
+    return pages

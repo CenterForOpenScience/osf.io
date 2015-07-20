@@ -359,11 +359,19 @@ class OsfStorageFileNode(StoredObject):
     def move_under(self, destination_parent, name=None):
         self.name = name or self.name
         self.parent = destination_parent
-        self.node_settings = destination_parent.node_settings
-
-        self.save()
+        self._update_node_settings(save=True)
+        # Trust _update_node_settings to save us
 
         return self
+
+    def _update_node_settings(self, recursive=True, save=True):
+        if self.parent is not None:
+            self.node_settings = self.parent.node_settings
+        if save:
+            self.save()
+        if recursive and self.is_folder:
+            for child in self.children:
+                child._update_node_settings(save=save)
 
     def __repr__(self):
         return '<{}(name={!r}, node_settings={!r})>'.format(

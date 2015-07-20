@@ -1445,16 +1445,6 @@ var FGItemButtons = {
             }
         }
         if (item.kind === 'file'){
-            if (item.data.permissions && item.data.permissions.view) {
-                rowButtons.push(
-                    m.component(FGButton, {
-                        onclick: function(event) {
-                            gotoFileEvent.call(tb, item);
-                        },
-                        icon: 'fa fa-file-o',
-                        className : 'text-info'
-                    }, 'View'));
-            }
             rowButtons.push(
                 m.component(FGButton, {
                     onclick: function(event) { _downloadEvent.call(tb, event, item); },
@@ -1470,6 +1460,16 @@ var FGItemButtons = {
                         className : 'text-danger'
                     }, 'Delete'));
 
+            }
+            if (item.data.permissions && item.data.permissions.view) {
+                rowButtons.push(
+                    m.component(FGButton, {
+                        onclick: function(event) {
+                            gotoFileEvent.call(tb, item);
+                        },
+                        icon: 'fa fa-file-o',
+                        className : 'text-info'
+                    }, 'View'));
             }
         } else if(item.data.provider && item.children.length !== 0) {
             rowButtons.push(
@@ -1657,9 +1657,10 @@ var FGToolbar = {
                         m('p', [ m('b', 'Open Files in New Tab:'), m('span',  ' Press Command (or Ctrl in Windows) and  click a file name to open it in a new tab.')]),
                         m('p', [ m('b', 'Copy Files:'), m('span', ' Press Option (or Alt in Windows) while dragging a file to a new folder or component.')])
                     ]);
-                    var mithrilButtons = m('div', [
-                        m('span.tb-modal-btn', { 'class' : 'text-primary', onclick : function(event) { ctrl.tb.modal.dismiss(); } }, 'Close'),
-                    ]);
+                    var mithrilButtons = m('button', {
+                            'type':'button',
+                            'class' : 'btn btn-default',
+                            onclick : function(event) { ctrl.tb.modal.dismiss(); } }, 'Close');
                     ctrl.tb.modal.update(mithrilContent, mithrilButtons);
                 },
                 icon: 'fa fa-info',

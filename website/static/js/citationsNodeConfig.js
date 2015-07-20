@@ -161,6 +161,11 @@ var CitationsFolderPickerViewModel = oop.extend(FolderPickerViewModel, {
                             if (confirmed) {
                                 self.connectExistingAccount.call(self, (self.accounts()[0].id));
                             }
+                        },
+                        buttons:{
+                            confirm:{
+                                label:'Import'
+                            }
                         }
                     });
                 }
