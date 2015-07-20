@@ -25,12 +25,17 @@ class NodeMixin(object):
         obj = get_object_or_404(Node, self.kwargs[self.node_lookup_url_kwarg])
         # May raise a permission denied
         self.check_object_permissions(self.request, obj)
+        if 'include' in self.request.query_params:
+            obj.included = self.get_parameters(self.request.query_params['include'])
         return obj
 
 
 class NodeIncludeMixin(object):
 
-    def get_parameters(self):
+    def get_parameters(self, data):
+        return data
+
+    def process_node_objects(self):
         pass
 
 

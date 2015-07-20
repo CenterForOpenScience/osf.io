@@ -49,6 +49,7 @@ class NodeSerializer(JSONAPISerializer):
             'self': Link('nodes:node-detail', kwargs={'node_id': '<parent_id>'})
         }
     })
+    included = ser.CharField(read_only=True)
     properties = ser.SerializerMethodField(help_text='A dictionary of read-only booleans: registration, collection,'
                                                      'and dashboard. Collections are special nodes used by the Project '
                                                      'Organizer to, as you would imagine, organize projects. '
