@@ -26,6 +26,25 @@ def get_file_guid(node, provider, path):
     return guid
 
 
+def compile_user_lists(files, user, source_node, node):
+    move = {key: [] for key in constants.NOTIFICATION_TYPES}
+    warn = {key: [] for key in constants.NOTIFICATION_TYPES}
+    remove = {key: [] for key in constants.NOTIFICATION_TYPES}
+    if len(files) == 0:
+        move, warn, remove = \
+            categorize_users(user, 'file_updated', source_node, 'file_updated', node)
+    for file_path in files:
+        path = file_path.strip('/')
+        t_move, t_warn, t_remove = \
+            categorize_users(user, path + '_file_updated', source_node,
+                             path + '_file_updated', node)
+        for notification in constants.NOTIFICATION_TYPES:
+            move[notification] = list(set(move[notification]).union(set(t_move[notification])))
+            warn[notification] = list(set(warn[notification]).union(set(t_warn[notification])))
+            remove[notification] = list(set(remove[notification]).union(set(t_remove[notification])))
+    return move, warn, remove
+
+
 def categorize_users(user, source_event, source_node, event, node):
     """
     Puts users in one of three bins: Those that are moved, those that need warned, those that are removed.
@@ -37,6 +56,7 @@ def categorize_users(user, source_event, source_node, event, node):
     :param node: node where event ends up
     :return: Moved, to be warned, and removed users.
     """
+    # TODO: move sub and remove users separate?
     remove = utils.move_subscription(source_event, source_node, event, node)
     source_node_subs = compile_subscriptions(source_node, '_'.join(source_event.split('_')[-2:]))
     new_subs = compile_subscriptions(node, '_'.join(source_event.split('_')[-2:]), event)

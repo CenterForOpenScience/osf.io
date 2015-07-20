@@ -202,12 +202,6 @@ def create_waterbutler_log(payload, **kwargs):
 
     auth = Auth(user=user)
     node = kwargs['node'] or kwargs['project']
-    # START LYNDSY
-    # notification = Event.from_waterbutler_response(user, node, payload)
-    # if notification:
-    #    notification.perform()
-    #
-    # END LYNDSY
 
     if action in (NodeLog.FILE_MOVED, NodeLog.FILE_COPIED):
         for bundle in ('source', 'destination'):

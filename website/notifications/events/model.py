@@ -58,7 +58,7 @@ class Event(object):
         raise TypeError
 
     def perform(self):
-        """Calls emails.notify"""
+        """Calls emails.notify to notify users of an action"""
         emails.notify(
             uid=self.node_id,
             event=self.event,
@@ -223,6 +223,8 @@ class ComplexFileEvent(FileEvent):
         self._wbid = self.payload['destination']['path'].strip('/')
         if self.payload['destination']['kind'] != u'folder':
             self._event = self.wbid + '_file_updated'
+        else:
+            self._event = 'file_updated'
 
     def form_url(self):
         super(ComplexFileEvent, self).form_url()
@@ -250,7 +252,7 @@ class AddonFileMoved(ComplexFileEvent):
             files = utils.get_file_subs_from_folder(self.addon, self.user, self.payload['destination']['kind'],
                                                     self.payload['destination']['path'],
                                                     self.payload['destination']['name'])
-            moved, warn, rm_users = self.compile_user_lists(files)
+            moved, warn, rm_users = utils.compile_user_lists(files, self.user, self.source_node, self.node)
             warn_message = self.html_message + ' Your component-level subscription was not transferred.'
             remove_message = self.html_message + ' Your subscription has been removed for the folder,' \
                                                  ' or a file within,' \
@@ -270,21 +272,6 @@ class AddonFileMoved(ComplexFileEvent):
                 emails.send(rm_users[notification], notification, self.node_id, 'file_updated', self.user,
                             self.source_node, self.timestamp, message=remove_message,
                             gravatar_url=self.gravatar_url, url=self.source_url.url)
-
-    def compile_user_lists(self, files):
-        move = {key: [] for key in NOTIFICATION_TYPES}
-        warn = {key: [] for key in NOTIFICATION_TYPES}
-        remove = {key: [] for key in NOTIFICATION_TYPES}
-        for file_path in files:
-            path = file_path.strip('/')
-            t_move, t_warn, t_remove = \
-                utils.categorize_users(self.user, path + '_file_updated', self.source_node,
-                                       path + '_file_updated', self.node)
-            for notification in NOTIFICATION_TYPES:
-                move[notification] = list(set(move[notification]).union(set(t_move[notification])))
-                warn[notification] = list(set(warn[notification]).union(set(t_warn[notification])))
-                remove[notification] = list(set(remove[notification]).union(set(t_remove[notification])))
-        return move, warn, remove
 
 
 class AddonFileCopied(ComplexFileEvent):
