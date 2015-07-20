@@ -55,8 +55,10 @@ var AddPointerViewModel = oop.extend(Paginator, {
         self.searchWarningMsg('');
 
         if (self.query()) {
+            var timeout = setTimeout(function() {
             self.results([]); // clears page for spinner
             self.loadingResults(true); // enables spinner
+                        }, 500);
 
             osfHelpers.postJSON(
                 '/api/v1/search/node/', {
@@ -76,7 +78,10 @@ var AddPointerViewModel = oop.extend(Paginator, {
                 self.loadingResults(false);
             }).fail(function(xhr) {
                     self.searchWarningMsg(xhr.responseJSON && xhr.responseJSON.message_long);
+            }).always( function (){
+            clearTimeout(timeout); // clear timeout function
             });
+
         } else {
             self.results([]);
             self.currentPage(0);
