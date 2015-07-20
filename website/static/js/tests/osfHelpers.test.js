@@ -21,7 +21,7 @@ describe('osfHelpers', () => {
 
             assert.calledWith(stub,
                 //adds non-breaking spaces to stop title overlapping upper right 'x' close button
-                {title: '<strong>The one &nbsp;&nbsp;&nbsp;&nbsp<strong><br />', message: 'the only'});
+                {title: '<strong>The one&nbsp;&nbsp;&nbsp;&nbsp<strong><br />', message: 'the only'});
             stub.restore();
         });
     });
