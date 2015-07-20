@@ -152,8 +152,6 @@ def box_oauth_finish(auth, **kwargs):
 
     user_settings.save()
 
-    flash('Successfully authorized Box', 'success')
-
     if node:
         # Automatically use newly-created auth
         if node.has_addon('box'):
