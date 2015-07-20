@@ -6,6 +6,16 @@ from rest_framework import exceptions
 from api.base.serializers import JSONAPISerializer, LinksField, Link, WaterbutlerLink
 
 
+class NestedNodeSerializer(JSONAPISerializer):
+
+    id = ser.CharField(read_only=True, source='_id')
+    title = ser.CharField(required=True)
+    description = ser.CharField(required=False, allow_blank=True, allow_null=True)
+    links = LinksField({})
+
+    class Meta:
+        type_ = 'nodes'
+
 class NodeSerializer(JSONAPISerializer):
     # TODO: If we have to redo this implementation in any of the other serializers, subclass ChoiceField and make it
     # handle blank choices properly. Currently DRF ChoiceFields ignore blank options, which is incorrect in this
@@ -49,7 +59,13 @@ class NodeSerializer(JSONAPISerializer):
             'self': Link('nodes:node-detail', kwargs={'node_id': '<parent_id>'})
         }
     })
-    included = ser.CharField(read_only=True)
+
+
+    children = NestedNodeSerializer(many=True, read_only=True)
+    pointers = NestedNodeSerializer(many=True, read_only=True)
+    registrations = NestedNodeSerializer(many=True, read_only=True, source='registered_nodes')
+
+
     properties = ser.SerializerMethodField(help_text='A dictionary of read-only booleans: registration, collection,'
                                                      'and dashboard. Collections are special nodes used by the Project '
                                                      'Organizer to, as you would imagine, organize projects. '
@@ -197,3 +213,5 @@ class NodeFilesSerializer(JSONAPISerializer):
     def update(self, instance, validated_data):
         # TODO
         pass
+
+

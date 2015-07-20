@@ -26,32 +26,22 @@ class NodeMixin(object):
         # May raise a permission denied
         self.check_object_permissions(self.request, obj)
         if 'include' in self.request.query_params:
-            obj.included = self.get_parameters(self.request.query_params['include'], obj)
+            obj = self.get_additional_parameters(self.request.query_params['include'], obj)
         return obj
 
 
 class NodeIncludeMixin(object):
 
-    def get_parameters(self, data, node):
-        self.node = node
-        raw_params = data.split()
-        processed_data = []
-        for param in raw_params:
-            processed_data.append(self.process_param(param))
-        return processed_data
-
-    def process_param(self, param):
-        if param in ['children', 'pointers', 'registrations']:
-            return self.process_node_objects(param)
-
-    def process_node_objects(self, param):
-        node_objects = None
-        if param == 'children':
-            auth = Auth(self.request.user)
-            nodes = self.node.nodes
-            node_objects = [node for node in nodes if node.can_view(auth) and node.primary]
-
-        return {param: node_objects}
+    def get_additional_parameters(self, data, node):
+        parameters = data.split(',')
+        auth = Auth(self.request.user)
+        if 'children' in parameters:
+            node.children = [node for node in node.nodes if node.can_view(auth)]
+        if 'pointers' in parameters:
+            node.pointers = node.nodes_pointer
+        if 'registrations' in parameters:
+            node.registered_nodes = [node for node in node.node__registrations if node.can_view(auth)]
+        return node
 
 
 class NodeList(generics.ListCreateAPIView, ODMFilterMixin, NodeIncludeMixin):
