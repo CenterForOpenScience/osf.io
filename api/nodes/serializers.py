@@ -192,7 +192,10 @@ class NodeFilesSerializer(JSONAPISerializer):
     path = ser.CharField(read_only=True)
     item_type = ser.CharField(read_only=True)
     name = ser.CharField(read_only=True)
-    metadata = ser.DictField(read_only=True)
+    content_type = ser.CharField(read_only=True)
+    modified = ser.DateField(read_only=True)
+    size = ser.CharField(read_only=True)
+    extra = ser.CharField(read_only=True)
 
     class Meta:
         type_ = 'files'
