@@ -24,7 +24,7 @@ var GrowlBox = require('js/growlBox');
  *
  */
 var growl = function(title, message, type) {
-    new GrowlBox(title + "&nbsp;&nbsp;&nbsp;&nbsp", message, type || 'danger');
+    new GrowlBox(title + '&nbsp;&nbsp;&nbsp;&nbsp', message, type || 'danger');
 };
 
 
