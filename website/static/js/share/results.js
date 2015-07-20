@@ -1,7 +1,6 @@
 'use strict';
 
-require('../vkbeautify.js');
-
+var pd = require('../pretty-data').pd;
 var $ = require('jquery');
 var m = require('mithril');
 var $osf = require('js/osfHelpers');
@@ -140,7 +139,7 @@ Results.controller = function(vm) {
                                     m('pre',
                                         (function(){
                                             if (result.rawfiletype == 'xml') {
-                                                return vkbeautify.xml(result.raw);
+                                                return pd.xml(result.raw);
                                             }
                                             else {
                                                 var rawjson = JSON.parse(result.raw);
