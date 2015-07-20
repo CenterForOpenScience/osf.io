@@ -22,7 +22,7 @@ class UserMixin(object):
     def get_user(self, check_permissions=True):
         obj = get_object_or_404(User, self.kwargs[self.node_lookup_url_kwarg])
 
-        if check_permissions & obj.is_disabled is False:
+        if check_permissions and obj.is_active:
             # May raise a permission denied
             self.check_object_permissions(self.request, obj)
             return obj
