@@ -23,6 +23,10 @@ class NodeSerializer(JSONAPISerializer):
     tags = ser.SerializerMethodField(help_text='A dictionary that contains two lists of tags: '
                                                'user and system. Any tag that a user will define in the UI will be '
                                                'a user tag')
+    registration = ser.BooleanField(read_only=True, source='is_registration')
+    collection = ser.BooleanField(read_only=True, source='is_folder')
+    dashboard = ser.BooleanField(read_only=True, source='is_dashboard')
+
     links = LinksField({'html': 'get_absolute_url'})
     # TODO: When we have 'admin' permissions, make this writable for admins
     public = ser.BooleanField(source='is_public', read_only=True,
@@ -116,15 +120,6 @@ class NodeSerializer(JSONAPISerializer):
 
     def get_pointers_count(self, obj):
         return len(obj.nodes_pointer)
-
-    @staticmethod
-    def get_properties(obj):
-        ret = {
-            'registration': obj.is_registration,
-            'collection': obj.is_folder,
-            'dashboard': obj.is_dashboard,
-        }
-        return ret
 
     @staticmethod
     def get_tags(obj):
