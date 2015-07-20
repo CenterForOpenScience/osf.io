@@ -3048,13 +3048,20 @@ class DraftRegistration(AddonModelMixin, StoredObject):
 
     initiator = fields.ForeignField('user')
 
-    registration_metadata = fields.DictionaryField({})
+    # Dictionary field mapping question id to a question's comments and answer
+    # {<qid>: { 'comments': [<Comment1>, <Comment2>], 'value': 'string answer }
+    registration_metadata = fields.DictionaryField(default=dict)
     registration_schema = fields.ForeignField('metaschema')
     registered_node = fields.ForeignField('node')
 
     storage = fields.ForeignField('osfstoragenodesettings')
 
+    # Dictionary field mapping
+    # { 'requiresApproval': true, 'fulfills': [{ 'name': 'Prereg Prize', 'info': <infourl>  }]  }
     config = fields.DictionaryField()
+
+    # Dictionary field mapping a draft's states during the review process to their value
+    # { 'isApproved': false, 'isPendingReview': false, 'paymentSent': false }
     flags = fields.DictionaryField()
 
     def __init__(self, *args, **kwargs):
@@ -3091,7 +3098,7 @@ class DraftRegistration(AddonModelMixin, StoredObject):
     def update_metadata(self, metadata, save=True):
         # TODO: uncommnet to disallow editing drafts that are approved or pending approval
         # if self.is_pending_review or self.is_approved:
-        #    raise HTTPError(http.BAD_REQUEST)
+        #    raise NodeStateError('Cannot edit while this draft is being reviewed')
         changes = []
         for key, value in metadata.iteritems():
             old_value = self.registration_metadata.get(key)
@@ -3101,6 +3108,7 @@ class DraftRegistration(AddonModelMixin, StoredObject):
         if save:
             self.save()
         # TODO: uncomment to nullify approval state if edited
+        # project_signals.draft_edited.send(self, changes)
         # self.after_edit(changes)
 
     def before_edit(self, auth):
@@ -3124,7 +3132,7 @@ class DraftRegistration(AddonModelMixin, StoredObject):
     def find_question(self, qid):
         for page in self.registration_schema.schema['pages']:
             for question_id, question in page['questions'].iteritems():
-                if question_id == qid and 'description' in question:
+                if question_id == qid:
                     return question
 
     def get_comments(self):
@@ -3146,16 +3154,6 @@ class DraftRegistration(AddonModelMixin, StoredObject):
                 }
             })
         return all_comments
-
-    def get_flat_comments(self):
-        """ Returns a flat list of all comments made on a draft
-        """
-        flat_comments = list()
-        for question_id, value in self.registration_metadata.iteritems():
-            if 'comments' in value:
-                for comment in value['comments']:
-                    flat_comments.append(comment)
-        return flat_comments
 
     def register(self, auth):
 

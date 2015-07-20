@@ -2,11 +2,10 @@
 required for the prereg-prize
 """
 import re
-import ast
+import json
 import sys
 import logging
 
-from nose.tools import *
 from modularodm import Q
 
 from website import models
@@ -15,7 +14,7 @@ from scripts import utils as scripts_utils
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
-
+IMMUTABLE_KEYS = frozenset(['datacompletion', 'summary'])
 
 def get_registered_nodes():
     return models.Node.find(
@@ -23,50 +22,54 @@ def get_registered_nodes():
     )
 
 
-def main(dry_run=True):
+def main():
     init_app(routes=False)
     count = 0
 
     if not dry_run:
         scripts_utils.add_file_logger(logger, __file__)
         logger.info("Iterating over all registrations")
-        models.MetaSchema.remove()
 
+    new_registration_data = dict()
     for node in get_registered_nodes():
-        for schema in node.registered_meta:
-            values = ast.literal_eval(node.registered_meta.get(schema))
-
+        for schema, values in json.loads(node.registered_meta).items():
             valid_schema = {
-                'embargoEndDate': values['embargoEndDate'],
-                'registrationChoice': values['registrationChoice']
+                'embargoEndDate': values['embargoEndDate'] if 'embargoEndDate' in values else '',
+                'registrationChoice': values['registrationChoice'] if 'registrationChoice' in values else '',
             }
 
             # in most schemas, answers are just stored as { 'itemX': 'answer' }
+            # only 'datacompletion' and 'summary' are stored with their name
+            # and can be interspersed with the itemX keys so reassigning keys based on num_questions
+            # could cause conflicts. Instead they are left there.
             matches = dict()
             for val in values:
-                m = re.search("item[0-9]*", val)
-                if m is not None or val == 'datacompletion' or val == 'summary':
-                    p = re.compile(r'item')
-                    new_val = p.sub('q', val)
+                match = re.search("item[0-9]*", val)
+                if match is not None and match not in IMMUTABLE_KEYS:
+                    new_val = val.replace('q', 'item')
                     matches[new_val] = values[val]
 
             if matches:
                 for item_num, item in matches.iteritems():
-                    if isinstance(value, dict):
+                    # if already matches the schema, don't change anything
+                    if isinstance(item, dict):
                         valid_schema[item_num] = {
-                            'value': value['value'] if 'value' in value else '',
-                            'comments': value['comments'] if 'comments' in value else {}
+                            'value': item['value'] if 'value' in item else '',
+                            'comments': item['comments'] if 'comments' in item else {}
                         }
+
+                    # everything else that doesn't match
                     else:
                         valid_schema[item_num] = {
                             'comments': {},
-                            'value': value
+                            'value': item
                         }
 
-        count += 1
+            new_registration_data[schema] = valid_schema
+            count += 1
 
         if not dry_run:
-            node.registered_meta[schema] = valid_schema
+            node.registered_meta = new_registration_data
             node.save()
 
     logger.info('Done with {} nodes migrated'.format(count))
@@ -74,4 +77,4 @@ def main(dry_run=True):
 
 if __name__ == '__main__':
     dry_run = 'dry' in sys.argv
-    main()
+    main(dry_run)

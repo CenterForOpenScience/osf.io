@@ -18,8 +18,8 @@ from website.project.decorators import (
     http_error_if_disk_saving_mode
 )
 from website import settings
-from website.admin.model import Role
 from website.mails import Mail, send_mail
+from website.exceptions import NodeStateError
 from website.project import utils as project_utils
 from website.project.model import MetaSchema, DraftRegistration
 from website.project.metadata.utils import serialize_meta_schema, serialize_draft_registration
@@ -231,7 +231,10 @@ def update_draft_registration(auth, node, draft_pk, *args, **kwargs):
         if (existing_schema.name, existing_schema.schema_version) != (meta_schema.name, meta_schema.schema_version):
             draft.registration_schema = meta_schema
 
-    draft.update_metadata(schema_data)
+    try:
+        draft.update_metadata(schema_data)
+    except (NodeStateError):
+        raise HTTPError(http.BAD_REQUEST)
     return serialize_draft_registration(draft, auth), http.OK
 
 @must_have_permission(ADMIN)
