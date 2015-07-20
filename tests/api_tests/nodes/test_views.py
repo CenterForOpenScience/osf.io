@@ -36,7 +36,7 @@ class TestWelcomeToApi(ApiTestCase):
     def test_returns_current_user_info_when_logged_in(self):
         res = self.app.get(self.url, auth=self.basic_auth)
         assert_equal(res.status_code, 200)
-        assert_equal(res.json['meta']['current_user']['data']['given_name'], self.user.given_name)
+        assert_equal(res.json['meta']['current_user']['data']['attributes']['given_name'], self.user.given_name)
 
 
 class TestNodeList(ApiTestCase):
@@ -802,9 +802,10 @@ class TestNodeContributorFiltering(ApiTestCase):
 
         # filter for bibliographic contributors
         url = base_url + '?filter[bibliographic]=True'
-        res = self.app.get(url, auth=self.basic_auth)
+        res = self.app.get(url, auth=self.basic_auth, expect_errors=True)
+        print res
         assert_equal(len(res.json['data']), 1)
-        assert_true(res.json['data'][0].get('bibliographic', None))
+        assert_true(res.json['data'][0]['attributes'].get('bibliographic', None))
 
         # filter for non-bibliographic contributors
         url = base_url + '?filter[bibliographic]=False'
@@ -820,6 +821,7 @@ class TestNodeContributorFiltering(ApiTestCase):
 
         # no filter
         res = self.app.get(base_url, auth=self.basic_auth)
+        print res
         assert_equal(len(res.json['data']), 2)
 
         # filter for bibliographic contributors
