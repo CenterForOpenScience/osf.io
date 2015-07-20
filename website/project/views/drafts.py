@@ -106,15 +106,9 @@ def register_draft_registration(auth, node, draft_id, *args, **kwargs):
 @must_be_logged_in
 def get_all_draft_registrations(auth, *args, **kwargs):
 
-    group = request.args.get('group')
     count = request.args.get('count', 100)
 
     query = Q('is_pending_review', 'eq', True)
-    if group:
-        role = Role.for_user(auth.user, group=group)
-        if not role or not role.is_super:
-            raise HTTPError(http.FORBIDDEN)
-        query = query & Q('fullfills', 'in', group)
 
     all_drafts = DraftRegistration.find(query)[:count]
 

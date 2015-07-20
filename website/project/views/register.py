@@ -1,18 +1,19 @@
 # -*- coding: utf-8 -*-
 import json
-import httplib as http
 import itertools
+import httplib as http
+from dateutil.parser import parse as parse_date
 
 from flask import request
 from modularodm import Q
-from modularodm.exceptions import NoResultsFound
+from modularodm.exceptions import NoResultsFound, ValidationValueError
 
 from framework import status
 from framework.exceptions import HTTPError, PermissionsError
 from framework.flask import redirect  # VOL-aware redirect
 
 from framework.mongo.utils import to_mongo
-from framework.forms.utils import unprocess_payload
+from framework.forms.utils import unprocess_payload, process_payload
 from framework.auth.decorators import must_be_signed
 
 from website.archiver import ARCHIVER_SUCCESS, ARCHIVER_FAILURE
@@ -31,7 +32,7 @@ from website.project.decorators import (
 )
 from website.identifiers.model import Identifier
 from website.identifiers.metadata import datacite_metadata_for_node
-from website.project.utils import serialize_node
+from website.project import utils as project_utils
 from website.util.permissions import ADMIN
 from website.models import MetaSchema, NodeLog
 from website import language, mails
@@ -49,7 +50,7 @@ from .node import _view_project
 def node_register_page(auth, node, **kwargs):
 
     if node.is_registration:
-        return serialize_node(node, auth)
+        return project_utils.serialize_node(node, auth)
     else:
         status.push_status_message('You have been redirected to the project\'s registrations page .From here you can initiate a new Draft Registration to complete the registration process')
         return redirect(node.web_url_for('node_registrations', view='draft'))
@@ -74,7 +75,7 @@ def node_registration_retraction_get(auth, node, **kwargs):
             'message_long': 'This registration is already pending a retraction.'
         })
 
-    return serialize_node(node, auth, primary=True)
+    return project_utils.serialize_node(node, auth, primary=True)
 
 @must_be_valid_project
 @must_have_permission(ADMIN)
@@ -447,7 +448,7 @@ def node_register_template_page_post(auth, node, **kwargs):
         for child in register.get_descendants_recursive(lambda n: n.primary):
             child.set_privacy('public', auth, log=False)
 
-    push_status_message((
+    status.push_status_message((
         'Files are being copied to the newly created registration, '
         'and you will receive an email notification containing a link'
         ' to the registration when the copying is finished.'), 'info')
