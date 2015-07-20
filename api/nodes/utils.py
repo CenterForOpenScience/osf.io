@@ -38,7 +38,7 @@ class IncludeAdditionalQueryNode(object):
     def get_children(self):
         nodes = {}
         for node in self.node.nodes:
-            if node.can_view(Auth(self.request.user)) or node.is_public:
+            if (node.can_view(Auth(self.request.user)) or node.is_public) and node.primary:
                 nodes[node._id] = {
                     'title': node.title,
                     'description': node.description,
