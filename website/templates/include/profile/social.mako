@@ -47,7 +47,7 @@
                             data-bind="if: github.hasAddon()"
                         >
                         <button
-                                class="btn btn-default"
+                                class="btn btn-primary"
                                 data-bind="click: github.importAddon"
                             >Import</button>
                     </span>
@@ -58,8 +58,8 @@
             <div class="form-group">
                 <label>LinkedIn</label>
                 <div class="input-group">
-                <span class="input-group-addon">https://www.linkedin.com/profile/view?id=</span>
-                <input class="form-control" data-bind="value: linkedIn" placeholder="profileID"/>
+                <span class="input-group-addon">https://www.linkedin.com/</span>
+                <input class="form-control" data-bind="value: linkedIn" placeholder="in/userID, profile/view?id=profileID, or pub/pubID"/>
                 </div>
             </div>
 
@@ -90,7 +90,7 @@
                 <button
                         type="submit"
                         class="btn btn-success"
-                    >Submit</button>
+                    >Save</button>
 
             </div>
 
@@ -119,7 +119,7 @@
         </div>
 
         <div data-bind="if: editAllowed">
-            <a class="btn btn-default" data-bind="click: edit">Edit</a>
+            <a class="btn btn-primary" data-bind="click: edit">Edit</a>
         </div>
 
     </div>

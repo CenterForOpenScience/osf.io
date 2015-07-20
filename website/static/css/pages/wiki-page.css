@@ -11,11 +11,6 @@
     padding: 10px;
 }
 
-@media (max-width: 991px) {
-    .osf-panel {
-        margin-bottom: 20px;
-    }
-}
 .panel-collapsed {
     background: #F5F5F5;
 }
@@ -64,13 +59,14 @@
     text-decoration: none !important;
 }
 
+/*Special for wiki panel */
 .osf-panel-flex {
     width: 100%;
     display: -webkit-box;
     display: -ms-flexbox;
     display: -webkit-flex;
     display: flex;
-    height: 750px;
+    height: 764px;
     -webkit-align-content: flex-start;
     -ms-align-content: flex-start;
     align-content: flex-start;
@@ -105,8 +101,23 @@
     overflow: auto;
 }
 
-.reset-height {
-    height: auto;
+.osf-panel .superlist li {
+    display: block;
+    font-size: 20px;
+}
+
+.superlist li {
+    display: inline-block;
+    float: none;
+}
+.superlist li a {
+    padding: 15px 10px;
+}
+
+@media (max-width: 768px) {
+ .superlist.navbar-nav {
+    margin: 0;
+ }
 }
 
 /* Style for Ace wiki editor */
@@ -266,7 +277,7 @@
 }
 
 .wmd-button > span {
-    background-image: url(../../../addons/wiki/static/pagedown-ace/wmd-buttons.png);
+    background-image: url(/static/public/vendor/pagedown/wmd-buttons.png);
     background-repeat: no-repeat;
     background-position: 0px 0px;
     width: 20px;
@@ -298,31 +309,36 @@
     background-color: #F5F5F5;
 }
 
-.wmd-prompt-dialog > div {
-    font-size: 0.8em;
-    font-family: arial, helvetica, sans-serif;
-}
-
-
-.wmd-prompt-dialog > form > input[type="text"] {
-    border: 1px solid #999999;
-    color: black;
-}
-
-.wmd-prompt-dialog > form > input[type="button"]{
-    border: 1px solid #888888;
-    font-family: trebuchet MS, helvetica, sans-serif;
-    font-size: 0.8em;
-    font-weight: bold;
-}
-
 .wiki-single-heading {
     border: 1px solid #ddd;
 }
 
 select.form-control {
     width: inherit;
+    padding:1px;
     display: inline;
     height: 24px;
     font-size: 13px;
+}
+
+.wiki-toolbar-icon {
+    padding: 5px 10px;
+    display: inline-block;
+    box-shadow: 0 0 2px #BBB;
+    background: #F8F8F8;
+    margin-right: 5px;
+    cursor: pointer;
+    font-size: 13px;
+    border-radius: 2px;
+    float: left;
+}
+.wiki-toolbar-icon .fa {
+    font-size: 15px;
+}
+.wiki-toolbar-icon span {
+    margin-left: 5px;
+}
+
+.wiki-toolbar-icon:hover {
+  background: rgba(51, 122, 183, 0.15);
 }

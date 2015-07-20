@@ -54,6 +54,12 @@ var ExternalAccount = oop.defclass({
                 if (confirm) {
                     self._deauthorizeNodeConfirm(node);
                 }
+            },
+            buttons:{
+                confirm:{
+                    label:'Remove',
+                    className:'btn-danger'
+                }
             }
         });
     }
@@ -77,7 +83,7 @@ var OAuthAddonSettingsViewModel = oop.defclass({
         var self = this;
         window.oauthComplete = function() {
             self.updateAccounts();
-            self.setMessage('Add-on successfully authorized. To link this add-on to an OSF project, go to the settings page of the project, enable ' + self.properName + ', and choose content to connect.', '.text-success');
+            self.setMessage('Add-on successfully authorized. To link this add-on to an OSF project, go to the settings page of the project, enable ' + self.properName + ', and choose content to connect.', 'text-success');
         };
         window.open('/oauth/connect/' + self.name + '/');
     },
@@ -92,6 +98,12 @@ var OAuthAddonSettingsViewModel = oop.defclass({
             callback: function(confirm) {
                 if (confirm) {
                     self.disconnectAccount(account);
+                }
+            },
+            buttons:{
+                confirm:{
+                    label:'Delete',
+                    className:'btn-danger'
                 }
             }
         });

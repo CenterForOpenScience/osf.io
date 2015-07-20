@@ -114,6 +114,7 @@ var LogsViewModel = oop.extend(Paginator, {
         self.loading = ko.observable(false);
         self.logs = ko.observableArray(logs);
         self.url = url;
+        self.anonymousUserName = '<em>A user</em>';
 
         self.tzname = ko.pureComputed(function() {
             var logs = self.logs();
@@ -180,7 +181,6 @@ var createLogs = function(logData){
             nodeUrl: item.node.url,
             userFullName: item.user.fullname,
             userURL: item.user.url,
-            apiKey: item.api_key,
             params: item.params,
             nodeTitle: item.node.title,
             nodeDescription: item.params.description_new,
