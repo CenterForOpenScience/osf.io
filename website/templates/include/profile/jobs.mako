@@ -1,5 +1,5 @@
 <script id="profileJobs" type="text/html">
-{{ko.toJSON($data)}}
+
     <div data-bind="if: mode() === 'edit'">
 
         <form role="form" data-bind="submit: submit, validationOptions: {insertMessages: false, messagesOnModified: false}">
