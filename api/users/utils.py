@@ -25,14 +25,12 @@ class IncludeAdditionalQueryUser(object):
 
     def get_nodes(self):
         nodes = {}
-        # todo Edit to hide private projects without current user view permissions
         query = (
             Q('contributors', 'eq', self.obj) &
             Q('is_folder', 'ne', True) &
             Q('is_deleted', 'ne', True)
         )
         node_list = Node.find(query)
-        # todo make simple serializer for nodes
         for node in node_list:
             nodes[node._id] = {
                 'title': node.title,

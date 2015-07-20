@@ -149,6 +149,13 @@ class TestUserIncludeQueryParameters(ApiTestCase):
         additional_query_params = res.json['data']['additional_query_params']
         assert_in(self.project._id, additional_query_params['nodes'])
 
+    def test_not_logged_in_get_detail_include_values(self):
+        url = self.user_base_url+'?include=nodes'
+        res = self.app.get(url)
+        assert_equal(res.status_code, 200)
+        additional_query_params = res.json['data']['additional_query_params']
+        assert_in(self.project._id, additional_query_params['nodes'])
+
     def test_get_node_contributors_include_key(self):
         url = self.contributor_base_url+'?include=nodes'
         res = self.app.get(url)
