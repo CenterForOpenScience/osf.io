@@ -307,8 +307,8 @@ class NodeFilesList(generics.ListAPIView, NodeMixin):
         if file_item['item_type'] != 'folder':
             file_item['content_type'] = item['contentType']
             file_item['modified'] = item['modified']
-            file_item['size'] = item['size'],
-            file_item['extra'] = item['extra'],
+            file_item['size'] = item['size']
+            file_item['extra'] = item['extra']
         return file_item
 
     def get_queryset(self):
