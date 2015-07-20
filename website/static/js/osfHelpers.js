@@ -615,6 +615,20 @@ ko.bindingHandlers.listing = {
     }
 };
 
+/* Responsive Affix for side nav */
+var fixAffixWidth = function() {
+    $('.affix, .affix-top, .affix-bottom').each(function (){
+        var el = $(this);
+        var colsize = el.parent('.affix-parent').width();
+        el.outerWidth(colsize);
+    });
+};
+
+var initializeResponsiveAffix = function (){
+    $(window).resize(debounce(fixAffixWidth, 80, true));
+    $('.osf-affix').one('affix.bs.affix', fixAffixWidth);
+};
+
 // Thanks to https://stackoverflow.com/questions/10420352/converting-file-size-in-bytes-to-human-readable
 function humanFileSize(bytes, si) {
     var thresh = si ? 1000 : 1024;
@@ -776,6 +790,7 @@ module.exports = window.$.osf = {
     htmlEscape: htmlEscape,
     htmlDecode: htmlDecode,
     tableResize: tableResize,
+    initializeResponsiveAffix: initializeResponsiveAffix,
     humanFileSize: humanFileSize,
     confirmDangerousAction: confirmDangerousAction,
     isIE: isIE

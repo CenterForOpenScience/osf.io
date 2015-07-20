@@ -4,22 +4,20 @@
             <div class="modal-body">
                 <div class="row">
                     <div class="col-md-4">
-                        <h4 class="f-w-lg">Links
-                            % if node['points'] > 0:
-                                <a class="btn btn-primary pull-right"
-                                   href="#showLinks"
-                                   data-toggle="modal"
-                                   data-dismiss="modal"
-                                >
-                                    ${ node['points'] }
-                                </a>
-                            % else:
+                        <h4 class="f-w-lg">Links To This Project
                                  <span class="btn btn-default disabled  pull-right">
                                     ${ node['points'] }
                                 </span>
-                            % endif
                         </h4>
                         ${ language.LINK_DESCRIPTION }
+                        % if node['points'] > 0:
+
+                        <a class="btn btn-info btn-block" href="#showLinks"
+                                                        data-toggle="modal"
+                                                        data-dismiss="modal"
+                                                    >View Links </a>
+                        % endif
+
                     </div>
                     <div class="col-md-4">
                         <h4 class="f-w-lg">Templated From
@@ -38,11 +36,10 @@
                     </div>
                     <div class="col-md-4">
                         <h4 class="f-w-lg">Forks
-                            <a class="btn btn-primary pull-right"
-                               href="${ node['url'] }forks/"
+                            <button class="btn btn-default disabled pull-right"
                             >
                                 ${ node['fork_count'] }
-                            </a>
+                            </button>
                         </h4>
                         % if not disk_saving_mode:
                             ${ language.FORK_DESCRIPTION }
@@ -56,12 +53,13 @@
                             >
                                 ${ language.FORK_ACTION }
                             </a>
+                            <a class="btn btn-info btn-block m-t-xs" href="${ node['url'] }forks/">View Forks</a>
                         % endif
                     </div>
                 </div>
             </div>
             <div class="modal-footer">
-                <button type="button" class="btn btn-default" data-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
             </div>
         </div><!-- /.modal-content -->
     </div><!-- /.modal-dialog -->

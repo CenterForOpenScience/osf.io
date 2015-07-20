@@ -122,6 +122,12 @@ function ViewModel(url) {
                 if (confirm) {
                     self.disconnectAccount(account);
                 }
+            },
+            buttons:{
+                confirm:{
+                    label:'Delete',
+                    className:'btn-danger'
+                }
             }
         });
     };
@@ -180,6 +186,10 @@ function ViewModel(url) {
                 error: error
             });
         });
+    };
+
+    self.selectionChanged = function() {
+        self.changeMessage('','');
     };
 
 }

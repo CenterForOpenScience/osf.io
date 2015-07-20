@@ -21,7 +21,7 @@ ADDED_DEFAULT = []
 ADDED_MANDATORY = []
 
 VIEWS = ['widget']
-CONFIGS = ['user', 'node']
+CONFIGS = ['accounts', 'node']
 
 CATEGORIES = ['citations']
 

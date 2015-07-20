@@ -269,6 +269,9 @@ BaseViewModel.prototype.handleSuccess = function() {
 BaseViewModel.prototype.handleError = function(response) {
     var defaultMsg = 'Could not update settings';
     var msg = response.message_long || defaultMsg;
+
+ 
+
     this.changeMessage(
         msg,
         'text-danger',
@@ -313,6 +316,12 @@ BaseViewModel.prototype.cancel = function(data, event) {
                         self.mode('view');
                     }
                 }
+            },
+            buttons:{
+                confirm:{
+                    label:'Discard',
+                    className:'btn-danger'
+                }
             }
         });
     } else {
@@ -338,6 +347,7 @@ BaseViewModel.prototype.submit = function() {
     } else {
         this.showMessages(true);
     }
+
 };
 
 var NameViewModel = function(urls, modes, preventUnsaved, fetchCallback) {
