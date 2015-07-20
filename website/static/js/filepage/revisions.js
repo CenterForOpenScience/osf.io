@@ -131,7 +131,7 @@ var FileRevisionsTable = {
     },
     view: function(ctrl) {
         return m('#revisionsPanel.panel.panel-default', [
-                m('.panel-heading.clearfix', m('h3.panel-title', 'Revisions')),
+                m('.panel-heading.clearfix', m('h3.panel-title', [m('i.fa.fa-history'),' Revisions'])),
                 m('.panel-body', {style:{'padding-right': '0','padding-left':'0', 'padding-bottom' : '0'}}, (function() {
                     if (!model.loaded()) {
                         return util.Spinner;
