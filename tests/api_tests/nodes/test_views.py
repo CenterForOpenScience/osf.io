@@ -441,14 +441,14 @@ class TestNodeDetail(ApiTestCase):
     def test_top_level_project_has_no_parent(self):
         res = self.app.get(self.public_url)
         assert_equal(res.status_code, 200)
-        assert_equal(res.json['data']['links']['parent']['self'], None)
+        assert_equal(res.json['data']['relationships']['parent']['links']['self'], None)
 
     def test_child_project_has_parent(self):
         public_component = NodeFactory(parent=self.public_project, creator=self.user, is_public=True)
         public_component_url = '/{}nodes/{}/'.format(API_BASE, public_component._id)
         res = self.app.get(public_component_url)
         assert_equal(res.status_code, 200)
-        assert_equal(res.json['data']['links']['parent']['self'], urlparse.urljoin(API_DOMAIN, self.public_url))
+        assert_equal(res.json['data']['relationships']['parent']['links']['self'], urlparse.urljoin(API_DOMAIN, self.public_url))
 
 class TestNodeUpdate(ApiTestCase):
 

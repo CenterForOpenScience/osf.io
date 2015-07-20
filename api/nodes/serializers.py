@@ -190,7 +190,7 @@ class NodeFilesSerializer(JSONAPISerializer):
     item_type = ser.CharField(read_only=True)
     name = ser.CharField(read_only=True)
     content_type = ser.CharField(read_only=True)
-    modified = ser.DateField(read_only=True)
+    modified = ser.DateTimeField(read_only=True)
     size = ser.CharField(read_only=True)
     extra = ser.DictField(read_only=True)
 
@@ -210,7 +210,7 @@ class NodeFilesSerializer(JSONAPISerializer):
 
     @staticmethod
     def get_id(obj):
-        ret =  obj['provider'] + obj['path']
+        ret = obj['provider'] + obj['path']
         return ret
 
     @staticmethod
