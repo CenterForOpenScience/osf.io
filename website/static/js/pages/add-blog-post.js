@@ -23,6 +23,7 @@ var save = function () {
     var ctx = window.contextVars;
     var uid = ctx.uid;
     var guid = ctx.guid;
+    var path = '/' + ctx.node.path + '/';
     var name = ctx.file.name;
     var date = getDate();
     var header = createHeader(title, uid, name, date);
@@ -30,7 +31,7 @@ var save = function () {
     var b = new Blob([header + content], {type: "text/plain", lastModified: date});
     var xhr = new XMLHttpRequest();
     var f = new File(b, fileName, xhr);
-    var url = waterbutler.buildUploadUrl('/', 'osfstorage', guid, f);
+    var url = waterbutler.buildUploadUrl(path, 'osfstorage', guid, f);
 
     xhr.open("put", url, true);
     xhr = $osf.setXHRAuthorization(xhr);

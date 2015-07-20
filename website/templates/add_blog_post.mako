@@ -3,12 +3,10 @@
 ## Use full page width
 <%def name="container_class()">container-xxl</%def>
 
-## <%def name="title()">${file_name | h}</%def>
 <%def name="title()">New Post</%def>
 <div class="row">
   <div class="col-sm-12">
     <h2 class="break-word">
-##       ${file_name | h}
         New Post
     </h2>
   </div>
@@ -209,53 +207,21 @@
     <script type="text/javascript">
       window.contextVars = $.extend(true, {}, window.contextVars, {
         file: {
-##             size: ${size},
-##             extra: ${extra},
-##             error: '${error | js_str}',
-##             name: '${file_name | js_str}',
-##             path: '${file_path | js_str}',
             provider: '${provider | js_str}',
             name: '${name | js_str}',
-##             safeName: '${file_name | h,js_str}',
-##             materializedPath: '${materialized_path | js_str}',
-##           urls: {
-##         %if error is None:
-##               render: '${urls['render']}',
-##         %endif
-##               sharejs: '${urls['sharejs'] | js_str}'
-##             }
         },
-##         editor: {
-##             registration: true,
-##             docId: '${sharejs_uuid}',
-##             userId: '${user['id']}',
-##             userName: '${user['fullname'] | js_str}',
-##             userUrl: '/${user['id']}/',
-##             userGravatar: '${urls['gravatar']}'.replace('&amp;', '&')
-##         },
         uid: '${user['id'] | js_str}',
         guid:'${node['root_id'] | js_str}',
         node: {
+          path: '${path | js_str}',
           urls: {
             files: '${urls['files'] | js_str}'
           }
         }
-##         panelsUsed: ['edit', 'view'],
-##         currentUser: {
-##           canEdit: ${int(user['can_edit'])}
-##         }
       });
     </script>
 
     <link href="/static/css/pages/blog-creation.css" rel="stylesheet">
-
-##     <link href="${urls['mfr']}/static/css/mfr.css" media="all" rel="stylesheet" />
-##     <script src="${urls['mfr']}/static/js/mfr.js"></script>
-
-##     <script src="//${urls['sharejs']}/text.js"></script>
-##     <script src="//${urls['sharejs']}/share.js"></script>
-
-##     <script src=${"/static/public/js/file-page.js" | webpack_asset}></script>
     <script src=${"/static/public/js/add-blog-post.js" | webpack_asset}></script>
     <script src=${"/static/public/js/view-file-tree-page.js" | webpack_asset}></script>
 </%def>

@@ -351,18 +351,7 @@ class User(GuidStoredObject, AddonModelMixin):
     #     'twitter': <twitter id>,
     # }
 
-    # Blog info
-    blog = fields.DictionaryField()
-    # Format: {
-    #     'blog_guid': <blog guid>,
-    #     'theme': <theme name>,
-    #     'title': <blog title>,
-    #     'description': <blog description>,
-    #     'logo': <blog logo>,
-    #     'cover': <blog cover>,
-    #     'navigation': <blog navigation>
-    #     }
-    # }
+    blog_guid = fields.StringField()
 
     # hashed password used to authenticate to Piwik
     piwik_token = fields.StringField()
@@ -946,28 +935,6 @@ class User(GuidStoredObject, AddonModelMixin):
     @property
     def deep_url(self):
         return '/profile/{}/'.format(self._primary_key)
-
-    @property
-    def blog_guid(self):
-        return self.blog['blog_guid']
-
-    # @property
-    # def blog_list(self):
-    #     nodes = self.node__contributed
-
-
-    def blog_dict(self):
-        return {
-            'title': self.blog['title'],
-            'description': self.blog['description'],
-            'logo': self.blog['logo'],
-            'cover': self.blog['cover'],
-            'navigation': self.blog['navigation']
-        }
-
-    @property
-    def blog_theme(self):
-        return 'website/static/ghost_themes/' + self.blog['theme']
 
     @property
     def gravatar_url(self):

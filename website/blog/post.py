@@ -1,9 +1,12 @@
 import markdown2
 from file_handler import FileHandler
 import requests
+from website.models import User
+from website.profile.utils import get_gravatar
 
-def parse_blog(posts, guid):
-    blog = parse_header(posts[1], guid)
+
+def parse_blog(posts, node):
+    blog = parse_header(posts[1], node)
     prev_ = posts[0]
     next_ = posts[2]
     blog_dict = {
@@ -26,7 +29,7 @@ def parse_blog(posts, guid):
         }]
     }
     if next_ is not None:
-        next = parse_header(next_, guid)
+        next = parse_header(next_, node)
         blog_dict['next_post'] =  {
             'title': next.get('title'),
             'content':  next.get('content'),
@@ -35,7 +38,7 @@ def parse_blog(posts, guid):
             'author': next.get('author')
         },
     if prev_ is not None:
-        prev = parse_header(prev_, guid)
+        prev = parse_header(prev_, node)
         blog_dict['prev_post'] =  {
             'title': prev.get('title'),
             'content':  prev.get('content'),
@@ -45,8 +48,8 @@ def parse_blog(posts, guid):
         }
     return blog_dict
 
-def parse_header(blog_, guid):
-    file_handler = FileHandler(guid)
+def parse_header(blog_, node):
+    file_handler = FileHandler(node)
     blog = file_handler.read_file(blog_)
     blog_dict = {
         'title': '',
@@ -63,14 +66,19 @@ def parse_header(blog_, guid):
     content = markdown2.markdown(blog[blog.find("**/")+3:])
     blog_dict['content'] = content
     id = blog_dict['author']
+    user = User.load(id)
+    try:
+        website = user.social['personal']
+    except KeyError:
+        website = None
     blog_dict['author'] = {
             'id': id,
-            'name': 'Jo Bloggs',
+            'name': user.fullname,
             'bio': 'test bio',
             'url': '/author/1',
-            'image': '/static/ghost_themes/puppies.jpg',
+            'image': get_gravatar(user, 75),
             'location': 'Location',
-            'website': 'http://facebook.com'
+            'website': website
         }
     return blog_dict
 

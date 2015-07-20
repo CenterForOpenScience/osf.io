@@ -1,0 +1,16 @@
+<header id="logo" class="page-wrap">
+    {{#if @blog.logo}}
+    	<a id="logo-image" href="{{@blog.url}}">
+    		<img src="{{@blog.logo}}" alt="{{@blog.title}} - {{@blog.description}}" />
+    	</a>
+    {{else}}
+	    <h1 class="blog-title">
+	    	<a href="{{@blog.url}}">{{@blog.title}}</a>
+	    </h1>
+	    <h2 class="blog-desc">
+	    	<a href="{{@blog.url}}">{{@blog.description}}</a>
+	    </h2>
+
+	    <small>Free Ghost Theme</small>
+    {{/if}}
+</header>

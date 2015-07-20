@@ -635,6 +635,18 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
     # {<User.id>: [<Node._id>, <Node2._id>, ...] }
     child_node_subscriptions = fields.DictionaryField(default=dict)
 
+    # Blog info
+    blog = fields.DictionaryField()
+    # Format: {
+    #     'theme': <theme name>,
+    #     'title': <blog title>,
+    #     'description': <blog description>,
+    #     'logo': <blog logo>,
+    #     'cover': <blog cover>,
+    #     'navigation': <blog navigation>
+    #     }
+    # }
+
     _meta = {
         'optimistic': True,
     }
@@ -1979,6 +1991,19 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
                 user._id in self.contributors
             )
         )
+
+    #Blog methods
+    def blog_dict(self):
+        return {
+            'title': self.blog['title'],
+            'description': self.blog['description'],
+            'logo': self.blog['logo'],
+            'cover': self.blog['cover']
+        }
+
+    @property
+    def blog_theme(self):
+        return 'website/static/ghost_themes/' + self.blog['theme']
 
     def add_addon(self, addon_name, auth, log=True, *args, **kwargs):
         """Add an add-on to the node. Do nothing if the addon is already

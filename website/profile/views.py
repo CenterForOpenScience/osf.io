@@ -25,7 +25,7 @@ from framework.status import push_status_message
 from website import mails
 from website import mailchimp_utils
 from website import settings
-from website.models import User
+from website.models import User, Node
 from website.profile import utils as profile_utils
 from website.util import web_url_for, paths
 from website.util.sanitize import escape_html
@@ -585,7 +585,7 @@ def serialize_school(school):
 @collect_auth
 def serialize_blog(auth, uid=None, **kwargs):
     target = get_target_user(auth, uid)
-    ret = target.blog
+    ret = target.blog_guid
     append_editable(ret, auth, uid)
     return ret
 
@@ -686,14 +686,15 @@ def unserialize_blog(auth, **kwargs):
 
     user = auth.user
     json_data = escape_html(request.get_json())
+    node = Node.load(user.blog_guid)
 
     for field in user.blog.keys():
         data = json_data.get(field)
         if data is not None:
-            user.blog[field] = json_data.get(field)
+            node.blog[field] = json_data.get(field)
 
     try:
-        user.save()
+        node.save()
     except ValidationError as exc:
         raise HTTPError(http.BAD_REQUEST, data=dict(
             message_long=exc.args[0]

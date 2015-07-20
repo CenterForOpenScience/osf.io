@@ -1,0 +1,70 @@
+{{!< default}}
+
+{{! The main content area on the homepage }}
+<main class="page-wrap author-page" role="main">
+    {{! Everything inside the #author tags pulls data from the author }}
+    {{#author}}    
+        <section class="author-profile">
+            {{#if image}}
+            <img src="{{image}}" alt="{{name}}'s Picture" />
+            {{/if}}
+            <h2 class="page-title">Posts by {{name}} ({{plural ../pagination.total empty='No posts' singular='% post' plural='% posts'}})</h1>
+            <p class="author-bio">{{bio}}</p>
+            <dl class="author-meta">
+                {{#if location}}<dt>Location:</dt><dd>{{location}}</dd>{{/if}}
+                {{#if website}}<dt>Website: </dt><dd><a href="{{website}}">{{website}}</a></dd>{{/if}}
+            </dl>
+            <a class="subscribe-button" href="{{url}}rss/">Subscribe {{name}}'s posts RSS</a>
+        </section>
+    {{/author}}
+    
+    {{! Each post will be output using this markup }}
+    {{#foreach posts}}
+
+    <article class="{{post_class}}" data-scroll-reveal="enter bottom">
+        <div>    
+            <header class="post-header">
+                {{#if image}}
+                	<img src="{{image}}" alt="{{{title}}}" />
+                {{/if}}
+                
+                <h2 class="post-title">
+                    <a href="{{url}}"><span>{{{title}}}</span></a>
+                </h2>
+            </header>
+            <section class="post-excerpt">
+                <p>{{excerpt}}&hellip;</p>
+
+                <a href="{{url}}" class="post-readmore">Read more</a>
+            </section>
+        </div>
+
+        <aside class="post-meta" data-scroll-reveal="enter left and move 30px after .3s">
+            <time datetime="{{date format='YYYY-MM-DD'}}">
+                {{date format="MMM DD"}}
+                <span>{{date format="YYYY"}}</span>
+            </time> 
+
+            <dl>
+                <dt class="item-author">by</dt>
+                <dd>{{author}}</dd>
+               
+                {{#if tags}}
+                <dt class="item-tags">tagged as:</dt>
+                <dd>
+                    <ul>
+                      {{#foreach tags}}
+                        <li><a href="{{url}}">{{name}}</a>{{#if @last}} {{else}}, {{/if}}</li>
+                      {{/foreach}}
+                    </ul>
+                </dd>
+                {{/if}}
+            </dl>
+        </aside>
+    </article>
+
+    {{/foreach}}
+
+    {{!! After all the posts, we have the previous/next pagination links }}
+    {{pagination}}
+</main>
