@@ -53,7 +53,7 @@
                             <div data-bind='if: loadingResults'>
                                 <div class="spinner-loading-wrapper">
                                     <div class="logo-spin text-center"><img src="/static/img/logo_spin.png" alt="loader"> </div>
-                                    <p class="m-t-sm fg-load-message"> Loading files...  </p>
+                                    <p class="m-t-sm fg-load-message"> Loading Results...  </p>
                                 </div>
                             </div>
 
