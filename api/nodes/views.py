@@ -36,11 +36,12 @@ class NodeIncludeMixin(object):
         parameters = data.split(',')
         auth = Auth(self.request.user)
         if 'children' in parameters:
-            node.children = [node for node in node.nodes if node.can_view(auth)]
+            node.children = [child for child in node.nodes if child.can_view(auth) and child.primary]
         if 'pointers' in parameters:
             node.pointers = node.nodes_pointer
         if 'registrations' in parameters:
-            node.registered_nodes = [node for node in node.node__registrations if node.can_view(auth)]
+            node.registered_nodes = [registration for registration in node.node__registrations
+                                     if registration.can_view(auth)]
         return node
 
 
