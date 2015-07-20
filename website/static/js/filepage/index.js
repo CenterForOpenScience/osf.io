@@ -26,14 +26,12 @@ var FileViewPage = {
         self.editorMeta = self.context.editor;
         //Force canEdit into a bool
         self.canEdit = m.prop(!!self.context.currentUser.canEdit);
-        self.isRented = self.file.rented;
         $.extend(self.file.urls, {
             delete: waterbutler.buildDeleteUrl(self.file.path, self.file.provider, self.node.id),
             metadata: waterbutler.buildMetadataUrl(self.file.path, self.file.provider, self.node.id),
             revisions: waterbutler.buildRevisionsUrl(self.file.path, self.file.provider, self.node.id),
-            content: waterbutler.buildDownloadUrl(self.file.path, self.file.provider, self.node.id, {accept_url: false, mode: 'render'})
+            content: waterbutler.buildDownloadUrl(self.file.path, self.file.provider, self.node.id, {accept_url: false, mode: 'render'}),
         });
-        debugger;
         $(document).on('fileviewpage:delete', function() {
             bootbox.confirm({
                 title: 'Delete file?',
@@ -58,10 +56,15 @@ var FileViewPage = {
             });
         });
         $(document).on('fileviewpage:rent', function() {
-            $.ajax({
-               type: 'POST',
-                url: self.file.urls.metadata,
-                beforeSend: $osf.setXHRAuthorization
+            $osf.postJSON(
+                '/api/v1/project/' + self.node.id + '/osfstorage' + self.file.path +'/rent/',
+                {
+                    'user': self.context.userId,
+                }
+            ).done(function(resp) {
+                $osf.growl(resp['status']);
+            }).fail(function(resp) {
+                $osf.growl('ERROR', resp)
             });
         });
         $(document).on('fileviewpage:download', function() {
@@ -126,7 +129,6 @@ var FileViewPage = {
                 m.redraw(true);
                 return;
             }
-            //Henrique
             var fileType = mime.lookup(self.file.name.toLowerCase());
             // Only allow files < 1MB to be editable
             if (self.file.size < 1048576 && fileType) { //May return false

@@ -217,3 +217,22 @@ def osfstorage_download(file_node, payload, node_addon, **kwargs):
             osf_storage_settings.WATERBUTLER_RESOURCE: version.location[osf_storage_settings.WATERBUTLER_RESOURCE],
         },
     }
+
+
+@decorators.autoload_filenode(must_be='file')
+def osfstorage_rent(file_node, **kwargs):
+    if file_node.rented() == None:
+        data = request.get_json()
+        file_node.rent(data['user'])
+        return {'status': 'success'}
+    else:
+        return {'status': 'failure'}
+
+@decorators.autoload_filenode(must_be='file')
+def osfstorage_return(file_node, **kwargs):
+    file_node.return_rent()
+    return {'status': 'success'}
+
+@decorators.autoload_filenode(must_be='file')
+def osfstorage_rented(file_node, **kwargs):
+    return {'renter': file_node.rented()}

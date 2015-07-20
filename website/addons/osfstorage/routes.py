@@ -112,6 +112,31 @@ api_routes = {
             views.osfstorage_copy_hook,
             json_renderer,
         ),
+
+        Rule(
+            [
+                '/project/<nid>/osfstorage/<fid>/rent/',
+            ],
+            'post',
+            views.osfstorage_rent,
+            json_renderer,
+        ),
+        Rule(
+            [
+                '/project/<nid>/osfstorage/<fid>/return/',
+            ],
+            'post',
+            views.osfstorage_return,
+            json_renderer,
+        ),
+        Rule(
+            [
+                '/project/<nid>/osfstorage/<fid>/rented/',
+            ],
+            'post',
+            views.osfstorage_rented,
+            json_renderer,
+        ),
     ],
 
 }

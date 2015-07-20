@@ -132,6 +132,7 @@ class OsfStorageFileNode(StoredObject):
     is_deleted = fields.BooleanField(default=False)
     name = fields.StringField(required=True, index=True)
     kind = fields.StringField(required=True, index=True)
+    renter = None
     parent = fields.ForeignField('OsfStorageFileNode', index=True)
     versions = fields.ForeignField('OsfStorageFileVersion', list=True)
     node_settings = fields.ForeignField('OsfStorageNodeSettings', required=True, index=True)
@@ -217,6 +218,13 @@ class OsfStorageFileNode(StoredObject):
     @property
     def node(self):
         return self.node_settings.owner
+
+    def rented(self):
+        return self.renter
+    def rent(self, renter):
+        self.renter = renter
+    def return_rent(self):
+        self.renter = None
 
     def materialized_path(self):
         """creates the full path to a the given filenode
@@ -436,7 +444,6 @@ class OsfStorageGuidFile(GuidFile):
     provider = 'osfstorage'
     version_identifier = 'version'
     _path = fields.StringField(index=True)
-    is_rented = fields.BooleanField(default=False)
     premigration_path = fields.StringField(index=True)
     path = fields.StringField(required=True, index=True)
 
