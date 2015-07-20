@@ -1,4 +1,5 @@
 from rest_framework import serializers as ser
+from .utils import IncludeAdditionalQueryUser
 
 from api.base.serializers import JSONAPISerializer, LinksField, Link
 
@@ -33,8 +34,16 @@ class UserSerializer(JSONAPISerializer):
         }
     })
 
+    additional_query_params = ser.SerializerMethodField(required=False)
+
     class Meta:
         type_ = 'users'
+
+    def get_additional_query_params(self, obj):
+        if 'request' in self.context:
+            include = IncludeAdditionalQueryUser(obj, self.context['request'])
+            ret = include.get_additional_query()
+            return ret
 
     def absolute_url(self, obj):
         return obj.absolute_url
@@ -50,3 +59,11 @@ class ContributorSerializer(UserSerializer):
     filterable_fields = frozenset.union(UserSerializer.filterable_fields, local_filterable)
 
     bibliographic = ser.BooleanField(help_text='Whether the user will be included in citations for this node or not')
+
+    additional_query_params = ser.SerializerMethodField(required=False)
+
+    def get_additional_query_params(self, obj):
+        if 'request' in self.context:
+            include = IncludeAdditionalQueryUser(obj, self.context['request'])
+            ret = include.get_additional_query()
+            return ret

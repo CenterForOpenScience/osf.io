@@ -8,6 +8,7 @@ from api.base.filters import ODMFilterMixin
 from api.nodes.serializers import NodeSerializer
 from .serializers import UserSerializer
 
+
 class UserMixin(object):
     """Mixin with convenience methods for retrieving the current node based on the
     current URL. By default, fetches the user based on the pk kwarg.

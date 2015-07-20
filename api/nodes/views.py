@@ -28,6 +28,15 @@ class NodeMixin(object):
         return obj
 
 
+class IncludeMixin(object):
+    """Mixin with convenience methods for retrieving the current node based on the
+    current URL. By default, fetches the current node based on the pk kwarg.
+    """
+
+    def get_additonal_parameters(self):
+        pass
+
+
 class NodeList(generics.ListCreateAPIView, ODMFilterMixin):
     """Projects and components.
 

@@ -115,6 +115,62 @@ class TestUserDetail(ApiTestCase):
         assert_equal(user_json['fullname'], self.user_two.fullname)
 
 
+class TestUserIncludeQueryParameters(ApiTestCase):
+
+    def setUp(self):
+        super(TestUserIncludeQueryParameters, self).setUp()
+        self.user = UserFactory.build()
+        self.user.set_password('justapoorboy')
+        self.user.save()
+        self.auth_one = (self.user.username, 'justapoorboy')
+
+        self.project = ProjectFactory.build(title='project', is_public=True, creator=self.user)
+        self.project.save()
+
+        self.user_base_url = '/{}users/{}/'.format(API_BASE, self.user._id)
+        self.contributor_base_url = '/{}nodes/{}/contributors/'.format(API_BASE, self.project._id)
+
+    def test_get_detail_include_key(self):
+        url = self.user_base_url+'?include=nodes'
+        res = self.app.get(url)
+        assert_equal(res.status_code, 200)
+        additional_query_params = res.json['data']['additional_query_params']
+        assert_in('nodes', additional_query_params)
+
+    def test_get_detail_invalid_key(self):
+        url = self.user_base_url+'?include=nope'
+        res = self.app.get(url, expect_errors=True)
+        assert_equal(res.status_code, 404)
+
+    def test_get_detail_include_values(self):
+        url = self.user_base_url+'?include=nodes'
+        res = self.app.get(url)
+        assert_equal(res.status_code, 200)
+        additional_query_params = res.json['data']['additional_query_params']
+        assert_in(self.project._id, additional_query_params['nodes'])
+
+    def test_not_logged_in_get_detail_include_values(self):
+        url = self.user_base_url+'?include=nodes'
+        res = self.app.get(url)
+        assert_equal(res.status_code, 200)
+        additional_query_params = res.json['data']['additional_query_params']
+        assert_in(self.project._id, additional_query_params['nodes'])
+
+    def test_get_node_contributors_include_key(self):
+        url = self.contributor_base_url+'?include=nodes'
+        res = self.app.get(url)
+        assert_equal(res.status_code, 200)
+        additional_query_params = res.json['data'][0]['additional_query_params']
+        assert_in('nodes', additional_query_params)
+
+    def test_get_node_contributors_include_values(self):
+        url = self.contributor_base_url+'?include=nodes'
+        res = self.app.get(url)
+        assert_equal(res.status_code, 200)
+        additional_query_params = res.json['data'][0]['additional_query_params']
+        assert_in(self.project._id, additional_query_params['nodes'])
+
+
 class TestUserNodes(ApiTestCase):
 
     def setUp(self):
