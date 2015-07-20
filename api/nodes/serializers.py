@@ -79,6 +79,9 @@ class NodeSerializer(JSONAPISerializer):
                 'related': Link('nodes:node-files', kwargs={'node_id': '<pk>'})
             }
         },
+        'parent': {
+            'self': Link('nodes:node-detail', kwargs={'node_id': '<parent_id>'})
+        }
     })
 
     # TODO: finish me
