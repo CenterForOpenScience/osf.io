@@ -221,6 +221,12 @@ var ViewModel = function(url, selector, folderPicker) {
                 if (confirmed) {
                     return sendDeauth();
                 }
+            },
+            buttons:{
+                confirm:{
+                    label:'Deauthorize',
+                    className:'btn-danger'
+                }
             }
         });
     };
@@ -254,6 +260,11 @@ var ViewModel = function(url, selector, folderPicker) {
                     return $osf.putJSON(self.urls().importAuth, {})
                         .done(onImportSuccess)
                         .fail(onImportError);
+                }
+            },
+            buttons:{
+                confirm:{
+                    label:'Import'
                 }
             }
         });

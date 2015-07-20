@@ -316,6 +316,11 @@ var ProjectViewModel = function(data) {
                 if (confirmed) {
                     self.createIdentifiers();
                 }
+            },
+            buttons:{
+                confirm:{
+                    label:'Create'
+                }
             }
         });
     };
