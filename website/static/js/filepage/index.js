@@ -78,7 +78,7 @@ var FileViewPage = {
         self.editHeader = function() {
             return m('.row', [
                 m('.col-sm-12', m('span[style=display:block;]', [
-                    m('h3.panel-title',[m('i.fa.fa-pencil-square-o'), '   Edit ']),
+                    m('h3.panel-title','Edit'),
                     m('.pull-right', [
                         m('.progress.no-margin.pointer', {
                             'data-toggle': 'modal',
