@@ -28,7 +28,13 @@ class NodeMixin(object):
         return obj
 
 
-class NodeList(generics.ListCreateAPIView, ODMFilterMixin):
+class NodeIncludeMixin(object):
+
+    def get_parameters(self):
+        pass
+
+
+class NodeList(generics.ListCreateAPIView, ODMFilterMixin, NodeIncludeMixin):
     """Projects and components.
 
     On the front end, nodes are considered 'projects' or 'components'. The difference between a project and a component
@@ -79,7 +85,7 @@ class NodeList(generics.ListCreateAPIView, ODMFilterMixin):
         serializer.save(creator=user)
 
 
-class NodeDetail(generics.RetrieveUpdateDestroyAPIView, NodeMixin):
+class NodeDetail(generics.RetrieveUpdateDestroyAPIView, NodeMixin, NodeIncludeMixin):
     """Projects and component details.
 
     On the front end, nodes are considered 'projects' or 'components'. The difference between a project and a component
@@ -143,7 +149,7 @@ class NodeContributorsList(generics.ListAPIView, ListFilterMixin, NodeMixin):
         return self.get_queryset_from_request()
 
 
-class NodeRegistrationsList(generics.ListAPIView, NodeMixin):
+class NodeRegistrationsList(generics.ListAPIView, NodeMixin, NodeIncludeMixin):
     """Registrations of the current node.
 
     Registrations are read-only snapshots of a project. This view lists all of the existing registrations
@@ -167,7 +173,7 @@ class NodeRegistrationsList(generics.ListAPIView, NodeMixin):
         return registrations
 
 
-class NodeChildrenList(generics.ListAPIView, NodeMixin):
+class NodeChildrenList(generics.ListAPIView, NodeMixin, NodeIncludeMixin):
     """Children of the current node.
 
     This will get the next level of child nodes for the selected node if the current user has read access for those
@@ -194,7 +200,7 @@ class NodeChildrenList(generics.ListAPIView, NodeMixin):
         return children
 
 
-class NodePointersList(generics.ListCreateAPIView, NodeMixin):
+class NodePointersList(generics.ListCreateAPIView, NodeMixin, NodeIncludeMixin):
     """Pointers to other nodes.
 
     Pointers are essentially aliases or symlinks: All they do is point to another node.
@@ -211,7 +217,7 @@ class NodePointersList(generics.ListCreateAPIView, NodeMixin):
         return pointers
 
 
-class NodePointerDetail(generics.RetrieveDestroyAPIView, NodeMixin):
+class NodePointerDetail(generics.RetrieveDestroyAPIView, NodeMixin, NodeIncludeMixin):
     """Detail of a pointer to another node.
 
     Pointers are essentially aliases or symlinks: All they do is point to another node.
