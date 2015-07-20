@@ -220,32 +220,16 @@ class NodeLogSerializer(JSONAPISerializer):
     links = LinksField({
         'self': 'get_absolute_api_v2_url',
         'user': {
-            'self': Link('users:user-detail', kwargs={'user_id': '<user._id>'})
-        },
+            'self': Link('users:user-detail', kwargs={'user_id': '<user_id>'})
+        }
     })
-    # def get_absolute_url(self, obj):
-    #     pointer_user = User.load(obj.user_id)
-    #     return pointer_user.absolute_api_v2_url
+
+    def absolute_url(self, obj):
+        return obj.absolute_url
 
     def get_absolute_api_v2_url(self, obj):
         pointer_node = Node.load(obj.node._id)
         return pointer_node.absolute_api_v2_url
-
-    # @property
-    # def absolute_url(self):
-    #     return absolute_reverse('users:user-detail', kwargs={'user_id': self.user._id})
-    #
-    # @property
-    # def absolute_api_v2_url(self):
-    #     from api.base.utils import absolute_reverse  # Avoid circular dependency
-    #     return absolute_reverse('users:user-detail', kwargs={'user_id': self.pk})
-    #
-    # def get_absolute_url(self):
-    #     return self.absolute_api_v2_url
-    #
-    # @property
-    # def absolute_api_v2_url(self):
-    #     return absolute_reverse('users:user-detail', kwargs={'user_id': self._id})
 
 
 
