@@ -242,17 +242,20 @@ def search_share_stats():
 @handle_search_errors
 def search_share_atom(**kwargs):
     json_query = request.args.get('jsonQuery')
+    start = util.compute_start(request.args.get('page', 1), RESULTS_PER_PAGE)
+
     if not json_query:
         q = request.args.get('q', '*')
         sort = request.args.get('sort')
 
         # we want the results per page to be constant between pages
         # TODO -  move this functionality into build_query in util
-        start = util.compute_start(request.args.get('page', 1), RESULTS_PER_PAGE)
 
         query = build_query(q, size=RESULTS_PER_PAGE, start=start, sort=sort)
     else:
         query = json.loads(unquote(json_query))
+        query['from'] = start
+        query['size'] = RESULTS_PER_PAGE
         q = query  # Do we really want to display this?
 
     try:
@@ -272,7 +275,7 @@ def search_share_atom(**kwargs):
         data=search_results['results'],
         query=q,
         size=RESULTS_PER_PAGE,
-        start=query.get('start', 0),
+        start=start,
         url=atom_url,
         to_atom=share_search.to_atom
     )
