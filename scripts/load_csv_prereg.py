@@ -2,96 +2,118 @@
 """
 
 import os
+import sys
 import csv
 import json
 import logging
 
+from scripts import utils as scripts_utils
+
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
-""" Given a question number, returns list containing page id, page index, and index of question on page
+def get_page(quest_num):
+    """ Given a question number, returns list containing page id, page index, and index of question on page
+['page1', 0, 1] => Question 2 on page 1
 """
-def getPage(quest_num):
-    pageDir = {'page1':['01', '02', '03', '04'], 'page2':['05', '06', '07', '08'], 'page3':['09', '10', '11', '12', '13', '14', '15'], 'page4':['16', '17', '18', '19', '20', '21'], 'page5':['22']}
-    for page in pageDir:
-        for question in pageDir[page]:
-            if (quest_num == question):
-                questionIndex = pageDir[page].index(question)
-                pageIndex = getPageIndex(page)
-                return [page, pageIndex, questionIndex]
-    return "Question not found."
+    pages = {
+        'page1': ['01', '02', '03', '04'],
+        'page2': ['05', '06', '07', '08'],
+        'page3': ['09', '10', '11', '12', '13', '14', '15'],
+        'page4': ['16', '17', '18', '19', '20', '21'],
+        'page5': ['22']
+    }
+    for page in pages:
+        for question in pages[page]:
+            if quest_num == question:
+                question_index = pages[page].index(question)
+                page_index = int(page.replace('page', '')) - 1
+                return [page, page_index, question_index]
+    return False
 
-def getPageIndex(pageName):
-    pageDir = {'page1': 0, 'page2': 1, 'page3': 2, 'page4': 3, 'page5': 4}
-    for page in pageDir:
-        if page == pageName:
-            return pageDir[page]
-    return "Page not found."
+def get_label(row_type):
+    """ Translates the csv terms to json schema terms used"""
+    types = {'QUESTION': 'title', 'EXPLAIN': 'description', 'HELP': 'help'}
 
-def getLabel(rowType):
-    typeDir = {'QUESTION': 'title', 'EXPLAIN': 'description', 'HELP': 'help'}
+    for type in types:
+        if type == row_type:
+            return types[type]
 
-    for typeOption in typeDir:
-        if (typeOption == rowType):
-            return typeDir[typeOption]
-        elif (rowType.startswith('MC')):
-            mc = rowType.split('C')
+        elif row_type.startswith('MC'):
+            mc = row_type.split('C')
             index = int(mc[1]) - 1;
             return (mc[1], index)
 
-# use json.dump(<data>, <filename>) to write json to file
-def main():
+# use json.dump(<data>, <filename>) to write formatted json to file
+def main(dry_run=True):
     __location__ = os.path.realpath(os.path.join(os.getcwd(), os.path.dirname(__file__)))
 
-    preregContent = os.path.join(__location__, 'preregcontent.csv');
-    jsonFileDir = os.path.realpath(os.path.join(os.getcwd(), 'website/project/metadata'))
-    preregSchema = os.path.join(jsonFileDir, 'prereg-prize-test.json')
+    prereg_content = os.path.join(__location__, 'preregcontent.csv');
+    schema_directory = os.path.realpath(os.path.join(os.getcwd(), 'website/project/metadata'))
+    prereg_schema = os.path.join(schema_directory, 'prereg-prize-test.json')
 
-    with open(preregSchema) as json_file:
+    if not dry_run:
+        scripts_utils.add_file_logger(logger, __file__)
+        logger.info('Opening the Prereg JSON Schema')
+
+    with open(prereg_schema) as json_file:
         json_data = json.load(json_file)
-        multipleChoice = {}
+        multiple_choice = {}
 
-        with open(preregContent, 'rU') as csvfile:
-            cr = csv.reader(csvfile)
+        with open(prereg_content, 'rU') as csv_file:
+            cr = csv.reader(csv_file)
             cr.next()
-            prevQuestionNumber = ""
-            currentPage = ""
-            
+            previous_question = ''
+            current_page = ['', 0, 0]
+            current_page_data = json_data['pages'][int(current_page[1])]
+
+            # row: ['01_QUESTION', 'What is your plan?']
             for row in cr:
+                # label: ['01' 'QUESTION']
                 label = row[0].split('_')
-                questionNumber = label[0]
-                questionPart = label[1]
-                if (questionNumber != prevQuestionNumber):
-                    prevQuestionNumber = questionNumber
-                    currentPage = getPage(questionNumber)
+                question_num = label[0]
+                question_part = label[1]
 
-                rowType = getLabel(questionPart)
+                if question_num != previous_question:
+                    previous_question = question_num
+                    current_page = get_page(question_num)
+                    current_page_data = json_data['pages'][int(current_page[1])]
+                    row_type = get_label(question_part)
 
-                if (json_data['pages'][int(currentPage[1])]['id'] == currentPage[0]):
-                    properties = json_data['pages'][int(currentPage[1])]['questions']
-                    questionData = properties.itervalues().next()
-                    key = properties.keys()[int(currentPage[2])]
-                    if isinstance(rowType, tuple):
-                        if (questionNumber in multipleChoice):
-                            multipleChoice[questionNumber].append(unicode(row[1]))
+                if current_page_data['id'] == current_page[0]:
+                    # dict of each question in a page
+                    questions = current_page_data['questions']
+                    question_data = questions.itervalues().next()
+                    key = questions.keys()[int(current_page[2])]
+
+                    # row is a multiple choice question
+                    if isinstance(row_type, tuple):
+                        import ipdb; ipdb.set_trace()
+                        if question_num in multiple_choice:
+                            multiple_choice[question_num].append(unicode(row[1]))
                         else:
-                            multipleChoice[questionNumber] = [unicode(row[1])]
+                            multiple_choice[question_num] = [unicode(row[1])]
                     else:
-                        if (row[1] != questionData[rowType]):
-                            json_data['pages'][int(currentPage[1])]['questions'][key][rowType] = unicode(row[1])
-                            
-        for array in multipleChoice:
-            currentPage = getPage(array)
-            properties = json_data['pages'][int(currentPage[1])]['questions']
-            key = properties.keys()[int(currentPage[2])]
-            
-            if (currentPage[1] == 1):
-                print json_data['pages'][int(currentPage[1])]['questions'][key]
-            else:
-                json_data['pages'][int(currentPage[1])]['questions'][key]['options'] = multipleChoice[array]
+                        import ipdb; ipdb.set_trace()
+                        # If the csv and json differ, save it
+                        if row[1] != question_data[row_type]:
+                            # save to the actual json file, not the variable
+                            json_data['pages'][int(current_page[1])]['questions'][key][row_type] = unicode(row[1])
 
-        with open(os.path.join(jsonFileDir, 'prereg-prize-test.json'), 'w') as newFile:
-            json.dump(json_data, newFile)
+                cr.next()
+
+        for list in multiple_choice:
+            current_page = get_page(list)
+            questions = current_page_data['questions']
+            key = questions.keys()[int(current_page[2])]
+
+            if current_page[1] != 1:
+                json_data['pages'][int(current_page[1])]['questions'][key]['options'] = multiple_choice[list]
+
+        if not dry_run:
+            with open(os.path.join(schema_directory, 'prereg-prize-test.json'), 'w') as updated_file:
+                json.dump(json_data, updated_file)
 
 if __name__ == '__main__':
-    main()
+    dry_run ='dry' in sys.argv
+    main(dry_run)
