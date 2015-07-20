@@ -782,9 +782,9 @@ class AddonNodeSettingsBase(AddonSettingsBase):
         if hasattr(self, "user_settings"):
             if self.user_settings is None:
                 return (
-                    u'Because you have not configured the authorization for this {addon} add-on this '
-                    u'{category} will not transfer your authentication token to '
-                    u'the new forked {category}.'
+                    u'Because you have not configured the authorization for this {addon} add-on, this '
+                    u'{category} will not transfer your authentication to '
+                    u'the forked {category}.'
                 ).format(
                     addon=self.config.full_name,
                     category=node.project_or_component,
@@ -793,7 +793,7 @@ class AddonNodeSettingsBase(AddonSettingsBase):
             elif self.user_settings and self.user_settings.owner == user:
                 return (
                     u'Because you have authorized the {addon} add-on for this '
-                    u'{category}, forking it will also transfer your authentication token to '
+                    u'{category}, forking it will also transfer your authentication to '
                     u'the forked {category}.'
                 ).format(
                     addon=self.config.full_name,
@@ -802,7 +802,7 @@ class AddonNodeSettingsBase(AddonSettingsBase):
             else:
                 return (
                     u'Because the {addon} add-on has been authorized by a different '
-                    u'user, forking it will not transfer authentication token to the forked '
+                    u'user, forking it will not transfer authentication to the forked '
                     u'{category}.'
                 ).format(
                     addon=self.config.full_name,
