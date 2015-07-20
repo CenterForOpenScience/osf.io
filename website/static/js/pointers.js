@@ -27,7 +27,6 @@ var AddPointerViewModel = oop.extend(Paginator, {
         this.errorMsg = ko.observable('');
         this.totalPages = ko.observable(0);
         this.includePublic = ko.observable(true);
-        this.loadingResults = ko.observable(false);
         this.searchWarningMsg = ko.observable('');
         this.submitWarningMsg = ko.observable('');
 
@@ -56,8 +55,8 @@ var AddPointerViewModel = oop.extend(Paginator, {
 
         if (self.query()) {
             var timeout = setTimeout(function() {
-            self.results([]); // clears page for spinner
-            self.loadingResults(true); // enables spinner
+                self.results([]); // clears page for spinner
+                self.loadingResults(true); // enables spinner
                         }, 500);
 
             osfHelpers.postJSON(
@@ -79,7 +78,8 @@ var AddPointerViewModel = oop.extend(Paginator, {
             }).fail(function(xhr) {
                     self.searchWarningMsg(xhr.responseJSON && xhr.responseJSON.message_long);
             }).always( function (){
-            clearTimeout(timeout); // clear timeout function
+                clearTimeout(timeout); // clear timeout function
+                this.loadingResults = ko.observable(false);
             });
 
         } else {
