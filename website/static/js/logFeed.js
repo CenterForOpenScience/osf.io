@@ -154,7 +154,7 @@ var LogsViewModel = oop.extend(Paginator, {
             self.addNewPaginators();
 
             //stops 'no logs' message from flashing
-            if(self.logs().length == 0){
+            if(self.logs().length === 0){
                 self.noLogs(true);
             } else {
                 self.noLogs(false);
