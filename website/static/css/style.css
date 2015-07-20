@@ -278,6 +278,10 @@ a {
     font-weight: normal;
 }
 
+.modal-body {
+    word-wrap: break-word;
+}
+
 /* sub-header for modal*/
 .modal-subheader {
     font-size: 20px;
