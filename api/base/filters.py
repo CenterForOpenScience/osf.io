@@ -22,10 +22,10 @@ query_pattern = re.compile(r'filter\[\s*(?P<field>\S*)\s*\]\s*')
 
 
 def query_params_to_fields(query_params):
-    yourmom = {query_pattern.match(key).groupdict()['field']: value
+    matched_key = {query_pattern.match(key).groupdict()['field']: value
         for key, value in query_params.items()
         if query_pattern.match(key)}
-    return yourmom
+    return matched_key
     # return {
     #     query_pattern.match(key).groupdict()['field']: value
     #     for key, value in query_params.items()
