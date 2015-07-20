@@ -137,6 +137,11 @@ ViewModel.prototype.deauthorizeNode = function() {
             if (confirm) {
                 self._deauthorizeNodeConfirm();
             }
+        },
+        buttons:{
+            confirm:{
+                label:'Deauthorize'
+            }
         }
     });
 };
@@ -170,6 +175,11 @@ ViewModel.prototype.importAuth = function() {
         callback: function(confirmed) {
             if (confirmed) {
                 return self._importAuthConfirm();
+            }
+        },
+        buttons:{
+            confirm:{
+                label:'Import'
             }
         }
     });
@@ -233,6 +243,11 @@ ViewModel.prototype.createBucket = function(bucketName) {
                 if (result) {
                     self.openCreateBucket();
                 }
+            },
+            buttons:{
+                confirm:{
+                    label:'Try new one'
+                }
             }
         });
     });
@@ -253,6 +268,11 @@ ViewModel.prototype.openCreateBucket = function() {
                 callback: function(result) {
                     if (result) {
                         self.openCreateBucket();
+                    }
+                },
+                buttons:{
+                    confirm:{
+                        label:'Try new one'
                     }
                 }
             });
