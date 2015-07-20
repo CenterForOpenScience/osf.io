@@ -177,7 +177,11 @@ class JSONAPISerializer(ser.Serializer):
         assert type_ is not None, 'Must define Meta.type_'
 
         attributes = super(JSONAPISerializer, self).to_representation(obj)
-        top_level = {'id': attributes.get('id'), 'links': attributes.get('links'), 'relationships': attributes.get('relationships')}
+        top_level = {
+            'id': attributes.get('id'),
+            'links': attributes.get('links'),
+            'relationships': attributes.get('relationships')
+        }
         for i in top_level.keys():
             attributes.pop(i, None)
         data = collections.OrderedDict((
