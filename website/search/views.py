@@ -1,8 +1,10 @@
 # -*- coding: utf-8 -*-
+import json
 import time
 import logging
 import functools
 import httplib as http
+from urllib2 import unquote
 
 import bleach
 
@@ -239,17 +241,22 @@ def search_share_stats():
 
 @handle_search_errors
 def search_share_atom(**kwargs):
-    q = request.args.get('q', '*')
-    sort = request.args.get('sort', 'dateUpdated')
+    json_query = request.args.get('jsonQuery')
+    if not json_query:
+        q = request.args.get('q', '*')
+        sort = request.args.get('sort')
 
-    # we want the results per page to be constant between pages
-    # TODO -  move this functionality into build_query in util
-    start = util.compute_start(request.args.get('page', 1), RESULTS_PER_PAGE)
+        # we want the results per page to be constant between pages
+        # TODO -  move this functionality into build_query in util
+        start = util.compute_start(request.args.get('page', 1), RESULTS_PER_PAGE)
 
-    query = build_query(q, size=RESULTS_PER_PAGE, start=start, sort=sort)
+        query = build_query(q, size=RESULTS_PER_PAGE, start=start, sort=sort)
+    else:
+        query = json.loads(unquote(json_query))
+        q = query  # Do we really want to display this?
 
     try:
-        search_results = search.search_share(query, index='share_v1')
+        search_results = search.search_share(query)
     except MalformedQueryError:
         raise HTTPError(http.BAD_REQUEST)
     except IndexNotFoundError:
@@ -265,7 +272,7 @@ def search_share_atom(**kwargs):
         data=search_results['results'],
         query=q,
         size=RESULTS_PER_PAGE,
-        start=start,
+        start=query.get('start', 0),
         url=atom_url,
         to_atom=share_search.to_atom
     )
