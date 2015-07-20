@@ -38,7 +38,7 @@ a {
     width:100%;
     padding-top:20px;
     padding-bottom:20px;
-    z-index:1;
+    z-index:9;
     background-color:white;
     border-top:2px solid black;
     display:none;
