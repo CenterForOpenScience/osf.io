@@ -128,9 +128,9 @@
                             </div>
 
                             <div class="btn-group">
-                                <button class="btn btn-default btn-sm m-r-xs copy-button" data-trigger="manual"
-                                        data-bind="attr: {data-clipboard-text: linkUrl}, tooltip: {title: 'Click to copy'}" >
-                                    <span class="fa fa-copy" ></span>
+                                <button class="btn btn-primary btn-sm m-r-xs copy-button"
+                                        data-bind="attr: {data-clipboard-text: linkUrl}" >
+                                    Copy
                                 </button>
                                 <input class="link-url" type="text" data-bind="value: linkUrl, attr:{readonly: readonly}"  />
                             </div>
@@ -232,7 +232,7 @@
             <!-- ko ifnot: contributor.canEdit() -->
                 <!-- ko if: canRemove -->
                     <a
-                            data-bind="click: removeSelf, tooltip: {title: 'Remove contributor'}"
+                            data-bind="click: function() { $data.removeSelf($parent)}, tooltip: {title: 'Remove contributor'}"
                         >
                         <i class="fa fa-times text-danger no-sort"></i>
                     </a>
@@ -248,10 +248,10 @@
         <a class="btn btn-danger contrib-button" data-bind="click: cancel, visible: changed">Discard Changes</a>
         <a class="btn btn-success contrib-button" data-bind="click: submit, visible: canSubmit">Save Changes</a>
         <br /><br />
+    % endif
         <div data-bind="foreach: messages">
             <div data-bind="css: cssClass">{{ text }}</div>
         </div>
-    % endif
 </%def>
 
 <%def name="javascript_bottom()">

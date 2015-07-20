@@ -28,56 +28,56 @@ from website.oauth.models import ExternalAccount
 logger = logging.getLogger(__name__)
 
 
-def do_migration(records, dry=True):
+def do_migration(records):
     host = 'dataverse.harvard.edu'
 
     for user_addon in records:
-
         user = user_addon.owner
         api_token = user_addon.api_token
 
-        with TokuTransaction():
-            logger.info('Record found for user {}'.format(user._id))
+        logger.info('Record found for user {}'.format(user._id))
 
-            if not dry:
+        # Modified from `dataverse_add_user_account`
+        # Create/load external account and append to user
+        try:
+            account = ExternalAccount(
+                provider='dataverse',
+                provider_name='Dataverse',
+                display_name=host,
+                oauth_key=host,
+                oauth_secret=api_token,
+                provider_id=api_token,
+            )
+            account.save()
+        except KeyExistsException:
+            # ... or get the old one
+            account = ExternalAccount.find_one(
+                Q('provider', 'eq', 'dataverse') &
+                Q('provider_id', 'eq', api_token)
+            )
+            assert account is not None
+        user.external_accounts.append(account)
+        user.save()
 
-                # Modified from `dataverse_add_user_account`
-                # Create/load external account and append to user
-                try:
-                    account = ExternalAccount(
-                        provider='dataverse',
-                        provider_name='Dataverse',
-                        display_name=host,
-                        oauth_key=host,
-                        oauth_secret=api_token,
-                        provider_id=api_token,
-                    )
-                    account.save()
-                except KeyExistsException:
-                    # ... or get the old one
-                    account = ExternalAccount.find_one(
-                        Q('provider', 'eq', 'dataverse') &
-                        Q('provider_id', 'eq', api_token)
-                    )
-                    assert account is not None
-                user.external_accounts.append(account)
-                user.save()
+        # Remove api_token from user settings object
+        user_addon.api_token = None
+        user_addon.save()
 
-                # Remove api_token from user settings object
-                user_addon.api_token = None
-                user_addon.save()
+        logger.info('Added external account {0} to user {1}'.format(
+            account._id, user._id,
+        ))
 
-                logger.info('Added external account {0} to user {1}'.format(
-                    account._id, user._id,
-                ))
+        ####### BROKEN #######
+        # Field user_addon needed to be user_addon._id for lookup.
+        #
+        # Add external account to authorized nodes
+        for node_addon in get_authorized_node_settings(user_addon):
+            node_addon.set_auth(account, user)
 
-                # Add external account to authorized nodes
-                for node_addon in get_authorized_node_settings(user_addon):
-                    node_addon.set_auth(account, user)
-
-                    logger.info('Added external account {0} to node {1}'.format(
-                        account._id, node_addon.owner._id,
-                    ))
+            logger.info('Added external account {0} to node {1}'.format(
+                account._id, node_addon.owner._id,
+            ))
+        ####### BROKEN #######
 
 
 def get_targets():
@@ -94,8 +94,11 @@ def get_authorized_node_settings(user_addon):
 
 
 def main(dry=True):
-    init_app(set_backends=True, routes=False, mfr=False)  # Sets the storage backends on all models
-    do_migration(get_targets(), dry=dry)
+    init_app(set_backends=True, routes=False)  # Sets the storage backends on all models
+    with TokuTransaction():
+        do_migration(get_targets())
+        if dry:
+            raise Exception('Abort Transaction - Dry Run')
 
 
 if __name__ == '__main__':
