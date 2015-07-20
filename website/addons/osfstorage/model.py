@@ -132,7 +132,7 @@ class OsfStorageFileNode(StoredObject):
     is_deleted = fields.BooleanField(default=False)
     name = fields.StringField(required=True, index=True)
     kind = fields.StringField(required=True, index=True)
-    renter = None
+    renter = fields.StringField(required=True, default='')
     parent = fields.ForeignField('OsfStorageFileNode', index=True)
     versions = fields.ForeignField('OsfStorageFileVersion', list=True)
     node_settings = fields.ForeignField('OsfStorageNodeSettings', required=True, index=True)
@@ -219,12 +219,17 @@ class OsfStorageFileNode(StoredObject):
     def node(self):
         return self.node_settings.owner
 
+    @classmethod
     def rented(self):
         return self.renter
+
+    @classmethod
     def rent(self, renter):
         self.renter = renter
+
+    @classmethod
     def return_rent(self):
-        self.renter = None
+        self.renter = ''
 
     def materialized_path(self):
         """creates the full path to a the given filenode

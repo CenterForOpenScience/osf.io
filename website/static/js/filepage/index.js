@@ -24,8 +24,23 @@ var FileViewPage = {
         self.file = self.context.file;
         self.node = self.context.node;
         self.editorMeta = self.context.editor;
+        self.renter = '';
+        self.isRenter = function() {
+            $osf.postJSON(
+                '/api/v1/project/' + self.node.id + '/osfstorage' + self.file.path +'/rented/',
+                {
+                    'user': self.context.userId
+                }
+            ).done(function(resp) {
+                self.renter =  resp['renter']
+            }).fail(function(resp) {
+                $osf.growl('ERROR', resp)
+            });
+        };
+        self.isRenter();
         //Force canEdit into a bool
-        self.canEdit = m.prop(!!self.context.currentUser.canEdit);
+        self.canEdit = function() {
+            return ((self.renter == '') || (self.renter == self.context.userId)) ? m.prop(!!self.context.currentUser.canEdit) : false};
         $.extend(self.file.urls, {
             delete: waterbutler.buildDeleteUrl(self.file.path, self.file.provider, self.node.id),
             metadata: waterbutler.buildMetadataUrl(self.file.path, self.file.provider, self.node.id),
@@ -65,8 +80,18 @@ var FileViewPage = {
             $osf.postJSON(
                 '/api/v1/project/' + self.node.id + '/osfstorage' + self.file.path +'/rent/',
                 {
-                    'user': self.context.userId,
+                    'user': self.context.userId
                 }
+            ).done(function(resp) {
+                $osf.growl(resp['status']);
+            }).fail(function(resp) {
+                $osf.growl('ERROR', resp)
+            });
+        });
+        $(document).on('fileviewpage:return', function() {
+            $osf.postJSON(
+                '/api/v1/project/' + self.node.id + '/osfstorage' + self.file.path +'/return/',
+                {}
             ).done(function(resp) {
                 $osf.growl(resp['status']);
             }).fail(function(resp) {
@@ -165,7 +190,7 @@ var FileViewPage = {
         //it was removed and shoved here due to issues with mithrils caching and interacting
         //With other non-mithril components on the page
         var panels;
-        if (ctrl.editor && !ctrl.file.rented) {
+        if (ctrl.editor) {
             panels = [ctrl.editor, ctrl.revisions];
         } else {
             panels = [ctrl.revisions];
@@ -215,10 +240,12 @@ var FileViewPage = {
 
         m.render(document.getElementById('toggleBar'), m('.btn-toolbar.m-t-md', [
             ctrl.canEdit() ? m('.btn-group.m-l-xs.m-t-xs', [
-                m('.btn.btn-sm.btn-danger.file-delete', {onclick: $(document).trigger.bind($(document), 'fileviewpage:delete')}, 'Delete')
             ]) : '',
             ctrl.canEdit() ? m('.btn-group.m-l-xs.m-t-xs', [
                 m('.btn.btn-sm.btn-primary', {onclick: $(document).trigger.bind($(document), 'fileviewpage:rent')}, 'Rent')
+            ]) : '',
+            ctrl.canEdit() ? m('.btn-group.m-l-xs.m-t-xs', [
+                m('.btn.btn-sm.btn-primary', {onclick: $(document).trigger.bind($(document), 'fileviewpage:return')}, 'Return')
             ]) : '',
             m('.btn-group.m-t-xs', [
                 m('.btn.btn-sm.btn-primary.file-download', {onclick: $(document).trigger.bind($(document), 'fileviewpage:download')}, 'Download')
