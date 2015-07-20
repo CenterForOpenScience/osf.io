@@ -24,8 +24,10 @@ class TestMetaData(OsfTestCase):
 
         ensure_schemas()
 
+        # OSF_META_SCHEMAS includes prereg schema which
+        # is not part of the MetaSchema class
         assert_equal(
-            MetaSchema.find().count(),
+            MetaSchema.find().count() + 1,
             len(OSF_META_SCHEMAS)
         )
 
