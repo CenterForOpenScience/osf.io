@@ -353,6 +353,11 @@ var FolderPickerViewModel = oop.defclass({
                     self._importAuthConfirm();
                     self.loadingImport(true);
                 }
+            },
+            buttons:{
+                confirm:{
+                    label:'Import'
+                }
             }
         });
     },
@@ -396,6 +401,12 @@ var FolderPickerViewModel = oop.defclass({
                 if (confirmed) {
                     self._deauthorizeConfirm();
                     self.loadingImport(false);
+                }
+            },
+            buttons:{
+                confirm:{
+                    label:'Disconnect',
+                    className:'btn-danger'
                 }
             }
         });
