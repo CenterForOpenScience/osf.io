@@ -67,38 +67,15 @@ def waterbutler_url_for(request_type, provider, path, node_id, token, obj_args=N
 
 def custom_exception_handler(exc, context):
     """
-    Returns the response that should be used for any given exception.
-
-    By default we handle the REST framework `APIException`, and also
-    Django's built-in `ValidationError`, `Http404` and `PermissionDenied`
-    exceptions.
-
-    Any unhandled exceptions may return `None`, which will cause a 500 error
-    to be raised.
+    Custom exception handler that nests detail inside errors.
     """
-    if isinstance(exc, exceptions.APIException):
-        headers = {}
-        if getattr(exc, 'auth_header', None):
-            headers['WWW-Authenticate'] = exc.auth_header
-        if getattr(exc, 'wait', None):
-            headers['Retry-After'] = '%d' % exc.wait
+    from rest_framework.views import exception_handler
+    response = exception_handler(exc, context)
 
-        if isinstance(exc.detail, (list, dict)):
-            data = exc.detail
-        else:
-            data = {'detail': exc.detail}
-
-        return Response(data, status=exc.status_code, headers=headers)
-
-    elif isinstance(exc, Http404):
-        msg = _('Not found.')
-        data = {'detail': six.text_type(msg)}
-        return Response(data, status=status.HTTP_404_NOT_FOUND)
-
-    elif isinstance(exc, PermissionDenied):
-        msg = _('Permission denied.')
-        data = {'detail': six.text_type(msg)}
-        return Response(data, status=status.HTTP_403_FORBIDDEN)
-
-    # Note: Unhandled exceptions will raise a 500 error.
-    return None
+    if response is not None:
+        if isinstance(response.data, (list)):
+            data = response.data
+            response = {}
+            response['data'] = {'errors': {'detail': data}}
+            return response
+        response.data['errors'] = [{'detail': response.data['detail']}]
