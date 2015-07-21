@@ -54,7 +54,7 @@ var ApplicationData = oop.defclass({
 
         this.isValid = ko.computed(function () {
             return this.validated.isValid();
-        }.bind(this))
+        }.bind(this));
     },
 
     serialize: function () {
@@ -66,7 +66,7 @@ var ApplicationData = oop.defclass({
             client_id: this.clientId,
             client_secret: this.clientSecret(),
             owner: this.owner
-        }
+        };
     }
 });
 
@@ -75,8 +75,8 @@ var ApplicationData = oop.defclass({
  */
 var ApplicationDataClient = oop.defclass({
     /*
-     * Create the client.
-     * @param {Object} urls: An object with urls for operations. Expects fields listUrl and detailUrl.
+     * Create the client for server operations on ApplicationData objects.
+     * @param {Object} urls: An object with urls for operations. Expects fields apiListUrl and apiDetailUrl.
      */
     constructor: function (urls) {
         this.urls = urls || {};
@@ -89,19 +89,8 @@ var ApplicationDataClient = oop.defclass({
             ret.resolve(this.unserialize(data));
         }.bind(this));
 
-        request.fail(function (xhr, status, err) {
-            $osf.growl('Error',
-                         'Data not loaded. Please refresh the page and try ' +
-                         'again or contact <a href="mailto: support@cos.io">support@cos.io</a> ' +
-                         'if the problem persists.',
-                       'danger');
-
-            Raven.captureMessage('Error fetching application data', {
-                url: url,
-                status: status,
-                error: err
-            });
-            ret.reject(xhr, status, err);
+        request.fail(function (xhr, status, error) {
+            ret.reject(xhr, status, error);
         }.bind(this));
 
         return ret.promise();
@@ -121,8 +110,8 @@ var ApplicationDataClient = oop.defclass({
         request.done(function (data) {
             ret.resolve(new ApplicationData(data.data));
         }.bind(this));
-        request.fail(function (xhr, status, err) {
-            ret.reject(xhr, status, err);
+        request.fail(function (xhr, status, error) {
+            ret.reject(xhr, status, error);
         });
         return ret.promise();
     },
@@ -132,7 +121,7 @@ var ApplicationDataClient = oop.defclass({
     },
     updateOne: function (appData) {
         var url = appData.apiDetailUrl;
-        return this._sendData(appData, url, 'PATCH')
+        return this._sendData(appData, url, 'PATCH');
     },
     deleteOne: function (appData) {
         var url = appData.apiDetailUrl;
@@ -159,6 +148,7 @@ var ApplicationDataClient = oop.defclass({
  */
 var ApplicationsListViewModel = oop.defclass({
     constructor: function (urls) {
+        this.urls = urls;
         // Set up data storage
         this.appData = ko.observableArray();
         this.sortByName = ko.computed(function () {
@@ -173,10 +163,24 @@ var ApplicationsListViewModel = oop.defclass({
         this.client = new ApplicationDataClient(urls);
     },
     init: function () {
-        this.client.fetchList()
-            .done(function (data) {
-                this.appData(data);
-            }.bind(this))
+        var request = this.client.fetchList();
+        request.done(function (data) {
+            this.appData(data);
+        }.bind(this));
+
+        request.fail(function(xhr, status, error) {
+            $osf.growl('Error',
+                'Data not loaded. Please refresh the page and try ' +
+                'again or contact <a href="mailto: support@cos.io">support@cos.io</a> ' +
+                'if the problem persists.',
+                'danger');
+
+            Raven.captureMessage('Error fetching list of registered applications', {
+                url: this.urls.apiListUrl,
+                status: status,
+                error: error
+            });
+        }.bind(this));
     },
     deleteApplication: function (appData) {
         bootbox.confirm({
@@ -187,14 +191,14 @@ var ApplicationsListViewModel = oop.defclass({
                     var request = this.client.deleteOne(appData);
                     request.done(function () {
                             this.appData.destroy(appData);
-                            $osf.growl('Deletion', '"' + appData.name() + '" has been deleted', 'success')
+                            $osf.growl('Deletion', '"' + appData.name() + '" has been deleted', 'success');
                     }.bind(this));
                     request.fail(function () {
                             $osf.growl('Error',
                                         'Could not delete application. Please refresh the page and try ' +
                                           'again or contact <a href="mailto: support@cos.io">support@cos.io</a> ' +
                                           'if the problem persists.',
-                                        'danger')
+                                        'danger');
                     }.bind(this));
                 }
             }.bind(this)
@@ -231,10 +235,23 @@ var ApplicationDetailViewModel = oop.defclass({
         if (this.isCreateView()) {
             this.appData(new ApplicationData());
         } else {
-            this.client.fetchOne()
-                .done(function (data) {
-                    this.appData(data);
-                }.bind(this))
+            var request = this.client.fetchOne();
+            request.done(function (data) {
+                this.appData(data);
+            }.bind(this));
+            request.fail(function(xhr, status, error) {
+                $osf.growl('Error',
+                             'Data not loaded. Please refresh the page and try ' +
+                              'again or contact <a href="mailto: support@cos.io">support@cos.io</a> ' +
+                              'if the problem persists.',
+                            'danger');
+
+                Raven.captureMessage('Error fetching application data', {
+                    url: this.urls.apiDetailUrl,
+                    status: status,
+                    error: error
+                });
+            }.bind(this));
         }
     },
     updateApplication: function () {
@@ -248,7 +265,7 @@ var ApplicationDetailViewModel = oop.defclass({
             this.changeMessage(
             'Application data updated',
             'text-success',
-            5000)
+            5000);
         }.bind(this));
 
         request.fail(function (xhr, status, error) {
@@ -263,7 +280,7 @@ var ApplicationDetailViewModel = oop.defclass({
                 status: status,
                 error: error
             });
-        }.bind(this))
+        }.bind(this));
     },
     createApplication: function () {
         if (!this.appData().isValid()) {
@@ -288,11 +305,11 @@ var ApplicationDetailViewModel = oop.defclass({
                 status: status,
                 error: error
             });
-        }.bind(this))
+        }.bind(this));
     },
     cancelChange: function () {
         // TODO: Add change tracking features a la profile page JS
-        window.location = this.urls.webListUrl
+        window.location = this.urls.webListUrl;
     },
     changeMessage: function (text, css, timeout) {
         // Display messages near save button. Overlaps with profile.js.
@@ -306,8 +323,8 @@ var ApplicationDetailViewModel = oop.defclass({
                 this.messageClass('text-info');
             }.bind(this),
             timeout
-        )}
-    }
+        );
+    }}
 });
 
 
