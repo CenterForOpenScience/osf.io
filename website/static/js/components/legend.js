@@ -14,9 +14,7 @@ module.exports = {
                 }, repr(item));
             })),
             m('hr'),
-            m('span', {
-                className: 'legend-footer'
-            }, opts.footer || '')
+            m('span', {className: 'pull-left'}, opts.footer || '')
         ];
     }
 };

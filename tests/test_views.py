@@ -447,7 +447,7 @@ class TestProjectViews(OsfTestCase):
         assert_equal(len(res.json['others_count']), 1)
         assert_equal(res.json['contributors'][0]['separator'], ',')
         assert_equal(res.json['contributors'][1]['separator'], ',')
-        assert_equal(res.json['contributors'][2]['separator'], '&nbsp;&')
+        assert_equal(res.json['contributors'][2]['separator'], '&')
 
     def test_edit_node_title(self):
         url = "/api/v1/project/{0}/edit/".format(self.project._id)

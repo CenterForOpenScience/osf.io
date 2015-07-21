@@ -97,6 +97,12 @@ var GithubConfigHelper = (function() {
                         $osf.handleJSONError
                     );
                     }
+                },
+                buttons:{
+                    confirm:{
+                        label:'Deauthorize',
+                        className:'btn-danger'
+                    }
                 }
             });
         });
