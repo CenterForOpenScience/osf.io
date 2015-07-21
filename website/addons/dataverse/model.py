@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 from time import sleep
 import requests
-import urlparse
 import httplib as http
 
 import pymongo
@@ -118,11 +117,6 @@ class AddonDataverseNodeSettings(StorageAddonBase, AddonOAuthNodeSettingsBase):
     def complete(self):
         return bool(self.has_auth and self.dataset_doi is not None)
 
-    @property
-    def has_auth(self):
-        """Whether a dataverse account is associated with this node."""
-        return bool(self.user_settings and self.user_settings.has_auth)
-
     def _get_fileobj_child_metadata(self, filenode, user, cookie=None, version=None):
         kwargs = dict(
             provider=self.config.short_name,
@@ -198,14 +192,7 @@ class AddonDataverseNodeSettings(StorageAddonBase, AddonOAuthNodeSettingsBase):
         }
 
     def create_waterbutler_log(self, auth, action, metadata):
-        path = metadata['path']
-        if 'name' in metadata:
-            name = metadata['name']
-        else:
-            query_string = urlparse.urlparse(metadata['full_path']).query
-            name = urlparse.parse_qs(query_string).get('name')
-
-        url = self.owner.web_url_for('addon_view_or_download_file', path=path, provider='dataverse')
+        url = self.owner.web_url_for('addon_view_or_download_file', path=metadata['path'], provider='dataverse')
         self.owner.add_log(
             'dataverse_{0}'.format(action),
             auth=auth,
@@ -213,7 +200,7 @@ class AddonDataverseNodeSettings(StorageAddonBase, AddonOAuthNodeSettingsBase):
                 'project': self.owner.parent_id,
                 'node': self.owner._id,
                 'dataset': self.dataset,
-                'filename': name,
+                'filename': metadata['materialized'].strip('/'),
                 'urls': {
                     'view': url,
                     'download': url + '?action=download'

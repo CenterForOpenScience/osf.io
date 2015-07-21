@@ -102,6 +102,12 @@ function ViewModel(url) {
                 if (confirmed) {
                     sendDeauth();
                 }
+            },
+            buttons:{
+                confirm:{
+                    label:'Delete',
+                    className:'btn-danger'
+                }
             }
         });
     };

@@ -483,6 +483,11 @@ ViewModel.prototype.importAuth = function() {
                         if (confirmed) {
                             self.connectExistingAccount.call(self, (self.accounts()[0].id));
                         }
+                    },
+                    buttons:{
+                        confirm:{
+                            label:'Import'
+                        }
                     }
                 });
             }
@@ -526,6 +531,12 @@ ViewModel.prototype.deauthorize = function() {
         callback: function(confirmed) {
             if (confirmed) {
                 self._deauthorizeConfirm();
+            }
+        },
+        buttons:{
+            confirm:{
+                label:'Deauthorize',
+                className:'btn-danger'
             }
         }
     });

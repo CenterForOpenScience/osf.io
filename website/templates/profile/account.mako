@@ -5,7 +5,7 @@
 
 <%def name="stylesheets()">
    ${parent.stylesheets()}
-   <link rel="stylesheet" href='/static/css/pages/account-setting-page.css'>;
+   <link rel="stylesheet" href='/static/css/pages/account-setting-page.css'>
 </%def>
 
 <%def name="content()">
@@ -43,7 +43,7 @@
                             <tbody data-bind="foreach: profile().alternateEmails()">
                                 <tr>
                                     <td style="word-break: break-all;">{{ $data.address }}</td>
-                                    <td><a data-bind="click: $parent.makeEmailPrimary">make&nbsp;primary</a></td>
+                                    <td style="width:150px;"><a data-bind="click: $parent.makeEmailPrimary">make&nbsp;primary</a></td>
                                     <td><a data-bind="click: $parent.removeEmail"><i class="fa fa-times text-danger"></i></a></td>
                                 </tr>
                             </tbody>
@@ -52,19 +52,19 @@
                         <table class="table">
                             <thead>
                                 <tr>
-                                    <th colspan="2">Unconfirmed Emails</th>
+                                    <th colspan="3">Unconfirmed Emails</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 <!-- ko foreach: profile().unconfirmedEmails() -->
                                 <tr>
                                     <td style="word-break: break-all;">{{ $data.address }}</td>
-                                    <td><a data-bind="click: $parent.resendConfirmation">resend&nbsp;confirmation</a></td>
+                                    <td style="width:150px;"><a data-bind="click: $parent.resendConfirmation">resend&nbsp;confirmation</a></td>
                                     <td><a data-bind="click: $parent.removeEmail"><i class="fa fa-times text-danger"></i></a></td>
                                 </tr>
                                 <!-- /ko -->
                                 <tr>
-                                    <td colspan="2">
+                                    <td colspan="3">
                                         <form data-bind="submit: addEmail">
                                             <div class="form-group">
                                               <input placeholder="Email address" data-bind="value: emailInput" class="form-control">
@@ -102,7 +102,7 @@
                     </div>
                 </div>
 				<div class="panel panel-default">
-                  <div class="panel-heading"><h3 class="panel-title">Security Settings</h3></div>
+                  <div class="panel-heading clearfix"><h3 class="panel-title">Security Settings</h3></div>
                   <div class="panel-body">
                     % for addon in addons:
                     ${render_user_settings(addon) }

@@ -15,6 +15,12 @@ $('#s3RemoveAccess').on('click', function() {
             if(result) {
                 deleteToken();
             }
+        },
+        buttons:{
+            confirm:{
+                label:'Remove',
+                className:'btn-danger'
+            }
         }
     });
 });

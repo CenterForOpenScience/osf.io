@@ -311,6 +311,12 @@ BaseViewModel.prototype.cancel = function(data, event) {
                         self.mode('view');
                     }
                 }
+            },
+            buttons:{
+                confirm:{
+                    label:'Discard',
+                    className:'btn-danger'
+                }
             }
         });
     } else {
