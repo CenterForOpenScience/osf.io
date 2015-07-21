@@ -38,11 +38,18 @@ describe('share/utils', () => {
             results: []
         };
 
-        var endpoints = [{
-            method: 'GET',
-            url: /\/api\/v1\/share\/.*/,
-            response: emptyResponse
-        }];
+        var endpoints = [
+            {
+                method: 'GET',
+                url: /\/api\/v1\/share\/.*/,
+                response: emptyResponse
+            },
+            {
+                method: 'POST',
+                url: /\/api\/v1\/share\/.*/,
+                response: emptyResponse
+            }
+        ];
 
         before(() => {
             query = '';
