@@ -111,6 +111,7 @@
 
 #addPointer td {
     vertical-align: middle;
+    word-break: break-all;
 }
 
 .affix-bottom {
