@@ -138,7 +138,7 @@ Results.controller = function(vm) {
                                     {class: 'tab-pane active', id:'raw'},
                                     m('pre',
                                         (function(){
-                                            if (result.rawfiletype == 'xml') {
+                                            if (result.rawfiletype === 'xml') {
                                                 return pd.xml(result.raw);
                                             }
                                             else {
