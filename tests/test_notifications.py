@@ -1118,12 +1118,11 @@ class TestSendEmails(OsfTestCase):
 
     def test_check_node_node_none(self):
         subs = emails.check_node(None, 'comments')
-        assert_equal(subs, {'email_transactional': [], 'email_digest': [], 'none': [], 'email_hour': []})
+        assert_equal(subs, {'email_transactional': [], 'email_digest': [], 'none': []})
 
     def test_check_node_one(self):
         subs = emails.check_node(self.project, 'comments')
-        assert_equal(subs, {'email_transactional': [self.project.creator._id], 'email_digest': [], 'none': [],
-                            'email_hour': []})
+        assert_equal(subs, {'email_transactional': [self.project.creator._id], 'email_digest': [], 'none': []})
 
     @mock.patch('website.project.views.comment.notify')
     def test_check_user_comment_reply_subscription_if_email_not_sent_to_target_user(self, mock_notify):
