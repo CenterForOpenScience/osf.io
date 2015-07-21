@@ -3,6 +3,7 @@ import requests
 from modularodm import Q
 from rest_framework import generics, permissions as drf_permissions
 from rest_framework.exceptions import PermissionDenied, ValidationError
+from rest_framework.response import Response
 
 from framework.auth.core import Auth
 from website.models import Node, Pointer
@@ -10,7 +11,7 @@ from api.users.serializers import ContributorSerializer
 from api.base.filters import ODMFilterMixin, ListFilterMixin
 from api.base.utils import get_object_or_404, waterbutler_url_for
 from .serializers import NodeSerializer, NodePointersSerializer, NodeFilesSerializer
-from .permissions import ContributorOrPublic, ReadOnlyIfRegistration, ContributorOrPublicForPointers
+from .permissions import ContributorOrPublic, ReadOnlyIfRegistration, ContributorOrPublicForPointers, get_user_auth
 
 
 class NodeMixin(object):
@@ -25,23 +26,23 @@ class NodeMixin(object):
         obj = get_object_or_404(Node, self.kwargs[self.node_lookup_url_kwarg])
         # May raise a permission denied
         self.check_object_permissions(self.request, obj)
-        if 'include' in self.request.query_params:
-            obj = self.get_additional_parameters(self.request.query_params['include'], obj)
+        self.get_additional_parameters(self.request, obj)
         return obj
 
 
 class NodeIncludeMixin(object):
 
-    def get_additional_parameters(self, data, node):
-        parameters = data.split(',')
-        auth = Auth(self.request.user)
-        if 'children' in parameters:
-            node.children = [child for child in node.nodes if child.can_view(auth) and child.primary]
-        if 'pointers' in parameters:
-            node.pointers = node.nodes_pointer
-        if 'registrations' in parameters:
-            node.registered_nodes = [registration for registration in node.node__registrations
-                                     if registration.can_view(auth)]
+    def get_additional_parameters(self, request, node):
+        if 'include' in request.query_params:
+            parameters = request.query_params['include'].split(',')
+            auth = get_user_auth(request)
+            if 'children' in parameters:
+                node.children = [child for child in node.nodes if child.can_view(auth) and child.primary]
+            if 'pointers' in parameters:
+                node.pointers = node.nodes_pointer
+            if 'registrations' in parameters:
+                node.registered_nodes = [registration for registration in node.node__registrations
+                                         if registration.can_view(auth)]
         return node
 
 
@@ -81,6 +82,22 @@ class NodeList(generics.ListCreateAPIView, ODMFilterMixin, NodeIncludeMixin):
     def get_queryset(self):
         query = self.get_query_from_request()
         return Node.find(query)
+
+    # overrides ListCreateAPIView
+    def list(self, request, *args, **kwargs):
+        queryset = self.filter_queryset(self.get_queryset())
+
+        nodes = []
+        page = self.paginate_queryset(queryset)
+        for node in page:
+            node = self.get_additional_parameters(request, node)
+            nodes.append(node)
+        if page is not None:
+            serializer = self.get_serializer(nodes, many=True)
+            return self.get_paginated_response(serializer.data)
+
+        serializer = self.get_serializer(queryset, many=True)
+        return Response(serializer.data)
 
     # overrides ListCreateAPIView
     def perform_create(self, serializer):
