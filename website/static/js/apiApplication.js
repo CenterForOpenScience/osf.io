@@ -90,7 +90,7 @@ var ApplicationDataClient = oop.defclass({
         }.bind(this));
 
         request.fail(function (xhr, status, err) {
-            $osf.growl('Error',  // TODO: UI in client? (following accountSettings.js but not great pattern)
+            $osf.growl('Error',
                          'Data not loaded. Please refresh the page and try ' +
                          'again or contact <a href="mailto: support@cos.io">support@cos.io</a> ' +
                          'if the problem persists.',
@@ -112,52 +112,41 @@ var ApplicationDataClient = oop.defclass({
     fetchOne: function () {
         return this._fetchData(this.urls.apiDetailUrl);
     },
-    createOne: function (appData) {
+    _sendData: function (appData, url, method) {
         var ret = $.Deferred();
 
-        var url = this.urls.apiListUrl;
         var payload = appData.serialize();
-        var request = $osf.ajaxJSON('POST', url, {isCors: true, data: payload});
+        var request = $osf.ajaxJSON(method, url, {isCors: true, data: payload});
 
         request.done(function (data) {
             ret.resolve(new ApplicationData(data.data));
-            // TODO: Display a status message on the page (how to do this when submission is separate from the server?)
         }.bind(this));
         request.fail(function (xhr, status, err) {
             ret.reject(xhr, status, err);
         });
         return ret.promise();
     },
-    updateOne: function (appData) {  // TODO: use appData object to get both url and payload from one argument
-        var ret = $.Deferred();
-
+    createOne: function (appData) {
+        var url = this.urls.apiListUrl;
+        return this._sendData(appData, url, 'POST');
+    },
+    updateOne: function (appData) {
         var url = appData.apiDetailUrl;
-        var payload = appData.serialize();
-
-        var request = $osf.ajaxJSON('PATCH', url, {isCors: true, data: payload});
-
-        request.done(function(data) {
-            ret.resolve(new ApplicationData(data.data));
-        }.bind(this));
-
-        request.fail(function (xhr, status, err) {
-            ret.reject(xhr. status, err)
-        }.bind(this));
-        return ret.promise();
+        return this._sendData(appData, url, 'PATCH')
     },
     deleteOne: function (appData) {
         var url = appData.apiDetailUrl;
         return $osf.ajaxJSON('DELETE', url, {isCors: true});
     },
-    unserialize: function (data) {
+    unserialize: function (apiData) {
         var result;
         // Check return type: return one object (detail view) or list of objects (list view) as appropriate.
-        if (Array.isArray(data.data)) {
-            result = $.map(data.data, function (item) {
+        if (Array.isArray(apiData.data)) {
+            result = $.map(apiData.data, function (item) {
                 return new ApplicationData(item);
             });
-        } else if (data.data) {
-            result = new ApplicationData(data.data);
+        } else if (apiData.data) {
+            result = new ApplicationData(apiData.data);
         } else {
             result = null;
         }
@@ -166,7 +155,7 @@ var ApplicationDataClient = oop.defclass({
 });
 
 /*
-    ViewModel for List views
+  ViewModel for List views
  */
 var ApplicationsListViewModel = oop.defclass({
     constructor: function (urls) {
@@ -208,7 +197,7 @@ var ApplicationsListViewModel = oop.defclass({
                                         'danger')
                     }.bind(this));
                 }
-            }
+            }.bind(this)
         });
     }
 });
@@ -227,7 +216,10 @@ var ApplicationDetailViewModel = oop.defclass({
 
         this.client = new ApplicationDataClient(urls);
 
+        // Control success/failure messages above submit buttons
         this.showMessages = ko.observable(false);
+        this.message = ko.observable();
+        this.messageClass = ko.observable();
 
         // // If no detail url provided, render view as though it was a creation form. Otherwise, treat as READ/UPDATE.
         this.apiDetailUrl = ko.observable(urls.apiDetailUrl);
@@ -253,7 +245,10 @@ var ApplicationDetailViewModel = oop.defclass({
         var request = this.client.updateOne(this.appData());
         request.done(function (data) {
             this.appData(data);
-            // TODO: Add a message that data was submitted successfully- self.changeMessage lines
+            this.changeMessage(
+            'Application data updated',
+            'text-success',
+            5000)
         }.bind(this));
 
         request.fail(function (xhr, status, error) {
@@ -271,7 +266,6 @@ var ApplicationDetailViewModel = oop.defclass({
         }.bind(this))
     },
     createApplication: function () {
-        // TODO: DRY with update?
         if (!this.appData().isValid()) {
             this.showMessages(true);
             return;
@@ -279,8 +273,7 @@ var ApplicationDetailViewModel = oop.defclass({
         var request = this.client.createOne(this.appData());
         request.done(function (data) {
             this.appData(data);
-            window.location = data.webDetailUrl; // Update address bar to show new detail page TODO: Move to view code to separate from client and use appData to encapsulate link var
-            // TODO: Add a message that data was submitted successfully- self.changeMessage lines
+            window.location = data.webDetailUrl; // Update address bar to show new detail page
         }.bind(this));
 
         request.fail(function (xhr, status, error) {
@@ -300,6 +293,20 @@ var ApplicationDetailViewModel = oop.defclass({
     cancelChange: function () {
         // TODO: Add change tracking features a la profile page JS
         window.location = this.urls.webListUrl
+    },
+    changeMessage: function (text, css, timeout) {
+        // Display messages near save button. Overlaps with profile.js.
+    this.message(text);
+    var cssClass = css || 'text-info';
+    this.messageClass(cssClass);
+    if (timeout) {
+        // Reset message after timeout period
+        setTimeout(function () {
+                this.message('');
+                this.messageClass('text-info');
+            }.bind(this),
+            timeout
+        )}
     }
 });
 
