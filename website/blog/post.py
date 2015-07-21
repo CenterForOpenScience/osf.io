@@ -1,8 +1,10 @@
-import markdown2
+from markdown2 import markdown as md
+import markdown
 from file_handler import FileHandler
 import requests
 from website.models import User
 from website.profile.utils import get_gravatar
+
 
 
 def parse_blog(posts, node):
@@ -13,7 +15,7 @@ def parse_blog(posts, node):
         'title': blog.get('title'),
         'post_class': blog.get('post_class'),
         'date': blog.get('date'),
-        'content': blog.get('content'),
+        'content': markdown.markdown(blog.get('content')),
         'file': blog.get('file'),
         'author': blog.get('author'),
         'tags': [{
@@ -32,7 +34,7 @@ def parse_blog(posts, node):
         next = parse_header(next_, node)
         blog_dict['next_post'] =  {
             'title': next.get('title'),
-            'content':  next.get('content'),
+            'content':  md(next.get('content')),
             'file': next.get('file'),
             'date': next.get('date'),
             'author': next.get('author')
@@ -41,7 +43,7 @@ def parse_blog(posts, node):
         prev = parse_header(prev_, node)
         blog_dict['prev_post'] =  {
             'title': prev.get('title'),
-            'content':  prev.get('content'),
+            'content':  md(prev.get('content')),
             'file': prev.get('file'),
             'date': prev.get('date'),
             'author': prev.get('author')
@@ -63,7 +65,7 @@ def parse_header(blog_, node):
         if line != "":
             key, value = line.strip().split(": ")
             blog_dict[key] = value
-    content = markdown2.markdown(blog[blog.find("**/")+3:])
+    content = blog[blog.find("**/")+3:]
     blog_dict['content'] = content
     id = blog_dict['author']
     user = User.load(id)
@@ -86,5 +88,6 @@ def parse_posts(posts, guid):
     index = []
     for post in posts:
         post_dict = parse_header(post, guid)
+        post_dict['content'] = md(post_dict['content'])
         index.append(post_dict)
     return index

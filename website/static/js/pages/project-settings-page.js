@@ -94,6 +94,34 @@ $(document).ready(function() {
 
     });
 
+    var BlogViewModel = function() {
+        var self = this;
+        var blog = window.contextVars.blog;
+        var parts = blog.theme.split("/");
+        self.theme = parts[parts.length - 1];
+        self.title = blog.title;
+        self.description = blog.description;
+        self.logo = blog.logo;
+        self.cover = blog.cover;
+    };
+
+    var blog = new BlogViewModel;
+    ko.applyBindings(blog, $('#blogSettings')[0]);
+
+    blog.submit = function() {
+        var $blogMsg = $('#blogMsg')
+        var $this = $(this);
+        $osf.postJSON(
+            ctx.node.urls.api + 'settings/blog/',
+            {blog_settings: $this[0]}
+        ).done(function() {
+            $blogMsg.addClass('text-success');
+            $blogMsg.text('Successfully updated settings.');
+        }).fail(function() {
+            bootbox.alert('Could not change blog settings. Please try again.');
+        });
+    };
+
     var checkedOnLoad = $('#selectAddonsForm input:checked');
     var uncheckedOnLoad = $('#selectAddonsForm input:not(:checked)');
 

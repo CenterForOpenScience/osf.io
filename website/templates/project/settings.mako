@@ -42,6 +42,10 @@
                             <li><a href="#configureNotificationsAnchor">Configure Notifications</a></li>
                         %endif
 
+                        % if 'admin' in user['permissions']:
+                            <li><a href="#blogSettingsAnchor">Blog Settings</a></li>
+                        % endif
+
                     % endif
 
                     % if node['is_registration']:
@@ -268,6 +272,62 @@
 
         % endif  ## End Configure Addons
 
+        % if 'admin' in user['permissions']:
+
+            % if not node['is_registration']:
+                <div class="panel panel-default">
+                    <span id="blogSettingsAnchor" class="anchor"></span>
+                    <div class="panel-heading clearfix">
+                        <h3 class="panel-title">Blog Settings</h3>
+                    </div>
+                    <div class="panel-body">
+                        <div id="blogMsg"></div>
+                        <form id="blogSettings" class="form" data-bind="submit: submit" style="margin-top: 5px">
+
+                            <div class="form-group">
+                                <label>Theme</label>
+                                <div class="input-group">
+                                    <select class='form-control' data-bind="value: theme">
+                                        <option value="casper">Casper</option>
+                                        <option value="openwriter">Openwriter</option>
+                                        <option value="perfetta">Perfetta</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div class="form-group">
+                                <label>Blog Name</label>
+                                <input class="form-control" data-bind="value: title" placeholder="My Blog"/>
+                            </div>
+
+                            <div class="form-group">
+                                <label>Blog Description</label>
+                                <input class="form-control" data-bind="value: description" placeholder="My Blog Description"/>
+                            </div>
+
+                            <div class="form-group">
+                                <label>Blog Cover Photo</label>
+                            </div>
+
+                            <div class="padded">
+                                <button
+                                        type="button"
+                                        class="btn btn-default"
+                                        data-bind="click: cancel"
+                                    >Cancel</button>
+                                <button
+                                        type="submit"
+                                        class="btn btn-primary"
+                                    >Submit</button>
+
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            % endif
+
+        % endif
+
         % if 'admin' in user['permissions']:  ## Begin Retract Registration
 
             % if node['is_registration']:
@@ -350,6 +410,7 @@
       window.contextVars.node = window.contextVars.node || {};
       window.contextVars.node.nodeType = '${node['node_type']}';
       window.contextVars.nodeCategories = ${json.dumps(categories)};
+      window.contextVars.blog = ${json.dumps(blog)};
     </script>
 
     <script type="text/javascript" src=${"/static/public/js/project-settings-page.js" | webpack_asset}></script>

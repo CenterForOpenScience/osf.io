@@ -11,32 +11,38 @@ var Markdown = require('pagedown-ace-converter');
 Markdown.getSanitizingConverter = require('pagedown-ace-sanitizer').getSanitizingConverter;
 require('imports?Markdown=pagedown-ace-converter!pagedown-ace-editor');
 var md = require('js/markdown').full;
-var mdQuick = require('js/markdown').quick;
 
 
+var ctx = window.contextVars;
 
 var editor = ace.edit('editor');
 var form = new formViewModel();
 var save = function () {
     var title = $("input[name='title']").val();
     var content = $("#hidden").val();
-    var ctx = window.contextVars;
     var uid = ctx.uid;
     var guid = ctx.guid;
     var path = '/' + ctx.node.path + '/';
     var name = ctx.file.name;
-    var date = getDate();
+    var date;
+    if (ctx.blog != null){
+        date = ctx.blog['date'];
+    }
+    else {
+        date = getDate();
+    }
     var header = createHeader(title, uid, name, date);
     var fileName = name + ".md";
     var b = new Blob([header + content], {type: "text/plain", lastModified: date});
     var xhr = new XMLHttpRequest();
+    xhr.upload.addEventListener("load", transferComplete, false);
     var f = new File(b, fileName, xhr);
     var url = waterbutler.buildUploadUrl(path, 'osfstorage', guid, f);
 
     xhr.open("put", url, true);
     xhr = $osf.setXHRAuthorization(xhr);
     xhr.send(f);
-    window.location = "../post/" + name;
+    //window.location = "../post/" + name;
 };
 form.save = save;
 $osf.applyBindings(form, '#wiki-form');
@@ -49,12 +55,18 @@ editor.setShowPrintMargin(false);           // Hides print margin
 editor.getSession().on('change', function() {
     updateView(editor.getValue(), form);
 });
+if (ctx.blog != null) {
+    //updateView(ctx.blog['content'], form);
+    $("input[name='title']").val(ctx.blog['title']);
+    editor.setValue(ctx.blog['content']);
+
+}
 var mdConverter = Markdown.getSanitizingConverter();
 var mdEditor = new Markdown.Editor(mdConverter);
 mdEditor.run(editor);
 
 function updateView(rawText, form){
-    form.renderedView(mdQuick.render(rawText));
+    form.renderedView(md.render(rawText));
     form.currentText(rawText);
 }
 
@@ -120,19 +132,19 @@ function createHeader(title, uid, name, date) {
 
 function getDate() {
     var today = new Date();
-    var dd = today.getDate();
-    var mm = today.getMonth() + 1;
-    var yyyy = today.getFullYear();
+    //var dd = today.getDate();
+    //var mm = today.getMonth() + 1;
+    //var yyyy = today.getFullYear();
+    //
+    //if(dd<10) {
+    //    dd='0'+dd;
+    //}
+    //
+    //if(mm<10) {
+    //    mm='0'+mm;
+    //}
 
-    if(dd<10) {
-        dd='0'+dd;
-    }
-
-    if(mm<10) {
-        mm='0'+mm;
-    }
-
-    return yyyy + "-" + mm + "-" + dd;
+    return today;
 };
 
 function File(blob, name, xhr){
@@ -140,4 +152,15 @@ function File(blob, name, xhr){
     self.name = name;
     self.xhr = xhr;
     return self;
+}
+
+function transferComplete(event) {
+    var pre;
+    if (ctx.blog == null) {
+        pre = "../post/"
+    }
+    else {
+        pre = "../../post/"
+    }
+    window.location = pre + ctx.file.name;
 }

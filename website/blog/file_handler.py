@@ -40,3 +40,8 @@ class FileHandler:
         except IndexError:
             next = None
         return prev, curr, next
+
+    def get_post(self, file):
+        set = self.get_file_list()
+        file = file + ".md"
+        return filter(lambda post: post.name == file, set)[0]

@@ -70,7 +70,6 @@ def render(guid, file=None, page=None):
 
     output = renderer.render(hbs, blog_dict, dict_)
     default_dict = {'body': output,
-                    'date': '2015-09-04',
                     'body_class': 'post-template'}
     html = renderer.render(theme + '/default.hbs', blog_dict, default_dict)
     parser = HTMLParser()
@@ -112,7 +111,28 @@ def new_post(auth, uid):
     node = Node.load(guid)
     return create_post(node, auth)
 
-def create_post(node, auth):
+@collect_auth
+def new_project_post(auth, pid):
+    node = Node.load(pid)
+    user = auth.user
+    if user not in node.contributors:
+        raise PermissionsError
+    return create_post(node, auth)
+
+
+@collect_auth
+def edit_post(auth, uid, bid):
+    user = User.load(uid)
+    node = Node.load(user.blog_guid)
+    fh = FileHandler(node)
+    blog = fh.get_post(bid)
+    blog_dict = post.parse_header(blog, node)
+    if auth.user != user:
+        raise PermissionsError
+    return create_post(node, auth, blog_dict)
+
+
+def create_post(node, auth, blog_dict=None):
     node_addon = node.get_addon('osfstorage')
 
     if not node_addon:
@@ -133,20 +153,15 @@ def create_post(node, auth):
             'message_long': 'The add-on containing this file is no longer configured.'
         })
 
-    return addon_view_file(auth, node)
+    return addon_view_file(auth, node, blog_dict)
 
 
-@collect_auth
-def new_project_post(auth, pid):
-    node = Node.load(pid)
-    user = auth.user
-    if user not in node.contributors:
-        raise PermissionsError
-    return create_post(node, auth)
-
-def addon_view_file(auth, node):
+def addon_view_file(auth, node, blog_dict):
     ret = serialize_node(node, auth, primary=True)
-    name = "blog" + str(len(get_posts(node)) + 1)
+    if blog_dict is not None:
+        name=blog_dict['file']
+    else:
+        name = "blog" + str(len(get_posts(node)) + 1)
     ret.update({
         'provider': 'osfstorage',
         'urls': {
@@ -156,6 +171,7 @@ def addon_view_file(auth, node):
     ret.update(rubeus.collect_addon_assets(node))
     ret['name'] = name
     ret['path'] = node.blog['path']
+    ret['blog'] = blog_dict
     return ret
 
 def get_pagination(page, total):

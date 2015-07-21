@@ -7,7 +7,11 @@
 <div class="row">
   <div class="col-sm-12">
     <h2 class="break-word">
-        New Post
+        % if blog_dict is None:
+            New Post
+        % else:
+            Edit Post
+        % endif
     </h2>
   </div>
 </div>
@@ -193,6 +197,7 @@
 ## End Modals block
 
 <%def name="javascript_bottom()">
+    <% import json %>
     ${parent.javascript_bottom()}
     % for script in tree_js:
         <script type="text/javascript" src="${script | webpack_asset}"></script>
@@ -217,7 +222,8 @@
           urls: {
             files: '${urls['files'] | js_str}'
           }
-        }
+        },
+        blog: ${json.dumps(blog)}
       });
     </script>
 

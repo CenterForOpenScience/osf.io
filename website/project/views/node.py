@@ -310,7 +310,8 @@ def node_setting(auth, node, **kwargs):
     ret['categories'].update({
         'project': 'Project'
     })
-
+    ret['blog'] = node.blog_dict()
+    ret['blog']['theme'] = node.blog_theme
     return ret
 def collect_node_config_js(addons):
     """Collect webpack bundles for each of the addons' node-cfg.js modules. Return
@@ -350,6 +351,14 @@ def configure_comments(node, **kwargs):
         node.comment_level = comment_level
     else:
         raise HTTPError(http.BAD_REQUEST)
+    node.save()
+
+
+@must_have_permission(ADMIN)
+def blog_settings(node, **kwargs):
+    blog_settings = request.json.get('blog_settings')
+    for key, value in blog_settings.iteritems():
+        node.blog[key] = value
     node.save()
 
 

@@ -491,8 +491,9 @@ def make_url_map(app):
         Rule('/profile/<uid>/blog/new/', 'get', blog_views.new_post,
              OsfWebRenderer('add_blog_post.mako')),
         Rule('/project/<pid>/blog/new/', 'get', blog_views.new_project_post,
+            OsfWebRenderer('add_blog_post.mako')),
+        Rule('/profile/<uid>/blog/edit/<path:bid>/', 'get', blog_views.edit_post,
             OsfWebRenderer('add_blog_post.mako'))
-
     ])
 
     ### Profile ###
@@ -682,26 +683,6 @@ def make_url_map(app):
             ],
             'put',
             profile_views.unserialize_schools,
-            json_renderer
-        ),
-
-        Rule(
-            [
-                '/settings/blog/',
-                '/settings/blog/<uid>/',
-            ],
-            'get',
-            profile_views.serialize_blog,
-            json_renderer,
-        ),
-
-        Rule(
-            [
-                '/settings/blog/',
-                '/settings/blog/<uid>/',
-            ],
-            'put',
-            profile_views.unserialize_blog,
             json_renderer
         ),
     ], prefix='/api/v1',)
@@ -1430,6 +1411,16 @@ def make_url_map(app):
             ],
             'post',
             project_views.node.configure_comments,
+            json_renderer,
+        ),
+
+        Rule(
+            [
+                '/project/<pid>/settings/blog/',
+                '/project/<pid>/node/<nid>/settings/blog/',
+            ],
+            'post',
+            project_views.node.blog_settings,
             json_renderer,
         ),
 

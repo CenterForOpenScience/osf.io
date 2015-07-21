@@ -745,52 +745,6 @@ var SchoolsViewModel = function(urls, modes) {
 };
 SchoolsViewModel.prototype = Object.create(ListViewModel.prototype);
 
-var BlogViewModel = function(urls, modes) {
-    var self = this;
-    BaseViewModel.call(self, urls, modes);
-    TrackedMixin.call(self);
-
-    self.trackedProperties = [
-        self.theme,
-        self.title,
-        self.description,
-        self.logo,
-        self.cover,
-    ];
-
-    self.theme = ko.observable();
-    self.title = ko.observable();
-    self.description = ko.observable();
-    self.logo = ko.observable();
-    self.cover = ko.observable();
-
-    var validated = ko.validatedObservable(self);
-    self.isValid = ko.computed(function() {
-        return validated.isValid();
-    });
-    self.hasValidProperty(true);
-
-    self.values = ko.computed(function() {
-        return [
-            {label: 'Theme', text: self.theme, value: self.theme},
-        ];
-    });
-
-    self.hasValues = ko.computed(function() {
-        var values = self.values();
-        for (var i=0; i<self.values().length; i++) {
-            if (values[i].value) {
-                return true;
-            }
-        }
-        return false;
-    });
-
-    self.fetch();
-};
-BlogViewModel.prototype = Object.create(BaseViewModel.prototype);
-$.extend(BlogViewModel.prototype, SerializeMixin.prototype, TrackedMixin.prototype);
-
 var Names = function(selector, urls, modes) {
     this.viewModel = new NameViewModel(urls, modes);
     $osf.applyBindings(this.viewModel, selector);
@@ -814,17 +768,11 @@ var Schools = function(selector, urls, modes) {
     $osf.applyBindings(this.viewModel, selector);
 };
 
-var Blog = function(selector, urls, modes) {
-    this.viewModel = new BlogViewModel(urls, modes);
-    $osf.applyBindings(this.viewModel, selector)
-};
-
 module.exports = {
     Names: Names,
     Social: Social,
     Jobs: Jobs,
     Schools: Schools,
-    Blog: Blog,
     // Expose private viewmodels
     _NameViewModel: NameViewModel
 };
