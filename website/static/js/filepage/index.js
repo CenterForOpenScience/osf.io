@@ -32,9 +32,12 @@ var FileViewPage = {
                     'user': self.context.userId
                 }
             ).done(function(resp) {
-                self.renter =  resp['renter']
+                self.renter =  resp['renter'];
+                if (!self.canEdit() && m.prop(!!self.context.currentUser.canEdit)){
+                    window.contextVars['renter'] = self.renter
+                }
             }).fail(function(resp) {
-                $osf.growl('ERROR', resp)
+
             });
         };
         self.isRenter();
@@ -77,25 +80,44 @@ var FileViewPage = {
             });
         });
         $(document).on('fileviewpage:rent', function() {
-            $osf.postJSON(
-                '/api/v1/project/' + self.node.id + '/osfstorage' + self.file.path +'/rent/',
-                {
-                    'user': self.context.userId
+            bootbox.confirm({
+                title: 'Confirm file lock',
+                message: 'Are you sure you want to lock this file? This would mean ' +
+                    'other contirbutors cannot edit, delete or upload new versions of this file ' +
+                    'as long as it is locked. You can unlock it at anytime.',
+                callback: function(confirm) {
+                    if (!confirm) {
+                        return;
+                    }
+                    $osf.postJSON(
+                        '/api/v1/project/' + self.node.id + '/osfstorage' + self.file.path +'/rent/',
+                        {
+                            'user': self.context.userId
+                        }
+                    ).done(function(resp) {
+                        window.location.reload()
+                    }).fail(function(resp) {
+                        $osf.growl('Error', 'Unable to lock file')
+                    });
+                },
+                buttons:{
+                    confirm:{
+                        label: 'Lock file',
+                        className: 'btn-warning'
+                    }
                 }
-            ).done(function(resp) {
-                $osf.growl(resp['status']);
-            }).fail(function(resp) {
-                $osf.growl('ERROR', resp)
             });
         });
         $(document).on('fileviewpage:return', function() {
             $osf.postJSON(
                 '/api/v1/project/' + self.node.id + '/osfstorage' + self.file.path +'/return/',
-                {}
+                {
+                    'user': self.context.userId
+                }
             ).done(function(resp) {
-                $osf.growl(resp['status']);
+                window.location.reload()
             }).fail(function(resp) {
-                $osf.growl('ERROR', resp)
+                $osf.growl('Error', 'Unable to unlock file')
             });
         });
         $(document).on('fileviewpage:download', function() {
@@ -241,11 +263,11 @@ var FileViewPage = {
         m.render(document.getElementById('toggleBar'), m('.btn-toolbar.m-t-md', [
             ctrl.canEdit() ? m('.btn-group.m-l-xs.m-t-xs', [
             ]) : '',
-            ctrl.canEdit() ? m('.btn-group.m-l-xs.m-t-xs', [
-                m('.btn.btn-sm.btn-primary', {onclick: $(document).trigger.bind($(document), 'fileviewpage:rent')}, 'Rent')
+            ctrl.canEdit() && (ctrl.renter == '') && ctrl.editor ? m('.btn-group.m-l-xs.m-t-xs', [
+                m('.btn.btn-sm.btn-primary', {onclick: $(document).trigger.bind($(document), 'fileviewpage:rent')}, 'Lock')
             ]) : '',
-            ctrl.canEdit() ? m('.btn-group.m-l-xs.m-t-xs', [
-                m('.btn.btn-sm.btn-primary', {onclick: $(document).trigger.bind($(document), 'fileviewpage:return')}, 'Return')
+            (ctrl.canEdit() && (ctrl.renter == ctrl.context.userId) && ctrl.editor) ? m('.btn-group.m-l-xs.m-t-xs', [
+                m('.btn.btn-sm.btn-primary', {onclick: $(document).trigger.bind($(document), 'fileviewpage:return')}, 'Unlock')
             ]) : '',
             m('.btn-group.m-t-xs', [
                 m('.btn.btn-sm.btn-primary.file-download', {onclick: $(document).trigger.bind($(document), 'fileviewpage:download')}, 'Download')

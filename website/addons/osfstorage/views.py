@@ -188,6 +188,9 @@ def osfstorage_delete(file_node, payload, node_addon, **kwargs):
     if file_node == node_addon.root_node:
         raise HTTPError(httplib.BAD_REQUEST)
 
+    if file_node.renter !=  '':
+        raise HTTPError(httplib.BAD_REQUEST)
+
     file_node.delete()
 
     return {'status': 'success'}
@@ -218,10 +221,9 @@ def osfstorage_download(file_node, payload, node_addon, **kwargs):
         },
     }
 
-
 @decorators.autoload_filenode(must_be='file')
 def osfstorage_rent(file_node, **kwargs):
-    if file_node.rented() == '':
+    if file_node.renter == '':
         data = request.get_json()
         file_node.rent(data['user'])
         return {'status': 'success'}
@@ -230,7 +232,7 @@ def osfstorage_rent(file_node, **kwargs):
 
 @decorators.autoload_filenode(must_be='file')
 def osfstorage_return(file_node, **kwargs):
-    if file_node.rented() == (request.get_json()['user']):
+    if (file_node.renter == request.get_json()['user']):
         file_node.return_rent()
         return {'status': 'success'}
     else:
@@ -238,4 +240,4 @@ def osfstorage_return(file_node, **kwargs):
 
 @decorators.autoload_filenode(must_be='file')
 def osfstorage_rented(file_node, **kwargs):
-    return {'renter': file_node.rented()}
+    return {'renter': file_node.rented}
