@@ -65,7 +65,7 @@ SideBar.controller = function(vm) {
         var checked = (self.vm.optionalFilters.indexOf('source:' + result.short_name) > -1 || self.vm.requiredFilters.indexOf('source:' + result.short_name) > -1) ? 'in-filter' : '';
 
         return m('li',
-            m('.provider-filter', {
+            m('.provider-filter.break-word', {
                 'class': checked,
                 onclick: function(cb){
                     if (checked === 'in-filter') {

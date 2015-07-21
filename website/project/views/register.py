@@ -195,7 +195,7 @@ def node_registration_retraction_approve(auth, node, token, **kwargs):
             'message_long': e.message
         })
 
-    status.push_status_message('Your approval has been accepted.')
+    status.push_status_message('Your approval has been accepted.', 'success')
     return redirect(node.web_url_for('view_project'))
 
 @must_be_valid_project
@@ -229,7 +229,7 @@ def node_registration_retraction_disapprove(auth, node, token, **kwargs):
             'message_long': e.message
         })
 
-    status.push_status_message('Your disapproval has been accepted and the retraction has been cancelled.')
+    status.push_status_message('Your disapproval has been accepted and the retraction has been cancelled.', 'success')
     return redirect(node.web_url_for('view_project'))
 
 @must_be_valid_project
@@ -262,7 +262,7 @@ def node_registration_embargo_approve(auth, node, token, **kwargs):
             'message_long': e.message
         })
 
-    status.push_status_message('Your approval has been accepted.')
+    status.push_status_message('Your approval has been accepted.', 'success')
     return redirect(node.web_url_for('view_project'))
 
 @must_be_valid_project
@@ -298,7 +298,7 @@ def node_registration_embargo_disapprove(auth, node, token, **kwargs):
             'message_long': e.message
         })
 
-    status.push_status_message('Your disapproval has been accepted and the embargo has been cancelled.')
+    status.push_status_message('Your disapproval has been accepted and the embargo has been cancelled.', 'success')
     return redirect(redirect_url)
 
 @must_be_valid_project
@@ -472,7 +472,10 @@ def node_register_template_page_post(auth, node, **kwargs):
         for child in register.get_descendants_recursive(lambda n: n.primary):
             child.set_privacy('public', auth, log=False)
 
-    push_status_message('Files are being copied to the newly created registration, and you will receive an email notification containing a link to the registration when the copying is finished.')
+    push_status_message((
+        'Files are being copied to the newly created registration, '
+        'and you will receive an email notification containing a link'
+        ' to the registration when the copying is finished.'), 'info')
 
     return {
         'status': 'initiated',

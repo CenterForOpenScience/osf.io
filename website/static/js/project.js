@@ -19,14 +19,19 @@ NodeActions.beforeForkNode = function(url, done) {
         url: url,
         contentType: 'application/json'
     }).done(function(response) {
-        bootbox.confirm(
-            $osf.joinPrompts(response.prompts, ('<h4>Are you sure you want to fork this project?</h4>')),
-            function(result) {
+        bootbox.confirm({
+            message: $osf.joinPrompts(response.prompts, ('<h4>Are you sure you want to fork this project?</h4>')),
+            callback: function (result) {
                 if (result) {
                     done && done();
                 }
+            },
+            buttons:{
+                confirm:{
+                    label:'Fork'
+                }
             }
-        );
+        });
     }).fail(
         $osf.handleJSONError
     );
@@ -74,6 +79,11 @@ NodeActions.forkPointer = function(pointerId) {
                     $osf.growl('Error','Could not fork link.');
                 });
             }
+        },
+        buttons:{
+            confirm:{
+                label:'Fork'
+            }
         }
     });
 };
@@ -83,19 +93,23 @@ NodeActions.beforeTemplate = function(url, done) {
         url: url,
         contentType: 'application/json'
     }).success(function(response) {
-        bootbox.confirm(
-            $osf.joinPrompts(response.prompts,
+        bootbox.confirm({
+            message: $osf.joinPrompts(response.prompts,
                 ('<h4>Are you sure you want to create a new project using this project as a template?</h4>' +
-                '<p class="text-info"><div class="fangorn-toolbar-icon"><i class="fa fa-info"></i></div> ' +
-                'Any add-ons configured for this project will not be authenticated in the new project.</p>')),
+                '<p>Any add-ons configured for this project will not be authenticated in the new project.</p>')),
                 //('Are you sure you want to create a new project using this project as a template? ' +
                 //  'Any add-ons configured for this project will not be authenticated in the new project.')),
-            function (result) {
+            callback: function (result) {
                 if (result) {
                     done && done();
                 }
+            },
+            buttons:{
+                confirm:{
+                    label:'Create'
+                }
             }
-        );
+        });
     });
 };
 
@@ -131,11 +145,11 @@ $(function() {
 
         if ($.trim($('#title').val()) === '') {
 
-            $('#newComponent .modal-alert').text('The new component title cannot be empty.');
+            $('#newComponent .modal-alert').text('This field is required.');
 
             $('#add-component-submit')
                 .removeAttr('disabled', 'disabled')
-                .text('OK');
+                .text('Add');
 
             e.preventDefault();
         } else if ($(e.target).find('#title').val().length > 200) {
@@ -143,7 +157,7 @@ $(function() {
 
             $('#add-component-submit')
                 .removeAttr('disabled', 'disabled')
-                .text('OK');
+                .text('Add');
 
             e.preventDefault();
 
@@ -265,6 +279,12 @@ $(document).ready(function() {
                     var pointerElm = $this.closest('.list-group-item');
                     NodeActions.removePointer(pointerId, pointerElm);
                 }
+            },
+            buttons:{
+                    confirm:{
+                        label:'Remove',
+                        className:'btn-danger'
+                    }
             }
         });
     });

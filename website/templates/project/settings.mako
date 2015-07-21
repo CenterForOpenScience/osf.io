@@ -16,21 +16,18 @@
 </div>
 
 <div class="row project-page">
-
     <!-- Begin left column -->
-    <div class="col-sm-3 affix-parent">
+    <div class="col-sm-3 affix-parent scrollspy">
 
         % if 'write' in user['permissions']:
 
-            <div class="panel panel-default" data-spy="affix" data-offset-top="60" data-offset-bottom="268"><!-- Begin sidebar -->
+            <div class="panel panel-default osf-affix" data-spy="affix" data-offset-top="60" data-offset-bottom="263"><!-- Begin sidebar -->
                 <ul class="nav nav-stacked nav-pills">
 
                     % if not node['is_registration']:
                         <li><a href="#configureNodeAnchor">Configure ${node['node_type'].capitalize()}</a></li>
 
-                        % if 'admin' in user['permissions']:
-                            <li><a href="#configureCommentingAnchor">Configure Commenting</a></li>
-                        % endif
+
 
                         % if 'write' in user['permissions']:
                             <li><a href="#selectAddonsAnchor">Select Add-ons</a></li>
@@ -40,7 +37,12 @@
                             % endif
 
                             <li><a href="#configureNotificationsAnchor">Configure Notifications</a></li>
-                        %endif
+                        % endif
+
+                        % if 'admin' in user['permissions']:
+                            <li><a href="#configureCommentingAnchor">Configure Commenting</a></li>
+                        % endif
+
 
                     % endif
 
@@ -79,19 +81,22 @@
                                                         optionsText: 'label',
                                                         value: selectedCategory"></select>
                         </h5>
+                    % if 'component' == node['node_type']:
                         <p data-bind="if: !disabled">
-                            <button data-bind="css: {disabled: !dirty()},
-                                               click: updateCategory"
-                                    class="btn btn-primary">Change</button>
                             <button data-bind="css: {disabled: !dirty()},
                                                click: cancelUpdateCategory"
                                     class="btn btn-default">Cancel</button>
+                            <button data-bind="css: {disabled: !dirty()},
+                                               click: updateCategory"
+                                    class="btn btn-primary">Change</button>
                         </p>
                         <span data-bind="css: messageClass, html: message"></span>
+                    % else:
                         <span data-bind="if: disabled" class="help-block">
                             A top-level project's category cannot be changed
                         </span>
                     </div>
+                    % endif
 
                     % if 'admin' in user['permissions']:
                         <hr />
@@ -110,50 +115,6 @@
             % endif
 
         % endif  ## End Configure Project
-
-        % if 'admin' in user['permissions']:  ## Begin Configure Commenting
-
-            % if not node['is_registration']:
-
-                <div class="panel panel-default">
-                    <span id="configureCommentingAnchor" class="anchor"></span>
-                    <div class="panel-heading clearfix">
-                        <h3 class="panel-title">Configure Commenting</h3>
-                    </div>
-
-                    <div class="panel-body">
-
-                        <form class="form" id="commentSettings">
-
-                            <div class="radio">
-                                <label>
-                                    <input type="radio" name="commentLevel" value="private" ${'checked' if comments['level'] == 'private' else ''}>
-                                    Only contributors can post comments
-                                </label>
-                            </div>
-                            <div class="radio">
-                                <label>
-                                    <input type="radio" name="commentLevel" value="public" ${'checked' if comments['level'] == 'public' else ''}>
-                                    When the ${node['node_type']} is public, any OSF user can post comments
-                                </label>
-                            </div>
-
-                            <button class="btn btn-success">Save</button>
-
-                            <!-- Flashed Messages -->
-                            <div class="help-block">
-                                <p id="configureCommentingMessage"></p>
-                            </div>
-                        </form>
-
-                    </div>
-
-                </div>
-
-            % endif
-
-        % endif  ## End Configure Commenting
-
 
         % if 'write' in user['permissions']:  ## Begin Select Addons
 
@@ -236,7 +197,6 @@
                 % endif
 
             % endif
-
         % endif  ## End Select Addons
 
         % if user['has_read_permissions']:  ## Begin Configure Notifications
@@ -266,7 +226,54 @@
 
             %endif
 
-        % endif  ## End Configure Addons
+        % endif End Configure Notifications
+
+
+
+        % if 'admin' in user['permissions']:  ## Begin Configure Commenting
+
+            % if not node['is_registration']:
+
+                <div class="panel panel-default">
+                    <span id="configureCommentingAnchor" class="anchor"></span>
+                    <div class="panel-heading clearfix">
+                        <h3 class="panel-title">Configure Commenting</h3>
+                    </div>
+
+                    <div class="panel-body">
+
+                        <form class="form" id="commentSettings">
+
+                            <div class="radio">
+                                <label>
+                                    <input type="radio" name="commentLevel" value="private" ${'checked' if comments['level'] == 'private' else ''}>
+                                    Only contributors can post comments
+                                </label>
+                            </div>
+                            <div class="radio">
+                                <label>
+                                    <input type="radio" name="commentLevel" value="public" ${'checked' if comments['level'] == 'public' else ''}>
+                                    When the ${node['node_type']} is public, any OSF user can post comments
+                                </label>
+                            </div>
+
+                            <button class="btn btn-success">Save</button>
+
+                            <!-- Flashed Messages -->
+                            <div class="help-block">
+                                <p id="configureCommentingMessage"></p>
+                            </div>
+                        </form>
+
+                    </div>
+
+                </div>
+
+            % endif
+
+        % endif  ## End Configure Commenting
+
+
 
         % if 'admin' in user['permissions']:  ## Begin Retract Registration
 
@@ -333,6 +340,14 @@
 % for name, capabilities in addon_capabilities.iteritems():
     <script id="capabilities-${name}" type="text/html">${capabilities}</script>
 % endfor
+
+
+<%def name="stylesheets()">
+    ${parent.stylesheets()}
+
+    <link rel="stylesheet" href="/static/css/pages/project-page.css">
+</%def>
+
 
 <%def name="javascript_bottom()">
     <% import json %>
