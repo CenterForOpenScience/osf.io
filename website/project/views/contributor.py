@@ -59,12 +59,12 @@ def get_node_contributors_abbrev(auth, node, **kwargs):
     for index, user in enumerate(users[:max_count]):
 
         if index == max_count - 1 and len(users) > max_count:
-            separator = '&nbsp;&'
+            separator = '&'
             others_count = str(n_contributors - 3)
         elif index == len(users) - 1:
             separator = ''
         elif index == len(users) - 2:
-            separator = '&nbsp&'
+            separator = '&'
         else:
             separator = ','
 

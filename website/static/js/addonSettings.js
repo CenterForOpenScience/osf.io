@@ -54,6 +54,12 @@ var ExternalAccount = oop.defclass({
                 if (confirm) {
                     self._deauthorizeNodeConfirm(node);
                 }
+            },
+            buttons:{
+                confirm:{
+                    label:'Remove',
+                    className:'btn-danger'
+                }
             }
         });
     }
@@ -92,6 +98,12 @@ var OAuthAddonSettingsViewModel = oop.defclass({
             callback: function(confirm) {
                 if (confirm) {
                     self.disconnectAccount(account);
+                }
+            },
+            buttons:{
+                confirm:{
+                    label:'Delete',
+                    className:'btn-danger'
                 }
             }
         });
