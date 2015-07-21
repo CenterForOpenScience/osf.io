@@ -73,9 +73,8 @@ def custom_exception_handler(exc, context):
     response = exception_handler(exc, context)
 
     if response is not None:
-        if isinstance(response.data, (list)):
-            data = response.data
-            response = {}
-            response['data'] = {'errors': {'detail': data}}
-            return response
-        response.data['errors'] = [{'detail': response.data['detail']}]
+        if 'detail' in response.data:
+            response.data = {'errors': [response.data]}
+        else:
+            response.data = {'errors': [{'detail': response.data}]}
+    return response

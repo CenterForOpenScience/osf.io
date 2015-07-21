@@ -61,6 +61,7 @@ REST_FRAMEWORK = {
         'api.base.renderers.JSONAPIRenderer',
         'rest_framework.renderers.BrowsableAPIRenderer',
     ),
+    'EXCEPTION_HANDLER': 'api.base.utils.custom_exception_handler',
     'DEFAULT_VERSIONING_CLASS': 'rest_framework.versioning.AcceptHeaderVersioning',
     'DEFAULT_VERSION': '2.0',
     'DEFAULT_FILTER_BACKENDS': ('api.base.filters.ODMOrderingFilter',),
@@ -72,7 +73,6 @@ REST_FRAMEWORK = {
         'api.base.authentication.drf.OSFSessionAuthentication',
         'api.base.authentication.drf.OSFCASAuthentication'
     ),
-    'EXCEPTION_HANDLER': 'api.base.utils.custom_exception_handler'
 }
 
 MIDDLEWARE_CLASSES = (
