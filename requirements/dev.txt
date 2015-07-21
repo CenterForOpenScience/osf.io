@@ -6,7 +6,10 @@ nose
 factory-boy==2.2.1
 webtest-plus==0.3.3
 mock==1.0.1
-fake-factory
+fake-factory==0.5.0
+Faker==0.0.4
+mixer==5.1.8
+
 # Fork of HTTPretty with pymongo fix
 git+https://github.com/jmcarp/HTTPretty@matcher-priority
 
