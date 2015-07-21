@@ -1,11 +1,16 @@
 from rest_framework import generics, permissions as drf_permissions
+from rest_framework.response import Response
 from modularodm import Q
 
 from website.models import User, Node
 from framework.auth.core import Auth
 from api.base.utils import get_object_or_404
+
+#todo move get_user_auth?
+from api.nodes.permissions import get_user_auth
 from api.base.filters import ODMFilterMixin
 from api.nodes.serializers import NodeSerializer
+from api.nodes.views import NodeIncludeMixin
 from .serializers import UserSerializer
 
 class UserMixin(object):
@@ -16,15 +21,27 @@ class UserMixin(object):
     serializer_class = UserSerializer
     node_lookup_url_kwarg = 'user_id'
 
-    def get_user(self, check_permissions=True):
+    def get_user(self, check_permissions=True, get_parameters=True):
         obj = get_object_or_404(User, self.kwargs[self.node_lookup_url_kwarg])
         if check_permissions:
             # May raise a permission denied
             self.check_object_permissions(self.request, obj)
+        if get_parameters:
+            obj = self.get_additional_parameters(self.request, obj)
         return obj
 
+class UserIncludeMixin(object):
 
-class UserList(generics.ListAPIView, ODMFilterMixin):
+    def get_additional_parameters(self, request, user):
+        if 'include' in request.query_params:
+            parameters = request.query_params['include'].split(',')
+            auth = get_user_auth(request)
+            if 'nodes' in parameters:
+                user.nodes = [node for node in user.node__contributed if node.can_view(auth)]
+        return user
+
+
+class UserList(generics.ListAPIView, ODMFilterMixin, UserIncludeMixin):
     """Users registered on the OSF.
 
     You can filter on users by their id, fullname, given_name, middle_name, or family_name.
@@ -49,8 +66,23 @@ class UserList(generics.ListAPIView, ODMFilterMixin):
         query = self.get_query_from_request()
         return User.find(query)
 
+    def list(self, request, *args, **kwargs):
+        queryset = self.filter_queryset(self.get_queryset())
 
-class UserDetail(generics.RetrieveAPIView, UserMixin):
+        users = []
+        page = self.paginate_queryset(queryset)
+        for user in page:
+            user = self.get_additional_parameters(request, user)
+            users.append(user)
+        if page is not None:
+            serializer = self.get_serializer(users, many=True)
+            return self.get_paginated_response(serializer.data)
+
+        serializer = self.get_serializer(queryset, many=True)
+        return Response(serializer.data)
+
+
+class UserDetail(generics.RetrieveAPIView, UserMixin, UserIncludeMixin):
     """Details about a specific user.
     """
     serializer_class = UserSerializer
@@ -59,8 +91,8 @@ class UserDetail(generics.RetrieveAPIView, UserMixin):
     def get_object(self):
         return self.get_user()
 
-
-class UserNodes(generics.ListAPIView, UserMixin, ODMFilterMixin):
+# todo, modify mixin
+class UserNodes(generics.ListAPIView, UserMixin, ODMFilterMixin, NodeIncludeMixin):
     """Nodes belonging to a user.
 
     Return a list of nodes that the user contributes to. """
@@ -68,7 +100,7 @@ class UserNodes(generics.ListAPIView, UserMixin, ODMFilterMixin):
 
     # overrides ODMFilterMixin
     def get_default_odm_query(self):
-        user = self.get_user(check_permissions=False)
+        user = self.get_user(check_permissions=False, get_parameters=False)
         return (
             Q('contributors', 'eq', user) &
             Q('is_folder', 'ne', True) &
@@ -84,5 +116,9 @@ class UserNodes(generics.ListAPIView, UserMixin, ODMFilterMixin):
             auth = Auth(current_user)
         query = self.get_query_from_request()
         raw_nodes = Node.find(self.get_default_odm_query() & query)
-        nodes = [each for each in raw_nodes if each.is_public or each.can_view(auth)]
+        raw_nodes = [each for each in raw_nodes if each.is_public or each.can_view(auth)]
+        nodes = []
+        for node in raw_nodes:
+            node = NodeIncludeMixin.get_additional_parameters(self.request, node)
+            nodes.append(node)
         return nodes
