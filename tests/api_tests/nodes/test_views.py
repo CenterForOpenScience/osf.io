@@ -1451,37 +1451,36 @@ class TestNodeIncludeParameters(ApiTestCase):
         assert_in(self.pointer._id, query_params['pointers'][0]['id'])
         assert_in(self.registration._id, query_params['registrations'][0]['id'])
 
-    # todo Debug contributor node list
-    # def test_contributor_node_list_get_keys(self):
-    #     url_contributor_node_list = '/{}users/{}/nodes/?include=children,contributors,pointers,registrations'\
-    #         .format(API_BASE, self.user._id)
-    #     res = self.app.get(url_contributor_node_list)
-    #     assert_equal(res.status_code, 200)
-    #     params_one = res.json['data'][0]
-    #     params_two = res.json['data'][1]
-    #     assert_in('children', params_one)
-    #     assert_in('contributors', params_one)
-    #     assert_in('pointers', params_one)
-    #     assert_in('registrations', params_one)
-    #
-    #     assert_in('children', params_two)
-    #     assert_in('contributors', params_two)
-    #     assert_in('pointers', params_two)
-    #     assert_in('registrations', params_one)
-    #
-    # def test_contributor_node_list_get_values(self):
-    #     url_contributor_node_list = '/{}users/{}/nodes/?include=children,contributors,pointers,registrations'\
-    #         .format(API_BASE, self.user._id)
-    #     res = self.app.get(url_contributor_node_list)
-    #     assert_equal(res.status_code, 200)
-    #     query_params = None
-    #     for param in res.json['data']:
-    #         if param['id'] == self.project._id:
-    #             query_params = param
-    #     assert_in(self.child._id, query_params['children'][0]['id'])
-    #     assert_in(self.user._id, query_params['contributors'][0]['id'])
-    #     assert_in(self.pointer._id, query_params['pointers'][0]['id'])
-    #     assert_in(self.registration._id, query_params['registrations'][0]['id'])
+    def test_contributor_node_list_get_keys(self):
+        url_contributor_node_list = '/{}users/{}/nodes/?include=children,contributors,pointers,registrations'\
+            .format(API_BASE, self.user._id)
+        res = self.app.get(url_contributor_node_list)
+        assert_equal(res.status_code, 200)
+        params_one = res.json['data'][0]
+        params_two = res.json['data'][1]
+        assert_in('children', params_one)
+        assert_in('contributors', params_one)
+        assert_in('pointers', params_one)
+        assert_in('registrations', params_one)
+
+        assert_in('children', params_two)
+        assert_in('contributors', params_two)
+        assert_in('pointers', params_two)
+        assert_in('registrations', params_one)
+
+    def test_contributor_node_list_get_values(self):
+        url_contributor_node_list = '/{}users/{}/nodes/?include=children,contributors,pointers,registrations'\
+            .format(API_BASE, self.user._id)
+        res = self.app.get(url_contributor_node_list)
+        assert_equal(res.status_code, 200)
+        query_params = None
+        for param in res.json['data']:
+            if param['id'] == self.project._id:
+                query_params = param
+        assert_in(self.child._id, query_params['children'][0]['id'])
+        assert_in(self.user._id, query_params['contributors'][0]['id'])
+        assert_in(self.pointer._id, query_params['pointers'][0]['id'])
+        assert_in(self.registration._id, query_params['registrations'][0]['id'])
 
     def test_node_registration_get_keys(self):
         url_registered_node_list = self.url_detail \
@@ -1494,15 +1493,16 @@ class TestNodeIncludeParameters(ApiTestCase):
         assert_in('pointers', additional_query_params)
         assert_in('registrations', additional_query_params)
 
+
+    # todo can a registration have a sub-registration?
     def test_node_registration_get_values(self):
         url_registered_node_list = self.url_detail \
                                    + 'registrations/?include=children,contributors,pointers,registrations'
-        registration_two = RegistrationFactory(creator=self.user, project=self.project)
         res = self.app.get(url_registered_node_list)
         assert_equal(res.status_code, 200)
-        query_params = res.json['data'][1]
-        child = registration_two.nodes[0]
-        pointer = registration_two.nodes_pointer[0]
+        query_params = res.json['data'][0]
+        child = self.registration.nodes[0]
+        pointer = self.registration.nodes_pointer[0]
 
         assert_in(child._id, query_params['children'][0]['id'])
         assert_in(self.user._id, query_params['contributors'][0]['id'])
