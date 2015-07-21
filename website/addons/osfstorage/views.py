@@ -155,7 +155,7 @@ def osfstorage_create_child(file_node, payload, node_addon, **kwargs):
 
     if not is_folder:
         try:
-            if file_node.renter == '' or file_node.renter == user:
+            if file_node.renter == '' or file_node.renter == user._id:
                 version = file_node.create_version(
                     user,
                     dict(payload['settings'], **dict(
