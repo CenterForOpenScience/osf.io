@@ -24,18 +24,20 @@ var FileViewPage = {
         self.file = self.context.file;
         self.node = self.context.node;
         self.editorMeta = self.context.editor;
-        self.file.is_rented = false;
         self.file.renter = '';
 
         self.isRenter = function() {
             $osf.postJSON(
-                '/api/v1/project/' + self.node.id + '/osfstorage' + self.file.path +'/rent_meta/',
+                '/api/v1/project/' + self.node.id + '/osfstorage' + self.file.path +'/rented/',
                 {
                     'user': self.context.userId
                 }
             ).done(function(resp) {
-                self.file.is_rented =  resp.is_rented;
                 self.file.renter = resp.renter;
+                if ((self.file.renter !== '') && (self.file.renter !== self.context.userId)) {
+                $osf.growl('File is locked', 'This file has been locked by a <a href="/' + self.file.renter +
+                    '"> collaborator </a>. It needs to be unlocked before any changes can be made.' )
+            }
             }).fail(function(resp) {
             });
         };
@@ -264,7 +266,7 @@ var FileViewPage = {
         $('.file-view-panels').removeClass().addClass('file-view-panels').addClass(fileViewPanelsLayout);
 
         m.render(document.getElementById('toggleBar'), m('.btn-toolbar.m-t-md', [
-            ctrl.canEdit() ? m('.btn-group.m-l-xs.m-t-xs', [
+            ctrl.canEdit() && (ctrl.file.renter === '') ? m('.btn-group.m-l-xs.m-t-xs', [
                 m('.btn.btn-sm.btn-danger.file-delete', {onclick: $(document).trigger.bind($(document), 'fileviewpage:delete')}, 'Delete')
             ]) : '',
             ctrl.canEdit() && (ctrl.file.renter === '') && ctrl.editor ? m('.btn-group.m-l-xs.m-t-xs', [
