@@ -900,14 +900,14 @@ function _removeEvent (event, items, col) {
         var folder = items[0];
         if (folder.data.permissions.edit) {
                 var mithrilContent = m('div', [
-                        m('h3.break-word', 'Delete "' + folder.data.name+ '"?'),
+
                         m('p.text-danger', 'This folder and ALL its contents will be deleted. This action is irreversible.')
                     ]);
                 var mithrilButtons = m('div', [
-                        m('span.tb-modal-btn', { 'class' : 'text-default', onclick : function() { cancelDelete.call(tb); } }, 'Cancel'),
-                        m('span.tb-modal-btn', { 'class' : 'text-danger', onclick : function() { runDelete(folder); }  }, 'Delete')
+                        m('span.btn.btn-default', { onclick : function() { cancelDelete.call(tb); } }, 'Cancel'),
+                        m('span.btn.btn-danger', {  onclick : function() { runDelete(folder); }  }, 'Delete')
                     ]);
-                tb.modal.update(mithrilContent, mithrilButtons);
+                tb.modal.update(mithrilContent, mithrilButtons, m('h3.break-word.modal-title', 'Delete "' + folder.data.name+ '"?'));
         } else {
             folder.notify.update('You don\'t have permission to delete this file.', 'info', undefined, 3000);
         }
