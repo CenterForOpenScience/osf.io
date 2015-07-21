@@ -54,9 +54,11 @@ class NodeIncludeMixin(object):
             if parameters != []:
 
                 # not found or validation error?
-                raise NotFound('{} are not valid parameters.')
+                raise NotFound('{} are not valid parameters.'.format(parameters))
         return node
 
+# Put here due ot issues importing node include mixin
+from api.users.views import UserIncludeMixin
 
 class NodeList(generics.ListCreateAPIView, ODMFilterMixin, NodeIncludeMixin):
     """Projects and components.
@@ -159,7 +161,7 @@ class NodeDetail(generics.RetrieveUpdateDestroyAPIView, NodeMixin, NodeIncludeMi
         node.save()
 
 
-class NodeContributorsList(generics.ListAPIView, ListFilterMixin, NodeMixin, NodeIncludeMixin):
+class NodeContributorsList(generics.ListAPIView, ListFilterMixin, NodeMixin, UserIncludeMixin):
     """Contributors (users) for a node.
 
     Contributors are users who can make changes to the node or, in the case of private nodes,
@@ -181,6 +183,7 @@ class NodeContributorsList(generics.ListAPIView, ListFilterMixin, NodeMixin, Nod
         contributors = []
         for contributor in node.contributors:
             contributor.bibliographic = contributor._id in visible_contributors
+            contributor = self.get_additional_parameters(self.request, contributor)
             contributors.append(contributor)
         return contributors
 
