@@ -10,15 +10,6 @@ from modularodm.exceptions import NoResultsFound
 from website import util as website_util  # noqa
 from website import settings as website_settings
 
-from django.core.exceptions import PermissionDenied
-from django.http import Http404
-from django.utils import six
-from django.utils.translation import ugettext_lazy as _
-from rest_framework import status, exceptions
-from rest_framework.response import Response
-
-
-
 def absolute_reverse(view_name, query_kwargs=None, args=None, kwargs=None):
     """Like django's `reverse`, except returns an absolute URL. Also add query parameters."""
     relative_url = reverse(view_name, kwargs=kwargs)
@@ -64,6 +55,7 @@ def waterbutler_url_for(request_type, provider, path, node_id, token, obj_args=N
 
     url.args.update(query)
     return url.url
+
 
 def custom_exception_handler(exc, context):
     """
