@@ -258,22 +258,6 @@ class TestUsersFiltering(ApiTestCase):
         assert_in(self.user_one._id, ids)
         assert_not_in(self.user_two._id, ids)
 
-    # def test_filter_using_jobs_dot_institution(self):
-    #     url = "/{}users/?filter[jobs.institution]=Church".format(API_BASE)
-    #     res = self.app.get(url)
-    #     user_json = res.json['data']
-    #     ids = [each['id'] for each in user_json]
-    #     assert_in(self.user_one._id, ids)
-    #     assert_not_in(self.user_two._id, ids)
-    #
-    # def test_filter_test_filter_using_employment_institutions_dot_institution(self):
-    #     url = "/{}users/?filter[employment_institutions.institution]=Church".format(API_BASE)
-    #     res = self.app.get(url)
-    #     user_json = res.json['data']
-    #     ids = [each['id'] for each in user_json]
-    #     assert_in(self.user_one._id, ids)
-    #     assert_not_in(self.user_two._id, ids)
-    #
     def test_filter_by_social_field(self):
         url = "/{}users/?filter[github]=userOneGithub".format(API_BASE)
         res = self.app.get(url)
@@ -313,14 +297,26 @@ class TestUserDetail(ApiTestCase):
         self.user_one.jobs = [
             {
                 'startYear': '1954',
-                'title': '',
-                'startMonth': '1',
-                'endMonth': None,
+                'title': 'Reverend',
+                'startMonth': '12',
+                'endMonth': '3',
                 'endYear': '1968',
                 'ongoing': False,
-                'department': '',
+                'department': 'Civil Disobedience',
                 'institution': 'Dexter Avenue Baptist Church'
-            },
+            }
+        ]
+        self.user_one.schools = [
+            {
+                'startYear': '1954',
+                'degree': 'MLK Degree',
+                'startMonth': '3',
+                'endMonth': 5,
+                'endYear': '1968',
+                'ongoing': False,
+                'department': 'MLK Department',
+                'institution': 'University of Institutions'
+            }
         ]
         self.user_one.save()
         self.auth_one = (self.user_one.username, 'justapoorboy')
@@ -339,26 +335,49 @@ class TestUserDetail(ApiTestCase):
         self.user_two.social['orcid'] = 'userTwoOrcid'
         self.user_two.social['researcherId'] = 'userTwoResearcherId'
 
-        self.user_two.schools = [
+        self.user_two.jobs = [
             {
                 'startYear': '1900',
-                'title': '',
+                'title': 'Vice President of Sitcoms',
                 'startMonth': '1',
-                'endMonth': None,
+                'endMonth': '5',
                 'endYear': None,
                 'ongoing': True,
                 'department': '',
                 'institution': 'Waffle House'
             },
             {
-                "startYear": '1905',
-                "title": 'President of Tony Danza Management',
-                "startMonth": None,
-                "endMonth": None,
-                "endYear": '2000',
-                "ongoing": False,
-                "department": 'Mom',
-                "institution": 'Heeyyyy'
+                'startYear': '',
+                'title': 'President of Tony Danza Management',
+                'startMonth': None,
+                'endMonth': None,
+                'endYear': '2000',
+                'ongoing': False,
+                'department': 'Mom',
+                'institution': 'Heeyyyy'
+            },
+        ]
+
+        self.user_two.schools = [
+            {
+                'startYear': '1985',
+                'degree': 'First Degree',
+                'startMonth': '1',
+                'endMonth': None,
+                'endYear': None,
+                'ongoing': True,
+                'department': '',
+                'institution': 'School of Hilarity'
+            },
+            {
+                'startYear': '',
+                'degree': 'Second Degree',
+                'startMonth': None,
+                'endMonth': None,
+                'endYear': '2000',
+                'ongoing': False,
+                'department': 'Mom',
+                'institution': 'Martin'
             },
         ]
 
