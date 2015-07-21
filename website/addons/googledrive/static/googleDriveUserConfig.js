@@ -83,6 +83,12 @@ var ViewModel = function(url) {
                 if (confirmed) {
                     sendDeauth();
                 }
+            },
+            buttons:{
+                confirm:{
+                    label:'Delete',
+                    className:'btn-danger'
+                }
             }
         });
     };
@@ -94,7 +100,6 @@ var ViewModel = function(url) {
             type: 'DELETE'
         }).done(function() {
             window.location.reload();
-            self.changeMessage(language.deauthSuccess, 'text-info', 5000);
         }).fail(function(textStatus, error) {
             self.changeMessage(language.deauthError, 'text-danger');
             Raven.captureMessage('Could not deauthorize Google Drive.', {
