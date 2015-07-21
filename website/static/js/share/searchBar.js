@@ -71,7 +71,7 @@ SearchBar.controller = function(vm) {
 
     self.atomParams = function(){
         return $.param({
-            jsonQuery: encodeURIComponent(JSON.stringify(vm.buildQuery()))
+            jsonQuery: encodeURIComponent(JSON.stringify(utils.buildQuery(vm)))
         });
     };
 
