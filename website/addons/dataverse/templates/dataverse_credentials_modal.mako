@@ -20,7 +20,8 @@
                                         id="hostSelect"
                                         data-bind="options: visibleHosts,
                                                    optionsCaption: 'Select an item...',
-                                                   value: selectedHost">
+                                                   value: selectedHost,
+                                                   event: { change: selectionChanged }">
                                 </select>
                             </div>
 
@@ -67,10 +68,8 @@
 
                     <a href="#" class="btn btn-default" data-bind="click: clearModal" data-dismiss="modal">Cancel</a>
 
-                    <!-- Submit Button -->
-                    <button data-bind="click: sendAuth" class="btn btn-success">
-                        Submit
-                    </button>
+                    <!-- Save Button -->
+                    <button data-bind="click: sendAuth" class="btn btn-success">Save</button>
 
                 </div><!-- end modal-footer -->
 

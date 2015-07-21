@@ -32,10 +32,8 @@ FRONTEND_VERSION = 1
 @requires_search
 def search(query, raw=False, index='share'):
     # Run the real query and get the results
-    if query.get('aggregations'):
-        if query['aggregations'].get('sourcesByTimes'):
-            index = settings.SHARE_ELASTIC_INDEX_TEMPLATE.format(FRONTEND_VERSION)
     results = share_es.search(index=index, doc_type=None, body=query)
+
     for hit in results['hits']['hits']:
         hit['_source']['highlight'] = hit.get('highlight', {})
     return results if raw else {
@@ -138,7 +136,7 @@ def stats(query=None):
         "earlier_documents": {
             "filter": {
                 "range": {
-                    "dateUpdated": {
+                    "providerUpdatedDateTime": {
                         "lt": three_months_ago
                     }
                 }
@@ -154,21 +152,20 @@ def stats(query=None):
             }
         }
     }
-    # date_histogram_query = {
-    #     'query': {
-    #         'filtered': {
-    #             'query': query['query'],
-    #             'filter': {
-    #                 'range': {
-    #                     'dateUpdated': {
-    #                         'gt': three_months_ago
-    #                     }
-    #                 }
-    #             }
-    #         }
-    #     }
-    # }
-    date_histogram_query = query
+    date_histogram_query = {
+        'query': {
+            'filtered': {
+                'query': query['query'],
+                'filter': {
+                    'range': {
+                        'providerUpdatedDateTime': {
+                            'gt': three_months_ago
+                        }
+                    }
+                }
+            }
+        }
+    }
     date_histogram_query['aggs'] = {
         "date_chunks": {
             "terms": {
@@ -179,7 +176,7 @@ def stats(query=None):
             "aggs": {
                 "articles_over_time": {
                     "date_histogram": {
-                        "field": "dateUpdated",
+                        "field": "providerUpdatedDateTime",
                         "interval": "week",
                         "min_doc_count": 0,
                         "extended_bounds": {
@@ -196,11 +193,10 @@ def stats(query=None):
                               body=query)
     date_results = share_es.search(index=index,
                                    body=date_histogram_query)
-
     results['aggregations']['date_chunks'] = date_results['aggregations']['date_chunks']
 
-    #chart_results = data_for_charts(results)
-    return date_histogram_query
+    chart_results = data_for_charts(results)
+    return chart_results
 
 
 def data_for_charts(elastic_results):
@@ -214,14 +210,11 @@ def data_for_charts(elastic_results):
     r = generate_color()
     stats = {}
     colors = {}
-    colorsNorm = {}
     for bucket in elastic_results['aggregations']['sources']['buckets']:
         stats[bucket['key']] = {
             'doc_count': bucket['doc_count'],
         }
-        (colHex, colNorm) = r.next()
-        colors[bucket['key']] = colHex
-        colorsNorm[bucket['key']] = colNorm
+        colors[bucket['key']] = r.next()
 
     for bucket in elastic_results['aggregations']['earlier_documents']['sources']['buckets']:
         stats[bucket['key']]['earlier_documents'] = bucket['doc_count']
@@ -296,38 +289,32 @@ def data_for_charts(elastic_results):
 
 
 def to_atom(result):
-    if not result['id']['url']:
-        logger.error('ATOM error for {}: Missing id'.format(result['source']))
     return {
         'title': html_and_illegal_unicode_replace(result.get('title')) or 'No title provided.',
         'summary': html_and_illegal_unicode_replace(result.get('description')) or 'No summary provided.',
-        'id': result['id']['url'],
+        'id': result['uris']['canonicalUri'],
         'updated': get_date_updated(result),
         'links': [
-            {'href': result['id']['url'], 'rel': 'alternate'}
+            {'href': result['uris']['canonicalUri'], 'rel': 'alternate'}
         ],
         'author': format_contributors_for_atom(result['contributors']),
-        'categories': [{"term": html_and_illegal_unicode_replace(tag)} for tag in result.get('tags')],
-        'published': parse(result.get('dateUpdated'))
+        'categories': [{"term": html_and_illegal_unicode_replace(tag)} for tag in (result.get('tags', []) + result.get('subjects', []))],
+        'published': parse(result.get('providerUpdatedDateTime'))
     }
 
 
 def format_contributors_for_atom(contributors_list):
     return [
         {
-            'name': '{} {}'.format(
-                html_and_illegal_unicode_replace(entry['given']),
-                html_and_illegal_unicode_replace(entry['family'])
-            )
-        }
-        for entry in contributors_list
+            'name': html_and_illegal_unicode_replace(entry['name'])
+        } for entry in contributors_list
     ]
 
 
 def get_date_updated(result):
     try:
-        updated = pytz.utc.localize(parse(result.get('dateUpdated')))
+        updated = pytz.utc.localize(parse(result.get('providerUpdatedDateTime')))
     except ValueError:
-        updated = parse(result.get('dateUpdated'))
+        updated = parse(result.get('providerUpdatedDateTime'))
 
     return updated

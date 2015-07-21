@@ -9,6 +9,13 @@
         <span class="icon-bar"></span>
         <span class="icon-bar"></span>
       </button>
+      <!-- ko ifnot: onSearchPage -->
+      <span class="visible-xs" data-bind="click : toggleSearch, css: searchCSS">
+          <a class="osf-xs-search pull-right" style="padding-top: 12px" >
+            <span rel="tooltip" data-placement="bottom" title="Search OSF" class="fa fa-search fa-lg fa-inverse" ></span>
+          </a>
+      </span>
+      <!-- /ko -->
       <a class="navbar-brand hidden-sm hidden-xs" href="/"><img src="/static/img/cos-white2.png" class="osf-navbar-logo" width="27" alt="COS logo"/> Open Science Framework</a>
       <a class="navbar-brand visible-sm visible-xs" href="/"><img src="/static/img/cos-white2.png" class="osf-navbar-logo" width="27" alt="COS logo"/> OSF</a>
     </div>

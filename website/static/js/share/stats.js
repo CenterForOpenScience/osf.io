@@ -16,6 +16,12 @@ var utils = require('./utils');
 
 var Stats = {};
 
+function indexById(myArray,key,id) {
+    return $.map(myArray, function (arrayItem, index) {
+        if (arrayItem[key] === id){return index}
+    })[0];
+}
+
 function donutGraph (data, vm) {
     data.charts.shareDonutGraph.onclick = function (d, element) {
         utils.updateFilter(vm, 'shareProperties.source:' + d.name, true); //TODO change this to subscription based filter?
@@ -57,24 +63,24 @@ function timeGraph (data,vm) {
             height: 250
         },
         data: data.charts.shareTimeGraph,
-        subchart: {
-            show: true,
-            size: {
-                height: 20
-            },
-            onbrush: function(zoomWin){
-                clearTimeout(data.charts.shareTimeGraph.dateChangeCallbackId); //stop constant redraws
-                data.charts.shareTimeGraph.dateChangeCallbackId = setTimeout( //update chart with new dates after some delay (1s) to stop repeated requests
-                    function(){
-                        var rawX = data.charts.shareTimeGraph.rawX;
-                        var xTick = (rawX.slice(-1)[0]-rawX[0])/rawX.length;
-                        var xMin = Math.round(rawX[0]+xTick*zoomWin[0]);
-                        var xMax = Math.round(rawX[0]+xTick*zoomWin[1]);
-                        Stats.mapFilter(vm, utils.fieldRange('providerUpdatedDateTime',zoomWin[0].getTime(),zoomWin[1].getTime()), 'shareTimeGraph');
-                    }
-                    ,1000);
-            }
-        },
+        //subchart: { //TODO @bdyetton implement subgraph and updating of search results from it
+        //    show: true,
+        //    size: {
+        //        height: 20
+        //    },
+        //    onbrush: function(zoomWin){
+        //        clearTimeout(data.charts.shareTimeGraph.dateChangeCallbackId); //stop constant redraws
+        //        data.charts.shareTimeGraph.dateChangeCallbackId = setTimeout( //update chart with new dates after some delay (1s) to stop repeated requests
+        //            function(){
+        //                var rawX = data.charts.shareTimeGraph.rawX;
+        //                var xTick = (rawX.slice(-1)[0]-rawX[0])/rawX.length;
+        //                var xMin = Math.round(rawX[0]+xTick*zoomWin[0]);
+        //                var xMax = Math.round(rawX[0]+xTick*zoomWin[1]);
+        //                Stats.mapFilter(vm, utils.fieldRange('providerUpdatedDateTime',zoomWin[0].getTime(),zoomWin[1].getTime()), 'shareTimeGraph');
+        //            }
+        //            ,1000);
+        //    }
+        //},
         axis: {
             x: {
                 type: 'timeseries',
@@ -146,21 +152,10 @@ Stats.mapFilter = function(vm,filter,sourceOfFilter)
     } else {
         vm.statsQuerys.shareDonutGraph.filters[indexOfFilter] = filterToAdd;
     }
-
-    utils.search(vm);//hack to force update
+    utils.search(vm);//force new search query and redraw
 
     //TODO work out some way to add filters based on some mapping
-    //MUST BE ADDED to Querys somehow!
-    //add everything to main query for now...
-    //if ('main' in vm.filterCallbackMap[sourceOfFilter] ||  ~vm.filterCallbackMap[sourceOfFilter]){
-    //    utils.updateFilter(vm, filter, true)}
 };
-
-function indexById(myArray,key,id) {
-    return $.map(myArray, function (arrayItem, index) {
-        if (arrayItem[key] === id){return index}
-    })[0];
-}
 
 Stats.shareDonutGraphParser = function(data)
 {
@@ -188,7 +183,6 @@ Stats.shareDonutGraphParser = function(data)
 
 Stats.shareTimeGraphParser = function(data)
 {
-    console.log(JSON.stringify(data.aggregations, null, 2));
     var chartData = {};
     chartData.name = 'shareTimeGraph';
     chartData.columns = [];
@@ -220,7 +214,6 @@ Stats.shareTimeGraphParser = function(data)
     chartData.groups.push(grouping);
     datesCol.unshift('x')
     chartData.columns.unshift(datesCol);
-    console.log(JSON.stringify(chartData, null, 2));
     return chartData;
 };
 
@@ -267,7 +260,7 @@ Stats.controller = function(vm) {
         'shareDonutGraph' : Stats.sourcesAgg()
     };
 
-    //set each aggregation as the data source for each chart
+    //set each aggregation as the data source for each chart parser, and hence chart
     self.vm.statsParsers = {
         'sources' : Stats.shareDonutGraphParser,
         'sourcesByTimes' : Stats.shareTimeGraphParser

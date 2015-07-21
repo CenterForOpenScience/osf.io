@@ -12,8 +12,8 @@ from website.project.decorators import must_not_be_registration
 
 
 @must_be_logged_in
-@must_have_addon('s3', 'user')
-def s3_post_user_settings(user_addon, **kwargs):
+def s3_post_user_settings(auth, **kwargs):
+    user_addon = auth.user.get_or_add_addon('s3')
     try:
         access_key = request.json['access_key']
         secret_key = request.json['secret_key']
@@ -143,5 +143,5 @@ def s3_delete_node_settings(auth, node_addon, **kwargs):
 
 @must_be_logged_in
 @must_have_addon('s3', 'user')
-def s3_delete_user_settings(user_addon, **kwargs):
-    user_addon.revoke_auth(save=True)
+def s3_delete_user_settings(user_addon, auth, **kwargs):
+    user_addon.revoke_auth(auth=auth, save=True)

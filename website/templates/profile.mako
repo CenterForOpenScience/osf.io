@@ -1,5 +1,9 @@
 <%inherit file="base.mako"/>
 <%def name="title()">${profile["fullname"]}</%def>
+<%def name="stylesheets()">
+   ${parent.stylesheets()}
+   <link rel="stylesheet" href='/static/css/pages/profile-page.css'>
+</%def>
 
 <%def name="javascript_bottom()">
 % if user['is_profile']:
@@ -18,7 +22,7 @@
 
 <div class="page-header">
     <div class="profile-fullname">
-        <span class="m-r-sm">
+        <span>
             % if user['is_profile']:
                 <a href="#changeAvatarModal" data-toggle="modal"><img class='profile-gravatar' src="${profile['gravatar_url']}"
                         rel="tooltip" title="Click to change avatar"/></a>
@@ -26,7 +30,7 @@
                 <img class='profile-gravatar' src="${profile['gravatar_url']}"/>
             % endif
         </span>
-        <span id="profileFullname" class="h1 overflow ">
+        <span id="profileFullname" class="h1 overflow m-l-sm">
             ${profile["fullname"]}
         </span>
         <span class="edit-profile-settings">

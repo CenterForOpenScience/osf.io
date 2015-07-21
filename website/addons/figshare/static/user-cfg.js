@@ -24,6 +24,12 @@ $(document).ready(function() {
                             }
                         });
                     }
+                },
+                buttons:{
+                    confirm:{
+                        label:'Delete',
+                        className:'btn-danger'
+                    }
                 }
             });
         });

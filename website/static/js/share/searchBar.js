@@ -70,10 +70,9 @@ SearchBar.controller = function(vm) {
     self.vm.showStats = true;
 
     self.atomParams = function(){
-        var d = {};
-        d.q = utils.buildQuery(self.vm);
-        d.sort = self.vm.sortMap[self.vm.sort()] || null;
-        return $.param(d);
+        return $.param({
+            jsonQuery: encodeURIComponent(JSON.stringify(vm.buildQuery()))
+        });
     };
 
     self.search = function(e) {

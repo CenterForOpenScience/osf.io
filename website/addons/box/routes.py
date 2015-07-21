@@ -94,14 +94,6 @@ api_routes = {
         ),
 
         Rule(
-            ['/project/<pid>/box/config/share/',
-            '/project/<pid>/node/<nid>/box/config/share/'],
-            'get',
-            views.config.box_get_share_emails,
-            json_renderer
-        ),
-
-        Rule(
             [
                 '/project/<pid>/box/folders/',
                 '/project/<pid>/node/<nid>/box/folders/',

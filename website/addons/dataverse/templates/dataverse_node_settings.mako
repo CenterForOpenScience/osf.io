@@ -4,6 +4,7 @@
     <%include file="dataverse_credentials_modal.mako"/>
 
     <h4 class="addon-title">
+        <img class="addon-icon" src=${addon_icon_url}></img>
         ${addon_full_name}
 
         <small class="authorized-by">
@@ -114,7 +115,7 @@
         </div>
     </div>
 
-    <!-- Submit button for set info -->
+    <!-- Save button for set info -->
     <div class="row">
         <div class="col-md-10">
             <p data-bind="html: message, attr: {class: messageClass}"></p>
@@ -122,8 +123,8 @@
         <div class="col-md-2" data-bind="if: showSubmitDataset">
             <br>
             <button data-bind="enable: enableSubmitDataset, click: setInfo"
-                    class="btn btn-primary pull-right">
-                Submit
+                    class="btn btn-success pull-right">
+                Save
             </button>
         </div>
     </div>
