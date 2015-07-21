@@ -30,6 +30,9 @@
               <li><a href="/explore/activity/">New Projects</a></li>
               <li><a href="/search/?q=*&amp;filter=registration">Registry</a></li>
               <li><a href="/meetings/">Meetings</a></li>
+              <li><a href="/explore/activity/">New Projects</a></li>
+
+
           </ul>
         </li>
         <li class="dropdown">
