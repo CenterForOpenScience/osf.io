@@ -924,7 +924,7 @@ function _removeEvent (event, items, col) {
             ]);
             // This is already being checked before this step but will keep this edit permission check
             if(items[0].data.permissions.edit){
-                tb.modal.update(mithrilContentSingle, mithrilButtonsSingle, m('h3.break-word.modal-title', 'Delete "' + items[0].data.name + '"'));
+                tb.modal.update(mithrilContentSingle, mithrilButtonsSingle, m('h3.break-word.modal-title', 'Delete "' + items[0].data.name + '"?'));
             }
         }
         if(items[0].kind === 'folder') {
