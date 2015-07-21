@@ -24,26 +24,28 @@ var FileViewPage = {
         self.file = self.context.file;
         self.node = self.context.node;
         self.editorMeta = self.context.editor;
+        self.is_rented = false;
         self.renter = '';
         self.isRenter = function() {
             $osf.postJSON(
-                '/api/v1/project/' + self.node.id + '/osfstorage' + self.file.path +'/rented/',
+                '/api/v1/project/' + self.node.id + '/osfstorage' + self.file.path +'/rent_meta/',
                 {
                     'user': self.context.userId
                 }
             ).done(function(resp) {
-                self.renter =  resp['renter'];
-                if (!self.canEdit() && m.prop(!!self.context.currentUser.canEdit)){
-                    window.contextVars['renter'] = self.renter
-                }
+                self.is_rented =  resp.is_rented;
+                self.renter = resp.renter;
             }).fail(function(resp) {
-
             });
+
         };
-        self.isRenter();
+        if (self.context.editor){
+            self.isRenter();
+        }
         //Force canEdit into a bool
         self.canEdit = function() {
-            return ((self.renter == '') || (self.renter == self.context.userId)) ? m.prop(!!self.context.currentUser.canEdit) : false};
+            return ((self.renter == '') || (self.renter === self.context.userId)) ? m.prop(!!self.context.currentUser.canEdit) : false;
+        };
         $.extend(self.file.urls, {
             delete: waterbutler.buildDeleteUrl(self.file.path, self.file.provider, self.node.id),
             metadata: waterbutler.buildMetadataUrl(self.file.path, self.file.provider, self.node.id),
@@ -95,9 +97,9 @@ var FileViewPage = {
                             'user': self.context.userId
                         }
                     ).done(function(resp) {
-                        window.location.reload()
+                        window.location.reload();
                     }).fail(function(resp) {
-                        $osf.growl('Error', 'Unable to lock file')
+                        $osf.growl('Error', 'Unable to lock file');
                     });
                 },
                 buttons:{
@@ -115,9 +117,9 @@ var FileViewPage = {
                     'user': self.context.userId
                 }
             ).done(function(resp) {
-                window.location.reload()
+                window.location.reload();
             }).fail(function(resp) {
-                $osf.growl('Error', 'Unable to unlock file')
+                $osf.growl('Error', 'Unable to unlock file');
             });
         });
         $(document).on('fileviewpage:download', function() {
@@ -262,11 +264,12 @@ var FileViewPage = {
 
         m.render(document.getElementById('toggleBar'), m('.btn-toolbar.m-t-md', [
             ctrl.canEdit() ? m('.btn-group.m-l-xs.m-t-xs', [
+                m('.btn.btn-sm.btn-danger.file-delete', {onclick: $(document).trigger.bind($(document), 'fileviewpage:delete')}, 'Delete')
             ]) : '',
-            ctrl.canEdit() && (ctrl.renter == '') && ctrl.editor ? m('.btn-group.m-l-xs.m-t-xs', [
+            ctrl.canEdit() && (ctrl.renter === '') && ctrl.editor ? m('.btn-group.m-l-xs.m-t-xs', [
                 m('.btn.btn-sm.btn-primary', {onclick: $(document).trigger.bind($(document), 'fileviewpage:rent')}, 'Lock')
             ]) : '',
-            (ctrl.canEdit() && (ctrl.renter == ctrl.context.userId) && ctrl.editor) ? m('.btn-group.m-l-xs.m-t-xs', [
+            (ctrl.canEdit() && (ctrl.renter === ctrl.context.userId) && ctrl.editor) ? m('.btn-group.m-l-xs.m-t-xs', [
                 m('.btn.btn-sm.btn-primary', {onclick: $(document).trigger.bind($(document), 'fileviewpage:return')}, 'Unlock')
             ]) : '',
             m('.btn-group.m-t-xs', [

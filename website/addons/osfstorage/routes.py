@@ -121,6 +121,7 @@ api_routes = {
             views.osfstorage_rent,
             json_renderer,
         ),
+
         Rule(
             [
                 '/project/<nid>/osfstorage/<fid>/return/',
@@ -129,12 +130,22 @@ api_routes = {
             views.osfstorage_return,
             json_renderer,
         ),
+
         Rule(
             [
                 '/project/<nid>/osfstorage/<fid>/rented/',
             ],
             'post',
             views.osfstorage_rented,
+            json_renderer,
+        ),
+
+        Rule(
+            [
+                '/project/<nid>/osfstorage/<fid>/rent_meta/',
+            ],
+            'post',
+            views.osfstorage_rent_meta,
             json_renderer,
         ),
     ],

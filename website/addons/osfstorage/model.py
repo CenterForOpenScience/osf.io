@@ -112,16 +112,6 @@ class OsfStorageNodeSettings(StorageAddonBase, AddonNodeSettingsBase):
             },
         )
 
-    def before_page_load(self, node, user):
-        messages = []
-        import ipdb; ipdb.set_trace()
-        if self.root_node.renter != '':
-            if self.root_node.renter != user._id:
-                messages.append('This file is currently being locked by ' + str(self.root_node.renter) +
-                            '. It cannot be edited until it is unlocked.')
-        return messages
-
-
 @unique_on(['name', 'kind', 'parent', 'node_settings'])
 class OsfStorageFileNode(StoredObject):
     """A node in the file tree of a given project
@@ -232,7 +222,6 @@ class OsfStorageFileNode(StoredObject):
     def rented(self):
         return self.renter
 
-
     @utils.must_be('file')
     def rent(self, renter, save=True):
         self.renter = renter
@@ -244,7 +233,6 @@ class OsfStorageFileNode(StoredObject):
         self.renter = ''
         if save:
             self.save()
-
 
     def materialized_path(self):
         """creates the full path to a the given filenode
@@ -360,7 +348,6 @@ class OsfStorageFileNode(StoredObject):
                 child.delete()
 
         self.__class__.remove_one(self)
-
 
     def serialized(self, include_full=False):
         """Build Treebeard JSON for folder or file.

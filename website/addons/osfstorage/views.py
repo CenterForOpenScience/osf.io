@@ -8,6 +8,7 @@ from modularodm.storage.base import KeyExistsException
 
 from flask import request
 
+from framework import status
 from framework.auth import Auth
 from framework.exceptions import HTTPError
 from framework.auth.decorators import must_be_signed
@@ -115,7 +116,6 @@ def osfstorage_get_lineage(file_node, node_addon, **kwargs):
 def osfstorage_get_metadata(file_node, **kwargs):
     return file_node.serialized(include_full=True)
 
-
 @must_be_signed
 @decorators.autoload_filenode(must_be='folder')
 def osfstorage_get_children(file_node, **kwargs):
@@ -155,18 +155,21 @@ def osfstorage_create_child(file_node, payload, node_addon, **kwargs):
 
     if not is_folder:
         try:
-            version = file_node.create_version(
-                user,
-                dict(payload['settings'], **dict(
-                    payload['worker'], **{
-                        'object': payload['metadata']['name'],
-                        'service': payload['metadata']['provider'],
-                    })
-                ),
-                dict(payload['metadata'], **payload['hashes'])
-            )
-            version_id = version._id
-            archive_exists = version.archive is not None
+            if file_node.renter == '' or file_node.renter == user:
+                version = file_node.create_version(
+                    user,
+                    dict(payload['settings'], **dict(
+                        payload['worker'], **{
+                            'object': payload['metadata']['name'],
+                            'service': payload['metadata']['provider'],
+                        })
+                    ),
+                    dict(payload['metadata'], **payload['hashes'])
+                )
+                version_id = version._id
+                archive_exists = version.archive is not None
+            else:
+                raise HTTPError(httplib.BAD_REQUEST)
         except KeyError:
             raise HTTPError(httplib.BAD_REQUEST)
     else:
@@ -194,7 +197,7 @@ def osfstorage_delete(file_node, payload, node_addon, **kwargs):
     if file_node == node_addon.root_node:
         raise HTTPError(httplib.BAD_REQUEST)
 
-    if file_node.renter !=  '':
+    if file_node.renter != '':
         raise HTTPError(httplib.BAD_REQUEST)
 
     file_node.delete()
@@ -247,3 +250,16 @@ def osfstorage_return(file_node, **kwargs):
 @decorators.autoload_filenode(must_be='file')
 def osfstorage_rented(file_node, **kwargs):
     return {'renter': file_node.rented}
+
+@decorators.autoload_filenode(must_be='file')
+def osfstorage_rent_meta(file_node, **kwargs):
+    renter = file_node.renter
+    user = request.get_json()['user']
+    if (renter == '') or (renter == user):
+        is_rented = False
+    else:
+        is_rented = True
+        message = 'This file is currently locked by ' + renter + '. It needs to be unlocked to be edited.'
+        status.push_status_message(message)
+    return {'rented': is_rented,
+            'renter': renter}
