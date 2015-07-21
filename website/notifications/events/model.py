@@ -8,7 +8,8 @@ from six import add_metaclass
 import website.notifications.emails as emails
 from website.notifications.constants import NOTIFICATION_TYPES
 from website.models import Node
-from website.notifications.events import utils
+from website.notifications.events import utils as event_utils
+from website.notifications import utils
 
 
 class _EventMeta(type):
@@ -243,20 +244,22 @@ class AddonFileMoved(ComplexFileEvent):
             super(AddonFileMoved, self).perform()
             return
         if self.payload['destination']['kind'] != u'folder':
-            moved, warn, rm_users = utils.categorize_users(self.user, self.event, self.source_node,
-                                                           self.event, self.node)
+            moved, warn, rm_users = event_utils.categorize_users(self.user, self.event, self.source_node,
+                                                                 self.event, self.node)
             warn_message = self.html_message + ' Your component-level subscription was not transferred.'
             remove_message = self.html_message + ' Your subscription has been removed' \
                                                  ' due to insufficient permissions in the new component.'
         else:
-            files = utils.get_file_subs_from_folder(self.addon, self.user, self.payload['destination']['kind'],
-                                                    self.payload['destination']['path'],
-                                                    self.payload['destination']['name'])
-            moved, warn, rm_users = utils.compile_user_lists(files, self.user, self.source_node, self.node)
+            files = event_utils.get_file_subs_from_folder(self.addon, self.user, self.payload['destination']['kind'],
+                                                          self.payload['destination']['path'],
+                                                          self.payload['destination']['name'])
+            moved, warn, rm_users = event_utils.compile_user_lists(files, self.user, self.source_node, self.node)
             warn_message = self.html_message + ' Your component-level subscription was not transferred.'
             remove_message = self.html_message + ' Your subscription has been removed for the folder,' \
                                                  ' or a file within,' \
                                                  ' due to insufficient permissions in the new component.'
+
+        utils.move_subscription(rm_users, self.event, self.source_node, self.event, self.node)
         for notification in NOTIFICATION_TYPES:
             if notification == 'none':
                 continue
@@ -279,11 +282,37 @@ class AddonFileCopied(ComplexFileEvent):
     Actual class called when a file is copied
     Specific methods for handling a copy file event.
     """
+    def perform(self):
+        """Warns people that they won't have a subscription to the new copy of the file."""
+        remove_message = self.html_message + ' This is due to insufficient permissions in the new component.'
+        if self.node == self.source_node:
+            super(AddonFileCopied, self).perform()
+            return
+        if self.payload['destination']['kind'] != u'folder':
+            moved, warn, rm_users = event_utils.categorize_users(self.user, self.event, self.source_node,
+                                                                 self.event, self.node)
+        else:
+            files = event_utils.get_file_subs_from_folder(self.addon, self.user, self.payload['destination']['kind'],
+                                                          self.payload['destination']['path'],
+                                                          self.payload['destination']['name'])
+            moved, warn, rm_users = event_utils.compile_user_lists(files, self.user, self.source_node, self.node)
+        for notification in NOTIFICATION_TYPES:
+            if notification == 'none':
+                continue
+            if moved[notification] or warn[notification]:
+                users = list(set(moved[notification]).union(set(warn[notification])))
+                emails.send(users, notification, self.node_id, 'file_updated', self.user, self.node, self.timestamp,
+                            message=self.html_message, gravatar_url=self.gravatar_url, url=self.url.url)
+            if rm_users[notification]:
+                emails.send(rm_users[notification], notification, self.node_id, 'file_updated', self.user,
+                            self.source_node, self.timestamp, message=remove_message,
+                            gravatar_url=self.gravatar_url, url=self.source_url.url)
+
     def form_message(self):
         """Adds warning to message to tell user that subscription did not copy with the file."""
         super(AddonFileCopied, self).form_message()
-        self._html_message += ' You are not subscribed to the new file, follow link to add subscription.'
-        self._text_message += ' You are not subscribed to the new file, follow link to add subscription.'
+        self._html_message += ' You are not subscribed to the new file.'
+        self._text_message += ' You are not subscribed to the new file.'
 
     def form_url(self):
         """Source url points to original file"""

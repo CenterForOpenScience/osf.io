@@ -27,6 +27,14 @@ def get_file_guid(node, provider, path):
 
 
 def compile_user_lists(files, user, source_node, node):
+    """
+    takes multiple files and compiles them
+    :param files: List of WaterButler paths
+    :param user: User who initiated action/event
+    :param source_node: Node instance from
+    :param node: Node instance to
+    :return: move, warn, and remove dicts
+    """
     move = {key: [] for key in constants.NOTIFICATION_TYPES}
     warn = {key: [] for key in constants.NOTIFICATION_TYPES}
     remove = {key: [] for key in constants.NOTIFICATION_TYPES}
@@ -56,8 +64,7 @@ def categorize_users(user, source_event, source_node, event, node):
     :param node: node where event ends up
     :return: Moved, to be warned, and removed users.
     """
-    # TODO: move sub and remove users separate?
-    remove = utils.move_subscription(source_event, source_node, event, node)
+    remove = utils.users_to_remove(source_event, source_node, node)
     source_node_subs = compile_subscriptions(source_node, '_'.join(source_event.split('_')[-2:]))
     new_subs = compile_subscriptions(node, '_'.join(source_event.split('_')[-2:]), event)
     warn = {key: [] for key in constants.NOTIFICATION_TYPES}

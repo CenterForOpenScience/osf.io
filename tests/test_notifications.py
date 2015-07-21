@@ -854,6 +854,7 @@ class TestCompileSubscriptions(OsfTestCase):
 class TestMoveSubscription(OsfTestCase):
     def setUp(self):
         super(TestMoveSubscription, self).setUp()
+        self.blank = {key: [] for key in constants.NOTIFICATION_TYPES}  # For use where it is blank.
         self.user_1 = factories.AuthUserFactory()
         self.auth = Auth(user=self.user_1)
         self.user_2 = factories.AuthUserFactory()
@@ -881,7 +882,7 @@ class TestMoveSubscription(OsfTestCase):
         self.private_node.add_contributor(self.user_2, permissions=['admin', 'write', 'read'], auth=self.auth)
         self.private_node.add_contributor(self.user_3, permissions=['write', 'read'], auth=self.auth)
         self.private_node.save()
-        results = utils.move_subscription('xyz42_file_updated', self.project, 'xyz42_file_updated', self.private_node)
+        results = utils.users_to_remove('xyz42_file_updated', self.project, self.private_node)
         assert_equal({'email_transactional': [self.user_4._id], 'email_digest': [], 'none': []}, results)
 
     def test_event_nodes_same(self):
@@ -890,12 +891,12 @@ class TestMoveSubscription(OsfTestCase):
         self.private_node.add_contributor(self.user_2, permissions=['admin', 'write', 'read'], auth=self.auth)
         self.private_node.add_contributor(self.user_3, permissions=['write', 'read'], auth=self.auth)
         self.private_node.save()
-        results = utils.move_subscription('xyz42_file_updated', self.project, 'abc42_file_updated', self.project)
+        results = utils.users_to_remove('xyz42_file_updated', self.project, self.project)
         assert_equal({'email_transactional': [], 'email_digest': [], 'none': []}, results)
 
     def test_move_sub(self):
         """Tests old sub is replaced with new sub."""
-        utils.move_subscription('xyz42_file_updated', self.project, 'abc42_file_updated', self.private_node)
+        utils.move_subscription(self.blank, 'xyz42_file_updated', self.project, 'abc42_file_updated', self.private_node)
         assert_equal('abc42_file_updated', self.file_sub.event_name)
         assert_equal(self.private_node, self.file_sub.owner)
         assert_equal(self.private_node._id + '_abc42_file_updated', self.file_sub._id)
@@ -906,7 +907,7 @@ class TestMoveSubscription(OsfTestCase):
         self.project.save()
         self.file_sub.none.append(self.user_2)
         self.file_sub.save()
-        results = utils.move_subscription('xyz42_file_updated', self.project, 'abc42_file_updated', self.private_node)
+        results = utils.users_to_remove('xyz42_file_updated', self.project, self.private_node)
         assert_equal({'email_transactional': [], 'email_digest': [], 'none': [self.user_2._id]}, results)
 
     def test_remove_one_user(self):
@@ -916,7 +917,7 @@ class TestMoveSubscription(OsfTestCase):
         self.private_node.add_contributor(self.user_2, permissions=['admin', 'write', 'read'], auth=self.auth)
         self.private_node.add_contributor(self.user_3, permissions=['write', 'read'], auth=self.auth)
         self.private_node.save()
-        results = utils.move_subscription('xyz42_file_updated', self.project, 'abc42_file_updated', self.private_node)
+        results = utils.users_to_remove('xyz42_file_updated', self.project, self.private_node)
         assert_equal({'email_transactional': [self.user_4._id], 'email_digest': [], 'none': []}, results)
 
         # url = self.private_node.api_url_for('get_contributors')
@@ -933,7 +934,8 @@ class TestMoveSubscription(OsfTestCase):
         self.sub.email_digest.append(self.user_3)
         self.sub.save()
         self.file_sub.email_transactional.extend([self.user_2, self.user_4])
-        results = utils.move_subscription('xyz42_file_updated', self.project, 'abc42_file_updated', self.private_node)
+        results = utils.users_to_remove('xyz42_file_updated', self.project, self.private_node)
+        utils.move_subscription(results, 'xyz42_file_updated', self.project, 'abc42_file_updated', self.private_node)
         assert_equal({'email_transactional': [self.user_4._id], 'email_digest': [self.user_3._id], 'none': []}, results)
         assert_in(self.user_3, self.sub.email_digest)  # Is not removed from the project subscription.
 
@@ -946,7 +948,8 @@ class TestMoveSubscription(OsfTestCase):
         self.sub.email_digest.append(self.user_3)
         self.sub.save()
         self.file_sub.email_transactional.extend([self.user_2])
-        results = utils.move_subscription('xyz42_file_updated', self.project, 'abc42_file_updated', self.private_node)
+        results = utils.users_to_remove('xyz42_file_updated', self.project, self.private_node)
+        utils.move_subscription(results, 'xyz42_file_updated', self.project, 'abc42_file_updated', self.private_node)
         assert_equal({'email_transactional': [], 'email_digest': [self.user_3._id], 'none': []}, results)
         assert_in(self.user_3, self.sub.email_digest)  # Is not removed from the project subscription.
 
@@ -957,7 +960,7 @@ class TestMoveSubscription(OsfTestCase):
         self.private_node.save()
         self.sub.email_digest.append(self.user_3)
         self.sub.save()
-        utils.move_subscription('xyz42_file_updated', self.project, 'abc42_file_updated', self.private_node)
+        utils.move_subscription(self.blank, 'xyz42_file_updated', self.project, 'abc42_file_updated', self.private_node)
         assert_equal([], self.file_sub.email_digest)
 
 

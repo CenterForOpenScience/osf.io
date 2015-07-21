@@ -89,14 +89,13 @@ def separate_users(node, user_ids):
     return subbed, removed
 
 
-def move_subscription(source_event, source_node, new_event, new_node):
+def users_to_remove(source_event, source_node, new_node):
     """
-    Moves subscription from old_node to new_node
-    :param source_event: A specific guid event <guid>_file_updated
-    :param source_node: Instance of Node
-    :param new_event: A specific guid event
-    :param new_node: Instance of Node
-    :return: Returns a NOTIFICATION_TYPES list of removed users without permissions
+    Find users that do not have permissions on new_node
+    :param source_event: such as _file_updated
+    :param source_node: Node instance where a subscription currently resides
+    :param new_node: Node instance where a sub or new sub will be.
+    :return: Dict of notification type lists with user_ids
     """
     removed_users = {key: [] for key in constants.NOTIFICATION_TYPES}
     if source_node == new_node:
@@ -106,20 +105,38 @@ def move_subscription(source_event, source_node, new_event, new_node):
                                                                      '_'.join(source_event.split('_')[-2:])))
     if not old_sub and not old_node_sub:
         return removed_users
+    for notification_type in constants.NOTIFICATION_TYPES:
+        users = getattr(old_sub, notification_type, []) + getattr(old_node_sub, notification_type, [])
+        subbed, removed_users[notification_type] = separate_users(new_node, users)
+    return removed_users
+
+
+def move_subscription(remove_users, source_event, source_node, new_event, new_node):
+    """
+    Moves subscription from old_node to new_node
+    :param remove_users: dictionary of lists of users to remove from the subscription
+    :param source_event: A specific guid event <guid>_file_updated
+    :param source_node: Instance of Node
+    :param new_event: A specific guid event
+    :param new_node: Instance of Node
+    :return: Returns a NOTIFICATION_TYPES list of removed users without permissions
+    """
+    if source_node == new_node:
+        return
+    old_sub = NotificationSubscription.load(to_subscription_key(source_node._id, source_event))
+    if not old_sub:
+        return
     elif old_sub:
         old_sub.update_fields(_id=to_subscription_key(new_node._id, new_event), event_name=new_event,
                               owner=new_node)
     new_sub = old_sub
-    # Remove users that don't have permission on the new node. Return user ids to send e-mail.
+    # Remove users that don't have permission on the new node.
     for notification_type in constants.NOTIFICATION_TYPES:
-        users = getattr(new_sub, notification_type, []) + getattr(old_node_sub, notification_type, [])
-        subbed, removed_users[notification_type] = separate_users(new_node, users)
         if new_sub:
-            for user_id in removed_users[notification_type]:
+            for user_id in remove_users[notification_type]:
                 if user_id in getattr(new_sub, notification_type, []):
                     user = User.load(user_id)
                     new_sub.remove_user_from_subscription(user)
-    return removed_users
 
 
 def get_configured_projects(user):
