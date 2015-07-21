@@ -63,7 +63,7 @@ utils.updateVM = function(vm, data) {
 
 utils.loadMore = function(vm) {
     var ret = m.deferred();
-    if (utils.buildQuery(vm).length === 0) {
+    if (vm.query().length === 0) {
         ret.resolve(null);
     }
     else {
@@ -74,13 +74,8 @@ utils.loadMore = function(vm) {
         m.request({
             method: 'post',
             background: true,
-            data: vm.buildQuery(),
-            url: '/api/v1/share/search/?' + $.param({
-                // from: page,
-                // q: vm.buildQuery(),
-                // sort: sort,
-                v: 2
-            })
+            data: utils.buildQuery(vm),
+            url: '/api/v1/share/search/'
         }).then(function(data) {
             vm.resultsLoading(false);
             ret.resolve(data);
@@ -106,7 +101,7 @@ utils.search = function(vm) {
         History.pushState({}, 'OSF | SHARE', '?');
         ret.resolve(null);
     }
-    else if (utils.buildQuery(vm).length === 0) {
+    else if (vm.query().length === 0) {
         ret.resolve(null);
     }
     else {
@@ -153,14 +148,31 @@ utils.buildURLParams = function(vm){
     return $.param(d);
 };
 
-utils.buildQuery = function(vm){
-    return [
-        vm.query(),
-        '(' + vm.optionalFilters.join(' OR ') + ')',
-        '(' + vm.requiredFilters.join(' AND ') + ')'
-    ].filter(function(a) {
-        return a !== '()';
-    }).join(' AND ');
+utils.buildQuery = function(vm) {
+    var must = (vm.requiredFilters.length > 0) ? utils.andFilter($.map(vm.requiredFilters, utils.parseToMatchFilter)) : {};
+    var should = $.map(vm.optionalFilters, utils.parseToMatchFilter);
+    var sort = {};
+
+    if (vm.sortMap[vm.sort()]) {
+        sort[vm.sortMap[vm.sort()]] = 'desc';
+    }
+
+    return {
+        'query': (vm.query().length > 0 && (vm.query() !== '*')) ? utils.commonQuery(vm.query()) : utils.matchAllQuery(),
+        'filter': utils.boolQuery(must, null, should),
+        'aggregations': {},  // TODO
+        'from': (vm.page - 1) * 10,
+        'size': 10,
+        'sort': [sort],
+        'highlight': {
+            'fields': {
+                'title': {'fragment_size': 2000},
+                'description': {'fragment_size': 2000},
+                'contributors.name': {'fragment_size': 2000}
+            }
+        }
+    };
+
 };
 
 utils.maybeQuashEvent = function(event) {
@@ -204,7 +216,7 @@ utils.loadStats = function(vm){
 
     return m.request({
         method: 'GET',
-        url: '/api/v1/share/stats/?' + $.param({q: utils.buildQuery(vm)}),
+        url: '/api/v1/share/stats/?' + $.param({q: vm.query()}),
         background: true
     }).then(function(data) {
         vm.statsData = data;
@@ -252,15 +264,18 @@ utils.fieldRange = function(field_name, gte, lte) {
 };
 
 utils.boolQuery = function(must, must_not, should, minimum) {
-    minimum = minimum || 1;
-    return {
+    var ret = {
         'bool': {
             'must': (must || []),
             'must_not': (must_not || []),
-            'should': (should || []),
-            'minimum_should_match': minimum
+            'should': (should || [])
         }
     };
+    if (minimum) {
+        ret.bool.minimum_should_match = minumum;
+    }
+
+    return ret;
 };
 
 utils.commonQuery = function(query_string, field) {
@@ -272,15 +287,29 @@ utils.commonQuery = function(query_string, field) {
     return ret;
 };
 
+utils.matchAllQuery = function() {
+    return {
+        match_all: {}
+    };
+};
+
 utils.andFilter = function(filters) {
     return {
         'and': filters
     };
 };
 
-utils.parseToTermQuery = function(term) {
+utils.queryFilter = function(query) {
+    return {
+        query: query
+    };
+};
+
+utils.parseToMatchFilter = function(term) {
     items = term.split(':');
-    return utils.matchQuery(items[0], items[1]);
+    return utils.queryFilter(
+        utils.matchQuery(items[0], items[1])
+    );
 };
 
 module.exports = utils;

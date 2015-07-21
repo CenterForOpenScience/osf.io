@@ -42,33 +42,6 @@ ShareApp.ViewModel = function() {
                 return a.long_name.toUpperCase() > b.long_name.toUpperCase() ? 1: -1;
         });
     };
-
-    self.buildQuery = function() {
-        var must = utils.commonQuery(self.query());
-        var should = $.map(self.optionalFilters.concat(self.requiredFilters), utils.parseToTermQuery);
-        var sort = {};
-        var minimum = (self.requiredFilters.length + (self.optionalFilters.length ? 1 : 0)) || 1;
-
-        if (self.sortMap[self.sort()]) {
-            sort[self.sortMap[self.sort()]] = 'desc';
-        }
-
-        return {
-            'query': utils.boolQuery(must, [], should, minimum),
-            'aggregations': {},  // TODO
-            'from': (self.page - 1) * 10,
-            'size': 10,
-            'sort': [sort],
-            'highlight': {
-                'fields': {
-                    'title': {'fragment_size': 2000},
-                    'description': {'fragment_size': 2000},
-                    'contributors.name': {'fragment_size': 2000}
-                }
-            }
-        };
-
-    };
 };
 
 
