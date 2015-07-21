@@ -592,11 +592,13 @@ class AddonOAuthUserSettingsBase(AddonUserSettingsBase):
 
     def get_nodes_with_oauth_grants(self, external_account):
         # Generator of nodes which have grants for this external account
-        return (
-            Node.load(node_id)
-            for node_id, grants in self.oauth_grants.iteritems()
-            if (external_account._id in grants.keys() and not Node.load(node_id).is_deleted)
-        )
+        nodes = []
+        for node_id, grants in self.oauth_grants.iteritems():
+            node = Node.load(node_id)
+            if external_account._id in grants.keys() and not node.is_deleted:
+                nodes.append(node)
+
+        return nodes
 
     def get_attached_nodes(self, external_account):
         for node in self.get_nodes_with_oauth_grants(external_account):
