@@ -9,7 +9,7 @@
 <div class="nav-rows container">
     <div class="row">
         <div class="col-sm-4 affix-parent scrollspy col-md-3 nav-list-spy">
-            <div data-spy="affix" class="hidden-print hidden-xs panel panel-default affix osf-affix m-t-lg" data-offset-top="100" data-offset-bottom="268" role="complementary">
+            <div data-spy="affix" class="hidden-print hidden-xs panel panel-default affix osf-affix m-t-lg" data-offset-top="40" data-offset-bottom="268" role="complementary">
                 <ul class="nav nav-stacked nav-pills " style="min-width: 210px">
                     <li><a class="active" href="#about">About</a></li>
                     <li><a href="#using">Using the OSF</a></li>

@@ -11,6 +11,7 @@
 <style>
 .addon-icon {
     width: 20px;
+    margin-top: -2px;
 }
 </style>
 
