@@ -53,7 +53,7 @@
 <script type="text/javascript">
     window.contextVars = window.contextVars || {};
     window.contextVars.urls = {
-        listUrl: ${app_list_url | sjson, n}
+        apiListUrl: ${app_list_url | sjson, n}
     };
 </script>
 <script src=${"/static/public/js/profile-settings-applications-list-page.js" | webpack_asset}></script>

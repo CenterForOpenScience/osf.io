@@ -20,9 +20,9 @@
     </div>
 
     <div class="col-sm-9 col-md-7">
-        <div id="appDetail" data-bind="with: content()">
+        <div id="appDetail" data-bind="with: appData()">
             <div id="app-keys" class="border-box text-right text-muted"
-                 data-bind="visible: $root.dataUrl">
+                 data-bind="visible: !$root.isCreateView()">
                 <p><span><strong>Client ID</strong>:</span> <br><span data-bind="text: clientId"></span></p>
                 <p><span><strong>Client secret</strong>:</span> <br><span data-bind="text: clientSecret"></span></p>
             </div>
@@ -67,13 +67,12 @@
                     </div>
 
                     <div class="padded">
-
                         <button type="reset" class="btn btn-default" data-bind="click: $root.cancelChange">Cancel</button>
                         <button type="submit" class="btn btn-primary"
-                                data-bind="visible: !$root.dataUrl, click: $root.createApplication">Create</button>
+                                data-bind="visible: $root.isCreateView(), click: $root.createApplication">Create</button>
 
                         <button type="submit" class="btn btn-primary"
-                                data-bind="visible: $root.dataUrl, click: $root.updateApplication">Save</button>
+                                data-bind="visible: !$root.isCreateView(), click: $root.updateApplication">Save</button>
                     </div>
                 </form>
             </div>
@@ -84,13 +83,11 @@
 
 <%def name="javascript_bottom()">
 <script type="text/javascript">
-    ## Store mako variables on window so they are accessible from JS
-    ## modules. Not sure if this is a good idea.
     window.contextVars = window.contextVars || {};
     window.contextVars.urls = {
-        dataUrl: ${ detail_url | sjson, n },
-        submitUrl: ${ submit_url | sjson, n },
-        listPageUrl: ${ web_url_for('oauth_application_list') | sjson, n }
+        webListUrl: ${ web_url_for('oauth_application_list') | sjson, n },
+        apiListUrl: ${ app_list_url | sjson, n },
+        apiDetailUrl: ${ app_detail_url | sjson, n }
     };
 </script>
 <script src=${"/static/public/js/profile-settings-applications-detail-page.js" | webpack_asset}></script>
