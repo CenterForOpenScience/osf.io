@@ -60,11 +60,9 @@ class NodeSerializer(JSONAPISerializer):
         }
     })
 
-
     children = NestedNodeSerializer(many=True, read_only=True)
     pointers = NestedNodeSerializer(many=True, read_only=True)
     registrations = NestedNodeSerializer(many=True, read_only=True, source='registered_nodes')
-
 
     properties = ser.SerializerMethodField(help_text='A dictionary of read-only booleans: registration, collection,'
                                                      'and dashboard. Collections are special nodes used by the Project '
@@ -213,5 +211,3 @@ class NodeFilesSerializer(JSONAPISerializer):
     def update(self, instance, validated_data):
         # TODO
         pass
-
-
