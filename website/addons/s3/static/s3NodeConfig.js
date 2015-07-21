@@ -9,11 +9,19 @@ var $osf = require('js/osfHelpers');
 
 ko.punches.enableAll();
 
-var ViewModel = function(url, selector) {
+var defaultSettings = {
+    url: '',
+    encryptUploads: true,
+    defaultBucketLocationValue: '',
+    defaultBucketLocationMessage: 'US Standard'
+};
+
+var ViewModel = function(selector, settings) {
     var self = this;
 
-    self.url = url;
+    self.url = settings.url;
     self.selector = selector;
+    self.settings = $.extend({}, defaultSettings, settings);
 
     self.nodeHasAuth = ko.observable(false);
     self.userHasAuth = ko.observable(false);
@@ -27,6 +35,7 @@ var ViewModel = function(url, selector) {
     self.loadedBucketList = ko.observable(false);
     self.currentBucket = ko.observable('');
     self.selectedBucket = ko.observable('');
+    self.encryptUploads = ko.observable(settings.defaultEncryptUploads);
 
     self.accessKey = ko.observable('');
     self.secretKey = ko.observable('');
@@ -83,7 +92,8 @@ ViewModel.prototype.selectBucket = function() {
     self.loading(true);
     return $osf.postJSON(
             self.urls().set_bucket, {
-                's3_bucket': self.selectedBucket()
+                's3_bucket': self.selectedBucket(),
+                'encrypt_uploads': self.encryptUploads()
             }
         )
         .done(function(response) {
@@ -211,13 +221,14 @@ ViewModel.prototype.createCredentials = function() {
     });
 };
 
-ViewModel.prototype.createBucket = function(bucketName) {
+ViewModel.prototype.createBucket = function(bucketName, bucketLocation) {
     var self = this;
     self.creating(true);
     bucketName = bucketName.toLowerCase();
     return $osf.postJSON(
         self.urls().create_bucket, {
-            bucket_name: bucketName
+            bucket_name: bucketName,
+            bucket_location: bucketLocation
         }
     ).done(function(response) {
         self.creating(false);
@@ -258,16 +269,59 @@ ViewModel.prototype.openCreateBucket = function() {
 
     var isValidBucket = /^(?!.*(\.\.|-\.))[^.][a-z0-9\d.-]{2,61}[^.]$/;
 
-    bootbox.prompt('Name your new bucket', function(bucketName) {
-        if (!bucketName) {
-            return;
-        } else if (isValidBucket.exec(bucketName) == null) {
-            bootbox.confirm({
-                title: 'Invalid bucket name',
-                message: 'Sorry, that\'s not a valid bucket name. Try another name?',
-                callback: function(result) {
-                    if (result) {
-                        self.openCreateBucket();
+    bootbox.dialog({
+        title: 'Create a new bucket',
+        message:
+                '<div class="row"> ' +
+                    '<div class="col-md-12"> ' +
+                        '<form class="form-horizontal"> ' +
+                            '<div class="form-group"> ' +
+                                '<label class="col-md-4 control-label" for="bucketName">Bucket Name</label> ' +
+                                '<div class="col-md-4"> ' +
+                                    '<input id="bucketName" name="bucketName" type="text" placeholder="Enter bucket\'s name" class="form-control" autofocus> ' +
+                                '</div>' +
+                            '</div>' +
+                            '<div class="form-group"> ' +
+                                '<label class="col-md-4 control-label" for="bucketLocation">Bucket Location</label> ' +
+                                '<div class="col-md-4"> ' +
+                                    '<select id="bucketLocation" name="bucketLocation" class="form-control"> ' +
+                                        '<option value="' + self.settings.defaultBucketLocationValue + '' +
+                                            '" selected>' + self.settings.defaultBucketLocationMessage + '</option> ' +
+                                        '<option value="EU">Europe Standard</option> ' +
+                                        '<option value="us-west-1">California</option> ' +
+                                        '<option value="us-west-2">Oregon</option> ' +
+                                        '<option value="ap-northeast-1">Tokyo</option> ' +
+                                        '<option value="ap-southeast-1">Singapore</option> ' +
+                                        '<option value="ap-southeast-2">Sydney, Australia</option> ' +
+                                        '<option value="cn-north-1">Beijing, China</option> ' +
+                                    '</select>' +
+                                '</div>' +
+                            '</div>' +
+                        '</form>' +
+                    '</div>' +
+                '</div>',
+        buttons: {
+            confirm: {
+                label: 'Save',
+                className: 'btn-success',
+                callback: function () {
+                    var bucketName = $('#bucketName').val();
+                    var bucketLocation = $('#bucketLocation').val();
+
+                    if (!bucketName) {
+                        return;
+                    } else if (isValidBucket.exec(bucketName) == null) {
+                        bootbox.confirm({
+                            title: 'Invalid bucket name',
+                            message: 'Sorry, that\'s not a valid bucket name. Try another name?',
+                            callback: function(result) {
+                                if (result) {
+                                    self.openCreateBucket();
+                                }
+                            }
+                        });
+                    } else {
+                        self.createBucket(bucketName, bucketLocation);
                     }
                 },
                 buttons:{
@@ -275,9 +329,11 @@ ViewModel.prototype.openCreateBucket = function() {
                         label:'Try new one'
                     }
                 }
-            });
-        } else {
-            self.createBucket(bucketName);
+            },
+            cancel: {
+                label: 'Cancel',
+                className: 'btn-default'
+            }
         }
     });
 };
@@ -398,8 +454,8 @@ ViewModel.prototype.changeMessage = function(text, css, timeout) {
     }
 };
 
-var S3Config = function(selector, url) {
-    var viewModel = new ViewModel(url, selector);
+var S3Config = function(selector, settings) {
+    var viewModel = new ViewModel(selector, settings);
     $osf.applyBindings(viewModel, selector);
     viewModel.updateFromData();
 };

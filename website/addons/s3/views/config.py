@@ -6,6 +6,7 @@ from framework.exceptions import HTTPError
 from framework.auth.decorators import must_be_logged_in
 
 from website.addons.s3 import utils
+from website.addons.s3.settings import ENCRYPT_UPLOADS_DEFAULT
 from website.project.decorators import must_have_addon
 from website.project.decorators import must_have_permission
 from website.project.decorators import must_not_be_registration
@@ -107,6 +108,14 @@ def s3_post_node_settings(node, auth, user_addon, node_addon, **kwargs):
             },
             auth=auth,
         )
+    encrypt = request.json.get('encrypt_uploads', ENCRYPT_UPLOADS_DEFAULT)
+    if encrypt != node_addon.encrypt_uploads:
+
+        # Update node settings
+        node_addon.encrypt_uploads = encrypt
+        node_addon.save()
+
+        # TODO(hrybacki): Add log action
 
     return node_addon.to_json(auth.user)
 
