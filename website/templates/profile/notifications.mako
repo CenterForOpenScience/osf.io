@@ -11,7 +11,6 @@
 <% from website import settings%>
 <h2 class="page-header">Notifications</h2>
 
-
 <div id="notificationSettings" class="row">
     <div class="col-sm-3 affix-parent">
       <%include file="include/profile/settings_navpanel.mako" args="current_page='notifications'"/>

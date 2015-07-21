@@ -18,6 +18,7 @@
 <% from website import settings %>
 <h2 class="page-header">Configure Add-on Accounts</h2>
 
+
 <div id="addonSettings" class="row">
     <div class="col-sm-3 affix-parent">
         <%include file="include/profile/settings_navpanel.mako" args="current_page='addons'"/>

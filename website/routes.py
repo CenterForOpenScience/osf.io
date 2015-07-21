@@ -556,13 +556,6 @@ def make_url_map(app):
             OsfWebRenderer('profile/oauth_app_detail.mako', trust=False)
         ),
 
-        Rule(
-            '/@<twitter_handle>/',
-            'get',
-            profile_views.redirect_to_twitter,
-            OsfWebRenderer('error.mako', render_mako_string)
-        ),
-
         # TODO: Uncomment once outstanding issues with this feature are addressed
         # Rule(
         #     '/@<twitter_handle>/',
