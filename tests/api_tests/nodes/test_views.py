@@ -1334,6 +1334,7 @@ class TestDeleteNodePointer(ApiTestCase):
         res = self.app.delete(self.private_url, auth=self.basic_auth_two, expect_errors=True)
         assert_equal(res.status_code, 403)
 
+
 class TestNodeIncludeParameters(ApiTestCase):
 
     def setUp(self):
@@ -1502,9 +1503,8 @@ class TestNodeIncludeParameters(ApiTestCase):
         query_params = res.json['data'][1]
         child = registration_two.nodes[0]
         pointer = registration_two.nodes_pointer[0]
-        registration = registration_two.node__registrations[0]
 
         assert_in(child._id, query_params['children'][0]['id'])
         assert_in(self.user._id, query_params['contributors'][0]['id'])
         assert_in(pointer._id, query_params['pointers'][0]['id'])
-        assert_in(registration._id, query_params['registrations'][0]['id'])
+        assert_equal(query_params['registrations'], [])
