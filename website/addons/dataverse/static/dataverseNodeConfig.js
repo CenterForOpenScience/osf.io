@@ -82,7 +82,7 @@ function ViewModel(url) {
             return 'Are you sure you want to authorize this project with your ' + self.addonName + ' access token?';
         }),
         deauthorizeSuccess: ko.pureComputed(function() {
-            return 'Deauthorized ' + self.addonName + '.';
+            return 'Disconnected ' + self.addonName + '.';
         }),
         deauthorizeFail: ko.pureComputed(function() {
             return 'Could not deauthorize because of an error. Please try again later.';
