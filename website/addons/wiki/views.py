@@ -546,6 +546,7 @@ def format_component_wiki_pages(node, auth):
             },
             'kind': 'component',
             'category': wiki_page['category'],
+            'pointer': wiki_page['is_pointer'],
             'children': children,
         }
         if len(component_page['children']) > 0:
