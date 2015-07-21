@@ -3,7 +3,7 @@ from rest_framework import serializers as ser
 from website.models import Node
 from framework.auth.core import Auth
 from rest_framework import exceptions
-from api.base.serializers import JSONAPISerializer, LinksField, Link, WaterbutlerLink, LinksFieldNoSelfLink
+from api.base.serializers import JSONAPISerializer, LinksFieldWIthSelfLink, Link, WaterbutlerLink, LinksField
 
 
 class NodeSerializer(JSONAPISerializer):
@@ -27,7 +27,7 @@ class NodeSerializer(JSONAPISerializer):
     collection = ser.BooleanField(read_only=True, source='is_folder')
     dashboard = ser.BooleanField(read_only=True, source='is_dashboard')
 
-    links = LinksField({'html': 'get_absolute_url'})
+    links = LinksFieldWIthSelfLink({'html': 'get_absolute_url'})
     # TODO: When we have 'admin' permissions, make this writable for admins
     public = ser.BooleanField(source='is_public', read_only=True,
                               help_text='Nodes that are made public will give read-only access '
@@ -37,7 +37,7 @@ class NodeSerializer(JSONAPISerializer):
                                                             'node have implicit read permissions for all child nodes',
                               )
 
-    relationships = LinksFieldNoSelfLink({
+    relationships = LinksField({
         'children': {
             'links': {
                 'related': {
@@ -157,7 +157,7 @@ class NodePointersSerializer(JSONAPISerializer):
     class Meta:
         type_ = 'pointers'
 
-    links = LinksField({
+    links = LinksFieldWIthSelfLink({
         'html': 'get_absolute_url',
     })
 
@@ -197,7 +197,7 @@ class NodeFilesSerializer(JSONAPISerializer):
     class Meta:
         type_ = 'files'
 
-    links = LinksField({
+    links = LinksFieldWIthSelfLink({
         'self': WaterbutlerLink(kwargs={'node_id': '<node_id>'}),
         'related': {
             'href': Link('nodes:node-files', kwargs={'node_id': '<node_id>'},
