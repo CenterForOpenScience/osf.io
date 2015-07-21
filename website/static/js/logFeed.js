@@ -115,6 +115,7 @@ var LogsViewModel = oop.extend(Paginator, {
         self.logs = ko.observableArray(logs);
         self.url = url;
         self.anonymousUserName = '<em>A user</em>';
+        self.noLogs = ko.observable(false);
 
         self.tzname = ko.pureComputed(function() {
             var logs = self.logs();
@@ -147,6 +148,14 @@ var LogsViewModel = oop.extend(Paginator, {
             self.currentPage(response.page);
             self.numberOfPages(response.pages);
             self.addNewPaginators();
+
+            //stops 'no logs' message from flashing
+            if(self.logs().length === 0){
+                self.noLogs(true);
+            } else {
+                self.noLogs(false);
+            }
+
         }).fail(
             $osf.handleJSONError
         ).always( function (){
