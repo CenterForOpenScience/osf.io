@@ -351,7 +351,7 @@ function checkConflicts(tb, item, folder, cb) {
         var child = folder.children[i];
         if (child.data.name === item.data.name && child.id !== item.id) {
             tb.modal.update(m('', [
-                    m('p', 'An item named "' + item.data.name + '" already exists in this location. Moving will replace that file. ')
+                    m('p', 'An item named "' + item.data.name + '" already exists in this location.')
                 ]), m('', [
                     m('span.btn.btn-info', {onclick: cb.bind(tb, 'keep')}, 'Keep Both'),
                     m('span.btn.btn-default', {onclick: function() {tb.modal.dismiss();}}, 'Cancel'), //jshint ignore:line
