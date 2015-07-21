@@ -1,6 +1,6 @@
 'use strict';
 
-var pd = require('../pretty-data').pd;
+var pd = require('pretty-data').pd;
 var $ = require('jquery');
 var m = require('mithril');
 var $osf = require('js/osfHelpers');
