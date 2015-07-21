@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 
-from framework.sessions import session, create_session
+from framework.sessions import session, create_session, Session
+from modularodm import Q
 from framework import bcrypt
 from framework.auth.exceptions import DuplicateEmailError
 
@@ -43,11 +44,16 @@ def authenticate(user, access_token, response):
 
 
 def logout():
+    ## does this need the domain? 
+
+    ## find places taht are using session data key and fix them as well. 
+    
     for key in ['auth_user_username', 'auth_user_id', 'auth_user_fullname', 'auth_user_access_token']:
         try:
             del session.data[key]
         except KeyError:
             pass
+    Session.remove(Q('_id', 'eq', session._id)) 
     return True
 
 
