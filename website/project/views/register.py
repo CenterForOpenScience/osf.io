@@ -402,7 +402,7 @@ def project_before_register(auth, node, **kwargs):
             messages[settings.ADDONS_ARCHIVABLE[name]]['addons'].add(addon.config.full_name)
         else:
             messages['none']['addons'].add(addon.config.full_name)
-    errors = errors.values()
+    error_messages = errors.values()
 
     prompts = [
         m['message'].format(util.conjunct(m['addons']))
@@ -418,7 +418,7 @@ def project_before_register(auth, node, **kwargs):
 
     return {
         'prompts': prompts,
-        'errors': errors
+        'errors': error_messages
     }
 
 
