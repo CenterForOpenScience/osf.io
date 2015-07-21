@@ -340,37 +340,8 @@ class TestNodeSettingsModel(StorageTestCase):
         assert_equal(cloned_record.versions, record.versions)
         assert_true(fork_node_settings.root_node)
 
-    '''
-    OSFStorage files are now copied by Archiver
-    @mock.patch('website.archiver.tasks.archive.si')
-    def test_after_register_copies_versions(self, mock_archive):
-        num_versions = 5
-        path = 'jazz/dreamers-ball.mp3'
 
-        record = self.node_settings.root_node.append_file(path)
-
-        for _ in range(num_versions):
-            version = factories.FileVersionFactory()
-            record.versions.append(version)
-        record.save()
-
-        registration = self.project.register_node(
-            None,
-            self.auth_obj,
-            '',
-            {},
-        )
-        assert_true(registration.has_addon('osfstorage'))
-        registration_node_settings = registration.get_addon('osfstorage')
-        registration_node_settings.reload()
-        cloned_record = registration_node_settings.root_node.find_child_by_name(path)
-        assert_equal(cloned_record.versions, record.versions)
-        assert_equal(cloned_record.versions, record.versions)
-        assert_true(registration_node_settings.root_node)
-    '''
-
-
-class TestOsfStorageFileVersion(OsfTestCase):
+class TestOsfStorageFileVersion(StorageTestCase):
 
     def setUp(self):
         super(TestOsfStorageFileVersion, self).setUp()
@@ -431,3 +402,71 @@ class TestOsfStorageFileVersion(OsfTestCase):
         version.reload()
         assert_in('archive', version.metadata)
         assert_equal(version.metadata['archive'], 'glacier')
+
+    def test_matching_archive(self):
+        version = factories.FileVersionFactory(
+            location={
+                'service': 'cloud',
+                settings.WATERBUTLER_RESOURCE: 'osf',
+                'object': 'd077f2',
+            },
+            metadata={'sha256': 'existing'}
+        )
+        factories.FileVersionFactory(
+            location={
+                'service': 'cloud',
+                settings.WATERBUTLER_RESOURCE: 'osf',
+                'object': '06d80e',
+            },
+            metadata={
+                'sha256': 'existing',
+                'vault': 'the cloud',
+                'archive': 'erchiv'
+            }
+        )
+
+        assert_is(version._find_matching_archive(), True)
+        assert_is_not(version.archive, None)
+
+        assert_equal(version.metadata['vault'], 'the cloud')
+        assert_equal(version.metadata['archive'], 'erchiv')
+
+    def test_archive_exits(self):
+        node_addon = self.project.get_addon('osfstorage')
+        fnode = node_addon.root_node.append_file('MyCoolTestFile')
+        version = fnode.create_version(
+            self.user,
+            {
+                'service': 'cloud',
+                settings.WATERBUTLER_RESOURCE: 'osf',
+                'object': '06d80e',
+            }, {
+                'sha256': 'existing',
+                'vault': 'the cloud',
+                'archive': 'erchiv'
+            })
+
+        assert_equal(version.archive, 'erchiv')
+
+        version2 = fnode.create_version(
+            self.user,
+            {
+                'service': 'cloud',
+                settings.WATERBUTLER_RESOURCE: 'osf',
+                'object': '07d80a',
+            }, {
+                'sha256': 'existing',
+            })
+
+        assert_equal(version2.archive, 'erchiv')
+
+    def test_no_matching_archive(self):
+        model.OsfStorageFileVersion.remove()
+        assert_is(False, factories.FileVersionFactory(
+            location={
+                'service': 'cloud',
+                settings.WATERBUTLER_RESOURCE: 'osf',
+                'object': 'd077f2',
+            },
+            metadata={'sha256': 'existing'}
+        )._find_matching_archive())
