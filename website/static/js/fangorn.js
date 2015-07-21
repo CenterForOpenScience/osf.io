@@ -351,13 +351,13 @@ function checkConflicts(tb, item, folder, cb) {
         var child = folder.children[i];
         if (child.data.name === item.data.name && child.id !== item.id) {
             tb.modal.update(m('', [
-                m('h3.break-word', 'An item named "' + item.data.name + '" already exists in this location.'),
-                m('p', 'Do you want to replace it?')
-            ]), m('', [
-                m('span.tb-modal-btn.text-primary', {onclick: cb.bind(tb, 'keep')}, 'Keep Both'),
-                m('span.tb-modal-btn.text-default', {onclick: function() {tb.modal.dismiss();}}, 'Cancel'), //jshint ignore:line
-                m('span.tb-modal-btn.text-primary', {onclick: cb.bind(tb, 'replace')},'Replace'),
-            ]));
+                    m('p', 'An item named "' + item.data.name + '" already exists in this location. Moving will replace that file. ')
+                ]), m('', [
+                    m('span.btn.btn-info', {onclick: cb.bind(tb, 'keep')}, 'Keep Both'),
+                    m('span.btn.btn-default', {onclick: function() {tb.modal.dismiss();}}, 'Cancel'), //jshint ignore:line
+                    m('span.btn.btn-primary', {onclick: cb.bind(tb, 'replace')},'Replace'),
+                ]), m('h3.break-word.modal-title', 'Replace "' + item.data.name + '"?')
+            );
             return;
         }
     }
