@@ -44,7 +44,7 @@ var FileViewPage = {
         }
         //Force canEdit into a bool
         self.canEdit = function() {
-            return ((self.file.renter == '') || (self.file.renter === self.context.userId)) ? m.prop(!!self.context.currentUser.canEdit) : false;
+            return ((self.file.renter === '') || (self.file.renter === self.context.userId)) ? m.prop(!!self.context.currentUser.canEdit) : false;
         };
         $.extend(self.file.urls, {
             delete: waterbutler.buildDeleteUrl(self.file.path, self.file.provider, self.node.id),
@@ -52,6 +52,7 @@ var FileViewPage = {
             revisions: waterbutler.buildRevisionsUrl(self.file.path, self.file.provider, self.node.id),
             content: waterbutler.buildDownloadUrl(self.file.path, self.file.provider, self.node.id, {accept_url: false, mode: 'render'}),
         });
+
         $(document).on('fileviewpage:delete', function() {
             bootbox.confirm({
                 title: 'Delete file?',

@@ -112,6 +112,7 @@ class OsfStorageNodeSettings(StorageAddonBase, AddonNodeSettingsBase):
             },
         )
 
+
 @unique_on(['name', 'kind', 'parent', 'node_settings'])
 class OsfStorageFileNode(StoredObject):
     """A node in the file tree of a given project
@@ -497,6 +498,7 @@ class OsfStorageGuidFile(GuidFile):
     path = fields.StringField(required=True, index=True)
     provider = 'osfstorage'
     version_identifier = 'version'
+
     _path = fields.StringField(index=True)
     premigration_path = fields.StringField(index=True)
     path = fields.StringField(required=True, index=True)

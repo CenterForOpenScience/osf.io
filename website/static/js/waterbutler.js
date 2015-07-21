@@ -32,6 +32,7 @@ var buildMetadataUrl = buildUrl.bind(this, 'data?');
 var buildRevisionsUrl = buildUrl.bind(this, 'revisions?');
 var buildCreateFolderUrl = buildUrl.bind(this, 'folders?');
 
+
 function buildUploadUrl(path, provider, nid, file, options) {
     path = (path || '/') + file.name;
     return buildUrl('file?', path, provider, nid, options);

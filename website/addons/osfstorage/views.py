@@ -116,6 +116,7 @@ def osfstorage_get_lineage(file_node, node_addon, **kwargs):
 def osfstorage_get_metadata(file_node, **kwargs):
     return file_node.serialized(include_full=True)
 
+
 @must_be_signed
 @decorators.autoload_filenode(must_be='folder')
 def osfstorage_get_children(file_node, **kwargs):
