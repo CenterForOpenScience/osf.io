@@ -22,11 +22,12 @@ class NodeMixin(object):
     serializer_class = NodeSerializer
     node_lookup_url_kwarg = 'node_id'
 
-    def get_node(self):
+    def get_node(self, param_check=True):
         obj = get_object_or_404(Node, self.kwargs[self.node_lookup_url_kwarg])
         # May raise a permission denied
         self.check_object_permissions(self.request, obj)
-        self.get_additional_parameters(self.request, obj)
+        if param_check:
+            self.get_additional_parameters(self.request, obj)
         return obj
 
 
@@ -158,7 +159,7 @@ class NodeDetail(generics.RetrieveUpdateDestroyAPIView, NodeMixin, NodeIncludeMi
         node.save()
 
 
-class NodeContributorsList(generics.ListAPIView, ListFilterMixin, NodeMixin):
+class NodeContributorsList(generics.ListAPIView, ListFilterMixin, NodeMixin, NodeIncludeMixin):
     """Contributors (users) for a node.
 
     Contributors are users who can make changes to the node or, in the case of private nodes,
@@ -330,7 +331,7 @@ class NodeFilesList(generics.ListAPIView, NodeMixin):
         if user is None or user.is_anonymous():
             return valid_methods
 
-        permissions = self.get_node().get_permissions(user)
+        permissions = self.get_node(param_check=False).get_permissions(user)
         if 'write' in permissions:
             valid_methods['file'].append('POST')
             valid_methods['file'].append('DELETE')
@@ -346,7 +347,7 @@ class NodeFilesList(generics.ListAPIView, NodeMixin):
             'provider': item['provider'],
             'path': item['path'],
             'name': item['name'],
-            'node_id': self.get_node()._primary_key,
+            'node_id': self.get_node(param_check=False)._primary_key,
             'cookie': cookie,
             'args': obj_args,
             'waterbutler_type': 'file',
@@ -366,10 +367,10 @@ class NodeFilesList(generics.ListAPIView, NodeMixin):
     def get_queryset(self):
         query_params = self.request.query_params
 
-        addons = self.get_node().get_addons()
+        addons = self.get_node(param_check=False).get_addons()
         user = self.request.user
         cookie = None if self.request.user.is_anonymous() else user.get_or_create_cookie()
-        node_id = self.get_node()._id
+        node_id = self.get_node(param_check=False)._id
         obj_args = self.request.parser_context['args']
 
         provider = query_params.get('provider')
