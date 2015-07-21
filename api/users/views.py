@@ -10,7 +10,6 @@ from api.base.utils import get_object_or_404
 from api.nodes.permissions import get_user_auth
 from api.base.filters import ODMFilterMixin
 from api.nodes.serializers import NodeSerializer
-from api.nodes.views import NodeIncludeMixin
 from .serializers import UserSerializer
 
 class UserMixin(object):
@@ -21,12 +20,12 @@ class UserMixin(object):
     serializer_class = UserSerializer
     node_lookup_url_kwarg = 'user_id'
 
-    def get_user(self, check_permissions=True, get_parameters=True):
+    def get_user(self, check_permissions=True, get_additional_params=True):
         obj = get_object_or_404(User, self.kwargs[self.node_lookup_url_kwarg])
         if check_permissions:
             # May raise a permission denied
             self.check_object_permissions(self.request, obj)
-        if get_parameters:
+        if get_additional_params:
             obj = self.get_additional_parameters(self.request, obj)
         return obj
 
@@ -92,7 +91,7 @@ class UserDetail(generics.RetrieveAPIView, UserMixin, UserIncludeMixin):
         return self.get_user()
 
 # todo, modify mixin
-class UserNodes(generics.ListAPIView, UserMixin, ODMFilterMixin, NodeIncludeMixin):
+class UserNodes(generics.ListAPIView, UserMixin, ODMFilterMixin):
     """Nodes belonging to a user.
 
     Return a list of nodes that the user contributes to. """
@@ -100,7 +99,7 @@ class UserNodes(generics.ListAPIView, UserMixin, ODMFilterMixin, NodeIncludeMixi
 
     # overrides ODMFilterMixin
     def get_default_odm_query(self):
-        user = self.get_user(check_permissions=False, get_parameters=False)
+        user = self.get_user(check_permissions=False, get_additional_params=False)
         return (
             Q('contributors', 'eq', user) &
             Q('is_folder', 'ne', True) &
@@ -116,9 +115,5 @@ class UserNodes(generics.ListAPIView, UserMixin, ODMFilterMixin, NodeIncludeMixi
             auth = Auth(current_user)
         query = self.get_query_from_request()
         raw_nodes = Node.find(self.get_default_odm_query() & query)
-        raw_nodes = [each for each in raw_nodes if each.is_public or each.can_view(auth)]
-        nodes = []
-        for node in raw_nodes:
-            node = NodeIncludeMixin.get_additional_parameters(self.request, node)
-            nodes.append(node)
+        nodes = [each for each in raw_nodes if each.is_public or each.can_view(auth)]
         return nodes
