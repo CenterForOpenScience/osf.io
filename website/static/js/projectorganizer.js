@@ -1405,7 +1405,10 @@ var tbOptions = {
         return m('i.fa.fa-refresh.fa-spin');
     },
     toolbarComponent : POToolbar,
-    naturalScrollLimit : 0
+    naturalScrollLimit : 0,
+    removeIcon : function(){
+        return m.trust('&times;');
+    },
 };
 
 /**
