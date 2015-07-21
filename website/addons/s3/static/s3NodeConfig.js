@@ -61,6 +61,7 @@ var ViewModel = function(url, selector) {
     self.allowSelectBucket = ko.pureComputed(function() {
         return (self.bucketList().length > 0 || self.loadedBucketList()) && (!self.loading());
     });
+
 };
 
 ViewModel.prototype.toggleSelect = function() {
@@ -115,6 +116,7 @@ ViewModel.prototype._deauthorizeNodeConfirm = function() {
         dataType: 'json'
     }).done(function(response) {
         self.updateFromData(response);
+        self.changeMessage('Disconnected S3.', 'text-warning', 3000);
     }).fail(function(xhr, status, error) {
         var message = 'Could not deauthorize S3 at ' +
             'this time. Please refresh the page. If the problem persists, email ' +
