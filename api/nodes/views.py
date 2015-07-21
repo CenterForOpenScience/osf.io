@@ -2,7 +2,7 @@ import requests
 
 from modularodm import Q
 from rest_framework import generics, permissions as drf_permissions
-from rest_framework.exceptions import PermissionDenied, ValidationError
+from rest_framework.exceptions import PermissionDenied, ValidationError, NotFound
 from rest_framework.response import Response
 
 from framework.auth.core import Auth
@@ -38,15 +38,22 @@ class NodeIncludeMixin(object):
             auth = get_user_auth(request)
             if 'children' in parameters:
                 node.children = [child for child in node.nodes if child.can_view(auth) and child.primary]
-
+                parameters.remove('children')
             # todo do the pointers need visibility limitations?
             if 'pointers' in parameters:
                 node.pointers = node.nodes_pointer
+                parameters.remove('pointers')
             if 'registrations' in parameters:
                 node.registered_nodes = [registration for registration in node.node__registrations
                                          if registration.can_view(auth)]
+                parameters.remove('registrations')
             if 'contributors' in parameters:
                 node.contributing_users = node.contributors
+                parameters.remove('contributors')
+            if parameters != []:
+
+                # not found or validation error?
+                raise NotFound('{} are not valid parameters.')
         return node
 
 
@@ -201,7 +208,11 @@ class NodeRegistrationsList(generics.ListAPIView, NodeMixin, NodeIncludeMixin):
             auth = Auth(None)
         else:
             auth = Auth(user)
-        registrations = [node for node in nodes if node.can_view(auth)]
+        raw_registrations = [node for node in nodes if node.can_view(auth)]
+        registrations = []
+        for registration in raw_registrations:
+            registration = self.get_additional_parameters(self.request, registration)
+            registrations.append(registration)
         return registrations
 
 
