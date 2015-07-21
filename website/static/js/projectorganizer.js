@@ -193,7 +193,7 @@ function saveExpandState(item, callback) {
 }
 
 /**
- * Contributors have first person's name and then number of contributors. This functio nreturns the proper html
+ * Contributors have first person's name and then number of contributors. This function returns the proper html
  * @param {Object} item A Treebeard _item object for the row involved. Node information is inside item.data
  * @returns {Object} A Mithril virtual DOM template object
  * @private
@@ -1002,7 +1002,12 @@ function showLegend() {
             ' )'
             ])
     };
-    tb.modal.update(legendView(data, repr, opts));
+    var closeBtn = m('button', {
+        class:'btn btn-default',
+        type:'button',
+        onclick : function(event) { tb.modal.dismiss(); } }, 'Close');
+
+    tb.modal.update(legendView(data, repr, opts), closeBtn);
     tb.modal.show();
 }
 
@@ -1399,7 +1404,8 @@ var tbOptions = {
     resolveRefreshIcon : function () {
         return m('i.fa.fa-refresh.fa-spin');
     },
-    toolbarComponent : POToolbar
+    toolbarComponent : POToolbar,
+    naturalScrollLimit : 0
 };
 
 /**

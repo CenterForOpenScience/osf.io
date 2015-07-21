@@ -7,7 +7,6 @@ var bootbox = require('bootbox');
 
 
 var preRegisterMessage =  function(title, parentTitle, parentUrl, category) {
-    // TODO(hrybacki): Remove warning once Retraction/Embargoes goes is merged into production
     if (parentUrl) {
         return 'You are about to register the ' + category + ' <b>' + title +
             '</b> including all components and data within it. This will <b>not</b> register' +
@@ -45,6 +44,11 @@ $(document).ready(function() {
             callback: function (confirmed) {
                 if(confirmed) {
                     window.location.href = target;
+                }
+            },
+            buttons:{
+                confirm:{
+                    label:'Register'
                 }
             }
         });

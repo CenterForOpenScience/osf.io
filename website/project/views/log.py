@@ -10,7 +10,7 @@ from framework.auth.decorators import collect_auth
 from framework.transactions.handlers import no_auto_transaction
 
 
-from website.views import serialize_log
+from website.views import serialize_log, validate_page_num
 from website.project.model import NodeLog
 from website.project.model import has_anonymous_link
 from website.project.decorators import must_be_valid_project
@@ -44,10 +44,7 @@ def _get_logs(node, count, auth, page=0):
     logs_set = node.get_aggregate_logs_queryset(auth)
     total = logs_set.count()
     pages = math.ceil(total / float(count))
-    if page < 0 or (pages and page >= pages):
-        raise HTTPError(http.BAD_REQUEST, data=dict(
-            message_long='Invalid value for "page".'
-        ))
+    validate_page_num(page, pages)
 
     start = page * count
     stop = start + count

@@ -26,7 +26,7 @@ from website.addons import base as addons_base
 from website.oauth.models import ExternalAccount
 from website.oauth.models import ExternalProvider
 from website.project.model import (
-    ApiKey, Node, NodeLog, WatchConfig, Tag, Pointer, Comment, PrivateLink,
+    Node, NodeLog, WatchConfig, Tag, Pointer, Comment, PrivateLink,
     Retraction, Embargo,
 )
 from website.notifications.model import NotificationSubscription, NotificationDigest
@@ -87,7 +87,6 @@ class UserFactory(ModularOdmFactory):
     fullname = Sequence(lambda n: "Freddie Mercury{0}".format(n))
     is_registered = True
     is_claimed = True
-    api_keys = []
     date_confirmed = datetime.datetime(2014, 2, 21)
     merged_by = None
     email_verifications = {}
@@ -117,21 +116,16 @@ class AuthUserFactory(UserFactory):
     """
 
     @post_generation
-    def add_api_key(self, create, extracted):
-        key = ApiKeyFactory()
-        self.api_keys.append(key)
+    def add_auth(self, create, extracted):
+        self.set_password('password')
         self.save()
-        self.auth = ('test', key._primary_key)
+        self.auth = (self.username, 'password')
 
 
 class TagFactory(ModularOdmFactory):
     FACTORY_FOR = Tag
 
     _id = Sequence(lambda n: "scientastic-{}".format(n))
-
-
-class ApiKeyFactory(ModularOdmFactory):
-    FACTORY_FOR = ApiKey
 
 
 class PrivateLinkFactory(ModularOdmFactory):
@@ -308,7 +302,6 @@ class UnconfirmedUserFactory(ModularOdmFactory):
 class AuthFactory(base.Factory):
     FACTORY_FOR = Auth
     user = SubFactory(UserFactory)
-    api_key = SubFactory(ApiKeyFactory)
 
 
 class ProjectWithAddonFactory(ProjectFactory):

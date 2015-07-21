@@ -10,12 +10,13 @@
                 <div class="modal-body">
                     <div class="form-group">
                         <input id="title" maxlength="200" placeholder="Component Title" name="title"  type="text" class='form-control'>
-                        <div class="modal-alert"></div>
+                        <div class="help-block">
+                          <span class="modal-alert text-danger"></span>
+                        </div>
                     </div>
                     <div class="form-group">
                         <select id="category" name="category" class="form-control">
                             <option disabled selected value=''>-- Category--</option>
-                            ## TODO: Remove hardcoded category values here and use the values from Node.CATEGORY_MAP
                             %for key, value in node_categories.iteritems():
                             <option value="${key}">${value}</option>
                             %endfor
@@ -23,21 +24,10 @@
                     </div>
                 </div><!-- end modal-body -->
                 <div class="modal-footer">
-                    <a id="confirm" href="#" class="btn btn-default" data-dismiss="modal">Close</a>
-                    <button id="add-component-submit" type="submit" class="btn btn-primary">OK</button>
+                    <a id="confirm" href="#" class="btn btn-default" data-dismiss="modal">Cancel</a>
+                    <button id="add-component-submit" type="submit" class="btn btn-success">Add</button>
                 </div><!-- end modal-footer -->
             </form>
         </div><!-- end modal- content -->
     </div><!-- end modal-dialog -->
 </div><!-- end modal -->
-
-<script type="text/javascript">
-        $(document).ready(function() {
-            $('#confirm').on('click', function () {
-                $("#alert").text("");
-                $("#title").val("");
-                $("#category").val("");
-
-            });
-        });
-</script>

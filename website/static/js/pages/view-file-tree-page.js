@@ -25,7 +25,7 @@ $(document).ready(function() {
         panelVisible.hide();
         panelHidden.show();
     });
-    $('.osf-panel-show .osf-panel-header').on('click', function () {
+    $('.osf-panel-show .panel-heading').on('click', function () {
         panelToggle.removeClass('col-sm-1').addClass('col-sm-3');
         panelExpand.removeClass('col-sm-11').addClass('col-sm-9');
 

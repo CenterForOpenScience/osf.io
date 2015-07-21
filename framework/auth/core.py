@@ -155,16 +155,14 @@ def get_user(email=None, password=None, verification_key=None):
 
 class Auth(object):
 
-    def __init__(self, user=None, api_key=None, api_node=None,
+    def __init__(self, user=None, api_node=None,
                  private_key=None):
         self.user = user
-        self.api_key = api_key
         self.api_node = api_node
         self.private_key = private_key
 
     def __repr__(self):
-        return ('<Auth(user="{self.user}", api_key={self.api_key}, '
-                'api_node={self.api_node}, '
+        return ('<Auth(user="{self.user}", '
                 'private_key={self.private_key})>').format(self=self)
 
     @property
@@ -174,14 +172,10 @@ class Auth(object):
     @classmethod
     def from_kwargs(cls, request_args, kwargs):
         user = request_args.get('user') or kwargs.get('user') or _get_current_user()
-        api_key = request_args.get('api_key') or kwargs.get('api_key')
-        api_node = request_args.get('api_node') or kwargs.get('api_node')
         private_key = request_args.get('view_only')
 
         return cls(
             user=user,
-            api_key=api_key,
-            api_node=api_node,
             private_key=private_key,
         )
 
@@ -300,10 +294,6 @@ class User(GuidStoredObject, AddonModelMixin):
     #    ...
     # }
 
-    # nicknames, or other names by which this used is known
-    # TODO: remove - unused
-    aka = fields.StringField(list=True)
-
     # the date this user was registered
     # TODO: consider removal - this can be derived from date_registered
     date_registered = fields.DateTimeField(auto_now_add=dt.datetime.utcnow,
@@ -360,8 +350,6 @@ class User(GuidStoredObject, AddonModelMixin):
     #     'personal': <personal site>,
     #     'twitter': <twitter id>,
     # }
-
-    api_keys = fields.ForeignField('apikey', list=True, backref='keyed')
 
     # hashed password used to authenticate to Piwik
     piwik_token = fields.StringField()
@@ -872,6 +860,15 @@ class User(GuidStoredObject, AddonModelMixin):
         for node in self.node__contributed:
             node.update_search()
 
+    def update_search_nodes_contributors(self):
+        """
+        Bulk update contributor name on all nodes on which the user is
+        a contributor.
+        :return:
+        """
+        from website.search import search
+        search.update_contributors(self.visible_contributor_to)
+
     @property
     def is_confirmed(self):
         return bool(self.date_confirmed)
@@ -977,6 +974,23 @@ class User(GuidStoredObject, AddonModelMixin):
     def profile_url(self):
         return '/{}/'.format(self._id)
 
+    @property
+    def contributor_to(self):
+        return (
+            node for node in self.node__contributed
+            if not (
+                node.is_deleted
+                or node.is_dashboard
+            )
+        )
+
+    @property
+    def visible_contributor_to(self):
+        return (
+            node for node in self.contributor_to
+            if self._id in node.visible_contributor_ids
+        )
+
     def get_summary(self, formatter='long'):
         return {
             'user_fullname': self.fullname,
@@ -993,6 +1007,7 @@ class User(GuidStoredObject, AddonModelMixin):
         ret = super(User, self).save(*args, **kwargs)
         if self.SEARCH_UPDATE_FIELDS.intersection(ret) and self.is_confirmed:
             self.update_search()
+            self.update_search_nodes_contributors()
         if settings.PIWIK_HOST and not self.piwik_token:
             piwik_tasks.update_user(self._id)
         return ret
@@ -1104,7 +1119,11 @@ class User(GuidStoredObject, AddonModelMixin):
 
     def merge_user(self, user):
         """Merge a registered user into this account. This user will be
-        a contributor on any project
+        a contributor on any project. if the registered user and this account
+        are both contributors of the same project. Then it will remove the
+        registered user and set this account to the highest permission of the two
+        and set this account to be visible if either of the two are visible on
+        the project.
 
         :param user: A User object to be merged.
         """
@@ -1116,8 +1135,6 @@ class User(GuidStoredObject, AddonModelMixin):
         for system_tag in user.system_tags:
             if system_tag not in self.system_tags:
                 self.system_tags.append(system_tag)
-
-        [self.aka.append(each) for each in user.aka if each not in self.aka]
 
         self.is_claimed = self.is_claimed or user.is_claimed
         self.is_invited = self.is_invited or user.is_invited
@@ -1176,10 +1193,6 @@ class User(GuidStoredObject, AddonModelMixin):
                 self.external_accounts.append(account)
         user.external_accounts = []
 
-        for api_key in user.api_keys:
-            self.api_keys.append(api_key)
-        user.api_keys = []
-
         # - addons
         # Note: This must occur before the merged user is removed as a
         #       contributor on the nodes, as an event hook is otherwise fired
@@ -1194,12 +1207,27 @@ class User(GuidStoredObject, AddonModelMixin):
             # Skip dashboard node
             if node.is_dashboard:
                 continue
-            node.add_contributor(
-                contributor=self,
-                permissions=node.get_permissions(user),
-                visible=node.get_visible(user),
-                log=False,
-            )
+            # if both accounts are contributor of the same project
+            if node.is_contributor(self) and node.is_contributor(user):
+                if node.permissions[user._id] > node.permissions[self._id]:
+                    permissions = node.permissions[user._id]
+                else:
+                    permissions = node.permissions[self._id]
+                node.set_permissions(user=self, permissions=permissions)
+
+                visible1 = self._id in node.visible_contributor_ids
+                visible2 = user._id in node.visible_contributor_ids
+                if visible1 != visible2:
+                    node.set_visible(user=self, visible=True, log=True, auth=Auth(user=self))
+
+            else:
+                node.add_contributor(
+                    contributor=self,
+                    permissions=node.get_permissions(user),
+                    visible=node.get_visible(user),
+                    log=False,
+                )
+
             try:
                 node.remove_contributor(
                     contributor=user,

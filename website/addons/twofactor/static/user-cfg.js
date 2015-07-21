@@ -1,5 +1,5 @@
-var TwoFactorUserConfig = require('./twoFactorUserConfig.js');
+var TwoFactorUserConfig = require('./twoFactorUserConfig.js').TwoFactorUserConfig;
 
-var otpURL = window.contextVars.otpauthURL;
 // Initialize tfa user config widget
-new TwoFactorUserConfig('#twoFactorScope', '#twoFactorQrCode', otpURL);
+var SETTINGS_URL = '/api/v1/settings/twofactor/';
+new TwoFactorUserConfig(SETTINGS_URL, '#twoFactorScope', '#twoFactorQrCode');

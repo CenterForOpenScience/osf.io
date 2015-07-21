@@ -262,7 +262,7 @@ class GoogleDriveNodeSettings(StorageAddonBase, AddonNodeSettingsBase):
             return None
 
         if self.folder_path != '/':
-            return unquote(os.path.split(self.folder_path)[1])
+            return unquote(os.path.split(self.folder_path)[1].encode('utf-8')).decode('utf-8')
 
         return '/ (Full Google Drive)'
 
@@ -414,7 +414,7 @@ class GoogleDriveNodeSettings(StorageAddonBase, AddonNodeSettingsBase):
             message = 'Google Drive authorization copied to fork.'
         else:
             message = ('Google Drive authorization not copied to forked {cat}. You may '
-                       'authorize this fork on the <a href="{url}">Settings</a>'
+                       'authorize this fork on the <a href="{url}">Settings</a> '
                        'page.').format(
                 url=fork.web_url_for('node_setting'),
                 cat=fork.project_or_component

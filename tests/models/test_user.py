@@ -146,9 +146,6 @@ class TestUserMerging(base.OsfTestCase):
         self.user.system_tags = ['shared', 'user']
         self.unconfirmed.system_tags = ['shared', 'unconfirmed']
 
-        self.user.aka = ['shared', 'user']
-        self.unconfirmed.aka = ['shared', 'unconfirmed']
-
     def _add_unregistered_user(self):
         self.unregistered = factories.UnregUserFactory()
 
@@ -234,12 +231,6 @@ class TestUserMerging(base.OsfTestCase):
         today = datetime.datetime.now()
         yesterday = today - datetime.timedelta(days=1)
 
-        self.user.aka = ['foo']
-        other_user.aka = ['bar']
-
-        self.user.api_keys = [factories.ApiKeyFactory()]
-        other_user.api_keys = [factories.ApiKeyFactory()]
-
         self.user.comments_viewed_timestamp['shared_gt'] = today
         other_user.comments_viewed_timestamp['shared_gt'] = yesterday
         self.user.comments_viewed_timestamp['shared_lt'] = yesterday
@@ -314,11 +305,6 @@ class TestUserMerging(base.OsfTestCase):
         ]
 
         calculated_fields = {
-            'aka': ['foo', 'bar'],
-            'api_keys': [
-                self.user.api_keys[0]._id,
-                other_user.api_keys[0]._id,
-            ],
             'comments_viewed_timestamp': {
                 'user': yesterday,
                 'other': yesterday,
@@ -412,13 +398,11 @@ class TestUserMerging(base.OsfTestCase):
         # TODO: test mailing_lists
 
         assert_equal(self.user.system_tags, ['shared', 'user', 'unconfirmed'])
-        assert_equal(self.user.aka, ['shared', 'user', 'unconfirmed'])
 
         # TODO: test emails
         # TODO: test watched
         # TODO: test external_accounts
 
-        # TODO: test api_keys
         assert_equal(self.unconfirmed.email_verifications, {})
         assert_is_none(self.unconfirmed.username)
         assert_is_none(self.unconfirmed.password)

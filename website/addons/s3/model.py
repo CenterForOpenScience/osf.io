@@ -49,6 +49,9 @@ class AddonS3UserSettings(AddonUserSettingsBase):
     def to_json(self, user):
         ret = super(AddonS3UserSettings, self).to_json(user)
         ret['has_auth'] = self.has_auth
+        if self.owner:
+            ret['name'] = self.owner.display_full_name()
+            ret['profile_url'] = self.owner.profile_url
         return ret
 
     @property
@@ -59,9 +62,9 @@ class AddonS3UserSettings(AddonUserSettingsBase):
     def is_valid(self):
         return utils.can_list(self.access_key, self.secret_key)
 
-    def revoke_auth(self, save=False):
+    def revoke_auth(self, auth=None, save=False):
         for node_settings in self.addons3nodesettings__authorized:
-            node_settings.deauthorize(save=True)
+            node_settings.deauthorize(auth=auth, save=True)
 
         self.s3_osf_user, self.access_key, self.secret_key = None, None, None
 
