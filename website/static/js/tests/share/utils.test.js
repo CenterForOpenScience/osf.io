@@ -153,13 +153,16 @@ describe('share/utils', () => {
             assert.equal('common', Object.keys(built.query)[0]);
         });
 
-        it('creates anded match query filters for required filters', () => {
+        it('creates match query filters for required filters', () => {
             vm.requiredFilters.push('_all:1');
             vm.requiredFilters.push('_all:2');
             var built = utils.buildQuery(vm);
 
             assert.equal('bool', Object.keys(built.filter)[0]);
-            assert.equal('and', Object.keys(built.filter.bool.must)[0]);
+
+            $.map(built.filter.bool.must, function (item) {
+                assert.equal('query', Object.keys(item)[0]);
+            });
         });
 
         it('creates a list of should filters for the optional filters', () => {
