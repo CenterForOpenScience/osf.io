@@ -5,11 +5,13 @@ from modularodm import Q
 from website.models import User, Node
 from framework.auth.core import Auth
 from api.base.utils import get_object_or_404
+from rest_framework.exceptions import NotFound
 
 #todo move get_user_auth?
 from api.nodes.permissions import get_user_auth
 from api.base.filters import ODMFilterMixin
 from api.nodes.serializers import NodeSerializer
+from api.nodes.views import NodeIncludeMixin
 from .serializers import UserSerializer
 
 class UserMixin(object):
@@ -37,6 +39,9 @@ class UserIncludeMixin(object):
             auth = get_user_auth(request)
             if 'nodes' in parameters:
                 user.nodes = [node for node in user.node__contributed if node.can_view(auth)]
+                parameters.remove('nodes')
+            if parameters != []:
+                raise NotFound('{} are not valid parameters.'.format(parameters))
         return user
 
 
@@ -91,7 +96,7 @@ class UserDetail(generics.RetrieveAPIView, UserMixin, UserIncludeMixin):
         return self.get_user()
 
 # todo, modify mixin
-class UserNodes(generics.ListAPIView, UserMixin, ODMFilterMixin):
+class UserNodes(generics.ListAPIView, UserMixin, ODMFilterMixin, NodeIncludeMixin):
     """Nodes belonging to a user.
 
     Return a list of nodes that the user contributes to. """
@@ -115,5 +120,9 @@ class UserNodes(generics.ListAPIView, UserMixin, ODMFilterMixin):
             auth = Auth(current_user)
         query = self.get_query_from_request()
         raw_nodes = Node.find(self.get_default_odm_query() & query)
-        nodes = [each for each in raw_nodes if each.is_public or each.can_view(auth)]
+        nodes = []
+        for node in raw_nodes:
+            if node.is_public or node.can_view(auth):
+                node = self.get_additional_parameters(self.request, node)
+                nodes.append(node)
         return nodes
