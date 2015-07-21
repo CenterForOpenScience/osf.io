@@ -3,10 +3,11 @@ from rest_framework import serializers as ser
 from website.models import Node
 from framework.auth.core import Auth
 from rest_framework import exceptions
+from api.users.serializers import ContributorIncludeSerializer
 from api.base.serializers import JSONAPISerializer, LinksField, Link, WaterbutlerLink
 
 
-class NestedNodeSerializer(JSONAPISerializer):
+class NodeIncludeSerializer(JSONAPISerializer):
 
     id = ser.CharField(read_only=True, source='_id')
     title = ser.CharField(required=True)
@@ -60,9 +61,10 @@ class NodeSerializer(JSONAPISerializer):
         }
     })
 
-    children = NestedNodeSerializer(many=True, read_only=True)
-    pointers = NestedNodeSerializer(many=True, read_only=True)
-    registrations = NestedNodeSerializer(many=True, read_only=True, source='registered_nodes')
+    children = NodeIncludeSerializer(many=True, read_only=True)
+    pointers = NodeIncludeSerializer(many=True, read_only=True)
+    registrations = NodeIncludeSerializer(many=True, read_only=True, source='registered_nodes')
+    contributors = ContributorIncludeSerializer(many=True, read_only=True, source='contributing_users')
 
     properties = ser.SerializerMethodField(help_text='A dictionary of read-only booleans: registration, collection,'
                                                      'and dashboard. Collections are special nodes used by the Project '

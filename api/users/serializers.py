@@ -3,6 +3,20 @@ from rest_framework import serializers as ser
 from api.base.serializers import JSONAPISerializer, LinksField, Link
 
 
+class ContributorIncludeSerializer(JSONAPISerializer):
+
+    id = ser.CharField(read_only=True, source='_id')
+    fullname = ser.CharField(required=True)
+
+    links = LinksField({})
+
+    class Meta:
+        type_ = 'users'
+
+# Moved due to import error
+from api.nodes.serializers import NodeIncludeSerializer
+
+
 class UserSerializer(JSONAPISerializer):
     filterable_fields = frozenset([
         'fullname',
@@ -32,6 +46,8 @@ class UserSerializer(JSONAPISerializer):
             'relation': Link('users:user-nodes', kwargs={'user_id': '<pk>'})
         }
     })
+
+    nodes = NodeIncludeSerializer(many=True, required=False)
 
     class Meta:
         type_ = 'users'

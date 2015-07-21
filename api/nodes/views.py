@@ -38,11 +38,15 @@ class NodeIncludeMixin(object):
             auth = get_user_auth(request)
             if 'children' in parameters:
                 node.children = [child for child in node.nodes if child.can_view(auth) and child.primary]
+
+            # todo do the pointers need visibility limitations?
             if 'pointers' in parameters:
                 node.pointers = node.nodes_pointer
             if 'registrations' in parameters:
                 node.registered_nodes = [registration for registration in node.node__registrations
                                          if registration.can_view(auth)]
+            if 'contributors' in parameters:
+                node.contributing_users = node.contributors
         return node
 
 
