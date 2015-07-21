@@ -34,7 +34,6 @@ def search(query, raw=False, index='share'):
     # Run the real query and get the results
     if query.get('aggregations'):
         if query['aggregations'].get('sourcesByTimes'):
-            #query = stats(query)
             index = settings.SHARE_ELASTIC_INDEX_TEMPLATE.format(FRONTEND_VERSION)
     results = share_es.search(index=index, doc_type=None, body=query)
     for hit in results['hits']['hits']:

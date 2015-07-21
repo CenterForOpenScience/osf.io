@@ -63,23 +63,21 @@ function timeGraph (data,vm) {
                 height: 20
             },
             onbrush: function(zoomWin){
-                console.log(zoomWin)
-                var rawX = data.charts.shareTimeGraph.rawX;
-                var xTick = (rawX.slice(-1)[0]-rawX[0])/rawX.length;
-                var xMin = rawX[0]+xTick*zoomWin[0];
-                var xMax = rawX[0]+xTick*zoomWin[1];
-                //Stats.mapFilter(vm, utils.fieldRange('dateUpdated',xMin,xMax), 'shareTimeGraph');
-                //range restriction should influence donut, and donut should influence time graph. both should influence main query
-                //should come up with some form of filter subscription, where it is easy to subscribe to filters from graphs
+                clearTimeout(data.charts.shareTimeGraph.dateChangeCallbackId); //stop constant redraws
+                data.charts.shareTimeGraph.dateChangeCallbackId = setTimeout( //update chart with new dates after some delay (1s) to stop repeated requests
+                    function(){
+                        var rawX = data.charts.shareTimeGraph.rawX;
+                        var xTick = (rawX.slice(-1)[0]-rawX[0])/rawX.length;
+                        var xMin = Math.round(rawX[0]+xTick*zoomWin[0]);
+                        var xMax = Math.round(rawX[0]+xTick*zoomWin[1]);
+                        Stats.mapFilter(vm, utils.fieldRange('providerUpdatedDateTime',zoomWin[0].getTime(),zoomWin[1].getTime()), 'shareTimeGraph');
+                    }
+                    ,1000);
             }
         },
         axis: {
             x: {
-                type: 'category',
-                label: {
-                    text: 'Last Three Months',
-                    position: 'outer-center'
-                },
+                type: 'timeseries',
                 tick: {
                     format: function(d) {return Stats.timeSinceEpochInMsToMMYY(d)}
                 }
@@ -122,13 +120,11 @@ Stats.sourcesByDatesAgg = function(){
     var dateTemp = new Date(); //get current time
     dateTemp.setMonth(dateTemp.getMonth() - 3);
     var threeMonthsAgo = dateTemp.getTime();
-    
     var dateHistogramQuery = {'match_all':{}};
-    var dateHistogramFilter = utils.fieldRange('dateUpdated',threeMonthsAgo);
     var dateHistogramAgg = {'sourcesByTimes': utils.termsFilter('field','_type')};
-    dateHistogramAgg.sourcesByTimes['aggregations'] = {'articlesOverTime' : utils.dateHistogramFilter('dateUpdated',threeMonthsAgo)};
-
-    return {'query' : dateHistogramQuery, 'aggregations': dateHistogramAgg ,'filters' : []};//[dateHistogramFilter]}
+    dateHistogramAgg.sourcesByTimes['aggregations'] = {'articlesOverTime' :
+        utils.dateHistogramFilter('providerUpdatedDateTime',threeMonthsAgo)};
+    return {'query' : dateHistogramQuery, 'aggregations': dateHistogramAgg ,'filters' : []}
 };
 
 Stats.timeSinceEpochInMsToMMYY = function(timeSinceEpochInMs)
@@ -136,8 +132,35 @@ Stats.timeSinceEpochInMsToMMYY = function(timeSinceEpochInMs)
     var d = new Date(0);
     d.setUTCSeconds(timeSinceEpochInMs/1000);
     return d.getMonth().toString() + '/' + d.getFullYear().toString().substring(2);
-
 };
+
+Stats.mapFilter = function(vm,filter,sourceOfFilter)
+{
+    var filterToAdd = {};
+    filterToAdd.sourceOfFilter = sourceOfFilter;
+    filterToAdd.filter = filter;
+
+    var indexOfFilter = indexById(vm.statsQuerys.shareDonutGraph.filters,'sourceOfFilter',sourceOfFilter);
+    if (indexOfFilter === undefined) {
+        vm.statsQuerys.shareDonutGraph.filters.push(filterToAdd);
+    } else {
+        vm.statsQuerys.shareDonutGraph.filters[indexOfFilter] = filterToAdd;
+    }
+
+    utils.search(vm);//hack to force update
+
+    //TODO work out some way to add filters based on some mapping
+    //MUST BE ADDED to Querys somehow!
+    //add everything to main query for now...
+    //if ('main' in vm.filterCallbackMap[sourceOfFilter] ||  ~vm.filterCallbackMap[sourceOfFilter]){
+    //    utils.updateFilter(vm, filter, true)}
+};
+
+function indexById(myArray,key,id) {
+    return $.map(myArray, function (arrayItem, index) {
+        if (arrayItem[key] === id){return index}
+    })[0];
+}
 
 Stats.shareDonutGraphParser = function(data)
 {
@@ -163,19 +186,9 @@ Stats.shareDonutGraphParser = function(data)
     return chartData
 };
 
-Stats.mapFilter = function(vm,filter,sourceOfFilter) //TODO
-{
-    vm.statsQuerys.shareDonutGraph.filters.push(filter);
-    utils.search(vm)//hack to force update
-    //TODO work out some way to add filters based on some mapping
-    //MUST BE ADDED to Querys somehow!
-    //add everything to main query for now...
-    //if ('main' in vm.filterCallbackMap[sourceOfFilter] ||  ~vm.filterCallbackMap[sourceOfFilter]){
-    //    utils.updateFilter(vm, filter, true)}
-};
-
 Stats.shareTimeGraphParser = function(data)
 {
+    console.log(JSON.stringify(data.aggregations, null, 2));
     var chartData = {};
     chartData.name = 'shareTimeGraph';
     chartData.columns = [];
@@ -188,7 +201,7 @@ Stats.shareTimeGraphParser = function(data)
     var hexColors = utils.generateColors(data.aggregations.sourcesByTimes.buckets.length);
     var i = 0;
     var datesCol = [];
-    data.aggregations.sourcesByTimes.buckets.forEach( //TODO what would be nice is a helper function to do this for any agg returned by elastic
+    data.aggregations.sourcesByTimes.buckets.forEach( //TODO @bdyetton what would be nice is a helper function to do this for any agg returned by elastic
         function (source) {
             chartData.colors[source.key] = hexColors[i];
             var column = [source.key];
@@ -196,7 +209,6 @@ Stats.shareTimeGraphParser = function(data)
             source.articlesOverTime.buckets.forEach(function(date){
                 column.push(date.doc_count);
                 if(i===0){
-                    //convert date to reable format
                     datesCol.push(date.key);
                 }
             });
@@ -204,10 +216,11 @@ Stats.shareTimeGraphParser = function(data)
             i = i + 1;
         }
     );
-    chartData.rawX = datesCol;
+    chartData.rawX = datesCol.slice();
     chartData.groups.push(grouping);
-    chartData.columns.unshift('x'.concat(datesCol));
-
+    datesCol.unshift('x')
+    chartData.columns.unshift(datesCol);
+    console.log(JSON.stringify(chartData, null, 2));
     return chartData;
 };
 
@@ -258,10 +271,6 @@ Stats.controller = function(vm) {
     self.vm.statsParsers = {
         'sources' : Stats.shareDonutGraphParser,
         'sourcesByTimes' : Stats.shareTimeGraphParser
-    };
-
-    self.vm.filterCallbackMap = { //Location : Query/Agg THESE ARE ONLY THE ONES NOT APPLIED TO ALL!
-        'shareTimeGraph' : ['main','shareDonutGraph'],
     };
 
     self.vm.totalCount = 0;

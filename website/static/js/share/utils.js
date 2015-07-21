@@ -102,6 +102,7 @@ utils.search = function(vm) {
         vm.showFooter = true;
         vm.optionalFilters = [];
         vm.requiredFilters = [];
+        vm.topLevelFilters = [];
         vm.sort('Relevance');
         utils.loadStats(vm);
         History.pushState({}, 'OSF | SHARE', '?');
@@ -203,7 +204,7 @@ utils.arrayEqual = function(a, b) {
 utils.addFiltersToQuery = function(query,filters){
     if (filters) {
         filters.forEach(function (filter) {
-            query = utils.filteredQuery(query, filter)
+            query = utils.filteredQuery(query, filter.filter)
         });
     }
     return query
