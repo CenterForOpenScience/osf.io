@@ -68,18 +68,29 @@ class TestUsersFiltering(ApiTestCase):
         self.user_one.social['impactStory'] = 'userOneImpactStory'
         self.user_one.social['orcid'] = 'userOneOrcid'
         self.user_one.social['researcherId'] = 'userOneResearcherId'
-
-        self.user_one.employment_institutions = [
+        self.user_one.jobs = [
             {
                 'startYear': '1954',
                 'title': 'Reverend',
-                'startMonth': 1,
-                'endMonth': None,
-                'endYear': 1968,
+                'startMonth': '12',
+                'endMonth': '3',
+                'endYear': '1968',
                 'ongoing': False,
                 'department': 'Civil Disobedience',
                 'institution': 'Dexter Avenue Baptist Church'
-            },
+            }
+        ]
+        self.user_one.schools = [
+            {
+                'startYear': '1954',
+                'degree': 'MLK Degree',
+                'startMonth': '3',
+                'endMonth': 5,
+                'endYear': '1968',
+                'ongoing': False,
+                'department': 'MLK Department',
+                'institution': 'University of Institutions'
+            }
         ]
         self.user_one.save()
         self.user_two = UserFactory.build()
@@ -97,26 +108,48 @@ class TestUsersFiltering(ApiTestCase):
         self.user_two.social['orcid'] = 'userTwoOrcid'
         self.user_two.social['researcherId'] = 'userTwoResearcherId'
 
-        self.user_two.employment_institutions = [
+        self.user_two.jobs = [
             {
                 'startYear': '1900',
                 'title': 'Vice President of Sitcoms',
-                'startMonth': 1,
-                'endMonth': None,
+                'startMonth': '1',
+                'endMonth': '5',
                 'endYear': None,
                 'ongoing': True,
                 'department': '',
                 'institution': 'Waffle House'
             },
             {
-                "startYear": '',
-                "title": 'President of Tony Danza Management',
-                "startMonth": None,
-                "endMonth": None,
-                "endYear": '2000',
-                "ongoing": False,
-                "department": 'Mom',
-                "institution": 'Heeyyyy'
+                'startYear': '',
+                'title': 'President of Tony Danza Management',
+                'startMonth': None,
+                'endMonth': None,
+                'endYear': '2000',
+                'ongoing': False,
+                'department': 'Mom',
+                'institution': 'Heeyyyy'
+            },
+        ]
+        self.user_two.schools = [
+            {
+                'startYear': '1985',
+                'degree': 'First Degree',
+                'startMonth': '1',
+                'endMonth': None,
+                'endYear': None,
+                'ongoing': True,
+                'department': '',
+                'institution': 'School of Hilarity'
+            },
+            {
+                'startYear': '',
+                'degree': 'Second Degree',
+                'startMonth': None,
+                'endMonth': None,
+                'endYear': '2000',
+                'ongoing': False,
+                'department': 'Mom',
+                'institution': 'Martin'
             },
         ]
 
@@ -154,7 +187,7 @@ class TestUsersFiltering(ApiTestCase):
         assert_not_in(self.user_two._id, ids)
 
     def test_filter_using_job_startYear(self):
-        url = "/{}users/?filter[job_startYear]=1900".format(API_BASE)
+        url = "/{}users/?filter[job_startYear]=1954".format(API_BASE)
         res = self.app.get(url)
         user_json = res.json['data']
         ids = [each['id'] for each in user_json]
@@ -163,14 +196,22 @@ class TestUsersFiltering(ApiTestCase):
 
     def test_filter_using_job_title(self):
         url = "/{}users/?filter[job_title]=Reverend".format(API_BASE)
-        res = self.app.get(url)
+        res = self.app.get(url, auth=self.auth_one)
         user_json = res.json['data']
         ids = [each['id'] for each in user_json]
         assert_in(self.user_one._id, ids)
         assert_not_in(self.user_two._id, ids)
 
+    def test_filter_using_job_title_second_object(self):
+        url = "/{}users/?filter[job_title]=President of Tony Danza Management".format(API_BASE)
+        res = self.app.get(url, auth=self.auth_one)
+        user_json = res.json['data']
+        ids = [each['id'] for each in user_json]
+        assert_not_in(self.user_one._id, ids)
+        assert_in(self.user_two._id, ids)
+
     def test_filter_using_job_startMonth(self):
-        url = "/{}users/?filter[job_startMonth]=1".format(API_BASE)
+        url = "/{}users/?filter[job_startMonth]=12".format(API_BASE)
         res = self.app.get(url)
         user_json = res.json['data']
         ids = [each['id'] for each in user_json]
@@ -178,7 +219,7 @@ class TestUsersFiltering(ApiTestCase):
         assert_not_in(self.user_two._id, ids)
 
     def test_filter_using_job_endMonth(self):
-        url = "/{}users/?filter[job_endMonth]=1968".format(API_BASE)
+        url = "/{}users/?filter[job_endMonth]=3".format(API_BASE)
         res = self.app.get(url)
         user_json = res.json['data']
         ids = [each['id'] for each in user_json]
@@ -193,13 +234,13 @@ class TestUsersFiltering(ApiTestCase):
         assert_in(self.user_one._id, ids)
         assert_not_in(self.user_two._id, ids)
 
-    def test_filter_using_job_endYear(self):
+    def test_filter_using_job_ongoing(self):
         url = "/{}users/?filter[job_ongoing]=True".format(API_BASE)
         res = self.app.get(url)
         user_json = res.json['data']
         ids = [each['id'] for each in user_json]
-        assert_in(self.user_one._id, ids)
-        assert_not_in(self.user_two._id, ids)
+        assert_not_in(self.user_one._id, ids)
+        assert_in(self.user_two._id, ids)
 
     def test_filter_using_job_department(self):
         url = "/{}users/?filter[job_department]=Civil Disobedience".format(API_BASE)
@@ -269,13 +310,13 @@ class TestUserDetail(ApiTestCase):
         self.user_one.social['orcid'] = 'userOneOrcid'
         self.user_one.social['researcherId'] = 'userOneResearcherId'
 
-        self.user_one.employment_institutions = [
+        self.user_one.jobs = [
             {
                 'startYear': '1954',
                 'title': '',
-                'startMonth': 1,
+                'startMonth': '1',
                 'endMonth': None,
-                'endYear': 1968,
+                'endYear': '1968',
                 'ongoing': False,
                 'department': '',
                 'institution': 'Dexter Avenue Baptist Church'
@@ -298,11 +339,11 @@ class TestUserDetail(ApiTestCase):
         self.user_two.social['orcid'] = 'userTwoOrcid'
         self.user_two.social['researcherId'] = 'userTwoResearcherId'
 
-        self.user_two.employment_institutions = [
+        self.user_two.schools = [
             {
                 'startYear': '1900',
                 'title': '',
-                'startMonth': 1,
+                'startMonth': '1',
                 'endMonth': None,
                 'endYear': None,
                 'ongoing': True,
@@ -310,7 +351,7 @@ class TestUserDetail(ApiTestCase):
                 'institution': 'Waffle House'
             },
             {
-                "startYear": '',
+                "startYear": '1905',
                 "title": 'President of Tony Danza Management',
                 "startMonth": None,
                 "endMonth": None,
