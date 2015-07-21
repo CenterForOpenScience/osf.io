@@ -1650,7 +1650,6 @@ var FGToolbar = {
             m.component(FGButton, {
                 onclick: function(event){
                     var mithrilContent = m('div', [
-                        m('h3.break-word.m-b-lg', 'How to Use the File Browser'),
                         m('p', [ m('b', 'Select Rows:'), m('span', ' Click on a row (outside the name) to show further actions in the toolbar.')]),
                         m('p', [ m('b', 'Select Multiple Files:'), m('span', ' Use Command or Shift keys to select multiple files.')]),
                         m('p', [ m('b', 'Open Files:'), m('span', ' Click a file name to go to the file.')]),
@@ -1661,7 +1660,7 @@ var FGToolbar = {
                             'type':'button',
                             'class' : 'btn btn-default',
                             onclick : function(event) { ctrl.tb.modal.dismiss(); } }, 'Close');
-                    ctrl.tb.modal.update(mithrilContent, mithrilButtons);
+                    ctrl.tb.modal.update(mithrilContent, mithrilButtons, m('h3.modal-title.break-word', 'How to Use the File Browser'));
                 },
                 icon: 'fa fa-info',
                 className : 'text-info'
