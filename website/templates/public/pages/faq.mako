@@ -143,7 +143,7 @@
                         <p>A folder can be used to organize files within a project or component - just like a folder on your own computer groups files together. A component is like a sub-project to help you organize different parts of your research. Components have their own privacy and sharing settings as well as their own unique, persistent identifiers for citation, and their own wiki and add-ons. You can also register a component on its own, without registering the parent project.</p>
 
                     <h4 class="m-t-lg f-w-lg">How do I delete a project or component?</h4>
-                        <p>To delete a project or component, navigate to the project or component and click on "Settings" in the gray navigation bar. There you will see a red "delete" button. You can only delete a project or component that does not contain other components - so you must delete any nested components first.</p>
+                        <p>To delete a project or component, navigate to the project or component and click on "Settings" in the gray navigation bar. There you will see a red "delete" button. You can only delete a project or component that does not contain other components, so you must delete any nested components first.</p>
 
                     <h4 class="m-t-lg f-w-lg">How do I move a file from one storage add-on to another? Or one component to another?</h4>
                         <p>You can move files between components and add-ons, provided the components and add-ons are a part of the same project, by simply dragging and dropping from within the files widget of the project overview page or the Files tab. The Dataverse add-on does not currently support this feature.</p>
