@@ -72,6 +72,7 @@ REST_FRAMEWORK = {
         'api.base.authentication.drf.OSFSessionAuthentication',
         'api.base.authentication.drf.OSFCASAuthentication'
     ),
+    'EXCEPTION_HANDLER': 'api.base.utils.custom_exception_handler'
 }
 
 MIDDLEWARE_CLASSES = (
