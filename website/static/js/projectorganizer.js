@@ -1007,7 +1007,7 @@ function showLegend() {
         type:'button',
         onclick : function(event) { tb.modal.dismiss(); } }, 'Close');
 
-    tb.modal.update(legendView(data, repr, opts), closeBtn);
+    tb.modal.update(legendView(data, repr, opts), closeBtn, m('h3.modal-title', 'Legend'));
     tb.modal.show();
 }
 
