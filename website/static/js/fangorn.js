@@ -917,16 +917,15 @@ function _removeEvent (event, items, col) {
     if(items.length === 1) {
         if(items[0].kind !== 'folder'){
             var mithrilContentSingle = m('div', [
-                m('h3.break-word', 'Delete "' + items[0].data.name + '"'),
                 m('p', 'This action is irreversible.')
             ]);
             var mithrilButtonsSingle = m('div', [
-                m('span.tb-modal-btn', { 'class' : 'text-default', onclick : function() { cancelDelete(); } }, 'Cancel'),
-                m('span.tb-modal-btn', { 'class' : 'text-danger', onclick : function() { runDelete(items[0]); }  }, 'Delete')
+                m('span.btn.btn-default', { onclick : function() { cancelDelete(); } }, 'Cancel'),
+                m('span.btn.btn-danger', { onclick : function() { runDelete(items[0]); }  }, 'Delete')
             ]);
             // This is already being checked before this step but will keep this edit permission check
             if(items[0].data.permissions.edit){
-                tb.modal.update(mithrilContentSingle, mithrilButtonsSingle);
+                tb.modal.update(mithrilContentSingle, mithrilButtonsSingle, m('h3.break-word.modal-title', 'Delete "' + items[0].data.name + '"'));
             }
         }
         if(items[0].kind === 'folder') {
