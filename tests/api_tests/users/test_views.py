@@ -250,6 +250,14 @@ class TestUsersFiltering(ApiTestCase):
         assert_in(self.user_one._id, ids)
         assert_not_in(self.user_two._id, ids)
 
+    def test_multiple_filters(self):
+        url = "/{}users/?filter[job_department]=Civil Disobedience&filter[twitter]=userOneTwitter".format(API_BASE)
+        res = self.app.get(url)
+        user_json = res.json['data']
+        ids = [each['id'] for each in user_json]
+        assert_in(self.user_one._id, ids)
+        assert_not_in(self.user_two._id, ids)
+
     def test_filter_using_job_institution(self):
         url = "/{}users/?filter[job_institution]=Church".format(API_BASE)
         res = self.app.get(url)
