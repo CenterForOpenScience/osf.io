@@ -13,10 +13,6 @@ var $osf = require('./osfHelpers');
 var koHelpers = require('./koHelpers');
 require('js/objectCreateShim');
 
-//Constants to differentiate between List Objects
-var SCHOOLS = 1;
-var JOBS = 2;
-
 var socialRules = {
     orcid: /orcid\.org\/([-\d]+)/i,
     researcherId: /researcherid\.com\/rid\/([-\w]+)/i,
@@ -270,7 +266,7 @@ BaseViewModel.prototype.handleError = function(response) {
     var defaultMsg = 'Could not update settings';
     var msg = response.message_long || defaultMsg;
 
- 
+
 
     this.changeMessage(
         msg,
@@ -615,18 +611,18 @@ var ListViewModel = function(ContentModel, urls, modes) {
         return self.contents().length > 1;
     });
 
-    self.institutionsEmpty = ko.computed(function() {
+    self.enablebtn = ko.computed(function(){
         for (var i=0; i<self.contents().length; i++) {
-            if (self.contents()[i].institutionEmpty()) {
-                return true;
+            if (self.contents()[i].institutionObjectEmpty()) {
+                return 'disabled';
             }
         }
-        return false;
-    });
-
-    self.enablebtn = ko.computed(function(){
-        return self.institutionsEmpty() ? 'disabled':'enabled';
+        return 'enabled';
     }, this);
+
+    self.hasMultiple = ko.computed(function() {
+        return self.contents().length > 1;
+    });
 
     self.isValid = ko.computed(function() {
         for (var i=0; i<self.contents().length; i++) {
@@ -635,31 +631,6 @@ var ListViewModel = function(ContentModel, urls, modes) {
             }
         }
         return true;
-    });
-
-    self.missingRequiredfield = ko.computed(function() {
-        for (var i=0; i<self.contents().length; i++) {
-            if (self.jobsOrSchools() === JOBS) {
-                if (self.contents()[i].institutionEmpty() && !(self.contents()[i].department() === '' && self.contents()[i].title() === '')) {
-                    return true;
-                }
-            }
-            else if (self.jobsOrSchools() === SCHOOLS) {
-                if (self.contents()[i].institutionEmpty() && !(self.contents()[i].department() === '' && self.contents()[i].degree() === '')) {
-                    return true;
-                }
-            }
-        }
-        return false;
-    });
-
-    self.jobsOrSchools = ko.computed(function() {
-        if (urls.crud.indexOf('jobs') !== -1) { return JOBS; }
-        if (urls.crud.indexOf('schools') !== -1) { return SCHOOLS; }
-    });
-
-    self.hasMultiple = ko.computed(function() {
-        return self.contents().length > 1;
     });
 
     self.contentsLength = ko.computed(function() {
@@ -728,7 +699,7 @@ ListViewModel.prototype.addContent = function() {
 ListViewModel.prototype.removeContent = function(content) {
     var idx = this.contents().indexOf(content);
     //  If there is more then one model, then delete it.  If there is only one, then delete it and add another.
-    if (this.hasMultiple()) {
+    if (this.contentsLength() > 1) {
         this.contents.splice(idx, 1);
     }
     else {
@@ -766,7 +737,7 @@ ListViewModel.prototype.serialize = function() {
     if (this.contents().length !== 0 && typeof(this.contents()[0].serialize()) !== 'undefined') {
         for (var i=0; i < this.contents().length; i++) {
             // If the requiredField is empty, it will not save it and will delete the blank structure from the database.
-            if (!( this.contents()[i].institutionEmpty() && this.hasMultiple() )) {
+            if (!this.contents()[i].institutionObjectEmpty()) {
                 contents.push(this.contents()[i].serialize());
             }
             else  {
@@ -785,24 +756,23 @@ ListViewModel.prototype.submit = function() {
     /* In Schools or Jobs, either institution field is empty but other data exists in the object or institution is empty and there is only one object.
     If the whole object is empty and there are multiple, it will be automatically deleted in ListViewModel.prototype.serialize  */
     if (self.hasValidProperty() && self.isValid()) {
-        if (self.missingRequiredfield()) {
-            $osf.growl('Please enter an Institution before pressing "Save"');
-        }
-        else {
-            $osf.putJSON(
-                self.urls.crud,
-                self.serialize()
-            ).done(
-                self.handleSuccess.bind(self)
-            ).done(
-                self.setOriginal.bind(self)
-            ).fail(
-                self.handleError.bind(self)
-            );
+        $osf.putJSON(
+            self.urls.crud,
+            self.serialize()
+        ).done(
+            self.handleSuccess.bind(self)
+        ).done(
+            self.setOriginal.bind(self)
+        ).fail(
+            self.handleError.bind(self)
+        );
+        // After submission, add an object to make the fields visible on the page.
+        if (self.contents().length === 0) {
+            self.addContent();
         }
     }
     else {
-            self.showMessages(true);
+        $osf.growl('Please enter an Institution before pressing "Save"');
     }
 };
 
@@ -826,12 +796,25 @@ var JobViewModel = function() {
     ];
 
     var validated = ko.validatedObservable(self);
-    self.isValid = ko.computed(function() {
-        return validated.isValid();
+
+    self.institutionObjectEmpty = ko.computed(function() {
+        if (self.institution() === '' && self.department() === '' && self.title() === '') {
+            return true;
+        }
+        else {
+            return false;
+        }
     });
 
-    self.institutionEmpty = ko.computed(function() {
-        return (self.institution() === '');
+    //In addition to normal knockout field checks, check to see if institution is not filled out when other fields are
+    // Institution is only required when the item is not blank.
+    self.isValid = ko.computed(function() {
+        if (validated.isValid() && (self.institution() !== '' || self.institutionObjectEmpty())) {
+            return true;
+        }
+        else {
+            return false;
+        }
     });
 
 };
@@ -857,12 +840,25 @@ var SchoolViewModel = function() {
     ];
 
     var validated = ko.validatedObservable(self);
-    self.isValid = ko.computed(function() {
-        return validated.isValid();
+
+    self.institutionObjectEmpty = ko.computed(function() {
+        if (self.institution() === '' && self.department() === '' && self.degree() === '') {
+            return true;
+        }
+        else {
+            return false;
+        }
     });
 
-    self.institutionEmpty = ko.computed(function() {
-        return (self.institution() === '');
+    //In addition to normal knockout field checks, check to see if institution is not filled out when other fields are
+    // Institution is only required when the item is not blank.
+    self.isValid = ko.computed(function() {
+        if (validated.isValid() && (self.institution() !== '' || self.institutionObjectEmpty())) {
+            return true;
+        }
+        else {
+            return false;
+        }
     });
 
 };
