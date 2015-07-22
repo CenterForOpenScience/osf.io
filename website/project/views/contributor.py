@@ -335,8 +335,9 @@ def project_contributors_post(auth, node, **kwargs):
     node.add_contributors(contributors=contribs, auth=auth)
     node.save()
 
-    # Disconnect listener to avoid multiple invite emails
+    # Disconnect listeners to avoid multiple invite or notification emails
     unreg_contributor_added.disconnect(finalize_invitation)
+    contributor_added.disconnect(notify_contributor)
 
     for child_id in node_ids:
         child = Node.load(child_id)
@@ -346,8 +347,9 @@ def project_contributors_post(auth, node, **kwargs):
         )
         child.add_contributors(contributors=child_contribs, auth=auth)
         child.save()
-    # Reconnect listener
+    # Reconnect listeners
     unreg_contributor_added.connect(finalize_invitation)
+    contributor_added.connect(notify_contributor)
     return {'status': 'success'}, 201
 
 
