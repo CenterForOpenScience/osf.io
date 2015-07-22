@@ -112,7 +112,6 @@ def dropbox_oauth_finish(auth, **kwargs):
     user_settings.dropbox_info = client.account_info()
     user_settings.save()
 
-    flash('Successfully authorized Dropbox', 'success')
     if node:
         del session.data['dropbox_auth_nid']
         # Automatically use newly-created auth
