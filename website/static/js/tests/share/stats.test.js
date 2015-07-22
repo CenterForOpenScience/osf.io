@@ -5,7 +5,6 @@ var assert = require('chai').assert;
 var $osf = require('js/osfHelpers');
 
 var Stats = require('js/share/Stats');
-var testUtils = require('tests/utils');
 
 describe('share/stats', () => {
 
@@ -27,7 +26,7 @@ describe('share/stats', () => {
                     }
                   }
                 },
-                "filters": []
+                "filters": {}
               };
             assert.deepEqual(returnedAgg, requiredAgg);
         });
@@ -64,7 +63,7 @@ describe('share/stats', () => {
                     }
                   }
                 },
-                "filters": []
+                "filters": {}
             };
 
             requiredAgg.aggregations.sourcesByTimes.aggregations.articlesOverTime.date_histogram.extended_bounds = returnedAgg.aggregations.sourcesByTimes.aggregations.articlesOverTime.date_histogram.extended_bounds;
@@ -209,8 +208,7 @@ describe('share/stats', () => {
               },
               "type": "area-spline",
               "x": "x",
-              "groups": [["x","figshare", "ucescholarship"]],
-              "rawX": [1434326400000,1434931200000,1435536000000,1436140800000,1436745600000,1437350400000]
+              "groups": [["x","figshare", "ucescholarship"]]
             };
             assert.deepEqual(returnedData, requiredData);
         });

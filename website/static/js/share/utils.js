@@ -70,6 +70,7 @@ utils.loadMore = function(vm) {
     else {
         var page = vm.page++ * 10;
         var sort = vm.sortMap[vm.sort()] || null;
+
         vm.resultsLoading(true);
         m.request({
             method: 'post',
@@ -107,7 +108,7 @@ utils.search = function(vm) {
         vm.page = 0;
         vm.results = [];
         if (utils.stateChanged(vm)){
-            History.pushState({
+            History.pushState({ //TODO remove of range filter should update range on subgraph
                 optionalFilters: vm.optionalFilters,
                 requiredFilters: vm.requiredFilters,
                 query: vm.query(),
@@ -151,16 +152,19 @@ utils.buildURLParams = function(vm){
 };
 
 utils.buildQuery = function(vm) {
-    var must = $.map(vm.requiredFilters, utils.parseToMatchFilter);
-    var should = $.map(vm.optionalFilters, utils.parseToMatchFilter);
+    var must = $.map(vm.requiredFilters, utils.parseFilter);
+    var should = $.map(vm.optionalFilters, utils.parseFilter);
     var sort = {};
 
     if (vm.sortMap[vm.sort()]) {
         sort[vm.sortMap[vm.sort()]] = 'desc';
     }
+
     return {
-        'query': (vm.query().length > 0 && (vm.query() !== '*')) ? utils.commonQuery(vm.query()) : utils.matchAllQuery(),
-        'filter': utils.boolQuery(must, null, should),
+        'query' : {
+            'filtered': {
+                'query': (vm.query().length > 0 && (vm.query() !== '*')) ? utils.commonQuery(vm.query()) : utils.matchAllQuery(),
+                'filter': utils.boolQuery(must, null, should)}},
         'aggregations': vm.loadStats ? utils.buildStatsAggs(vm) : {},
         'from': (vm.page - 1) * 10,
         'size': 10,
@@ -206,16 +210,6 @@ utils.removeFilter = function(vm, filter){
         vm.optionalFilters.splice(optIndex, 1);
     }
     utils.search(vm);
-};
-
-utils.removeFilterById = function(vm, id){ //TODO test
-    $.map(vm.requiredFilters, function (arrayItem) {
-        if (arrayItem[key] === id){delete(arrayItem)}
-    });
-
-    $.map(vm.optionalFilters, function (arrayItem) {
-        if (arrayItem[key] === id){delete(arrayItem)}
-    });
 };
 
 utils.arrayEqual = function(a, b) {
@@ -266,7 +260,7 @@ utils.matchQuery = function(field, value) {
     return ret;
 };
 
-utils.fieldRange = function(field_name, gte, lte) {
+utils.rangeFilter = function(field_name, gte, lte) {
     lte = lte || new Date().getTime();
     gte = gte || 0;
     ret = {'range': {}};
@@ -335,11 +329,23 @@ utils.queryFilter = function(query) {
     };
 };
 
-utils.parseToMatchFilter = function(term) {
-    items = term.split(':');
-    return utils.queryFilter(
-        utils.matchQuery(items[0], items[1])
-    );
+utils.parseFilter = function(filterString) {
+    // parses a filter of the form
+    // filterName:fieldName:param1:param2...
+    // range:providerUpdatedDateTime:2015-06-05:2015-06-16
+    var parts = filterString.split(':');
+    var type = parts[0];
+    var field = parts[1];
+    if (type === 'range') {
+        return utils.rangeFilter(field, parts[2], parts[3]);
+    }
+    else if (type === 'match') {
+        return utils.queryFilter(
+            utils.matchQuery(field, parts[2])
+        );
+    }
+    // Any time you add a filter, put it here
+    // TODO: Maybe this would be better as a map?
 };
 
 utils.processStats = function(vm,data)
@@ -384,8 +390,8 @@ utils.updateAggs = function(currentAgg,newAgg,global)
 utils.buildStatsAggs = function(vm)
 {
     var currentAggs = {};
-    $.map(Object.keys(vm.statsAggs), function (statQuery) {
-        currentAggs = utils.updateAggs(currentAggs, vm.statsAggs[statQuery].aggregations);
+    $.map(Object.keys(vm.statsQueries), function (statQuery) {
+        currentAggs = utils.updateAggs(currentAggs, vm.statsQueries[statQuery].aggregations);
     });
     return currentAggs
 };
