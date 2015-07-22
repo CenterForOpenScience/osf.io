@@ -38,6 +38,12 @@ var $osf = require('osfHelpers');
                             }
                         });
                     }
+                },
+                buttons:{
+                    confirm:{
+                        label:'Remove',
+                        className:'btn-danger'
+                    }
                 }
             });
         });

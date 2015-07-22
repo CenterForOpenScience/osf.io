@@ -101,7 +101,6 @@ def googledrive_oauth_finish(auth, **kwargs):
     user_settings.expires_at = datetime.utcfromtimestamp(token['expires_at'])
     user_settings.save()
 
-    flash('Successfully authorized Google Drive', 'success')
     if node:
         if node.has_addon('googledrive'):
             node_addon = node.get_addon('googledrive')

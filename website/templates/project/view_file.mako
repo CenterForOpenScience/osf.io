@@ -42,7 +42,6 @@
     <!-- Menu toggle closed -->
     <div class="panel panel-default osf-panel-show text-center reset-height"  style="display: none">
       <div class="panel-heading">
-        <i class="fa fa-file"></i>
         <i class="fa fa-angle-right"></i>
       </div>
     </div>
@@ -76,6 +75,9 @@
           contributors with write permission in real time. Changes will be stored
           but not published until you click the "Save" button.
         </p>
+      </div>
+      <div class="modal-footer">
+          <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
       </div>
     </div>
   </div>

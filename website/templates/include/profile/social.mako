@@ -47,7 +47,7 @@
                             data-bind="if: github.hasAddon()"
                         >
                         <button
-                                class="btn btn-default"
+                                class="btn btn-primary"
                                 data-bind="click: github.importAddon"
                             >Import</button>
                     </span>
@@ -119,7 +119,7 @@
         </div>
 
         <div data-bind="if: editAllowed">
-            <a class="btn btn-default" data-bind="click: edit">Edit</a>
+            <a class="btn btn-primary" data-bind="click: edit">Edit</a>
         </div>
 
     </div>

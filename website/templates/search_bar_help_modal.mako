@@ -7,7 +7,7 @@
                 </div>
                 <div class="modal-body">
                     <h4>Queries</h4>
-                    <p>Search uses the<a href="http://extensions.xwiki.org/xwiki/bin/view/Extension/Search+Application+Query+Syntax">Lucene search syntax</a>.This gives you many options, but can be very simple as well. Examples of valid searches include:</p>
+                    <p>Search uses the <a href="http://extensions.xwiki.org/xwiki/bin/view/Extension/Search+Application+Query+Syntax">Lucene search syntax</a>.This gives you many options, but can be very simple as well. Examples of valid searches include:</p>
                     <ul>
                         <li><a href="/search/?q=repro*">repro*</a></li>
                         <li><a href="/search/?q=brian+AND+title%3Amany">brian AND title:many</a></li>

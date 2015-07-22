@@ -44,9 +44,7 @@
         </div><!-- end .form-group -->
         <!-- /ko -->
     </div> <!-- end .ob-search -->
-    <button type="submit" data-bind="visible: showSubmit(), html: submitText"
-            class="btn btn-primary pull-right" >
-    </button>
+    <button type="submit" data-bind="visible: showSubmit(), html: submitText,  attr: {class: btnClass}"> </button>
 </form>
 </template>
 
@@ -132,6 +130,7 @@
                         onClear: showCreateAndUpload,
                         onSelected: hideCreateAndUpload,
                         submitText: 'Upload',
+                        btnClass: 'btn btn-success pull-right';
                         ">
                 </osf-project-search>
             </div>
@@ -153,7 +152,7 @@
             <div class="row">
                 <div class="col-md-12">
                     <br>
-                    <button  class="btn btn-primary pull-right" type="submit">Create</button>
+                    <button  class="btn btn-success pull-right" type="submit">Upload</button>
                 </div>
             </div>
         </form>
@@ -170,6 +169,7 @@
             <input class="form-control"
                 type="text" name="title"
                 maxlength="200"
+                placeholder="Required"
                 data-bind="value: title, valueUpdate:'input', hasFocus: focus"
                 >
 
@@ -185,9 +185,12 @@
 ##            </select>
 ##            <br />
 
-            <label>Description (Optional)</label>
-            <textarea data-bind="value: description"class="form-control resize-vertical" name="description"
-                ></textarea>
+            <label>Description</label>
+            <textarea data-bind="value: description"
+                class="form-control resize-vertical"
+                name="description"
+                placeholder="Optional"
+               ></textarea>
             <br />
             <label>Template (Optional)</label>
             <span class="help-block">Start typing to search. Selecting project as template will duplicate its structure in the new project without importing the content of that project.</span>
