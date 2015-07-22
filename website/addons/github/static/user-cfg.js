@@ -25,6 +25,12 @@ $(document).ready(function() {
                         }
                     });
                 }
+            },
+            buttons:{
+                confirm:{
+                    label:'Remove',
+                    className:'btn-danger'
+                }
             }
         });
     });

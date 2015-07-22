@@ -45,6 +45,9 @@ class NodeSerializer(JSONAPISerializer):
         'files': {
             'related': Link('nodes:node-files', kwargs={'node_id': '<pk>'})
         },
+        'parent': {
+            'self': Link('nodes:node-detail', kwargs={'node_id': '<parent_id>'})
+        }
     })
     properties = ser.SerializerMethodField(help_text='A dictionary of read-only booleans: registration, collection,'
                                                      'and dashboard. Collections are special nodes used by the Project '

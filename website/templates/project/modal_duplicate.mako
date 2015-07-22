@@ -4,7 +4,7 @@
             <div class="modal-body">
                 <div class="row">
                     <div class="col-md-4">
-                        <h4 class="f-w-lg">Links
+                        <h4 class="f-w-lg">Links To This Project
                                  <span class="btn btn-default disabled  pull-right">
                                     ${ node['points'] }
                                 </span>

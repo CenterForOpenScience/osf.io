@@ -54,6 +54,12 @@ var FileViewPage = {
                     }).fail(function() {
                         $osf.growl('Error', 'Could not delete file.');
                     });
+                },
+                buttons:{
+                    confirm:{
+                        label:'Delete',
+                        className:'btn-danger'
+                    }
                 }
             });
         });
