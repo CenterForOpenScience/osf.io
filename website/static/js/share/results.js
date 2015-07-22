@@ -1,5 +1,6 @@
 'use strict';
 
+var pd = require('pretty-data').pd;
 var $ = require('jquery');
 var m = require('mithril');
 var $osf = require('js/osfHelpers');
@@ -99,20 +100,66 @@ Results.controller = function(vm) {
                                     m('br'),
                                     m('div', m('a', {onclick: function() {result.showAllsubjects = result.showAllsubjects ? false : true;}},'See All'))
                                 ]);
-                            }())))
+                            }())
+                        )
+                    )
                 ]),
                 m('br'),
                 m('br'),
                 m('div', [
-                    m('span', 'Released on ' + new $osf.FormattableDate(result.providerUpdatedDateTime).local),
+                    m('span', 
+                        'Released on ' + new $osf.FormattableDate(result.providerUpdatedDateTime).local,
+                        m('span', {style: {'margin-right': '5px', 'margin-left': '5px'}}, ' | '),
+                        m('a', {
+                            onclick: function() {
+                                result.showRawNormed = result.showRawNormed ? false : true;
+                                if (!result.raw) {
+                                    utils.loadRawNormalized(result);
+                                }
+                            }
+                        },'Data')
+                    ),
                     m('span.pull-right', [
                         m('img', {src: self.vm.ProviderMap[result.shareProperties.source].favicon, style: {width: '16px', height: '16px'}}),
                         ' ',
-                        m('a', {onclick: function() {utils.updateFilter(self.vm, 'shareProperties.source:' + result.shareProperties.source);}}, self.vm.ProviderMap[result.shareProperties.source].long_name)
-                    ])
-                ])
-            ]),
-            m('hr')
+                        m('a', {onclick: function() {utils.updateFilter(self.vm, 'shareProperties.source:' + result.shareProperties.source);}}, self.vm.ProviderMap[result.shareProperties.source].long_name),
+                        m('br')
+                    ]),
+                ]),
+                m('.row', [
+                    m('.col-md-12',
+                        result.showRawNormed && result.raw ? m('div', [
+                            m('ul', {class: 'nav nav-tabs'}, [
+                                m('li', m('a', {href: '#raw', 'data-toggle': 'tab'}, 'Raw')),
+                                m('li', m('a', {href: '#normalized', 'data-toggle': 'tab'}, 'Normalized'))
+                            ]),
+                            m('div', {class: 'tab-content'},
+                                m('div',
+                                    {class: 'tab-pane active', id:'raw'},
+                                    m('pre',
+                                        (function(){
+                                            if (result.rawfiletype === 'xml') {
+                                                return pd.xml(result.raw);
+                                            }
+                                            else {
+                                                var rawjson = JSON.parse(result.raw);
+                                                return JSON.stringify(rawjson, undefined, 2);
+                                            }
+                                        }())
+                                    )
+                                ),
+                                m('div',
+                                    {class: 'tab-pane', id:'normalized'},
+                                    m('pre',
+                                        result.normalized
+                                    )
+                                )
+                            )
+                        ]) : m('span')
+                    )
+                ]),
+                m('hr')
+            ])
         ]);
     };
 

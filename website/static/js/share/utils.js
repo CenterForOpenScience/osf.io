@@ -232,6 +232,25 @@ utils.loadStats = function(vm){
 
 };
 
+utils.loadRawNormalized = function(result){
+
+    return m.request({
+        method: 'GET',
+        // url: 'http://localhost:8000/documents/' + result.shareProperties.docID
+        url: '/api/v1/share/documents' + result.shareProperties.docID  // TODO where will the postgres API live??
+    }).then(function(data) {
+
+        var normed = JSON.parse(data.normalized);
+        normed = JSON.stringify(normed, undefined, 2);
+
+        var all_raw = JSON.parse(data.raw);
+
+        result.raw = all_raw.doc;
+        result.rawfiletype = all_raw.filetype;
+        result.normalized = normed;
+    });
+};
+
 utils.filteredQuery = function(query, filter) {
     ret = {
         'filtered': {}
