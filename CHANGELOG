@@ -2,6 +2,15 @@
 Changelog
 *********
 
+0.43.0 (unreleased)
+===================
+
+- Improved add-on user settings UI.
+- Improved wiki menu/table of contents (based on Treebeard).
+- More style changes for consistency with OSF Style Guidelines.
+- Many UI bug fixes.
+- Dev: Allow markup-safe rendering of mako files by passing ``trust=True`` parameter to OsfWebRenderer.
+
 0.42.6 (2015-07-14)
 ===================
 
