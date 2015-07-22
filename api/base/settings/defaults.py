@@ -61,6 +61,7 @@ REST_FRAMEWORK = {
         'api.base.renderers.JSONAPIRenderer',
         'rest_framework.renderers.BrowsableAPIRenderer',
     ),
+    'DEFAULT_CONTENT_NEGOTIATION_CLASS': 'api.base.content_negotiation.CustomClientContentNegotiation',
     'DEFAULT_VERSIONING_CLASS': 'rest_framework.versioning.AcceptHeaderVersioning',
     'DEFAULT_VERSION': '2.0',
     'DEFAULT_FILTER_BACKENDS': ('api.base.filters.ODMOrderingFilter',),
