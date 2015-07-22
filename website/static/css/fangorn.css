@@ -29,6 +29,9 @@
 .fangorn-selected .text-muted {
     color: #eeeeee;
 }
+.fangorn-selected .text-danger {
+    color: #FFC6C5;
+}
 .fangorn-selected a {
 	color : white;
 }
