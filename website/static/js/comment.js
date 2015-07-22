@@ -372,8 +372,8 @@ var CommentModel = function(data, $parent, $root) {
         return notEmpty(self.content());
     });
 
-    self.toggleIcon = ko.pureComputed(function() {
-        return self.showChildren() ? 'fa fa-minus-square-o' : 'fa fa-plus-square-o';
+    self.toggleIcon = ko.computed(function() {
+            return self.showChildren() ? 'fa fa-minus' : 'fa fa-plus';
     });
     self.editHighlight = ko.pureComputed(function() {
         return self.canEdit() && self.hoverContent() && self.mode !== 'widget';

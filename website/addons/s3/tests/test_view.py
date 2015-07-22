@@ -31,7 +31,7 @@ class TestS3ViewsConfig(OsfTestCase):
 
         self.user = AuthUserFactory()
         self.consolidated_auth = Auth(user=self.user)
-        self.auth = ('test', self.user.api_keys[0]._primary_key)
+        self.auth = self.user.auth
         self.project = ProjectFactory(creator=self.user)
 
         self.project.add_addon('s3', auth=self.consolidated_auth)
@@ -139,6 +139,23 @@ class TestS3ViewsConfig(OsfTestCase):
         self.user_settings.reload()
         assert_equals(self.user_settings.access_key, 'Steven Hawking')
         assert_equals(self.user_settings.secret_key, 'Atticus Fitch killing mocking')
+
+    @mock.patch('website.addons.s3.views.config.utils.can_list', return_value=True)
+    def test_user_settings_when_user_does_not_have_addon(self, _):
+        user = AuthUserFactory()
+        url = self.project.api_url_for('s3_post_user_settings')
+        self.app.post_json(
+            url,
+            {
+                'access_key': 'ABCDEFG',
+                'secret_key': 'We are the champions'
+            },
+            auth=user.auth
+        )
+        user.reload()
+        user_settings = user.get_addon('s3')
+        assert_equals(user_settings.access_key, 'ABCDEFG')
+        assert_equals(user_settings.secret_key, 'We are the champions')
 
     def test_s3_remove_user_settings(self):
         self.user_settings.access_key = 'to-kill-a-mocking-bucket'
@@ -330,7 +347,7 @@ class TestCreateBucket(OsfTestCase):
 
         self.user = AuthUserFactory()
         self.consolidated_auth = Auth(user=self.user)
-        self.auth = ('test', self.user.api_keys[0]._primary_key)
+        self.auth = self.user.auth
         self.project = ProjectFactory(creator=self.user)
 
         self.project.add_addon('s3', auth=self.consolidated_auth)
