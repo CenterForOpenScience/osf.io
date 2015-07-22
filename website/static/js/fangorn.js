@@ -1006,6 +1006,7 @@ function _removeEvent (event, items, col) {
  * @private
  */
 function _fangornResolveLazyLoad(item) {
+    item.connected = true;
     var configOption = resolveconfigOption.call(this, item, 'lazyload', [item]);
     if (configOption) {
         return configOption;
@@ -1024,9 +1025,10 @@ function _fangornResolveLazyLoad(item) {
  * @private
  */
 function _fangornLazyLoadError (item) {
+    item.connected = false;
     var configOption = resolveconfigOption.call(this, item, 'lazyLoadError', [item]);
     if (!configOption) {
-        item.notify.update('Files couldn\'t load. Please try again later.', 'deleting', undefined, 3000);
+        item.notify.update('OSF Storage files couldn\'t load. Please try again later.', 'deleting', undefined, 3000);
     }
 }
 
@@ -1115,9 +1117,16 @@ function _fangornTitleColumn(item, col) {
             }
         }, item.data.name);
     }
-    else if ((item.data.nodeType === 'project') || (item.data.nodeType ==='component')) {
+    if ((item.data.nodeType === 'project') || (item.data.nodeType ==='component')) {
         return m('a.fg-file-links',{ href: '/' + item.data.nodeID.toString() + '/'},
                 item.data.name);
+    }
+    if (item.data.isAddonRoot && !item.connected) {
+        return m('span.text-danger', [
+            m('span', item.data.name),
+            m('span.m-l-xs', ' files can\'t be loaded at this time.' ),
+            m('button.btn.btn-xs.btn-primary.m-l-xs', 'Try Again')
+            ]);
     }
     return m('span', item.data.name);
 }
