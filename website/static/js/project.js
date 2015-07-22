@@ -28,7 +28,7 @@ NodeActions.beforeForkNode = function(url, done) {
             },
             buttons:{
                 confirm:{
-                    label:'fork'
+                    label:'Fork'
                 }
             }
         });

@@ -200,7 +200,7 @@ class AddonDataverseNodeSettings(StorageAddonBase, AddonOAuthNodeSettingsBase):
                 'project': self.owner.parent_id,
                 'node': self.owner._id,
                 'dataset': self.dataset,
-                'filename': metadata['name'],
+                'filename': metadata['materialized'].strip('/'),
                 'urls': {
                     'view': url,
                     'download': url + '?action=download'
