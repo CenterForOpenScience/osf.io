@@ -92,7 +92,7 @@ var GithubConfigHelper = (function() {
 
         $('#githubRemoveToken').on('click', function() {
             bootbox.confirm({
-                title: 'Deauthorize GitHub?',
+                title: 'Disconnect GitHub?',
                 message: 'Are you sure you want to remove this GitHub authorization?',
                 callback: function(confirm) {
                     if(confirm) {
@@ -108,8 +108,8 @@ var GithubConfigHelper = (function() {
                 },
                 buttons:{
                     confirm:{
-                        label:'Deauthorize',
-                        className:'btn-danger'
+                        label: 'Disconnect',
+                        className: 'btn-danger'
                     }
                 }
             });

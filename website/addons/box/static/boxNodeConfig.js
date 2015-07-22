@@ -215,7 +215,7 @@ var ViewModel = function(url, selector, folderPicker) {
     */
     self.deauthorize = function() {
         bootbox.confirm({
-            title: 'Deauthorize Box?',
+            title: 'Disconnect Box?',
             message: 'Are you sure you want to remove this Box authorization?',
             callback: function(confirmed) {
                 if (confirmed) {
@@ -224,7 +224,7 @@ var ViewModel = function(url, selector, folderPicker) {
             },
             buttons:{
                 confirm:{
-                    label:'Deauthorize',
+                    label:'Disconnect',
                     className:'btn-danger'
                 }
             }

@@ -133,7 +133,7 @@ ViewModel.prototype._deauthorizeNodeConfirm = function() {
 ViewModel.prototype.deauthorizeNode = function() {
     var self = this;
     bootbox.confirm({
-        title: 'Deauthorize S3?',
+        title: 'Disconnect S3?',
         message: 'Are you sure you want to remove this S3 authorization?',
         callback: function(confirm) {
             if (confirm) {
@@ -142,7 +142,8 @@ ViewModel.prototype.deauthorizeNode = function() {
         },
         buttons:{
             confirm:{
-                label:'Deauthorize'
+                label: 'Disconnect',
+                className: 'btn-danger'
             }
         }
     });
