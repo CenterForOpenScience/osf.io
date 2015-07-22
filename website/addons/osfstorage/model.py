@@ -21,6 +21,7 @@ from website.addons.osfstorage import errors
 from website.addons.osfstorage import settings
 
 
+
 logger = logging.getLogger(__name__)
 
 
@@ -224,17 +225,17 @@ class OsfStorageFileNode(StoredObject):
         return self.renter
 
     @utils.must_be('file')
-    def rent(self, renter, date, save=True):
+    def rent(self, renter, end_date, save=True):
         self.renter = renter
-        rented_file = self.find_rent_by_name(self.name)
-        if not rented_file:
-            rented_file = OsfStorageRentedFile()
-        else:
+        try:
+            rented_file = self.find_rent_by_name(self.name)
             rented_file.initiation_date = datetime.datetime.utcnow()
+        except:
+            rented_file = OsfStorageRentedFile()
         rented_file._id = self._id
         rented_file.name = self.name
         rented_file.renter = renter
-        rented_file.end_date = date
+        rented_file.end_date = end_date
         rented_file.file_node = self
         rented_file.state = 'active'
         rented_file.save()
@@ -246,6 +247,7 @@ class OsfStorageFileNode(StoredObject):
         self.renter = ''
         rented_file = self.find_rent_by_name(self.name)
         rented_file.state = 'inactive'
+        rented_file.save()
         if save:
             self.save()
 
@@ -576,12 +578,11 @@ class OsfStorageRentedFile(StoredObject):
 
     _id = fields.StringField(primary=True)
     name = fields.StringField(required=True, index=True)
-    initiation_date = fields.DateTimeField(auto_now_add=datetime.datetime.utcnow)
+    initiation_date = fields.DateTimeField(default=datetime.datetime.utcnow)
     renter = fields.ForeignField('user')
     end_date = fields.DateTimeField()
     file_node = fields.ForeignField('OsfStorageFileNode', index=True)
-
-    state = 'inactive'
+    state = fields.StringField(index=True, default='inactive')
 
     @property
     def rent_end_date(self):

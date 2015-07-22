@@ -234,12 +234,13 @@ def osfstorage_download(file_node, payload, node_addon, **kwargs):
 def osfstorage_rent(file_node, **kwargs):
     if file_node.renter == '':
         data = request.get_json()
-        file_node.rent(renter=data['user'], date=data['end_date'])
+        file_node.rent(renter=data['user'], end_date=data['end_date'])
         return {'status': 'success'}
     else:
         return {'status': 'failure'}
 
 @decorators.autoload_filenode(must_be='file')
+@decorators.handle_odm_errors
 def osfstorage_return(file_node, **kwargs):
     if (file_node.renter == request.get_json()['user']):
         file_node.return_rent()
@@ -248,5 +249,6 @@ def osfstorage_return(file_node, **kwargs):
         return {'status': 'failure'}
 
 @decorators.autoload_filenode(must_be='file')
+@decorators.handle_odm_errors
 def osfstorage_rented(file_node, **kwargs):
     return {'renter': file_node.rented}

@@ -91,15 +91,16 @@ var FileViewPage = {
                     'other contributors cannot edit, delete or upload new versions of this file ' +
                     'as long as it is locked. You can unlock it at anytime or extend the lock period.' +
                     'Please select the locking period below:</p></div>' +
-                    '<div class="radio align-center"><input type="radio" name="date" value="day">1 day</div></div>'+
-                    '<div class="radio align-center"><input type="radio" name="date" value="week">1 week</div></div>'+
-                    '<div class="radio align-center"><input type="radio" name="date" value="month">1 month</div></div>',
+                    '<div class="row"><div class="col-md-12""> <div class="control-group">' +
+                    '<div class="radio align-center col-xs-4"><input type="radio" name="date" value="day">1 day</div></div>'+
+                    '<div class="radio align-center col-xs-4"><input type="radio" name="date" value="week">1 week</div></div>'+
+                    '<div class="radio align-center col-xs-4"><input type="radio" name="date" value="month">1 month</div></div></div></div></div>',
                 buttons:{
                     confirm:{
                         label: 'Lock file',
                         className: 'btn-warning',
                         callback: function() {
-                            /*var date = $("input[name='date']:checked").val()
+                            var date = $("input[name='date']:checked").val()
                             if (date === 'day'){
                                 date = new Date().getTime() + (1 * 24 * 60 * 60 * 1000);
                             }
@@ -108,12 +109,54 @@ var FileViewPage = {
                             }
                             else {
                                 date =new Date().getTime()  + (30 * 24 * 60 * 60 * 1000);
-                            }*/
+                            }
                             $osf.postJSON(
                                 '/api/v1/project/' + self.node.id + '/osfstorage' + self.file.path +'/rent/',
                                 {
                                     'user': self.context.userId,
-                                    'end_date': 2
+                                    'end_date': 1
+                                }
+                            ).done(function(resp) {
+                                window.location.reload();
+                            }).fail(function(resp) {
+                                $osf.growl('Error', 'Unable to lock file');
+                            });
+                        }
+                    }
+                }
+            });
+        });
+        $(document).on('fileviewpage:extend', function() {
+            bootbox.dialog({
+                title: 'Extend file lock',
+                message: '<div><p>Are you sure you want to extend the lock on this file? This would mean ' +
+                    'other contributors cannot edit, delete or upload new versions of this file ' +
+                    'as long as it is locked. You can unlock it at anytime or extend the lock period.' +
+                    'Please select the locking period below:</p></div>' +
+                    '<div class="row"><div class="col-md-12""> <div class="control-group">' +
+                    '<div class="radio align-center col-xs-4"><input type="radio" name="date" value="day">1 day</div></div>'+
+                    '<div class="radio align-center col-xs-4"><input type="radio" name="date" value="week">1 week</div></div>'+
+                    '<div class="radio align-center col-xs-4"><input type="radio" name="date" value="month">1 month</div></div></div></div></div>',
+                buttons:{
+                    confirm:{
+                        label: 'Lock file',
+                        className: 'btn-warning',
+                        callback: function() {
+                            var date = $("input[name='date']:checked").val()
+                            if (date === 'day'){
+                                date = new Date().getTime() + (1 * 24 * 60 * 60 * 1000);
+                            }
+                            else if (date == 'week'){
+                                date = new Date().getTime()  + (7 * 24 * 60 * 60 * 1000);
+                            }
+                            else {
+                                date =new Date().getTime()  + (30 * 24 * 60 * 60 * 1000);
+                            }
+                            $osf.postJSON(
+                                '/api/v1/project/' + self.node.id + '/osfstorage' + self.file.path +'/rent/',
+                                {
+                                    'user': self.context.userId,
+                                    'end_date': date
                                 }
                             ).done(function(resp) {
                                 window.location.reload();
@@ -282,10 +325,13 @@ var FileViewPage = {
                 m('.btn.btn-sm.btn-danger.file-delete', {onclick: $(document).trigger.bind($(document), 'fileviewpage:delete')}, 'Delete')
             ]) : '',
             ctrl.canEdit() && (ctrl.file.renter === '') && ctrl.editor ? m('.btn-group.m-l-xs.m-t-xs', [
-                m('.btn.btn-sm.btn-primary', {onclick: $(document).trigger.bind($(document), 'fileviewpage:rent')}, 'Lock')
+                m('.btn.btn-sm.btn-warning', {onclick: $(document).trigger.bind($(document), 'fileviewpage:rent')}, 'Lock')
             ]) : '',
             (ctrl.canEdit() && (ctrl.file.renter === ctrl.context.userId) && ctrl.editor) ? m('.btn-group.m-l-xs.m-t-xs', [
-                m('.btn.btn-sm.btn-primary', {onclick: $(document).trigger.bind($(document), 'fileviewpage:return')}, 'Unlock')
+                m('.btn.btn-sm.btn-warning', {onclick: $(document).trigger.bind($(document), 'fileviewpage:return')}, 'Unlock')
+            ]) : '',
+            (ctrl.canEdit() && (ctrl.file.renter === ctrl.context.userId) && ctrl.editor) ? m('.btn-group.m-l-xs.m-t-xs', [
+                m('.btn.btn-sm.btn-warning', {onclick: $(document).trigger.bind($(document), 'fileviewpage:extend')}, 'Extend Lock')
             ]) : '',
             m('.btn-group.m-t-xs', [
                 m('.btn.btn-sm.btn-primary.file-download', {onclick: $(document).trigger.bind($(document), 'fileviewpage:download')}, 'Download')
