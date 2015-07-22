@@ -15,13 +15,13 @@ class NodeIncludeSerializer(JSONAPISerializer):
     links = LinksField({})
 
     class Meta:
-        _type = 'nodes'
+        type_ = 'nodes'
 
 
 class PointerIncludeSerializer(NodeIncludeSerializer):
 
     class Meta:
-        _type = 'pointers'
+        type_ = 'pointers'
 
 
 class NodeSerializer(JSONAPISerializer):
