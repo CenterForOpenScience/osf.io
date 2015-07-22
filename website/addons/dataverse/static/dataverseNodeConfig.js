@@ -473,6 +473,11 @@ ViewModel.prototype.importAuth = function() {
                         if (accountId) {
                             self.connectExistingAccount.call(self, (accountId));
                         }
+                    },
+                    buttons:{
+                        confirm:{
+                            label: 'Import'
+                        }
                     }
                 });
             } else {
