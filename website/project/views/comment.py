@@ -324,30 +324,21 @@ def list_comments(auth, node, **kwargs):
 
 
 def list_total_comments_widget(node, auth):
-    comments = list(Comment.find(Q('node', 'eq', node)))
-    comments.sort(
-        key=lambda item: item.date_created,
-        reverse=False
-    )
+    comments = list(Comment.find(Q('node', 'eq', node)).sort('date_created'))
     return comments
 
 
 def list_total_comments(node, auth, page):
     if page == 'total':
-        comments = list(Comment.find(Q('node', 'eq', node)))
+        comments = list(Comment.find(Q('node', 'eq', node)).sort('date_created'))
     else:
         comments = list(Comment.find(Q('node', 'eq', node) &
-                                Q('page', 'eq', page)))
+                                Q('page', 'eq', page)).sort('date_created'))
 
     root_comments = []
     for comment in comments:
         if not isinstance(comment.target, Comment):
             root_comments.append(comment)
-    root_comments = sorted(
-        root_comments,
-        key=lambda item: item.date_created,
-        reverse=False,
-    )
     return root_comments
 
 
