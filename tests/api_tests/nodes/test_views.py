@@ -16,8 +16,11 @@ from tests.factories import (
     NodeFactory,
     ProjectFactory,
     RegistrationFactory,
-    UserFactory
+    UserFactory,
+    NodeLogFactory
+
 )
+
 
 class TestWelcomeToApi(ApiTestCase):
     def setUp(self):
@@ -103,7 +106,6 @@ class TestNodeList(ApiTestCase):
 
 
 class TestNodeFiltering(ApiTestCase):
-
     def setUp(self):
         super(TestNodeFiltering, self).setUp()
         self.user_one = UserFactory.build()
@@ -311,7 +313,6 @@ class TestNodeFiltering(ApiTestCase):
 
 
 class TestNodeCreate(ApiTestCase):
-
     def setUp(self):
         super(TestNodeCreate, self).setUp()
         self.user = UserFactory.build()
@@ -449,8 +450,8 @@ class TestNodeDetail(ApiTestCase):
         assert_equal(res.status_code, 200)
         assert_equal(res.json['data']['links']['parent']['self'], urlparse.urljoin(API_DOMAIN, self.public_url))
 
-class TestNodeUpdate(ApiTestCase):
 
+class TestNodeUpdate(ApiTestCase):
     def setUp(self):
         super(TestNodeUpdate, self).setUp()
         self.user = UserFactory.build()
@@ -651,7 +652,6 @@ class TestNodeUpdate(ApiTestCase):
 
 
 class TestNodeDelete(ApiTestCase):
-
     def setUp(self):
         super(TestNodeDelete, self).setUp()
         self.user = UserFactory.build()
@@ -724,7 +724,6 @@ class TestNodeDelete(ApiTestCase):
 
 
 class TestNodeContributorList(ApiTestCase):
-
     def setUp(self):
         super(TestNodeContributorList, self).setUp()
         self.user = UserFactory.build()
@@ -783,7 +782,6 @@ class TestNodeContributorList(ApiTestCase):
 
 
 class TestNodeContributorFiltering(ApiTestCase):
-
     def setUp(self):
         super(TestNodeContributorFiltering, self).setUp()
         self.project = ProjectFactory()
@@ -793,7 +791,6 @@ class TestNodeContributorFiltering(ApiTestCase):
         self.basic_auth = (self.project.creator.username, self.password)
 
     def test_filtering_node_with_only_bibliographic_contributors(self):
-
         base_url = '/{}nodes/{}/contributors/'.format(API_BASE, self.project._id)
         # no filter
         res = self.app.get(base_url, auth=self.basic_auth)
@@ -954,7 +951,6 @@ class TestNodeChildrenList(ApiTestCase):
 
 
 class TestNodePointersList(ApiTestCase):
-
     def setUp(self):
         super(TestNodePointersList, self).setUp()
         self.user = UserFactory.build()
@@ -1111,7 +1107,6 @@ class TestCreateNodePointer(ApiTestCase):
 
 
 class TestNodeFilesList(ApiTestCase):
-
     def setUp(self):
         super(TestNodeFilesList, self).setUp()
         self.user = UserFactory.build()
@@ -1215,7 +1210,6 @@ class TestNodeFilesList(ApiTestCase):
 
 
 class TestNodePointerDetail(ApiTestCase):
-
     def setUp(self):
         super(TestNodePointerDetail, self).setUp()
         self.user = UserFactory.build()
@@ -1270,7 +1264,6 @@ class TestNodePointerDetail(ApiTestCase):
 
 
 class TestDeleteNodePointer(ApiTestCase):
-
     def setUp(self):
         super(TestDeleteNodePointer, self).setUp()
         self.user = UserFactory.build()
@@ -1338,6 +1331,7 @@ class TestNodeLogList(ApiTestCase):
     def setUp(self):
         super(TestNodeLogList, self).setUp()
         self.user = UserFactory.build()
+        self.project = ProjectFactory()
         self.user.set_password('justapoorboy')
         self.user.save()
         self.basic_auth = (self.user.username, 'justapoorboy')
@@ -1352,57 +1346,91 @@ class TestNodeLogList(ApiTestCase):
         self.public_url = '/{}nodes/{}/'.format(API_BASE, self.public_project._id)
         self.private_url = '/{}nodes/{}/'.format(API_BASE, self.private_project._id)
 
-    def test_return_public_project_details_logged_out(self):
-        res = self.app.get(self.public_url)
-        assert_equal(res.status_code, 200)
-        assert_equal(res.json['data']['title'], self.public_project.title)
-        assert_equal(res.json['data']['description'], self.public_project.description)
-        assert_equal(res.json['data']['category'], self.public_project.category)
-
-    def test_return_public_project_details_logged_in(self):
-        res = self.app.get(self.public_url, auth=self.basic_auth)
-        assert_equal(res.status_code, 200)
-        assert_equal(res.json['data']['title'], self.public_project.title)
-        assert_equal(res.json['data']['description'], self.public_project.description)
-        assert_equal(res.json['data']['category'], self.public_project.category)
-
-    def test_return_private_project_details_logged_out(self):
-        res = self.app.get(self.private_url, expect_errors=True)
-        # This is 403 instead of 401 because basic authentication is only for unit tests and, in order to keep from
-        # presenting a basic authentication dialog box in the front end. We may change this as we understand CAS
-        # a little better
-        assert_equal(res.status_code, 403)
-
-    def test_return_private_project_details_logged_in_contributor(self):
-        res = self.app.get(self.private_url, auth=self.basic_auth)
-        assert_equal(res.status_code, 200)
-        assert_equal(res.json['data']['title'], self.private_project.title)
-        assert_equal(res.json['data']['description'], self.private_project.description)
-        assert_equal(res.json['data']['category'], self.private_project.category)
-
-
-class test_Log_date(ApiTestCase):
-    def setUp(self):
-        super(test_Log_date, self).setUp()
-        self.user = UserFactory.build()
-        api_key = ApiKeyFactory()
-        self.user.api_keys.append(api_key)
-        self.user.save()
-        self.combine = Auth(user=self.user)
-        self.auth = ('test', self.user.api_keys[0]._id)
-        self.project = ProjectFactory(is_public=True)
+    def test_get_logs(self):
+        self.project = ProjectFactory()
+        self.user = UserFactory()
+        for _ in range(5):
+            self.project.logs.append( NodeLogFactory(
+                user=self.user, action='file_added',
+                params={'node': self.project._id}
+            )
+            )
         self.project.save()
-        self.project.logs[0].date = dt.datetime.utcnow() - dt.timedelta(days=100)
-        self.project.logs[0].save()
-        self.last_log = self.project.add_log(
-            NodeLog.TAG_ADDED,
-            params={'node': self.project._primary_key},
-            auth=self.combine,
-            log_date=dt.datetime.utcnow(),
-            save=True,
+        url = self.project.api_url_for('get_logs')
+        res = self.app.get(url, auth=self.auth)
+        for log in logss:
+            assert_false(log.called)
+        self.project.reload()
+        data = res.json
+        assert_equal(len(data['logs']), len(self.project.logs))
+        assert_equal(data['total'], len(self.project.logs))
+        assert_equal(data['page'], 0)
+        assert_equal(data['pages'], 1)
+        most_recent = data['logs'][0]
+        assert_equal(most_recent['action'], 'file_added')
+
+    def test_get_logs_invalid_page_input(self):
+        self.project = ProjectFactory()
+        self.user = UserFactory()
+        url = self.project.api_url_for('get_logs')
+        invalid_input = 'invalid page'
+        res = self.app.get(
+            url, {'page': invalid_input}, auth=self.auth, expect_errors=True
         )
-        self.user.logs = []
-        self.user.save()
+        assert_equal(res.status_code, 400)
+        assert_equal(
+            res.json['message_long'],
+            'Invalid value for "page".'
+        )
 
+    def test_get_logs_with_count_param(self):
+        self.project = ProjectFactory()
+        self.user = UserFactory()
+        for _ in range(5):
+            self.project.logs.append(NodeLogFactory(
+                user=self.user, action='file_added',
+                params={'node': self.project._id}
+            )
+            )
+        self.project.save()
+        url = self.project.api_url_for('get_logs')
+        res = self.app.get(url, {'count': 3}, auth=self.auth)
+        assert_equal(len(res.json['logs']), 3)
+        assert_equal(res.json['total'], 5 + 2)
+        assert_equal(res.json['page'], 0)
+        assert_equal(res.json['pages'], 3)
 
+    def test_get_logs_defaults_to_ten(self):
+        self.project = ProjectFactory()
+        self.user = UserFactory()
+        for _ in range(12):
+            self.project.logs.append(NodeLogFactory(
+                user=self.user, action='file_added',
+                params={'node': self.project._id}
+            )
+            )
+        self.project.save()
+        url = self.project.api_url_for('get_logs')
+        res = self.app.get(url, auth=self.auth)
+        assert_equal(len(res.json['logs']), 10)
+        assert_equal(res.json['total'], 12 + 2)
+        assert_equal(res.json['page'], 0)
+        assert_equal(res.json['pages'], 2)
+
+    def test_get_more_logs(self):
+        self.project = ProjectFactory()
+        self.user = UserFactory()
+        for _ in range(12):
+            self.project.logs.append( NodeLogFactory(
+                user=self.user, action="file_added",
+                params={"node": self.project._id}
+            )
+            )
+        self.project.save()
+        url = self.project.api_url_for('get_logs')
+        res = self.app.get(url, {"page": 1}, auth=self.auth)
+        assert_equal(len(res.json['logs']), 4)
+        assert_equal(res.json['total'], 12 + 2)
+        assert_equal(res.json['page'], 1)
+        assert_equal(res.json['pages'], 2)
 
