@@ -88,13 +88,11 @@ def main(dry_run=True):
 
                     # row is a multiple choice question
                     if isinstance(row_type, tuple):
-                        import ipdb; ipdb.set_trace()
                         if question_num in multiple_choice:
                             multiple_choice[question_num].append(unicode(row[1]))
                         else:
                             multiple_choice[question_num] = [unicode(row[1])]
                     else:
-                        import ipdb; ipdb.set_trace()
                         # If the csv and json differ, save it
                         if row[1] != question_data[row_type]:
                             # save to the actual json file, not the variable
@@ -112,6 +110,10 @@ def main(dry_run=True):
 
         if not dry_run:
             with open(os.path.join(schema_directory, 'prereg-prize-test.json'), 'w') as updated_file:
+                json.dump(json_data, updated_file)
+        # For tests
+        else:
+            with open(os.path.join(schema_directory, 'prereg-prize-test.test.json'), 'w') as updated_file:
                 json.dump(json_data, updated_file)
 
 if __name__ == '__main__':
