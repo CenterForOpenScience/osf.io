@@ -37,9 +37,6 @@ Results.controller = function(vm) {
     var self = this;
     self.vm = vm;
     self.vm.resultsLoading = m.prop(false);
-    self.vm.rawNormedLoaded = {onload: function(vm) {
-        return utils.checkRawNormalizedResponse(vm);
-    }};
 
     self.renderResult = function(result, index) {
         return m( '.animated.fadeInUp', [
@@ -112,23 +109,17 @@ Results.controller = function(vm) {
                 m('div', [
                     m('span', 
                         'Released on ' + new $osf.FormattableDate(result.providerUpdatedDateTime).local,
-                        m('span',
-                            function() {
-                                if (vm.rawNormedLoaded) {
-                                    return m('span', [
-                                        m('span', {style: {'margin-right': '5px', 'margin-left': '5px'}}, ' | '),
-                                        m('a', {
-                                            onclick: function() {
-                                                result.showRawNormed = result.showRawNormed ? false : true;
-                                                if (!result.raw) {
-                                                    utils.loadRawNormalized(result);
-                                                }
-                                            }
-                                        }, 'Data')
-                                    ]);
+                        vm.rawNormedLoaded() ?  m('span', [
+                            m('span', {style: {'margin-right': '5px', 'margin-left': '5px'}}, ' | '),
+                            m('a', {
+                                onclick: function() {
+                                    result.showRawNormed = result.showRawNormed ? false : true;
+                                    if (!result.raw) {
+                                        utils.loadRawNormalized(result);
+                                    }
                                 }
-                            }
-                        )
+                            }, 'Data')
+                        ]) : []
                     ),
                     m('span.pull-right', [
                         m('img', {src: self.vm.ProviderMap[result.shareProperties.source].favicon, style: {width: '16px', height: '16px'}}),
