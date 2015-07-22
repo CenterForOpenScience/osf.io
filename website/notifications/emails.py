@@ -67,6 +67,8 @@ def email_digest(recipient_ids, uid, event, user, node, timestamp, **context):
         )
         digest.save()
 
+        tasks.check_and_send_later(user_id, timestamp, context['time_to_send'], 'transactional')
+
 
 EMAIL_FUNCTION_MAP = {
     'email_transactional': email_transactional,
@@ -163,10 +165,7 @@ def send(recipient_ids, notification_type, uid, event, user, node, timestamp, **
         delay = 86400
         n_seconds = timestamp.hour * 3600 + timestamp.minute * 60 + timestamp.second + timestamp.microsecond * 1e-6
         delta = (n_seconds // delay) * delay + delay - n_seconds
-    time_to_send = timestamp + timedelta(seconds=delta)
-    context['time_to_send'] = time_to_send
-
-    tasks.check_and_send_later(user, timestamp, time_to_send, notification_type)
+    context['time_to_send'] = timestamp + timedelta(seconds=delta)
 
     try:
         email_digest(

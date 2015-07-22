@@ -29,14 +29,20 @@ def check_and_send_later(user, time_start, time_to_send, delay_type):
         task_id = user + '_' + delay_type
     else:
         task_id = user._id + '_' + delay_type
-    task = send_user_email.Async_Result(task_id)
-    if task.state == 'PENDING':
+    celery_app.main = 'website.notifications.tasks'
+    task = None
+    try:
+        task = send_user_email.Async_Result(task_id)
+    except:
+        pass
+    if task and task.state == 'PENDING':
         print task.get()
     else:
         send_user_email.apply_async(args=(user, time_start), eta=time_to_send)
+    print "We are here."
 
 
-@celery_app.task(max_retries=3)
+@celery_app.task(name='notify.send_user_email', max_retries=0)
 def send_user_email(user, time_start):
     """
     Finds pending Emails and amalgamates them into a single Email
@@ -53,7 +59,7 @@ def send_user_email(user, time_start):
     grouped_emails = group_by_node(info)
     if grouped_emails:
         mails.send_mail(
-            to_addr=user.user_name,
+            to_addr=user.username,
             mimetype='html',
             mail=mails.DIGEST,
             name=user.fullname,
@@ -72,9 +78,7 @@ def get_user_emails(user, time_start):
     return db['notificationdigest'].group(
         key={'user_id': 1},
         condition={
-            'user_id': {
-                '$eq': user
-            },
+            'user_id': user,
             'timestamp': {
                 '$lt': time_current
             },
