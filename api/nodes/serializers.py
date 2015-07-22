@@ -62,11 +62,11 @@ class NodeSerializer(JSONAPISerializer):
     })
 
     children = NodeIncludeSerializer(many=True, read_only=True,
-                                     help_text= 'optional query parameters can be used to view node children, '
-                                                'pointers, registrations and contributors.  This can be done by adding'
-                                                'an "include" parameter to the url followed by a comma separated string'
-                                                'of desired queries.  '
-                                                'Ex: include=children,pointers,registrations,contributors')
+                                     help_text='optional query parameters can be used to view node children, '
+                                            'pointers, registrations and contributors.  This can be done by adding'
+                                            'an "include" parameter to the url followed by a comma separated string'
+                                            'of desired queries.  '
+                                            'Ex: include=children,pointers,registrations,contributors')
     pointers = NodeIncludeSerializer(many=True, read_only=True, help_text='See description in children')
     registrations = NodeIncludeSerializer(many=True, read_only=True, source='registered_nodes',
                                           help_text='See description in children')
