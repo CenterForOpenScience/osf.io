@@ -149,8 +149,8 @@ utils.buildURLParams = function(vm){
 };
 
 utils.buildQuery = function(vm) {
-    var must = $.map(vm.requiredFilters, utils.parseToMatchFilter);
-    var should = $.map(vm.optionalFilters, utils.parseToMatchFilter);
+    var must = $.map(vm.requiredFilters, utils.parseFilter);
+    var should = $.map(vm.optionalFilters, utils.parseFilter);
     var sort = {};
 
     if (vm.sortMap[vm.sort()]) {
@@ -287,7 +287,7 @@ utils.matchQuery = function(field, value) {
     return ret;
 };
 
-utils.fieldRange = function(field_name, gte, lte) {
+utils.rangeFilter = function(field_name, gte, lte) {
     ret = {'range': {}};
     ret.range[field_name] = {'gte': gte, 'lte': lte};
     return ret;
@@ -335,11 +335,23 @@ utils.queryFilter = function(query) {
     };
 };
 
-utils.parseToMatchFilter = function(term) {
-    items = term.split(':');
-    return utils.queryFilter(
-        utils.matchQuery(items[0], items[1])
-    );
+utils.parseFilter = function(filterString) {
+    // parses a filter of the form
+    // filterName:fieldName:param1:param2...
+    // range:providerUpdatedDateTime:2015-06-05:2015-06-16
+    var parts = filterString.split(':');
+    var type = parts[0];
+    var field = parts[1];
+    if (type === 'range') {
+        return utils.rangeFilter(field, parts[2], parts[3]);
+    }
+    else if (type === 'match') {
+        return utils.queryFilter(
+            utils.matchQuery(field, parts[2])
+        );
+    }
+    // Any time you add a filter, put it here
+    // TODO: Maybe this would be better as a map?
 };
 
 module.exports = utils;
