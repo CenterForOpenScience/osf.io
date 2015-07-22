@@ -139,7 +139,7 @@ ko.bindingHandlers.projectSearch = {
             var nodes = params.data;
             // Compute relevant URLs for each search result, filters results that would result in a 'forbidden' error.
             nodes = nodes.filter(function(node) {
-               return viewModel.permissionsAllowed.indexOf(node['permissions']) > -1;
+               return viewModel.permissionsAllowed.indexOf(node.permissions) > -1;
             });
 
             initTypeahead(element, nodes, viewModel, params);
