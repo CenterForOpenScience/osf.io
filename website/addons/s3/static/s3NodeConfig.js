@@ -118,7 +118,7 @@ ViewModel.prototype._deauthorizeNodeConfirm = function() {
         self.updateFromData(response);
         self.changeMessage('Disconnected S3.', 'text-warning', 3000);
     }).fail(function(xhr, status, error) {
-        var message = 'Could not deauthorize S3 at ' +
+        var message = 'Could not disconnect S3 at ' +
             'this time. Please refresh the page. If the problem persists, email ' +
             '<a href="mailto:support@osf.io">support@osf.io</a>.';
         self.changeMessage(message, 'text-warning');
@@ -133,8 +133,8 @@ ViewModel.prototype._deauthorizeNodeConfirm = function() {
 ViewModel.prototype.deauthorizeNode = function() {
     var self = this;
     bootbox.confirm({
-        title: 'Deauthorize S3?',
-        message: 'Are you sure you want to remove this S3 authorization?',
+        title: 'Disconnect S3 Account?',
+        message: 'Are you sure you want to remove this S3 account?',
         callback: function(confirm) {
             if (confirm) {
                 self._deauthorizeNodeConfirm();
@@ -142,7 +142,7 @@ ViewModel.prototype.deauthorizeNode = function() {
         },
         buttons:{
             confirm:{
-                label:'Deauthorize'
+                label:'Disconnect'
             }
         }
     });
