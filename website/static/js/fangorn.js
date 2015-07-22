@@ -1118,10 +1118,10 @@ function _fangornTitleColumn(item, col) {
         return m('a.fg-file-links',{ href: '/' + item.data.nodeID.toString() + '/'},
                 item.data.name);
     }
-    if (item.data.isAddonRoot && item.connected === false) { // as opposed to undefined.
+    if (item.data.isAddonRoot && item.connected === false) { // as opposed to undefined, avoids unnecessary setting of this value
         return m('span.text-danger', [
             m('span', item.data.name),
-            m('span.m-l-xs', ' can\'t be loaded at this time.' ),
+            m('em', ' can\'t be loaded at this time.' ),
             m('button.btn.btn-xs.btn-default.m-l-xs', {
                 onclick : function(e){
                     e.stopImmediatePropagation();
@@ -1130,7 +1130,7 @@ function _fangornTitleColumn(item, col) {
                         tb.toggleFolder(index, e);
                     }
                 }
-            },'Try Again')
+            }, [m('i.fa.fa-refresh'), ' Retry'])
         ]);
     }
     return m('span', item.data.name);
