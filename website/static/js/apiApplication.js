@@ -7,6 +7,8 @@
 
 var $ = require('jquery');
 var bootbox = require('bootbox');
+var historyjs = require('exports?History!history');
+
 var ko = require('knockout');
 require('knockout.validation');
 require('knockout.punches');
@@ -247,7 +249,7 @@ var ApplicationDetailViewModel = oop.defclass({
                             'danger');
 
                 Raven.captureMessage('Error fetching application data', {
-                    url: this.apiDetailUrl,
+                    url: this.apiDetailUrl(),
                     status: status,
                     error: error
                 });
@@ -290,7 +292,9 @@ var ApplicationDetailViewModel = oop.defclass({
         var request = this.client.createOne(this.appData());
         request.done(function (data) {
             this.appData(data);
-            window.location = data.webDetailUrl; // Update address bar to show new detail page
+            this.changeMessage('Successfully registered new application', 'text-success', 5000);
+            this.apiDetailUrl(data.apiDetailUrl); // Toggle ViewModel --> act like a display view now.
+            historyjs.replaceState({}, '', data.webDetailUrl);  // Update address bar to show new detail page
         }.bind(this));
 
         request.fail(function (xhr, status, error) {
