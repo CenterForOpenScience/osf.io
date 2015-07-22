@@ -64,8 +64,8 @@ def main(dry_run=True):
             cr = csv.reader(csv_file)
             cr.next()
             previous_question = ''
-            current_page = ['', 0, 0]
-            current_page_data = json_data['pages'][int(current_page[1])]
+            current_page = ''
+            # current_page_data = json_data['pages'][int(current_page[1])]
 
             # row: ['01_QUESTION', 'What is your plan?']
             for row in cr:
@@ -77,12 +77,12 @@ def main(dry_run=True):
                 if question_num != previous_question:
                     previous_question = question_num
                     current_page = get_page(question_num)
-                    current_page_data = json_data['pages'][int(current_page[1])]
-                    row_type = get_label(question_part)
 
-                if current_page_data['id'] == current_page[0]:
+                row_type = get_label(question_part)
+
+                if json_data['pages'][int(current_page[1])]['id'] == current_page[0]:
                     # dict of each question in a page
-                    questions = current_page_data['questions']
+                    questions = json_data['pages'][int(current_page[1])]['questions']
                     question_data = questions.itervalues().next()
                     key = questions.keys()[int(current_page[2])]
 
@@ -98,23 +98,22 @@ def main(dry_run=True):
                             # save to the actual json file, not the variable
                             json_data['pages'][int(current_page[1])]['questions'][key][row_type] = unicode(row[1])
 
-                cr.next()
+                # cr.next()
 
-        for list in multiple_choice:
-            current_page = get_page(list)
-            questions = current_page_data['questions']
-            key = questions.keys()[int(current_page[2])]
+            for list in multiple_choice:
+                current_page = get_page(list)
+                questions = json_data['pages'][int(current_page[1])]['questions']
+                key = questions.keys()[int(current_page[2])]
 
-            if current_page[1] != 1:
-                json_data['pages'][int(current_page[1])]['questions'][key]['options'] = multiple_choice[list]
+                if current_page[1] != 1:
+                    json_data['pages'][int(current_page[1])]['questions'][key]['options'] = multiple_choice[list]
 
-        if not dry_run:
-            with open(os.path.join(schema_directory, 'prereg-prize-test.json'), 'w') as updated_file:
-                json.dump(json_data, updated_file)
-        # For tests
-        else:
-            with open(os.path.join(schema_directory, 'prereg-prize-test.test.json'), 'w') as updated_file:
-                json.dump(json_data, updated_file)
+            if not dry_run:
+                with open(os.path.join(schema_directory, 'prereg-prize-test.json'), 'w') as updated_file:
+                    json.dump(json_data, updated_file)
+            else: # For tests
+                with open(os.path.join(schema_directory, 'prereg-prize-test.test.json'), 'w') as updated_file:
+                    json.dump(json_data, updated_file)
 
 if __name__ == '__main__':
     dry_run ='dry' in sys.argv
