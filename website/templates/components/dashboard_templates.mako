@@ -169,6 +169,7 @@
             <input class="form-control"
                 type="text" name="title"
                 maxlength="200"
+                placeholder="Required"
                 data-bind="value: title, valueUpdate:'input', hasFocus: focus"
                 >
 
@@ -184,9 +185,12 @@
 ##            </select>
 ##            <br />
 
-            <label>Description (Optional)</label>
-            <textarea data-bind="value: description"class="form-control resize-vertical" name="description"
-                ></textarea>
+            <label>Description</label>
+            <textarea data-bind="value: description"
+                class="form-control resize-vertical"
+                name="description"
+                placeholder="Optional"
+               ></textarea>
             <br />
             <label>Template (Optional)</label>
             <span class="help-block">Start typing to search. Selecting project as template will duplicate its structure in the new project without importing the content of that project.</span>

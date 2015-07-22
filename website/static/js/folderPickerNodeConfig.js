@@ -82,7 +82,7 @@ var FolderPickerViewModel = oop.defclass({
             invalidCredOwner: ko.pureComputed(function() {
                 return 'Could not retrieve ' + self.addonName + ' settings at ' +
                     'this time. The credentials associated with this ' + self.addonName + ' account may no longer be valid.' +
-                    ' Try disconnecting and reconnecting the ' + self.addonName + 'account on your <a href="' +
+                    ' Try disconnecting and reconnecting the ' + self.addonName + ' account on your <a href="' +
                     self.urls().settings + 'addons/">account settings page</a>.';
             }),
             invalidCredNotOwner: ko.pureComputed(function() {
@@ -102,7 +102,7 @@ var FolderPickerViewModel = oop.defclass({
                     '<a href="mailto:support@osf.io">support@osf.io</a>.';
             }),
             deauthorizeSuccess: ko.pureComputed(function() {
-                return 'Disconnect ' + self.addonName + '.';
+                return 'Disconnected ' + self.addonName + '.';
             }),
             deauthorizeFail: ko.pureComputed(function() {
                 return 'Could not disconnect ' + self.addonName + ' account because of an error. Please try again later.';
@@ -353,6 +353,11 @@ var FolderPickerViewModel = oop.defclass({
                     self._importAuthConfirm();
                     self.loadingImport(true);
                 }
+            },
+            buttons:{
+                confirm:{
+                    label:'Import'
+                }
             }
         });
     },
@@ -396,6 +401,12 @@ var FolderPickerViewModel = oop.defclass({
                 if (confirmed) {
                     self._deauthorizeConfirm();
                     self.loadingImport(false);
+                }
+            },
+            buttons:{
+                confirm:{
+                    label:'Disconnect',
+                    className:'btn-danger'
                 }
             }
         });

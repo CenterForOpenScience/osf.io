@@ -2,6 +2,21 @@
 Changelog
 *********
 
+0.43.0 (unreleased)
+===================
+
+- Improved add-on user settings UI.
+- Improved wiki menu/table of contents (based on Treebeard).
+- More style changes for consistency with OSF Style Guidelines.
+- Many UI bug fixes.
+- Dev: Allow markup-safe rendering of mako files by passing ``trust=True`` parameter to OsfWebRenderer.
+
+0.42.6 (2015-07-14)
+===================
+
+- Enable parallel uploads for OSF Storage, figshare, Box.com, Dropbox, S3, and Google Drive.
+- Improve performance when uploading large files.
+
 0.42.0 (2015-07-13)
 ===================
 

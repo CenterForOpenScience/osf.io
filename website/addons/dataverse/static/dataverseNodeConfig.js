@@ -82,7 +82,7 @@ function ViewModel(url) {
             return 'Are you sure you want to authorize this project with your ' + self.addonName + ' access token?';
         }),
         deauthorizeSuccess: ko.pureComputed(function() {
-            return 'Deauthorized ' + self.addonName + '.';
+            return 'Disconnected ' + self.addonName + '.';
         }),
         deauthorizeFail: ko.pureComputed(function() {
             return 'Could not deauthorize because of an error. Please try again later.';
@@ -473,6 +473,11 @@ ViewModel.prototype.importAuth = function() {
                         if (accountId) {
                             self.connectExistingAccount.call(self, (accountId));
                         }
+                    },
+                    buttons:{
+                        confirm:{
+                            label: 'Import'
+                        }
                     }
                 });
             } else {
@@ -482,6 +487,11 @@ ViewModel.prototype.importAuth = function() {
                     callback: function(confirmed) {
                         if (confirmed) {
                             self.connectExistingAccount.call(self, (self.accounts()[0].id));
+                        }
+                    },
+                    buttons:{
+                        confirm:{
+                            label:'Import'
                         }
                     }
                 });
@@ -521,11 +531,17 @@ ViewModel.prototype._deauthorizeConfirm = function() {
 ViewModel.prototype.deauthorize = function() {
     var self = this;
     bootbox.confirm({
-        title: 'Deauthorize ' + self.addonName + '?',
+        title: 'Disconnect ' + self.addonName + '?',
         message: self.messages.confirmDeauth(),
         callback: function(confirmed) {
             if (confirmed) {
                 self._deauthorizeConfirm();
+            }
+        },
+        buttons:{
+            confirm:{
+                label: 'Disconnect',
+                className: 'btn-danger'
             }
         }
     });

@@ -48,11 +48,11 @@
             <!-- Show/Hide recent activity log -->
             % if not summary['archiving']:
             <div class="pull-right">
-                % if not summary['primary'] and 'admin' in user['permissions']:
+                % if not summary['primary'] and 'admin' in user['permissions'] and not node['is_registration']:
                     <i class="fa fa-times remove-pointer" data-id="${summary['id']}" data-toggle="tooltip" title="Remove link"></i>
                     <i class="fa fa-code-fork" onclick="NodeActions.forkPointer('${summary['id']}', '${summary['primary_id']}');" data-toggle="tooltip" title="Fork this ${summary['node_type']} into ${node['node_type']} ${node['title']}"></i>
                 % endif
-                <i id="icon-${summary['id']}" class="pointer fa fa-plus" onclick="NodeActions.openCloseNode('${summary['id']}');" data-toggle="tooltip" title="More"></i>
+                <i id="icon-${summary['id']}" class="pointer fa fa-angle-down" onclick="NodeActions.openCloseNode('${summary['id']}');" style="font-weight:bold;"></i>
             </div>
             % endif
         </h4>
@@ -119,8 +119,8 @@
 % else:
     <li
         node_reference="${summary['id']}:${'node' if summary['primary'] else 'pointer'}"
-        class="project list-group-item list-group-item-node unavailable">
-        <h4 class="list-group-item-heading f-w-lg">
+        class="project list-group-item list-group-item-node">
+        <p class="list-group-item-heading f-w-lg">
             %if summary['is_registration']:
                 Private Registration
             %elif summary['is_fork']:
@@ -130,7 +130,7 @@
             %else:
                 Private Component
             %endif
-        </h4>
+        </p>
     </li>
 
 % endif
