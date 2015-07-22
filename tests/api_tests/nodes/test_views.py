@@ -1235,38 +1235,6 @@ class TestEditNodeContributor(ApiTestCase):
         self.project.reload()
         assert_false(self.project.get_visible(self.user))
 
-    def test_create_one_admin_one_different_bibliographic_user(self):
-        data_one = {
-            'bibliographic': False,
-            'permission':'admin'
-        }
-        self.project.add_permission(self.user, 'admin', save=True)
-
-        self.project.reload()
-        res = self.app.put(self.url_contributor, data_one, auth=self.user_auth, expect_errors=False)
-        assert_equal(res.status_code, 200)
-
-        self.project.reload()
-        assert_false(self.project.get_visible(self.user))
-        data_two = {
-            'bibliographic': True,
-            'permission':'write'
-        }
-        res = self.app.put(self.url_admin, data_two, auth=self.user_auth, expect_errors=False)
-        assert_equal(res.status_code, 200)
-
-        self.project.reload()
-        assert_equal(self.project.get_permissions(self.admin), ['read', 'write'])
-        res = self.app.put(self.url_admin, data_one, auth=self.user_auth, expect_errors=True)
-        print res
-        assert_equal(res.status_code, 400)
-
-        self.project.reload()
-        assert_true(self.project.get_visible(self.admin))
-        res = self.app.put(self.url_contributor, data_two, auth=self.user_auth, expect_errors=True)
-        assert_equal(res.status_code, 400)
-        assert_equal(self.project.get_permissions(self.user), ['read', 'write', 'admin'])
-
     def test_not_logged_in_change_contributor_status(self):
         data = {
             'bibliographic': True,
