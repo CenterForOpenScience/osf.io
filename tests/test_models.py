@@ -17,7 +17,7 @@ from modularodm.exceptions import ValidationError, ValidationValueError, Validat
 
 
 from framework.analytics import get_total_activity_count
-from framework.exceptions import PermissionsError
+from framework.exceptions import PermissionsError, ProfileValidationError
 from framework.auth import User, Auth
 from framework.sessions.model import Session
 from framework.auth import exceptions as auth_exc
@@ -97,18 +97,127 @@ class TestUserValidation(OsfTestCase):
         assert_equal(self.user.social_links['personal'], 'http://cos.io/')
         assert_equal(len(self.user.social_links), 1)
 
-    def test_various_social_handles(self):
-        self.user.social = {
-            'personal': 'http://cos.io/',
-            'twitter': 'OSFramework',
-            'github': 'CenterForOpenScience'
-        }
+    def test_invalid_personal_site(self):
+        self.user.social = {'personal': 'not a real url'}
+        with assert_raises(ProfileValidationError):
+            self.user.save()
+
+    def test_valid_personal_site(self):
+        self.user.social = {'personal': 'http://cos.io/'}
         self.user.save()
-        assert_equal(self.user.social_links, {
-            'personal': 'http://cos.io/',
-            'twitter': 'http://twitter.com/OSFramework',
-            'github': 'http://github.com/CenterForOpenScience'
-        })
+        assert_equal(
+            self.user.social_links,
+            {'personal': 'http://cos.io/'}
+        )
+
+    def test_invalid_twitter_handle(self):
+        self.user.social = {'twitter': '1234 not valid @ twitter handle'}
+        with assert_raises(ProfileValidationError):
+            self.user.save()
+
+    def test_valid_twitter_handle(self):
+        self.user.social = {'twitter': 'SomeRandomPerson'}
+        self.user.save()
+        assert_equal(
+            self.user.social_links,
+            {'twitter': 'http://twitter.com/SomeRandomPerson'}
+        )
+
+    def test_invalid_github_username(self):
+        self.user.social = {'github': '1234 not a valid GH handle!!#@'}
+        with assert_raises(ProfileValidationError):
+            self.user.save()
+
+    def test_valid_github_username(self):
+        self.user.social = {'github': 'SomeRandomPerson'}
+        self.user.save()
+        assert_equal(
+            self.user.social_links,
+            {'github': 'http://github.com/SomeRandomPerson'}
+        )
+
+    def test_invalid_orcid(self):
+        invalid_values = [
+            '1234-5678-9012-3456-7890',
+            '1234-5678-9012',
+            '1234567890123456',
+            '1234-5678-9012-345a'
+        ]
+        for value in invalid_values:
+            self.user.social = {'orcid': value}
+            with assert_raises(ProfileValidationError):
+                self.user.save()
+
+    def test_valid_orcid(self):
+        self.user.social = {'orcid': '1234-5678-9012-3456'}
+        self.user.save()
+        assert_equal(
+            self.user.social_links,
+            {'orcid': 'http://orcid.com/1234-5678-9012-3456'}
+        )
+
+    def test_invalid_scholar(self):
+        self.user.social = {'scholar': 'not a valid scholar id ##@'}
+        with assert_raises(ProfileValidationError):
+            self.user.save()
+
+    def test_valid_scholar(self):
+        self.user.social = {'scholar': 'SomeRandomPerson'}
+        self.user.save()
+        assert_equal(
+            self.user.social_links,
+            {'scholar': 'http://scholar.google.com/citation?user=SomeRandomPerson'}
+        )
+
+    def test_invalid_linkedin(self):
+        invalid_values = [
+            'not a correct endpoint',
+            'wrong/pew2',
+            'in/what about spaces?',
+            'profile/not$a!!%valid$%url !'
+            'pub/pew/pew.pew/!? wrong'
+        ]
+        for value in invalid_values:
+            self.user.social = {'linkedIn': value}
+            with assert_raises(ProfileValidationError):
+                self.user.save()
+
+    def test_valid_linkedin(self):
+        valid_values = [
+            'in/SomeRandomPerson',
+            'profile/12341234abcv',
+            'pub/some-person/123abc'
+        ]
+        for value in valid_values:
+            self.user.social = {'linkedIn': value}
+            self.user.save()
+            # TODO(hrybacki): test `User.social_links` after  issue #3401 is resolved
+
+    def test_invalid_impactstory(self):
+        self.user.social = {'impactStory': 'not a valid@ impactStory ID'}
+        with assert_raises(ProfileValidationError):
+            self.user.save()
+
+    def test_valid_impactstory(self):
+        self.user.social = {'impactStory': 'SomeRandomResearcher'}
+        self.user.save()
+        assert_equal(
+            self.user.social_links,
+            {'impactStory': 'https://impactstory.org/SomeRandomResearcher'}
+        )
+
+    def test_invalid_researcherid(self):
+        self.user.social = {'researcherId': 'not a researcher id'}
+        with assert_raises(ProfileValidationError):
+            self.user.save()
+
+    def test_valid_researcherid(self):
+        self.user.social = {'researcherId': 'A-2345-6789'}
+        self.user.save()
+        assert_equal(
+            self.user.social_links,
+            {'researcherId': 'http://researcherid.com/rid/A-2345-6789'}
+        )
 
     def test_nonsocial_ignored(self):
         self.user.social = {
