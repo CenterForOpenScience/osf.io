@@ -37,6 +37,9 @@ Results.controller = function(vm) {
     var self = this;
     self.vm = vm;
     self.vm.resultsLoading = m.prop(false);
+    self.vm.rawNormedLoaded = {onload: function(vm) {
+        return utils.checkRawNormalizedResponse(vm);
+    }};
 
     self.renderResult = function(result, index) {
         return m( '.animated.fadeInUp', [
@@ -109,22 +112,30 @@ Results.controller = function(vm) {
                 m('div', [
                     m('span', 
                         'Released on ' + new $osf.FormattableDate(result.providerUpdatedDateTime).local,
-                        m('span', {style: {'margin-right': '5px', 'margin-left': '5px'}}, ' | '),
-                        m('a', {
-                            onclick: function() {
-                                result.showRawNormed = result.showRawNormed ? false : true;
-                                if (!result.raw) {
-                                    utils.loadRawNormalized(result);
+                        m('span',
+                            function() {
+                                if (vm.rawNormedLoaded) {
+                                    return m('span', [
+                                        m('span', {style: {'margin-right': '5px', 'margin-left': '5px'}}, ' | '),
+                                        m('a', {
+                                            onclick: function() {
+                                                result.showRawNormed = result.showRawNormed ? false : true;
+                                                if (!result.raw) {
+                                                    utils.loadRawNormalized(result);
+                                                }
+                                            }
+                                        }, 'Data')
+                                    ]);
                                 }
                             }
-                        },'Data')
+                        )
                     ),
                     m('span.pull-right', [
                         m('img', {src: self.vm.ProviderMap[result.shareProperties.source].favicon, style: {width: '16px', height: '16px'}}),
                         ' ',
                         m('a', {onclick: function() {utils.updateFilter(self.vm, 'shareProperties.source:' + result.shareProperties.source);}}, self.vm.ProviderMap[result.shareProperties.source].long_name),
                         m('br')
-                    ]),
+                    ])
                 ]),
                 m('.row', [
                     m('.col-md-12',
