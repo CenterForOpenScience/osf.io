@@ -639,7 +639,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
     # {<User._id>:
     #   {'last_sent': time.time()}
     # }
-    contributor_record = fields.DictionaryField(default={})
+    contributor_record = fields.DictionaryField(default=dict)
     users_watching_node = fields.ForeignField('user', list=True, backref='watched')
 
     logs = fields.ForeignField('nodelog', list=True, backref='logged')
