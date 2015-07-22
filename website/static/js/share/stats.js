@@ -8,8 +8,8 @@ var utils = require('./utils');
 
 var Stats = {};
 
-function donutGraph (data, vm) {
-    data.charts.shareDonutGraph.onclick = function (d, element) {
+function donutGraph(data, vm) {
+    data.charts.shareDonutGraph.onclick = function (d) {
         utils.updateFilter(vm, 'match:shareProperties.source:' + d.name, true);
     };
     return c3.generate({
@@ -22,7 +22,7 @@ function donutGraph (data, vm) {
             title: data.charts.shareDonutGraph.title,
             label: {
                 format: function (value, ratio, id) {
-                    return Math.round(ratio*100) + '%';
+                    return Math.round(ratio * 100) + '%';
                 }
             }
         },
@@ -42,7 +42,7 @@ function donutGraph (data, vm) {
     });
 }
 
-function timeGraph (data,vm) {
+function timeGraph(data, vm) {
     return c3.generate({
         bindto: '#shareTimeGraph',
         size: {
@@ -69,7 +69,7 @@ function timeGraph (data,vm) {
             x: {
                 type: 'timeseries',
                 tick: {
-                    format: function(d) {return Stats.timeSinceEpochInMsToMMYY(d)}
+                    format: function (d) {return Stats.timeSinceEpochInMsToMMYY(d); }
                 }
             },
             y: {
@@ -79,7 +79,7 @@ function timeGraph (data,vm) {
                 },
                 tick: {
                     count: 8,
-                    format: function (d) {return parseInt(d).toFixed(0);}
+                    format: function (d) {return parseInt(d).toFixed(0); }
                 }
             }
         },
@@ -89,43 +89,41 @@ function timeGraph (data,vm) {
         tooltip: {
             grouped: false,
             format: {
-              name: function (name, ratio, id, index) {
-                  if (name === 'pubmed') {
-                      name = 'pubmed central';
-                  }
-                  return name;
-              }
+                name: function (name, ratio, id, index) {
+                    if (name === 'pubmed') {
+                        name = 'pubmed central';
+                    }
+                    return name;
+                }
             }
         }
     });
 }
 
-Stats.sourcesAgg = function(){
-    var sourcesQuery = {'match_all':{}};
-    var sourcesAgg = {'sources': utils.termsFilter('field','_type')};
-    return {'query' : sourcesQuery, 'aggregations': sourcesAgg ,'filters' : {}}
+Stats.sourcesAgg = function () {
+    var sourcesQuery = {'match_all': {} };
+    var sourcesAgg = {'sources': utils.termsFilter('field', '_type')};
+    return {'query' : sourcesQuery, 'aggregations': sourcesAgg, 'filters' : {}};
 };
 
-Stats.sourcesByDatesAgg = function(){
+Stats.sourcesByDatesAgg = function () {
     var dateTemp = new Date(); //get current time
     dateTemp.setMonth(dateTemp.getMonth() - 3);
     var threeMonthsAgo = dateTemp.getTime();
-    var dateHistogramQuery = {'match_all':{}};
-    var dateHistogramAgg = {'sourcesByTimes': utils.termsFilter('field','_type')};
-    dateHistogramAgg.sourcesByTimes['aggregations'] = {'articlesOverTime' :
-        utils.dateHistogramFilter('providerUpdatedDateTime',threeMonthsAgo)};
-    return {'query' : dateHistogramQuery, 'aggregations': dateHistogramAgg ,'filters' : {}}
+    var dateHistogramQuery = {'match_all': {} };
+    var dateHistogramAgg = {'sourcesByTimes': utils.termsFilter('field', '_type')};
+    dateHistogramAgg.sourcesByTimes.aggregations = {'articlesOverTime' :
+        utils.dateHistogramFilter('providerUpdatedDateTime', threeMonthsAgo)};
+    return {'query' : dateHistogramQuery, 'aggregations': dateHistogramAgg, 'filters' : {} };
 };
 
-Stats.timeSinceEpochInMsToMMYY = function(timeSinceEpochInMs)
-{
+Stats.timeSinceEpochInMsToMMYY = function (timeSinceEpochInMs) {
     var d = new Date(0);
-    d.setUTCSeconds(timeSinceEpochInMs/1000);
+    d.setUTCSeconds(timeSinceEpochInMs / 1000);
     return d.getMonth().toString() + '/' + d.getFullYear().toString().substring(2);
 };
 
-Stats.shareDonutGraphParser = function(data)
-{
+Stats.shareDonutGraphParser = function (data) {
     var chartData = {};
     chartData.name = 'shareDonutGraph';
     chartData.columns = [];
@@ -145,11 +143,10 @@ Stats.shareDonutGraphParser = function(data)
     );
     chartData.title = providerCount.toString() + ' Provider' + (providerCount !== 1 ? 's' : '');
     $('.c3-chart-arcs-title').text(chartData.title); //dynamically update chart title
-    return chartData
+    return chartData;
 };
 
-Stats.shareTimeGraphParser = function(data)
-{
+Stats.shareTimeGraphParser = function (data) {
     var chartData = {};
     chartData.name = 'shareTimeGraph';
     chartData.columns = [];
@@ -169,7 +166,7 @@ Stats.shareTimeGraphParser = function(data)
             grouping.push(source.key);
             source.articlesOverTime.buckets.forEach(function(date){
                 column.push(date.doc_count);
-                if(i===0){
+                if (i === 0) {
                     datesCol.push(date.key);
                 }
             });
@@ -184,7 +181,7 @@ Stats.shareTimeGraphParser = function(data)
 };
 
 
-Stats.view = function(ctrl) {
+Stats.view = function (ctrl) {
     return [
         m('.row.search-helper', {style: {color: 'darkgrey'}},
             m('.col-xs-12.col-lg-8.col-lg-offset-2', [
@@ -205,7 +202,7 @@ Stats.view = function(ctrl) {
         ] : []),
         m('.row', [
             m('col-md-12', m('a.stats-expand', {
-                onclick: function() {ctrl.vm.showStats = !ctrl.vm.showStats;}
+                onclick: function () {ctrl.vm.showStats = !ctrl.vm.showStats;}
             },
                 ctrl.vm.showStats ? m('i.fa.fa-angle-up') : m('i.fa.fa-angle-down')
             ))
@@ -213,7 +210,7 @@ Stats.view = function(ctrl) {
     ];
 };
 
-Stats.controller = function(vm) {
+Stats.controller = function (vm) {
     var self = this;
 
     self.vm = vm;
@@ -236,8 +233,8 @@ Stats.controller = function(vm) {
     self.vm.latestDate = undefined;
     self.vm.statsLoaded = m.prop(false);
 
-    self.drawGraph = function(divId, graphFunction) {
-        return m('div', {id: divId, config: function(e, i) {
+    self.drawGraph = function (divId, graphFunction) {
+        return m('div', {id: divId, config: function (e, i) {
             if (i) {
                 return;
             }
@@ -248,8 +245,8 @@ Stats.controller = function(vm) {
     m.request({
         method: 'GET',
         background: true,
-        url: '/api/v1/share/search/?size=1&sort=providerUpdatedDateTime',
-    }).then(function(data) {
+        url: '/api/v1/share/search/?size=1&sort=providerUpdatedDateTime'
+    }).then(function (data) {
         self.vm.totalCount = data.count;
         self.vm.latestDate = new $osf.FormattableDate(data.results[0].providerUpdatedDateTime).local;
     }).then(m.redraw);
