@@ -256,7 +256,7 @@ utils.loadRawNormalized = function(result){
 
     }, function(error) {
         result.rawfiletype = "json";
-        result.normalized = '"normalized data not found."';
+        result.normalized = '"Normalized data not found."';
         result.raw = '"Raw data not found."';
     });
 };
