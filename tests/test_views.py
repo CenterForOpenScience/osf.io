@@ -1648,6 +1648,38 @@ class TestAddingContributorViews(OsfTestCase):
         # finalize_invitation should only have been called once
         assert_equal(mock_send_claim_email.call_count, 1)
 
+    @mock.patch('website.mails.send_mail')
+    def test_add_contributors_post_only_sends_one_email_to_registered_user(self, mock_send_mail):
+        # Project has components
+        comp1, comp2 = NodeFactory(
+            creator=self.creator), NodeFactory(creator=self.creator)
+        self.project.nodes.append(comp1)
+        self.project.nodes.append(comp2)
+        self.project.save()
+
+        # A registered user is added to the project AND its components
+        user = UserFactory()
+        user_dict = {
+            'id': user._id,
+            'fullname': user.fullname,
+            'email': user.username,
+            'permission': 'write',
+            'visible': True}
+
+        payload = {
+            'users': [user_dict],
+            'node_ids': [comp1._primary_key, comp2._primary_key]
+        }
+
+        # send request
+        url = self.project.api_url_for('project_contributors_post')
+        assert self.project.can_edit(user=self.creator)
+        self.app.post_json(url, payload, auth=self.creator.auth)
+
+        # send_mail should only have been called once
+        assert_equal(mock_send_mail.call_count, 1)
+
+
     @mock.patch('website.project.views.contributor.send_claim_email')
     def test_email_sent_when_unreg_user_is_added(self, send_mail):
         name, email = fake.name(), fake.email()
