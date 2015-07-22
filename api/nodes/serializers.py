@@ -15,7 +15,14 @@ class NodeIncludeSerializer(JSONAPISerializer):
     links = LinksField({})
 
     class Meta:
-        type_ = 'nodes'
+        _type = 'nodes'
+
+
+class PointerIncludeSerializer(NodeIncludeSerializer):
+
+    class Meta:
+        _type = 'pointers'
+
 
 class NodeSerializer(JSONAPISerializer):
     # TODO: If we have to redo this implementation in any of the other serializers, subclass ChoiceField and make it
@@ -67,7 +74,7 @@ class NodeSerializer(JSONAPISerializer):
                                             'an "include" parameter to the url followed by a comma separated string'
                                             'of desired queries.  '
                                             'Ex: include=children,pointers,registrations,contributors')
-    pointers = NodeIncludeSerializer(many=True, read_only=True, help_text='See description in children')
+    pointers = PointerIncludeSerializer(many=True, read_only=True, help_text='See description in children')
     registrations = NodeIncludeSerializer(many=True, read_only=True, source='registered_nodes',
                                           help_text='See description in children')
     contributors = ContributorIncludeSerializer(many=True, read_only=True, source='contributing_users',
