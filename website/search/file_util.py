@@ -26,6 +26,13 @@ def get_content_of_file(file_):
 
 
 def build_file_document(name, path, addon, include_content=True):
+    """Return file data to be in the indexed document as a dict.
+
+    :param name: Name of file.
+    :param path: Path of file.
+    :param addon: Instance of storage addon containing the containing the file.
+    :param include_content: Include the content of the file in document.
+    """
     file_, created = addon.find_or_create_file_guid(path)
     parent_id = file_.node._id
     file_content = None

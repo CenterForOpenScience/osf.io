@@ -299,6 +299,12 @@ def update_node(node, index=None):
 
 @requires_search
 def update_file(name, path, addon, index=None):
+    """Add file to elastic_search.
+
+    :param name: Name of file to index.
+    :param path: Path of file to index.
+    :param addon: Instance of storage containing the file.
+    """
     if file_util.is_indexed(name):
         index = index or settings.ELASTIC_INDEX
         file_doc = file_util.build_file_document(name, path, addon, include_content=True)
@@ -311,6 +317,10 @@ def update_file(name, path, addon, index=None):
 
 @requires_search
 def update_all_files(node, index=None):
+    """Add all indexable files of a node to elasticsearch.
+
+    :param node: Instance of Node.
+    """
     index = index or INDEX
     for file_dict in file_util.collect_files(node):
         update_file(
@@ -323,6 +333,10 @@ def update_all_files(node, index=None):
 
 @requires_search
 def delete_file(file_path, index=None):
+    """Remove a single file from search index.
+
+    :param file_path:
+    """
     index = index or INDEX
     file_path = ''.join(['/', file_path]) if not file_path[0] == '/' else file_path
     es.delete(index=index, doc_type='file', id=file_path, refresh=True, ignore=[404])
@@ -330,6 +344,10 @@ def delete_file(file_path, index=None):
 
 @requires_search
 def delete_all_files(node, index=None):
+    """Remove all of a nodes files from search index.
+
+    :param node:
+    """
     index = index or INDEX
     for file_dict in file_util.collect_files(node):
         file_path = file_dict['path']

@@ -1532,6 +1532,8 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
             log_exception()
 
     def update_search_files(self):
+        """Update all files associated with node based on node's privacy.
+        """
         from website import search
         try:
             if self.is_public:
@@ -1543,6 +1545,13 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
             log_exception()
 
     def update_search_file(self, action, addon, name, path):
+        """ Update a single file in the node based on the action given.
+
+        :param action: 'update', 'create', or 'delete'.
+        :param addon: Instance of a storage addon.
+        :param name: Name of the file to be updated.
+        :param path: Path of the file to be updated.
+        """
         from website import search
         if not self.is_public:
             return

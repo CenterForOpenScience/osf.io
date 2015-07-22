@@ -56,6 +56,8 @@ def build_query(qs='*', start=0, size=10, sort=None, has_child=True):
 
 
 def build_has_child_query_string(qs='*'):
+    """Queries for parent documents who's children match a query string.
+    """
     return {
         'has_child': {
             'type': 'file',
