@@ -96,7 +96,15 @@ $(document).ready(function() {
             $commentMsg.text('Successfully updated settings.');
             window.location.reload();
         }).fail(function() {
-            bootbox.alert('Could not set commenting configuration. Please try again.');
+            bootbox.alert({
+                message: 'Could not set commenting configuration. Please try again.',
+                buttons:{
+                    ok:{
+                        label:'Close',
+                        className:'btn-default'
+                    }
+                }
+            });
         });
 
         return false;
@@ -154,14 +162,19 @@ $(document).ready(function() {
             var name = $that.attr('name');
             var capabilities = $('#capabilities-' + name).html();
             if (capabilities) {
-                bootbox.confirm(
-                    capabilities,
-                    function(result) {
+                bootbox.confirm({
+                    message: capabilities,
+                    callback: function(result) {
                         if (!result) {
                             $(that).attr('checked', false);
                         }
+                    },
+                    buttons:{
+                        confirm:{
+                            label:'Confirm'
+                        }
                     }
-                );
+               });
             }
         }
     });

@@ -16,7 +16,7 @@ from website.addons.wiki import settings
 from website.addons.wiki import utils as wiki_utils
 from website.profile.utils import get_gravatar
 from website.project.views.node import _view_project
-from website.project.model import has_anonymous_link
+from website.project.model import has_anonymous_link, Node
 from website.project.decorators import (
     must_be_contributor_or_public,
     must_have_addon, must_not_be_registration,
@@ -504,13 +504,13 @@ def project_wiki_grid_data(auth, node, **kwargs):
     }
     pages.append(project_wiki_pages)
 
-    if len(node.nodes) > 0:
-        component_wiki_pages = {
-            'title': 'Component Wiki Pages',
-            'kind': 'folder',
-            'type': 'heading',
-            'children': format_component_wiki_pages(node, auth)
-        }
+    component_wiki_pages = {
+        'title': 'Component Wiki Pages',
+        'kind': 'folder',
+        'type': 'heading',
+        'children': format_component_wiki_pages(node, auth)
+    }
+    if len(component_wiki_pages['children']) > 0:
         pages.append(component_wiki_pages)
 
     return pages
@@ -559,7 +559,6 @@ def format_project_wiki_pages(node, auth):
 
 def format_component_wiki_pages(node, auth):
     pages = []
-    can_edit = node.has_permission(auth.user, 'write') and not node.is_registration
     component_wiki_pages = _serialize_wiki_toc(node, auth)
     for wiki_page in component_wiki_pages:
         children = []
@@ -571,6 +570,8 @@ def format_component_wiki_pages(node, auth):
                 'id': wiki_page['id'],
             }
         }
+        component = Node.load(component_home_wiki['page']['id'])
+        can_edit = component.has_permission(auth.user, 'write') and not component.is_registration
         if can_edit or home_has_content:
             children.append(component_home_wiki)
 
@@ -594,6 +595,7 @@ def format_component_wiki_pages(node, auth):
             },
             'kind': 'component',
             'category': wiki_page['category'],
+            'pointer': wiki_page['is_pointer'],
             'children': children,
         }
         if len(component_page['children']) > 0:
