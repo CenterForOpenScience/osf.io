@@ -102,7 +102,7 @@ var FolderPickerViewModel = oop.defclass({
                     '<a href="mailto:support@osf.io">support@osf.io</a>.';
             }),
             deauthorizeSuccess: ko.pureComputed(function() {
-                return 'Disconnect ' + self.addonName + '.';
+                return 'Disconnected ' + self.addonName + '.';
             }),
             deauthorizeFail: ko.pureComputed(function() {
                 return 'Could not disconnect ' + self.addonName + ' account because of an error. Please try again later.';

@@ -150,7 +150,7 @@ utils.buildURLParams = function(vm){
 };
 
 utils.buildQuery = function(vm) {
-    var must = (vm.requiredFilters.length > 0) ? utils.andFilter($.map(vm.requiredFilters, utils.parseToMatchFilter)) : {};
+    var must = $.map(vm.requiredFilters, utils.parseToMatchFilter);
     var should = $.map(vm.optionalFilters, utils.parseToMatchFilter);
     var sort = {};
 
