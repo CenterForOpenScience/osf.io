@@ -1,7 +1,7 @@
 
 def jsonapi_exception_handler(exc, context):
     """
-    Custom exception handler that nests detail inside errors.
+    Custom exception handler that returns errors object as an array with a 'detail' member
     """
     from rest_framework.views import exception_handler
     response = exception_handler(exc, context)
