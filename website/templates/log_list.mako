@@ -13,7 +13,7 @@
     %endif
         id="logScope">
 
-    <div class="logs m-t-lg">
+    <div class="logs">
 
         <div class="components panel panel-default">
             <div class="panel-heading clearfix">
