@@ -9,7 +9,7 @@
     },
     "config": {
         "requiresApproval": true,
-        "messages": {        
+        "messages": {
             "beforeSubmitForApproval": "You are about to submit your study and analysis for review. This will notify Prereg Prize Administrators who will begin to review it. You will still be able to edit this registration but must submit again. Are you sure you are ready for review?",
             "afterSubmitForApproval": "<img src=\"https://i.imgur.com/0aCtj3b.png\"><br><p>You have successfully submitted your study and analysis plans. Next, staff from the Center for Open Science will have the plans reviewed to assure that enough detail was included. Reviewers may accept your plans or request revisions. Remember, in order to be eligible for the Prere Prize, your plans must be accepted through this review process. We will contact you within five business days with a status update. If you have any questions, please contact <a href=\"mailto:prereg@cos.io\">prereg@cos.io</a> and we will be happy to help you.</p>"
         },
@@ -134,6 +134,8 @@
                 "nav": "Certify",
                 "type": "object",
                 "title": "Please check and certify one of the following statements",
+                "description": "",
+                "help": "",
                 "properties": {
                     "certify": {
                         "id": "q8b",
@@ -162,6 +164,8 @@
                 "nav": "Type",
                 "type": "choose",
                 "title": "Study type",
+                "description": "",
+                "help": "",
                 "format": "singleselect",
                 "options": [
                     "Experiment (A researcher randomly assigns treatments to study subjects, this includes field or lab experiments. This is also known as an intervention experiment or a randomized controlled trial.",
@@ -174,6 +178,8 @@
                 "nav": "Blinding",
                 "type": "choose",
                 "format": "singleselect",
+                "description": "",
+                "help": "",
                 "title": "Blinding",
                 "options": [
                     "Not applicable: This study will not assign treatments to subjects (e.g. observational studies or meta-analyses).",

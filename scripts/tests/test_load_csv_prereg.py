@@ -6,7 +6,7 @@ from nose.tools import *  # noqa
 
 from tests.base import OsfTestCase
 
-from scripts import load_csv_prereg
+from scripts.prereg import load_csv_prereg
 
 __location__ = os.path.realpath(os.path.join(os.getcwd(), os.path.dirname(__file__)))
 

@@ -27,7 +27,7 @@ def get_page(quest_num):
         for question in pages[page]:
             if quest_num == question:
                 question_index = pages[page].index(question)
-                page_index = int(page.replace('page', '')) - 1
+                page_index = int(page.replace('page', '')) - 1  # 'page1' => 1
                 return [page, page_index, question_index]
     return False
 
@@ -65,7 +65,6 @@ def main(dry_run=True):
             cr.next()
             previous_question = ''
             current_page = ''
-            # current_page_data = json_data['pages'][int(current_page[1])]
 
             # row: ['01_QUESTION', 'What is your plan?']
             for row in cr:
@@ -74,7 +73,7 @@ def main(dry_run=True):
                 question_num = label[0]
                 question_part = label[1]
 
-                if question_num != previous_question:
+                if previous_question != question_num:
                     previous_question = question_num
                     current_page = get_page(question_num)
 
@@ -98,7 +97,6 @@ def main(dry_run=True):
                             # save to the actual json file, not the variable
                             json_data['pages'][int(current_page[1])]['questions'][key][row_type] = unicode(row[1])
 
-                # cr.next()
 
             for list in multiple_choice:
                 current_page = get_page(list)
@@ -113,7 +111,7 @@ def main(dry_run=True):
                     json.dump(json_data, updated_file)
             else: # For tests
                 with open(os.path.join(schema_directory, 'prereg-prize-test.test.json'), 'w') as updated_file:
-                    json.dump(json_data, updated_file)
+                    json.dump(json_data, updated_file, indent=4)
 
 if __name__ == '__main__':
     dry_run ='dry' in sys.argv
