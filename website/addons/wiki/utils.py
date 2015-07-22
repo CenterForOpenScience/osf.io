@@ -10,7 +10,6 @@ from framework.mongo.utils import to_mongo_key
 
 from website import settings
 from website.models import Node
-from website.exceptions import NodeStateError
 from website.addons.wiki import settings as wiki_settings
 from website.addons.wiki.exceptions import InvalidVersionError
 

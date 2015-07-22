@@ -304,8 +304,7 @@ def node_setting(auth, node, **kwargs):
         or any(
             (
                 each for each in node.get_descendants_recursive()
-                if each.has_addon('wiki')
-                   and each.has_permission(auth.user, 'admin')
+                if each.has_addon('wiki') and each.has_permission(auth.user, 'admin')
             )
         )
     )

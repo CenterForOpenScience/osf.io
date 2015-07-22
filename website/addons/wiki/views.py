@@ -401,8 +401,7 @@ def edit_wiki_permissions(node, auth, permissions, **kwargs):
 
 @must_be_logged_in
 @must_be_valid_project
-def get_node_wiki_permissions(auth, **kwargs):
-    node = kwargs.get('node') or kwargs['project']
+def get_node_wiki_permissions(node, auth, **kwargs):
     return wiki_utils.serialize_wiki_settings(auth.user, [node._id])
 
 @must_be_valid_project
