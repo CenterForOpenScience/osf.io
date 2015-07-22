@@ -105,38 +105,7 @@ Results.controller = function(vm) {
     };
 
     self.renderResultFooter = function(result) {
-        return [m('span', 'Released on ' + new $osf.FormattableDate(result.providerUpdatedDateTime).local),
-        m('span.pull-right', [
-            m('img', {src: self.vm.ProviderMap[result.shareProperties.source].favicon, style: {width: '16px', height: '16px'}}),
-            ' ',
-            m('a', {onclick: function() {utils.updateFilter(self.vm, 'match:shareProperties.source:' + result.shareProperties.source);}}, self.vm.ProviderMap[result.shareProperties.source].long_name)
-        ])];
-
-    };
-
-
-    self.renderResult = function(result, index) {
-        return m( '.animated.fadeInUp', [
-            m('div', [
-                m('h4', [
-                    self.renderTitleBar(result)
-                ]),
-                m('.row', [
-                    m('.col-md-7',
-                      m('span.pull-left',
-                        self.renderContributors(result)
-                      )
-                    ),
-                    m('.col-md-5',
-                        m('.pull-right',
-                          {style: {'text-align': 'right'}},
-                          self.renderSubjects(result)
-                        )
-                    )
-                ]),
-                m('br'),
-                m('br'),
-                m('div', [
+        return m('div', [
                     m('span', 
                         'Released on ' + new $osf.FormattableDate(result.providerUpdatedDateTime).local,
                         vm.rawNormedLoaded() ?  m('span', [
@@ -157,8 +126,12 @@ Results.controller = function(vm) {
                         m('a', {onclick: function() {utils.updateFilter(self.vm, 'shareProperties.source:' + result.shareProperties.source);}}, self.vm.ProviderMap[result.shareProperties.source].long_name),
                         m('br')
                     ])
-                ]),
-                m('.row', [
+                ]);
+
+    };
+
+    self.renderRawNormalizedData = function(result) {
+        return m('.row', [
                     m('.col-md-12',
                         result.showRawNormed && result.raw ? m('div', [
                             m('ul', {class: 'nav nav-tabs'}, [
@@ -189,10 +162,31 @@ Results.controller = function(vm) {
                             )
                         ]) : m('span')
                     )
+                ]);
+    };
+
+    self.renderResult = function(result, index) {
+        return m( '.animated.fadeInUp', [
+            m('div', [
+                m('h4', [
+                    self.renderTitleBar(result)
                 ]),
-                m('hr')
-            ])
-                m('div', self.renderResultFooter(result))
+                m('.row', [
+                    m('.col-md-7',
+                      m('span.pull-left',
+                        self.renderContributors(result)
+                      )
+                    ),
+                    m('.col-md-5',
+                        m('.pull-right',
+                          {style: {'text-align': 'right'}},
+                          self.renderSubjects(result)
+                        )
+                    )
+                ]),
+                m('br'),
+                m('div', self.renderResultFooter(result)),
+                self.renderRawNormalizedData(result)
             ]),
             m('hr')
         ]);
