@@ -456,13 +456,13 @@ def project_wiki_grid_data(auth, node, **kwargs):
     }
     pages.append(project_wiki_pages)
 
-    if len(node.nodes) > 0:
-        component_wiki_pages = {
-            'title': 'Component Wiki Pages',
-            'kind': 'folder',
-            'type': 'heading',
-            'children': format_component_wiki_pages(node, auth)
-        }
+    component_wiki_pages = {
+        'title': 'Component Wiki Pages',
+        'kind': 'folder',
+        'type': 'heading',
+        'children': format_component_wiki_pages(node, auth)
+    }
+    if len(component_wiki_pages['children']) > 0:
         pages.append(component_wiki_pages)
 
     return pages
@@ -546,6 +546,7 @@ def format_component_wiki_pages(node, auth):
             },
             'kind': 'component',
             'category': wiki_page['category'],
+            'pointer': wiki_page['is_pointer'],
             'children': children,
         }
         if len(component_page['children']) > 0:
