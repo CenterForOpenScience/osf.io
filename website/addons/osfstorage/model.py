@@ -133,10 +133,11 @@ class OsfStorageFileNode(StoredObject):
     is_deleted = fields.BooleanField(default=False)
     name = fields.StringField(required=True, index=True)
     kind = fields.StringField(required=True, index=True)
-    renter = fields.StringField(required=True, default='')
+    renter = fields.ForeignField('User', default=None)
     parent = fields.ForeignField('OsfStorageFileNode', index=True)
     versions = fields.ForeignField('OsfStorageFileVersion', list=True)
     node_settings = fields.ForeignField('OsfStorageNodeSettings', required=True, index=True)
+    end_date = fields.DateTimeField()
 
     @classmethod
     def create_child_by_path(cls, path, node_settings):
@@ -222,34 +223,20 @@ class OsfStorageFileNode(StoredObject):
 
     @property
     def rented(self):
-        return self.renter
+        if self.renter:
+            return self.renter.username
+        return ''
 
     @utils.must_be('file')
-    def rent(self, renter, end_date, save=True):
+    def rent(self, renter, end_date):
         self.renter = renter
-        try:
-            rented_file = self.find_rent_by_name(self.name)
-            rented_file.initiation_date = datetime.datetime.utcnow()
-        except:
-            rented_file = OsfStorageRentedFile()
-        rented_file._id = self._id
-        rented_file.name = self.name
-        rented_file.renter = renter
-        rented_file.end_date = end_date
-        rented_file.file_node = self
-        rented_file.state = 'active'
-        rented_file.save()
-        if save:
-            self.save()
+        self.end_date = end_date
+        self.save()
 
     @utils.must_be('file')
-    def return_rent(self, save=True):
-        self.renter = ''
-        rented_file = self.find_rent_by_name(self.name)
-        rented_file.state = 'inactive'
-        rented_file.save()
-        if save:
-            self.save()
+    def return_rent(self):
+        self.renter = None
+        self.save()
 
     def materialized_path(self):
         """creates the full path to a the given filenode
@@ -281,12 +268,6 @@ class OsfStorageFileNode(StoredObject):
             Q('parent', 'eq', self)
         )
 
-    @utils.must_be('file')
-    def find_rent_by_name(self, name):
-        return OsfStorageRentedFile.find_one(
-            Q('name', 'eq', name) &
-            Q('file_node', 'eq', self)
-        )
 
     def append_folder(self, name, save=True):
         return self._create_child(name, 'folder', save=save)
@@ -574,22 +555,3 @@ class OsfStorageTrashedFileNode(StoredObject):
     versions = fields.ForeignField('OsfStorageFileVersion', list=True)
     node_settings = fields.ForeignField('OsfStorageNodeSettings', required=True, index=True)
 
-class OsfStorageRentedFile(StoredObject):
-
-    _id = fields.StringField(primary=True)
-    name = fields.StringField(required=True, index=True)
-    initiation_date = fields.DateTimeField(default=datetime.datetime.utcnow)
-    renter = fields.ForeignField('user')
-    end_date = fields.DateTimeField()
-    file_node = fields.ForeignField('OsfStorageFileNode', index=True)
-    state = fields.StringField(index=True, default='inactive')
-
-    @property
-    def rent_end_date(self):
-        if self.state == 'active':
-            return self.end_date
-        return False
-
-    def finish_rent(self):
-        self.file_node.renter = ''
-        self.state = 'inactive'

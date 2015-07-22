@@ -1,5 +1,6 @@
 import httplib
 import functools
+import datetime
 
 from modularodm.exceptions import NoResultsFound
 from modularodm.storage.base import KeyExistsException
@@ -30,7 +31,7 @@ def handle_odm_errors(func):
     return wrapped
 
 
-def autoload_filenode(must_be=None, default_root=False):
+def autoload_filenode(must_be=None, default_root=False, check_rent=False):
     """Implies both must_have_addon osfstorage node and
     handle_odm_errors
     Attempts to load fid as a OsfStorageFileNode with viable constraints
@@ -52,6 +53,11 @@ def autoload_filenode(must_be=None, default_root=False):
                     'message_short': 'incorrect type',
                     'message_long': 'FileNode must be of type {} not {}'.format(must_be, file_node.kind)
                 })
+
+            if check_rent:
+                if file_node.renter is not None:
+                    if file_node.end_time < datetime.datetime.utcnow:
+                        file_node.return_rent()
 
             kwargs['file_node'] = file_node
 

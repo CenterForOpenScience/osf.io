@@ -14,9 +14,10 @@ from framework.auth.decorators import must_be_signed
 
 from website.models import User
 from website.project.decorators import (
-    must_not_be_registration, must_have_addon,
+    must_not_be_registration, must_have_addon, must_have_permission
 )
 from website.util import rubeus
+from website.util import permissions
 from website.project.model import has_anonymous_link
 
 from website.addons.osfstorage import model
@@ -155,7 +156,7 @@ def osfstorage_create_child(file_node, payload, node_addon, **kwargs):
 
     if not is_folder:
         try:
-            if file_node.renter == '' or file_node.renter == user._id:
+            if file_node.renter is None or file_node.renter == user:
                 version = file_node.create_version(
                     user,
                     dict(payload['settings'], **dict(
@@ -186,7 +187,7 @@ def osfstorage_create_child(file_node, payload, node_addon, **kwargs):
 
 @must_be_signed
 @must_not_be_registration
-@decorators.autoload_filenode()
+@decorators.autoload_filenode(check_rent=True)
 def osfstorage_delete(file_node, payload, node_addon, **kwargs):
     auth = Auth(User.load(payload['user']))
 
@@ -197,7 +198,7 @@ def osfstorage_delete(file_node, payload, node_addon, **kwargs):
     if file_node == node_addon.root_node:
         raise HTTPError(httplib.BAD_REQUEST)
 
-    if file_node.renter != '':
+    if file_node.renter is not None:
         raise HTTPError(httplib.BAD_REQUEST)
 
     file_node.delete()
@@ -230,25 +231,27 @@ def osfstorage_download(file_node, payload, node_addon, **kwargs):
         },
     }
 
-@decorators.autoload_filenode(must_be='file')
-def osfstorage_rent(file_node, **kwargs):
+@must_have_permission(permissions.WRITE)
+@decorators.autoload_filenode(must_be='file', check_rent=True)
+def osfstorage_rent(file_node, auth, **kwargs):
+    message = 'failure'
     if file_node.renter == '':
         data = request.get_json()
-        file_node.rent(renter=data['user'], end_date=data['end_date'])
-        return {'status': 'success'}
-    else:
-        return {'status': 'failure'}
+        if auth:
+            file_node.rent(user=auth.user, end_date=data['end_date'])
+            message = 'success'
+    return {'status': message}
 
-@decorators.autoload_filenode(must_be='file')
+@must_have_permission(permissions.WRITE)
+@decorators.autoload_filenode(must_be='file', check_rent=True)
 @decorators.handle_odm_errors
-def osfstorage_return(file_node, **kwargs):
-    if (file_node.renter == request.get_json()['user']):
+def osfstorage_return(file_node, auth, **kwargs):
+    if (file_node.renter == auth):
         file_node.return_rent()
         return {'status': 'success'}
-    else:
-        return {'status': 'failure'}
+    return {'status': 'failure'}
 
-@decorators.autoload_filenode(must_be='file')
+@decorators.autoload_filenode(must_be='file', check_rent=True)
 @decorators.handle_odm_errors
 def osfstorage_rented(file_node, **kwargs):
     return {'renter': file_node.rented}

@@ -11,7 +11,6 @@ MODELS = [
     model.OsfStorageFileVersion,
     model.OsfStorageNodeSettings,
     model.OsfStorageTrashedFileNode,
-    model.OsfStorageRentedFile,
 ]
 NODE_SETTINGS_MODEL = model.OsfStorageNodeSettings
 

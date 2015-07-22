@@ -108,13 +108,12 @@ var FileViewPage = {
                                 date = new Date().getTime()  + (7 * 24 * 60 * 60 * 1000);
                             }
                             else {
-                                date =new Date().getTime()  + (30 * 24 * 60 * 60 * 1000);
+                                date = new Date().getTime()  + (30 * 24 * 60 * 60 * 1000);
                             }
                             $osf.postJSON(
                                 '/api/v1/project/' + self.node.id + '/osfstorage' + self.file.path +'/rent/',
                                 {
-                                    'user': self.context.userId,
-                                    'end_date': 1
+                                    'end_date': date
                                 }
                             ).done(function(resp) {
                                 window.location.reload();
@@ -131,7 +130,7 @@ var FileViewPage = {
                 title: 'Extend file lock',
                 message: '<div><p>Are you sure you want to extend the lock on this file? This would mean ' +
                     'other contributors cannot edit, delete or upload new versions of this file ' +
-                    'as long as it is locked. You can unlock it at anytime or extend the lock period.' +
+                    'as long as it is locked. You can unlock it at anytime or extend the lock period (if no time period is chosed, it will be locked for 1 month.' +
                     'Please select the locking period below:</p></div>' +
                     '<div class="row"><div class="col-md-12""> <div class="control-group">' +
                     '<div class="radio align-center col-xs-4"><input type="radio" name="date" value="day">1 day</div></div>'+
@@ -142,21 +141,20 @@ var FileViewPage = {
                         label: 'Lock file',
                         className: 'btn-warning',
                         callback: function() {
-                            var date = $("input[name='date']:checked").val()
+                            var date = $("input[name='date']:checked").val();
                             if (date === 'day'){
-                                date = new Date().getTime() + (1 * 24 * 60 * 60 * 1000);
+                                date = (new Date().getTime()) + (1 * 24 * 60 * 60 * 1000);
                             }
                             else if (date == 'week'){
-                                date = new Date().getTime()  + (7 * 24 * 60 * 60 * 1000);
+                                date = (new Date().getTime())  + (7 * 24 * 60 * 60 * 1000);
                             }
                             else {
-                                date =new Date().getTime()  + (30 * 24 * 60 * 60 * 1000);
+                                date = (new Date().getTime())  + (30 * 24 * 60 * 60 * 1000);
                             }
                             $osf.postJSON(
                                 '/api/v1/project/' + self.node.id + '/osfstorage' + self.file.path +'/rent/',
                                 {
-                                    'user': self.context.userId,
-                                    'end_date': date
+                                    'end_date': 999999999999999999999999
                                 }
                             ).done(function(resp) {
                                 window.location.reload();
@@ -171,9 +169,7 @@ var FileViewPage = {
         $(document).on('fileviewpage:return', function() {
             $osf.postJSON(
                 '/api/v1/project/' + self.node.id + '/osfstorage' + self.file.path +'/return/',
-                {
-                    'user': self.context.userId
-                }
+                {}
             ).done(function(resp) {
                 window.location.reload();
             }).fail(function(resp) {
