@@ -235,7 +235,7 @@ utils.loadStats = function(vm){
 utils.loadRawNormalized = function(result){
     var nonJsonErrors = function(xhr) {
         return xhr.status > 200 ? JSON.stringify(xhr.responseText) : xhr.responseText;
-    }
+    };
     return m.request({
         method: 'GET',
         // url: 'http://localhost:8000/documents/' + result.shareProperties.docID,
@@ -251,7 +251,7 @@ utils.loadRawNormalized = function(result){
         result.rawfiletype = all_raw.filetype;
         result.normalized = normed;
     }, function(error) {
-        result.rawfiletype = "json";
+        result.rawfiletype = 'json';
         result.normalized = '"Normalized data not found."';
         result.raw = '"Raw data not found."';
     });
