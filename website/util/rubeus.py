@@ -324,8 +324,8 @@ class NodeProjectCollector(object):
             to_expand = False
 
         return {
-            # TODO: Remove safe_unescape_html when mako html safe comes in
-            'name': sanitize.safe_unescape_html(node.title) if can_view else u'Private Component',
+            # TODO: Remove unescape_entities when mako html safe comes in
+            'name': sanitize.unescape_entities(node.title) if can_view else u'Private Component',
             'kind': FOLDER,
             'category': node.category,
             # Once we get files into the project organizer, files would be kind of FILE
@@ -444,8 +444,8 @@ class NodeFileCollector(object):
         else:
             children = []
         return {
-            # TODO: Remove safe_unescape_html when mako html safe comes in
-            'name': u'{0}: {1}'.format(node.project_or_component.capitalize(), sanitize.safe_unescape_html(node.title))
+            # TODO: Remove unescape_entities when mako html safe comes in
+            'name': u'{0}: {1}'.format(node.project_or_component.capitalize(), sanitize.unescape_entities(node.title))
             if can_view
             else u'Private Component',
             'category': node.category,
