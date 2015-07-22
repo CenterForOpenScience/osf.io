@@ -68,14 +68,15 @@ def assert_clean(data):
     return escape_html(data)
 
 
-# TODO: Remove safe_unescape_html when mako html safe comes in
-def safe_unescape_html(value):
+# TODO: Remove unescape_entities when mako html safe comes in
+def unescape_entities(value):
     """
-    Return data without certain html escape characters. Deliberately leave < and > untouched.
+    Convert HTML-encoded data (stored in the database) to literal characters.
+
+    Intended primarily for endpoints consumed by frameworks that handle their own escaping (eg Knockout)
 
     :param value: A string, dict, or list
     :return: A string or list or dict without html escape characters
-
     """
     safe_characters = {
         '&amp;': '&',
@@ -83,13 +84,13 @@ def safe_unescape_html(value):
 
     if isinstance(value, dict):
         return {
-            key: safe_unescape_html(value)
+            key: unescape_entities(value)
             for (key, value) in value.iteritems()
         }
 
     if is_iterable_but_not_string(value):
         return [
-            safe_unescape_html(each)
+            unescape_entities(each)
             for each in value
         ]
     if isinstance(value, basestring):
