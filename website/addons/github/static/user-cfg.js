@@ -1,5 +1,6 @@
 var bootbox = require('bootbox');
 var $ = require('jquery');
+var language = require('js/osfLanguage').Addons.github;
 
 $(document).ready(function() {
 
@@ -9,12 +10,8 @@ $(document).ready(function() {
 
     $('#githubDelKey').on('click', function() {
         bootbox.confirm({
-            title: 'Remove access key?',
-            message: 'Are you sure you want to remove your GitHub access key? This will ' +
-                'revoke access to GitHub for all projects you have authorized ' +
-                'and delete your access token from GitHub. Your OSF collaborators ' +
-                'will not be able to write to GitHub repos or view private repos ' +
-                'that you have authorized.',
+            title: 'Disconnect GitHub Account?',
+            message: language.confirmDeauth,
             callback: function(result) {
                 if(result) {
                     $.ajax({
@@ -28,7 +25,7 @@ $(document).ready(function() {
             },
             buttons:{
                 confirm:{
-                    label:'Remove',
+                    label:'Disconnect',
                     className:'btn-danger'
                 }
             }
