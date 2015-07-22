@@ -287,9 +287,11 @@ def create_waterbutler_log(payload, **kwargs):
             action = payload['action']
             name = payload['metadata']['name']
             path = payload['metadata']['path']
-            node.update_search_file(action, node_addon, name, path)
         except KeyError:
             pass
+        else:
+            # only called if no exception is raised
+            node.update_search_file(action, node_addon, name, path)
 
     return {'status': 'success'}
 
