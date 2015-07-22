@@ -36,6 +36,7 @@ if ($('#grid').length) {
 //Initialize treebeard grid for wiki
 var ProjectWiki = require('js/wikiTreebeard.js');
 var wikiPermissionsURL = ctx.node.urls.api  + 'wiki/permissions/';
+var $wikiMsg = $('#configureWikiMessage');
 
 if ($('#wgrid').length) {
     $.ajax({
@@ -45,8 +46,8 @@ if ($('#wgrid').length) {
     }).done(function(response) {
         new ProjectWiki(response);
     }).fail(function(xhr, status, error) {
-        $notificationsMsg.addClass('text-danger');
-        $notificationsMsg.text('Could not retrieve wiki settings.');
+        $wikiMsg.addClass('text-danger');
+        $wikiMsg.text('Could not retrieve wiki settings.');
         Raven.captureMessage('Could not GET wiki settings.', {
             url: wikiPermissionsURL, status: status, error: error
         });

@@ -21,6 +21,8 @@ from website.addons.wiki import utils as wiki_utils
 from website.addons.wiki.settings import WIKI_CHANGE_DATE
 from website.project.signals import write_permissions_revoked
 
+from website.exceptions import NodeStateError
+
 from .exceptions import (
     NameEmptyError,
     NameInvalidError,
@@ -37,31 +39,28 @@ class AddonWikiNodeSettings(AddonNodeSettingsBase):
     has_auth = True
     is_publicly_editable = fields.BooleanField(default=False, index=True)
 
-    def set_editing(self, permissions, auth=None, node=None, save=False, log=False):
+    def set_editing(self, permissions, auth=None, log=False):
         """Set the editing permissions for this node.
 
-        :param permissions: A string, either 'public' or 'private'
         :param auth: All the auth informtion including user, API key
-        :param node: Node to which self belongs,
-         only necessary if logging is desired
         :param bool save: Whether to save the privacy change
         :param bool log: Whether to add a NodeLog for the privacy change
+            if true the node object is also saved
         """
 
-        if permissions == 'public' and not self.is_publicly_editable:
+        if permissions and not self.is_publicly_editable:
             self.is_publicly_editable = True
-        elif permissions == 'private' and self.is_publicly_editable:
+        elif not permissions and self.is_publicly_editable:
             self.is_publicly_editable = False
         else:
-            return False
+            raise NodeStateError
 
         if log:
-            if not node:
-                raise AttributeError("Node object is required for logging.")
-            action = NodeLog.MADE_WIKI_PUBLIC if permissions == 'public'\
-                else NodeLog.MADE_WIKI_PRIVATE
+            node = self.owner
             node.add_log(
-                action=action,
+                action=(NodeLog.MADE_WIKI_PUBLIC
+                        if self.is_publicly_editable
+                        else NodeLog.MADE_WIKI_PRIVATE),
                 params={
                     'project': node.parent_id,
                     'node': node._primary_key,
@@ -69,13 +68,9 @@ class AddonWikiNodeSettings(AddonNodeSettingsBase):
                 auth=auth,
                 save=False,
             )
-            if save:
-                node.save()
+            node.save()
 
-        if save:
-            self.save()
-
-        return True
+        self.save()
 
     def after_register(self, node, registration, user, save=True):
         """Copy wiki settings to registrations."""

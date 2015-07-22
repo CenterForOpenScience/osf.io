@@ -25,6 +25,8 @@ from website.project.decorators import (
     must_have_permission_or_public_wiki,
 )
 
+from website.exceptions import NodeStateError
+
 from .exceptions import (
     NameEmptyError,
     NameInvalidError,
@@ -241,9 +243,14 @@ def project_wiki_view(auth, wname, path=None, **kwargs):
     wiki_page = node.get_wiki_page(wiki_name)
     wiki_settings = node.get_addon('wiki')
     toc = _serialize_wiki_toc(node, auth=auth)
-    can_edit = auth.logged_in and not node.is_registration and\
-               (node.has_permission(auth.user, 'write') or
-                wiki_settings.is_publicly_editable)
+    can_edit = (
+        auth.logged_in
+        and not node.is_registration
+        and (
+            node.has_permission(auth.user, 'write')
+            or wiki_settings.is_publicly_editable
+        )
+    )
     versions = _get_wiki_versions(node, wiki_name, anonymous=anonymous)
 
     # Determine panels used in view
@@ -367,29 +374,25 @@ def project_wiki_edit_post(auth, wname, **kwargs):
 @must_have_permission('admin')
 @must_not_be_registration
 @must_have_addon('wiki', 'node')
-def edit_wiki_permissions(**kwargs):
-    node = kwargs['node'] or kwargs['project']
+def edit_wiki_permissions(node, auth, permissions, **kwargs):
     wiki_settings = node.get_addon('wiki')
-    permissions = kwargs.get('permissions')
-    auth = kwargs['auth']
 
-    if permissions is None:
+    if not (permissions and wiki_settings):
         raise HTTPError(http.BAD_REQUEST)
 
-    if wiki_settings is None:
+    if permissions == 'public':
+        permissions = True
+    elif permissions == 'private':
+        permissions = False
+    else:
         raise HTTPError(http.BAD_REQUEST)
 
     try:
-        edited = wiki_settings.set_editing(permissions, auth, node, True, True)
-    except AttributeError as e:
+        wiki_settings.set_editing(permissions, auth, True)
+    except NodeStateError:
         raise HTTPError(http.BAD_REQUEST, data=dict(
-            message_short=e.message
+            message_short="Can't change privacy."
         ))
-    else:
-        if not edited:
-            raise HTTPError(http.BAD_REQUEST, data=dict(
-                message_short="Can't change privacy."
-            ))
 
     return {
         'status': 'success',
@@ -400,7 +403,7 @@ def edit_wiki_permissions(**kwargs):
 @must_be_valid_project
 def get_node_wiki_permissions(auth, **kwargs):
     node = kwargs.get('node') or kwargs['project']
-    return wiki_utils.format_data(auth.user, [node._id])
+    return wiki_utils.serialize_wiki_settings(auth.user, [node._id])
 
 @must_be_valid_project
 @must_have_addon('wiki', 'node')

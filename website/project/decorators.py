@@ -336,9 +336,9 @@ def must_have_permission_or_public_wiki(func):
     def wrapped(*args, **kwargs):
         # Ensure `project` and `node` kwargs
         _inject_nodes(kwargs)
-        node = kwargs['node']
 
-        wiki = node.get_addon('wiki')
+        wiki = kwargs['node'].get_addon('wiki')
+
         if wiki and wiki.is_publicly_editable:
             return func(*args, **kwargs)
         else:

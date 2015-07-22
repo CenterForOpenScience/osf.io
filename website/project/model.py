@@ -60,7 +60,7 @@ logger = logging.getLogger(__name__)
 
 
 def has_anonymous_link(node, auth):
-    """check if the node is anonymous to the user
+    """Check if the node is anonymous to the user.
 
     :param Node node: Node which the user wants to visit
     :param str link: any view-only link in the current url

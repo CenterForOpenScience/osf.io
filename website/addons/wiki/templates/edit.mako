@@ -232,7 +232,7 @@
         <h3 class="modal-title">The permissions for this page have changed</h3>
       </div>
       <div class="modal-body">
-        <p>Your browser should refresh shortly.&hellip;</p>
+        <p>Your browser should refresh shortly&hellip;</p>
       </div>
     </div>
   </div>
@@ -245,7 +245,7 @@
         <h3 class="modal-title">The content of this wiki has been moved to a different page</h3>
       </div>
       <div class="modal-body">
-        <p>Your browser should refresh shortly.&hellip;</p>
+        <p>Your browser should refresh shortly&hellip;</p>
       </div>
     </div>
   </div>

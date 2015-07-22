@@ -298,8 +298,18 @@ def node_setting(auth, node, **kwargs):
     ], key=lambda addon: addon.full_name.lower())
 
     ret['addons_enabled'] = addons_enabled
-    ret['wiki_on_children'] = node.has_addon_on_children('wiki')
-    ret['admin_on_children'] = node.has_permission_on_children(auth.user, 'admin')
+    ret['admin_wiki_on_children'] = (
+        node.has_addon('wiki')
+        and node.has_permission(auth.user, 'admin')
+        or any(
+            (
+                each for each in node.get_descendants_recursive()
+                if each.has_addon('wiki')
+                   and each.has_permission(auth.user, 'admin')
+            )
+        )
+    )
+
     ret['addon_enabled_settings'] = addon_enabled_settings
     ret['addon_capabilities'] = settings.ADDON_CAPABILITIES
 

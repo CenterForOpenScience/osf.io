@@ -60,7 +60,7 @@ function before_change_permissions(item, permission){
     var title = item.parent().data.node.title;
     if(permission === 'public'){
         bootbox.confirm({
-            title: 'Warning',
+            title: 'Make publicly editable',
             message: 'Are you sure you want to make the wiki of ' + title +
                 ' publicly editable? This will allow any logged in user to edit the content of your wiki. ' +
                 'Non-contributor users will not be able to add or remove pages. ' +
@@ -69,6 +69,9 @@ function before_change_permissions(item, permission){
             if (confirm) {
                 change_permissions(item, permission);
                 }
+            else {
+                item.notify.update('', 'notify-primary', 1, 10);
+            }
             }
         });
     }
@@ -86,7 +89,7 @@ function change_permissions(item, permission) {
         item.notify.update('Settings updated', 'notify-success', 1, 2000);
         item.data.event.permission = permission;
     }).fail(function() {
-        item.notify.update('Could not update settings.', 'notify-danger', 1, 2000);
+        item.notify.update('Could not update settings', 'notify-danger', 1, 2000);
     });
 }
 
