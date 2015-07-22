@@ -526,7 +526,7 @@ ViewModel.prototype._deauthorizeConfirm = function() {
 ViewModel.prototype.deauthorize = function() {
     var self = this;
     bootbox.confirm({
-        title: 'Deauthorize ' + self.addonName + '?',
+        title: 'Disconnect ' + self.addonName + '?',
         message: self.messages.confirmDeauth(),
         callback: function(confirmed) {
             if (confirmed) {
@@ -535,7 +535,7 @@ ViewModel.prototype.deauthorize = function() {
         },
         buttons:{
             confirm:{
-                label:'Deauthorize',
+                label:'Disconnect',
                 className:'btn-danger'
             }
         }
