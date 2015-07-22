@@ -194,7 +194,6 @@ describe('share/stats', () => {
               }
             };
             var returnedData = Stats.shareTimeGraphParser(rawData);
-            debugger;
             var requiredData = {
               'name': 'shareTimeGraph',
               'columns': [
