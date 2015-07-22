@@ -991,12 +991,13 @@ class User(GuidStoredObject, AddonModelMixin):
             if self._id in node.visible_contributor_ids
         )
 
-    def get_summary(self, formatter='long'):
+    def get_summary(self, separator='', formatter='long'):
         return {
             'user_fullname': self.fullname,
             'user_profile_url': self.profile_url,
             'user_display_name': name_formatters[formatter](self),
-            'user_is_claimed': self.is_claimed
+            'user_is_claimed': self.is_claimed,
+            'separator': separator
         }
 
     def save(self, *args, **kwargs):

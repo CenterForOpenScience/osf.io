@@ -302,10 +302,10 @@ def edit_profile(**kwargs):
     return ret
 
 
-def get_profile_summary(user_id, formatter='long'):
+def get_profile_summary(user_id, separator='', formatter='long'):
 
     user = User.load(user_id)
-    return user.get_summary(formatter)
+    return user.get_summary(separator, formatter)
 
 
 @must_be_logged_in
