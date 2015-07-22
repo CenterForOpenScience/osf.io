@@ -167,8 +167,6 @@ class TestProject(SearchTestCase):
 
     def setUp(self):
         super(TestProject, self).setUp()
-        # search.delete_index(elastic_search.INDEX)
-        # search.create_index(elastic_search.INDEX)
         self.user = UserFactory(fullname='John Deacon')
         self.project = ProjectFactory(title='Red Special', creator=self.user)
 
