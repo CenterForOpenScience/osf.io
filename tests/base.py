@@ -66,6 +66,7 @@ fake = Factory.create()
 MODELS = (User, Node, NodeLog, NodeWikiPage,
           Tag, WatchConfig, Session, Guid)
 
+
 def teardown_database(client=None, database=None):
     client = client or client_proxy
     database = database or database_proxy
@@ -76,10 +77,6 @@ def teardown_database(client=None, database=None):
         if messages.NO_TRANSACTION_ERROR not in message:
             raise
     client.drop_database(database)
-
-
-def return_empty_list(*args, **kwargs):
-    return []
 
 
 class DbTestCase(unittest.TestCase):
@@ -198,7 +195,7 @@ class MockUpdateNodeCase(unittest.TestCase):
     def setUp(self):
         super(MockUpdateNodeCase, self).setUp()
         self.search_patch = mock.patch('website.search.file_util.collect_files',
-                                       side_effect=return_empty_list)
+                                       side_effect=lambda n: [])
         self.search_patch.start()
 
     def tearDown(self):
