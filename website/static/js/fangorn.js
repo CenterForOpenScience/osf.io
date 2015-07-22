@@ -1106,6 +1106,9 @@ function gotoFileEvent (item) {
  */
 function _fangornTitleColumn(item, col) {
     var tb = this;
+    if (item.data.isAddonRoot && item.connected === false) { // as opposed to undefined, avoids unnecessary setting of this value
+        return _connectCheckTemplate.call(this, item);
+    }
     if (item.kind === 'file' && item.data.permissions.view) {
         return m('span.fg-file-links',{
             onclick: function(event) {
@@ -1118,22 +1121,30 @@ function _fangornTitleColumn(item, col) {
         return m('a.fg-file-links',{ href: '/' + item.data.nodeID.toString() + '/'},
                 item.data.name);
     }
-    if (item.data.isAddonRoot && item.connected === false) { // as opposed to undefined, avoids unnecessary setting of this value
-        return m('span.text-danger', [
-            m('span', item.data.name),
-            m('em', ' can\'t be loaded at this time.' ),
-            m('button.btn.btn-xs.btn-default.m-l-xs', {
-                onclick : function(e){
-                    e.stopImmediatePropagation();
-                    if (tb.options.togglecheck.call(tb, item)) {
-                        var index = tb.returnIndex(item.id);
-                        tb.toggleFolder(index, e);
-                    }
-                }
-            }, [m('i.fa.fa-refresh'), ' Retry'])
-        ]);
-    }
     return m('span', item.data.name);
+}
+
+/**
+ * Returns a reusable template for column titles when there is no connection
+ * @param {Object} item A Treebeard _item object for the row involved. Node information is inside item.data
+ * @this Treebeard.controller
+ * @private
+ */
+function _connectCheckTemplate(item){
+    var tb = this;
+    return m('span.text-danger', [
+        m('span', item.data.name),
+        m('em', ' can\'t be loaded at this time.' ),
+        m('button.btn.btn-xs.btn-default.m-l-xs', {
+            onclick : function(e){
+                e.stopImmediatePropagation();
+                if (tb.options.togglecheck.call(tb, item)) {
+                    var index = tb.returnIndex(item.id);
+                    tb.toggleFolder(index, e);
+                }
+            }
+        }, [m('i.fa.fa-refresh'), ' Retry'])
+    ]);
 }
 
 /**
@@ -2214,7 +2225,8 @@ Fangorn.Utils = {
     dismissToolbar : dismissToolbar,
     uploadRowTemplate : uploadRowTemplate,
     resolveIconView: resolveIconView,
-    orderFolder: orderFolder
+    orderFolder: orderFolder,
+    connectCheckTemplate : _connectCheckTemplate
 };
 
 Fangorn.DefaultOptions = tbOptions;
