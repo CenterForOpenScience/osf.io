@@ -29,7 +29,6 @@ module.exports = {
                 'Dataverse authorization from your <a href="/settings/addons/">user settings</a> ' +
                 'page.',
             deauthError: 'Could not disconnect the Dataverse Account at this time.',
-            deauthSuccess: 'Succesfully disconnected the connected Dataverse Account.',
             authError: 'Sorry, but there was a problem connecting to that instance of Dataverse. It ' +
                 'is likely that the instance hasn\'t been upgraded to Dataverse 4.0. If you ' +
                 'have any questions or believe this to be an error, please contact ' +
@@ -52,7 +51,6 @@ module.exports = {
                 'This will revoke access to Dropbox for all projects you have ' +
                 'authorized.',
             deauthError: 'Could not disconnect Dropbox Account at this time',
-            deauthSuccess: 'Successfully disconnected the connected Dropbox Account.'
         },
         // TODO
         github: {
@@ -67,7 +65,6 @@ module.exports = {
                 'This will revoke access to Box for all projects you have ' +
                 'authorized.',
             deauthError: 'Could not disconnect the Box Account at this time',
-            deauthSuccess: 'Successfully disconnected the connected Box Account.'
         },
         googledrive: {
           // Shown on clicking "Delete Access Token" for googledrive
@@ -75,7 +72,6 @@ module.exports = {
                 'This will revoke access to Google Drive for all projects you have ' +
                 'authorized.',
             deauthError: 'Could not disconnect the Google Drive Account at this time',
-            deauthSuccess: 'Successfully disconnected the connected Google Drive Account.'
         }
     }
 };
