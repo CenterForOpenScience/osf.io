@@ -61,10 +61,17 @@ class NodeSerializer(JSONAPISerializer):
         }
     })
 
-    children = NodeIncludeSerializer(many=True, read_only=True)
-    pointers = NodeIncludeSerializer(many=True, read_only=True)
-    registrations = NodeIncludeSerializer(many=True, read_only=True, source='registered_nodes')
-    contributors = ContributorIncludeSerializer(many=True, read_only=True, source='contributing_users')
+    children = NodeIncludeSerializer(many=True, read_only=True,
+                                     help_text= 'optional query parameters can be used to view node children, '
+                                                'pointers, registrations and contributors.  This can be done by adding'
+                                                'an "include" parameter to the url followed by a comma separated string'
+                                                'of desired queries.  '
+                                                'Ex: include=children,pointers,registrations,contributors')
+    pointers = NodeIncludeSerializer(many=True, read_only=True, help_text='See description in children')
+    registrations = NodeIncludeSerializer(many=True, read_only=True, source='registered_nodes',
+                                          help_text='See description in children')
+    contributors = ContributorIncludeSerializer(many=True, read_only=True, source='contributing_users',
+                                                help_text='See description in children')
 
     properties = ser.SerializerMethodField(help_text='A dictionary of read-only booleans: registration, collection,'
                                                      'and dashboard. Collections are special nodes used by the Project '
