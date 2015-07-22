@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 import os
 import re
-import uuid
 import urllib
 import logging
 import datetime
@@ -308,25 +307,6 @@ class Comment(GuidStoredObject):
             self.save()
 
 
-class ApiKey(StoredObject):
-
-    # The key is also its primary key
-    _id = fields.StringField(
-        primary=True,
-        default=lambda: str(ObjectId()) + str(uuid.uuid4())
-    )
-    # A display name
-    label = fields.StringField()
-
-    @property
-    def user(self):
-        return self.user__keyed[0] if self.user__keyed else None
-
-    @property
-    def node(self):
-        return self.node__keyed[0] if self.node__keyed else None
-
-
 @unique_on(['params.node', '_id'])
 class NodeLog(StoredObject):
 
@@ -340,7 +320,6 @@ class NodeLog(StoredObject):
     was_connected_to = fields.ForeignField('node', list=True)
 
     user = fields.ForeignField('user', backref='created')
-    api_key = fields.ForeignField('apikey', backref='created')
     foreign_user = fields.StringField()
 
     DATE_FORMAT = '%m/%d/%Y %H:%M UTC'
@@ -696,8 +675,6 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
     # The node (if any) used as a template for this node's creation
     template_node = fields.ForeignField('node', backref='template_node', index=True)
 
-    api_keys = fields.ForeignField('apikey', list=True, backref='keyed')
-
     piwik_site_id = fields.StringField()
 
     # Dictionary field mapping user id to a list of nodes in node.nodes which the user has subscriptions for
@@ -1039,6 +1016,10 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
             self.visible_contributor_ids.append(user._id)
             self.update_visible_ids(save=False)
         elif not visible and user._id in self.visible_contributor_ids:
+            if len(self.visible_contributor_ids) == 1:
+                raise ValueError(
+                    'Must have at least one visible contributor'
+                )
             self.visible_contributor_ids.remove(user._id)
         else:
             return
@@ -1227,7 +1208,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
 
         # set attributes which may NOT be overridden by `changes`
         new.creator = auth.user
-        new.add_contributor(contributor=auth.user, log=False, save=False)
+        new.add_contributor(contributor=auth.user, permissions=CREATOR_PERMISSIONS, log=False, save=False)
         new.template_node = self
         new.is_fork = False
         new.is_registration = False
@@ -1643,7 +1624,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         for addon in self.get_addons():
             message = addon.after_delete(self, auth.user)
             if message:
-                status.push_status_message(message)
+                status.push_status_message(message, 'info')
 
         log_date = date or datetime.datetime.utcnow()
 
@@ -1733,7 +1714,12 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         forked.permissions = {}
         forked.visible_contributor_ids = []
 
-        forked.add_contributor(contributor=user, log=False, save=False)
+        forked.add_contributor(
+            contributor=user,
+            permissions=CREATOR_PERMISSIONS,
+            log=False,
+            save=False
+        )
 
         forked.add_log(
             action=NodeLog.NODE_FORKED,
@@ -1752,7 +1738,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         for addon in original.get_addons():
             _, message = addon.after_fork(original, forked, user)
             if message:
-                status.push_status_message(message)
+                status.push_status_message(message, 'info')
 
         return forked
 
@@ -1816,7 +1802,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         for addon in original.get_addons():
             _, message = addon.after_register(original, registered, auth.user)
             if message:
-                status.push_status_message(message)
+                status.push_status_message(message, 'info')
 
         for node_contained in original.nodes:
             if not node_contained.is_deleted:
@@ -1871,13 +1857,11 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
 
     def add_log(self, action, params, auth, foreign_user=None, log_date=None, save=True):
         user = auth.user if auth else None
-        api_key = auth.api_key if auth else None
         params['node'] = params.get('node') or params.get('project')
         log = NodeLog(
             action=action,
             user=user,
             foreign_user=foreign_user,
-            api_key=api_key,
             params=params,
         )
         if log_date:
@@ -2162,6 +2146,9 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         if contributor._id in self.visible_contributor_ids:
             self.visible_contributor_ids.remove(contributor._id)
 
+        if not self.visible_contributor_ids:
+            return False
+
         # Node must have at least one registered admin user
         # TODO: Move to validator or helper
         admins = [
@@ -2179,7 +2166,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         for addon in self.get_addons():
             message = addon.after_remove_contributor(self, contributor, auth)
             if message:
-                status.push_status_message(message)
+                status.push_status_message(message, 'info')
 
         if log:
             self.add_log(
@@ -2475,7 +2462,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         for addon in self.get_addons():
             message = addon.after_set_privacy(self, permissions)
             if message:
-                status.push_status_message(message)
+                status.push_status_message(message, 'info')
 
         if log:
             action = NodeLog.MADE_PUBLIC if permissions == 'public' else NodeLog.MADE_PRIVATE

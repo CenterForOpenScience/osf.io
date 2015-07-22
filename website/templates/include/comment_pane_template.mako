@@ -46,8 +46,8 @@
                     </span>
                 </div>
                 <div data-bind="if: replyNotEmpty" class="form-group">
-                    <a class="btn btn-primary" data-bind="click: submitReply, css: {disabled: submittingReply}"><i class="fa fa-check-square-o"></i> {{commentButtonText}}</a>
-                    <a class="btn btn-default" data-bind="click: cancelReply, css: {disabled: submittingReply}"><i class="fa fa-undo"></i> Cancel</a>
+                    <a class="btn btn-default btn-sm" data-bind="click: cancelReply, css: {disabled: submittingReply}">Cancel</a>
+                    <a class="btn btn-success btn-sm" data-bind="click: submitReply, css: {disabled: submittingReply}">{{commentButtonText}}</a>
                     <span data-bind="text: replyErrorMessage" class="text-danger"></span>
                 </div>
                 <div class="text-danger">{{errorMessage}}</div>
