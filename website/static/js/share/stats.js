@@ -55,24 +55,24 @@ function timeGraph (data,vm) {
             height: 250
         },
         data: data.charts.shareTimeGraph,
-        //subchart: { //TODO @bdyetton implement subgraph and updating of search results from it
-        //    show: true,
-        //    size: {
-        //        height: 20
-        //    },
-        //    onbrush: function(zoomWin){
-        //        clearTimeout(data.charts.shareTimeGraph.dateChangeCallbackId); //stop constant redraws
-        //        data.charts.shareTimeGraph.dateChangeCallbackId = setTimeout( //update chart with new dates after some delay (1s) to stop repeated requests
-        //            function(){
-        //                var rawX = data.charts.shareTimeGraph.rawX;
-        //                var xTick = (rawX.slice(-1)[0]-rawX[0])/rawX.length;
-        //                var xMin = Math.round(rawX[0]+xTick*zoomWin[0]);
-        //                var xMax = Math.round(rawX[0]+xTick*zoomWin[1]);
-        //                Stats.mapFilter(vm, utils.fieldRange('providerUpdatedDateTime',zoomWin[0].getTime(),zoomWin[1].getTime()), 'shareTimeGraph');
-        //            }
-        //            ,1000);
-        //    }
-        //},
+        subchart: { //TODO @bdyetton implement subgraph and updating of search results from it
+            show: true,
+            size: {
+                height: 20
+            },
+            onbrush: function(zoomWin){
+                clearTimeout(data.charts.shareTimeGraph.dateChangeCallbackId); //stop constant redraws
+                data.charts.shareTimeGraph.dateChangeCallbackId = setTimeout( //update chart with new dates after some delay (1s) to stop repeated requests
+                    function(){
+                        var rawX = data.charts.shareTimeGraph.rawX;
+                        var xTick = (rawX.slice(-1)[0]-rawX[0])/rawX.length;
+                        var xMin = Math.round(rawX[0]+xTick*zoomWin[0]);
+                        var xMax = Math.round(rawX[0]+xTick*zoomWin[1]);
+                        utils.updateFilter(vm, utils.fieldRange('providerUpdatedDateTime',zoomWin[0].getTime(),zoomWin[1].getTime()), true);
+                    }
+                    ,1000);
+            }
+        },
         axis: {
             x: {
                 type: 'timeseries',
@@ -130,23 +130,6 @@ Stats.timeSinceEpochInMsToMMYY = function(timeSinceEpochInMs)
     var d = new Date(0);
     d.setUTCSeconds(timeSinceEpochInMs/1000);
     return d.getMonth().toString() + '/' + d.getFullYear().toString().substring(2);
-};
-
-Stats.mapFilter = function(vm,filter,sourceOfFilter)
-{
-    var filterToAdd = {};
-    filterToAdd.sourceOfFilter = sourceOfFilter;
-    filterToAdd.filter = filter;
-
-    var indexOfFilter = indexById(vm.statsQuerys.shareDonutGraph.filters,'sourceOfFilter',sourceOfFilter);
-    if (indexOfFilter === undefined) {
-        vm.statsQuerys.shareDonutGraph.filters.push(filterToAdd);
-    } else {
-        vm.statsQuerys.shareDonutGraph.filters[indexOfFilter] = filterToAdd;
-    }
-    utils.search(vm);//force new search query and redraw
-
-    //TODO work out some way to add filters based on some mapping
 };
 
 Stats.shareDonutGraphParser = function(data)
@@ -245,9 +228,9 @@ Stats.controller = function(vm) {
     self.vm = vm;
     self.vm.graphs = {}; //holds actual c3 chart objects
     self.vm.statsData = {'charts': {}}; //holds data for charts
-
+    self.vm.loadStats = true; //we want to turn stats on
     //request these querys/aggregations for charts
-    self.vm.statsQuerys = {
+    self.vm.statsAggs = {
         'shareTimeGraph' : Stats.sourcesByDatesAgg(),
         'shareDonutGraph' : Stats.sourcesAgg()
     };
@@ -270,12 +253,12 @@ Stats.controller = function(vm) {
             self.vm.graphs[divId] = graphFunction(self.vm.statsData, self.vm);
         }});
     };
+    //
+    //self.loadStats = function(){
+    //    return utils.loadStats(self.vm);
+    //};
 
-    self.loadStats = function(){
-        return utils.loadStats(self.vm);
-    };
-
-    utils.onSearch(self.loadStats);
+    //utils.onSearch(self.loadStats);
 
     m.request({
         method: 'GET',
@@ -286,7 +269,7 @@ Stats.controller = function(vm) {
         self.vm.latestDate = new $osf.FormattableDate(data.results[0].providerUpdatedDateTime).local;
     }).then(m.redraw);
 
-    self.loadStats();
+    //self.loadStats();
 };
 
 module.exports = Stats;

@@ -70,7 +70,6 @@ utils.loadMore = function(vm) {
     else {
         var page = vm.page++ * 10;
         var sort = vm.sortMap[vm.sort()] || null;
-
         vm.resultsLoading(true);
         m.request({
             method: 'post',
@@ -98,7 +97,6 @@ utils.search = function(vm) {
         vm.optionalFilters = [];
         vm.requiredFilters = [];
         vm.sort('Relevance');
-        utils.loadStats(vm);
         History.pushState({}, 'OSF | SHARE', '?');
         ret.resolve(null);
     }
@@ -118,6 +116,9 @@ utils.search = function(vm) {
         }
         utils.loadMore(vm)
             .then(function(data) {
+                if (vm.loadStats) {
+                    utils.processStats(vm,data);
+                }
                 utils.updateVM(vm, data);
                 ret.resolve(vm);
             });
@@ -157,11 +158,10 @@ utils.buildQuery = function(vm) {
     if (vm.sortMap[vm.sort()]) {
         sort[vm.sortMap[vm.sort()]] = 'desc';
     }
-
     return {
         'query': (vm.query().length > 0 && (vm.query() !== '*')) ? utils.commonQuery(vm.query()) : utils.matchAllQuery(),
         'filter': utils.boolQuery(must, null, should),
-        'aggregations': {},  // TODO
+        'aggregations': vm.loadStats ? utils.buildStatsAggs(vm) : {},
         'from': (vm.page - 1) * 10,
         'size': 10,
         'sort': [sort],
@@ -208,6 +208,16 @@ utils.removeFilter = function(vm, filter){
     utils.search(vm);
 };
 
+utils.removeFilterById = function(vm, id){ //TODO test
+    $.map(vm.requiredFilters, function (arrayItem) {
+        if (arrayItem[key] === id){delete(arrayItem)}
+    });
+
+    $.map(vm.optionalFilters, function (arrayItem) {
+        if (arrayItem[key] === id){delete(arrayItem)}
+    });
+};
+
 utils.arrayEqual = function(a, b) {
     return $(a).not(b).length === 0 && $(b).not(a).length === 0;
 };
@@ -219,39 +229,6 @@ utils.addFiltersToQuery = function(query,filters){
         });
     }
     return query
-};
-
-utils.loadStats = function(vm) { //plug and play function to send elasticsearch agg and load in stats, and parse for chart
-    if (vm.statsQuerys) {
-        //For every aggregation required, perform a search
-        $.map(Object.keys(vm.statsQuerys), function (statQuery) {
-            vm.statsLoaded(false);
-            //var queryToPost = utils.addFiltersToQuery(vm.statsQuerys[statQuery].query, vm.statsQuerys[statQuery].filters);
-            var queryToPost = utils.addFiltersToQuery(vm.buildQuery().query, vm.statsQuerys[statQuery].filters);
-            queryToPost = utils.addAggToQuery(queryToPost,vm.statsQuerys[statQuery].aggregations);
-            m.request({
-                method: 'POST',
-                data: queryToPost,
-                url: '/api/v1/share/search/?' + $.param({v: 2}),
-                background: true
-            }).then(function (data) { //TODO maybe this should be moved to the stats file?
-                if (data.aggregations) {
-                    $.map(Object.keys(data.aggregations), function (key) { //parse data and load correctly
-                        if (vm.statsParsers[key]) {
-                            var chartData = vm.statsParsers[key](data);
-                            vm.statsData.charts[chartData.name] = chartData;
-                            if (chartData.name in vm.graphs) {
-                                vm.graphs[chartData.name].load(chartData)
-                            }
-                        }
-                    });
-                }
-                vm.statsLoaded(true);
-            }).then(m.redraw, function () { //Redraw is called everytime we get stats data, and will attempt to redraw every chart even if data for it is not availble for it yet.
-                console.log('failure to load stats')
-            }); //TODO deal with this error correctly
-        });
-    }
 };
 
 utils.filteredQuery = function(query, filter) {
@@ -314,7 +291,7 @@ utils.boolQuery = function(must, must_not, should, minimum) {
 
 utils.dateHistogramFilter = function(feild,gte,lte,interval){
     //gte and lte in ms since epoch
-    lte = lte || new Date().getTime()
+    lte = lte || new Date().getTime();
     gte = gte || 0;
 
     interval = interval || 'week';
@@ -329,19 +306,6 @@ utils.dateHistogramFilter = function(feild,gte,lte,interval){
             }
         }
     }
-};
-
-utils.addAggToQuery = function(query, agg)
-{
-    var ret = {};
-    ret.query = query;
-    if (agg){ret.aggregations = agg}
-    return ret;
-};
-
-utils.updateAggs = function(vm,aggs)
-{
-    vm.query.aggs[name] = agg
 };
 
 utils.commonQuery = function(query_string, field) {
@@ -376,6 +340,54 @@ utils.parseToMatchFilter = function(term) {
     return utils.queryFilter(
         utils.matchQuery(items[0], items[1])
     );
+};
+
+utils.processStats = function(vm,data)
+{
+    if (data.aggregations) {
+        $.map(Object.keys(data.aggregations), function (key) { //parse data and load correctly
+            if (vm.statsParsers[key]) {
+                var chartData = vm.statsParsers[key](data);
+                vm.statsData.charts[chartData.name] = chartData;
+                if (chartData.name in vm.graphs) {
+                    vm.graphs[chartData.name].load(chartData)
+                }
+            }
+        });
+    } else {
+        $osf.growl('Error','Could not load search statistics','danger');
+    }
+};
+
+
+utils.updateAggs = function(currentAgg,newAgg,global)
+{
+    global = global || false;
+    if (currentAgg) {
+        if (currentAgg.all && global){
+            $.extend(currentAgg.all.aggregations, newAgg)
+        } else {
+            $.extend(currentAgg, newAgg)
+        }
+        return currentAgg
+    } else {
+        if (global){
+            return {'all':{'global':{},'aggregations':newAgg}}
+        } else{
+            return newAgg
+        }
+
+    }
+};
+
+
+utils.buildStatsAggs = function(vm)
+{
+    var currentAggs = {};
+    $.map(Object.keys(vm.statsAggs), function (statQuery) {
+        currentAggs = utils.updateAggs(currentAggs, vm.statsAggs[statQuery].aggregations);
+    });
+    return currentAggs
 };
 
 
