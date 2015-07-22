@@ -72,29 +72,23 @@ class NodeSerializer(JSONAPISerializer):
     def get_children(self, obj):
         auth = self.get_user_auth(self.context['request'])
         nodes = [node for node in obj.nodes if node.can_view(auth) and node.primary]
-        return {
-            'related': Link('nodes:node-children', kwargs={'node_id': '<pk>'}).resolve_url(obj),
-            'count': len(nodes)
-        }
+        return self.get_object_information('children', nodes, obj)
 
     def get_contributors(self, obj):
-        return {
-            'related': Link('nodes:node-contributors', kwargs={'node_id': '<pk>'}).resolve_url(obj),
-            'count': len(obj.contributors),
-        }
+        return self.get_object_information('contributors', obj.contributors, obj)
 
     def get_pointers(self, obj):
-        return {
-            'related': Link('nodes:node-pointers', kwargs={'node_id': '<pk>'}).resolve_url(obj),
-            'count': len(obj.nodes_pointer),
-        }
+        return self.get_object_information('pointers', obj.nodes_pointer, obj)
 
     def get_registrations(self, obj):
         auth = self.get_user_auth(self.context['request'])
         registrations = [node for node in obj.node__registrations if node.can_view(auth)]
+        return self.get_object_information('registrations', registrations, obj)
+
+    def get_object_information(self, name, objects, obj):
         return {
-            'related': Link('nodes:node-registrations', kwargs={'node_id': '<pk>'}).resolve_url(obj),
-            'count': len(registrations),
+            'related': Link('nodes:node-{}'.format(name), kwargs={'node_id': '<pk>'}).resolve_url(obj),
+            'count': len(objects),
         }
 
     @staticmethod
