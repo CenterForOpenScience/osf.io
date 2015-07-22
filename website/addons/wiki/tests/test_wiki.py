@@ -1194,6 +1194,7 @@ class TestWikiMenu(OsfTestCase):
                 ],
                 'kind': 'component',
                 'category': self.component.category,
+                'pointer': False,
             }
         ]
         data = views.format_component_wiki_pages(node=self.project, auth=self.consolidate_auth)
