@@ -269,6 +269,26 @@ class TestUser(OsfTestCase):
         dupe = UserFactory(merged_by=master)
         assert_false(dupe.is_active)
 
+    def test_merged_user_with_two_account_on_same_project_with_different_visibility_and_permissions(self):
+        user2 = UserFactory.build()
+        user2.save()
+
+        project = ProjectFactory(is_public=True)
+        # Both the master and dupe are contributors
+        project.add_contributor(user2, log=False)
+        project.add_contributor(self.user, log=False)
+        project.set_permissions(user=self.user, permissions=['read'])
+        project.set_permissions(user=user2, permissions=['read', 'write', 'admin'])
+        project.set_visible(user=self.user, visible=False)
+        project.set_visible(user=user2, visible=True)
+        project.save()
+        self.user.merge_user(user2)
+        self.user.save()
+
+        assert_true('admin' in project.permissions[self.user._id])
+        assert_true(self.user._id in project.visible_contributor_ids)
+        assert_false(project.is_contributor(user2))
+
     def test_cant_create_user_without_username(self):
         u = User()  # No username given
         with assert_raises(ValidationError):
@@ -2724,6 +2744,15 @@ class TestTemplateNode(OsfTestCase):
         assert_equal(new.wiki_pages_current, {})
         assert_equal(new.wiki_pages_versions, {})
 
+    def test_user_who_makes_node_from_template_has_creator_permission(self):
+        project = ProjectFactory(is_public=True)
+        user = UserFactory()
+        auth = Auth(user)
+
+        templated = project.use_as_template(auth)
+
+        assert_equal(templated.get_permissions(user), ['read', 'write', 'admin'])
+
     def test_template_security(self):
         """Create a templated node from a node with public and private children
 
@@ -2953,6 +2982,9 @@ class TestForkNode(OsfTestCase):
         user2_auth = Auth(user=user2)
         fork = self.project.fork_node(user2_auth)
         assert_true(fork)
+        # Forker has admin permissions
+        assert_equal(len(fork.contributors), 1)
+        assert_equal(fork.get_permissions(user2), ['read', 'write', 'admin'])
 
     def test_fork_registration(self):
         self.registration = RegistrationFactory(project=self.project)

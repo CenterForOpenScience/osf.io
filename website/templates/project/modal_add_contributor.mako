@@ -61,7 +61,7 @@
                                 </thead>
                                 <tbody data-bind="foreach:{data:results, as: 'contributor', afterRender:addTips}">
                                     <tr data-bind="if:!($root.selected($data))">
-                                        <td style="padding-right: 10px;">
+                                        <td class="p-r-sm osf-icon-td" >
                                             <a
                                                     class="btn btn-success contrib-button btn-mini"
                                                     data-bind="click:$root.add, tooltip: {title: 'Add contributor'}"
@@ -148,7 +148,7 @@
                                 </thead>
                                 <tbody data-bind="sortable: {data: selection, as: 'contributor', afterRender: makeAfterRender(), options: {containment: 'parent'}}">
                                     <tr>
-                                        <td style="padding-right: 10px;">
+                                        <td class="p-r-sm" class="osf-icon-td">
                                             <a
                                                     class="btn btn-default contrib-button btn-mini"
                                                     data-bind="click:$root.remove, tooltip: {title: 'Remove contributor'}"
@@ -167,7 +167,7 @@
                                         </td>
 
                                         <td>
-                                            <select class="form-control" data-bind="
+                                            <select class="form-control input-sm" data-bind="
                                                 options: $root.permissionList,
                                                 value: permission,
                                                 optionsText: 'text'">

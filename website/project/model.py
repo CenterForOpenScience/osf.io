@@ -1158,7 +1158,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
 
         # set attributes which may NOT be overridden by `changes`
         new.creator = auth.user
-        new.add_contributor(contributor=auth.user, permissions=('read', 'write', 'admin'), log=False, save=False)
+        new.add_contributor(contributor=auth.user, permissions=CREATOR_PERMISSIONS, log=False, save=False)
         new.template_node = self
         new.is_fork = False
         new.is_registration = False
@@ -1574,7 +1574,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         for addon in self.get_addons():
             message = addon.after_delete(self, auth.user)
             if message:
-                status.push_status_message(message)
+                status.push_status_message(message, 'info')
 
         log_date = date or datetime.datetime.utcnow()
 
@@ -1664,7 +1664,12 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         forked.permissions = {}
         forked.visible_contributor_ids = []
 
-        forked.add_contributor(contributor=user, log=False, save=False)
+        forked.add_contributor(
+            contributor=user,
+            permissions=CREATOR_PERMISSIONS,
+            log=False,
+            save=False
+        )
 
         forked.add_log(
             action=NodeLog.NODE_FORKED,
@@ -1683,7 +1688,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         for addon in original.get_addons():
             _, message = addon.after_fork(original, forked, user)
             if message:
-                status.push_status_message(message)
+                status.push_status_message(message, 'info')
 
         return forked
 
@@ -1747,7 +1752,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         for addon in original.get_addons():
             _, message = addon.after_register(original, registered, auth.user)
             if message:
-                status.push_status_message(message)
+                status.push_status_message(message, 'info')
 
         for node_contained in original.nodes:
             if not node_contained.is_deleted:
@@ -2091,6 +2096,9 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         if contributor._id in self.visible_contributor_ids:
             self.visible_contributor_ids.remove(contributor._id)
 
+        if not self.visible_contributor_ids:
+            return False
+
         # Node must have at least one registered admin user
         # TODO: Move to validator or helper
         admins = [
@@ -2108,7 +2116,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         for addon in self.get_addons():
             message = addon.after_remove_contributor(self, contributor, auth)
             if message:
-                status.push_status_message(message)
+                status.push_status_message(message, 'info')
 
         if log:
             self.add_log(
@@ -2404,7 +2412,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         for addon in self.get_addons():
             message = addon.after_set_privacy(self, permissions)
             if message:
-                status.push_status_message(message)
+                status.push_status_message(message, 'info')
 
         if log:
             action = NodeLog.MADE_PUBLIC if permissions == 'public' else NodeLog.MADE_PRIVATE

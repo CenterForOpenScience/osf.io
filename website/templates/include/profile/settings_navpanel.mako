@@ -1,6 +1,6 @@
 <%page args="current_page=''" />
 
-<div class="osf-affix profile-affix" data-spy="affix" data-offset-top="70" data-offset-bottom="268">
+<div class="osf-affix profile-affix panel panel-default" data-spy="affix" data-offset-top="70" data-offset-bottom="268">
   <ul class="nav nav-stacked nav-pills">
       <li ${'class="active"' if current_page == 'profile' else ''}><a href="${ '#' if current_page == 'profile' else web_url_for('user_profile') }">Profile Information</a></li>
 
