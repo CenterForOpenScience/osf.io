@@ -1,5 +1,5 @@
 
-def custom_exception_handler(exc, context):
+def jsonapi_exception_handler(exc, context):
     """
     Custom exception handler that nests detail inside errors.
     """
