@@ -230,7 +230,7 @@ class OsfStorageFileNode(StoredObject):
         if not rented_file:
             rented_file = OsfStorageRentedFile()
         else:
-            rented_file.initiation_date = datetime.datetime.now()
+            rented_file.initiation_date = datetime.datetime.utcnow()
         rented_file._id = self._id
         rented_file.name = self.name
         rented_file.renter = renter
