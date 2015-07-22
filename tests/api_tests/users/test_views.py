@@ -246,7 +246,7 @@ class TestUserIncludeQueryParameters(ApiTestCase):
         additional_query_params = res.json['data']['nodes']
         assert_in(self.project._id, additional_query_params[0]['id'])
 
-        #checks to see that only one project is displayed
+        # checks to see that only one project is displayed
         assert_equal(len(additional_query_params), 1)
 
     def test_get_node_contributors_include(self):
@@ -254,4 +254,3 @@ class TestUserIncludeQueryParameters(ApiTestCase):
         assert_equal(res.status_code, 200)
         additional_query_params = res.json['data'][0]['nodes']
         assert_in(self.project._id, additional_query_params[0]['id'])
-        
