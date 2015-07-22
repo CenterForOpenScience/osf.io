@@ -2,7 +2,7 @@
 from nose.tools import *  # flake8: noqa
 
 from website.models import Node
-from tests.base import ApiTestCase
+from tests.base import ApiTestCase, fake
 from api.base.settings.defaults import API_BASE
 from tests.factories import UserFactory, ProjectFactory, FolderFactory, DashboardFactory
 
@@ -77,7 +77,7 @@ class TestUserDetail(ApiTestCase):
         super(TestUserDetail, self).setUp()
         self.user_one = UserFactory.build()
         self.user_one.set_password('justapoorboy')
-        self.user_one.social['twitter'] = 'howtopizza'
+        self.user_one.social['twitter'] = fake.first_name()
         self.user_one.save()
         self.auth_one = (self.user_one.username, 'justapoorboy')
         self.user_two = UserFactory.build()
@@ -99,7 +99,10 @@ class TestUserDetail(ApiTestCase):
         res = self.app.get(url)
         user_json = res.json['data']
         assert_equal(user_json['fullname'], self.user_one.fullname)
-        assert_equal(user_json['social_accounts']['twitter'], 'howtopizza')
+        assert_equal(
+            user_json['social_accounts']['twitter'],
+            self.user_one.social['twitter']
+        )
 
     def test_get_incorrect_pk_user_logged_in(self):
         url = "/{}users/{}/".format(API_BASE, self.user_two._id)
@@ -121,7 +124,7 @@ class TestUserNodes(ApiTestCase):
         super(TestUserNodes, self).setUp()
         self.user_one = UserFactory.build()
         self.user_one.set_password('justapoorboy')
-        self.user_one.social['twitter'] = 'howtopizza'
+        self.user_one.social['twitter'] = fake.first_name()
         self.user_one.save()
         self.auth_one = (self.user_one.username, 'justapoorboy')
         self.user_two = UserFactory.build()

@@ -1093,27 +1093,27 @@ class TestUserProfile(OsfTestCase):
         assert_equal(res.json['message_long'], 'Invalid personal URL.')
 
     def test_serialize_social_editable(self):
-        self.user.social['twitter'] = 'howtopizza'
+        self.user.social['twitter'] = 'howtopizza1'
         self.user.save()
         url = api_url_for('serialize_social')
         res = self.app.get(
             url,
             auth=self.user.auth,
         )
-        assert_equal(res.json.get('twitter'), 'howtopizza')
+        assert_equal(res.json.get('twitter'), 'howtopizza1')
         assert_true(res.json.get('github') is None)
         assert_true(res.json['editable'])
 
     def test_serialize_social_not_editable(self):
         user2 = AuthUserFactory()
-        self.user.social['twitter'] = 'howtopizza'
+        self.user.social['twitter'] = 'howtopizza2'
         self.user.save()
         url = api_url_for('serialize_social', uid=self.user._id)
         res = self.app.get(
             url,
             auth=user2.auth,
         )
-        assert_equal(res.json.get('twitter'), 'howtopizza')
+        assert_equal(res.json.get('twitter'), 'howtopizza2')
         assert_true(res.json.get('github') is None)
         assert_false(res.json['editable'])
 
