@@ -238,8 +238,8 @@ utils.loadRawNormalized = function(result){
     }
     return m.request({
         method: 'GET',
-        url: 'http://localhost:8000/documents/' + result.shareProperties.docID,
-        // url: '/api/v1/share/documents/' + result.shareProperties.docID,  // TODO where will the postgres API live??
+        // url: 'http://localhost:8000/documents/' + result.shareProperties.docID,
+        url: '/api/v1/share/documents/' + result.shareProperties.docID,  // TODO where will the postgres API live??
         extract: nonJsonErrors
     }).then(function(data) {
 
@@ -250,10 +250,6 @@ utils.loadRawNormalized = function(result){
         result.raw = all_raw.doc;
         result.rawfiletype = all_raw.filetype;
         result.normalized = normed;
-
-        console.log(typeof(result.raw));
-        console.log(typeof(result.normalized));
-
     }, function(error) {
         result.rawfiletype = "json";
         result.normalized = '"Normalized data not found."';
