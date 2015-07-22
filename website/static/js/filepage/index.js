@@ -60,7 +60,7 @@ var FileViewPage = {
                 title: 'Delete file?',
                 message: '<p class="overflow">' +
                         'Are you sure you want to delete <strong>' +
-                        self.file.safeName + '</strong>?' +
+                       self.file.safeName + '</strong>?' +
                     '</p>',
                 callback: function(confirm) {
                     if (!confirm) {
@@ -85,31 +85,42 @@ var FileViewPage = {
             });
         });
         $(document).on('fileviewpage:rent', function() {
-            bootbox.confirm({
+            bootbox.dialog({
                 title: 'Confirm file lock',
-                message: 'Are you sure you want to lock this file? This would mean ' +
-                    'other contirbutors cannot edit, delete or upload new versions of this file ' +
-                    'as long as it is locked. You can unlock it at anytime.',
-                callback: function(confirm) {
-                    if (!confirm) {
-                        return;
-                    }
-                    $osf.postJSON(
-                        '/api/v1/project/' + self.node.id + '/osfstorage' + self.file.path +'/rent/',
-                        {
-                            'user': self.context.userId,
-                            'end_date': 2
-                        }
-                    ).done(function(resp) {
-                        window.location.reload();
-                    }).fail(function(resp) {
-                        $osf.growl('Error', 'Unable to lock file');
-                    });
-                },
+                message: '<div><p>Are you sure you want to lock this file? This would mean ' +
+                    'other contributors cannot edit, delete or upload new versions of this file ' +
+                    'as long as it is locked. You can unlock it at anytime or extend the lock period.' +
+                    'Please select the locking period below:</p></div>' +
+                    '<div class="radio align-center"><input type="radio" name="date" value="day">1 day</div></div>'+
+                    '<div class="radio align-center"><input type="radio" name="date" value="week">1 week</div></div>'+
+                    '<div class="radio align-center"><input type="radio" name="date" value="month">1 month</div></div>',
                 buttons:{
                     confirm:{
                         label: 'Lock file',
-                        className: 'btn-warning'
+                        className: 'btn-warning',
+                        callback: function() {
+                            /*var date = $("input[name='date']:checked").val()
+                            if (date === 'day'){
+                                date = new Date().getTime() + (1 * 24 * 60 * 60 * 1000);
+                            }
+                            else if (date == 'week'){
+                                date = new Date().getTime()  + (7 * 24 * 60 * 60 * 1000);
+                            }
+                            else {
+                                date =new Date().getTime()  + (30 * 24 * 60 * 60 * 1000);
+                            }*/
+                            $osf.postJSON(
+                                '/api/v1/project/' + self.node.id + '/osfstorage' + self.file.path +'/rent/',
+                                {
+                                    'user': self.context.userId,
+                                    'end_date': 2
+                                }
+                            ).done(function(resp) {
+                                window.location.reload();
+                            }).fail(function(resp) {
+                                $osf.growl('Error', 'Unable to lock file');
+                            });
+                        }
                     }
                 }
             });
