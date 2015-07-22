@@ -473,6 +473,11 @@ ViewModel.prototype.importAuth = function() {
                         if (accountId) {
                             self.connectExistingAccount.call(self, (accountId));
                         }
+                    },
+                    buttons:{
+                        confirm:{
+                            label: 'Import'
+                        }
                     }
                 });
             } else {
@@ -535,8 +540,8 @@ ViewModel.prototype.deauthorize = function() {
         },
         buttons:{
             confirm:{
-                label:'Disconnect',
-                className:'btn-danger'
+                label: 'Disconnect',
+                className: 'btn-danger'
             }
         }
     });

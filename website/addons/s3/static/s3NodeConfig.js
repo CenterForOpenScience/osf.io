@@ -142,7 +142,8 @@ ViewModel.prototype.deauthorizeNode = function() {
         },
         buttons:{
             confirm:{
-                label:'Disconnect'
+                label: 'Disconnect',
+                className: 'btn-danger'
             }
         }
     });
