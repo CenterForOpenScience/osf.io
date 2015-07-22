@@ -22,7 +22,7 @@ var oop = require('js/oop');
  *  Store the data related to a single API application
  */
 var ApplicationData = oop.defclass({
-    constructor: function (data) {
+    constructor: function (data) {  // Read in API data and store as object
         data = data || {};
 
         // User-editable fields
@@ -58,7 +58,7 @@ var ApplicationData = oop.defclass({
     },
 
     serialize: function () {
-        return {
+        return { // Convert data to JSON-serializable format consistent with API
             name: this.name(),
             description: this.description(),
             home_url: this.homeUrl(),
@@ -76,10 +76,10 @@ var ApplicationData = oop.defclass({
 var ApplicationDataClient = oop.defclass({
     /*
      * Create the client for server operations on ApplicationData objects.
-     * @param {Object} urls: An object with urls for operations. Expects fields apiListUrl and apiDetailUrl.
+     * @param {Object} apiListUrl: The api URL for application listing/creation
      */
-    constructor: function (urls) {
-        this.urls = urls || {};
+    constructor: function (apiListUrl) {
+        this.apiListUrl = apiListUrl;
     },
     _fetchData: function (url) {
         var ret = $.Deferred();
@@ -96,10 +96,10 @@ var ApplicationDataClient = oop.defclass({
         return ret.promise();
     },
     fetchList: function () {
-        return this._fetchData(this.urls.apiListUrl);
+        return this._fetchData(this.apiListUrl);
     },
-    fetchOne: function () {
-        return this._fetchData(this.urls.apiDetailUrl);
+    fetchOne: function (url) {
+        return this._fetchData(url);
     },
     _sendData: function (appData, url, method) {
         var ret = $.Deferred();
@@ -107,7 +107,7 @@ var ApplicationDataClient = oop.defclass({
         var payload = appData.serialize();
         var request = $osf.ajaxJSON(method, url, {isCors: true, data: payload});
 
-        request.done(function (data) {
+        request.done(function (data) { // The server response will contain the newly created/updated record
             ret.resolve(new ApplicationData(data.data));
         }.bind(this));
         request.fail(function (xhr, status, error) {
@@ -116,7 +116,7 @@ var ApplicationDataClient = oop.defclass({
         return ret.promise();
     },
     createOne: function (appData) {
-        var url = this.urls.apiListUrl;
+        var url = this.apiListUrl;
         return this._sendData(appData, url, 'POST');
     },
     updateOne: function (appData) {
@@ -160,7 +160,7 @@ var ApplicationsListViewModel = oop.defclass({
         }.bind(this));
 
         // Set up data access client
-        this.client = new ApplicationDataClient(urls);
+        this.client = new ApplicationDataClient(urls.apiListUrl);
     },
     init: function () {
         var request = this.client.fetchList();
@@ -218,7 +218,7 @@ var ApplicationDetailViewModel = oop.defclass({
         // Set up data access client
         this.urls = urls;
 
-        this.client = new ApplicationDataClient(urls);
+        this.client = new ApplicationDataClient(urls.apiListUrl);
 
         // Control success/failure messages above submit buttons
         this.showMessages = ko.observable(false);
@@ -235,7 +235,7 @@ var ApplicationDetailViewModel = oop.defclass({
         if (this.isCreateView()) {
             this.appData(new ApplicationData());
         } else {
-            var request = this.client.fetchOne();
+            var request = this.client.fetchOne(this.apiDetailUrl());
             request.done(function (data) {
                 this.appData(data);
             }.bind(this));
@@ -247,7 +247,7 @@ var ApplicationDetailViewModel = oop.defclass({
                             'danger');
 
                 Raven.captureMessage('Error fetching application data', {
-                    url: this.urls.apiDetailUrl,
+                    url: this.apiDetailUrl,
                     status: status,
                     error: error
                 });
