@@ -8,7 +8,6 @@ from modularodm.storage.base import KeyExistsException
 
 from flask import request
 
-from framework import status
 from framework.auth import Auth
 from framework.exceptions import HTTPError
 from framework.auth.decorators import must_be_signed
@@ -235,7 +234,7 @@ def osfstorage_download(file_node, payload, node_addon, **kwargs):
 def osfstorage_rent(file_node, **kwargs):
     if file_node.renter == '':
         data = request.get_json()
-        file_node.rent(data['user'])
+        file_node.rent(renter=data['user'], date=data['end_date'])
         return {'status': 'success'}
     else:
         return {'status': 'failure'}
@@ -251,16 +250,3 @@ def osfstorage_return(file_node, **kwargs):
 @decorators.autoload_filenode(must_be='file')
 def osfstorage_rented(file_node, **kwargs):
     return {'renter': file_node.rented}
-
-@decorators.autoload_filenode(must_be='file')
-def osfstorage_rent_meta(file_node, **kwargs):
-    renter = file_node.renter
-    user = request.get_json()['user']
-    if (renter == '') or (renter == user):
-        is_rented = False
-    else:
-        is_rented = True
-        message = 'This file is currently locked by ' + renter + '. It needs to be unlocked to be edited.'
-        status.push_status_message(message)
-    return {'rented': is_rented,
-            'renter': renter}

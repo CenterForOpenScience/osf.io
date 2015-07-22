@@ -3,7 +3,7 @@ from __future__ import unicode_literals
 import os
 import bson
 import logging
-
+import datetime
 import furl
 
 from modularodm import fields, Q
@@ -224,14 +224,28 @@ class OsfStorageFileNode(StoredObject):
         return self.renter
 
     @utils.must_be('file')
-    def rent(self, renter, save=True):
+    def rent(self, renter, date, save=True):
         self.renter = renter
+        rented_file = self.find_rent_by_name(self.name)
+        if not rented_file:
+            rented_file = OsfStorageRentedFile()
+        else:
+            rented_file.initiation_date = datetime.datetime.now()
+        rented_file._id = self._id
+        rented_file.name = self.name
+        rented_file.renter = renter
+        rented_file.end_date = date
+        rented_file.file_node = self
+        rented_file.state = 'active'
+        rented_file.save()
         if save:
             self.save()
 
     @utils.must_be('file')
     def return_rent(self, save=True):
         self.renter = ''
+        rented_file = self.find_rent_by_name(self.name)
+        rented_file.state = 'inactive'
         if save:
             self.save()
 
@@ -263,6 +277,13 @@ class OsfStorageFileNode(StoredObject):
             Q('name', 'eq', name) &
             Q('kind', 'eq', kind) &
             Q('parent', 'eq', self)
+        )
+
+    @utils.must_be('file')
+    def find_rent_by_name(self, name):
+        return OsfStorageRentedFile.find_one(
+            Q('name', 'eq', name) &
+            Q('file_node', 'eq', self)
         )
 
     def append_folder(self, name, save=True):
@@ -550,3 +571,24 @@ class OsfStorageTrashedFileNode(StoredObject):
     parent = fields.ForeignField('OsfStorageFileNode', index=True)
     versions = fields.ForeignField('OsfStorageFileVersion', list=True)
     node_settings = fields.ForeignField('OsfStorageNodeSettings', required=True, index=True)
+
+class OsfStorageRentedFile(StoredObject):
+
+    _id = fields.StringField(primary=True)
+    name = fields.StringField(required=True, index=True)
+    initiation_date = fields.DateTimeField(auto_now_add=datetime.datetime.utcnow)
+    renter = fields.ForeignField('user')
+    end_date = fields.DateTimeField()
+    file_node = fields.ForeignField('OsfStorageFileNode', index=True)
+
+    state = 'inactive'
+
+    @property
+    def rent_end_date(self):
+        if self.state == 'active':
+            return self.end_date
+        return False
+
+    def finish_rent(self):
+        self.file_node.renter = ''
+        self.state = 'inactive'

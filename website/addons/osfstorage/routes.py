@@ -140,14 +140,6 @@ api_routes = {
             json_renderer,
         ),
 
-        Rule(
-            [
-                '/project/<nid>/osfstorage/<fid>/rent_meta/',
-            ],
-            'post',
-            views.osfstorage_rent_meta,
-            json_renderer,
-        ),
     ],
 
 }

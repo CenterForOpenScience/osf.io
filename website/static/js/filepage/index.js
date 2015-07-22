@@ -36,7 +36,7 @@ var FileViewPage = {
                 self.file.renter = resp.renter;
                 if ((self.file.renter !== '') && (self.file.renter !== self.context.userId)) {
                 $osf.growl('File is locked', 'This file has been locked by a <a href="/' + self.file.renter +
-                    '"> collaborator </a>. It needs to be unlocked before any changes can be made.' )
+                    '"> collaborator </a>. It needs to be unlocked before any changes can be made.' );
             }
             }).fail(function(resp) {
             });
@@ -97,7 +97,8 @@ var FileViewPage = {
                     $osf.postJSON(
                         '/api/v1/project/' + self.node.id + '/osfstorage' + self.file.path +'/rent/',
                         {
-                            'user': self.context.userId
+                            'user': self.context.userId,
+                            'end_date': 2
                         }
                     ).done(function(resp) {
                         window.location.reload();
