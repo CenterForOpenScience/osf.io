@@ -31,6 +31,7 @@ class UserMixin(object):
             obj = self.get_additional_parameters(self.request, obj)
         return obj
 
+
 class UserIncludeMixin(object):
 
     def get_additional_parameters(self, request, user):
@@ -95,7 +96,7 @@ class UserDetail(generics.RetrieveAPIView, UserMixin, UserIncludeMixin):
     def get_object(self):
         return self.get_user()
 
-# todo, modify mixin
+
 class UserNodes(generics.ListAPIView, UserMixin, ODMFilterMixin, NodeIncludeMixin):
     """Nodes belonging to a user.
 
