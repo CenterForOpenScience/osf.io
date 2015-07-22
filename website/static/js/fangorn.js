@@ -1027,9 +1027,6 @@ function _fangornResolveLazyLoad(item) {
 function _fangornLazyLoadError (item) {
     item.connected = false;
     var configOption = resolveconfigOption.call(this, item, 'lazyLoadError', [item]);
-    if (!configOption) {
-        item.notify.update('OSF Storage files couldn\'t load. Please try again later.', 'deleting', undefined, 3000);
-    }
 }
 
 /**
@@ -1121,12 +1118,20 @@ function _fangornTitleColumn(item, col) {
         return m('a.fg-file-links',{ href: '/' + item.data.nodeID.toString() + '/'},
                 item.data.name);
     }
-    if (item.data.isAddonRoot && !item.connected) {
+    if (item.data.isAddonRoot && item.connected === false) { // as opposed to undefined.
         return m('span.text-danger', [
             m('span', item.data.name),
-            m('span.m-l-xs', ' files can\'t be loaded at this time.' ),
-            m('button.btn.btn-xs.btn-primary.m-l-xs', 'Try Again')
-            ]);
+            m('span.m-l-xs', ' can\'t be loaded at this time.' ),
+            m('button.btn.btn-xs.btn-default.m-l-xs', {
+                onclick : function(e){
+                    e.stopImmediatePropagation();
+                    if (tb.options.togglecheck.call(tb, item)) {
+                        var index = tb.returnIndex(item.id);
+                        tb.toggleFolder(index, e);
+                    }
+                }
+            },'Try Again')
+        ]);
     }
     return m('span', item.data.name);
 }
