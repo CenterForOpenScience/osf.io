@@ -90,6 +90,10 @@ installed. Consult the Waterbutler
 [repository](https://github.com/CenterForOpenScience/waterbutler) and
 [documentation](https://waterbutler.readthedocs.org/en/latest/) for information on how to set up and run this service.
 
+#### Modular File Renderer
+
+The Modular File Renderer (MFR) is used to render uploaded files to HTML via an iFrame so that they can be viewed directly on the OSF. Files will not be rendered if the MFR is not running. Consult [repository] (https://github.com/CenterForOpenScience/modular-file-renderer) for information on how to install and run the MFR. 
+
 ## Installation
 
 These instructions assume a working knowledge of package managers and the command line.
