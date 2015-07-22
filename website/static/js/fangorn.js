@@ -1682,7 +1682,11 @@ var FGToolbar = {
             }, '')
         );
 
-        templates[toolbarModes.DEFAULT] =  m('.col-xs-12', m('.pull-right', [finalRowButtons,  m('span', generalButtons)]));
+        if (item && item.connected !== false){
+            templates[toolbarModes.DEFAULT] =  m('.col-xs-12', m('.pull-right', [finalRowButtons,  m('span', generalButtons)]));
+        } else {
+            templates[toolbarModes.DEFAULT] =  m('.col-xs-12', m('.pull-right', m('span', generalButtons)));
+        }
         return m('.row.tb-header-row', [
             m('#folderRow', { config : function () {
                 $('#folderRow input').focus();
