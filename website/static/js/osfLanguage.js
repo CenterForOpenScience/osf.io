@@ -1,4 +1,5 @@
 var SUPPORT_EMAIL = 'support@osf.io';
+var SUPPORT_EMAIL_MAILTO = '<a href="mailto:' + SUPPORT_EMAIL + '">' + SUPPORT_EMAIL +'</a>';
 
 module.exports = {
     // TODO
@@ -9,13 +10,16 @@ module.exports = {
         invalidEmbargoTitle: 'Invalid embargo end date',
         invalidEmbargoMessage: 'Please choose a date more than two days, but less than four years, from today.',
         registerConfirm: 'Are you sure you want to register this project?',
-        registerSkipAddons: 'If you choose to continue with the registration at this time we will exclude the contents of any addons that are not copyable. These files will not appear in the final registration.'
+        registerSkipAddons: 'If you choose to continue with the registration at this time we will exclude the contents of any addons that are not copyable. These files will not appear in the final registration.',
+        registerFail: 'There was a problem completing your registration right now. Please try again later. If this should not have occurred and the issue persists, please report it to ' + SUPPORT_EMAIL_MAILTO,
+        submitForReviewFail: 'There was a problem submitting this draft for review right now. Please try again later. If this should not have occurred and the issue persists, please report it to ' + SUPPORT_EMAIL_MAILTO,
+        beforeEditIsApproved: 'This draft registration is currently approved. Please note that if you make any changes (excluding comments) this approval status will be revoked and you will need to submit for approval again.',
+        beforeEditIsPendingReview: 'This draft registration is currently pending review. Please note that if you make any changes (excluding comments) this request will be cancelled and you will need to submit for approval again.'
     },
     Addons: {
         dataverse: {
             userSettingsError: 'Could not retrieve settings. Please refresh the page or ' +
-                'contact <a href="mailto: ' + SUPPORT_EMAIL + '">' + SUPPORT_EMAIL + '</a> if the ' +
-                'problem persists.',
+                'contact ' + SUPPORT_EMAIL_MAILTO + ' if the problem persists.',
             confirmUserDeauth: 'Are you sure you want to unlink your Dataverse ' +
                 'Account? This will revoke access to Dataverse for all ' +
                 'projects you have authorized.',

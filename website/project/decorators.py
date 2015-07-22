@@ -13,6 +13,7 @@ from framework.auth.decorators import collect_auth
 from framework.mongo.utils import get_or_http_error
 
 from website.models import Node
+from website import settings
 
 _load_node_or_fail = lambda pk: get_or_http_error(Node, pk)
 
@@ -108,7 +109,7 @@ def must_not_be_registration(func):
         _inject_nodes(kwargs)
         node = kwargs['node']
 
-        if not node.archiving and node.is_registration:
+        if node.is_registration:
             raise HTTPError(
                 http.BAD_REQUEST,
                 data={
@@ -328,4 +329,19 @@ def must_have_permission(permission):
         return wrapped
 
     # Return decorator
+    return wrapper
+
+def http_error_if_disk_saving_mode(func):
+
+    @functools.wraps(func)
+    def wrapper(*args, **kwargs):
+        _inject_nodes(kwargs)
+        node = kwargs['node']
+
+        if settings.DISK_SAVING_MODE:
+            raise HTTPError(
+                http.METHOD_NOT_ALLOWED,
+                redirect_url=node.url
+            )
+        return func(*args, **kwargs)
     return wrapper

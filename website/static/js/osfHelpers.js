@@ -190,6 +190,25 @@ var unblock = function() {
     $.unblockUI();
 };
 
+var blockElement = function($el, message) {
+    $el.block({
+        message: message,
+        css: {
+            border: 'none',
+            padding: '15px',
+            backgroundColor: '#000',
+            '-webkit-border-radius': '10px',
+            '-moz-border-radius': '10px',
+            opacity: 0.5,
+            color: '#fff'
+        }
+    });
+};
+
+var unblockElement = function($el) {
+    $el.unblock();
+};
+
 var joinPrompts = function(prompts, base) {
     var prompt = base || '';
     if (prompts.length !==0) {
@@ -349,19 +368,6 @@ var trackPiwik = function(host, siteId, cvars, useCookies) {
 //////////////////
 // Data binders //
 //////////////////
-
-/**
- * Tooltip data binder. The value accessor should be an object containing
- * parameters for the tooltip.
- * Example:
- * <span data-bind='tooltip: {title: 'Tooltip text here'}'></span>
- */
-ko.bindingHandlers.tooltip = {
-    init: function(elem, valueAccessor) {
-        $(elem).tooltip(valueAccessor());
-    }
-};
-
 
 /**
  * Takes over anchor scrolling and scrolls to anchor positions within elements
@@ -766,6 +772,64 @@ var confirmDangerousAction = function (options) {
     bootbox.dialog(bootboxOptions);
 };
 
+/**
+ * Maps an object to an array of {key: KEY, value: VALUE} pairs
+ *
+ * @param {Object} obj
+ * @returns {Array} array of key, value pairs
+**/
+var iterObject = function(obj) {
+    var ret = [];
+    $.each(obj, function(prop, value) {
+        ret.push({
+            key: prop,
+            value: value
+        });
+    });
+    return ret;
+};
+/** 
+ * Asserts that a value is falsey or an empty string
+ *
+ * @param {String} item
+ * @returns {Boolean} true if item is flasey or an empty string else false
+**/
+function isBlank(item) {
+    return !item || /^\s*$/.test(item || '');
+}
+/**
+ * Use a search function to get the index of an object in an array
+ *
+ * @param {Array} array
+ * @param {Function} searchFn: function that returns true when an item matching the search conditions is found
+ * @returns {Integer} index of matched item or -1 if no matching item is found
+ **/
+function indexOf(array, searchFn) {
+    var len = array.length;
+    for(var i = 0; i < len; i++) {
+        if(searchFn(array[i])) {
+            return i;
+        }
+    }
+    return -1;
+}
+/**
+ * Create a function that negates the passed value
+ *
+ * @param {Any} any: either a function or some other value; for function values the return value of the function is negated
+ * @returns {Function}: a function that returns the negated value of any (or the return value of any when called with the same arguments)
+ **/
+function not(any) {
+    return function() {
+        try {
+            return !any.apply(this, arguments);
+        }
+        catch(err) {
+            return !any;
+        }
+    };
+}
+
 // Also export these to the global namespace so that these can be used in inline
 // JS. This is used on the /goodbye page at the moment.
 module.exports = window.$.osf = {
@@ -775,9 +839,11 @@ module.exports = window.$.osf = {
     handleJSONError: handleJSONError,
     handleEditableError: handleEditableError,
     block: block,
+    unblock: unblock,
+    blockElement: blockElement,
+    unblockElement: unblockElement,
     growl: growl,
     apiV2Url: apiV2Url,
-    unblock: unblock,
     joinPrompts: joinPrompts,
     mapByProperty: mapByProperty,
     isEmail: isEmail,
@@ -793,5 +859,9 @@ module.exports = window.$.osf = {
     initializeResponsiveAffix: initializeResponsiveAffix,
     humanFileSize: humanFileSize,
     confirmDangerousAction: confirmDangerousAction,
-    isIE: isIE
+    isIE: isIE,
+    indexOf: indexOf,
+    iterObject: iterObject,
+    isBlank: isBlank,
+    not: not
 };

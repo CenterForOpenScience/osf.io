@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 import os
 import re
-import urllib
 import logging
 import datetime
 import urlparse
@@ -16,7 +15,7 @@ from HTMLParser import HTMLParser
 from modularodm import Q
 from modularodm import fields
 from modularodm.validators import MaxLengthValidator
-from modularodm.exceptions import ValidationTypeError
+from modularodm.exceptions import ValidationTypeError, NoResultsFound
 from modularodm.exceptions import ValidationValueError
 
 from api.base.utils import absolute_reverse
@@ -30,7 +29,7 @@ from framework.exceptions import PermissionsError
 from framework.guid.model import GuidStoredObject
 from framework.auth.utils import privacy_info_handle
 from framework.analytics import tasks as piwik_tasks
-from framework.mongo.utils import to_mongo, to_mongo_key, unique_on
+from framework.mongo.utils import to_mongo_key, unique_on
 from framework.analytics import (
     get_basic_counters, increment_user_activity_counters
 )
@@ -91,27 +90,22 @@ class MetaSchema(StoredObject):
     schema_version = fields.IntegerField()
 
 
-def ensure_schemas(clear=True):
-    """Import meta-data schemas from JSON to database, optionally clearing
-    database first.
-
-    :param clear: Clear schema database before import
+def ensure_schemas():
+    """Import meta-data schemas from JSON to database if not already loaded
     """
-    if clear:
-        try:
-            MetaSchema.remove()
-        except AttributeError:
-            if not settings.DEBUG_MODE:
-                raise
     for schema in OSF_META_SCHEMAS:
         try:
             MetaSchema.find_one(
                 Q('name', 'eq', schema['name']) &
-                Q('schema_version', 'eq', schema['schema_version'])
+                Q('schema_version', 'eq', schema.get('version', 1))
             )
-        except:
-            schema['name'] = schema['name'].replace(' ', '_')
-            schema_obj = MetaSchema(**schema)
+        except NoResultsFound:
+            meta_schema = {
+                'name': schema['name'],
+                'schema_version': schema.get('version', 1),
+                'schema': schema,
+            }
+            schema_obj = MetaSchema(**meta_schema)
             schema_obj.save()
 
 
@@ -522,6 +516,8 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
     #: Whether this is a pointer or not
     primary = True
 
+    is_draft_registration = False
+
     # Node fields that trigger an update to Solr on save
     SOLR_UPDATE_FIELDS = {
         'title',
@@ -593,6 +589,8 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
     registered_meta = fields.DictionaryField()
     retraction = fields.ForeignField('retraction')
     embargo = fields.ForeignField('embargo')
+
+    draft_registrations = fields.ForeignField('draftregistration', backref='branched')
 
     is_fork = fields.BooleanField(default=False, index=True)
     forked_date = fields.DateTimeField(index=True)
@@ -1710,9 +1708,6 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         if self.is_folder:
             raise NodeStateError("Folders may not be registered")
 
-        template = urllib.unquote_plus(template)
-        template = to_mongo(template)
-
         when = datetime.datetime.utcnow()
 
         original = self.load(self._primary_key)
@@ -1734,7 +1729,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         registered.registered_from = original
         if not registered.registered_meta:
             registered.registered_meta = {}
-        registered.registered_meta[template] = data
+        registered.registered_meta = data
 
         registered.contributors = self.contributors
         registered.forked_from = self.forked_from
@@ -1757,7 +1752,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         for node_contained in original.nodes:
             if not node_contained.is_deleted:
                 child_registration = node_contained.register_node(
-                    schema, auth, template, data, parent=registered
+                    schema, auth, data, parent=registered
                 )
                 if child_registration and not child_registration.primary:
                     registered.nodes.append(child_registration)
@@ -3044,3 +3039,135 @@ class Embargo(StoredObject):
                 },
                 auth=Auth(user),
             )
+
+class DraftRegistration(AddonModelMixin, StoredObject):
+
+    is_draft_registration = True
+
+    _id = fields.StringField(primary=True, default=lambda: str(ObjectId()))
+
+    datetime_initiated = fields.DateTimeField(auto_now_add=True)
+    datetime_updated = fields.DateTimeField(auto_now=True)
+
+    branched_from = fields.ForeignField('node')
+
+    initiator = fields.ForeignField('user')
+
+    # Dictionary field mapping question id to a question's comments and answer
+    # {<qid>: { 'comments': [<Comment1>, <Comment2>], 'value': 'string answer }
+    registration_metadata = fields.DictionaryField(default=dict)
+    registration_schema = fields.ForeignField('metaschema')
+    registered_node = fields.ForeignField('node')
+
+    storage = fields.ForeignField('osfstoragenodesettings')
+
+    # Dictionary field mapping
+    # { 'requiresApproval': true, 'fulfills': [{ 'name': 'Prereg Prize', 'info': <infourl>  }]  }
+    config = fields.DictionaryField()
+
+    # Dictionary field mapping a draft's states during the review process to their value
+    # { 'isApproved': false, 'isPendingReview': false, 'paymentSent': false }
+    flags = fields.DictionaryField()
+
+    def __init__(self, *args, **kwargs):
+        super(DraftRegistration, self).__init__(*args, **kwargs)
+
+        meta_schema = self.registration_schema or kwargs.get('registration_schema')
+        if meta_schema:
+            schema = meta_schema.schema
+            config = schema.get('config', {})
+            self.config = config
+            # TODO: uncomment to set flags
+            # if not self.registration_schema:
+            #    flags = schema.get('flags', {})
+            #    for flag, value in flags.iteritems():
+            #        self.flags[flag] = value
+
+    # TODO: uncomment to expose approval/review properties
+    #    @property
+    #    def is_pending_review(self):
+    #        return self.flags.get('isPendingReview')
+    #
+    #    @is_pending_review.setter
+    #    def is_pending_review(self, value):
+    #        self.flags['isPendingReview'] = value
+    #
+    #    @property
+    #    def is_approved(self):
+    #        self.flags.get('isApproved')
+    #
+    #    @is_approved.setter
+    #    def is_approved(self, value):
+    #        self.flags['isApproved'] = value
+
+    def update_metadata(self, metadata, save=True):
+        # TODO: uncommnet to disallow editing drafts that are approved or pending approval
+        # if self.is_pending_review or self.is_approved:
+        #    raise NodeStateError('Cannot edit while this draft is being reviewed')
+        changes = []
+        for key, value in metadata.iteritems():
+            old_value = self.registration_metadata.get(key)
+            if not old_value or old_value.get('value') != value.get('value'):
+                changes.append(key)
+        self.registration_metadata.update(metadata)
+        if save:
+            self.save()
+        # TODO: uncomment to nullify approval state if edited
+        # project_signals.draft_edited.send(self, changes)
+        # self.after_edit(changes)
+
+    def before_edit(self, auth):
+        messages = []
+        # TODO: uncomment to provide pre-edit warnings for drafts that are approved or are pending approval
+        # if self.flags.get('isApproved'):
+        #     messages.append('The draft registration you are editing is currently approved. Please note that if you make any changes (excluding comments) this approval status will be revoked and you will need to submit for approval again.')
+        # if self.flags.get('isPendingReview'):
+        #     messages.append('The draft registration you are editing is currently pending review. Please note that if you make any changes (excluding comments) this request will be cancelled and you will need to submit for approval again.')
+        return messages
+
+    def after_edit(self, changes):
+        # revoke approval and review status if changed
+        if changes:
+            self.flags.update({
+                'isPendingReview': False,
+                'isApproved': False
+            })
+            self.save()
+
+    def find_question(self, qid):
+        for page in self.registration_schema.schema['pages']:
+            for question_id, question in page['questions'].iteritems():
+                if question_id == qid:
+                    return question
+
+    def get_comments(self):
+        """ Returns a list of all comments made on a draft in the format of :
+        [{
+          [QUESTION_ID]: {
+            'question': [QUESTION],
+            'comments': [LIST_OF_COMMENTS]
+            }
+        },]
+        """
+
+        all_comments = []
+        for question_id, value in self.registration_metadata.iteritems():
+            all_comments.append({
+                question_id: {
+                    'question': self.find_question(question_id),
+                    'comments': value['comments'] if 'comments' in value else ''
+                }
+            })
+        return all_comments
+
+    def register(self, auth):
+
+        node = self.branched_from
+
+        # Create the registration
+        register = node.register_node(
+            self.registration_schema, auth, self.registration_metadata
+        )
+        self.registered_node = register
+        self.save()
+        return register

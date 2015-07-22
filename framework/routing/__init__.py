@@ -49,7 +49,6 @@ REDIRECT_CODES = [
     http.FOUND,
 ]
 
-
 class Rule(object):
     """ Container for routing and rendering rules."""
 

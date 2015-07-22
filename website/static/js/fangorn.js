@@ -2162,7 +2162,7 @@ Fangorn.prototype = {
     _initGrid: function () {
         this.grid = new Treebeard(this.options);
         return this.grid;
-    },
+    }
 };
 
 Fangorn.Components = {
@@ -2197,6 +2197,7 @@ Fangorn.Utils = {
     uploadRowTemplate : uploadRowTemplate,
     resolveIconView: resolveIconView,
     orderFolder: orderFolder
+
 };
 
 Fangorn.DefaultOptions = tbOptions;
