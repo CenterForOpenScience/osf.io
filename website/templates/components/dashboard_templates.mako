@@ -65,6 +65,7 @@
                 params="data: data,
                         onSubmit: onRegisterSubmit,
                         enableComponents: false,
+                        permissionsAllowed: ['admin'],
                         submitText: 'Continue registration'">
                 </osf-project-search>
             </div><!-- end col-md -->
