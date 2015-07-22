@@ -88,6 +88,12 @@ function ViewModel(url) {
 
     /** Send POST request to authorize Dataverse */
     self.sendAuth = function() {
+        // Selection should not be empty
+        if( !self.selectedHost() ){
+            self.changeMessage("Please select a Dataverse repository.", 'text-danger');
+            return;
+        }
+
         var url = self.urls().create;
         return osfHelpers.postJSON(
             url,
