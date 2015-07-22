@@ -3,7 +3,25 @@ from rest_framework import serializers as ser
 from website.models import Node
 from framework.auth.core import Auth
 from rest_framework import exceptions
+from api.users.serializers import ContributorIncludeSerializer
 from api.base.serializers import JSONAPISerializer, LinksField, Link, WaterbutlerLink
+
+
+class NodeIncludeSerializer(JSONAPISerializer):
+
+    id = ser.CharField(read_only=True, source='_id')
+    title = ser.CharField(required=True)
+    description = ser.CharField(required=False, allow_blank=True, allow_null=True)
+    links = LinksField({})
+
+    class Meta:
+        type_ = 'nodes'
+
+
+class PointerIncludeSerializer(NodeIncludeSerializer):
+
+    class Meta:
+        type_ = 'pointers'
 
 
 class NodeSerializer(JSONAPISerializer):
@@ -49,6 +67,19 @@ class NodeSerializer(JSONAPISerializer):
             'self': Link('nodes:node-detail', kwargs={'node_id': '<parent_id>'})
         }
     })
+
+    children = NodeIncludeSerializer(many=True, read_only=True,
+                                     help_text='optional query parameters can be used to view node children, '
+                                            'pointers, registrations and contributors.  This can be done by adding'
+                                            'an "include" parameter to the url followed by a comma separated string'
+                                            'of desired queries.  '
+                                            'Ex: include=children,pointers,registrations,contributors')
+    pointers = PointerIncludeSerializer(many=True, read_only=True, help_text='See description in children')
+    registrations = NodeIncludeSerializer(many=True, read_only=True, source='registered_nodes',
+                                          help_text='See description in children')
+    contributors = ContributorIncludeSerializer(many=True, read_only=True, source='contributing_users',
+                                                help_text='See description in children')
+
     properties = ser.SerializerMethodField(help_text='A dictionary of read-only booleans: registration, collection,'
                                                      'and dashboard. Collections are special nodes used by the Project '
                                                      'Organizer to, as you would imagine, organize projects. '

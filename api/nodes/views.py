@@ -2,7 +2,8 @@ import requests
 
 from modularodm import Q
 from rest_framework import generics, permissions as drf_permissions
-from rest_framework.exceptions import PermissionDenied, ValidationError
+from rest_framework.exceptions import PermissionDenied, ValidationError, NotFound
+from rest_framework.response import Response
 
 from framework.auth.core import Auth
 from website.models import Node, Pointer
@@ -10,7 +11,7 @@ from api.users.serializers import ContributorSerializer
 from api.base.filters import ODMFilterMixin, ListFilterMixin
 from api.base.utils import get_object_or_404, waterbutler_url_for
 from .serializers import NodeSerializer, NodePointersSerializer, NodeFilesSerializer
-from .permissions import ContributorOrPublic, ReadOnlyIfRegistration, ContributorOrPublicForPointers
+from .permissions import ContributorOrPublic, ReadOnlyIfRegistration, ContributorOrPublicForPointers, get_user_auth
 
 
 class NodeMixin(object):
@@ -21,14 +22,45 @@ class NodeMixin(object):
     serializer_class = NodeSerializer
     node_lookup_url_kwarg = 'node_id'
 
-    def get_node(self):
+    def get_node(self, param_check=True):
         obj = get_object_or_404(Node, self.kwargs[self.node_lookup_url_kwarg])
         # May raise a permission denied
         self.check_object_permissions(self.request, obj)
+        if param_check:
+            self.get_additional_parameters(self.request, obj)
         return obj
 
 
-class NodeList(generics.ListCreateAPIView, ODMFilterMixin):
+class NodeIncludeMixin(object):
+
+    def get_additional_parameters(self, request, node):
+        if 'include' in request.query_params:
+            parameters = request.query_params['include'].split(',')
+            auth = get_user_auth(request)
+            if 'children' in parameters:
+                node.children = [child for child in node.nodes if child.can_view(auth) and child.primary]
+                parameters.remove('children')
+            # todo do the pointers need visibility limitations?
+            if 'pointers' in parameters:
+                node.pointers = node.nodes_pointer
+                parameters.remove('pointers')
+            if 'registrations' in parameters:
+                node.registered_nodes = [registration for registration in node.node__registrations
+                                         if registration.can_view(auth)]
+                parameters.remove('registrations')
+            if 'contributors' in parameters:
+                node.contributing_users = node.contributors
+                parameters.remove('contributors')
+            if parameters != []:
+
+                # not found or validation error?
+                raise NotFound('{} are not valid parameters.'.format(parameters))
+        return node
+
+# Put here due ot issues importing node include mixin
+from api.users.views import UserIncludeMixin
+
+class NodeList(generics.ListCreateAPIView, ODMFilterMixin, NodeIncludeMixin):
     """Projects and components.
 
     On the front end, nodes are considered 'projects' or 'components'. The difference between a project and a component
@@ -66,6 +98,22 @@ class NodeList(generics.ListCreateAPIView, ODMFilterMixin):
         return Node.find(query)
 
     # overrides ListCreateAPIView
+    def list(self, request, *args, **kwargs):
+        queryset = self.filter_queryset(self.get_queryset())
+
+        nodes = []
+        page = self.paginate_queryset(queryset)
+        for node in page:
+            node = self.get_additional_parameters(request, node)
+            nodes.append(node)
+        if page is not None:
+            serializer = self.get_serializer(nodes, many=True)
+            return self.get_paginated_response(serializer.data)
+
+        serializer = self.get_serializer(queryset, many=True)
+        return Response(serializer.data)
+
+    # overrides ListCreateAPIView
     def perform_create(self, serializer):
         """
         Create a node.
@@ -79,7 +127,7 @@ class NodeList(generics.ListCreateAPIView, ODMFilterMixin):
         serializer.save(creator=user)
 
 
-class NodeDetail(generics.RetrieveUpdateDestroyAPIView, NodeMixin):
+class NodeDetail(generics.RetrieveUpdateDestroyAPIView, NodeMixin, NodeIncludeMixin):
     """Projects and component details.
 
     On the front end, nodes are considered 'projects' or 'components'. The difference between a project and a component
@@ -113,7 +161,7 @@ class NodeDetail(generics.RetrieveUpdateDestroyAPIView, NodeMixin):
         node.save()
 
 
-class NodeContributorsList(generics.ListAPIView, ListFilterMixin, NodeMixin):
+class NodeContributorsList(generics.ListAPIView, ListFilterMixin, NodeMixin, UserIncludeMixin):
     """Contributors (users) for a node.
 
     Contributors are users who can make changes to the node or, in the case of private nodes,
@@ -135,6 +183,7 @@ class NodeContributorsList(generics.ListAPIView, ListFilterMixin, NodeMixin):
         contributors = []
         for contributor in node.contributors:
             contributor.bibliographic = contributor._id in visible_contributors
+            contributor = self.get_additional_parameters(self.request, contributor)
             contributors.append(contributor)
         return contributors
 
@@ -143,7 +192,7 @@ class NodeContributorsList(generics.ListAPIView, ListFilterMixin, NodeMixin):
         return self.get_queryset_from_request()
 
 
-class NodeRegistrationsList(generics.ListAPIView, NodeMixin):
+class NodeRegistrationsList(generics.ListAPIView, NodeMixin, NodeIncludeMixin):
     """Registrations of the current node.
 
     Registrations are read-only snapshots of a project. This view lists all of the existing registrations
@@ -163,11 +212,15 @@ class NodeRegistrationsList(generics.ListAPIView, NodeMixin):
             auth = Auth(None)
         else:
             auth = Auth(user)
-        registrations = [node for node in nodes if node.can_view(auth)]
+        raw_registrations = [node for node in nodes if node.can_view(auth)]
+        registrations = []
+        for registration in raw_registrations:
+            registration = self.get_additional_parameters(self.request, registration)
+            registrations.append(registration)
         return registrations
 
 
-class NodeChildrenList(generics.ListAPIView, NodeMixin):
+class NodeChildrenList(generics.ListAPIView, NodeMixin, NodeIncludeMixin):
     """Children of the current node.
 
     This will get the next level of child nodes for the selected node if the current user has read access for those
@@ -194,7 +247,7 @@ class NodeChildrenList(generics.ListAPIView, NodeMixin):
         return children
 
 
-class NodePointersList(generics.ListCreateAPIView, NodeMixin):
+class NodePointersList(generics.ListCreateAPIView, NodeMixin, NodeIncludeMixin):
     """Pointers to other nodes.
 
     Pointers are essentially aliases or symlinks: All they do is point to another node.
@@ -211,7 +264,7 @@ class NodePointersList(generics.ListCreateAPIView, NodeMixin):
         return pointers
 
 
-class NodePointerDetail(generics.RetrieveDestroyAPIView, NodeMixin):
+class NodePointerDetail(generics.RetrieveDestroyAPIView, NodeMixin, NodeIncludeMixin):
     """Detail of a pointer to another node.
 
     Pointers are essentially aliases or symlinks: All they do is point to another node.
@@ -281,7 +334,7 @@ class NodeFilesList(generics.ListAPIView, NodeMixin):
         if user is None or user.is_anonymous():
             return valid_methods
 
-        permissions = self.get_node().get_permissions(user)
+        permissions = self.get_node(param_check=False).get_permissions(user)
         if 'write' in permissions:
             valid_methods['file'].append('POST')
             valid_methods['file'].append('DELETE')
@@ -297,7 +350,7 @@ class NodeFilesList(generics.ListAPIView, NodeMixin):
             'provider': item['provider'],
             'path': item['path'],
             'name': item['name'],
-            'node_id': self.get_node()._primary_key,
+            'node_id': self.get_node(param_check=False)._primary_key,
             'cookie': cookie,
             'args': obj_args,
             'waterbutler_type': 'file',
@@ -317,10 +370,10 @@ class NodeFilesList(generics.ListAPIView, NodeMixin):
     def get_queryset(self):
         query_params = self.request.query_params
 
-        addons = self.get_node().get_addons()
+        addons = self.get_node(param_check=False).get_addons()
         user = self.request.user
         cookie = None if self.request.user.is_anonymous() else user.get_or_create_cookie()
-        node_id = self.get_node()._id
+        node_id = self.get_node(param_check=False)._id
         obj_args = self.request.parser_context['args']
 
         provider = query_params.get('provider')
