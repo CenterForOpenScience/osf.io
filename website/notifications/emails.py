@@ -4,7 +4,7 @@ from datetime import timedelta
 
 from website import mails
 from website import models as website_models
-from website.notifications import constants
+from website.notifications import constants, tasks
 from website.notifications import utils
 from website.notifications.model import NotificationDigest
 from website.notifications.model import NotificationSubscription
@@ -70,7 +70,6 @@ def email_digest(recipient_ids, uid, event, user, node, timestamp, **context):
 
 EMAIL_FUNCTION_MAP = {
     'email_transactional': email_transactional,
-    'email_hour': email_digest,
     'email_digest': email_digest,
 }
 
@@ -158,15 +157,19 @@ def send(recipient_ids, notification_type, uid, event, user, node, timestamp, **
     delta = 0
     if notification_type == 'email_transactional':
         delay = 60
-        delta = delay  # TODO: Look into making this adjustable, learn how fast users generally check Email
+        n_seconds = timestamp.minute * 60 + timestamp.second + timestamp.microsecond * 1e-6
+        delta = (n_seconds // delay) * delay + delay - n_seconds  # TODO: Look into making this adjustable, learn how fast users generally check Email
     elif notification_type == 'email_digest':
         delay = 86400
         n_seconds = timestamp.hour * 3600 + timestamp.minute * 60 + timestamp.second + timestamp.microsecond * 1e-6
         delta = (n_seconds // delay) * delay + delay - n_seconds
-    context['time_to_send'] = timestamp + timedelta(seconds=delta)
+    time_to_send = timestamp + timedelta(seconds=delta)
+    context['time_to_send'] = time_to_send
+
+    tasks.check_and_send_later(user, timestamp, time_to_send, notification_type)
 
     try:
-        EMAIL_FUNCTION_MAP[notification_type](
+        email_digest(
             recipient_ids=recipient_ids,
             uid=uid,
             event=event,
