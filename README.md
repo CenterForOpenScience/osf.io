@@ -92,7 +92,7 @@ installed. Consult the Waterbutler
 
 #### Modular File Renderer
 
-The Modular File Renderer (MFR) is used to render uploaded files to HTML via an iFrame so that they can be viewed directly on the OSF. Files will not be rendered if the MFR is not running. Consult [repository] (https://github.com/CenterForOpenScience/modular-file-renderer) for information on how to install and run the MFR. 
+The Modular File Renderer (MFR) is used to render uploaded files to HTML via an iFrame so that they can be viewed directly on the OSF. Files will not be rendered if the MFR is not running. Consult the MFR [repository] (https://github.com/CenterForOpenScience/modular-file-renderer) for information on how to install and run the MFR.
 
 ## Installation
 
