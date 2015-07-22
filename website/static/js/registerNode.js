@@ -45,6 +45,11 @@ $(document).ready(function() {
                 if(confirmed) {
                     window.location.href = target;
                 }
+            },
+            buttons:{
+                confirm:{
+                    label:'Register'
+                }
             }
         });
     });

@@ -61,6 +61,7 @@ var ViewModel = function(url, selector) {
     self.allowSelectBucket = ko.pureComputed(function() {
         return (self.bucketList().length > 0 || self.loadedBucketList()) && (!self.loading());
     });
+
 };
 
 ViewModel.prototype.toggleSelect = function() {
@@ -115,6 +116,7 @@ ViewModel.prototype._deauthorizeNodeConfirm = function() {
         dataType: 'json'
     }).done(function(response) {
         self.updateFromData(response);
+        self.changeMessage('Disconnected S3.', 'text-warning', 3000);
     }).fail(function(xhr, status, error) {
         var message = 'Could not deauthorize S3 at ' +
             'this time. Please refresh the page. If the problem persists, email ' +
@@ -136,6 +138,11 @@ ViewModel.prototype.deauthorizeNode = function() {
         callback: function(confirm) {
             if (confirm) {
                 self._deauthorizeNodeConfirm();
+            }
+        },
+        buttons:{
+            confirm:{
+                label:'Deauthorize'
             }
         }
     });
@@ -170,6 +177,11 @@ ViewModel.prototype.importAuth = function() {
         callback: function(confirmed) {
             if (confirmed) {
                 return self._importAuthConfirm();
+            }
+        },
+        buttons:{
+            confirm:{
+                label:'Import'
             }
         }
     });
@@ -233,6 +245,11 @@ ViewModel.prototype.createBucket = function(bucketName) {
                 if (result) {
                     self.openCreateBucket();
                 }
+            },
+            buttons:{
+                confirm:{
+                    label:'Try new one'
+                }
             }
         });
     });
@@ -253,6 +270,11 @@ ViewModel.prototype.openCreateBucket = function() {
                 callback: function(result) {
                     if (result) {
                         self.openCreateBucket();
+                    }
+                },
+                buttons:{
+                    confirm:{
+                        label:'Try new one'
                     }
                 }
             });
