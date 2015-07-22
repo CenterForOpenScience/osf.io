@@ -86,6 +86,11 @@ class NodeSerializer(JSONAPISerializer):
         return self.get_object_information('registrations', registrations, obj)
 
     def get_object_information(self, name, objects, obj):
+        query_params = self.context['request'].query_params
+        if 'include' in query_params:
+            additional_params = query_params['include'].split(',')
+            if name in additional_params:
+                return name
         return {
             'related': Link('nodes:node-{}'.format(name), kwargs={'node_id': '<pk>'}).resolve_url(obj),
             'count': len(objects),
