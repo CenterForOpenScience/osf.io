@@ -61,8 +61,8 @@ Results.controller = function(vm) {
                                     m('span', index !== 0 ? ' · ' : ''),
                                     m('a', {
                                         onclick: function() {
-                                            utils.updateFilter(self.vm, 'contributors.familyName:' + person.familyName, true);
-                                            utils.updateFilter(self.vm, 'contributors.givenName:' + person.givenName, true);
+                                            utils.updateFilter(self.vm, 'match:contributors.familyName:' + person.familyName, true);
+                                            utils.updateFilter(self.vm, 'match:contributors.givenName:' + person.givenName, true);
                                         }
                                     }, person.name)
                                 ]);
@@ -85,7 +85,7 @@ Results.controller = function(vm) {
                                 var rendersubject = function(subject) {
                                     return [
                                         m('.badge.pointer', {onclick: function(){
-                                            utils.updateFilter(self.vm, 'subjects:"' + subject + '"', true);
+                                            utils.updateFilter(self.vm, 'match:subjects:"' + subject + '"', true);
                                         }}, subject.length < 50 ? subject : subject.substring(0, 47) + '...'),
                                         ' '
                                     ];
@@ -108,7 +108,7 @@ Results.controller = function(vm) {
                     m('span.pull-right', [
                         m('img', {src: self.vm.ProviderMap[result.shareProperties.source].favicon, style: {width: '16px', height: '16px'}}),
                         ' ',
-                        m('a', {onclick: function() {utils.updateFilter(self.vm, 'shareProperties.source:' + result.shareProperties.source);}}, self.vm.ProviderMap[result.shareProperties.source].long_name)
+                        m('a', {onclick: function() {utils.updateFilter(self.vm, 'match:shareProperties.source:' + result.shareProperties.source);}}, self.vm.ProviderMap[result.shareProperties.source].long_name)
                     ])
                 ])
             ]),
