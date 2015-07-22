@@ -34,7 +34,7 @@ linked Dropbox folder <span class="overflow">{{ params.folder === '/' ? '/ (Full
 
 
 <script type="text/html" id="dropbox_node_deauthorized">
-deauthorized the Dropbox addon for
+disconnect the Dropbox addon for
 <a class="log-node-title-link overflow"
     data-bind="attr: {href: nodeUrl}">{{ nodeTitle }}</a>
 </script>
@@ -50,5 +50,5 @@ authorized the Dropbox addon for
 Dropbox addon for
 <a class="log-node-title-link overflow"
     data-bind="attr: {href: nodeUrl}">{{ nodeTitle }}</a>
-    deauthorized
+    disconnected
 </script>

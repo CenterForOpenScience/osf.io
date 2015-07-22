@@ -70,7 +70,7 @@ function ViewModel(url) {
             },
             error: function(textStatus, error) {
                 self.changeMessage(language.deauthError, 'text-danger');
-                Raven.captureMessage('Could not deauthorize Dropbox.', {
+                Raven.captureMessage('Could not disconnect Dropbox.', {
                     url: url,
                     textStatus: textStatus,
                     error: error
