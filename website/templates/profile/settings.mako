@@ -80,17 +80,17 @@
     ## modules. Not sure if this is a good idea.
     window.contextVars = window.contextVars || {};
     window.contextVars.nameUrls = {
-        crud: '${ api_url_for('serialize_names') }',
-        impute: '${ api_url_for('impute_names') }'
+        crud: ${ api_url_for('serialize_names') | sjson, n },
+        impute: ${ api_url_for('impute_names') | sjson, n }
     };
     window.contextVars.socialUrls = {
-        crud: '${ api_url_for('serialize_social') }'
+        crud: ${ api_url_for('serialize_social') | sjson, n }
     };
     window.contextVars.jobsUrls = {
-        crud: '${ api_url_for('serialize_jobs') }'
+        crud: ${ api_url_for('serialize_jobs') | sjson, n }
     };
     window.contextVars.schoolsUrls = {
-        crud: '${ api_url_for('serialize_schools') }'
+        crud: ${ api_url_for('serialize_schools') | sjson, n }
     };
 </script>
 <script src=${"/static/public/js/profile-settings-page.js" | webpack_asset}></script>

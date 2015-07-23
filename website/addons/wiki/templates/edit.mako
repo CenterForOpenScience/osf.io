@@ -48,6 +48,7 @@
                         <p class="m-t-sm fg-load-message"> Loading wiki pages...  </p>
                     </div>
                 </div>
+                <div class="hidden text-danger" id="wikiErrorMessage" style="padding: 15px"></div>
             </div>
 
             <!-- Menu with toggle collapsed -->
@@ -56,7 +57,7 @@
                     <i class="fa fa-list"> </i>
                     <i class="fa fa-angle-right"> </i>
                 </div>
-                <div class="panel-body">
+                <div>
                     <%include file="wiki/templates/nav.mako"/>
                 </div>
             </div>
