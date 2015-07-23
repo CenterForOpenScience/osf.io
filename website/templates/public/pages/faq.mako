@@ -8,9 +8,9 @@
 <%def name="content()">
 <div class="nav-rows container">
     <div class="row">
-        <div class="col-sm-4 col-md-3 nav-list-spy">
-            <div data-spy="affix" class="gs-sidebar hidden-print hidden-xs panel panel-default" role="complementary">
-                <ul class="nav nav-stacked nav-pills gs-sidenav" style="min-width: 210px">
+        <div class="col-sm-4 affix-parent scrollspy col-md-3 nav-list-spy">
+            <div data-spy="affix" class="hidden-print hidden-xs panel panel-default affix osf-affix m-t-lg" data-offset-top="40" data-offset-bottom="268" role="complementary">
+                <ul class="nav nav-stacked nav-pills " style="min-width: 210px">
                     <li><a class="active" href="#about">About</a></li>
                     <li><a href="#using">Using the OSF</a></li>
                     <li><a href="#security">Privacy and Security</a></li>
@@ -32,7 +32,7 @@
 
                     <h4 class="m-t-lg f-w-lg">How can it be free? How are you funded?</h4>
                         <p>The OSF is maintained and developed by the <a href="http://cos.io">Center for Open Science</a> (COS), a non-profit organization. COS is supported through grants from a variety of supporters, including <a href="http://centerforopenscience.org/about_sponsors/"> federal agencies, private foundations, and commercial entities</a>.</p>
-                    
+
                     <h4 class="m-t-lg f-w-lg">What if you run out of funding? What happens to my data?</h4>
                         <p>Data stored on the OSF is backed by a $250,000 preservation fund that will provide for persistence of your data, even if the Center for Open Science runs out of funding. The code base for the OSF is entirely <a href="https://github.com/CenterForOpenScience/osf.io">open source</a>, which enables other groups to continue maintaining and expanding it if we aren’t able to.</p>
 

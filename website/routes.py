@@ -73,6 +73,8 @@ def get_globals():
         'waterbutler_url': settings.WATERBUTLER_URL,
         'login_url': cas.get_login_url(request.url, auto=True),
         'access_token': session.data.get('auth_user_access_token') or '',
+        'auth_url': cas.get_login_url(request.url),
+        'profile_url': cas.get_profile_url(),
     }
 
 
@@ -118,7 +120,7 @@ def goodbye():
     # Redirect to dashboard if logged in
     if _get_current_user():
         return redirect(util.web_url_for('dashboard'))
-    status.push_status_message(language.LOGOUT, 'info')
+    status.push_status_message(language.LOGOUT, 'success')
     return {}
 
 

@@ -7,10 +7,12 @@
 </%def>
 
 <%def name="content()">
+
     <div href="#start">
-        <div class="col-sm-4 col-md-3 nav-list-spy">
-            <div data-spy="affix" class="gs-sidebar hidden-print hidden-xs panel panel-default" role="complementary">
-                <ul class="nav nav-stacked nav-pills gs-sidenav" style="min-width: 210px">
+        <div class="col-sm-4 col-md-3 affix-parent scrollspy">
+            <div data-spy="affix" data-offset-top="0" class="osf-affix gs-sidebar hidden-print hidden-xs panel panel-default" role="complementary">
+                <ul class="nav nav-stacked nav-pills gs-sidenav" style="min-width: 205px">
+
                     <li>
                         <a  class="active" href="#start">Getting Started</a>
                         <ul class="nav">
@@ -72,14 +74,14 @@
         </div>
     <div class="col-sm-8 col-md-9">
 
-        <div  id="start">
+        <div  id="start" class="p-t-xl">
             <h1 class="text-center">Getting Started with the OSF</h1>
 
             <p>The OSF has many tools to help you organize your research and communicate efficiently with your collaborators.
                 Here, you can get the basics down, or learn the intricacies of each feature.</p>
 
             <div id="start-one" style="margin-top: 25px">
-                <h3 class="text-center">Use projects to organize your work</h3>
+                <h3 class="text-center anchor">Use projects to organize your work</h3>
                 <p>The OSF organizes your lines of research into projects. Projects come with features meant to streamline
                 your workflow as well as make your work more discoverable.</p>
                 <div class="row">
@@ -93,7 +95,7 @@
             </div>
 
             <div id="start-two">
-                <h3 class="text-center">Collaborate with your colleagues</h3>
+                <h3 class="text-center anchor">Collaborate with your colleagues</h3>
                 <p>Keep yourself and your collaborators on point while collecting data by using the OSF. Add
                     contributors to your project so that everyone has access to the same files. Use our pre-formatted
                     citations and URLs to make sure credit is given where credit is due.  </p>
@@ -107,7 +109,7 @@
             </div>
 
             <div id="start-three">
-                <h3 class="text-center">Simplify your life with version control</h3>
+                <h3 class="text-center anchor">Simplify your life with version control</h3>
                 <p>Keep your research up to date by uploading new versions of documents to the OSF. We use version
                     control to keep track of older versions of your documents so you don't have to. You can also register
                     your work to freeze a version of your project.</p>
@@ -119,7 +121,7 @@
                     </div>
                 </div>
             </div>
-        <div  id="structure" class="row" style="padding-top: 40px;">
+        <div  id="structure" class="row p-t-xl">
             <h2 class="text-center">Structuring Your Work</h2>
             <div class="col-md-12">
                 <%include file="/public/pages/help/organizer.mako"/>
@@ -135,8 +137,8 @@
             </div>
         </div>
 
-        <div id="sharing" class="row" style="padding-top: 40px;">
-            <h2 class="text-center anchor">Sharing Your Work</h2>
+        <div id="sharing" class="row p-t-xl">
+            <h2 class="text-center">Sharing Your Work</h2>
             <div class="col-md-12">
                 <%include file="/public/pages/help/contributors.mako"/>
                 <%include file="/public/pages/help/privacy.mako"/>
@@ -146,14 +148,14 @@
             </div>
         </div>
 
-        <div id="addons" class="row" style="padding-top: 40px;">
-            <h2 class="text-center anchor m-b-lg">OSF Add-ons</h2>
+        <div id="addons" class="row p-t-xl">
+            <h2 class="text-center m-b-lg">OSF Add-ons</h2>
             <div class="col-md-12">
                 <%include file="/public/pages/help/addons.mako"/>
             </div>
         </div>
 
-        <div id="metrics" class="row" style="padding-top: 40px;">
+        <div id="metrics" class="row p-t-xl">
             <h2 class="text-center">Metrics</h2>
             <div class="col-md-12">
                 <%include file="/public/pages/help/statistics.mako"/>
