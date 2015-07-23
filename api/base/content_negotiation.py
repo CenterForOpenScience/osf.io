@@ -6,6 +6,10 @@ class CustomClientContentNegotiation(BaseContentNegotiation):
         """
         Select the first parser in the `.parser_classes` list.
         """
+        content_type = request.QUERY_PARAMS.get('content_type', request.content_type)
+        for parser in parsers:
+            if parser.media_type == content_type:
+                return parser
         return parsers[0]
 
     def select_renderer(self, request, renderers, format_suffix):
