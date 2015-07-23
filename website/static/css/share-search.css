@@ -132,6 +132,14 @@ stroke: #BAB5B5;
     column-gap: 2.5em;
 }
 
+@media (max-width: 767px) {
+    .provider-footer {
+        -moz-column-count: 1;
+        -webkit-column-count: 1;
+        column-count: 1;
+    }
+}
+
 .info_bullets li {
   font-size: 150%;
 }
