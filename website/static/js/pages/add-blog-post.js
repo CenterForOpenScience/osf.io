@@ -29,7 +29,7 @@ var save = function () {
         date = ctx.blog['date'];
     }
     else {
-        date = getDate();
+        date = new Date();
     }
     var header = createHeader(title, uid, name, date);
     var fileName = name + ".md";
@@ -37,13 +37,27 @@ var save = function () {
     var xhr = new XMLHttpRequest();
     xhr.upload.addEventListener("load", transferComplete, false);
     var f = new File(b, fileName, xhr);
-    var url = waterbutler.buildUploadUrl(path, 'osfstorage', guid, f);
 
-    xhr.open("put", url, true);
-    xhr = $osf.setXHRAuthorization(xhr);
-    xhr.send(f);
-    //window.location = "../post/" + name;
+    var url = waterbutler.buildUploadUrl(path, 'osfstorage', guid, f);
+    $.ajax({
+        url: url,
+        type: "PUT",
+        data: content+header,
+        processData: false,
+        contentType: false,
+        beforeSend: $osf.setXHRAuthorization,
+    }).done(function (data) {
+        var pre;
+        if (ctx.blog == null) {
+            pre = "../post/"
+        }
+        else {
+            pre = "../../post/"
+        }
+        window.location = pre + ctx.file.name;
+    });
 };
+
 form.save = save;
 $osf.applyBindings(form, '#wiki-form');
 editor.focus();
@@ -56,7 +70,6 @@ editor.getSession().on('change', function() {
     updateView(editor.getValue(), form);
 });
 if (ctx.blog != null) {
-    //updateView(ctx.blog['content'], form);
     $("input[name='title']").val(ctx.blog['title']);
     editor.setValue(ctx.blog['content']);
 
@@ -130,22 +143,6 @@ function createHeader(title, uid, name, date) {
     return start + date + author + title + post_class + file + end;
 };
 
-function getDate() {
-    var today = new Date();
-    //var dd = today.getDate();
-    //var mm = today.getMonth() + 1;
-    //var yyyy = today.getFullYear();
-    //
-    //if(dd<10) {
-    //    dd='0'+dd;
-    //}
-    //
-    //if(mm<10) {
-    //    mm='0'+mm;
-    //}
-
-    return today;
-};
 
 function File(blob, name, xhr){
     var self = blob;
