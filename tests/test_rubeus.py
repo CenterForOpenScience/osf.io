@@ -483,6 +483,19 @@ class TestSmartFolderViews(OsfTestCase):
         res = self.app.get(url + ALL_MY_REGISTRATIONS_ID)
         assert_equal(len(res.json[u'data']), init_len + 1)
 
+    @mock.patch('website.project.decorators.Auth.from_kwargs')
+    def test_adding_registration_to_dashboard_increases_json_size_by_one(self, mock_from_kwargs):
+        mock_from_kwargs.return_value = Auth(user=self.user)
+
+        url = api_url_for('get_dashboard')
+
+        res = self.app.get(url + ALL_MY_WATCHED_ID)
+        init_len = len(res.json[u'data'])
+
+        RegistrationFactory(creator=self.user)
+        res = self.app.get(url + ALL_MY_WATCHED_ID)
+        assert_equal(len(res.json[u'data']), init_len + 1)
+
 
 def assert_valid_hgrid_folder(node_hgrid):
     folder_types = {
