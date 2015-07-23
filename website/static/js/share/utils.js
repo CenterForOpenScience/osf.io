@@ -238,8 +238,7 @@ utils.loadRawNormalized = function(result){
     };
     return m.request({
         method: 'GET',
-        // url: 'http://localhost:8000/documents/' + result.shareProperties.docID,
-        url: '/api/v1/share/documents/' + result.shareProperties.docID,  // TODO where will the postgres API live??
+        url: '/api/v1/share/documents/?' + $.param({id: result.shareProperties.docID, source: result.shareProperties.source}),  // TODO where will the postgres API live??
         extract: nonJsonErrors
     }).then(function(data) {
 
