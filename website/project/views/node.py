@@ -196,7 +196,7 @@ def project_new_node(auth, node, **kwargs):
 
         message = (
             'Your component was created successfully. You can keep working on the component page below, '
-            'or return to the <u><a href="{url}">Project Page</a></u>.'
+            'or return to the <u><a href="{url}">project page</a></u>.'
         ).format(url=node.url)
         status.push_status_message(message, 'info')
 

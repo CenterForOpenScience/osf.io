@@ -48,6 +48,7 @@
                         <p class="m-t-sm fg-load-message"> Loading wiki pages...  </p>
                     </div>
                 </div>
+                <div class="hidden text-danger" id="wikiErrorMessage" style="padding: 15px"></div>
             </div>
 
             <!-- Menu with toggle collapsed -->
