@@ -13,16 +13,13 @@ INDEXED_TYPES = [
 
 
 def is_indexed(filename):
-    extension = filename.rsplit('.')[-1]
-    indexed = extension in INDEXED_TYPES
-    return indexed
+    return filename.rsplit('.')[-1] in INDEXED_TYPES
 
 
-def get_content_of_file(file_):
+def get_file_content(file_):
     url = file_.mfr_public_download_url
     response = requests.get(url)
-    content = response.content
-    return content
+    return response.content
 
 
 def build_file_document(name, path, addon, include_content=True):
@@ -35,9 +32,7 @@ def build_file_document(name, path, addon, include_content=True):
     """
     file_, created = addon.find_or_create_file_guid(path)
     parent_id = file_.node._id
-    file_content = None
-    if include_content:
-        file_content = get_content_of_file(file_)
+    file_content = get_file_content(file_) if include_content else None
     return {
         'id': file_.node._id,
         'name': name,
