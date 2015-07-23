@@ -312,7 +312,7 @@ def update_file(name, path, addon, index=None):
         file_doc.update({'attachment': base64.encodestring(file_doc.pop('content'))})
         file_doc.update({'category': 'file'})
         parent_id = file_doc['parent_id']
-        es.index(index=index, doc_type='file', parent=parent_id, id=file_doc['id'], body=file_doc, refresh=True)
+        es.index(index=index, doc_type='file', parent=parent_id, id=file_doc['path'], body=file_doc, refresh=True)
 
 
 @requires_search

@@ -825,6 +825,7 @@ class TestDeleteFiles(SearchTestCase):
             'parent_id': self.parent_project._id
         }
         self.fake_file_doc_two = {
+            'id': 'bbbbb',
             'name': 'test_file_two.txt',
             'path': '/00002',
             'content': 'the rain in spain rains mainly on the plain',
