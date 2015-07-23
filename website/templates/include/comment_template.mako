@@ -21,12 +21,14 @@
                 <div class="form-group">
                     <textarea class="form-control" placeholder="Add a comment" data-bind="value: replyContent, valueUpdate: 'input', attr: {maxlength: $root.MAXLENGTH}"></textarea>
                 </div>
-                <div data-bind="if: replyNotEmpty" class="form-inline pull-right">
-                    <a class="btn btn-default btn-sm" data-bind="click: cancelReply, css: {disabled: submittingReply}"> Cancel</a>
-                    <a class="btn btn-success btn-sm" data-bind="click: submitReply, css: {disabled: submittingReply}">{{commentButtonText}}</a>
-                    <span data-bind="text: replyErrorMessage" class="comment-error"></span>
+                <div class="clearfix">
+                    <div data-bind="if: replyNotEmpty" class="form-inline pull-right">
+                        <a class="btn btn-default btn-sm" data-bind="click: cancelReply, css: {disabled: submittingReply}"> Cancel</a>
+                        <a class="btn btn-success btn-sm" data-bind="click: submitReply, css: {disabled: submittingReply}">{{commentButtonText}}</a>
+                        <span data-bind="text: replyErrorMessage" class="comment-error"></span>
+                    </div>
+                    <div class="comment-error">{{errorMessage}}</div>
                 </div>
-                <div class="comment-error">{{errorMessage}}</div>
             </form>
         </div>
 
@@ -50,7 +52,7 @@
                 </div>
                 <div data-bind="if: canEdit">
                     <a data-bind="click: startUndelete">Restore</a>
-                    <div data-bind="if: undeleting">
+                    <div class="clearfix" data-bind="if: undeleting">
                         <div class="pull-right">
                             <a class="btn btn-default btn-sm" data-bind="click: cancelUndelete">Cancel</a>
                             <a class="btn btn-success btn-sm" data-bind="click: submitUndelete">Save</a>
@@ -79,12 +81,12 @@
 
                 <div class="comment-info">
                     <form class="form-inline">
-                        <img data-bind="attr: {src: author.gravatarUrl}"/>
+                        <img data-bind="attr: {src: author.gravatar_url}"/>
                         <span data-bind="if: author.id">
-                            <a class="comment-author" data-bind="text: author.name, attr: {href: author.url}"></a>
+                            <a class="comment-author" data-bind="text: author.fullname, attr: {href: author.url}"></a>
                         </span>
                         <span data-bind="ifnot: author.id">
-                            <span class="comment-author" data-bind="text: author.name"></span>
+                            <span class="comment-author" data-bind="text: author.fullname"></span>
                         </span>
                         <span class="comment-date pull-right">
                             <span data-bind="template: {if: modified, afterRender: setupToolTips}">
@@ -102,7 +104,7 @@
                         <div data-bind="ifnot: editing">
                             <span class="component-overflow"
                               data-bind="html: contentDisplay, css: {'edit-comment': editHighlight}, event: {mouseenter: startHoverContent, mouseleave: stopHoverContent}"></span>
-                              <span data-bind="if: hasChildren">
+                              <span class="pull-right" data-bind="if: hasChildren">
                                 <i data-bind="css: toggleIcon, click: toggle"></i>
                               </span>
                         </div>
