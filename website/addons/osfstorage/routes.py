@@ -140,6 +140,15 @@ api_routes = {
             json_renderer,
         ),
 
+        Rule(
+            [
+                '/project/<nid>/osfstorage/<fid>/force_return/',
+            ],
+            'post',
+            views.osfstorage_force_return,
+            json_renderer,
+        ),
+
     ],
 
 }

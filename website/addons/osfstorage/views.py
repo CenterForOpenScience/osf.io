@@ -247,8 +247,7 @@ def osfstorage_rent(file_node, auth, **kwargs):
     return {'status': message}
 
 @must_have_permission(permissions.WRITE)
-@decorators.autoload_filenode(must_be='file', check_rent=True)
-@decorators.handle_odm_errors
+@decorators.autoload_filenode(must_be='file')
 def osfstorage_return(file_node, auth, **kwargs):
     if file_node.renter == auth.user:
         file_node.return_rent()
@@ -256,6 +255,11 @@ def osfstorage_return(file_node, auth, **kwargs):
     return {'status': 'failure'}
 
 @decorators.autoload_filenode(must_be='file', check_rent=True)
-@decorators.handle_odm_errors
 def osfstorage_rented(file_node, **kwargs):
     return {'renter': file_node.rented}
+
+@must_have_permission(permissions.ADMIN)
+@decorators.autoload_filenode(must_be='file')
+def osfstorage_force_return(file_node, auth, **kwargs):
+    file_node.return_rent()
+    return {'status': 'success'}

@@ -25,7 +25,6 @@ var FileViewPage = {
         self.node = self.context.node;
         self.editorMeta = self.context.editor;
         self.file.renter = '';
-
         self.isRenter = function() {
             $osf.postJSON(
                 '/api/v1/project/' + self.node.id + '/osfstorage' + self.file.path +'/rented/',
@@ -34,7 +33,9 @@ var FileViewPage = {
                 self.file.renter = resp.renter;
                 if ((self.file.renter !== '') && (self.file.renter !== self.context.userId)) {
                 $osf.growl('File is locked', 'This file has been locked by a <a href="/' + self.file.renter +
-                    '"> collaborator </a>. It needs to be unlocked before any changes can be made.' );
+                    '"> collaborator </a>. It needs to be unlocked before any changes can be made. ' +
+                    'If you are an administrator, you may <a data-bind="onclick:' +
+                    '$(document).trigger.bind($(document), \'fileviewpage:force_return\')">force unlock the file.</a>');
             }
             }).fail(function(resp) {
             });
@@ -154,6 +155,32 @@ var FileViewPage = {
                 window.location.reload();
             }).fail(function(resp) {
                 $osf.growl('Error', 'Unable to unlock file');
+            });
+        });
+        $(document).on('fileviewpage:force_return', function() {
+            bootbox.confirm({
+                title: 'Force unlock file',
+                message: 'This will unlock the file for all contributors, are you sure?',
+                buttons: {
+                    confirm:{
+                        label: 'Force unlock',
+                        className: 'btn-danger'
+                    }
+                },
+                callback: function(confirm) {
+                    if (!confirm) {
+                        return
+                    }
+                    $osf.postJSON(
+                        '/api/v1/project/' + self.node.id + '/osfstorage' + self.file.path +'/force_return/',
+                        {}
+                    ).done(function(resp) {
+                        window.location.reload();
+                    }).fail(function(resp) {
+                        $osf.growl('Error', 'Unable to force unlock file, make sure you have admin privileges.');
+                    });
+                }
+
             });
         });
         $(document).on('fileviewpage:download', function() {
@@ -300,13 +327,13 @@ var FileViewPage = {
             ctrl.canEdit() && (ctrl.file.renter === '') ? m('.btn-group.m-l-xs.m-t-xs', [
                 m('.btn.btn-sm.btn-danger.file-delete', {onclick: $(document).trigger.bind($(document), 'fileviewpage:delete')}, 'Delete')
             ]) : '',
-            ctrl.canEdit() && (ctrl.file.renter === '') && ctrl.editor ? m('.btn-group.m-l-xs.m-t-xs', [
+            ctrl.canEdit() && (ctrl.file.renter === '') ? m('.btn-group.m-l-xs.m-t-xs', [
                 m('.btn.btn-sm.btn-warning', {onclick: $(document).trigger.bind($(document), 'fileviewpage:rent')}, 'Lock')
             ]) : '',
-            (ctrl.canEdit() && (ctrl.file.renter === ctrl.context.userId) && ctrl.editor) ? m('.btn-group.m-l-xs.m-t-xs', [
+            (ctrl.canEdit() && (ctrl.file.renter === ctrl.context.userId)) ? m('.btn-group.m-l-xs.m-t-xs', [
                 m('.btn.btn-sm.btn-warning', {onclick: $(document).trigger.bind($(document), 'fileviewpage:return')}, 'Unlock')
             ]) : '',
-            (ctrl.canEdit() && (ctrl.file.renter === ctrl.context.userId) && ctrl.editor) ? m('.btn-group.m-l-xs.m-t-xs', [
+            (ctrl.canEdit() && (ctrl.file.renter === ctrl.context.userId)) ? m('.btn-group.m-l-xs.m-t-xs', [
                 m('.btn.btn-sm.btn-warning', {onclick: $(document).trigger.bind($(document), 'fileviewpage:extend')}, 'Extend Lock')
             ]) : '',
             m('.btn-group.m-t-xs', [
