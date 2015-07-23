@@ -400,6 +400,9 @@ ko.bindingHandlers.anchorScroll = {
  */
 ko.bindingHandlers.toggleHeight = {
     init: function(elem, valueAccessor) {
+        var height = valueAccessor().height || 20;
+        var iconDown = valueAccessor().iconDown || 'fa fa-angle-down';
+        var iconUp = valueAccessor().iconUp || 'fa fa-angle-up';
 
     }
 };
