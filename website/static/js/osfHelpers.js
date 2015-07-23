@@ -400,16 +400,23 @@ ko.bindingHandlers.anchorScroll = {
  */
 ko.bindingHandlers.toggleHeight = {
     init: function(elem, valueAccessor) {
-        var height = valueAccessor().height || 20;
+        elem.height = valueAccessor().height || 50;
         var iconDown = valueAccessor().iconDown || 'fa fa-angle-down';
         var iconUp = valueAccessor().iconUp || 'fa fa-angle-up';
+        elem.element = $(elem);
 
-        var element = $(elem);
-        // if height of this div is higher than height
-        if(element.height() > height){
-            element.height(height);
-            element.append('<div class="contributor-gradient"></div>');
-            element.append('<div class="contributor-toggle text-center"><i class="' + iconDown +'"></i><i style="display:none" class="' + iconUp + '"></i></div>');
+        elem.element.append('<div class="contributor-gradient" style="display:none"></div>');
+        elem.element.append('<div class="contributor-toggle text-center" style="display:none"><i class="' + iconDown +'"></i><i style="display:none" class="' + iconUp + '"></i></div>');
+    },
+    update: function(elem, valueAccessor) {
+        if(elem.element.height() > elem.height){
+            elem.element.height(elem.height);
+            elem.element.children('.contributor-gradient').show();
+            elem.element.children('.contributor-toggle').show();
+        } else {
+            elem.element.height(elem.element[0].scrollHeight);
+            elem.element.children('.contributor-gradient').hide();
+            elem.element.children('.contributor-toggle').hide();
         }
     }
 };
