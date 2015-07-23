@@ -48,7 +48,7 @@ var BaseClient = oop.defclass({
  *     client.makeRequest()
  *          .fail(captureError('Failed to make request'));
  */
-var DEFAULT_ERROR_MESSAGE = 'Request failed.'
+var DEFAULT_ERROR_MESSAGE = 'Request failed.';
 function captureError(message, callback) {
     return function(xhr, status, error) {
         Raven.captureMessage(message || DEFAULT_ERROR_MESSAGE, {

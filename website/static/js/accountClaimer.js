@@ -52,6 +52,11 @@ function onClickIfLoggedIn() {
                         $osf.handleJSONError
                     );
                 }
+            },
+            buttons:{
+                confirm:{
+                    label:'Claim'
+                }
             }
         });
     }

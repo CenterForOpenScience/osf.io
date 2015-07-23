@@ -1,13 +1,15 @@
-from rest_framework import authentication
 import itsdangerous
-from website import settings
-
 from django.utils.translation import ugettext_lazy as _
-from framework.sessions.model import Session
-from framework.auth.core import User, get_user
 
+from rest_framework import authentication
 from rest_framework.authentication import BasicAuthentication
 from rest_framework import exceptions
+
+from framework.auth import cas
+from framework.sessions.model import Session
+from framework.auth.core import User, get_user
+from website import settings
+
 
 def get_session_from_cookie(cookie_val):
     """Given a cookie value, return the `Session` object or `None`."""
@@ -47,6 +49,36 @@ class OSFBasicAuthentication(BasicAuthentication):
         elif userid is None and password is None:
             raise exceptions.NotAuthenticated()
         return (user, None)
+
+    def authenticate_header(self, request):
+        return ""
+
+class OSFCASAuthentication(authentication.BaseAuthentication):
+    """Check whether the user provides a valid OAuth2 bearer token"""
+
+    def authenticate(self, request):
+        client = cas.get_client()  # Returns a CAS server client
+        try:
+            auth_header_field = request.META["HTTP_AUTHORIZATION"]
+            auth_token = cas.parse_auth_header(auth_header_field)
+        except (cas.CasTokenError, KeyError):
+            return None  # If no token in header, then this method is not applicable
+
+        # Found a token; query CAS for the associated user id
+        try:
+            resp = client.profile(auth_token)
+        except cas.CasHTTPError:
+            raise exceptions.NotAuthenticated('User provided an invalid OAuth2 access token')
+
+        if resp.authenticated is False:
+            raise exceptions.NotAuthenticated('CAS server failed to authenticate this token')
+
+        user_id = resp.user
+        user = User.load(user_id)
+        if user is None:
+            raise exceptions.AuthenticationFailed("Could not find the user associated with this token")
+
+        return user, auth_token
 
     def authenticate_header(self, request):
         return ""

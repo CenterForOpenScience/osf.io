@@ -14,7 +14,6 @@ from modularodm.validators import URLValidator
 from modularodm.exceptions import NoResultsFound
 from modularodm.exceptions import ValidationError, ValidationValueError
 
-from api.base.utils import absolute_reverse
 import framework
 from framework import analytics
 from framework.sessions import session
@@ -156,16 +155,14 @@ def get_user(email=None, password=None, verification_key=None):
 
 class Auth(object):
 
-    def __init__(self, user=None, api_key=None, api_node=None,
+    def __init__(self, user=None, api_node=None,
                  private_key=None):
         self.user = user
-        self.api_key = api_key
         self.api_node = api_node
         self.private_key = private_key
 
     def __repr__(self):
-        return ('<Auth(user="{self.user}", api_key={self.api_key}, '
-                'api_node={self.api_node}, '
+        return ('<Auth(user="{self.user}", '
                 'private_key={self.private_key})>').format(self=self)
 
     @property
@@ -175,14 +172,10 @@ class Auth(object):
     @classmethod
     def from_kwargs(cls, request_args, kwargs):
         user = request_args.get('user') or kwargs.get('user') or _get_current_user()
-        api_key = request_args.get('api_key') or kwargs.get('api_key')
-        api_node = request_args.get('api_node') or kwargs.get('api_node')
         private_key = request_args.get('view_only')
 
         return cls(
             user=user,
-            api_key=api_key,
-            api_node=api_node,
             private_key=private_key,
         )
 
@@ -224,6 +217,7 @@ class User(GuidStoredObject, AddonModelMixin):
     # The primary email address for the account.
     # This value is unique, but multiple "None" records exist for:
     #   * unregistered contributors where an email address was not provided.
+    # TODO: Update mailchimp subscription on username change in user.save()
     username = fields.StringField(required=False, unique=True, index=True)
 
     # Hashed. Use `User.set_password` and `User.check_password`
@@ -300,10 +294,6 @@ class User(GuidStoredObject, AddonModelMixin):
     #    ...
     # }
 
-    # nicknames, or other names by which this used is known
-    # TODO: remove - unused
-    aka = fields.StringField(list=True)
-
     # the date this user was registered
     # TODO: consider removal - this can be derived from date_registered
     date_registered = fields.DateTimeField(auto_now_add=dt.datetime.utcnow,
@@ -361,8 +351,6 @@ class User(GuidStoredObject, AddonModelMixin):
     #     'twitter': <twitter id>,
     # }
 
-    api_keys = fields.ForeignField('apikey', list=True, backref='keyed')
-
     # hashed password used to authenticate to Piwik
     piwik_token = fields.StringField()
 
@@ -393,7 +381,7 @@ class User(GuidStoredObject, AddonModelMixin):
         return '<User({0!r}) with id {1!r}>'.format(self.username, self._id)
 
     def __str__(self):
-        return self.fullname
+        return self.fullname.encode('ascii', 'replace')
 
     __unicode__ = __str__
 
@@ -414,7 +402,8 @@ class User(GuidStoredObject, AddonModelMixin):
 
     @property
     def absolute_api_v2_url(self):
-        return absolute_reverse('users:user-detail', kwargs={'pk': self.pk})
+        from api.base.utils import absolute_reverse  # Avoid circular dependency
+        return absolute_reverse('users:user-detail', kwargs={'user_id': self.pk})
 
     # used by django and DRF
     def get_absolute_url(self):
@@ -659,6 +648,8 @@ class User(GuidStoredObject, AddonModelMixin):
             issues.append('Passwords cannot be blank')
         elif len(raw_new_password) < 6:
             issues.append('Password should be at least six characters')
+        elif len(raw_new_password) > 256:
+            issues.append('Password should not be longer than 256 characters')
 
         if raw_new_password != raw_confirm_password:
             issues.append('Password does not match the confirmation')
@@ -681,7 +672,6 @@ class User(GuidStoredObject, AddonModelMixin):
 
     def add_unconfirmed_email(self, email, expiration=None):
         """Add an email verification token for a given email."""
-        # TODO: If the unconfirmed email is already present, refresh the token
 
         # TODO: This is technically not compliant with RFC 822, which requires
         #       that case be preserved in the "local-part" of an address. From
@@ -695,6 +685,10 @@ class User(GuidStoredObject, AddonModelMixin):
 
         validate_email(email)
 
+        # If the unconfirmed email is already present, refresh the token
+        if email in self.unconfirmed_emails:
+            self.remove_unconfirmed_email(email)
+
         token = generate_confirm_token()
 
         # handle when email_verifications is None
@@ -707,8 +701,6 @@ class User(GuidStoredObject, AddonModelMixin):
 
     def remove_unconfirmed_email(self, email):
         """Remove an unconfirmed email addresses and their tokens."""
-        if email == self.username:
-            raise PermissionsError("Can't remove primary email")
         for token, value in self.email_verifications.iteritems():
             if value.get('email') == email:
                 del self.email_verifications[token]
@@ -868,6 +860,15 @@ class User(GuidStoredObject, AddonModelMixin):
         for node in self.node__contributed:
             node.update_search()
 
+    def update_search_nodes_contributors(self):
+        """
+        Bulk update contributor name on all nodes on which the user is
+        a contributor.
+        :return:
+        """
+        from website.search import search
+        search.update_contributors(self.visible_contributor_to)
+
     @property
     def is_confirmed(self):
         return bool(self.date_confirmed)
@@ -973,6 +974,23 @@ class User(GuidStoredObject, AddonModelMixin):
     def profile_url(self):
         return '/{}/'.format(self._id)
 
+    @property
+    def contributor_to(self):
+        return (
+            node for node in self.node__contributed
+            if not (
+                node.is_deleted
+                or node.is_dashboard
+            )
+        )
+
+    @property
+    def visible_contributor_to(self):
+        return (
+            node for node in self.contributor_to
+            if self._id in node.visible_contributor_ids
+        )
+
     def get_summary(self, formatter='long'):
         return {
             'user_fullname': self.fullname,
@@ -982,12 +1000,14 @@ class User(GuidStoredObject, AddonModelMixin):
         }
 
     def save(self, *args, **kwargs):
+        # TODO: Update mailchimp subscription on username change
         # Avoid circular import
         from framework.analytics import tasks as piwik_tasks
         self.username = self.username.lower().strip() if self.username else None
         ret = super(User, self).save(*args, **kwargs)
         if self.SEARCH_UPDATE_FIELDS.intersection(ret) and self.is_confirmed:
             self.update_search()
+            self.update_search_nodes_contributors()
         if settings.PIWIK_HOST and not self.piwik_token:
             piwik_tasks.update_user(self._id)
         return ret
@@ -1099,7 +1119,11 @@ class User(GuidStoredObject, AddonModelMixin):
 
     def merge_user(self, user):
         """Merge a registered user into this account. This user will be
-        a contributor on any project
+        a contributor on any project. if the registered user and this account
+        are both contributors of the same project. Then it will remove the
+        registered user and set this account to the highest permission of the two
+        and set this account to be visible if either of the two are visible on
+        the project.
 
         :param user: A User object to be merged.
         """
@@ -1111,8 +1135,6 @@ class User(GuidStoredObject, AddonModelMixin):
         for system_tag in user.system_tags:
             if system_tag not in self.system_tags:
                 self.system_tags.append(system_tag)
-
-        [self.aka.append(each) for each in user.aka if each not in self.aka]
 
         self.is_claimed = self.is_claimed or user.is_claimed
         self.is_invited = self.is_invited or user.is_invited
@@ -1139,9 +1161,11 @@ class User(GuidStoredObject, AddonModelMixin):
 
         for key, value in user.mailing_lists.iteritems():
             # subscribe to each list if either user was subscribed
-            self.mailing_lists[key] = value or self.mailing_lists.get(key)
-        # - clear subscriptions for merged user
-        user.mailing_lists = {}
+            subscription = value or self.mailing_lists.get(key)
+            signals.user_merged.send(self, list_name=key, subscription=subscription)
+
+            # clear subscriptions for merged user
+            signals.user_merged.send(user, list_name=key, subscription=False)
 
         for node_id, timestamp in user.comments_viewed_timestamp.iteritems():
             if not self.comments_viewed_timestamp.get(node_id):
@@ -1169,10 +1193,6 @@ class User(GuidStoredObject, AddonModelMixin):
                 self.external_accounts.append(account)
         user.external_accounts = []
 
-        for api_key in user.api_keys:
-            self.api_keys.append(api_key)
-        user.api_keys = []
-
         # - addons
         # Note: This must occur before the merged user is removed as a
         #       contributor on the nodes, as an event hook is otherwise fired
@@ -1187,12 +1207,27 @@ class User(GuidStoredObject, AddonModelMixin):
             # Skip dashboard node
             if node.is_dashboard:
                 continue
-            node.add_contributor(
-                contributor=self,
-                permissions=node.get_permissions(user),
-                visible=node.get_visible(user),
-                log=False,
-            )
+            # if both accounts are contributor of the same project
+            if node.is_contributor(self) and node.is_contributor(user):
+                if node.permissions[user._id] > node.permissions[self._id]:
+                    permissions = node.permissions[user._id]
+                else:
+                    permissions = node.permissions[self._id]
+                node.set_permissions(user=self, permissions=permissions)
+
+                visible1 = self._id in node.visible_contributor_ids
+                visible2 = user._id in node.visible_contributor_ids
+                if visible1 != visible2:
+                    node.set_visible(user=self, visible=True, log=True, auth=Auth(user=self))
+
+            else:
+                node.add_contributor(
+                    contributor=self,
+                    permissions=node.get_permissions(user),
+                    visible=node.get_visible(user),
+                    log=False,
+                )
+
             try:
                 node.remove_contributor(
                     contributor=user,

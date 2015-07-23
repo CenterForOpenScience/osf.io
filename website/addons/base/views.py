@@ -25,8 +25,8 @@ from website.addons.base import exceptions
 from website.models import User, Node, NodeLog
 from website.util import rubeus
 from website.profile.utils import get_gravatar
-from website.project.utils import serialize_node
 from website.project.decorators import must_be_valid_project, must_be_contributor_or_public
+from website.project.utils import serialize_node
 
 
 @decorators.must_have_permission('write')
@@ -99,6 +99,23 @@ def check_access(node, user, action, key=None):
     if permission == 'read':
         if node.is_public or key in node.private_link_keys_active:
             return True
+    # Users attempting to register projects with components might not have
+    # `write` permissions for all components. This will result in a 403 for
+    # all `copyto` actions as well as `copyfrom` actions if the component
+    # in question is not public. To get around this, we have to recursively
+    # check the node's parent node to determine if they have `write`
+    # permissions up the stack.
+    # TODO(hrybacki): is there a way to tell if this is for a registration?
+    # All nodes being registered that receive the `copyto` action will have
+    # `node.is_registration` == True. However, we have no way of telling if
+    # `copyfrom` actions are originating from a node being registered.
+    if action == 'copyfrom' or (action == 'copyto' and node.is_registration):
+        parent = node.parent_node
+        while parent:
+            if parent.has_permission(user, 'write'):
+                return True
+            parent = parent.parent_node
+
     code = httplib.FORBIDDEN if user else httplib.UNAUTHORIZED
     raise HTTPError(code)
 
@@ -169,7 +186,7 @@ def get_auth(**kwargs):
         'credentials': credentials,
         'settings': settings,
         'callback_url': node.api_url_for(
-            'create_waterbutler_log',
+            ('create_waterbutler_log' if not node.is_registration else 'registration_callbacks'),
             _absolute=True,
         ),
     }
@@ -406,14 +423,18 @@ def addon_view_file(auth, node, node_addon, guid_file, extras):
     else:
         error = None
 
-    if guid_file._id not in node.wiki_private_uuids:
-        node.wiki_private_uuids[guid_file._id] = uuid.uuid4()
+    if guid_file._id not in node.file_guid_to_share_uuids:
+        node.file_guid_to_share_uuids[guid_file._id] = uuid.uuid4()
         node.save()
 
     if ret['user']['can_edit']:
-        sharejs_uuid = str(node.wiki_private_uuids[guid_file._id])
+        sharejs_uuid = str(node.file_guid_to_share_uuids[guid_file._id])
     else:
         sharejs_uuid = None
+
+    size = getattr(guid_file, 'size', None)
+    if size is None:  # Size could be 0 which is a falsey value
+        size = 9966699  # if we dont know the size assume its to big to edit
 
     ret.update({
         'error': error.replace('\n', '') if error else None,
@@ -423,13 +444,13 @@ def addon_view_file(auth, node, node_addon, guid_file, extras):
         'sharejs_uuid': sharejs_uuid,
         'urls': {
             'files': node.web_url_for('collect_file_trees'),
-            'content': guid_file.download_url,
             'render': guid_file.mfr_render_url,
             'sharejs': wiki_settings.SHAREJS_URL,
+            'mfr': settings.MFR_SERVER_URL,
             'gravatar': get_gravatar(auth.user, 25),
         },
         # Note: must be called after get_or_start_render. This is really only for github
-        'size': getattr(guid_file, 'size', 0),
+        'size': size,
         'extra': json.dumps(getattr(guid_file, 'extra', {})),
         #NOTE: get_or_start_render must be called first to populate name
         'file_name': getattr(guid_file, 'name', os.path.split(guid_file.waterbutler_path)[1]),

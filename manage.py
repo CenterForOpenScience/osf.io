@@ -9,7 +9,7 @@ if __name__ == "__main__":
 
     from django.core.management import execute_from_command_line
 
-    init_app(set_backends=True, routes=False, mfr=False, attach_request_handlers=False)
+    init_app(set_backends=True, routes=False, attach_request_handlers=False)
 
     if 'livereload' in sys.argv:
         from django.core.wsgi import get_wsgi_application

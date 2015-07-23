@@ -6,11 +6,10 @@ from bson import ObjectId
 
 import matplotlib.pyplot as plt
 import matplotlib.dates as mdates
-import seaborn as sns  # noqa
 
 import requests
 
-from website.addons.osfstorage import utils as storage_utils
+from website import util
 
 
 def oid_to_datetime(oid):
@@ -52,11 +51,7 @@ def send_file(app, name, content_type, file_like, node, user):
     """Upload file to OSF."""
     file_like.seek(0)
     with app.test_request_context():
-        upload_url = storage_utils.get_waterbutler_upload_url(
-            user,
-            node,
-            path=name,
-        )
+        upload_url = util.waterbutler_url_for('upload', 'osfstorage', name, node, user=user)
     requests.put(
         upload_url,
         data=file_like,

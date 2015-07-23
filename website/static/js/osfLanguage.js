@@ -1,24 +1,26 @@
+var SUPPORT_EMAIL = 'support@osf.io';
+
 module.exports = {
     // TODO
     makePublic: null,
     makePrivate: null,
-
+    registrations: {
+        registrationFailed: 'Registration failed. If this problem persists, please contact ' + SUPPORT_EMAIL + '.',
+        invalidEmbargoTitle: 'Invalid embargo end date',
+        invalidEmbargoMessage: 'Please choose a date more than two days, but less than four years, from today.',
+        registerConfirm: 'Are you sure you want to register this project?',
+        registerSkipAddons: 'If you choose to continue with the registration at this time we will exclude the contents of any addons that are not copyable. These files will not appear in the final registration.'
+    },
     Addons: {
         dataverse: {
             userSettingsError: 'Could not retrieve settings. Please refresh the page or ' +
-                'contact <a href="mailto: support@osf.io">support@osf.io</a> if the ' +
+                'contact <a href="mailto: ' + SUPPORT_EMAIL + '">' + SUPPORT_EMAIL + '</a> if the ' +
                 'problem persists.',
-            confirmUserDeauth: 'Are you sure you want to unlink your Dataverse ' +
-                'account? This will revoke access to Dataverse for all ' +
-                'projects you have authorized.',
-            confirmNodeDeauth: 'Are you sure you want to unlink this Dataverse account? This will ' +
-                'revoke the ability to view, download, modify, and upload files ' +
-                'to studies on the Dataverse from the OSF. This will not remove your ' +
-                'Dataverse authorization from your <a href="/settings/addons/">user settings</a> ' +
-                'page.',
-            deauthError: 'Could not unlink Dataverse at this time.',
-            deauthSuccess: 'Unlinked your Dataverse account.',
-            authError: 'There was a problem connecting to the Dataverse.',
+            deauthError: 'Could not disconnect the Dataverse account at this time.',
+            authError: 'Sorry, but there was a problem connecting to that instance of Dataverse. It ' +
+                'is likely that the instance hasn\'t been upgraded to Dataverse 4.0. If you ' +
+                'have any questions or believe this to be an error, please contact ' +
+                'support@osf.io.',
             authInvalid: 'Your Dataverse API token is invalid.',
             authSuccess: 'Your Dataverse account was linked.',
             datasetDeaccessioned: 'This dataset has already been deaccessioned on the Dataverse ' +
@@ -27,40 +29,46 @@ module.exports = {
                 'in one or more of the dataset\'s file names. This issue has been forwarded to our ' +
                 'development team.',
             setDatasetError: 'Could not connect to this dataset.',
-            widgetInvalid: 'The Dataverse credentials associated with ' +
-                'this node appear to be invalid.',
+            widgetInvalid: 'The credentials associated with this Dataverse account ' +
+                'appear to be invalid.',
             widgetError: 'There was a problem connecting to the Dataverse.'
         },
         dropbox: {
             // Shown on clicking "Delete Access Token" for dropbox
-            confirmDeauth: 'Are you sure you want to delete your Dropbox access ' +
-                'key? This will revoke access to Dropbox for all projects you have ' +
-                'authorized.',
-            deauthError: 'Could not deauthorize Dropbox at this time',
-            deauthSuccess: 'Deauthorized Dropbox.'
+            confirmDeauth: 'Are you sure you want to disconnect the Dropbox account? ' +
+                'This will revoke access to Dropbox for all projects you have ' +
+                'associated with this account.',
+            deauthError: 'Could not disconnect Dropbox account at this time',
+        },
+        figshare: {
+            confirmDeauth: 'Are you sure you want to disconnect the figshare account? ' +
+                'This will revoke access to figshare for all projects you have ' +
+                'associated with this account.',
         },
         // TODO
         github: {
-
+            confirmDeauth: 'Are you sure you want to disconnect the GitHub account? ' +
+                'This will revoke access to GitHub for all projects you have ' +
+                'associated with this account.',
         },
         s3: {
-
+            confirmDeauth: 'Are you sure you want to disconnect the S3 account? ' +
+                'This will revoke access to S3 for all projects you have ' +
+                'associated with this account.',
         },
         box: {
             // Shown on clicking "Delete Access Token" for dropbox
-            confirmDeauth: 'Are you sure you want to delete your Box access ' +
-                'key? This will revoke access to Box for all projects you have ' +
-                'authorized.',
-            deauthError: 'Could not deauthorize Box at this time',
-            deauthSuccess: 'Deauthorized Box.'
+            confirmDeauth: 'Are you sure you want to disconnect the Box account? ' +
+                'This will revoke access to Box for all projects you have ' +
+                'associated with this account.',
+            deauthError: 'Could not disconnect the Box account at this time',
         },
         googledrive: {
           // Shown on clicking "Delete Access Token" for googledrive
-            confirmDeauth: 'Are you sure you want to delete your Google Drive access ' +
-                'key? This will revoke access to Google Drive for all projects you have ' +
-                'authorized.',
-            deauthError: 'Could not deauthorize Google Drive at this time',
-            deauthSuccess: 'Deauthorized Google Drive.'
+            confirmDeauth: 'Are you sure you want to disconnect the Google Drive account? ' +
+                'This will revoke access to Google Drive for all projects you have ' +
+                'associated with this account.',
+            deauthError: 'Could not disconnect the Google Drive account at this time',
         }
     }
 };

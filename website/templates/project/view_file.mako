@@ -4,29 +4,34 @@
 <%def name="container_class()">container-xxl</%def>
 
 <%def name="title()">${file_name | h}</%def>
-
-<div>
-  <div>
+<div class="row">
+  <div class="col-sm-5">
     <h2 class="break-word">
       ${file_name | h}
       % if file_revision:
         <small>&nbsp;${file_revision | h}</small>
       % endif
-    </h2><hr>
+    </h2>
   </div>
+  <div class="col-sm-7">
+    <div id="toggleBar" class="pull-right"></div>
+  </div>
+</div>
+<hr>
+<div class="row">
 
-  <div id="file-navigation" class="panel-toggle col-md-3 file-tree">
-    <div class="osf-panel osf-panel-flex hidden-xs reset-height">
-      <div class="osf-panel-header osf-panel-header-flex" style="display:none">
+  <div id="file-navigation" class="panel-toggle col-sm-3 file-tree">
+    <div class="osf-panel panel panel-default osf-panel-hide osf-panel-flex reset-height">
+      <div class="panel-heading clearfix osf-panel-header-flex" style="display:none">
         <div id="filesSearch"></div>
         <div id="toggleIcon" class="pull-right">
-          <div class="panel-collapse"> <i class="fa fa-angle-left"></i> </div>
+          <div class="panel-collapse"><i class="fa fa-angle-left"></i></div>
         </div>
       </div>
 
-      <div class="osf-panel-body osf-panel-body-flex file-page reset-height">
+      <div class="osf-panel-body-flex file-page reset-height">
         <div id="grid">
-          <div class="fangorn-loading">
+          <div class="spinner-loading-wrapper">
             <div class="logo-spin text-center"><img src="/static/img/logo_spin.png" alt="loader"> </div>
             <p class="m-t-sm fg-load-message"> Loading files...  </p>
           </div>
@@ -35,16 +40,23 @@
     </div>
 
     <!-- Menu toggle closed -->
-    <div class="osf-panel panel-collapsed hidden-xs text-center reset-height"  style="display: none">
-      <div class="osf-panel-header">
-        <i class="fa fa-file"></i>
+    <div class="panel panel-default osf-panel-show text-center reset-height"  style="display: none">
+      <div class="panel-heading">
         <i class="fa fa-angle-right"></i>
       </div>
     </div>
-
   </div>
 
-  <div class="file-view-panels panel-expand col-md-9" style="margin-top: -75px"></div>
+  <div id="fileViewPanelLeft" class="col-sm-9 panel-expand">
+    <div class="row">
+      <div id="mfrIframeParent" class="col-sm-9">
+        <div id="mfrIframe" class="mfr mfr-file"></div>
+      </div>
+
+    <!-- This section is built by mithril in revisions.js -->
+      <div class="file-view-panels col-sm-3"></div>
+    </div>
+  </div>
 
 </div>
 
@@ -63,6 +75,9 @@
           contributors with write permission in real time. Changes will be stored
           but not published until you click the "Save" button.
         </p>
+      </div>
+      <div class="modal-footer">
+          <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
       </div>
     </div>
   </div>
@@ -147,7 +162,6 @@
         %if error is None:
               render: '${urls['render']}',
         %endif
-              content: '${urls['content'] | js_str}',
               sharejs: '${urls['sharejs'] | js_str}',
             }
         },
@@ -170,6 +184,10 @@
         }
       });
     </script>
+
+    <link href="/static/css/pages/file-view-page.css" rel="stylesheet">
+    <link href="${urls['mfr']}/static/css/mfr.css" media="all" rel="stylesheet" />
+    <script src="${urls['mfr']}/static/js/mfr.js"></script>
 
     <script src="//${urls['sharejs']}/text.js"></script>
     <script src="//${urls['sharejs']}/share.js"></script>

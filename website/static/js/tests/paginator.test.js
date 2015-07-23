@@ -23,6 +23,7 @@ describe('Paginator', () => {
     var paginator;
     var numberOfPages;
     var currentPage;
+    var pageToGet;
 
     beforeEach(() => {
         paginator = new TestPaginator();
@@ -32,6 +33,7 @@ describe('Paginator', () => {
         spy.reset();
         numberOfPages = 0;
         currentPage = 0;
+        pageToGet = 0;
     });
 
     it('previousPage', () => {
@@ -43,7 +45,19 @@ describe('Paginator', () => {
         });
         paginator.previousPage();
         assert.calledOnce(paginator.fetchResults);
-        assert.equal(paginator.currentPage() + 1, currentPage);
+        assert.equal(paginator.pageToGet() + 1, currentPage);
+    });
+
+    it('previousPage doesnot fetchResult when pageNum is 0', () => {
+        numberOfPages = 5;
+        currentPage = 0;
+        paginator.configure(function(p){
+            p.numberOfPages(numberOfPages);
+            p.currentPage(currentPage);
+        });
+        paginator.previousPage();
+        assert.isFalse(paginator.fetchResults.called);
+        assert.equal(paginator.pageToGet() + 1, currentPage);
     });
 
     it('nextPage', () => {
@@ -53,7 +67,19 @@ describe('Paginator', () => {
         });
         paginator.nextPage();
         assert.calledOnce(paginator.fetchResults);
-        assert.equal(paginator.currentPage() - 1, currentPage);
+        assert.equal(paginator.pageToGet() - 1, currentPage);
+    });
+
+    it('nextPage doesnot fetchResult when pageNum is at the end', () => {
+        numberOfPages = 5;
+        currentPage = 4;
+        paginator.configure(function(p){
+            p.numberOfPages(numberOfPages);
+            p.currentPage(currentPage);
+        });
+        paginator.nextPage();
+        assert.isFalse(paginator.fetchResults.called);
+        assert.equal(paginator.pageToGet() - 1, currentPage);
     });
 
     it('enforces implementation of fetchResults', () => {
@@ -104,7 +130,7 @@ describe('Paginator', () => {
             assert.equal(paginator.paginators()[0].text, '&lt;');
             assert.equal(paginator.paginators()[maxPaginatorNumber - 1].text, '&gt;');
             assert.equal(paginator.paginators()[maxPaginatorNumber - 2].text, numberOfPages);
-            assert.equal(paginator.paginators()[maxPaginatorNumber - 3].text, '...')
+            assert.equal(paginator.paginators()[maxPaginatorNumber - 3].text, '...');
         });
 
         it('more than 7 pages, currentPage more than numbersOfPages - 5, one ellipse at the beginning',
@@ -140,7 +166,7 @@ describe('Paginator', () => {
             assert.equal(paginator.paginators()[2].text, '...');
             assert.equal(paginator.paginators()[maxPaginatorNumber - 1].text, '&gt;');
             assert.equal(paginator.paginators()[maxPaginatorNumber - 2].text, numberOfPages);
-            assert.equal(paginator.paginators()[maxPaginatorNumber - 3].text, '...')
+            assert.equal(paginator.paginators()[maxPaginatorNumber - 3].text, '...');
 
         });
 

@@ -74,7 +74,7 @@ def osfstorage_update_metadata(node_addon, payload, **kwargs):
 @must_be_signed
 @decorators.autoload_filenode(must_be='file')
 def osfstorage_get_revisions(file_node, node_addon, payload, **kwargs):
-    is_anon = has_anonymous_link(node_addon.owner, Auth(private_key=payload.get('view_only')))
+    is_anon = has_anonymous_link(node_addon.owner, Auth(private_key=request.args.get('view_only')))
 
     # Return revisions in descending order
     return {
@@ -155,7 +155,7 @@ def osfstorage_create_child(file_node, payload, node_addon, **kwargs):
 
     if not is_folder:
         try:
-            file_node.create_version(
+            version = file_node.create_version(
                 user,
                 dict(payload['settings'], **dict(
                     payload['worker'], **{
@@ -165,13 +165,19 @@ def osfstorage_create_child(file_node, payload, node_addon, **kwargs):
                 ),
                 dict(payload['metadata'], **payload['hashes'])
             )
+            version_id = version._id
+            archive_exists = version.archive is not None
         except KeyError:
             raise HTTPError(httplib.BAD_REQUEST)
+    else:
+        version_id = None
+        archive_exists = False
 
     return {
         'status': 'success',
+        'archive': not archive_exists,  # Should waterbutler also archive this file
         'data': file_node.serialized(),
-        'version': None if is_folder else file_node.versions[-1]._id
+        'version': version_id,
     }, httplib.CREATED if created else httplib.OK
 
 
@@ -201,7 +207,7 @@ def osfstorage_download(file_node, payload, node_addon, **kwargs):
     except ValueError:
         raise make_error(httplib.BAD_REQUEST, 'Version must be an int or not specified')
 
-    version = file_node.get_version(version_id)
+    version = file_node.get_version(version_id, required=True)
 
     if request.args.get('mode') not in ('render', ):
         if version_id < 0:

@@ -261,6 +261,70 @@ MEETING_DATA = {
         'admins': [],
         'public_projects': True,
     },
+    'OSFM2015': {
+        'name': 'OSF for Meetings 2015',
+        'info_url': None,
+        'logo_url': None,
+        'active': True,
+        'admins': [],
+        'public_projects': True,
+    },
+    'JSSP2015': {
+        'name': 'Japanese Society of Social Psychology 2015',
+        'info_url': 'http://www.socialpsychology.jp/conf2015/index.html',
+        'logo_url': None,
+        'active': True,
+        'admins': [],
+        'public_projects': True,
+    },
+    '4S2015': {
+        'name': 'Society for Social Studies of Science 2015',
+        'info_url': 'http://www.4sonline.org/meeting',
+        'logo_url': 'http://www.4sonline.org/ee/denver-skyline.jpg',
+        'active': True,
+        'admins': [],
+        'public_projects': True,
+    },
+    'IARR2016': {
+        'name': 'International Association for Relationship Research 2016',
+        'info_url': 'http://iarr.psych.utoronto.ca/',
+        'logo_url': None,
+        'active': True,
+        'admins': [],
+        'public_projects': True,
+    },
+    'IA2015': {
+        'name': 'Inclusive Astronomy 2015',
+        'info_url': 'https://vanderbilt.irisregistration.com/Home/Site?code=InclusiveAstronomy2015',
+        'logo_url': 'https://vanderbilt.blob.core.windows.net/images/Inclusive%20Astronomy.jpg',
+        'active': True,
+        'admins': [],
+        'public_projects': True,
+    },
+    'PsiChiRepository': {
+        'name': 'Psi Chi Repository',
+        'info_url': None,
+        'logo_url': None,
+        'active': True,
+        'admins': [],
+        'public_projects': True,
+    },
+    'R2RC': {
+        'name': 'Right to Research Coalition',
+        'info_url': None,
+        'logo_url': None,
+        'active': True,
+        'admins': [],
+        'public_projects': True,
+    },
+    'OpenCon2015': {
+        'name': 'OpenCon2015',
+        'info_url': 'http://opencon2015.org/',
+        'logo_url': 'http://s8.postimg.org/w9b30pxyd/Open_Con2015_new_logo.png',
+        'active': True,
+        'admins': [],
+        'public_projects': True,
+    },
 }
 
 
@@ -289,6 +353,8 @@ def populate_conferences():
             changed_fields = conf.save()
             if changed_fields:
                 print('Changed: {}'.format(changed_fields))
+        else:
+            print('Added new Conference: {}'.format(meeting))
 
 
 if __name__ == '__main__':

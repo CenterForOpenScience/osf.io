@@ -1,40 +1,40 @@
 var $ = require('jquery');
 var m = require('mithril');
-var mime = require('mime-types');
+var mime = require('js/mime');
 var bootbox = require('bootbox');
 var $osf = require('js/osfHelpers');
 var waterbutler = require('js/waterbutler');
 
 // Local requires
 var utils = require('./util.js');
-var FileRenderer = require('./render.js');
 var FileEditor = require('./editor.js');
 var FileRevisionsTable = require('./revisions.js');
 
-//Sanity
+// Sanity
 var Panel = utils.Panel;
-var PanelToggler = utils.PanelToggler;
 
 
 var EDITORS = {'text': FileEditor};
+
 
 var FileViewPage = {
     controller: function(context) {
         var self = this;
         self.context = context;
-        self.canEdit = m.prop(false);
         self.file = self.context.file;
         self.node = self.context.node;
         self.editorMeta = self.context.editor;
+        //Force canEdit into a bool
+        self.canEdit = m.prop(!!self.context.currentUser.canEdit);
 
         $.extend(self.file.urls, {
             delete: waterbutler.buildDeleteUrl(self.file.path, self.file.provider, self.node.id),
             metadata: waterbutler.buildMetadataUrl(self.file.path, self.file.provider, self.node.id),
             revisions: waterbutler.buildRevisionsUrl(self.file.path, self.file.provider, self.node.id),
-            content: waterbutler.buildDownloadUrl(self.file.path, self.file.provider, self.node.id, {accept_url: false}),
+            content: waterbutler.buildDownloadUrl(self.file.path, self.file.provider, self.node.id, {accept_url: false, mode: 'render'})
         });
 
-        self.deleteFile = function() {
+        $(document).on('fileviewpage:delete', function() {
             bootbox.confirm({
                 title: 'Delete file?',
                 message: '<p class="overflow">' +
@@ -42,7 +42,9 @@ var FileViewPage = {
                         self.file.safeName + '</strong>?' +
                     '</p>',
                 callback: function(confirm) {
-                    if (!confirm) return;
+                    if (!confirm) {
+                        return;
+                    }
                     $.ajax({
                         type: 'DELETE',
                         url: self.file.urls.delete,
@@ -52,14 +54,20 @@ var FileViewPage = {
                     }).fail(function() {
                         $osf.growl('Error', 'Could not delete file.');
                     });
+                },
+                buttons:{
+                    confirm:{
+                        label:'Delete',
+                        className:'btn-danger'
+                    }
                 }
             });
-        };
+        });
 
-        self.downloadFile = function() {
+        $(document).on('fileviewpage:download', function() {
             window.location = self.file.urls.content;
             return false;
-        };
+        });
 
         self.shareJSObservables = {
             activeUsers: m.prop([]),
@@ -67,48 +75,31 @@ var FileViewPage = {
             userId: self.context.currentUser.id
         };
 
-        revisionsHeader = m('.row', [
-            m('.col-md-6', 'Revisions'),
-            m('.col-md-6', [
-                m('.pull-right.btn-group.btn-group-sm', [
-                    m('button.btn.btn-danger', {onclick: self.deleteFile}, 'Delete'),
-                    m('button.btn.btn-success', {
-                        onclick: self.downloadFile,
-                        href: '?' + $.param($.extend(true, {}, $osf.urlParams(), {download: true}))
-                    }, 'Download')
-                ])
-            ])
-        ]);
-
-        // viewHeader = [m('i.fa.fa-eye'), ' View'];
-        editHeader = function() {
+        self.editHeader = function() {
             return m('.row', [
-                m('.col-md-3', [
-                    m('i.fa.fa-pencil-square-o'),
-                    ' Edit',
-                ]),
-                m('.col-md-6', [
-                    m('', [
-                        m('.progress.progress-no-margin.pointer', {
+                m('.col-sm-12', m('span[style=display:block;]', [
+                    m('h3.panel-title',[m('i.fa.fa-pencil-square-o'), '   Edit ']),
+                    m('.pull-right', [
+                        m('.progress.no-margin.pointer', {
                             'data-toggle': 'modal',
-                            'data-target': '#' + self.shareJSObservables.status() + 'Modal',
+                            'data-target': '#' + self.shareJSObservables.status() + 'Modal'
                         }, [
-                            m('.progress-bar.progress-bar-success', {
+                            m('.progress-bar.p-h-sm.progress-bar-success', {
                                 connected: {
                                     style: 'width: 100%',
-                                    class: 'progress-bar progress-bar-success',
+                                    class: 'progress-bar progress-bar-success'
                                 },
                                 connecting: {
                                     style: 'width: 100%',
-                                    class: 'progress-bar progress-bar-warning progress-bar-striped active',
+                                    class: 'progress-bar progress-bar-warning progress-bar-striped active'
                                 },
                                 saving: {
                                     style: 'width: 100%',
-                                    class: 'progress-bar progress-bar-info progress-bar-striped active',
+                                    class: 'progress-bar progress-bar-info progress-bar-striped active'
                                 }
                             }[self.shareJSObservables.status()] || {
                                     style: 'width: 100%',
-                                    class: 'progress-bar progress-bar-danger',
+                                    class: 'progress-bar progress-bar-danger'
                                 }, [
                                     m('span.progress-bar-content', [
                                         {
@@ -122,46 +113,165 @@ var FileViewPage = {
                                 ])
                             ])
                         ])
-                    ]),
-                    m('.col-md-3', [
-                        m('.pull-right.btn-group.btn-group-sm', [
-                            m('button#fileEditorRevert.btn.btn-warning', {onclick: function(){$(document).trigger('fileviewpage:revert');}}, 'Revert'),
-                            m('button#fileEditorSave.btn.btn-success', {onclick: function() {$(document).trigger('fileviewpage:save');}}, 'Save')
-                        ])
-                    ])
+                    ]))
                 ]);
         };
 
 
-        //crappy hack to delay creation of the editor
-        //until we know this is the current file revsion
+        // Hack to delay creation of the editor
+        // until we know this is the current file revsion
         self.enableEditing = function() {
-            if (self.editor) return;
-            var fileType = mime.lookup(self.file.name);
+            // Sometimes we can get here twice, check just in case
+            if (self.editor || !self.canEdit()) {
+                m.redraw(true);
+                return;
+            }
+            var fileType = mime.lookup(self.file.name.toLowerCase());
+            // Only allow files < 1MB to be editable
             if (self.file.size < 1048576 && fileType) { //May return false
-                editor = EDITORS[fileType.split('/')[0]];
+                var editor = EDITORS[fileType.split('/')[0]];
                 if (editor) {
-                    self.editor = Panel('Edit', editHeader, editor, [self.file.urls.content, self.file.urls.sharejs, self.editorMeta, self.shareJSObservables], true);
-                    // Splicing breaks mithrils caching :shrug:
-                    // self.panels.splice(1, 0, p);
-                    self.panels.push(self.editor);
+                    self.editor = new Panel('Edit', self.editHeader, editor, [self.file.urls.content, self.file.urls.sharejs, self.editorMeta, self.shareJSObservables], false);
                 }
             }
+            m.redraw(true);
         };
 
-        self.panels = [
-            Panel('View', null, FileRenderer, [self.file.urls.render, self.file.error], true),
-            Panel('Revisions', revisionsHeader, FileRevisionsTable, [self.file, self.node, self.enableEditing]),
-        ];
+        //Hack to polyfill the Panel interface
+        //Ran into problems with mithrils caching messing up with multiple "Panels"
+        self.revisions = m.component(FileRevisionsTable, self.file, self.node, self.enableEditing, self.canEdit);
+        self.revisions.selected = false;
+        self.revisions.title = 'Revisions';
 
+        // inform the mfr of a change in display size performed via javascript,
+        // otherwise the mfr iframe will not update unless the document windows is changed.
+        self.triggerResize = $osf.throttle(function () {
+            $(document).trigger('fileviewpage:resize');
+        }, 1000);
+
+        self.mfrIframeParent = $('#mfrIframeParent');
     },
     view: function(ctrl) {
-        return m('.file-view-page', [
-            m.component(PanelToggler, m('h3', ctrl.file.name), ctrl.panels)
-        ]);
+        //This code was abstracted into a panel toggler at one point
+        //it was removed and shoved here due to issues with mithrils caching and interacting
+        //With other non-mithril components on the page
+        var panels;
+        if (ctrl.editor) {
+            panels = [ctrl.editor, ctrl.revisions];
+        } else {
+            panels = [ctrl.revisions];
+        }
+
+        var shown = panels.reduce(function(accu, panel) {
+            return accu + (panel.selected ? 1 : 0);
+        }, 0);
+
+        var panelsShown = shown + (ctrl.mfrIframeParent.is(':visible') ? 1 : 0);
+        var mfrIframeParentLayout;
+        var fileViewPanelsLayout;
+
+        if (panelsShown === 3) {
+            // view | edit | revisions
+            mfrIframeParentLayout = 'col-sm-4';
+            fileViewPanelsLayout = 'col-sm-8';
+        } else if (panelsShown === 2) {
+            if (ctrl.mfrIframeParent.is(':visible')) {
+                if (ctrl.revisions.selected) {
+                    // view | revisions
+                    mfrIframeParentLayout = 'col-sm-8';
+                    fileViewPanelsLayout = 'col-sm-4';
+                } else {
+                    // view | edit
+                    mfrIframeParentLayout = 'col-sm-6';
+                    fileViewPanelsLayout = 'col-sm-6';
+                }
+            } else {
+                // edit | revisions
+                mfrIframeParentLayout = '';
+                fileViewPanelsLayout = 'col-sm-12';
+            }
+        } else {
+            // view
+            if (ctrl.mfrIframeParent.is(':visible')) {
+                mfrIframeParentLayout = 'col-sm-12';
+                fileViewPanelsLayout = '';
+            } else {
+                // edit or revisions
+                mfrIframeParentLayout = '';
+                fileViewPanelsLayout = 'col-sm-12';
+            }
+        }
+        $('#mfrIframeParent').removeClass().addClass(mfrIframeParentLayout);
+        $('.file-view-panels').removeClass().addClass('file-view-panels').addClass(fileViewPanelsLayout);
+
+        m.render(document.getElementById('toggleBar'), m('.btn-toolbar.m-t-md', [
+            ctrl.canEdit() ? m('.btn-group.m-l-xs.m-t-xs', [
+                m('.btn.btn-sm.btn-danger.file-delete', {onclick: $(document).trigger.bind($(document), 'fileviewpage:delete')}, 'Delete')
+            ]) : '',
+            m('.btn-group.m-t-xs', [
+                m('.btn.btn-sm.btn-primary.file-download', {onclick: $(document).trigger.bind($(document), 'fileviewpage:download')}, 'Download')
+            ]),
+            m('.btn-group.btn-group-sm.m-t-xs', [
+                m('.btn.btn-default.disabled', 'Toggle view: ')
+            ].concat(
+                m('.btn' + (ctrl.mfrIframeParent.is(':visible') ? '.btn-primary' : '.btn-default'), {
+                    onclick: function (e) {
+                        e.preventDefault();
+                        // atleast one button must remain enabled.
+                        if (!ctrl.mfrIframeParent.is(':visible') || panelsShown > 1) {
+                            ctrl.mfrIframeParent.toggle();
+                        }
+                    }
+                }, 'View')
+            ).concat(
+                panels.map(function(panel) {
+                    return m('.btn' + (panel.selected ? '.btn-primary' : '.btn-default'), {
+                        onclick: function(e) {
+                            e.preventDefault();
+                            // atleast one button must remain enabled.
+                            if (!panel.selected || panelsShown > 1) {
+                                panel.selected = !panel.selected;
+                            }
+                        }
+                    }, panel.title);
+                })
+            ))
+        ]));
+
+        return m('.file-view-page', m('.panel-toggler', [
+            m('.row', panels.map(function(pane, index) {
+                ctrl.triggerResize();
+                if (!pane.selected) {
+                    return m('[style="display:none"]', pane);
+                }
+                return m('.col-sm-' + Math.floor(12/shown), pane);
+            }))
+        ]));
     }
 };
 
 module.exports = function(context) {
+    // Treebeard forces all mithril to load twice, to avoid
+    // destroying the page iframe this out side of mithril.
+    if (!context.file.urls.render) {
+        $('#mfrIframe').html(context.file.error);
+    } else {
+        var url = context.file.urls.render;
+        if (context.accessToken) {
+            url += '&token=' + context.accessToken;
+        }
+
+        if (window.mfr !== undefined) {
+            var mfrRender = new mfr.Render('mfrIframe', url);
+            $(document).on('fileviewpage:reload', function() {
+                mfrRender.reload();
+            });
+            $(document).on('fileviewpage:resize', function() {
+                mfrRender.resize();
+            });
+        }
+
+    }
+
     return m.component(FileViewPage, context);
 };

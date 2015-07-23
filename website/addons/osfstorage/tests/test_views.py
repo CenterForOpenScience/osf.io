@@ -2,6 +2,7 @@
 from __future__ import unicode_literals
 
 import os
+import datetime
 from nose.tools import *  # noqa
 
 from framework.auth.core import Auth
@@ -296,6 +297,37 @@ class TestUploadFileHook(HookTestCase):
 
         assert_equal(res.status_code, 400)
 
+    def test_archive(self):
+        name = 'ლ(ಠ益ಠლ).unicode'
+        parent = self.node_settings.root_node.append_folder('cheesey')
+        res = self.send_upload_hook(parent, self.make_payload(name=name, hashes={'sha256': 'foo'}))
+
+        assert_equal(res.status_code, 201)
+        assert_equal(res.json['status'], 'success')
+        assert_is(res.json['archive'], True)
+
+        self.send_hook(
+            'osfstorage_update_metadata',
+            {},
+            payload={'metadata': {
+                'vault': 'Vault 101',
+                'archive': '101 tluaV',
+            }, 'version': res.json['version']},
+            method='put_json',
+        )
+
+        res = self.send_upload_hook(parent, self.make_payload(
+            name=name,
+            hashes={'sha256': 'foo'},
+            metadata={
+                'name': 'lakdjf',
+                'provider': 'testing',
+            }))
+
+        assert_equal(res.status_code, 200)
+        assert_equal(res.json['status'], 'success')
+        assert_is(res.json['archive'], False)
+
     # def test_upload_update_deleted(self):
     #     pass
 
@@ -310,9 +342,13 @@ class TestUpdateMetadataHook(HookTestCase):
         self.record.versions = [self.version]
         self.record.save()
         self.payload = {
-            'metadata': {'archive': 'glacier', 'size': 123, 'modified': 'Mon, 16 Feb 2015 18:45:34 GMT'},
+            'metadata': {
+                'size': 123,
+                'modified': 'Mon, 16 Feb 2015 18:45:34 GMT',
+                'md5': 'askjasdlk;jsadlkjsadf'
+            },
             'version': self.version._id,
-            'size': 123,
+            'size': 321,  # Just to make sure the field is ignored
         }
 
     def send_metadata_hook(self, payload=None, **kwargs):
@@ -324,11 +360,32 @@ class TestUpdateMetadataHook(HookTestCase):
             **kwargs
         )
 
-    def test_archived(self):
+    def test_callback(self):
+        self.version.date_modified = None
+        self.version.save()
         self.send_metadata_hook()
         self.version.reload()
-        assert_in('archive', self.version.metadata)
-        assert_equal(self.version.metadata['archive'], 'glacier')
+        #Test fields are added
+        assert_equal(self.version.metadata['size'], 123)
+        assert_equal(self.version.metadata['md5'], 'askjasdlk;jsadlkjsadf')
+        assert_equal(self.version.metadata['modified'], 'Mon, 16 Feb 2015 18:45:34 GMT')
+
+        #Test attributes are populated
+        assert_equal(self.version.size, 123)
+        assert_true(isinstance(self.version.date_modified, datetime.datetime))
+
+    def test_archived(self):
+        self.send_metadata_hook({
+            'version': self.version._id,
+            'metadata': {
+                'vault': 'osf_storage_prod',
+                'archive': 'Some really long glacier object id here'
+            }
+        })
+        self.version.reload()
+
+        assert_equal(self.version.metadata['vault'], 'osf_storage_prod')
+        assert_equal(self.version.metadata['archive'], 'Some really long glacier object id here')
 
     def test_archived_record_not_found(self):
         res = self.send_metadata_hook(

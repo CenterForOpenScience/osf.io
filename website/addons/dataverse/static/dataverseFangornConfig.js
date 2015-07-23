@@ -31,7 +31,7 @@ var _dataverseItemButtons = {
         }
         function dataversePublish(event, item, col) {
             var both = !item.data.dataverseIsPublished;
-            var url = both ? item.data.urls.publishBoth : item.data.urls.publish;
+            var url = item.data.urls.publish;
             var toPublish = both ? 'Dataverse and dataset' : 'dataset';
             var modalContent = [
                 m('h3', 'Publish this ' + toPublish + '?'),
@@ -59,7 +59,7 @@ var _dataverseItemButtons = {
                 item.notify.update('Publishing ' + toPublish, 'info', 1, 1);
                 $.osf.putJSON(
                     url,
-                    {}
+                    {'publish_both': both}
                 ).done(function (data) {
                     item.notify.update();
                     var modalContent = [
@@ -73,6 +73,7 @@ var _dataverseItemButtons = {
                         }, 'Okay')
                     ];
                     tb.modal.update(modalContent, modalActions);
+                    item.data.dataverseIsPublished = true;
                     item.data.hasPublishedFiles = item.children.length > 0;
                     item.data.version = item.data.hasPublishedFiles ? 'latest-published' : 'latest';
                 }).fail(function (xhr, status, error) {
@@ -108,6 +109,22 @@ var _dataverseItemButtons = {
                 });
             }
         }
+        if (item.data.addonFullname) {
+            var options = [
+                m('option', {selected: item.data.version === 'latest-published', value: 'latest-published'}, 'Published'),
+                m('option', {selected: item.data.version === 'latest', value: 'latest'}, 'Draft')
+            ];
+            buttons.push(
+                m.component(Fangorn.Components.dropdown, {
+                    'label': 'Version: ',
+                    onchange: function (e) {
+                        changeState(tb, item, e.target.value);
+                    },
+                    icon: 'fa fa-external-link',
+                    className: 'text-info'
+                }, options)
+            );
+        }
         if (item.kind === 'folder' && item.data.addonFullname && item.data.version === 'latest' && item.data.permissions.edit) {
             buttons.push(
                 m.component(Fangorn.Components.button, {
@@ -122,7 +139,7 @@ var _dataverseItemButtons = {
                         dataversePublish.call(tb, event, item);
                     },
                     icon: 'fa fa-globe',
-                    className: 'text-success'
+                    className: 'text-primary'
                 }, 'Publish')
             );
         } else if (item.kind === 'folder' && !item.data.addonFullname) {
@@ -142,10 +159,10 @@ var _dataverseItemButtons = {
                         _downloadEvent.call(tb, event, item);
                     },
                     icon: 'fa fa-download',
-                    className: 'text-info'
+                    className: 'text-primary'
                 }, 'Download')
             );
-            if (item.parent().data.state === 'draft' && item.data.permissions.edit) {
+            if (item.parent().data.version === 'latest' && item.data.permissions.edit) {
                 buttons.push(
                     m.component(Fangorn.Components.button, {
                         onclick: function (event) {
@@ -162,7 +179,7 @@ var _dataverseItemButtons = {
                         onclick: function(event) {
                             gotoFile(item);
                         },
-                        icon: 'fa fa-external-link',
+                        icon: 'fa fa-file-o',
                         className : 'text-info'
                     }, 'View'));
 
@@ -184,8 +201,9 @@ function gotoFile (item) {
 
 function _fangornDataverseTitle(item, col) {
     var tb = this;
+    var version = item.data.version === 'latest-published' ? 'Published' : 'Draft';
     if (item.data.addonFullname) {
-        var contents = [m('dataverse-name', item.data.name + ' ')];
+        var contents = [m('dataverse-name', item.data.name + ' (' + version + ')')];
         if (item.data.hasPublishedFiles) {
             if (item.data.permissions.edit) {
                 // Default to version in url parameters for file view page
@@ -193,21 +211,6 @@ function _fangornDataverseTitle(item, col) {
                 if (urlParams.version && urlParams.version !== item.data.version) {
                     item.data.version = urlParams.version;
                 }
-                var options = [
-                    m('option', {selected: item.data.version === 'latest-published', value: 'latest-published'}, 'Published'),
-                    m('option', {selected: item.data.version === 'latest', value: 'latest'}, 'Draft')
-                ];
-                contents.push(
-                    m('span', [
-                        m('select', {
-                            class: 'dataverse-state-select',
-                            style: { color : '#000000'},
-                            onchange: function (e) {
-                                changeState(tb, item, e.target.value);
-                            }
-                        }, options)
-                    ])
-                );
             } else {
                 contents.push(
                     m('span.text-muted', '[Published]')
@@ -288,7 +291,6 @@ function _canDrop(item) {
     return item.data.provider &&
         item.kind === 'folder' &&
         item.data.permissions.edit &&
-//        item.data.state === 'draft'; Outdated with merge?
         item.data.version === 'latest';
 }
 

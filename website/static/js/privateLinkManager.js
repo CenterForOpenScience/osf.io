@@ -5,6 +5,10 @@ var ko = require('knockout');
 var $osf = require('./osfHelpers');
 
 var NODE_OFFSET = 25;
+
+// TODO: Remove dependency on global scope
+var nodeApiUrl = window.contextVars.node.urls.api;
+
 var PrivateLinkViewModel = function(url) {
     var self = this;
 
@@ -20,7 +24,7 @@ var PrivateLinkViewModel = function(url) {
     self.nodes = ko.observableArray([]);
     self.nodesToChange = ko.observableArray();
     self.disableSubmit = ko.observable(false);
-    self.submitText = ko.observable('Submit');
+    self.submitText = ko.observable('Generate');
 
     self.isChildVisible = function(data) {
         return (self.nodesToChange().indexOf(data.parent_id) !== -1 ||  data.parent_id === self.id());
@@ -42,8 +46,8 @@ var PrivateLinkViewModel = function(url) {
     });
 
     /**
-        * Fetches the node info from the server and updates the viewmodel.
-        */
+    * Fetches the node info from the server and updates the viewmodel.
+    */
 
     function onFetchSuccess(response) {
         self.title(response.node.title);
@@ -108,7 +112,7 @@ var PrivateLinkViewModel = function(url) {
         }).fail(function() {
             $osf.growl('Error:','Failed to create a view-only link.');
             self.disableSubmit(false);
-            self.submitText('Submit');
+            self.submitText('Generate');
         });
     };
 

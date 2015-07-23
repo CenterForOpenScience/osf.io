@@ -16,6 +16,7 @@ from framework.mongo import StoredObject
 from website import settings
 from website.addons.base import exceptions
 from website.addons.base import AddonUserSettingsBase, AddonNodeSettingsBase, GuidFile
+from website.addons.base import StorageAddonBase
 
 from website.addons.googledrive.client import GoogleAuthClient
 from website.addons.googledrive import settings as drive_settings
@@ -246,7 +247,7 @@ class GoogleDriveUserSettings(AddonUserSettingsBase):
         return u'<GoogleDriveUserSettings(user={self.owner.username!r})>'.format(self=self)
 
 
-class GoogleDriveNodeSettings(AddonNodeSettingsBase):
+class GoogleDriveNodeSettings(StorageAddonBase, AddonNodeSettingsBase):
 
     folder_id = fields.StringField(default=None)
     folder_path = fields.StringField(default=None)
@@ -261,7 +262,7 @@ class GoogleDriveNodeSettings(AddonNodeSettingsBase):
             return None
 
         if self.folder_path != '/':
-            return unquote(os.path.split(self.folder_path)[1])
+            return unquote(os.path.split(self.folder_path)[1].encode('utf-8')).decode('utf-8')
 
         return '/ (Full Google Drive)'
 
@@ -413,7 +414,7 @@ class GoogleDriveNodeSettings(AddonNodeSettingsBase):
             message = 'Google Drive authorization copied to fork.'
         else:
             message = ('Google Drive authorization not copied to forked {cat}. You may '
-                       'authorize this fork on the <a href="{url}">Settings</a>'
+                       'authorize this fork on the <a href="{url}">Settings</a> '
                        'page.').format(
                 url=fork.web_url_for('node_setting'),
                 cat=fork.project_or_component

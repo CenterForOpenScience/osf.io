@@ -6,7 +6,7 @@
     </div>
     <div class="cp-bar"></div>
 
-    <div id="comments" class="cp-sidebar">
+    <div id="comments" class="cp-sidebar bg-color-light">
         <h4>
             <span>${node['title']} Discussion</span>
             <span data-bind="foreach: {data: discussion, afterAdd: setupToolTips}" class="pull-right">
@@ -21,10 +21,12 @@
                 <div class="form-group">
                     <textarea class="form-control" placeholder="Add a comment" data-bind="value: replyContent, valueUpdate: 'input', attr: {maxlength: $root.MAXLENGTH}"></textarea>
                 </div>
-                <div data-bind="if: replyNotEmpty" class="form-inline">
-                    <a class="btn btn-default btn-default" data-bind="click: submitReply, css: {disabled: submittingReply}"><i class="fa fa-check-square-o"></i> {{saveButtonText}}</a>
-                    <a class="btn btn-default btn-default" data-bind="click: cancelReply, css: {disabled: submittingReply}"><i class="fa fa-undo"></i> Cancel</a>
-                    <span data-bind="text: replyErrorMessage" class="comment-error"></span>
+                <div class="clearfix">
+                    <div data-bind="if: replyNotEmpty" class="form-inline pull-right">
+                        <a class="btn btn-default btn-sm" data-bind="click: cancelReply, css: {disabled: submittingReply}"> Cancel</a>
+                        <a class="btn btn-success btn-sm" data-bind="click: submitReply, css: {disabled: submittingReply}"> {{commentButtonText}}</a>
+                        <span data-bind="text: replyErrorMessage" class="comment-error"></span>
+                    </div>
                 </div>
                 <div class="comment-error">{{errorMessage}}</div>
             </form>
@@ -39,8 +41,7 @@
 <script type="text/html" id="commentTemplate">
     <div class="comment-container" data-bind="if: shouldShow">
 
-        <div class="comment-body">
-
+        <div class="comment-body m-b-sm p-sm osf-box">
             <div data-bind="if: isDeleted">
                 <div>
                     <span data-bind="if: hasChildren">
@@ -50,9 +51,11 @@
                 </div>
                 <div data-bind="if: canEdit">
                     <a data-bind="click: startUndelete">Restore</a>
-                    <div data-bind="if: undeleting">
-                        <a class="btn btn-default btn-sm" data-bind="click: submitUndelete">Submit</a>
-                        <a class="btn btn-default btn-sm" data-bind="click: cancelUndelete">Cancel</a>
+                    <div class="clearfix" data-bind="if: undeleting">
+                        <div class="pull-right">
+                            <a class="btn btn-default btn-sm" data-bind="click: cancelUndelete">Cancel</a>
+                            <a class="btn btn-success btn-sm" data-bind="click: submitUndelete">Save</a>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -65,9 +68,11 @@
                     Comment reported
                 </div>
                 <a data-bind="click: startUnreportAbuse">Not abuse</a>
-                <div data-bind="if: unreporting">
-                    <a class="btn btn-primary btn-sm" data-bind="click: submitUnreportAbuse">Submit</a>
+                <div class="clearfix" data-bind="if: unreporting">
+                    <div class="pull-right">
                     <a class="btn btn-default btn-sm" data-bind="click: cancelUnreportAbuse">Cancel</a>
+                    <a class="btn btn-success btn-sm" data-bind="click: submitUnreportAbuse">Save</a>
+                    </div>
                 </div>
             </div>
 
@@ -96,11 +101,11 @@
                     <div class="comment-content">
 
                         <div data-bind="ifnot: editing">
-                            <span data-bind="if: hasChildren">
+                            <span class="component-overflow"
+                              data-bind="html: contentDisplay, css: {'edit-comment': editHighlight}, event: {mouseenter: startHoverContent, mouseleave: stopHoverContent}"></span>
+                            <span class="pull-right" data-bind="if: hasChildren">
                                 <i data-bind="css: toggleIcon, click: toggle"></i>
                             </span>
-                            <span class="overflow"
-                              data-bind="html: contentDisplay, css: {'edit-comment': editHighlight}, event: {mouseenter: startHoverContent, mouseleave: stopHoverContent}"></span>
                         </div>
 
                         <!--
@@ -111,10 +116,12 @@
                             <div class="form-group" style="padding-top: 10px">
                                 <textarea class="form-control" data-bind="value: content, valueUpdate: 'input', attr: {maxlength: $root.MAXLENGTH}"></textarea>
                             </div>
-                            <div class="form-inline">
-                                <a class="btn btn-default btn-default" data-bind="click: submitEdit, visible: editNotEmpty"><i class="fa fa-check-square-o"></i> Save</a>
-                                <a class="btn btn-default btn-default" data-bind="click: cancelEdit"><i class="fa fa-undo"></i> Cancel</a>
-                                <span data-bind="text: editErrorMessage" class="comment-error"></span>
+                            <div class="clearfix">
+                                <div class="form-inline pull-right">
+                                    <a class="btn btn-default btn-sm" data-bind="click: cancelEdit">Cancel</a>
+                                    <a class="btn btn-success btn-sm" data-bind="click: submitEdit, visible: editNotEmpty">Save</a>
+                                    <span data-bind="text: editErrorMessage" class="comment-error"></span>
+                                </div>
                             </div>
                         </div>
 
@@ -145,18 +152,22 @@
 
                     </div>
 
-                    <div class="comment-report" data-bind="if: reporting">
+                    <div class="comment-report clearfix" data-bind="if: reporting">
                         <form class="form-inline">
                             <select class="form-control" data-bind="options: abuseOptions, optionsText: abuseLabel, value: abuseCategory"></select>
                             <input class="form-control" data-bind="value: abuseText" placeholder="Describe abuse" />
                         </form>
-                        <a class="btn btn-danger btn-sm" data-bind="click: submitAbuse"><i class="fa fa-check-square-o"></i> Report</a>
-                        <a class="btn btn-default btn-sm" data-bind="click: cancelAbuse"><i class="fa fa-undo"></i> Cancel</a>
+                        <div class="pull-right m-t-xs">
+                            <a class="btn btn-default btn-sm" data-bind="click: cancelAbuse"> Cancel</a>
+                            <a class="btn btn-danger btn-sm" data-bind="click: submitAbuse"> Report</a>
+                        </div>
                     </div>
 
-                    <div class="comment-delete" data-bind="if: deleting">
-                        <a class="btn btn-danger btn-sm" data-bind="click: submitDelete"><i class="fa fa-check-square-o"></i> Delete</a>
-                        <a class="btn btn-default btn-sm" data-bind="click: cancelDelete"><i class="fa fa-undo"></i> Cancel</a>
+                    <div class="comment-delete clearfix m-t-xs" data-bind="if: deleting">
+                        <div class="pull-right">
+                            <a class="btn btn-default btn-sm" data-bind="click: cancelDelete">Cancel</a>
+                            <a class="btn btn-danger btn-sm" data-bind="click: submitDelete">Delete</a>
+                        </div>
                     </div>
 
                 </div>
@@ -174,10 +185,12 @@
                     <div class="form-group" style="padding-top: 10px">
                         <textarea class="form-control" placeholder="Add a comment" data-bind="value: replyContent, valueUpdate: 'input', attr: {maxlength: $root.MAXLENGTH}"></textarea>
                     </div>
-                    <div>
-                        <a class="btn btn-default btn-default" data-bind="click: submitReply, visible: replyNotEmpty, css: {disabled: submittingReply}"><i class="fa fa-check-square-o"></i> {{saveButtonText}}</a>
-                        <a class="btn btn-default btn-default" data-bind="click: cancelReply, css: {disabled: submittingReply}"><i class="fa fa-undo"></i> Cancel</a>
-                        <span data-bind="text: replyErrorMessage" class="comment-error"></span>
+                    <div class="clearfix">
+                        <div class="pull-right">
+                            <a class="btn btn-default btn-sm" data-bind="click: cancelReply, css: {disabled: submittingReply}"> Cancel</a>
+                            <a class="btn btn-success btn-sm" data-bind="click: submitReply, visible: replyNotEmpty, css: {disabled: submittingReply}"> {{commentButtonText}}</a>
+                            <span data-bind="text: replyErrorMessage" class="comment-error"></span>
+                        </div>
                     </div>
                 </div>
 

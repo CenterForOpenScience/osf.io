@@ -6,13 +6,16 @@
                 "text": "Making an OSF project public or private is independent of making a GitHub repo public or private. The OSF does not alter the permissions of linked GitHub repos."
             },
             "View / download file versions": {
-                "status": "full"
+                "status": "full",
+                "text": "GitHub files and their versions can be viewed/downloaded via OSF."
             },
             "Add / update files": {
-                "status": "full"
+                "status": "full",
+                "text": "Adding/updating files in the project via OSF will be reflected in GitHub."
             },
             "Delete files": {
-                "status": "full"
+                "status": "full",
+                "text": "Files deleted via OSF will be deleted in GitHub."
             },
             "Logs": {
                 "status": "full",
@@ -23,8 +26,8 @@
                 "text": "Forking a project or component does not copy Github authorization unless the user forking the project is the same user who authorized the Github add-on in the source project being forked."
             },
             "Registering": {
-                "status": "none",
-                "text": "GitHub content cannot be registered."
+                "status": "partial",
+                "text": "GitHub content will be registered, but version history will not be copied to the registration."
             }
         },
         "Amazon S3": {
@@ -37,10 +40,12 @@
                 "text": "The S3 add-on supports file versions if versioning is enabled for your S3 buckets."
             },
             "Add / update files": {
-                "status": "full"
+                "status": "full",
+                "text": "Adding/updating files in the project via OSF will be reflected in Amazon S3."
             },
             "Delete files": {
-                "status": "full"
+                "status": "full",
+                "text": "Files deleted via OSF will be deleted in Amazon S3."
             },
             "Logs": {
                 "status": "partial",
@@ -51,8 +56,8 @@
                 "text": "Forking a project or component does not copy S3 authorization unless the user forking the project is the same user who authorized the S3 add-on in the source project being forked."
             },
             "Registering": {
-                "status": "none",
-                "text": "S3 content cannot be registered."
+                "status": "partial",
+                "text": "S3 content will be registered, but version history will not be copied to the registration."
             }
         },
         "figshare": {
@@ -69,7 +74,8 @@
                 "text": "Files can be added but not updated."
             },
             "Delete files": {
-                "status": "none"
+                "status": "none",
+                "text": "figshare files cannot be deleted via OSF."
             },
             "Logs": {
                 "status": "partial",
@@ -80,8 +86,8 @@
                 "text": "Forking a project or component does not copy figshare authorization unless the user forking the project is the same user who authorized the figshare add-on in the source project being forked."
             },
             "Registering": {
-                "status": "none",
-                "text": "figshare content cannot be registered."
+                "status": "partial",
+                "text": "figshare content will be registered, but version history will not be copied to the registration."
             }
         },
         "Dropbox": {
@@ -90,13 +96,16 @@
                 "text": "Making an OSF project public or private is independent of Dropbox privacy. The OSF does not alter the permissions of linked Dropbox folders."
             },
             "View / download file versions": {
-                "status": "full"
+                "status": "full",
+                "text": "Dropbox files and their versions can be viewed/downloaded via OSF."
             },
             "Add / update files": {
-                "status": "full"
+                "status": "full",
+                "text": "Adding/updating files in the project via OSF will be reflected in Dropbox."
             },
             "Delete files": {
-                "status": "full"
+                "status": "full",
+                "text": "Files deleted via OSF will be deleted in Dropbox."
             },
             "Logs": {
                 "status": "partial",
@@ -107,24 +116,26 @@
                 "text": "Forking a project or component does not copy Dropbox authorization unless the user forking the project is the same user who authorized the Dropbox add-on in the source project being forked."
             },
             "Registering": {
-                "status": "none",
-                "text": "Dropbox content cannot be registered."
+                "status": "partial",
+                "text": "Dropbox content will be registered, but version history will not be copied to the registration."
             }
         },
         "Dataverse": {
             "Permissions": {
                 "status": "partial",
-                "text": "Making an OSF project public or private is independent of making a Dataverse study public or private, although the OSF can only access public studies on released Dataverses. The OSF allows you to release the latest draft version of a Dataverse study."
+                "text": "Making an OSF project public or private is independent of making a Dataverse study public or private. The OSF allows you to release the latest draft version of a Dataverse dataset."
             },
             "View / download file versions": {
                 "status": "partial",
                 "text": "Files from the latest release of the selected Dataverse study can be viewed/downloaded. OSF users with write permissions can view/download draft files as well."
             },
             "Add / update files": {
-                "status": "full"
+                "status": "full",
+                "text": "Adding/updating files in the project via OSF will be reflected in Dataverse."
             },
             "Delete files": {
-                "status": "full"
+                "status": "full",
+                "text": "Files deleted via OSF will be deleted in Dataverse."
             },
             "Logs": {
                 "status": "partial",
@@ -135,8 +146,8 @@
                 "text": "Forking a project or component does not copy Dataverse authorization unless the user forking the project is the same user who authorized the Dataverse add-on in the source project being forked."
             },
             "Registering": {
-                "status": "none",
-                "text": "Dataverse content cannot be registered."
+                "status": "partial",
+                "text": "Dataverse content will be registered, but version history will not be copied to the registration."
             }
         },
         "Google Drive": {
@@ -145,13 +156,16 @@
                 "text": "Making an OSF project public or private is independent of Google Drive privacy. The OSF does not alter the permissions of linked Google Drive folders."
             },
             "View / download file versions": {
-                "status": "full"
+                "status": "full",
+                "text": "Google Drive files and their versions can be viewed/downloaded via OSF."
             },
             "Add / update files": {
-                "status": "full"
+                "status": "full",
+                "text": "Adding/updating files in the project via OSF will be reflected in Google Drive."
             },
             "Delete files": {
-                "status": "full"
+                "status": "full",
+                "text": "Files deleted via OSF will be deleted in Google Drive."
             },
             "Logs": {
                 "status": "partial",
@@ -162,8 +176,8 @@
                 "text": "Forking a project or component does not copy Google Drive authorization unless the user forking the project is the same user who authorized the Google Drive add-on in the source project being forked."
             },
             "Registering": {
-                "status": "none",
-                "text": "Google Drive content cannot be registered."
+                "status": "partial",
+                "text": "Google Drive content will be registered, but version history will not be copied to the registration."
             }
         },
         "Box": {
@@ -172,13 +186,16 @@
                 "text": "Making an OSF project public or private is independent of Box privacy. The OSF does not alter the permissions of linked Box folders."
             },
             "View / download file versions": {
-                "status": "full"
+                "status": "full",
+                "text": "Box files and their versions can be viewed/downloaded via OSF."
             },
             "Add / update files": {
-                "status": "full"
+                "status": "full",
+                "text": "Adding/updating files in the project via OSF will be reflected in Box."
             },
             "Delete files": {
-                "status": "full"
+                "status": "full",
+                "text": "Files deleted via OSF will be deleted in Box."
             },
             "Logs": {
                 "status": "partial",
@@ -189,8 +206,8 @@
                 "text": "Forking a project or component does not copy Box authorization unless the user forking the project is the same user who authorized the Box add-on in the source project being forked."
             },
             "Registering": {
-                "status": "none",
-                "text": "Box content cannot be registered."
+                "status": "partial",
+                "text": "Box content will be registered, but version history will not be copied to the registration."
             }
         },
         "Mendeley": {
@@ -216,7 +233,7 @@
             },
             "Registering": {
                 "status": "none",
-                "text": "Mendeley content cannot be registered."
+                "text": "Mendeley content will not be registered."
             }
         },
         "Zotero": {
@@ -242,7 +259,7 @@
             },
             "Registering": {
                 "status": "none",
-                "text": "Zotero content cannot be registered."
+                "text": "Zotero content will not be registered."
             }
         }
     },

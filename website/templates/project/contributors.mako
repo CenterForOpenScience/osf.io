@@ -9,7 +9,7 @@
 </div>
 
 <div class="row">
-    <div class="col-md-10 col-md-offset-1">
+    <div class="col-lg-10 col-lg-offset-1">
 
             <div id="manageContributors" class="scripted">
                 <h3> Contributors
@@ -55,7 +55,6 @@
                             data: contributors,
                             as: 'contributor',
                             isEnabled: canEdit,
-                            afterRender: setupEditable,
                             options: {
                               containment: '#manageContributors'
                             }
@@ -125,20 +124,22 @@
                     <tr>
                         <td class="col-sm-3">
                             <div>
-                                <span class="link-name overflow-block" data-bind="text: name, tooltip: {title: 'Link name'}" style="width: 200px"></span>
+                                <span class="link-name m-b-xs" data-bind="text: name, tooltip: {title: 'Link name'}" style="display: block; width: 100%"></span>
                             </div>
+
                             <div class="btn-group">
-                            <button class="btn btn-default btn-mini copy-button" data-trigger="manual"
-                                    data-bind="attr: {data-clipboard-text: linkUrl}, tooltip: {title: 'Click to copy'}" >
-                                <span class="fa fa-copy" ></span>
-                            </button>
+                                <button class="btn btn-primary btn-sm m-r-xs copy-button"
+                                        data-bind="attr: {data-clipboard-text: linkUrl}" >
+                                    Copy
+                                </button>
                                 <input class="link-url" type="text" data-bind="value: linkUrl, attr:{readonly: readonly}"  />
                             </div>
                         </td>
                         <td class="col-sm-4">
                            <ul class="narrow-list list-overflow" data-bind="foreach: nodesList">
                                <li data-bind="style:{marginLeft: $data.scale}">
-                                  <img data-bind="attr:{src: imgUrl}" /><a data-bind="text:$data.title, attr: {href: $data.url}"></a>
+                                  <span data-bind="getIcon: $data.category"></span>
+                                  <a data-bind="text:$data.title, attr: {href: $data.url}"></a>
                                </li>
                            </ul>
                            <button class="btn btn-default btn-mini more-link-node" data-bind="text:hasMoreText, visible: moreNode, click: displayAllNodes"></button>
@@ -168,11 +169,13 @@
             </table>
 
         </div>
+
     % endif
 
     </div><!-- end col-md -->
 </div><!-- end row -->
 
+<link rel="stylesheet" href="/static/css/pages/contributor-page.css">
 
 <script id="contribTpl" type="text/html">
     <tr data-bind="click: unremove, css: {'contributor-delete-staged': deleteStaged}">
@@ -185,10 +188,16 @@
                 <a class="no-sort" data-bind="text: contributor.shortname, attr:{href: profileUrl}"></a>
             </span>
         </td>
-        <td>
+        <td class="permissions">
             <!-- ko if: contributor.canEdit() -->
                 <span data-bind="visible: notDeleteStaged">
-                    <a href="#" class="permission-editable no-sort" data-type="select"></a>
+                    <select class="form-control input-sm" data-bind="
+                        options: permissionList,
+                        value: curPermission,
+                        optionsText: 'text',
+                        style: { font-weight: change() ? 'normal' : 'bold' }"
+                    >
+                    </select>
                 </span>
                 <span data-bind="visible: deleteStaged">
                     <span data-bind="text: formatPermission"></span>
@@ -198,9 +207,9 @@
                 <span data-bind="text: formatPermission"></span>
             <!-- /ko -->
         </td>
-        <td>
+        <td class="text-center">
             <input
-                    type="checkbox" class="no-sort"
+                    type="checkbox" class="no-sort biblio"
                     data-bind="checked: visible, enable: $parent.canEdit() && !contributor.isAdmin"
                 />
         </td>
@@ -216,14 +225,14 @@
                     </a>
                 <!-- /ko -->
                 <!-- ko if: deleteStaged -->
-                    Will be removed after Save
+                    Save to Remove
                 <!-- /ko -->
             <!-- /ko -->
 
             <!-- ko ifnot: contributor.canEdit() -->
                 <!-- ko if: canRemove -->
                     <a
-                            data-bind="click: removeSelf, tooltip: {title: 'Remove contributor'}"
+                            data-bind="click: function() { $data.removeSelf($parent)}, tooltip: {title: 'Remove contributor'}"
                         >
                         <i class="fa fa-times text-danger no-sort"></i>
                     </a>
@@ -239,10 +248,10 @@
         <a class="btn btn-danger contrib-button" data-bind="click: cancel, visible: changed">Discard Changes</a>
         <a class="btn btn-success contrib-button" data-bind="click: submit, visible: canSubmit">Save Changes</a>
         <br /><br />
+    % endif
         <div data-bind="foreach: messages">
             <div data-bind="css: cssClass">{{ text }}</div>
         </div>
-    % endif
 </%def>
 
 <%def name="javascript_bottom()">
