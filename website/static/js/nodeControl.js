@@ -374,7 +374,7 @@ var ProjectViewModel = function(data) {
     $(window).resize(checkCollapse);
     checkCollapse();
     ko.bindingHandlers.animateHeight = {
-        init : function(element,valueAccessor){
+        init: function(element,valueAccessor){
             var value = valueAccessor();
             var height = value.state ? value.shortHeight : $(element)[0].scrollHeight;
             $(element).height(height);
