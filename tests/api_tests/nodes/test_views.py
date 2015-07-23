@@ -29,7 +29,8 @@ class TestWelcomeToApi(ApiTestCase):
         self.url = '/{}'.format(API_BASE)
 
     def test_returns_200_for_logged_out_user(self):
-        res = self.app.get(self.url)
+        res = self.app.get(self.url, expect_errors=True)
+        print res
         assert_equal(res.status_code, 200)
         assert_equal(res.json['meta']['current_user'], None)
 
