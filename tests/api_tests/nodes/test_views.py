@@ -945,7 +945,6 @@ class TestNodeRegistrationList(ApiTestCase):
         assert 'detail' in res.json['errors'][0].keys()
 
 
-
 class TestNodeChildrenList(ApiTestCase):
     def setUp(self):
         super(TestNodeChildrenList, self).setUp()
@@ -1080,7 +1079,6 @@ class TestNodePointersList(ApiTestCase):
         res = self.app.get(self.private_url, auth=self.basic_auth_two, expect_errors=True)
         assert_equal(res.status_code, 403)
         assert 'detail' in res.json['errors'][0].keys()
-
 
 
 class TestCreateNodePointer(ApiTestCase):
