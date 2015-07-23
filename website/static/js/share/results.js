@@ -1,5 +1,6 @@
 'use strict';
 
+var pd = require('pretty-data').pd;
 var $ = require('jquery');
 var m = require('mithril');
 var $osf = require('js/osfHelpers');
@@ -104,15 +105,65 @@ Results.controller = function(vm) {
     };
 
     self.renderResultFooter = function(result) {
-        return [m('span', 'Released on ' + new $osf.FormattableDate(result.providerUpdatedDateTime).local),
-        m('span.pull-right', [
-            m('img', {src: self.vm.ProviderMap[result.shareProperties.source].favicon, style: {width: '16px', height: '16px'}}),
-            ' ',
-            m('a', {onclick: function() {utils.updateFilter(self.vm, 'match:shareProperties.source:' + result.shareProperties.source);}}, self.vm.ProviderMap[result.shareProperties.source].long_name)
-        ])];
+        return m('div', [
+                    m('span', 
+                        'Released on ' + new $osf.FormattableDate(result.providerUpdatedDateTime).local,
+                        vm.rawNormedLoaded() ?  m('span', [
+                            m('span', {style: {'margin-right': '5px', 'margin-left': '5px'}}, ' | '),
+                            m('a', {
+                                onclick: function() {
+                                    result.showRawNormed = result.showRawNormed ? false : true;
+                                    if (!result.raw) {
+                                        utils.loadRawNormalized(result);
+                                    }
+                                }
+                            }, 'Data')
+                        ]) : []
+                    ),
+                    m('span.pull-right', [
+                        m('img', {src: self.vm.ProviderMap[result.shareProperties.source].favicon, style: {width: '16px', height: '16px'}}),
+                        ' ',
+                        m('a', {onclick: function() {utils.updateFilter(self.vm, 'shareProperties.source:' + result.shareProperties.source);}}, self.vm.ProviderMap[result.shareProperties.source].long_name),
+                        m('br')
+                    ])
+                ]);
 
     };
 
+    self.renderRawNormalizedData = function(result) {
+        return m('.row', [
+                    m('.col-md-12',
+                        result.showRawNormed && result.raw ? m('div', [
+                            m('ul', {class: 'nav nav-tabs'}, [
+                                m('li', m('a', {href: '#raw', 'data-toggle': 'tab'}, 'Raw')),
+                                m('li', m('a', {href: '#normalized', 'data-toggle': 'tab'}, 'Normalized'))
+                            ]),
+                            m('div', {class: 'tab-content'},
+                                m('div',
+                                    {class: 'tab-pane active', id:'raw'},
+                                    m('pre',
+                                        (function(){
+                                            if (result.rawfiletype === 'xml') {
+                                                return pd.xml(result.raw);
+                                            }
+                                            else {
+                                                var rawjson = JSON.parse(result.raw);
+                                                return JSON.stringify(rawjson, undefined, 2);
+                                            }
+                                        }())
+                                    )
+                                ),
+                                m('div',
+                                    {class: 'tab-pane', id:'normalized'},
+                                    m('pre',
+                                        result.normalized
+                                    )
+                                )
+                            )
+                        ]) : m('span')
+                    )
+                ]);
+    };
 
     self.renderResult = function(result, index) {
         return m( '.animated.fadeInUp', [
@@ -134,8 +185,8 @@ Results.controller = function(vm) {
                     )
                 ]),
                 m('br'),
-                m('br'),
-                m('div', self.renderResultFooter(result))
+                m('div', self.renderResultFooter(result)),
+                self.renderRawNormalizedData(result)
             ]),
             m('hr')
         ]);
