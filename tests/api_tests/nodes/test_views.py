@@ -29,14 +29,15 @@ class TestWelcomeToApi(ApiTestCase):
         self.url = '/{}'.format(API_BASE)
 
     def test_returns_200_for_logged_out_user(self):
-        res = self.app.get(self.url, expect_errors=True)
-        print res
+        res = self.app.get(self.url)
         assert_equal(res.status_code, 200)
+        assert_equal(res.content_type, 'application/vnd.api+json')
         assert_equal(res.json['meta']['current_user'], None)
 
     def test_returns_current_user_info_when_logged_in(self):
         res = self.app.get(self.url, auth=self.basic_auth)
         assert_equal(res.status_code, 200)
+        assert_equal(res.content_type, 'application/vnd.api+json')
         assert_equal(res.json['meta']['current_user']['data']['given_name'], self.user.given_name)
 
 
@@ -71,6 +72,7 @@ class TestNodeList(ApiTestCase):
     def test_return_public_node_list_logged_out_user(self):
         res = self.app.get(self.url)
         assert_equal(res.status_code, 200)
+        assert_equal(res.content_type, 'application/vnd.api+json')
         ids = [each['id'] for each in res.json['data']]
         assert_in(self.public._id, ids)
         assert_not_in(self.private._id, ids)
@@ -78,6 +80,7 @@ class TestNodeList(ApiTestCase):
     def test_return_public_node_list_logged_in_user(self):
         res = self.app.get(self.url, auth=self.non_contrib)
         assert_equal(res.status_code, 200)
+        assert_equal(res.content_type, 'application/vnd.api+json')
         ids = [each['id'] for each in res.json['data']]
         assert_in(self.public._id, ids)
         assert_not_in(self.private._id, ids)
@@ -91,6 +94,7 @@ class TestNodeList(ApiTestCase):
     def test_return_private_node_list_logged_in_contributor(self):
         res = self.app.get(self.url, auth=self.basic_auth)
         assert_equal(res.status_code, 200)
+        assert_equal(res.content_type, 'application/vnd.api+json')
         ids = [each['id'] for each in res.json['data']]
         assert_in(self.public._id, ids)
         assert_in(self.private._id, ids)
@@ -351,6 +355,7 @@ class TestNodeCreate(ApiTestCase):
     def test_creates_public_project_logged_in(self):
         res = self.app.post_json(self.url, self.public_project, auth=self.basic_auth)
         assert_equal(res.status_code, 201)
+        assert_equal(res.content_type, 'application/vnd.api+json')
         assert_equal(res.json['data']['title'], self.public_project['title'])
         assert_equal(res.json['data']['description'], self.public_project['description'])
         assert_equal(res.json['data']['category'], self.public_project['category'])
@@ -365,6 +370,7 @@ class TestNodeCreate(ApiTestCase):
     def test_creates_private_project_logged_in_contributor(self):
         res = self.app.post_json(self.url, self.private_project, auth=self.basic_auth)
         assert_equal(res.status_code, 201)
+        assert_equal(res.content_type, 'application/vnd.api+json')
         assert_equal(res.json['data']['title'], self.private_project['title'])
         assert_equal(res.json['data']['description'], self.private_project['description'])
         assert_equal(res.json['data']['category'], self.private_project['category'])
@@ -381,6 +387,7 @@ class TestNodeCreate(ApiTestCase):
         }, auth=self.basic_auth)
         project_id = res.json['data']['id']
         assert_equal(res.status_code, 201)
+        assert_equal(res.content_type, 'application/vnd.api+json')
         url = '/{}nodes/{}/'.format(API_BASE, project_id)
 
         res = self.app.get(url, auth=self.basic_auth)
@@ -410,6 +417,7 @@ class TestNodeDetail(ApiTestCase):
     def test_return_public_project_details_logged_out(self):
         res = self.app.get(self.public_url)
         assert_equal(res.status_code, 200)
+        assert_equal(res.content_type, 'application/vnd.api+json')
         assert_equal(res.json['data']['title'], self.public_project.title)
         assert_equal(res.json['data']['description'], self.public_project.description)
         assert_equal(res.json['data']['category'], self.public_project.category)
@@ -417,6 +425,7 @@ class TestNodeDetail(ApiTestCase):
     def test_return_public_project_details_logged_in(self):
         res = self.app.get(self.public_url, auth=self.basic_auth)
         assert_equal(res.status_code, 200)
+        assert_equal(res.content_type, 'application/vnd.api+json')
         assert_equal(res.json['data']['title'], self.public_project.title)
         assert_equal(res.json['data']['description'], self.public_project.description)
         assert_equal(res.json['data']['category'], self.public_project.category)
@@ -431,6 +440,7 @@ class TestNodeDetail(ApiTestCase):
     def test_return_private_project_details_logged_in_contributor(self):
         res = self.app.get(self.private_url, auth=self.basic_auth)
         assert_equal(res.status_code, 200)
+        assert_equal(res.content_type, 'application/vnd.api+json')
         assert_equal(res.json['data']['title'], self.private_project.title)
         assert_equal(res.json['data']['description'], self.private_project.description)
         assert_equal(res.json['data']['category'], self.private_project.category)
@@ -442,6 +452,7 @@ class TestNodeDetail(ApiTestCase):
     def test_top_level_project_has_no_parent(self):
         res = self.app.get(self.public_url)
         assert_equal(res.status_code, 200)
+        assert_equal(res.content_type, 'application/vnd.api+json')
         assert_equal(res.json['data']['links']['parent']['self'], None)
 
     def test_child_project_has_parent(self):
@@ -449,7 +460,9 @@ class TestNodeDetail(ApiTestCase):
         public_component_url = '/{}nodes/{}/'.format(API_BASE, public_component._id)
         res = self.app.get(public_component_url)
         assert_equal(res.status_code, 200)
+        assert_equal(res.content_type, 'application/vnd.api+json')
         assert_equal(res.json['data']['links']['parent']['self'], urlparse.urljoin(API_DOMAIN, self.public_url))
+
 
 class TestNodeUpdate(ApiTestCase):
 
@@ -507,6 +520,7 @@ class TestNodeUpdate(ApiTestCase):
             'public': True,
         }, auth=self.basic_auth)
         assert_equal(res.status_code, 200)
+        assert_equal(res.content_type, 'application/vnd.api+json')
         assert_equal(res.json['data']['title'], self.new_title)
         assert_equal(res.json['data']['description'], self.new_description)
         assert_equal(res.json['data']['category'], self.new_category)
@@ -540,6 +554,7 @@ class TestNodeUpdate(ApiTestCase):
             'public': False,
         }, auth=self.basic_auth)
         assert_equal(res.status_code, 200)
+        assert_equal(res.content_type, 'application/vnd.api+json')
         assert_equal(res.json['data']['title'], self.new_title)
         assert_equal(res.json['data']['description'], self.new_description)
         assert_equal(res.json['data']['category'], self.new_category)
@@ -568,6 +583,7 @@ class TestNodeUpdate(ApiTestCase):
             'public': True,
         }, auth=self.basic_auth)
         assert_equal(res.status_code, 200)
+        assert_equal(res.content_type, 'application/vnd.api+json')
         assert_equal(res.json['data']['title'], strip_html(new_title))
         assert_equal(res.json['data']['description'], strip_html(new_description))
 
@@ -581,9 +597,11 @@ class TestNodeUpdate(ApiTestCase):
             'title': new_title,
         }, auth=self.basic_auth)
         assert_equal(res.status_code, 200)
+        assert_equal(res.content_type, 'application/vnd.api+json')
 
         res = self.app.get(url)
         assert_equal(res.status_code, 200)
+        assert_equal(res.content_type, 'application/vnd.api+json')
         assert_equal(res.json['data']['title'], strip_html(new_title))
         assert_equal(res.json['data']['description'], self.description)
         assert_equal(res.json['data']['category'], self.category)
@@ -620,6 +638,7 @@ class TestNodeUpdate(ApiTestCase):
             'title': self.new_title,
         }, auth=self.basic_auth)
         assert_equal(res.status_code, 200)
+        assert_equal(res.content_type, 'application/vnd.api+json')
         assert_equal(res.json['data']['title'], self.new_title)
         assert_equal(res.json['data']['description'], self.description)
         assert_equal(res.json['data']['category'], self.category)
@@ -640,6 +659,7 @@ class TestNodeUpdate(ApiTestCase):
     def test_partial_update_private_project_logged_in_contributor(self):
         res = self.app.patch_json(self.private_url, {'title': self.new_title}, auth=self.basic_auth)
         assert_equal(res.status_code, 200)
+        assert_equal(res.content_type, 'application/vnd.api+json')
         assert_equal(res.json['data']['title'], self.new_title)
         assert_equal(res.json['data']['description'], self.description)
         assert_equal(res.json['data']['category'], self.category)
@@ -752,6 +772,7 @@ class TestNodeContributorList(ApiTestCase):
 
         res = self.app.get(self.public_url)
         assert_equal(res.status_code, 200)
+        assert_equal(res.content_type, 'application/vnd.api+json')
         assert_equal(len(res.json['data']), 2)
         assert_equal(res.json['data'][0]['id'], self.user._id)
         assert_equal(res.json['data'][1]['id'], self.user_two._id)
@@ -759,6 +780,7 @@ class TestNodeContributorList(ApiTestCase):
     def test_return_public_contributor_list_logged_in(self):
         res = self.app.get(self.public_url, auth=self.basic_auth_two)
         assert_equal(res.status_code, 200)
+        assert_equal(res.content_type, 'application/vnd.api+json')
         assert_equal(len(res.json['data']), 1)
         assert_equal(res.json['data'][0]['id'], self.user._id)
 
@@ -775,6 +797,7 @@ class TestNodeContributorList(ApiTestCase):
 
         res = self.app.get(self.private_url, auth=self.basic_auth)
         assert_equal(res.status_code, 200)
+        assert_equal(res.content_type, 'application/vnd.api+json')
         assert_equal(len(res.json['data']), 2)
         assert_equal(res.json['data'][0]['id'], self.user._id)
         assert_equal(res.json['data'][1]['id'], self.user_two._id)
@@ -863,11 +886,13 @@ class TestNodeRegistrationList(ApiTestCase):
     def test_return_public_registrations_logged_out(self):
         res = self.app.get(self.public_url)
         assert_equal(res.status_code, 200)
+        assert_equal(res.content_type, 'application/vnd.api+json')
         assert_equal(res.json['data'][0]['title'], self.public_project.title)
 
     def test_return_public_registrations_logged_in(self):
         res = self.app.get(self.public_url, auth=self.basic_auth)
         assert_equal(res.status_code, 200)
+        assert_equal(res.content_type, 'application/vnd.api+json')
         assert_equal(res.json['data'][0]['category'], self.public_project.category)
 
     def test_return_private_registrations_logged_out(self):
@@ -880,6 +905,7 @@ class TestNodeRegistrationList(ApiTestCase):
     def test_return_private_registrations_logged_in_contributor(self):
         res = self.app.get(self.private_url, auth=self.basic_auth)
         assert_equal(res.status_code, 200)
+        assert_equal(res.content_type, 'application/vnd.api+json')
         assert_equal(res.json['data'][0]['category'], self.project.category)
 
     def test_return_private_registrations_logged_in_non_contributor(self):
@@ -921,12 +947,14 @@ class TestNodeChildrenList(ApiTestCase):
     def test_return_public_node_children_list_logged_out(self):
         res = self.app.get(self.public_project_url)
         assert_equal(res.status_code, 200)
+        assert_equal(res.content_type, 'application/vnd.api+json')
         assert_equal(len(res.json['data']), 1)
         assert_equal(res.json['data'][0]['id'], self.public_component._id)
 
     def test_return_public_node_children_list_logged_in(self):
         res = self.app.get(self.public_project_url, auth=self.basic_auth_two)
         assert_equal(res.status_code, 200)
+        assert_equal(res.content_type, 'application/vnd.api+json')
         assert_equal(len(res.json['data']), 1)
         assert_equal(res.json['data'][0]['id'], self.public_component._id)
 
@@ -940,6 +968,7 @@ class TestNodeChildrenList(ApiTestCase):
     def test_return_private_node_children_list_logged_in_contributor(self):
         res = self.app.get(self.private_project_url, auth=self.basic_auth)
         assert_equal(res.status_code, 200)
+        assert_equal(res.content_type, 'application/vnd.api+json')
         assert_equal(len(res.json['data']), 1)
         assert_equal(res.json['data'][0]['id'], self.component._id)
 
@@ -983,6 +1012,7 @@ class TestNodePointersList(ApiTestCase):
         res_json = res.json['data']
         assert_equal(len(res_json), 1)
         assert_equal(res.status_code, 200)
+        assert_equal(res.content_type, 'application/vnd.api+json')
         assert_in(res_json[0]['node_id'], self.public_pointer_project._id)
 
     def test_return_public_node_pointers_logged_in(self):
@@ -990,6 +1020,7 @@ class TestNodePointersList(ApiTestCase):
         res_json = res.json['data']
         assert_equal(len(res_json), 1)
         assert_equal(res.status_code, 200)
+        assert_equal(res.content_type, 'application/vnd.api+json')
         assert_in(res_json[0]['node_id'], self.public_pointer_project._id)
 
     def test_return_private_node_pointers_logged_out(self):
@@ -1003,6 +1034,7 @@ class TestNodePointersList(ApiTestCase):
         res = self.app.get(self.private_url, auth=self.basic_auth)
         res_json = res.json['data']
         assert_equal(res.status_code, 200)
+        assert_equal(res.content_type, 'application/vnd.api+json')
         assert_equal(len(res_json), 1)
         assert_in(res_json[0]['node_id'], self.pointer_project._id)
 
@@ -1053,6 +1085,7 @@ class TestCreateNodePointer(ApiTestCase):
 
         res = self.app.post(self.public_url, self.public_payload, auth=self.basic_auth)
         assert_equal(res.status_code, 201)
+        assert_equal(res.content_type, 'application/vnd.api+json')
         assert_equal(res.json['data']['node_id'], self.public_pointer_project._id)
 
     def test_creates_private_node_pointer_logged_out(self):
@@ -1065,6 +1098,7 @@ class TestCreateNodePointer(ApiTestCase):
     def test_creates_private_node_pointer_logged_in_contributor(self):
         res = self.app.post(self.private_url, self.private_payload, auth=self.basic_auth)
         assert_equal(res.status_code, 201)
+        assert_equal(res.content_type, 'application/vnd.api+json')
         assert_equal(res.json['data']['node_id'], self.pointer_project._id)
 
     def test_creates_private_node_pointer_logged_in_non_contributor(self):
@@ -1078,6 +1112,7 @@ class TestCreateNodePointer(ApiTestCase):
     def test_create_node_pointer_contributing_node_to_non_contributing_node(self):
         res = self.app.post(self.private_url, self.user_two_payload, auth=self.basic_auth)
         assert_equal(res.status_code, 201)
+        assert_equal(res.content_type, 'application/vnd.api+json')
         assert_equal(res.json['data']['node_id'], self.user_two_project._id)
 
     def test_create_pointer_non_contributing_node_to_fake_node(self):
@@ -1101,11 +1136,13 @@ class TestCreateNodePointer(ApiTestCase):
 
         res = self.app.post(self.public_url, self.point_to_itself_payload, auth=self.basic_auth)
         assert_equal(res.status_code, 201)
+        assert_equal(res.content_type, 'application/vnd.api+json')
         assert_equal(res.json['data']['node_id'], self.public_project._id)
 
     def test_create_node_pointer_already_connected(self):
         res = self.app.post(self.public_url, self.public_payload, auth=self.basic_auth)
         assert_equal(res.status_code, 201)
+        assert_equal(res.content_type, 'application/vnd.api+json')
         assert_equal(res.json['data']['node_id'], self.public_pointer_project._id)
 
         res = self.app.post(self.public_url, self.public_payload, auth=self.basic_auth, expect_errors=True)
@@ -1134,11 +1171,13 @@ class TestNodeFilesList(ApiTestCase):
     def test_returns_public_files_logged_out(self):
         res = self.app.get(self.public_url, expect_errors=True)
         assert_equal(res.status_code, 200)
+        assert_equal(res.content_type, 'application/vnd.api+json')
         assert_equal(res.json['data'][0]['provider'], 'osfstorage')
 
     def test_returns_public_files_logged_in(self):
         res = self.app.get(self.public_url, auth=self.basic_auth)
         assert_equal(res.status_code, 200)
+        assert_equal(res.content_type, 'application/vnd.api+json')
         assert_equal(res.json['data'][0]['provider'], 'osfstorage')
 
     def test_returns_private_files_logged_out(self):
@@ -1151,6 +1190,7 @@ class TestNodeFilesList(ApiTestCase):
     def test_returns_private_files_logged_in_contributor(self):
         res = self.app.get(self.private_url, auth=self.basic_auth)
         assert_equal(res.status_code, 200)
+        assert_equal(res.content_type, 'application/vnd.api+json')
         assert_equal(len(res.json['data']), 1)
         assert_equal(res.json['data'][0]['provider'], 'osfstorage')
 
@@ -1244,6 +1284,7 @@ class TestNodePointerDetail(ApiTestCase):
     def test_returns_public_node_pointer_detail_logged_out(self):
         res = self.app.get(self.public_url)
         assert_equal(res.status_code, 200)
+        assert_equal(res.content_type, 'application/vnd.api+json')
         res_json = res.json['data']
         assert_equal(res_json['node_id'], self.public_pointer_project._id)
 
@@ -1251,6 +1292,7 @@ class TestNodePointerDetail(ApiTestCase):
         res = self.app.get(self.public_url, auth=self.basic_auth)
         res_json = res.json['data']
         assert_equal(res.status_code, 200)
+        assert_equal(res.content_type, 'application/vnd.api+json')
         assert_equal(res_json['node_id'], self.public_pointer_project._id)
 
     def test_returns_private_node_pointer_detail_logged_out(self):
@@ -1264,6 +1306,7 @@ class TestNodePointerDetail(ApiTestCase):
         res = self.app.get(self.private_url, auth=self.basic_auth)
         res_json = res.json['data']
         assert_equal(res.status_code, 200)
+        assert_equal(res.content_type, 'application/vnd.api+json')
         assert_equal(res_json['node_id'], self.pointer_project._id)
 
     def returns_private_node_pointer_detail_logged_in_non_contributor(self):
