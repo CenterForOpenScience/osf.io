@@ -1693,7 +1693,7 @@ var FGToolbar = {
             }, '')
         );
 
-        if (item && item.connected !== false){
+        if (item && item.connected !== false){ // as opposed to undefined, avoids unnecessary setting of this value
             templates[toolbarModes.DEFAULT] =  m('.col-xs-12', m('.pull-right', [finalRowButtons,  m('span', generalButtons)]));
         } else {
             templates[toolbarModes.DEFAULT] =  m('.col-xs-12', m('.pull-right', m('span', generalButtons)));
