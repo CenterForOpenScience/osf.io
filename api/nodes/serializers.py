@@ -90,7 +90,11 @@ class NodeSerializer(JSONAPISerializer):
         if 'include' in query_params:
             additional_params = query_params['include'].split(',')
             if name in additional_params:
-                return name
+                object_data = {}
+                for o in objects:
+                    object_data[o._id] = Link('nodes:node-{}'.format(name), kwargs={'node_id': '<pk>'})\
+                        .resolve_url(o)
+                return object_data
         return {
             'related': Link('nodes:node-{}'.format(name), kwargs={'node_id': '<pk>'}).resolve_url(obj),
             'count': len(objects),
