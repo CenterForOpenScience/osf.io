@@ -60,13 +60,10 @@ var _figshareItemButtons = {
         }
         if (item.kind === 'file' && item.data.permissions && item.data.permissions.view) {
             buttons.push(
-                m.component(Fangorn.Components.button, {
-                    onclick: function(event) {
-                        window.open(item.data.extra.webView, '_self');
-                    },
-                    icon: 'fa fa-external-link',
-                    className : 'text-info'
-                }, 'View on figshare')
+                m('a.text-info.fangorn-toolbar-icon', {href: item.data.extra.webView}, [
+                    m('i.fa.fa-external-link'),
+                    m('span', 'View on figshare')
+                ])
             );
         }
         return m('span', buttons); // Tell fangorn this function is used.

@@ -1500,13 +1500,10 @@ var FGItemButtons = {
             if(storageAddons[item.data.provider].externalView) {
                 var providerFullName = storageAddons[item.data.provider].fullName;
                 rowButtons.push(
-                    m.component(FGButton, {
-                        onclick: function(event) {
-                            window.open(item.data.extra.webView, '_self');
-                        },
-                        icon: 'fa fa-external-link',
-                        className : 'text-info'
-                    }, 'View on ' + providerFullName)
+                    m('a.text-info.fangorn-toolbar-icon', {href: item.data.extra.webView}, [
+                        m('i.fa.fa-external-link'),
+                        m('span', 'View on ' + providerFullName)
+                    ])
                 );
             }
         } else if(item.data.provider && item.children.length !== 0) {

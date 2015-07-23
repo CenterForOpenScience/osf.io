@@ -425,6 +425,7 @@ class TestAddonFileViews(OsfTestCase):
             'provider': '',
             'file_path': '',
             'sharejs_uuid': '',
+            'private': '',
             'urls': {
                 'files': '',
                 'render': '',

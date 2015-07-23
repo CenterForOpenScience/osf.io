@@ -154,7 +154,7 @@
             size: ${size},
             extra: ${extra},
             error: '${error | js_str}',
-            privateRepo: '${private or '' | js_str}',
+            privateRepo: '${private}',
             name: '${file_name | js_str}',
             path: '${file_path | js_str}',
             provider: '${provider | js_str}',

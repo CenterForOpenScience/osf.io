@@ -220,13 +220,10 @@ var _githubItemButtons = {
             }
             if (item.data.permissions && item.data.permissions.view && !item.data.permissions.private) {
                 buttons.push(
-                    m.component(Fangorn.Components.button, {
-                        onclick: function(event) {
-                            window.open(item.data.extra.webView, '_self');
-                        },
-                        icon: 'fa fa-external-link',
-                        className : 'text-info'
-                    }, 'View on GitHub')
+                    m('a.text-info.fangorn-toolbar-icon', {href: item.data.extra.webView}, [
+                        m('i.fa.fa-external-link'),
+                        m('span', 'View on GitHub')
+                    ])
                 );
             }
         }

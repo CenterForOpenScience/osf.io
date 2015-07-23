@@ -441,7 +441,7 @@ def addon_view_file(auth, node, node_addon, guid_file, extras):
         'provider': guid_file.provider,
         'file_path': guid_file.waterbutler_path,
         'panels_used': ['edit', 'view'],
-        'private': getattr(node_addon, 'is_private', None),
+        'private': getattr(node_addon, 'is_private', False),
         'sharejs_uuid': sharejs_uuid,
         'urls': {
             'files': node.web_url_for('collect_file_trees'),
