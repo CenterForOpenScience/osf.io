@@ -57,11 +57,12 @@ REST_FRAMEWORK = {
     # rest_framework.renderers.JSONRenderer needs to be first, at least until
     # https://github.com/marcgibbons/django-rest-swagger/issues/271 is resolved.
     'DEFAULT_RENDERER_CLASSES': (
-        'rest_framework.renderers.JSONRenderer',
         'api.base.renderers.JSONAPIRenderer',
+        'rest_framework.renderers.JSONRenderer',
         'rest_framework.renderers.BrowsableAPIRenderer',
     ),
     'EXCEPTION_HANDLER': 'api.base.exceptions.jsonapi_exception_handler',
+    'DEFAULT_CONTENT_NEGOTIATION_CLASS': 'api.base.content_negotiation.CustomClientContentNegotiation',
     'DEFAULT_VERSIONING_CLASS': 'rest_framework.versioning.AcceptHeaderVersioning',
     'DEFAULT_VERSION': '2.0',
     'DEFAULT_FILTER_BACKENDS': ('api.base.filters.ODMOrderingFilter',),

@@ -23,6 +23,7 @@ class TestUsers(ApiTestCase):
     def test_returns_200(self):
         res = self.app.get('/{}users/'.format(API_BASE))
         assert_equal(res.status_code, 200)
+        assert_equal(res.content_type, 'application/vnd.api+json')
 
     def test_find_user_in_users(self):
         url = "/{}users/".format(API_BASE)
@@ -93,6 +94,7 @@ class TestUserDetail(ApiTestCase):
         url = "/{}users/{}/".format(API_BASE, self.user_one._id)
         res = self.app.get(url)
         assert_equal(res.status_code, 200)
+        assert_equal(res.content_type, 'application/vnd.api+json')
 
     def test_get_correct_pk_user(self):
         url = "/{}users/{}/".format(API_BASE, self.user_one._id)
@@ -159,11 +161,13 @@ class TestUserNodes(ApiTestCase):
         url = "/{}users/{}/nodes/".format(API_BASE, self.user_one._id)
         res = self.app.get(url, auth=self.auth_one)
         assert_equal(res.status_code, 200)
+        assert_equal(res.content_type, 'application/vnd.api+json')
 
     def test_anonymous_gets_200(self):
         url = "/{}users/{}/nodes/".format(API_BASE, self.user_one._id)
         res = self.app.get(url)
         assert_equal(res.status_code, 200)
+        assert_equal(res.content_type, 'application/vnd.api+json')
 
     def test_get_projects_logged_in(self):
         url = "/{}users/{}/nodes/".format(API_BASE, self.user_one._id)
