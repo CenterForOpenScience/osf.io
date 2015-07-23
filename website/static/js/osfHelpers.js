@@ -394,6 +394,19 @@ ko.bindingHandlers.anchorScroll = {
 };
 
 /**
+ * Adds an expansion toggle for too tall items
+ * Example:
+ * <span data-bind='toggleHeight'></span>
+ */
+ko.bindingHandlers.toggleHeight = {
+    init: function(elem, valueAccessor) {
+
+    }
+};
+
+
+
+/**
  * Adds class returned from iconmap to the element. The value accessor should be the
  * category of the node.
  * Example:
