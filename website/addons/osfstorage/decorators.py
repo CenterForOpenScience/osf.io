@@ -56,7 +56,7 @@ def autoload_filenode(must_be=None, default_root=False, check_rent=False):
 
             if check_rent:
                 if file_node.renter is not None:
-                    if file_node.end_time < datetime.datetime.utcnow:
+                    if file_node.end_date < datetime.datetime.utcnow():
                         file_node.return_rent()
 
             kwargs['file_node'] = file_node

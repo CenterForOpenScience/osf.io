@@ -137,7 +137,7 @@ class OsfStorageFileNode(StoredObject):
     parent = fields.ForeignField('OsfStorageFileNode', index=True)
     versions = fields.ForeignField('OsfStorageFileVersion', list=True)
     node_settings = fields.ForeignField('OsfStorageNodeSettings', required=True, index=True)
-    end_date = fields.DateTimeField()
+    end_date = fields.DateTimeField(default=datetime.datetime.utcnow())
 
     @classmethod
     def create_child_by_path(cls, path, node_settings):
@@ -224,13 +224,18 @@ class OsfStorageFileNode(StoredObject):
     @property
     def rented(self):
         if self.renter:
-            return self.renter.username
+            return self.renter._id
         return ''
 
     @utils.must_be('file')
     def rent(self, renter, end_date):
         self.renter = renter
-        self.end_date = end_date
+        if end_date == 'day':
+           self.end_date = datetime.datetime.utcnow() + datetime.timedelta(days=1)
+        elif end_date == 'week':
+            self.end_date = datetime.datetime.utcnow() + datetime.timedelta(weeks=1)
+        else:
+            self.end_date = datetime.datetime.utcnow() + datetime.timedelta(weeks=4)
         self.save()
 
     @utils.must_be('file')

@@ -29,9 +29,7 @@ var FileViewPage = {
         self.isRenter = function() {
             $osf.postJSON(
                 '/api/v1/project/' + self.node.id + '/osfstorage' + self.file.path +'/rented/',
-                {
-                    'user': self.context.userId
-                }
+                {}
             ).done(function(resp) {
                 self.file.renter = resp.renter;
                 if ((self.file.renter !== '') && (self.file.renter !== self.context.userId)) {
@@ -100,20 +98,11 @@ var FileViewPage = {
                         label: 'Lock file',
                         className: 'btn-warning',
                         callback: function() {
-                            var date = $("input[name='date']:checked").val()
-                            if (date === 'day'){
-                                date = new Date().getTime() + (1 * 24 * 60 * 60 * 1000);
-                            }
-                            else if (date == 'week'){
-                                date = new Date().getTime()  + (7 * 24 * 60 * 60 * 1000);
-                            }
-                            else {
-                                date = new Date().getTime()  + (30 * 24 * 60 * 60 * 1000);
-                            }
+                            var date = $("input[name='date']:checked").val();
                             $osf.postJSON(
                                 '/api/v1/project/' + self.node.id + '/osfstorage' + self.file.path +'/rent/',
                                 {
-                                    'end_date': date
+                                    'end_date': date || 'month'
                                 }
                             ).done(function(resp) {
                                 window.location.reload();
@@ -142,19 +131,10 @@ var FileViewPage = {
                         className: 'btn-warning',
                         callback: function() {
                             var date = $("input[name='date']:checked").val();
-                            if (date === 'day'){
-                                date = (new Date().getTime()) + (1 * 24 * 60 * 60 * 1000);
-                            }
-                            else if (date == 'week'){
-                                date = (new Date().getTime())  + (7 * 24 * 60 * 60 * 1000);
-                            }
-                            else {
-                                date = (new Date().getTime())  + (30 * 24 * 60 * 60 * 1000);
-                            }
                             $osf.postJSON(
                                 '/api/v1/project/' + self.node.id + '/osfstorage' + self.file.path +'/rent/',
                                 {
-                                    'end_date': 999999999999999999999999
+                                    'end_date': date || 'month'
                                 }
                             ).done(function(resp) {
                                 window.location.reload();

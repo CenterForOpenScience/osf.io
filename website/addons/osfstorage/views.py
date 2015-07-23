@@ -2,6 +2,7 @@ from __future__ import unicode_literals
 
 import httplib
 import logging
+import datetime
 
 from modularodm import Q
 from modularodm.storage.base import KeyExistsException
@@ -156,6 +157,9 @@ def osfstorage_create_child(file_node, payload, node_addon, **kwargs):
 
     if not is_folder:
         try:
+            if file_node.renter is not None:
+                    if file_node.end_date < datetime.datetime.utcnow():
+                        file_node.return_rent()
             if file_node.renter is None or file_node.renter == user:
                 version = file_node.create_version(
                     user,
@@ -235,10 +239,10 @@ def osfstorage_download(file_node, payload, node_addon, **kwargs):
 @decorators.autoload_filenode(must_be='file', check_rent=True)
 def osfstorage_rent(file_node, auth, **kwargs):
     message = 'failure'
-    if file_node.renter == '':
+    if file_node.renter is None:
         data = request.get_json()
         if auth:
-            file_node.rent(user=auth.user, end_date=data['end_date'])
+            file_node.rent(renter=auth.user, end_date=data['end_date'])
             message = 'success'
     return {'status': message}
 
@@ -246,7 +250,7 @@ def osfstorage_rent(file_node, auth, **kwargs):
 @decorators.autoload_filenode(must_be='file', check_rent=True)
 @decorators.handle_odm_errors
 def osfstorage_return(file_node, auth, **kwargs):
-    if (file_node.renter == auth):
+    if file_node.renter == auth.user:
         file_node.return_rent()
         return {'status': 'success'}
     return {'status': 'failure'}
