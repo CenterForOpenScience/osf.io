@@ -42,7 +42,7 @@ function Comment(data) {
     self.lastModified = new Date(data.lastModified)|| new Date();
     self.value = ko.observable(data.value || '');
     self.value.subscribe(function() {
-        self.lastModified = new Date();
+        self.lastModified = new Date()
     });
 
     self.isDeleted = ko.observable(data.isDeleted || false);
@@ -58,7 +58,7 @@ function Comment(data) {
     };
 
     /**
-     * Returns the author as the actual user, not 'You' 
+     * Returns the author as the actual user, not 'You'
      **/
     self.author = ko.pureComputed(function() {
       return self.user.fullname;
@@ -334,7 +334,7 @@ var Draft = function(params, metaSchema) {
     self.updated = new Date(params.updated);
 
     self.urls = params.urls || {};
-    
+
     // TODO: uncomment to support draft approval states
     //    self.fulfills = params.fulfills || [];
     //    self.isPendingReview = params.flags.isPendingReview || false;
@@ -347,7 +347,7 @@ var Draft = function(params, metaSchema) {
     //    $.each(params.flags || {}, function(key, value) {
     //        self[key] = value;
     //    });
-    
+
     self.completion = ko.computed(function() {
         var total = 0;
         var complete = 0;
@@ -390,7 +390,7 @@ Draft.prototype.beforeRegister = function(data) {
         var preRegisterErrors = function(confirm, reject) {
             bootbox.confirm(
                 $osf.joinPrompts(
-                    response.errors, 
+                    response.errors,
                     'Before you continue...'
                 ) + '<br /><hr /> ' + language.registerSkipAddons,
                 function(result) {
@@ -400,13 +400,13 @@ Draft.prototype.beforeRegister = function(data) {
                 }
             );
         };
-        
+
         if (response.errors && response.errors.length) {
             preRegisterErrors(preRegisterWarnings);
         }
         else if (response.prompts && response.prompts.length) {
             preRegisterWarnings();
-        } 
+        }
         else {
             self.register(data);
         }
@@ -428,7 +428,7 @@ Draft.prototype.register = function(data) {
         contentType: 'application/json',
         dataType: 'json'
     }).done(function(response) {
-        if (response.status === 'initiated') {            
+        if (response.status === 'initiated') {
             window.location.assign(response.urls.registrations);
         }
         else if (response.status === 'error') {

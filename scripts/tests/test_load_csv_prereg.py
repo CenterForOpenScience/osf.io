@@ -15,7 +15,7 @@ class TestLoadCsvPrereg(OsfTestCase):
     def setUp(self):
         super(TestLoadCsvPrereg, self).setUp()
         self.page1_expected_data = {
-            'q1': {
+            'q01': {
                 'nav': 'Title',
                 'type': 'string',
                 'format': 'text',
@@ -23,15 +23,15 @@ class TestLoadCsvPrereg(OsfTestCase):
                 'description': 'What is the working title of your study? It is helpful if this is the same title that you submit for publication of your final manuscript, but it is not a requirement.',
                 'help': 'Effect of sugar on brownie tastiness.'
             },
-            'q2': {
+            'q02': {
                 'nav': 'Authors',
                 'type': 'string',
                 'format': 'text',
                 'title': 'Authorship',
-                'description': 'The first author of the pre-registered study is the recipient of the award money and must also be the first author of the published manuscript. Additional authors may be added or removed at any time.',
+                'description': 'The award goes to the first author of the pre-registered study is the recipient of the award money and must also be the first author of the published manuscript.',
                 'help': 'Jimmy Stewart, Ava Gardner, Bob Hope, Greta Garbo'
             },
-            'q3': {
+            'q03': {
                 'nav': 'COI',
                 'type': 'string',
                 'format': 'textarea',
@@ -39,8 +39,8 @@ class TestLoadCsvPrereg(OsfTestCase):
                 'description': 'Could the results of this project benefit the financial interests of any of its authors, or be reasonably perceived to do so?',
                 'help': 'The authors of this study own a majority share of Tastee Sugar Company.'
             },
-            'q4': {
-                'nav': 'Research',
+            'q04': {
+                'nav': 'Questions and Hypotheses',
                 'type': 'object',
                 'title': 'Research questions and hypotheses',
                 'description': 'What are your research questions and hypotheses? Both directional and non-directional hypotheses are acceptable.',

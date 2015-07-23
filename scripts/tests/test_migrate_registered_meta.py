@@ -6,6 +6,7 @@ from modularodm import Q
 from website.models import Node
 from tests.factories import NodeFactory
 from scripts.migration.migrate_registered_meta import main as do_migration
+from scripts.migration.migrate_registered_meta import IMMUTABLE_KEYS
 
 
 class TestMigrateSchemas(OsfTestCase):
@@ -20,7 +21,7 @@ class TestMigrateSchemas(OsfTestCase):
             }
         })
 
-        self.reg1 = NodeFactory(is_registration=True, registered_meta=self.reg_meta1)
+        self.reg1 = NodeFactory(is_registration=True, registered_meta=self.reg_meta1, fits_prereg_schema=False)
 
         self.reg_meta2 = json.dumps({
             'V serious Registration': {
@@ -54,7 +55,7 @@ class TestMigrateSchemas(OsfTestCase):
                 "registrationChoice": "immediate"}
         })
 
-        self.reg2 = NodeFactory(is_registration=True, registered_meta=self.reg_meta2)
+        self.reg2 = NodeFactory(is_registration=True, registered_meta=self.reg_meta2, fits_prereg_schema=False)
 
     def test_migrate_json_schemas(self):
         do_migration(dry_run=False)
@@ -63,6 +64,7 @@ class TestMigrateSchemas(OsfTestCase):
         )
 
         for node in migrated_nodes:
+            assert_equal(node.fits_prereg_schema, True)
             registrations = node.registered_meta
             for name, data in registrations.iteritems():
                 assert_in('embargoEndDate', data)
@@ -70,6 +72,8 @@ class TestMigrateSchemas(OsfTestCase):
                 assert_in('registrationChoice', data)
                 assert_equal(data['registrationChoice'], u'immediate')
                 for item in data:
+                    assert_not_in(item, IMMUTABLE_KEYS)
+                    assert_not_equal(item, None)
                     if item != 'embargoEndDate' and item != 'registrationChoice':
                         assert_in('comments', data[item])
                         assert_not_equal(data[item]['comments'],u'Thu%2C 02 Jul 2015 13%3A34%3A27 GMT' )

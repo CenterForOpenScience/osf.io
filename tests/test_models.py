@@ -3407,7 +3407,7 @@ class TestPointer(OsfTestCase):
         project = ProjectFactory()
         auth = Auth(user=project.creator)
         project.add_pointer(pointee, auth=auth)
-        registration = project.register_node(None, auth, '', '')
+        registration = project.register_node(None, auth, '', '', '')
         assert_equal(registration.nodes[0].node, pointee)
 
     def test_has_pointers_recursive_false(self):

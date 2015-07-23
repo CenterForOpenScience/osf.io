@@ -24,7 +24,7 @@
         "title": "Basic Information",
         "type": "object",
         "questions": {
-            "q1": {
+            "q01": {
                 "nav": "Title",
                 "type": "string",
                 "format": "text",
@@ -32,7 +32,7 @@
                 "description": "What is the working title of your study? It is helpful if this is the same title that you submit for publication of your final manuscript, but it is not a requirement.",
                 "help": "Effect of sugar on brownie tastiness."
             },
-            "q2": {
+            "q02": {
                 "nav": "Authors",
                 "type": "string",
                 "format": "text",
@@ -40,7 +40,7 @@
                 "description": "The first author of the pre-registered study is the recipient of the award money and must also be the first author of the published manuscript. Additional authors may be added or removed at any time.",
                 "help": "Jimmy Stewart, Ava Gardner, Bob Hope, Greta Garbo"
             },
-            "q3": {
+            "q03": {
                 "nav": "COI",
                 "type": "string",
                 "format": "textarea",
@@ -48,7 +48,7 @@
                 "description": "Could the results of this project benefit the financial interests of any of its authors, or be reasonably perceived to do so?",
                 "help": "The authors of this study own a majority share of Tastee Sugar Company."
             },
-            "q4": {
+            "q04": {
                 "nav": "Research",
                 "type": "object",
                 "title": "Research questions and hypotheses",
@@ -73,7 +73,7 @@
         "title": "Sampling Plan",
         "type": "object",
         "questions": {
-            "q5": {
+            "q05": {
                 "nav": "Data",
                 "type": "object",
                 "title": "Data collection procedures",
@@ -92,7 +92,7 @@
                     }
                 }
             },
-            "q6": {
+            "q06": {
                 "nav": "Sample",
                 "type": "object",
                 "title": "Sample size",
@@ -111,7 +111,7 @@
                     }
                 }
             },
-            "q7": {
+            "q07": {
                 "nav": "Rationale",
                 "type": "object",
                 "title": "Sample size rationale",
@@ -130,7 +130,7 @@
                     }
                 }
             },
-            "q8": {
+            "q08": {
                 "nav": "Certify",
                 "type": "object",
                 "title": "Please check and certify one of the following statements",
@@ -160,7 +160,7 @@
         "title": "Design Plan",
         "type": "object",
         "questions": {
-            "q9": {
+            "q09": {
                 "nav": "Type",
                 "type": "choose",
                 "title": "Study type",

@@ -14,8 +14,8 @@ logger.setLevel(logging.INFO)
 
 def get_page(quest_num):
     """ Given a question number, returns list containing page id, page index, and index of question on page
-['page1', 0, 1] => Question 2 on page 1
-"""
+    ['page1', 0, 1] => Question 2 on page 1
+    """
     pages = {
         'page1': ['01', '02', '03', '04'],
         'page2': ['05', '06', '07', '08'],
@@ -33,7 +33,7 @@ def get_page(quest_num):
 
 def get_label(row_type):
     """ Translates the csv terms to json schema terms used"""
-    types = {'QUESTION': 'title', 'EXPLAIN': 'description', 'HELP': 'help'}
+    types = {'QUESTION': 'title', 'EXPLAIN': 'description', 'HELP': 'help', 'NAV': 'nav'}
 
     for type in types:
         if type == row_type:
@@ -83,7 +83,7 @@ def main(dry_run=True):
                     # dict of each question in a page
                     questions = json_data['pages'][int(current_page[1])]['questions']
                     question_data = questions.itervalues().next()
-                    key = questions.keys()[int(current_page[2])]
+                    key = sorted(questions.keys())[int(current_page[2])]
 
                     # row is a multiple choice question
                     if isinstance(row_type, tuple):
@@ -94,9 +94,7 @@ def main(dry_run=True):
                     else:
                         # If the csv and json differ, save it
                         if row[1] != question_data[row_type]:
-                            # save to the actual json file, not the variable
                             json_data['pages'][int(current_page[1])]['questions'][key][row_type] = unicode(row[1])
-
 
             for list in multiple_choice:
                 current_page = get_page(list)
@@ -106,12 +104,12 @@ def main(dry_run=True):
                 if current_page[1] != 1:
                     json_data['pages'][int(current_page[1])]['questions'][key]['options'] = multiple_choice[list]
 
-            if not dry_run:
-                with open(os.path.join(schema_directory, 'prereg-prize-test.json'), 'w') as updated_file:
-                    json.dump(json_data, updated_file)
-            else: # For tests
-                with open(os.path.join(schema_directory, 'prereg-prize-test.test.json'), 'w') as updated_file:
-                    json.dump(json_data, updated_file, indent=4)
+        if not dry_run:
+            with open(os.path.join(schema_directory, 'prereg-prize-test.json'), 'w') as updated_file:
+                json.dump(json_data, updated_file, indent=4)
+        else: # For tests
+            with open(os.path.join(schema_directory, 'prereg-prize-test.test.json'), 'w') as updated_file:
+                json.dump(json_data, updated_file, indent=4)
 
 if __name__ == '__main__':
     dry_run ='dry' in sys.argv

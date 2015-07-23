@@ -8,7 +8,7 @@ import logging
 
 from modularodm import Q
 
-from website import models
+from website.models import Node
 from website.app import init_app
 from scripts import utils as scripts_utils
 
@@ -17,12 +17,13 @@ logger.setLevel(logging.INFO)
 IMMUTABLE_KEYS = frozenset(['datacompletion', 'summary'])
 
 def get_registered_nodes():
-    return models.Node.find(
-        Q('is_registration', 'eq', True)
+    return Node.find(
+        Q('is_registration', 'eq', True) &
+        Q('fits_prereg_schema', 'eq', False)
     )
 
 
-def main():
+def main(dry_run):
     init_app(routes=False)
     count = 0
 
@@ -32,10 +33,10 @@ def main():
 
     new_registration_data = dict()
     for node in get_registered_nodes():
-        for schema, values in json.loads(node.registered_meta).items():
+        for schema, schema_data in json.loads(node.registered_meta).items():
             valid_schema = {
-                'embargoEndDate': values['embargoEndDate'] if 'embargoEndDate' in values else '',
-                'registrationChoice': values['registrationChoice'] if 'registrationChoice' in values else '',
+                'embargoEndDate': schema_data['embargoEndDate'] if 'embargoEndDate' in schema_data else '',
+                'registrationChoice': schema_data['registrationChoice'] if 'registrationChoice' in schema_data else '',
             }
 
             # in most schemas, answers are just stored as { 'itemX': 'answer' }
@@ -43,11 +44,11 @@ def main():
             # and can be interspersed with the itemX keys so reassigning keys based on num_questions
             # could cause conflicts. Instead they are left there.
             matches = dict()
-            for val in values:
+            for val in schema_data:
                 match = re.search("item[0-9]*", val)
-                if match is not None and match not in IMMUTABLE_KEYS:
+                if match is not None and val not in IMMUTABLE_KEYS:
                     new_val = val.replace('q', 'item')
-                    matches[new_val] = values[val]
+                    matches[new_val] = schema_data[val]
 
             if matches:
                 for item_num, item in matches.iteritems():
@@ -70,10 +71,10 @@ def main():
 
         if not dry_run:
             node.registered_meta = new_registration_data
+            node.fits_prereg_schema = True
             node.save()
 
     logger.info('Done with {} nodes migrated'.format(count))
-
 
 if __name__ == '__main__':
     dry_run = 'dry' in sys.argv

@@ -632,6 +632,8 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
     # Dictionary field mapping user id to a list of nodes in node.nodes which the user has subscriptions for
     # {<User.id>: [<Node._id>, <Node2._id>, ...] }
     child_node_subscriptions = fields.DictionaryField(default=dict)
+    # For the purpose of migrate_registered_meta script
+    fits_prereg_schema = fields.BooleanField(default=False)
 
     _meta = {
         'optimistic': True,
@@ -1729,7 +1731,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         registered.registered_from = original
         if not registered.registered_meta:
             registered.registered_meta = {}
-        registered.registered_meta = data
+        registered.registered_meta[template] = data
 
         registered.contributors = self.contributors
         registered.forked_from = self.forked_from
