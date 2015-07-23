@@ -173,19 +173,12 @@ NodeActions._openCloseNode = function(nodeId) {
     body.toggleClass('hide');
 
     if (body.hasClass('hide')) {
-        icon.removeClass('fa fa-minus');
-        icon.addClass('fa fa-plus');
-        icon.attr('title', 'More');
+        icon.removeClass('fa fa-angle-up');
+        icon.addClass('fa fa-angle-down');
     } else {
-        icon.removeClass('fa fa-plus');
-        icon.addClass('fa fa-minus');
-        icon.attr('title', 'Less');
+        icon.removeClass('fa fa-angle-down');
+        icon.addClass('fa fa-angle-up');
     }
-
-    // Refresh tooltip text
-    icon.tooltip('destroy');
-    icon.tooltip();
-
 };
 
 
