@@ -1,16 +1,7 @@
-from rest_framework.negotiation import BaseContentNegotiation
+from rest_framework.negotiation import DefaultContentNegotiation
 
 
-class CustomClientContentNegotiation(BaseContentNegotiation):
-    def select_parser(self, request, parsers):
-        """
-        Select parser whose media_type matches content_type
-        """
-        content_type = request.QUERY_PARAMS.get('content_type', request.content_type)
-        for parser in parsers:
-            if parser.media_type == content_type:
-                return parser
-        return parsers[0]
+class CustomClientContentNegotiation(DefaultContentNegotiation):
 
     def select_renderer(self, request, renderers, format_suffix):
         """
