@@ -18,7 +18,7 @@ class TestUsers(ApiTestCase):
 
     def tearDown(self):
         super(TestUsers, self).tearDown()
-        Node.remove()
+        # Node.remove()
 
     def test_returns_200(self):
         res = self.app.get('/{}users/'.format(API_BASE))
