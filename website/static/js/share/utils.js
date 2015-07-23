@@ -74,7 +74,7 @@ utils.loadMore = function (vm) {
             background: true,
             data: utils.buildQuery(vm),
             url: '/api/v1/share/search/'
-        }).then(function(data) {
+        }).then(function (data) {
             vm.resultsLoading(false);
             ret.resolve(data);
         }, function (xhr, status, err) {
@@ -408,7 +408,7 @@ utils.generateColors = function (numColors) {
     var color;
     while (colorsOut.length < numColors) {
         color = colorsToGenerate.shift();
-        if (color === 'undefined') {
+        if (typeof color === 'undefined') {
             colorsToGenerate = utils.getNewColors(colorsUsed);
             colorsUsed = [];
         } else {

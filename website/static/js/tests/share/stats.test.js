@@ -4,7 +4,7 @@
 var assert = require('chai').assert;
 var $osf = require('js/osfHelpers');
 
-var Stats = require('js/share/Stats');
+var Stats = require('js/share/stats');
 
 describe('share/stats', () => {
 

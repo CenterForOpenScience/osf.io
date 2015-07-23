@@ -28,16 +28,6 @@ function donutGraph(data, vm) {
         },
         legend: {
             show: false
-        },
-        tooltip: {
-            format: {
-                name: function (name, ratio, id, index) {
-                    if (name === 'pubmed') { //TODO @fabianvf, can we get rid of this now? looks like pubmedcentral is already the name of one of the sources
-                        name = 'pubmed central';
-                    }
-                    return name;
-                }
-            }
         }
     });
 }
@@ -87,15 +77,7 @@ function timeGraph(data, vm) {
             show: false
         },
         tooltip: {
-            grouped: false,
-            format: {
-                name: function (name, ratio, id, index) {
-                    if (name === 'pubmed') {
-                        name = 'pubmed central';
-                    }
-                    return name;
-                }
-            }
+            grouped: false
         }
     });
 }
