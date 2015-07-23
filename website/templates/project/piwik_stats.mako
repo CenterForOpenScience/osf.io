@@ -1,12 +1,30 @@
 <% import json %>
 <%inherit file="project/project_base.mako"/>
 <%def name="title()">${node['title']} Statistics</%def>
-<script type="text/javascript" src="http://code.highcharts.com/highcharts.js"></script>
-
 
 <div class="row">
-    <input type="text" id="datepicker" class="form-control">
-    <button class="btn btn-default" id="datepicker-btn">Select Date</button>
+    <div class="col-md-3">
+        <input type="text" id="datepicker" class="hidden">
+        <button type="button" class="btn btn-default" id="datepickerButton">Select Date</button>
+        <button type="button" class="btn btn-default" id="rangeButton">Select Range</button>
+    </div>
+    <div class="col-md-3" id="rangeDiv">
+        <input type="text" id="startPicker">
+        <input type="text" id="endPicker">
+    </div>
+    <div class="col-md-6">
+        <div class="btn-group pull-right">
+            <button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown" aria-expanded="false">
+                Statistics <span class="fa fa-caret-down"></span>
+            </button>
+            <ul class="dropdown-menu" role="menu">
+                <li><a href="#">Visits</a></li>
+                <li><a href="#">Page Views</a></li>
+                <li><a href="#">Unique Page Views</a></li>
+                <li><a href="#">Unique Visitors</a></li>
+            </ul>
+        </div>
+    </div>
 </div>
 <div class="row">
     <div class="col-md-12">
