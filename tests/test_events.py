@@ -258,29 +258,30 @@ class TestFileMoved(OsfTestCase):
         self.file_sub.save()
 
     def test_info_formed_correct(self):
+        """Move Event: Ensures data is correctly formatted"""
         assert_equal('{}_file_updated'.format(wb_path), self.event.event)
         # assert_equal('moved file "<b>{}</b>".', self.event.html_message)
         # assert_equal('created folder "Three/".', self.event.text_message)
 
-    @mock.patch('website.notifications.emails.send')
-    def test_user_performing_action_no_email(self, mock_send):
-        """Makes sure user who performed the action is not included in the notifications"""
+    @mock.patch('website.notifications.emails.store_emails')
+    def test_user_performing_action_no_email(self, mock_store):
+        """Move Event: Makes sure user who performed the action is not included in the notifications"""
         self.sub.email_digest.append(self.user_2)
         self.sub.save()
         self.event.perform()
-        assert_equal(0, mock_send.call_count)
+        assert_equal(0, mock_store.call_count)
 
-    @mock.patch('website.notifications.emails.send')
-    def test_perform_send_called_once(self, mock_send):
-        """Tests that send is called once from perform"""
+    @mock.patch('website.notifications.emails.store_emails')
+    def test_perform_store_called_once(self, mock_store):
+        """Move Event: Tests that store_emails is called once from perform"""
         self.sub.email_transactional.append(self.user_1)
         self.sub.save()
         self.event.perform()
-        assert_equal(1, mock_send.call_count)
+        assert_equal(1, mock_store.call_count)
 
-    @mock.patch('website.notifications.emails.send')
-    def test_perform_send_one_of_each(self, mock_send):
-        """Tests that send is called 3 times, one in each category"""
+    @mock.patch('website.notifications.emails.store_emails')
+    def test_perform_store_one_of_each(self, mock_store):
+        """Move Event: Tests that store_emails is called 3 times, one in each category"""
         self.sub.email_transactional.append(self.user_1)
         self.project.add_contributor(self.user_3, permissions=['write', 'read'], auth=self.auth)
         self.project.save()
@@ -293,16 +294,17 @@ class TestFileMoved(OsfTestCase):
         self.file_sub.email_digest.append(self.user_4)
         self.file_sub.save()
         self.event.perform()
-        assert_equal(3, mock_send.call_count)
+        assert_equal(3, mock_store.call_count)
 
-    @mock.patch('website.notifications.emails.send')
-    def test_remove_user_sent_once(self, mock_send):
+    @mock.patch('website.notifications.emails.store_emails')
+    def test_remove_user_sent_once(self, mock_store):
+        """Move Event: Tests removed user is removed once. Regression"""
         self.project.add_contributor(self.user_3, permissions=['write', 'read'], auth=self.auth)
         self.project.save()
         self.file_sub.email_digest.append(self.user_3)
         self.file_sub.save()
         self.event.perform()
-        assert_equal(1, mock_send.call_count)
+        assert_equal(1, mock_store.call_count)
 
     def tearDown(self):
         pass
