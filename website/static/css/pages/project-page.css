@@ -44,6 +44,7 @@
 #contributor-toggle:hover {
     background-color: #F5F5F5;
     color: #666;
+    cursor: pointer;
 }
 #contributor-gradient {
     background: -moz-linear-gradient(top,  rgba(30,87,153,0) 0%, rgba(255,255,255,1) 100%); /* FF3.6+ */
