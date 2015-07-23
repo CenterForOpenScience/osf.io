@@ -1002,7 +1002,12 @@ function showLegend() {
             ' )'
             ])
     };
-    tb.modal.update(legendView(data, repr, opts));
+    var closeBtn = m('button', {
+        class:'btn btn-default',
+        type:'button',
+        onclick : function(event) { tb.modal.dismiss(); } }, 'Close');
+
+    tb.modal.update(legendView(data, repr, opts), closeBtn);
     tb.modal.show();
 }
 

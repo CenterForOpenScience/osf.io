@@ -70,5 +70,11 @@
     border: 1px solid DarkGray;
 }
 
+#toggleIcon {
+    margin-top: 5px;
+}
 
-
+#file-navigation #tb-tbody {
+    max-height: 500px;
+    height: inherit;
+}

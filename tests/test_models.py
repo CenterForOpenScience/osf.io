@@ -269,6 +269,26 @@ class TestUser(OsfTestCase):
         dupe = UserFactory(merged_by=master)
         assert_false(dupe.is_active)
 
+    def test_merged_user_with_two_account_on_same_project_with_different_visibility_and_permissions(self):
+        user2 = UserFactory.build()
+        user2.save()
+
+        project = ProjectFactory(is_public=True)
+        # Both the master and dupe are contributors
+        project.add_contributor(user2, log=False)
+        project.add_contributor(self.user, log=False)
+        project.set_permissions(user=self.user, permissions=['read'])
+        project.set_permissions(user=user2, permissions=['read', 'write', 'admin'])
+        project.set_visible(user=self.user, visible=False)
+        project.set_visible(user=user2, visible=True)
+        project.save()
+        self.user.merge_user(user2)
+        self.user.save()
+
+        assert_true('admin' in project.permissions[self.user._id])
+        assert_true(self.user._id in project.visible_contributor_ids)
+        assert_false(project.is_contributor(user2))
+
     def test_cant_create_user_without_username(self):
         u = User()  # No username given
         with assert_raises(ValidationError):
@@ -1605,6 +1625,10 @@ class TestNode(OsfTestCase):
             )
         assert_equal(err.exception.message, 'Cannot register deleted node.')
 
+    def test_set_visible_contributor_with_only_one_contributor(self):
+        with assert_raises(ValueError) as e:
+            self.node.set_visible(user=self.user, visible=False, auth=None)
+            assert_equal(e.exception.message, 'Must have at least one visible contributor')
 
 class TestNodeTraversals(OsfTestCase):
 
@@ -2720,6 +2744,15 @@ class TestTemplateNode(OsfTestCase):
         assert_equal(new.wiki_pages_current, {})
         assert_equal(new.wiki_pages_versions, {})
 
+    def test_user_who_makes_node_from_template_has_creator_permission(self):
+        project = ProjectFactory(is_public=True)
+        user = UserFactory()
+        auth = Auth(user)
+
+        templated = project.use_as_template(auth)
+
+        assert_equal(templated.get_permissions(user), ['read', 'write', 'admin'])
+
     def test_template_security(self):
         """Create a templated node from a node with public and private children
 
@@ -2742,7 +2775,7 @@ class TestTemplateNode(OsfTestCase):
         self.read.save()
 
         self.write = NodeFactory(creator=self.user, parent=self.project)
-        self.write.add_contributor(other_user, permissions=['read', 'write', ])
+        self.write.add_contributor(other_user, permissions=['read', 'write'])
         self.write.save()
 
         self.admin = NodeFactory(creator=self.user, parent=self.project)
@@ -2949,6 +2982,9 @@ class TestForkNode(OsfTestCase):
         user2_auth = Auth(user=user2)
         fork = self.project.fork_node(user2_auth)
         assert_true(fork)
+        # Forker has admin permissions
+        assert_equal(len(fork.contributors), 1)
+        assert_equal(fork.get_permissions(user2), ['read', 'write', 'admin'])
 
     def test_fork_registration(self):
         self.registration = RegistrationFactory(project=self.project)
@@ -3116,9 +3152,9 @@ class TestRegisterNode(OsfTestCase):
 
         # Share the project and some nodes
         user2 = UserFactory()
-        self.project.add_contributor(user2)
-        self.shared_component.add_contributor(user2)
-        self.shared_subproject.add_contributor(user2)
+        self.project.add_contributor(user2, permissions=('read', 'write', 'admin'))
+        self.shared_component.add_contributor(user2, permissions=('read', 'write', 'admin'))
+        self.shared_subproject.add_contributor(user2, permissions=('read', 'write', 'admin'))
 
         # Partial contributor registers the node
         registration = RegistrationFactory(project=self.project, user=user2)
@@ -3151,7 +3187,7 @@ class TestRegisterNode(OsfTestCase):
     def test_registered_user(self):
         # Add a second contributor
         user2 = UserFactory()
-        self.project.add_contributor(user2)
+        self.project.add_contributor(user2, permissions=('read', 'write', 'admin'))
         # Second contributor registers project
         registration = RegistrationFactory(parent=self.project, user=user2)
         assert_equal(registration.registered_user, user2)

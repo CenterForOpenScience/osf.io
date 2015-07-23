@@ -152,6 +152,37 @@ class TestProjectViews(OsfTestCase):
         self.project.add_contributor(self.user2, auth=Auth(self.user1))
         self.project.save()
 
+    def test_cannot_remove_only_visible_contributor_before_remove_contributor(self):
+        self.project.visible_contributor_ids.remove(self.user1._id)
+        self.project.save()
+
+        url = self.project.api_url_for('project_before_remove_contributor')
+        res = self.app.post_json(
+            url, {'id': self.user2._id}, auth=self.auth, expect_errors=True
+        )
+        assert_equal(res.status_code, http.FORBIDDEN)
+        assert_equal(res.json['message_long'], 'Must have at least one bibliographic contributor')
+
+    def test_cannot_remove_only_visible_contributor_remove_contributor(self):
+        self.project.visible_contributor_ids.remove(self.user1._id)
+        self.project.save()
+        url = self.project.api_url_for('project_removecontributor')
+        res = self.app.post_json(
+            url, {'id': self.user2._id}, auth=self.auth, expect_errors=True
+        )
+        assert_equal(res.status_code, http.FORBIDDEN)
+        assert_equal(res.json['message_long'], 'Must have at least one bibliographic contributor')
+        assert_true(self.project.is_contributor(self.user2))
+
+    def test_remove_only_visible_contributor_return_false(self):
+        self.project.visible_contributor_ids.remove(self.user1._id)
+        self.project.save()
+        ret = self.project.remove_contributor(contributor=self.user2, auth=self.consolidate_auth1)
+        assert_false(ret)
+        self.project.reload()
+        assert_true(self.project.is_contributor(self.user2))
+
+
     def test_can_view_nested_project_as_admin(self):
         self.parent_project = NodeFactory(
             title='parent project',
@@ -416,7 +447,7 @@ class TestProjectViews(OsfTestCase):
         assert_equal(len(res.json['others_count']), 1)
         assert_equal(res.json['contributors'][0]['separator'], ',')
         assert_equal(res.json['contributors'][1]['separator'], ',')
-        assert_equal(res.json['contributors'][2]['separator'], '&nbsp;&')
+        assert_equal(res.json['contributors'][2]['separator'], ' &')
 
     def test_edit_node_title(self):
         url = "/api/v1/project/{0}/edit/".format(self.project._id)
@@ -1414,52 +1445,53 @@ class TestUserProfile(OsfTestCase):
         assert_equal(mock_client.lists.subscribe.call_count, 0)
         handlers.celery_teardown_request()
 
-    def test_twitter_redirect_success(self):
-        self.user.social['twitter'] = fake.last_name()
-        self.user.save()
+    # TODO: Uncomment once outstanding issues with this feature are addressed
+    # def test_twitter_redirect_success(self):
+    #     self.user.social['twitter'] = fake.last_name()
+    #     self.user.save()
 
-        res = self.app.get(web_url_for('redirect_to_twitter', twitter_handle=self.user.social['twitter']))
-        assert_equals(res.status_code, http.FOUND)
-        assert_in(self.user.url, res.location)
+    #     res = self.app.get(web_url_for('redirect_to_twitter', twitter_handle=self.user.social['twitter']))
+    #     assert_equals(res.status_code, http.FOUND)
+    #     assert_in(self.user.url, res.location)
 
-    def test_twitter_redirect_is_case_insensitive(self):
-        self.user.social['twitter'] = fake.last_name()
-        self.user.save()
+    # def test_twitter_redirect_is_case_insensitive(self):
+    #     self.user.social['twitter'] = fake.last_name()
+    #     self.user.save()
 
-        res1 = self.app.get(web_url_for('redirect_to_twitter', twitter_handle=self.user.social['twitter']))
-        res2 = self.app.get(web_url_for('redirect_to_twitter', twitter_handle=self.user.social['twitter'].lower()))
-        assert_equal(res1.location, res2.location)
+    #     res1 = self.app.get(web_url_for('redirect_to_twitter', twitter_handle=self.user.social['twitter']))
+    #     res2 = self.app.get(web_url_for('redirect_to_twitter', twitter_handle=self.user.social['twitter'].lower()))
+    #     assert_equal(res1.location, res2.location)
 
-    def test_twitter_redirect_unassociated_twitter_handle_returns_404(self):
-        unassociated_handle = fake.last_name()
-        expected_error = 'There is no active user associated with the Twitter handle: {0}.'.format(unassociated_handle)
+    # def test_twitter_redirect_unassociated_twitter_handle_returns_404(self):
+    #     unassociated_handle = fake.last_name()
+    #     expected_error = 'There is no active user associated with the Twitter handle: {0}.'.format(unassociated_handle)
 
-        res = self.app.get(
-            web_url_for('redirect_to_twitter', twitter_handle=unassociated_handle),
-            expect_errors=True
-        )
-        assert_equal(res.status_code, http.NOT_FOUND)
-        assert_true(expected_error in res.body)
+    #     res = self.app.get(
+    #         web_url_for('redirect_to_twitter', twitter_handle=unassociated_handle),
+    #         expect_errors=True
+    #     )
+    #     assert_equal(res.status_code, http.NOT_FOUND)
+    #     assert_true(expected_error in res.body)
 
-    def test_twitter_redirect_handle_with_multiple_associated_accounts_redirects_to_selection_page(self):
-        self.user.social['twitter'] = fake.last_name()
-        self.user.save()
-        user2 = AuthUserFactory()
-        user2.social['twitter'] = self.user.social['twitter']
-        user2.save()
+    # def test_twitter_redirect_handle_with_multiple_associated_accounts_redirects_to_selection_page(self):
+    #     self.user.social['twitter'] = fake.last_name()
+    #     self.user.save()
+    #     user2 = AuthUserFactory()
+    #     user2.social['twitter'] = self.user.social['twitter']
+    #     user2.save()
 
-        expected_error = 'There are multiple OSF accounts associated with the Twitter handle: <strong>{0}</strong>.'.format(self.user.social['twitter'])
-        res = self.app.get(
-            web_url_for(
-                'redirect_to_twitter',
-                twitter_handle=self.user.social['twitter'],
-                expect_error=True
-            )
-        )
-        assert_equal(res.status_code, http.MULTIPLE_CHOICES)
-        assert_true(expected_error in res.body)
-        assert_true(self.user.url in res.body)
-        assert_true(user2.url in res.body)
+    #     expected_error = 'There are multiple OSF accounts associated with the Twitter handle: <strong>{0}</strong>.'.format(self.user.social['twitter'])
+    #     res = self.app.get(
+    #         web_url_for(
+    #             'redirect_to_twitter',
+    #             twitter_handle=self.user.social['twitter'],
+    #             expect_error=True
+    #         )
+    #     )
+    #     assert_equal(res.status_code, http.MULTIPLE_CHOICES)
+    #     assert_true(expected_error in res.body)
+    #     assert_true(self.user.url in res.body)
+    #     assert_true(user2.url in res.body)
 
 
 class TestUserAccount(OsfTestCase):

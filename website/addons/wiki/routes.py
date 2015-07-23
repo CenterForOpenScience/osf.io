@@ -120,6 +120,12 @@ api_routes = {
             '/project/<pid>/node/<nid>/wiki/<wname>/',
         ], 'delete', views.project_wiki_delete, json_renderer),
 
+        # Wiki Menu : GET
+        Rule([
+            '/project/<pid>/wiki/<wname>/grid/',
+            '/project/<pid>/node/<nid>/wiki/<wname>/grid/'
+        ], 'get', views.project_wiki_grid_data, json_renderer),
+
     ],
 
     'prefix': '/api/v1',

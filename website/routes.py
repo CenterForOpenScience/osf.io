@@ -73,13 +73,15 @@ def get_globals():
         'waterbutler_url': settings.WATERBUTLER_URL,
         'login_url': cas.get_login_url(request.url, auto=True),
         'access_token': session.data.get('auth_user_access_token') or '',
+        'auth_url': cas.get_login_url(request.url),
+        'profile_url': cas.get_profile_url(),
     }
 
 
 class OsfWebRenderer(WebRenderer):
     """Render a Mako template with OSF context vars.
 
-    :param trust: Optional. If ``False``, markup-save escaping will be enabled
+    :param trust: Optional. If ``False``, markup-safe escaping will be enabled
     """
     def __init__(self, *args, **kwargs):
         kwargs['data'] = get_globals
@@ -118,15 +120,15 @@ def goodbye():
     # Redirect to dashboard if logged in
     if _get_current_user():
         return redirect(util.web_url_for('dashboard'))
-    status.push_status_message(language.LOGOUT, 'info')
+    status.push_status_message(language.LOGOUT, 'success')
     return {}
 
 
 def make_url_map(app):
-    '''Set up all the routes for the OSF app.
+    """Set up all the routes for the OSF app.
 
     :param app: A Flask/Werkzeug app to bind the rules to.
-    '''
+    """
 
     # Set default views to 404, using URL-appropriate renderers
     process_rules(app, [
@@ -481,64 +483,87 @@ def make_url_map(app):
     # Web
 
     process_rules(app, [
-        Rule('/profile/', 'get', profile_views.profile_view, OsfWebRenderer('profile.mako')),
-        Rule('/profile/<uid>/', 'get', profile_views.profile_view_id,
-             OsfWebRenderer('profile.mako')),
-        Rule(["/user/merge/"], 'get', auth_views.merge_user_get,
-             OsfWebRenderer("merge_accounts.mako")),
-        Rule(["/user/merge/"], 'post', auth_views.merge_user_post,
-             OsfWebRenderer("merge_accounts.mako")),
+        Rule(
+            '/profile/',
+            'get',
+            profile_views.profile_view,
+            OsfWebRenderer('profile.mako', trust=False)
+        ),
+        Rule(
+            '/profile/<uid>/',
+            'get',
+            profile_views.profile_view_id,
+            OsfWebRenderer('profile.mako', trust=False)
+        ),
+        Rule(
+            ["/user/merge/"],
+            'get',
+            auth_views.merge_user_get,
+            OsfWebRenderer("merge_accounts.mako", trust=False)
+        ),
+        Rule(
+            ["/user/merge/"],
+            'post',
+            auth_views.merge_user_post,
+            OsfWebRenderer("merge_accounts.mako", trust=False)
+        ),
         # Route for claiming and setting email and password.
         # Verification token must be querystring argument
-        Rule(['/user/<uid>/<pid>/claim/'], ['get', 'post'],
-             project_views.contributor.claim_user_form, OsfWebRenderer('claim_account.mako')),
-        Rule(['/user/<uid>/<pid>/claim/verify/<token>/'], ['get', 'post'],
-             project_views.contributor.claim_user_registered,
-             OsfWebRenderer('claim_account_registered.mako')),
-
+        Rule(
+            ['/user/<uid>/<pid>/claim/'],
+            ['get', 'post'],
+            project_views.contributor.claim_user_form,
+            OsfWebRenderer('claim_account.mako', trust=False)
+        ),
+        Rule(
+            ['/user/<uid>/<pid>/claim/verify/<token>/'],
+            ['get', 'post'],
+            project_views.contributor.claim_user_registered,
+            OsfWebRenderer('claim_account_registered.mako', trust=False)
+        ),
 
         Rule(
             '/settings/',
             'get',
             profile_views.user_profile,
-            OsfWebRenderer('profile/settings.mako'),
+            OsfWebRenderer('profile/settings.mako', trust=False),
         ),
 
         Rule(
             '/settings/account/',
             'get',
             profile_views.user_account,
-            OsfWebRenderer('profile/account.mako'),
+            OsfWebRenderer('profile/account.mako', trust=False),
         ),
 
         Rule(
             '/settings/account/password',
             'post',
             profile_views.user_account_password,
-            OsfWebRenderer('profile/account.mako'),
+            OsfWebRenderer('profile/account.mako', trust=False),
         ),
 
         Rule(
             '/settings/addons/',
             'get',
             profile_views.user_addons,
-            OsfWebRenderer('profile/addons.mako'),
+            OsfWebRenderer('profile/addons.mako', trust=False),
         ),
 
         Rule(
             '/settings/notifications/',
             'get',
             profile_views.user_notifications,
-            OsfWebRenderer('profile/notifications.mako'),
+            OsfWebRenderer('profile/notifications.mako', trust=False),
         ),
 
-        Rule(
-            '/@<twitter_handle>/',
-            'get',
-            profile_views.redirect_to_twitter,
-            OsfWebRenderer('error.mako', render_mako_string)
-        ),
-
+        # TODO: Uncomment once outstanding issues with this feature are addressed
+        # Rule(
+        #     '/@<twitter_handle>/',
+        #     'get',
+        #     profile_views.redirect_to_twitter,
+        #     OsfWebRenderer('error.mako', render_mako_string, trust=False)
+        # ),
     ])
 
     # API

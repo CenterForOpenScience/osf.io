@@ -11,6 +11,7 @@ from website import mails
 from website import settings
 from website.project.model import NodeLog
 
+
 def send_archiver_success_mail(dst):
     user = dst.creator
     mails.send_mail(
@@ -20,6 +21,7 @@ def send_archiver_success_mail(dst):
         src=dst,
         mimetype='html',
     )
+
 
 def send_archiver_size_exceeded_mails(src, user, stat_result):
     mails.send_mail(
@@ -36,6 +38,7 @@ def send_archiver_size_exceeded_mails(src, user, stat_result):
         src=src,
         mimetype='html',
     )
+
 
 def send_archiver_copy_error_mails(src, user, results):
     mails.send_mail(
@@ -54,6 +57,7 @@ def send_archiver_copy_error_mails(src, user, results):
         mimetype='html',
     )
 
+
 def send_archiver_uncaught_error_mails(src, user, results):
     mails.send_mail(
         to_addr=settings.SUPPORT_EMAIL,
@@ -71,6 +75,7 @@ def send_archiver_uncaught_error_mails(src, user, results):
         mimetype='html',
     )
 
+
 def handle_archive_fail(reason, src, dst, user, result):
     if reason == ARCHIVER_NETWORK_ERROR:
         send_archiver_copy_error_mails(src, user, result)
@@ -79,6 +84,7 @@ def handle_archive_fail(reason, src, dst, user, result):
     else:  # reason == ARCHIVER_UNCAUGHT_ERROR
         send_archiver_uncaught_error_mails(src, user, result)
     delete_registration_tree(dst.root)
+
 
 def archive_provider_for(node, user):
     """A generic function to get the archive provider for some node, user pair.
@@ -99,6 +105,7 @@ def has_archive_provider(node, user):
     """
     return node.has_addon(settings.ARCHIVE_PROVIDER)
 
+
 def link_archive_provider(node, user):
     """A generic function for linking some node, user pair with the configured
     archive provider
@@ -111,6 +118,7 @@ def link_archive_provider(node, user):
     addon.on_add()
     node.save()
 
+
 def delete_registration_tree(node):
     node.is_deleted = True
     if not getattr(node.embargo, 'for_existing_registration', False):
@@ -119,6 +127,7 @@ def delete_registration_tree(node):
     node.update_search()
     for child in node.nodes_primary:
         delete_registration_tree(child)
+
 
 def aggregate_file_tree_metadata(addon_short_name, fileobj_metadata, user):
     """Recursively traverse the addon's file tree and collect metadata in AggregateStatResult
@@ -144,6 +153,7 @@ def aggregate_file_tree_metadata(addon_short_name, fileobj_metadata, user):
             targets=[aggregate_file_tree_metadata(addon_short_name, child, user) for child in fileobj_metadata.get('children', [])],
         )
 
+
 def before_archive(node, user):
     link_archive_provider(node, user)
     job = ArchiveJob(
@@ -152,6 +162,7 @@ def before_archive(node, user):
         initiator=user
     )
     job.set_targets()
+
 
 def add_archive_success_logs(node, user):
     src = node.registered_from
@@ -167,6 +178,7 @@ def add_archive_success_logs(node, user):
         save=False
     )
     src.save()
+
 
 def archive_success(node, user):
     add_archive_success_logs(node, user)

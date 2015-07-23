@@ -549,3 +549,6 @@ footer {
     border-radius: 0;
     margin-bottom: 0;
 }
+#alert-container {
+    margin-top: 0 !important;
+}

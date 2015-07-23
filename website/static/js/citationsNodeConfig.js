@@ -105,6 +105,7 @@ var CitationsFolderPickerViewModel = oop.extend(FolderPickerViewModel, {
         window.oauthComplete = function(res) {
             // Update view model based on response
             self.changeMessage(self.messages.connectAccountSuccess(), 'text-success', 3000);
+            self.userHasAuth(true);
             self.importAuth.call(self);
         };
         window.open(self.urls().auth);
@@ -150,6 +151,11 @@ var CitationsFolderPickerViewModel = oop.extend(FolderPickerViewModel, {
                             if (accountId) {
                                 self.connectExistingAccount.call(self, (accountId));
                             }
+                        },
+                        buttons:{
+                            confirm:{
+                                label: 'Import'
+                            }
                         }
                     });
                 } else {
@@ -159,6 +165,11 @@ var CitationsFolderPickerViewModel = oop.extend(FolderPickerViewModel, {
                         callback: function(confirmed) {
                             if (confirmed) {
                                 self.connectExistingAccount.call(self, (self.accounts()[0].id));
+                            }
+                        },
+                        buttons:{
+                            confirm:{
+                                label:'Import'
                             }
                         }
                     });

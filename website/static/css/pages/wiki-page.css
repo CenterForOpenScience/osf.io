@@ -66,7 +66,7 @@
     display: -ms-flexbox;
     display: -webkit-flex;
     display: flex;
-    height: 750px;
+    height: 764px;
     -webkit-align-content: flex-start;
     -ms-align-content: flex-start;
     align-content: flex-start;
@@ -99,10 +99,6 @@
     flex: 3 0 auto;
     height: 500px;
     overflow: auto;
-}
-
-.reset-height {
-    height: auto;
 }
 
 .osf-panel .superlist li {
@@ -313,24 +309,6 @@
     background-color: #F5F5F5;
 }
 
-.wmd-prompt-dialog > div {
-    font-size: 0.8em;
-    font-family: arial, helvetica, sans-serif;
-}
-
-
-.wmd-prompt-dialog > form > input[type="text"] {
-    border: 1px solid #999999;
-    color: black;
-}
-
-.wmd-prompt-dialog > form > input[type="button"]{
-    border: 1px solid #888888;
-    font-family: trebuchet MS, helvetica, sans-serif;
-    font-size: 0.8em;
-    font-weight: bold;
-}
-
 .wiki-single-heading {
     border: 1px solid #ddd;
 }
@@ -341,4 +319,26 @@ select.form-control {
     display: inline;
     height: 24px;
     font-size: 13px;
+}
+
+.wiki-toolbar-icon {
+    padding: 5px 10px;
+    display: inline-block;
+    box-shadow: 0 0 2px #BBB;
+    background: #F8F8F8;
+    margin-right: 5px;
+    cursor: pointer;
+    font-size: 13px;
+    border-radius: 2px;
+    float: left;
+}
+.wiki-toolbar-icon .fa {
+    font-size: 15px;
+}
+.wiki-toolbar-icon span {
+    margin-left: 5px;
+}
+
+.wiki-toolbar-icon:hover {
+  background: rgba(51, 122, 183, 0.15);
 }
