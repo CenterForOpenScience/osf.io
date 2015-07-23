@@ -1,7 +1,6 @@
-from rest_framework.negotiation import DefaultContentNegotiation
-
 from rest_framework import exceptions
 from rest_framework.utils.mediatypes import _MediaType
+from rest_framework.negotiation import DefaultContentNegotiation
 from rest_framework.utils.mediatypes import order_by_precedence, media_type_matches
 
 
