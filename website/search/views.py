@@ -256,6 +256,12 @@ def search_share_atom(**kwargs):
         query = json.loads(unquote(json_query))
         query['from'] = start
         query['size'] = RESULTS_PER_PAGE
+
+        # Aggregations are expensive, and we really don't want to
+        # execute them if they won't be used
+        for field in ['aggs', 'aggregations']:
+            if query.get(field):
+                del query[field]
         q = query  # Do we really want to display this?
 
     try:
