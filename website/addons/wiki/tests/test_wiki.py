@@ -1225,18 +1225,15 @@ class TestWikiMenu(OsfTestCase):
         ]
         assert_equal(data, expected)
 
+
 class TestWikiComments(OsfTestCase):
 
     def setUp(self):
         super(TestWikiComments, self).setUp()
-
-        self.project = ProjectFactory()
-        api_key = ApiKeyFactory()
-        self.project.creator.api_keys.append(api_key)
-        self.project.creator.save()
-        self.consolidate_auth = Auth(user=self.project.creator, api_key=api_key)
-        self.auth = ('test', api_key._primary_key)
-        self.project.update_node_wiki('Snow', 'It\'s snow day!', self.consolidate_auth)
+        self.user = AuthUserFactory()
+        self.project = ProjectFactory(creator=self.user)
+        self.auth = self.user.auth
+        self.project.update_node_wiki(name='Snow', content='It\'s snow day!', auth=Auth(self.user))
 
     @mock.patch('website.addons.wiki.utils.broadcast_to_sharejs')
     def test_delete_wiki_see_comments_hidden(self, mock_sharejs):
