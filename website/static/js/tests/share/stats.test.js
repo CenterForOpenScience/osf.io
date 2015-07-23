@@ -198,8 +198,8 @@ describe('share/stats', () => {
               'name': 'shareTimeGraph',
               'columns': [
                 ['x', 1434326400000, 1434931200000, 1435536000000, 1436140800000, 1436745600000, 1437350400000],
-                ['figshare', 0, 0, 1378, 0, 0, 0],
-                ['ucescholarship', 0, 0, 73, 0, 0, 0]
+                ['figshare', 0, 0, 1378, 1378, 1378, 1378],
+                ['ucescholarship', 0, 0, 73, 73, 73, 73]
               ],
               'colors': {
                 'figshare': '#a6cee3',
