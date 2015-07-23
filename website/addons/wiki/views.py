@@ -15,7 +15,7 @@ from website.addons.wiki import settings
 from website.addons.wiki import utils as wiki_utils
 from website.profile.utils import get_gravatar
 from website.project.views.node import _view_project
-from website.project.model import has_anonymous_link, Node
+from website.project.model import has_anonymous_link
 from website.project.decorators import (
     must_be_contributor_or_public,
     must_have_addon, must_not_be_registration,
@@ -128,26 +128,6 @@ def _get_wiki_web_urls(node, key, version=1, additional_urls=None):
     return urls
 
 
-def _serialize_wiki_toc(project, auth):
-    toc = [
-        {
-            'id': child._primary_key,
-            'title': child.title,
-            'category': child.category,
-            'pages_current': _get_wiki_pages_current(child),
-            'url': child.web_url_for('project_wiki_view', wname='home', _guid=True),
-            'is_pointer': not child.primary,
-            'link': auth.private_key,
-            'wiki_content': wiki_page_content('home', node=child)
-        }
-        for child in project.nodes
-        if not child.is_deleted
-        and child.can_view(auth)
-        if child.has_addon('wiki')
-    ]
-    return toc
-
-
 @must_be_contributor_or_public
 @must_have_addon('wiki', 'node')
 def wiki_widget(**kwargs):
@@ -236,7 +216,6 @@ def project_wiki_view(auth, wname, path=None, **kwargs):
     wiki_name = (wname or '').strip()
     wiki_key = to_mongo_key(wiki_name)
     wiki_page = node.get_wiki_page(wiki_name)
-    toc = _serialize_wiki_toc(node, auth=auth)
     can_edit = node.has_permission(auth.user, 'write') and not node.is_registration
     versions = _get_wiki_versions(node, wiki_name, anonymous=anonymous)
 
@@ -311,7 +290,6 @@ def project_wiki_view(auth, wname, path=None, **kwargs):
         'is_current': is_current,
         'version_settings': version_settings,
         'pages_current': _get_wiki_pages_current(node),
-        'toc': toc,
         'category': node.category,
         'panels_used': panels_used,
         'num_columns': num_columns,
@@ -511,45 +489,56 @@ def format_project_wiki_pages(node, auth):
 
 def format_component_wiki_pages(node, auth):
     pages = []
-    component_wiki_pages = _serialize_wiki_toc(node, auth)
-    for wiki_page in component_wiki_pages:
-        children = []
-        home_has_content = bool(wiki_page['wiki_content'].get('wiki_content'))
-        component_home_wiki = {
-            'page': {
-                'url': wiki_page['url'],
-                'name': 'Home',
-                'id': wiki_page['id'],
-            }
+    for node in node.nodes:
+        if any([node.is_deleted,
+                not node.can_view(auth),
+                not node.has_addon('wiki')]):
+            continue
+        else:
+            pages.append(serialize_component_wiki(node, auth))
+    return pages
+
+
+def serialize_component_wiki(node, auth):
+    children = []
+    url = node.web_url_for('project_wiki_view', wname='home', _guid=True)
+    home_has_content = bool(wiki_page_content('home', node=node).get('wiki_content'))
+    component_home_wiki = {
+        'page': {
+            'url': url,
+            'name': 'Home',
+            # Handle pointers
+            'id': node._primary_key if node.primary else node.node._primary_key,
         }
-        component = Node.load(component_home_wiki['page']['id'])
-        can_edit = bool(component) and component.has_permission(auth.user, 'write') and not component.is_registration
-        if can_edit or home_has_content:
-            children.append(component_home_wiki)
+    }
 
-        for component_page in wiki_page['pages_current']:
-            if component_page['name'] != 'home':
-                has_content = bool(component_page['wiki_content'].get('wiki_content'))
-                child = {
-                    'page': {
-                        'url': component_page['url'],
-                        'name': component_page['name'],
-                        'id': component_page['wiki_id'],
-                    }
+    can_edit = node.has_permission(auth.user, 'write') and not node.is_registration
+    if can_edit or home_has_content:
+        children.append(component_home_wiki)
+
+    for page in _get_wiki_pages_current(node):
+        if page['name'] != 'home':
+            has_content = bool(page['wiki_content'].get('wiki_content'))
+            component_page = {
+                'page': {
+                    'url': page['url'],
+                    'name': page['name'],
+                    'id': page['wiki_id'],
                 }
-                if can_edit or has_content:
-                    children.append(child)
+            }
+            if can_edit or has_content:
+                children.append(component_page)
 
-        component_page = {
+    if len(children) > 0:
+        component = {
             'page': {
-                'name': wiki_page['title'],
-                'url': wiki_page['url']
+                'name': node.title,
+                'url': url,
             },
             'kind': 'component',
-            'category': wiki_page['category'],
-            'pointer': wiki_page['is_pointer'],
+            'category': node.category,
+            'pointer': not node.primary,
             'children': children,
         }
-        if len(component_page['children']) > 0:
-            pages.append(component_page)
-    return pages
+        return component
+    return {}

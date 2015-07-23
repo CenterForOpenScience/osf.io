@@ -148,36 +148,6 @@ class TestWikiViews(OsfTestCase):
         res = self.app.get(url)
         assert_equal(res.status_code, 200)
 
-    def test_serialize_wiki_toc(self):
-        project = ProjectFactory()
-        auth = Auth(project.creator)
-        NodeFactory(parent=project, creator=project.creator)
-        no_wiki = NodeFactory(parent=project, creator=project.creator)
-        project.save()
-
-        serialized = views._serialize_wiki_toc(project, auth=auth)
-        assert_equal(len(serialized), 2)
-        no_wiki.delete_addon('wiki', auth=auth)
-        serialized = views._serialize_wiki_toc(project, auth=auth)
-        assert_equal(len(serialized), 1)
-
-    def test_get_wiki_url_pointer_component(self):
-        """Regression test for issues
-        https://github.com/CenterForOpenScience/osf/issues/363 and
-        https://github.com/CenterForOpenScience/openscienceframework.org/issues/574
-
-        """
-        user = UserFactory()
-        pointed_node = NodeFactory(creator=user)
-        project = ProjectFactory(creator=user)
-        auth = Auth(user=user)
-        project.add_pointer(pointed_node, auth=auth, save=True)
-
-        serialized = views._serialize_wiki_toc(project, auth)
-        assert_equal(
-            serialized[0]['url'],
-            pointed_node.web_url_for('project_wiki_view', wname='home', _guid=True)
-        )
 
     def test_project_wiki_edit_post(self):
         self.project.update_node_wiki(
@@ -1202,7 +1172,7 @@ class TestWikiMenu(OsfTestCase):
 
     def test_format_component_wiki_pages_no_content_non_contributor(self):
         data = views.format_component_wiki_pages(node=self.project, auth=Auth(self.non_contributor))
-        expected = []
+        expected = [{}]
         assert_equal(data, expected)
 
     def test_project_wiki_grid_data(self):
