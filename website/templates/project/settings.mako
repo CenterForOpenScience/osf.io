@@ -67,7 +67,6 @@
         % if 'write' in user['permissions']:  ## Begin Configure Project
 
             % if not node['is_registration']:
-
                 <div class="panel panel-default">
                     <span id="configureNodeAnchor" class="anchor"></span>
                     <div class="panel-heading clearfix">
@@ -81,7 +80,6 @@
                                                         optionsText: 'label',
                                                         value: selectedCategory"></select>
                         </h5>
-                    % if 'component' == node['node_type']:
                         <p data-bind="if: !disabled">
                             <button data-bind="css: {disabled: !dirty()},
                                                click: cancelUpdateCategory"
@@ -91,12 +89,11 @@
                                     class="btn btn-primary">Change</button>
                         </p>
                         <span data-bind="css: messageClass, html: message"></span>
-                    % else:
+
                         <span data-bind="if: disabled" class="help-block">
                             A top-level project's category cannot be changed
                         </span>
                     </div>
-                    % endif
 
                     % if 'admin' in user['permissions']:
                         <hr />

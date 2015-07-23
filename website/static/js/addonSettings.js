@@ -90,10 +90,10 @@ var OAuthAddonSettingsViewModel = oop.defclass({
     askDisconnect: function(account) {
         var self = this;
         bootbox.confirm({
-            title: 'Delete account?',
+            title: 'Disconnect Account?',
             message: '<p class="overflow">' +
-                'Are you sure you want to delete account <strong>' +
-                account.name + '</strong>?' +
+                'Are you sure you want to disconnect the ' + self.properName + ' account <strong>' +
+                account.name + '</strong>? This will revoke access to ' + self.properName + ' for all projects you have authorized.' +
                 '</p>',
             callback: function(confirm) {
                 if (confirm) {

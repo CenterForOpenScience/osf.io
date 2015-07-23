@@ -312,7 +312,8 @@ var DeactivateAccountViewModel = oop.defclass({
             },
             buttons:{
                 confirm:{
-                    label:'Request'
+                    label:'Request',
+                    className:'btn-danger'
                 }
             }
         });
