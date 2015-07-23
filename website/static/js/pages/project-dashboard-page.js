@@ -70,7 +70,7 @@ $(document).ready(function () {
                     return [
                         {
                             title: 'Name',
-                            width : '90%',
+                            width : '100%',
                             sort : true,
                             sortType : 'text'
                         }
