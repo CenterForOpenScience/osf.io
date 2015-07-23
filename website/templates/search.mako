@@ -203,6 +203,7 @@
         <h4><span data-bind="if: parent_title">{{ parent_title }} /</span> <a data-bind="attr.href: url">{{title }}</a></h4>
         <!-- /ko -->
 
+        <strong><span data-bind="text: 'Date Created: ' + date_created['local'], tooltip: {title: date_created['utc']}" {{ date_created['local'] | fit:500 }}></span></strong>
         <p data-bind="visible: description"><strong>Description:</strong> {{ description | fit:500 }}</p>
 
         <!-- ko if: contributors.length > 0 -->
@@ -234,6 +235,8 @@
     </script>
     <script type="text/html" id="registration">
         <h4><a data-bind="attr.href: url">{{ title }}</a>  (<!-- ko if: is_retracted --><span class="text-danger">Retracted</span> <!-- /ko -->Registration)</h4>
+
+        <strong><span data-bind="text: 'Date Registered: ' + date_created['local'], tooltip: {title: date_created['utc']}" {{ date_created['local'] | fit:500 }}></span></strong>
         <p data-bind="visible: description"><strong>Description:</strong> {{ description | fit:500 }}</p>
 
         <!-- ko if: contributors.length > 0 -->
