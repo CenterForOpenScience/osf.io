@@ -523,7 +523,7 @@ def format_component_wiki_pages(node, auth):
             }
         }
         component = Node.load(component_home_wiki['page']['id'])
-        can_edit = component.has_permission(auth.user, 'write') and not component.is_registration
+        can_edit = bool(component) and component.has_permission(auth.user, 'write') and not component.is_registration
         if can_edit or home_has_content:
             children.append(component_home_wiki)
 
