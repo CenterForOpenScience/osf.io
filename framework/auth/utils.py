@@ -2,7 +2,7 @@ import re
 from nameparser.parser import HumanName
 from modularodm.exceptions import ValidationError
 
-
+# email verification adopted from django. For licence information, see NOTICE
 USER_REGEX = re.compile(
     r"(^[-!#$%&'*+/=?^_`{}|~0-9A-Z]+(\.[-!#$%&'*+/=?^_`{}|~0-9A-Z]+)*$"  # dot-atom
     # quoted-string
