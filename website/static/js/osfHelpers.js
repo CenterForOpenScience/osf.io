@@ -409,7 +409,7 @@ ko.bindingHandlers.toggleHeight = {
         if(element.height() > height){
             element.height(height);
             element.append('<div class="contributor-gradient"></div>');
-            element.append('<div class="contributor-toggle" class="text-center m-b-xs"><i class="' + iconDown +'"></i><i style="display:none" class="' + iconUp + '"></i></div>');
+            element.append('<div class="contributor-toggle text-center"><i class="' + iconDown +'"></i><i style="display:none" class="' + iconUp + '"></i></div>');
         }
     }
 };
