@@ -404,6 +404,10 @@ ko.bindingHandlers.toggleHeight = {
         var iconDown = valueAccessor().iconDown || 'fa fa-angle-down';
         var iconUp = valueAccessor().iconUp || 'fa fa-angle-up';
 
+        // if height of this div is higher than height
+        // insert the div with white shading
+        // insert the toggle div
+        $(elem).append('<div class="contributor-gradient"></div>');
     }
 };
 
