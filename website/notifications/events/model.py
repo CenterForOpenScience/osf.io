@@ -5,7 +5,7 @@ from furl import furl
 from datetime import datetime
 from six import add_metaclass
 
-import website.notifications.emails as emails
+from website.notifications import emails
 from website.notifications.constants import NOTIFICATION_TYPES
 from website.models import Node
 from website.notifications.events import utils as event_utils
@@ -46,7 +46,6 @@ class Event(object):
         self.user = user
         self.gravatar_url = user.gravatar_url
         self.node = node
-        self.node_id = node._id
         self.action = action
         self.timestamp = datetime.utcnow()
 
@@ -61,7 +60,6 @@ class Event(object):
     def perform(self):
         """Calls emails.notify to notify users of an action"""
         emails.notify(
-            uid=self.node_id,
             event=self.event,
             user=self.user,
             node=self.node,
@@ -264,17 +262,17 @@ class AddonFileMoved(ComplexFileEvent):
             if notification == 'none':
                 continue
             if moved[notification]:
-                emails.send(moved[notification], notification, self.node_id, 'file_updated', self.user, self.node,
-                            self.timestamp, message=self.html_message, gravatar_url=self.gravatar_url,
-                            url=self.url.url)
+                emails.store_emails(moved[notification], notification, 'file_updated', self.user, self.node,
+                                    self.timestamp, message=self.html_message,
+                                    gravatar_url=self.gravatar_url, url=self.url.url)
             if warn[notification]:
-                emails.send(warn[notification], notification, self.node_id, 'file_updated', self.user, self.node,
-                            self.timestamp, message=warn_message, gravatar_url=self.gravatar_url,
-                            url=self.url.url)
+                emails.store_emails(warn[notification], notification, 'file_updated', self.user, self.node,
+                                    self.timestamp, message=warn_message, gravatar_url=self.gravatar_url,
+                                    url=self.url.url)
             if rm_users[notification]:
-                emails.send(rm_users[notification], notification, self.node_id, 'file_updated', self.user,
-                            self.source_node, self.timestamp, message=remove_message,
-                            gravatar_url=self.gravatar_url, url=self.source_url.url)
+                emails.store_emails(rm_users[notification], notification, 'file_updated', self.user, self.source_node,
+                                    self.timestamp, message=remove_message,
+                                    gravatar_url=self.gravatar_url, url=self.source_url.url)
 
 
 class AddonFileCopied(ComplexFileEvent):
@@ -301,12 +299,12 @@ class AddonFileCopied(ComplexFileEvent):
                 continue
             if moved[notification] or warn[notification]:
                 users = list(set(moved[notification]).union(set(warn[notification])))
-                emails.send(users, notification, self.node_id, 'file_updated', self.user, self.node, self.timestamp,
-                            message=self.html_message, gravatar_url=self.gravatar_url, url=self.url.url)
+                emails.store_emails(users, notification, 'file_updated', self.user, self.node, self.timestamp,
+                                    message=self.html_message, gravatar_url=self.gravatar_url, url=self.url.url)
             if rm_users[notification]:
-                emails.send(rm_users[notification], notification, self.node_id, 'file_updated', self.user,
-                            self.source_node, self.timestamp, message=remove_message,
-                            gravatar_url=self.gravatar_url, url=self.source_url.url)
+                emails.store_emails(rm_users[notification], notification, 'file_updated', self.user, self.source_node,
+                                    self.timestamp, message=remove_message,
+                                    gravatar_url=self.gravatar_url, url=self.source_url.url)
 
     def form_message(self):
         """Adds warning to message to tell user that subscription did not copy with the file."""

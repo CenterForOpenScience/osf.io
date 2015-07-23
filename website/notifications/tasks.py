@@ -3,6 +3,7 @@ Tasks for making even transactional emails consolidated.
 """
 
 from datetime import datetime, timedelta
+import time
 from bson.code import Code
 from modularodm import Q
 
@@ -39,7 +40,6 @@ def check_and_send_later(user, time_start, time_to_send, delay_type):
         print task.get()
     else:
         send_user_email.apply_async(args=(user, time_start), eta=time_to_send)
-    print "We are here."
 
 
 @celery_app.task(name='notify.send_user_email', max_retries=0)
@@ -51,6 +51,13 @@ def send_user_email(user, time_start):
     """
     if not isinstance(user, User):
         user = User.load(user)
+    count = 0
+    for i in range(5):
+        current_count = get_email_count(user._id)
+        if count == current_count:
+            break
+        count = current_count
+        time.sleep(60)
     emails = get_user_emails(user._id, time_start)
     if not emails:
         return
@@ -66,6 +73,26 @@ def send_user_email(user, time_start):
             message=grouped_emails,
             callback=remove_notifications.si(email_notification_ids=notification_ids)
         )
+
+
+def get_email_count(user):
+    """
+    Gets the number of emails that a user would receive if sent now.
+    :param user:
+    :return:
+    """
+    time_current = datetime.utcnow() + timedelta(seconds=10)
+    return db['notificationdigest'].count(
+        {
+            'user_id': user,
+            'timestamp': {
+                '$lt': time_current
+            },
+            'time_to_send': {
+                '$lt': time_current
+            }
+        }
+    )
 
 
 def get_user_emails(user, time_start):

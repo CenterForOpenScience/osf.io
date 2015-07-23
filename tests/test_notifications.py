@@ -402,7 +402,8 @@ class TestNotificationUtils(OsfTestCase):
 
     def test_get_all_node_subscriptions_given_user_subscriptions(self):
         user_subscriptions = utils.get_all_user_subscriptions(self.user)
-        node_subscriptions = [x for x in utils.get_all_node_subscriptions(self.user, self.node, user_subscriptions=user_subscriptions)]
+        node_subscriptions = [x for x in utils.get_all_node_subscriptions(self.user, self.node,
+                                                                          user_subscriptions=user_subscriptions)]
         assert_equal(node_subscriptions, [self.node_subscription])
 
     def test_get_all_node_subscriptions_given_user_and_node(self):
@@ -989,7 +990,7 @@ class TestSendEmails(OsfTestCase):
     @mock.patch('website.notifications.emails.store_emails')
     def test_notify_no_subscription(self, mock_store):
         node = factories.NodeFactory()
-        emails.notify(node._id, 'comments', user=self.user, node=node, timestamp=datetime.datetime.utcnow())
+        emails.notify('comments', user=self.user, node=node, timestamp=datetime.datetime.utcnow())
         assert_false(mock_store.called)
 
     @mock.patch('website.notifications.emails.store_emails')
@@ -1001,16 +1002,16 @@ class TestSendEmails(OsfTestCase):
             event_name='comments'
         )
         node_subscription.save()
-        emails.notify(node._id, 'comments', user=self.user, node=node, timestamp=datetime.datetime.utcnow())
+        emails.notify('comments', user=self.user, node=node, timestamp=datetime.datetime.utcnow())
         assert_false(mock_store.called)
 
     @mock.patch('website.notifications.emails.store_emails')
     def test_notify_sends_with_correct_args(self, mock_store):
         time_now = datetime.datetime.utcnow()
-        emails.notify(self.project._id, 'comments', user=self.user, node=self.node, timestamp=time_now)
+        emails.notify('comments', user=self.user, node=self.node, timestamp=time_now)
         assert_true(mock_store.called)
-        mock_store.assert_called_with([self.project.creator._id], 'email_transactional', self.project._id, 'comments',
-                                      self.user, self.node, time_now)
+        mock_store.assert_called_with([self.project.creator._id], 'email_transactional', 'comments', self.user,
+                                      self.node, time_now)
 
     @mock.patch('website.notifications.emails.store_emails')
     def test_notify_does_not_send_to_users_subscribed_to_none(self, mock_store):
@@ -1024,35 +1025,32 @@ class TestSendEmails(OsfTestCase):
         node_subscription.save()
         node_subscription.none.append(user)
         node_subscription.save()
-        sent = emails.notify(node._id, 'comments', user=user, node=node, timestamp=datetime.datetime.utcnow())
+        sent = emails.notify('comments', user=user, node=node, timestamp=datetime.datetime.utcnow())
         assert_false(mock_store.called)
         assert_equal(sent, [])
 
     @mock.patch('website.notifications.emails.store_emails')
     def test_notify_sends_comment_reply_event_if_comment_is_direct_reply(self, mock_store):
         time_now = datetime.datetime.utcnow()
-        emails.notify(self.project._id, 'comments', user=self.user, node=self.node,
-                                         timestamp=time_now, target_user=self.project.creator)
-        mock_store.assert_called_with([self.project.creator._id], 'email_transactional', self.project._id,
-                                      'comment_replies', self.user, self.node, time_now,
-                                      target_user=self.project.creator)
+        emails.notify('comments', user=self.user, node=self.node, timestamp=time_now, target_user=self.project.creator)
+        mock_store.assert_called_with([self.project.creator._id], 'email_transactional', 'comment_replies',
+                                      self.user, self.node, time_now, target_user=self.project.creator)
 
     @mock.patch('website.notifications.emails.store_emails')
     def test_notify_sends_comment_event_if_comment_reply_is_not_direct_reply(self, mock_store):
         user = factories.UserFactory()
         time_now = datetime.datetime.utcnow()
-        emails.notify(self.project._id, 'comments', user=user, node=self.node, timestamp=time_now,
-                                         target_user=user)
-        mock_store.assert_called_with([self.project.creator._id], 'email_transactional', self.project._id,
-                                      'comments', user, self.node, time_now, target_user=user)
+        emails.notify('comments', user=user, node=self.node, timestamp=time_now, target_user=user)
+        mock_store.assert_called_with([self.project.creator._id], 'email_transactional', 'comments', user,
+                                      self.node, time_now, target_user=user)
 
     @mock.patch('website.mails.send_mail')
     @mock.patch('website.notifications.emails.store_emails')
     def test_notify_does_not_send_comment_if_they_reply_to_their_own_comment(self, mock_store, mock_send_mail):
         user = factories.UserFactory()
         time_now = datetime.datetime.utcnow()
-        emails.notify(self.project._id, 'comments', user=self.project.creator, node=self.project,
-                                         timestamp=time_now,  target_user=self.project.creator)
+        emails.notify('comments', user=self.project.creator, node=self.project, timestamp=time_now,
+                      target_user=self.project.creator)
         assert_false(mock_store.called)
         assert_false(mock_send_mail.called)
 
@@ -1063,10 +1061,9 @@ class TestSendEmails(OsfTestCase):
         """
         user = factories.UserFactory()
         time_now = datetime.datetime.utcnow()
-        emails.notify(self.node._id, 'comments', user, self.node,
-                                         time_now, target_user=user)
-        mock_store.assert_called_with([self.project.creator._id], 'email_transactional', self.node._id, 'comments',
-                                      user, self.node, time_now, target_user=user)
+        emails.notify('comments', user, self.node, time_now, target_user=user)
+        mock_store.assert_called_with([self.project.creator._id], 'email_transactional', 'comments', user,
+                                      self.node, time_now, target_user=user)
 
     def test_check_node_node_none(self):
         subs = emails.check_node(None, 'comments')
