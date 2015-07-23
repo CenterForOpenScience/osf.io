@@ -76,16 +76,16 @@ function ViewModel(url) {
                 'problem persists.';
         }),
         confirmDeauth: ko.pureComputed(function() {
-            return 'Are you sure you want to remove this ' + self.addonName + ' authorization?';
+            return 'Are you sure you want to remove this ' + self.addonName + ' account?';
         }),
         confirmAuth: ko.pureComputed(function() {
             return 'Are you sure you want to authorize this project with your ' + self.addonName + ' access token?';
         }),
         deauthorizeSuccess: ko.pureComputed(function() {
-            return 'Deauthorized ' + self.addonName + '.';
+            return 'Disconnected ' + self.addonName + '.';
         }),
         deauthorizeFail: ko.pureComputed(function() {
-            return 'Could not deauthorize because of an error. Please try again later.';
+            return 'Could not disconnect because of an error. Please try again later.';
         }),
         authInvalid: ko.pureComputed(function() {
             return 'The API token provided for ' + self.host() + ' is invalid.';
@@ -473,6 +473,11 @@ ViewModel.prototype.importAuth = function() {
                         if (accountId) {
                             self.connectExistingAccount.call(self, (accountId));
                         }
+                    },
+                    buttons:{
+                        confirm:{
+                            label: 'Import'
+                        }
                     }
                 });
             } else {
@@ -526,7 +531,7 @@ ViewModel.prototype._deauthorizeConfirm = function() {
 ViewModel.prototype.deauthorize = function() {
     var self = this;
     bootbox.confirm({
-        title: 'Deauthorize ' + self.addonName + '?',
+        title: 'Disconnect ' + self.addonName + ' Account?',
         message: self.messages.confirmDeauth(),
         callback: function(confirmed) {
             if (confirmed) {
@@ -535,8 +540,8 @@ ViewModel.prototype.deauthorize = function() {
         },
         buttons:{
             confirm:{
-                label:'Deauthorize',
-                className:'btn-danger'
+                label: 'Disconnect',
+                className: 'btn-danger'
             }
         }
     });
