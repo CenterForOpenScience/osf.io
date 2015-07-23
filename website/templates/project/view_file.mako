@@ -40,7 +40,7 @@
     </div>
 
     <!-- Menu toggle closed -->
-    <div class="panel panel-default osf-panel-show text-center reset-height"  style="display: none">
+    <div class="panel panel-default osf-panel-show text-center reset-height pointer"  style="display: none">
       <div class="panel-heading">
         <i class="fa fa-angle-right"></i>
       </div>
