@@ -72,7 +72,7 @@ SHARE_ELASTIC_INDEX_TEMPLATE = 'share_v{}'
 
 # Sessions
 # TODO: Override SECRET_KEY in local.py in production
-OSF_COOKIE_DOMAIN = 'staging3.osf.io'
+OSF_COOKIE_DOMAIN = '.osf.io'
 COOKIE_NAME = 'osf'
 SECRET_KEY = 'CHANGEME'
 
