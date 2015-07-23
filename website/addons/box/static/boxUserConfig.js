@@ -95,7 +95,7 @@ function ViewModel(url) {
     /** Pop up confirm dialog for deleting user's access token. */
     self.deleteKey = function() {
         bootbox.confirm({
-            title: 'Delete Box Token?',
+            title: 'Disconnect Box Account?',
             message: language.confirmDeauth,
             callback: function(confirmed) {
                 if (confirmed) {
@@ -104,7 +104,7 @@ function ViewModel(url) {
             },
             buttons:{
                 confirm:{
-                    label:'Delete',
+                    label:'Disconnect',
                     className:'btn-danger'
                 }
             }
