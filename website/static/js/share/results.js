@@ -39,10 +39,10 @@ Results.controller = function(vm) {
     self.vm.resultsLoading = m.prop(false);
 
     self.renderTitleBar = function(result) {
-        return m(
+        return [m(
             'a[href=' + result.uris.canonicalUri + ']', m.trust(result.title) || 'No title provided'),
             m('br'),
-            self.renderDescription(result);
+            self.renderDescription(result)];
     };
 
     self.renderDescription = function(result) {
@@ -106,7 +106,7 @@ Results.controller = function(vm) {
 
     self.renderResultFooter = function(result) {
         return m('div', [
-                    m('span', 
+                    m('span',
                         'Released on ' + new $osf.FormattableDate(result.providerUpdatedDateTime).local,
                         vm.rawNormedLoaded() ?  m('span', [
                             m('span', {style: {'margin-right': '5px', 'margin-left': '5px'}}, ' | '),
