@@ -495,7 +495,9 @@ def format_component_wiki_pages(node, auth):
                 not node.has_addon('wiki')]):
             continue
         else:
-            pages.append(serialize_component_wiki(node, auth))
+            serialized = serialize_component_wiki(node, auth)
+            if serialized:
+                pages.append(serialized)
     return pages
 
 
@@ -541,4 +543,4 @@ def serialize_component_wiki(node, auth):
             'children': children,
         }
         return component
-    return {}
+    return None

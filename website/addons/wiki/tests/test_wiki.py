@@ -1172,7 +1172,7 @@ class TestWikiMenu(OsfTestCase):
 
     def test_format_component_wiki_pages_no_content_non_contributor(self):
         data = views.format_component_wiki_pages(node=self.project, auth=Auth(self.non_contributor))
-        expected = [{}]
+        expected = []
         assert_equal(data, expected)
 
     def test_project_wiki_grid_data(self):
