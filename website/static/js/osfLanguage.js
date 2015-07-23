@@ -37,37 +37,37 @@ module.exports = {
             // Shown on clicking "Delete Access Token" for dropbox
             confirmDeauth: 'Are you sure you want to disconnect the Dropbox account? ' +
                 'This will revoke access to Dropbox for all projects you have ' +
-                'authorized.',
+                'associated with this account.',
             deauthError: 'Could not disconnect Dropbox account at this time',
         },
         figshare: {
             confirmDeauth: 'Are you sure you want to disconnect the figshare account? ' +
                 'This will revoke access to figshare for all projects you have ' +
-                'authorized.',
+                'associated with this account.',
         },
         // TODO
         github: {
             confirmDeauth: 'Are you sure you want to disconnect the GitHub account? ' +
                 'This will revoke access to GitHub for all projects you have ' +
-                'authorized.',
+                'associated with this account.',
         },
         s3: {
             confirmDeauth: 'Are you sure you want to disconnect the S3 account? ' +
                 'This will revoke access to S3 for all projects you have ' +
-                'authorized.',
+                'associated with this account.',
         },
         box: {
             // Shown on clicking "Delete Access Token" for dropbox
             confirmDeauth: 'Are you sure you want to disconnect the Box account? ' +
                 'This will revoke access to Box for all projects you have ' +
-                'authorized.',
+                'associated with this account.',
             deauthError: 'Could not disconnect the Box account at this time',
         },
         googledrive: {
           // Shown on clicking "Delete Access Token" for googledrive
             confirmDeauth: 'Are you sure you want to disconnect the Google Drive account? ' +
                 'This will revoke access to Google Drive for all projects you have ' +
-                'authorized.',
+                'associated with this account.',
             deauthError: 'Could not disconnect the Google Drive account at this time',
         }
     }

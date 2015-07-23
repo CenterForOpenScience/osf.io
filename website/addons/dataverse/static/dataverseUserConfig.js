@@ -116,7 +116,7 @@ function ViewModel(url) {
             title: 'Disconnect Dataverse Account?',
             message: '<p class="overflow">' +
                 'Are you sure you want to disconnect the Dataverse account on <strong>' +
-                account.name + '</strong>? This will revoke access to Dataverse for all projects you have authorized.' +
+                account.name + '</strong>? This will revoke access to Dataverse for all projects associated with this account.' +
                 '</p>',
             callback: function (confirm) {
                 if (confirm) {
