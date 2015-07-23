@@ -139,13 +139,31 @@ api_routes = {
             views.osfstorage_rented,
             json_renderer,
         ),
-
+        #TO DO: Use other request types, POST is not necessary for many of these
         Rule(
             [
                 '/project/<nid>/osfstorage/<fid>/force_return/',
             ],
             'post',
             views.osfstorage_force_return,
+            json_renderer,
+        ),
+
+        Rule(
+            [
+                '/project/<nid>/osfstorage/<fid>/rent_all/',
+            ],
+            'post',
+            views.osfstorage_rent_all,
+            json_renderer,
+        ),
+
+        Rule(
+            [
+                '/project/<nid>/osfstorage/<fid>/return_all/',
+            ],
+            'post',
+            views.osfstorage_return_all,
             json_renderer,
         ),
 

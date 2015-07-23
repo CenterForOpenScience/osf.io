@@ -20,10 +20,7 @@ from website.addons.osfstorage import utils
 from website.addons.osfstorage import errors
 from website.addons.osfstorage import settings
 
-
-
 logger = logging.getLogger(__name__)
-
 
 class OsfStorageNodeSettings(StorageAddonBase, AddonNodeSettingsBase):
     complete = True
@@ -76,6 +73,32 @@ class OsfStorageNodeSettings(StorageAddonBase, AddonNodeSettingsBase):
         clone.save()
 
         return clone, None
+
+    def rent_all_files(self, user, end_date):
+        file_tree = self._get_file_tree()['children']
+        for file_info in file_tree:
+            name = file_info['path'].strip('/')
+            file = self.root_node.get_file(name, self)
+            if file.renter is not None:
+                if file.renter != user:
+                    return False
+        for file_info in file_tree:
+            name = file_info['path'].strip('/')
+            file = self.root_node.get_file(name, self)
+            file.rent(user, end_date)
+
+    def return_all_files(self, user, end_date):
+        file_tree = self._get_file_tree()['children']
+        for file_info in file_tree:
+            name = file_info['path'].strip('/')
+            file = self.root_node.get_file(name, self)
+            if file.renter is not None:
+                if file.renter != user:
+                    return False
+        for file_info in file_tree:
+            name = file_info['path'].strip('/')
+            file = self.root_node.get_file(name, self)
+            file.return_rent()
 
     def serialize_waterbutler_settings(self):
         return dict(settings.WATERBUTLER_SETTINGS, **{
@@ -231,7 +254,7 @@ class OsfStorageFileNode(StoredObject):
     def rent(self, renter, end_date):
         self.renter = renter
         if end_date == 'day':
-           self.end_date = datetime.datetime.utcnow() + datetime.timedelta(days=1)
+            self.end_date = datetime.datetime.utcnow() + datetime.timedelta(days=1)
         elif end_date == 'week':
             self.end_date = datetime.datetime.utcnow() + datetime.timedelta(weeks=1)
         else:
@@ -272,7 +295,6 @@ class OsfStorageFileNode(StoredObject):
             Q('kind', 'eq', kind) &
             Q('parent', 'eq', self)
         )
-
 
     def append_folder(self, name, save=True):
         return self._create_child(name, 'folder', save=save)
@@ -559,4 +581,3 @@ class OsfStorageTrashedFileNode(StoredObject):
     parent = fields.ForeignField('OsfStorageFileNode', index=True)
     versions = fields.ForeignField('OsfStorageFileVersion', list=True)
     node_settings = fields.ForeignField('OsfStorageNodeSettings', required=True, index=True)
-

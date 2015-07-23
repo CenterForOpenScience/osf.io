@@ -35,7 +35,7 @@ var FileViewPage = {
                 $osf.growl('File is locked', 'This file has been locked by a <a href="/' + self.file.renter +
                     '"> collaborator </a>. It needs to be unlocked before any changes can be made. ' +
                     'If you are an administrator, you may <a data-bind="onclick:' +
-                    '$(document).trigger.bind($(document), \'fileviewpage:force_return\')">force unlock the file.</a>');
+                    '$(window.document).trigger.bind($(window.document), \'fileviewpage:force_return\')">force unlock the file.</a>');
             }
             }).fail(function(resp) {
             });
@@ -99,7 +99,7 @@ var FileViewPage = {
                         label: 'Lock file',
                         className: 'btn-warning',
                         callback: function() {
-                            var date = $("input[name='date']:checked").val();
+                            var date = $('input[name="date"]:checked').val();
                             $osf.postJSON(
                                 '/api/v1/project/' + self.node.id + '/osfstorage' + self.file.path +'/rent/',
                                 {
@@ -131,7 +131,7 @@ var FileViewPage = {
                         label: 'Lock file',
                         className: 'btn-warning',
                         callback: function() {
-                            var date = $("input[name='date']:checked").val();
+                            var date = $('input[name="date"]:checked').val();
                             $osf.postJSON(
                                 '/api/v1/project/' + self.node.id + '/osfstorage' + self.file.path +'/rent/',
                                 {
@@ -169,7 +169,7 @@ var FileViewPage = {
                 },
                 callback: function(confirm) {
                     if (!confirm) {
-                        return
+                        return;
                     }
                     $osf.postJSON(
                         '/api/v1/project/' + self.node.id + '/osfstorage' + self.file.path +'/force_return/',
@@ -327,7 +327,7 @@ var FileViewPage = {
             ctrl.canEdit() && (ctrl.file.renter === '') ? m('.btn-group.m-l-xs.m-t-xs', [
                 m('.btn.btn-sm.btn-danger.file-delete', {onclick: $(document).trigger.bind($(document), 'fileviewpage:delete')}, 'Delete')
             ]) : '',
-            ctrl.canEdit() && (ctrl.file.renter === '') ? m('.btn-group.m-l-xs.m-t-xs', [
+            ctrl.canEdit() && (ctrl.file.renter === '') && (ctrl.file.provider === 'osfstorage') ? m('.btn-group.m-l-xs.m-t-xs', [
                 m('.btn.btn-sm.btn-warning', {onclick: $(document).trigger.bind($(document), 'fileviewpage:rent')}, 'Lock')
             ]) : '',
             (ctrl.canEdit() && (ctrl.file.renter === ctrl.context.userId)) ? m('.btn-group.m-l-xs.m-t-xs', [
