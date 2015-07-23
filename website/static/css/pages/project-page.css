@@ -27,10 +27,6 @@
     content: "";
 }
 
-.contributor-name {
-    margin-right: -4px;
-}
-
 /* Project Navigation */
 #projectSubnav .navbar-collapse {
     padding-left: 0;
