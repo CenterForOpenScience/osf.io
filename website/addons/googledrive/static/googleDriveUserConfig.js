@@ -77,7 +77,7 @@ var ViewModel = function(url) {
     /** Pop up confirm dialog for deleting user's access token. */
     self.deleteKey = function() {
         bootbox.confirm({
-            title: 'Delete Google Drive Token?',
+            title: 'Disconnect Google Drive Account?',
             message: language.confirmDeauth,
             callback: function(confirmed) {
                 if (confirmed) {
@@ -86,7 +86,7 @@ var ViewModel = function(url) {
             },
             buttons:{
                 confirm:{
-                    label:'Delete',
+                    label:'Disconnect',
                     className:'btn-danger'
                 }
             }
@@ -100,7 +100,6 @@ var ViewModel = function(url) {
             type: 'DELETE'
         }).done(function() {
             window.location.reload();
-            self.changeMessage(language.deauthSuccess, 'text-info', 5000);
         }).fail(function(textStatus, error) {
             self.changeMessage(language.deauthError, 'text-danger');
             Raven.captureMessage('Could not deauthorize Google Drive.', {

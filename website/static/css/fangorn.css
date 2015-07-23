@@ -5,9 +5,9 @@
 }
 
 .alert-deleting {
-	background: #F5F5F5;
-color: #F00;
-text-align: center;
+  background: #F5F5F5;
+  color: #A94442;
+  text-align: center;
 }
 
 .tb-head {
@@ -28,6 +28,9 @@ text-align: center;
 }
 .fangorn-selected .text-muted {
     color: #eeeeee;
+}
+.fangorn-selected .text-danger {
+    color: #FFFFFF;
 }
 .fangorn-selected a {
 	color : white;
@@ -97,8 +100,8 @@ text-align: center;
 }
 .tb-notify {
 	white-space: nowrap;
-    height: 30px;
-    padding-top: 4px;
+  height: 34px;
+  padding-top: 4px;
 }
 
 .tb-row .progress {

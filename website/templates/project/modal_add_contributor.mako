@@ -167,7 +167,7 @@
                                         </td>
 
                                         <td>
-                                            <select class="form-control" data-bind="
+                                            <select class="form-control input-sm" data-bind="
                                                 options: $root.permissionList,
                                                 value: permission,
                                                 optionsText: 'text'">
