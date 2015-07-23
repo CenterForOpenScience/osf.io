@@ -115,7 +115,7 @@ class TestWikiViews(OsfTestCase):
 
         # Check publicly editable but not logged in
         res = self.app.get(url, expect_errors=True)
-        assert_equal(res.status_code, 403)
+        assert_equal(res.status_code, 401)
 
     def test_wiki_url_for_pointer_returns_200(self):
         # TODO: explain how this tests a pointer

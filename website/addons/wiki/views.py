@@ -308,6 +308,8 @@ def project_wiki_view(auth, wname, path=None, **kwargs):
         if wiki_key not in node.wiki_pages_current and wiki_key != 'home':
             raise WIKI_PAGE_NOT_FOUND_ERROR
         if 'edit' in request.args:
+            if wiki_settings.is_publicly_editable:
+                raise HTTPError(http.UNAUTHORIZED)
             raise HTTPError(http.FORBIDDEN)
         sharejs_uuid = None
 

@@ -287,7 +287,12 @@ def node_setting(auth, node, **kwargs):
             config['template_lookup'] = addon.config.template_lookup
             config['addon_icon_url'] = addon.config.icon_url
             addon_enabled_settings.append(config)
+
     addon_enabled_settings = sorted(addon_enabled_settings, key=lambda addon: addon['addon_full_name'].lower())
+
+    admin_on_wiki = (
+        lambda x: x.has_addon('wiki') and x.has_permission(auth.user, 'admin')
+    )
 
     ret['addon_categories'] = settings.ADDON_CATEGORIES
     ret['addons_available'] = sorted([
@@ -298,14 +303,9 @@ def node_setting(auth, node, **kwargs):
     ], key=lambda addon: addon.full_name.lower())
 
     ret['addons_enabled'] = addons_enabled
-    ret['admin_wiki_on_children'] = (
-        node.has_addon('wiki')
-        and node.has_permission(auth.user, 'admin')
-        or any(
-            (
-                each for each in node.get_descendants_recursive()
-                if each.has_addon('wiki') and each.has_permission(auth.user, 'admin')
-            )
+    ret['include_wiki_settings'] = (
+        admin_on_wiki(node) or any(
+            (admin_on_wiki(each) for each in node.get_descendants_recursive())
         )
     )
 

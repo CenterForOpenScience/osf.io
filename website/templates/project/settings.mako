@@ -37,7 +37,7 @@
                             <li><a href="#configureNotificationsAnchor">Configure Notifications</a></li>
                         % endif
 
-                        % if admin_wiki_on_children:
+                        % if include_wiki_settings:
                             <li><a href="#configureWikiAnchor">Configure Wiki</a></li>
                         % endif
                             
@@ -227,7 +227,7 @@
 
         % endif ## End Configure Notifications
 
-        % if admin_wiki_on_children:  ## Begin Configure Wiki
+        % if include_wiki_settings:  ## Begin Configure Wiki
 
             % if not node['is_registration']:
 
