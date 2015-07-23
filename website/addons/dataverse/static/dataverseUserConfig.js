@@ -113,10 +113,10 @@ function ViewModel(url) {
     self.askDisconnect = function(account) {
         var self = this;
         bootbox.confirm({
-            title: 'Delete account?',
+            title: 'Disconnect Dataverse Account?',
             message: '<p class="overflow">' +
-                'Are you sure you want to delete account <strong>' +
-                account.name + '</strong>?' +
+                'Are you sure you want to disconnect the Dataverse account on <strong>' +
+                account.name + '</strong>? This will revoke access to Dataverse for all projects you have authorized.' +
                 '</p>',
             callback: function (confirm) {
                 if (confirm) {
@@ -125,7 +125,7 @@ function ViewModel(url) {
             },
             buttons:{
                 confirm:{
-                    label:'Delete',
+                    label:'Disconnect',
                     className:'btn-danger'
                 }
             }

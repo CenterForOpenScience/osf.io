@@ -14,7 +14,6 @@ from website import models
 from website.util import web_url_for
 from website.project.decorators import must_have_addon
 from website.project.decorators import must_have_permission
-from framework.status import push_status_message
 
 from ..auth import oauth_start_url, oauth_get_token
 
@@ -102,7 +101,6 @@ def figshare_oauth_callback(auth, **kwargs):
     )
     # Handle request cancellations from FigShare's API
     if not access_token or not access_token_secret:
-        push_status_message('figshare authorization request cancelled.')
         if node:
             return redirect(node.web_url_for('node_setting'))
         return redirect(web_url_for('user_addons'))
