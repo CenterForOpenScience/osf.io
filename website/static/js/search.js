@@ -245,9 +245,11 @@ var ViewModel = function(params) {
                     }
                     self.results.push(result);
                 }
-                if(result.category === 'project' || result.category === 'registration'){
+                if(result.category === 'project')
                     result.date_created = new $osf.FormattableDate(result.date_created);
-                }
+
+                if(result.category === 'registration')
+                    result.date_registered = new $osf.FormattableDate(result.date_registered);
             });
 
             //Load our categories
