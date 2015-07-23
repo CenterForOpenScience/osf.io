@@ -7,31 +7,31 @@ var callbacks = [];
 
 var utils = {};
 
-utils.onSearch = function (fb) {
+utils.onSearch = function(fb) {
     callbacks.push(fb);
 };
 
 var COLORBREWER_COLORS = [[166, 206, 227], [31, 120, 180], [178, 223, 138], [51, 160, 44], [251, 154, 153], [227, 26, 28], [253, 191, 111], [255, 127, 0], [202, 178, 214], [106, 61, 154], [255, 255, 153], [177, 89, 40]];
 var tags = ['div', 'i', 'b', 'sup', 'p', 'span', 'sub', 'bold', 'strong', 'italic', 'a', 'small'];
 
-utils.scrubHTML = function (text) {
-    tags.forEach(function (tag) {
+utils.scrubHTML = function(text) {
+    tags.forEach(function(tag) {
         text = text.replace(new RegExp('<' + tag + '>', 'g'), '');
         text = text.replace(new RegExp('</' + tag + '>', 'g'), '');
     });
     return text;
 };
 
-utils.formatNumber = function (num) {
-    while (/(\d+)(\d{3})/.test(num.toString())) {
-        num = num.toString().replace(/(\d+)(\d{3})/, '$1' + ',' + '$2');
+utils.formatNumber = function(num) {
+    while (/(\d+)(\d{3})/.test(num.toString())){
+        num = num.toString().replace(/(\d+)(\d{3})/, '$1'+','+'$2');
     }
     return num;
 };
 
-var loadingIcon = m('img[src=/static/img/loading.gif]', {style: {margin: 'auto', display: 'block'}});
+var loadingIcon = m('img[src=/static/img/loading.gif]',{style: {margin: 'auto', display: 'block'}});
 
-utils.errorState = function (vm) {
+utils.errorState = function(vm){
     vm.results = null;
     vm.statsData = undefined;
     vm.time = 0;
@@ -41,26 +41,28 @@ utils.errorState = function (vm) {
     $osf.growl('Error', 'invalid query');
 };
 
-utils.highlightField = function (result, field_name) {
+utils.highlightField = function(result, field_name) {
     return utils.scrubHTML(result.highlight[field_name] ? result.highlight[field_name][0] : result[field_name] || '');
 };
 
-utils.updateVM = function (vm, data) {
+utils.updateVM = function(vm, data) {
     if (data === null) {
         return;
     }
     vm.time = data.time;
     vm.count = data.count;
-    data.results.forEach(function (result) {
+    data.results.forEach(function(result) {
         result.title = utils.highlightField(result, 'title');
         result.description = utils.highlightField(result, 'description');
     });
     vm.results.push.apply(vm.results, data.results);
     m.redraw();
-    $.map(callbacks, function (cb) {cb(); });
+    $.map(callbacks, function(cb) {
+        cb();
+    });
 };
 
-utils.loadMore = function (vm) {
+utils.loadMore = function(vm) {
     var ret = m.deferred();
     if (vm.query().length === 0) {
         ret.resolve(null);
@@ -85,7 +87,7 @@ utils.loadMore = function (vm) {
     return ret.promise;
 };
 
-utils.search = function (vm) {
+utils.search = function(vm) {
     vm.showFooter = false;
     var ret = m.deferred();
     if (!vm.query() || vm.query().length === 0) {
@@ -130,7 +132,7 @@ utils.stateChanged = function (vm) {
             utils.arrayEqual(state.requiredFilters, vm.requiredFilters));
 };
 
-utils.buildURLParams = function (vm) {
+utils.buildURLParams = function(vm){
     var d = {};
     if (vm.query()) {
         d.q = vm.query();
@@ -223,7 +225,31 @@ utils.addFiltersToQuery = function (query, filters) {
     return query;
 };
 
-utils.filteredQuery = function (query, filter) {
+utils.loadRawNormalized = function(result){
+    var nonJsonErrors = function(xhr) {
+        return xhr.status > 200 ? JSON.stringify(xhr.responseText) : xhr.responseText;
+    };
+    return m.request({
+        method: 'GET',
+        url: '/api/v1/share/documents/?' + $.param({id: result.shareProperties.docID, source: result.shareProperties.source}),  // TODO where will the postgres API live??
+        extract: nonJsonErrors
+    }).then(function(data) {
+
+        var normed = JSON.parse(data.normalized);
+        normed = JSON.stringify(normed, undefined, 2);
+
+        var all_raw = JSON.parse(data.raw);
+        result.raw = all_raw.doc;
+        result.rawfiletype = all_raw.filetype;
+        result.normalized = normed;
+    }, function(error) {
+        result.rawfiletype = 'json';
+        result.normalized = '"Normalized data not found."';
+        result.raw = '"Raw data not found."';
+    });
+};
+
+utils.filteredQuery = function(query, filter) {
     var ret = {
         'filtered': {}
     };

@@ -8,9 +8,9 @@
               rel="tooltip"
               href="${contributor['user_profile_url']}"
               data-original-title="${contributor['user_fullname']}"
-              >${contributor['user_display_name']}</a><span>${contributor['separator']}</span>
+              >${contributor['user_display_name']}</a><span>${ contributor['separator'] | n }</span>
   % else:
-      <span class="overflow">${contributor['user_display_name']}</span><span>${contributor['separator']}</span>
+      <span class="overflow">${contributor['user_display_name']}</span><span>${ contributor['separator'] | n }</span>
   % endif
 </%def>
 
