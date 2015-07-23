@@ -130,6 +130,31 @@ class NodeSerializer(JSONAPISerializer):
         return instance
 
 
+class NodeRegistrationSerializer(NodeSerializer):
+    # Removed registration link as it is not possible to register a registration
+    links = LinksField({
+        'html': 'get_absolute_url',
+        'children': {
+            'related': Link('nodes:node-children', kwargs={'node_id': '<pk>'}),
+            'count': 'get_node_count',
+        },
+        'contributors': {
+            'related': Link('nodes:node-contributors', kwargs={'node_id': '<pk>'}),
+            'count': 'get_contrib_count',
+        },
+        'pointers': {
+            'related': Link('nodes:node-pointers', kwargs={'node_id': '<pk>'}),
+            'count': 'get_pointers_count',
+        },
+        'files': {
+            'related': Link('nodes:node-files', kwargs={'node_id': '<pk>'})
+        },
+        'parent': {
+            'self': Link('nodes:node-detail', kwargs={'node_id': '<parent_id>'})
+        }
+    })
+
+
 class NodePointersSerializer(JSONAPISerializer):
 
     id = ser.CharField(read_only=True, source='_id')
