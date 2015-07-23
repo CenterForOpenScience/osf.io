@@ -101,7 +101,7 @@
         </div>
         <div id="contributors" class="row" style="line-height:25px">
             <div class="col-sm-12">
-                <div id="contributors-list" data-bind="animateHeight: { state : collapsed(), shortHeight : collapseLimit, longHeight : 'auto'}">
+                <div id="contributors-list" data-bind="toggleHeight">
                 % if user['is_contributor']:
                     <a class="link-dashed" href="${node['url']}contributors/">Contributors</a>:
                 % else:
@@ -119,11 +119,6 @@
                         }'></div>
                     </ol>
                 % endif
-                    <div id="contributor-gradient" data-bind="visible : collapsed()" ></div>
-                </div>
-                <div id="contributor-toggle" class="text-center m-b-xs" data-bind="visible : showToggle(), click : toggleHeight">
-                    <i style="display:none" data-bind="visible : collapsed()" class="fa fa-angle-down"></i>
-                    <i style="display:none"  data-bind="visible : !collapsed()" class="fa fa-angle-up"></i>
                 </div>
                 % if node['is_fork']:
                     <p>
