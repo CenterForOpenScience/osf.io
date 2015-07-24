@@ -32,6 +32,8 @@ def view_comments_project(auth, **kwargs):
 
     node = kwargs['node'] or kwargs['project']
     page = request.args.get('page', None)
+    if page == 'overview':
+        page = Comment.OVERVIEW
     root_id = node._id if page == Comment.OVERVIEW else None
 
     if page:
