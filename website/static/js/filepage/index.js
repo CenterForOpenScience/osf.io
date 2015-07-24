@@ -223,10 +223,10 @@ var FileViewPage = {
                         var data = '\<ul class="nav nav-tabs nav-justified"\>\<li class="active"\>\<a href="#share" data-toggle="tab"\>Share\</a\>\</li\>\<li\>\<a href="#embed" data-toggle="tab"\>Embed\</a\>\</li\>\</ul\>';
                         data += '\<div class="tab-content"\>\<div id="share" class="tab-pane fade in active"\> \<input onclick="this.select()" class="form-control" type="text" value="' + link + '" /\> \</div\>';
                         data += '\<div id="embed" class="tab-pane fade"\>';
-                        data += '\<span data-toggle="tooltip" data-placement="bottom" title="Copy and paste to dynamically render an iFrame that is automatically sized appropriately."\>CSS Style, HTML & Script\<span/\>\<textarea onclick="this.select()" class="form-control" \>' + style + '\<div id="mfrIframe" class="mfr mfr-file"\>\</div\>';
+                        data += '\<span data-toggle="tooltip" data-placement="bottom" title="Copy and paste to dynamically render an iFrame that is automatically sized appropriately."\>CSS Style, HTML & Script\<span/\>\<br/\>\<br/\>\<textarea onclick="this.select()" class="form-control" \>' + style + '\<div id="mfrIframe" class="mfr mfr-file"\>\</div\>';
                         data += ' \<script src="' + url + 'static/js/mfr.js"\>\</script\>';
                         data += ' \<script\>var mfrRender = new mfr.Render\("mfrIframe", "' + link + '"\);\n\</script\> \</textarea\>';
-                        data += '\<hr/\><span data-toggle="tooltip" data-placement="bottom" title="Copy and paste to directly embed the iFrame with custom sizing and scrolling enabled."\>Direct iFrame\<span/\>\<textarea onclick="this.select()" class="form-control" \>' + '\<iframe src="' + link + '" width="100%" scrolling="yes" height="100%" marginheight="0" frameborder="0" allowfullscreen webkitallowfullscreen \>' + '\</textarea\>';
+                        data += '\<br/\>\<span data-toggle="tooltip" data-placement="bottom" title="Copy and paste to directly embed the iFrame with custom sizing and scrolling enabled."\>Direct iFrame\<span/\>\<br/\>\<br/\>\<textarea onclick="this.select()" class="form-control" \>' + '\<iframe src="' + link + '" width="100%" scrolling="yes" height="100%" marginheight="0" frameborder="0" allowfullscreen webkitallowfullscreen \>' + '\</textarea\>';
                         data += '\</div\> \</div\>';
                         $(element).attr('data-content', data);
                     }
