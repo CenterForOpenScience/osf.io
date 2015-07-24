@@ -1,12 +1,12 @@
-from rest_framework.exceptions import ValidationError, NotFound, PermissionDenied
+from rest_framework.exceptions import ValidationError, PermissionDenied
 from rest_framework import serializers as ser
 
-from api.users.serializers import UserSerializer
 from website.models import Node, User
 from framework.auth.core import Auth
 from rest_framework import exceptions
+from api.users.serializers import UserSerializer
 from api.base.serializers import JSONAPISerializer, LinksField, Link, WaterbutlerLink, LinksFieldWIthSelfLink
-from api.base.utils import has_multiple_admins
+from api.base.utils import has_multiple_admins, get_object_or_404
 
 
 class NodeSerializer(JSONAPISerializer):
@@ -199,32 +199,24 @@ class NodeContributorsSerializer(JSONAPISerializer):
         current_user = self.context['request'].user
         auth = Auth(current_user)
         node = self.context['view'].get_node()
-        user = User.load(validated_data['_id'])
+        user = get_object_or_404(User, validated_data['_id'])
+        added = node.add_contributor(contributor=user, auth=auth, save=True)
+        if not added:
+            raise ValidationError('User {} already is a contributor.'.format(user.username))
+
         bibliographic = validated_data['bibliographic'] == "True"
-        permission_field = validated_data['permission']
         try:
-            added = node.add_contributor(contributor=user, auth=auth, save=True)
-            if not added:
-                raise ValidationError('User {} already is a contributor.'.format(user.username))
-        except AttributeError:
-            raise NotFound('User with id {} cannot be found.'.format(validated_data['_id']))
-        self.set_visibility(bibliographic, user, node)
+            node.set_visible(user, bibliographic, save=True)
+        except ValueError as e:
+            raise ValidationError(e)
+
+        permission_field = validated_data['permission']
         self.set_permissions(permission_field, user, node)
         user.node_id = node._id
         user.bibliographic = node.get_visible(user)
         return user
 
-    def set_visibility(self, bibliographic, user, node, is_admin=True, is_current=False):
-        if is_admin and bibliographic:
-            node.set_visible(user, True, save=True)
-        elif not bibliographic:
-            if len(node.visible_contributors) == 1 and node.get_visible(user):
-                raise ValidationError('Must have at least one visible contributor')
-            elif is_admin or is_current:
-                node.set_visible(user, False, save=True)
-        else:
-            raise PermissionDenied()
-
+    # todo simplify this
     def set_permissions(self, field, user, node, is_admin=True, is_current=False):
         if field == '':
             pass
