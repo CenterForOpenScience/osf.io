@@ -158,7 +158,7 @@
                     <p>
                       <i class="fa fa-spinner fa-lg fa-spin"></i>
                         <span class="text-info">Creating DOI and ARK. Please wait...</span>
-                    </p
+                    </p>
                   <!-- /ko -->
 
                   <!-- ko ifnot: idCreationInProgress() -->
