@@ -64,10 +64,10 @@ class NodeSerializer(JSONAPISerializer):
     # TODO: When we have 'admin' permissions, make this writable for admins
     public = ser.BooleanField(source='is_public', read_only=True,
                               help_text='Nodes that are made public will give read-only access '
-                                                            'to everyone. Private nodes require explicit read '
-                                                            'permission. Write and admin access are the same for '
-                                                            'public and private nodes. Administrators on a parent '
-                                                            'node have implicit read permissions for all child nodes',
+                                        'to everyone. Private nodes require explicit read '
+                                        'permission. Write and admin access are the same for '
+                                        'public and private nodes. Administrators on a parent '
+                                        'node have implicit read permissions for all child nodes',
                               )
     # TODO: finish me
 
@@ -137,11 +137,11 @@ class NodeSerializer(JSONAPISerializer):
 
 
 class NodePointersSerializer(JSONAPISerializer):
-
     id = ser.CharField(read_only=True, source='_id')
     node_id = ser.CharField(source='node._id', help_text='The ID of the node that this pointer points to')
     title = ser.CharField(read_only=True, source='node.title', help_text='The title of the node that this pointer '
                                                                          'points to')
+
     class Meta:
         type_ = 'pointers'
 
@@ -172,7 +172,6 @@ class NodePointersSerializer(JSONAPISerializer):
 
 
 class NodeFilesSerializer(JSONAPISerializer):
-
     id = ser.CharField(read_only=True, source='_id')
     provider = ser.CharField(read_only=True)
     path = ser.CharField(read_only=True)
@@ -202,6 +201,7 @@ class NodeFilesSerializer(JSONAPISerializer):
         # TODO
         pass
 
+
 class NodeLogSerializer(JSONAPISerializer):
     filterable_fields = frozenset([
         'date',
@@ -210,7 +210,7 @@ class NodeLogSerializer(JSONAPISerializer):
         'action',
         'version',
         'name',
-        ])
+    ])
 
     date = ser.DateTimeField(read_only=True)
     id = ser.CharField(read_only=True, source='_id')
@@ -235,6 +235,3 @@ class NodeLogSerializer(JSONAPISerializer):
     def get_absolute_api_v2_url(self, obj):
         pointer_node = Node.load(obj.node._id)
         return pointer_node.absolute_api_v2_url
-
-
-

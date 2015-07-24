@@ -1342,7 +1342,6 @@ class TestNodeLogList(ApiTestCase):
         self.user_two.set_password(self.password)
         self.user_two.save()
         self.basic_auth_two = (self.user_two.username, self.password)
-
         self.private_project = ProjectFactory(is_public=False, creator=self.user)
         self.private_url = '/{}nodes/{}/logs/'.format(API_BASE, self.private_project._id)
         self.public_project = ProjectFactory(is_public=True, creator=self.user)
