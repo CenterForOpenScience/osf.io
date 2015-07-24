@@ -396,7 +396,7 @@ ko.bindingHandlers.anchorScroll = {
 /**
  * Adds an expansion toggle for too tall items
  * Example:
- * <span data-bind='toggleHeight'></span>
+ * <span data-bind='toggleHeight : { height : 100}'></span>
  */
 ko.bindingHandlers.toggleHeight = {
     init: function(elem, valueAccessor) {
