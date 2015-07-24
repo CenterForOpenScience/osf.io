@@ -192,7 +192,7 @@ var ContributorsViewModel = function(contributors, adminContributors, user, isRe
     self.adminContributors = adminContributors;
 
     self.user = ko.observable(user);
-    self.userIsAdmin  = $.inArray('admin', user.permissions) !== -1);
+    self.userIsAdmin  = $.inArray('admin', user.permissions) !== -1;
     self.canEdit = ko.computed(function() {
         return (self.userIsAdmin) && !isRegistration;
     });
@@ -304,10 +304,11 @@ var ContributorsViewModel = function(contributors, adminContributors, user, isRe
             if (self.changed() && !self.forceSubmit()) {
                 $osf.growl('Error','There are unsaved changes to your contributor ' +
                     'settings. Are you sure you want to leave this page?'
-            );
-            return false;
-        });
-    };
+                );
+                return false;
+            }
+        }
+    )};
 
     self.init();
     self.initListeners();
