@@ -101,7 +101,7 @@
         </div>
         <div id="contributors" class="row" style="line-height:25px">
             <div class="col-sm-12">
-                <div id="contributors-list" data-bind="toggleHeight :{}">
+                <div id="contributors-list" data-bind="toggleHeight :{ height : 60}">
                 % if user['is_contributor']:
                     <a class="link-dashed" href="${node['url']}contributors/">Contributors</a>:
                 % else:
