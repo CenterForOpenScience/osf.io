@@ -370,7 +370,6 @@ class NodeLogList(generics.ListAPIView, NodeMixin):
     This allows users to be able to get log information. This will allow more interesting
     use cases for the API. Also this will be necessary if we want to be able to use the
      v2 api for the project summary page.
-
     """
     serializer_class = NodeLogSerializer
 
