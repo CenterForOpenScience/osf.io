@@ -229,9 +229,11 @@ utils.loadRawNormalized = function(result){
     var nonJsonErrors = function(xhr) {
         return xhr.status > 200 ? JSON.stringify(xhr.responseText) : xhr.responseText;
     };
+    var source = encodeURIComponent(result.shareProperties.source);
+    var docID = encodeURIComponent(result.shareProperties.docID);
     return m.request({
         method: 'GET',
-        url: '/api/v1/share/documents/?' + $.param({id: result.shareProperties.docID, source: result.shareProperties.source}),  // TODO where will the postgres API live??
+        url: '/api/v1/share/documents/' + source + '/' + docID + '/',
         extract: nonJsonErrors
     }).then(function(data) {
 
