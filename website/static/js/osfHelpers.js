@@ -410,24 +410,26 @@ ko.bindingHandlers.toggleHeight = {
         var toggleDiv = $('<div class="' + elem.id + '-toggle toggle-height-toggle text-center" style="display:none"></div>').insertAfter(elem);
 
         function noToggle () {
-            $el.height($el[0].scrollHeight);
+            $el.css('height', 'auto');
             gradientDiv.hide();
             toggleDiv.hide();
+            showToggle = false;
         }
         function toggleCollapse () {
-            $el.height(height);
+            $el.css('height', height + 'px');
             gradientDiv.show();
             toggleDiv.html('<i class="' + iconDown +'"></i>').show();
         }
         function toggleOpen (){
-            $el.height($el[0].scrollHeight);
+            $el.css('height', 'auto');
             gradientDiv.hide();
             toggleDiv.html('<i class="' + iconUp + '"></i>').show();
         }
         function checkCollapse () {
-            if ($el.height() < height){
+            if ($el[0].scrollHeight <= height){
                 noToggle();
-            } else {
+            } else if (!showToggle){
+                showToggle = true;
                 if (collapsed){
                     toggleCollapse();
                 } else {
