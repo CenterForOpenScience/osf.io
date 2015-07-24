@@ -40,7 +40,7 @@ Results.controller = function(vm) {
 
     self.renderTitleBar = function(result) {
         return [m(
-            'a[href=' + result.uris.canonicalUri + ']', m.trust(result.title) || 'No title provided'),
+            'a[href=' + result.uris.canonicalUri + ']', ((result.title || '').length > 0) ? m.trust(result.title) : 'No title provided'),
             m('br'),
             self.renderDescription(result)];
     };
