@@ -320,3 +320,25 @@ select.form-control {
     height: 24px;
     font-size: 13px;
 }
+
+.wiki-toolbar-icon {
+    padding: 5px 10px;
+    display: inline-block;
+    box-shadow: 0 0 2px #BBB;
+    background: #F8F8F8;
+    margin-right: 5px;
+    cursor: pointer;
+    font-size: 13px;
+    border-radius: 2px;
+    float: left;
+}
+.wiki-toolbar-icon .fa {
+    font-size: 15px;
+}
+.wiki-toolbar-icon span {
+    margin-left: 5px;
+}
+
+.wiki-toolbar-icon:hover {
+  background: rgba(51, 122, 183, 0.15);
+}

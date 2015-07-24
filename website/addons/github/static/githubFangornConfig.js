@@ -274,6 +274,9 @@ function gotoFile (item) {
 }
 function _fangornGithubTitle(item, col)  {
     var tb = this;
+    if (item.data.isAddonRoot && item.connected === false) { // as opposed to undefined, avoids unnecessary setting of this value
+        return Fangorn.Utils.connectCheckTemplate.call(this, item);
+    }
     if (item.data.addonFullname) {
         var branch = item.data.branch || item.data.defaultBranch;
         return m('span',[

@@ -520,30 +520,6 @@ class AddonGitHubNodeSettings(StorageAddonBase, AddonNodeSettingsBase):
             )
         )
 
-    def before_fork(self, node, user):
-        """
-
-        :param Node node:
-        :param User user:
-        :return str: Alert message
-
-        """
-        if self.user_settings and self.user_settings.owner == user:
-            return (
-                'Because you have authenticated the GitHub add-on for this '
-                '{cat}, forking it will also transfer your authorization to '
-                'the forked {cat}.'
-            ).format(
-                cat=node.project_or_component,
-            )
-        return (
-            'Because this GitHub add-on has been authenticated by a different '
-            'user, forking it will not transfer authentication to the forked '
-            '{cat}.'
-        ).format(
-            cat=node.project_or_component,
-        )
-
     def after_fork(self, node, fork, user, save=True):
         """
 

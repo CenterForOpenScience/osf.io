@@ -18,7 +18,7 @@
                 % else:
                     % if user_has_auth:
                         <a id="githubImportToken" class="text-primary pull-right addon-auth">
-                           Import Account From Profile
+                           Import Account from Profile
                         </a>
                     % else:
                         <a id="githubCreateToken" class="text-primary pull-right addon-auth">

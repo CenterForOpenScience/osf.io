@@ -7,7 +7,6 @@ from framework.flask import redirect  # VOL-aware redirect
 from framework.sessions import session
 from framework.exceptions import HTTPError
 from framework.auth.decorators import must_be_logged_in
-from framework.status import push_status_message as flash
 
 from website import models
 from website.util import permissions
@@ -39,9 +38,8 @@ def googledrive_oauth_start(auth, **kwargs):
     if node and not node.is_contributor(user):
         raise HTTPError(http.FORBIDDEN)
 
-    # If user has already authorized google drive, flash error message
+    # Handle if user has already authorized google drive
     if node_addon and node_addon.has_auth:
-        flash('You have already authorized Google Drive for this account', 'warning')
         return redirect(web_url_for('user_addons'))
 
     client = GoogleAuthClient()
@@ -64,7 +62,6 @@ def googledrive_oauth_finish(auth, **kwargs):
 
     # Handle request cancellations from Google's API
     if request.args.get('error'):
-        flash('Google Drive authorization request cancelled.')
         if node:
             return redirect(node.web_url_for('node_setting'))
         return redirect(web_url_for('user_addons'))
@@ -101,7 +98,6 @@ def googledrive_oauth_finish(auth, **kwargs):
     user_settings.expires_at = datetime.utcfromtimestamp(token['expires_at'])
     user_settings.save()
 
-    flash('Successfully authorized Google Drive', 'success')
     if node:
         if node.has_addon('googledrive'):
             node_addon = node.get_addon('googledrive')
