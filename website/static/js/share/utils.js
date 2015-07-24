@@ -309,7 +309,7 @@ utils.boolQuery = function (must, must_not, should, minimum) {
     return ret;
 };
 
-utils.dateHistogramFilter = function (feild, gte, lte, interval) {
+utils.dateHistogramFilter = function (field, gte, lte, interval) {
     //gte and lte in ms since epoch
     lte = lte || new Date().getTime();
     gte = gte || 0;
@@ -317,7 +317,7 @@ utils.dateHistogramFilter = function (feild, gte, lte, interval) {
     interval = interval || 'week';
     return {
         'date_histogram': {
-            'field': feild,
+            'field': field,
             'interval': interval,
             'min_doc_count': 0,
             'extended_bounds': {
