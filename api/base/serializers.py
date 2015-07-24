@@ -204,25 +204,32 @@ def _params_url_val(val, obj, serializer, **kwargs):
 
 class AttributeLinksField(LinksField):
 
-    def to_representation(self, obj):
-        ret = _rapply(self.links, _params_url_val, obj=obj, serializer=self.parent)
+    def __init__(self, objects, *args, **kwargs):
+        ser.Field.__init__(self, read_only=True, *args, **kwargs)
+        self.objects = objects
+
+    def to_representation(self, obj, link_endpoint=None, link_kwargs=None):
+        ret = _rapply(self.objects, _params_url_val, obj=obj, serializer=self.parent)
         if hasattr(obj, 'get_absolute_url'):
             ret['self'] = obj.get_absolute_url()
+        if hasattr(obj, 'link'):
+            _params_url_val(obj.link, obj, self.parent)
         return ret
 
 
 class Attribute(object):
 
-    def __init__(self, query):
+    def __init__(self, query, link_endpoint, link_kwargs):
         self.query = query
+        self.link_endpoint = link_endpoint
+        self.link_kwargs = link_kwargs
 
     def resolve_attribute(self, obj):
         object_list = []
-        object_ids = []
+        ret = {}
         if hasattr(obj, self.query):
             object_list = getattr(obj, self.query)
-
         for o in object_list:
-            object_ids.append(o._id)
-
-        return object_ids
+            self.link_kwargs['node_id'] = o._id
+            ret[o._id] = Link(endpoint=self.link_endpoint, kwargs=self.link_kwargs).resolve_url(obj)
+        return ret
