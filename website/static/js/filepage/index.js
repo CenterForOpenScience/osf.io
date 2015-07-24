@@ -33,14 +33,12 @@ var FileViewPage = {
                 self.file.renter = resp.renter;
                 if ((self.file.renter !== '') && (self.file.renter !== self.context.userId)) {
                 $osf.growl('File is locked', 'This file has been locked by a <a href="/' + self.file.renter +
-                    '"> collaborator </a>. It needs to be unlocked before any changes can be made. ' +
-                    'If you are an administrator, you may <a data-bind="onclick:' +
-                    '$(window.document).trigger.bind($(window.document), \'fileviewpage:force_return\')">force unlock the file.</a>');
+                    '"> collaborator </a>. It needs to be unlocked before any changes can be made.');
             }
             }).fail(function(resp) {
             });
         };
-        if (self.context.editor){
+        if (self.file.provider === 'osfstorage'){
             self.isRenter();
         }
         //Force canEdit into a bool
@@ -160,7 +158,8 @@ var FileViewPage = {
         $(document).on('fileviewpage:force_return', function() {
             bootbox.confirm({
                 title: 'Force unlock file',
-                message: 'This will unlock the file for all contributors, are you sure?',
+                message: 'This will unlock the file for all contributors, and it will only work if you are an ' +
+                'administrator. Are you sure?',
                 buttons: {
                     confirm:{
                         label: 'Force unlock',
@@ -326,6 +325,9 @@ var FileViewPage = {
         m.render(document.getElementById('toggleBar'), m('.btn-toolbar.m-t-md', [
             ctrl.canEdit() && (ctrl.file.renter === '') ? m('.btn-group.m-l-xs.m-t-xs', [
                 m('.btn.btn-sm.btn-danger.file-delete', {onclick: $(document).trigger.bind($(document), 'fileviewpage:delete')}, 'Delete')
+            ]) : '',
+            ctrl.context.currentUser.canEdit && (!ctrl.canEdit()) ? m('.btn-group.m-l-xs.m-t-xs', [
+                m('.btn.btn-sm.btn-danger', {onclick: $(document).trigger.bind($(document), 'fileviewpage:force_return')}, 'Force Unlock')
             ]) : '',
             ctrl.canEdit() && (ctrl.file.renter === '') && (ctrl.file.provider === 'osfstorage') ? m('.btn-group.m-l-xs.m-t-xs', [
                 m('.btn.btn-sm.btn-warning', {onclick: $(document).trigger.bind($(document), 'fileviewpage:rent')}, 'Lock')

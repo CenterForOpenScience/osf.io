@@ -261,14 +261,14 @@ def osfstorage_rented(file_node, **kwargs):
 @must_have_permission(permissions.ADMIN)
 @decorators.autoload_filenode(must_be='file')
 def osfstorage_force_return(file_node, auth, **kwargs):
-    file_node.return_rent(auth.user)
+    file_node.return_rent()
     return {'status': 'success'}
 
 @must_have_permission(permissions.WRITE)
 @decorators.autoload_filenode(check_rent=True)
 def osfstorage_rent_all(file_node, auth, **kwargs):
     data = request.get_json()
-    worked = file_node.node_settings.root_node.node_settings.rent_all_files(user=auth.user, end_date=data['end_date'])
+    worked = file_node.node_settings.rent_all_files(user=auth.user, end_date=data['end_date'])
     if worked:
         return {'status': 'success'}
     return {'status': 'failure'}
@@ -276,7 +276,7 @@ def osfstorage_rent_all(file_node, auth, **kwargs):
 @must_have_permission(permissions.WRITE)
 @decorators.autoload_filenode(check_rent=True)
 def osfstorage_return_all(file_node, auth, **kwargs):
-    worked = file_node.node_settings.root_node.node_settings.return_all_files(user=auth.user)
+    worked = file_node.node_settings.return_all_files(auth.userx)
     if worked:
         return {'status': 'success'}
     return {'status': 'failure'}
