@@ -576,6 +576,16 @@ class TestProjectViews(OsfTestCase):
         assert_equal(res.status_code, 404)
         assert_in('Template not found', res)
 
+    def test_register_project_with_multiple_errors(self):
+        mock_addon1 = MockAddon()
+        mock_addon2 = MockAddon()
+        mock_addon1.config.short_name = 'figshare'
+        mock_addon2.config.short_name = 'github'
+        setattr(mock_addon1, 'archive_errors', 'Error message')
+        setattr(mock_addon2, 'archive_errors', 'Error message')
+        self.project.
+
+
     # Regression test for https://github.com/CenterForOpenScience/osf.io/issues/1478
     @mock.patch('website.archiver.tasks.archive.si')
     def test_registered_projects_contributions(self, mock_archive):
