@@ -400,24 +400,52 @@ ko.bindingHandlers.anchorScroll = {
  */
 ko.bindingHandlers.toggleHeight = {
     init: function(elem, valueAccessor) {
-        elem.height = valueAccessor().height || 50;
+        var height = valueAccessor().height || 50;
         var iconDown = valueAccessor().iconDown || 'fa fa-angle-down';
         var iconUp = valueAccessor().iconUp || 'fa fa-angle-up';
-        elem.element = $(elem);
+        var $el = $(elem);
+        var collapsed = true;
+        var showToggle = false;
+        var gradientDiv = $('<div class="' + elem.id + '-gradient toggle-height-gradient" style="display:none"></div>').appendTo(elem);
+        var toggleDiv = $('<div class="' + elem.id + '-toggle toggle-height-toggle text-center" style="display:none"><i class="' + iconDown +'"></i><i style="display:none" class="' + iconUp + '"></i></div>').insertAfter(elem);
 
-        elem.element.append('<div class="contributor-gradient" style="display:none"></div>');
-        elem.element.append('<div class="contributor-toggle text-center" style="display:none"><i class="' + iconDown +'"></i><i style="display:none" class="' + iconUp + '"></i></div>');
-    },
-    update: function(elem, valueAccessor) {
-        if(elem.element.height() > elem.height){
-            elem.element.height(elem.height);
-            elem.element.children('.contributor-gradient').show();
-            elem.element.children('.contributor-toggle').show();
-        } else {
-            elem.element.height(elem.element[0].scrollHeight);
-            elem.element.children('.contributor-gradient').hide();
-            elem.element.children('.contributor-toggle').hide();
+        function noToggle () {
+            $el.height($el[0].scrollHeight);
+            gradientDiv.hide();
+            toggleDiv.hide();
         }
+        function toggleCollapse () {
+            $el.height(height);
+            gradientDiv.show();
+            toggleDiv.show();
+        }
+        function toggleOpen (){
+            $el.height($el[0].scrollHeight);
+            gradientDiv.show();
+            toggleDiv.show();
+        }
+        function checkCollapse () {
+            if ($el.height() < height){
+                noToggle();
+            } else {
+                if (collapsed){
+                    toggleCollapse();
+                } else {
+                    toggleOpen();
+                }
+            }
+        }
+        function toggle() {
+            if (collapsed) {
+                toggleOpen();
+            } else {
+                toggleCollapse();
+            }
+            collapsed = !collapsed;
+        }
+        $(elem.id + '-toggle.toggle-height-toggle').click(toggle);
+        checkCollapse();
+        $(window).resize(checkCollapse);
     }
 };
 
