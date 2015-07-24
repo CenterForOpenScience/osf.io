@@ -414,6 +414,7 @@ ko.bindingHandlers.toggleHeight = {
             gradientDiv.hide();
             toggleDiv.hide();
             showToggle = false;
+            $el.removeClass('toggle-height-parent');
         }
         function toggleCollapse () {
             $el.css('height', height + 'px');
@@ -430,6 +431,7 @@ ko.bindingHandlers.toggleHeight = {
                 noToggle();
             } else if (!showToggle){
                 showToggle = true;
+                $el.addClass('toggle-height-parent');
                 if (collapsed){
                     toggleCollapse();
                 } else {

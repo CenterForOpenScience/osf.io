@@ -483,3 +483,8 @@ button.close {
     position: absolute;
     bottom: 0;
 }
+.toggle-height-parent {
+    position: relative;
+    overflow: hidden;
+}
+
