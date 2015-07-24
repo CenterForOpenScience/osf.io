@@ -841,11 +841,11 @@ class TestAddNodeContributor(ApiTestCase):
 
     def setUp(self):
         ApiTestCase.setUp(self)
-        self.creator = UserFactory.build()
+        self.admin = UserFactory.build()
         password = fake.password()
-        self.creator.set_password(password)
-        self.creator.save()
-        self.creator_auth = (self.creator.username, password)
+        self.admin.set_password(password)
+        self.admin.save()
+        self.admin_auth = (self.admin.username, password)
 
         self.user = UserFactory.build()
         self.user.set_password(password)
@@ -857,16 +857,16 @@ class TestAddNodeContributor(ApiTestCase):
             'permission': 'write',
             'bibliographic': True
         }
-        self.project = ProjectFactory(is_public=True, creator=self.creator)
+        self.project = ProjectFactory(is_public=True, creator=self.admin)
         self.url = '/{}nodes/{}/contributors/'.format(API_BASE, self.project._id)
 
-    def test_creator_add_read_bibliographic_contributor(self):
+    def test_admin_add_read_bibliographic_contributor(self):
         data = {
             'id': self.user._id,
             'permission': 'read',
             'bibliographic': True
         }
-        res = self.app.post(self.url, params=data, auth=self.creator_auth, expect_errors=False)
+        res = self.app.post(self.url, params=data, auth=self.admin_auth, expect_errors=False)
         assert_equal(res.status_code, 201)
 
         self.project.reload()
@@ -874,13 +874,13 @@ class TestAddNodeContributor(ApiTestCase):
         assert_equal(self.project.get_permissions(self.user), ['read'])
         assert_true(self.project.get_visible(self.user))
 
-    def test_creator_add_read_non_bibliographic_contributor(self):
+    def test_admin_add_read_non_bibliographic_contributor(self):
         data = {
             'id': self.user._id,
             'permission': 'read',
             'bibliographic': False
         }
-        res = self.app.post(self.url, params=data, auth=self.creator_auth, expect_errors=False)
+        res = self.app.post(self.url, params=data, auth=self.admin_auth, expect_errors=False)
 
         self.project.reload()
         assert_equal(res.status_code, 201)
@@ -888,13 +888,13 @@ class TestAddNodeContributor(ApiTestCase):
         assert_equal(self.project.get_permissions(self.user), ['read'])
         assert_false(self.project.get_visible(self.user))
 
-    def test_creator_add_write_bibliographic_contributor(self):
+    def test_admin_add_write_bibliographic_contributor(self):
         data = {
             'id': self.user._id,
             'permission': 'write',
             'bibliographic': True
         }
-        res = self.app.post(self.url, params=data, auth=self.creator_auth, expect_errors=False)
+        res = self.app.post(self.url, params=data, auth=self.admin_auth, expect_errors=False)
 
         self.project.reload()
         assert_equal(res.status_code, 201)
@@ -902,13 +902,13 @@ class TestAddNodeContributor(ApiTestCase):
         assert_equal(self.project.get_permissions(self.user), ['read', 'write'])
         assert_true(self.project.get_visible(self.user))
 
-    def test_creator_add_write_non_bibliographic_contributor(self):
+    def test_admin_add_write_non_bibliographic_contributor(self):
         data = {
             'id': self.user._id,
             'permission': 'write',
             'bibliographic': False
         }
-        res = self.app.post(self.url, params=data, auth=self.creator_auth, expect_errors=False)
+        res = self.app.post(self.url, params=data, auth=self.admin_auth, expect_errors=False)
 
         self.project.reload()
         assert_equal(res.status_code, 201)
@@ -916,13 +916,13 @@ class TestAddNodeContributor(ApiTestCase):
         assert_equal(self.project.get_permissions(self.user), ['read', 'write'])
         assert_false(self.project.get_visible(self.user))
 
-    def test_creator_add_admin_bibliographic_contributor(self):
+    def test_admin_add_admin_bibliographic_contributor(self):
         data = {
             'id': self.user._id,
             'permission': 'admin',
             'bibliographic': True
         }
-        res = self.app.post(self.url, params=data, auth=self.creator_auth, expect_errors=False)
+        res = self.app.post(self.url, params=data, auth=self.admin_auth, expect_errors=False)
 
         self.project.reload()
         assert_equal(res.status_code, 201)
@@ -930,13 +930,13 @@ class TestAddNodeContributor(ApiTestCase):
         assert_equal(self.project.get_permissions(self.user), ['read', 'write', 'admin'])
         assert_true(self.project.get_visible(self.user))
 
-    def test_creator_add_admin_non_bibliographic_contributor(self):
+    def test_admin_add_admin_non_bibliographic_contributor(self):
         data = {
             'id': self.user._id,
             'permission': 'admin',
             'bibliographic': False
         }
-        res = self.app.post(self.url, params=data, auth=self.creator_auth, expect_errors=False)
+        res = self.app.post(self.url, params=data, auth=self.admin_auth, expect_errors=False)
 
         self.project.reload()
         assert_equal(res.status_code, 201)
@@ -944,18 +944,18 @@ class TestAddNodeContributor(ApiTestCase):
         assert_equal(self.project.get_permissions(self.user), ['read', 'write', 'admin'])
         assert_false(self.project.get_visible(self.user))
 
-    def test_creator_add_already_existing_contributor(self):
+    def test_admin_add_already_existing_contributor(self):
         self.project.add_contributor(contributor=self.user, save=True)
-        res = self.app.post(self.url, params=self.default_user_data, auth=self.creator_auth, expect_errors=True)
+        res = self.app.post(self.url, params=self.default_user_data, auth=self.admin_auth, expect_errors=True)
         assert_equal(res.status_code, 400)
 
-    def test_creator_add_non_existing_contributor(self):
+    def test_admin_add_non_existing_contributor(self):
         data = {
             'id': 'non_existent',
             'permission': 'write',
             'bibliographic': True
         }
-        res = self.app.post(self.url, params=data, auth=self.creator_auth, expect_errors=True)
+        res = self.app.post(self.url, params=data, auth=self.admin_auth, expect_errors=True)
         assert_equal(res.status_code, 404)
 
     def test_non_contributor_add_contributor(self):
