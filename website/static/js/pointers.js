@@ -29,6 +29,7 @@ var AddPointerViewModel = oop.extend(Paginator, {
         this.includePublic = ko.observable(true);
         this.searchWarningMsg = ko.observable('');
         this.submitWarningMsg = ko.observable('');
+        this.loadingResults = ko.observable(false);
 
         this.foundResults = ko.pureComputed(function() {
             return self.query() && self.results().length;
@@ -79,7 +80,7 @@ var AddPointerViewModel = oop.extend(Paginator, {
                     self.searchWarningMsg(xhr.responseJSON && xhr.responseJSON.message_long);
             }).always( function (){
                 clearTimeout(timeout); // clear timeout function
-                this.loadingResults = ko.observable(false);
+                self.loadingResults(false);
             });
 
         } else {
