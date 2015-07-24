@@ -50,7 +50,15 @@
   <div id="fileViewPanelLeft" class="col-sm-9 panel-expand">
     <div class="row">
       <div id="mfrIframeParent" class="col-sm-9">
-        <div id="mfrIframe" class="mfr mfr-file"></div>
+        <div class="panel panel-default">
+          <div class="panel-heading clearfix">
+            <h4 class="panel-title"><i class="fa fa-eye"></i> View</h4>
+          </div>
+          <div class="panel-body">
+            <div id="mfrIframe" class="mfr mfr-file"></div>
+          </div>
+        </div>
+
       </div>
 
     <!-- This section is built by mithril in revisions.js -->

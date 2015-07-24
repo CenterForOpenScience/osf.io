@@ -78,3 +78,8 @@
     max-height: 500px;
     height: inherit;
 }
+
+.mfr-logo-spin {
+    z-index: 1 !important;
+    top: 60px !important;
+}
