@@ -443,7 +443,7 @@ ko.bindingHandlers.toggleHeight = {
             }
             collapsed = !collapsed;
         }
-        $(elem.id + '-toggle.toggle-height-toggle').click(toggle);
+        $('.' + elem.id + '-toggle.toggle-height-toggle').click(toggle);
         checkCollapse();
         $(window).resize(checkCollapse);
     }
