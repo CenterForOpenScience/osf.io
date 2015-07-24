@@ -349,56 +349,6 @@ var ProjectViewModel = function(data) {
         });
     };
 
-
-    /* Contributor toggle */
-    // self.showToggle = ko.observable(false);
-    // self.collapsed = ko.observable(false);
-    // self.collapseLimit = 40;
-    // self.contributorsEl = $('#contributors-list');
-    // if (self.contributorsEl.length > 0) {
-    //     self.collapseHeight = ko.observable(self.contributorsEl.height());
-    //     var checkCollapse = function () {
-    //         self.collapseHeight((self.contributorsEl.height()));
-    //         if(self.collapseHeight() > self.collapseLimit ){
-    //             self.showToggle(true);
-    //             self.collapsed(true);
-    //         } else {
-    //             self.showToggle(false);
-    //             self.collapsed(false);
-    //             var height = self.collapsed() ? self.collapseLimit : self.contributorsEl[0].scrollHeight;
-    //             self.contributorsEl.height(height);
-    //         }
-    //     };
-    //     self.toggleHeight = function(){
-    //         self.collapsed(!self.collapsed());
-    //     };
-    //     $(window).resize(checkCollapse);
-    //     checkCollapse();
-    //     ko.bindingHandlers.animateHeight = {
-    //         init: function(element,valueAccessor){
-    //             var value = valueAccessor();
-    //             var height = value.state ? value.shortHeight : $(element)[0].scrollHeight;
-    //             $(element).height(height);
-    //         },
-    //         update: function(element, valueAccessor) {
-    //             var value = valueAccessor();
-    //             var speed = 300;
-    //             //var height = value.state ? value.shortHeight : value.longHeight;
-    //             if(value.state){
-    //                 $(element).animate({
-    //                     height: value.shortHeight
-    //                 }, speed);
-    //             } else {
-    //                 $(element).animate({
-    //                     height: $(element)[0].scrollHeight
-    //                 }, speed);
-    //             }
-
-    //         }
-    //     };
-    // }
-
-
 };
 
 ////////////////
