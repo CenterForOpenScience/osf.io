@@ -137,11 +137,7 @@ ko.bindingHandlers.projectSearch = {
         }
         if (Array.isArray(nodesOrURL)) {
             var nodes = params.data;
-            // Compute relevant URLs for each search result, filters results that would result in a 'forbidden' error.
-            nodes = nodes.filter(function(node) {
-               return viewModel.permissionsAllowed.indexOf(node.permissions) > -1;
-            });
-
+            // Compute relevant URLs for each search result.
             initTypeahead(element, nodes, viewModel, params);
         } else if (typeof nodesOrURL === 'string') { // params.data is a URL
             var url = nodesOrURL;
@@ -179,9 +175,6 @@ function ProjectSearchViewModel(params) {
     self.submitText = params.submitText || 'Submit';
     self.projectPlaceholder = params.projectPlaceholder || 'Type to search for a project';
     self.componentPlaceholder = params.componentPlaceholder || 'Optional: Type to search for a component';
-    // node must have one of these permission for typeahead results, stops users for getting 'forbidden' error from
-    // typeahead results.
-    self.permissionsAllowed = params.permissionsAllowed || ['read','write','admin'];
 
     /* Observables */
     // If params.enableComponents is passed in, use that value, otherwise default to true
