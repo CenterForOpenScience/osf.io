@@ -80,11 +80,13 @@
 
  <script>
     // Make s3 settings variables globally accessible for relevant JS
-    <% from website.addons.s3.settings import DEFAULT_BUCKET_LOCATION %>
+    <%
+      from website.addons.s3.settings import BUCKET_LOCATIONS
+      from website.util.sanitize import safe_json as sjson
+    %>
     window.contextVars = $.extend(true, {}, window.contextVars, {
         s3Settings: {
-            defaultBucketLocationValue: ${ DEFAULT_BUCKET_LOCATION['value'] | sjson, n },
-            defaultBucketLocationMessage: ${ DEFAULT_BUCKET_LOCATION['message'] | sjson, n }
+            bucketLocations: ${ BUCKET_LOCATIONS | sjson, n}
           }
     })
  </script>

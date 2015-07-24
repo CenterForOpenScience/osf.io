@@ -7,8 +7,8 @@ from boto.s3.connection import OrdinaryCallingFormat
 
 from framework.exceptions import HTTPError
 from website.util import web_url_for
-from website.addons.s3.settings import DEFAULT_BUCKET_LOCATION
-from .settings import VALID_BUCKET_LOCATIONS
+from website.addons.s3.settings import DEFAULT_BUCKET_LOCATION, BUCKET_LOCATIONS
+
 
 def connect_s3(access_key=None, secret_key=None, user_settings=None):
     """Helper to build an S3Connection object
@@ -33,7 +33,7 @@ def get_bucket_names(user_settings):
 
 
 def valid_bucket_location(location):
-    return bool(location in VALID_BUCKET_LOCATIONS)
+    return bool(location in BUCKET_LOCATIONS.keys())
 
 
 def validate_bucket_name(name):

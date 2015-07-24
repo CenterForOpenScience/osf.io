@@ -262,6 +262,33 @@ ViewModel.prototype.openCreateBucket = function() {
 
     var isValidBucket = /^(?!.*(\.\.|-\.))[^.][a-z0-9\d.-]{2,61}[^.]$/;
 
+    // Maps internal values used by API to display names
+    var BUCKET_LOCATION_MAP = $.extend(
+        {},
+        {
+            '': 'US Standard',
+            'EU': 'Europe Standard',
+            'us-west-1': 'California',
+            'us-west-2': 'Oregon',
+            'ap-northeast-1': 'Tokyo',
+            'ap-southeast-1': 'Singapore',
+            'ap-southeast-2': 'Sydney',
+            'cn-north-1': 'Beijing'
+        },
+        window.contextVars.s3Settings.bucketLocations
+    );
+
+    // Generates html options for key-value pairs in BUCKET_LOCATION_MAP
+    function generateBucketOptions(locations) {
+        var options;
+        for (var location in locations) {
+            if (BUCKET_LOCATION_MAP.hasOwnProperty(location)) {
+                options = options + ['<option value="', location, '">', locations[location], '</option>', '\n'].join('');
+            }
+        }
+        return options;
+    }
+
     bootbox.dialog({
         title: 'Create a new bucket',
         message:
@@ -278,15 +305,7 @@ ViewModel.prototype.openCreateBucket = function() {
                                 '<label class="col-md-4 control-label" for="bucketLocation">Bucket Location</label> ' +
                                 '<div class="col-md-4"> ' +
                                     '<select id="bucketLocation" name="bucketLocation" class="form-control"> ' +
-                                        '<option value="' + window.contextVars.s3Settings.defaultBucketLocationValue + '' +
-                                            '" selected>' + window.contextVars.s3Settings.defaultBucketLocationMessage + '</option> ' +
-                                        '<option value="EU">Europe Standard</option> ' +
-                                        '<option value="us-west-1">California</option> ' +
-                                        '<option value="us-west-2">Oregon</option> ' +
-                                        '<option value="ap-northeast-1">Tokyo</option> ' +
-                                        '<option value="ap-southeast-1">Singapore</option> ' +
-                                        '<option value="ap-southeast-2">Sydney, Australia</option> ' +
-                                        '<option value="cn-north-1">Beijing, China</option> ' +
+                                        generateBucketOptions(BUCKET_LOCATION_MAP) +
                                     '</select>' +
                                 '</div>' +
                             '</div>' +

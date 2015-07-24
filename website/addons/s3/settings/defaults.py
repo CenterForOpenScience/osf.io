@@ -4,16 +4,16 @@ MAX_RENDER_SIZE = (1024 ** 2) * 3
 
 ALLOWED_ORIGIN = '*'
 
-VALID_BUCKET_LOCATIONS = [
-    '',
-    'EU',
-    'us-west-1',
-    'us-west-2',
-    'ap-northeast-1',
-    'ap-southeast-1',
-    'ap-southeast-2',
-    'cn-north-1'
-]
+BUCKET_LOCATIONS = {
+    '': 'US Standard',
+    'EU': 'Europe Standard',
+    'us-west-1': 'California',
+    'us-west-2': 'Oregon',
+    'ap-northeast-1': 'Tokyo',
+    'ap-southeast-1': 'Singapore',
+    'ap-southeast-2': 'Sydney',
+    'cn-north-1': 'Beijing'
+}
 DEFAULT_BUCKET_LOCATION = {
     'value': '',
     'message': 'US Standard'
