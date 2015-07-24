@@ -5,6 +5,7 @@ from api.users.serializers import UserSerializer
 from website.models import Node, User
 from framework.auth.core import Auth
 from api.base.serializers import JSONAPISerializer, LinksField, Link, WaterbutlerLink
+from api.base.utils import has_multiple_admins
 
 
 class NodeSerializer(JSONAPISerializer):
@@ -204,7 +205,7 @@ class NodeContributorsSerializer(UserSerializer):
         elif is_admin or not is_current:
             if field == 'admin':
                     node.set_permissions(user, ['read', 'write', 'admin'])
-            elif self.has_multiple_admins(node) or not is_current:
+            elif has_multiple_admins(node) or not is_current:
                 if field == 'write':
                     node.set_permissions(user, ['read', 'write'])
                 elif field == 'read':
@@ -216,15 +217,6 @@ class NodeContributorsSerializer(UserSerializer):
         else:
             raise PermissionDenied()
         node.save()
-
-    def has_multiple_admins(self, node):
-        has_one_admin = False
-        for contributor in node.contributors:
-            if node.has_permission(contributor, 'admin'):
-                if has_one_admin:
-                    return True
-                has_one_admin = True
-        return False
 
 
 class NodeContributorDetailSerializer(NodeContributorsSerializer):

@@ -7,7 +7,7 @@ from modularodm import Q
 from framework.auth.core import Auth
 from website.models import Node, Pointer, User
 from api.base.filters import ODMFilterMixin, ListFilterMixin
-from api.base.utils import get_object_or_404, waterbutler_url_for
+from api.base.utils import get_object_or_404, waterbutler_url_for, has_multiple_admins
 from .serializers import NodeSerializer, NodePointersSerializer, NodeFilesSerializer, NodeContributorsSerializer,\
     NodeContributorDetailSerializer
 from .permissions import ContributorOrPublic, ReadOnlyIfRegistration, ContributorOrPublicForPointers, \
@@ -177,20 +177,11 @@ class NodeContributorDetail(generics.RetrieveUpdateDestroyAPIView, NodeMixin):
         node = self.get_node()
         current_user = self.request.user
         auth = Auth(current_user)
-        if not self.has_multiple_admins(node) and node.has_permission(instance, 'admin'):
+        if not has_multiple_admins(node) and node.has_permission(instance, 'admin'):
             raise ValidationError("Must have at least one registered admin contributor")
         if len(node.visible_contributors) == 1 and node.get_visible(instance):
             raise ValidationError("Must have at least one visible contributor")
         node.remove_contributor(instance, auth)
-
-    def has_multiple_admins(self, node):
-        has_one_admin = False
-        for contributor in node.contributors:
-            if node.has_permission(contributor, 'admin'):
-                if has_one_admin:
-                    return True
-                has_one_admin = True
-        return False
 
 
 class NodeRegistrationsList(generics.ListAPIView, NodeMixin):
