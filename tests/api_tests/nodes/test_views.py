@@ -1327,46 +1327,5 @@ class TestDeleteNodePointer(ApiTestCase):
         assert_equal(res.status_code, 403)
 
 
-class TestNodeLogList(ApiTestCase):
-    def setUp(self):
-        super(TestNodeLogList, self).setUp()
-        self.user = UserFactory.build()
-        password = fake.password()
-        self.password = password
-        self.user.set_password(password)
-        self.user.save()
-        self.basic_auth = (self.user.username, password)
 
-        self.user_two = UserFactory.build()
-        self.user_two.set_password(self.password)
-        self.user_two.save()
-        self.basic_auth_two = (self.user_two.username, self.password)
-
-        self.private_project = ProjectFactory(is_public=False, creator=self.user)
-        self.private_url = '/{}nodes/{}/logs/'.format(API_BASE, self.private_project._id)
-        self.public_project = ProjectFactory(is_public=True, creator=self.user)
-        self.public_url = '/{}nodes/{}/logs/'.format(API_BASE, self.public_project._id)
-
-
-        # self.public_project = {'id': self.id,
-        #                        # 'description': self.description,
-        #                        # 'category': self.category,
-        #                        # 'public': True
-        #                        }
-        # self.private_project = {'id': self.id,
-        #                         # 'description': self.description,
-        #                         # 'category': self.category,
-        #                         # 'public': False
-        #                         }
-
-    def test_creates_logs(self):
-        res = self.app.get(self.public_url)
-        assert_equal(res.status_code, 200)
-        assert_equal(len(res.json['data']), 1)
-        assert_equal(res.json['data'],['date'], self.public_project)
-        assert_equal(res.json['data'][0]['id'], self.logs[0]._id)
-        assert_equal(res.json['data'][0]['date'], self.public_project._id)
-        assert_equal(res.json['data'][0]['id'], self.public_project._id)
-        assert_equal(res.json['data'][0]['name'], self.public_project._id)
-        assert_equal(res.json['data'][0]['version'], self.public_project._id)
 
