@@ -5,9 +5,7 @@ from modularodm.exceptions import ValidationError
 
 from framework.auth.decorators import collect_auth
 from framework.guid.model import Guid
-from website.util.sanitize import clean_tag
 from website.project.model import Tag
-from website.util.sanitize import clean_tag
 from website.project.decorators import (
     must_be_valid_project, must_have_permission, must_not_be_registration
 )
@@ -35,9 +33,9 @@ def project_tag(tag, auth, **kwargs):
 @must_be_valid_project  # injects project
 @must_have_permission('write')
 @must_not_be_registration
-def project_addtag(auth, node, **kwargs):
-
-    tag = clean_tag(kwargs['tag'])
+def project_add_tag(auth, node, **kwargs):
+    data = request.get_json()
+    tag = data['tag']
     if tag:
         try:
             node.add_tag(tag=tag, auth=auth)
@@ -49,34 +47,38 @@ def project_addtag(auth, node, **kwargs):
 @must_be_valid_project  # injects project
 @must_have_permission('write')
 @must_not_be_registration
-def project_removetag(auth, node, **kwargs):
-    tag = clean_tag(kwargs['tag'])
+def project_remove_tag(auth, node, **kwargs):
+    data = request.get_json()
+    tag = data['tag']
     if tag:
         node.remove_tag(tag=tag, auth=auth)
         return {'status': 'success'}
 
 
-@must_be_valid_project # injects project
+@must_be_valid_project  # injects project
 @must_have_permission('write')
 @must_not_be_registration
-def file_addtag(auth, node, guid, **kwargs):
-    tag = clean_tag(kwargs['tag'])
+def file_add_tag(auth, node, guid, **kwargs):
+    data = request.get_json()
+    tag = data['tag']
+    file_name = data['fileName']
     if tag:
         try:
             fileobject = Guid.load(guid).referent
-            fileobject.add_tag(tag=tag, auth=auth, node=node)
+            fileobject.add_tag(tag, auth, node, file_name)
             return {'status': 'success'}, http.CREATED
         except ValidationError:
             return {'status': 'error'}, http.BAD_REQUEST
 
 
-@must_be_valid_project # injects project
+@must_be_valid_project  # injects project
 @must_have_permission('write')
 @must_not_be_registration
-def file_removetag(auth, node, guid, **kwargs):
-    tag = clean_tag(kwargs['tag'])
+def file_remove_tag(auth, node, guid, **kwargs):
+    data = request.get_json()
+    tag = data['tag']
+    file_name = data['fileName']
     if tag:
         fileobject = Guid.load(guid).referent
-        fileobject.remove_tag(tag=tag, auth=auth, node=node)
+        fileobject.remove_tag(tag, auth, node, file_name)
         return {'status': 'success'}
-

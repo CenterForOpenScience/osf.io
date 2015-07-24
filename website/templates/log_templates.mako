@@ -125,14 +125,14 @@ from
 
 <script type="text/html" id="filetag_added">
 tagged
-<a class="log-file-link overflow" data-bind="attr: {href: params.url}, text: params.path"></a>
+<a class="log-file-link overflow" data-bind="attr: {href: params.url}, text: params.fileName"></a>
 as <a class='tag' data-bind="attr: {href: '/search/?q=%22' + params.tag + '%22'}, text: params.tag"></a>
 </script>
 
 <script type="text/html" id="filetag_removed">
 removed tag <a class='tag' data-bind="attr: {href: '/search/?q=%22' + params.tag + '%22'}, text: params.tag"></a>
 from
-<a class="log-file-link overflow" data-bind="attr: {href: params.url}, text: params.path"></a>
+<a class="log-file-link overflow" data-bind="attr: {href: params.url}, text: params.fileName"></a>
 </script>
 
 <script type="text/html" id="edit_title">

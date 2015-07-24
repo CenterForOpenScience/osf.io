@@ -14,9 +14,6 @@ from modularodm.storage.base import KeyExistsException
 from framework.mongo import StoredObject
 from framework.mongo.utils import unique_on
 from framework.analytics import get_basic_counters
-from website.models import NodeLog
-from website.addons.base import AddonNodeSettingsBase, GuidFile
-from website.models import Tag
 
 from website.addons.base import AddonNodeSettingsBase, GuidFile, StorageAddonBase
 from website.addons.osfstorage import utils
@@ -135,8 +132,6 @@ class OsfStorageFileNode(StoredObject):
     is_deleted = fields.BooleanField(default=False)
     name = fields.StringField(required=True, index=True)
     kind = fields.StringField(required=True, index=True)
-    path = fields.StringField(required=True, index=True)
-    tags = fields.ForeignField('tag', list=True, backref='tagged')
     parent = fields.ForeignField('OsfStorageFileNode', index=True)
     versions = fields.ForeignField('OsfStorageFileVersion', list=True)
     node_settings = fields.ForeignField('OsfStorageNodeSettings', required=True, index=True)
@@ -202,45 +197,10 @@ class OsfStorageFileNode(StoredObject):
             Q('node_settings', 'eq', node_settings)
         )
 
-    def remove_tag(self, tag, auth, save=True):
-       if tag in self.tags2:
-            self.tags2.remove(tag)
-            self.add_log(
-                action=NodeLog.TAG_REMOVED,
-                params={
-                    'file': self.parent_id,
-                    'node': self._primary_key,
-                    'tag': tag,
-                },
-                auth=auth,
-                save=False,
-            )
-            if save:
-                self.save()
     @property
     @utils.must_be('folder')
     def children(self):
         return self.__class__.find(Q('parent', 'eq', self._id))
-
-    def add_tag(self, tag, auth, save=True):
-        if tag not in self.tags2:
-            new_tag = Tag.load(tag)
-            if not new_tag:
-                new_tag = Tag(_id=tag)
-            new_tag.save()
-            self.tags2.append(new_tag)
-            self.add_log(
-                action=NodeLog.TAG_ADDED,
-                params={
-                    'file': self.parent_id,
-                    'node': self._primary_key,
-                    'tag': tag,
-                },
-                auth=auth,
-                save=False,
-            )
-            if save:
-                self.save()
 
     @property
     def is_folder(self):
@@ -561,8 +521,6 @@ class OsfStorageGuidFile(GuidFile):
             'mode': 'render',
         })
         return url.url
-
-
 
 
 class OsfStorageTrashedFileNode(StoredObject):

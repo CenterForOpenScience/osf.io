@@ -19,10 +19,9 @@ from framework.mongo import set_up_storage
 
 from website import settings
 from website.util import api_url_for, rubeus
-from website.addons.base import exceptions, GuidFile
+from website.addons.base import GuidFile
 from website.project import new_private_link
 from website.project.model import NodeLog
-from website.project.utils import serialize_node
 from website.project.views.node import _view_project as serialize_node
 from website.addons.base import AddonConfig, AddonNodeSettingsBase, views
 from website.addons.github.model import AddonGitHubOauthSettings
@@ -440,6 +439,8 @@ class TestAddonFileViews(OsfTestCase):
             'size': '',
             'extra': '',
             'file_name': '',
+            'file_guid': '',
+            'file_tags': '',
             'materialized_path': '',
         })
         ret.update(rubeus.collect_addon_assets(self.project))
@@ -787,7 +788,7 @@ class TestFileTags(OsfTestCase):
         self.guid, _ = self.node_addon.find_or_create_file_guid('/' + self.path)
 
     def test_add_tag(self):
-        self.guid.add_tag('footag', auth=Auth(self.user), node=self.project)
+        self.guid.add_tag('footag', auth=Auth(self.user), node=self.project, file_name='file.txt')
         assert_in('footag', self.guid.tags)
         assert_equal(
             self.project.logs[-1].action,
@@ -796,21 +797,21 @@ class TestFileTags(OsfTestCase):
 
     def test_add_tag_too_long(self):
         with assert_raises(ValidationError):
-            self.guid.add_tag('a' * 129, auth=Auth(self.user), node=self.project)
+            self.guid.add_tag('a' * 129, auth=Auth(self.user), node=self.project, file_name='file.txt')
         assert_equal(0, len(self.guid.tags))
 
     def test_add_tag_already_present(self):
         assert_equal(0, len(self.guid.tags))
-        self.guid.add_tag('footag', auth=Auth(self.user), node=self.project)
+        self.guid.add_tag('footag', auth=Auth(self.user), node=self.project, file_name='file.txt')
         assert_in('footag', self.guid.tags)
         assert_equal(1, len(self.guid.tags))
-        self.guid.add_tag('footag', auth=Auth(self.user), node=self.project)
+        self.guid.add_tag('footag', auth=Auth(self.user), node=self.project, file_name='file.txt')
         assert_equal(1, len(self.guid.tags))
 
     def test_remove_tag(self):
-        self.guid.add_tag('footag', auth=Auth(self.user), node=self.project)
+        self.guid.add_tag('footag', auth=Auth(self.user), node=self.project, file_name='file.txt')
         assert_in('footag', self.guid.tags)
-        self.guid.remove_tag('footag', auth=Auth(self.user), node=self.project)
+        self.guid.remove_tag('footag', auth=Auth(self.user), node=self.project, file_name='file.txt')
         assert_not_in('footag', self.guid.tags)
         assert_equal(
             self.project.logs[-1].action,
@@ -819,7 +820,7 @@ class TestFileTags(OsfTestCase):
 
     def test_remove_tag_not_present(self):
         assert_equal(0, len(self.guid.tags))
-        self.guid.remove_tag('footag', auth=Auth(self.user), node=self.project)
+        self.guid.remove_tag('footag', auth=Auth(self.user), node=self.project, file_name='file.txt')
         assert_equal(
             self.project.logs[-1].action,
             NodeLog.ADDON_ADDED

@@ -970,24 +970,30 @@ class TestFileTagViews(OsfTestCase):
 
     def test_file_add_tag(self):
         assert_not_in('footag', self.guid.tags)
-        url = "/api/v1/project/{pid}/addfiletag/{tag}/{guid}/".format(
+        url = "/api/v1/project/{pid}/file/tags/{guid}/".format(
             pid=self.project._primary_key,
-            tag='footag',
             guid=self.guid
         )
-        self.app.post_json(url, {}, auth=self.user.auth)
+        post_data = {
+            'tag': 'footag',
+            'fileName': 'test.pdf'
+        }
+        self.app.post_json(url, post_data, auth=self.user.auth)
         self.guid.reload()
         assert_in('footag', self.guid.tags)
 
     def test_file_remove_tag(self):
-        self.guid.add_tag("footag", auth=Auth(self.user), node=self.project, save=True)
-        assert_in("footag", self.guid.tags)
-        url = "/api/v1/project/{pid}/removefiletag/{tag}/{guid}/".format(
+        self.guid.add_tag('footag', auth=Auth(self.user), node=self.project, file_name='test.pdf', save=True)
+        assert_in('footag', self.guid.tags)
+        url = "/api/v1/project/{pid}/file/tags/{guid}/".format(
             pid=self.project._primary_key,
-            tag='footag',
             guid=self.guid
         )
-        self.app.post_json(url, {}, auth=self.user.auth)
+        delete_data = {
+            'tag': 'footag',
+            'fileName': 'test.pdf'
+        }
+        self.app.delete_json(url, delete_data, auth=self.user.auth)
         self.guid.reload()
         assert_not_in('footag', self.guid.tags)
 

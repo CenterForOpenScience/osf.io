@@ -26,12 +26,9 @@ from framework.exceptions import (
 from website import settings
 from website.addons.base import exceptions
 from website.addons.base import serializer
-from website.project.model import Node
+from website.project.model import Node, Tag, NodeLog
 from website.util import waterbutler_url_for
-
 from website.oauth.signals import oauth_complete
-from website.models import Tag
-from website.models import NodeLog
 
 NODE_SETTINGS_TEMPLATE_DEFAULT = os.path.join(
     settings.TEMPLATES_PATH,
@@ -353,26 +350,7 @@ class GuidFile(GuidStoredObject):
     def revision(self):
         return getattr(self, '_revision', None)
 
-    def remove_tag(self, tag, auth, node, save=True):
-        if tag in self.tags:
-            self.tags.remove(tag)
-            node.add_log(
-                action=NodeLog.FILETAG_REMOVED,
-                params={
-                    'node': node._primary_key,
-                    'file': self._id,
-                    'tag': tag,
-                    'path': self.waterbutler_path.lstrip('/'),
-                    'url': self.guid_url
-                },
-                auth=auth,
-                save=False,
-            )
-            if save:
-                self.save()
-                node.save()
-
-    def add_tag(self, tag, auth, node, save=True):
+    def add_tag(self, tag, auth, node, file_name, save=True):
         if tag not in self.tags:
             new_tag = Tag.load(tag)
             if not new_tag:
@@ -383,9 +361,26 @@ class GuidFile(GuidStoredObject):
                 action=NodeLog.FILETAG_ADDED,
                 params={
                     'node': node._primary_key,
-                    'file': self._id,
+                    'fileName': file_name,
                     'tag': tag,
-                    'path': self.waterbutler_path.lstrip('/'),
+                    'url': self.guid_url
+                },
+                auth=auth,
+                save=False,
+            )
+            if save:
+                self.save()
+                node.save()
+
+    def remove_tag(self, tag, auth, node, file_name, save=True):
+        if tag in self.tags:
+            self.tags.remove(tag)
+            node.add_log(
+                action=NodeLog.FILETAG_REMOVED,
+                params={
+                    'node': node._primary_key,
+                    'fileName': file_name,
+                    'tag': tag,
                     'url': self.guid_url
                 },
                 auth=auth,

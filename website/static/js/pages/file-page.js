@@ -11,26 +11,20 @@ m.mount(document.getElementsByClassName('file-view-panels')[0], FileViewPage(win
 
 
 var guid = window.contextVars.file.file_guid;
-console.log(guid);
-
-var path = window.contextVars.file.path;
-console.log(path);
-
-console.log(window.contextVars.file);
-
 
     // Tag input
     $('#node-tags').tagsInput({
-
         width: '100%',
         interactive: window.contextVars.currentUser.canEdit,
         maxChars: 128,
         onAddTag: function(tag){
-            var url = nodeApiUrl + 'addfiletag/' + tag + '/' + guid + '/';
+            var url = nodeApiUrl + 'file/tags/' + guid + '/';
             var request = $.ajax({
                 url: url,
                 type: 'POST',
-                contentType: 'application/json'
+                contentType: 'application/json',
+                dataType: 'JSON',
+                data: JSON.stringify({tag: tag, fileName: window.contextVars.file.name}),
             });
             request.fail(function(xhr, textStatus, error) {
                 Raven.captureMessage('Failed to add tag', {
@@ -39,11 +33,13 @@ console.log(window.contextVars.file);
             });
         },
         onRemoveTag: function(tag){
-            var url = nodeApiUrl + 'removefiletag/' + tag + '/'+ guid + '/';
+            var url = nodeApiUrl + 'file/tags/' + guid + '/';
             var request = $.ajax({
                 url: url,
-                type: 'POST',
-                contentType: 'application/json'
+                type: 'DELETE',
+                contentType: 'application/json',
+                dataType: 'JSON',
+                data: JSON.stringify({tag: tag, fileName: window.contextVars.file.name}),
             });
             request.fail(function(xhr, textStatus, error) {
                 Raven.captureMessage('Failed to remove tag', {
