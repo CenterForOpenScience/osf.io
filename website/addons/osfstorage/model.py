@@ -74,31 +74,43 @@ class OsfStorageNodeSettings(StorageAddonBase, AddonNodeSettingsBase):
 
         return clone, None
 
-    def rent_all_files(self, user, end_date):
+    def rent_all_files(self, user, end_date, node=False):
         file_tree = self._get_file_tree()['children']
+        if not node:
+            node = self.root_node
         for file_info in file_tree:
-            name = file_info['path'].strip('/')
-            file = self.root_node.get_file(name, self)
+            try:
+                file = node.get_file(file_info['path'], self)
+            except NoResultsFound:
+                file = node.get_folder(file_info['path'], self)
             if file.renter is not None:
                 if file.renter != user:
                     return False
         for file_info in file_tree:
-            name = file_info['path'].strip('/')
-            file = self.root_node.get_file(name, self)
+            try:
+                file = node.get_file(file_info['path'], self)
+            except NoResultsFound:
+                file = node.get_folder(file_info['path'], self)
             file.rent(user, end_date)
 
-    def return_all_files(self, user, end_date):
+    def return_all_files(self, user, node=False):
         file_tree = self._get_file_tree()['children']
+        if not node:
+            node = self.root_node
         for file_info in file_tree:
-            name = file_info['path'].strip('/')
-            file = self.root_node.get_file(name, self)
+            try:
+                file = node.get_file(file_info['path'], self)
+            except NoResultsFound:
+                file = node.get_folder(file_info['path'], self)
             if file.renter is not None:
                 if file.renter != user:
                     return False
         for file_info in file_tree:
-            name = file_info['path'].strip('/')
-            file = self.root_node.get_file(name, self)
-            file.return_rent()
+            try:
+                file = node.get_file(file_info['path'], self)
+            except NoResultsFound:
+                file = node.get_folder(file_info['path'], self)
+            file.return_rent(user)
 
     def serialize_waterbutler_settings(self):
         return dict(settings.WATERBUTLER_SETTINGS, **{
@@ -250,7 +262,6 @@ class OsfStorageFileNode(StoredObject):
             return self.renter._id
         return ''
 
-    @utils.must_be('file')
     def rent(self, renter, end_date):
         self.renter = renter
         if end_date == 'day':
@@ -259,11 +270,14 @@ class OsfStorageFileNode(StoredObject):
             self.end_date = datetime.datetime.utcnow() + datetime.timedelta(weeks=1)
         else:
             self.end_date = datetime.datetime.utcnow() + datetime.timedelta(weeks=4)
+        if self.is_folder:
+            self.node_settings.rent_all_files(user=renter, end_date=end_date, node=self)
         self.save()
 
-    @utils.must_be('file')
-    def return_rent(self):
+    def return_rent(self, renter):
         self.renter = None
+        if self.is_folder:
+            self.node_settings.return_all_files(user=renter, node=self)
         self.save()
 
     def materialized_path(self):

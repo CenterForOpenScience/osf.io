@@ -101,7 +101,7 @@ var FileViewPage = {
                         callback: function() {
                             var date = $('input[name="date"]:checked').val();
                             $osf.postJSON(
-                                '/api/v1/project/' + self.node.id + '/osfstorage' + self.file.path +'/rent/',
+                                '/api/v1/project/' + self.node.id + '/osfstorage' + self.file.path +'/rent_all/',
                                 {
                                     'end_date': date || 'month'
                                 }
@@ -149,7 +149,7 @@ var FileViewPage = {
         });
         $(document).on('fileviewpage:return', function() {
             $osf.postJSON(
-                '/api/v1/project/' + self.node.id + '/osfstorage' + self.file.path +'/return/',
+                '/api/v1/project/' + self.node.id + '/osfstorage' + self.file.path +'/return_all/',
                 {}
             ).done(function(resp) {
                 window.location.reload();
