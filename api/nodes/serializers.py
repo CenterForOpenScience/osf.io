@@ -5,8 +5,7 @@ from api.users.serializers import UserSerializer
 from website.models import Node, User
 from framework.auth.core import Auth
 from rest_framework import exceptions
-from api.base.serializers import JSONAPISerializer, LinksFieldWIthSelfLink, Link, WaterbutlerLink, LinksField
-from api.base.serializers import JSONAPISerializer, LinksField, Link, WaterbutlerLink
+from api.base.serializers import JSONAPISerializer, LinksField, Link, WaterbutlerLink, LinksFieldWIthSelfLink
 from api.base.utils import has_multiple_admins
 
 
@@ -151,12 +150,9 @@ class NodeSerializer(JSONAPISerializer):
         return instance
 
 
-class NodeContributorsSerializer(UserSerializer):
+class NodeContributorsSerializer(JSONAPISerializer):
 
     id = ser.CharField(source='_id')
-    permissions = ser.ListField(read_only=True)
-    bibliographic = ser.BooleanField(initial=True, help_text='Whether the user will be included in citations for '
-                                                               'this node or not')
     permission = ser.ChoiceField(choices=['read', 'write', 'admin'], initial='write', write_only=True)
     local_filterable = frozenset(['permission', 'bibliographic'])
     filterable_fields = frozenset.union(UserSerializer.filterable_fields, local_filterable)
@@ -178,6 +174,9 @@ class NodeContributorsSerializer(UserSerializer):
     social_accounts = ser.DictField(read_only=True, source='social', help_text='A dictionary of various social media '
                                                                                'account identifiers including an array '
                                                                                'of user-defined URLs')
+    permissions = ser.ListField(read_only=True)
+    bibliographic = ser.BooleanField(initial=True, help_text='Whether the user will be included in citations for '
+                                                               'this node or not')
 
     links = LinksFieldWIthSelfLink({'html': 'absolute_url',
                                     'detail': Link('nodes:node-contributor-detail',
@@ -189,6 +188,9 @@ class NodeContributorsSerializer(UserSerializer):
             }
         },
     })
+
+    class Meta:
+        type_ = 'contributors'
 
     def absolute_url(self, obj):
         return obj.absolute_url
