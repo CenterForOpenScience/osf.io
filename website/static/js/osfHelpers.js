@@ -408,25 +408,24 @@ ko.bindingHandlers.toggleHeight = {
         var showToggle = false;
         var gradientDiv = $('<div class="' + elem.id + '-gradient toggle-height-gradient" style="display:none"></div>').appendTo(elem);
         var toggleDiv = $('<div class="' + elem.id + '-toggle toggle-height-toggle text-center" style="display:none"></div>').insertAfter(elem);
-
-        function noToggle () {
+        var noToggle = function _noToggle () {
             $el.css('height', 'auto');
             gradientDiv.hide();
             toggleDiv.hide();
             showToggle = false;
             $el.removeClass('toggle-height-parent');
-        }
-        function toggleCollapse () {
+        };
+        var toggleCollapse = function _toggleCollapse () {
             $el.css('height', height + 'px');
             gradientDiv.show();
             toggleDiv.html('<i class="' + iconDown +'"></i>').show();
-        }
-        function toggleOpen (){
+        };
+        var toggleOpen = function _toggleOpen (){
             $el.css('height', 'auto');
             gradientDiv.hide();
             toggleDiv.html('<i class="' + iconUp + '"></i>').show();
-        }
-        function checkCollapse () {
+        };
+        var checkCollapse = function _checkCollapse () {
             if ($el[0].scrollHeight <= height){
                 noToggle();
             } else if (!showToggle){
@@ -438,15 +437,15 @@ ko.bindingHandlers.toggleHeight = {
                     toggleOpen();
                 }
             }
-        }
-        function toggle() {
+        };
+        var toggle = function _toggle() {
             if (collapsed) {
                 toggleOpen();
             } else {
                 toggleCollapse();
             }
             collapsed = !collapsed;
-        }
+        };
         $('.' + elem.id + '-toggle.toggle-height-toggle').click(toggle);
         checkCollapse();
         $(window).resize(checkCollapse);
