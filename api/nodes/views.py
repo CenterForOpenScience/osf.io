@@ -365,30 +365,5 @@ class NodeFilesList(generics.ListAPIView, NodeMixin):
         return files
 
 
-class NodeLogList(generics.ListAPIView,  NodeMixin):
-    """ Recent Log Activity
-
-    This allows users to be able to get log information. This will allow more interesting
-    use cases for the API. Also this will be necessary if we want to be able to use the
-     v2 api for the project summary page.
-    """
-    serializer_class = NodeLogSerializer
-
-    log_lookup_url_kwarg = 'node_id'
-
-    permission_classes = (
-        drf_permissions.IsAuthenticatedOrReadOnly,
-        ContributorOrPublic,
-    )
-
-    def get_queryset(self):
-        log_id = [self.get_node()._id]
-        query = Q('__backrefs.logged.node.logs', 'in', log_id)
-        logs = NodeLog.find(query).sort('-_id')
-        log_list = []
-        for log in logs:
-            log.user_id = log.user._id
-            log_list.append(log)
-        return log_list
 
 
