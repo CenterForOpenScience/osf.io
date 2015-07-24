@@ -1,13 +1,11 @@
 /**
- * Paginator model
- */
+* Paginator model
+*/
 'use strict';
 var ko = require('knockout');
 var oop = require('js/oop');
-var MAX_PAGES_ON_PAGINATOR = 7;
-var MAX_PAGES_ON_PAGINATOR_SIDE = 5;
-
-
+var MAX_PAGES_ON_PAGINATOR = 17;
+var MAX_PAGES_ON_PAGINATOR_SIDE = 15;
 
 
 var Paginator = oop.defclass({
@@ -16,7 +14,9 @@ var Paginator = oop.defclass({
         this.numberOfPages = ko.observable(0);
         this.currentPage = ko.observable(0);
         this.paginators = ko.observableArray([]);
+
     },
+
     addNewPaginators: function() {
         var self = this;
         var i;
@@ -39,6 +39,7 @@ var Paginator = oop.defclass({
                     }
                 }
             });
+
             if (self.numberOfPages() <= MAX_PAGES_ON_PAGINATOR) {
                 for (i = 1; i < self.numberOfPages() - 1; i++) {
                     self.paginators.push({
@@ -136,7 +137,9 @@ var Paginator = oop.defclass({
             });
         }
     },
+
     nextPage: function() {
+
         this.pageToGet(this.currentPage() + 1);
         if (this.pageToGet() < this.numberOfPages()){
             this.fetchResults();
@@ -153,5 +156,17 @@ var Paginator = oop.defclass({
     }
 });
 
-
+//var pageModel = function() {
+//	this.paginators = ko.observableArray(Paginator.paginators);
+//	this.makeResponsive = function(element) {
+//
+//		if ($(element).length > 0) {
+//			$(element[0]).parent().find('> ul').rPage();
+//		}
+//
+//	}
+//};
+//
+//ko.applyBindings(new pageModel());
+//
 module.exports = Paginator;

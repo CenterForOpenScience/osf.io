@@ -156,7 +156,6 @@ var LogsViewModel = oop.extend(Paginator, {
     }
 });
 
-
 /**
   * Create an Array of Log model objects from data returned from an endpoint
   * @param  {Object[]} logData Log data returned from an endpoint.
@@ -194,7 +193,6 @@ var defaults = {
     /** Selector for the progress bar. */
     progBar: '#logProgressBar'
 };
-
 
 var initViewModel = function(self, logs, url){
     self.logs = createLogs(logs);

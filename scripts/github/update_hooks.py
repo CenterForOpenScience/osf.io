@@ -37,7 +37,6 @@ def update_hook(node_settings):
             node_settings.owner._id
         )
     )
-
     connection = GitHub.from_settings(node_settings.user_settings)
     repo = connection.repo(node_settings.user, node_settings.repo)
     hook = repo.hook(node_settings.hook_id)
