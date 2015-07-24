@@ -192,10 +192,9 @@ var ContributorsViewModel = function(contributors, adminContributors, user, isRe
     self.adminContributors = adminContributors;
 
     self.user = ko.observable(user);
-    // TODO: Does this need to be an observable?
-    self.userIsAdmin  = ko.observable($.inArray('admin', user.permissions) !== -1);
+    self.userIsAdmin  = $.inArray('admin', user.permissions) !== -1);
     self.canEdit = ko.computed(function() {
-        return (self.userIsAdmin()) && !isRegistration;
+        return (self.userIsAdmin) && !isRegistration;
     });
 
     self.messages = ko.observableArray([]);
@@ -303,10 +302,10 @@ var ContributorsViewModel = function(contributors, adminContributors, user, isRe
         // Warn on URL change if pending changes
         $(window).on('beforeunload', function() {
             if (self.changed() && !self.forceSubmit()) {
-                // TODO: Use GrowlBox.
-                return 'There are unsaved changes to your contributor ' +
-                    'settings. Are you sure you want to leave this page?';
-            }
+                $osf.growl('Error','There are unsaved changes to your contributor ' +
+                    'settings. Are you sure you want to leave this page?'
+            );
+            return false;
         });
     };
 
