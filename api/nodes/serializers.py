@@ -3,7 +3,7 @@ from rest_framework import serializers as ser
 from website.models import Node
 from framework.auth.core import Auth
 from rest_framework import exceptions
-from api.base.serializers import JSONAPISerializer, LinksField, Link, WaterbutlerLink
+from api.base.serializers import JSONAPISerializer, LinksField, Link, WaterbutlerLink, Attribute, AttributeLinksField
 
 
 class NodeSerializer(JSONAPISerializer):
@@ -24,9 +24,9 @@ class NodeSerializer(JSONAPISerializer):
                                                'user and system. Any tag that a user will define in the UI will be '
                                                'a user tag')
 
-    links = LinksField({
+    links = AttributeLinksField({
         'html': 'get_absolute_url',
-        'children': 'get_children',
+        'children': Attribute('nodes'),
         'contributors': 'get_contributors',
         'pointers': 'get_pointers',
         'registrations': 'get_registrations',
@@ -72,21 +72,21 @@ class NodeSerializer(JSONAPISerializer):
     def get_children(self, obj):
         auth = self.get_user_auth(self.context['request'])
         nodes = [node for node in obj.nodes if node.can_view(auth) and node.primary]
-        return self.get_object_information('children', nodes, obj)
+        return self.get_object_attribute('children', nodes, obj)
 
     def get_contributors(self, obj):
-        return self.get_object_information('contributors', obj.contributors, obj)
+        return self.get_object_attribute('contributors', obj.contributors, obj)
 
     def get_pointers(self, obj):
-        return self.get_object_information('pointers', obj.nodes_pointer, obj)
+        return self.get_object_attribute('pointers', obj.nodes_pointer, obj)
 
     def get_registrations(self, obj):
         auth = self.get_user_auth(self.context['request'])
         registrations = [node for node in obj.node__registrations if node.can_view(auth)]
-        return self.get_object_information('registrations', registrations, obj)
+        return self.get_object_attribute('registrations', registrations, obj)
 
     @staticmethod
-    def get_object_information(name, objects, obj):
+    def get_object_attribute(name, objects, obj):
         return {
             'related': Link('nodes:node-{}'.format(name), kwargs={'node_id': '<pk>'}).resolve_url(obj),
             'count': len(objects),

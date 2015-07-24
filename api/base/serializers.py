@@ -188,3 +188,41 @@ class JSONAPISerializer(ser.Serializer):
         if clean_html is True:
             self._validated_data = _rapply(self.validated_data, strip_html)
         return ret
+
+
+def _params_url_val(val, obj, serializer, **kwargs):
+
+    if isinstance(val, Attribute):
+        return val.resolve_attribute(obj)
+    if isinstance(val, Link):  # If a Link is passed, get the url value
+        return val.resolve_url(obj, **kwargs)
+    elif isinstance(val, basestring):  # if a string is passed, it's a method of the serializer
+        return getattr(serializer, val)(obj)
+    else:
+        return val
+
+
+class AttributeLinksField(LinksField):
+
+    def to_representation(self, obj):
+        ret = _rapply(self.links, _params_url_val, obj=obj, serializer=self.parent)
+        if hasattr(obj, 'get_absolute_url'):
+            ret['self'] = obj.get_absolute_url()
+        return ret
+
+
+class Attribute(object):
+
+    def __init__(self, query):
+        self.query = query
+
+    def resolve_attribute(self, obj):
+        object_list = []
+        object_ids = []
+        if hasattr(obj, self.query):
+            object_list = getattr(obj, self.query)
+
+        for o in object_list:
+            object_ids.append(o._id)
+
+        return object_ids
