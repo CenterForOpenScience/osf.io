@@ -57,7 +57,7 @@ from tests.factories import (
     RegistrationFactory, CommentFactory, PrivateLinkFactory, UnconfirmedUserFactory, DashboardFactory, FolderFactory,
     ProjectWithAddonFactory,
 )
-
+from tests.test_archiver import MockAddon
 from website.settings import ALL_MY_REGISTRATIONS_ID, ALL_MY_PROJECTS_ID
 
 
@@ -575,6 +575,20 @@ class TestProjectViews(OsfTestCase):
         res = self.app.get(url, expect_errors=True, auth=self.auth)
         assert_equal(res.status_code, 404)
         assert_in('Template not found', res)
+
+    def test_register_project_with_multiple_errors(self):
+        component = NodeFactory(parent=self.project, creator=self.user1)
+        setattr(self.project.get_addons()[0], 'archive_errors', 'Error message')
+        setattr(component.get_addons()[0], 'archive_errors', 'Error message')
+        setattr(component.get_addons()[1], 'archive_errors', 'Error message')
+        self.project.save()
+        component.save()
+        url = self.project.api_url_for('project_before_register')
+        res = self.app.get(url, auth=self.auth)
+        data = res.json
+        assert_equal(res.status_code, 200)
+        assert_equal(len(data['errors']), 2)
+
 
     # Regression test for https://github.com/CenterForOpenScience/osf.io/issues/1478
     @mock.patch('website.archiver.tasks.archive.si')
@@ -1694,7 +1708,7 @@ class TestAddingContributorViews(OsfTestCase):
     @mock.patch('website.project.views.contributor.send_claim_email')
     def test_add_contributors_post_only_sends_one_email_to_unreg_user(
             self, mock_send_claim_email):
-        # Project has components
+        # Project has s
         comp1, comp2 = NodeFactory(
             creator=self.creator), NodeFactory(creator=self.creator)
         self.project.nodes.append(comp1)
