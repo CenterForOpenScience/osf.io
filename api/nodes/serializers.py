@@ -45,6 +45,11 @@ class NodeSerializer(JSONAPISerializer):
         'files': {
             'related': Link('nodes:node-files', kwargs={'node_id': '<pk>'})
         },
+
+        'logs': {
+            'related': Link('nodes:node-logs', kwargs={'node_id': '<pk>'})
+        },
+
         'parent': {
             'self': Link('nodes:node-detail', kwargs={'node_id': '<parent_id>'})
         }
@@ -58,10 +63,10 @@ class NodeSerializer(JSONAPISerializer):
     # TODO: When we have 'admin' permissions, make this writable for admins
     public = ser.BooleanField(source='is_public', read_only=True,
                               help_text='Nodes that are made public will give read-only access '
-                                                            'to everyone. Private nodes require explicit read '
-                                                            'permission. Write and admin access are the same for '
-                                                            'public and private nodes. Administrators on a parent '
-                                                            'node have implicit read permissions for all child nodes',
+                                        'to everyone. Private nodes require explicit read '
+                                        'permission. Write and admin access are the same for '
+                                        'public and private nodes. Administrators on a parent '
+                                        'node have implicit read permissions for all child nodes',
                               )
     # TODO: finish me
 
@@ -131,7 +136,6 @@ class NodeSerializer(JSONAPISerializer):
 
 
 class NodePointersSerializer(JSONAPISerializer):
-
     id = ser.CharField(read_only=True, source='_id')
     node_id = ser.CharField(source='node._id', help_text='The ID of the node that this pointer points to')
     title = ser.CharField(read_only=True, source='node.title', help_text='The title of the node that this pointer '
@@ -167,7 +171,6 @@ class NodePointersSerializer(JSONAPISerializer):
 
 
 class NodeFilesSerializer(JSONAPISerializer):
-
     id = ser.CharField(read_only=True, source='_id')
     provider = ser.CharField(read_only=True)
     path = ser.CharField(read_only=True)
@@ -196,3 +199,38 @@ class NodeFilesSerializer(JSONAPISerializer):
     def update(self, instance, validated_data):
         # TODO
         pass
+
+
+class NodeLogSerializer(JSONAPISerializer):
+    filterable_fields = frozenset([
+        'date',
+        'id',
+        'api_key',
+        'action',
+        'version',
+        'name',
+    ])
+
+    date = ser.DateTimeField(read_only=True)
+    id = ser.CharField(read_only=True, source='_id')
+    api_key = ser.CharField(read_only=True)
+    action = ser.CharField(read_only=True)
+    version = ser.CharField(read_only=True, source='_version')
+    name = ser.CharField(read_only=True, source='_name')
+
+    class Meta:
+        type_ = 'logs'
+
+    links = LinksField({
+        'self': 'get_absolute_api_v2_url',
+        'user': {
+            'self': Link('users:user-detail', kwargs={'user_id': '<user_id>'})
+        }
+    })
+
+    def absolute_url(self, obj):
+        return obj.absolute_url
+
+    def get_absolute_api_v2_url(self, obj):
+        pointer_node = Node.load(obj.node._id)
+        return pointer_node.absolute_api_v2_url

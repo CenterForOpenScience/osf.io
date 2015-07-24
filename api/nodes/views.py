@@ -9,8 +9,9 @@ from website.models import Node, Pointer
 from api.users.serializers import ContributorSerializer
 from api.base.filters import ODMFilterMixin, ListFilterMixin
 from api.base.utils import get_object_or_404, waterbutler_url_for
-from .serializers import NodeSerializer, NodePointersSerializer, NodeFilesSerializer
+from .serializers import NodeSerializer, NodePointersSerializer, NodeFilesSerializer, NodeLogSerializer
 from .permissions import ContributorOrPublic, ReadOnlyIfRegistration, ContributorOrPublicForPointers
+from website.project.model import NodeLog
 
 
 class NodeMixin(object):
@@ -44,7 +45,7 @@ class NodeList(generics.ListCreateAPIView, ODMFilterMixin):
         drf_permissions.IsAuthenticatedOrReadOnly,
     )
     serializer_class = NodeSerializer
-    ordering = ('-date_modified', )  # default ordering
+    ordering = ('-date_modified',)  # default ordering
 
     # overrides ODMFilterMixin
     def get_default_odm_query(self):
@@ -361,3 +362,30 @@ class NodeFilesList(generics.ListAPIView, NodeMixin):
                 files.append(self.get_file_item(waterbutler_data, cookie, obj_args))
 
         return files
+
+
+class NodeLogList(generics.ListAPIView, NodeMixin):
+    """ Recent Log Activity
+
+    This allows users to be able to get log information. This will allow more interesting
+    use cases for the API. Also this will be necessary if we want to be able to use the
+     v2 api for the project summary page.
+    """
+    serializer_class = NodeLogSerializer
+
+    log_lookup_url_kwarg = 'node_id'
+
+    permission_classes = (
+        drf_permissions.IsAuthenticatedOrReadOnly,
+        ContributorOrPublic,
+    )
+
+    def get_queryset(self):
+        log_id = [self.get_node()._id]
+        query = Q('__backrefs.logged.node.logs', 'in', log_id)
+        logs = NodeLog.find(query).sort('-_id')
+        log_list = []
+        for log in logs:
+            log.user_id = log.user._id
+            log_list.append(log)
+        return log_list
