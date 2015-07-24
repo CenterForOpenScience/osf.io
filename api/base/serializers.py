@@ -29,7 +29,7 @@ def _url_val(val, obj, serializer, **kwargs):
         return val
 
 
-class LinksField(ser.Field):
+class LinksFieldWIthSelfLink(ser.Field):
     """Links field that resolves to a links object. Used in conjunction with `Link`.
     If the object to be serialized implements `get_absolute_url`, then the return value
     of that method is used for the `self` link.
@@ -66,6 +66,12 @@ class LinksField(ser.Field):
         ret = _rapply(self.links, _url_val, obj=obj, serializer=self.parent)
         if hasattr(obj, 'get_absolute_url'):
             ret['self'] = obj.get_absolute_url()
+        return ret
+
+
+class LinksField(LinksFieldWIthSelfLink):
+    def to_representation(self, obj):
+        ret = _rapply(self.links, _url_val, obj=obj, serializer=self.parent)
         return ret
 
 _tpl_pattern = re.compile(r'\s*<\s*(\S*)\s*>\s*')
@@ -172,8 +178,21 @@ class JSONAPISerializer(ser.Serializer):
         meta = getattr(self, 'Meta', None)
         type_ = getattr(meta, 'type_', None)
         assert type_ is not None, 'Must define Meta.type_'
-        data = super(JSONAPISerializer, self).to_representation(obj)
-        data['type'] = type_
+
+        attributes = super(JSONAPISerializer, self).to_representation(obj)
+        top_level = {
+            'id': attributes.get('id'),
+            'links': attributes.get('links'),
+            'relationships': attributes.get('relationships')
+        }
+        for i in top_level.keys():
+            attributes.pop(i, None)
+        data = collections.OrderedDict((
+            ('id', top_level['id']),
+            ('type', type_),
+            ('attributes', attributes),
+            ('links', top_level['links']),
+            ('relationships', top_level['relationships'])))
         if envelope:
             ret[envelope] = data
         else:
