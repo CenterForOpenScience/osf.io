@@ -35,9 +35,7 @@ var sortMap = {
     }
 };
 
-// TODO: We shouldn't need both pageOwner (the current user) and currentUserCanEdit. Separate
-// out the permissions-related functions and remove currentUserCanEdit.
-var ContributorModel = function(contributor, currentUserCanEdit, pageOwner, isRegistration, isAdmin) {
+var ContributorModel = function(contributor, pageOwner, isRegistration, isAdmin) {
 
     var self = this;
     $.extend(self, contributor);
@@ -56,7 +54,6 @@ var ContributorModel = function(contributor, currentUserCanEdit, pageOwner, isRe
         return self.permissionList[0];
     };
 
-    self.currentUserCanEdit = currentUserCanEdit;
     self.isAdmin = isAdmin;
     self.visible = ko.observable(contributor.visible);
     self.permission = ko.observable(contributor.permission);
