@@ -33,11 +33,13 @@ def check_and_send_later(user, time_start, time_to_send, delay_type):
     celery_app.main = 'website.notifications.tasks'
     task = None
     try:
-        task = send_user_email.Async_Result(task_id)
+        task = send_user_email.AsyncResult(task_id)
+        task.get()
     except:
         pass
-    if task and task.state == 'PENDING':
-        print task.get()
+    if task:
+        # if task.state == 'PENDING':
+        print task.state
     else:
         send_user_email.apply_async(args=(user, time_start), eta=time_to_send)
 
@@ -82,7 +84,7 @@ def get_email_count(user):
     :return:
     """
     time_current = datetime.utcnow() + timedelta(seconds=10)
-    return db['notificationdigest'].count(
+    return db['notificationdigest'].find(
         {
             'user_id': user,
             'timestamp': {
@@ -92,7 +94,7 @@ def get_email_count(user):
                 '$lt': time_current
             }
         }
-    )
+    ).count()
 
 
 def get_user_emails(user, time_start):

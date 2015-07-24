@@ -1,5 +1,4 @@
 from babel import dates, core, Locale
-from mako.lookup import Template
 from datetime import timedelta
 
 from website import mails
