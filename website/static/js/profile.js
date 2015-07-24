@@ -265,9 +265,6 @@ BaseViewModel.prototype.handleSuccess = function() {
 BaseViewModel.prototype.handleError = function(response) {
     var defaultMsg = 'Could not update settings';
     var msg = response.message_long || defaultMsg;
-
-
-
     this.changeMessage(
         msg,
         'text-danger',
@@ -287,7 +284,7 @@ BaseViewModel.prototype.fetch = function(callback) {
         url: this.urls.crud,
         dataType: 'json',
         success: [this.unserialize.bind(this), self.setOriginal.bind(self), callback.bind(self)],
-        error: this.handleError.bind(this, 'Could not retrieve your data')
+        error: this.handleError.bind(this, 'Could not fetch data')
     });
 };
 
@@ -352,7 +349,12 @@ var NameViewModel = function(urls, modes, preventUnsaved, fetchCallback) {
     fetchCallback = fetchCallback || noop;
     TrackedMixin.call(self);
 
-    self.full = koHelpers.sanitizedObservable().extend({required: true, trimmed: true});
+    self.full = koHelpers.sanitizedObservable().extend({
+        trimmed: true,
+        required: true,
+        message: 'Full Name Required'
+    });
+
     self.given = koHelpers.sanitizedObservable().extend({trimmed: true});
     self.middle = koHelpers.sanitizedObservable().extend({trimmed: true});
     self.family = koHelpers.sanitizedObservable().extend({trimmed: true});
@@ -370,11 +372,6 @@ var NameViewModel = function(urls, modes, preventUnsaved, fetchCallback) {
     self.isValid = ko.computed(function() {
         return validated.isValid();
     });
-    //Test to see if Name field, which is required, is filled in.  Used in client side validation.
-    self.nameFieldEmpty = ko.computed(function () {
-        return (self.full() === '');
-    });
-
     self.hasValidProperty(true);
 
     self.citations = ko.observable();
@@ -452,32 +449,6 @@ var NameViewModel = function(urls, modes, preventUnsaved, fetchCallback) {
     self.fetch(fetchCallback);
 };
 NameViewModel.prototype = Object.create(BaseViewModel.prototype);
-
-NameViewModel.prototype.submit = function() {
-    if (this.hasValidProperty() && this.isValid()) {
-        // Name on Name view is empty
-        if (this.nameFieldEmpty()) {
-            $osf.growl('Please enter Full Name before pressing "Save"');
-        }
-          else {
-            $osf.putJSON(
-                this.urls.crud,
-                this.serialize()
-            ).done(
-                this.handleSuccess.bind(this)
-            ).done(
-                this.setOriginal.bind(this)
-            ).fail(
-                this.handleError.bind(this)
-            );
-        }
-    }
-    else {
-            this.showMessages(true);
-    }
-
-};
-
 $.extend(NameViewModel.prototype, SerializeMixin.prototype, TrackedMixin.prototype);
 
 /*
@@ -620,10 +591,6 @@ var ListViewModel = function(ContentModel, urls, modes) {
         return 'enabled';
     }, this);
 
-    self.hasMultiple = ko.computed(function() {
-        return self.contents().length > 1;
-    });
-
     self.isValid = ko.computed(function() {
         for (var i=0; i<self.contents().length; i++) {
             if (! self.contents()[i].isValid()) {
@@ -631,6 +598,9 @@ var ListViewModel = function(ContentModel, urls, modes) {
             }
         }
         return true;
+    });
+    self.hasMultiple = ko.computed(function() {
+        return self.contents().length > 1;
     });
 
     self.contentsLength = ko.computed(function() {
@@ -740,7 +710,8 @@ ListViewModel.prototype.serialize = function() {
             if (!this.contents()[i].institutionObjectEmpty()) {
                 contents.push(this.contents()[i].serialize());
             }
-            else  {
+            //Remove empty contents object unless there is only one
+            else if (this.contents().length === 0) {
                 this.contents.splice(i, 1);
             }
         }
@@ -751,39 +722,25 @@ ListViewModel.prototype.serialize = function() {
     return {contents: contents};
 };
 
-ListViewModel.prototype.submit = function() {
-    var self = this;
-    /* In Schools or Jobs, either institution field is empty but other data exists in the object or institution is empty and there is only one object.
-    If the whole object is empty and there are multiple, it will be automatically deleted in ListViewModel.prototype.serialize  */
-    if (self.hasValidProperty() && self.isValid()) {
-        $osf.putJSON(
-            self.urls.crud,
-            self.serialize()
-        ).done(
-            self.handleSuccess.bind(self)
-        ).done(
-            self.setOriginal.bind(self)
-        ).fail(
-            self.handleError.bind(self)
-        );
-        // After submission, add an object to make the fields visible on the page.
-        if (self.contents().length === 0) {
-            self.addContent();
-        }
-    }
-    else {
-        $osf.growl('Please enter an Institution before pressing "Save"');
-    }
-};
-
 var JobViewModel = function() {
     var self = this;
     DateMixin.call(self);
     TrackedMixin.call(self);
 
-    self.institution = ko.observable('').extend({trimmed: true});
     self.department = ko.observable('').extend({trimmed: true});
     self.title = ko.observable('').extend({trimmed: true});
+
+    self.institution = ko.observable('').extend({
+        trimmed: true,
+        required: {
+            onlyIf: function() {
+                if (!!self.department() || !!self.title()) {
+                    return true;
+                }
+            },
+            message: 'Institution/Employer Required'
+        },
+    });
 
     self.trackedProperties = [
         self.institution,
@@ -809,14 +766,8 @@ var JobViewModel = function() {
     //In addition to normal knockout field checks, check to see if institution is not filled out when other fields are
     // Institution is only required when the item is not blank.
     self.isValid = ko.computed(function() {
-        if (validated.isValid() && (self.institution() !== '' || self.institutionObjectEmpty())) {
-            return true;
-        }
-        else {
-            return false;
-        }
+        return validated.isValid();
     });
-
 };
 $.extend(JobViewModel.prototype, DateMixin.prototype, TrackedMixin.prototype);
 
@@ -825,9 +776,20 @@ var SchoolViewModel = function() {
     DateMixin.call(self);
     TrackedMixin.call(self);
 
-    self.institution = ko.observable('').extend({required: true, trimmed: true});
     self.department = ko.observable('').extend({trimmed: true});
     self.degree = ko.observable('').extend({trimmed: true});
+
+    self.institution = ko.observable('').extend({
+        trimmed: true,
+        required: {
+            onlyIf: function() {
+                if (!!self.department() || !!self.degree()) {
+                    return true;
+                }
+            },
+            message: 'Institution Required'
+        },
+    });
 
     self.trackedProperties = [
         self.institution,
@@ -853,14 +815,8 @@ var SchoolViewModel = function() {
     //In addition to normal knockout field checks, check to see if institution is not filled out when other fields are
     // Institution is only required when the item is not blank.
     self.isValid = ko.computed(function() {
-        if (validated.isValid() && (self.institution() !== '' || self.institutionObjectEmpty())) {
-            return true;
-        }
-        else {
-            return false;
-        }
+        return validated.isValid();
     });
-
 };
 $.extend(SchoolViewModel.prototype, DateMixin.prototype, TrackedMixin.prototype);
 
