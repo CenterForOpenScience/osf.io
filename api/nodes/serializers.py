@@ -251,8 +251,10 @@ class NodeContributorDetailSerializer(NodeContributorsSerializer):
         permission_field = validated_data['permission']
         is_admin_current = node.has_permission(current_user, 'admin')
         is_current = user is current_user
-        if node.get_visible(user) != bibliographic:
-            self.set_visibility(bibliographic, user, node, is_admin_current, is_current)
+        try:
+            node.set_visible(user, bibliographic, save=True)
+        except ValueError as e:
+            raise ValidationError(e)
         if permission_field != '':
             self.set_permissions(permission_field, user, node, is_admin_current, is_current=is_current)
         user.bibliographic = node.get_visible(user)
