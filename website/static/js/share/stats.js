@@ -92,11 +92,18 @@ Stats.sourcesByDatesAgg = function () {
     var dateTemp = new Date(); //get current time
     dateTemp.setMonth(dateTemp.getMonth() - 3);
     var threeMonthsAgo = dateTemp.getTime();
-    var dateHistogramQuery = {'match_all': {} };
-    var dateHistogramAgg = {'sourcesByTimes': utils.termsFilter('field', '_type')};
-    dateHistogramAgg.sourcesByTimes.aggregations = {'articlesOverTime' :
-        utils.dateHistogramFilter('providerUpdatedDateTime', threeMonthsAgo)};
-    return {'query' : dateHistogramQuery, 'aggregations': dateHistogramAgg, 'filters' : {} };
+    var dateHistogramAgg = {
+        sourcesByTimes: utils.termsFilter('field', '_type')
+    };
+    dateHistogramAgg.sourcesByTimes.aggregations = {
+        articlesOverTime : {
+            filter: utils.rangeFilter('providerUpdatedDateTime', threeMonthsAgo),
+            aggregations: {
+                articlesOverTime: utils.dateHistogramFilter('providerUpdatedDateTime', threeMonthsAgo)
+            }
+        }
+    };
+    return {aggregations: dateHistogramAgg};
 };
 
 Stats.timeSinceEpochInMsToMMYY = function (timeSinceEpochInMs) {
@@ -147,7 +154,7 @@ Stats.shareTimeGraphParser = function (data) {
             chartData.colors[source.key] = hexColors[i];
             var column = [source.key];
             grouping.push(source.key);
-            source.articlesOverTime.buckets.forEach(function(date){
+            source.articlesOverTime.articlesOverTime.buckets.forEach(function(date){
                 total = total + date.doc_count;
                 column.push(total);
                 if (i === 0) {
