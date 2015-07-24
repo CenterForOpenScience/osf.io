@@ -175,13 +175,14 @@ class NodeContributorsSerializer(UserSerializer):
         auth = Auth(current_user)
         node = self.context['view'].get_node()
         user = User.load(validated_data['_id'])
-        if not user:
-            raise NotFound('User with id {} cannot be found.'.format(validated_data['_id']))
-        elif user in node.contributors:
-            raise ValidationError('User {} already is a contributor.'.format(user.username))
         bibliographic = validated_data['bibliographic'] == "True"
         permission_field = validated_data['permission']
-        node.add_contributor(contributor=user, auth=auth, save=True)
+        try:
+            added = node.add_contributor(contributor=user, auth=auth, save=True)
+            if not added:
+                raise ValidationError('User {} already is a contributor.'.format(user.username))
+        except AttributeError:
+            raise NotFound('User with id {} cannot be found.'.format(validated_data['_id']))
         self.set_visibility(bibliographic, user, node)
         self.set_permissions(permission_field, user, node)
         user.node_id = node._id
