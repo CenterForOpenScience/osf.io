@@ -5,7 +5,6 @@ from rest_framework import generics, permissions as drf_permissions
 from rest_framework.exceptions import PermissionDenied, ValidationError
 
 from framework.auth.core import Auth
-from api.users.views import UserSerializer
 from website.models import Node, Pointer
 from api.users.serializers import ContributorSerializer
 from api.base.filters import ODMFilterMixin, ListFilterMixin
@@ -46,7 +45,7 @@ class NodeList(generics.ListCreateAPIView, ODMFilterMixin):
         drf_permissions.IsAuthenticatedOrReadOnly,
     )
     serializer_class = NodeSerializer
-    ordering = ('-date_modified', )  # default ordering
+    ordering = ('-date_modified',)  # default ordering
 
     # overrides ODMFilterMixin
     def get_default_odm_query(self):
@@ -365,7 +364,7 @@ class NodeFilesList(generics.ListAPIView, NodeMixin):
         return files
 
 
-class NodeLogList(generics.ListAPIView,  NodeMixin):
+class NodeLogList(generics.ListAPIView, NodeMixin):
     """ Recent Log Activity
 
     This allows users to be able to get log information. This will allow more interesting
@@ -391,4 +390,3 @@ class NodeLogList(generics.ListAPIView,  NodeMixin):
             log.user_id = log.user._id
             log_list.append(log)
         return log_list
-
