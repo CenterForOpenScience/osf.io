@@ -9,11 +9,19 @@ var $osf = require('js/osfHelpers');
 
 ko.punches.enableAll();
 
-var ViewModel = function(url, selector) {
+var defaultSettings = {
+    url: '',
+    encryptUploads: true,
+    defaultBucketLocationValue: '',
+    defaultBucketLocationMessage: 'US Standard'
+};
+
+var ViewModel = function(selector, settings) {
     var self = this;
 
-    self.url = url;
+    self.url = settings.url;
     self.selector = selector;
+    self.settings = $.extend({}, defaultSettings, settings);
 
     self.nodeHasAuth = ko.observable(false);
     self.userHasAuth = ko.observable(false);
@@ -27,6 +35,7 @@ var ViewModel = function(url, selector) {
     self.loadedBucketList = ko.observable(false);
     self.currentBucket = ko.observable('');
     self.selectedBucket = ko.observable('');
+    self.encryptUploads = ko.observable(settings.defaultEncryptUploads);
 
     self.accessKey = ko.observable('');
     self.secretKey = ko.observable('');
@@ -84,7 +93,8 @@ ViewModel.prototype.selectBucket = function() {
     self.loading(true);
     return $osf.postJSON(
             self.urls().set_bucket, {
-                's3_bucket': self.selectedBucket()
+                's3_bucket': self.selectedBucket(),
+                'encrypt_uploads': self.encryptUploads()
             }
         )
         .done(function(response) {
@@ -466,8 +476,8 @@ ViewModel.prototype.changeMessage = function(text, css, timeout) {
     }
 };
 
-var S3Config = function(selector, url) {
-    var viewModel = new ViewModel(url, selector);
+var S3Config = function(selector, settings) {
+    var viewModel = new ViewModel(selector, settings);
     $osf.applyBindings(viewModel, selector);
     viewModel.updateFromData();
 };

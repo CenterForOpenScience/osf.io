@@ -41,11 +41,15 @@
         <br />
         <br />
         <div class="row" data-bind="if: showSelect">
-          <div class="col-md-8">
+          <div class="col-md-6">
             <select class="form-control" id="s3_bucket" name="s3_bucket"
                     data-bind="value: selectedBucket,
                                attr.disabled: !loadedBucketList(),
                                options: bucketList"> </select>
+          </div>
+          <div class="col-md-3">
+            <input type="checkbox" id="encryptUploads" name="encryptUploads"
+                   data-bind="checked: encryptUploads" />  Encrypt file uploads
           </div>
           <div class="col-md-2">
             <button data-bind="click: selectBucket,
