@@ -407,7 +407,7 @@ ko.bindingHandlers.toggleHeight = {
         var collapsed = true;
         var showToggle = false;
         var gradientDiv = $('<div class="' + elem.id + '-gradient toggle-height-gradient" style="display:none"></div>').appendTo(elem);
-        var toggleDiv = $('<div class="' + elem.id + '-toggle toggle-height-toggle text-center" style="display:none"><i class="' + iconDown +'"></i><i style="display:none" class="' + iconUp + '"></i></div>').insertAfter(elem);
+        var toggleDiv = $('<div class="' + elem.id + '-toggle toggle-height-toggle text-center" style="display:none"></div>').insertAfter(elem);
 
         function noToggle () {
             $el.height($el[0].scrollHeight);
@@ -417,12 +417,12 @@ ko.bindingHandlers.toggleHeight = {
         function toggleCollapse () {
             $el.height(height);
             gradientDiv.show();
-            toggleDiv.show();
+            toggleDiv.html('<i class="' + iconDown +'"></i>').show();
         }
         function toggleOpen (){
             $el.height($el[0].scrollHeight);
-            gradientDiv.show();
-            toggleDiv.show();
+            gradientDiv.hide();
+            toggleDiv.html('<i class="' + iconUp + '"></i>').show();
         }
         function checkCollapse () {
             if ($el.height() < height){
