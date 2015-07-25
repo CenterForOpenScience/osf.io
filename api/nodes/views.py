@@ -14,8 +14,6 @@ from .permissions import ContributorOrPublic, ReadOnlyIfRegistration, Contributo
 from website.project.model import NodeLog
 
 
-
-
 class NodeMixin(object):
     """Mixin with convenience methods for retrieving the current node based on the
     current URL. By default, fetches the current node based on the node_id kwarg.
@@ -365,7 +363,7 @@ class NodeFilesList(generics.ListAPIView, NodeMixin):
 
         return files
 
-class NodeLogList(generics.ListAPIView,  NodeMixin):
+class NodeLogList(generics.ListAPIView, NodeMixin):
     """ Recent Log Activity
 
     This allows users to be able to get log information. This will allow more interesting
