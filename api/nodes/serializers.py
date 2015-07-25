@@ -4,6 +4,7 @@ from website.models import Node
 from framework.auth.core import Auth
 from rest_framework import exceptions
 from api.base.serializers import JSONAPISerializer, LinksField, Link, WaterbutlerLink
+from api.users.serializers import UserSerializer
 
 
 class NodeSerializer(JSONAPISerializer):
@@ -44,6 +45,9 @@ class NodeSerializer(JSONAPISerializer):
         },
         'files': {
             'related': Link('nodes:node-files', kwargs={'node_id': '<pk>'})
+        },
+        'logs': {
+            'related': Link('nodes:node-logs', kwargs={'node_id': '<pk>'})
         },
         'parent': {
             'self': Link('nodes:node-detail', kwargs={'node_id': '<parent_id>'})
@@ -196,3 +200,37 @@ class NodeFilesSerializer(JSONAPISerializer):
     def update(self, instance, validated_data):
         # TODO
         pass
+
+class NodeLogSerializer(JSONAPISerializer):
+    filterable_fields = frozenset([
+        'date',
+        'id',
+        'api_key',
+        'action',
+        'version',
+        'name',
+    ])
+
+    date = ser.DateTimeField(read_only=True)
+    id = ser.CharField(read_only=True, source='_id')
+    api_key = ser.CharField(read_only=True)
+    action = ser.CharField(read_only=True)
+    version = ser.CharField(read_only=True, source='_version')
+    name = ser.CharField(read_only=True, source='_name')
+
+    class Meta:
+        type_ = 'logs'
+
+    links = LinksField({
+        'self': 'get_absolute_api_v2_url',
+        'user': {
+            'self': Link('users:user-detail', kwargs={'user_id': '<user_id>'})
+        }
+    })
+
+    def absolute_url(self, obj):
+        return obj.absolute_url
+
+    def get_absolute_api_v2_url(self, obj):
+        pointer_node = Node.load(obj.node._id)
+        return pointer_node.absolute_api_v2_url
