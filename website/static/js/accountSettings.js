@@ -177,6 +177,7 @@ var UserProfileViewModel = oop.extend(ChangeMessageMixin, {
         this.changeMessage('', 'text-info');
         var newEmail = this.emailInput().toLowerCase().trim();
         if(newEmail){
+
             var email = new UserEmail({
                 address: newEmail
             });
@@ -312,7 +313,8 @@ var DeactivateAccountViewModel = oop.defclass({
             },
             buttons:{
                 confirm:{
-                    label:'Request'
+                    label:'Request',
+                    className:'btn-danger'
                 }
             }
         });
