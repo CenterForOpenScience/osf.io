@@ -10,7 +10,6 @@ from modularodm.exceptions import NoResultsFound
 from website import util as website_util  # noqa
 from website import settings as website_settings
 
-
 def absolute_reverse(view_name, query_kwargs=None, args=None, kwargs=None):
     """Like django's `reverse`, except returns an absolute URL. Also add query parameters."""
     relative_url = reverse(view_name, kwargs=kwargs)
@@ -56,3 +55,13 @@ def waterbutler_url_for(request_type, provider, path, node_id, token, obj_args=N
 
     url.args.update(query)
     return url.url
+
+
+def has_multiple_admins(node):
+    has_one_admin = False
+    for contributor in node.contributors:
+        if node.has_permission(contributor, 'admin'):
+            if has_one_admin:
+                return True
+            has_one_admin = True
+    return False

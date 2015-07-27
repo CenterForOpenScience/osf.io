@@ -1,9 +1,12 @@
+from rest_framework.exceptions import ValidationError, PermissionDenied
 from rest_framework import serializers as ser
 
-from website.models import Node
+from website.models import Node, User
 from framework.auth.core import Auth
 from rest_framework import exceptions
-from api.base.serializers import JSONAPISerializer, LinksField, Link, WaterbutlerLink
+from api.users.serializers import UserSerializer
+from api.base.serializers import JSONAPISerializer, LinksField, Link, WaterbutlerLink, LinksFieldWIthSelfLink
+from api.base.utils import has_multiple_admins, get_object_or_404
 
 
 class NodeSerializer(JSONAPISerializer):
@@ -23,38 +26,11 @@ class NodeSerializer(JSONAPISerializer):
     tags = ser.SerializerMethodField(help_text='A dictionary that contains two lists of tags: '
                                                'user and system. Any tag that a user will define in the UI will be '
                                                'a user tag')
+    registration = ser.BooleanField(read_only=True, source='is_registration')
+    collection = ser.BooleanField(read_only=True, source='is_folder')
+    dashboard = ser.BooleanField(read_only=True, source='is_dashboard')
 
-    links = LinksField({
-        'html': 'get_absolute_url',
-        'children': {
-            'related': Link('nodes:node-children', kwargs={'node_id': '<pk>'}),
-            'count': 'get_node_count',
-        },
-        'contributors': {
-            'related': Link('nodes:node-contributors', kwargs={'node_id': '<pk>'}),
-            'count': 'get_contrib_count',
-        },
-        'pointers': {
-            'related': Link('nodes:node-pointers', kwargs={'node_id': '<pk>'}),
-            'count': 'get_pointers_count',
-        },
-        'registrations': {
-            'related': Link('nodes:node-registrations', kwargs={'node_id': '<pk>'}),
-            'count': 'get_registration_count',
-        },
-        'files': {
-            'related': Link('nodes:node-files', kwargs={'node_id': '<pk>'})
-        },
-        'parent': {
-            'self': Link('nodes:node-detail', kwargs={'node_id': '<parent_id>'})
-        }
-    })
-    properties = ser.SerializerMethodField(help_text='A dictionary of read-only booleans: registration, collection,'
-                                                     'and dashboard. Collections are special nodes used by the Project '
-                                                     'Organizer to, as you would imagine, organize projects. '
-                                                     'A dashboard is a collection node that serves as the root of '
-                                                     'Project Organizer collections. Every user will always have '
-                                                     'one Dashboard')
+    links = LinksFieldWIthSelfLink({'html': 'get_absolute_url'})
     # TODO: When we have 'admin' permissions, make this writable for admins
     public = ser.BooleanField(source='is_public', read_only=True,
                               help_text='Nodes that are made public will give read-only access '
@@ -63,8 +39,61 @@ class NodeSerializer(JSONAPISerializer):
                                                             'public and private nodes. Administrators on a parent '
                                                             'node have implicit read permissions for all child nodes',
                               )
-    # TODO: finish me
 
+    relationships = LinksField({
+        'children': {
+            'links': {
+                'related': {
+                    'href': Link('nodes:node-children', kwargs={'node_id': '<pk>'}),
+                    'meta': {
+                        'count': 'get_node_count'
+                    }
+                }
+            },
+        },
+        'contributors': {
+            'links': {
+                'related': {
+                    'href': Link('nodes:node-contributors', kwargs={'node_id': '<pk>'}),
+                    'meta': {
+                        'count': 'get_contrib_count'
+                    }
+                }
+            },
+        },
+        'pointers': {
+            'links': {
+                'related': {
+                    'href': Link('nodes:node-pointers', kwargs={'node_id': '<pk>'}),
+                    'meta': {
+                        'count': 'get_pointers_count'
+                    }
+                }
+            },
+        },
+        'registrations': {
+            'links': {
+                'related': {
+                    'href': Link('nodes:node-registrations', kwargs={'node_id': '<pk>'}),
+                    'meta': {
+                        'count': 'get_registration_count'
+                    }
+                }
+            },
+        },
+        'files': {
+            'links': {
+                'related': Link('nodes:node-files', kwargs={'node_id': '<pk>'})
+            }
+        },
+        'parent': {
+            'links': {
+                'self': Link('nodes:node-detail', kwargs={'node_id': '<parent_id>'})
+            }
+        }
+    })
+
+    # TODO: finish me
     class Meta:
         type_ = 'nodes'
 
@@ -98,15 +127,6 @@ class NodeSerializer(JSONAPISerializer):
         return len(obj.nodes_pointer)
 
     @staticmethod
-    def get_properties(obj):
-        ret = {
-            'registration': obj.is_registration,
-            'collection': obj.is_folder,
-            'dashboard': obj.is_dashboard,
-        }
-        return ret
-
-    @staticmethod
     def get_tags(obj):
         ret = {
             'system': [tag._id for tag in obj.system_tags],
@@ -130,6 +150,124 @@ class NodeSerializer(JSONAPISerializer):
         return instance
 
 
+class NodeContributorsSerializer(JSONAPISerializer):
+
+    id = ser.CharField(source='_id')
+    permission = ser.ChoiceField(choices=['read', 'write', 'admin'], initial='write', write_only=True)
+    local_filterable = frozenset(['permission', 'bibliographic'])
+    filterable_fields = frozenset.union(UserSerializer.filterable_fields, local_filterable)
+
+    fullname = ser.CharField(read_only=True, help_text='Display name used in the general user interface')
+    given_name = ser.CharField(read_only=True, help_text='For bibliographic citations')
+    middle_name = ser.CharField(read_only=True, source='middle_names', help_text='For bibliographic citations')
+    family_name = ser.CharField(read_only=True, help_text='For bibliographic citations')
+    suffix = ser.CharField(read_only=True, help_text='For bibliographic citations')
+    date_registered = ser.DateTimeField(read_only=True)
+    gravatar_url = ser.CharField(read_only=True, help_text='URL for the icon used to identify the user. Relies on '
+                                                           'http://gravatar.com ')
+    employment_institutions = ser.ListField(read_only=True, source='jobs', help_text='An array of dictionaries '
+                                                                                     'representing the '
+                                                                                     'places the user has worked')
+    educational_institutions = ser.ListField(read_only=True, source='schools', help_text='An array of dictionaries '
+                                                                                         'representing the places the '
+                                                                                         'user has attended school')
+    social_accounts = ser.DictField(read_only=True, source='social', help_text='A dictionary of various social media '
+                                                                               'account identifiers including an array '
+                                                                               'of user-defined URLs')
+    permissions = ser.ListField(read_only=True)
+    bibliographic = ser.BooleanField(initial=True, help_text='Whether the user will be included in citations for '
+                                                               'this node or not')
+
+    links = LinksFieldWIthSelfLink({'html': 'absolute_url',
+                                    'detail': Link('nodes:node-contributor-detail',
+                                                   kwargs={'node_id': '<node_id>', 'user_id': '<pk>'})})
+    relationships = LinksField({
+        'nodes': {
+            'links': {
+                'related': Link('users:user-nodes', kwargs={'user_id': '<pk>'})
+            }
+        },
+    })
+
+    class Meta:
+        type_ = 'contributors'
+
+    def absolute_url(self, obj):
+        return obj.absolute_url
+
+    def create(self, validated_data):
+        current_user = self.context['request'].user
+        auth = Auth(current_user)
+        node = self.context['view'].get_node()
+        user = get_object_or_404(User, validated_data['_id'])
+        added = node.add_contributor(contributor=user, auth=auth, save=True)
+        if not added:
+            raise ValidationError('User {} already is a contributor.'.format(user.username))
+
+        bibliographic = validated_data['bibliographic'] == "True"
+
+        self.set_bibliographic(bibliographic, node, user)
+        permission_field = validated_data['permission']
+        self.set_permissions(permission_field, user, node)
+        user.node_id = node._id
+        user.bibliographic = node.get_visible(user)
+        return user
+
+    def set_bibliographic(self, bibliographic, node, user):
+        try:
+            node.set_visible(user, bibliographic, save=True)
+        except ValueError as e:
+            raise ValidationError(e)
+
+    # todo simplify this
+    def set_permissions(self, field, user, node, is_admin=True, is_current=False):
+        if field == '':
+            pass
+        elif is_admin or not is_current:
+            if field == 'admin':
+                    node.set_permissions(user, ['read', 'write', 'admin'])
+            elif has_multiple_admins(node) or not is_current:
+                if field == 'write':
+                    node.set_permissions(user, ['read', 'write'])
+                elif field == 'read':
+                    node.set_permissions(user, ['read'])
+            else:
+                raise ValidationError('Must have at least one admin contributor')
+        elif field == 'read' and node.has_permission(user, 'write'):
+            node.set_permissions(user, ['read'])
+        else:
+            raise PermissionDenied()
+        node.save()
+
+
+class NodeContributorDetailSerializer(NodeContributorsSerializer):
+
+    id = ser.CharField(read_only=True, source='_id')
+
+    # Overridden to allow blank for user to not change status by using initial blank value
+    permission = ser.ChoiceField(choices=['read', 'write', 'admin'], write_only=True, allow_blank=True)
+
+    def update(self, user, validated_data):
+        node = self.context['view'].get_node()
+        current_user = self.context['request'].user
+        bibliographic = validated_data['bibliographic'] == "True"
+        permission_field = validated_data['permission']
+        is_admin_current = node.has_permission(current_user, 'admin')
+        is_current = user is current_user
+
+        # if a user is not an admin, they cannot make their bibliographic status true
+        if is_admin_current or \
+                ((node.get_visible(user) and is_current) or not bibliographic):
+            self.set_bibliographic(bibliographic, node, user)
+        else:
+            raise PermissionDenied('Non admin user cannot make self bibliographic')
+
+        self.set_permissions(permission_field, user, node, is_admin_current, is_current=is_current)
+        user.bibliographic = node.get_visible(user)
+        user.permissions = node.get_permissions(user)
+        return user
+
+
 class NodePointersSerializer(JSONAPISerializer):
 
     id = ser.CharField(read_only=True, source='_id')
@@ -140,7 +278,7 @@ class NodePointersSerializer(JSONAPISerializer):
     class Meta:
         type_ = 'pointers'
 
-    links = LinksField({
+    links = LinksFieldWIthSelfLink({
         'html': 'get_absolute_url',
     })
 
@@ -167,23 +305,34 @@ class NodePointersSerializer(JSONAPISerializer):
 
 
 class NodeFilesSerializer(JSONAPISerializer):
-
-    id = ser.CharField(read_only=True, source='_id')
+    id = ser.SerializerMethodField()
     provider = ser.CharField(read_only=True)
     path = ser.CharField(read_only=True)
     item_type = ser.CharField(read_only=True)
     name = ser.CharField(read_only=True)
-    metadata = ser.DictField(read_only=True)
+    content_type = ser.CharField(read_only=True)
+    modified = ser.DateTimeField(read_only=True)
+    size = ser.CharField(read_only=True)
+    extra = ser.DictField(read_only=True)
 
     class Meta:
         type_ = 'files'
 
-    links = LinksField({
+    links = LinksFieldWIthSelfLink({
         'self': WaterbutlerLink(kwargs={'node_id': '<node_id>'}),
-        'self_methods': 'valid_self_link_methods',
-        'related': Link('nodes:node-files', kwargs={'node_id': '<node_id>'},
+        'related': {
+            'href': Link('nodes:node-files', kwargs={'node_id': '<node_id>'},
                         query_kwargs={'path': '<path>', 'provider': '<provider>'}),
+            'meta': {
+                'self_methods': 'valid_self_link_methods'
+            }
+        }
     })
+
+    @staticmethod
+    def get_id(obj):
+        ret = obj['provider'] + obj['path']
+        return ret
 
     @staticmethod
     def valid_self_link_methods(obj):

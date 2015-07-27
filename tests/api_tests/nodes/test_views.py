@@ -31,12 +31,14 @@ class TestWelcomeToApi(ApiTestCase):
     def test_returns_200_for_logged_out_user(self):
         res = self.app.get(self.url)
         assert_equal(res.status_code, 200)
+        assert_equal(res.content_type, 'application/vnd.api+json')
         assert_equal(res.json['meta']['current_user'], None)
 
     def test_returns_current_user_info_when_logged_in(self):
         res = self.app.get(self.url, auth=self.basic_auth)
         assert_equal(res.status_code, 200)
-        assert_equal(res.json['meta']['current_user']['data']['given_name'], self.user.given_name)
+        assert_equal(res.content_type, 'application/vnd.api+json')
+        assert_equal(res.json['meta']['current_user']['data']['attributes']['given_name'], self.user.given_name)
 
 
 class TestNodeList(ApiTestCase):
@@ -70,6 +72,7 @@ class TestNodeList(ApiTestCase):
     def test_return_public_node_list_logged_out_user(self):
         res = self.app.get(self.url)
         assert_equal(res.status_code, 200)
+        assert_equal(res.content_type, 'application/vnd.api+json')
         ids = [each['id'] for each in res.json['data']]
         assert_in(self.public._id, ids)
         assert_not_in(self.private._id, ids)
@@ -77,6 +80,7 @@ class TestNodeList(ApiTestCase):
     def test_return_public_node_list_logged_in_user(self):
         res = self.app.get(self.url, auth=self.non_contrib)
         assert_equal(res.status_code, 200)
+        assert_equal(res.content_type, 'application/vnd.api+json')
         ids = [each['id'] for each in res.json['data']]
         assert_in(self.public._id, ids)
         assert_not_in(self.private._id, ids)
@@ -90,6 +94,7 @@ class TestNodeList(ApiTestCase):
     def test_return_private_node_list_logged_in_contributor(self):
         res = self.app.get(self.url, auth=self.basic_auth)
         assert_equal(res.status_code, 200)
+        assert_equal(res.content_type, 'application/vnd.api+json')
         ids = [each['id'] for each in res.json['data']]
         assert_in(self.public._id, ids)
         assert_in(self.private._id, ids)
@@ -346,27 +351,31 @@ class TestNodeCreate(ApiTestCase):
         # presenting a basic authentication dialog box in the front end. We may change this as we understand CAS
         # a little better
         assert_equal(res.status_code, 403)
+        assert 'detail' in res.json['errors'][0].keys()
 
     def test_creates_public_project_logged_in(self):
         res = self.app.post_json(self.url, self.public_project, auth=self.basic_auth)
         assert_equal(res.status_code, 201)
-        assert_equal(res.json['data']['title'], self.public_project['title'])
-        assert_equal(res.json['data']['description'], self.public_project['description'])
-        assert_equal(res.json['data']['category'], self.public_project['category'])
-
+        assert_equal(res.json['data']['attributes']['title'], self.public_project['title'])
+        assert_equal(res.json['data']['attributes']['description'], self.public_project['description'])
+        assert_equal(res.json['data']['attributes']['category'], self.public_project['category'])
+        assert_equal(res.content_type, 'application/vnd.api+json')
+       
     def test_creates_private_project_logged_out(self):
         res = self.app.post_json(self.url, self.private_project, expect_errors=True)
         # This is 403 instead of 401 because basic authentication is only for unit tests and, in order to keep from
         # presenting a basic authentication dialog box in the front end. We may change this as we understand CAS
         # a little better
         assert_equal(res.status_code, 403)
+        assert 'detail' in res.json['errors'][0].keys()
 
     def test_creates_private_project_logged_in_contributor(self):
         res = self.app.post_json(self.url, self.private_project, auth=self.basic_auth)
         assert_equal(res.status_code, 201)
-        assert_equal(res.json['data']['title'], self.private_project['title'])
-        assert_equal(res.json['data']['description'], self.private_project['description'])
-        assert_equal(res.json['data']['category'], self.private_project['category'])
+        assert_equal(res.content_type, 'application/vnd.api+json')
+        assert_equal(res.json['data']['attributes']['title'], self.private_project['title'])
+        assert_equal(res.json['data']['attributes']['description'], self.private_project['description'])
+        assert_equal(res.json['data']['attributes']['category'], self.private_project['category'])
 
     def test_creates_project_creates_project_and_sanitizes_html(self):
         title = '<em>Cool</em> <strong>Project</strong>'
@@ -380,12 +389,13 @@ class TestNodeCreate(ApiTestCase):
         }, auth=self.basic_auth)
         project_id = res.json['data']['id']
         assert_equal(res.status_code, 201)
+        assert_equal(res.content_type, 'application/vnd.api+json')
         url = '/{}nodes/{}/'.format(API_BASE, project_id)
 
         res = self.app.get(url, auth=self.basic_auth)
-        assert_equal(res.json['data']['title'], strip_html(title))
-        assert_equal(res.json['data']['description'], strip_html(description))
-        assert_equal(res.json['data']['category'], self.category)
+        assert_equal(res.json['data']['attributes']['title'], strip_html(title))
+        assert_equal(res.json['data']['attributes']['description'], strip_html(description))
+        assert_equal(res.json['data']['attributes']['category'], self.category)
 
 
 class TestNodeDetail(ApiTestCase):
@@ -409,16 +419,18 @@ class TestNodeDetail(ApiTestCase):
     def test_return_public_project_details_logged_out(self):
         res = self.app.get(self.public_url)
         assert_equal(res.status_code, 200)
-        assert_equal(res.json['data']['title'], self.public_project.title)
-        assert_equal(res.json['data']['description'], self.public_project.description)
-        assert_equal(res.json['data']['category'], self.public_project.category)
+        assert_equal(res.content_type, 'application/vnd.api+json')
+        assert_equal(res.json['data']['attributes']['title'], self.public_project.title)
+        assert_equal(res.json['data']['attributes']['description'], self.public_project.description)
+        assert_equal(res.json['data']['attributes']['category'], self.public_project.category)
 
     def test_return_public_project_details_logged_in(self):
         res = self.app.get(self.public_url, auth=self.basic_auth)
         assert_equal(res.status_code, 200)
-        assert_equal(res.json['data']['title'], self.public_project.title)
-        assert_equal(res.json['data']['description'], self.public_project.description)
-        assert_equal(res.json['data']['category'], self.public_project.category)
+        assert_equal(res.content_type, 'application/vnd.api+json')
+        assert_equal(res.json['data']['attributes']['title'], self.public_project.title)
+        assert_equal(res.json['data']['attributes']['description'], self.public_project.description)
+        assert_equal(res.json['data']['attributes']['category'], self.public_project.category)
 
     def test_return_private_project_details_logged_out(self):
         res = self.app.get(self.private_url, expect_errors=True)
@@ -426,29 +438,36 @@ class TestNodeDetail(ApiTestCase):
         # presenting a basic authentication dialog box in the front end. We may change this as we understand CAS
         # a little better
         assert_equal(res.status_code, 403)
+        assert 'detail' in res.json['errors'][0].keys()
+
 
     def test_return_private_project_details_logged_in_contributor(self):
         res = self.app.get(self.private_url, auth=self.basic_auth)
         assert_equal(res.status_code, 200)
-        assert_equal(res.json['data']['title'], self.private_project.title)
-        assert_equal(res.json['data']['description'], self.private_project.description)
-        assert_equal(res.json['data']['category'], self.private_project.category)
+        assert_equal(res.content_type, 'application/vnd.api+json')
+        assert_equal(res.json['data']['attributes']['title'], self.private_project.title)
+        assert_equal(res.json['data']['attributes']['description'], self.private_project.description)
+        assert_equal(res.json['data']['attributes']['category'], self.private_project.category)
 
     def test_return_private_project_details_logged_in_non_contributor(self):
         res = self.app.get(self.private_url, auth=self.basic_auth_two, expect_errors=True)
         assert_equal(res.status_code, 403)
+        assert 'detail' in res.json['errors'][0].keys()
 
     def test_top_level_project_has_no_parent(self):
         res = self.app.get(self.public_url)
         assert_equal(res.status_code, 200)
-        assert_equal(res.json['data']['links']['parent']['self'], None)
+        assert_equal(res.json['data']['relationships']['parent']['links']['self'], None)
+        assert_equal(res.content_type, 'application/vnd.api+json')
 
     def test_child_project_has_parent(self):
         public_component = NodeFactory(parent=self.public_project, creator=self.user, is_public=True)
         public_component_url = '/{}nodes/{}/'.format(API_BASE, public_component._id)
         res = self.app.get(public_component_url)
         assert_equal(res.status_code, 200)
-        assert_equal(res.json['data']['links']['parent']['self'], urlparse.urljoin(API_DOMAIN, self.public_url))
+        assert_equal(res.content_type, 'application/vnd.api+json')
+        assert_equal(res.json['data']['relationships']['parent']['links']['self'], urlparse.urljoin(API_DOMAIN, self.public_url))
+
 
 class TestNodeUpdate(ApiTestCase):
 
@@ -496,6 +515,8 @@ class TestNodeUpdate(ApiTestCase):
         # presenting a basic authentication dialog box in the front end. We may change this as we understand CAS
         # a little better
         assert_equal(res.status_code, 403)
+        assert 'detail' in res.json['errors'][0].keys()
+
 
     def test_update_public_project_logged_in(self):
         # Public project, logged in, contrib
@@ -506,9 +527,10 @@ class TestNodeUpdate(ApiTestCase):
             'public': True,
         }, auth=self.basic_auth)
         assert_equal(res.status_code, 200)
-        assert_equal(res.json['data']['title'], self.new_title)
-        assert_equal(res.json['data']['description'], self.new_description)
-        assert_equal(res.json['data']['category'], self.new_category)
+        assert_equal(res.content_type, 'application/vnd.api+json')
+        assert_equal(res.json['data']['attributes']['title'], self.new_title)
+        assert_equal(res.json['data']['attributes']['description'], self.new_description)
+        assert_equal(res.json['data']['attributes']['category'], self.new_category)
 
         # Public project, logged in, unauthorized
         res = self.app.put_json(self.public_url, {
@@ -518,6 +540,7 @@ class TestNodeUpdate(ApiTestCase):
             'public': True,
         }, auth=self.basic_auth_two, expect_errors=True)
         assert_equal(res.status_code, 403)
+        assert 'detail' in res.json['errors'][0].keys()
 
     def test_update_private_project_logged_out(self):
         res = self.app.put_json(self.private_url, {
@@ -530,6 +553,7 @@ class TestNodeUpdate(ApiTestCase):
         # presenting a basic authentication dialog box in the front end. We may change this as we understand CAS
         # a little better
         assert_equal(res.status_code, 403)
+        assert 'detail' in res.json['errors'][0].keys()
 
     def test_update_private_project_logged_in_contributor(self):
         res = self.app.put_json(self.private_url, {
@@ -539,9 +563,10 @@ class TestNodeUpdate(ApiTestCase):
             'public': False,
         }, auth=self.basic_auth)
         assert_equal(res.status_code, 200)
-        assert_equal(res.json['data']['title'], self.new_title)
-        assert_equal(res.json['data']['description'], self.new_description)
-        assert_equal(res.json['data']['category'], self.new_category)
+        assert_equal(res.content_type, 'application/vnd.api+json')
+        assert_equal(res.json['data']['attributes']['title'], self.new_title)
+        assert_equal(res.json['data']['attributes']['description'], self.new_description)
+        assert_equal(res.json['data']['attributes']['category'], self.new_category)
 
     def test_update_private_project_logged_in_non_contributor(self):
         res = self.app.put_json(self.private_url, {
@@ -551,6 +576,7 @@ class TestNodeUpdate(ApiTestCase):
             'public': False,
         }, auth=self.basic_auth_two, expect_errors=True)
         assert_equal(res.status_code, 403)
+        assert 'detail' in res.json['errors'][0].keys()
 
     def test_update_project_sanitizes_html_properly(self):
         """Post request should update resource, and any HTML in fields should be stripped"""
@@ -567,8 +593,9 @@ class TestNodeUpdate(ApiTestCase):
             'public': True,
         }, auth=self.basic_auth)
         assert_equal(res.status_code, 200)
-        assert_equal(res.json['data']['title'], strip_html(new_title))
-        assert_equal(res.json['data']['description'], strip_html(new_description))
+        assert_equal(res.content_type, 'application/vnd.api+json')
+        assert_equal(res.json['data']['attributes']['title'], strip_html(new_title))
+        assert_equal(res.json['data']['attributes']['description'], strip_html(new_description))
 
     def test_partial_update_project_updates_project_correctly_and_sanitizes_html(self):
         new_title = 'An <script>alert("even cooler")</script> project'
@@ -580,12 +607,14 @@ class TestNodeUpdate(ApiTestCase):
             'title': new_title,
         }, auth=self.basic_auth)
         assert_equal(res.status_code, 200)
+        assert_equal(res.content_type, 'application/vnd.api+json')
 
         res = self.app.get(url)
         assert_equal(res.status_code, 200)
-        assert_equal(res.json['data']['title'], strip_html(new_title))
-        assert_equal(res.json['data']['description'], self.description)
-        assert_equal(res.json['data']['category'], self.category)
+        assert_equal(res.content_type, 'application/vnd.api+json')
+        assert_equal(res.json['data']['attributes']['title'], strip_html(new_title))
+        assert_equal(res.json['data']['attributes']['description'], self.description)
+        assert_equal(res.json['data']['attributes']['category'], self.category)
 
     def test_writing_to_public_field(self):
         title = "Cool project"
@@ -599,11 +628,13 @@ class TestNodeUpdate(ApiTestCase):
             'is_public': False,
         }, auth=self.basic_auth_two, expect_errors=True)
         assert_equal(res.status_code, 403)
+        assert 'detail' in res.json['errors'][0].keys()
+
         # Test creator writing to public field (supposed to be read-only)
         res = self.app.patch_json(url, {
             'is_public': False,
         }, auth=self.basic_auth, expect_errors=True)
-        assert_true(res.json['data']['public'])
+        assert_true(res.json['data']['attributes']['public'])
         # TODO: Figure out why the validator isn't raising when attempting to write to a read-only field
         # assert_equal(res.status_code, 403)
 
@@ -613,21 +644,24 @@ class TestNodeUpdate(ApiTestCase):
         # presenting a basic authentication dialog box in the front end. We may change this as we understand CAS
         # a little better
         assert_equal(res.status_code, 403)
+        assert 'detail' in res.json['errors'][0].keys()
 
     def test_partial_update_public_project_logged_in(self):
         res = self.app.patch_json(self.public_url, {
             'title': self.new_title,
         }, auth=self.basic_auth)
         assert_equal(res.status_code, 200)
-        assert_equal(res.json['data']['title'], self.new_title)
-        assert_equal(res.json['data']['description'], self.description)
-        assert_equal(res.json['data']['category'], self.category)
+        assert_equal(res.content_type, 'application/vnd.api+json')
+        assert_equal(res.json['data']['attributes']['title'], self.new_title)
+        assert_equal(res.json['data']['attributes']['description'], self.description)
+        assert_equal(res.json['data']['attributes']['category'], self.category)
 
         # Public resource, logged in, unauthorized
         res = self.app.patch_json(self.public_url, {
             'title': self.new_title,
         }, auth=self.basic_auth_two, expect_errors=True)
         assert_equal(res.status_code, 403)
+        assert 'detail' in res.json['errors'][0].keys()
 
     def test_partial_update_private_project_logged_out(self):
         res = self.app.patch_json(self.private_url, {'title': self.new_title}, expect_errors=True)
@@ -635,13 +669,15 @@ class TestNodeUpdate(ApiTestCase):
         # presenting a basic authentication dialog box in the front end. We may change this as we understand CAS
         # a little better
         assert_equal(res.status_code, 403)
+        assert 'detail' in res.json['errors'][0].keys()
 
     def test_partial_update_private_project_logged_in_contributor(self):
         res = self.app.patch_json(self.private_url, {'title': self.new_title}, auth=self.basic_auth)
         assert_equal(res.status_code, 200)
-        assert_equal(res.json['data']['title'], self.new_title)
-        assert_equal(res.json['data']['description'], self.description)
-        assert_equal(res.json['data']['category'], self.category)
+        assert_equal(res.content_type, 'application/vnd.api+json')
+        assert_equal(res.json['data']['attributes']['title'], self.new_title)
+        assert_equal(res.json['data']['attributes']['description'], self.description)
+        assert_equal(res.json['data']['attributes']['category'], self.category)
 
     def test_partial_update_private_project_logged_in_non_contributor(self):
         res = self.app.patch_json(self.private_url,
@@ -649,6 +685,7 @@ class TestNodeUpdate(ApiTestCase):
                                   auth=self.basic_auth_two,
                                   expect_errors=True)
         assert_equal(res.status_code, 403)
+        assert 'detail' in res.json['errors'][0].keys()
 
 
 class TestNodeDelete(ApiTestCase):
@@ -679,12 +716,16 @@ class TestNodeDelete(ApiTestCase):
         # presenting a basic authentication dialog box in the front end. We may change this as we understand CAS
         # a little better
         assert_equal(res.status_code, 403)
+        assert 'detail' in res.json['errors'][0].keys()
+
 
     def test_deletes_public_node_fails_if_bad_auth(self):
         res = self.app.delete_json(self.public_url, auth=self.basic_auth_two, expect_errors=True)
         self.public_project.reload()
         assert_equal(res.status_code, 403)
         assert_equal(self.public_project.is_deleted, False)
+        assert 'detail' in res.json['errors'][0].keys()
+
 
     def test_deletes_public_node_succeeds_as_owner(self):
         res = self.app.delete_json(self.public_url, auth=self.basic_auth, expect_errors=True)
@@ -698,6 +739,8 @@ class TestNodeDelete(ApiTestCase):
         # presenting a basic authentication dialog box in the front end. We may change this as we understand CAS
         # a little better
         assert_equal(res.status_code, 403)
+        assert 'detail' in res.json['errors'][0].keys()
+
 
     def test_deletes_private_node_logged_in_contributor(self):
         res = self.app.delete(self.private_url, auth=self.basic_auth, expect_errors=True)
@@ -710,6 +753,8 @@ class TestNodeDelete(ApiTestCase):
         self.project.reload()
         assert_equal(res.status_code, 403)
         assert_equal(self.project.is_deleted, False)
+        assert 'detail' in res.json['errors'][0].keys()
+
 
     def test_deletes_private_node_logged_in_read_only_contributor(self):
         self.project.add_contributor(self.user_two, permissions=['read'])
@@ -718,10 +763,13 @@ class TestNodeDelete(ApiTestCase):
         self.project.reload()
         assert_equal(res.status_code, 403)
         assert_equal(self.project.is_deleted, False)
+        assert 'detail' in res.json['errors'][0].keys()
+
 
     def test_deletes_invalid_node(self):
         res = self.app.delete(self.fake_url, auth=self.basic_auth, expect_errors=True)
         assert_equal(res.status_code, 404)
+        assert 'detail' in res.json['errors'][0].keys()
 
 
 class TestNodeContributorList(ApiTestCase):
@@ -751,6 +799,7 @@ class TestNodeContributorList(ApiTestCase):
 
         res = self.app.get(self.public_url)
         assert_equal(res.status_code, 200)
+        assert_equal(res.content_type, 'application/vnd.api+json')
         assert_equal(len(res.json['data']), 2)
         assert_equal(res.json['data'][0]['id'], self.user._id)
         assert_equal(res.json['data'][1]['id'], self.user_two._id)
@@ -758,6 +807,7 @@ class TestNodeContributorList(ApiTestCase):
     def test_return_public_contributor_list_logged_in(self):
         res = self.app.get(self.public_url, auth=self.basic_auth_two)
         assert_equal(res.status_code, 200)
+        assert_equal(res.content_type, 'application/vnd.api+json')
         assert_equal(len(res.json['data']), 1)
         assert_equal(res.json['data'][0]['id'], self.user._id)
 
@@ -767,6 +817,8 @@ class TestNodeContributorList(ApiTestCase):
         # presenting a basic authentication dialog box in the front end. We may change this as we understand CAS
         # a little better
         assert_equal(res.status_code, 403)
+        assert 'detail' in res.json['errors'][0].keys()
+
 
     def test_return_private_contributor_list_logged_in_contributor(self):
         self.private_project.add_contributor(self.user_two)
@@ -774,6 +826,7 @@ class TestNodeContributorList(ApiTestCase):
 
         res = self.app.get(self.private_url, auth=self.basic_auth)
         assert_equal(res.status_code, 200)
+        assert_equal(res.content_type, 'application/vnd.api+json')
         assert_equal(len(res.json['data']), 2)
         assert_equal(res.json['data'][0]['id'], self.user._id)
         assert_equal(res.json['data'][1]['id'], self.user_two._id)
@@ -781,6 +834,476 @@ class TestNodeContributorList(ApiTestCase):
     def test_return_private_contributor_list_logged_in_non_contributor(self):
         res = self.app.get(self.private_url, auth=self.basic_auth_two, expect_errors=True)
         assert_equal(res.status_code, 403)
+        assert 'detail' in res.json['errors'][0].keys()
+
+
+class TestAddNodeContributor(ApiTestCase):
+
+    def setUp(self):
+        ApiTestCase.setUp(self)
+        self.admin = UserFactory.build()
+        password = fake.password()
+        self.admin.set_password(password)
+        self.admin.save()
+        self.admin_auth = (self.admin.username, password)
+
+        self.user = UserFactory.build()
+        self.user.set_password(password)
+        self.user_auth = (self.user.username, password)
+        self.user.save()
+
+        self.default_user_data = {
+            'id': self.user._id,
+            'permission': 'write',
+            'bibliographic': True
+        }
+        self.project = ProjectFactory(is_public=True, creator=self.admin)
+        self.url = '/{}nodes/{}/contributors/'.format(API_BASE, self.project._id)
+
+    def test_admin_add_read_bibliographic_contributor(self):
+        data = {
+            'id': self.user._id,
+            'permission': 'read',
+            'bibliographic': True
+        }
+        res = self.app.post(self.url, params=data, auth=self.admin_auth, expect_errors=False)
+        assert_equal(res.status_code, 201)
+
+        self.project.reload()
+        assert_in(self.user, self.project.contributors)
+        assert_equal(self.project.get_permissions(self.user), ['read'])
+        assert_true(self.project.get_visible(self.user))
+
+    def test_admin_add_read_non_bibliographic_contributor(self):
+        data = {
+            'id': self.user._id,
+            'permission': 'read',
+            'bibliographic': False
+        }
+        res = self.app.post(self.url, params=data, auth=self.admin_auth, expect_errors=False)
+
+        self.project.reload()
+        assert_equal(res.status_code, 201)
+        assert_in(self.user, self.project.contributors)
+        assert_equal(self.project.get_permissions(self.user), ['read'])
+        assert_false(self.project.get_visible(self.user))
+
+    def test_admin_add_write_bibliographic_contributor(self):
+        data = {
+            'id': self.user._id,
+            'permission': 'write',
+            'bibliographic': True
+        }
+        res = self.app.post(self.url, params=data, auth=self.admin_auth, expect_errors=False)
+
+        self.project.reload()
+        assert_equal(res.status_code, 201)
+        assert_in(self.user, self.project.contributors)
+        assert_equal(self.project.get_permissions(self.user), ['read', 'write'])
+        assert_true(self.project.get_visible(self.user))
+
+    def test_admin_add_write_non_bibliographic_contributor(self):
+        data = {
+            'id': self.user._id,
+            'permission': 'write',
+            'bibliographic': False
+        }
+        res = self.app.post(self.url, params=data, auth=self.admin_auth, expect_errors=False)
+
+        self.project.reload()
+        assert_equal(res.status_code, 201)
+        assert_in(self.user, self.project.contributors)
+        assert_equal(self.project.get_permissions(self.user), ['read', 'write'])
+        assert_false(self.project.get_visible(self.user))
+
+    def test_admin_add_admin_bibliographic_contributor(self):
+        data = {
+            'id': self.user._id,
+            'permission': 'admin',
+            'bibliographic': True
+        }
+        res = self.app.post(self.url, params=data, auth=self.admin_auth, expect_errors=False)
+
+        self.project.reload()
+        assert_equal(res.status_code, 201)
+        assert_in(self.user, self.project.contributors)
+        assert_equal(self.project.get_permissions(self.user), ['read', 'write', 'admin'])
+        assert_true(self.project.get_visible(self.user))
+
+    def test_admin_add_admin_non_bibliographic_contributor(self):
+        data = {
+            'id': self.user._id,
+            'permission': 'admin',
+            'bibliographic': False
+        }
+        res = self.app.post(self.url, params=data, auth=self.admin_auth, expect_errors=False)
+
+        self.project.reload()
+        assert_equal(res.status_code, 201)
+        assert_in(self.user, self.project.contributors)
+        assert_equal(self.project.get_permissions(self.user), ['read', 'write', 'admin'])
+        assert_false(self.project.get_visible(self.user))
+
+    def test_admin_add_already_existing_contributor(self):
+        self.project.add_contributor(contributor=self.user, save=True)
+        res = self.app.post(self.url, params=self.default_user_data, auth=self.admin_auth, expect_errors=True)
+        assert_equal(res.status_code, 400)
+
+    def test_admin_add_non_existing_contributor(self):
+        data = {
+            'id': 'non_existent',
+            'permission': 'write',
+            'bibliographic': True
+        }
+        res = self.app.post(self.url, params=data, auth=self.admin_auth, expect_errors=True)
+        assert_equal(res.status_code, 404)
+
+    def test_non_contributor_add_contributor(self):
+        password = fake.password()
+        user_two = UserFactory.build()
+        user_two.set_password(password)
+        user_two.save()
+        data = {
+            'id': user_two._id,
+            'permission': 'write',
+            'bibliographic': True
+        }
+
+        non_contributor_auth = (self.user.username, password)
+        res = self.app.post(self.url, params=data, auth=non_contributor_auth, expect_errors=True)
+
+        self.project.reload()
+        assert_equal(res.status_code, 403)
+        assert_not_in(user_two, self.project.contributors)
+
+    def test_non_admin_contributor_add_contributor(self):
+        password = fake.password()
+        user_two = UserFactory.build()
+        user_two.set_password(password)
+        user_two.save()
+
+        self.project.add_contributor(self.user)
+
+        data = {
+            'id': user_two._id,
+            'permission': 'write',
+            'bibliographic': True
+        }
+
+        res = self.app.post(self.url, params=data, auth=self.user_auth, expect_errors=True)
+
+        self.project.reload()
+        assert_equal(res.status_code, 403)
+        assert_not_in(user_two, self.project.contributors)
+
+    def test_non_logged_in_user_add_contributor(self):
+        res = self.app.post(self.url, params=self.default_user_data, expect_errors=True)
+
+        self.project.reload()
+        assert_equal(res.status_code, 403)
+        assert_not_in(self.user, self.project.contributors)
+
+
+class TestRemoveNodeContributor(ApiTestCase):
+
+    def setUp(self):
+        ApiTestCase.setUp(self)
+        self.admin = UserFactory.build()
+        password = fake.password()
+        self.admin.set_password(password)
+        self.admin.save()
+        self.admin_auth = (self.admin.username, password)
+
+        self.user = UserFactory.build()
+        self.user.set_password(password)
+        self.user.save()
+        self.user_auth = (self.user.username, password)
+
+        self.project = ProjectFactory(is_public=True, creator=self.admin)
+        self.project.add_contributor(contributor=self.user, save=True)
+        self.project.save()
+
+        self.url_contributor = '/{}nodes/{}/contributors/{}/'.format(API_BASE, self.project._id, self.user._id)
+        self.url_admin = '/{}nodes/{}/contributors/{}/'.format(API_BASE, self.project._id, self.admin._id)
+
+    def test_admin_remove_contributor(self):
+        res = self.app.delete(self.url_contributor, auth=self.admin_auth)
+        assert_equal(res.status_code, 204)
+
+        self.project.reload()
+        assert_not_in(self.user, self.project.contributors)
+
+    def test_non_admin_contributor_remove_self(self):
+        res = self.app.delete(self.url_contributor, auth=self.user_auth, expect_errors=False)
+        assert_equal(res.status_code, 204)
+
+        self.project.reload()
+        assert_not_in(self.user, self.project.contributors)
+
+    def test_admin_remove_self_with_other_admin(self):
+        self.project.add_permission(self.user, 'admin', save=True)
+
+        self.project.reload()
+        res = self.app.delete(self.url_admin, auth=self.admin_auth, expect_errors=False)
+        assert_equal(res.status_code, 204)
+
+        self.project.reload()
+        assert_not_in(self.admin, self.project.contributors)
+
+    def test_admin_remove_all_contributors(self):
+        res = self.app.delete(self.url_contributor, auth=self.admin_auth, expect_errors=False)
+        assert_equal(res.status_code, 204)
+        res = self.app.delete(self.url_admin, auth=self.admin_auth, expect_errors=True)
+        assert_equal(res.status_code, 400)
+
+        self.project.reload()
+        assert_in(self.admin, self.project.contributors)
+
+    def test_admin_remove_contributor_twice(self):
+        res = self.app.delete(self.url_contributor, auth=self.admin_auth, expect_errors=False)
+        assert_equal(res.status_code, 204)
+
+        self.project.reload()
+        assert_not_in(self.user, self.project.contributors)
+        res = self.app.delete(self.url_contributor, auth=self.admin_auth, expect_errors=True)
+        assert_equal(res.status_code, 404)
+
+    def test_unique_admin_remove_self(self):
+        res = self.app.delete(self.url_admin, auth=self.admin_auth, expect_errors=True)
+        assert_equal(res.status_code, 400)
+
+        self.project.reload()
+        assert_in(self.admin, self.project.contributors)
+
+    def test_admin_remove_non_contributor(self):
+        url_fake = '/{}nodes/{}/contributors/fake/'.format(API_BASE, self.project._id)
+        res = self.app.delete(url_fake, auth=self.admin_auth, expect_errors=True)
+        assert_equal(res.status_code, 404)
+
+    def test_admin_remove_non_existent_contributor(self):
+        self.non_admin = UserFactory.build()
+        password = fake.password()
+        self.non_admin.set_password(password)
+        self.user.save()
+        self.url_non_contributor = '/{}nodes/{}/contributors/{}/'.format(API_BASE, self.project._id, self.non_admin._id)
+        res = self.app.delete(self.url_non_contributor, auth=self.admin_auth, expect_errors=True)
+        assert_equal(res.status_code, 404)
+
+    def test_non_admin_remove_contributor(self):
+        res = self.app.delete(self.url_admin, auth=self.user_auth, expect_errors=True)
+        assert_equal(res.status_code, 403)
+
+        self.project.reload()
+        assert_in(self.admin, self.project.contributors)
+
+    def test_not_logged_in_remove_contributor(self):
+        res = self.app.delete(self.url_contributor, expect_errors=True)
+        # This is 403 instead of 401 because basic authentication is only for unit tests and, in order to keep from
+        # presenting a basic authentication dialog box in the front end. We may change this as we understand CAS
+        # a little better
+        assert_equal(res.status_code, 403)
+
+        self.project.reload()
+        assert_in(self.user, self.project.contributors)
+
+
+class TestEditNodeContributor(ApiTestCase):
+
+    def setUp(self):
+        ApiTestCase.setUp(self)
+        self.admin = UserFactory.build()
+        self.password = fake.password()
+        self.admin.set_password(self.password)
+        self.admin.save()
+        self.admin_auth = (self.admin.username, self.password)
+
+        self.user = UserFactory.build()
+        self.user.set_password(self.password)
+        self.user.save()
+        self.user_auth = (self.user.username, self.password)
+
+        self.project = ProjectFactory(is_public=True, creator=self.admin)
+        self.project.add_contributor(contributor=self.user, save=True)
+        self.url_contributor = '/{}nodes/{}/contributors/{}/'.format(API_BASE, self.project._id, self.user._id)
+        self.url_admin = '/{}nodes/{}/contributors/{}/'.format(API_BASE, self.project._id, self.admin._id)
+
+    def test_admin_change_contributor_admin_to_read_permission(self):
+        res = self.app.put(self.url_contributor, {'permission': 'read'}, auth=self.admin_auth, expect_errors=False)
+        assert_equal(res.status_code, 200)
+
+        self.project.reload()
+        assert_equal(self.project.get_permissions(self.user), ['read'])
+
+    def test_admin_change_contributor_admin_to_write_permission(self):
+        res = self.app.put(self.url_contributor, {'permission': 'write'}, auth=self.admin_auth, expect_errors=False)
+        assert_equal(res.status_code, 200)
+
+        self.project.reload()
+        assert_equal(self.project.get_permissions(self.user), ['read', 'write'])
+
+    def test_admin_change_contributor_admin_to_same_permission(self):
+        res = self.app.put(self.url_contributor, {'permission': 'admin'}, auth=self.admin_auth, expect_errors=False)
+        assert_equal(res.status_code, 200)
+
+        self.project.reload()
+        assert_equal(self.project.get_permissions(self.user), ['read', 'write', 'admin'])
+
+    def test_admin_not_change_contributor_permission(self):
+        res = self.app.put(self.url_contributor, {'permission': ''}, auth=self.admin_auth, expect_errors=False)
+        assert_equal(res.status_code, 200)
+
+        self.project.reload()
+        assert_equal(self.project.get_permissions(self.user), ['read', 'write'])
+
+
+    def test_admin_change_contributor_bibliographic_status(self):
+        data = {
+            'bibliographic': False,
+            'permission': ''
+        }
+        res = self.app.put(self.url_contributor, data, auth=self.admin_auth, expect_errors=False)
+        assert_equal(res.status_code, 200)
+
+        self.project.reload()
+        assert_false(self.project.get_visible(self.user))
+        data = {
+            'bibliographic': True,
+            'permission': ''
+        }
+        res = self.app.put(self.url_contributor, data, auth=self.admin_auth, expect_errors=False)
+        assert_equal(res.status_code, 200)
+
+        self.project.reload()
+        assert_true(self.project.get_visible(self.user))
+
+    def test_admin_not_changing_contributor_bibliographic_status(self):
+        data = {
+            'bibliographic': True,
+            'permission': ''
+        }
+        res = self.app.put(self.url_contributor, data, auth=self.admin_auth, expect_errors=False)
+        assert_equal(res.status_code, 200)
+
+        self.project.reload()
+        assert_true(self.project.get_visible(self.user))
+
+    def test_admin_change_contributor_bibliographic_and_permission_status(self):
+        data = {
+            'bibliographic': False,
+            'permission': 'read'
+        }
+        res = self.app.put(self.url_contributor, data, auth=self.admin_auth, expect_errors=False)
+        assert_equal(res.status_code, 200)
+
+        self.project.reload()
+        assert_false(self.project.get_visible(self.user))
+        assert_equal(self.project.get_permissions(self.user), ['read'])
+
+    def test_admin_change_own_permissions(self):
+        self.project.add_permission(self.user, 'admin', save=True)
+
+        self.project.reload()
+        res = self.app.put(self.url_admin, {'permission': 'write'}, auth=self.admin_auth, expect_errors=False)
+        assert_equal(res.status_code, 200)
+
+        self.project.reload()
+        assert_equal(self.project.get_permissions(self.admin), ['read', 'write'])
+        res = self.app.put(self.url_admin, {'permission': 'read'}, auth=self.admin_auth, expect_errors=False)
+        assert_equal(res.status_code, 200)
+
+        self.project.reload()
+        assert_equal(self.project.get_permissions(self.admin), ['read'])
+        res = self.app.put(self.url_admin, {'permission': 'admin'}, auth=self.admin_auth, expect_errors=True)
+        assert_equal(res.status_code, 403)
+
+        self.project.reload()
+        assert_equal(self.project.get_permissions(self.admin), ['read'])
+
+    def test_admin_remove_all_admin_privileges(self):
+        self.project.remove_contributor(self.user, Auth(self.admin))
+        res = self.app.put(self.url_admin, {'permission': 'write'}, auth=self.admin_auth, expect_errors=True)
+        assert_equal(res.status_code, 400)
+
+        self.project.reload()
+        assert_true(self.project.has_permission(self.admin, 'admin'))
+
+    def test_admin_remove_all_bibliographic_privileges(self):
+        self.project.set_visible(self.user, False, save=True)
+        data = {
+            'permission': '',
+            'bibliographic': False
+        }
+        res = self.app.put(self.url_admin, data, auth=self.admin_auth, expect_errors=True)
+        assert_equal(res.status_code, 400)
+
+        self.project.reload()
+        assert_true(self.project.get_visible(self.admin))
+
+    def test_admin_change_non_contributor_status(self):
+        non_contributor = UserFactory.build()
+        non_contributor.set_password(self.password)
+        non_contributor.save()
+        self.url_non_contributor = '/{}nodes/{}/contributors/{}/'.format(API_BASE, self.project._id, non_contributor._id)
+        data = {
+            'bibliographic': False,
+            'permission': 'read'
+        }
+        res = self.app.put(self.url_non_contributor, data, auth=self.admin_auth, expect_errors=True)
+        assert_equal(res.status_code, 404)
+
+    def test_non_admin_change_contributor_status(self):
+        contributor = UserFactory.build()
+        contributor.set_password(self.password)
+        contributor.save()
+        contributor_auth = (contributor.username, self.password)
+        self.project.add_contributor(contributor)
+
+        self.project.reload()
+        data = {
+            'bibliographic': False,
+            'permission': 'read'
+        }
+        res = self.app.put(self.url_contributor, data, auth=contributor_auth, expect_errors=True)
+        assert_equal(res.status_code, 403)
+
+        self.project.reload()
+        assert_equal(self.project.get_permissions(self.user), ['read', 'write'])
+
+    def test_non_admin_change_own_bibliographic_status_false(self):
+        data = {
+            'bibliographic': False,
+            'permission': ''
+        }
+        res = self.app.put(self.url_contributor, data, auth=self.user_auth, expect_errors=False)
+        assert_equal(res.status_code, 200)
+
+        self.project.reload()
+        assert_false(self.project.get_visible(self.user))
+
+    def test_non_admin_change_own_bibliographic_status_true(self):
+        self.project.set_visible(self.user, False, save=True)
+
+        data = {
+            'bibliographic': True,
+            'permission': ''
+        }
+        res = self.app.put(self.url_contributor, data, auth=self.user_auth, expect_errors=True)
+        assert_false(self.project.get_visible(self.user))
+        assert_equal(res.status_code, 403)
+
+        self.project.reload()
+        assert_false(self.project.get_visible(self.user))
+
+    def test_not_logged_in_change_contributor_status(self):
+        data = {
+            'bibliographic': True,
+            'permission': ''
+        }
+        res = self.app.put(self.url_contributor, data, expect_errors=True)
+        assert_equal(res.status_code, 403)
+
+        self.project.reload()
+        assert_equal(self.project.get_permissions(self.user), ['read', 'write'])
 
 
 class TestNodeContributorFiltering(ApiTestCase):
@@ -802,9 +1325,9 @@ class TestNodeContributorFiltering(ApiTestCase):
 
         # filter for bibliographic contributors
         url = base_url + '?filter[bibliographic]=True'
-        res = self.app.get(url, auth=self.basic_auth)
+        res = self.app.get(url, auth=self.basic_auth, expect_errors=True)
         assert_equal(len(res.json['data']), 1)
-        assert_true(res.json['data'][0].get('bibliographic', None))
+        assert_true(res.json['data'][0]['attributes'].get('bibliographic', None))
 
         # filter for non-bibliographic contributors
         url = base_url + '?filter[bibliographic]=False'
@@ -826,13 +1349,13 @@ class TestNodeContributorFiltering(ApiTestCase):
         url = base_url + '?filter[bibliographic]=True'
         res = self.app.get(url, auth=self.basic_auth)
         assert_equal(len(res.json['data']), 1)
-        assert_true(res.json['data'][0].get('bibliographic', None))
+        assert_true(res.json['data'][0]['attributes'].get('bibliographic', None))
 
         # filter for non-bibliographic contributors
         url = base_url + '?filter[bibliographic]=False'
         res = self.app.get(url, auth=self.basic_auth)
         assert_equal(len(res.json['data']), 1)
-        assert_false(res.json['data'][0].get('bibliographic', None))
+        assert_false(res.json['data'][0]['attributes'].get('bibliographic', None))
 
 
 class TestNodeRegistrationList(ApiTestCase):
@@ -862,12 +1385,14 @@ class TestNodeRegistrationList(ApiTestCase):
     def test_return_public_registrations_logged_out(self):
         res = self.app.get(self.public_url)
         assert_equal(res.status_code, 200)
-        assert_equal(res.json['data'][0]['title'], self.public_project.title)
+        assert_equal(res.content_type, 'application/vnd.api+json')
+        assert_equal(res.json['data'][0]['attributes']['title'], self.public_project.title)
 
     def test_return_public_registrations_logged_in(self):
         res = self.app.get(self.public_url, auth=self.basic_auth)
         assert_equal(res.status_code, 200)
-        assert_equal(res.json['data'][0]['category'], self.public_project.category)
+        assert_equal(res.json['data'][0]['attributes']['category'], self.public_project.category)
+        assert_equal(res.content_type, 'application/vnd.api+json')
 
     def test_return_private_registrations_logged_out(self):
         res = self.app.get(self.private_url, expect_errors=True)
@@ -875,15 +1400,18 @@ class TestNodeRegistrationList(ApiTestCase):
         # presenting a basic authentication dialog box in the front end. We may change this as we understand CAS
         # a little better
         assert_equal(res.status_code, 403)
+        assert 'detail' in res.json['errors'][0].keys()
 
     def test_return_private_registrations_logged_in_contributor(self):
         res = self.app.get(self.private_url, auth=self.basic_auth)
         assert_equal(res.status_code, 200)
-        assert_equal(res.json['data'][0]['category'], self.project.category)
+        assert_equal(res.json['data'][0]['attributes']['category'], self.project.category)
+        assert_equal(res.content_type, 'application/vnd.api+json')
 
     def test_return_private_registrations_logged_in_non_contributor(self):
         res = self.app.get(self.private_url, auth=self.basic_auth_two, expect_errors=True)
         assert_equal(res.status_code, 403)
+        assert 'detail' in res.json['errors'][0].keys()
 
 
 class TestNodeChildrenList(ApiTestCase):
@@ -920,12 +1448,14 @@ class TestNodeChildrenList(ApiTestCase):
     def test_return_public_node_children_list_logged_out(self):
         res = self.app.get(self.public_project_url)
         assert_equal(res.status_code, 200)
+        assert_equal(res.content_type, 'application/vnd.api+json')
         assert_equal(len(res.json['data']), 1)
         assert_equal(res.json['data'][0]['id'], self.public_component._id)
 
     def test_return_public_node_children_list_logged_in(self):
         res = self.app.get(self.public_project_url, auth=self.basic_auth_two)
         assert_equal(res.status_code, 200)
+        assert_equal(res.content_type, 'application/vnd.api+json')
         assert_equal(len(res.json['data']), 1)
         assert_equal(res.json['data'][0]['id'], self.public_component._id)
 
@@ -935,16 +1465,20 @@ class TestNodeChildrenList(ApiTestCase):
         # presenting a basic authentication dialog box in the front end. We may change this as we understand CAS
         # a little better
         assert_equal(res.status_code, 403)
+        assert 'detail' in res.json['errors'][0].keys()
+
 
     def test_return_private_node_children_list_logged_in_contributor(self):
         res = self.app.get(self.private_project_url, auth=self.basic_auth)
         assert_equal(res.status_code, 200)
+        assert_equal(res.content_type, 'application/vnd.api+json')
         assert_equal(len(res.json['data']), 1)
         assert_equal(res.json['data'][0]['id'], self.component._id)
 
     def test_return_private_node_children_list_logged_in_non_contributor(self):
         res = self.app.get(self.private_project_url, auth=self.basic_auth_two, expect_errors=True)
         assert_equal(res.status_code, 403)
+        assert 'detail' in res.json['errors'][0].keys()
 
     def test_node_children_list_does_not_include_unauthorized_projects(self):
         private_component = NodeFactory(parent=self.project)
@@ -982,14 +1516,16 @@ class TestNodePointersList(ApiTestCase):
         res_json = res.json['data']
         assert_equal(len(res_json), 1)
         assert_equal(res.status_code, 200)
-        assert_in(res_json[0]['node_id'], self.public_pointer_project._id)
+        assert_equal(res.content_type, 'application/vnd.api+json')
+        assert_in(res_json[0]['attributes']['node_id'], self.public_pointer_project._id)
 
     def test_return_public_node_pointers_logged_in(self):
         res = self.app.get(self.public_url, auth=self.basic_auth_two)
         res_json = res.json['data']
         assert_equal(len(res_json), 1)
         assert_equal(res.status_code, 200)
-        assert_in(res_json[0]['node_id'], self.public_pointer_project._id)
+        assert_equal(res.content_type, 'application/vnd.api+json')
+        assert_in(res_json[0]['attributes']['node_id'], self.public_pointer_project._id)
 
     def test_return_private_node_pointers_logged_out(self):
         res = self.app.get(self.private_url, expect_errors=True)
@@ -997,17 +1533,21 @@ class TestNodePointersList(ApiTestCase):
         # presenting a basic authentication dialog box in the front end. We may change this as we understand CAS
         # a little better
         assert_equal(res.status_code, 403)
+        assert 'detail' in res.json['errors'][0].keys()
+
 
     def test_return_private_node_pointers_logged_in_contributor(self):
         res = self.app.get(self.private_url, auth=self.basic_auth)
         res_json = res.json['data']
         assert_equal(res.status_code, 200)
+        assert_equal(res.content_type, 'application/vnd.api+json')
         assert_equal(len(res_json), 1)
-        assert_in(res_json[0]['node_id'], self.pointer_project._id)
+        assert_in(res_json[0]['attributes']['node_id'], self.pointer_project._id)
 
     def test_return_private_node_pointers_logged_in_non_contributor(self):
         res = self.app.get(self.private_url, auth=self.basic_auth_two, expect_errors=True)
         assert_equal(res.status_code, 403)
+        assert 'detail' in res.json['errors'][0].keys()
 
 
 class TestCreateNodePointer(ApiTestCase):
@@ -1045,14 +1585,18 @@ class TestCreateNodePointer(ApiTestCase):
         # presenting a basic authentication dialog box in the front end. We may change this as we understand CAS
         # a little better
         assert_equal(res.status_code, 403)
+        assert 'detail' in res.json['errors'][0].keys()
+
 
     def test_creates_public_node_pointer_logged_in(self):
         res = self.app.post(self.public_url, self.public_payload, auth=self.basic_auth_two, expect_errors=True)
         assert_equal(res.status_code, 403)
+        assert 'detail' in res.json['errors'][0].keys()
 
         res = self.app.post(self.public_url, self.public_payload, auth=self.basic_auth)
         assert_equal(res.status_code, 201)
-        assert_equal(res.json['data']['node_id'], self.public_pointer_project._id)
+        assert_equal(res.content_type, 'application/vnd.api+json')
+        assert_equal(res.json['data']['attributes']['node_id'], self.public_pointer_project._id)
 
     def test_creates_private_node_pointer_logged_out(self):
         res = self.app.post(self.private_url, self.private_payload, expect_errors=True)
@@ -1060,55 +1604,70 @@ class TestCreateNodePointer(ApiTestCase):
         # presenting a basic authentication dialog box in the front end. We may change this as we understand CAS
         # a little better
         assert_equal(res.status_code, 403)
+        assert 'detail' in res.json['errors'][0].keys()
+
 
     def test_creates_private_node_pointer_logged_in_contributor(self):
         res = self.app.post(self.private_url, self.private_payload, auth=self.basic_auth)
         assert_equal(res.status_code, 201)
-        assert_equal(res.json['data']['node_id'], self.pointer_project._id)
+        assert_equal(res.json['data']['attributes']['node_id'], self.pointer_project._id)
+        assert_equal(res.content_type, 'application/vnd.api+json')
 
     def test_creates_private_node_pointer_logged_in_non_contributor(self):
         res = self.app.post(self.private_url, self.private_payload, auth=self.basic_auth_two, expect_errors=True)
         assert_equal(res.status_code, 403)
+        assert 'detail' in res.json['errors'][0].keys()
 
     def test_create_node_pointer_non_contributing_node_to_contributing_node(self):
         res = self.app.post(self.private_url, self.user_two_payload, auth=self.basic_auth_two, expect_errors=True)
         assert_equal(res.status_code, 403)
+        assert 'detail' in res.json['errors'][0].keys()
 
     def test_create_node_pointer_contributing_node_to_non_contributing_node(self):
         res = self.app.post(self.private_url, self.user_two_payload, auth=self.basic_auth)
         assert_equal(res.status_code, 201)
-        assert_equal(res.json['data']['node_id'], self.user_two_project._id)
+        assert_equal(res.content_type, 'application/vnd.api+json')
+        assert_equal(res.json['data']['attributes']['node_id'], self.user_two_project._id)
 
     def test_create_pointer_non_contributing_node_to_fake_node(self):
         res = self.app.post(self.private_url, self.fake_payload, auth=self.basic_auth_two, expect_errors=True)
         assert_equal(res.status_code, 403)
+        assert 'detail' in res.json['errors'][0].keys()
 
     def test_create_pointer_contributing_node_to_fake_node(self):
         res = self.app.post(self.private_url, self.fake_payload, auth=self.basic_auth, expect_errors=True)
         assert_equal(res.status_code, 404)
+        assert 'detail' in res.json['errors'][0].keys()
 
     def test_create_fake_node_pointing_to_contributing_node(self):
         res = self.app.post(self.fake_url, self.private_payload, auth=self.basic_auth, expect_errors=True)
         assert_equal(res.status_code, 404)
+        assert 'detail' in res.json['errors'][0].keys()
 
         res = self.app.post(self.fake_url, self.private_payload, auth=self.basic_auth_two, expect_errors=True)
         assert_equal(res.status_code, 404)
+        assert 'detail' in res.json['errors'][0].keys()
 
     def test_create_node_pointer_to_itself(self):
         res = self.app.post(self.public_url, self.point_to_itself_payload, auth=self.basic_auth_two, expect_errors=True)
         assert_equal(res.status_code, 403)
+        assert 'detail' in res.json['errors'][0].keys()
+
 
         res = self.app.post(self.public_url, self.point_to_itself_payload, auth=self.basic_auth)
         assert_equal(res.status_code, 201)
-        assert_equal(res.json['data']['node_id'], self.public_project._id)
+        assert_equal(res.content_type, 'application/vnd.api+json')
+        assert_equal(res.json['data']['attributes']['node_id'], self.public_project._id)
 
     def test_create_node_pointer_already_connected(self):
         res = self.app.post(self.public_url, self.public_payload, auth=self.basic_auth)
         assert_equal(res.status_code, 201)
-        assert_equal(res.json['data']['node_id'], self.public_pointer_project._id)
+        assert_equal(res.content_type, 'application/vnd.api+json')
+        assert_equal(res.json['data']['attributes']['node_id'], self.public_pointer_project._id)
 
         res = self.app.post(self.public_url, self.public_payload, auth=self.basic_auth, expect_errors=True)
         assert_equal(res.status_code, 400)
+        assert 'detail' in res.json['errors'][0].keys()
 
 
 class TestNodeFilesList(ApiTestCase):
@@ -1133,12 +1692,14 @@ class TestNodeFilesList(ApiTestCase):
     def test_returns_public_files_logged_out(self):
         res = self.app.get(self.public_url, expect_errors=True)
         assert_equal(res.status_code, 200)
-        assert_equal(res.json['data'][0]['provider'], 'osfstorage')
+        assert_equal(res.json['data'][0]['attributes']['provider'], 'osfstorage')
+        assert_equal(res.content_type, 'application/vnd.api+json')
 
     def test_returns_public_files_logged_in(self):
         res = self.app.get(self.public_url, auth=self.basic_auth)
         assert_equal(res.status_code, 200)
-        assert_equal(res.json['data'][0]['provider'], 'osfstorage')
+        assert_equal(res.content_type, 'application/vnd.api+json')
+        assert_equal(res.json['data'][0]['attributes']['provider'], 'osfstorage')
 
     def test_returns_private_files_logged_out(self):
         res = self.app.get(self.private_url, expect_errors=True)
@@ -1146,28 +1707,33 @@ class TestNodeFilesList(ApiTestCase):
         # presenting a basic authentication dialog box in the front end. We may change this as we understand CAS
         # a little better
         assert_equal(res.status_code, 403)
+        assert 'detail' in res.json['errors'][0].keys()
+
 
     def test_returns_private_files_logged_in_contributor(self):
         res = self.app.get(self.private_url, auth=self.basic_auth)
         assert_equal(res.status_code, 200)
+        assert_equal(res.content_type, 'application/vnd.api+json')
         assert_equal(len(res.json['data']), 1)
-        assert_equal(res.json['data'][0]['provider'], 'osfstorage')
+        assert_equal(res.json['data'][0]['attributes']['provider'], 'osfstorage')
 
     def test_returns_private_files_logged_in_non_contributor(self):
         res = self.app.get(self.private_url, auth=self.basic_auth_two, expect_errors=True)
         assert_equal(res.status_code, 403)
+        assert 'detail' in res.json['errors'][0].keys()
+
 
     def test_returns_addon_folders(self):
         user_auth = Auth(self.user)
         res = self.app.get(self.private_url, auth=self.basic_auth)
         assert_equal(len(res.json['data']), 1)
-        assert_equal(res.json['data'][0]['provider'], 'osfstorage')
+        assert_equal(res.json['data'][0]['attributes']['provider'], 'osfstorage')
 
         self.project.add_addon('github', auth=user_auth)
         self.project.save()
         res = self.app.get(self.private_url, auth=self.basic_auth)
         data = res.json['data']
-        providers = [item['provider'] for item in data]
+        providers = [item['attributes']['provider'] for item in data]
         assert_equal(len(data), 2)
         assert_in('github', providers)
         assert_in('osfstorage', providers)
@@ -1192,8 +1758,8 @@ class TestNodeFilesList(ApiTestCase):
 
         url = '/{}nodes/{}/files/?path=%2F&provider=osfstorage'.format(API_BASE, self.project._id)
         res = self.app.get(url, auth=self.basic_auth)
-        assert_equal(res.json['data'][0]['name'], 'NewFile')
-        assert_equal(res.json['data'][0]['provider'], 'osfstorage')
+        assert_equal(res.json['data'][0]['attributes']['name'], 'NewFile')
+        assert_equal(res.json['data'][0]['attributes']['provider'], 'osfstorage')
 
     @mock.patch('api.nodes.views.requests.get')
     def test_handles_unauthenticated_waterbutler_request(self, mock_waterbutler_request):
@@ -1203,6 +1769,8 @@ class TestNodeFilesList(ApiTestCase):
         mock_waterbutler_request.return_value = mock_res
         res = self.app.get(url, auth=self.basic_auth, expect_errors=True)
         assert_equal(res.status_code, 403)
+        assert 'detail' in res.json['errors'][0].keys()
+
 
     @mock.patch('api.nodes.views.requests.get')
     def test_handles_bad_waterbutler_request(self, mock_waterbutler_request):
@@ -1213,6 +1781,7 @@ class TestNodeFilesList(ApiTestCase):
         mock_waterbutler_request.return_value = mock_res
         res = self.app.get(url, auth=self.basic_auth, expect_errors=True)
         assert_equal(res.status_code, 400)
+        assert 'detail' in res.json['errors'][0].keys()
 
 
 class TestNodePointerDetail(ApiTestCase):
@@ -1243,14 +1812,16 @@ class TestNodePointerDetail(ApiTestCase):
     def test_returns_public_node_pointer_detail_logged_out(self):
         res = self.app.get(self.public_url)
         assert_equal(res.status_code, 200)
+        assert_equal(res.content_type, 'application/vnd.api+json')
         res_json = res.json['data']
-        assert_equal(res_json['node_id'], self.public_pointer_project._id)
+        assert_equal(res_json['attributes']['node_id'], self.public_pointer_project._id)
 
     def test_returns_public_node_pointer_detail_logged_in(self):
         res = self.app.get(self.public_url, auth=self.basic_auth)
         res_json = res.json['data']
         assert_equal(res.status_code, 200)
-        assert_equal(res_json['node_id'], self.public_pointer_project._id)
+        assert_equal(res.content_type, 'application/vnd.api+json')
+        assert_equal(res_json['attributes']['node_id'], self.public_pointer_project._id)
 
     def test_returns_private_node_pointer_detail_logged_out(self):
         res = self.app.get(self.private_url, expect_errors=True)
@@ -1258,16 +1829,20 @@ class TestNodePointerDetail(ApiTestCase):
         # presenting a basic authentication dialog box in the front end. We may change this as we understand CAS
         # a little better
         assert_equal(res.status_code, 403)
+        assert 'detail' in res.json['errors'][0].keys()
+
 
     def test_returns_private_node_pointer_detail_logged_in_contributor(self):
         res = self.app.get(self.private_url, auth=self.basic_auth)
         res_json = res.json['data']
         assert_equal(res.status_code, 200)
-        assert_equal(res_json['node_id'], self.pointer_project._id)
+        assert_equal(res.content_type, 'application/vnd.api+json')
+        assert_equal(res_json['attributes']['node_id'], self.pointer_project._id)
 
     def returns_private_node_pointer_detail_logged_in_non_contributor(self):
         res = self.app.get(self.private_url, auth=self.basic_auth_two, expect_errors=True)
         assert_equal(res.status_code, 403)
+        assert 'detail' in res.json['errors'][0].keys()
 
 
 class TestDeleteNodePointer(ApiTestCase):
@@ -1301,6 +1876,8 @@ class TestDeleteNodePointer(ApiTestCase):
         # presenting a basic authentication dialog box in the front end. We may change this as we understand CAS
         # a little better
         assert_equal(res.status_code, 403)
+        assert 'detail' in res.json['errors'][0].keys()
+
 
     def test_deletes_public_node_pointer_fails_if_bad_auth(self):
         node_count_before = len(self.public_project.nodes_pointer)
@@ -1308,6 +1885,8 @@ class TestDeleteNodePointer(ApiTestCase):
         self.public_project.reload()
         # This is could arguably be a 405, but we don't need to go crazy with status codes
         assert_equal(res.status_code, 403)
+        assert 'detail' in res.json['errors'][0].keys()
+
         assert_equal(node_count_before, len(self.public_project.nodes_pointer))
 
     def test_deletes_public_node_pointer_succeeds_as_owner(self):
@@ -1323,6 +1902,8 @@ class TestDeleteNodePointer(ApiTestCase):
         # presenting a basic authentication dialog box in the front end. We may change this as we understand CAS
         # a little better
         assert_equal(res.status_code, 403)
+        assert 'detail' in res.json['errors'][0].keys()
+
 
     def test_deletes_private_node_pointer_logged_in_contributor(self):
         res = self.app.delete(self.private_url, auth=self.basic_auth)
@@ -1333,3 +1914,5 @@ class TestDeleteNodePointer(ApiTestCase):
     def test_deletes_private_node_pointer_logged_in_non_contributor(self):
         res = self.app.delete(self.private_url, auth=self.basic_auth_two, expect_errors=True)
         assert_equal(res.status_code, 403)
+        assert 'detail' in res.json['errors'][0].keys()
+
