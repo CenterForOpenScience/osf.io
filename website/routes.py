@@ -488,11 +488,13 @@ def make_url_map(app):
             OsfWebRenderer('blog.mako')),
         Rule('/project/<pid>/blog/post/<path:bid>/', 'get', blog_views.post_view_pid,
              OsfWebRenderer('post.mako')),
-        Rule('/profile/<uid>/blog/new/', 'get', blog_views.new_post,
+        Rule(['/profile/<guid>/blog/new/', '/project/<guid>/blog/new'], 'get', blog_views.new_post,
              OsfWebRenderer('add_blog_post.mako')),
-        Rule('/project/<pid>/blog/new/', 'get', blog_views.new_project_post,
+        # Rule('/project/<pid>/blog/new/', 'get', blog_views.new_project_post,
+        #     OsfWebRenderer('add_blog_post.mako')),
+        Rule('/profile/<guid>/blog/edit/<path:bid>/', 'get', blog_views.edit_post,
             OsfWebRenderer('add_blog_post.mako')),
-        Rule('/profile/<uid>/blog/edit/<path:bid>/', 'get', blog_views.edit_post,
+        Rule('/project/<guid>/blog/edit/<path:bid>/', 'get', blog_views.edit_post,
             OsfWebRenderer('add_blog_post.mako'))
     ])
 

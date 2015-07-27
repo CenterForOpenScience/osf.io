@@ -647,6 +647,16 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
     #     }
     # }
 
+    # blog_posts = fields.List(dict())
+    # # Format: [{
+    # #       'date': <date>,
+    # #       'author': <guid>,
+    # #       'title': <title>,
+    # #       'file': <file>,
+    # #       'markdown': <markdown>,
+    # #       'html': <html>
+    # # }]
+
     _meta = {
         'optimistic': True,
     }

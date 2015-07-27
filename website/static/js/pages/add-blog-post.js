@@ -34,19 +34,18 @@ var save = function () {
     var header = createHeader(title, uid, name, date);
     var fileName = name + ".md";
     var b = new Blob([header + content], {type: "text/plain", lastModified: date});
-    var xhr = new XMLHttpRequest();
-    xhr.upload.addEventListener("load", transferComplete, false);
-    var f = new File(b, fileName, xhr);
+    var f = new File(b, fileName);
 
     var url = waterbutler.buildUploadUrl(path, 'osfstorage', guid, f);
     $.ajax({
         url: url,
         type: "PUT",
-        data: content+header,
+        data: header+content,
         processData: false,
         contentType: false,
         beforeSend: $osf.setXHRAuthorization,
     }).done(function (data) {
+        console.log(data);
         var pre;
         if (ctx.blog == null) {
             pre = "../post/"
@@ -144,10 +143,9 @@ function createHeader(title, uid, name, date) {
 };
 
 
-function File(blob, name, xhr){
+function File(blob, name){
     var self = blob;
     self.name = name;
-    self.xhr = xhr;
     return self;
 }
 

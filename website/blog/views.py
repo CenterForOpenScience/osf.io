@@ -103,20 +103,26 @@ def get_blog_dir(guid):
 
 
 @collect_auth
-def new_post(auth, uid):
-    user = User.load(uid)
+def new_post(auth, guid):
+    user = User.load(guid)
     if auth.user != user:
         raise PermissionsError
-    guid = get_blog_dir(uid)
+    guid = get_blog_dir(guid)
     node = Node.load(guid)
     return create_post(node, auth)
 
 @collect_auth
-def new_project_post(auth, pid):
-    node = Node.load(pid)
-    user = auth.user
-    if user not in node.contributors:
-        raise PermissionsError
+def new_project_post(auth, guid):
+    node = Node.load(guid)
+    if node is not None:
+        user = auth.user
+        if user not in node.contributors:
+            raise PermissionsError
+    else:
+        user = User.load(guid)
+        if auth.user != user:
+            raise PermissionsError
+        node = Node.load(get_blog_dir(guid))
     return create_post(node, auth)
 
 

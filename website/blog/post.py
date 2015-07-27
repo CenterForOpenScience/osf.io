@@ -2,8 +2,10 @@ from markdown2 import markdown as md
 import markdown
 from file_handler import FileHandler
 import requests
-from website.models import User
+from website.models import User, Node
+# from website.project.model import Node
 from website.profile.utils import get_gravatar
+import subprocess
 
 
 
@@ -15,7 +17,7 @@ def parse_blog(posts, node):
         'title': blog.get('title'),
         'post_class': blog.get('post_class'),
         'date': blog.get('date'),
-        'content': markdown.markdown(blog.get('content')),
+        'content': _md(blog.get('content')),
         'file': blog.get('file'),
         'author': blog.get('author'),
         'tags': [{
@@ -34,7 +36,7 @@ def parse_blog(posts, node):
         next = parse_header(next_, node)
         blog_dict['next_post'] =  {
             'title': next.get('title'),
-            'content':  md(next.get('content')),
+            'content':  _md(next.get('content')),
             'file': next.get('file'),
             'date': next.get('date'),
             'author': next.get('author')
@@ -43,7 +45,7 @@ def parse_blog(posts, node):
         prev = parse_header(prev_, node)
         blog_dict['prev_post'] =  {
             'title': prev.get('title'),
-            'content':  md(prev.get('content')),
+            'content':  _md(prev.get('content')),
             'file': prev.get('file'),
             'date': prev.get('date'),
             'author': prev.get('author')
@@ -91,3 +93,6 @@ def parse_posts(posts, guid):
         post_dict['content'] = md(post_dict['content'])
         index.append(post_dict)
     return index
+
+def _md(content):
+    return subprocess.check_output(["/usr/local/bin/node", "website/static/js/pages/blog.js", content])
