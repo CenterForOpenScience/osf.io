@@ -577,17 +577,24 @@ class TestProjectViews(OsfTestCase):
         assert_in('Template not found', res)
 
     def test_register_project_with_multiple_errors(self):
+        class FakeAddon(MockAddon):
+            def archive_errors(self):
+                return 'Error Message'
+        addon1 = FakeAddon()
+        addon1.short_name = 'addon'
         component = NodeFactory(parent=self.project, creator=self.user1)
-        setattr(self.project.get_addons()[0], 'archive_errors', 'Error message')
-        setattr(component.get_addons()[0], 'archive_errors', 'Error message')
-        setattr(component.get_addons()[1], 'archive_errors', 'Error message')
-        self.project.save()
-        component.save()
+        self.user1.add_addon('github')
+        self.project.add_addon('github', auth=Auth(self.user1))
+        component.add_addon('github', auth=Auth(self.user1))
+        self.user_addon = self.user1.get_addon('github')
+        self.node_addon = self.project.get_addon('github')
+        self.node_addon.archive_errors = 'Error message'
+        import ipdb; ipdb.set_trace()
         url = self.project.api_url_for('project_before_register')
         res = self.app.get(url, auth=self.auth)
         data = res.json
         assert_equal(res.status_code, 200)
-        assert_equal(len(data['errors']), 2)
+        assert_equal(len(data['errors']), 1)
 
 
     # Regression test for https://github.com/CenterForOpenScience/osf.io/issues/1478
