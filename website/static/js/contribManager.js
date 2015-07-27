@@ -66,7 +66,7 @@ var ContributorModel = function(contributor, pageOwner, isRegistration, isAdmin)
     };
 
     self.canEdit = ko.computed(function() {
-      return self.currentUserCanEdit && !self.isAdmin;
+      return  $.inArray('admin', pageOwner.permissions) !== -1;
     });
 
     self.remove = function() {
@@ -278,10 +278,10 @@ var ContributorsViewModel = function(contributors, adminContributors, user, isRe
     self.init = function() {
         self.messages([]);
         self.contributors(self.original().map(function(item) {
-            return new ContributorModel(item, self.canEdit(), self.user(), isRegistration);
+            return new ContributorModel(item, self.user(), isRegistration);
         }));
         self.adminContributors = adminContributors.map(function(contributor) {
-          return new ContributorModel(contributor, self.canEdit(), self.user(), isRegistration, true);
+          return new ContributorModel(contributor, self.user(), isRegistration, true);
         });
     };
 
