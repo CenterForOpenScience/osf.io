@@ -1,0 +1,80 @@
+#filesSearch {
+    width: 95%;
+}
+
+/* Modular File Renderer */
+.mfr-slickgrid {
+    width: 750px;
+    height: 503px;
+    overflow: auto;
+}
+
+.mfr-pdf-button-container {
+    display: inline-block;
+    vertical-align: top;
+}
+
+.mfr-pdf-button {
+    height: 500px;
+    width: 25px;
+    display:inline-block;
+    background: #F5F5F5;
+    -moz-user-select: none;
+    -khtml-user-select: none;
+    -webkit-user-select: none;
+    border-style:none;
+    -webkit-box-shadow: none;
+}
+
+.mfr-pdf-button.active {
+    background: #D0D0D0;
+}
+
+.mfr-pdf-arrow.disabled {
+    /*background: white;*/
+    visibility:hidden;
+}
+
+.mfr-ipynb-body {
+    vertical-align: middle;
+    display: block;
+    max-width: 100%;
+    height: auto;
+}
+
+.mfr-file > img {
+    max-width:100%
+}
+
+/* Style for Ace wiki editor */
+.wiki-editor {
+    position: relative;
+    border: solid;
+    border-width: 1px;
+    width: 100%;
+    margin: auto;
+    -webkit-box-flex: 3 0 auto;
+    -webkit-flex: 3 0 auto;
+    -ms-flex: 3 0 auto;
+    flex: 3 0 auto;
+    height: 500px; /* this will get overwritten by flex box */
+}
+
+.editor-pane{
+    padding-top: 0;
+}
+
+/*light color border for editor border*/
+.wmd-input
+{
+    border: 1px solid DarkGray;
+}
+
+#toggleIcon {
+    margin-top: 5px;
+}
+
+#file-navigation #tb-tbody {
+    max-height: 500px;
+    height: inherit;
+}

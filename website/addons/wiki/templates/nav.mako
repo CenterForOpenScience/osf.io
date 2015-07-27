@@ -7,8 +7,8 @@
             <li data-toggle="tooltip" title="New" data-placement="right" data-container="body">
                 <a id="openNewWiki" href="#" data-toggle="modal" data-target="#newWiki">
                     <span class="wiki-nav-closed">
-                        <i class="fa fa-plus-circle"></i>
-                    </span> 
+                        <i class="fa fa-plus-circle text-success"></i>
+                    </span>
                 </a>
             </li>
                 % if wiki_id and wiki_name != 'home':

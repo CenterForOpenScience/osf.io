@@ -165,7 +165,7 @@ var UserProfileViewModel = oop.extend(ChangeMessageMixin, {
         this.super.constructor.call(this);
         this.client = new UserProfileClient();
         this.profile = ko.observable(new UserProfile());
-        this.emailInput = ko.observable();
+        this.emailInput = ko.observable('');
 
     },
     init: function () {
@@ -177,6 +177,7 @@ var UserProfileViewModel = oop.extend(ChangeMessageMixin, {
         this.changeMessage('', 'text-info');
         var newEmail = this.emailInput().toLowerCase().trim();
         if(newEmail){
+
             var email = new UserEmail({
                 address: newEmail
             });
@@ -199,7 +200,7 @@ var UserProfileViewModel = oop.extend(ChangeMessageMixin, {
                 for (var i=0; i<emails.length; i++) {
                     if (emails[i].address() === email.address()) {
                         this.emailInput('');
-                        $osf.growl('<em>' + email.address()  + '<em> added to your account.','You will receive a confirmation email at <em>' + email.address()  + '<em>. Please check your email and confirm.', 'success');
+                        $osf.growl('<em>' + email.address()  + '</em> added to your account.','You will receive a confirmation email at <em>' + email.address()  + '</em>. Please check your email and confirm.', 'success');
                         return;
                     }
                 }
@@ -214,15 +215,20 @@ var UserProfileViewModel = oop.extend(ChangeMessageMixin, {
         self.changeMessage('', 'text-info');
         bootbox.confirm({
             title: 'Resend Email Confirmation?',
-            message: 'Are you sure that you want to resend email confirmation at ' + '<em><b>' + email.address() + '</b></em>',
+            message: 'Are you sure that you want to resend email confirmation to ' + '<em><b>' + email.address() + '</b></em>',
             callback: function (confirmed) {
                 if (confirmed) {
                     self.client.update(self.profile(), email).done(function () {
                         $osf.growl(
-                            'Email confirmation resent to <em>' + email.address() + '<em>',
-                            'You will receive a new confirmation email at <em>' + email.address()  + '<em>. Please check your email and confirm.',
+                            'Email confirmation resent to <em>' + email.address() + '</em>',
+                            'You will receive a new confirmation email at <em>' + email.address()  + '</em>. Please check your email and confirm.',
                             'success');
                     });
+                }
+            },
+            buttons:{
+                confirm:{
+                    label:'Resend'
                 }
             }
         });
@@ -238,8 +244,14 @@ var UserProfileViewModel = oop.extend(ChangeMessageMixin, {
                     if (confirmed) {
                         self.profile().emails.remove(email);
                         self.client.update(self.profile()).done(function () {
-                            $osf.growl('Email Removed', '<em>' + email.address() + '<em>', 'success');
+                            $osf.growl('Email Removed', '<em>' + email.address() + '</em>', 'success');
                         });
+                    }
+                },
+                buttons:{
+                    confirm:{
+                        label:'Remove',
+                        className:'btn-danger'
                     }
                 }
             });
@@ -298,6 +310,12 @@ var DeactivateAccountViewModel = oop.defclass({
                 if (confirmed) {
                     return self._requestDeactivation();
                 }
+            },
+            buttons:{
+                confirm:{
+                    label:'Request',
+                    className:'btn-danger'
+                }
             }
         });
     }
@@ -338,6 +356,11 @@ var ExportAccountViewModel = oop.defclass({
             callback: function(confirmed) {
                 if (confirmed) {
                     return self._requestExport();
+                }
+            },
+            buttons:{
+                confirm:{
+                    label:'Request'
                 }
             }
         });

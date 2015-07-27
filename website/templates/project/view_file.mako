@@ -21,17 +21,17 @@
 <div class="row">
 
   <div id="file-navigation" class="panel-toggle col-sm-3 file-tree">
-    <div class="osf-panel osf-panel-hide osf-panel-flex reset-height">
-      <div class="osf-panel-header osf-panel-header-flex" style="display:none">
+    <div class="osf-panel panel panel-default osf-panel-hide osf-panel-flex reset-height">
+      <div class="panel-heading clearfix osf-panel-header-flex" style="display:none">
         <div id="filesSearch"></div>
         <div id="toggleIcon" class="pull-right">
           <div class="panel-collapse"><i class="fa fa-angle-left"></i></div>
         </div>
       </div>
 
-      <div class="osf-panel-body osf-panel-body-flex file-page reset-height">
+      <div class="osf-panel-body-flex file-page reset-height">
         <div id="grid">
-          <div class="fangorn-loading">
+          <div class="spinner-loading-wrapper">
             <div class="logo-spin text-center"><img src="/static/img/logo_spin.png" alt="loader"> </div>
             <p class="m-t-sm fg-load-message"> Loading files...  </p>
           </div>
@@ -40,9 +40,8 @@
     </div>
 
     <!-- Menu toggle closed -->
-    <div class="osf-panel osf-panel-show text-center reset-height"  style="display: none">
-      <div class="osf-panel-header">
-        <i class="fa fa-file"></i>
+    <div class="panel panel-default osf-panel-show text-center reset-height pointer"  style="display: none">
+      <div class="panel-heading">
         <i class="fa fa-angle-right"></i>
       </div>
     </div>
@@ -54,6 +53,7 @@
         <div id="mfrIframe" class="mfr mfr-file"></div>
       </div>
 
+    <!-- This section is built by mithril in revisions.js -->
       <div class="file-view-panels col-sm-3"></div>
     </div>
   </div>
@@ -75,6 +75,9 @@
           contributors with write permission in real time. Changes will be stored
           but not published until you click the "Save" button.
         </p>
+      </div>
+      <div class="modal-footer">
+          <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
       </div>
     </div>
   </div>
@@ -182,6 +185,7 @@
       });
     </script>
 
+    <link href="/static/css/pages/file-view-page.css" rel="stylesheet">
     <link href="${urls['mfr']}/static/css/mfr.css" media="all" rel="stylesheet" />
     <script src="${urls['mfr']}/static/js/mfr.js"></script>
 

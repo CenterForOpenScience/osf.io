@@ -20,7 +20,7 @@ from website import settings
 from website.util import api_url_for, rubeus
 from website.addons.base import exceptions, GuidFile
 from website.project import new_private_link
-from website.project.utils import serialize_node
+from website.project.views.node import _view_project as serialize_node
 from website.addons.base import AddonConfig, AddonNodeSettingsBase, views
 from website.addons.github.model import AddonGitHubOauthSettings
 from tests.base import OsfTestCase
@@ -318,6 +318,31 @@ class TestCheckAuth(OsfTestCase):
         with assert_raises(HTTPError) as exc_info:
             views.check_access(self.node, None, 'download')
         assert_equal(exc_info.exception.code, 401)
+
+    def test_has_permission_on_parent_node_copyto_pass_if_registration(self):
+        component_admin = AuthUserFactory()
+        component = ProjectFactory(creator=component_admin, parent=self.node)
+        component.is_registration = True
+
+        assert_false(component.has_permission(self.user, 'write'))
+        res = views.check_access(component, self.user, 'copyto')
+        assert_true(res)
+
+    def test_has_permission_on_parent_node_copyto_fail_if_not_registration(self):
+        component_admin = AuthUserFactory()
+        component = ProjectFactory(creator=component_admin, parent=self.node)
+
+        assert_false(component.has_permission(self.user, 'write'))
+        with assert_raises(HTTPError):
+            views.check_access(component, self.user, 'copyto')
+
+    def test_has_permission_on_parent_node_copyfrom(self):
+        component_admin = AuthUserFactory()
+        component = ProjectFactory(creator=component_admin, public=False, parent=self.node)
+
+        assert_false(component.has_permission(self.user, 'write'))
+        res = views.check_access(component, self.user, 'copyfrom')
+        assert_true(res)
 
 
 class OsfFileTestCase(OsfTestCase):

@@ -288,7 +288,7 @@ MEETING_DATA = {
     'IARR2016': {
         'name': 'International Association for Relationship Research 2016',
         'info_url': 'http://iarr.psych.utoronto.ca/',
-        'logo_url': 'http://iarr.psych.utoronto.ca/iarrV2.jpg',
+        'logo_url': None,
         'active': True,
         'admins': [],
         'public_projects': True,
@@ -300,7 +300,31 @@ MEETING_DATA = {
         'active': True,
         'admins': [],
         'public_projects': True,
-    },    
+    },
+    'PsiChiRepository': {
+        'name': 'Psi Chi Repository',
+        'info_url': None,
+        'logo_url': None,
+        'active': True,
+        'admins': [],
+        'public_projects': True,
+    },
+    'R2RC': {
+        'name': 'Right to Research Coalition',
+        'info_url': None,
+        'logo_url': None,
+        'active': True,
+        'admins': [],
+        'public_projects': True,
+    },
+    'OpenCon2015': {
+        'name': 'OpenCon2015',
+        'info_url': 'http://opencon2015.org/',
+        'logo_url': 'http://s8.postimg.org/w9b30pxyd/Open_Con2015_new_logo.png',
+        'active': True,
+        'admins': [],
+        'public_projects': True,
+    },
 }
 
 

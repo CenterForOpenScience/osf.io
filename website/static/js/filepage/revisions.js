@@ -28,6 +28,7 @@ var FileRevisionsTable = {
         self.file = file;
         self.canEdit = canEdit;
         self.enableEditing = enableEditing;
+        self.baseUrl = (window.location.href).split('?')[0];
 
         model.hasDate = self.file.provider !== 'dataverse';
 
@@ -100,19 +101,18 @@ var FileRevisionsTable = {
             var isSelected = index === model.selectedRevision;
 
             return m('tr' + (isSelected ? '.active' : ''), [
-                m('td',  isSelected ?
-                  revision.displayVersion :
-                  m('a', {href: revision.osfViewUrl}, revision.displayVersion)
+                m('td',  isSelected ? revision.displayVersion :
+                  m('a', {href: parseInt(revision.displayVersion) === model.revisions.length ? self.baseUrl : revision.osfViewUrl}, revision.displayVersion)
                 ),
                 model.hasDate ? m('td', revision.displayDate) : false,
                 model.hasUser ?
                     m('td', revision.extra.user.url ?
-                        m('a', {href: revision.extra.user.url}, revision.extra.user.name) :
-                        revision.extra.user.name
+                            m('a', {href: revision.extra.user.url}, revision.extra.user.name) :
+                            revision.extra.user.name
                     ) : false,
                 m('td', revision.extra.downloads > -1 ? m('.badge', revision.extra.downloads) : ''),
                 m('td',
-                  m('a.btn.btn-primary.btn-sm.file-download', {
+                    m('a.btn.btn-primary.btn-sm.file-download', {
                         href: revision.osfDownloadUrl,
                         onclick: function() {
                             window.location = revision.waterbutlerDownloadUrl;
@@ -130,23 +130,22 @@ var FileRevisionsTable = {
         return self;
     },
     view: function(ctrl) {
-        return m('#revisionsPanel', [
-            m('.osf-panel-header', 'Revisions'),
-            m('', (function() {
-                if (!model.loaded()) {
-                    return util.Spinner;
-                }
-                if (model.errorMessage) {
-                    return m('.alert.alert-warning', {style:{margin: '10px'}}, model.errorMessage);
-                }
+        return m('#revisionsPanel.panel.panel-default', [
+                m('.panel-heading.clearfix', m('h3.panel-title', 'Revisions')),
+                m('.panel-body', {style:{'padding-right': '0','padding-left':'0', 'padding-bottom' : '0'}}, (function() {
+                    if (!model.loaded()) {
+                        return util.Spinner;
+                    }
+                    if (model.errorMessage) {
+                        return m('.alert.alert-warning', {style:{margin: '10px'}}, model.errorMessage);
+                    }
 
-                return m('table.table', [
-                    ctrl.getTableHead(),
-                    m('tbody', model.revisions.map(ctrl.makeTableRow))
-                ]);
-            })())
-        ]);
-
+                    return m('table.table',{style:{'margin-bottom': '0'}}, [
+                        ctrl.getTableHead(),
+                        m('tbody', model.revisions.map(ctrl.makeTableRow))
+                    ]);
+                })())
+            ]);
     },
     postProcessRevision: function(file, node, revision, index) {
         var options = {};

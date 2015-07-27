@@ -16,11 +16,14 @@
 
 <%include file="modal_show_links.mako"/>
 
-${next.body()}
-
-## % if node['node_type'] == 'project':
-    <%include file="modal_duplicate.mako"/>
-## % endif
+% if node['is_retracted'] == True:
+    <%include file="retracted_registration.mako" args="node='${node}'"/>
+% else:
+    ${next.body()}
+##  % if node['node_type'] == 'project':
+        <%include file="modal_duplicate.mako"/>
+##  % endif
+% endif
 
 </%def>
 
@@ -76,6 +79,7 @@ ${next.body()}
                 update: ${json.dumps(node['update_url'])}
             },
             isPublic: ${json.dumps(node.get('is_public', False))},
+            isRetracted: ${json.dumps(node.get('is_retracted', False))},
             piwikSiteID: ${json.dumps(node.get('piwik_site_id', None))},
             piwikHost: ${json.dumps(piwik_host)},
             anonymous: ${json.dumps(node['anonymous'])},

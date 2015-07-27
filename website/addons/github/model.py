@@ -17,6 +17,7 @@ from website.util import web_url_for
 from website.addons.base import GuidFile
 from website.addons.base import exceptions
 from website.addons.base import AddonUserSettingsBase, AddonNodeSettingsBase
+from website.addons.base import StorageAddonBase
 
 from website.addons.github import utils
 from website.addons.github.api import GitHub
@@ -199,7 +200,7 @@ class AddonGitHubUserSettings(AddonUserSettingsBase):
         super(AddonGitHubUserSettings, self).delete(save=save)
 
 
-class AddonGitHubNodeSettings(AddonNodeSettingsBase):
+class AddonGitHubNodeSettings(StorageAddonBase, AddonNodeSettingsBase):
 
     user = fields.StringField()
     repo = fields.StringField()
@@ -211,6 +212,10 @@ class AddonGitHubNodeSettings(AddonNodeSettingsBase):
     )
 
     registration_data = fields.DictionaryField()
+
+    @property
+    def folder_name(self):
+        return self.repo
 
     @property
     def has_auth(self):
@@ -399,7 +404,7 @@ class AddonGitHubNodeSettings(AddonNodeSettingsBase):
         repo_permissions = 'private' if repo.private else 'public'
         if repo_permissions != node_permissions:
             message = (
-                'Warnings: This OSF {category} is {node_perm}, but the GitHub '
+                'Warning: This OSF {category} is {node_perm}, but the GitHub '
                 'repo {user} / {repo} is {repo_perm}.'.format(
                     category=node.project_or_component,
                     node_perm=node_permissions,
@@ -513,30 +518,6 @@ class AddonGitHubNodeSettings(AddonNodeSettingsBase):
                 repo=self.repo,
                 perm=permissions,
             )
-        )
-
-    def before_fork(self, node, user):
-        """
-
-        :param Node node:
-        :param User user:
-        :return str: Alert message
-
-        """
-        if self.user_settings and self.user_settings.owner == user:
-            return (
-                'Because you have authenticated the GitHub add-on for this '
-                '{cat}, forking it will also transfer your authorization to '
-                'the forked {cat}.'
-            ).format(
-                cat=node.project_or_component,
-            )
-        return (
-            'Because this GitHub add-on has been authenticated by a different '
-            'user, forking it will not transfer authentication to the forked '
-            '{cat}.'
-        ).format(
-            cat=node.project_or_component,
         )
 
     def after_fork(self, node, fork, user, save=True):

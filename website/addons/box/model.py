@@ -6,7 +6,8 @@ from datetime import datetime
 import furl
 import pymongo
 import requests
-from modularodm import fields, StoredObject
+from modularodm import fields
+from framework.mongo import StoredObject
 from box import CredentialsV2, refresh_v2_token, BoxClientException
 
 from framework.auth import Auth
@@ -14,6 +15,7 @@ from framework.exceptions import HTTPError
 
 from website.addons.base import exceptions
 from website.addons.base import AddonUserSettingsBase, AddonNodeSettingsBase, GuidFile
+from website.addons.base import StorageAddonBase
 
 from website.addons.box import settings
 from website.addons.box.utils import BoxNodeLogger
@@ -219,7 +221,7 @@ class BoxUserSettings(AddonUserSettingsBase):
         return u'<BoxUserSettings(user={self.owner.username!r})>'.format(self=self)
 
 
-class BoxNodeSettings(AddonNodeSettingsBase):
+class BoxNodeSettings(StorageAddonBase, AddonNodeSettingsBase):
 
     user_settings = fields.ForeignField(
         'boxusersettings', backref='authorized'
@@ -354,27 +356,6 @@ class BoxNodeSettings(AddonNodeSettingsBase):
 
     # backwards compatibility
     before_register = before_register_message
-
-    def before_fork_message(self, node, user):
-        """Return warning text to display if user auth will be copied to a
-        fork.
-        """
-        category = node.project_or_component
-        if self.user_settings and self.user_settings.owner == user:
-            return (
-                u'Because you have authorized the Box add-on for this '
-                '{category}, forking it will also transfer your authentication token to '
-                'the forked {category}.'
-            ).format(category=category)
-        else:
-            return (
-                u'Because the Box add-on has been authorized by a different '
-                'user, forking it will not transfer authentication token to the forked '
-                '{category}.'
-            ).format(category=category)
-
-    # backwards compatibility
-    before_fork = before_fork_message
 
     def before_remove_contributor_message(self, node, removed):
         """Return warning text to display if removed contributor is the user
