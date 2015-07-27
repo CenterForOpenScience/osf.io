@@ -219,7 +219,6 @@ class NodeContributorsSerializer(JSONAPISerializer):
         except ValueError as e:
             raise ValidationError(e)
 
-    # todo simplify this
     def set_permissions(self, field, user, node, is_admin=True, is_current=False):
         if field == '':
             pass

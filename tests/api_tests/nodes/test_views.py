@@ -837,7 +837,7 @@ class TestNodeContributorList(ApiTestCase):
         assert 'detail' in res.json['errors'][0].keys()
 
 
-class TestAddNodeContributor(ApiTestCase):
+class TestNodeAddContributor(ApiTestCase):
 
     def setUp(self):
         ApiTestCase.setUp(self)
@@ -1004,7 +1004,7 @@ class TestAddNodeContributor(ApiTestCase):
         assert_not_in(self.user, self.project.contributors)
 
 
-class TestRemoveNodeContributor(ApiTestCase):
+class TestNodeRemoveContributor(ApiTestCase):
 
     def setUp(self):
         ApiTestCase.setUp(self)
@@ -1107,7 +1107,7 @@ class TestRemoveNodeContributor(ApiTestCase):
         assert_in(self.user, self.project.contributors)
 
 
-class TestEditNodeContributor(ApiTestCase):
+class TestNodeEditContributor(ApiTestCase):
 
     def setUp(self):
         ApiTestCase.setUp(self)
@@ -1155,7 +1155,6 @@ class TestEditNodeContributor(ApiTestCase):
         self.project.reload()
         assert_equal(self.project.get_permissions(self.user), ['read', 'write'])
 
-
     def test_admin_change_contributor_bibliographic_status(self):
         data = {
             'bibliographic': False,
@@ -1199,7 +1198,7 @@ class TestEditNodeContributor(ApiTestCase):
         assert_false(self.project.get_visible(self.user))
         assert_equal(self.project.get_permissions(self.user), ['read'])
 
-    def test_admin_change_own_permissions(self):
+    def test_non_unique_admin_change_own_permissions(self):
         self.project.add_permission(self.user, 'admin', save=True)
 
         self.project.reload()
@@ -1220,7 +1219,6 @@ class TestEditNodeContributor(ApiTestCase):
         assert_equal(self.project.get_permissions(self.admin), ['read'])
 
     def test_admin_remove_all_admin_privileges(self):
-        self.project.remove_contributor(self.user, Auth(self.admin))
         res = self.app.put(self.url_admin, {'permission': 'write'}, auth=self.admin_auth, expect_errors=True)
         assert_equal(res.status_code, 400)
 
