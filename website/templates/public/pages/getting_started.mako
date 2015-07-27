@@ -17,7 +17,7 @@
                         <a  class="active" href="#start">Getting Started</a>
                         <ul class="nav">
                             <li><a href="#start-one"><i class="fa fa-chevron-right"></i> Creating a Project</a></li>
-                            <li><a href="#start-two"><i class="fa fa-chevron-right"></i> Collaboratiion</a></li>
+                            <li><a href="#start-two"><i class="fa fa-chevron-right"></i> Collaboration</a></li>
                             <li><a href="#start-three"><i class="fa fa-chevron-right"></i> Version Control</a></li>
                         </ul>
                     </li>
