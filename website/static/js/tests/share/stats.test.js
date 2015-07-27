@@ -165,35 +165,39 @@ describe('share/stats', () => {
 
     describe('#shareTimeGraphParser', () => {
 
-        it('Parse returned sources elasticsearch data into correct format for c3 donut graph, including correct colors', () => {
+        it('Parse returned sources elasticsearch data into correct format for c3 stacked graph, including correct colors', () => {
             var rawData = {};
             rawData.aggregations = {
               'sourcesByTimes': {
                 'buckets': [
                   {
                     'articlesOverTime': {
-                      'buckets': [
-                        {'key': 1434326400000, 'doc_count': 0},
-                        {'key': 1434931200000, 'doc_count': 0},
-                        {'key': 1435536000000, 'doc_count': 1378},
-                        {'key': 1436140800000, 'doc_count': 0},
-                        {'key': 1436745600000, 'doc_count': 0},
-                        {'key': 1437350400000, 'doc_count': 0}
-                      ]
+                        'articlesOverTime': {
+                            'buckets': [
+                                {'key': 1434326400000, 'doc_count': 0},
+                                {'key': 1434931200000, 'doc_count': 0},
+                                {'key': 1435536000000, 'doc_count': 1378},
+                                {'key': 1436140800000, 'doc_count': 0},
+                                {'key': 1436745600000, 'doc_count': 0},
+                                {'key': 1437350400000, 'doc_count': 0}
+                            ]
+                        }
                     },
                     'key': 'figshare',
                     'doc_count': 1378
                   },
                   {
                     'articlesOverTime': {
-                      'buckets': [
-                        {'key': 1434326400000, 'doc_count': 0},
-                        {'key': 1434931200000, 'doc_count': 0},
-                        {'key': 1435536000000, 'doc_count': 73},
-                        {'key': 1436140800000, 'doc_count': 0},
-                        {'key': 1436745600000, 'doc_count': 0},
-                        {'key': 1437350400000, 'doc_count': 0}
-                      ]
+                        'articlesOverTime': {
+                            'buckets': [
+                                {'key': 1434326400000, 'doc_count': 0},
+                                {'key': 1434931200000, 'doc_count': 0},
+                                {'key': 1435536000000, 'doc_count': 73},
+                                {'key': 1436140800000, 'doc_count': 0},
+                                {'key': 1436745600000, 'doc_count': 0},
+                                {'key': 1437350400000, 'doc_count': 0}
+                            ]
+                        }
                     },
                     'key': 'ucescholarship',
                     'doc_count': 73
