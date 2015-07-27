@@ -12,7 +12,7 @@ def jsonapi_exception_handler(exc, context):
         else:
             response.data = {'errors': [{'detail': response.data}]}
 
-    # Returns 401 instead of 403 during unauthorized requests without having user to log in with Basic Auth
+    # Return 401 instead of 403 during unauthorized requests without having user log in with Basic Auth
     if response is not None and response.data['errors'][0]['detail'] == "Authentication credentials were not provided.":
         response.status_code = 401
 
