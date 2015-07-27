@@ -63,10 +63,6 @@ def main(dry_run=True):
     logger.info('Updating crontab file:')
     logger.info(cron.render())
 
-    unlock_files = ensure_item(cron, 'bash {}'.format(app_prefix('scripts/osfstorage/unlock_files.sh')))
-    unlock_files.hour.on(0)
-    unlock_files.minute.on(0) # Daily 12 a.m.
-
     if not dry_run:
         cron.write_to_user(settings.CRON_USER)
 
