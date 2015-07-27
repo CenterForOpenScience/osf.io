@@ -150,13 +150,13 @@ class OsfStorageFileNode(StoredObject):
     _id = fields.StringField(primary=True, default=lambda: str(bson.ObjectId()))
 
     is_deleted = fields.BooleanField(default=False)
+    renter = fields.ForeignField('User', default=None)
     name = fields.StringField(required=True, index=True)
     kind = fields.StringField(required=True, index=True)
-    renter = fields.ForeignField('User', default=None)
+    end_date = fields.DateTimeField(default=datetime.datetime.min)
     parent = fields.ForeignField('OsfStorageFileNode', index=True)
     versions = fields.ForeignField('OsfStorageFileVersion', list=True)
     node_settings = fields.ForeignField('OsfStorageNodeSettings', required=True, index=True)
-    end_date = fields.DateTimeField(default=datetime.datetime.utcnow())
 
     @classmethod
     def create_child_by_path(cls, path, node_settings):
@@ -357,13 +357,16 @@ class OsfStorageFileNode(StoredObject):
         raise errors.VersionNotFoundError
 
     def delete(self, recurse=True):
-        if self.renter != '':
+        # This shouldn't be failing silently with a simple return
+        if self.renter is not None:
             return
         trashed = OsfStorageTrashedFileNode()
+        trashed.renter = None
         trashed._id = self._id
         trashed.name = self.name
         trashed.kind = self.kind
         trashed.parent = self.parent
+        trashed.end_date = self.end_date
         trashed.versions = self.versions
         trashed.node_settings = self.node_settings
 
@@ -570,6 +573,8 @@ class OsfStorageGuidFile(GuidFile):
 class OsfStorageTrashedFileNode(StoredObject):
     """The graveyard for all deleted OsfStorageFileNodes"""
     _id = fields.StringField(primary=True)
+    end_date = fields.DateTimeField(default=None)
+    renter = fields.ForeignField('User', default=None)
     name = fields.StringField(required=True, index=True)
     kind = fields.StringField(required=True, index=True)
     parent = fields.ForeignField('OsfStorageFileNode', index=True)
