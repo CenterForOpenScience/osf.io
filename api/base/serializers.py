@@ -215,9 +215,10 @@ class JSONAPISerializer(ser.Serializer):
 
 class NodeIncludeSerializer(JSONAPISerializer):
 
-    id = ser.CharField(read_only=True, source='_id')
-    title = ser.CharField(required=True)
-    description = ser.CharField(required=False, allow_blank=True, allow_null=True)
+    id = ser.CharField(source='_id')
+    title = ser.CharField()
+    description = ser.CharField()
+    is_public = ser.BooleanField()
     links = LinksFieldWIthSelfLink({'html': 'absolute_url'})
 
     def absolute_url(self, obj):
@@ -229,8 +230,8 @@ class NodeIncludeSerializer(JSONAPISerializer):
 
 class UserIncludeSerializer(JSONAPISerializer):
 
-    id = ser.CharField(read_only=True, source='_id')
-    fullname = ser.CharField(help_text='Display name used in the general user interface')
+    id = ser.CharField(source='_id')
+    fullname = ser.CharField()
     links = LinksFieldWIthSelfLink({'html': 'absolute_url'})
 
     def absolute_url(self, obj):
@@ -291,6 +292,9 @@ class Attribute(object):
         self.query = query
 
     def resolve_attribute(self, obj, request, allowed_params):
+        if request is None:
+            return None
+
         ret = {}
         if self.query:
             object_list = getattr(obj, self.query)
@@ -328,17 +332,14 @@ class Attribute(object):
             Q('is_deleted', 'ne', True)
         )
         raw_nodes = Node.find(query)
-        nodes = [each for each in raw_nodes if each.is_public]
+        nodes = [each for each in raw_nodes if each.is_public or each.can_view(auth)]
         return nodes
 
     def get_registrations(self, obj, auth):
         registrations = [node for node in obj.node__registrations if node.can_view(auth)]
         return registrations
 
-    # todo add authorization check for user pages
     def get_user_auth(self, request):
-        if request is None:
-            return Auth(None)
         user = request.user
         if user.is_anonymous():
             auth = Auth(None)
