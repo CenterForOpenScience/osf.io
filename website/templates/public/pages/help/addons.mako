@@ -1,10 +1,10 @@
 <p>The OSF makes integrating your various research tools easy. We are always developing Add-On connections to services
     you already use. An add-on is a connection between the OSF to another, existing tool.</p>
-<p>Some Add-Ons can be added to the entire user account, like Two-Factor Authentication. To access these, navigate to
-    your user settings using the gear in the top right corner. Then select "Configure Add-Ons". Here you can choose
-    which Add-Ons to apply.</p>
-<p>Other Add-Ons only apply to individual projects. Our storage options are one example of this. They can
-    only be accessed and applied from your project's settings. </p>
+<p>To connect an add-on to a project, you can do this through your project's Settings page. Should you ever want to remove
+    an add-on from all of its connected projects, you can visit your account settings page by clicking on the gear in the 
+    top navigation bar. Then, click on "Configure Add-on Accounts." You can disconnect an account that has been enabled by scrolling
+    to that add-on and clicking "Disconnect Account." If you want to associate your OSF account with an add-on but do 
+    not yet have a specific project to link it to, you can do so from the same page by clicking "Connect Account."</p>
 <p>Most Add-Ons require both account authentication as well as project application. The easiest way to do this is
     directly from the project page. First, navigate to the project's settings. Then select the Add-Ons that you want to
     incorporate into your project. A pop-up with information about the Add-On will show up, click okay, and then click
