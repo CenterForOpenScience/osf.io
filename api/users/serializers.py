@@ -1,6 +1,6 @@
 from rest_framework import serializers as ser
 
-from api.base.serializers import JSONAPISerializer, LinksFieldWIthSelfLink, Link, LinksField
+from api.base.serializers import JSONAPISerializer, LinksFieldWIthSelfLink, Link, AttributeLinksField, Attribute
 
 class UserSerializer(JSONAPISerializer):
     filterable_fields = frozenset([
@@ -25,10 +25,11 @@ class UserSerializer(JSONAPISerializer):
     social_accounts = ser.DictField(source='social', help_text='A dictionary of various social media account '
                                                                'identifiers including an array of user-defined URLs')
     links = LinksFieldWIthSelfLink({'html': 'absolute_url'})
-    relationships = LinksField({
+    relationships = AttributeLinksField({
         'nodes': {
             'links': {
-                'related': Link('users:user-nodes', kwargs={'user_id': '<pk>'})
+                'related': Link('users:user-nodes', kwargs={'user_id': '<pk>'}),
+                'meta': Attribute('nodes')
             }
         },
     })

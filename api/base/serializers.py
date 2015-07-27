@@ -3,9 +3,11 @@ import re
 
 from rest_framework import serializers as ser
 from website.util.sanitize import strip_html
+from website.models import Node
 from api.base.utils import absolute_reverse, waterbutler_url_for
 from rest_framework.exceptions import ValidationError
 from framework.auth.core import Auth
+from modularodm import Q
 
 
 def _rapply(d, func, *args, **kwargs):
@@ -319,12 +321,24 @@ class Attribute(object):
         nodes = [node for node in obj.nodes if node.can_view(auth) and node.primary]
         return nodes
 
+    def get_nodes(self, obj, auth):
+        query = (
+            Q('contributors', 'eq', obj) &
+            Q('is_folder', 'ne', True) &
+            Q('is_deleted', 'ne', True)
+        )
+        raw_nodes = Node.find(query)
+        nodes = [each for each in raw_nodes if each.is_public]
+        return nodes
 
     def get_registrations(self, obj, auth):
         registrations = [node for node in obj.node__registrations if node.can_view(auth)]
         return registrations
 
+    # todo add authorization check for user pages
     def get_user_auth(self, request):
+        if request is None:
+            return Auth(None)
         user = request.user
         if user.is_anonymous():
             auth = Auth(None)
