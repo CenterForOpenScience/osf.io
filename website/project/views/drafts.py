@@ -9,7 +9,6 @@ from framework import status
 from framework.mongo.utils import get_or_http_error
 from framework.exceptions import HTTPError
 from framework.status import push_status_message
-from framework.auth.decorators import must_be_logged_in
 
 from website.util.permissions import ADMIN
 from website.project.decorators import (

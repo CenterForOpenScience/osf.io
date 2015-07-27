@@ -17,7 +17,7 @@ def ensure_schema_structure(schema):
     schema['title'] = ' '.join(schema['name'].split('_'))
     # TODO better versioning
     schema['version'] = schema.get('version', 1)
-    
+
     for question in schema['pages']:
         if 'comments' not in question:
             question['comments'] = []
@@ -29,8 +29,8 @@ def from_json(fname):
     return json.load(open(os.path.join(here, fname)))
 
 OSF_META_SCHEMAS = [
-    #ensure_schema_structure(from_json('osf-open-ended-1.json')),
-    #ensure_schema_structure(from_json('osf-standard-1.json')),
+    ensure_schema_structure(from_json('osf-open-ended-1.json')),
+    ensure_schema_structure(from_json('osf-standard-1.json')),
     #ensure_schema_structure(from_json('osf-standard-test.json')),
     #ensure_schema_structure(from_json('brandt-prereg-1.json')),
     #ensure_schema_structure(from_json('brandt-prereg-test.json')),
