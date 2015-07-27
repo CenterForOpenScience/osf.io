@@ -151,11 +151,16 @@ var CitationsFolderPickerViewModel = oop.extend(FolderPickerViewModel, {
                             if (accountId) {
                                 self.connectExistingAccount.call(self, (accountId));
                             }
+                        },
+                        buttons:{
+                            confirm:{
+                                label: 'Import'
+                            }
                         }
                     });
                 } else {
                     bootbox.confirm({
-                        title: 'Import ' + self.addonName + ' Access Token?',
+                        title: 'Import ' + self.addonName + ' access token?',
                         message: self.messages.confirmAuth(),
                         callback: function(confirmed) {
                             if (confirmed) {

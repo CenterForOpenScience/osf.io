@@ -394,9 +394,10 @@ var NameViewModel = function(urls, modes, preventUnsaved, fetchCallback) {
         });
     };
 
-    var initials = function(names) {
+    self.initials = function(names) {
+        names = $.trim(names);
         return names
-            .split(' ')
+            .split(/\s+/)
             .map(function(name) {
                 return name[0].toUpperCase() + '.';
             })
@@ -421,7 +422,7 @@ var NameViewModel = function(urls, modes, preventUnsaved, fetchCallback) {
         var given = $.trim(self.given() + ' ' + self.middle());
 
         if (given) {
-            cite = cite + ', ' + initials(given);
+            cite = cite + ', ' + self.initials(given);
         }
         if (self.suffix()) {
             cite = cite + ', ' + suffix(self.suffix());
@@ -434,7 +435,7 @@ var NameViewModel = function(urls, modes, preventUnsaved, fetchCallback) {
         if (self.given()) {
             cite = cite + ', ' + self.given();
             if (self.middle()) {
-                cite = cite + ' ' + initials(self.middle());
+                cite = cite + ' ' + self.initials(self.middle());
             }
         }
         if (self.suffix()) {

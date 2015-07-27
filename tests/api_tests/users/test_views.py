@@ -34,7 +34,6 @@ class TestUsers(ApiTestCase):
 
     def tearDown(self):
         super(TestUsers, self).tearDown()
-        Node.remove()
 
     def test_returns_200(self):
         res = self.app.get('/{}users/'.format(API_BASE))
@@ -103,7 +102,6 @@ class TestUserDetail(ApiTestCase):
 
     def tearDown(self):
         super(TestUserDetail, self).tearDown()
-        Node.remove()
 
     def test_gets_200(self):
         url = "/{}users/{}/".format(API_BASE, self.user_one._id)
@@ -169,7 +167,6 @@ class TestUserNodes(ApiTestCase):
 
     def tearDown(self):
         super(TestUserNodes, self).tearDown()
-        Node.remove()
 
     def test_authorized_in_gets_200(self):
         url = "/{}users/{}/nodes/".format(API_BASE, self.user_one._id)
