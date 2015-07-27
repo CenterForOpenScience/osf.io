@@ -38,7 +38,7 @@ You have not created any Badges.
               '<input type="url" class="form-control" name="imageurl" placeholder="Image URL"><br />' +
               '<textarea class="form-control" name="criteria" placeholder="Criteria" />' +
               '</form>',
-              title: 'Create a New Badge',
+              title: 'Create a new badge',
               buttons: {
                 submit: {
                   label: "Submit",

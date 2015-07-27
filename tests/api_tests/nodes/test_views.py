@@ -100,7 +100,6 @@ class TestNodeList(ApiTestCase):
         assert_in(self.public._id, ids)
         assert_not_in(self.private._id, ids)
 
-        Node.remove()
 
 
 class TestNodeFiltering(ApiTestCase):
@@ -951,8 +950,6 @@ class TestNodeChildrenList(ApiTestCase):
         res = self.app.get(self.private_project_url, auth=self.basic_auth)
         assert_equal(len(res.json['data']), 1)
 
-        Node.remove()
-
 
 class TestNodePointersList(ApiTestCase):
 
@@ -1333,6 +1330,7 @@ class TestDeleteNodePointer(ApiTestCase):
     def test_deletes_private_node_pointer_logged_in_non_contributor(self):
         res = self.app.delete(self.private_url, auth=self.basic_auth_two, expect_errors=True)
         assert_equal(res.status_code, 403)
+
 
     def test_return_deleted_public_node_pointer(self):
         res = self.app.delete(self.public_url, auth=self.basic_auth)
