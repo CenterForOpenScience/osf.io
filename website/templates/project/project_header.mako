@@ -30,10 +30,23 @@
                         % endif
 
                     % endif
-                        <li><a href="${node['url']}"  class="project-title"> ${node['title'] | n}  </a></li>
-
+                        <li>
+                            <a href="${node['url']}"  class="project-title">
+                                ${node['title'] | n}
+                                % if user['unread_comments']['node'] > 0:
+                                    <span class="badge">${user['unread_comments']['node']}</span>
+                                % endif
+                            </a>
+                        </li>
                     % if not node['is_retracted']:
-                        <li><a href="${node['url']}files/">Files</a></li>
+                        <li>
+                            <a href="${node['url']}files/">
+                                Files
+                                % if user['unread_comments']['files'] > 0:
+                                    <span class="badge">${user['unread_comments']['files']}</span>
+                                % endif
+                            </a>
+                        </li>
                         <!-- Add-on tabs -->
                         % for addon in addons_enabled:
 
@@ -45,11 +58,21 @@
                                             <img src="${addons[addon]['icon']}" class="addon-logo"/>
                                         % endif
                                         ${addons[addon]['full_name']}
+                                        % if addons[addon]['full_name']=='Wiki' and user['unread_comments']['wiki'] > 0:
+                                            <span class="badge">${user['unread_comments']['wiki']}</span>
+                                        % endif
                                     </a>
                                 </li>
                             % endif
                         % endfor
 
+                        <li>
+                            <a href="${node['url']}discussions/">Discussions
+                                % if user['unread_comments']['total'] > 0:
+                                    <span class="badge">${user['unread_comments']['total']}</span>
+                                % endif
+                            </a>
+                        </li>
                         % if node['is_public'] or user['is_contributor']:
                             <li><a href="${node['url']}statistics/">Statistics</a></li>
                         % endif

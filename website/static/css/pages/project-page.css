@@ -114,3 +114,7 @@
     word-break: break-all;
     word-break: break-word; /* Non standard for webkit*/
 }
+
+#commentsWidgetContainer .comment-body {
+    border: none !important;
+}

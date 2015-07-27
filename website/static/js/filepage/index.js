@@ -9,6 +9,7 @@ var waterbutler = require('js/waterbutler');
 var utils = require('./util.js');
 var FileEditor = require('./editor.js');
 var FileRevisionsTable = require('./revisions.js');
+var CommentModel = require('js/comment');
 
 // Sanity
 var Panel = utils.Panel;
@@ -249,6 +250,24 @@ var FileViewPage = {
         ]));
     }
 };
+
+
+// Initialize file comment pane
+var $comments = $('.comments');
+if ($comments.length) {
+    var options = {
+        nodeId: window.contextVars.node.id,
+        nodeApiUrl: window.contextVars.node.urls.api,
+        hostPage: 'files',
+        hostName: window.contextVars.file.id,
+        mode: 'pane',
+        userName: window.contextVars.currentUser.name,
+        canComment: window.contextVars.currentUser.canComment,
+        hasChildren: window.contextVars.node.hasChildren
+    };
+    CommentModel.init('.comment-pane', options);
+}
+
 
 module.exports = function(context) {
     // Treebeard forces all mithril to load twice, to avoid

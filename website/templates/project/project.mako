@@ -176,9 +176,9 @@
 
 <%include file="project/modal_add_component.mako"/>
 
-% if user['can_comment'] or node['has_comments']:
-    <%include file="include/comment_template.mako"/>
-% endif
+##% if user['can_comment'] or node['has_comments']:
+<%include file="include/comment_pane_template.mako"/>
+##% endif
 
 <div class="row">
 
@@ -191,6 +191,7 @@
         }'></div>
         %endif
 
+        <!-- Files -->
         <div class="panel panel-default">
             <div class="panel-heading clearfix">
                 <h3 class="panel-title">Files</h3>
@@ -204,6 +205,25 @@
                         <div class="logo-spin text-center"><img src="/static/img/logo_spin.png" alt="loader"> </div>
                          <p class="m-t-sm fg-load-message"> Loading files...  </p>
                     </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Discussions -->
+        <div id="commentsWidgetContainer" class="panel panel-default">
+            <div class="panel-heading clearfix">
+                <h3 class="panel-title">Recent discussions</h3>
+                <div class="pull-right">
+                    <a href="${node['url']}discussions/" class="btn"> <i class="fa fa-external-link"></i></a>
+                </div>
+            </div>
+            <div class="panel-body">
+                <div data-bind="if: commented">
+                    <div data-bind="template: {name: 'commentTemplate', foreach: recentComments}"></div>
+                </div>
+                <div data-bind="ifnot: commented">There are no comments in this ${node['node_type']} yet.</div>
+                <div>
+                    <span>Open the <a class="open-comment-pane">comment pane</a> on the right to make a comment.</span>
                 </div>
             </div>
         </div>

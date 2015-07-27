@@ -385,6 +385,10 @@ class CommentFactory(ModularOdmFactory):
             target=target,
             *args, **kwargs
         )
+        if isinstance(target, cls):
+            instance.root_target = target.root_target
+        else:
+            instance.root_target = target
         return instance
 
     @classmethod
@@ -398,6 +402,10 @@ class CommentFactory(ModularOdmFactory):
             target=target,
             *args, **kwargs
         )
+        if isinstance(target, cls):
+            instance.root_target = target.root_target
+        else:
+            instance.root_target = target
         instance.save()
         return instance
 

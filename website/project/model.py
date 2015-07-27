@@ -140,17 +140,28 @@ def validate_comment_reports(value, *args, **kwargs):
 
 class Comment(GuidStoredObject):
 
+    OVERVIEW = "node"
+    FILES = "files"
+    WIKI = "wiki"
+
     _id = fields.StringField(primary=True)
 
     user = fields.ForeignField('user', required=True, backref='commented')
     node = fields.ForeignField('node', required=True, backref='comment_owner')
     target = fields.AbstractForeignField(required=True, backref='commented')
+    # The file/wiki/overview's page that the comment is for
+    root_target = fields.AbstractForeignField(backref='comment_target')
 
     date_created = fields.DateTimeField(auto_now_add=datetime.datetime.utcnow)
     date_modified = fields.DateTimeField(auto_now=datetime.datetime.utcnow)
     modified = fields.BooleanField()
 
     is_deleted = fields.BooleanField(default=False)
+    # Whether the original file/wiki is deleted
+    # NOTE Currently, is_hidden will set to True only when a wiki is deleted.
+    is_hidden = fields.BooleanField(default=False)
+    # The type root_target: node/files/wiki
+    page = fields.StringField()
     content = fields.StringField()
 
     # Dictionary field mapping user IDs to dictionaries of report details:
@@ -160,10 +171,27 @@ class Comment(GuidStoredObject):
     # }
     reports = fields.DictionaryField(validate=validate_comment_reports)
 
+    @property
+    def url(self):
+        return '/{}/'.format(self._id)
+
+    @property
+    def deep_url(self):
+        return '/{0}discussions/{1}/'.format(self.node.deep_url, self._id)
+
     @classmethod
     def create(cls, auth, **kwargs):
         comment = cls(**kwargs)
+        if isinstance(comment.target, Comment):
+            comment.root_target = comment.target.root_target
+        else:
+            comment.root_target = comment.target
         comment.save()
+
+        if comment.page == cls.FILES:
+            file_key = comment.root_target._id
+            comment.node.commented_files[file_key] = \
+                comment.node.commented_files.get(file_key, 0) + 1
 
         comment.node.add_log(
             NodeLog.COMMENT_ADDED,
@@ -200,6 +228,10 @@ class Comment(GuidStoredObject):
 
     def delete(self, auth, save=False):
         self.is_deleted = True
+        if self.page == Comment.FILES:
+            self.node.commented_files[self.root_target._id] -= 1
+            if self.node.commented_files[self.root_target._id] == 0:
+                del self.node.commented_files[self.root_target._id]
         self.node.add_log(
             NodeLog.COMMENT_REMOVED,
             {
@@ -216,6 +248,10 @@ class Comment(GuidStoredObject):
 
     def undelete(self, auth, save=False):
         self.is_deleted = False
+        if self.page == Comment.FILES:
+            file_key = self.root_target._id
+            self.node.commented_files[file_key] = \
+                self.node.commented_files.get(file_key, 0) + 1
         self.node.add_log(
             NodeLog.COMMENT_ADDED,
             {
@@ -227,6 +263,16 @@ class Comment(GuidStoredObject):
             auth=auth,
             save=False,
         )
+        if save:
+            self.save()
+
+    def hide(self, save=False):
+        self.is_hidden = True
+        if save:
+            self.save()
+
+    def show(self, save=False):
+        self.is_hidden = False
         if save:
             self.save()
 
@@ -634,6 +680,10 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
     # Dictionary field mapping user id to a list of nodes in node.nodes which the user has subscriptions for
     # {<User.id>: [<Node._id>, <Node2._id>, ...] }
     child_node_subscriptions = fields.DictionaryField(default=dict)
+
+    # Files that contains comments and the number of comments each contains
+    # {<File1.id>: int, <File2.id>: int}
+    commented_files = fields.DictionaryField(default=dict)
 
     _meta = {
         'optimistic': True,

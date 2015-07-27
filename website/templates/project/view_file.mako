@@ -4,6 +4,17 @@
 <%def name="container_class()">container-xxl</%def>
 
 <%def name="title()">${file_name | h}</%def>
+
+% if (user['can_comment'] or node['has_comments']):
+    % if allow_comment:
+        <%include file="include/comment_pane_template.mako"/>
+    % else:
+        <div class="alert alert-warning" role="alert">
+            Comments for this addon is not yet supported.
+        </div>
+    % endif
+% endif
+
 <div class="row">
   <div class="col-sm-5">
     <h2 class="break-word">
@@ -148,11 +159,13 @@
     </script>
     %endif
     <script type="text/javascript">
+      <% import json %>
       window.contextVars = $.extend(true, {}, window.contextVars, {
         file: {
             size: ${size},
             extra: ${extra},
             error: '${error | js_str}',
+            id: '${file_id | js_str}',
             name: '${file_name | js_str}',
             path: '${file_path | js_str}',
             provider: '${provider | js_str}',
@@ -176,7 +189,8 @@
         node: {
           urls: {
             files: '${urls['files'] | js_str}'
-          }
+          },
+          hasComments: ${json.dumps(node['has_comments'])}
         },
         panelsUsed: ['edit', 'view'],
         currentUser: {
