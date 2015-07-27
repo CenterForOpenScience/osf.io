@@ -103,7 +103,7 @@
                                 To delete a parent project, you must first delete all child components
                                 by visiting their settings pages.
                             </div>
-                            <button id="deleteNode" class="btn btn-danger btn-delete-node">Delete ${node['node_type']}</button>
+                            <button id="deleteNode" class="btn btn-danger btn-delete-node">Delete ${node['node_type']}.capitalize()</button>
                         </div>
                     % endif
 
