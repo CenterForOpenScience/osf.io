@@ -167,10 +167,7 @@ def update_user(auth):
         ]
 
         for address in added_emails:
-            try:
-                user.add_unconfirmed_email(address)
-            except (ValidationError, ValueError):
-                continue
+            user.add_unconfirmed_email(address)
 
             # TODO: This setting is now named incorrectly.
             if settings.CONFIRM_REGISTRATIONS_BY_EMAIL:
@@ -343,7 +340,7 @@ def user_account_password(auth, **kwargs):
     except ChangePasswordError as error:
         push_status_message('<br />'.join(error.messages) + '.', kind='warning')
     else:
-        push_status_message('Password updated successfully.', kind='info')
+        push_status_message('Password updated successfully.', kind='success')
 
     return redirect(web_url_for('user_account'))
 

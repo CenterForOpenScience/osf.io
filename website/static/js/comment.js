@@ -222,8 +222,6 @@ var CommentModel = function(data, $parent, $root) {
 
     self.showChildren = ko.observable(false);
 
-    self.hoverContent = ko.observable(false);
-
     self.reporting = ko.observable(false);
     self.deleting = ko.observable(false);
     self.unreporting = ko.observable(false);
@@ -250,9 +248,7 @@ var CommentModel = function(data, $parent, $root) {
     self.toggleIcon = ko.computed(function() {
             return self.showChildren() ? 'fa fa-minus' : 'fa fa-plus';
     });
-    self.editHighlight = ko.computed(function() {
-        return self.canEdit() && self.hoverContent();
-    });
+
     self.canReport = ko.computed(function() {
         return self.$root.canComment() && !self.canEdit();
     });
@@ -281,7 +277,6 @@ CommentModel.prototype.cancelEdit = function() {
     this.editing(false);
     this.$root.editors -= 1;
     this.editErrorMessage('');
-    this.hoverContent(false);
     this.content(this._content);
 };
 
@@ -398,13 +393,6 @@ CommentModel.prototype.cancelUnreportAbuse = function() {
     this.unreporting(false);
 };
 
-CommentModel.prototype.startHoverContent = function() {
-    this.hoverContent(true);
-};
-
-CommentModel.prototype.stopHoverContent = function() {
-    this.hoverContent(false);
-};
 
 CommentModel.prototype.toggle = function () {
     this.fetch();

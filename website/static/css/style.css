@@ -38,7 +38,7 @@ a {
     width:100%;
     padding-top:20px;
     padding-bottom:20px;
-    z-index:1;
+    z-index:9;
     background-color:white;
     border-top:2px solid black;
     display:none;
@@ -81,10 +81,6 @@ a {
     display: block;
     z-index: -1;
     position: relative;
-}
-
-.osf-project-navbar .navbar-nav li > a:focus {
-    background-color: inherit;
 }
 
 .anchor {
@@ -282,6 +278,10 @@ a {
     font-weight: normal;
 }
 
+.modal-body {
+    word-wrap: break-word;
+}
+
 /* sub-header for modal*/
 .modal-subheader {
     font-size: 20px;
@@ -417,7 +417,7 @@ select {
     word-wrap: normal;
 }
 
-tr a {
+tr a, b, em {
     word-break: break-word;
 }
 
@@ -437,4 +437,25 @@ tr a {
 
 button.close {
     line-height: 0.9;
+}
+
+/* table for add link and contributor */
+.osf-icon-td {
+    width: 50px;
+}
+
+/* Override Select2 CSS*/
+.select2-search-choice-close {
+    margin-top: -3px;
+}
+
+.affix-bottom {
+    position: relative;
+    word-break: break-all;
+    word-break: break-word; /* Non standard for webkit*/
+}
+
+/* growlBox style */
+.alert.growl-animated {
+    padding-right: 35px; /* work as alert-dismissable in bootstrap */
 }

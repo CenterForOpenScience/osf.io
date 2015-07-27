@@ -198,7 +198,7 @@ def project_new_node(auth, node, **kwargs):
 
         message = (
             'Your component was created successfully. You can keep working on the component page below, '
-            'or return to the <u><a href="{url}">Project Page</a></u>.'
+            'or return to the <u><a href="{url}">project page</a></u>.'
         ).format(url=node.url)
         status.push_status_message(message, 'info')
 
@@ -594,7 +594,7 @@ def component_remove(auth, node, **kwargs):
     message = '{} deleted'.format(
         node.project_or_component.capitalize()
     )
-    status.push_status_message(message)
+    status.push_status_message(message, 'success')
     parent = node.parent_node
     if parent and parent.can_view(auth):
         redirect_url = node.node__parent[0].url
@@ -698,7 +698,7 @@ def _view_project(node, auth, primary=False):
         for addon in node.get_addons():
             messages = addon.before_page_load(node, user) or []
             for message in messages:
-                status.push_status_message(message, dismissible=False)
+                status.push_status_message(message, 'info', dismissible=False)
     data = {
         'node': {
             'id': node._primary_key,

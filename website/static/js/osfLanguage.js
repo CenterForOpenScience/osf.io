@@ -35,47 +35,53 @@ module.exports = {
                 'have any questions or believe this to be an error, please contact ' +
                 'support@osf.io.',
             authInvalid: 'Your Dataverse API token is invalid.',
-            authSuccess: 'Your Dataverse Account was linked.',
+            authSuccess: 'Your Dataverse account was linked.',
             datasetDeaccessioned: 'This dataset has already been deaccessioned on the Dataverse ' +
                 'and cannot be connected to the OSF.',
             forbiddenCharacters: 'This dataset cannot be connected due to forbidden characters ' +
                 'in one or more of the dataset\'s file names. This issue has been forwarded to our ' +
                 'development team.',
             setDatasetError: 'Could not connect to this dataset.',
-            widgetInvalid: 'The credentials associated with this Dataverse Account ' +
+            widgetInvalid: 'The credentials associated with this Dataverse account ' +
                 'appear to be invalid.',
             widgetError: 'There was a problem connecting to the Dataverse.'
         },
         dropbox: {
             // Shown on clicking "Delete Access Token" for dropbox
-            confirmDeauth: 'Are you sure you want to disconnect the Dropbox Account? ' +
+            confirmDeauth: 'Are you sure you want to disconnect the Dropbox account? ' +
                 'This will revoke access to Dropbox for all projects you have ' +
-                'authorized.',
-            deauthError: 'Could not disconnect Dropbox Account at this time',
-            deauthSuccess: 'Successfully disconnected the connected Dropbox Account.'
+                'associated with this account.',
+            deauthError: 'Could not disconnect Dropbox account at this time',
+        },
+        figshare: {
+            confirmDeauth: 'Are you sure you want to disconnect the figshare account? ' +
+                'This will revoke access to figshare for all projects you have ' +
+                'associated with this account.',
         },
         // TODO
         github: {
-
+            confirmDeauth: 'Are you sure you want to disconnect the GitHub account? ' +
+                'This will revoke access to GitHub for all projects you have ' +
+                'associated with this account.',
         },
         s3: {
-
+            confirmDeauth: 'Are you sure you want to disconnect the S3 account? ' +
+                'This will revoke access to S3 for all projects you have ' +
+                'associated with this account.',
         },
         box: {
             // Shown on clicking "Delete Access Token" for dropbox
-            confirmDeauth: 'Are you sure you want to disconnect the Box Account? ' +
+            confirmDeauth: 'Are you sure you want to disconnect the Box account? ' +
                 'This will revoke access to Box for all projects you have ' +
-                'authorized.',
-            deauthError: 'Could not disconnect the Box Account at this time',
-            deauthSuccess: 'Successfully disconnected the connected Box Account.'
+                'associated with this account.',
+            deauthError: 'Could not disconnect the Box account at this time',
         },
         googledrive: {
           // Shown on clicking "Delete Access Token" for googledrive
-            confirmDeauth: 'Are you sure you want to disconnect the Google Drive Account? ' +
+            confirmDeauth: 'Are you sure you want to disconnect the Google Drive account? ' +
                 'This will revoke access to Google Drive for all projects you have ' +
-                'authorized.',
-            deauthError: 'Could not disconnect the Google Drive Account at this time',
-            deauthSuccess: 'Successfully disconnected the connected Google Drive Account.'
+                'associated with this account.',
+            deauthError: 'Could not disconnect the Google Drive account at this time',
         }
     }
 };

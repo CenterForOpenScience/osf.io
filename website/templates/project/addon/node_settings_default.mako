@@ -16,7 +16,7 @@
              <!-- Import Access Token Button -->
             <span data-bind="if: showImport">
                 <a data-bind="click: importAuth" href="#" class="text-primary pull-right addon-auth">
-                    Import Account From Profile
+                    Import Account from Profile
                 </a>
             </span>
 
@@ -51,10 +51,10 @@
                 <!-- Folder buttons -->
                 <div class="btn-group" data-bind="visible: userIsOwner() && validCredentials()">
                     <button data-bind="click: togglePicker,
-                                       css: {active: currentDisplay() === PICKER}" class="btn btn-sm btn-primary">Change</button>
+                                       css: {active: currentDisplay() === PICKER}" class="btn btn-primary">Change</button>
                 </div>
                 <!-- Folder picker -->
-                <div class="addon-folderpicker-widget ${addon_short_name}-widget">
+                <div class="m-t-sm addon-folderpicker-widget ${addon_short_name}-widget">
                     <p class="text-muted text-center ${addon_short_name}-loading-text" data-bind="visible: loading">
                         Loading folders...</p>
                     <div data-bind="visible: currentDisplay() === PICKER">
@@ -64,9 +64,9 @@
                     <div class="${addon_short_name}-confirm-selection" data-bind="visible: currentDisplay() == PICKER && selected()">
                         <form data-bind="submit: submitSettings">
                             <div class="break-word">
-                                <h4 data-bind="if: selected" class="${addon_short_name}-confirm-dlg">
-                                    Connect &ldquo;{{ selectedFolderName }}&rdquo;?
-                                </h4>
+                                <div data-bind="if: selected" class="alert alert-info ${addon_short_name}-confirm-dlg">
+                                    Connect <b>&ldquo;{{ selectedFolderName }}&rdquo;</b>?
+                                </div>
                             </div>
                             <div class="pull-right">
                                 <button class="btn btn-default" data-bind="click: cancelSelection">
@@ -75,7 +75,7 @@
                                 <input type="submit" class="btn btn-success" value="Save" />
                             </div>
                         </form>
-                    </div>         
+                    </div>
                 </div>
             </div>
             <!-- end col -->

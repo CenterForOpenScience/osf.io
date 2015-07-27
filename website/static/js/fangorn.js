@@ -43,6 +43,8 @@ var STATE_MAP = {
     }
 };
 
+var SYNC_UPLOAD_ADDONS = ['github', 'dataverse'];
+
 
 var OPERATIONS = {
     RENAME: {
@@ -108,7 +110,6 @@ function cancelUploads (row) {
 var uploadRowTemplate = function(item){
     var tb = this;
     var padding;
-    var progress = item.data.uploadState() === 'pending' ? 0 : Math.floor(item.data.progress);
     if (tb.filterOn) {
         padding = 20;
     } else {
@@ -124,12 +125,12 @@ var uploadRowTemplate = function(item){
             ]),
             m('.col-xs-3',
                 m('.progress', [
-                    m('.progress-bar.progress-bar-info.progress-bar-striped', {
+                    m('.progress-bar.progress-bar-info.progress-bar-striped.active', {
                         role : 'progressbar',
-                        'aria-valuenow' : progress,
+                        'aria-valuenow' : item.data.progress,
                         'aria-valuemin' : '0',
                         'aria-valuemax': '100',
-                        'style':'width: ' + progress + '%' }, m('span.sr-only', progress + '% Complete'))
+                        'style':'width: ' + item.data.progress + '%' }, m('span.sr-only', item.data.progress + '% Complete'))
                 ])
             ),
             m('.col-xs-2', [
@@ -533,23 +534,15 @@ function _fangornMouseOverRow(item, event) {
  */
 function _fangornUploadProgress(treebeard, file, progress) {
     var parent = file.treebeardParent;
-
-    var item,
-        child,
-        templateWithCancel,
-        templateWithoutCancel;
+    progress = Math.ceil(progress);
     for(var i = 0; i < parent.children.length; i++) {
-        child = parent.children[i];
-        if(!child.data.tmpID){
-            continue;
+        if (parent.children[i].data.tmpID !== file.tmpID) continue;
+        if (parent.children[i].data.progress !== progress) {
+            parent.children[i].data.progress = progress;
+            m.redraw();
         }
-        if(child.data.tmpID === file.tmpID) {
-            item = child;
-            item.data.progress = progress;
-            item.data.uploadState('uploading');
-        }
+        return;
     }
-    m.redraw();
 }
 
 /**
@@ -587,6 +580,19 @@ function _fangornAddedFile(treebeard, file) {
     if (!_fangornCanDrop(treebeard, item)) {
         return;
     }
+
+    if (SYNC_UPLOAD_ADDONS.indexOf(item.data.provider) !== -1) {
+        this.syncFileCache = this.syncFileCache || {};
+        this.syncFileCache[item.data.provider] = this.syncFileCache[item.data.provider] || [];
+
+        var files = this.getActiveFiles().filter(function(f) {return f.isSync;});
+        if (files.length > 0) {
+            this.syncFileCache[item.data.provider].push(file);
+            this.files.splice(this.files.indexOf(files), 1);
+        }
+        file.isSync = true;
+    }
+
     var configOption = resolveconfigOption.call(treebeard, item, 'uploadAdd', [file, item]);
 
     var tmpID = tempCounter++;
@@ -605,7 +611,8 @@ function _fangornAddedFile(treebeard, file) {
             edit: false
         },
         tmpID: tmpID,
-        uploadState : m.prop('pending')
+        progress: 0,
+        uploadState : m.prop('uploading'),
     };
     var newitem = treebeard.createItem(blankItem, item.id);
     return configOption || null;
@@ -661,6 +668,12 @@ function _fangornComplete(treebeard, file) {
     var item = file.treebeardParent;
     resolveconfigOption.call(treebeard, item, 'onUploadComplete', [item]);
     orderFolder.call(treebeard, item);
+
+    if (file.isSync) {
+        if (this.syncFileCache[item.data.provider].length > 0) {
+            this.processFile(this.syncFileCache[item.data.provider].pop());
+        }
+    }
 }
 
 /**
@@ -729,10 +742,10 @@ function _fangornDropzoneError(treebeard, file, message, xhr) {
     var msgText;
     if (file.isDirectory) {
         msgText = 'Cannot upload directories, applications, or packages.';
-    } else if (xhr.status === 507) {
+    } else if (xhr && xhr.status === 507) {
         msgText = 'Cannot upload file due to insufficient storage.';
     } else {
-        msgText = DEFAULT_ERROR_MESSAGE;
+        msgText = message || DEFAULT_ERROR_MESSAGE;
     }
     var parent = file.treebeardParent || treebeardParent.dropzoneItemCache; // jshint ignore:line
     // Parent may be undefined, e.g. in Chrome, where file is an entry object
@@ -993,6 +1006,7 @@ function _removeEvent (event, items, col) {
  * @private
  */
 function _fangornResolveLazyLoad(item) {
+    item.connected = true;
     var configOption = resolveconfigOption.call(this, item, 'lazyload', [item]);
     if (configOption) {
         return configOption;
@@ -1011,10 +1025,8 @@ function _fangornResolveLazyLoad(item) {
  * @private
  */
 function _fangornLazyLoadError (item) {
+    item.connected = false;
     var configOption = resolveconfigOption.call(this, item, 'lazyLoadError', [item]);
-    if (!configOption) {
-        item.notify.update('Files couldn\'t load. Please try again later.', 'deleting', undefined, 3000);
-    }
 }
 
 /**
@@ -1073,7 +1085,6 @@ function _fangornUploadMethod(item) {
     return configOption || 'PUT';
 }
 
-
 function gotoFileEvent (item) {
     var tb = this;
     var redir = new URI(item.data.nodeUrl);
@@ -1095,6 +1106,9 @@ function gotoFileEvent (item) {
  */
 function _fangornTitleColumn(item, col) {
     var tb = this;
+    if (item.data.isAddonRoot && item.connected === false) { // as opposed to undefined, avoids unnecessary setting of this value
+        return _connectCheckTemplate.call(this, item);
+    }
     if (item.kind === 'file' && item.data.permissions.view) {
         return m('span.fg-file-links',{
             onclick: function(event) {
@@ -1103,7 +1117,34 @@ function _fangornTitleColumn(item, col) {
             }
         }, item.data.name);
     }
+    if ((item.data.nodeType === 'project') || (item.data.nodeType ==='component')) {
+        return m('a.fg-file-links',{ href: '/' + item.data.nodeID.toString() + '/'},
+                item.data.name);
+    }
     return m('span', item.data.name);
+}
+
+/**
+ * Returns a reusable template for column titles when there is no connection
+ * @param {Object} item A Treebeard _item object for the row involved. Node information is inside item.data
+ * @this Treebeard.controller
+ * @private
+ */
+function _connectCheckTemplate(item){
+    var tb = this;
+    return m('span.text-danger', [
+        m('span', item.data.name),
+        m('em', ' could\'t load.' ),
+        m('button.btn.btn-xs.btn-default.m-l-xs', {
+            onclick : function(e){
+                e.stopImmediatePropagation();
+                if (tb.options.togglecheck.call(tb, item)) {
+                    var index = tb.returnIndex(item.id);
+                    tb.toggleFolder(index, e);
+                }
+            }
+        }, [m('i.fa.fa-refresh'), ' Retry'])
+    ]);
 }
 
 /**
@@ -1429,16 +1470,6 @@ var FGItemButtons = {
             }
         }
         if (item.kind === 'file'){
-            if (item.data.permissions && item.data.permissions.view) {
-                rowButtons.push(
-                    m.component(FGButton, {
-                        onclick: function(event) {
-                            gotoFileEvent.call(tb, item);
-                        },
-                        icon: 'fa fa-file-o',
-                        className : 'text-info'
-                    }, 'View'));
-            }
             rowButtons.push(
                 m.component(FGButton, {
                     onclick: function(event) { _downloadEvent.call(tb, event, item); },
@@ -1454,6 +1485,16 @@ var FGItemButtons = {
                         className : 'text-danger'
                     }, 'Delete'));
 
+            }
+            if (item.data.permissions && item.data.permissions.view) {
+                rowButtons.push(
+                    m.component(FGButton, {
+                        onclick: function(event) {
+                            gotoFileEvent.call(tb, item);
+                        },
+                        icon: 'fa fa-file-o',
+                        className : 'text-info'
+                    }, 'View'));
             }
         } else if(item.data.provider && item.children.length !== 0) {
             rowButtons.push(
@@ -1641,9 +1682,10 @@ var FGToolbar = {
                         m('p', [ m('b', 'Open Files in New Tab:'), m('span',  ' Press Command (or Ctrl in Windows) and  click a file name to open it in a new tab.')]),
                         m('p', [ m('b', 'Copy Files:'), m('span', ' Press Option (or Alt in Windows) while dragging a file to a new folder or component.')])
                     ]);
-                    var mithrilButtons = m('div', [
-                        m('span.tb-modal-btn', { 'class' : 'text-primary', onclick : function(event) { ctrl.tb.modal.dismiss(); } }, 'Close'),
-                    ]);
+                    var mithrilButtons = m('button', {
+                            'type':'button',
+                            'class' : 'btn btn-default',
+                            onclick : function(event) { ctrl.tb.modal.dismiss(); } }, 'Close');
                     ctrl.tb.modal.update(mithrilContent, mithrilButtons);
                 },
                 icon: 'fa fa-info',
@@ -1651,7 +1693,11 @@ var FGToolbar = {
             }, '')
         );
 
-        templates[toolbarModes.DEFAULT] =  m('.col-xs-12', m('.pull-right', [finalRowButtons,  m('span', generalButtons)]));
+        if (item && item.connected !== false){ // as opposed to undefined, avoids unnecessary setting of this value
+            templates[toolbarModes.DEFAULT] =  m('.col-xs-12', m('.pull-right', [finalRowButtons,  m('span', generalButtons)]));
+        } else {
+            templates[toolbarModes.DEFAULT] =  m('.col-xs-12', m('.pull-right', m('span', generalButtons)));
+        }
         return m('.row.tb-header-row', [
             m('#folderRow', { config : function () {
                 $('#folderRow input').focus();
@@ -1949,7 +1995,8 @@ function _resizeHeight () {
     var topBuffer = tbody.offset().top + 50;
     var availableSpace = windowHeight - topBuffer;
     if(availableSpace > 0) {
-        tbody.height(availableSpace);
+        // Set a minimum height
+        tbody.height(availableSpace < 300 ? 300 : availableSpace);
     }
 }
 
@@ -2065,13 +2112,15 @@ tbOptions = {
     onmouseoverrow : _fangornMouseOverRow,
     sortDepth : 2,
     dropzone : {                                           // All dropzone options.
+        maxFilesize: 10000000,
         url: function(files) {return files[0].url;},
         clickable : '#treeGrid',
         addRemoveLinks: false,
         previewTemplate: '<div></div>',
-        parallelUploads: 1,
+        parallelUploads: 5,
         acceptDirectories: false,
-        fallback: function(){}
+        createImageThumbnails: false,
+        fallback: function(){},
     },
     resolveIcon : _fangornResolveIcon,
     resolveToggle : _fangornResolveToggle,
@@ -2176,8 +2225,8 @@ Fangorn.Utils = {
     dismissToolbar : dismissToolbar,
     uploadRowTemplate : uploadRowTemplate,
     resolveIconView: resolveIconView,
-    orderFolder: orderFolder
-
+    orderFolder: orderFolder,
+    connectCheckTemplate : _connectCheckTemplate
 };
 
 Fangorn.DefaultOptions = tbOptions;
