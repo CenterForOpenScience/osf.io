@@ -13,7 +13,7 @@ import math
 from nose.tools import *  # noqa PEP8 asserts
 from tests.test_features import requires_search
 
-from modularodm import Q
+from modularodm import Q, fields
 from dateutil.parser import parse as parse_date
 
 from framework import auth
@@ -55,8 +55,9 @@ from tests.factories import (
     UserFactory, ProjectFactory, WatchConfigFactory,
     NodeFactory, NodeLogFactory, AuthUserFactory, UnregUserFactory,
     RegistrationFactory, CommentFactory, PrivateLinkFactory, UnconfirmedUserFactory, DashboardFactory, FolderFactory,
-    ProjectWithAddonFactory,
+    ProjectWithAddonFactory, MockAddonNodeSettings,
 )
+from website.addons.base import AddonNodeSettingsBase
 from tests.test_archiver import MockAddon
 from website.settings import ALL_MY_REGISTRATIONS_ID, ALL_MY_PROJECTS_ID
 
@@ -578,17 +579,19 @@ class TestProjectViews(OsfTestCase):
 
     def test_register_project_with_multiple_errors(self):
         class FakeAddon(MockAddon):
+            node_settings = fields.ForeignField('AddonNodeSettingsBase')
             def archive_errors(self):
                 return 'Error Message'
         addon1 = FakeAddon()
         addon1.short_name = 'addon'
+        addon1.full_name = 'addon'
+        model = addon1.node_settings(owner=self.project)
+        model.on_add()
+        model.save()
         component = NodeFactory(parent=self.project, creator=self.user1)
-        self.user1.add_addon('github')
-        self.project.add_addon('github', auth=Auth(self.user1))
-        component.add_addon('github', auth=Auth(self.user1))
-        self.user_addon = self.user1.get_addon('github')
-        self.node_addon = self.project.get_addon('github')
-        self.node_addon.archive_errors = 'Error message'
+        model1 = addon1.node_settings(owner=component)
+        model1.on_add()
+        model1.save()
         import ipdb; ipdb.set_trace()
         url = self.project.api_url_for('project_before_register')
         res = self.app.get(url, auth=self.auth)
