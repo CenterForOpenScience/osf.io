@@ -3,7 +3,7 @@ from rest_framework import serializers as ser
 from website.models import Node
 from framework.auth.core import Auth
 from rest_framework import exceptions
-from api.base.serializers import JSONAPISerializer, LinksField, Link, WaterbutlerLink
+from api.base.serializers import JSONAPISerializer, LinksField, Link, WaterbutlerLink, Attribute, AttributeLinksField
 
 
 class NodeSerializer(JSONAPISerializer):
@@ -24,24 +24,12 @@ class NodeSerializer(JSONAPISerializer):
                                                'user and system. Any tag that a user will define in the UI will be '
                                                'a user tag')
 
-    links = LinksField({
+    links = AttributeLinksField({
         'html': 'get_absolute_url',
-        'children': {
-            'related': Link('nodes:node-children', kwargs={'node_id': '<pk>'}),
-            'count': 'get_node_count',
-        },
-        'contributors': {
-            'related': Link('nodes:node-contributors', kwargs={'node_id': '<pk>'}),
-            'count': 'get_contrib_count',
-        },
-        'pointers': {
-            'related': Link('nodes:node-pointers', kwargs={'node_id': '<pk>'}),
-            'count': 'get_pointers_count',
-        },
-        'registrations': {
-            'related': Link('nodes:node-registrations', kwargs={'node_id': '<pk>'}),
-            'count': 'get_registration_count',
-        },
+        'children': Attribute('children', 'nodes', 'node_id', link_endpoint='nodes:node-detail', link_kwargs={'node_id': '<pk>'}),
+        'contributors': 'get_contributors',
+        'pointers': 'get_pointers',
+        'registrations': 'get_registrations',
         'files': {
             'related': Link('nodes:node-files', kwargs={'node_id': '<pk>'})
         },
@@ -81,21 +69,28 @@ class NodeSerializer(JSONAPISerializer):
             auth = Auth(user)
         return auth
 
-    def get_node_count(self, obj):
+    def get_children(self, obj):
         auth = self.get_user_auth(self.context['request'])
         nodes = [node for node in obj.nodes if node.can_view(auth) and node.primary]
-        return len(nodes)
+        return self.get_object_attribute('children', nodes, obj)
 
-    def get_contrib_count(self, obj):
-        return len(obj.contributors)
+    def get_contributors(self, obj):
+        return self.get_object_attribute('contributors', obj.contributors, obj)
 
-    def get_registration_count(self, obj):
+    def get_pointers(self, obj):
+        return self.get_object_attribute('pointers', obj.nodes_pointer, obj)
+
+    def get_registrations(self, obj):
         auth = self.get_user_auth(self.context['request'])
         registrations = [node for node in obj.node__registrations if node.can_view(auth)]
-        return len(registrations)
+        return self.get_object_attribute('registrations', registrations, obj)
 
-    def get_pointers_count(self, obj):
-        return len(obj.nodes_pointer)
+    @staticmethod
+    def get_object_attribute(name, objects, obj):
+        return {
+            'related': Link('nodes:node-{}'.format(name), kwargs={'node_id': '<pk>'}).resolve_url(obj),
+            'count': len(objects),
+        }
 
     @staticmethod
     def get_properties(obj):
