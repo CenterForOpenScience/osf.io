@@ -437,7 +437,8 @@ class TestNodeDetail(ApiTestCase):
         # This is 403 instead of 401 because basic authentication is only for unit tests and, in order to keep from
         # presenting a basic authentication dialog box in the front end. We may change this as we understand CAS
         # a little better
-        assert_equal(res.status_code, 403)
+        print res
+        assert_equal(res.status_code, 401)
         assert 'detail' in res.json['errors'][0].keys()
 
 

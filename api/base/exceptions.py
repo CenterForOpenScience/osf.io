@@ -11,4 +11,8 @@ def jsonapi_exception_handler(exc, context):
             response.data = {'errors': [response.data]}
         else:
             response.data = {'errors': [{'detail': response.data}]}
+
+    if response.data['errors'][0]['detail'] == "Authentication credentials were not provided.":
+        response.status_code = 401
+
     return response
