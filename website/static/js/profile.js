@@ -395,14 +395,11 @@ var NameViewModel = function(urls, modes, preventUnsaved, fetchCallback) {
     };
 
     self.initials = function(names) {
+        names = $.trim(names);
         return names
-            .split(' ')
+            .split(/\s+/)
             .map(function(name) {
-                if (name){
-                    return name[0].toUpperCase() + '.';
-                } else {
-                    return '';
-                }
+                return name[0].toUpperCase() + '.';
             })
             .filter(function(initial) {
                 return initial.match(/^[a-z]/i);
