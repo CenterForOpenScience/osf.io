@@ -350,7 +350,7 @@ class TestNodeCreate(ApiTestCase):
         # This is 403 instead of 401 because basic authentication is only for unit tests and, in order to keep from
         # presenting a basic authentication dialog box in the front end. We may change this as we understand CAS
         # a little better
-        assert_equal(res.status_code, 403)
+        assert_equal(res.status_code, 401)
         assert 'detail' in res.json['errors'][0].keys()
 
     def test_creates_public_project_logged_in(self):
@@ -366,7 +366,7 @@ class TestNodeCreate(ApiTestCase):
         # This is 403 instead of 401 because basic authentication is only for unit tests and, in order to keep from
         # presenting a basic authentication dialog box in the front end. We may change this as we understand CAS
         # a little better
-        assert_equal(res.status_code, 403)
+        assert_equal(res.status_code, 401)
         assert 'detail' in res.json['errors'][0].keys()
 
     def test_creates_private_project_logged_in_contributor(self):
@@ -437,7 +437,6 @@ class TestNodeDetail(ApiTestCase):
         # This is 403 instead of 401 because basic authentication is only for unit tests and, in order to keep from
         # presenting a basic authentication dialog box in the front end. We may change this as we understand CAS
         # a little better
-        print res
         assert_equal(res.status_code, 401)
         assert 'detail' in res.json['errors'][0].keys()
 
@@ -515,7 +514,7 @@ class TestNodeUpdate(ApiTestCase):
         # This is 403 instead of 401 because basic authentication is only for unit tests and, in order to keep from
         # presenting a basic authentication dialog box in the front end. We may change this as we understand CAS
         # a little better
-        assert_equal(res.status_code, 403)
+        assert_equal(res.status_code, 401)
         assert 'detail' in res.json['errors'][0].keys()
 
 
@@ -553,7 +552,7 @@ class TestNodeUpdate(ApiTestCase):
         # This is 403 instead of 401 because basic authentication is only for unit tests and, in order to keep from
         # presenting a basic authentication dialog box in the front end. We may change this as we understand CAS
         # a little better
-        assert_equal(res.status_code, 403)
+        assert_equal(res.status_code, 401)
         assert 'detail' in res.json['errors'][0].keys()
 
     def test_update_private_project_logged_in_contributor(self):
@@ -644,7 +643,7 @@ class TestNodeUpdate(ApiTestCase):
         # This is 403 instead of 401 because basic authentication is only for unit tests and, in order to keep from
         # presenting a basic authentication dialog box in the front end. We may change this as we understand CAS
         # a little better
-        assert_equal(res.status_code, 403)
+        assert_equal(res.status_code, 401)
         assert 'detail' in res.json['errors'][0].keys()
 
     def test_partial_update_public_project_logged_in(self):
@@ -669,7 +668,7 @@ class TestNodeUpdate(ApiTestCase):
         # This is 403 instead of 401 because basic authentication is only for unit tests and, in order to keep from
         # presenting a basic authentication dialog box in the front end. We may change this as we understand CAS
         # a little better
-        assert_equal(res.status_code, 403)
+        assert_equal(res.status_code, 401)
         assert 'detail' in res.json['errors'][0].keys()
 
     def test_partial_update_private_project_logged_in_contributor(self):
@@ -716,7 +715,7 @@ class TestNodeDelete(ApiTestCase):
         # This is 403 instead of 401 because basic authentication is only for unit tests and, in order to keep from
         # presenting a basic authentication dialog box in the front end. We may change this as we understand CAS
         # a little better
-        assert_equal(res.status_code, 403)
+        assert_equal(res.status_code, 401)
         assert 'detail' in res.json['errors'][0].keys()
 
 
@@ -739,7 +738,7 @@ class TestNodeDelete(ApiTestCase):
         # This is 403 instead of 401 because basic authentication is only for unit tests and, in order to keep from
         # presenting a basic authentication dialog box in the front end. We may change this as we understand CAS
         # a little better
-        assert_equal(res.status_code, 403)
+        assert_equal(res.status_code, 401)
         assert 'detail' in res.json['errors'][0].keys()
 
 
@@ -817,7 +816,7 @@ class TestNodeContributorList(ApiTestCase):
         # This is 403 instead of 401 because basic authentication is only for unit tests and, in order to keep from
         # presenting a basic authentication dialog box in the front end. We may change this as we understand CAS
         # a little better
-        assert_equal(res.status_code, 403)
+        assert_equal(res.status_code, 401)
         assert 'detail' in res.json['errors'][0].keys()
 
 
@@ -931,7 +930,7 @@ class TestNodeRegistrationList(ApiTestCase):
         # This is 403 instead of 401 because basic authentication is only for unit tests and, in order to keep from
         # presenting a basic authentication dialog box in the front end. We may change this as we understand CAS
         # a little better
-        assert_equal(res.status_code, 403)
+        assert_equal(res.status_code, 401)
         assert 'detail' in res.json['errors'][0].keys()
 
     def test_return_private_registrations_logged_in_contributor(self):
@@ -996,7 +995,7 @@ class TestNodeChildrenList(ApiTestCase):
         # This is 403 instead of 401 because basic authentication is only for unit tests and, in order to keep from
         # presenting a basic authentication dialog box in the front end. We may change this as we understand CAS
         # a little better
-        assert_equal(res.status_code, 403)
+        assert_equal(res.status_code, 401)
         assert 'detail' in res.json['errors'][0].keys()
 
 
@@ -1064,7 +1063,7 @@ class TestNodePointersList(ApiTestCase):
         # This is 403 instead of 401 because basic authentication is only for unit tests and, in order to keep from
         # presenting a basic authentication dialog box in the front end. We may change this as we understand CAS
         # a little better
-        assert_equal(res.status_code, 403)
+        assert_equal(res.status_code, 401)
         assert 'detail' in res.json['errors'][0].keys()
 
 
@@ -1116,7 +1115,7 @@ class TestCreateNodePointer(ApiTestCase):
         # This is 403 instead of 401 because basic authentication is only for unit tests and, in order to keep from
         # presenting a basic authentication dialog box in the front end. We may change this as we understand CAS
         # a little better
-        assert_equal(res.status_code, 403)
+        assert_equal(res.status_code, 401)
         assert 'detail' in res.json['errors'][0].keys()
 
 
@@ -1135,7 +1134,7 @@ class TestCreateNodePointer(ApiTestCase):
         # This is 403 instead of 401 because basic authentication is only for unit tests and, in order to keep from
         # presenting a basic authentication dialog box in the front end. We may change this as we understand CAS
         # a little better
-        assert_equal(res.status_code, 403)
+        assert_equal(res.status_code, 401)
         assert 'detail' in res.json['errors'][0].keys()
 
 
@@ -1238,7 +1237,7 @@ class TestNodeFilesList(ApiTestCase):
         # This is 403 instead of 401 because basic authentication is only for unit tests and, in order to keep from
         # presenting a basic authentication dialog box in the front end. We may change this as we understand CAS
         # a little better
-        assert_equal(res.status_code, 403)
+        assert_equal(res.status_code, 401)
         assert 'detail' in res.json['errors'][0].keys()
 
 
@@ -1360,7 +1359,7 @@ class TestNodePointerDetail(ApiTestCase):
         # This is 403 instead of 401 because basic authentication is only for unit tests and, in order to keep from
         # presenting a basic authentication dialog box in the front end. We may change this as we understand CAS
         # a little better
-        assert_equal(res.status_code, 403)
+        assert_equal(res.status_code, 401)
         assert 'detail' in res.json['errors'][0].keys()
 
 
@@ -1407,7 +1406,7 @@ class TestDeleteNodePointer(ApiTestCase):
         # This is 403 instead of 401 because basic authentication is only for unit tests and, in order to keep from
         # presenting a basic authentication dialog box in the front end. We may change this as we understand CAS
         # a little better
-        assert_equal(res.status_code, 403)
+        assert_equal(res.status_code, 401)
         assert 'detail' in res.json['errors'][0].keys()
 
 
@@ -1433,7 +1432,7 @@ class TestDeleteNodePointer(ApiTestCase):
         # This is 403 instead of 401 because basic authentication is only for unit tests and, in order to keep from
         # presenting a basic authentication dialog box in the front end. We may change this as we understand CAS
         # a little better
-        assert_equal(res.status_code, 403)
+        assert_equal(res.status_code, 401)
         assert 'detail' in res.json['errors'][0].keys()
 
 
