@@ -12,7 +12,7 @@ def jsonapi_exception_handler(exc, context):
         else:
             response.data = {'errors': [{'detail': response.data}]}
 
-    if response.data['errors'][0]['detail'] == "Authentication credentials were not provided.":
+    if response is not None and response.data['errors'][0]['detail'] == "Authentication credentials were not provided.":
         response.status_code = 401
 
     return response
