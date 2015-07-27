@@ -43,7 +43,7 @@ class NodeSerializer(JSONAPISerializer):
             'links': {
                 'related': {
                     'href': Link('nodes:node-children', kwargs={'node_id': '<pk>'}),
-                    'meta': Attribute('children', 'nodes')
+                    'meta': Attribute('children')
                 }
             },
         },
@@ -59,7 +59,7 @@ class NodeSerializer(JSONAPISerializer):
             'links': {
                 'related': {
                     'href': Link('nodes:node-pointers', kwargs={'node_id': '<pk>'}),
-                    'meta': Attribute('pointers')
+                    'meta': Attribute('pointers', 'nodes_pointer')
                 }
             },
         },

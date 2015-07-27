@@ -5,6 +5,7 @@ from rest_framework import serializers as ser
 from website.util.sanitize import strip_html
 from api.base.utils import absolute_reverse, waterbutler_url_for
 from rest_framework.exceptions import ValidationError
+from framework.auth.core import Auth
 
 
 def _rapply(d, func, *args, **kwargs):
@@ -292,8 +293,9 @@ class Attribute(object):
         if self.query:
             object_list = getattr(obj, self.query)
         else:
+            auth = self.get_user_auth(request)
             get_object = getattr(self, 'get_{}'.format(self.name))
-            object_list = get_object(obj)
+            object_list = get_object(obj, auth)
         if 'include' in request.query_params:
             include_params = request.query_params['include'].split(',')
             for param in include_params:
@@ -313,8 +315,19 @@ class Attribute(object):
                 objects_serialized.append(UserIncludeSerializer(o).data)
         return {'list': objects_serialized}
 
-    def get_pointers(self, obj):
-        return []
+    def get_children(self, obj, auth):
+        nodes = [node for node in obj.nodes if node.can_view(auth) and node.primary]
+        return nodes
 
-    def get_registrations(self, obj):
-        return []
+
+    def get_registrations(self, obj, auth):
+        registrations = [node for node in obj.node__registrations if node.can_view(auth)]
+        return registrations
+
+    def get_user_auth(self, request):
+        user = request.user
+        if user.is_anonymous():
+            auth = Auth(None)
+        else:
+            auth = Auth(user)
+        return auth
