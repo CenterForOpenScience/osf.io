@@ -137,15 +137,17 @@
         <hr />
         <div class="row" data-bind="if: selectedSchema">
           <div class="col-md-12" data-bind="with: selectedSchema">
-            <h4> Fulfills: </h4 >
-            <div class="row">
-              <div class="col-md-12 schema-fulfillment" data-bind="foreach: schema.config.fulfills">
-                <span class="well">
-                  <span data-bind="text: name"></span>&nbsp;&nbsp;
-                  <a class="fa fa-info-circle" target="_blank" data-bind="attr.href: info"></a>
-                </span>
+            <span data-bind="if: schema.config">
+              <h4> Fulfills: </h4>
+              <div class="row">
+                <div class="col-md-12 schema-fulfillment" data-bind="foreach: schema.config.fulfills">
+                  <span class="well">
+                    <span data-bind="text: name"></span>&nbsp;&nbsp;
+                    <a class="fa fa-info-circle" target="_blank" data-bind="attr.href: info"></a>
+                  </span>
+                </div>
               </div>
-            </div>
+            </span>
             <h4> Description: </h4> 
             <blockquote>
               <p data-bind="html: schema.description"></p>
