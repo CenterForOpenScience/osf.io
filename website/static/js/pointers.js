@@ -75,14 +75,12 @@ var AddPointerViewModel = oop.extend(Paginator, {
                 self.currentPage(result.page);
                 self.numberOfPages(result.pages);
                 self.addNewPaginators();
-                self.loadingResults(false);
             }).fail(function(xhr) {
                     self.searchWarningMsg(xhr.responseJSON && xhr.responseJSON.message_long);
             }).always( function (){
                 clearTimeout(timeout); // clear timeout function
                 self.loadingResults(false);
             });
-
         } else {
             self.results([]);
             self.currentPage(0);
