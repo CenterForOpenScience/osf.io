@@ -39,12 +39,16 @@ var FileViewPage = {
             });
         };
         if (self.file.provider === 'osfstorage'){
+            self.canEdit = function() {
+                return ((self.file.renter === '') || (self.file.renter === self.context.userId)) ? m.prop(!!self.context.currentUser.canEdit) : false;
+            };
             self.isRenter();
+        } else {
+            self.canEdit = function() {
+                return m.prop(!!self.context.currentUser.canEdit);
+            };
         }
-        //Force canEdit into a bool
-        self.canEdit = function() {
-            return ((self.file.renter === '') || (self.file.renter === self.context.userId)) ? m.prop(!!self.context.currentUser.canEdit) : false;
-        };
+        
         $.extend(self.file.urls, {
             delete: waterbutler.buildDeleteUrl(self.file.path, self.file.provider, self.node.id),
             metadata: waterbutler.buildMetadataUrl(self.file.path, self.file.provider, self.node.id),
@@ -342,7 +346,7 @@ var FileViewPage = {
                 m('.btn.btn-sm.btn-primary.file-download', {onclick: $(document).trigger.bind($(document), 'fileviewpage:download')}, 'Download')
             ]),
             m('.btn-group.btn-group-sm.m-t-xs', [
-                m('.btn.btn-default.disabled', ' Toggle view: ')
+                m('.btn.btn-default.disabled', 'Toggle view: ')
             ].concat(
                 m('.btn' + (ctrl.mfrIframeParent.is(':visible') ? '.btn-primary' : '.btn-default'), {
                     onclick: function (e) {

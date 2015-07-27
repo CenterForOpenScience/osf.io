@@ -1516,7 +1516,7 @@ var FGItemButtons = {
                 }, 'Rename')
             );
         }
-        if(item.data.kind === 'folder' && item.data.addonFullname=='OSF Storage' && item.data.permissions.edit) {
+        if(item.data.kind === 'folder' && item.data.addonFullname ==='OSF Storage' && item.data.permissions.edit) {
             rowButtons.push(
                 m.component(FGButton, {
                     onclick: function() {
@@ -1555,7 +1555,7 @@ var FGItemButtons = {
                                         'end_date': 'week'
                                     }
                                 ).done(function(resp) {
-                                    window.location.reload()
+                                    window.location.reload();
                                 }).fail(function(resp) {
                                     $osf.growl('Error', 'Unable to lock OSF Storage. Make sure all files are unlocked, or locked by you.');
                                 });
