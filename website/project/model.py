@@ -632,6 +632,8 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
     # Dictionary field mapping user id to a list of nodes in node.nodes which the user has subscriptions for
     # {<User.id>: [<Node._id>, <Node2._id>, ...] }
     child_node_subscriptions = fields.DictionaryField(default=dict)
+    # For the purpose of migrate_registered_meta script
+    fits_prereg_schema = fields.BooleanField(default=False)
 
     _meta = {
         'optimistic': True,
@@ -1690,7 +1692,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
 
         return forked
 
-    def register_node(self, schema, auth, data, parent=None):
+    def register_node(self, schema, auth, template, data, parent=None):
         """Make a frozen copy of a node.
 
         :param schema: Schema object
@@ -1729,7 +1731,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         registered.registered_from = original
         if not registered.registered_meta:
             registered.registered_meta = {}
-        registered.registered_meta = data
+        registered.registered_meta[template] = data
 
         registered.contributors = self.contributors
         registered.forked_from = self.forked_from
@@ -3053,13 +3055,20 @@ class DraftRegistration(AddonModelMixin, StoredObject):
 
     initiator = fields.ForeignField('user')
 
-    registration_metadata = fields.DictionaryField({})
+    # Dictionary field mapping question id to a question's comments and answer
+    # {<qid>: { 'comments': [<Comment1>, <Comment2>], 'value': 'string answer }
+    registration_metadata = fields.DictionaryField(default=dict)
     registration_schema = fields.ForeignField('metaschema')
     registered_node = fields.ForeignField('node')
 
     storage = fields.ForeignField('osfstoragenodesettings')
 
+    # Dictionary field mapping
+    # { 'requiresApproval': true, 'fulfills': [{ 'name': 'Prereg Prize', 'info': <infourl>  }]  }
     config = fields.DictionaryField()
+
+    # Dictionary field mapping a draft's states during the review process to their value
+    # { 'isApproved': false, 'isPendingReview': false, 'paymentSent': false }
     flags = fields.DictionaryField()
 
     def __init__(self, *args, **kwargs):
@@ -3096,7 +3105,7 @@ class DraftRegistration(AddonModelMixin, StoredObject):
     def update_metadata(self, metadata, save=True):
         # TODO: uncommnet to disallow editing drafts that are approved or pending approval
         # if self.is_pending_review or self.is_approved:
-        #    raise HTTPError(http.BAD_REQUEST)
+        #    raise NodeStateError('Cannot edit while this draft is being reviewed')
         changes = []
         for key, value in metadata.iteritems():
             old_value = self.registration_metadata.get(key)
@@ -3106,6 +3115,7 @@ class DraftRegistration(AddonModelMixin, StoredObject):
         if save:
             self.save()
         # TODO: uncomment to nullify approval state if edited
+        # project_signals.draft_edited.send(self, changes)
         # self.after_edit(changes)
 
     def before_edit(self, auth):
@@ -3129,8 +3139,8 @@ class DraftRegistration(AddonModelMixin, StoredObject):
     def find_question(self, qid):
         for page in self.registration_schema.schema['pages']:
             for question_id, question in page['questions'].iteritems():
-                if question_id == qid and 'description' in question:
-                    return question['description']
+                if question_id == qid:
+                    return question
 
     def get_comments(self):
         """ Returns a list of all comments made on a draft in the format of :
@@ -3151,42 +3161,6 @@ class DraftRegistration(AddonModelMixin, StoredObject):
                 }
             })
         return all_comments
-
-    def get_flat_comments(self):
-        """ Returns a flat list of all comments made on a draft
-        """
-        flat_comments = list()
-        for question_id, value in self.registration_metadata.iteritems():
-            if 'comments' in value:
-                for comment in value['comments']:
-                    flat_comments.append(comment)
-        return flat_comments
-
-    def get_new_comments(self):
-        """ Returns a list of all comments admins haven't seen
-        In the same format as get_comments
-        """
-        comments = self.get_comments()
-
-        if comments:
-            for question_id, value in comments.iteritems():
-                for comment in value['comments']:
-                    if comment['adminHasSeen'] is False:
-                        comments.remove(question_id)
-
-        return comments
-
-    def has_new_comments(self):
-        """ Checks is a draft has comments that an admin hasn't seen
-        """
-        comments = self.get_flat_comments()
-
-        if comments:
-            for comment in comments:
-                if comment['adminHasSeen'] is False:
-                    return True
-
-        return False
 
     def register(self, auth):
 

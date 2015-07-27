@@ -573,8 +573,8 @@ class TestProjectViews(OsfTestCase):
     def test_register_template_page_with_invalid_template_name(self):
         url = self.project.web_url_for('node_register_template_page', template='invalid')
         res = self.app.get(url, expect_errors=True, auth=self.auth)
-        assert_equal(res.status_code, 404)
-        assert_in('Template not found', res)
+        # 302 because users are now redirected to the draft registration page
+        assert_equal(res.status_code, 302)
 
     # Regression test for https://github.com/CenterForOpenScience/osf.io/issues/1478
     @mock.patch('website.archiver.tasks.archive.si')

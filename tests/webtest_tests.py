@@ -415,7 +415,7 @@ class TestComponents(OsfTestCase):
         url = self.component.web_url_for('node_registrations')
         res = self.app.get(url, auth=self.user.auth)
         # New registration button is hidden
-        assert_in('New Registration', res)
+        assert_in('New Draft Registration', res)
 
 
 class TestPrivateLinkView(OsfTestCase):

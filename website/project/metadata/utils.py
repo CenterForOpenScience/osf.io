@@ -16,7 +16,7 @@ def serialize_draft_registration(draft, auth=None):
     return {
         'pk': draft._id,
         'branched_from': serialize_node(draft.branched_from, auth),
-        'initiator': serialize_user(draft.initiator),
+        'initiator': serialize_user(draft.initiator, full=True),
         'registration_metadata': draft.registration_metadata,
         'registration_schema': serialize_meta_schema(draft.registration_schema),
         'initiated': str(draft.datetime_initiated),

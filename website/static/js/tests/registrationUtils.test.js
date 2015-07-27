@@ -11,7 +11,7 @@ window.contextVars.currentUser = {
 var registrationUtils = require('js/registrationUtils');
 
 var utilities = registrationUtils.utilities;
-var Comment = registrationUtils.Comment;
+var Comment = registrationUtils.Comment; // jshint ignore:line
 var Question = registrationUtils.Question;
 var MetaSchema = registrationUtils.MetaSchema;
 var Draft = registrationUtils.Draft;
@@ -110,7 +110,7 @@ describe('Comment', () => {
                 lastModified: faker.date.past(),
                 value: faker.lorem.sentence()
             };
-            var comment = new Comment(data);
+            comment = new Comment(data);
             assert.isTrue(comment.saved());
         });
     });
@@ -135,7 +135,7 @@ describe('Comment', () => {
     describe('#viewComment', () => {
         it('adds a user id that is not the author to a the seenBy array', () => {
             var comment = new Comment();
-            var currentUser = window.contextVars.currentUser
+            var currentUser = window.contextVars.currentUser;
 
             var user = {
                 fullname: faker.name.findName(),
@@ -156,12 +156,12 @@ describe('Comment', () => {
             assert.isTrue(comment.seenBy().length === 2);
             assert.isTrue(comment.seenBy().indexOf(user.id) !== -1);
             assert.isTrue(comment.seenBy().indexOf(currentUser.id) !== -1);
-        })
-    })
+        });
+    });
     describe('#seenBy', () => {
         it('is a list of all user ids that have seen the comment', () => {
             var comment = new Comment();
-            var currentUser = window.contextVars.currentUser
+            var currentUser = window.contextVars.currentUser;
             assert.isTrue(comment.seenBy().length === 1);
             assert.isTrue(comment.seenBy().indexOf(currentUser.id) !== -1);
 
@@ -212,7 +212,7 @@ describe('Comment', () => {
             assert.isFalse(comment.isDeleted());
             comment.isDeleted(true);
             assert.isTrue(comment.isDeleted());
-            assert.equal(comment.value(), 'this comment was deleted');
+            assert.equal(comment.value(), '');
 
             var user = {
                 fullname: faker.name.findName(),
@@ -227,7 +227,7 @@ describe('Comment', () => {
             assert.isFalse(comment.isDeleted());
             comment.isDeleted(true);
             assert.isTrue(comment.isDeleted());
-            assert.equal(comment.value(), 'this comment was deleted');
+            assert.equal(comment.value(), '');
         });
     });
     describe('#author', () => {
