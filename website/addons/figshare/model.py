@@ -78,6 +78,8 @@ class AddonFigShareUserSettings(AddonUserSettingsBase):
         ret = super(AddonFigShareUserSettings, self).to_json(user)
         ret.update({
             'authorized': self.has_auth,
+            'name': self.owner.display_full_name(),
+            'profile_url': self.owner.profile_url,
         })
         return ret
 
@@ -383,22 +385,6 @@ class AddonFigShareNodeSettings(StorageAddonBase, AddonNodeSettingsBase):
                 ).format(url=url)
             #
             return message
-
-    def before_fork(self, node, user):
-        """
-
-        :param Node node:
-        :param User user:
-        :return str: Alert message
-
-        """
-        if self.user_settings and self.user_settings.owner == user:
-            return messages.BEFORE_FORK_OWNER.format(
-                category=node.project_or_component,
-            )
-        return messages.BEFORE_FORK_NOT_OWNER.format(
-            category=node.project_or_component,
-        )
 
     def after_fork(self, node, fork, user, save=True):
         """

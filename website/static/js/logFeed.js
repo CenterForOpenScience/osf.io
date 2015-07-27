@@ -114,6 +114,7 @@ var LogsViewModel = oop.extend(Paginator, {
         self.loading = ko.observable(false);
         self.logs = ko.observableArray(logs);
         self.url = url;
+        self.anonymousUserName = '<em>A user</em>';
 
         self.tzname = ko.pureComputed(function() {
             var logs = self.logs();
@@ -127,10 +128,7 @@ var LogsViewModel = oop.extend(Paginator, {
     //send request to get more logs when the more button is clicked
     fetchResults: function(){
         var self = this;
-        // Only show loading indicator for slow responses
-        var timeout = setTimeout(function() {
-            self.loading(true); // show loading indicator
-        }, 500);
+        self.loading(true); // show loading indicator
 
         return $.ajax({
             type: 'get',
@@ -140,10 +138,9 @@ var LogsViewModel = oop.extend(Paginator, {
             },
             cache: false
         }).done(function(response) {
-            self.loading(false);
             // Initialize LogViewModel
-            self.logs.removeAll();
             var logModelObjects = createLogs(response.logs); // Array of Log model objects
+            self.logs.removeAll();
             for (var i=0; i<logModelObjects.length; i++) {
                 self.logs.push(logModelObjects[i]);
             }
@@ -152,10 +149,8 @@ var LogsViewModel = oop.extend(Paginator, {
             self.addNewPaginators();
         }).fail(
             $osf.handleJSONError
-        ).fail(function() {
+        ).always( function (){
             self.loading(false);
-        }).always( function (){
-            clearTimeout(timeout); // clear timeout function
         });
 
     }

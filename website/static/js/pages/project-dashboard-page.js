@@ -70,7 +70,7 @@ $(document).ready(function () {
                     return [
                         {
                             title: 'Name',
-                            width : '90%',
+                            width : '100%',
                             sort : true,
                             sortType : 'text'
                         }
@@ -202,4 +202,7 @@ $(document).ready(function () {
     if (window.contextVars.node.isRegistration && window.contextVars.node.tags.length === 0) {
         $('div.tags').remove();
     }
+    $('a.btn').mouseup(function(){
+        $(this).blur();
+    });
 });

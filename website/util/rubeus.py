@@ -447,7 +447,7 @@ class NodeFileCollector(object):
             # TODO: Remove safe_unescape_html when mako html safe comes in
             'name': u'{0}: {1}'.format(node.project_or_component.capitalize(), sanitize.safe_unescape_html(node.title))
             if can_view
-            else u'Private Component',
+            else (u'Private Component' if node.primary else u'Private Link'),
             'category': node.category,
             'kind': FOLDER,
             'permissions': {

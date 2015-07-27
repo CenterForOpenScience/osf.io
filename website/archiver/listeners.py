@@ -14,12 +14,14 @@ from website.archiver import signals as archiver_signals
 from website.project import signals as project_signals
 from website.project import utils as project_utils
 
+
 def node_and_primary_descendants(node):
     """Gets an iterator for a node and all of its visible descendants
 
     :param node Node: target Node
     """
     return itertools.chain([node], node.get_descendants_recursive(lambda n: n.primary))
+
 
 @project_signals.after_create_registration.connect
 def after_register(src, dst, user):
@@ -37,6 +39,7 @@ def after_register(src, dst, user):
     handlers.enqueue_task(
         celery.chain(*archive_tasks)
     )
+
 
 @project_signals.archive_callback.connect
 @fail_archive_on_error
@@ -75,6 +78,7 @@ def archive_callback(dst):
             root.registered_user,
             dst.archive_job.target_addons,
         )
+
 
 @archiver_signals.archive_fail.connect
 def archive_fail(dst, errors):
