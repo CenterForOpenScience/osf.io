@@ -7,7 +7,7 @@
             <form class="form">
                 <div class="modal-header">
                     <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
-                    <h3 class="modal-title">Add new wiki page</h3>
+                    <h3 class="modal-title">Add new wiki page?</h3>
                 </div><!-- end modal-header -->
                 <div class="modal-body">
                     <div class='form-group'>
