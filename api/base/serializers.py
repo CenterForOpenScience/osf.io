@@ -4,6 +4,7 @@ import re
 from rest_framework import serializers as ser
 from website.util.sanitize import strip_html
 from api.base.utils import absolute_reverse, waterbutler_url_for
+from rest_framework.exceptions import ValidationError
 
 
 def _rapply(d, func, *args, **kwargs):
@@ -209,10 +210,49 @@ class JSONAPISerializer(ser.Serializer):
         return ret
 
 
-def _params_url_val(val, obj, serializer, request, **kwargs):
+class NodeIncludeSerializer(JSONAPISerializer):
+
+    id = ser.CharField(read_only=True, source='_id')
+    title = ser.CharField(required=True)
+    description = ser.CharField(required=False, allow_blank=True, allow_null=True)
+    links = LinksFieldWIthSelfLink({'html': 'absolute_url'})
+
+    def absolute_url(self, obj):
+        return obj.absolute_url
+
+    class Meta:
+        type_ = 'nodes'
+
+
+class UserIncludeSerializer(JSONAPISerializer):
+
+    id = ser.CharField(read_only=True, source='_id')
+    fullname = ser.CharField(help_text='Display name used in the general user interface')
+    links = LinksFieldWIthSelfLink({'html': 'absolute_url'})
+
+    def absolute_url(self, obj):
+        return obj.absolute_url
+
+    class Meta:
+        type_ = 'users'
+
+
+class OtherObjectIncludeSerializer(JSONAPISerializer):
+
+    id = ser.CharField(read_only=True, source='_id')
+    links = LinksFieldWIthSelfLink({'html': 'absolute_url'})
+
+    def absolute_url(self, obj):
+        return obj.absolute_url
+
+    class Meta:
+        type_ = 'objects'
+
+
+def _params_url_val(val, obj, serializer, request, allowed_params, **kwargs):
 
     if isinstance(val, Attribute):
-        return val.resolve_attribute(obj, request)
+        return val.resolve_attribute(obj, request, allowed_params)
     if isinstance(val, Link):  # If a Link is passed, get the url value
         return val.resolve_url(obj, **kwargs)
     elif isinstance(val, basestring):  # if a string is passed, it's a method of the serializer
@@ -228,7 +268,12 @@ class AttributeLinksField(LinksField):
         self.objects = objects
 
     def to_representation(self, obj, link_endpoint=None, link_kwargs=None):
-        ret = _rapply(self.objects, _params_url_val, obj=obj, serializer=self.parent, request=self.context.get('request'))
+        if hasattr(obj, 'title'):
+            allowed_params = ['children', 'contributors', 'pointers', 'registrations']
+        else:
+            allowed_params = ['nodes']
+        ret = _rapply(self.objects, _params_url_val, obj=obj, serializer=self.parent,
+                      request=self.context.get('request'), allowed_params=allowed_params)
         if hasattr(obj, 'get_absolute_url'):
             ret['self'] = obj.get_absolute_url()
         if hasattr(obj, 'link'):
@@ -242,23 +287,31 @@ class Attribute(object):
         self.name = name
         self.query = query
 
-    def resolve_attribute(self, obj, request):
+    def resolve_attribute(self, obj, request, allowed_params):
+        ret = {}
         if self.query:
             object_list = getattr(obj, self.query)
         else:
             get_object = getattr(self, 'get_{}'.format(self.name))
             object_list = get_object(obj)
         if 'include' in request.query_params:
-            if self.name in request.query_params['include'].split():
-                return self.process_objects(obj, object_list)
-        ret = {'count': len(object_list)}
+            include_params = request.query_params['include'].split(',')
+            for param in include_params:
+                if param not in allowed_params:
+                    raise ValidationError('{} is not a valid additional query parameter.'.format(param))
+            if self.name in include_params:
+                ret = self.process_objects(object_list)
+        ret['count'] = len(object_list)
         return ret
 
-    def process_objects(self, obj, object_list):
-        ret = {}
+    def process_objects(self, object_list):
+        objects_serialized = []
         for o in object_list:
-            ret[o._id] = 'test'
-        return ret
+            if hasattr(o, 'title'):
+                objects_serialized.append(NodeIncludeSerializer(o).data)
+            else:
+                objects_serialized.append(UserIncludeSerializer(o).data)
+        return {'list': objects_serialized}
 
     def get_pointers(self, obj):
         return []
