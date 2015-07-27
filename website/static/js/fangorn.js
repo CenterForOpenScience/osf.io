@@ -89,7 +89,7 @@ function findByTempID(parent, tmpID) {
 
 function cancelUploads (row) {
     var tb = this;
-    var filesArr = tb.dropzone.getQueuedFiles();
+    var filesArr = tb.dropzone.getUploadingFiles();
     for (var i = 0; i < filesArr.length; i++) {
         var j = filesArr[i];
         if(!row){
