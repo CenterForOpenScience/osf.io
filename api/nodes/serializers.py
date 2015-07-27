@@ -26,7 +26,7 @@ class NodeSerializer(JSONAPISerializer):
 
     links = AttributeLinksField({
         'html': 'get_absolute_url',
-        'children': Attribute('nodes', link_endpoint='nodes:node-detail', link_kwargs={'node_id': '<pk>'}),
+        'children': Attribute('children', 'nodes', 'node_id', link_endpoint='nodes:node-detail', link_kwargs={'node_id': '<pk>'}),
         'contributors': 'get_contributors',
         'pointers': 'get_pointers',
         'registrations': 'get_registrations',
