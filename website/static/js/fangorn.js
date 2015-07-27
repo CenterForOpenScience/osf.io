@@ -762,7 +762,9 @@ function _fangornDropzoneError(treebeard, file, message, xhr) {
             child.removeSelf();
         }
     }
-    $osf.growl('Error', msgText);
+    if (msgText !== 'Upload canceled.') {
+        $osf.growl('Error', msgText);
+    }
     treebeard.options.uploadInProgress = false;
 }
 
