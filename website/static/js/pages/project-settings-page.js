@@ -60,6 +60,22 @@ $(document).ready(function() {
         ProjectSettings.getConfirmationCode(ctx.node.nodeType);
     });
 
+    $('#discussionsSub').on('click', function() {
+        ProjectSettings.subscribeDiscussions(ctx.node.nodeType);
+    });
+
+    $('#discussionsUnsub').on('click', function() {
+        ProjectSettings.unsubscribeDiscussions(ctx.node.nodeType);
+    });
+
+    $('#enableDiscussions').on('click', function() {
+        ProjectSettings.enableDiscussions(ctx.node.nodeType);
+    });
+
+    $('#disableDiscussions').on('click', function() {
+        ProjectSettings.disableDiscussions(ctx.node.nodeType);
+    });
+
     // TODO: Knockout-ify me
     $('#commentSettings').on('submit', function() {
         var $commentMsg = $('#configureCommentingMessage');

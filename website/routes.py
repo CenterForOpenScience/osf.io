@@ -1420,6 +1420,64 @@ def make_url_map(app):
             json_renderer,
         ),
 
+                Rule(
+            [
+                '/project/<pid>/discussions/',
+                '/project/<pid>/node/<nid>/discussions/',
+            ],
+            'post',
+            project_views.discussions.enable,
+            json_renderer,
+        ),
+
+        Rule(
+            [
+                '/project/<pid>/discussions/',
+                '/project/<pid>/node/<nid>/discussions/',
+            ],
+            'delete',
+            project_views.discussions.disable,
+            json_renderer,
+        ),
+
+        Rule(
+            [
+                '/project/<pid>/discussions/sub/',
+                '/project/<pid>/node/<nid>/discussions/sub/',
+            ],
+            'post',
+            project_views.discussions.subscribe,
+            json_renderer,
+        ),
+
+        Rule(
+            [
+                '/project/<pid>/discussions/sub/',
+                '/project/<pid>/node/<nid>/discussions/sub/',
+            ],
+            'delete',
+            project_views.discussions.unsubscribe,
+            json_renderer,
+        ),
+
+        Rule(
+            [
+                '/discussions/messages/',
+            ],
+            'post',
+            project_views.discussions.route_message,
+            json_renderer,
+        ),
+
+        # Rule(
+        #     [
+        #         '/discussions/unsubscribe/',
+        #     ],
+        #     'post',
+        #     project_views.node.unsubscribe_by_mail,
+        #     json_renderer,
+        # ),
+
         # Invite Users
         Rule(
             [

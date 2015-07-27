@@ -141,4 +141,74 @@ ProjectSettings.getConfirmationCode = function(nodeType) {
     });
 };
 
+ProjectSettings.subscribeDiscussions = function(nodetype) {
+    var request = $.ajax({
+        type: 'post',
+        dataType: 'json',
+        url: nodeApiUrl + "discussions/sub/"
+    });
+    request.done(function() {
+        window.location.reload();
+    });
+    request.fail($osf.handleJSONError);
+};
+
+ProjectSettings.unsubscribeDiscussions = function(nodeType) {
+
+    var message = '<p>You may miss important messages from other contributors.';
+
+    bootbox.confirm({
+        title: 'Are you sure you want to unsubscribe from this ' + nodeType + '\'s mailing list?',
+        message: message,
+        callback: function (result) {
+            if (result) {
+                var request = $.ajax({
+                    type: 'delete',
+                    dataType: 'json',
+                    url: nodeApiUrl + "discussions/sub/"
+                });
+                request.done(function () {
+                    window.location.reload();
+                });
+                request.fail($osf.handleJSONError);
+            }
+        }
+    });
+};
+
+ProjectSettings.enableDiscussions = function(nodeType) {
+    var request = $.ajax({
+        type: 'post',
+        dataType: 'json',
+        url: nodeApiUrl + "discussions/"
+    });
+    request.done(function() {
+        window.location.reload();
+    });
+    request.fail($osf.handleJSONError);
+};
+
+ProjectSettings.disableDiscussions = function(nodeType) {
+
+    var message = "<p>Disabling this project's mailing list will prevent all members from recieving or sending to the mailing list location.";
+
+    bootbox.confirm({
+        title: 'Are you sure you want to delete this ' + nodeType + '\'s mailing list?',
+        message: message,
+        callback: function (result) {
+            if (result) {
+                var request = $.ajax({
+                    type: 'delete',
+                    dataType: 'json',
+                    url: nodeApiUrl + "discussions/"
+                });
+                request.done(function () {
+                    window.location.reload();
+                });
+                request.fail($osf.handleJSONError);
+            }
+        }
+    });
+};
+
 module.exports = ProjectSettings;

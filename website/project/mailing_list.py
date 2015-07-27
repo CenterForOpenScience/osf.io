@@ -107,14 +107,12 @@ def remove_member(node_id, email):
     if res.status_code != 200:
         raise HTTPError(400)
 
-def update_member(node_id, user, old_email):
+def update_member(node_id, email, subscription):
     res = requests.put(
-        'https://api.mailgun.net/v3/lists/{0}/members/{1}'.format(address(node_id), old_email),
+        'https://api.mailgun.net/v3/lists/{0}/members/{1}'.format(address(node_id), email),
         auth=('api', MAILGUN_API_KEY),
         data={
-            'subscribed': user['subscribed'],
-            'address': user['email'],
-            'name': user['name'],
+            'subscribed': subscription,
         }
     )
     if res.status_code != 200:
@@ -154,6 +152,12 @@ def update_list(self, node_id, node_title, list_enabled, emails, subscriptions):
                 emails_to_remove = list_emails.difference(emails)
                 for email in emails_to_remove:
                     remove_member(node_id, email)
+
+                list_subscriptions = {member['address']: member['subscribed'] for member in members}
+
+                for email in emails:
+                    if subscriptions[email] != list_subscriptions[email]:
+                        update_member(node_id, email, subscriptions[email])
 
             else:
                 create_list(node_id, node_title, emails, subscriptions)

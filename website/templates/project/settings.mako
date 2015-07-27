@@ -19,17 +19,15 @@
     <!-- Begin left column -->
     <div class="col-sm-3 affix-parent scrollspy">
 
-        % if 'write' in user['permissions']:
+        % if user['has_read_permissions']:
 
             <div class="panel panel-default osf-affix" data-spy="affix" data-offset-top="60" data-offset-bottom="263"><!-- Begin sidebar -->
                 <ul class="nav nav-stacked nav-pills">
 
                     % if not node['is_registration']:
-                        <li><a href="#configureNodeAnchor">Configure ${node['node_type'].capitalize()}</a></li>
-
-
-
                         % if 'write' in user['permissions']:
+                            <li><a href="#configureNodeAnchor">Configure ${node['node_type'].capitalize()}</a></li>
+
                             <li><a href="#selectAddonsAnchor">Select Add-ons</a></li>
 
                             % if addon_enabled_settings:
@@ -43,6 +41,7 @@
                             <li><a href="#configureCommentingAnchor">Configure Commenting</a></li>
                         % endif
 
+                        <li><a href="#configureDiscussionsAnchor">Configure Discussions</a></li>
 
                     % endif
 
@@ -270,7 +269,52 @@
 
         % endif  ## End Configure Commenting
 
+        % if user['has_read_permissions']: ## Begin Configure Discussions
 
+            % if not node['is_registration']:
+
+                <div class="panel panel-default">
+                    <span id="configureDiscussionsAnchor" class="anchor"></span>
+
+                    <div class="panel-heading clearfix">
+                        <h3 class="panel-title">Configure Discussions</h3>
+                    </div>
+
+                        % if discussions['enabled']:
+                            <div class="help-block" style="padding-left: 15px">
+                                <p>This ${node['node_type']} has a mailing list at <a href="mailto: ${node['id']}@osf.io">${node['id']}@osf.io</a>.</p>
+                            </div>
+                            <div class="panel-body">
+                                % if discussions['user_subscribed']:
+                                    <button id="discussionsUnsub" class="btn btn-warning">Unsubscribe</button>
+                                % else:
+                                    <button id="discussionsSub" class="btn btn-primary">Subscribe</button>
+                                % endif
+                            </div>
+                            % if 'admin' in user['permissions']:
+                                <div class="panel-body">
+                                    <button id="disableDiscussions" class="btn btn-danger">Disable</button>
+                                </div>
+                            % endif
+                            <div></div>
+                        % else:
+                            <div class="help-block" style="padding-left: 15px">
+                                <p>This ${node['node_type']} does not currently have a mailing list.</p>
+                            </div>
+                            <div class="panel-body">
+                                % if 'admin' in user['permissions']:
+                                    <div>
+                                        <button id="enableDiscussions" class="btn btn-success">Enable</button>
+                                    </div>
+                                % endif
+                            </div>
+                        % endif
+                    </div>
+
+                </div>
+
+            % endif
+        % endif
 
         % if 'admin' in user['permissions']:  ## Begin Retract Registration
 

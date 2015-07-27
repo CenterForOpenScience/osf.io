@@ -25,14 +25,14 @@ from website.models import Node
 @must_be_valid_project
 @must_have_permission(ADMIN)
 @must_not_be_registration
-def discussions_enable(node, **kwargs):
+def enable(node, **kwargs):
     node.discussions.enable()
 
 
 @must_be_valid_project
 @must_have_permission(ADMIN)
 @must_not_be_registration
-def discussions_disable(node, **kwargs):
+def disable(node, **kwargs):
     node.discussions.disable()
 
 
@@ -55,7 +55,7 @@ def unsubscribe(node, auth, **kwargs):
 ###############################################################################
 
 
-def receive_message(**kwargs):
+def route_message(**kwargs):
     message = request.form
     attachments = request.files.values()
     node_id = re.search(r'[a-z0-9]*@', message['To']).group(0)[:-1]
