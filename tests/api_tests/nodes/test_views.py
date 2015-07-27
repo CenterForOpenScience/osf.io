@@ -100,7 +100,6 @@ class TestNodeList(ApiTestCase):
         assert_in(self.public._id, ids)
         assert_not_in(self.private._id, ids)
 
-        Node.remove()
 
 
 class TestNodeFiltering(ApiTestCase):
@@ -950,8 +949,6 @@ class TestNodeChildrenList(ApiTestCase):
         private_component = NodeFactory(parent=self.project)
         res = self.app.get(self.private_project_url, auth=self.basic_auth)
         assert_equal(len(res.json['data']), 1)
-
-        Node.remove()
 
 
 class TestNodePointersList(ApiTestCase):
