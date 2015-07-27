@@ -187,7 +187,7 @@ def mongoserver(daemon=False, config=None):
         platform = str(sys.platform).lower()
         config = platform_configs.get(platform)
     port = settings.DB_PORT
-    cmd = 'mongod --port {0}'.format(port)
+    cmd = 'ulimit -n 2048 && mongod --port {0}'.format(port)
     if config:
         cmd += ' --config {0}'.format(config)
     if daemon:
