@@ -1,4 +1,6 @@
-import urllib as url
+import httplib
+import urllib
+import math
 
 import post
 from file_handler import FileHandler
@@ -6,16 +8,12 @@ from render import Renderer
 from HTMLParser import HTMLParser
 import ghostpy._compiler as compiler
 
-from framework.exceptions import HTTPError, PermissionsError
-
-from framework.auth.decorators import collect_auth
-
 from website.models import User, Node
-
-import httplib
-from website.project.utils import serialize_node
 from website.util import rubeus
-import math
+from website.project.utils import serialize_node
+from framework.exceptions import HTTPError, PermissionsError
+from framework.auth.decorators import collect_auth
+from framework.flask import redirect
 
 
 def get_posts(node):
@@ -24,23 +22,30 @@ def get_posts(node):
     return posts
 
 
-def blog_view_pid(pid, int=None):
-    return _blog_view(pid, int=int, is_profile=False)
-
-
-def blog_view_id(uid, int=None):
-    return _blog_view(uid, int=int, is_profile=True)
-
-
-def _blog_view(guid, int=None, is_profile=False):
+def blog_view(guid, int=None):
+    if int == '1':
+        return redirect("/"+guid+"/blog/")
+    if int is None:
+        int=1
+    guid = resolve_guid(guid)
     compiler._ghostpy_ = compiler.reset()
     compiler._ghostpy_['context'].append('index')
-    if is_profile:
-        guid = get_blog_dir(guid)
     posts = render(guid, file=None, page=int)
     return {
         'posts': posts
     }
+
+
+def post_view(guid, bid):
+    guid = resolve_guid(guid)
+    compiler._ghostpy_ = compiler.reset()
+    compiler._ghostpy_['context'].append('post')
+    blog_file = urllib.unquote(bid).decode('utf8') + ".md"
+    post = render(guid, blog_file, page=None)
+    return {
+        'post': post
+    }
+
 
 def render(guid, file=None, page=None):
     node = Node.load(guid)
@@ -77,68 +82,30 @@ def render(guid, file=None, page=None):
     return html
 
 
-def _post_view(guid, bid, is_profile=False):
-    compiler._ghostpy_ = compiler.reset()
-    compiler._ghostpy_['context'].append('post')
-    blog_file = url.unquote(bid).decode('utf8') + ".md"
-    if is_profile:
-        guid = get_blog_dir(guid)
-    post = render(guid, blog_file, page=None)
-    return {
-        'post': post
-    }
-
-
-def post_view_id(uid, bid):
-    return _post_view(uid, bid, is_profile=True)
-
-
-def post_view_pid(pid, bid):
-    return _post_view(pid, bid, is_profile=False)
-
-
-def get_blog_dir(guid):
-    user = User.load(guid)
-    return user.blog_guid
-
-
 @collect_auth
-def new_post(auth, guid):
-    user = User.load(guid)
-    if auth.user != user:
-        raise PermissionsError
-    guid = get_blog_dir(guid)
-    node = Node.load(guid)
-    return create_post(node, auth)
-
-@collect_auth
-def new_project_post(auth, guid):
+def resolve_guid(guid, auth, permissions_needed=False):
     node = Node.load(guid)
     if node is not None:
         user = auth.user
-        if user not in node.contributors:
+        if user not in node.contributors and permissions_needed:
             raise PermissionsError
     else:
         user = User.load(guid)
-        if auth.user != user:
+        if auth.user != user and permissions_needed:
             raise PermissionsError
-        node = Node.load(get_blog_dir(guid))
-    return create_post(node, auth)
+        guid = user.blog_guid
+    return guid
 
 
 @collect_auth
-def edit_post(auth, uid, bid):
-    user = User.load(uid)
-    node = Node.load(user.blog_guid)
-    fh = FileHandler(node)
-    blog = fh.get_post(bid)
-    blog_dict = post.parse_header(blog, node)
-    if auth.user != user:
-        raise PermissionsError
-    return create_post(node, auth, blog_dict)
-
-
-def create_post(node, auth, blog_dict=None):
+def edit_or_create_post(guid, auth, bid=None):
+    node = Node.load(resolve_guid(guid))
+    if bid is not None:
+        fh = FileHandler(node)
+        blog = fh.get_post(bid)
+        blog_dict = post.parse_header(blog, node)
+    else:
+        blog_dict = None
     node_addon = node.get_addon('osfstorage')
 
     if not node_addon:
@@ -159,10 +126,6 @@ def create_post(node, auth, blog_dict=None):
             'message_long': 'The add-on containing this file is no longer configured.'
         })
 
-    return addon_view_file(auth, node, blog_dict)
-
-
-def addon_view_file(auth, node, blog_dict):
     ret = serialize_node(node, auth, primary=True)
     if blog_dict is not None:
         name=blog_dict['file']
@@ -181,8 +144,7 @@ def addon_view_file(auth, node, blog_dict):
     return ret
 
 def get_pagination(page, total):
-    #prev = newer posts
-    #next = older posts
+    ### prev = newer posts,  next = older posts
     prev = int(page) - 1
     next = int(page) + 1
     limit = 10

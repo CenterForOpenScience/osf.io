@@ -1,12 +1,7 @@
-from markdown2 import markdown as md
-import markdown
 from file_handler import FileHandler
-import requests
-from website.models import User, Node
-# from website.project.model import Node
+from website.models import User
 from website.profile.utils import get_gravatar
 import subprocess
-
 
 
 def parse_blog(posts, node):
@@ -90,7 +85,7 @@ def parse_posts(posts, guid):
     index = []
     for post in posts:
         post_dict = parse_header(post, guid)
-        post_dict['content'] = md(post_dict['content'])
+        post_dict['content'] = _md(post_dict['content'])
         index.append(post_dict)
     return index
 

@@ -3,11 +3,17 @@
 ## Use full page width
 <%def name="container_class()">container-xxl</%def>
 
-<%def name="title()">New Post</%def>
+<%def name="title()">
+    % if blog is None:
+        New Post
+    % else:
+        Edit Post
+    % endif
+</%def>
 <div class="row">
   <div class="col-sm-12">
     <h2 class="break-word">
-        % if blog_dict is None:
+        % if blog is None:
             New Post
         % else:
             Edit Post

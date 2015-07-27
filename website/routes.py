@@ -482,22 +482,12 @@ def make_url_map(app):
     ### Blog ###
 
     process_rules(app, [
-        Rule('/profile/<uid>/blog/<int>/', 'get', blog_views.blog_view_id,
+        Rule(['/profile/<guid>/blog/<int>/', '/project/<guid>/blog/<int>/', '/profile/<guid>/blog/', '/project/<guid>/blog/'], 'get', blog_views.blog_view,
             OsfWebRenderer('blog.mako')),
-        Rule('/profile/<uid>/blog/post/<path:bid>/', 'get', blog_views.post_view_id,
+        Rule(['/profile/<guid>/blog/post/<path:bid>/', '/project/<guid>/blog/post/<path:bid>/'], 'get', blog_views.post_view,
              OsfWebRenderer('post.mako')),
-        Rule('/project/<pid>/blog/<int>/', 'get', blog_views.blog_view_pid,
-            OsfWebRenderer('blog.mako')),
-        Rule('/project/<pid>/blog/post/<path:bid>/', 'get', blog_views.post_view_pid,
-             OsfWebRenderer('post.mako')),
-        Rule(['/profile/<guid>/blog/new/', '/project/<guid>/blog/new'], 'get', blog_views.new_post,
-             OsfWebRenderer('add_blog_post.mako')),
-        # Rule('/project/<pid>/blog/new/', 'get', blog_views.new_project_post,
-        #     OsfWebRenderer('add_blog_post.mako')),
-        Rule('/profile/<guid>/blog/edit/<path:bid>/', 'get', blog_views.edit_post,
-            OsfWebRenderer('add_blog_post.mako')),
-        Rule('/project/<guid>/blog/edit/<path:bid>/', 'get', blog_views.edit_post,
-            OsfWebRenderer('add_blog_post.mako'))
+        Rule(['/profile/<guid>/blog/new/', '/project/<guid>/blog/new/', '/profile/<guid>/blog/edit/<path:bid>/', '/project/<guid>/blog/edit/<path:bid>/'], 'get', blog_views.edit_or_create_post,
+             OsfWebRenderer('edit_post.mako'))
     ])
 
     ### Profile ###
