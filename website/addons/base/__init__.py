@@ -771,14 +771,42 @@ class AddonNodeSettingsBase(AddonSettingsBase):
         pass
 
     def before_fork(self, node, user):
-        """
-
+        """Return warning text to display if user auth will be copied to a
+        fork.
         :param Node node:
-        :param User user:
-        :returns: Alert message
-
+        :param Uder user
+        :returns Alert message
         """
-        pass
+
+        if hasattr(self, "user_settings"):
+            if self.user_settings is None:
+                return (
+                    u'Because you have not configured the authorization for this {addon} add-on, this '
+                    u'{category} will not transfer your authentication to '
+                    u'the forked {category}.'
+                ).format(
+                    addon=self.config.full_name,
+                    category=node.project_or_component,
+                )
+
+            elif self.user_settings and self.user_settings.owner == user:
+                return (
+                    u'Because you have authorized the {addon} add-on for this '
+                    u'{category}, forking it will also transfer your authentication to '
+                    u'the forked {category}.'
+                ).format(
+                    addon=self.config.full_name,
+                    category=node.project_or_component,
+                )
+            else:
+                return (
+                    u'Because the {addon} add-on has been authorized by a different '
+                    u'user, forking it will not transfer authentication to the forked '
+                    u'{category}.'
+                ).format(
+                    addon=self.config.full_name,
+                    category=node.project_or_component,
+                )
 
     def after_fork(self, node, fork, user, save=True):
         """
@@ -1003,31 +1031,6 @@ class AddonOAuthNodeSettingsBase(AddonNodeSettingsBase):
                 ).format(url=url)
             #
             return message
-
-    def before_fork_message(self, node, user):
-        """Return warning text to display if user auth will be copied to a
-        fork.
-        """
-        if self.user_settings and self.user_settings.owner == user:
-            return (
-                u'Because you have authorized the {addon} add-on for this '
-                u'{category}, forking it will also transfer your authentication token to '
-                u'the forked {category}.'
-            ).format(
-                addon=self.config.full_name,
-                category=node.project_or_component,
-            )
-        return (
-            u'Because the {addon} add-on has been authorized by a different '
-            u'user, forking it will not transfer authentication token to the forked '
-            u'{category}.'
-        ).format(
-            addon=self.config.full_name,
-            category=node.project_or_component,
-        )
-
-    # backwards compatibility
-    before_fork = before_fork_message
 
     def after_fork(self, node, fork, user, save=True):
         """After forking, copy user settings if the user is the one who authorized

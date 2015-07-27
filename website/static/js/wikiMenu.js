@@ -26,6 +26,9 @@ function resolveIcon(item) {
         return m('span', { 'class' : icons[category]});
     }
     if (item.data.kind === 'component' && item.parent().data.title === 'Component Wiki Pages') {
+        if(item.data.pointer) {
+            return m('i.fa.fa-link', '');
+        }
         return returnView(item.data.category);
     }
     if (item.data.type === 'heading') {

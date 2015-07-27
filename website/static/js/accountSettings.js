@@ -177,6 +177,7 @@ var UserProfileViewModel = oop.extend(ChangeMessageMixin, {
         this.changeMessage('', 'text-info');
         var newEmail = this.emailInput().toLowerCase().trim();
         if(newEmail){
+
             var email = new UserEmail({
                 address: newEmail
             });
@@ -224,6 +225,11 @@ var UserProfileViewModel = oop.extend(ChangeMessageMixin, {
                             'success');
                     });
                 }
+            },
+            buttons:{
+                confirm:{
+                    label:'Resend'
+                }
             }
         });
     },
@@ -240,6 +246,12 @@ var UserProfileViewModel = oop.extend(ChangeMessageMixin, {
                         self.client.update(self.profile()).done(function () {
                             $osf.growl('Email Removed', '<em>' + email.address() + '</em>', 'success');
                         });
+                    }
+                },
+                buttons:{
+                    confirm:{
+                        label:'Remove',
+                        className:'btn-danger'
                     }
                 }
             });
@@ -298,6 +310,12 @@ var DeactivateAccountViewModel = oop.defclass({
                 if (confirmed) {
                     return self._requestDeactivation();
                 }
+            },
+            buttons:{
+                confirm:{
+                    label:'Request',
+                    className:'btn-danger'
+                }
             }
         });
     }
@@ -338,6 +356,11 @@ var ExportAccountViewModel = oop.defclass({
             callback: function(confirmed) {
                 if (confirmed) {
                     return self._requestExport();
+                }
+            },
+            buttons:{
+                confirm:{
+                    label:'Request'
                 }
             }
         });

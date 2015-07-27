@@ -43,6 +43,12 @@ var AddonPermissionsTable = {
                             }
                         });
                     }
+                },
+                buttons:{
+                    confirm:{
+                        label:'Remove',
+                        className:'btn-danger'
+                    }
                 }
             });
     });

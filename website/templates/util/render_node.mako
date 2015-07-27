@@ -52,14 +52,19 @@
                     <i class="fa fa-times remove-pointer" data-id="${summary['id']}" data-toggle="tooltip" title="Remove link"></i>
                     <i class="fa fa-code-fork" onclick="NodeActions.forkPointer('${summary['id']}', '${summary['primary_id']}');" data-toggle="tooltip" title="Fork this ${summary['node_type']} into ${node['node_type']} ${node['title']}"></i>
                 % endif
-                <i id="icon-${summary['id']}" class="pointer fa fa-plus" onclick="NodeActions.openCloseNode('${summary['id']}');" data-toggle="tooltip" title="More"></i>
+                <i id="icon-${summary['id']}" class="pointer fa fa-angle-down" onclick="NodeActions.openCloseNode('${summary['id']}');" style="font-weight:bold;"></i>
             </div>
             % endif
         </h4>
 
         % if summary['show_path'] and summary['node_type'] == 'component':
             <div style="padding-bottom: 10px">
-                ${summary['parent_title'] if summary['parent_is_public'] else "<em>-- private project --</em>"} / <b>${summary['title']}</b>
+                % if summary['parent_is_public']:
+                    ${summary['parent_title']}
+                % else:
+                    <em>-- private project --</em>
+                % endif
+                 / <b>${summary['title']}</b>
             </div>
         % endif
 
