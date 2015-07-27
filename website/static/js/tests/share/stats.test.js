@@ -37,9 +37,6 @@ describe('share/stats', () => {
         it('builds correct query, aggregation and filters for a sourcesByDates aggregation', () => {
             var returnedAgg = Stats.sourcesByDatesAgg();
             var requiredAgg = {
-                'query': {
-                  'match_all': {}
-                },
                 'aggregations': {
                   'sourcesByTimes': {
                     'terms': {
@@ -50,24 +47,37 @@ describe('share/stats', () => {
                     },
                     'aggregations': {
                       'articlesOverTime': {
-                        'date_histogram': {
-                          'field': 'providerUpdatedDateTime',
-                          'interval': 'week',
-                          'min_doc_count': 0,
-                          'extended_bounds': {
-                            'min': 1429562338929,
-                            'max': 1437424738929
-                          }
+                          'aggregations': {
+                              'articlesOverTime': {
+                                'date_histogram': {
+                                    'field': 'providerUpdatedDateTime',
+                                    'interval': 'week',
+                                    'min_doc_count': 0,
+                                    'extended_bounds': {
+                                        'min': 1429562338929,
+                                        'max': 1437424738929
+                                    }
+                                }
+                              }
+                            },
+                            'filter': {
+                                'range': {
+                                    'providerUpdatedDateTime': {
+                                        'gte': 1429562338929,
+                                        'lte': 1437424738929
+                                    }
+                                }
+                            }
                         }
-                      }
                     }
                   }
                 },
-                'filters': {}
             };
 
-            requiredAgg.aggregations.sourcesByTimes.aggregations.articlesOverTime.date_histogram.extended_bounds = returnedAgg.aggregations.sourcesByTimes.aggregations.articlesOverTime.date_histogram.extended_bounds;
-            var diffInMs = requiredAgg.aggregations.sourcesByTimes.aggregations.articlesOverTime.date_histogram.extended_bounds.max-returnedAgg.aggregations.sourcesByTimes.aggregations.articlesOverTime.date_histogram.extended_bounds.min;
+
+            requiredAgg.aggregations.sourcesByTimes.aggregations.articlesOverTime.aggregations.articlesOverTime.date_histogram.extended_bounds = returnedAgg.aggregations.sourcesByTimes.aggregations.articlesOverTime.aggregations.articlesOverTime.date_histogram.extended_bounds;
+            requiredAgg.aggregations.sourcesByTimes.aggregations.articlesOverTime.filter.range.providerUpdatedDateTime = returnedAgg.aggregations.sourcesByTimes.aggregations.articlesOverTime.filter.range.providerUpdatedDateTime ;
+            var diffInMs = requiredAgg.aggregations.sourcesByTimes.aggregations.articlesOverTime.aggregations.articlesOverTime.date_histogram.extended_bounds.max - returnedAgg.aggregations.sourcesByTimes.aggregations.articlesOverTime.aggregations.articlesOverTime.date_histogram.extended_bounds.min;
             var testDate = new Date(0);
             testDate.setUTCSeconds(diffInMs/1000);
             assert.equal(testDate.getMonth(),3);
