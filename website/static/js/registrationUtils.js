@@ -18,7 +18,6 @@ var currentUser = window.contextVars.currentUser || {
     name: 'Anonymous'
 };
 
-
 /**
  * @class Comment
  * Model for storing/editing/deleting comments on form fields
@@ -122,17 +121,40 @@ $(document).keydown(function(e) {
     }
 });
 
-var validate = function(checks, value) {
+var validate = function(checks, value, required) {
+    required = required || false;        
     var valid = true;
+    var blank = $osf.isBlank(value);
+    if (required && blank) {
+        return {
+            status: false, 
+            messages: ['This field is required']
+        };
+    }
+    else if (!required && blank) {
+        return {
+            status: true
+        };            
+    }
+    var messages = [];
     $.each(checks, function(i, check) {
-        valid = valid && check(value);
+        var passed = check.fn(value);
+        if (!passed) {
+            messages.push(check.message);
+        }
+        valid = valid && passed;
     });
-    return valid;
+    return {
+        status: valid,
+        messages: messages
+    }; 
 };
 
 var validators = {
-    string: validate.bind(null, [$osf.not($osf.isBlank)]),
-    number: validate.bind(null, [$osf.not($osf.isBlank), $osf.not(isNaN.bind(parseFloat))])
+    number: {
+        fn: validate.bind(null, [$osf.not(isNaN.bind(parseFloat))]),
+        message: 'This field must be a numeric value'
+    }
 };
 
 /**
@@ -146,6 +168,7 @@ var validators = {
  * @param {String} data.format: 'text' | 'textarea' | 'list'; format corresponding with data.type
  * @param {String} data.description
  * @param {String} data.help
+ * @param {String} data.required
  * @param {String[]} data.options: array of options for 'choose' types
  * @param {Object[]} data.properties: object of sub-Question properties for 'object' types
  * @param {String} id: unique identifier
@@ -164,6 +187,7 @@ var Question = function(data, id) {
     self.nav = data.nav || 'Untitled';
     self.type = data.type || 'string';
     self.format = data.format || 'text';
+    self.required = data.required || false;
     self.description = data.description || '';
     self.help = data.help || 'no help text provided';
     self.options = data.options || [];
@@ -195,14 +219,16 @@ var Question = function(data, id) {
         return !$osf.isBlank(self.value());
     });
 
-    /**
-     * @returns {Boolean} true if the validator matching the question's type returns true,
-     * if no validator matches also return true
-     **/
-    self.valid = ko.computed(function() {
-        var value = self.value();
-        var isValid = validators[self.type] || function(){ return true; };
-        return isValid(value);
+    self.validationMessages = ko.computed(function() {
+        var valid = self.valid();
+        return valid.messages || [];
+    });
+    self.validationStatus = ko.computed(function() {
+        var valid = self.valid();
+        return {
+            false: 'text-error',
+            true: ''
+        }[valid.status];
     });
 
     self.init();
@@ -238,13 +264,30 @@ Question.prototype.addComment = function(save) {
 Question.prototype.toggleExample = function(){
     this.showExample(!this.showExample());
 };
-
 /**
  * Shows/hides the Question uploader
  **/
 Question.prototype.toggleUploader = function(){
     this.showUploader(!this.showUploader());
 };
+/**
+ * @returns {object} valid 
+ * @returns {Boolean} valid.status
+ * @returns {String[]} valid.messages
+ **/
+Question.prototype.valid = function() {
+    var self = this;
+
+    var value = self.value();
+    var validator = validators[self.type];
+    if (validator) {
+        return validator(value, self.required);
+    }
+    else {
+        return validate([], value, self.required); 
+    }
+};
+
 
 /**
  * Model for MetaSchema instances
@@ -466,6 +509,7 @@ var RegistrationEditor = function(urls, editorId) {
     self.draft = ko.observable();
 
     self.currentQuestion = ko.observable();
+    self.showValidation = ko.observable(false);
 
     self.currentPages = ko.computed(function() {
         var draft = self.draft();
@@ -577,6 +621,22 @@ RegistrationEditor.prototype.context = function(data) {
 RegistrationEditor.prototype.extendEditor = function(type, ViewModel) {
     this.extensions[type] = ViewModel;
 };
+RegistrationEditor.prototype.check = function() {
+    var self = this;
+
+    var proceed = true;
+    $.each(self.flatQuestions(), function(i, question) {
+        var valid = question.valid();
+        proceed = proceed && valid.status;
+    });
+    if (!proceed) {
+        self.showValidation(true);    
+    }
+    else {
+        window.location = self.draft().urls.register_page;
+    }
+};
+
 RegistrationEditor.prototype.viewComments = function() {
   var self = this;
 

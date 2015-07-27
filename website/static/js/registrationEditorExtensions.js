@@ -4,7 +4,7 @@ var moment = require('moment');
 var ko = require('knockout');
 var m = require('mithril');
 
-var FilesWidget = require('js/FilesWidget');
+var FilesWidget = require('js/filesWidget');
 var Fangorn = require('js/fangorn');
 var $osf = require('js/osfHelpers');
 

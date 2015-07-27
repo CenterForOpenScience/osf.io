@@ -11,7 +11,8 @@
                 "nav": "Summary",
                 "type": "string",
                 "format": "textarea",
-                "description": "Provide a narrative summary of what is contained in this registration, or how it differs from prior registrations."
+                "description": "Provide a narrative summary of what is contained in this registration, or how it differs from prior registrations.",
+                "required": true
             }
         }
     }]

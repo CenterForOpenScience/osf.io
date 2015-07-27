@@ -42,7 +42,8 @@
                       <ul class="list-group" data-bind="foreach: {data: Object.keys(page.questions), as: 'qid'}">
                         <span data-bind="with: page.questions[qid]">
                           <li data-bind="css: {
-                                           registration-editor-question-current: $root.currentQuestion().id === $data.id
+                                           registration-editor-question-current: $root.currentQuestion().id === $data.id,
+                                           list-group-item-danger: $root.showValidation() && $data.validationStatus()
                                          },
                                          click: $root.currentQuestion.bind($root, $data)"
                               class="registration-editor-question list-group-item">
@@ -72,7 +73,7 @@
                 </p>
                 <button data-bind="click: save" type="button" class="btn btn-primary">Save
                 </button>
-                <a data-bind="attr.href: draft().urls.register_page" type="button" class="pull-right btn btn-success">Register
+                <a data-bind="click: $root.check" type="button" class="pull-right btn btn-success">Register
                 </a>
               </div>
             </div>

@@ -1,7 +1,6 @@
 {
     "name": "Prereg Prize",
     "version": 1,
-    "type": "object",
     "flags": {
         "isApproved": false,
         "isPendingReview": false,
@@ -22,7 +21,6 @@
     "pages": [{
         "id": "page1",
         "title": "Basic Information",
-        "type": "object",
         "questions": {
             "q1": {
                 "nav": "Title",
