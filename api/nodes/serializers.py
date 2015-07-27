@@ -205,16 +205,19 @@ class NodeContributorsSerializer(JSONAPISerializer):
             raise ValidationError('User {} already is a contributor.'.format(user.username))
 
         bibliographic = validated_data['bibliographic'] == "True"
-        try:
-            node.set_visible(user, bibliographic, save=True)
-        except ValueError as e:
-            raise ValidationError(e)
 
+        self.set_bibliographic(bibliographic, node, user)
         permission_field = validated_data['permission']
         self.set_permissions(permission_field, user, node)
         user.node_id = node._id
         user.bibliographic = node.get_visible(user)
         return user
+
+    def set_bibliographic(self, bibliographic, node, user):
+        try:
+            node.set_visible(user, bibliographic, save=True)
+        except ValueError as e:
+            raise ValidationError(e)
 
     # todo simplify this
     def set_permissions(self, field, user, node, is_admin=True, is_current=False):
@@ -251,12 +254,15 @@ class NodeContributorDetailSerializer(NodeContributorsSerializer):
         permission_field = validated_data['permission']
         is_admin_current = node.has_permission(current_user, 'admin')
         is_current = user is current_user
-        try:
-            node.set_visible(user, bibliographic, save=True)
-        except ValueError as e:
-            raise ValidationError(e)
-        if permission_field != '':
-            self.set_permissions(permission_field, user, node, is_admin_current, is_current=is_current)
+
+        # if a user is not an admin, they cannot make their bibliographic status true
+        if is_admin_current or \
+                ((node.get_visible(user) and is_current) or not bibliographic):
+            self.set_bibliographic(bibliographic, node, user)
+        else:
+            raise PermissionDenied('Non admin user cannot make self bibliographic')
+
+        self.set_permissions(permission_field, user, node, is_admin_current, is_current=is_current)
         user.bibliographic = node.get_visible(user)
         user.permissions = node.get_permissions(user)
         return user

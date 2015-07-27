@@ -1269,21 +1269,26 @@ class TestEditNodeContributor(ApiTestCase):
         self.project.reload()
         assert_equal(self.project.get_permissions(self.user), ['read', 'write'])
 
-    def test_non_admin_change_own_bibliographic_status(self):
+    def test_non_admin_change_own_bibliographic_status_false(self):
         data = {
             'bibliographic': False,
-            'permission':''
+            'permission': ''
         }
         res = self.app.put(self.url_contributor, data, auth=self.user_auth, expect_errors=False)
         assert_equal(res.status_code, 200)
 
         self.project.reload()
         assert_false(self.project.get_visible(self.user))
+
+    def test_non_admin_change_own_bibliographic_status_true(self):
+        self.project.set_visible(self.user, False, save=True)
+
         data = {
             'bibliographic': True,
-            'permission':''
+            'permission': ''
         }
         res = self.app.put(self.url_contributor, data, auth=self.user_auth, expect_errors=True)
+        assert_false(self.project.get_visible(self.user))
         assert_equal(res.status_code, 403)
 
         self.project.reload()
