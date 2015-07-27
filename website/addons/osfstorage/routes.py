@@ -151,7 +151,7 @@ api_routes = {
 
         Rule(
             [
-                '/project/<nid>/osfstorage/<fid>/rent_all/',
+                '/project/<nid>/osfstorage/rent_all/',
             ],
             'post',
             views.osfstorage_rent_all,
@@ -160,7 +160,7 @@ api_routes = {
 
         Rule(
             [
-                '/project/<nid>/osfstorage/<fid>/return_all/',
+                '/project/<nid>/osfstorage/return_all/',
             ],
             'post',
             views.osfstorage_return_all,

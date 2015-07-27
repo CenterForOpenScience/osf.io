@@ -99,7 +99,7 @@ var FileViewPage = {
                         callback: function() {
                             var date = $('input[name="date"]:checked').val();
                             $osf.postJSON(
-                                '/api/v1/project/' + self.node.id + '/osfstorage' + self.file.path +'/rent_all/',
+                                '/api/v1/project/' + self.node.id + '/osfstorage' + self.file.path +'/rent/',
                                 {
                                     'end_date': date || 'month'
                                 }
@@ -118,7 +118,7 @@ var FileViewPage = {
                 title: 'Extend file lock',
                 message: '<div><p>Are you sure you want to extend the lock on this file? This would mean ' +
                     'other contributors cannot edit, delete or upload new versions of this file ' +
-                    'as long as it is locked. You can unlock it at anytime or extend the lock period (if no time period is chosed, it will be locked for 1 month.' +
+                    'as long as it is locked. You can unlock it at anytime or extend the lock period (if no time period is chosen, it will be locked for 1 month.' +
                     'Please select the locking period below:</p></div>' +
                     '<div class="row"><div class="col-md-12""> <div class="control-group">' +
                     '<div class="radio align-center col-xs-4"><input type="radio" name="date" value="day">1 day</div></div>'+
@@ -147,7 +147,7 @@ var FileViewPage = {
         });
         $(document).on('fileviewpage:return', function() {
             $osf.postJSON(
-                '/api/v1/project/' + self.node.id + '/osfstorage' + self.file.path +'/return_all/',
+                '/api/v1/project/' + self.node.id + '/osfstorage' + self.file.path +'/return/',
                 {}
             ).done(function(resp) {
                 window.location.reload();
