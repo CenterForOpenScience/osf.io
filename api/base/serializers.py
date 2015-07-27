@@ -238,28 +238,30 @@ class AttributeLinksField(LinksField):
 
 class Attribute(object):
 
-    def __init__(self, name, query, id_type, link_endpoint, link_kwargs):
+    def __init__(self, name, query=None):
         self.name = name
         self.query = query
-        self.link_endpoint = link_endpoint
-        self.link_kwargs = link_kwargs
-        self.id_type = id_type
 
     def resolve_attribute(self, obj, request):
-        object_list = []
-        ret = {}
-        if 'include' in request.query_params:
-            self.name in request.query_params['include'].split()
-            return self.process_parameter(obj)
-        return {self.name: 'test'}
-
-    def process_parameter(self, obj):
-        object_list = []
-        ret = {}
-        if hasattr(obj, self.query):
+        if self.query:
             object_list = getattr(obj, self.query)
-        for o in object_list:
-            self.link_kwargs[self.id_type] = o._id
-            ret[o._id] = Link(endpoint=self.link_endpoint, kwargs=self.link_kwargs).resolve_url(obj)
-
+        else:
+            get_object = getattr(self, 'get_{}'.format(self.name))
+            object_list = get_object(obj)
+        if 'include' in request.query_params:
+            if self.name in request.query_params['include'].split():
+                return self.process_objects(obj, object_list)
+        ret = {'count': len(object_list)}
         return ret
+
+    def process_objects(self, obj, object_list):
+        ret = {}
+        for o in object_list:
+            ret[o._id] = 'test'
+        return ret
+
+    def get_pointers(self, obj):
+        return []
+
+    def get_registrations(self, obj):
+        return []
