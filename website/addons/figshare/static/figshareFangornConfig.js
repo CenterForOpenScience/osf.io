@@ -58,7 +58,7 @@ var _figshareItemButtons = {
                 }, 'Delete')
             );
         }
-        if (item.kind === 'file' && item.data.permissions && item.data.permissions.view) {
+        if (item.kind === 'file' && item.data.permissions && item.data.permissions.view && item.data.extra.status === 'public') {
             buttons.push(
                 m('a.text-info.fangorn-toolbar-icon', {href: item.data.extra.webView}, [
                     m('i.fa.fa-external-link'),

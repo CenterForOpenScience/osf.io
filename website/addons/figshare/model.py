@@ -46,7 +46,10 @@ class FigShareGuidFile(GuidFile):
 
     @property
     def external_url(self):
-        return self._metadata_cache['extra']['webView']
+        extra = self._metadata_cache['extra']
+        if extra['status'] == 'public':
+            return self._metadata_cache['extra']['webView']
+        return None
 
     def _exception_from_response(self, response):
         try:

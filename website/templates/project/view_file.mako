@@ -137,6 +137,7 @@
 ## End Modals block
 
 <%def name="javascript_bottom()">
+    <% import json %>
     ${parent.javascript_bottom()}
     % for script in tree_js:
         <script type="text/javascript" src="${script | webpack_asset}"></script>
@@ -154,7 +155,7 @@
             size: ${size},
             extra: ${extra},
             error: '${error | js_str}',
-            privateRepo: '${private}',
+            privateRepo: ${private | sjson, n},
             name: '${file_name | js_str}',
             path: '${file_path | js_str}',
             provider: '${provider | js_str}',
