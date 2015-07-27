@@ -1535,7 +1535,7 @@ var FGItemButtons = {
                                     }).fail(function(resp) {
                                         $osf.growl('Error', 'Unable to unlock OSF Storage. Make sure all files are unlocked, or locked by you.');
                                     });
-                                }}, 'Lock all'),
+                                }}, 'Unlock all'),
                                 m('span.tb-modal-btn.text-default', {onclick: function() {tb.modal.dismiss();}}, 'Cancel'), //jshint ignore:line
                             ]));
                         },
@@ -1559,7 +1559,7 @@ var FGItemButtons = {
                                         }
                                     ).done(function(resp) {
                                         item.data.rented = true;
-                                        window.location.reload();
+                                        window.location.reload()
                                     }).fail(function(resp) {
                                         $osf.growl('Error', 'Unable to lock OSF Storage. Make sure all files are unlocked, or locked by you.');
                                     });

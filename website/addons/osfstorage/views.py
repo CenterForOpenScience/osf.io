@@ -35,6 +35,7 @@ def osf_storage_root(node_settings, auth, **kwargs):
     URL creation for uploaded files.
     """
     node = node_settings.owner
+    root_node = node_settings.root_node
     root = rubeus.build_addon_root(
         node_settings=node_settings,
         name='',
@@ -42,6 +43,7 @@ def osf_storage_root(node_settings, auth, **kwargs):
         user=auth.user,
         nodeUrl=node.url,
         nodeApiUrl=node.api_url,
+        rented=root_node.rented
     )
     return [root]
 
