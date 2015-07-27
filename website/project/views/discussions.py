@@ -26,30 +26,28 @@ from website.models import Node
 @must_have_permission(ADMIN)
 @must_not_be_registration
 def discussions_enable(node, **kwargs):
-    node.create_mailing_list()
-    node.save()
+    node.discussions.enable()
 
 
 @must_be_valid_project
 @must_have_permission(ADMIN)
 @must_not_be_registration
 def discussions_disable(node, **kwargs):
-    node.delete_mailing_list()
-    node.save()
+    node.discussions.disable()
 
 
 @must_be_valid_project
 @collect_auth
 @must_not_be_registration
 def subscribe(node, auth, **kwargs):
-    node.subscribe_member(auth.user)
+    node.discussions.subscribe_member(auth.user.email)
 
 
 @must_be_valid_project
 @collect_auth
 @must_not_be_registration
 def unsubscribe(node, auth, **kwargs):
-    node.unsubscribe_member(auth.user)
+    node.discussions.unsubscribe_member(auth.user.email)
 
 
 ###############################################################################

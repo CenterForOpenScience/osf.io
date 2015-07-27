@@ -53,6 +53,7 @@ from website.util.permissions import CREATOR_PERMISSIONS
 from website.project.metadata.schemas import OSF_META_SCHEMAS
 from website.util.permissions import DEFAULT_CONTRIBUTOR_PERMISSIONS
 from website.project import signals as project_signals
+from website.project.mailing_list import update_list
 
 html_parser = HTMLParser()
 
@@ -605,6 +606,8 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
     # TODO: Add validator
     comment_level = fields.StringField(default='private')
 
+    discussions = fields.ForeignField('MailingList', backref='node')
+
     wiki_pages_current = fields.DictionaryField()
     wiki_pages_versions = fields.DictionaryField()
     # Dictionary field mapping node wiki page to sharejs private uuid.
@@ -1068,6 +1071,9 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
             suppress_log = False
 
         saved_fields = super(Node, self).save(*args, **kwargs)
+
+        if first_save and self.discussions:
+            self.discussions.set_node(self)
 
         if first_save and is_original and not suppress_log:
             # TODO: This logic also exists in self.use_as_template()
@@ -1560,6 +1566,9 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
 
         if not self.can_edit(auth):
             raise PermissionsError('{0!r} does not have permission to modify this {1}'.format(auth.user, self.category or 'node'))
+
+        if self.discussions:
+            self.discussions.disable()
 
         #if this is a folder, remove all the folders that this is pointing at.
         if self.is_folder:
@@ -2092,6 +2101,9 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
 
         self.contributors.remove(contributor._id)
 
+        if self.discussions:
+            self.discussions.remove_member(contributor.email)
+
         self.clear_permission(contributor)
         if contributor._id in self.visible_contributor_ids:
             self.visible_contributor_ids.remove(contributor._id)
@@ -2279,6 +2291,9 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
             self.contributors.append(contrib_to_add)
             if visible:
                 self.set_visible(contrib_to_add, visible=True, log=False)
+
+            if self.discussions:
+                self.discussions.add_member(contrib_to_add.email)
 
             # Add default contributor permissions
             permissions = permissions or DEFAULT_CONTRIBUTOR_PERMISSIONS
@@ -2786,6 +2801,92 @@ class WatchConfig(StoredObject):
 
     def __repr__(self):
         return '<WatchConfig(node="{self.node}")>'.format(self=self)
+
+
+class MailingList(StoredObject):
+    """Discussions mailing list object for projects and components"""
+
+    _id = fields.StringField(primary=True, default=lambda: str(ObjectId()))
+    node_id = fields.StringField()
+    node_title = fields.StringField()
+
+    is_enabled = fields.BooleanField(default=False)
+
+    emails = fields.StringField(list=True)
+    # List of all emails that are on the mailing list
+    subscriptions = fields.StringField(list=True)
+    # List of only subscribed emails on the mailing list
+
+    def set_node(self, node, save=True):
+        self.node_id = node._id
+        self.node_title = node.title
+        self.is_enabled = False if node.parent else True
+
+        self.emails = [user.email for user in node.contributors]
+        self.subscriptions = self.emails
+        # add all emails to subscriptions initially because we are subscribing all contributors by default
+
+        if save:
+            self.save()
+
+    def enable(self, save=True):
+        self.is_enabled = True
+
+        if save:
+            self.save()
+
+    def disable(self, save=True):
+        self.is_enabled = False
+
+        if save:
+            self.save()
+
+    def add_member(self, email, save=True):
+        self.emails.append(email)
+        self.subscriptions.append(email)
+
+        if save:
+            self.save()
+
+    def remove_member(self, email, save=True):
+        if email in self.emails:
+            self.emails.remove(email)
+        if email in self.subscriptions:
+            self.subscriptions.remove(email)
+
+        if save:
+            self.save()
+
+    def subscribe_member(self, email, save=True):
+        if email in self.emails and email not in self.subscriptions:
+            self.subscriptions.append(email)
+
+        if save:
+            self.save()
+
+    def unsubscribe_member(self, email, save=True):
+        if email in self.emails and email in self.subscriptions:
+            self.subscriptions.remove(email)
+
+        if save:
+            self.save()
+
+    def update_email(self, old_email, new_email, save=True):
+        self.emails.remove(old_email)
+        self.emails.append(new_email)
+        if old_email in self.subscriptions:
+            self.subscriptions.remove(old_email)
+            self.subscriptions.append(new_email)
+
+        if save:
+            self.save()
+
+    def save(self, *args, **kwargs):
+        if self.node_id:
+            update_list(self.node_id, self.node_title, self.is_enabled, self.emails, self.subscriptions)
+
+        saved_fields = super(MailingList, self).save(*args, **kwargs)
+        return saved_fields
 
 
 class PrivateLink(StoredObject):
