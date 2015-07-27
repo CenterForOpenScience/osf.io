@@ -41,7 +41,7 @@ from website.addons.base import StorageAddonBase
 from website.util import api_url_for
 
 from tests import factories
-from tests.base import OsfTestCase, fake
+from tests.base import OsfTestCase
 
 
 SILENT_LOGGERS = (
@@ -266,7 +266,8 @@ class TestArchiverTasks(ArchiverTestCase):
         mock_archive_addon.assert_not_called()
 
     @use_fake_addons
-    def test_archive_node_no_archive_size_limit(self):
+    @mock.patch('website.archiver.tasks.archive_addon.delay')
+    def test_archive_node_no_archive_size_limit(self, mock_archive_addon):
         settings.MAX_ARCHIVE_SIZE = 100
         self.archive_job.initiator.system_tags.append(NO_ARCHIVE_LIMIT)
         self.archive_job.initiator.save()
