@@ -253,7 +253,7 @@ var ViewModel = function(url, selector, folderPicker) {
         */
     self.importAuth = function() {
         bootbox.confirm({
-            title: 'Import Box access token?',
+            title: 'Import Box access token',
             message: 'Are you sure you want to authorize this project with your Box access token?',
             callback: function(confirmed) {
                 if (confirmed) {
