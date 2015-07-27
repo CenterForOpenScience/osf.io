@@ -6,11 +6,4 @@
     <p>You will be able to continue editing the original project; however, the registration will be frozen, timestamped, and uneditable. Registrations cannot be deleted; however, they can be retracted. Retracting a registration will leave behind metadata about when the registration was created and retracted but removes the contents of the registration.</p>
 
     <p>A registration can be made public immediately or entered into an embargo period of up to 4 years. At the end of the embargo period, the registration will automatically become public.</p>
-    <div class="row">
-        <div class="col-md-8 col-md-offset-2 col-sm-12">
-            <div class="gs-video embed-responsive embed-responsive-16by9">
-                <div class="embed-responsive-item youtube-loader" id="rj89AgTdIvA"></div>
-            </div>
-        </div>
-    </div>
 </div>
