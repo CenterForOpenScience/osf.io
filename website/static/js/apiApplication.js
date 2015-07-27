@@ -346,5 +346,10 @@ var ApplicationDetail = function (selector, urls) {
 
 module.exports = {
     ApplicationsList: ApplicationsList,
-    ApplicationDetail: ApplicationDetail
+    ApplicationDetail: ApplicationDetail,
+    // Make internals accessible directly for testing
+    _ApplicationData: ApplicationData,
+    _ApplicationDataClient: ApplicationDataClient,
+    _ApplicationsListViewModel: ApplicationsListViewModel,
+    _ApplicationDetailViewModel: ApplicationDetailViewModel
 };
