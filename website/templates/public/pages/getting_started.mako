@@ -10,7 +10,7 @@
 
     <div href="#start">
         <div class="col-sm-4 col-md-3 affix-parent scrollspy">
-            <div data-spy="affix" data-offset-top="0" class="osf-affix gs-sidebar hidden-print hidden-xs panel panel-default" role="complementary">
+            <div data-spy="affix" data-offset-top="0" data-offset-bottom="250"  class="osf-affix gs-sidebar hidden-print hidden-xs panel panel-default" role="complementary">
                 <ul class="nav nav-stacked nav-pills gs-sidenav" style="min-width: 205px">
 
                     <li>
