@@ -32,7 +32,7 @@ def get_bucket_names(user_settings):
     return [bucket.name for bucket in buckets]
 
 
-def valid_bucket_location(location):
+def validate_bucket_location(location):
     return bool(location in BUCKET_LOCATIONS.keys())
 
 

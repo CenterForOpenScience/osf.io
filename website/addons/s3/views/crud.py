@@ -25,7 +25,7 @@ def create_bucket(auth, node_addon, **kwargs):
         }, httplib.NOT_ACCEPTABLE
 
     # Get location and verify it is valid
-    if not utils.valid_bucket_location(bucket_location):
+    if not utils.validate_bucket_location(bucket_location):
         return {
             'message': 'That bucket location is not valid.',
             'title': 'Invalid bucket location',
