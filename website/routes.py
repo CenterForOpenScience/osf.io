@@ -1055,12 +1055,6 @@ def make_url_map(app):
         ], 'get', project_views.node.get_registrations, json_renderer),
 
         # Draft Registrations
-
-        # TODO delete this route when we switch to Django admin appp
-        Rule([
-            '/drafts/',
-        ], 'get', project_views.drafts.get_all_draft_registrations, json_renderer),
-
         Rule([
             '/project/<pid>/draft/<draft_pk>/submit/',
         ], 'post', project_views.drafts.submit_draft_for_review, json_renderer),

@@ -18,7 +18,6 @@ from website.project.decorators import (
     http_error_if_disk_saving_mode
 )
 from website import settings
-from website.admin.model import Role
 from website.mails import Mail, send_mail
 from website.project import utils as project_utils
 from website.project.model import MetaSchema, DraftRegistration
@@ -102,25 +101,6 @@ def register_draft_registration(auth, node, draft_id, *args, **kwargs):
             'registrations': node.web_url_for('node_registrations')
         }
     }, http.CREATED
-
-@must_be_logged_in
-def get_all_draft_registrations(auth, *args, **kwargs):
-
-    group = request.args.get('group')
-    count = request.args.get('count', 100)
-
-    query = Q('is_pending_review', 'eq', True)
-    if group:
-        role = Role.for_user(auth.user, group=group)
-        if not role or not role.is_super:
-            raise HTTPError(http.FORBIDDEN)
-        query = query & Q('fullfills', 'in', group)
-
-    all_drafts = DraftRegistration.find(query)[:count]
-
-    return {
-        'drafts': [serialize_draft_registration(d, auth) for d in all_drafts]
-    }
 
 @must_have_permission(ADMIN)
 @must_be_valid_project
