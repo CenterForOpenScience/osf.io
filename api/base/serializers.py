@@ -24,7 +24,13 @@ def _url_val(val, obj, serializer, **kwargs):
     if isinstance(val, Link):  # If a Link is passed, get the url value
         return val.resolve_url(obj, **kwargs)
     elif isinstance(val, basestring):  # if a string is passed, it's a method of the serializer
-        return getattr(serializer, val)(obj)
+        data = val.split(':', 1)  # if string includes ':', then everything after the colon is made into an argument
+        method = data[0]
+        argument = data[1] if len(data) > 1 else None
+        if argument:
+            return getattr(serializer, method)(obj, argument)
+        else:
+            return getattr(serializer, method)(obj)
     else:
         return val
 
