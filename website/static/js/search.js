@@ -76,6 +76,7 @@ var ViewModel = function(params) {
     self.resultsPerPage = ko.observable(10);
     self.categories = ko.observableArray([]);
     self.searchStarted = ko.observable(false);
+    self.jsonData = ko.observable('');
     self.showSearch = true;
     self.showClose = false;
     self.searchCSS = ko.observable('active');
@@ -282,7 +283,16 @@ var ViewModel = function(params) {
             }
 
             $osf.postJSON('/api/v1/share/search/?count&v=1', jsonData).success(function(data) {
-                self.categories.push(new Category('SHARE', data.count, 'SHARE'));
+                var share_check = true;
+                for (var i = 0; i < self.categories.length; i++){
+                    if (self.categories[i].name === 'SHARE' && self.categories[i].count === data.count && self.jsonData() === jsonData){
+                        share_check = false;
+                    }
+                }
+                if(share_check) {
+                    self.categories.push(new Category('SHARE', data.count, 'SHARE'));
+                    self.jsonData(jsonData);
+                }
             });
         }).fail(function(response){
             self.totalResults(0);
