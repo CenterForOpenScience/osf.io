@@ -49,3 +49,6 @@ USE_CDN_FOR_CLIENT_LIBS = False
 
 # Example of extending default settings
 # defaults.IMG_FMTS += ["pdf"]
+
+# File indexing
+USE_FILE_INDEXING = True

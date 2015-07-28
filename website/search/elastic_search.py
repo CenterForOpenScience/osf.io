@@ -297,6 +297,7 @@ def update_node(node, index=None):
         es.index(index=index, doc_type=category, id=elastic_document_id, body=elastic_document, refresh=True)
 
 
+@file_util.file_indexing
 @requires_search
 def update_file(name, path, addon, index=None):
     """Add file to elastic_search.
@@ -315,6 +316,7 @@ def update_file(name, path, addon, index=None):
         es.index(index=index, doc_type='file', parent=parent_id, id=file_doc['path'], body=file_doc, refresh=True)
 
 
+@file_util.file_indexing
 @requires_search
 def update_all_files(node, index=None):
     """Add all indexable files of a node to elasticsearch.
@@ -331,6 +333,7 @@ def update_all_files(node, index=None):
         )
 
 
+@file_util.file_indexing
 @requires_search
 def delete_file(name, path, addon, index=None):
     """Remove a single file from search index.
@@ -341,6 +344,8 @@ def delete_file(name, path, addon, index=None):
     file_doc = file_util.build_file_document(name, path, addon, include_content=False)
     es.delete(index=index, doc_type='file', id=file_doc['path'], refresh=True, ignore=404)
 
+
+@file_util.file_indexing
 @requires_search
 def delete_all_files(node, index=None):
     """Remove all of a nodes files from search index.

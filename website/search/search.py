@@ -1,6 +1,7 @@
 import logging
 
 from website import settings
+from website.search import file_util
 from website.search import share_search
 
 logger = logging.getLogger(__name__)
@@ -31,24 +32,28 @@ def update_node(node, index=None):
     search_engine.update_node(node, index=index)
 
 
+@file_util.file_indexing
 @requires_search
 def update_file(name, path, addon, index=None):
     index = index or settings.ELASTIC_INDEX
     search_engine.update_file(name, path, addon, index=index)
 
 
+@file_util.file_indexing
 @requires_search
 def update_all_files(node, index=None):
     index = index or settings.ELASTIC_INDEX
     search_engine.update_all_files(node, index=index)
 
 
+@file_util.file_indexing
 @requires_search
 def delete_file(name, path, addon, index=None):
     index = index or settings.ELASTIC_INDEX
     search_engine.delete_file(name, path, addon, index=index)
 
 
+@file_util.file_indexing
 @requires_search
 def delete_all_files(node, index=None):
     index = index or settings.ELASTIC_INDEX

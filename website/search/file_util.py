@@ -1,7 +1,8 @@
+import logging
 import requests
 
 from framework.exceptions import HTTPError
-from website import settings 
+from website import settings
 
 INDEXED_TYPES = [
     'txt',
@@ -12,7 +13,15 @@ INDEXED_TYPES = [
 ]
 
 
-def is_indexed(filename):
+def file_indexing(func):
+    """Execute function only if use_file_indexing setting is true.
+    """
+    def wrapper(*args, **kwargs):
+        if settings.USE_FILE_INDEXING:
+            return func(*args, **kwargs)
+    return wrapper
+
+
 def is_indexed(filename, addon):
     if not addon.config.short_name == 'osfstorage':
         return False
