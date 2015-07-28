@@ -1358,7 +1358,7 @@ class TestNodeLogList(ApiTestCase):
         self.public_url = '/{}nodes/{}/logs/'.format(API_BASE, self.public_project._id)
 
     def test_log_create_on_public_project(self):
-        res = self.app.get(self.public_url)
+        res = self.app.get(self.public_url) 
         assert_equal(res.status_code, 200)
         assert_equal(len(res.json['data']), 1)
         assert_equal(res.json['data'][0]['id'], self.public_project.logs[0]._id)
