@@ -190,7 +190,8 @@ def format_result(result, parent_id=None):
         'description': result['description'] if parent_info is None else None,
         'category': result.get('category'),
         'date_created': result.get('date_created'),
-        'date_registered': result.get('registration_date')
+        'date_registered': result.get('registration_date'),
+        'wikis': len(result['wikis'])
     }
 
     return formatted_result
