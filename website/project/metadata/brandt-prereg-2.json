@@ -1,153 +1,205 @@
 {
     "name": "Replication Recipe (Brandt et al., 2013): Pre-Registration",
-    "schema": {
-        "pages": [{
-            "id": "page1",
-            "title": "The Nature of the Effect",
-            "contents": [{
-                "type": "textarea",
-                "id": "item1",
-                "label": "Verbal description of the effect I am trying to replicate"
-            }, {
-                "type": "textarea",
-                "id": "item2",
-                "label": "It is important to replicate this effect because"
-            }, {
-                "type": "textfield",
-                "id": "item3",
-                "label": "The effect size of the effect I am trying to replicate is"
-            }, {
-                "type": "textfield",
-                "id": "item4",
-                "label": "The confidence interval of the original effect is"
-            }, {
-                "type": "textfield",
-                "id": "item5",
-                "label": "The sample size of the original effect is"
-            }, {
-                "type": "textfield",
-                "id": "item6",
-                "label": "Where was the original study conducted? (e.g., lab, in the field, online)"
-            }, {
-                "type": "textfield",
-                "id": "item7",
-                "label": "What country/region was the original study conducted in?"
-            }, {
-                "type": "textfield",
-                "id": "item8",
-                "label": "What kind of sample did the original study use? (e.g., student, Mturk, representative)"
-            }, {
-                "type": "textfield",
-                "id": "item9",
-                "label": "Was the original study conducted with paper-and-pencil surveys, on a computer, or something else?"
-            }]
-        }, {
+    "version": 2,
+    "description": "This template is intended for use when conducting a replication. You will be asked a series of questions about the study you intend to replicate. This template is not a valid submission for the Pre-registration Prize.",
+    "pages": [{
+        "id": "page1",
+        "title": "The Nature of the Effect",
+        "questions": {
+            "item1": {
+                "title": "Verbal description of the effect I am trying to replicate",
+                "nav": "Effect description",
+                "type": "string",
+                "format": "textarea"
+            },
+            "item2": {
+                "title": "It is important to replicate this effect because",
+                "nav": "Importance of replication",
+                "type": "string",
+                "format": "textarea"
+            },
+            "item3": {
+                "type": "string",
+                "format": "text",
+                "title": "The effect size of the effect I am trying to replicate is",
+                "nav": "Original effect size"
+            },
+            "item4": {
+                "type": "string",
+                "format": "text",
+                "title": "The confidence interval of the original effect is",
+                "nav": "Original confidence iterval"
+            },
+            "item5": {
+                "type": "string",
+                "format": "text",
+                "title": "The sample size of the original effect is",
+                "nav": "Original sample size"
+            },
+            "item6": {
+                "type": "string",
+                "format": "text",
+                "title": "Where was the original study conducted? (e.g., lab, in the field, online)",
+                "nav": "Original location"
+            },
+            "item7": {
+                "title": "What country/region was the original study conducted in?"
+                "type": "string",
+                "format": "text",
+                "nav": "Country/Region"
+            },
+            "item8": {
+                "title": "What kind of sample did the original study use? (e.g., student, Mturk, representative)"
+                "type": "string",
+                "format": "text",
+                "nav": "Original kind of sample"
+            },
+            "item9": {
+                "title": "Was the original study conducted with paper-and-pencil surveys, on a computer, or something else?"
+                "type": "string",
+                "format": "text",
+                "nav": "Original survey format"
+            }
+        },
+        {
             "id": "page2",
             "title": "Designing the Replication Study",
-            "contents": [{
-                "type": "select",
-                "id": "item10",
-                "label": "Are the original materials for the study available from the author?",
-                "options": ["yes", "no"],
-                "caption": "Choose..."
-            }, {
-                "type": "textarea",
-                "id": "item11",
-                "label": "I know that assumptions (e.g., about the meaning of the stimuli) in the original study will also hold in my replication because"
-            }, {
-                "type": "textfield",
-                "id": "item12",
-                "label": "Location of the experimenter during data collection"
-            }, {
-                "type": "textfield",
-                "id": "item13",
-                "label": "Experimenter knowledge of participant experimental condition"
-            }, {
-                "type": "textfield",
-                "id": "item14",
-                "label": "Experimenter knowledge of overall hypotheses"
-            }, {
-                "type": "textfield",
-                "id": "item15",
-                "label": "My target sample size is"
-            }, {
-                "type": "textarea",
-                "id": "item16",
-                "label": "The rationale for my sample size is"
-            }]
-        }, {
+            "questions": {
+                "item10": {
+                    "title": "Are the original materials for the study available from the author?",
+                    "type": "choose",
+                    "format": "singleselect",
+                    "options": ["yes", "no"],
+                    "nav": "Materials available?"
+                },
+                "item11": {
+                    "title": "I know that assumptions (e.g., about the meaning of the stimuli) in the original study will also hold in my replication because",
+                    "type": "string",
+                    "format": "textarea",
+                    "nav": "Assumptions will hold"
+                },
+                "item12": {
+                    "title": "Location of the experimenter during data collection",
+                    "type": "string",
+                    "format": "textarea",
+                    "nav": "Location of experimenter"
+                },
+                "item13": {
+                    "title": "Experimenter knowledge of participant experimental condition",
+                    "type": "string",
+                    "format": "textarea",
+                    "nav": "Experimenter knowledge (condition)"
+                },
+                "item14": {
+                    "type": "string",
+                    "format": "text",
+                    "label": "Experimenter knowledge of overall hypotheses",
+                    "nav": "Experimenter knowledge (hypothesis)"
+                },
+                "item15": {
+                    "type": "string",
+                    "format": "text",
+                    "label": "My target sample size is",
+                    "nav": "Sample size"
+                },
+                "item16": {
+                    "type": "string",
+                    "format": "text",
+                    "label": "The rationale for my sample size is",
+                    "nav": "Sample size rationale"
+                }
+            },
+        },
+        {
             "id": "page3",
             "title": "Documenting Differences between the Original and Replication Study",
-            "contents": [{
-                "type": "select",
-                "id": "item17",
-                "label": "The similarities/differences in the instructions are",
-                "options": ["Exact", "Close", "Different"],
-                "caption": "Choose..."
-            }, {
-                "type": "select",
-                "id": "item18",
-                "label": "The similarities/differences in the measures are",
-                "options": ["Exact", "Close", "Different"],
-                "caption": "Choose..."
-            }, {
-                "type": "select",
-                "id": "item19",
-                "label": "The similarities/differences in the stimuli are",
-                "options": ["Exact", "Close", "Different"],
-                "caption": "Choose..."
-            }, {
-                "type": "select",
-                "id": "item20",
-                "label": "The similarities/differences in the procedure are",
-                "options": ["Exact", "Close", "Different"],
-                "caption": "Choose..."
-            }, {
-                "type": "select",
-                "id": "item21",
-                "label": "The similarities/differences in the location (e.g., lab vs. online; alone vs. in groups) are",
-                "options": ["Exact", "Close", "Different"],
-                "caption": "Choose..."
-            }, {
-                "type": "select",
-                "id": "item22",
-                "label": "The similarities/difference in remuneration are",
-                "options": ["Exact", "Close", "Different"],
-                "caption": "Choose..."
-            }, {
-                "type": "select",
-                "id": "item23",
-                "label": "The similarities/differences between participant populations are",
-                "options": ["Exact", "Close", "Different"],
-                "caption": "Choose..."
-            }, {
-                "type": "textarea",
-                "id": "item24",
-                "label": "What differences between the original study and your study might be expected to influence the size and/or direction of the effect?"
-            }, {
-                "type": "textarea",
-                "id": "item25",
-                "label": "I have taken the following steps to test whether the differences listed in the previous question will influence the outcome of my replication attempt"
-            }]
-        }, {
+            "questions": {
+                "item17": {
+                    "title": "The similarities/differences in the instructions are",
+                    "type": "choose",
+                    "format": "singleselect",
+                    "options": ["Exact", "Close", "Different"],
+                    "nav": "Differences in instructions"
+                },
+                "item18": {
+                    "title": "The similarities/differences in the measures are",
+                    "type": "choose",
+                    "format": "singleselect",
+                    "options": ["Exact", "Close", "Different"],
+                    "nav": "Differences in measures"
+                },
+                "item19": {
+                    "title": "The similarities/differences in the stimuli are",
+                    "type": "choose",
+                    "format": "singleselect",
+                    "options": ["Exact", "Close", "Different"],
+                    "nav": "Differences in stimuli"
+                },
+                "item20": {
+                    "title": "The similarities/differences in the procedure are",
+                    "type": "choose",
+                    "format": "singleselect",
+                    "options": ["Exact", "Close", "Different"],
+                    "nav": "Differences in procedure"
+                },
+                "item21": {
+                    "title": "The similarities/differences in the location (e.g., lab vs. online; alone vs. in groups) are",
+                    "type": "choose",
+                    "format": "singleselect",
+                    "options": ["Exact", "Close", "Different"],
+                    "nav": "Differences in location"
+                },
+                "item22": {
+                    "title": "The similarities/difference in remuneration are",
+                    "type": "choose",
+                    "format": "singleselect",
+                    "options": ["Exact", "Close", "Different"],
+                    "nav": "Differences in remuneration"
+                },
+                "item23": {
+                    "title": "The similarities/differences between participant populations are",
+                    "type": "choose",
+                    "format": "singleselect",
+                    "options": ["Exact", "Close", "Different"],
+                    "nav": "Differences in populations"
+                },
+                "item24": {
+                    "title": "What differences between the original study and your study might be expected to influence the size and/or direction of the effect?",
+                    "type": "string",
+                    "format": "textarea",
+                    "nav": "Expected differences"
+                },
+                "item25": {
+                    "title": "I have taken the following steps to test whether the differences listed in the previous question will influence the outcome of my replication attempt",
+                    "type": "string",
+                    "format": "textarea",
+                    "nav": "Steps to test differences"
+                }
+            }
+        },
+        {
             "id": "page4",
             "title": "Analysis and Replication Evaluation",
-            "contents": [{
-                "type": "textarea",
-                "id": "item26",
-                "label": "My exclusion criteria are (e.g., handling outliers, removing participants from analysis)"
-            }, {
-                "type": "textarea",
-                "id": "item27",
-                "label": "My analysis plan is (justify differences from the original)"
-            }, {
-                "type": "textarea",
-                "id": "item28",
-                "label": "A successful replication is defined as"
-            }]
-        }]
-    },
-    "category": "registration",
-    "metadata_version": 1,
-    "schema_version": 1
+            "questions": {
+                "item26": {
+                    "title": "My exclusion criteria are (e.g., handling outliers, removing participants from analysis)",
+                    "type": "string",
+                    "format": "textarea",
+                    "nav": "Exclusion criteria"
+                },
+                "item27": {
+                    "title": "My analysis plan is (justify differences from the original)",
+                    "type": "string",
+                    "format": "textarea",
+                    "nav": "Analysis plan"
+                },
+                "item28": {
+                    "title": "A successful replication is defined as",
+                    "type": "string",
+                    "format": "textarea",
+                    "nav": "Successful replication"
+                }
+            }
+        }
+    }]
 }
