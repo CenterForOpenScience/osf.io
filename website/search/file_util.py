@@ -1,7 +1,7 @@
 import requests
 
 from framework.exceptions import HTTPError
-
+from website import settings 
 
 INDEXED_TYPES = [
     'txt',
@@ -13,11 +13,14 @@ INDEXED_TYPES = [
 
 
 def is_indexed(filename):
+def is_indexed(filename, addon):
+    if not addon.config.short_name == 'osfstorage':
+        return False
     return filename.rsplit('.')[-1] in INDEXED_TYPES
 
 
 def get_file_content(file_):
-    url = file_.mfr_public_download_url
+    url = file_.download_url + '&mode=render'
     response = requests.get(url)
     return response.content
 
@@ -42,6 +45,7 @@ def build_file_document(name, path, addon, include_content=True):
     }
 
 
+#TODO: Restrict to osfstorage
 def collect_files_from_addon(addon, tree=None):
     """ Generate the file dicts for all files in an addon.
 
@@ -57,20 +61,21 @@ def collect_files_from_addon(addon, tree=None):
                 yield file_
         else:
             path, name = child['path'], child['name']
-            if is_indexed(name):
+            if is_indexed(name, addon):
                 yield {'name': name, 'path': path, 'addon': addon}
 
 
 def collect_files(node):
-    """ Generate the contents of a projects.
+    """ Generate the file_dicts of files in osfstorage.
 
     :param node: project.
-    :return: Genarator returning file dicts.
+    :return: Genarator returning file dicts consisting of name, path, addon.
     """
     addons = node.get_addons()
     for addon in addons:
-        try:
-            for file_dict in collect_files_from_addon(addon):
-                yield file_dict
-        except (AttributeError, HTTPError):
-            continue
+        if addon.config.short_name == 'osfstorage':
+            try:
+                for file_dict in collect_files_from_addon(addon):
+                    yield file_dict
+            except (AttributeError, HTTPError):
+                continue
