@@ -23,7 +23,9 @@ from website.archiver import (
     ARCHIVER_SUCCESS,
     ARCHIVER_FAILURE,
     ARCHIVER_NETWORK_ERROR,
-    ARCHIVER_SIZE_EXCEEDED,)
+    ARCHIVER_SIZE_EXCEEDED,
+    NO_ARCHIVE_LIMIT,
+)
 from website.archiver import utils as archiver_utils
 from website.app import *  # noqa
 from website.archiver import listeners
@@ -39,7 +41,7 @@ from website.addons.base import StorageAddonBase
 from website.util import api_url_for
 
 from tests import factories
-from tests.base import OsfTestCase, fake
+from tests.base import OsfTestCase
 
 
 SILENT_LOGGERS = (
@@ -262,6 +264,24 @@ class TestArchiverTasks(ArchiverTestCase):
             results = [stat_addon(addon, self.archive_job._id) for addon in ['osfstorage']]
             archive_node(results, job_pk=self.archive_job._id)
         mock_archive_addon.assert_not_called()
+
+    @use_fake_addons
+    @mock.patch('website.archiver.tasks.archive_addon.delay')
+    def test_archive_node_no_archive_size_limit(self, mock_archive_addon):
+        settings.MAX_ARCHIVE_SIZE = 100
+        self.archive_job.initiator.system_tags.append(NO_ARCHIVE_LIMIT)
+        self.archive_job.initiator.save()
+        with mock.patch.object(StorageAddonBase, '_get_file_tree') as mock_file_tree:
+            mock_file_tree.return_value = FILE_TREE
+            results = [stat_addon(addon, self.archive_job._id) for addon in ['osfstorage', 'dropbox']]
+        with mock.patch.object(celery, 'group') as mock_group:
+            archive_node(results, self.archive_job._id)
+        archive_dropbox_signature = archive_addon.si(
+            'dropbox',
+            self.archive_job._id,
+            results
+        )
+        assert(mock_group.called_with(archive_dropbox_signature))
 
     @use_fake_addons
     @mock.patch('website.archiver.tasks.make_copy_request.delay')

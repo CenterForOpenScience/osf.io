@@ -14,6 +14,7 @@ from website.archiver import (
     ARCHIVER_SIZE_EXCEEDED,
     ARCHIVER_NETWORK_ERROR,
     ARCHIVER_UNCAUGHT_ERROR,
+    NO_ARCHIVE_LIMIT,
     AggregateStatResult,
 )
 from website.archiver import utils
@@ -217,7 +218,7 @@ def archive_node(results, job_pk):
         src.title,
         targets=results,
     )
-    if stat_result.disk_usage > settings.MAX_ARCHIVE_SIZE:
+    if (NO_ARCHIVE_LIMIT not in job.initiator.system_tags) and (stat_result.disk_usage > settings.MAX_ARCHIVE_SIZE):
         raise ArchiverSizeExceeded(result=stat_result)
     else:
         if not results:
