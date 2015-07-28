@@ -30,7 +30,7 @@
         
         link: "Hyperlink <a>",
         linkdescription: "enter link description here",
-        linkdialog: "<div class='modal-header'> <h4 class='modal-title f-w-lg'>Add hyperlink?</h4></div><div class='modal-body'> <p><b>Example:</b><br>http://example.com/ \"optional title\"</p></div>",
+        linkdialog: "<div class='modal-header'> <h4 class='modal-title f-w-lg'>Add hyperlink</h4></div><div class='modal-body'> <p><b>Example:</b><br>http://example.com/ \"optional title\"</p></div>",
         
         quote: "Blockquote <blockquote>",
         quoteexample: "Blockquote",
