@@ -8,20 +8,19 @@ import logging
 
 from modularodm import Q
 
-from website.models import Node
+from website.models import Node, MetaSchema
 from website.app import init_app
+from website.project.model import ensure_schemas
 from scripts import utils as scripts_utils
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
-IMMUTABLE_KEYS = frozenset(['datacompletion', 'summary'])
 
-def get_registered_nodes():
+def get_old_registered_nodes():
     return Node.find(
         Q('is_registration', 'eq', True) &
-        Q('fits_prereg_schema', 'eq', False)
+        Q('registered_schema', 'eq', None)
     )
-
 
 def main(dry_run):
     init_app(routes=False)
@@ -30,50 +29,38 @@ def main(dry_run):
     if not dry_run:
         scripts_utils.add_file_logger(logger, __file__)
         logger.info("Iterating over all registrations")
+        # nullify old registered_schema refs
+        MetaSchema.remove()
+        ensure_schemas()
 
-    new_registration_data = dict()
-    for node in get_registered_nodes():
-        for schema, schema_data in json.loads(node.registered_meta).items():
-            valid_schema = {
-                'embargoEndDate': schema_data['embargoEndDate'] if 'embargoEndDate' in schema_data else '',
-                'registrationChoice': schema_data['registrationChoice'] if 'registrationChoice' in schema_data else '',
+    import ipdb; ipdb.set_trace()
+    for node in get_old_registered_nodes():
+        schemas = node.registered_meta
+        # there is only ever one key in this dict
+        for name, schema in schemas.iteritems():
+            schema = json.loads(schema)
+            schema_data = {
+                'embargoEndDate': schema.get('embargoEndDate', ''),
+                'registrationChoice': schema.get('registrationChoice', ''),
             }
-
-            # in most schemas, answers are just stored as { 'itemX': 'answer' }
-            # only 'datacompletion' and 'summary' are stored with their name
-            # and can be interspersed with the itemX keys so reassigning keys based on num_questions
-            # could cause conflicts. Instead they are left there.
-            matches = dict()
-            for val in schema_data:
-                match = re.search("item[0-9]*", val)
-                if match is not None and val not in IMMUTABLE_KEYS:
-                    new_val = val.replace('q', 'item')
-                    matches[new_val] = schema_data[val]
-
-            if matches:
-                for item_num, item in matches.iteritems():
-                    # if already matches the schema, don't change anything
-                    if isinstance(item, dict):
-                        valid_schema[item_num] = {
-                            'value': item['value'] if 'value' in item else '',
-                            'comments': item['comments'] if 'comments' in item else {}
-                        }
-
-                    # everything else that doesn't match
-                    else:
-                        valid_schema[item_num] = {
-                            'comments': {},
-                            'value': item
-                        }
-
-            new_registration_data[schema] = valid_schema
-            count += 1
-
-        if not dry_run:
-            node.registered_meta = new_registration_data
-            node.fits_prereg_schema = True
-            node.save()
-
+            schema_data.update(schema)
+            try:
+                meta_schema = MetaSchema.find_one(
+                    Q('name', 'eq', ' '.join(name.split('_'))) &
+                    Q('schema_version', 'eq', 2)
+                )
+            except Exception:
+                import ipdb; ipdb.set_trace()
+            node.registered_schema = meta_schema
+            node.registered_meta = {
+                key: {
+                    'value': value
+                }
+                for key, value in schema_data.iteritems()
+            }
+            if not dry_run:
+                node.save()
+        count = count + 1
     logger.info('Done with {} nodes migrated'.format(count))
 
 if __name__ == '__main__':
