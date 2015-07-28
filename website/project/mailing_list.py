@@ -3,14 +3,9 @@
 import requests
 import json
 
-from framework import sentry
 from framework.tasks import app
 from framework.tasks.handlers import queued_task
-from framework.auth.signals import user_confirmed
 from framework.exceptions import HTTPError
-
-from website import settings
-from website.util import waterbutler_url_for
 
 from website.settings.local import MAILGUN_API_KEY, MAILGUN_DOMAIN, OWN_URL
 
@@ -18,11 +13,14 @@ from website.settings.local import MAILGUN_API_KEY, MAILGUN_DOMAIN, OWN_URL
 # Base Functions
 ###############################################################################
 
+
 def address(node_id):
     return node_id + '@' + MAILGUN_DOMAIN
 
+
 def project_url(node_id):
     return OWN_URL + node_id
+
 
 def get_list(node_id):
     info = requests.get(
@@ -42,6 +40,7 @@ def get_list(node_id):
     members = json.loads(members.text)
 
     return info, members
+
 
 def create_list(node_id, node_title, emails, subscriptions):
     res = requests.post(
@@ -67,6 +66,7 @@ def create_list(node_id, node_title, emails, subscriptions):
         'text': 'A mailing list has been created/enabled for the project {}.'.format(node_title)
     })
 
+
 def delete_list(node_id):
     res = requests.delete(
         'https://api.mailgun.net/v3/lists/{}'.format(address(node_id)),
@@ -74,6 +74,7 @@ def delete_list(node_id):
     )
     if res.status_code != 200:
         raise HTTPError(400)
+
 
 def update_title(node_id, node_title):
     res = requests.put(
@@ -85,6 +86,7 @@ def update_title(node_id, node_title):
     )
     if res.status_code != 200:
         raise HTTPError(400)
+
 
 def add_member(node_id, email, subscription):
     res = requests.post(
@@ -99,6 +101,7 @@ def add_member(node_id, email, subscription):
     if res.status_code != 200:
         raise HTTPError(400)
 
+
 def remove_member(node_id, email):
     res = requests.delete(
         'https://api.mailgun.net/v3/lists/{0}/members/{1}'.format(address(node_id), email),
@@ -106,6 +109,7 @@ def remove_member(node_id, email):
     )
     if res.status_code != 200:
         raise HTTPError(400)
+
 
 def update_member(node_id, email, subscription):
     res = requests.put(
@@ -118,9 +122,11 @@ def update_member(node_id, email, subscription):
     if res.status_code != 200:
         raise HTTPError(400)
 
+
 ###############################################################################
 # Celery Tasks
 ###############################################################################
+
 
 @queued_task
 @app.task(bind=True, default_retry_delay=120)
@@ -171,6 +177,7 @@ def update_list(self, node_id, node_title, list_enabled, emails, subscriptions):
     except (HTTPError, requests.ConnectionError):
         self.retry()
 
+
 @queued_task
 @app.task(bind=True, default_retry_delay=120)
 def send_message(self, node_id, node_title, message):
@@ -178,7 +185,7 @@ def send_message(self, node_id, node_title, message):
         res = requests.post(
             'https://api.mailgun.net/v3/{}/messages'.format(MAILGUN_DOMAIN),
             auth=('api', MAILGUN_API_KEY),
-            data={'from': '{0} Mailing List <{1}>'.format(node_title,address(node_id)),
+            data={'from': '{0} Mailing List <{1}>'.format(node_title, address(node_id)),
                   'to': address(node_id),
                   'subject': message['subject'],
                   'html': '<html>{}</html>'.format(message['text'])})
@@ -187,4 +194,3 @@ def send_message(self, node_id, node_title, message):
 
     except (HTTPError, requests.ConnectionError):
         self.retry()
-
