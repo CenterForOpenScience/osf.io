@@ -5,7 +5,7 @@ import httplib as http
 
 import pymongo
 from modularodm.query import QueryBase
-from modularodm.exceptions import ValidationValueError, NoResultsFound
+from modularodm.exceptions import ValidationValueError, NoResultsFound, MultipleResultsFound
 
 from framework.exceptions import HTTPError
 
@@ -71,18 +71,22 @@ def get_or_http_error(Model, pk_or_query):
             instance = Model.find_one(pk_or_query)
         except NoResultsFound:
             raise HTTPError(http.NOT_FOUND, data=dict(
-                message_long="No {name} resource matching that query could be found".format(name=name)
+                message_long="No {name} record matching that query could be found".format(name=name)
+            ))
+        except MultipleResultsFound:
+            raise HTTPError(http.BAD_REQUEST, data=dict(
+                message_long="The query must match exactly one {name} record".format(name=name)
             ))
         return instance
     else:
         instance = Model.load(pk_or_query)
         if not instance:
             raise HTTPError(http.NOT_FOUND, data=dict(
-                message_long="No {name} resource with that primary key could be found".format(name=name)
+                message_long="No {name} record with that primary key could be found".format(name=name)
             ))
         if getattr(instance, 'is_deleted', False):
             raise HTTPError(http.GONE, data=dict(
-                message_long="This {name} resource has been deleted".format(name=name)
+                message_long="This {name} record has been deleted".format(name=name)
             ))
         else:
             return instance

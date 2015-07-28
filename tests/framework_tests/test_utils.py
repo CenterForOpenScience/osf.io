@@ -1,14 +1,42 @@
 import unittest
 from nose.tools import *  # noqa
 
+from modularodm import Q
+
 from tests.base import DbTestCase
+from tests import factories
+
+from framework.mongo.utils import get_or_http_error
+from framework.exceptions import HTTPError
+
+from website.models import Node
 
 class MongoUtilsTestCase(DbTestCase):
 
-    @unittest.skip
-    def test_get_or_http_error_by_pk(self):
-        pass
+    def test_get_or_http_error_by_pk_found(self):
+        n = factories.NodeFactory()
+        found = get_or_http_error(Node, n._id)
+        assert_equal(found, n)
 
-    @unittest.skip
-    def test_get_or_http_error_by_query(self):
-        pass
+    def test_get_or_http_error_by_pk_not_found(self):
+        fail = lambda: get_or_http_error(Node, 'blah')
+        assert_raises(HTTPError, fail)
+
+    def test_get_or_http_error_by_query_found(self):
+        n = factories.NodeFactory()
+        found = get_or_http_error(
+            Node,
+            (Q('title', 'eq', n.title) & Q('_id', 'eq', n._id))
+        )
+        assert_equal(found, n)
+
+    def test_get_or_http_error_by_query_not_found(self):
+        fail = lambda: get_or_http_error(Node, Q('_id', 'eq', 'blah'))
+        assert_raises(HTTPError, fail)
+
+    def test_get_or_http_error_by_query_not_unique(self):
+        title = 'TITLE'
+        factories.NodeFactory(title=title)
+        factories.NodeFactory(title=title)
+        fail = lambda: get_or_http_error(Node, Q('title', 'eq', title))
+        assert_raises(HTTPError, fail)
