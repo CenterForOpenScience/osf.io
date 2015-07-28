@@ -135,6 +135,12 @@ ViewModel.prototype.disableTwofactor = function() {
             if (confirmed) {
                 self.disableTwofactorConfirm.call(self);
             }
+        },
+        buttons:{
+            confirm:{
+                label:'Disable',
+                className:'btn-danger'
+            }
         }
     });
 };
@@ -174,6 +180,11 @@ ViewModel.prototype.enableTwofactor = function() {
         callback: function(confirmed) {
             if (confirmed) {
                 self.enableTwofactorConfirm.call(self);
+            }
+        },
+        buttons:{
+            confirm:{
+                label:'Enable',
             }
         }
     });

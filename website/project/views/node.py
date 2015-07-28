@@ -182,7 +182,7 @@ def project_new_node(auth, node, **kwargs):
     user = auth.user
     if form.validate():
         try:
-            node = new_node(
+            new_component = new_node(
                 title=strip_html(form.title.data),
                 user=user,
                 category=form.category.data,
@@ -196,13 +196,13 @@ def project_new_node(auth, node, **kwargs):
 
         message = (
             'Your component was created successfully. You can keep working on the component page below, '
-            'or return to the <u><a href="{url}">Project Page</a></u>.'
+            'or return to the <u><a href="{url}">project page</a></u>.'
         ).format(url=node.url)
         status.push_status_message(message, kind='info', trust=True)
 
         return {
             'status': 'success',
-        }, 201, None, node.url
+        }, 201, None, new_component.url
     else:
         # TODO: This function doesn't seem to exist anymore?
         status.push_errors_to_status(form.errors)

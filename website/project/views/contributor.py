@@ -38,7 +38,7 @@ from website.project.decorators import (must_have_permission, must_be_valid_proj
 @must_be_valid_project(retractions_valid=True)
 def get_node_contributors_abbrev(auth, node, **kwargs):
     anonymous = has_anonymous_link(node, auth)
-
+    formatter = 'surname'
     max_count = kwargs.get('max_count', 3)
     if 'user_ids' in kwargs:
         users = [
@@ -59,19 +59,19 @@ def get_node_contributors_abbrev(auth, node, **kwargs):
     for index, user in enumerate(users[:max_count]):
 
         if index == max_count - 1 and len(users) > max_count:
-            separator = '&nbsp;&'
+            separator = ' &'
             others_count = str(n_contributors - 3)
         elif index == len(users) - 1:
             separator = ''
         elif index == len(users) - 2:
-            separator = '&nbsp&'
+            separator = ' &'
         else:
             separator = ','
+        contributor = user.get_summary(formatter)
+        contributor['user_id'] = user._primary_key
+        contributor['separator'] = separator
 
-        contributors.append({
-            'user_id': user._primary_key,
-            'separator': separator,
-        })
+        contributors.append(contributor)
 
     return {
         'contributors': contributors,
@@ -553,7 +553,7 @@ def claim_user_registered(auth, node, **kwargs):
         logout_url = web_url_for('auth_logout', redirect_url=request.url)
         data = {
             'message_short': 'Already a contributor',
-            'message_long': ('The logged-in user is already a contributor to this'
+            'message_long': ('The logged-in user is already a contributor to this '
                 'project. Would you like to <a href="{}">log out</a>?').format(logout_url)
         }
         raise HTTPError(http.BAD_REQUEST, data=data)

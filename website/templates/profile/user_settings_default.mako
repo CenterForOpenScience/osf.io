@@ -14,7 +14,7 @@
         <table class="table table-hover">
             <thead>
                 <tr class="user-settings-addon-auth">
-                    <th class="text-muted default-authorized-by">Authorized by <em><a data-bind="attr.href: profileUrl, text: name"></a></em></th>
+                    <th class="text-muted default-authorized-by">Authorized by <em><span data-bind="text: name"></span></em></th>
                     <th><a data-bind="click: $root.askDisconnect" class="text-danger pull-right default-authorized-by">Disconnect Account</a></th>
                 </tr>
             </thead>

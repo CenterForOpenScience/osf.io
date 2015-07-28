@@ -39,18 +39,18 @@
                     % endif
                     </div>
                     <!-- ko if: canBeOrganized -->
-                    <div class="btn-group" style="display: none" data-bind="visible: true">
+                    <div class="btn-group" style="display: none;" data-bind="visible: true">
 
                         <!-- ko ifnot: inDashboard -->
                            <a data-bind="click: addToDashboard, tooltip: {title: 'Add to Dashboard Folder',
-                            placement: 'bottom'}" class="btn btn-default">
+                            placement: 'bottom', container : 'body'}" class="btn btn-default">
                                <i class="fa fa-folder-open"></i>
                                <i class="fa fa-plus"></i>
                            </a>
                         <!-- /ko -->
                         <!-- ko if: inDashboard -->
                            <a data-bind="click: removeFromDashboard, tooltip: {title: 'Remove from Dashboard Folder',
-                            placement: 'bottom'}" class="btn btn-default">
+                            placement: 'bottom', container : 'body'}" class="btn btn-default">
                                <i class="fa fa-folder-open"></i>
                                <i class="fa fa-minus"></i>
                            </a>
@@ -65,7 +65,7 @@
                             class="btn-group">
                         <a
                         % if user_name and (node['is_public'] or user['has_read_permissions']) and not node['is_registration']:
-                            data-bind="click: toggleWatch, tooltip: {title: watchButtonAction, placement: 'bottom'}"
+                            data-bind="click: toggleWatch, tooltip: {title: watchButtonAction, placement: 'bottom', container : 'body'}"
                             class="btn btn-default" data-container="body"
                         % else:
                             class="btn btn-default disabled"
@@ -77,7 +77,7 @@
                         <a
                         % if user_name:
                             class="btn btn-default"
-                            data-bind="tooltip: {title: 'Duplicate', placement: 'bottom'}"
+                            data-bind="tooltip: {title: 'Duplicate', placement: 'bottom', container : 'body'}"
                             data-target="#duplicateModal" data-toggle="modal"
                         % else:
                             class="btn btn-default disabled"
@@ -198,7 +198,7 @@
             <div class="panel-body">
                 <div id="treeGrid">
                     <div class="spinner-loading-wrapper">
-                        <div class="logo-spin text-center"><img src="/static/img/logo_spin.png" alt="loader"> </div> 
+                        <div class="logo-spin text-center"><img src="/static/img/logo_spin.png" alt="loader"> </div>
                          <p class="m-t-sm fg-load-message"> Loading files...  </p>
                     </div>
                 </div>

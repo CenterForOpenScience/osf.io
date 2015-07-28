@@ -40,7 +40,7 @@
     </div>
 
     <!-- Menu toggle closed -->
-    <div class="panel panel-default osf-panel-show text-center reset-height"  style="display: none">
+    <div class="panel panel-default osf-panel-show text-center reset-height pointer"  style="display: none">
       <div class="panel-heading">
         <i class="fa fa-angle-right"></i>
       </div>
@@ -50,6 +50,7 @@
   <div id="fileViewPanelLeft" class="col-sm-9 panel-expand">
     <div class="row">
       <div id="mfrIframeParent" class="col-sm-9">
+        <div id="externalView"></div>
         <div id="mfrIframe" class="mfr mfr-file"></div>
       </div>
 
@@ -153,12 +154,14 @@
             size: ${size},
             extra: ${extra},
             error: ${ error | sjson, n },
+            privateRepo: ${private | sjson, n},
             name: ${ file_name | sjson, n },
             path: ${ file_path | sjson, n },
             provider: ${ provider | sjson, n },
             safeName: ${ file_name | h, sjson},
             materializedPath: ${ materialized_path | sjson, n },
           urls: {
+              external: '${(urls['external'] or '') | js_str}',
         %if error is None:
               render: ${ urls['render'] | sjson ,n },
         %endif

@@ -128,7 +128,7 @@
                             </div>
 
                             <div class="btn-group">
-                                <button class="btn btn-default btn-sm m-r-xs copy-button"
+                                <button class="btn btn-primary btn-sm m-r-xs copy-button"
                                         data-bind="attr: {data-clipboard-text: linkUrl}" >
                                     Copy
                                 </button>

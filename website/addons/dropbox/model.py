@@ -220,24 +220,6 @@ class DropboxNodeSettings(StorageAddonBase, AddonNodeSettingsBase):
     # backwards compatibility
     before_register = before_register_message
 
-    def before_fork_message(self, node, user):
-        """Return warning text to display if user auth will be copied to a
-        fork.
-        """
-        category = node.project_or_component
-        if self.user_settings and self.user_settings.owner == user:
-            return (u'Because you have authorized the Dropbox add-on for this '
-                '{category}, forking it will also transfer your authentication token to '
-                'the forked {category}.').format(category=category)
-
-        else:
-            return (u'Because the Dropbox add-on has been authorized by a different '
-                    'user, forking it will not transfer authentication token to the forked '
-                    '{category}.').format(category=category)
-
-    # backwards compatibility
-    before_fork = before_fork_message
-
     def before_remove_contributor_message(self, node, removed):
         """Return warning text to display if removed contributor is the user
         who authorized the Dropbox addon
