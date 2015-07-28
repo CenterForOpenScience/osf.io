@@ -1,4 +1,5 @@
 from rest_framework import generics, permissions as drf_permissions
+from rest_framework.exceptions import ValidationError
 from modularodm import Q
 
 from website.models import User, Node
@@ -25,7 +26,38 @@ class UserMixin(object):
         return obj
 
 
-class UserList(generics.ListAPIView, ODMFilterMixin):
+class UserIncludeMixin(object):
+
+    def get_user_nodes_meta_data(self, obj):
+        included = False
+        query_parmas = self.request.query_params
+        if 'include' in query_parmas:
+            if query_parmas['include'] != 'nodes' or None:
+                raise ValidationError
+            elif query_parmas['include'] == 'nodes':
+                included = True
+        return self.get_node_data(obj, included)
+
+    def get_node_data(self, obj, included):
+        ret = {}
+        auth = Auth(self.request.user)
+        query = (
+            Q('contributors', 'eq', obj) &
+            Q('is_folder', 'ne', True) &
+            Q('is_deleted', 'ne', True)
+        )
+        raw_nodes = Node.find(query)
+        nodes = [each for each in raw_nodes if each.is_public or each.can_view(auth)]
+        ret['count'] = len(nodes)
+        if included:
+            ret['data'] = []
+            for node in nodes:
+                serialized_node = NodeSerializer(node, context={'view': NodeIncludeMixin('contributors')})
+                ret['data'].append(serialized_node.data)
+        return ret
+
+
+class UserList(generics.ListAPIView, ODMFilterMixin, UserIncludeMixin):
     """Users registered on the OSF.
 
     You can filter on users by their id, fullname, given_name, middle_name, or family_name.

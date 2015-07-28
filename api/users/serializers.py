@@ -28,7 +28,8 @@ class UserSerializer(JSONAPISerializer):
     relationships = LinksField({
         'nodes': {
             'links': {
-                'related': Link('users:user-nodes', kwargs={'user_id': '<pk>'})
+                'related': Link('users:user-nodes', kwargs={'user_id': '<pk>'}),
+                'meta':  'get_objects_data'
             }
         },
     })
@@ -38,6 +39,9 @@ class UserSerializer(JSONAPISerializer):
 
     def absolute_url(self, obj):
         return obj.absolute_url
+
+    def get_objects_data(self, obj):
+        return self.context['view'].get_user_nodes_meta_data(obj)
 
     def update(self, instance, validated_data):
         # TODO

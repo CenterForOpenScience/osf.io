@@ -30,11 +30,22 @@ class NodeMixin(object):
 
 class NodeIncludeMixin(object):
 
+    def __init__(self, additional_query_params=None, user=None):
+        self.query_params = additional_query_params
+        self.auth = Auth(user)
+
     def get_relationship_meta_data(self, obj, object_type):
         included = False
-        query_parmas = self.request.query_params
-        if 'include' in query_parmas and object_type in query_parmas['include']:
-            included = True
+        if not self.query_params:
+            self.query_params = self.request.query_params
+            self.auth = Auth(self.request.user)
+        query_params = self.request.query_params if hasattr(self, 'request') else self.query_params
+        if 'include' in query_params:
+            for param in self.query_params['include'].split(','):
+                if param not in ['children', 'contributors', 'pointers', 'registrations']:
+                    raise ValidationError('{} is an invalid key.'.format(param))
+                if param == object_type:
+                    included = True
         ret = None
         if object_type == 'children':
             ret = self.get_node_data(obj, included)
@@ -48,14 +59,13 @@ class NodeIncludeMixin(object):
 
     def get_node_data(self, obj, included):
         ret = {}
-        auth = Auth(self.request.user)
-        nodes = [node for node in obj.nodes if node.can_view(auth) and node.primary]
+        nodes = [node for node in obj.nodes if node.can_view(self.auth) and node.primary]
         ret['count'] = len(nodes)
         if included:
             ret['data'] = []
             for node in nodes:
-                serialized_node = NodeSerializer(node).data
-                ret['data'].append(serialized_node)
+                serialized_node = NodeSerializer(node)
+                ret['data'].append(serialized_node.data['data'])
         return ret
 
     def get_contrib_data(self, obj, included):
@@ -66,8 +76,8 @@ class NodeIncludeMixin(object):
             ret['data'] = []
             for contributor in contributors:
                 contributor.bibliographic = obj.get_visible(contributor)
-                serialized_contributor = ContributorSerializer(contributor).data['data']
-                ret['data'].append(serialized_contributor)
+                serialized_contributor = ContributorSerializer(contributor)
+                ret['data'].append(serialized_contributor['data'])
         return ret
 
     def get_pointers_data(self, obj, included):
@@ -77,19 +87,18 @@ class NodeIncludeMixin(object):
         if included:
             ret['data'] = []
             for pointer in pointers:
-                serialized_pointer = NodePointersSerializer(pointer).data['data']
-                ret['data'].append(serialized_pointer)
+                serialized_pointer = NodePointersSerializer(pointer)
+                ret['data'].append(serialized_pointer.data['data'])
         return ret
 
     def get_registration_data(self, obj, included):
         ret = {}
-        auth = Auth(self.request.user)
-        registrations = [node for node in obj.node__registrations if node.can_view(auth)]
+        registrations = [node for node in obj.node__registrations if node.can_view(self.auth)]
         ret['count'] = len(registrations)
         if included:
             ret['data'] = []
             for registration in registrations:
-                serialized_registration = NodeSerializer(registration).data
+                serialized_registration = NodeSerializer(registration['data'])
                 ret['data'].append(serialized_registration)
         return ret
 
@@ -168,7 +177,10 @@ class NodeDetail(generics.RetrieveUpdateDestroyAPIView, NodeMixin, NodeIncludeMi
     # overrides RetrieveUpdateDestroyAPIView
     def get_serializer_context(self):
         # Serializer needs the request in order to make an update to privacy
-        return {'request': self.request}
+        return {
+            'request': self.request,
+            'view': self
+        }
 
     # overrides RetrieveUpdateDestroyAPIView
     def perform_destroy(self, instance):
