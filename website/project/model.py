@@ -83,31 +83,33 @@ class MetaSchema(StoredObject):
     schema = fields.DictionaryField()
     category = fields.StringField()
 
-    # Version of the Knockout metadata renderer to use (e.g. if data binds
-    # change)
+    # Deprecated legacy field
     metadata_version = fields.IntegerField()
+
     # Version of the schema to use (e.g. if questions, responses change)
     schema_version = fields.IntegerField()
 
-
+def ensure_schema(schema, name, version=1):
+    try:
+        schema_obj = MetaSchema.find_one(
+            Q('name', 'eq', name) &
+            Q('schema_version', 'eq', version)
+        )
+    except NoResultsFound:
+        meta_schema = {
+            'name': name,
+            'schema_version': version,
+            'schema': schema,
+        }
+        schema_obj = MetaSchema(**meta_schema)
+        schema_obj.save()
+    return schema_obj
+    
 def ensure_schemas():
     """Import meta-data schemas from JSON to database if not already loaded
     """
     for schema in OSF_META_SCHEMAS:
-        try:
-            MetaSchema.find_one(
-                Q('name', 'eq', schema['name']) &
-                Q('schema_version', 'eq', schema.get('version', 1))
-            )
-        except NoResultsFound:
-            meta_schema = {
-                'name': schema['name'],
-                'schema_version': schema.get('version', 1),
-                'schema': schema,
-            }
-            schema_obj = MetaSchema(**meta_schema)
-            schema_obj.save()
-
+        ensure_schema(schema, schema['name'], schema.get('version', 1))
 
 class MetaData(GuidStoredObject):
 
@@ -632,8 +634,6 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
     # Dictionary field mapping user id to a list of nodes in node.nodes which the user has subscriptions for
     # {<User.id>: [<Node._id>, <Node2._id>, ...] }
     child_node_subscriptions = fields.DictionaryField(default=dict)
-    # For the purpose of migrate_registered_meta script
-    fits_prereg_schema = fields.BooleanField(default=False)
 
     _meta = {
         'optimistic': True,
@@ -3074,7 +3074,7 @@ class DraftRegistration(AddonModelMixin, StoredObject):
     def __init__(self, *args, **kwargs):
         super(DraftRegistration, self).__init__(*args, **kwargs)
 
-        meta_schema = self.registration_schema or kwargs.get('registration_schema')
+        meta_schema = self.registration_schema  # or kwargs.get('registration_schema')
         if meta_schema:
             schema = meta_schema.schema
             config = schema.get('config', {})

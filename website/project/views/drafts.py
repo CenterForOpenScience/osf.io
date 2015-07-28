@@ -6,6 +6,7 @@ from modularodm import Q
 from modularodm.exceptions import ValidationValueError
 
 from framework import status
+from framework.mongo import database
 from framework.mongo.utils import get_or_http_error
 from framework.exceptions import HTTPError
 from framework.status import push_status_message
@@ -229,11 +230,22 @@ def delete_draft_registration(auth, node, draft_pk, *args, **kwargs):
 def get_metaschemas(*args, **kwargs):
 
     count = request.args.get('count', 100)
+    include = request.args.get('include', 'latest')
 
-    meta_schemas = MetaSchema.find()[:count]
+    meta_schema_collection = database['metaschema']
+
+    meta_schemas = []
+    schema_names = meta_schema_collection.distinct('name')
+    for name in schema_names:
+        meta_schema_set = MetaSchema.find(Q('name', 'eq', name))
+        if include == 'latest':
+            meta_schemas = meta_schemas + [s for s in meta_schema_set.sort('schema_version').limit(1)]
+        else:
+            meta_schemas = meta_schemas + [s for s in meta_schema_set]
+
     return {
         'meta_schemas': [
-            serialize_meta_schema(ms) for ms in meta_schemas
+            serialize_meta_schema(ms) for ms in meta_schemas[:count]
         ]
     }, http.OK
 
