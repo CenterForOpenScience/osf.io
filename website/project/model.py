@@ -2293,7 +2293,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
             if visible:
                 self.set_visible(contrib_to_add, visible=True, log=False)
 
-            if self.discussions:
+            if self.discussions and contrib_to_add.is_registered:
                 self.discussions.add_member(contrib_to_add.email)
 
             # Add default contributor permissions

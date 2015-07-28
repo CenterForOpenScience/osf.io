@@ -649,6 +649,8 @@ def claim_user_form(auth, **kwargs):
             user.unclaimed_records = {}
             user.verification_key = security.random_string(20)
             user.save()
+            for node in user.node__contributed:
+                node.discussions.add_member(user.email)
             # Authenticate user and redirect to project page
             node = Node.load(pid)
             status.push_status_message(language.CLAIMED_CONTRIBUTOR.format(node=node), 'success')
