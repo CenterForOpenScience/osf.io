@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+import datetime
 import mock
 import urlparse
 from nose.tools import *  # flake8: noqa
@@ -1358,18 +1359,23 @@ class TestNodeLogList(ApiTestCase):
         self.public_url = '/{}nodes/{}/logs/'.format(API_BASE, self.public_project._id)
 
     def test_log_create_on_public_project(self):
-        res = self.app.get(self.public_url) 
+        res = self.app.get(self.public_url)
         assert_equal(res.status_code, 200)
         assert_equal(len(res.json['data']), 1)
         assert_equal(res.json['data'][0]['id'], self.public_project.logs[0]._id)
         assert_equal(res.json['data'][0]['action'], self.public_project.logs[0].action)
+        assert_equal(res.json['data'][0]['version'], self.public_project._version)
         assert_equal(res.json['data'][0]['name'], self.public_project.logs[0]._name)
 
+
     def test_log_create_on_private_project(self):
+        now = datetime.datetime.utcnow()
         res = self.app.get(self.public_url)
         assert_equal(res.status_code, 200)
         assert_equal(len(res.json['data']), 1)
+        assert_equal(res.json['data'][0]['id'], self.public_project.logs[0]._id)
         assert_equal(res.json['data'][0]['action'], self.private_project.logs[0].action)
+        assert_equal(res.json['data'][0]['version'], self.private_project.logs[0]._version)
         assert_equal(res.json['data'][0]['name'], self.private_project.logs[0]._name)
 
     def test_return_logs_private_project_details(self):
