@@ -1740,10 +1740,9 @@ class TestAddingContributorViews(OsfTestCase):
         notify_contributor(project, contributor)
         assert_true(send_mail.called)
 
-        # 2nd call raises error because throttle period has not expired
-        with assert_raises(HTTPError):
-            notify_contributor(project, contributor)
-            send_mail.assert_not_called()
+        # 2nd call does not send email because throttle period has not expired
+        notify_contributor(project, contributor)
+        send_mail.assert_not_called()
 
     def test_add_multiple_contributors_only_adds_one_log(self):
         n_logs_pre = len(self.project.logs)
