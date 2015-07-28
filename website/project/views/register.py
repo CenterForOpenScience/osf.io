@@ -11,7 +11,6 @@ from framework import status
 from framework.exceptions import HTTPError, PermissionsError
 from framework.flask import redirect  # VOL-aware redirect
 
-from framework.status import push_status_message
 from framework.mongo.utils import to_mongo
 from framework.forms.utils import unprocess_payload
 from framework.auth.decorators import must_be_signed
