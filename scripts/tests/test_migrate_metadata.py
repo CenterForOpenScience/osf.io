@@ -1,45 +1,145 @@
-from nose.tools import *
+from nose.tools import *  # noqa
 from tests.base import OsfTestCase
 
+import json
 from modularodm import Q
-from website.models import Node
-from tests.factories import NodeFactory
-from scripts.migration.migrate_metadata import main as do_migration
+
+from framework.mongo.utils import to_mongo
+
+from website.project.model import ensure_schemas, MetaSchema
+from tests import factories
+from scripts.migration.migrate_registered_meta import main as do_migration
+from scripts.migration.migrate_registered_meta import get_old_registered_nodes
+
+SCHEMA_NAMES = [
+    'Open-Ended Registration',
+    'OSF-Standard Pre-Data Collection Registration',
+    'Replication Recipe (Brandt et al., 2013): Pre-Registration',
+    'Replication Recipe (Brandt et al., 2013): Post-Completion'
+]
+OLD_META = {
+    'Open-Ended Registration': {
+        'summary': 'some airy',
+    },
+    'OSF-Standard Pre-Data Collection Registration': {
+        'comments': 'Standard',
+        'datacompletion': 'Yes',
+        'looked': 'Yes',
+    },
+    'Replication Recipe (Brandt et al., 2013): Pre-Registration': {
+        'item1': 'Ver',
+        'item10': 'yes',
+        'item11': 'fas',
+        'item12': 'afs',
+        'item13': 'fsa',
+        'item14': 'fsa',
+        'item15': 'fsa',
+        'item16': 'sf',
+        'item17': 'Exact',
+        'item18': 'Different',
+        'item19': 'Different',
+        'item2': 'vsf',
+        'item20': 'Different',
+        'item21': 'Close',
+        'item22': 'Exact',
+        'item23': 'Exact',
+        'item24': 'fsasf',
+        'item25': 'asfsfa',
+        'item26': 'safasf',
+        'item27': 'asf',
+        'item28': 'fassf',
+        'item3': 'fafa',
+        'item4': 'fsafds',
+        'item5': 'fafa',
+        'item6': 'asdfsadf',
+        'item7': 'sfsaf',
+        'item8': 'sfdsdf',
+        'item9': 'sfd',
+    },
+    'Replication Recipe (Brandt et al., 2013): Post-Completion': {
+        'item29': 'adad',
+        'item30': 'asd',
+        'item31': 'asd',
+        'item32': 'not significantly different from the original effect size',
+        'item33': 'informative failure to replicate',
+        'item34': 'asdasd',
+        'item35': 'ds',
+        'item36': 'ads',
+        'item37': 'das',
+    },
+}
 
 
 class TestMigrateSchemas(OsfTestCase):
     def setUp(self):
         super(TestMigrateSchemas, self).setUp()
-        self.reg1 = NodeFactory(is_registration=True, registered_meta={u'Open-Ended_Registration': u'{"registrationChoice": \
-         "immediate","embargoEndDate":"Thu%2C 02 Jul 2015 13%3A34%3A27 GMT","summary":\
-          "This is the most basic schema that we have"}'}
+
+        MetaSchema.remove()
+        ensure_schemas()
+
+        self.open_ended_schema = MetaSchema.find_one(
+            Q('name', 'eq', SCHEMA_NAMES[0]) &
+            Q('schema_version', 'eq', 1)
         )
+        self.open_ended = factories.RegistrationFactory(
+            registered_meta={
+                to_mongo(SCHEMA_NAMES[0]): json.dumps(OLD_META[SCHEMA_NAMES[0]])
+            },
+            registered_schema=self.open_ended_schema
+        )
+        del self.open_ended.registered_meta['Template1']
+        self.open_ended.save()
+        self.standard_schema = MetaSchema.find_one(
+            Q('name', 'eq', SCHEMA_NAMES[1]) &
+            Q('schema_version', 'eq', 1)
+        )
+        self.standard = factories.RegistrationFactory(
+            registered_meta={
+                to_mongo(SCHEMA_NAMES[1]): json.dumps(OLD_META[SCHEMA_NAMES[1]])
+            },
+            registered_schema=self.standard_schema
+        )
+        del self.standard.registered_meta['Template1']
+        self.standard.save()
+        self.brandt_pre_schema = MetaSchema.find_one(
+            Q('name', 'eq', SCHEMA_NAMES[2]) &
+            Q('schema_version', 'eq', 1)
+        )
+        self.brandt_pre = factories.RegistrationFactory(
+            registered_meta={
+                to_mongo(SCHEMA_NAMES[2]): json.dumps(OLD_META[SCHEMA_NAMES[2]])
+            },
+            registered_schema=self.brandt_pre_schema
+        )
+        del self.brandt_pre.registered_meta['Template1']
+        self.brandt_pre.save()
+        self.brant_post_schema = MetaSchema.find_one(
+            Q('name', 'eq', SCHEMA_NAMES[3]) &
+            Q('schema_version', 'eq', 1)
+        )
+        self.brandt_post = factories.RegistrationFactory(
+            registered_meta={
+                to_mongo(SCHEMA_NAMES[3]): json.dumps(OLD_META[SCHEMA_NAMES[3]])
+            },
+            registered_schema=self.brant_post_schema
+        )
+        del self.brandt_post.registered_meta['Template1']
+        self.brandt_post.save()
 
-        self.reg2 = NodeFactory(is_registration=True, registered_meta={u'V serious Registration': u'{"embargoEndDate":\
-            "Thu%2C 02 Jul 2015 13%3A34%3A27 GMT","item1": "the nature","item10": "yes","item11": "asfd","item12":\
-            "fasfsdf","item13": "has anyone","item14": "even been so","item15": "far as","item16": "decided to use",\
-            "item17": "Close","item18": "Exact","item19": "Exact","item2": "of the ","item22": "Different","item23":\
-            "Different","item24": " even go want","item25": " to do look more like%3F","item26": "You%27ve got to\
-            be kidding me. ","item27": "I%27ve been further even more decided to use even go need to do look more as\
-            anyone can. C","item28": "an you really be far even as decided half as much to use go wish for that%3F",\
-            "item3": "effect","item4": "is so","item5": "huge","item6": "i need to see","item7": "these ","item8":\
-            "answers","item9": "wtf","registrationChoice": "immediate"}'
-        })
+    def test_get_old_registered_nodes(self):
+        # create a non-registered node
+        factories.NodeFactory()
 
-    def test_migrate_json_schemas(self):
+        old_nodes = get_old_registered_nodes(dry_run=False)
+        assert_equal(len(old_nodes), 4)
+
+    def test_migrate_registration_schemas(self):
+        target_nodes = get_old_registered_nodes(dry_run=False)
         do_migration(dry_run=False)
-        migrated_nodes = Node.find(
-            Q('is_registration', 'eq', True)
-        )
 
-        for node in migrated_nodes:
-            registrations = node.registered_meta
-            for name, data in registrations.iteritems():
-                assert_in('embargoEndDate', data)
-                assert_equal(data['embargoEndDate'],'Thu%2C 02 Jul 2015 13%3A34%3A27 GMT')
-                assert_in('registrationChoice', data)
-                assert_equal(data['registrationChoice'],'immediate')
-                for item in data:
-                    if item != 'embargoEndDate' and item != 'registrationChoice':
-                        assert_in('comments', data[item])
-                        assert_in('value', data[item])
+        for node in target_nodes:
+            schema_name = node.registered_schema.name
+            old_data = OLD_META[schema_name]
+            for key, value in old_data.iteritems():
+                assert_equal(node.registered_meta[key]['value'], value)
+            assert_equal(node.registered_schema.schema_version, 2)

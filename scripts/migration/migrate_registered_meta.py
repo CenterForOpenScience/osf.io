@@ -18,7 +18,12 @@ from scripts import utils as scripts_utils
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
-def get_old_registered_nodes():
+def get_old_registered_nodes(dry_run=True):
+    if not dry_run:
+        # nullify old registered_schema refs
+        MetaSchema.remove()
+        ensure_schemas()
+
     return Node.find(
         Q('is_registration', 'eq', True) &
         Q('registered_schema', 'eq', None)
@@ -31,9 +36,6 @@ def main(dry_run):
     if not dry_run:
         scripts_utils.add_file_logger(logger, __file__)
         logger.info("Iterating over all registrations")
-        # nullify old registered_schema refs
-        MetaSchema.remove()
-        ensure_schemas()
 
     for node in get_old_registered_nodes():
         schemas = node.registered_meta

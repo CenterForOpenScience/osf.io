@@ -199,8 +199,9 @@ class RegistrationFactory(AbstractNodeFactory):
             dst_node=register,
             initiator=user,
         )
+        reg = None
         if archive:
-            return register()
+            reg = register()
         else:
             with patch('framework.tasks.handlers.enqueue_task'):
                 reg = register()
@@ -208,7 +209,9 @@ class RegistrationFactory(AbstractNodeFactory):
                     reg,
                     reg.registered_user
                 )
-                return reg
+        return reg
+
+
 
 class PointerFactory(ModularOdmFactory):
     FACTORY_FOR = Pointer
