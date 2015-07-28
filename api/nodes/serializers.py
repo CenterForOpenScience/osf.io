@@ -61,10 +61,10 @@ class NodeSerializer(JSONAPISerializer):
     # TODO: When we have 'admin' permissions, make this writable for admins
     public = ser.BooleanField(source='is_public', read_only=True,
                               help_text='Nodes that are made public will give read-only access '
-                                                            'to everyone. Private nodes require explicit read '
-                                                            'permission. Write and admin access are the same for '
-                                                            'public and private nodes. Administrators on a parent '
-                                                            'node have implicit read permissions for all child nodes',
+                                        'to everyone. Private nodes require explicit read '
+                                        'permission. Write and admin access are the same for '
+                                        'public and private nodes. Administrators on a parent '
+                                        'node have implicit read permissions for all child nodes',
                               )
     # TODO: finish me
 
@@ -134,7 +134,6 @@ class NodeSerializer(JSONAPISerializer):
 
 
 class NodePointersSerializer(JSONAPISerializer):
-
     id = ser.CharField(read_only=True, source='_id')
     node_id = ser.CharField(source='node._id', help_text='The ID of the node that this pointer points to')
     title = ser.CharField(read_only=True, source='node.title', help_text='The title of the node that this pointer '
@@ -170,7 +169,6 @@ class NodePointersSerializer(JSONAPISerializer):
 
 
 class NodeFilesSerializer(JSONAPISerializer):
-
     id = ser.CharField(read_only=True, source='_id')
     provider = ser.CharField(read_only=True)
     path = ser.CharField(read_only=True)
@@ -200,18 +198,13 @@ class NodeFilesSerializer(JSONAPISerializer):
         # TODO
         pass
 
+
 class NodeLogSerializer(JSONAPISerializer):
     date = ser.DateTimeField(read_only=True, )
     id = ser.CharField(read_only=True, source='_id')
     action = ser.CharField(read_only=True)
     version = ser.IntegerField(read_only=True, source='_version')
     name = ser.CharField(read_only=True, source='_name')
-
-    # date_unicode = str(list[0][0])
-    # date = ser.datetime.datetime.strptime(date_unicode, '%Y-%m-%dT%H:%M:%S')
-
-    def __unicode__(self):
-        return self.id
 
     class Meta:
         type_ = 'logs'
