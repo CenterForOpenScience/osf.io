@@ -35,6 +35,11 @@ var FileViewPage = {
             content: waterbutler.buildDownloadUrl(self.file.path, self.file.provider, self.node.id, {accept_url: false, mode: 'render'})
         });
 
+        if ($osf.urlParams().branch) {
+            self.file.urls.revisions = waterbutler.buildRevisionsUrl(self.file.path, self.file.provider, self.node.id, {sha: $osf.urlParams().branch});
+            self.file.urls.content = waterbutler.buildDownloadUrl(self.file.path, self.file.provider, self.node.id, {accept_url: false, mode: 'render', branch: $osf.urlParams().branch});
+        }
+
         $(document).on('fileviewpage:delete', function() {
             bootbox.confirm({
                 title: 'Delete file?',
