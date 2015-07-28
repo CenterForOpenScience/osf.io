@@ -1558,7 +1558,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         if action in ('update', 'create'):
             search.search.update_file(name, path, addon)
         elif action in ('delete',):
-            search.search.delete_file(path)
+            search.search.delete_file(name, path, addon)
         else:
             raise ValueError('{} is not a valid action'.format(action))
 

@@ -305,8 +305,8 @@ def update_file(name, path, addon, index=None):
     :param path: Path of file to index.
     :param addon: Instance of storage containing the file.
     """
-    if file_util.is_indexed(name):
-        index = index or settings.ELASTIC_INDEX
+    if file_util.is_indexed(name, addon):
+        index = index or INDEX
         file_doc = file_util.build_file_document(name, path, addon, include_content=True)
         # elastic-search-mapper takes base64 encoded files.
         file_doc.update({'attachment': base64.encodestring(file_doc.pop('content'))})
@@ -332,15 +332,14 @@ def update_all_files(node, index=None):
 
 
 @requires_search
-def delete_file(file_path, index=None):
+def delete_file(name, path, addon, index=None):
     """Remove a single file from search index.
 
     :param file_path:
     """
     index = index or INDEX
-    file_path = ''.join(['/', file_path]) if not file_path[0] == '/' else file_path
-    es.delete(index=index, doc_type='file', id=file_path, refresh=True, ignore=[404])
-
+    file_doc = file_util.build_file_document(name, path, addon, include_content=False)
+    es.delete(index=index, doc_type='file', id=file_doc['path'], refresh=True, ignore=404)
 
 @requires_search
 def delete_all_files(node, index=None):
@@ -350,8 +349,7 @@ def delete_all_files(node, index=None):
     """
     index = index or INDEX
     for file_dict in file_util.collect_files(node):
-        file_path = file_dict['path']
-        delete_file(file_path, index)
+        delete_file(name=file_dict['name'], path=file_dict['path'], addon=file_dict['addon'], index=index)
 
 
 def bulk_update_contributors(nodes, index=INDEX):

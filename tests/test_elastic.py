@@ -652,7 +652,7 @@ class TestUserSearchResults(SearchTestCase):
             self.user_five
         ]
 
-    @unittest.skip('Cannot guarentee always passes')
+    # @unittest.skip('Cannot guarentee always passes')
     def test_current_job_first_in_results(self):
         results = query_user('Star Fleet')['results']
         result_names = [r['names']['fullname'] for r in results]
@@ -754,6 +754,11 @@ def update_file(file_doc, parent_id, index=None):
 class TestUpdateFiles(SearchTestCase):
     def setUp(self):
         super(TestUpdateFiles, self).setUp()
+
+        self.mock_addon = mock.Mock()
+        self.mock_addon.config = mock.Mock()
+        self.mock_addon.config.short_name = 'osfstorage'
+
         self.parent_project = ProjectFactory()
         self.parent_project.set_privacy('public')
         self.fake_file_doc_one = {
@@ -774,25 +779,98 @@ class TestUpdateFiles(SearchTestCase):
 
     def test_file_indexed(self):
         with mock.patch('website.search.file_util.build_file_document', return_value=self.fake_file_doc_one):
-            elastic_search.update_file(self.fake_file_doc_one['name'],
+            search.update_file(self.fake_file_doc_one['name'],
                                        self.fake_file_doc_one['path'],
-                                       'addon')
+                                       self.mock_addon)
             time.sleep(1)
-            res = query('test file')['results']
+            res = query('test')['results']
             assert_equal(len(res), 1)
 
     def test_update_file_does_not_index_images(self):
         with mock.patch('website.search.file_util.build_file_document', return_value=self.fake_file_doc_one):
             self.fake_file_doc_one['name'] = 'test_file.png'
-            elastic_search.update_file(self.fake_file_doc_one['name'],
+            search.update_file(self.fake_file_doc_one['name'],
                                        self.fake_file_doc_one['path'],
-                                       'addon')
+                                       self.mock_addon)
             time.sleep(1)
-            res = query('test file')['results']
+            res = query('test')['results']
             assert_equal(len(res), 0)
 
     def test_update_all_files(self):
         file_list = [self.fake_file_doc_one, self.fake_file_doc_two]
+        file_dict_list = []
+        for f in file_list:
+            f_dict = f.copy()
+            del f_dict['content']
+            del f_dict['parent_id']
+            f_dict.update({'addon': self.mock_addon})
+            file_dict_list.append(f_dict)
+
+        with mock.patch('website.search.file_util.collect_files', return_value=file_dict_list):
+            with mock.patch('website.search.file_util.build_file_document', side_effect=file_list):
+                search.update_all_files(self.parent_project)
+
+        time.sleep(1)
+        res_one = query('test')['results']
+        res_two = query('spain rains')['results']
+        assert_equal(len(res_one), 1)
+        assert_equal(len(res_two), 1)
+
+
+class TestDeleteFiles(SearchTestCase):
+    def setUp(self):
+        super(TestDeleteFiles, self).setUp()
+
+        self.mock_addon = mock.Mock()
+        self.mock_addon.config = mock.Mock()
+        self.mock_addon.config.short_name = 'osfstorage'
+
+        self.parent_project = ProjectFactory()
+        self.parent_project.set_privacy('public')
+        self.fake_file_doc_one = {
+            'id': 'aaaaa',
+            'name': 't_one.txt',
+            'path': '/000000001',
+            'content': 'this is a test file.',
+            'parent_id': self.parent_project._id
+        }
+        self.fake_file_doc_two = {
+            'id': 'bbbbb',
+            'name': 't_two.txt',
+            'path': '/000000002',
+            'content': 'the rain in spain rains mainly on the plain',
+            'parent_id': self.parent_project._id
+        }
+
+        self.file_list = [
+            self.fake_file_doc_one.copy(),
+            self.fake_file_doc_two.copy(),
+        ]
+
+        with mock.patch('website.search.file_util.build_file_document', side_effect=self.file_list):
+            search.update_file(self.fake_file_doc_one['name'], self.fake_file_doc_one['path'], self.mock_addon)
+            search.update_file(self.fake_file_doc_two['name'], self.fake_file_doc_two['path'], self.mock_addon)
+
+    def test_remove_file(self):
+        res = query('test')['results']
+        assert_equal(len(res), 1)
+
+        with mock.patch('website.search.file_util.build_file_document', return_value=self.fake_file_doc_two):
+            search.delete_file(self.fake_file_doc_two['name'], self.fake_file_doc_two['path'], self.mock_addon)
+
+        res = query('spain rains')['results']
+        assert_equal(len(res), 0)
+
+    def test_remove_all_file(self):
+        res_one = query('test')['results']
+        res_two = query('spain rains')['results']
+        assert_equal(len(res_one), 1)
+        assert_equal(len(res_two), 1)
+
+        file_list = [
+            self.fake_file_doc_one.copy(),
+            self.fake_file_doc_two.copy(),
+        ]
         file_dict_list = []
         for f in file_list:
             f_dict = f.copy()
@@ -803,64 +881,10 @@ class TestUpdateFiles(SearchTestCase):
 
         with mock.patch('website.search.file_util.collect_files', return_value=file_dict_list):
             with mock.patch('website.search.file_util.build_file_document', side_effect=file_list):
-                elastic_search.update_all_files(self.parent_project)
-
-        time.sleep(1)
-        res_one = query('test file')['results']
-        res_two = query('spain rains')['results']
-        assert_equal(len(res_one), 1)
-        assert_equal(len(res_two), 1)
-
-
-class TestDeleteFiles(SearchTestCase):
-    def setUp(self):
-        super(TestDeleteFiles, self).setUp()
-        self.parent_project = ProjectFactory()
-        self.parent_project.set_privacy('public')
-        self.fake_file_doc_one = {
-            'id': 'aaaaa',
-            'name': 'test_file_one.txt',
-            'path': '/00001',
-            'content': 'this is a test file.',
-            'parent_id': self.parent_project._id
-        }
-        self.fake_file_doc_two = {
-            'id': 'bbbbb',
-            'name': 'test_file_two.txt',
-            'path': '/00002',
-            'content': 'the rain in spain rains mainly on the plain',
-            'parent_id': self.parent_project._id
-        }
-        update_file(self.fake_file_doc_one, self.parent_project, elastic_search.INDEX)
-        update_file(self.fake_file_doc_two, self.parent_project, elastic_search.INDEX)
-
-    def test_remove_file(self):
-        res = query('test file')['results']
-        assert_equal(len(res), 1)
-        elastic_search.delete_file(self.fake_file_doc_one['path'])
-        res = query('test file')['results']
-        assert_equal(len(res), 0)
-
-    def test_remove_all_file(self):
-        res_one = query('test file')['results']
-        res_two = query('spain rains')['results']
-        assert_equal(len(res_one), 1)
-        assert_equal(len(res_two), 1)
-
-        file_list = [self.fake_file_doc_one, self.fake_file_doc_two]
-        file_dict_list = []
-        for f in file_list:
-            f_dict = f.copy()
-            del f_dict['content']
-            del f_dict['parent_id']
-            f_dict.update({'addon': 'some_addon'})
-            file_dict_list.append(f_dict)
-
-        with mock.patch('website.search.file_util.collect_files', return_value=file_dict_list):
-            elastic_search.delete_all_files(self.parent_project)
+                search.delete_all_files(self.parent_project)
         time.sleep(1)
 
-        res_one = query('test file')['results']
+        res_one = query('test')['results']
         res_two = query('spain rains')['results']
         assert_equal(len(res_one), 0)
         assert_equal(len(res_two), 0)
@@ -905,10 +929,15 @@ class TestSearchUpdate(SearchTestCase):
         assert_true(mock_remove_file.called)
 
 
-@unittest.skip('Travis dosn\'t seem to like loading files in tests.')
+# @unittest.skip('Travis dosn\'t seem to like loading files in tests.')
 class TestIndexFiles(SearchTestCase):
     def setUp(self):
         super(TestIndexFiles, self).setUp()
+
+        self.mock_addon = mock.Mock()
+        self.mock_addon.config = mock.Mock()
+        self.mock_addon.config.short_name = 'osfstorage'
+
         self.parent_project = ProjectFactory()
         self.parent_project.set_privacy('public')
         self.here = os.path.dirname(os.path.abspath(__file__))
@@ -929,28 +958,32 @@ class TestIndexFiles(SearchTestCase):
 
     def test_index_txt_file(self):
         with mock.patch('website.search.file_util.build_file_document', self._local_file_doc):
-            elastic_search.update_file('index_test.txt', 'some path', 'some addon')
+            search.update_file('index_test.txt', 'some path', self.mock_addon)
 
             res = query('diamond')['results']
             assert_equal(len(res), 1)
+            assert_equal(res[0]['category'], 'project')
 
     def test_index_rtf_file(self):
         with mock.patch('website.search.file_util.build_file_document', self._local_file_doc):
-            elastic_search.update_file('index_test.rtf', 'some path', 'some addon')
+            search.update_file('index_test.rtf', 'some path', self.mock_addon)
 
             res = query('diamond')['results']
             assert_equal(len(res), 1)
+            assert_equal(res[0]['category'], 'project')
 
     def test_index_pdf_file(self):
         with mock.patch('website.search.file_util.build_file_document', self._local_file_doc):
-            elastic_search.update_file('index_test.pdf', 'some path', 'some addon')
+            search.update_file('index_test.pdf', 'some path', self.mock_addon)
 
             res = query('diamond')['results']
             assert_equal(len(res), 1)
+            assert_equal(res[0]['category'], 'project')
 
     def test_index_docx_file(self):
         with mock.patch('website.search.file_util.build_file_document', self._local_file_doc):
-            elastic_search.update_file('index_test.pdf', 'some path', 'some addon')
+            search.update_file('index_test.pdf', 'some path', self.mock_addon)
 
             res = query('diamond')['results']
             assert_equal(len(res), 1)
+            assert_equal(res[0]['category'], 'project')

@@ -44,9 +44,9 @@ def update_all_files(node, index=None):
 
 
 @requires_search
-def delete_file(file_path, index=None):
+def delete_file(name, path, addon, index=None):
     index = index or settings.ELASTIC_INDEX
-    search_engine.delete_file(file_path, index=index)
+    search_engine.delete_file(name, path, addon, index=index)
 
 
 @requires_search
