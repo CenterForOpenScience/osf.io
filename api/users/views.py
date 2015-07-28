@@ -22,7 +22,7 @@ class UserMixin(object):
         if key == 'me':
             return self.request.user
 
-        obj = get_object_or_404(User, self.kwargs[self.node_lookup_url_kwarg])
+        obj = get_object_or_404(User, key)
         if check_permissions:
             # May raise a permission denied
             self.check_object_permissions(self.request, obj)
