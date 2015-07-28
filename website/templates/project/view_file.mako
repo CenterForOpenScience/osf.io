@@ -170,9 +170,9 @@
             safeName: ${ file_name | h, sjson},
             materializedPath: ${ materialized_path | sjson, n },
           urls: {
-              external: '${(urls['external'] or '') | js_str}',
+              external: ${ (urls['external'] or '') | sjson, n },
         %if error is None:
-              render: ${ urls['render'] | sjson ,n },
+              render: ${ urls['render'] | sjson, n },
         %endif
               sharejs: ${ urls['sharejs'] | sjson, n },
             }
