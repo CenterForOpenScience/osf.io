@@ -321,6 +321,18 @@ def migrate_search(delete=False, index=settings.ELASTIC_INDEX):
     migrate(delete, index=index)
 
 @task
+def migrate_search_files(index=settings.ELASTIC_INDEX):
+    from website.search_migration.migrate import migrate_files
+    migrate_files(index)
+
+@task
+def clear_search_files(index=settings.ELASTIC_INDEX):
+    from elasticsearch import Elasticsearch
+    es = Elasticsearch()
+    es.delete_by_query(index=index, doc_type='file', body={'query': {'query_string': {'query': '*', 'analyze_wildcard': True}}})
+
+
+@task
 def rebuild_search():
     """Delete and recreate the index for elasticsearch"""
     run("curl -s -XDELETE {uri}/{index}*".format(uri=settings.ELASTIC_URI,
@@ -328,6 +340,7 @@ def rebuild_search():
     run("curl -s -XPUT {uri}/{index}".format(uri=settings.ELASTIC_URI,
                                           index=settings.ELASTIC_INDEX))
     migrate_search()
+
 
 
 @task
@@ -817,3 +830,4 @@ def update_citation_styles():
     from scripts import parse_citation_styles
     total = parse_citation_styles.main()
     print("Parsed {} styles".format(total))
+

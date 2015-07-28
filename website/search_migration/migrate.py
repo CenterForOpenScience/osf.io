@@ -25,7 +25,6 @@ def migrate_nodes(index):
     nodes = Node.find(Q('is_public', 'eq', True) & Q('is_deleted', 'eq', False))
     for node in nodes:
         search.update_node(node, index=index)
-        search.update_all_files(node, index=index)
         n_iter += 1
 
     logger.info('Nodes migrated: {}'.format(n_iter))
@@ -43,6 +42,20 @@ def migrate_users(index):
 
     logger.info('Users iterated: {0}\nUsers migrated: {1}'.format(n_iter, n_migr))
 
+
+def migrate_files(index=None, app=None):
+    index = index or settings.ELASTIC_INDEX
+    app = app or init_app('website.settings', set_backends=True, routes=True)
+    ctx = app.test_request_context()
+    ctx.push()
+
+    logger.info("Migrating files to index: {}".format(index))
+    nodes = Node.find(Q('is_public', 'eq', True) & Q('is_deleted', 'eq', False))
+    for node in nodes:
+        search.update_all_files(node, index=index)
+    logger.info('Files migrated')
+
+    ctx.pop()
 
 def migrate(delete, index=None, app=None):
     index = index or settings.ELASTIC_INDEX
