@@ -190,13 +190,14 @@ ViewModel.prototype.importAuth = function() {
 
 ViewModel.prototype.createCredentials = function() {
     var self = this;
+    self.creatingCredentials(true);
+
     if ( !(self.secretKey() && self.accessKey()) ){
         var message = 'All those fields above are required.';
         self.changeMessage(message, 'text-danger');
-        return;
+        self.creatingCredentials(false);
+        return false;
     }
-
-    self.creatingCredentials(true);
     return $osf.postJSON(
         self.urls().create_auth, {
             secret_key: self.secretKey(),
