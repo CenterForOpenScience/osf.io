@@ -222,7 +222,7 @@
         <div data-bind="template: 'tag-cloud'"></div>
         <!-- /ko -->
         <p><strong>Jump to:</strong>
-            <!-- ko if: wikis > 0 -->
+            <!-- ko if: n_wikis > 0 -->
             <a data-bind="attr.href: wikiUrl">Wiki</a> -
             <!-- /ko -->
             <a data-bind="attr.href: filesUrl">Files</a>
@@ -257,7 +257,7 @@
         <div data-bind="template: 'tag-cloud'"></div>
         <!-- /ko -->
         <p><strong>Jump to:</strong>
-            <!-- ko if: wikis > 0 -->
+            <!-- ko if: n_wikis > 0 -->
             <a data-bind="attr.href: wikiUrl">Wiki</a> -
             <!-- /ko -->
             <a data-bind="attr.href: filesUrl">Files</a>
