@@ -1494,6 +1494,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
 
         original_title = self.title
         self.title = title
+        self.discussions.update_title(title)
         self.add_log(
             action=NodeLog.EDITED_TITLE,
             params={
@@ -2877,6 +2878,12 @@ class MailingList(StoredObject):
         if old_email in self.subscriptions:
             self.subscriptions.remove(old_email)
             self.subscriptions.append(new_email)
+
+        if save:
+            self.save()
+
+    def update_title(self, new_title, save=True):
+        self.node_title = new_title
 
         if save:
             self.save()

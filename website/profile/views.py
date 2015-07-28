@@ -208,6 +208,11 @@ def update_user(auth):
             for list_name, subscription in user.mailing_lists.iteritems():
                 if subscription:
                     mailchimp_utils.unsubscribe_mailchimp(list_name, user._id, username=user.username)
+
+            for node in user.node__contributed:
+                if node.discussions:
+                    node.discussions.update_email(user.username, username)
+
             user.username = username
 
     ###################
