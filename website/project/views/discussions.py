@@ -6,14 +6,16 @@ from flask import request
 from modularodm import Q
 from modularodm.exceptions import NoResultsFound
 
-from framework.auth.decorators import must_be_logged_in, collect_auth
+from framework.auth.decorators import collect_auth
+from framework.auth.core import User
 
+from website import mails
 from website.project.decorators import (
     must_be_valid_project,
     must_have_permission,
     must_not_be_registration,
 )
-from website.util.permissions import ADMIN, READ, WRITE
+from website.util.permissions import ADMIN
 from website.models import Node
 
 
@@ -57,19 +59,86 @@ def unsubscribe(node, auth, **kwargs):
 
 def route_message(**kwargs):
     message = request.form
-    attachments = request.files.values()
-    node_id = re.search(r'[a-z0-9]*@', message['To']).group(0)[:-1]
+    target_address = message['To']
+    node_id = re.search(r'[a-z0-9]*@', target_address).group(0)[:-1]
     sender_email = message['From']
     # allow for both "{email}" syntax and "{name} <{email}>" syntax
     if ' ' in sender_email:
         sender_email = re.search(r'<\S*>$', sender_email).group(0)[1:-1]
-    parsed_message = {
-        'From': sender_email,
-        'subject': message['subject'],
-        'text': message['stripped-text'],
-        'attachments': attachments
-    }
-    node = Node.find_one(Q('_id','eq',node_id))
+
+    sender = User.find_by_email(sender_email)
+    if sender:
+        sender = sender[0]
+    else:
+        mails.send_mail(to_addr=sender_email,
+                        mail=mails.DISCUSSIONS_EMAIL_REJECTED,
+                        user=None,
+                        target_address=target_address,
+                        node_type='',
+                        node_url='',
+                        reason='no_user')
+        return
+
+    try:
+        node = Node.find_one(Q('_id','eq',node_id))
+    except NoResultsFound:
+        mails.send_mail(to_addr=sender_email,
+                        mail=mails.DISCUSSIONS_EMAIL_REJECTED,
+                        user=sender,
+                        target_address=target_address,
+                        node_type='',
+                        node_url='',
+                        reason='project_dne')
+        return
+
+    if node.is_deleted:
+        mails.send_mail(to_addr=sender_email,
+                        mail=mails.DISCUSSIONS_EMAIL_REJECTED,
+                        user=sender,
+                        target_address=target_address,
+                        node_type=node.project_or_component,
+                        node_url=node.absolute_url,
+                        reason='project_deleted')
+        return
+
+    if sender not in node.contributors:
+        if node.is_public:
+            mails.send_mail(to_addr=sender_email,
+                            mail=mails.DISCUSSIONS_EMAIL_REJECTED,
+                            user=sender,
+                            target_address=target_address,
+                            node_type=node.project_or_component,
+                            node_url=node.absolute_url,
+                            reason='no_access')
+        else:
+            mails.send_mail(to_addr=sender_email,
+                            mail=mails.DISCUSSIONS_EMAIL_REJECTED,
+                            user=sender,
+                            target_address=target_address,
+                            node_type='',
+                            node_url='',
+                            reason='project_dne')
+        return
+
+    if not node.discussions.is_enabled:
+        mails.send_mail(to_addr=sender_email,
+                        mail=mails.DISCUSSIONS_EMAIL_REJECTED,
+                        user=sender,
+                        target_address=target_address,
+                        node_type=node.project_or_component,
+                        node_url=node.absolute_url,
+                        is_admin='admin' in node.get_permissions(sender),
+                        reason='discussions_disabled')
+        return
+
+    # TODO: Put rest of email logging functionality here
+    # attachments = request.files.values()
+    # parsed_message = {
+    #     'From': sender_email,
+    #     'subject': message['subject'],
+    #     'text': message['stripped-text'],
+    #     'attachments': attachments
+    # }
 
 
 # def unsubscribe_by_mail(**kwargs):
