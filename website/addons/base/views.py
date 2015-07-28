@@ -4,6 +4,7 @@ import os
 import json
 import uuid
 import httplib
+import logging
 import functools
 
 import furl
@@ -283,14 +284,11 @@ def create_waterbutler_log(payload, **kwargs):
 
         node_addon.create_waterbutler_log(auth, action, metadata)
 
-        try:
+        # file indexing/updates
+        if payload['action'] in ('create', 'update'):
             action = payload['action']
-            name = payload['metadata']['name']
             path = payload['metadata']['path']
-        except KeyError:
-            pass
-        else:
-            # only called if no exception is raised
+            name = payload['metadata']['name']
             node.update_search_file(action, node_addon, name, path)
 
     return {'status': 'success'}

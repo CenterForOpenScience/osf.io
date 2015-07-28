@@ -42,11 +42,12 @@ def build_file_document(name, path, addon, include_content=True):
     :param addon: Instance of storage addon containing the containing the file.
     :param include_content: Include the content of the file in document.
     """
+    parent_node = addon.owner
+    parent_id = parent_node._id
+    path = path if not path[0] == '/' else path[1:]
     file_, created = addon.find_or_create_file_guid(path)
-    parent_id = file_.node._id
     file_content = get_file_content(file_) if include_content else None
     return {
-        'id': file_.node._id,
         'name': name,
         'path': path,
         'content': file_content,
@@ -71,7 +72,10 @@ def collect_files_from_addon(addon, tree=None):
         else:
             path, name = child['path'], child['name']
             if is_indexed(name, addon):
-                yield {'name': name, 'path': path, 'addon': addon}
+                file_doc = build_file_document(name, path, addon, include_content=False)
+                yield {'name': file_doc['name'], 'path': file_doc['path'], 'addon': addon}
+            else:
+                continue
 
 
 def collect_files(node):

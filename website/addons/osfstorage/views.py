@@ -179,6 +179,7 @@ def osfstorage_create_child(file_node, payload, node_addon, **kwargs):
 @must_not_be_registration
 @decorators.autoload_filenode()
 def osfstorage_delete(file_node, payload, node_addon, **kwargs):
+    from website.search import search
     auth = Auth(User.load(payload['user']))
 
     #TODO Auth check?
@@ -187,8 +188,8 @@ def osfstorage_delete(file_node, payload, node_addon, **kwargs):
 
     if file_node == node_addon.root_node:
         raise HTTPError(httplib.BAD_REQUEST)
-
     file_node.delete()
+    search.delete_file(name=file_node.name, path=file_node.path, addon=node_addon)
 
     return {'status': 'success'}
 
