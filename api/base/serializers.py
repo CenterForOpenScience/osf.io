@@ -1,16 +1,16 @@
 import collections
 import re
-
+import logging
 from rest_framework import serializers as ser
 from website.util.sanitize import strip_html
 from api.base.utils import absolute_reverse, waterbutler_url_for
 
 
-def _rapply(d, func, *args, **kwargs):
+def _recursive_apply(d, func, *args, **kwargs):
     """Apply a function to all values in a dictionary, recursively."""
     if isinstance(d, collections.Mapping):
         return {
-            key: _rapply(value, func, *args, **kwargs)
+            key: _recursive_apply(value, func, *args, **kwargs)
             for key, value in d.iteritems()
         }
     else:
@@ -63,36 +63,44 @@ class LinksField(ser.Field):
         return obj
 
     def to_representation(self, obj):
-        ret = _rapply(self.links, _url_val, obj=obj, serializer=self.parent)
+        ret = _recursive_apply(self.links, _url_val, obj=obj, serializer=self.parent)
         if hasattr(obj, 'get_absolute_url'):
             ret['self'] = obj.get_absolute_url()
         return ret
 
+""" regular expression to extract the content inside of '<>' e.g., '<blarg>' would store 'blarg' """
 _tpl_pattern = re.compile(r'\s*<\s*(\S*)\s*>\s*')
 
 
-def _tpl(val):
+def _get_attr_name_from_tpl(attr_tpl):
     """Return value within ``< >`` if possible, else return ``None``."""
-    match = _tpl_pattern.match(val)
+    match = _tpl_pattern.match(attr_tpl)
     if match:
         return match.groups()[0]
     return None
 
 
 def _get_attr_from_tpl(attr_tpl, obj):
-    attr_name = _tpl(str(attr_tpl))
+    """Takes attr_tpl (e.g.,) """
+    attr_name = _get_attr_name_from_tpl(str(attr_tpl))
     if attr_name:
         attribute_value = getattr(obj, attr_name, ser.empty)
-        if attribute_value is not ser.empty:
-            return attribute_value
-        elif attr_name in obj:
-            return obj[attr_name]
-        else:
-            raise AttributeError(
-                '{attr_name!r} is not a valid '
-                'attribute of {obj!r}'.format(
-                    attr_name=attr_name, obj=obj,
-                ))
+        logging.warning('#')
+        try:
+            if attribute_value is not ser.empty:
+                return attribute_value
+            elif attr_name in obj:
+                return obj[attr_name]
+            else:
+                raise AttributeError(
+                    '{attr_name!r} is not a valid '
+                    'attribute of {obj!r}'.format(
+                        attr_name=attr_name, obj=obj,
+                    ))
+        except TypeError:
+            raise TypeError('{attr_name!r} is not a valid primary key in LinksField kwargs'.format(
+                        attr_name=attr_name,
+                    ))
     else:
         return attr_tpl
 
@@ -186,5 +194,5 @@ class JSONAPISerializer(ser.Serializer):
         ret = super(JSONAPISerializer, self).is_valid(**kwargs)
 
         if clean_html is True:
-            self._validated_data = _rapply(self.validated_data, strip_html)
+            self._validated_data = _recursive_apply(self.validated_data, strip_html)
         return ret
