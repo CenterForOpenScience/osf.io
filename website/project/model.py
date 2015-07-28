@@ -147,7 +147,9 @@ class Comment(GuidStoredObject):
     _id = fields.StringField(primary=True)
 
     user = fields.ForeignField('user', required=True, backref='commented')
+    # the node that the comment belongs to
     node = fields.ForeignField('node', required=True, backref='comment_owner')
+    # the direct 'parent' of the comment (e.g. the target of a comment reply is another comment)
     target = fields.AbstractForeignField(required=True, backref='commented')
     # The file/wiki/overview's page that the comment is for
     root_target = fields.AbstractForeignField(backref='comment_target')
@@ -160,7 +162,7 @@ class Comment(GuidStoredObject):
     # Whether the original file/wiki is deleted
     # NOTE Currently, is_hidden will set to True only when a wiki is deleted.
     is_hidden = fields.BooleanField(default=False)
-    # The type root_target: node/files/wiki
+    # The type of root_target: node/files/wiki
     page = fields.StringField()
     content = fields.StringField()
 
