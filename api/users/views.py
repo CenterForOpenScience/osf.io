@@ -10,7 +10,7 @@ from .serializers import UserSerializer
 
 class UserMixin(object):
     """Mixin with convenience methods for retrieving the current node based on the
-    current URL. By default, fetches the user based on the pk kwarg.
+    current URL. By default, fetches the user based on the user_id kwarg.
     """
 
     serializer_class = UserSerializer
