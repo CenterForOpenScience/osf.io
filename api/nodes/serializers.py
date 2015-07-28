@@ -201,18 +201,8 @@ class NodeFilesSerializer(JSONAPISerializer):
         pass
 
 class NodeLogSerializer(JSONAPISerializer):
-    filterable_fields = frozenset([
-        'date',
-        'id',
-        'api_key',
-        'action',
-        'version',
-        'name',
-    ])
-
     date = ser.DateTimeField(read_only=True)
     id = ser.CharField(read_only=True, source='_id')
-    api_key = ser.CharField(read_only=True)
     action = ser.CharField(read_only=True)
     version = ser.CharField(read_only=True, source='_version')
     name = ser.CharField(read_only=True, source='_name')

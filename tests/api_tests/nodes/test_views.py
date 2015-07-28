@@ -1357,24 +1357,19 @@ class TestNodeLogList(ApiTestCase):
         self.public_project = ProjectFactory(is_public=True, creator=self.user)
         self.public_url = '/{}nodes/{}/logs/'.format(API_BASE, self.public_project._id)
 
-    def test_creates_public_logs(self):
+    def test_log_create_on_public_project(self):
         res = self.app.get(self.public_url)
         assert_equal(res.status_code, 200)
         assert_equal(len(res.json['data']), 1)
-        # assert_equal(res.json['data'][0]['date'], self.public_project.logs[0].date)
         assert_equal(res.json['data'][0]['id'], self.public_project.logs[0]._id)
         assert_equal(res.json['data'][0]['action'], self.public_project.logs[0].action)
-        # assert_equal(res.json['data'][0]['version'], self.public_project.logs[0]._version)
         assert_equal(res.json['data'][0]['name'], self.public_project.logs[0]._name)
 
-    def test_creates_private_logs(self):
+    def test_log_create_on_private_project(self):
         res = self.app.get(self.public_url)
         assert_equal(res.status_code, 200)
         assert_equal(len(res.json['data']), 1)
-        # assert_equal(res.json['data'][0]['date'], self.private_project.logs[0].date)
-        # assert_equal(res.json['data'][0]['id'], self.private_project.logs[0]._id)
         assert_equal(res.json['data'][0]['action'], self.private_project.logs[0].action)
-        # assert_equal(res.json['data'][0]['version'], self.private_project.logs[0]._version)
         assert_equal(res.json['data'][0]['name'], self.private_project.logs[0]._name)
 
     def test_return_logs_private_project_details(self):
