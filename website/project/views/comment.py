@@ -104,7 +104,8 @@ def comment_discussion(comments, node, anonymous=False, widget=False):
         reverse=True,
     )
 
-    def get_recency(item):
+    def get_most_recent_comment(item):
+        """Gets the most recent comment made by a user"""
         most_recent = comments_dict[item][0].date_created
         for comment in comments_dict[item][1:]:
             if comment.date_created > most_recent:
@@ -113,7 +114,7 @@ def comment_discussion(comments, node, anonymous=False, widget=False):
 
     sorted_users_recency = sorted(
         comments_dict.keys(),
-        key=get_recency,
+        key=get_most_recent_comment,
         reverse=True,
     )
 
