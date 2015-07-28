@@ -226,7 +226,8 @@ BaseComment.prototype.checkFileExistsAndConfigure = function(nodeId) {
     var url  = waterbutler.buildMetadataUrl(self.title(), self.provider(), nodeId, {}); // waterbutler url
     var request = $.ajax({
         method: 'GET',
-        url: url
+        url: url,
+        beforeSend: osfHelpers.setXHRAuthorization
     });
     request.done(function (resp) {
         if (self.provider() === FIGSHARE) {
