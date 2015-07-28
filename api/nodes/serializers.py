@@ -3,8 +3,8 @@ from rest_framework import serializers as ser
 from website.models import Node
 from framework.auth.core import Auth
 from rest_framework import exceptions
-from api.base.serializers import JSONAPISerializer, LinksFieldWIthSelfLink, Link, WaterbutlerLink, LinksField
-from api.base.serializers import JSONAPISerializer, LinksField, Link, WaterbutlerLink, Attribute, AttributeLinksField
+from api.base.serializers import JSONAPISerializer, Link, WaterbutlerLink, Attribute, AttributeLinksField, \
+    LinksFieldWIthSelfLink
 
 
 class NodeSerializer(JSONAPISerializer):
@@ -72,7 +72,6 @@ class NodeSerializer(JSONAPISerializer):
             },
         },
     })
-
 
     # TODO: finish me
     class Meta:

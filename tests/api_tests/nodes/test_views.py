@@ -1435,7 +1435,6 @@ class TestDeleteNodePointer(ApiTestCase):
         assert_equal(res.status_code, 403)
         assert 'detail' in res.json['errors'][0].keys()
 
-
     def test_deletes_private_node_pointer_logged_in_contributor(self):
         res = self.app.delete(self.private_url, auth=self.basic_auth)
         self.project.reload()  # Update the model to reflect changes made by post request
@@ -1447,3 +1446,137 @@ class TestDeleteNodePointer(ApiTestCase):
         assert_equal(res.status_code, 403)
         assert 'detail' in res.json['errors'][0].keys()
 
+
+class TestNodeIncludeQueryParams(ApiTestCase):
+
+    def setUp(self):
+        super(TestNodeIncludeQueryParams, self).setUp()
+        self.user = UserFactory.build()
+        self.user.set_password('justapoorboy')
+        self.user.save()
+        self.auth = Auth(self.user)
+
+        self.contributor = UserFactory.build()
+        self.contributor.set_password('justapoorboy')
+        self.contributor.save()
+
+        self.project = ProjectFactory(is_public=True, creator=self.user)
+        self.project.add_contributor(self.contributor)
+        self.url_detail = '/{}nodes/{}/'.format(API_BASE, self.project._id)
+
+        self.child = ProjectFactory(is_public=True, creator=self.user, parent=self.project)
+        self.node_pointer = ProjectFactory(is_public=True, creator=self.user)
+        self.pointer = self.project.add_pointer(self.node_pointer, self.auth)
+        self.registration = RegistrationFactory(creator=self.user, project=self.project)
+
+        self.project.save()
+        self.project.reload()
+
+    def tearDown(self):
+        super(TestNodeIncludeQueryParams, self).tearDown()
+        Node.remove()
+
+    def test_node_detail_get_invalid_key(self):
+        self.url_detail += '?include=invalid'
+        res = self.app.get(self.url_detail, expect_errors=True)
+        assert_equal(res.status_code, 400)
+
+    def test_node_detail_get_built_in_keys_plus_invalid_key(self):
+        self.url_detail += '?include=children,contributors,pointers,invalid'
+        res = self.app.get(self.url_detail, expect_errors=True)
+        assert_equal(res.status_code, 400)
+
+    def test_node_detail_get_include_child_value(self):
+        self.url_detail += '?include=children'
+        res = self.app.get(self.url_detail)
+        assert_equal(res.status_code, 200)
+        child_list = res.json['data']['relationships']['children']['links']['related']['meta']['list']
+        child_in_list = False
+        for child in child_list:
+            if child['data']['id'] == self.child._id:
+                child_in_list = True
+        assert_true(child_in_list)
+
+    def test_node_detail_get_include_contributor_value(self):
+        self.url_detail += '?include=contributors'
+        res = self.app.get(self.url_detail)
+        assert_equal(res.status_code, 200)
+        contributor_list = res.json['data']['relationships']['contributors']['links']['related']['meta']['list']
+        contributor_in_list = False
+        for contributor in contributor_list:
+            if contributor['data']['id'] == self.contributor._id:
+                contributor_in_list = True
+        assert_true(contributor_in_list)
+
+    def test_node_detail_get_include_pointer_value(self):
+        self.url_detail += '?include=pointers'
+        res = self.app.get(self.url_detail)
+        assert_equal(res.status_code, 200)
+        pointer_list = res.json['data']['relationships']['pointers']['links']['related']['meta']['list']
+        pointer_in_list = False
+        for pointer in pointer_list:
+            if pointer['data']['id'] == self.pointer._id:
+                pointer_in_list = True
+        assert_true(pointer_in_list)
+
+    def test_node_detail_get_include_registration_value(self):
+        self.url_detail += '?include=registrations'
+        res = self.app.get(self.url_detail)
+        assert_equal(res.status_code, 200)
+        registration_list = res.json['data']['relationships']['registrations']['links']['related']['meta']['list']
+        registration_in_list = False
+        for registration in registration_list:
+            if registration['data']['id'] == self.registration._id:
+                registration_in_list = True
+        assert_true(registration_in_list)
+
+    def test_node_detail_get_values(self):
+        self.url_detail += '?include=children,contributors,pointers,registrations'
+        res = self.app.get(self.url_detail)
+        assert_equal(res.status_code, 200)
+        query_params = res.json['data']['relationships']
+        assert_in(self.child._id, query_params['children']['links']['related']['meta']['list']['data']['id'])
+        assert_in(self.contributor._id, query_params['contributors']['links']['related']['meta']['list']['data']['id'])
+        assert_in(self.pointer._id, query_params['pointers']['links']['related']['meta']['list']['data']['id'])
+        assert_in(self.registration._id, query_params['registrations']['links']['related']['meta']['list']['data']['id'])
+
+    def test_node_list_get_values(self):
+        url_list = '/{}nodes/?include=children,contributors,pointers,registrations'.format(API_BASE)
+        res = self.app.get(url_list)
+        assert_equal(res.status_code, 200)
+        query_params = None
+        for param in res.json['data']:
+            if param['id'] == self.project._id:
+                query_params = param['relationships']
+        assert_in(self.child._id, query_params['children']['links']['related']['meta']['list'])
+        assert_in(self.contributor._id, query_params['contributors']['links']['related']['meta']['list'])
+        assert_in(self.pointer._id, query_params['pointers']['links']['related']['meta']['list'])
+        assert_in(self.registration._id, query_params['registrations']['links']['related']['meta']['list'])
+
+    def test_contributor_node_list_get_values(self):
+        url_contributor_node_list = '/{}users/{}/nodes/?include=children,contributors,pointers,registrations'\
+            .format(API_BASE, self.user._id)
+        res = self.app.get(url_contributor_node_list)
+        assert_equal(res.status_code, 200)
+        query_params = None
+        for param in res.json['data']:
+            if param['id'] == self.project._id:
+                query_params = param['relationships']
+        assert_in(self.child._id, query_params['children']['links']['related']['meta']['list'])
+        assert_in(self.contributor._id, query_params['contributors']['links']['related']['meta']['list'])
+        assert_in(self.pointer._id, query_params['pointers']['links']['related']['meta']['list'])
+        assert_in(self.registration._id, query_params['registrations']['links']['related']['meta']['list'])
+
+    def test_node_registration_get_values(self):
+        url_registered_node_list = self.url_detail \
+                                   + 'registrations/?include=children,contributors,pointers,registrations'
+        res = self.app.get(url_registered_node_list)
+        assert_equal(res.status_code, 200)
+        query_params = res.json['data'][0]['relationships']
+        child = self.registration.nodes[0]
+        pointer = self.registration.nodes_pointer[0]
+
+        assert_in(child._id, query_params['children']['links']['related']['meta']['list'])
+        assert_in(self.contributor._id, query_params['contributors']['links']['related']['meta']['list'])
+        assert_in(pointer._id, query_params['pointers']['links']['related']['meta']['list'])
+        assert_equal(query_params['registrations']['links']['related']['meta']['list'], {})
