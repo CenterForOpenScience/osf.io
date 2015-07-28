@@ -314,7 +314,7 @@
                 </div>
 
             % endif
-        % endif
+        % endif  ## End Configure Discussions
 
         % if 'admin' in user['permissions']:  ## Begin Retract Registration
 
