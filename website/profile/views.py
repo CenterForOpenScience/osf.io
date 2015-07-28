@@ -107,7 +107,12 @@ def resend_confirmation(auth):
     if primary or confirmed:
         raise HTTPError(httplib.BAD_REQUEST, data={'message_long': 'Cannnot resend confirmation for confirmed emails'})
 
-    user.add_unconfirmed_email(address)
+    try:
+        user.add_unconfirmed_email(address)
+    except (ValidationError, ValueError):
+        raise HTTPError(http.BAD_REQUEST, data=dict(
+            message_long="Invalid Email")
+        )
 
     # TODO: This setting is now named incorrectly.
     if settings.CONFIRM_REGISTRATIONS_BY_EMAIL:
@@ -167,7 +172,12 @@ def update_user(auth):
         ]
 
         for address in added_emails:
-            user.add_unconfirmed_email(address)
+            try:
+                user.add_unconfirmed_email(address)
+            except (ValidationError, ValueError):
+                raise HTTPError(http.BAD_REQUEST, data=dict(
+                    message_long="Invalid Email")
+                )
 
             # TODO: This setting is now named incorrectly.
             if settings.CONFIRM_REGISTRATIONS_BY_EMAIL:

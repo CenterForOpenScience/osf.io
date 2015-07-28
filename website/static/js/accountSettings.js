@@ -102,15 +102,20 @@ var UserProfileClient = oop.defclass({
         ).done(function (data) {
             ret.resolve(this.unserialize(data, profile));
         }.bind(this)).fail(function(xhr, status, error) {
-            $osf.growl('Error', 'User profile not updated. Please refresh the page and try ' +
+            if (error.toLowerCase() !== 'bad request') {
+                $osf.growl('Error', 'User profile not updated. Please refresh the page and try ' +
                 'again or contact <a href="mailto: support@cos.io">support@cos.io</a> ' +
                 'if the problem persists.', 'danger');
+            } else {
+                $osf.growl('Error', 'Invalid Email');
+            }
+
             Raven.captureMessage('Error fetching user profile', {
                 url: this.urls.update,
                 status: status,
                 error: error
             });
-                ret.reject(xhr, status, error);
+            ret.reject(xhr, status, error);
         }.bind(this));
 
         return ret;
@@ -205,7 +210,6 @@ var UserProfileViewModel = oop.extend(ChangeMessageMixin, {
                         return;
                     }
                 }
-                this.changeMessage('Invalid Email.', 'text-danger');
             }.bind(this));
         } else {
             this.changeMessage('Email cannot be empty.', 'text-danger');
