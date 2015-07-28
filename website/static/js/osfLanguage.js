@@ -1,4 +1,7 @@
 var SUPPORT_EMAIL = 'support@osf.io';
+var SUPPORT_LINK = '<a href="mailto: ' + SUPPORT_EMAIL + '">' + SUPPORT_EMAIL + '</a>';
+
+var REFRESH_OR_SUPPORT = 'Please refresh the page and try again or contact ' + SUPPORT_LINK + ' if the problem persists.';
 
 module.exports = {
     // TODO
@@ -70,5 +73,13 @@ module.exports = {
                 'associated with this account.',
             deauthError: 'Could not disconnect the Google Drive account at this time',
         }
+    },
+    apiOauth2Application: {
+        discardUnchanged: 'Are you sure you want to discard your unsaved changes?',
+        deactivateConfirm: 'Are you sure you want to deactivate this application for all users and revoke all access tokens? This cannot be reversed.',
+        deactivateError: 'Could not delete application. ' + REFRESH_OR_SUPPORT,
+        dataFetchError: 'Data not loaded. ' + REFRESH_OR_SUPPORT,
+        dataSendError: 'Error sending data to the server: check that all fields are valid, or contact ' + SUPPORT_LINK + ' if the problem persists.',
+        creationSuccess: 'Successfully registered new application'
     }
 };

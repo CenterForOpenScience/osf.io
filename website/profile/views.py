@@ -392,10 +392,16 @@ def oauth_application_detail(auth, **kwargs):
     """Show detail for a single OAuth application"""
     client_id = kwargs.get('client_id')
 
+    # The client ID must be an active and existing record, and the logged-in user must have permission to view it.
     try:
-        ApiOAuth2Application.find_one(Q('client_id', 'eq', client_id))
+        #
+        record = ApiOAuth2Application.find_one(Q('client_id', 'eq', client_id))
     except NoResultsFound:
         raise HTTPError(http.NOT_FOUND)
+    if record.owner != auth.user:
+        raise HTTPError(http.FORBIDDEN)
+    if record.active is False:
+        raise HTTPError(http.GONE)
 
     app_detail_url = api_v2_url("users/{}/applications/{}/".format(auth.user._id, client_id))  # Send request to this URL
     return {"app_list_url": '',

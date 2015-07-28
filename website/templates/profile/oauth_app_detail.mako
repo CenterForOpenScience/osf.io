@@ -12,7 +12,7 @@
     }
 </style>
 
-<h2 class="page-header">OAuth Application Settings</h2>
+<h2 class="page-header">Application Detail</h2>
 
 <div id="applicationDetailPage" class="row">
     <div class="col-sm-3 affix-parent">
@@ -61,10 +61,10 @@
 
                     <div class="padded">
                         <button type="reset" class="btn btn-default"
-                                data-bind="click: $root.cancelChange, enable: isValid(), text: $root.isCreateView()? 'Back' : 'Cancel'"></button>
+                                data-bind="click: $root.cancelChange">Cancel</button>
                         <button type="submit" class="btn btn-success"
                                 data-bind="visible: $root.isCreateView(), click: $root.createApplication, enable: isValid()">Create</button>
-
+                        <button data-bind="visible: !$root.isCreateView(), click: $root.deleteApplication" class="btn btn-danger">Delete</button>
                         <button type="submit" class="btn btn-success"
                                 data-bind="visible: !$root.isCreateView(), click: $root.updateApplication, enable: (isValid() && $root.dirty())">Save</button>
                     </div>

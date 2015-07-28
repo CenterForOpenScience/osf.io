@@ -1,12 +1,11 @@
 <%inherit file="base.mako"/>
-<%def name="title()">OAuth Application Settings</%def>
+<%def name="title()">Registered Developer Applications</%def>
 <%def name="content()">
-<h2 class="page-header">OAuth Application Settings</h2>
+<h2 class="page-header">Registered Developer Applications</h2>
 
 <div id="applicationListPage" class="row">
     <div class="col-sm-3 affix-parent">
       <%include file="include/profile/settings_navpanel.mako" args="current_page='dev_apps'"/>
-    </div>
     </div>
 
     <div class="col-sm-9 col-md-7">

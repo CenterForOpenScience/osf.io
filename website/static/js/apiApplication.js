@@ -18,7 +18,7 @@ var Raven = require('raven-js');
 var koHelpers = require('./koHelpers');  // URL validators etc
 var $osf = require('./osfHelpers');
 var oop = require('js/oop');
-
+var language = require('js/osfLanguage');
 
 /*
  *  Store the data related to a single API application
@@ -150,7 +150,7 @@ var ApplicationDataClient = oop.defclass({
  */
 var ApplicationsListViewModel = oop.defclass({
     constructor: function (urls) {
-        this.urls = urls;
+        this.apiListUrl = urls.apiListUrl;
         // Set up data storage
         this.appData = ko.observableArray();
         this.sortByName = ko.computed(function () {
@@ -162,7 +162,7 @@ var ApplicationsListViewModel = oop.defclass({
         }.bind(this));
 
         // Set up data access client
-        this.client = new ApplicationDataClient(urls.apiListUrl);
+        this.client = new ApplicationDataClient(this.apiListUrl);
     },
     init: function () {
         var request = this.client.fetchList();
@@ -172,13 +172,11 @@ var ApplicationsListViewModel = oop.defclass({
 
         request.fail(function(xhr, status, error) {
             $osf.growl('Error',
-                'Data not loaded. Please refresh the page and try ' +
-                'again or contact <a href="mailto: support@cos.io">support@cos.io</a> ' +
-                'if the problem persists.',
+                language.apiOauth2Application.dataFetchError,
                 'danger');
 
             Raven.captureMessage('Error fetching list of registered applications', {
-                url: this.urls.apiListUrl,
+                url: this.apiListUrl,
                 status: status,
                 error: error
             });
@@ -187,7 +185,7 @@ var ApplicationsListViewModel = oop.defclass({
     deleteApplication: function (appData) {
         bootbox.confirm({
             title: 'Deactivate application?',
-            message: 'Are you sure you want to deactivate this application for all users and revoke all access tokens? This cannot be reversed.',
+            message: language.apiOauth2Application.deactivateConfirm,
             callback: function (confirmed) {
                 if (confirmed) {
                     var request = this.client.deleteOne(appData);
@@ -198,17 +196,15 @@ var ApplicationsListViewModel = oop.defclass({
                     }.bind(this));
                     request.fail(function () {
                             $osf.growl('Error',
-                                        'Could not delete application. Please refresh the page and try ' +
-                                          'again or contact <a href="mailto: support@cos.io">support@cos.io</a> ' +
-                                          'if the problem persists.',
-                                        'danger');
+                                       language.apiOauth2Application.deactivateError,
+                                       'danger');
                     }.bind(this));
                 }
             }.bind(this),
             buttons:{
                 confirm:{
                     label:'Deactivate',
-                    className:'btn-warning'
+                    className:'btn-danger'
                 }
             }
         });
@@ -234,7 +230,7 @@ var ApplicationDetailViewModel = oop.defclass({
         this.allowExit = ko.observable(false);
 
         // Set up data access client
-        this.urls = urls;
+        this.webListUrl = urls.webListUrl;
         this.client = new ApplicationDataClient(urls.apiListUrl);
 
         // Control success/failure messages above submit buttons
@@ -263,9 +259,7 @@ var ApplicationDetailViewModel = oop.defclass({
             }.bind(this));
             request.fail(function(xhr, status, error) {
                 $osf.growl('Error',
-                             'Data not loaded. Please refresh the page and try ' +
-                              'again or contact <a href="mailto: support@cos.io">support@cos.io</a> ' +
-                              'if the problem persists.',
+                             language.apiOauth2Application.dataFetchError,
                             'danger');
 
                 Raven.captureMessage('Error fetching application data', {
@@ -289,9 +283,7 @@ var ApplicationDetailViewModel = oop.defclass({
 
         request.fail(function (xhr, status, error) {
             $osf.growl('Error',
-                       'Failed to update data. Please refresh the page and try ' +
-                         'again or contact <a href="mailto: support@cos.io">support@cos.io</a> ' +
-                         'if the problem persists.',
+                       language.apiOauth2Application.dataSendError,
                        'danger');
 
             Raven.captureMessage('Error updating instance', {
@@ -307,16 +299,14 @@ var ApplicationDetailViewModel = oop.defclass({
             this.appData(dataObj);
             this.originalValues(dataObj.serialize());
 
-            this.changeMessage('Successfully registered new application', 'text-success', 5000);
+            this.changeMessage(language.apiOauth2Application.creationSuccess, 'text-success', 5000);
             this.apiDetailUrl(dataObj.apiDetailUrl); // Toggle ViewModel --> act like a display view now.
             historyjs.replaceState({}, '', dataObj.webDetailUrl);  // Update address bar to show new detail page
         }.bind(this));
 
         request.fail(function (xhr, status, error) {
             $osf.growl('Error',
-                       'Failed to send data. Please refresh the page and try ' +
-                         'again or contact <a href="mailto: support@cos.io">support@cos.io</a> ' +
-                         'if the problem persists.',
+                       language.apiOauth2Application.dataSendError,
                        'danger');
 
             Raven.captureMessage('Error registering new OAuth2 application', {
@@ -326,8 +316,38 @@ var ApplicationDetailViewModel = oop.defclass({
             });
         }.bind(this));
     },
+    deleteApplication: function () {
+        var appData = this.appData();
+        bootbox.confirm({
+            title: 'Deactivate application?',
+            message: language.apiOauth2Application.deactivateConfirm,
+            callback: function (confirmed) {
+                if (confirmed) {
+                    var request = this.client.deleteOne(appData );
+                    request.done(function () {
+                        var appName = $osf.htmlEscape(appData.name());
+                        this.allowExit(true);
+                        // Don't let user go back to a deleted application page
+                        historyjs.replaceState({}, '', this.webListUrl);
+                        this.visitList();
+                    }.bind(this));
+                    request.fail(function () {
+                            $osf.growl('Error',
+                                       language.apiOauth2Application.deactivateError,
+                                       'danger');
+                    }.bind(this));
+                }
+            }.bind(this),
+            buttons:{
+                confirm:{
+                    label:'Deactivate',
+                    className:'btn-danger'
+                }
+            }
+        });
+    },
     visitList: function () {
-        window.location = this.urls.webListUrl;
+        window.location = this.webListUrl;
     },
     cancelChange: function () {
         if (!this.dirty()) {
@@ -335,7 +355,7 @@ var ApplicationDetailViewModel = oop.defclass({
         } else {
             bootbox.confirm({
                 title: 'Discard changes?',
-                message: 'Are you sure you want to discard your unsaved changes?',
+                message: language.apiOauth2Application.discardUnchanged,
                 callback: function(confirmed) {
                     if (confirmed) {
                         this.allowExit(true);
