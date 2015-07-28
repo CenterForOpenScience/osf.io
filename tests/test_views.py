@@ -4358,6 +4358,59 @@ class TestUserConfirmSignal(OsfTestCase):
 
         assert_equal(mock_signals.signals_sent(), set([auth.signals.user_confirmed]))
 
+class TestDraftRegistrationViews(OsfTestCase):
+
+    @unittest.skip
+    def test_submit_draft_for_review(self):
+        pass
+
+    @unittest.skip
+    def test_draft_before_register_page(self):
+        pass
+
+    @unittest.skip
+    def test_draft_before_register(skip):
+        pass
+
+    @unittest.skip
+    def test_register_draft_registration(self):
+        pass
+
+    @unittest.skip
+    def test_get_draft_registration(self):
+        pass
+
+    @unittest.skip
+    def test_get_draft_registrations(self):
+        pass
+
+    @unittest.skip
+    def test_create_draft_registration(self):
+        pass
+
+    @unittest.skip
+    def test_new_draft_registration(self):
+        pass
+
+    @unittest.skip
+    def test_edit_draft_registration(self):
+        pass
+
+    @unittest.skip
+    def test_update_draft_registration(self):
+        pass
+
+    @unittest.skip
+    def test_delete_draft_registration(self):
+        pass
+
+    @unittest.skip
+    def test_get_metaschemas(self):
+        pass
+
+    @unittest.skip
+    def test_get_metaschema(self):
+        pass
 
 if __name__ == '__main__':
     unittest.main()
