@@ -28,7 +28,73 @@ class NodeMixin(object):
         return obj
 
 
-class NodeList(generics.ListCreateAPIView, ODMFilterMixin):
+class NodeIncludeMixin(object):
+
+    def get_relationship_meta_data(self, obj, object_type):
+        included = False
+        query_parmas = self.request.query_params
+        if 'include' in query_parmas and object_type in query_parmas['include']:
+            included = True
+        ret = None
+        if object_type == 'children':
+            ret = self.get_node_data(obj, included)
+        if object_type == 'contributors':
+            ret = self.get_contrib_data(obj, included)
+        if object_type == 'pointers':
+            ret = self.get_pointers_data(obj, included)
+        if object_type == 'registrations':
+            ret = self.get_registration_data(obj, included)
+        return ret
+
+    def get_node_data(self, obj, included):
+        ret = {}
+        auth = Auth(self.request.user)
+        nodes = [node for node in obj.nodes if node.can_view(auth) and node.primary]
+        ret['count'] = len(nodes)
+        if included:
+            ret['data'] = []
+            for node in nodes:
+                serialized_node = NodeSerializer(node).data
+                ret['data'].append(serialized_node)
+        return ret
+
+    def get_contrib_data(self, obj, included):
+        ret = {}
+        contributors = obj.contributors
+        ret['count'] = len(contributors)
+        if included:
+            ret['data'] = []
+            for contributor in contributors:
+                contributor.bibliographic = obj.get_visible(contributor)
+                serialized_contributor = ContributorSerializer(contributor).data['data']
+                ret['data'].append(serialized_contributor)
+        return ret
+
+    def get_pointers_data(self, obj, included):
+        ret = {}
+        pointers = obj.nodes_pointer
+        ret['count'] = len(pointers)
+        if included:
+            ret['data'] = []
+            for pointer in pointers:
+                serialized_pointer = NodePointersSerializer(pointer).data['data']
+                ret['data'].append(serialized_pointer)
+        return ret
+
+    def get_registration_data(self, obj, included):
+        ret = {}
+        auth = Auth(self.request.user)
+        registrations = [node for node in obj.node__registrations if node.can_view(auth)]
+        ret['count'] = len(registrations)
+        if included:
+            ret['data'] = []
+            for registration in registrations:
+                serialized_registration = NodeSerializer(registration).data
+                ret['data'].append(serialized_registration)
+        return ret
+
+
+class NodeList(generics.ListCreateAPIView, ODMFilterMixin, NodeIncludeMixin):
     """Projects and components.
 
     On the front end, nodes are considered 'projects' or 'components'. The difference between a project and a component
@@ -79,7 +145,7 @@ class NodeList(generics.ListCreateAPIView, ODMFilterMixin):
         serializer.save(creator=user)
 
 
-class NodeDetail(generics.RetrieveUpdateDestroyAPIView, NodeMixin):
+class NodeDetail(generics.RetrieveUpdateDestroyAPIView, NodeMixin, NodeIncludeMixin):
     """Projects and component details.
 
     On the front end, nodes are considered 'projects' or 'components'. The difference between a project and a component
@@ -143,7 +209,7 @@ class NodeContributorsList(generics.ListAPIView, ListFilterMixin, NodeMixin):
         return self.get_queryset_from_request()
 
 
-class NodeRegistrationsList(generics.ListAPIView, NodeMixin):
+class NodeRegistrationsList(generics.ListAPIView, NodeMixin, NodeIncludeMixin):
     """Registrations of the current node.
 
     Registrations are read-only snapshots of a project. This view lists all of the existing registrations
@@ -167,7 +233,7 @@ class NodeRegistrationsList(generics.ListAPIView, NodeMixin):
         return registrations
 
 
-class NodeChildrenList(generics.ListAPIView, NodeMixin):
+class NodeChildrenList(generics.ListAPIView, NodeMixin, NodeIncludeMixin):
     """Children of the current node.
 
     This will get the next level of child nodes for the selected node if the current user has read access for those
@@ -194,7 +260,7 @@ class NodeChildrenList(generics.ListAPIView, NodeMixin):
         return children
 
 
-class NodePointersList(generics.ListCreateAPIView, NodeMixin):
+class NodePointersList(generics.ListCreateAPIView, NodeMixin, NodeIncludeMixin):
     """Pointers to other nodes.
 
     Pointers are essentially aliases or symlinks: All they do is point to another node.
@@ -211,7 +277,7 @@ class NodePointersList(generics.ListCreateAPIView, NodeMixin):
         return pointers
 
 
-class NodePointerDetail(generics.RetrieveDestroyAPIView, NodeMixin):
+class NodePointerDetail(generics.RetrieveDestroyAPIView, NodeMixin, NodeIncludeMixin):
     """Detail of a pointer to another node.
 
     Pointers are essentially aliases or symlinks: All they do is point to another node.

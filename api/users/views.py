@@ -6,6 +6,7 @@ from framework.auth.core import Auth
 from api.base.utils import get_object_or_404
 from api.base.filters import ODMFilterMixin
 from api.nodes.serializers import NodeSerializer
+from api.nodes.views import NodeIncludeMixin
 from .serializers import UserSerializer
 
 class UserMixin(object):
@@ -60,7 +61,7 @@ class UserDetail(generics.RetrieveAPIView, UserMixin):
         return self.get_user()
 
 
-class UserNodes(generics.ListAPIView, UserMixin, ODMFilterMixin):
+class UserNodes(generics.ListAPIView, UserMixin, ODMFilterMixin, NodeIncludeMixin):
     """Nodes belonging to a user.
 
     Return a list of nodes that the user contributes to. """

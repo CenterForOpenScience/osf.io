@@ -42,9 +42,7 @@ class NodeSerializer(JSONAPISerializer):
             'links': {
                 'related': {
                     'href': Link('nodes:node-children', kwargs={'node_id': '<pk>'}),
-                    'meta': {
-                        'count': 'get_node_count'
-                    }
+                    'meta': 'get_objects_data:children'
                 }
             },
         },
@@ -52,9 +50,7 @@ class NodeSerializer(JSONAPISerializer):
             'links': {
                 'related': {
                     'href': Link('nodes:node-contributors', kwargs={'node_id': '<pk>'}),
-                    'meta': {
-                        'count': 'get_contrib_count'
-                    }
+                    'meta': 'get_objects_data:contributors'
                 }
             },
         },
@@ -62,9 +58,7 @@ class NodeSerializer(JSONAPISerializer):
             'links': {
                 'related': {
                     'href': Link('nodes:node-pointers', kwargs={'node_id': '<pk>'}),
-                    'meta': {
-                        'count': 'get_pointers_count'
-                    }
+                    'meta': 'get_objects_data:pointers'
                 }
             },
         },
@@ -72,9 +66,7 @@ class NodeSerializer(JSONAPISerializer):
             'links': {
                 'related': {
                     'href': Link('nodes:node-registrations', kwargs={'node_id': '<pk>'}),
-                    'meta': {
-                        'count': 'get_registration_count'
-                    }
+                    'meta':  'get_objects_data:registrations'
                 }
             },
         },
@@ -97,31 +89,8 @@ class NodeSerializer(JSONAPISerializer):
     def get_absolute_url(self, obj):
         return obj.absolute_url
 
-    # TODO: See if we can get the count filters into the filter rather than the serializer.
-
-    def get_user_auth(self, request):
-        user = request.user
-        if user.is_anonymous():
-            auth = Auth(None)
-        else:
-            auth = Auth(user)
-        return auth
-
-    def get_node_count(self, obj):
-        auth = self.get_user_auth(self.context['request'])
-        nodes = [node for node in obj.nodes if node.can_view(auth) and node.primary]
-        return len(nodes)
-
-    def get_contrib_count(self, obj):
-        return len(obj.contributors)
-
-    def get_registration_count(self, obj):
-        auth = self.get_user_auth(self.context['request'])
-        registrations = [node for node in obj.node__registrations if node.can_view(auth)]
-        return len(registrations)
-
-    def get_pointers_count(self, obj):
-        return len(obj.nodes_pointer)
+    def get_objects_data(self, obj, object_type):
+        return self.context['view'].get_relationship_meta_data(obj, object_type)
 
     @staticmethod
     def get_tags(obj):
