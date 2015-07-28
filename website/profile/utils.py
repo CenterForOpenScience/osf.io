@@ -36,7 +36,11 @@ def serialize_user(user, node=None, admin=False, full=False, n_comments=None, an
     """Return a dictionary representation of a registered user.
 
     :param User user: A User object
+    :param Node node: A Node object
+    :param bool admin: If the user has admin permissions on the node
     :param bool full: Include complete user properties
+    :param int n_comments: Number of comments made by user on the node
+    :param bool anonymous: Whether the user is anonymous
     """
     fullname = user.display_full_name(node=node)
     ret = {
