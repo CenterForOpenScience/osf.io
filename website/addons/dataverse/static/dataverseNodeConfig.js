@@ -349,6 +349,12 @@ ViewModel.prototype.getDatasets = function() {
 /** Send POST request to authorize Dataverse */
 ViewModel.prototype.sendAuth = function() {
     var self = this;
+
+    // Selection should not be empty
+    if( !self.selectedHost() ){
+        self.changeMessage("Please select a Dataverse repository.", 'text-danger');
+        return;
+    }
     var url = self.urls().create;
     return $osf.postJSON(
         url,

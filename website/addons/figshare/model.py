@@ -44,6 +44,13 @@ class FigShareGuidFile(GuidFile):
     def provider(self):
         return 'figshare'
 
+    @property
+    def external_url(self):
+        extra = self._metadata_cache['extra']
+        if extra['status'] == 'public':
+            return self._metadata_cache['extra']['webView']
+        return None
+
     def _exception_from_response(self, response):
         try:
             if response.json()['data']['extra']['status'] == 'drafts':
@@ -385,22 +392,6 @@ class AddonFigShareNodeSettings(StorageAddonBase, AddonNodeSettingsBase):
                 ).format(url=url)
             #
             return message
-
-    def before_fork(self, node, user):
-        """
-
-        :param Node node:
-        :param User user:
-        :return str: Alert message
-
-        """
-        if self.user_settings and self.user_settings.owner == user:
-            return messages.BEFORE_FORK_OWNER.format(
-                category=node.project_or_component,
-            )
-        return messages.BEFORE_FORK_NOT_OWNER.format(
-            category=node.project_or_component,
-        )
 
     def after_fork(self, node, fork, user, save=True):
         """

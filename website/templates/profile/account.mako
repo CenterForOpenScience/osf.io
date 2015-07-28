@@ -67,7 +67,8 @@
                                     <td colspan="3">
                                         <form data-bind="submit: addEmail">
                                             <div class="form-group">
-                                              <input placeholder="Email address" data-bind="value: emailInput" class="form-control">
+                                                ## email input verification is not supported on safari
+                                              <input placeholder="Email address" type="email" data-bind="value: emailInput" class="form-control" required maxlength="254">
                                             </div>
                                             <input type="submit" value="Add Email" class="btn btn-success">
                                         </form>
