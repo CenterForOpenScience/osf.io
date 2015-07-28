@@ -32,33 +32,26 @@
                     <div class="form-group">
                         <label>Application name</label>
                         <input class="form-control" type="text" data-bind="value: name" placeholder="Required">
-                        <div data-bind="visible: $root.showMessages, css:'text-danger'">
-                            <p data-bind="validationMessage: name"></p>
-                        </div>
+
+                            <p data-bind="validationMessage: name" class="text-danger"></p>
                     </div>
 
                     <div class="form-group">
                         <label>Project homepage URL</label>
                         <input class="form-control" type="text" data-bind="value: homeUrl" placeholder="Required">
-                        <div data-bind="visible: $root.showMessages, css:'text-danger'">
-                            <p data-bind="validationMessage: homeUrl"></p>
-                        </div>
+                            <p data-bind="validationMessage: homeUrl" class="text-danger"></p>
                     </div>
 
                     <div class="form-group">
                         <label>Application description</label>
                         <textarea class="form-control" placeholder="Application description is optional" data-bind="value: description"></textarea>
-                        <div data-bind="visible: $root.showMessages, css:'text-danger'">
-                            <p data-bind="validationMessage: description"></p>
-                        </div>
+                            <p data-bind="validationMessage: description" class="text-danger"></p>
                     </div>
 
                     <div class="form-group">
                         <label>Authorization callback URL</label>
                         <input type="text" class="form-control" data-bind="value: callbackUrl" placeholder="Required">
-                        <div data-bind="visible: $root.showMessages, css:'text-danger'">
-                            <p data-bind="validationMessage: callbackUrl"></p>
-                        </div>
+                            <p data-bind="validationMessage: callbackUrl" class="text-danger"></p>
                     </div>
 
                     <!-- Flashed Messages -->
@@ -67,12 +60,13 @@
                     </div>
 
                     <div class="padded">
-                        <button type="reset" class="btn btn-default" data-bind="click: $root.cancelChange">Cancel</button>
-                        <button type="submit" class="btn btn-primary"
-                                data-bind="visible: $root.isCreateView(), click: $root.createApplication">Create</button>
+                        <button type="reset" class="btn btn-default"
+                                data-bind="click: $root.cancelChange, enable: isValid(), text: $root.isCreateView()? 'Back' : 'Cancel'"></button>
+                        <button type="submit" class="btn btn-success"
+                                data-bind="visible: $root.isCreateView(), click: $root.createApplication, enable: isValid()">Create</button>
 
-                        <button type="submit" class="btn btn-primary"
-                                data-bind="visible: !$root.isCreateView(), click: $root.updateApplication">Save</button>
+                        <button type="submit" class="btn btn-success"
+                                data-bind="visible: !$root.isCreateView(), click: $root.updateApplication, enable: (isValid() && $root.dirty())">Save</button>
                     </div>
                 </form>
             </div>

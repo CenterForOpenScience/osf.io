@@ -7,9 +7,10 @@
     <div class="col-sm-3 affix-parent">
       <%include file="include/profile/settings_navpanel.mako" args="current_page='dev_apps'"/>
     </div>
+    </div>
 
     <div class="col-sm-9 col-md-7">
-        <a href="${web_url_for('oauth_application_register')}" role="button" class="btn btn-primary pull-right"><i class="fa fa-plus"></i> Register new application</a>
+        <a href="${web_url_for('oauth_application_register')}" role="button" class="btn btn-primary pull-right"><i class="fa fa-plus"></i> Register new</a>
         <div id="appList">
 
             <p data-bind="visible: (appData().length == 0)">You have not registered any applications that can connect to the OSF.</p>
@@ -22,8 +23,7 @@
                         <th>Application</th>
                         <th>
                             <span class="pull-right">
-                                Delete <span class="glyphicon glyphicon-info-sign" aria-hidden="true"
-                                             title="De-registering this application cannot be reversed!"></span>
+                                Deactivate
                             </span>
                         </th>
                     </tr>

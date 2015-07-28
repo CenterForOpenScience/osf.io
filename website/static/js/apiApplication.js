@@ -186,14 +186,15 @@ var ApplicationsListViewModel = oop.defclass({
     },
     deleteApplication: function (appData) {
         bootbox.confirm({
-            title: 'De-register application?',
-            message: 'Are you sure you want to de-register this application and revoke all access tokens? This cannot be reversed.',
+            title: 'Deactivate application?',
+            message: 'Are you sure you want to deactivate this application for all users and revoke all access tokens? This cannot be reversed.',
             callback: function (confirmed) {
                 if (confirmed) {
                     var request = this.client.deleteOne(appData);
                     request.done(function () {
                             this.appData.destroy(appData);
-                            $osf.growl('Deletion', '"' + appData.name() + '" has been deleted', 'success');
+                            var appName = $osf.htmlEscape(appData.name());
+                            $osf.growl('Deletion', '"' + appName + '" has been deactivated', 'success');
                     }.bind(this));
                     request.fail(function () {
                             $osf.growl('Error',
@@ -203,7 +204,13 @@ var ApplicationsListViewModel = oop.defclass({
                                         'danger');
                     }.bind(this));
                 }
-            }.bind(this)
+            }.bind(this),
+            buttons:{
+                confirm:{
+                    label:'Deactivate',
+                    className:'btn-warning'
+                }
+            }
         });
     }
 });
@@ -216,14 +223,21 @@ var ApplicationsListViewModel = oop.defclass({
  */
 var ApplicationDetailViewModel = oop.defclass({
     constructor: function (urls) {
-        this.appData = ko.observable();
+        var placeholder = new ApplicationData();
+        this.appData = ko.observable(placeholder);
+
+        // Track whether data has changed, and whether user is allowed to leave page anyway
+        this.originalValues = ko.observable(placeholder.serialize());
+        this.dirty = ko.computed(function(){
+            return JSON.stringify(this.originalValues()) !== JSON.stringify(this.appData().serialize());
+        }.bind(this));
+        this.allowExit = ko.observable(false);
+
         // Set up data access client
         this.urls = urls;
-
         this.client = new ApplicationDataClient(urls.apiListUrl);
 
         // Control success/failure messages above submit buttons
-        this.showMessages = ko.observable(false);
         this.message = ko.observable();
         this.messageClass = ko.observable();
 
@@ -232,14 +246,20 @@ var ApplicationDetailViewModel = oop.defclass({
         this.isCreateView = ko.computed(function () {
             return !this.apiDetailUrl();
         }.bind(this));
+
+        // Prevent user from leaving page if there are unsaved changes
+        $(window).on('beforeunload', function () {
+            if (this.dirty() && !this.allowExit()) {
+                return 'There are unsaved changes on this page.';
+            }
+        }.bind(this));
     },
     init: function () {
-        if (this.isCreateView()) {
-            this.appData(new ApplicationData());
-        } else {
+        if (!this.isCreateView()) {
             var request = this.client.fetchOne(this.apiDetailUrl());
-            request.done(function (data) {
-                this.appData(data);
+            request.done(function (dataObj) {
+                this.appData(dataObj);
+                this.originalValues(dataObj.serialize());
             }.bind(this));
             request.fail(function(xhr, status, error) {
                 $osf.growl('Error',
@@ -257,13 +277,10 @@ var ApplicationDetailViewModel = oop.defclass({
         }
     },
     updateApplication: function () {
-        if (!this.appData().isValid()) {
-            this.showMessages(true);
-            return;
-        }
         var request = this.client.updateOne(this.appData());
-        request.done(function (data) {
-            this.appData(data);
+        request.done(function (dataObj) {
+            this.appData(dataObj);
+            this.originalValues(dataObj.serialize());
             this.changeMessage(
             'Application data updated',
             'text-success',
@@ -285,16 +302,14 @@ var ApplicationDetailViewModel = oop.defclass({
         }.bind(this));
     },
     createApplication: function () {
-        if (!this.appData().isValid()) {
-            this.showMessages(true);
-            return;
-        }
         var request = this.client.createOne(this.appData());
-        request.done(function (data) {
-            this.appData(data);
+        request.done(function (dataObj) {
+            this.appData(dataObj);
+            this.originalValues(dataObj.serialize());
+
             this.changeMessage('Successfully registered new application', 'text-success', 5000);
-            this.apiDetailUrl(data.apiDetailUrl); // Toggle ViewModel --> act like a display view now.
-            historyjs.replaceState({}, '', data.webDetailUrl);  // Update address bar to show new detail page
+            this.apiDetailUrl(dataObj.apiDetailUrl); // Toggle ViewModel --> act like a display view now.
+            historyjs.replaceState({}, '', dataObj.webDetailUrl);  // Update address bar to show new detail page
         }.bind(this));
 
         request.fail(function (xhr, status, error) {
@@ -311,9 +326,30 @@ var ApplicationDetailViewModel = oop.defclass({
             });
         }.bind(this));
     },
-    cancelChange: function () {
-        // TODO: Add change tracking features a la profile page JS
+    visitList: function () {
         window.location = this.urls.webListUrl;
+    },
+    cancelChange: function () {
+        if (!this.dirty()) {
+            this.visitList();
+        } else {
+            bootbox.confirm({
+                title: 'Discard changes?',
+                message: 'Are you sure you want to discard your unsaved changes?',
+                callback: function(confirmed) {
+                    if (confirmed) {
+                        this.allowExit(true);
+                        this.visitList();
+                    }
+                }.bind(this),
+                buttons: {
+                    confirm: {
+                        label:'Discard',
+                        className:'btn-danger'
+                    }
+                }
+            });
+        }
     },
     changeMessage: function (text, css, timeout) {
         // Display messages near save button. Overlaps with profile.js.
