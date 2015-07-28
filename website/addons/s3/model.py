@@ -74,10 +74,11 @@ class AddonS3UserSettings(AddonUserSettingsBase):
 
         return True
 
+
 class AddonS3NodeSettings(StorageAddonBase, AddonNodeSettingsBase):
 
     bucket = fields.StringField()
-    encrypt_uploads = fields.BooleanField(defaul=ENCRYPT_UPLOADS_DEFAULT)
+    encrypt_uploads = fields.BooleanField(default=ENCRYPT_UPLOADS_DEFAULT)
     user_settings = fields.ForeignField(
         'addons3usersettings', backref='authorized'
     )

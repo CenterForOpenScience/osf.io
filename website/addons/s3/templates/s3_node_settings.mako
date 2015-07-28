@@ -58,7 +58,7 @@
               Save
             </button>
           </div>
-        </div>        
+        </div>
       </div>
       </div>
     </div>
@@ -85,12 +85,13 @@
  <script>
     // Make s3 settings variables globally accessible for relevant JS
     <%
-      from website.addons.s3.settings import BUCKET_LOCATIONS
+      from website.addons.s3.settings import BUCKET_LOCATIONS, ENCRYPT_UPLOADS_DEFAULT
       from website.util.sanitize import safe_json as sjson
     %>
     window.contextVars = $.extend(true, {}, window.contextVars, {
         s3Settings: {
-            bucketLocations: ${ BUCKET_LOCATIONS | sjson, n}
+            encryptUploads: ${ ENCRYPT_UPLOADS_DEFAULT | sjson, n },
+            bucketLocations: ${ BUCKET_LOCATIONS | sjson, n }
           }
     })
  </script>

@@ -63,8 +63,16 @@ var APITestCases = function(test, cases) {
 var s3ViewModelSettings = {
     url: '/api/v1/12345/s3/settings/',
     encryptUploads: false,
-    defaultBucketLocationValue: 'testValue',
-    defaultBucketLocationMessage: 'Test Message'
+    bucketLocations: {
+        '': 'US',
+        'EU': 'ES',
+        'us-west-1': 'CA',
+        'us-west-2': 'OR',
+        'ap-northeast-1': 'TO',
+        'ap-southeast-1': 'SI',
+        'ap-southeast-2': 'SY',
+        'cn-north-1': 'BE'
+    }
 };
 
 describe('s3NodeConfigViewModel', () => {
@@ -74,8 +82,16 @@ describe('s3NodeConfigViewModel', () => {
             var defaultSettings = {
                 url: '',
                 encryptUploads: true,
-                defaultBucketLocationValue: '',
-                defaultBucketLocationMessage: 'US Standard'
+                bucketLocations: {
+                    '': 'US Standard',
+                    'EU': 'Europe Standard',
+                    'us-west-1': 'California',
+                    'us-west-2': 'Oregon',
+                    'ap-northeast-1': 'Tokyo',
+                    'ap-southeast-1': 'Singapore',
+                    'ap-southeast-2': 'Sydney',
+                    'cn-north-1': 'Beijing'
+                }
             };
             var vm = new s3NodeConfigVM('', {});
             vm.updateFromData().always(function() {

@@ -12,8 +12,16 @@ ko.punches.enableAll();
 var defaultSettings = {
     url: '',
     encryptUploads: true,
-    defaultBucketLocationValue: '',
-    defaultBucketLocationMessage: 'US Standard'
+    bucketLocations: {
+        '': 'US Standard',
+        'EU': 'Europe Standard',
+        'us-west-1': 'California',
+        'us-west-2': 'Oregon',
+        'ap-northeast-1': 'Tokyo',
+        'ap-southeast-1': 'Singapore',
+        'ap-southeast-2': 'Sydney',
+        'cn-north-1': 'Beijing'
+    }
 };
 
 var ViewModel = function(selector, settings) {
@@ -272,27 +280,11 @@ ViewModel.prototype.openCreateBucket = function() {
 
     var isValidBucket = /^(?!.*(\.\.|-\.))[^.][a-z0-9\d.-]{2,61}[^.]$/;
 
-    // Maps internal values used by API to display names
-    var BUCKET_LOCATION_MAP = $.extend(
-        {},
-        {
-            '': 'US Standard',
-            'EU': 'Europe Standard',
-            'us-west-1': 'California',
-            'us-west-2': 'Oregon',
-            'ap-northeast-1': 'Tokyo',
-            'ap-southeast-1': 'Singapore',
-            'ap-southeast-2': 'Sydney',
-            'cn-north-1': 'Beijing'
-        },
-        window.contextVars.s3Settings.bucketLocations
-    );
-
     // Generates html options for key-value pairs in BUCKET_LOCATION_MAP
     function generateBucketOptions(locations) {
         var options;
         for (var location in locations) {
-            if (BUCKET_LOCATION_MAP.hasOwnProperty(location)) {
+            if (self.settings.bucketLocations.hasOwnProperty(location)) {
                 options = options + ['<option value="', location, '">', locations[location], '</option>', '\n'].join('');
             }
         }
@@ -315,7 +307,7 @@ ViewModel.prototype.openCreateBucket = function() {
                                 '<label class="col-md-4 control-label" for="bucketLocation">Bucket Location</label> ' +
                                 '<div class="col-md-4"> ' +
                                     '<select id="bucketLocation" name="bucketLocation" class="form-control"> ' +
-                                        generateBucketOptions(BUCKET_LOCATION_MAP) +
+                                        generateBucketOptions(self.settings.bucketLocations) +
                                     '</select>' +
                                 '</div>' +
                             '</div>' +
