@@ -282,7 +282,7 @@ ViewModel.prototype.openCreateBucket = function() {
 
     // Generates html options for key-value pairs in BUCKET_LOCATION_MAP
     function generateBucketOptions(locations) {
-        var options;
+        var options = '';
         for (var location in locations) {
             if (self.settings.bucketLocations.hasOwnProperty(location)) {
                 options = options + ['<option value="', location, '">', locations[location], '</option>', '\n'].join('');
