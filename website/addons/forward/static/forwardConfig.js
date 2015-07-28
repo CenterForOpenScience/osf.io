@@ -87,7 +87,7 @@ var ViewModel = function(url, nodeId) {
                 'this time. Please refresh ' +
                 'the page. If the problem persists, email ' +
                 '<a href="mailto:support@osf.io">support@osf.io</a>.',
-                'text-warning');
+                'text-danger');
             Raven.captureMessage('Could not GET get Forward addon settings.', {
                 url: url,
                 textStatus: textStatus,

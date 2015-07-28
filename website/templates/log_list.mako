@@ -68,7 +68,7 @@
                             <!-- For debugging purposes: If a log template for a the Log can't be found, show
                                 an error message with its log action. -->
                             <!-- ko ifnot: log.hasTemplate() -->
-                            <span class="text-warning">Could not render log: "<span data-bind="text: log.action"></span>"</span>
+                            <span class="text-danger">Could not render log: "<span data-bind="text: log.action"></span>"</span>
                             <!-- /ko -->
                         </dd>
                     </dl><!-- end foreach logs -->
