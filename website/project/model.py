@@ -104,7 +104,7 @@ def ensure_schema(schema, name, version=1):
         schema_obj = MetaSchema(**meta_schema)
         schema_obj.save()
     return schema_obj
-    
+
 def ensure_schemas():
     """Import meta-data schemas from JSON to database if not already loaded
     """

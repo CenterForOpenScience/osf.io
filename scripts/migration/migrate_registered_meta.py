@@ -1,12 +1,14 @@
-""" Changes existing registered_meta on a node to new schema layout
+"""
+Changes existing registered_meta on a node to new schema layout
 required for the prereg-prize
 """
-import re
 import json
 import sys
 import logging
 
 from modularodm import Q
+
+from framework.mongo.utils import from_mongo
 
 from website.models import Node, MetaSchema
 from website.app import init_app
@@ -33,11 +35,12 @@ def main(dry_run):
         MetaSchema.remove()
         ensure_schemas()
 
-    import ipdb; ipdb.set_trace()
     for node in get_old_registered_nodes():
         schemas = node.registered_meta
         # there is only ever one key in this dict
         for name, schema in schemas.iteritems():
+            name = from_mongo(name)
+
             schema = json.loads(schema)
             schema_data = {
                 'embargoEndDate': schema.get('embargoEndDate', ''),

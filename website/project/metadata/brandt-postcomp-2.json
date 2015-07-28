@@ -2,18 +2,17 @@
     "name": "Replication Recipe (Brandt et al., 2013): Post-Completion",
     "version": 2,
     "pages": [{
-            "id": "page1",
-            "title": "Registering the Replication Attempt",
-            "questions": {
-                "item29": {
-                    "type": "string",
-                    "format": "textfield",
-                    "title": "The finalized materials, procedures, analysis plan etc of the replication are registered here",
-                    "nav": "Finalized materials"
-                }
-            }]
-    },
-    {
+        "id": "page1",
+        "title": "Registering the Replication Attempt",
+        "questions": {
+            "item29": {
+                "type": "string",
+                "format": "textfield",
+                "title": "The finalized materials, procedures, analysis plan etc of the replication are registered here",
+                "nav": "Finalized materials"
+            }
+        }
+    }, {
         "id": "page2",
         "title": "Reporting the Replication",
         "questions": {
@@ -31,14 +30,14 @@
             },
             "item32": {
                 "type": "choose",
-                "format": "singleselect"
+                "format": "singleselect",
                 "title": "The replication effect size is",
                 "options": ["significantly different from the original effect size", "not significantly different from the original effect size"],
                 "nav": "Difference in effect size"
             },
             "item33": {
                 "type": "choose",
-                "format": "singleselect"
+                "format": "singleselect",
                 "title": "I judge the replication to be a(n)",
                 "options": ["success", "informative failure to replicate", "practical failure to replicate", "inconclusive"],
                 "nav": "Outcome"
