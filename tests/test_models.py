@@ -3033,12 +3033,11 @@ class TestRegisterNode(OsfTestCase):
         registration2 = RegistrationFactory(
             project=self.project,
             user=user2,
-            template='Template2',
             data='Something else',
         )
         assert_equal(registration2.registered_from, self.project)
         assert_equal(registration2.registered_user, user2)
-        assert_equal(registration2.registered_meta['Template2'], 'Something else')
+        assert_equal(registration2.registered_meta, 'Something else')
 
         # Test default user
         assert_equal(self.registration.registered_user, self.user)

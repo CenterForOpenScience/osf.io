@@ -20,7 +20,6 @@ from website.project.decorators import (
 )
 from website import settings
 # from website.mails import Mail, send_mail
-from website.exceptions import NodeStateError
 from website.project import utils as project_utils
 from website.project.model import MetaSchema, DraftRegistration
 from website.project.metadata.utils import serialize_meta_schema, serialize_draft_registration
