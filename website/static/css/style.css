@@ -419,6 +419,8 @@ select {
 
 .tagsinput {
     border:1px solid #CCC;
+    float: left;
+    padding: 5px;
     background: #FFF;
     padding:5px;
     width:300px;
@@ -427,19 +429,8 @@ select {
 }
 
 .tagsinput span.tag {
-    float: left; padding: 5px;
-    text-decoration:none;
-    background: #DEF;
-    margin-right: 5px;
-    margin-bottom:5px;
-    font-size:13px;
-}
-
-.tagsinput span.tag a {
-    font-weight: bold;
-    color: #000;
-    text-decoration:none;
-    font-size: 11px;
+    float: left;
+    padding: 5px;
 }
 
 .tagsinput input {
@@ -453,10 +444,25 @@ select {
     margin-bottom:5px;
 }
 
-.tagsinput div {
-    display:block;
-    float: left;
-    }
+.tag a {
+    font-weight: bold;
+    color: #000;
+    text-decoration:none;
+    font-size: 11px;
+
+}
+
+.tag {
+    text-decoration:none;
+    display: inline-block;
+    background: #DEF;
+    margin-right: 5px;
+    margin-bottom:5px;
+    font-size:13px;
+    padding:5px;
+    border:1px solid transparent;
+    border-radius: 5px;
+}
 
 tr a, b, em, td {
     word-break: break-word;
