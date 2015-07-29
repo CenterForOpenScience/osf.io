@@ -56,20 +56,10 @@ var mkMetaSchema = function() {
 
 describe('Utilites', () => {
     describe('validators', () => {
-        describe('#string', () => {
-            it('is valid if the string is not blank', () => {
-                assert.isTrue(utilities.validators.string('abc'));
-                assert.isFalse(utilities.validators.string(''));
-                assert.isFalse(utilities.validators.string('    '));
-            });
-        });
-        describe('#number', () => {
-            it('is valid if the value is not blank and is either a number or a string that can be parsed as a number', () => {
-                assert.isTrue(utilities.validators.number('1'));
-                assert.isTrue(utilities.validators.number(42));
-                assert.isFalse(utilities.validators.number('abc'));
-                assert.isFalse(utilities.validators.number(false));
-            });
+        it('is valid if the value is either a number or a string that can be parsed as a number', () => {
+            assert.isTrue(utilities.validators.number('1').status);
+            assert.isTrue(utilities.validators.number(42).status);
+            assert.isFalse(utilities.validators.number('abc').status);
         });
     });
 });
@@ -314,10 +304,10 @@ describe('Question', () => {
     });
     describe('#valid', () => {
         it('is true if the Question\'s value passes the corresponding validator\'s checks', () => {
-            // q is string type
-            assert.isFalse(q.valid());
             q.value('not blank');
-            assert.isTrue(q.valid());
+            assert.isTrue(q.valid().status);
+            q.type = 'number';
+            assert.isFalse(q.valid().status);
         });
     });
     describe('#init', () => {

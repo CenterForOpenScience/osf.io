@@ -121,7 +121,7 @@ $(document).keydown(function(e) {
     }
 });
 
-var validate = function(checks, value, required) {
+var validate = function(checks, message, value, required) {
     required = required || false;        
     var valid = true;
     var blank = $osf.isBlank(value);
@@ -136,25 +136,18 @@ var validate = function(checks, value, required) {
             status: true
         };            
     }
-    var messages = [];
     $.each(checks, function(i, check) {
-        var passed = check.fn(value);
-        if (!passed) {
-            messages.push(check.message);
-        }
+        var passed = check(value);
         valid = valid && passed;
     });
     return {
         status: valid,
-        messages: messages
+        message: !valid ? message: ''
     }; 
 };
 
 var validators = {
-    number: {
-        fn: validate.bind(null, [$osf.not(isNaN.bind(parseFloat))]),
-        message: 'This field must be a numeric value'
-    }
+    number: validate.bind(null, [$osf.not(isNaN.bind(parseFloat))], 'This field must be a numeric value')
 };
 
 /**
@@ -221,7 +214,7 @@ var Question = function(data, id) {
 
     self.validationMessages = ko.computed(function() {
         var valid = self.valid();
-        return valid.messages || [];
+        return valid.message;
     });
     self.validationStatus = ko.computed(function() {
         var valid = self.valid();
@@ -283,7 +276,7 @@ Question.prototype.valid = function() {
         return validator(value, self.required);
     }
     else {
-        return validate([], value, self.required); 
+        return validate([], '', value, self.required); 
     }
 };
 
