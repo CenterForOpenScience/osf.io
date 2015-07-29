@@ -9,6 +9,7 @@ import datetime as dt
 import mock
 import httplib as http
 import math
+import datetime
 
 from nose.tools import *  # noqa PEP8 asserts
 from tests.test_features import requires_search
@@ -4327,6 +4328,24 @@ class TestDraftRegistrationViews(OsfTestCase):
         )
         self.draft.save()
 
+        current_month = datetime.datetime.now().strftime("%B")
+        current_year = datetime.datetime.now().strftime("%Y")
+
+        valid_date = datetime.datetime.now() + datetime.timedelta(days=180)
+        self.valid_embargo_payload = json.dumps({
+            u'embargoEndDate': unicode(valid_date.strftime('%a, %d, %B %Y %H:%M:%S')) + u' GMT',
+            u'registrationChoice': 'embargo',
+            u'summary': unicode(fake.sentence())
+        })
+        self.invalid_embargo_date_payload = json.dumps({
+            u'embargoEndDate': u"Thu, 01 {month} {year} 05:00:00 GMT".format(
+                month=current_month,
+                year=str(int(current_year)-1)
+            ),
+            u'registrationChoice': 'embargo',
+            u'summary': unicode(fake.sentence())
+        })
+
     def tearDown(self, *args, **kwargs):
         super(TestDraftRegistrationViews, self).tearDown(*args, **kwargs)
         DraftRegistration.remove()
@@ -4356,7 +4375,21 @@ class TestDraftRegistrationViews(OsfTestCase):
         assert_true(reg.is_public)
 
     @mock.patch('framework.tasks.handlers.enqueue_task')
-    def test_register_template_with_embargo_creates_embargo(self, mock_enquque):
+    def test_register_template_make_public_makes_children_public(self, mock_enquque):
+        comp1 = NodeFactory(parent=self.node)
+        NodeFactory(parent=comp1)
+
+        url = self.node.api_url_for('register_draft_registration', draft_id=self.draft._id)
+        self.app.post_json(url, {'registrationChoice': 'immediate'}, auth=self.auth)
+        self.node.reload()
+        # Most recent node is a registration
+        reg = Node.load(self.node.node__registrations[-1])
+        for node in reg.get_descendants_recursive():
+            assert_true(node.is_registration)
+            assert_true(node.is_public)
+
+    @mock.patch('framework.tasks.handlers.enqueue_task')
+    def test_register_draft_registration_with_embargo_creates_embargo(self, mock_enquque):
         url = self.node.api_url_for('register_draft_registration', draft_id=self.draft._id)
         self.app.post_json(
             url,
@@ -4375,6 +4408,49 @@ class TestDraftRegistrationViews(OsfTestCase):
         # The registration is pending an embargo that has not been approved
         assert_true(reg.pending_embargo)
         assert_false(reg.embargo_end_date)
+
+    @mock.patch('framework.tasks.handlers.enqueue_task')
+    def test_register_draft_registration_with_embargo_adds_to_parent_project_logs(self, mock_enquque):
+        initial_project_logs = len(self.node.logs)
+        self.app.post(
+            self.node.api_url_for('register_draft_registration', draft_id=self.draft._id),
+            self.valid_embargo_payload,
+            content_type='application/json',
+            auth=self.user.auth
+        )
+        self.node.reload()
+        # Logs: Created, registered, embargo initiated
+        assert_equal(len(self.node.logs), initial_project_logs + 1)
+
+    @mock.patch('framework.tasks.handlers.enqueue_task')
+    def test_register_draft_registration_with_embargo_is_not_public(self, mock_enqueue):
+        res = self.app.post(
+            self.node.api_url_for('register_draft_registration', draft_id=self.draft._id),
+            self.valid_embargo_payload,
+            content_type='application/json',
+            auth=self.user.auth
+        )
+
+        assert_equal(res.status_code, 201)
+
+        registration = Node.find().sort('-registered_date')[0]
+
+        assert_true(registration.is_registration)
+        assert_false(registration.is_public)
+        assert_true(registration.pending_registration)
+        assert_is_not_none(registration.embargo)
+
+    @mock.patch('framework.tasks.handlers.enqueue_task')
+    def test_register_draft_registration_invalid_embargo_end_date_raises_HTTPError(self, mock_enqueue):
+        res = self.app.post(
+            self.node.api_url_for('register_draft_registration', draft_id=self.draft._id),
+            self.invalid_embargo_date_payload,
+            content_type='application/json',
+            auth=self.user.auth,
+            expect_errors=True
+        )
+
+        assert_equal(res.status_code, 400)
 
     def test_get_draft_registrations_gets_drafts_for_node_and_user(self):
 
