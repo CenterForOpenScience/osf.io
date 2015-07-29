@@ -1446,7 +1446,6 @@ var FGItemButtons = {
         var item = args.item;
         var rowButtons = [];
         var mode = args.mode;
-        debugger;
         if (window.File && window.FileReader && item.kind === 'folder' && item.data.provider && item.data.permissions && item.data.permissions.edit) {
             rowButtons.push(
                 m.component(FGButton, {
@@ -1530,7 +1529,7 @@ var FGItemButtons = {
                                      item.data.nodeApiUrl + 'osfstorage/return_all/',
                                     {}
                                 ).done(function(resp) {
-                                    if (resp['status'] === 'success') {
+                                    if (resp.status === 'success') {
                                         window.location.reload();
                                     } else {
                                         $osf.growl('Error', 'Unable to unlock OSF Storage. Make sure all files are unlocked, or locked by you.');
@@ -1560,8 +1559,8 @@ var FGItemButtons = {
                                         'end_date': 'week'
                                     }
                                 ).done(function(resp) {
-                                    if (resp['status'] === 'success') {
-                                        window.location.reload()
+                                    if (resp.status === 'success') {
+                                        window.location.reload();
                                     } else {
                                         $osf.growl('Error', 'Unable to lock OSF Storage. Make sure all files are unlocked, or locked by you.');
                                     }
