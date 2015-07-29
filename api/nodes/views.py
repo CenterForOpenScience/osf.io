@@ -62,7 +62,7 @@ class NodeIncludeMixin(object):
         if include:
             ret['data'] = []
             for node in nodes:
-                serialized_node = NodeSerializer(node).data
+                serialized_node = NodeSerializer(node)
                 ret['data'].append(serialized_node.data['data'])
         return ret
 
@@ -74,8 +74,8 @@ class NodeIncludeMixin(object):
             ret['data'] = []
             for contributor in contributors:
                 contributor.bibliographic = obj.get_visible(contributor)
-                serialized_contributor = ContributorSerializer(contributor).data
-                ret['data'].append(serialized_contributor['data'])
+                serialized_contributor = ContributorSerializer(contributor)
+                ret['data'].append(serialized_contributor.data['data'])
         return ret
 
     def get_pointers_data(self, obj, include):
@@ -85,7 +85,7 @@ class NodeIncludeMixin(object):
         if include:
             ret['data'] = []
             for pointer in pointers:
-                serialized_pointer = NodePointersSerializer(pointer).data
+                serialized_pointer = NodePointersSerializer(pointer)
                 ret['data'].append(serialized_pointer.data['data'])
         return ret
 
@@ -96,8 +96,8 @@ class NodeIncludeMixin(object):
         if include:
             ret['data'] = []
             for registration in registrations:
-                serialized_registration = NodeSerializer(registration).data
-                ret['data'].append(serialized_registration['data'])
+                serialized_registration = NodeSerializer(registration)
+                ret['data'].append(serialized_registration.data['data'])
         return ret
 
 
