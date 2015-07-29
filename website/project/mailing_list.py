@@ -7,7 +7,7 @@ from framework.tasks import app
 from framework.tasks.handlers import queued_task
 from framework.exceptions import HTTPError
 
-from website.settings.local import MAILGUN_API_KEY, MAILGUN_DOMAIN, OWN_URL
+from website import settings
 
 ###############################################################################
 # Base Functions
@@ -15,17 +15,17 @@ from website.settings.local import MAILGUN_API_KEY, MAILGUN_DOMAIN, OWN_URL
 
 
 def address(node_id):
-    return node_id + '@' + MAILGUN_DOMAIN
+    return node_id + '@' + settings.MAILGUN_DOMAIN
 
 
 def project_url(node_id):
-    return OWN_URL + node_id
+    return settings.DOMAIN + node_id
 
 
 def get_list(node_id):
     info = requests.get(
         'https://api.mailgun.net/v3/lists/{}'.format(address(node_id)),
-        auth=('api', MAILGUN_API_KEY),
+        auth=('api', settings.MAILGUN_API_KEY),
     )
     if info.status_code != 200 and info.status_code != 404:
         raise HTTPError(400)
@@ -33,7 +33,7 @@ def get_list(node_id):
 
     members = requests.get(
         'https://api.mailgun.net/v3/lists/{}/members'.format(address(node_id)),
-        auth=('api', MAILGUN_API_KEY),
+        auth=('api', settings.MAILGUN_API_KEY),
     )
     if members.status_code != 200 and members.status_code != 404:
         raise HTTPError(400)
@@ -45,7 +45,7 @@ def get_list(node_id):
 def create_list(node_id, node_title, emails, subscriptions):
     res = requests.post(
         'https://api.mailgun.net/v3/lists',
-        auth=('api', MAILGUN_API_KEY),
+        auth=('api', settings.MAILGUN_API_KEY),
         data={
             'address': address(node_id),
             'name': '{} Mailing List'.format(node_title),
@@ -70,7 +70,7 @@ def create_list(node_id, node_title, emails, subscriptions):
 def delete_list(node_id):
     res = requests.delete(
         'https://api.mailgun.net/v3/lists/{}'.format(address(node_id)),
-        auth=('api', MAILGUN_API_KEY)
+        auth=('api', settings.MAILGUN_API_KEY)
     )
     if res.status_code != 200:
         raise HTTPError(400)
@@ -79,7 +79,7 @@ def delete_list(node_id):
 def update_title(node_id, node_title):
     res = requests.put(
         'https://api.mailgun.net/v3/lists/{}'.format(address(node_id)),
-        auth=('api', MAILGUN_API_KEY),
+        auth=('api', settings.MAILGUN_API_KEY),
         data={
             'name': '{} Mailing List'.format(node_title)
         }
@@ -91,7 +91,7 @@ def update_title(node_id, node_title):
 def add_member(node_id, email, subscription):
     res = requests.post(
         'https://api.mailgun.net/v3/lists/{}/members'.format(address(node_id)),
-        auth=('api', MAILGUN_API_KEY),
+        auth=('api', settings.MAILGUN_API_KEY),
         data={
             'subscribed': subscription,
             'address': email,
@@ -105,7 +105,7 @@ def add_member(node_id, email, subscription):
 def remove_member(node_id, email):
     res = requests.delete(
         'https://api.mailgun.net/v3/lists/{0}/members/{1}'.format(address(node_id), email),
-        auth=('api', MAILGUN_API_KEY)
+        auth=('api', settings.MAILGUN_API_KEY)
     )
     if res.status_code != 200:
         raise HTTPError(400)
@@ -114,7 +114,7 @@ def remove_member(node_id, email):
 def update_member(node_id, email, subscription):
     res = requests.put(
         'https://api.mailgun.net/v3/lists/{0}/members/{1}'.format(address(node_id), email),
-        auth=('api', MAILGUN_API_KEY),
+        auth=('api', settings.MAILGUN_API_KEY),
         data={
             'subscribed': subscription,
         }
@@ -183,8 +183,8 @@ def update_list(self, node_id, node_title, list_enabled, emails, subscriptions):
 def send_message(self, node_id, node_title, message):
     try:
         res = requests.post(
-            'https://api.mailgun.net/v3/{}/messages'.format(MAILGUN_DOMAIN),
-            auth=('api', MAILGUN_API_KEY),
+            'https://api.mailgun.net/v3/{}/messages'.format(settings.MAILGUN_DOMAIN),
+            auth=('api', settings.MAILGUN_API_KEY),
             data={'from': '{0} Mailing List <{1}>'.format(node_title, address(node_id)),
                   'to': address(node_id),
                   'subject': message['subject'],
