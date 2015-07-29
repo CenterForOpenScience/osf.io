@@ -102,7 +102,6 @@ var UserProfileClient = oop.defclass({
         ).done(function (data) {
             ret.resolve(this.unserialize(data, profile));
         }.bind(this)).fail(function(xhr, status, error) {
-                console.log(xhr);
             if (xhr.status === 400) {
                 $osf.growl('Error', xhr.responseJSON.message_long);
 
