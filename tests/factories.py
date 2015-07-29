@@ -172,7 +172,7 @@ class RegistrationFactory(AbstractNodeFactory):
 
     @classmethod
     def _create(cls, target_class, project=None, schema=None, user=None,
-                template=None, data=None, archive=False, *args, **kwargs):
+                data=None, archive=False, *args, **kwargs):
         save_kwargs(**kwargs)
 
         # Original project to be registered
@@ -185,13 +185,11 @@ class RegistrationFactory(AbstractNodeFactory):
         #)
         schema = None
         user = user or project.creator
-        template = template or "Template1"
         data = data or "Some words"
         auth = Auth(user=user)
         register = lambda: project.register_node(
             schema=schema,
             auth=auth,
-            template=template,
             data=data,
         )
         ArchiveJob(

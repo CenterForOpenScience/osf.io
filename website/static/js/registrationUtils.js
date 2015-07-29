@@ -435,7 +435,7 @@ Draft.prototype.beforeRegister = function(data) {
                 $osf.joinPrompts(
                     response.errors,
                     'Before you continue...'
-                ) + '<br /><hr /> ' + language.registerSkipAddons,
+                ) + '<br />' + language.registerSkipAddons,
                 function(result) {
                     if(result) {
                         confirm();

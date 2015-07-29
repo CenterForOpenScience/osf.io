@@ -1692,7 +1692,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
 
         return forked
 
-    def register_node(self, schema, auth, template, data, parent=None):
+    def register_node(self, schema, auth, data, parent=None):
         """Make a frozen copy of a node.
 
         :param schema: Schema object
@@ -1731,7 +1731,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         registered.registered_from = original
         if not registered.registered_meta:
             registered.registered_meta = {}
-        registered.registered_meta[template] = data
+        registered.registered_meta = data
 
         registered.contributors = self.contributors
         registered.forked_from = self.forked_from

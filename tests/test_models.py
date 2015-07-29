@@ -43,6 +43,7 @@ from website.addons.wiki.exceptions import (
     PageConflictError,
     PageNotFoundError,
 )
+from website.archiver import utils as archiver_utils
 
 from tests.base import OsfTestCase, Guid, fake, capture_signals
 from tests.factories import (
@@ -1620,7 +1621,6 @@ class TestNode(OsfTestCase):
             self.node.register_node(
                 schema=None,
                 auth=self.consolidate_auth,
-                template='the template',
                 data=None
             )
         assert_equal(err.exception.message, 'Cannot register deleted node.')
@@ -1870,7 +1870,7 @@ class TestAddonCallbacks(OsfTestCase):
     @mock.patch('website.archiver.tasks.archive.si')
     def test_register_callback(self, mock_archive):
         registration = self.node.register_node(
-            None, self.consolidate_auth, '', '',
+            None, self.consolidate_auth, {}
         )
         for addon in self.node.addons:
             callback = addon.after_register
@@ -3025,7 +3025,6 @@ class TestRegisterNode(OsfTestCase):
         assert_equal(len(registration1.contributors), 1)
         assert_in(self.user, registration1.contributors)
         assert_equal(registration1.registered_user, self.user)
-        assert_equal(len(registration1.registered_meta), 1)
         assert_equal(len(registration1.private_links), 0)
 
         # Create a registration from a project
@@ -3179,10 +3178,6 @@ class TestRegisterNode(OsfTestCase):
             [addon.config.short_name for addon in self.registration.get_addons()],
             [addon.config.short_name for addon in self.registration.registered_from.get_addons()],
         )
-
-    def test_registered_meta(self):
-        assert_equal(self.registration.registered_meta['Template1'],
-                     'Some words')
 
     def test_registered_user(self):
         # Add a second contributor
@@ -3407,7 +3402,7 @@ class TestPointer(OsfTestCase):
         project = ProjectFactory()
         auth = Auth(user=project.creator)
         project.add_pointer(pointee, auth=auth)
-        registration = project.register_node(None, auth, '', '', '')
+        registration = project.register_node(None, auth, '', '')
         assert_equal(registration.nodes[0].node, pointee)
 
     def test_has_pointers_recursive_false(self):
@@ -3752,6 +3747,20 @@ class TestPrivateLink(OsfTestCase):
         link.nodes.extend([project, node])
         link.save()
         assert_equal(link.node_scale(node), -40)
+
+class TestDraftRegistration(OsfTestCase):
+
+    @unittest.skip
+    def test_register(self):
+        self.node.reload()
+        archiver_utils.archive_success(self.node.node__registrations[0], self.node.creator)
+        # A registration was added to the project's registration list
+        assert_equal(len(self.node.node__registrations), 1)
+        # A log event was saved
+        assert_equal(self.logs[-1].action, "project_registered")
+        # Most recent node is a registration
+        reg = Node.load(self.node__registrations[-1])
+        assert_true(reg.is_registration)
 
 
 if __name__ == '__main__':

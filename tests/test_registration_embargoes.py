@@ -3,7 +3,7 @@ import datetime
 import json
 
 import mock
-from nose.tools import *  #noqa
+from nose.tools import *  # noqa
 from tests.base import fake, OsfTestCase
 from tests.factories import (
     AuthUserFactory, EmbargoFactory, NodeFactory, ProjectFactory,

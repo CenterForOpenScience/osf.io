@@ -815,7 +815,7 @@ def make_url_map(app):
         Rule([
             '/project/<pid>/draft/<draft_id>/',
             '/project/<pid>/node/<nidB>/draft/<draft_id>/',
-        ], 'get', project_views.drafts.edit_draft_registration,
+        ], 'get', project_views.drafts.edit_draft_registration_page,
             OsfWebRenderer('project/edit_draft_registration.mako')),
         Rule([
             '/project/<pid>/draft/<draft_id>/register/',
@@ -1078,31 +1078,25 @@ def make_url_map(app):
 
         # Draft Registrations
         Rule([
-            '/project/<pid>/draft/<draft_pk>/submit/',
-        ], 'post', project_views.drafts.submit_draft_for_review, json_renderer),
-        Rule([
             '/project/<pid>/draft/',
         ], 'get', project_views.drafts.get_draft_registrations, json_renderer),
         Rule([
-            '/project/<pid>/draft/<draft_pk>/',
+            '/project/<pid>/draft/<draft_id>/',
         ], 'get', project_views.drafts.get_draft_registration, json_renderer),
         Rule([
             '/project/<pid>/draft/',
         ], 'post', project_views.drafts.create_draft_registration, json_renderer),
         Rule([
-            '/project/<pid>/draft/<draft_pk>/',
+            '/project/<pid>/draft/<draft_id>/',
         ], 'put', project_views.drafts.update_draft_registration, json_renderer),
         Rule([
-            '/project/<pid>/draft/<draft_pk>/',
+            '/project/<pid>/draft/<draft_id>/',
         ], 'delete', project_views.drafts.delete_draft_registration, json_renderer),
+
         # Meta Schemas
         Rule([
             '/project/schema/',
         ], 'get', project_views.drafts.get_metaschemas, json_renderer),
-        Rule([
-            '/project/schema/<schema_name>/',
-            '/project/schema/<schema_name>/version/<schema_version>/',
-        ], 'get', project_views.drafts.get_metaschema, json_renderer),
 
         Rule('/log/<log_id>/', 'get', project_views.log.get_log, json_renderer),
 
@@ -1261,15 +1255,10 @@ def make_url_map(app):
         ], 'get', project_views.node.node_forks, json_renderer),
 
         # Registrations
-        # NOTE: This route is deprecated and left only for backwards compatiblity
         Rule([
             '/project/<pid>/beforeregister/',
             '/project/<pid>/node/<nid>/beforeregister',
         ], 'get', project_views.register.project_before_register, json_renderer),
-        Rule([
-            '/project/<pid>/draft/<draft_id>/beforeregister/',
-            '/project/<pid>/node/<nid>/draft/<draft_id>/beforeregister',
-        ], 'get', project_views.drafts.draft_before_register, json_renderer),
         Rule([
             '/project/<pid>/draft/<draft_id>/register/',
             '/project/<pid>/node/<nid>/draft/<draft_id>/register/',
