@@ -137,6 +137,12 @@
 ##        </div>
 ##    </div>
 ##</div>
+
+<hr />
+<div id="profileDashboard" class="row">
+</div>
+
+
 <% import json %>
 <hr />
 <div class="row">

@@ -26,8 +26,8 @@ function timeSinceEpochInMsToMMYY(timeSinceEpochInMs) {
     return d.getMonth().toString() + '/' + d.getFullYear().toString().substring(2);
 }
 
-charts.donutChart = function (data, callback, name) {
-    data.onclick = callback.onclick;
+charts.donutChart = function (data, name, callback) {
+    if (callback){data.onclick = callback.onclick; }
     data.type = 'donut';
     return c3.generate({
         bindto: '#' + name,
@@ -49,7 +49,7 @@ charts.donutChart = function (data, callback, name) {
     });
 };
 
-charts.timeseriesChart = function (data, callback, name) { //TODO this should be made dumber, data need only be the data for this graph, not all...
+charts.timeseriesChart = function (data, name, callback) { //TODO this should be made dumber, data need only be the data for this graph, not all...
     data.type = 'area-spline';
     return c3.generate({
         bindto: '#' + name,
@@ -62,7 +62,7 @@ charts.timeseriesChart = function (data, callback, name) { //TODO this should be
             size: {
                 height: 30
             },
-            onbrush: callback.onbrush
+            onbrush: callback ? callback.onbrush : undefined
         },
         axis: {
             x: {
@@ -98,11 +98,10 @@ charts.singleLevelAggParser = function (data, levelNames) {
     chartData.columns = [];
     chartData.colors = {};
     chartData.type = 'donut';
-
     var providerCount = 0;
     var hexColors = charts.generateColors(data.aggregations[levelNames[0]].buckets.length);
     var i = 0;
-    data.aggregations.sources.buckets.forEach(
+    data.aggregations[levelNames[0]].buckets.forEach(
         function (bucket) {
             chartData.columns.push([bucket.key, bucket.doc_count]);
             providerCount = providerCount + (bucket.doc_count ? 1 : 0); //TODO @bdyetton generalise this...
@@ -128,11 +127,11 @@ charts.twoLevelAggParser = function (data, levelNames) {
     var i = 0;
     var xCol = [];
     data.aggregations[levelNames[0]].buckets.forEach(
-        function (source) {
-            chartData.colors[source.key] = hexColors[i];
-            var column = [source.key];
-            grouping.push(source.key);
-            source[levelNames[1]].buckets.forEach(function(date){
+        function (levelTwoItem) {
+            chartData.colors[levelTwoItem.key] = hexColors[i];
+            var column = [levelTwoItem.key];
+            grouping.push(levelTwoItem.key);
+            levelTwoItem[levelNames[1]].buckets.forEach(function(date){
                 column.push(date.doc_count);
                 if (i === 0) {
                     xCol.push(date.key);
@@ -171,7 +170,7 @@ charts.generateColors = function(numColors) {
 charts.getNewColors = function(colorsUsed) {
     var newColors = [];
     for (var i=0; i < colorsUsed.length-1; i++) {
-        newColors.push(calculateDistanceBetweenColors(colorsUsed[i], colorsUsed[i + 1]))
+        newColors.push(calculateDistanceBetweenColors(colorsUsed[i], colorsUsed[i + 1]));
     }
     return newColors;
 };
