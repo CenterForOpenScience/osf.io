@@ -29,77 +29,75 @@ class NodeMixin(object):
 
 
 class NodeIncludeMixin(object):
-
-    def __init__(self, additional_query_params=None, user=None):
-        self.query_params = additional_query_params
-        self.auth = Auth(user)
-
+    """Mixin with to check for comma separated additional query parameters for node in
+    get request given by  include query parameter.
+    Ex: v2/nodes?include=contributors,registrations
+    """
     def get_relationship_meta_data(self, obj, object_type):
-        included = False
-        if not self.query_params:
-            self.query_params = self.request.query_params
-            self.auth = Auth(self.request.user)
-        query_params = self.request.query_params if hasattr(self, 'request') else self.query_params
+        self.query_params = self.request.query_params
+        self.auth = Auth(self.request.user)
+        query_params = self.request.query_params
+        include = False
         if 'include' in query_params:
             for param in self.query_params['include'].split(','):
                 if param not in ['children', 'contributors', 'pointers', 'registrations']:
                     raise ValidationError('{} is an invalid key.'.format(param))
                 if param == object_type:
-                    included = True
+                    include = True
         ret = None
         if object_type == 'children':
-            ret = self.get_node_data(obj, included)
+            ret = self.get_node_data(obj, include)
         if object_type == 'contributors':
-            ret = self.get_contrib_data(obj, included)
+            ret = self.get_contrib_data(obj, include)
         if object_type == 'pointers':
-            ret = self.get_pointers_data(obj, included)
+            ret = self.get_pointers_data(obj, include)
         if object_type == 'registrations':
-            ret = self.get_registration_data(obj, included)
+            ret = self.get_registration_data(obj, include)
         return ret
 
-    def get_node_data(self, obj, included):
+    def get_node_data(self, obj, include):
         ret = {}
         nodes = [node for node in obj.nodes if node.can_view(self.auth) and node.primary]
         ret['count'] = len(nodes)
-        if included:
+        if include:
             ret['data'] = []
             for node in nodes:
-                serialized_node = NodeSerializer(node)
+                serialized_node = NodeSerializer(node).data
                 ret['data'].append(serialized_node.data['data'])
         return ret
 
-    def get_contrib_data(self, obj, included):
+    def get_contrib_data(self, obj, include):
         ret = {}
         contributors = obj.contributors
         ret['count'] = len(contributors)
-        if included:
+        if include:
             ret['data'] = []
             for contributor in contributors:
                 contributor.bibliographic = obj.get_visible(contributor)
-                serialized_contributor = ContributorSerializer(contributor)
+                serialized_contributor = ContributorSerializer(contributor).data
                 ret['data'].append(serialized_contributor['data'])
         return ret
 
-    def get_pointers_data(self, obj, included):
+    def get_pointers_data(self, obj, include):
         ret = {}
         pointers = obj.nodes_pointer
         ret['count'] = len(pointers)
-        if included:
+        if include:
             ret['data'] = []
             for pointer in pointers:
-                serialized_pointer = NodePointersSerializer(pointer)
+                serialized_pointer = NodePointersSerializer(pointer).data
                 ret['data'].append(serialized_pointer.data['data'])
         return ret
 
-    def get_registration_data(self, obj, included):
+    def get_registration_data(self, obj, include):
         ret = {}
         registrations = [node for node in obj.node__registrations if node.can_view(self.auth)]
         ret['count'] = len(registrations)
-        if included:
+        if include:
             ret['data'] = []
             for registration in registrations:
-                serialized_registration = NodeSerializer(registration['data'])
-                ret['data'].append(serialized_registration)
+                serialized_registration = NodeSerializer(registration).data
+                ret['data'].append(serialized_registration['data'])
         return ret
 
 
