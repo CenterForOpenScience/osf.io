@@ -102,12 +102,14 @@ var UserProfileClient = oop.defclass({
         ).done(function (data) {
             ret.resolve(this.unserialize(data, profile));
         }.bind(this)).fail(function(xhr, status, error) {
-            if (error.toLowerCase() !== 'bad request') {
+                console.log(xhr);
+            if (xhr.status === 400) {
+                $osf.growl('Error', xhr.responseJSON.message_long);
+
+            } else {
                 $osf.growl('Error', 'User profile not updated. Please refresh the page and try ' +
                 'again or contact <a href="mailto: support@cos.io">support@cos.io</a> ' +
                 'if the problem persists.', 'danger');
-            } else {
-                $osf.growl('Error', 'Invalid Email');
             }
 
             Raven.captureMessage('Error fetching user profile', {
