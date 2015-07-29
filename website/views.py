@@ -368,3 +368,13 @@ def resolve_guid(guid, suffix=None):
 
     # GUID not found
     raise HTTPError(http.NOT_FOUND)
+
+# redirect ###
+
+
+def redirect_about(**kwargs):
+    return redirect('/4znzp/wiki/home/')
+
+
+def redirect_howosfworks(**kwargs):
+    return redirect('/getting-started/')
