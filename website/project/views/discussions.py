@@ -14,6 +14,7 @@ from website.project.decorators import (
     must_be_valid_project,
     must_have_permission,
     must_not_be_registration,
+    must_be_contributor
 )
 from website.util.permissions import ADMIN
 from website.models import Node
@@ -40,16 +41,15 @@ def disable(node, **kwargs):
 
 @must_be_valid_project
 @collect_auth
+@must_be_contributor
 @must_not_be_registration
-def subscribe(node, auth, **kwargs):
-    node.discussions.subscribe_member(auth.user.email)
-
-
-@must_be_valid_project
-@collect_auth
-@must_not_be_registration
-def unsubscribe(node, auth, **kwargs):
-    node.discussions.unsubscribe_member(auth.user.email)
+def set_subscription(node, auth, **kwargs):
+    subscription = request.json.get('discussionsSub')
+    subscribed = True if subscription == 'subscribed' else False
+    if subscribed:
+        node.discussions.subscribe_member(auth.user.email)
+    else:
+        node.discussions.unsubscribe_member(auth.user.email)
 
 
 ###############################################################################

@@ -41,7 +41,9 @@
                             <li><a href="#configureCommentingAnchor">Configure Commenting</a></li>
                         % endif
 
-                        <li><a href="#configureDiscussionsAnchor">Configure Discussions</a></li>
+                        %if 'admin' in user['permissions'] or (discussions['enabled'] and user['has_read_permissions']):
+                            <li><a href="#configureDiscussionsAnchor">Configure Email Discussions</a></li>
+                        %endif
 
                     % endif
 
@@ -269,7 +271,7 @@
 
         % endif  ## End Configure Commenting
 
-        % if user['has_read_permissions']: ## Begin Configure Discussions
+        % if 'admin' in user['permissions'] or (discussions['enabled'] and user['has_read_permissions']): ## Begin Configure Discussions
 
             % if not node['is_registration']:
 
@@ -277,40 +279,65 @@
                     <span id="configureDiscussionsAnchor" class="anchor"></span>
 
                     <div class="panel-heading clearfix">
-                        <h3 class="panel-title">Configure Discussions</h3>
+                        <h3 class="panel-title">Configure Email Discussions</h3>
                     </div>
 
-                        % if discussions['enabled']:
-                            <div class="help-block" style="padding-left: 15px">
-                                <p>This ${node['node_type']} has a mailing list at <a href="mailto: ${node['id']}@osf.io">${node['id']}@osf.io</a>.</p>
-                            </div>
-                            <div class="panel-body">
-                                % if discussions['user_subscribed']:
-                                    <button id="discussionsUnsub" class="btn btn-warning">Unsubscribe</button>
-                                % else:
-                                    <button id="discussionsSub" class="btn btn-primary">Subscribe</button>
-                                % endif
-                            </div>
-                            % if 'admin' in user['permissions']:
-                                <div class="panel-body">
-                                    <button id="disableDiscussions" class="btn btn-danger">Disable</button>
-                                </div>
+                    % if discussions['enabled']:
+                        <div class="help-block" style="padding-left: 15px">
+                            <p>Start an email discussions by sending an email to <a href="mailto: ${node['id']}@osf.io">${node['id']}@osf.io</a>.</p>
+                            % if not discussions['user_subscribed']:
+                                <p class="text-danger">You currently do not receive email discussions for this ${node['node_type']}
+                                    and may be missing important information from other contributors</p>
                             % endif
-                            <div></div>
-                        % else:
-                            <div class="help-block" style="padding-left: 15px">
-                                <p>This ${node['node_type']} does not currently have a mailing list.</p>
-                            </div>
+                        </div>
+                        <div class="panel-body">
+                            <form class="form" id="discussionsSettings">
+
+                                <div class="radio">
+                                    <label>
+                                        <input type="radio" name="discussionsSub" value="subscribed" ${'checked' if discussions['user_subscribed'] else ''}>
+                                        Receive email discussions for this ${node['node_type']}
+                                    </label>
+                                </div>
+                                <div class="radio">
+                                    <label>
+                                        <input type="radio" name="discussionsSub" value="unsubscribed" ${'' if discussions['user_subscribed'] else 'checked'}>
+                                        Do not receive email discussions (can still send to the address)
+                                    </label>
+                                </div>
+
+                                <button class="btn btn-success">Save</button>
+
+                                <!-- Flashed Messages -->
+                                <div class="help-block">
+                                    <p id="configureDiscussionsMessage"></p>
+                                </div>
+                            </form>
+                        </div>
+                        % if 'admin' in user['permissions']:
+                            <hr />
                             <div class="panel-body">
-                                % if 'admin' in user['permissions']:
-                                    <div>
-                                        <button id="enableDiscussions" class="btn btn-success">Enable</button>
-                                    </div>
-                                % endif
+                                <div class="help-block">
+                                    Disabling email discussions for this ${node['node_type']} will preserve
+                                    the subscription status of all members, but will ignore email communications and
+                                    recording through the list until it is enabled again.
+                                </div>
+                                <button id="disableDiscussions" class="btn btn-warning">Disable</button>
                             </div>
                         % endif
-                    </div>
-
+                        <div></div>
+                    % else:
+                        <div class="help-block" style="padding-left: 15px">
+                            <p>Email discussions are currently disabled for this ${node['node_type']}.</p>
+                        </div>
+                        <div class="panel-body">
+                            % if 'admin' in user['permissions']:
+                                <div>
+                                    <button id="enableDiscussions" class="btn btn-success">Enable</button>
+                                </div>
+                            % endif
+                        </div>
+                    % endif
                 </div>
 
             % endif

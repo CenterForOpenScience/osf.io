@@ -190,10 +190,10 @@ ProjectSettings.enableDiscussions = function(nodeType) {
 
 ProjectSettings.disableDiscussions = function(nodeType) {
 
-    var message = "<p>Disabling this project's mailing list will prevent all members from recieving or sending to the mailing list location.";
+    var message = "<p>Are you sure that you want to disable email discussions for this " + nodeType + "?";
 
     bootbox.confirm({
-        title: 'Are you sure you want to delete this ' + nodeType + '\'s mailing list?',
+        title: 'Email discussions disable confirmation',
         message: message,
         callback: function (result) {
             if (result) {

@@ -1446,17 +1446,7 @@ def make_url_map(app):
                 '/project/<pid>/node/<nid>/discussions/sub/',
             ],
             'post',
-            project_views.discussions.subscribe,
-            json_renderer,
-        ),
-
-        Rule(
-            [
-                '/project/<pid>/discussions/sub/',
-                '/project/<pid>/node/<nid>/discussions/sub/',
-            ],
-            'delete',
-            project_views.discussions.unsubscribe,
+            project_views.discussions.set_subscription,
             json_renderer,
         ),
 
