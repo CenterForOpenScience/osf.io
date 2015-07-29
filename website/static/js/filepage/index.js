@@ -8,7 +8,7 @@ var waterbutler = require('js/waterbutler');
 // Local requires
 var utils = require('./util.js');
 var FileEditor = require('./editor.js');
-var FileRevisionsTable = require('./revisions.js');
+var FileDetailTable = require('./details.js');
 var storageAddons = require('json!storageAddons.json');
 
 // Sanity
@@ -145,9 +145,9 @@ var FileViewPage = {
 
         //Hack to polyfill the Panel interface
         //Ran into problems with mithrils caching messing up with multiple "Panels"
-        self.revisions = m.component(FileRevisionsTable, self.file, self.node, self.enableEditing, self.canEdit);
-        self.revisions.selected = false;
-        self.revisions.title = 'Revisions';
+        self.details = m.component(FileDetailTable, self.file, self.node, self.enableEditing, self.canEdit);
+        self.details.selected = false;
+        self.details.title = 'Details';
 
         // inform the mfr of a change in display size performed via javascript,
         // otherwise the mfr iframe will not update unless the document windows is changed.
@@ -163,9 +163,9 @@ var FileViewPage = {
         //With other non-mithril components on the page
         var panels;
         if (ctrl.editor) {
-            panels = [ctrl.editor, ctrl.revisions];
+            panels = [ctrl.editor, ctrl.details];
         } else {
-            panels = [ctrl.revisions];
+            panels = [ctrl.details];
         }
 
         var shown = panels.reduce(function(accu, panel) {
@@ -177,13 +177,13 @@ var FileViewPage = {
         var fileViewPanelsLayout;
 
         if (panelsShown === 3) {
-            // view | edit | revisions
+            // view | edit | details
             mfrIframeParentLayout = 'col-sm-4';
             fileViewPanelsLayout = 'col-sm-8';
         } else if (panelsShown === 2) {
             if (ctrl.mfrIframeParent.is(':visible')) {
-                if (ctrl.revisions.selected) {
-                    // view | revisions
+                if (ctrl.details.selected) {
+                    // view | details
                     mfrIframeParentLayout = 'col-sm-8';
                     fileViewPanelsLayout = 'col-sm-4';
                 } else {
@@ -192,7 +192,7 @@ var FileViewPage = {
                     fileViewPanelsLayout = 'col-sm-6';
                 }
             } else {
-                // edit | revisions
+                // edit | details
                 mfrIframeParentLayout = '';
                 fileViewPanelsLayout = 'col-sm-12';
             }
@@ -202,7 +202,7 @@ var FileViewPage = {
                 mfrIframeParentLayout = 'col-sm-12';
                 fileViewPanelsLayout = '';
             } else {
-                // edit or revisions
+                // edit or details
                 mfrIframeParentLayout = '';
                 fileViewPanelsLayout = 'col-sm-12';
             }

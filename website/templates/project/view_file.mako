@@ -61,18 +61,6 @@
 
 </div>
 
-%if file_tags or 'write' in user['permissions']:
-     <div class="tags addon-widget-container">
-        <div class="addon-widget-header clearfix">
-            <h4>Tags </h4>
-            <div class="pull-right"></div>
-        </div>
-        <div class="addon-widget-body">
-            <input name="node-tags" id="node-tags" value="${','.join([tag for tag in file_tags]) if file_tags else ''}" />
-        </div>
-    </div>
-%endif
-
 
 ## Begin Modals
 <div class="modal fade" id="connectedModal" tabindex="-1">
@@ -181,7 +169,8 @@
             provider: '${provider | js_str}',
             safeName: '${file_name | h,js_str}',
             materializedPath: '${materialized_path | js_str}',
-            file_guid: '${file_guid | js_str}',
+            file_guid: ${file_guid | sjson, n},
+            file_tags: ${file_tags | sjson, n},
           urls: {
               external: '${(urls['external'] or '') | js_str}',
         %if error is None:

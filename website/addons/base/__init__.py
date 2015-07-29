@@ -28,6 +28,7 @@ from website.addons.base import exceptions
 from website.addons.base import serializer
 from website.project.model import Node, Tag, NodeLog
 from website.util import waterbutler_url_for
+
 from website.oauth.signals import oauth_complete
 
 NODE_SETTINGS_TEMPLATE_DEFAULT = os.path.join(
