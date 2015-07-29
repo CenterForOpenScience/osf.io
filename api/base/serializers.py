@@ -22,7 +22,11 @@ def _url_val(val, obj, serializer, **kwargs):
     schema.
     """
     if isinstance(val, Link):  # If a Link is passed, get the url value
-        return val.resolve_url(obj, **kwargs)
+        ret = {}
+        ret['href'] = val.resolve_url(obj, **kwargs)
+        if val.query:
+            ret['meta'] = val.query
+        return ret
     elif isinstance(val, basestring):  # if a string is passed, it's a method of the serializer
         data = val.split(':', 1)  # if string includes ':', then everything after the colon is made into an argument
         method = data[0]
@@ -115,8 +119,9 @@ class Link(object):
     URLs given an endpoint name and attributed enclosed in `<>`.
     """
 
-    def __init__(self, endpoint, args=None, kwargs=None, query_kwargs=None, **kw):
+    def __init__(self, endpoint, query=None, args=None, kwargs=None, query_kwargs=None, **kw):
         self.endpoint = endpoint
+        self.query = query
         self.kwargs = kwargs or {}
         self.args = args or tuple()
         self.reverse_kwargs = kw

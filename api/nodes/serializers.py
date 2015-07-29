@@ -41,7 +41,7 @@ class NodeSerializer(JSONAPISerializer):
         'children': {
             'links': {
                 'related': {
-                    'href': Link('nodes:node-children', kwargs={'node_id': '<pk>'}),
+                    'href': Link('nodes:node-children', 'children', kwargs={'node_id': '<pk>'}),
                     'meta': 'get_objects_data:children'
                 }
             },
@@ -49,7 +49,7 @@ class NodeSerializer(JSONAPISerializer):
         'contributors': {
             'links': {
                 'related': {
-                    'href': Link('nodes:node-contributors', kwargs={'node_id': '<pk>'}),
+                    'href': Link('nodes:node-contributors', 'contributors', kwargs={'node_id': '<pk>'}),
                     'meta': 'get_objects_data:contributors'
                 }
             },
@@ -57,7 +57,7 @@ class NodeSerializer(JSONAPISerializer):
         'pointers': {
             'links': {
                 'related': {
-                    'href': Link('nodes:node-pointers', kwargs={'node_id': '<pk>'}),
+                    'href': Link('nodes:node-pointers', 'pointers', kwargs={'node_id': '<pk>'}),
                     'meta': 'get_objects_data:pointers'
                 }
             },
@@ -65,7 +65,7 @@ class NodeSerializer(JSONAPISerializer):
         'registrations': {
             'links': {
                 'related': {
-                    'href': Link('nodes:node-registrations', kwargs={'node_id': '<pk>'}),
+                    'href': Link('nodes:node-registrations', 'registrations', kwargs={'node_id': '<pk>'}),
                     'meta':  'get_objects_data:registrations'
                 }
             },
