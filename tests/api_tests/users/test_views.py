@@ -324,11 +324,6 @@ class TestUserRoutesNodeRoutes(ApiTestCase):
         res = self.app.get(url, auth=self.auth_two, expect_errors=True)
         assert_equal(res.status_code, 404)
 
-    def test_get_404_path_nodes_me_user_logged_in(self):
-        url = "/{}nodes/me/".format(API_BASE, self.user_one._id)
-        res = self.app.get(url, auth=self.auth_one, expect_errors=True)
-        assert_equal(res.status_code, 404)
-
     def test_get_404_path_nodes_me_user_not_logged_in(self):
         url = "/{}nodes/me/".format(API_BASE, self.user_one._id)
         res = self.app.get(url, auth=self.auth_two, expect_errors=True)
