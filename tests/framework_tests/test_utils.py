@@ -1,4 +1,4 @@
-import unittest
+import unittest  # noqa
 from nose.tools import *  # noqa
 
 from modularodm import Q
@@ -6,7 +6,7 @@ from modularodm import Q
 from tests.base import DbTestCase
 from tests import factories
 
-from framework.mongo.utils import get_or_http_error
+from framework.mongo.utils import get_or_http_error, autoload
 from framework.exceptions import HTTPError
 
 from website.models import Node
@@ -40,3 +40,14 @@ class MongoUtilsTestCase(DbTestCase):
         factories.NodeFactory(title=title)
         fail = lambda: get_or_http_error(Node, Q('title', 'eq', title))
         assert_raises(HTTPError, fail)
+
+    def test_autoload(self):
+
+        target = factories.NodeFactory()
+
+        def fn(node, *args, **kwargs):
+            return node
+
+        wrapped = autoload(Node, 'node_id', 'node', fn)
+        found = wrapped(node_id=target._id)
+        assert_equal(found, target)

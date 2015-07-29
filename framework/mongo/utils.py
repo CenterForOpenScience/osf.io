@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-
+import functools
 import re
 import httplib as http
 
@@ -63,6 +63,16 @@ def unique_on(*groups):
 
 
 def get_or_http_error(Model, pk_or_query):
+    """Load an instance of Model by primary key or modularodm.Q query. Raise an appropriate
+    HTTPError if no record is found or if the query fails to find a unique record
+
+    param Model: <StoredObject> subclass
+    param pk_or_query: either-
+      - a <basestring> representation of the record's primary key, e.g. 'abcdef'
+      - a <QueryBase> subclass query to uniquely select a record, e.g.
+        Q('title', 'eq', 'Entitled') & Q('version', 'eq', 1)
+    return Model instance
+    """
 
     name = str(Model)
 
@@ -90,3 +100,40 @@ def get_or_http_error(Model, pk_or_query):
             ))
         else:
             return instance
+
+def autoload(Model, extract_key, inject_key, func):
+    """Decorator to autoload a StoredObject instance by primary key and inject into kwargs. Raises
+    an appropriate HTTPError (see #get_or_http_error)
+
+    params model: <StoredObject> subclass
+    param extract_key: <basestring> key to extract Model instance's primary key
+    param inject_key: <basestring> key to inject loaded Model instance into kwargs
+
+    Example usage:
+      def get_node(node_id):
+          node = Node.load(node_id)
+          ...
+
+      becomes
+
+      @autoload(Node, 'node_id', 'node')
+      def get_node(node):
+          ...
+
+    Alternatively:
+      import functools
+      autoload_node = functools.partial(autoload, Node, 'node_id', 'node')
+
+      @autoload_node
+      def get_node(node):
+          ...
+    """
+
+    @functools.wraps(func)
+    def wrapper(*args, **kwargs):
+        primary_key = kwargs.get(extract_key)
+        instance = get_or_http_error(Model, primary_key)
+
+        kwargs[inject_key] = instance
+        return func(*args, **kwargs)
+    return wrapper
