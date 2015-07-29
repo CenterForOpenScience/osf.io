@@ -18,6 +18,7 @@ ARCHIVER_FAILURE_STATUSES = {
     ARCHIVER_UNCAUGHT_ERROR,
 }
 
+NO_ARCHIVE_LIMIT = 'high_upload_limit'
 
 class StatResult(object):
     """

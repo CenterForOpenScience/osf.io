@@ -6,17 +6,17 @@
 <div class="row">
     ## Center the form
     <div class="col-md-6 col-md-offset-3">
-    <p>Hello ${firstname}! Please set a password to claim your account.</p>
-    <p>E-mail: <strong>${email}</strong></p>
+    <p>Hello ${ firstname }! Please set a password to claim your account.</p>
+    <p>E-mail: <strong>${ email }</strong></p>
 
         <form method="POST" id='setPasswordForm' role='form'>
             <div class='form-group'>
-                ${form.password(placeholder='New password')}
+                ${form.password(placeholder='New password') | unicode, n }
             </div>
             <div class='form-group'>
-                ${form.password2(placeholder='New password again')}
+                ${form.password2(placeholder='New password again') | unicode, n }
             </div>
-            ${form.token}
+            ${form.token | unicode, n }
             %if next_url:
                 <input type='hidden' name='next_url' value='${next_url}'>
             %endif
