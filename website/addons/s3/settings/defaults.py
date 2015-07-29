@@ -1,19 +1,21 @@
 import json
+import os
+
+from website.settings import parent_dir
+
+
+HERE = os.path.dirname(os.path.abspath(__file__))
+STATIC_PATH = os.path.join(parent_dir(HERE), 'static')
 
 MAX_RENDER_SIZE = (1024 ** 2) * 3
 
 ALLOWED_ORIGIN = '*'
 
-BUCKET_LOCATIONS = {
-    '': 'US Standard',
-    'EU': 'Europe Standard',
-    'us-west-1': 'California',
-    'us-west-2': 'Oregon',
-    'ap-northeast-1': 'Tokyo',
-    'ap-southeast-1': 'Singapore',
-    'ap-southeast-2': 'Sydney',
-    'cn-north-1': 'Beijing'
-}
+BUCKET_LOCATIONS = {}
+# Load S3 bucket key/value map
+with open(os.path.join(STATIC_PATH, 'bucketLocations.json')) as fp:
+    BUCKET_LOCATIONS = json.load(fp)
+
 DEFAULT_BUCKET_LOCATION = {
     'value': '',
     'message': 'US Standard'

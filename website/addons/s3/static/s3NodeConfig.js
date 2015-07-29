@@ -7,21 +7,14 @@ var Raven = require('raven-js');
 
 var $osf = require('js/osfHelpers');
 
+var bucketLocations = require('json!./bucketLocations.json');
+
 ko.punches.enableAll();
 
 var defaultSettings = {
     url: '',
     encryptUploads: true,
-    bucketLocations: {
-        '': 'US Standard',
-        'EU': 'Europe Standard',
-        'us-west-1': 'California',
-        'us-west-2': 'Oregon',
-        'ap-northeast-1': 'Tokyo',
-        'ap-southeast-1': 'Singapore',
-        'ap-southeast-2': 'Sydney',
-        'cn-north-1': 'Beijing'
-    }
+    bucketLocations: bucketLocations
 };
 
 var ViewModel = function(selector, settings) {
@@ -285,7 +278,7 @@ ViewModel.prototype.openCreateBucket = function() {
         var options = '';
         for (var location in locations) {
             if (self.settings.bucketLocations.hasOwnProperty(location)) {
-                options = options + ['<option value="', location, '">', locations[location], '</option>', '\n'].join('');
+                options = options + ['<option value="', locations[location], '">', location, '</option>', '\n'].join('');
             }
         }
         return options;
