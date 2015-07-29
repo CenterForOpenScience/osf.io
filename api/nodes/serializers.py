@@ -34,8 +34,8 @@ class NodeSerializer(JSONAPISerializer):
             'related': Link('nodes:node-contributors', kwargs={'node_id': '<pk>'}),
             'count': 'get_contrib_count',
         },
-        'pointers': {
-            'related': Link('nodes:node-pointers', kwargs={'node_id': '<pk>'}),
+        'node_links': {
+            'related': Link('nodes:node-node_links', kwargs={'node_id': '<pk>'}),
             'count': 'get_pointers_count',
         },
         'registrations': {
@@ -138,7 +138,7 @@ class NodePointersSerializer(JSONAPISerializer):
                                                                          'points to')
 
     class Meta:
-        type_ = 'pointers'
+        type_ = 'node_links'
 
     links = LinksField({
         'html': 'get_absolute_url',
