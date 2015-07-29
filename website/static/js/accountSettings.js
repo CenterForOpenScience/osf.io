@@ -211,6 +211,8 @@ var UserProfileViewModel = oop.extend(ChangeMessageMixin, {
                         return;
                     }
                 }
+            }.bind(this)).fail(function(){
+                this.profile().emails.remove(email);
             }.bind(this));
         } else {
             this.changeMessage('Email cannot be empty.', 'text-danger');
