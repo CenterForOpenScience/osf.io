@@ -184,7 +184,7 @@ def project_new_node(auth, node, **kwargs):
     user = auth.user
     if form.validate():
         try:
-            node = new_node(
+            new_component = new_node(
                 title=strip_html(form.title.data),
                 user=user,
                 category=form.category.data,
@@ -204,7 +204,7 @@ def project_new_node(auth, node, **kwargs):
 
         return {
             'status': 'success',
-        }, 201, None, node.url
+        }, 201, None, new_component.url
     else:
         status.push_errors_to_status(form.errors)
     raise HTTPError(http.BAD_REQUEST, redirect_url=node.url)

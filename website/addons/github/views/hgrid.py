@@ -76,7 +76,8 @@ def github_hgrid_data(node_settings, auth, **kwargs):
 
     permissions = {
         'edit': can_edit,
-        'view': True
+        'view': True,
+        'private': node_settings.is_private
     }
     urls = {
         'upload': node_settings.owner.api_url + 'github/file/' + (ref or ''),
