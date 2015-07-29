@@ -26,6 +26,8 @@ def _url_val(val, obj, serializer, **kwargs):
             'href': val.resolve_url(obj, **kwargs)
         }
         query = val.query
+        if query == 'files':
+            return data
         if query:
             meta = getattr(serializer, 'get_objects_data')(obj, query)
             if meta:
