@@ -57,16 +57,16 @@ SideBar.controller = function(vm) {
     };
 
     self.renderProvider = function(result, index) {
-        var checked = (self.vm.optionalFilters.indexOf('shareProperties.source:' + result.short_name) > -1 || self.vm.requiredFilters.indexOf('shareProperties.source:' + result.short_name) > -1) ? 'in-filter' : '';
+        var checked = (self.vm.optionalFilters.indexOf('match:shareProperties.source:' + result.short_name) > -1 || self.vm.requiredFilters.indexOf('match:shareProperties.source:' + result.short_name) > -1) ? 'in-filter' : '';
 
         return m('li',
             m('.provider-filter.break-word', {
                 'class': checked,
                 onclick: function(cb){
                     if (checked === 'in-filter') {
-                        utils.removeFilter(self.vm, 'shareProperties.source:' + result.short_name);
+                        utils.removeFilter(self.vm, 'match:shareProperties.source:' + result.short_name);
                     } else {
-                        utils.updateFilter(self.vm, 'shareProperties.source:' + result.short_name);
+                        utils.updateFilter(self.vm, 'match:shareProperties.source:' + result.short_name);
                     }
                 }
             }, [

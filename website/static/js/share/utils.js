@@ -11,7 +11,7 @@ utils.onSearch = function(fb) {
     callbacks.push(fb);
 };
 
-var COLORBREWER_COLORS = [[166, 206, 227], [31, 120, 180], [178, 223, 138], [51, 160, 44], [251, 154, 153], [227, 26, 28], [253, 191, 111], [255, 127, 0], [202, 178, 214], [106, 61, 154], [255, 255, 153], [177, 89, 40]]
+var COLORBREWER_COLORS = [[166, 206, 227], [31, 120, 180], [178, 223, 138], [51, 160, 44], [251, 154, 153], [227, 26, 28], [253, 191, 111], [255, 127, 0], [202, 178, 214], [106, 61, 154], [255, 255, 153], [177, 89, 40]];
 var tags = ['div', 'i', 'b', 'sup', 'p', 'span', 'sub', 'bold', 'strong', 'italic', 'a', 'small'];
 
 utils.scrubHTML = function(text) {
@@ -66,20 +66,20 @@ utils.loadMore = function(vm) {
     var ret = m.deferred();
     if (vm.query().length === 0) {
         ret.resolve(null);
-    }
-    else {
+    } else {
         var page = vm.page++ * 10;
         var sort = vm.sortMap[vm.sort()] || null;
+
         vm.resultsLoading(true);
         m.request({
             method: 'post',
             background: true,
             data: utils.buildQuery(vm),
             url: '/api/v1/share/search/'
-        }).then(function(data) {
+        }).then(function (data) {
             vm.resultsLoading(false);
             ret.resolve(data);
-        }, function(xhr, status, err) {
+        }, function (xhr, status, err) {
             ret.reject(xhr, status, err);
             utils.errorState.call(this, vm);
         });
@@ -90,7 +90,7 @@ utils.loadMore = function(vm) {
 utils.search = function(vm) {
     vm.showFooter = false;
     var ret = m.deferred();
-    if (!vm.query() || vm.query().length === 0){
+    if (!vm.query() || vm.query().length === 0) {
         vm.query = m.prop('');
         vm.results = null;
         vm.showFooter = true;
@@ -99,25 +99,24 @@ utils.search = function(vm) {
         vm.sort('Relevance');
         History.pushState({}, 'OSF | SHARE', '?');
         ret.resolve(null);
-    }
-    else if (vm.query().length === 0) {
+    } else if (vm.query().length === 0) {
         ret.resolve(null);
-    }
-    else {
+    } else {
         vm.page = 0;
         vm.results = [];
-        if (utils.stateChanged(vm)){
+        if (utils.stateChanged(vm)) {
+            // TODO remove of range filter should update range on subgraph
             History.pushState({
                 optionalFilters: vm.optionalFilters,
                 requiredFilters: vm.requiredFilters,
                 query: vm.query(),
                 sort: vm.sort()
-            }, 'OSF | SHARE', '?'+ utils.buildURLParams(vm));
+            }, 'OSF | SHARE', '?' + utils.buildURLParams(vm));
         }
         utils.loadMore(vm)
-            .then(function(data) {
+            .then(function (data) {
                 if (vm.loadStats) {
-                    utils.processStats(vm,data);
+                    utils.processStats(vm, data);
                 }
                 utils.updateVM(vm, data);
                 ret.resolve(vm);
@@ -126,7 +125,7 @@ utils.search = function(vm) {
     return ret.promise;
 };
 
-utils.stateChanged = function(vm){
+utils.stateChanged = function (vm) {
     var state = History.getState().data;
     return !(state.query === vm.query() && state.sort === vm.sort() &&
             utils.arrayEqual(state.optionalFilters, vm.optionalFilters) &&
@@ -135,32 +134,37 @@ utils.stateChanged = function(vm){
 
 utils.buildURLParams = function(vm){
     var d = {};
-    if (vm.query()){
+    if (vm.query()) {
         d.q = vm.query();
     }
-    if (vm.requiredFilters.length > 0){
+    if (vm.requiredFilters.length > 0) {
         d.required = vm.requiredFilters.join('|');
     }
-    if (vm.optionalFilters.length > 0){
+    if (vm.optionalFilters.length > 0) {
         d.optional = vm.optionalFilters.join('|');
     }
-    if (vm.sort()){
+    if (vm.sort()) {
         d.sort = vm.sort();
     }
     return $.param(d);
 };
 
-utils.buildQuery = function(vm) {
-    var must = $.map(vm.requiredFilters, utils.parseToMatchFilter);
-    var should = $.map(vm.optionalFilters, utils.parseToMatchFilter);
+utils.buildQuery = function (vm) {
+    var must = $.map(vm.requiredFilters, utils.parseFilter);
+    var should = $.map(vm.optionalFilters, utils.parseFilter);
     var sort = {};
 
     if (vm.sortMap[vm.sort()]) {
         sort[vm.sortMap[vm.sort()]] = 'desc';
     }
+
     return {
-        'query': (vm.query().length > 0 && (vm.query() !== '*')) ? utils.commonQuery(vm.query()) : utils.matchAllQuery(),
-        'filter': utils.boolQuery(must, null, should),
+        'query' : {
+            'filtered': {
+                'query': (vm.query().length > 0 && (vm.query() !== '*')) ? utils.commonQuery(vm.query()) : utils.matchAllQuery(),
+                'filter': utils.boolQuery(must, null, should)
+            }
+        },
         'aggregations': vm.loadStats ? utils.buildStatsAggs(vm) : {},
         'from': (vm.page - 1) * 10,
         'size': 10,
@@ -176,8 +180,8 @@ utils.buildQuery = function(vm) {
 
 };
 
-utils.maybeQuashEvent = function(event) {
-    if (event !== undefined){
+utils.maybeQuashEvent = function (event) {
+    if (event !== undefined) {
         try {
             event.preventDefault();
             event.stopPropagation();
@@ -187,16 +191,16 @@ utils.maybeQuashEvent = function(event) {
     }
 };
 
-utils.updateFilter = function(vm, filter, required){
-    if (required && vm.requiredFilters.indexOf(filter) === -1){
+utils.updateFilter = function (vm, filter, required) {
+    if (required && vm.requiredFilters.indexOf(filter) === -1) {
         vm.requiredFilters.push(filter);
-    } else if (vm.optionalFilters.indexOf(filter) === -1 && !required){
+    } else if (vm.optionalFilters.indexOf(filter) === -1 && !required) {
         vm.optionalFilters.push(filter);
     }
     utils.search(vm);
 };
 
-utils.removeFilter = function(vm, filter){
+utils.removeFilter = function (vm, filter) {
     var reqIndex = vm.requiredFilters.indexOf(filter);
     var optIndex = vm.optionalFilters.indexOf(filter);
     if (reqIndex > -1) {
@@ -208,31 +212,47 @@ utils.removeFilter = function(vm, filter){
     utils.search(vm);
 };
 
-utils.removeFilterById = function(vm, id){ //TODO test
-    $.map(vm.requiredFilters, function (arrayItem) {
-        if (arrayItem[key] === id){delete(arrayItem)}
-    });
-
-    $.map(vm.optionalFilters, function (arrayItem) {
-        if (arrayItem[key] === id){delete(arrayItem)}
-    });
-};
-
-utils.arrayEqual = function(a, b) {
+utils.arrayEqual = function (a, b) {
     return $(a).not(b).length === 0 && $(b).not(a).length === 0;
 };
 
-utils.addFiltersToQuery = function(query,filters){
+utils.addFiltersToQuery = function (query, filters) {
     if (filters) {
         filters.forEach(function (filter) {
-            query = utils.filteredQuery(query, filter.filter)
+            query = utils.filteredQuery(query, filter.filter);
         });
     }
-    return query
+    return query;
+};
+
+utils.loadRawNormalized = function(result){
+    var nonJsonErrors = function(xhr) {
+        return xhr.status > 200 ? JSON.stringify(xhr.responseText) : xhr.responseText;
+    };
+    var source = encodeURIComponent(result.shareProperties.source);
+    var docID = encodeURIComponent(result.shareProperties.docID);
+    return m.request({
+        method: 'GET',
+        url: '/api/v1/share/documents/' + source + '/' + docID + '/',
+        extract: nonJsonErrors
+    }).then(function(data) {
+
+        var normed = JSON.parse(data.normalized);
+        normed = JSON.stringify(normed, undefined, 2);
+
+        var all_raw = JSON.parse(data.raw);
+        result.raw = all_raw.doc;
+        result.rawfiletype = all_raw.filetype;
+        result.normalized = normed;
+    }, function(error) {
+        result.rawfiletype = 'json';
+        result.normalized = '"Normalized data not found."';
+        result.raw = '"Raw data not found."';
+    });
 };
 
 utils.filteredQuery = function(query, filter) {
-    ret = {
+    var ret = {
         'filtered': {}
     };
     if (filter) {
@@ -244,13 +264,13 @@ utils.filteredQuery = function(query, filter) {
     return ret;
 };
 
-utils.termFilter = function(field, value) {
-    ret = {'term': {}};
+utils.termFilter = function (field, value) {
+    var ret = {'term': {}};
     ret.term[field] = value;
     return ret;
 };
 
-utils.termsFilter = function(field, value, min_doc_count) {
+utils.termsFilter = function (field, value, min_doc_count) {
     min_doc_count = min_doc_count || 0;
     var ret = {'terms': {}};
     ret.terms[field] = value;
@@ -260,21 +280,21 @@ utils.termsFilter = function(field, value, min_doc_count) {
     return ret;
 };
 
-utils.matchQuery = function(field, value) {
-    ret = {'match': {}};
+utils.matchQuery = function (field, value) {
+    var ret = {'match': {}};
     ret.match[field] = value;
     return ret;
 };
 
-utils.fieldRange = function(field_name, gte, lte) {
+utils.rangeFilter = function (field_name, gte, lte) {
     lte = lte || new Date().getTime();
     gte = gte || 0;
-    ret = {'range': {}};
+    var ret = {'range': {}};
     ret.range[field_name] = {'gte': gte, 'lte': lte};
     return ret;
 };
 
-utils.boolQuery = function(must, must_not, should, minimum) {
+utils.boolQuery = function (must, must_not, should, minimum) {
     var ret = {
         'bool': {
             'must': (must || []),
@@ -283,13 +303,13 @@ utils.boolQuery = function(must, must_not, should, minimum) {
         }
     };
     if (minimum) {
-        ret.bool.minimum_should_match = minumum;
+        ret.bool.minimum_should_match = minimum;
     }
 
     return ret;
 };
 
-utils.dateHistogramFilter = function(feild,gte,lte,interval){
+utils.dateHistogramFilter = function (field, gte, lte, interval) {
     //gte and lte in ms since epoch
     lte = lte || new Date().getTime();
     gte = gte || 0;
@@ -297,7 +317,7 @@ utils.dateHistogramFilter = function(feild,gte,lte,interval){
     interval = interval || 'week';
     return {
         'date_histogram': {
-            'field': feild,
+            'field': field,
             'interval': interval,
             'min_doc_count': 0,
             'extended_bounds': {
@@ -305,129 +325,136 @@ utils.dateHistogramFilter = function(feild,gte,lte,interval){
                 'max': lte
             }
         }
-    }
+    };
 };
 
-utils.commonQuery = function(query_string, field) {
+utils.commonQuery = function (query_string, field) {
     field = field || '_all';
-    ret = {'common': {}};
+    var ret = {'common': {}};
     ret.common[field] = {
         query: query_string
     };
     return ret;
 };
 
-utils.matchAllQuery = function() {
+utils.matchAllQuery = function () {
     return {
         match_all: {}
     };
 };
 
-utils.andFilter = function(filters) {
+utils.andFilter = function (filters) {
     return {
         'and': filters
     };
 };
 
-utils.queryFilter = function(query) {
+utils.queryFilter = function (query) {
     return {
         query: query
     };
 };
 
-utils.parseToMatchFilter = function(term) {
-    items = term.split(':');
-    return utils.queryFilter(
-        utils.matchQuery(items[0], items[1])
-    );
+utils.parseFilter = function (filterString) {
+    // parses a filter of the form
+    // filterName:fieldName:param1:param2...
+    // range:providerUpdatedDateTime:2015-06-05:2015-06-16
+    var parts = filterString.split(':');
+    var type = parts[0];
+    var field = parts[1];
+    if (type === 'range') {
+        return utils.rangeFilter(field, parts[2], parts[3]);
+    } else if (type === 'match') {
+        return utils.queryFilter(
+            utils.matchQuery(field, parts[2])
+        );
+    }
+    // Any time you add a filter, put it here
+    // TODO: Maybe this would be better as a map?
 };
 
-utils.processStats = function(vm,data)
-{
+utils.processStats = function (vm, data) {
     if (data.aggregations) {
         $.map(Object.keys(data.aggregations), function (key) { //parse data and load correctly
             if (vm.statsParsers[key]) {
                 var chartData = vm.statsParsers[key](data);
                 vm.statsData.charts[chartData.name] = chartData;
                 if (chartData.name in vm.graphs) {
-                    vm.graphs[chartData.name].load(chartData)
+                    vm.graphs[chartData.name].load(chartData);
                 }
             }
         });
     } else {
-        $osf.growl('Error','Could not load search statistics','danger');
+        $osf.growl('Error', 'Could not load search statistics', 'danger');
     }
 };
 
 
-utils.updateAggs = function(currentAgg,newAgg,global)
-{
+utils.updateAggs = function (currentAgg, newAgg, global) {
     global = global || false;
     if (currentAgg) {
-        if (currentAgg.all && global){
-            $.extend(currentAgg.all.aggregations, newAgg)
+        if (currentAgg.all && global) {
+            $.extend(currentAgg.all.aggregations, newAgg);
         } else {
-            $.extend(currentAgg, newAgg)
+            $.extend(currentAgg, newAgg);
         }
-        return currentAgg
-    } else {
-        if (global){
-            return {'all':{'global':{},'aggregations':newAgg}}
-        } else{
-            return newAgg
-        }
-
+        return currentAgg;
     }
+
+    if (global) {
+        return {'all': {'global': {}, 'aggregations': newAgg}};
+    }
+
+    return newAgg;
 };
 
 
-utils.buildStatsAggs = function(vm)
-{
+utils.buildStatsAggs = function (vm) {
     var currentAggs = {};
-    $.map(Object.keys(vm.statsAggs), function (statQuery) {
-        currentAggs = utils.updateAggs(currentAggs, vm.statsAggs[statQuery].aggregations);
+    $.map(Object.keys(vm.statsQueries), function (statQuery) {
+        currentAggs = utils.updateAggs(currentAggs, vm.statsQueries[statQuery].aggregations);
     });
-    return currentAggs
+    return currentAggs;
 };
 
+function calculateDistanceBetweenColors(color1, color2) {
+    return [Math.floor((color1[0] + color2[0]) / 2),
+            Math.floor((color1[1] + color2[1]) / 2),
+            Math.floor((color1[2] + color2[2]) / 2)];
+}
 
-utils.generateColors = function(numColors) {
+function rgbToHex(rbgIn) {
+    var rgb = rbgIn[2] + (rbgIn[1] << 8) + (rbgIn[0] << 16);
+    return '#' + (0x1000000 + rgb).toString(16).substring(1);
+}
+
+utils.generateColors = function (numColors) {
     var colorsToGenerate = COLORBREWER_COLORS.slice();
     var colorsUsed = [];
     var colorsOut = [];
     var colorsNorm = [];
-
+    var color;
     while (colorsOut.length < numColors) {
-        var color = colorsToGenerate.shift();
-        if (typeof color === 'undefined'){
+        color = colorsToGenerate.shift();
+        if (typeof color === 'undefined') {
             colorsToGenerate = utils.getNewColors(colorsUsed);
             colorsUsed = [];
         } else {
             colorsUsed.push(color);
             colorsNorm.push(color);
-            colorsOut.push(rgbToHex(color))
+            colorsOut.push(rgbToHex(color));
         }
     }
-    return colorsOut
+    return colorsOut;
 };
 
-utils.getNewColors = function(colorsUsed) {
+utils.getNewColors = function (colorsUsed) {
     var newColors = [];
-    for (var i=0; i < colorsUsed.length-1; i++) {
-        newColors.push(calculateDistanceBetweenColors(colorsUsed[i], colorsUsed[i + 1]))
+    var i;
+    for (i = 0; i < colorsUsed.length - 1; i++) {
+        newColors.push(calculateDistanceBetweenColors(colorsUsed[i], colorsUsed[i + 1]));
     }
     return newColors;
 };
-
-calculateDistanceBetweenColors = function(color1, color2) {
-    return [Math.floor((color1[0] + color2[0]) / 2),
-            Math.floor((color1[1] + color2[1]) / 2),
-            Math.floor((color1[2] + color2[2]) / 2)]
-};
-
-function rgbToHex(rgb) {
-        var rgb = rgb[2] + (rgb[1] << 8) + (rgb[0] << 16);
-        return  '#' + (0x1000000 + rgb).toString(16).substring(1);
-    }
 
 module.exports = utils;

@@ -8,15 +8,9 @@ var utils = require('./utils');
 
 var Stats = {};
 
-function indexById(myArray,key,id) {
-    return $.map(myArray, function (arrayItem, index) {
-        if (arrayItem[key] === id){return index}
-    })[0];
-}
-
-function donutGraph (data, vm) {
-    data.charts.shareDonutGraph.onclick = function (d, element) {
-        utils.updateFilter(vm, 'shareProperties.source:' + d.name, true); //TODO change this to subscription based filter?
+function donutGraph(data, vm) {
+    data.charts.shareDonutGraph.onclick = function (d) {
+        utils.updateFilter(vm, 'match:shareProperties.source:' + d.name, true);
     };
     return c3.generate({
         bindto: '#shareDonutGraph',
@@ -28,56 +22,44 @@ function donutGraph (data, vm) {
             title: data.charts.shareDonutGraph.title,
             label: {
                 format: function (value, ratio, id) {
-                    return Math.round(ratio*100) + '%';
+                    return Math.round(ratio * 100) + '%';
                 }
             }
         },
         legend: {
             show: false
-        },
-        tooltip: {
-            format: {
-                name: function (name, ratio, id, index) {
-                    if (name === 'pubmed') { //TODO @fabianvf, can we get rid of this now? looks like pubmedcentral is already the name of one of the sources
-                        name = 'pubmed central';
-                    }
-                    return name;
-                }
-            }
         }
     });
 }
 
-function timeGraph (data,vm) {
+function timeGraph(data, vm) {
     return c3.generate({
         bindto: '#shareTimeGraph',
         size: {
             height: 250
         },
         data: data.charts.shareTimeGraph,
-        subchart: { //TODO @bdyetton implement subgraph and updating of search results from it
-            show: true,
-            size: {
-                height: 20
-            },
-            onbrush: function(zoomWin){
-                clearTimeout(data.charts.shareTimeGraph.dateChangeCallbackId); //stop constant redraws
-                data.charts.shareTimeGraph.dateChangeCallbackId = setTimeout( //update chart with new dates after some delay (1s) to stop repeated requests
-                    function(){
-                        var rawX = data.charts.shareTimeGraph.rawX;
-                        var xTick = (rawX.slice(-1)[0]-rawX[0])/rawX.length;
-                        var xMin = Math.round(rawX[0]+xTick*zoomWin[0]);
-                        var xMax = Math.round(rawX[0]+xTick*zoomWin[1]);
-                        utils.updateFilter(vm, utils.fieldRange('providerUpdatedDateTime',zoomWin[0].getTime(),zoomWin[1].getTime()), true);
-                    }
-                    ,1000);
-            }
-        },
+        //subchart: { //TODO @bdyetton fix the aggregation that the subchart pulls from so it always has the global range results
+        //    show: true,
+        //    size: {
+        //        height: 30
+        //    },
+        //    onbrush: function(zoomWin){
+        //        clearTimeout(data.charts.shareTimeGraph.dateChangeCallbackId); //stop constant redraws
+        //        data.charts.shareTimeGraph.dateChangeCallbackId = setTimeout( //update chart with new dates after some delay (1s) to stop repeated requests
+        //            function(){
+        //                utils.removeFilter(vm,vm.statsQueries.shareTimeGraph.filter);
+        //                vm.statsQueries.shareTimeGraph.filter = 'range:providerUpdatedDateTime:'+zoomWin[0].getTime()+':'+zoomWin[1].getTime();
+        //                utils.updateFilter(vm,vm.statsQueries.shareTimeGraph.filter, true);
+        //            }
+        //            ,1000);
+        //    }
+        //},
         axis: {
             x: {
                 type: 'timeseries',
                 tick: {
-                    format: function(d) {return Stats.timeSinceEpochInMsToMMYY(d)}
+                    format: function (d) {return Stats.timeSinceEpochInMsToMMYY(d); }
                 }
             },
             y: {
@@ -87,7 +69,7 @@ function timeGraph (data,vm) {
                 },
                 tick: {
                     count: 8,
-                    format: function (d) {return parseInt(d).toFixed(0);}
+                    format: function (d) {return parseInt(d).toFixed(0); }
                 }
             }
         },
@@ -95,45 +77,42 @@ function timeGraph (data,vm) {
             show: false
         },
         tooltip: {
-            grouped: false,
-            format: {
-              name: function (name, ratio, id, index) {
-                  if (name === 'pubmed') {
-                      name = 'pubmed central';
-                  }
-                  return name;
-              }
-            }
+            grouped: false
         }
     });
 }
 
-Stats.sourcesAgg = function(){
-    var sourcesQuery = {'match_all':{}};
-    var sourcesAgg = {'sources': utils.termsFilter('field','_type')};
-    return {'query' : sourcesQuery, 'aggregations': sourcesAgg ,'filters' : []}
+Stats.sourcesAgg = function () {
+    var sourcesQuery = {'match_all': {} };
+    var sourcesAgg = {'sources': utils.termsFilter('field', '_type')};
+    return {'query' : sourcesQuery, 'aggregations': sourcesAgg, 'filters' : {}};
 };
 
-Stats.sourcesByDatesAgg = function(){
+Stats.sourcesByDatesAgg = function () {
     var dateTemp = new Date(); //get current time
     dateTemp.setMonth(dateTemp.getMonth() - 3);
     var threeMonthsAgo = dateTemp.getTime();
-    var dateHistogramQuery = {'match_all':{}};
-    var dateHistogramAgg = {'sourcesByTimes': utils.termsFilter('field','_type')};
-    dateHistogramAgg.sourcesByTimes['aggregations'] = {'articlesOverTime' :
-        utils.dateHistogramFilter('providerUpdatedDateTime',threeMonthsAgo)};
-    return {'query' : dateHistogramQuery, 'aggregations': dateHistogramAgg ,'filters' : []}
+    var dateHistogramAgg = {
+        sourcesByTimes: utils.termsFilter('field', '_type')
+    };
+    dateHistogramAgg.sourcesByTimes.aggregations = {
+        articlesOverTime : {
+            filter: utils.rangeFilter('providerUpdatedDateTime', threeMonthsAgo),
+            aggregations: {
+                articlesOverTime: utils.dateHistogramFilter('providerUpdatedDateTime', threeMonthsAgo)
+            }
+        }
+    };
+    return {aggregations: dateHistogramAgg};
 };
 
-Stats.timeSinceEpochInMsToMMYY = function(timeSinceEpochInMs)
-{
+Stats.timeSinceEpochInMsToMMYY = function (timeSinceEpochInMs) {
     var d = new Date(0);
-    d.setUTCSeconds(timeSinceEpochInMs/1000);
+    d.setUTCSeconds(timeSinceEpochInMs / 1000);
     return d.getMonth().toString() + '/' + d.getFullYear().toString().substring(2);
 };
 
-Stats.shareDonutGraphParser = function(data)
-{
+Stats.shareDonutGraphParser = function (data) {
     var chartData = {};
     chartData.name = 'shareDonutGraph';
     chartData.columns = [];
@@ -153,11 +132,10 @@ Stats.shareDonutGraphParser = function(data)
     );
     chartData.title = providerCount.toString() + ' Provider' + (providerCount !== 1 ? 's' : '');
     $('.c3-chart-arcs-title').text(chartData.title); //dynamically update chart title
-    return chartData
+    return chartData;
 };
 
-Stats.shareTimeGraphParser = function(data)
-{
+Stats.shareTimeGraphParser = function (data) {
     var chartData = {};
     chartData.name = 'shareTimeGraph';
     chartData.columns = [];
@@ -172,12 +150,14 @@ Stats.shareTimeGraphParser = function(data)
     var datesCol = [];
     data.aggregations.sourcesByTimes.buckets.forEach( //TODO @bdyetton what would be nice is a helper function to do this for any agg returned by elastic
         function (source) {
+            var total = 0;
             chartData.colors[source.key] = hexColors[i];
             var column = [source.key];
             grouping.push(source.key);
-            source.articlesOverTime.buckets.forEach(function(date){
-                column.push(date.doc_count);
-                if(i===0){
+            source.articlesOverTime.articlesOverTime.buckets.forEach(function(date){
+                total = total + date.doc_count;
+                column.push(total);
+                if (i === 0) {
                     datesCol.push(date.key);
                 }
             });
@@ -185,15 +165,14 @@ Stats.shareTimeGraphParser = function(data)
             i = i + 1;
         }
     );
-    chartData.rawX = datesCol.slice();
     chartData.groups.push(grouping);
-    datesCol.unshift('x')
+    datesCol.unshift('x');
     chartData.columns.unshift(datesCol);
     return chartData;
 };
 
 
-Stats.view = function(ctrl) {
+Stats.view = function (ctrl) {
     return [
         m('.row.search-helper', {style: {color: 'darkgrey'}},
             m('.col-xs-12.col-lg-8.col-lg-offset-2', [
@@ -214,7 +193,7 @@ Stats.view = function(ctrl) {
         ] : []),
         m('.row', [
             m('col-md-12', m('a.stats-expand', {
-                onclick: function() {ctrl.vm.showStats = !ctrl.vm.showStats;}
+                onclick: function () {ctrl.vm.showStats = !ctrl.vm.showStats;}
             },
                 ctrl.vm.showStats ? m('i.fa.fa-angle-up') : m('i.fa.fa-angle-down')
             ))
@@ -222,7 +201,7 @@ Stats.view = function(ctrl) {
     ];
 };
 
-Stats.controller = function(vm) {
+Stats.controller = function (vm) {
     var self = this;
 
     self.vm = vm;
@@ -230,7 +209,7 @@ Stats.controller = function(vm) {
     self.vm.statsData = {'charts': {}}; //holds data for charts
     self.vm.loadStats = true; //we want to turn stats on
     //request these querys/aggregations for charts
-    self.vm.statsAggs = {
+    self.vm.statsQueries = {
         'shareTimeGraph' : Stats.sourcesByDatesAgg(),
         'shareDonutGraph' : Stats.sourcesAgg()
     };
@@ -245,31 +224,23 @@ Stats.controller = function(vm) {
     self.vm.latestDate = undefined;
     self.vm.statsLoaded = m.prop(false);
 
-    self.drawGraph = function(divId, graphFunction) {
-        return m('div', {id: divId, config: function(e, i) {
+    self.drawGraph = function (divId, graphFunction) {
+        return m('div', {id: divId, config: function (e, i) {
             if (i) {
                 return;
             }
             self.vm.graphs[divId] = graphFunction(self.vm.statsData, self.vm);
         }});
     };
-    //
-    //self.loadStats = function(){
-    //    return utils.loadStats(self.vm);
-    //};
-
-    //utils.onSearch(self.loadStats);
 
     m.request({
         method: 'GET',
         background: true,
-        url: '/api/v1/share/search/?size=1&sort=providerUpdatedDateTime',
-    }).then(function(data) {
+        url: '/api/v1/share/search/?size=1&sort=providerUpdatedDateTime'
+    }).then(function (data) {
         self.vm.totalCount = data.count;
         self.vm.latestDate = new $osf.FormattableDate(data.results[0].providerUpdatedDateTime).local;
     }).then(m.redraw);
-
-    //self.loadStats();
 };
 
 module.exports = Stats;

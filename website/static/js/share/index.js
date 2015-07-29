@@ -26,6 +26,7 @@ ShareApp.ViewModel = function() {
     self.query = m.prop($osf.urlParams().q || '');
     self.sort = m.prop($osf.urlParams().sort || 'Relevance');
     self.showStats = false;
+    self.rawNormedLoaded = m.prop(false);
     self.showFooter = (self.query() === '');
     self.requiredFilters = $osf.urlParams().required ? $osf.urlParams().required.split('|') : [];
     self.optionalFilters = $osf.urlParams().optional ? $osf.urlParams().optional.split('|') : [];
@@ -76,7 +77,6 @@ ShareApp.controller = function() {
         requiredFilters: self.vm.requiredFilters
     }, 'OSF | SHARE', '?' + utils.buildURLParams(self.vm));
 
-
     m.request({
         method: 'get',
         background: false,
@@ -92,6 +92,14 @@ ShareApp.controller = function() {
 
     });
 
+    m.request({
+        method: 'GET',
+        url: '/api/v1/share/documents/' // TODO where will the postgres API live??
+    }).then(function(data) {
+        self.vm.rawNormedLoaded(true);
+    }, function(err) {
+        // blank, but needed to handle missing rawNormed API
+    });
 
     History.Adapter.bind(window, 'statechange', function(e) {
         var state = History.getState().data;
