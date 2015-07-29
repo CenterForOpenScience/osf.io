@@ -231,7 +231,6 @@ function _fangornDataverseTitle(item, col) {
                 onclick: function () {
                     gotoFile(item);
                 },
-                'data-placement': 'bottom'
             }, item.data.name
                 )
         ]);
