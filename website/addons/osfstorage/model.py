@@ -359,7 +359,7 @@ class OsfStorageFileNode(StoredObject):
     def delete(self, recurse=True):
         # This shouldn't be failing silently with a simple return
         if self.renter is not None:
-            return
+            return False
         trashed = OsfStorageTrashedFileNode()
         trashed.renter = None
         trashed._id = self._id
@@ -377,6 +377,7 @@ class OsfStorageFileNode(StoredObject):
                 child.delete()
 
         self.__class__.remove_one(self)
+        return True
 
     def serialized(self, include_full=False):
         """Build Treebeard JSON for folder or file.
@@ -387,6 +388,7 @@ class OsfStorageFileNode(StoredObject):
             'name': self.name,
             'kind': self.kind,
             'size': self.versions[-1].size if self.versions else None,
+            'renter': self.renter._id if self.renter else '',
             'version': len(self.versions),
             'downloads': self.get_download_count(),
         }

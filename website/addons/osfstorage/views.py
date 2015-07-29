@@ -174,7 +174,7 @@ def osfstorage_create_child(file_node, payload, node_addon, **kwargs):
                 version_id = version._id
                 archive_exists = version.archive is not None
             else:
-                raise HTTPError(httplib.BAD_REQUEST)
+                raise HTTPError(httplib.UNAUTHORIZED)
         except KeyError:
             raise HTTPError(httplib.BAD_REQUEST)
     else:
@@ -203,9 +203,11 @@ def osfstorage_delete(file_node, payload, node_addon, **kwargs):
         raise HTTPError(httplib.BAD_REQUEST)
 
     if file_node.renter is not None:
-        raise HTTPError(httplib.BAD_REQUEST)
+        raise HTTPError(httplib.METHOD_NOT_ALLOWED)
 
-    file_node.delete()
+    success = file_node.delete()
+    if not success:
+        raise HTTPError(httplib.METHOD_NOT_ALLOWED)
 
     return {'status': 'success'}
 
