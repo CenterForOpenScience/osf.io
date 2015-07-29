@@ -1127,31 +1127,29 @@ class TestNodeEditContributor(ApiTestCase):
         self.url_contributor = '/{}nodes/{}/contributors/{}/'.format(API_BASE, self.project._id, self.user._id)
         self.url_admin = '/{}nodes/{}/contributors/{}/'.format(API_BASE, self.project._id, self.admin._id)
 
-    def test_admin_change_contributor_admin_to_read_permission(self):
+    def test_admin_change_contributor_permissions(self):
         res = self.app.put(self.url_contributor, {'permission': 'read'}, auth=self.admin_auth, expect_errors=False)
-        assert_equal(res.status_code, 200)
 
+        assert_equal(res.status_code, 200)
         self.project.reload()
         assert_equal(self.project.get_permissions(self.user), ['read'])
 
-    def test_admin_change_contributor_admin_to_write_permission(self):
         res = self.app.put(self.url_contributor, {'permission': 'write'}, auth=self.admin_auth, expect_errors=False)
-        assert_equal(res.status_code, 200)
 
+        assert_equal(res.status_code, 200)
         self.project.reload()
         assert_equal(self.project.get_permissions(self.user), ['read', 'write'])
 
-    def test_admin_change_contributor_admin_to_same_permission(self):
         res = self.app.put(self.url_contributor, {'permission': 'admin'}, auth=self.admin_auth, expect_errors=False)
-        assert_equal(res.status_code, 200)
 
+        assert_equal(res.status_code, 200)
         self.project.reload()
         assert_equal(self.project.get_permissions(self.user), ['read', 'write', 'admin'])
 
     def test_admin_not_change_contributor_permission(self):
         res = self.app.put(self.url_contributor, {'permission': ''}, auth=self.admin_auth, expect_errors=False)
-        assert_equal(res.status_code, 200)
 
+        assert_equal(res.status_code, 200)
         self.project.reload()
         assert_equal(self.project.get_permissions(self.user), ['read', 'write'])
 
@@ -1161,8 +1159,8 @@ class TestNodeEditContributor(ApiTestCase):
             'permission': ''
         }
         res = self.app.put(self.url_contributor, data, auth=self.admin_auth, expect_errors=False)
-        assert_equal(res.status_code, 200)
 
+        assert_equal(res.status_code, 200)
         self.project.reload()
         assert_false(self.project.get_visible(self.user))
         data = {
@@ -1170,19 +1168,8 @@ class TestNodeEditContributor(ApiTestCase):
             'permission': ''
         }
         res = self.app.put(self.url_contributor, data, auth=self.admin_auth, expect_errors=False)
+
         assert_equal(res.status_code, 200)
-
-        self.project.reload()
-        assert_true(self.project.get_visible(self.user))
-
-    def test_admin_not_changing_contributor_bibliographic_status(self):
-        data = {
-            'bibliographic': True,
-            'permission': ''
-        }
-        res = self.app.put(self.url_contributor, data, auth=self.admin_auth, expect_errors=False)
-        assert_equal(res.status_code, 200)
-
         self.project.reload()
         assert_true(self.project.get_visible(self.user))
 
@@ -1192,8 +1179,8 @@ class TestNodeEditContributor(ApiTestCase):
             'permission': 'read'
         }
         res = self.app.put(self.url_contributor, data, auth=self.admin_auth, expect_errors=False)
-        assert_equal(res.status_code, 200)
 
+        assert_equal(res.status_code, 200)
         self.project.reload()
         assert_false(self.project.get_visible(self.user))
         assert_equal(self.project.get_permissions(self.user), ['read'])
@@ -1203,25 +1190,20 @@ class TestNodeEditContributor(ApiTestCase):
 
         self.project.reload()
         res = self.app.put(self.url_admin, {'permission': 'write'}, auth=self.admin_auth, expect_errors=False)
-        assert_equal(res.status_code, 200)
 
+        assert_equal(res.status_code, 200)
         self.project.reload()
         assert_equal(self.project.get_permissions(self.admin), ['read', 'write'])
-        res = self.app.put(self.url_admin, {'permission': 'read'}, auth=self.admin_auth, expect_errors=False)
-        assert_equal(res.status_code, 200)
+        res = self.app.put(self.url_admin, {'permission': 'read'}, auth=self.admin_auth, expect_errors=True)
 
-        self.project.reload()
-        assert_equal(self.project.get_permissions(self.admin), ['read'])
-        res = self.app.put(self.url_admin, {'permission': 'admin'}, auth=self.admin_auth, expect_errors=True)
         assert_equal(res.status_code, 403)
-
         self.project.reload()
-        assert_equal(self.project.get_permissions(self.admin), ['read'])
+        assert_equal(self.project.get_permissions(self.admin), ['read', 'write'])
 
-    def test_admin_remove_all_admin_privileges(self):
+    def test_unique_admin_change_own_permissions(self):
         res = self.app.put(self.url_admin, {'permission': 'write'}, auth=self.admin_auth, expect_errors=True)
-        assert_equal(res.status_code, 400)
 
+        assert_equal(res.status_code, 400)
         self.project.reload()
         assert_true(self.project.has_permission(self.admin, 'admin'))
 
@@ -1232,8 +1214,8 @@ class TestNodeEditContributor(ApiTestCase):
             'bibliographic': False
         }
         res = self.app.put(self.url_admin, data, auth=self.admin_auth, expect_errors=True)
-        assert_equal(res.status_code, 400)
 
+        assert_equal(res.status_code, 400)
         self.project.reload()
         assert_true(self.project.get_visible(self.admin))
 
@@ -1247,6 +1229,7 @@ class TestNodeEditContributor(ApiTestCase):
             'permission': 'read'
         }
         res = self.app.put(self.url_non_contributor, data, auth=self.admin_auth, expect_errors=True)
+
         assert_equal(res.status_code, 404)
 
     def test_non_admin_change_contributor_status(self):
@@ -1266,31 +1249,6 @@ class TestNodeEditContributor(ApiTestCase):
 
         self.project.reload()
         assert_equal(self.project.get_permissions(self.user), ['read', 'write'])
-
-    def test_non_admin_change_own_bibliographic_status_false(self):
-        data = {
-            'bibliographic': False,
-            'permission': ''
-        }
-        res = self.app.put(self.url_contributor, data, auth=self.user_auth, expect_errors=False)
-        assert_equal(res.status_code, 200)
-
-        self.project.reload()
-        assert_false(self.project.get_visible(self.user))
-
-    def test_non_admin_change_own_bibliographic_status_true(self):
-        self.project.set_visible(self.user, False, save=True)
-
-        data = {
-            'bibliographic': True,
-            'permission': ''
-        }
-        res = self.app.put(self.url_contributor, data, auth=self.user_auth, expect_errors=True)
-        assert_false(self.project.get_visible(self.user))
-        assert_equal(res.status_code, 403)
-
-        self.project.reload()
-        assert_false(self.project.get_visible(self.user))
 
     def test_not_logged_in_change_contributor_status(self):
         data = {
