@@ -412,6 +412,7 @@ def project_wiki_rename(auth, wname, **kwargs):
 @must_have_addon('wiki', 'node')
 def project_wiki_validate_name(wname, **kwargs):
     node = kwargs['node'] or kwargs['project']
+    auth = kwargs['auth']
     wiki_name = wname.strip()
     wiki_key = to_mongo_key(wiki_name)
 
@@ -420,6 +421,8 @@ def project_wiki_validate_name(wname, **kwargs):
             message_short='Wiki page name conflict.',
             message_long='A wiki page with that name already exists.'
         ))
+    else:
+        node.update_node_wiki(wiki_name, '', auth)
     return {'message': wiki_name}
 
 @must_be_valid_project
