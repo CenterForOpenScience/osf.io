@@ -250,13 +250,14 @@ def osfstorage_rent(file_node, auth, **kwargs):
 @decorators.autoload_filenode(must_be='file')
 def osfstorage_return(file_node, auth, **kwargs):
     if file_node.renter == auth.user:
-        file_node.return_rent(auth.user)
+        file_node.return_rent()
         return {'status': 'success'}
     return {'status': 'failure'}
 
 @decorators.autoload_filenode(must_be='file', check_rent=True)
 def osfstorage_rented(file_node, **kwargs):
-    return {'renter': file_node.rented}
+    return {'renter': file_node.rented,
+            'end_date': file_node.end_date.toordinal()}
 
 @must_have_permission(permissions.ADMIN)
 @decorators.autoload_filenode(must_be='file')

@@ -26,10 +26,10 @@ var FileViewPage = {
         self.editorMeta = self.context.editor;
         self.file.renter = '';
         self.isRenter = function() {
-            $osf.postJSON(
-                '/api/v1/project/' + self.node.id + '/osfstorage' + self.file.path +'/rented/',
-                {}
-            ).done(function(resp) {
+            $.ajax({
+                method: 'get',
+                url: '/api/v1/project/' +self.node.id + '/osfstorage' + self.file.path + '/rented/',
+            }).done(function(resp) {
                 self.file.renter = resp.renter;
                 if ((self.file.renter !== '') && (self.file.renter !== self.context.userId)) {
                 $osf.growl('File is locked', 'This file has been locked by a <a href="/' + self.file.renter +

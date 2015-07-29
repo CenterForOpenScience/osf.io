@@ -135,11 +135,11 @@ api_routes = {
             [
                 '/project/<nid>/osfstorage/<fid>/rented/',
             ],
-            'post',
+            'get',
             views.osfstorage_rented,
             json_renderer,
         ),
-        #TO DO: Use other request types, POST is not necessary for many of these
+
         Rule(
             [
                 '/project/<nid>/osfstorage/<fid>/force_return/',

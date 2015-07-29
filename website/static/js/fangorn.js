@@ -1529,7 +1529,11 @@ var FGItemButtons = {
                                      item.data.nodeApiUrl + 'osfstorage/return_all/',
                                     {}
                                 ).done(function(resp) {
-                                    window.location.reload();
+                                    if (resp['status'] === 'success') {
+                                        window.location.reload();
+                                    } else {
+                                        $osf.growl('Error', 'Unable to unlock OSF Storage. Make sure all files are unlocked, or locked by you.');
+                                    }
                                 }).fail(function(resp) {
                                     $osf.growl('Error', 'Unable to unlock OSF Storage. Make sure all files are unlocked, or locked by you.');
                                 });
@@ -1555,7 +1559,11 @@ var FGItemButtons = {
                                         'end_date': 'week'
                                     }
                                 ).done(function(resp) {
-                                    window.location.reload();
+                                    if (resp['status'] === 'success') {
+                                        window.location.reload()
+                                    } else {
+                                        $osf.growl('Error', 'Unable to lock OSF Storage. Make sure all files are unlocked, or locked by you.');
+                                    }
                                 }).fail(function(resp) {
                                     $osf.growl('Error', 'Unable to lock OSF Storage. Make sure all files are unlocked, or locked by you.');
                                 });
