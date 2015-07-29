@@ -316,11 +316,11 @@ def init_mock_addon(short_name, user_settings=None, node_settings=None):
     """Add an addon to the settings, so that it is ready for app init
 
     This is used to inject addons into the application context for tests."""
+
+    #Importing within the function to prevent circular import problems.
     import factories
-    if not user_settings:
-        user_settings = factories.MockAddonUserSettings
-    if not node_settings:
-        node_settings = factories.MockAddonNodeSettings
+    user_settings = user_settings or factories.MockAddonUserSettings
+    node_settings = node_settings or factories.MockAddonNodeSettings
     settings.ADDONS_REQUESTED.append(short_name)
 
     addon_config = AddonConfig(
