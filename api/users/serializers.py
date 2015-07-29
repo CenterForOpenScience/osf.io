@@ -41,7 +41,8 @@ class UserSerializer(JSONAPISerializer):
         return obj.absolute_url
 
     def get_objects_data(self, obj):
-        return self.context['view'].get_user_nodes_meta_data(obj)
+        if 'view' in self.context:
+            return self.context['view'].get_user_nodes_meta_data(obj)
 
     def update(self, instance, validated_data):
         # TODO
