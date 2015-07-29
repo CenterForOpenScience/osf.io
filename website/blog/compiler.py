@@ -492,31 +492,31 @@ def _encode(*args, **kwargs):
     return quote(args[1])
 
 
-# def _excerpt(this, *args, **kwargs):
-#     tags = []
-#     attr = {}
-#     styles = []
-#     strip = True
-#
-#     content = str(bleach.clean(this.get('content'),
-#                         tags=tags,
-#                         attributes=attr,
-#                         styles=styles,
-#                         strip=strip))
-#
-#     if "words" in kwargs.keys():
-#         words = content.split()
-#         excerpt = " ".join(words[:int(kwargs.get("words"))])
-#
-#     elif "characters" in kwargs.keys():
-#         chars = int(kwargs.get('characters'))
-#         last = content.find(' ', chars)
-#         excerpt = content[:last]
-#
-#     else:
-#         words = content.split()
-#         excerpt = " ".join(words[:50])
-#     return excerpt
+def _excerpt(this, *args, **kwargs):
+    tags = []
+    attr = {}
+    styles = []
+    strip = True
+
+    content = str(bleach.clean(this.get('content'),
+                        tags=tags,
+                        attributes=attr,
+                        styles=styles,
+                        strip=strip))
+
+    if "words" in kwargs.keys():
+        words = content.split()
+        excerpt = " ".join(words[:int(kwargs.get("words"))])
+
+    elif "characters" in kwargs.keys():
+        chars = int(kwargs.get('characters'))
+        last = content.find(' ', chars)
+        excerpt = content[:last]
+
+    else:
+        words = content.split()
+        excerpt = " ".join(words[:50])
+    return excerpt
 
 
 def _for_each(this, options, context, scope, columns=None):
@@ -556,8 +556,10 @@ def _for_each(this, options, context, scope, columns=None):
         scope_ = Scope(value, this, options['root'], **kwargs)
         _ghostpy_['scope'] = scope
         options['fn'].keywords['scope'] = scope
-        result.grow(options['fn'](scope_))
-
+        try:
+            result.grow(options['fn'](scope_))
+        except TypeError:
+            pass
         index += 1
 
     return result
@@ -781,7 +783,7 @@ _ghostpy_defaults = {
         'date': _date,
         'each': _each,
         'encode': _encode,
-        # 'excerpt': _excerpt,
+        'excerpt': _excerpt,
         'foreach': _for_each,
         'ghost_head': _ghost_head,
         'ghost_foot': _ghost_foot,
@@ -1087,6 +1089,10 @@ class CodeBuilder:
     def add_invertedblock(self, symbol, arguments, nested, alt_nested):
         # This may need to be a blockHelperMissing clal as well.
 
+        if len(arguments_) > 0 and type(arguments_[0]) is tuple:
+            (arguments, scope) = arguments_[0]
+        else:
+            arguments = arguments_
         name = nested.name
         self._locals[name] = nested
 
@@ -1109,18 +1115,30 @@ class CodeBuilder:
                 ])
         else:
             self._result.grow([
-                u"    options['fn'] = lambda this: None\n"
+                u"    options['inverse'] = lambda this: None\n"
                 ])
-        self._result.grow([
-            u"    value = helper = helpers.get('%s')\n" % symbol,
-            u"    if value is None:\n"
-            u"        value = resolve(context, '%s')\n" % symbol,
-            u"    if helper and hasattr(helper, '__call__'):\n"
-            u"        value = helper(context, options%s\n" % call,
-            u"    else:\n"
-            u"        value = helpers['blockHelperMissing'](context, options, value)\n"
-            u"    result.grow(value or '')\n"
+        if symbol == 'foreach' or symbol == 'each':
+            if len(arguments_) == 2:
+                (key, value) = tuple(arguments_[1].split('='))
+                assert key == 'columns'
+            else:
+                value = "None"
+            self._result.grow([
+                u"    value = resolve(context, '%s')\n" % scope[0],
+                u"    value = helpers['%s'](context, options, value, '%s', columns=%s)\n" % (symbol, scope[0], value),
+                u"    result.grow(value or '')\n"
             ])
+        else:
+            self._result.grow([
+                u"    value = helper = helpers.get('%s')\n" % symbol,
+                u"    if value is None:\n"
+                u"        value = resolve(context, '%s')\n" % symbol,
+                u"    if helper and hasattr(helper, '__call__'):\n"
+                u"        value = helper(context, options%s\n" % call,
+                u"    else:\n"
+                u"        value = helpers['blockHelperMissing'](context, options, value, '%s')\n" % symbol,
+                u"    result.grow(value or '')\n"
+                ])
 
     def _invoke_template(self, fn_name, this_name):
         self._result.grow([
