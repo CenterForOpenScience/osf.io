@@ -206,7 +206,7 @@ class TestUserNodes(ApiTestCase):
 class TestUserRoutesNodeRoutes(ApiTestCase):
 
     def setUp(self):
-        ApiTestCase.setUp(self)
+        super(TestUserRoutesNodeRoutes, self).setUp()
         self.user_one = UserFactory.build()
         self.user_one.set_password('justapoorboy')
         self.user_one.social['twitter'] = 'howtopizza'
@@ -226,10 +226,10 @@ class TestUserRoutesNodeRoutes(ApiTestCase):
         self.dashboard = DashboardFactory()
 
     def tearDown(self):
-        ApiTestCase.tearDown(self)
+        super(TestUserRoutesNodeRoutes, self).tearDown()
         Node.remove()
 
-    def test_path_Users_User_id_Nodes_user_not_logged_in(self): #~WORK
+    def test_path_Users_User_id_Nodes_user_not_logged_in(self):  #~WORK
         url = "/{}users/{}/nodes/".format(API_BASE, self.user_one._id)
         res = self.app.get(url)
         node_json = res.json['data']
@@ -266,8 +266,6 @@ class TestUserRoutesNodeRoutes(ApiTestCase):
         url = "/{}users/me/nodes/".format(API_BASE, self.user_one._id)
         res = self.app.get(url, auth=self.auth_one)
         assert_equal(res.status_code, 200)
-
-        node_json = res.json['data']
 
         ids = {each['id'] for each in res.json['data']}
         assert_in(self.public_project_user_one._id, ids)
