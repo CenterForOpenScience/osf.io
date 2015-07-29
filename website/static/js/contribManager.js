@@ -12,6 +12,7 @@ var contribsEqual = function(a, b) {
     return a.id === b.id &&
         a.visible === b.visible &&
         a.permission === b.permission &&
+        a.subscribed === b.subscribed &&
         Boolean(a.deleteStaged) === Boolean(b.deleteStaged);
 };
 
@@ -63,6 +64,7 @@ var ContributorModel = function(contributor, currentUserCanEdit, pageOwner, isRe
     self.curPermission = ko.observable(self.getPermission(self.permission()));
     self.deleteStaged = ko.observable(contributor.deleteStaged || false);
     self.removeContributor = 'Remove contributor';
+    self.subscribed = contributor.subscribed;
     self.pageOwner = pageOwner;
     self.serialize = function() {
         return JSON.parse(ko.toJSON(self));

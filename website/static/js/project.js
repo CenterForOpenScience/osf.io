@@ -256,6 +256,17 @@ $(document).ready(function() {
         trigger: 'hover'
     });
 
+    var DiscussionsInfoHtml = 'A contributor who is not subscribed to email discussions will ' +
+        'not recieve any of the emails sent to it. They will, however, still be able to send ' +
+        'emails themselves, which will be distributed and/or logged as per how the discussions ' +
+        'list was set.<br><br>You can change your subscription setting on the settings page.';
+
+    $('.discussions-info').attr(
+        'data-content', DiscussionsInfoHtml
+    ).popover({
+        trigger: 'hover'
+    });
+
     ////////////////////
     // Event Handlers //
     ////////////////////

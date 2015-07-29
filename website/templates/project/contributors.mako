@@ -25,7 +25,7 @@
                 <table id="manageContributorsTable" class="table">
                     <thead>
                         <tr>
-                        <th class="col-md-6">Name</th>
+                        <th class=${"col-md-3" if discussions['enabled'] else "col-md-6"}>Name</th>
                         <th class="col-md-2">
                             Permissions
                             <i class="fa fa-question-circle permission-info"
@@ -46,6 +46,18 @@
                                     data-html="true"
                                 ></i>
                         </th>
+                        % if discussions['enabled']:
+                            <th class="col-md-3">
+                                On Email Discussions
+                                <i class="fa fa-question-circle discussions-info"
+                                        data-toggle="popover"
+                                        data-title="Email Discussions Information"
+                                        data-container="body"
+                                        data-placement="right"
+                                        data-html="true"
+                                    ></i>
+                            </th>
+                        % endif
                         <th class="col-md-1">
                         </th>
                         </tr>
@@ -213,6 +225,15 @@
                     data-bind="checked: visible, enable: $parent.canEdit() && !contributor.isAdmin"
                 />
         </td>
+        % if discussions['enabled']:
+            <td class="text-center">
+                <input
+                        type="checkbox" class="no-sort discussions"
+                        data-bind="checked: subscribed, enable: false"
+                    />
+
+            </td>
+        % endif
         <td>
           <!-- ko if: contributor.canEdit() -->
                 <!-- ko ifnot: deleteStaged -->
