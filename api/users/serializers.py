@@ -27,10 +27,7 @@ class UserSerializer(JSONAPISerializer):
     links = LinksFieldWIthSelfLink({'html': 'absolute_url'})
     relationships = LinksField({
         'nodes': {
-            'links': {
-                'related': Link('users:user-nodes', kwargs={'user_id': '<pk>'}),
-                'meta':  'get_objects_data'
-            }
+            'related': Link('users:user-nodes', kwargs={'user_id': '<pk>'}),
         },
     })
 

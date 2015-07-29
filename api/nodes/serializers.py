@@ -38,48 +38,12 @@ class NodeSerializer(JSONAPISerializer):
                               )
 
     relationships = LinksField({
-        'children': {
-            'links': {
-                'related': {
-                    'href': Link('nodes:node-children', 'children', kwargs={'node_id': '<pk>'}),
-                    'meta': 'get_objects_data:children'
-                }
-            },
-        },
-        'contributors': {
-            'links': {
-                'related': {
-                    'href': Link('nodes:node-contributors', 'contributors', kwargs={'node_id': '<pk>'}),
-                    'meta': 'get_objects_data:contributors'
-                }
-            },
-        },
-        'pointers': {
-            'links': {
-                'related': {
-                    'href': Link('nodes:node-pointers', 'pointers', kwargs={'node_id': '<pk>'}),
-                    'meta': 'get_objects_data:pointers'
-                }
-            },
-        },
-        'registrations': {
-            'links': {
-                'related': {
-                    'href': Link('nodes:node-registrations', 'registrations', kwargs={'node_id': '<pk>'}),
-                    'meta':  'get_objects_data:registrations'
-                }
-            },
-        },
-        'files': {
-            'links': {
-                'related': Link('nodes:node-files', kwargs={'node_id': '<pk>'})
-            }
-        },
-        'parent': {
-            'links': {
-                'self': Link('nodes:node-detail', kwargs={'node_id': '<parent_id>'})
-            }
-        }
+        'children': Link('nodes:node-children', 'children', kwargs={'node_id': '<pk>'}),
+        'contributors':  Link('nodes:node-contributors', 'contributors', kwargs={'node_id': '<pk>'}),
+        'pointers': Link('nodes:node-pointers', 'pointers', kwargs={'node_id': '<pk>'}),
+        'registrations': Link('nodes:node-registrations', 'registrations', kwargs={'node_id': '<pk>'}),
+        'files': Link('nodes:node-files', kwargs={'node_id': '<pk>'}),
+        'parent': Link('nodes:node-detail', kwargs={'node_id': '<parent_id>'})
     })
 
     # TODO: finish me
@@ -170,7 +134,7 @@ class NodeFilesSerializer(JSONAPISerializer):
     links = LinksFieldWIthSelfLink({
         'self': WaterbutlerLink(kwargs={'node_id': '<node_id>'}),
         'related': {
-            'href': Link('nodes:node-files', kwargs={'node_id': '<node_id>'},
+            'href': Link('nodes:node-files', 'files', kwargs={'node_id': '<node_id>'},
                         query_kwargs={'path': '<path>', 'provider': '<provider>'}),
             'meta': {
                 'self_methods': 'valid_self_link_methods'
