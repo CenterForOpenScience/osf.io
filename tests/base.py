@@ -19,6 +19,7 @@ from nose.tools import *  # noqa (PEP8 asserts)
 from pymongo.errors import OperationFailure
 from modularodm import storage
 
+
 from api.base.wsgi import application as django_app
 from framework.mongo import set_up_storage
 from framework.auth import User
@@ -311,10 +312,15 @@ def assert_datetime_equal(dt1, dt2, allowance=500):
     assert_less(dt1 - dt2, dt.timedelta(milliseconds=allowance))
 
 
-def init_mock_addon(short_name, user_settings, node_settings):
+def init_mock_addon(short_name, user_settings=None, node_settings=None):
     """Add an addon to the settings, so that it is ready for app init
 
     This is used to inject addons into the application context for tests."""
+    import factories
+    if not user_settings:
+        user_settings = factories.MockAddonUserSettings
+    if not node_settings:
+        node_settings = factories.MockAddonNodeSettings
     settings.ADDONS_REQUESTED.append(short_name)
 
     addon_config = AddonConfig(

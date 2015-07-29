@@ -57,10 +57,20 @@ from tests.factories import (
     RegistrationFactory, CommentFactory, PrivateLinkFactory, UnconfirmedUserFactory, DashboardFactory, FolderFactory,
     ProjectWithAddonFactory, MockAddonNodeSettings,
 )
-from website.addons.base import AddonNodeSettingsBase
-from tests.test_archiver import MockAddon
 from website.settings import ALL_MY_REGISTRATIONS_ID, ALL_MY_PROJECTS_ID
 
+class Addon(MockAddonNodeSettings):
+    @property
+    def complete(self):
+        return True
+    def archive_errors(self):
+        return 'Error'
+class Addon2(MockAddonNodeSettings):
+    @property
+    def complete(self):
+        return True
+    def archive_errors(self):
+        return 'Error'
 
 class TestViewingProjectWithPrivateLink(OsfTestCase):
 
@@ -135,6 +145,15 @@ class TestViewingProjectWithPrivateLink(OsfTestCase):
 
 
 class TestProjectViews(OsfTestCase):
+
+    ADDONS_UNDER_TEST = {
+        'addon1': {
+            'node_settings': Addon,
+        },
+        'addon2': {
+            'node_settings': Addon2,
+        },
+    }
 
     def setUp(self):
         super(TestProjectViews, self).setUp()
@@ -578,26 +597,17 @@ class TestProjectViews(OsfTestCase):
         assert_in('Template not found', res)
 
     def test_register_project_with_multiple_errors(self):
-        class FakeAddon(MockAddon):
-            node_settings = fields.ForeignField('AddonNodeSettingsBase')
-            def archive_errors(self):
-                return 'Error Message'
-        addon1 = FakeAddon()
-        addon1.short_name = 'addon'
-        addon1.full_name = 'addon'
-        model = addon1.node_settings(owner=self.project)
-        model.on_add()
-        model.save()
+        self.project.add_addon('addon1', auth=Auth(self.user1))
         component = NodeFactory(parent=self.project, creator=self.user1)
-        model1 = addon1.node_settings(owner=component)
-        model1.on_add()
-        model1.save()
-        import ipdb; ipdb.set_trace()
+        component.add_addon('addon1', auth=Auth(self.user1))
+        component.add_addon('addon2', auth=Auth(self.user1))
+        self.project.save()
+        component.save()
         url = self.project.api_url_for('project_before_register')
         res = self.app.get(url, auth=self.auth)
         data = res.json
         assert_equal(res.status_code, 200)
-        assert_equal(len(data['errors']), 1)
+        assert_equal(len(data['errors']), 2)
 
 
     # Regression test for https://github.com/CenterForOpenScience/osf.io/issues/1478
