@@ -1,8 +1,6 @@
 """Tests related to embargoes of registrations"""
 import datetime
-import json
 
-import mock
 from nose.tools import *  # noqa
 from tests.base import fake, OsfTestCase
 from tests.factories import (
@@ -15,8 +13,7 @@ from modularodm.exceptions import ValidationValueError
 from website.exceptions import (
     InvalidEmbargoDisapprovalToken, InvalidEmbargoApprovalToken, NodeStateError,
 )
-from website.models import Embargo, Node
-from website.project.model import ensure_schemas
+from website.models import Embargo
 
 
 class RegistrationEmbargoModelsTestCase(OsfTestCase):

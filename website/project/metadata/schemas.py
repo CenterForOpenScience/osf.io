@@ -4,7 +4,7 @@ import json
 
 def ensure_schema_structure(schema):
     schema['pages'] = schema.get('pages', [])
-    schema['title'] = ' '.join(schema['name'].split('_'))
+    schema['title'] = ' '.join(schema.get('name', '').split('_'))
     schema['version'] = schema.get('version', 1)
     return schema
 
