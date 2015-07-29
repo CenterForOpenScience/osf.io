@@ -151,6 +151,11 @@ var CitationsFolderPickerViewModel = oop.extend(FolderPickerViewModel, {
                             if (accountId) {
                                 self.connectExistingAccount.call(self, (accountId));
                             }
+                        },
+                        buttons:{
+                            confirm:{
+                                label: 'Import'
+                            }
                         }
                     });
                 } else {
@@ -160,6 +165,11 @@ var CitationsFolderPickerViewModel = oop.extend(FolderPickerViewModel, {
                         callback: function(confirmed) {
                             if (confirmed) {
                                 self.connectExistingAccount.call(self, (self.accounts()[0].id));
+                            }
+                        },
+                        buttons:{
+                            confirm:{
+                                label:'Import'
                             }
                         }
                     });

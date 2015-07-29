@@ -34,6 +34,11 @@ var FileViewPage = {
             content: waterbutler.buildDownloadUrl(self.file.path, self.file.provider, self.node.id, {accept_url: false, mode: 'render'})
         });
 
+        if ($osf.urlParams().branch) {
+            self.file.urls.revisions = waterbutler.buildRevisionsUrl(self.file.path, self.file.provider, self.node.id, {sha: $osf.urlParams().branch});
+            self.file.urls.content = waterbutler.buildDownloadUrl(self.file.path, self.file.provider, self.node.id, {accept_url: false, mode: 'render', branch: $osf.urlParams().branch});
+        }
+
         $(document).on('fileviewpage:delete', function() {
             bootbox.confirm({
                 title: 'Delete file?',
@@ -54,6 +59,12 @@ var FileViewPage = {
                     }).fail(function() {
                         $osf.growl('Error', 'Could not delete file.');
                     });
+                },
+                buttons:{
+                    confirm:{
+                        label:'Delete',
+                        className:'btn-danger'
+                    }
                 }
             });
         });
@@ -198,14 +209,14 @@ var FileViewPage = {
         $('#mfrIframeParent').removeClass().addClass(mfrIframeParentLayout);
         $('.file-view-panels').removeClass().addClass('file-view-panels').addClass(fileViewPanelsLayout);
 
-        m.render(document.getElementById('toggleBar'), m('.btn-toolbar[style=margin-top:20px]', [
-            ctrl.canEdit() ? m('.btn-group', {style: 'margin-left: 0;'}, [
+        m.render(document.getElementById('toggleBar'), m('.btn-toolbar.m-t-md', [
+            ctrl.canEdit() ? m('.btn-group.m-l-xs.m-t-xs', [
                 m('.btn.btn-sm.btn-danger.file-delete', {onclick: $(document).trigger.bind($(document), 'fileviewpage:delete')}, 'Delete')
             ]) : '',
-            m('.btn-group', [
+            m('.btn-group.m-t-xs', [
                 m('.btn.btn-sm.btn-primary.file-download', {onclick: $(document).trigger.bind($(document), 'fileviewpage:download')}, 'Download')
             ]),
-            m('.btn-group.btn-group-sm', [
+            m('.btn-group.btn-group-sm.m-t-xs', [
                 m('.btn.btn-default.disabled', 'Toggle view: ')
             ].concat(
                 m('.btn' + (ctrl.mfrIframeParent.is(':visible') ? '.btn-primary' : '.btn-default'), {

@@ -471,6 +471,7 @@ class TestPrivateLinkView(OsfTestCase):
             res.body
         )
 
+
 class TestMergingAccounts(OsfTestCase):
 
     def setUp(self):

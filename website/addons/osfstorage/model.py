@@ -298,6 +298,8 @@ class OsfStorageFileNode(StoredObject):
         if metadata:
             version.update_metadata(metadata)
 
+        version._find_matching_archive(save=False)
+
         version.save()
         self.versions.append(version)
         self.save()
@@ -351,11 +353,19 @@ class OsfStorageFileNode(StoredObject):
     def move_under(self, destination_parent, name=None):
         self.name = name or self.name
         self.parent = destination_parent
-        self.node_settings = destination_parent.node_settings
-
-        self.save()
+        self._update_node_settings(save=True)
+        # Trust _update_node_settings to save us
 
         return self
+
+    def _update_node_settings(self, recursive=True, save=True):
+        if self.parent is not None:
+            self.node_settings = self.parent.node_settings
+        if save:
+            self.save()
+        if recursive and self.is_folder:
+            for child in self.children:
+                child._update_node_settings(save=save)
 
     def __repr__(self):
         return '<{}(name={!r}, node_settings={!r})>'.format(
@@ -406,6 +416,10 @@ class OsfStorageFileVersion(StoredObject):
     def location_hash(self):
         return self.location['object']
 
+    @property
+    def archive(self):
+        return self.metadata.get('archive')
+
     def is_duplicate(self, other):
         return self.location_hash == other.location_hash
 
@@ -420,6 +434,36 @@ class OsfStorageFileVersion(StoredObject):
             # Incorrect version
             self.date_modified = parse_date(self.metadata['modified'], ignoretz=True)
         self.save()
+
+    def _find_matching_archive(self, save=True):
+        """Find another version with the same sha256 as this file.
+        If found copy its vault name and glacier id, no need to create additional backups.
+        returns True if found otherwise false
+        """
+        if 'sha256' not in self.metadata:
+            return False  # Dont bother searching for nothing
+
+        if 'vault' in self.metadata and 'archive' in self.metadata:
+            # Shouldn't ever happen, but we already have an archive
+            return True  # We've found ourself
+
+        qs = self.__class__.find(
+            Q('_id', 'ne', self._id) &
+            Q('metadata.vault', 'ne', None) &
+            Q('metadata.archive', 'ne', None) &
+            Q('metadata.sha256', 'eq', self.metadata['sha256'])
+        ).limit(1)
+        if qs.count() < 1:
+            return False
+        other = qs[0]
+        try:
+            self.metadata['vault'] = other.metadata['vault']
+            self.metadata['archive'] = other.metadata['archive']
+        except KeyError:
+            return False
+        if save:
+            self.save()
+        return True
 
 
 @unique_on(['node', 'path'])

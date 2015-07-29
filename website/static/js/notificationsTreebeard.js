@@ -260,7 +260,7 @@ function ProjectNotifications(data) {
         },
         showFilter : false,     // Gives the option to filter by showing the filter box.
         allowMove : false,       // Turn moving on or off.
-        hoverClass : 'fangorn-hover',
+        hoverClass : '',
         resolveRefreshIcon : function() {
           return m('i.fa.fa-refresh.fa-spin');
         }

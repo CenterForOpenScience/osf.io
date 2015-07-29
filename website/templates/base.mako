@@ -49,7 +49,7 @@
     <link href='//fonts.googleapis.com/css?family=Carrois+Gothic|Inika|Patua+One' rel='stylesheet' type='text/css'>
 
 </head>
-<body data-spy="scroll" data-target=".nav-list-spy">
+<body data-spy="scroll" data-target=".scrollspy">
     % if dev_mode:
     <style>
         #devmode {
@@ -145,6 +145,9 @@
                 waterbutlerURL: ${ waterbutler_url if waterbutler_url.endswith('/') else waterbutler_url + '/' | sjson, n },
             % if access_token:
                 accessToken: ${ access_token | sjson, n },
+                userId: ${user_id | sjson, n},
+                authUrl: ${auth_url | sjson, n},
+                profileUrl: ${profile_url | sjson, n},
             % endif
                 cookieName: ${ cookie_name | sjson, n },
                 apiV2Prefix: ${ api_v2_base | sjson, n }
