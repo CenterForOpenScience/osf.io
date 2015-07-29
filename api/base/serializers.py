@@ -23,11 +23,15 @@ def _url_val(val, obj, serializer, **kwargs):
     """
     if isinstance(val, Link):  # If a Link is passed, get the url value
         data = {
-            'href': val.resolve_url(obj, **kwargs)
+            'href': val.resolve_url(obj)
         }
         query = val.query
         if query == 'files':
-            return data
+             return data
+        if query == 'parent':
+            data = {
+                'self': val.resolve_url(obj)
+            }
         if query:
             meta = getattr(serializer, 'get_objects_data')(obj, query)
             if meta:

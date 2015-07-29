@@ -43,7 +43,7 @@ class NodeSerializer(JSONAPISerializer):
         'pointers': Link('nodes:node-pointers', 'pointers', kwargs={'node_id': '<pk>'}),
         'registrations': Link('nodes:node-registrations', 'registrations', kwargs={'node_id': '<pk>'}),
         'files': Link('nodes:node-files', kwargs={'node_id': '<pk>'}),
-        'parent': Link('nodes:node-detail', kwargs={'node_id': '<parent_id>'})
+        'parent': Link('nodes:node-detail', 'parent', kwargs={'node_id': '<parent_id>'})
     })
 
     # TODO: finish me
