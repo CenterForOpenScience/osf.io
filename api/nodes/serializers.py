@@ -219,24 +219,18 @@ class NodeContributorsSerializer(JSONAPISerializer):
         except ValueError as e:
             raise ValidationError(e)
 
-    def set_permissions(self, field, user, node, is_admin=True, is_current=False):
+    def set_permissions(self, field, user, node, is_current=False):
         if field == '':
             pass
-        elif is_admin or not is_current:
-            if field == 'admin':
-                    node.set_permissions(user, ['read', 'write', 'admin'])
-            elif has_multiple_admins(node) or not is_current:
-                if field == 'write':
-                    node.set_permissions(user, ['read', 'write'])
-                elif field == 'read':
-                    node.set_permissions(user, ['read'])
-            else:
-                raise ValidationError('Must have at least one admin contributor')
-        elif field == 'read' and node.has_permission(user, 'write'):
-            node.set_permissions(user, ['read'])
+        if field == 'admin':
+                node.set_permissions(user, ['read', 'write', 'admin'])
+        elif has_multiple_admins(node) or not is_current:
+            if field == 'write':
+                node.set_permissions(user, ['read', 'write'])
+            elif field == 'read':
+                node.set_permissions(user, ['read'])
         else:
-            raise PermissionDenied()
-        node.save()
+            raise ValidationError('Must have at least one admin contributor')
 
 
 class NodeContributorDetailSerializer(NodeContributorsSerializer):
@@ -251,17 +245,9 @@ class NodeContributorDetailSerializer(NodeContributorsSerializer):
         current_user = self.context['request'].user
         bibliographic = validated_data['bibliographic'] == "True"
         permission_field = validated_data['permission']
-        is_admin_current = node.has_permission(current_user, 'admin')
         is_current = user is current_user
-
-        # if a user is not an admin, they cannot make their bibliographic status true
-        if is_admin_current or \
-                ((node.get_visible(user) and is_current) or not bibliographic):
-            self.set_bibliographic(bibliographic, node, user)
-        else:
-            raise PermissionDenied('Non admin user cannot make self bibliographic')
-
-        self.set_permissions(permission_field, user, node, is_admin_current, is_current=is_current)
+        self.set_bibliographic(bibliographic, node, user)
+        self.set_permissions(permission_field, user, node, is_current=is_current)
         user.bibliographic = node.get_visible(user)
         user.permissions = node.get_permissions(user)
         return user
