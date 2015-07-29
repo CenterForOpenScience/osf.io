@@ -309,6 +309,8 @@ def update_file(name, path, addon, index=None):
     if file_util.is_indexed(name, addon):
         index = index or INDEX
         file_doc = file_util.build_file_document(name, path, addon, include_content=True)
+        if not file_doc['size'] < settings.MAX_INDEXED_FILE_SIZE:
+            return
         # elastic-search-mapper takes base64 encoded files.
         file_doc.update({'attachment': base64.encodestring(file_doc.pop('content'))})
         file_doc.update({'category': 'file'})

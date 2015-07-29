@@ -25,6 +25,7 @@ def file_indexing(func):
 def is_indexed(filename, addon):
     if not addon.config.short_name == 'osfstorage':
         return False
+
     return filename.rsplit('.')[-1] in INDEXED_TYPES
 
 
@@ -32,6 +33,10 @@ def get_file_content(file_):
     url = file_.download_url + '&mode=render'
     response = requests.get(url)
     return response.content
+
+
+def norm_path(path):
+    return path if not path[0] == '/' else path[1:]
 
 
 def build_file_document(name, path, addon, include_content=True):
@@ -44,14 +49,17 @@ def build_file_document(name, path, addon, include_content=True):
     """
     parent_node = addon.owner
     parent_id = parent_node._id
-    path = path if not path[0] == '/' else path[1:]
+    path = norm_path(path)
     file_, created = addon.find_or_create_file_guid(path)
+    file_.enrich()
     file_content = get_file_content(file_) if include_content else None
+    file_size = file_.size
     return {
         'name': name,
         'path': path,
         'content': file_content,
         'parent_id': parent_id,
+        'size': file_size,
     }
 
 
@@ -70,10 +78,19 @@ def collect_files_from_addon(addon, tree=None):
             for file_ in collect_files_from_addon(addon, child):
                 yield file_
         else:
-            path, name = child['path'], child['name']
-            if is_indexed(name, addon):
-                file_doc = build_file_document(name, path, addon, include_content=False)
-                yield {'name': file_doc['name'], 'path': file_doc['path'], 'addon': addon}
+            path = child['path']
+            name = child['name']
+            size = child['size']
+
+            if not size < settings.MAX_INDEXED_FILE_SIZE:
+                continue
+
+            if is_indexed(filename=name, addon=addon):
+                yield {
+                    'name': name,
+                    'path': norm_path(path),
+                    'addon': addon,
+                }
             else:
                 continue
 

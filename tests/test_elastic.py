@@ -766,7 +766,8 @@ class TestUpdateFiles(SearchTestCase):
             'name': 'test_file_one.txt',
             'path': '/00001',
             'content': 'this is a test file.',
-            'parent_id': self.parent_project._id
+            'parent_id': self.parent_project._id,
+            'size': 1000,
         }
 
         self.fake_file_doc_two = {
@@ -774,24 +775,35 @@ class TestUpdateFiles(SearchTestCase):
             'name': 'test_file_two.txt',
             'path': '/00002',
             'content': 'the rain in spain rains mainly on the plain',
-            'parent_id': self.parent_project._id
+            'parent_id': self.parent_project._id,
+            'size': 2000,
         }
 
     def test_file_indexed(self):
         with mock.patch('website.search.file_util.build_file_document', return_value=self.fake_file_doc_one):
             search.update_file(self.fake_file_doc_one['name'],
-                                       self.fake_file_doc_one['path'],
-                                       self.mock_addon)
+                               self.fake_file_doc_one['path'],
+                               self.mock_addon)
             time.sleep(1)
             res = query('test')['results']
             assert_equal(len(res), 1)
 
-    def test_update_file_does_not_index_images(self):
+    def test_file_above_size_limit_not_indexed(self):
+        self.fake_file_doc_one['size'] = settings.MAX_INDEXED_FILE_SIZE + 1
         with mock.patch('website.search.file_util.build_file_document', return_value=self.fake_file_doc_one):
-            self.fake_file_doc_one['name'] = 'test_file.png'
             search.update_file(self.fake_file_doc_one['name'],
-                                       self.fake_file_doc_one['path'],
-                                       self.mock_addon)
+                               self.fake_file_doc_one['path'],
+                               self.mock_addon)
+            time.sleep(1)
+            res = query('test')['results']
+            assert_equal(len(res), 0)
+
+    def test_update_file_does_not_index_images(self):
+        self.fake_file_doc_one['name'] = 'test_file.png'
+        with mock.patch('website.search.file_util.build_file_document', return_value=self.fake_file_doc_one):
+            search.update_file(self.fake_file_doc_one['name'],
+                               self.fake_file_doc_one['path'],
+                               self.mock_addon)
             time.sleep(1)
             res = query('test')['results']
             assert_equal(len(res), 0)
@@ -832,14 +844,16 @@ class TestDeleteFiles(SearchTestCase):
             'name': 't_one.txt',
             'path': '/000000001',
             'content': 'this is a test file.',
-            'parent_id': self.parent_project._id
+            'parent_id': self.parent_project._id,
+            'size': 1000,
         }
         self.fake_file_doc_two = {
             'id': 'bbbbb',
             'name': 't_two.txt',
             'path': '/000000002',
             'content': 'the rain in spain rains mainly on the plain',
-            'parent_id': self.parent_project._id
+            'parent_id': self.parent_project._id,
+            'size': 1000,
         }
 
         self.file_list = [
@@ -954,6 +968,7 @@ class TestIndexFiles(SearchTestCase):
                 'path': path,
                 'content': content,
                 'parent_id': self.parent_project._id,
+                'size': 1000,
             }
 
     def test_index_txt_file(self):

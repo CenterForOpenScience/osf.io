@@ -33,6 +33,7 @@ class IndexFileTestCase(unittest.TestCase):
         self.FILE_TREE['children'].append({'type': 'file',
                                            'name': name,
                                            'path': path,
+                                           'size': 1000,
                                            })
 
     def _reset_files(self):
@@ -62,7 +63,7 @@ class TestCollectFiles(OsfTestCase, IndexFileTestCase):
         self._add_file('file_one.txt', '/file_one')
         for file_ in collect_files(self.fake_project_with_addon):
             assert_equal(file_['name'], 'file_one.txt')
-            assert_equal(file_['path'], '/file_one')
+            assert_equal(file_['path'], 'file_one')
 
     def test_collect_multiple_files(self):
         self._add_file('file_one.txt', '/file_one')
