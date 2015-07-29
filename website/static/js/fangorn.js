@@ -1446,6 +1446,7 @@ var FGItemButtons = {
         var item = args.item;
         var rowButtons = [];
         var mode = args.mode;
+
         if (window.File && window.FileReader && item.kind === 'folder' && item.data.provider && item.data.permissions && item.data.permissions.edit) {
             rowButtons.push(
                 m.component(FGButton, {
@@ -1477,14 +1478,58 @@ var FGItemButtons = {
                     className : 'text-primary'
                 }, 'Download')
             );
-            if (item.data.permissions && item.data.permissions.edit) {
+            if (item.data.permissions && item.data.permissions.edit && (item.data.extra.renter === '')) {
                 rowButtons.push(
                     m.component(FGButton, {
-                        onclick: function(event) { _removeEvent.call(tb, event, [item]); },
+                        onclick: function(event) { _removeEvent.call(tb, event, [item]);  },
                         icon: 'fa fa-trash',
                         className : 'text-danger'
                     }, 'Delete'));
+                if (item.data.provider === 'osfstorage') {
+                    rowButtons.push(
+                        m.component(FGButton, {
+                            onclick: function(event) {
+                                $osf.postJSON(
+                                     item.data.nodeApiUrl + 'osfstorage' + item.data.path +'/rent/',
+                                    {
+                                        'end_date': 'week',
+                                    }
+                                ).done(function(resp) {
+                                    if (resp.status === 'success') {
+                                        window.location.reload();
+                                    } else {
+                                        $osf.growl('Error', 'Unable to lock file.');
+                                    }
+                                }).fail(function(resp) {
+                                    $osf.growl('Error', 'Unable to lock file.');
+                                });
+                            },
+                            icon: 'fa fa-lock',
+                            className : 'text-warning'
+                        }, 'Lock file'));
+                }
 
+            }
+            if (item.data.permissions && item.data.permissions.edit && (item.data.extra.renter === window.contextVars.currentUser.id) && item.data.provider === 'osfstorage') {
+                rowButtons.push(
+                    m.component(FGButton, {
+                        onclick: function(event) {
+                            $osf.postJSON(
+                                 item.data.nodeApiUrl + 'osfstorage' + item.data.path +'/return/',
+                                {}
+                            ).done(function(resp) {
+                                if (resp.status === 'success') {
+                                    window.location.reload();
+                                } else {
+                                    $osf.growl('Error', 'Unable to unlock file.');
+                                }
+                            }).fail(function(resp) {
+                                $osf.growl('Error', 'Unable to unlock file.');
+                            });
+                        },
+                        icon: 'fa fa-unlock',
+                        className : 'text-warning'
+                    }, 'Unlock file'));
             }
             if (item.data.permissions && item.data.permissions.view) {
                 rowButtons.push(
