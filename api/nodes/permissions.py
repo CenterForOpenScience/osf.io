@@ -52,18 +52,8 @@ class Contributor(permissions.BasePermission):
             return node.is_public or node.can_view(auth)
         elif request.method == 'DELETE':
             return is_admin or is_current_user
-        elif request.method == 'PUT':
-            return self.put_permission_check(node, user, is_admin, is_current_user)
         else:
-            return False
-
-    def put_permission_check(self, node, user, is_admin, is_current):
-        if is_admin:
-            return True
-        elif len(node.get_permissions(user)) > 1 and is_current:
-            return True
-        else:
-            return False
+            return is_admin
 
 
 class ContributorOrPublicForPointers(permissions.BasePermission):
