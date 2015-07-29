@@ -28,17 +28,21 @@ class UserMixin(object):
 
 class UserIncludeMixin(object):
 
-    def get_user_nodes_meta_data(self, obj):
-        included = False
+    def get_user_nodes_meta_data(self, obj, object_name):
+        include = False
         query_parmas = self.request.query_params
         if 'include' in query_parmas:
-            if query_parmas['include'] != 'nodes' or None:
-                raise ValidationError
-            elif query_parmas['include'] == 'nodes':
-                included = True
-        return self.get_node_data(obj, included)
+            additional_query_params = query_parmas['include']
+            if additional_query_params == 'nodes':
+                include = True
+            elif additional_query_params is not None:
+                invalid_params = additional_query_params.split(',')
+                if 'node' in invalid_params:
+                    invalid_params.remove('node')
+                raise ValidationError('{} are not valid parameters.'.format(invalid_params))
+        return self.get_node_data(obj, include)
 
-    def get_node_data(self, obj, included):
+    def get_node_data(self, obj, include):
         ret = {}
         auth = Auth(self.request.user)
         query = (
@@ -49,11 +53,11 @@ class UserIncludeMixin(object):
         raw_nodes = Node.find(query)
         nodes = [each for each in raw_nodes if each.is_public or each.can_view(auth)]
         ret['count'] = len(nodes)
-        if included:
+        if include:
             ret['data'] = []
             for node in nodes:
-                serialized_node = NodeSerializer(node, context={'view': NodeIncludeMixin('contributors')})
-                ret['data'].append(serialized_node.data)
+                serialized_node = NodeSerializer(node)
+                ret['data'].append(serialized_node.data['data'])
         return ret
 
 
