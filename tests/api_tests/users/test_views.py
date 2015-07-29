@@ -208,3 +208,153 @@ class TestUserNodes(ApiTestCase):
         assert_not_in(self.private_project_user_two._id, ids)
         assert_not_in(self.folder._id, ids)
         assert_not_in(self.deleted_project_user_one._id, ids)
+
+
+class TestUserNodes(ApiTestCase):
+
+    def setUp(self):
+        super(TestUserNodes, self).setUp()
+        self.user_one = UserFactory.build()
+        self.user_one.set_password('justapoorboy')
+        self.user_one.social['twitter'] = 'howtopizza'
+        self.user_one.save()
+        self.auth_one = (self.user_one.username, 'justapoorboy')
+        self.user_two = UserFactory.build()
+        self.user_two.set_password('justapoorboy')
+        self.user_two.save()
+        self.auth_two = (self.user_two.username, 'justapoorboy')
+        self.public_project_user_one = ProjectFactory(title="Public Project User One",
+                                                      is_public=True,
+                                                      creator=self.user_one)
+        self.private_project_user_one = ProjectFactory(title="Private Project User One",
+                                                       is_public=False,
+                                                       creator=self.user_one)
+        self.public_project_user_two = ProjectFactory(title="Public Project User Two",
+                                                      is_public=True,
+                                                      creator=self.user_two)
+        self.private_project_user_two = ProjectFactory(title="Private Project User Two",
+                                                       is_public=False,
+                                                       creator=self.user_two)
+        self.deleted_project_user_one = FolderFactory(title="Deleted Project User One",
+                                                      is_public=False,
+                                                      creator=self.user_one,
+                                                      is_deleted=True)
+        self.folder = FolderFactory()
+        self.deleted_folder = FolderFactory(title="Deleted Folder User One",
+                                            is_public=False,
+                                            creator=self.user_one,
+                                            is_deleted=True)
+        self.dashboard = DashboardFactory()
+
+    def tearDown(self):
+        super(TestUserNodes, self).tearDown()
+        Node.remove()
+
+    def test_authorized_in_gets_200(self):
+        url = "/{}users/{}/nodes/".format(API_BASE, self.user_one._id)
+        res = self.app.get(url, auth=self.auth_one)
+        assert_equal(res.status_code, 200)
+        assert_equal(res.content_type, 'application/vnd.api+json')
+
+    def test_anonymous_gets_200(self):
+        url = "/{}users/{}/nodes/".format(API_BASE, self.user_one._id)
+        res = self.app.get(url)
+        assert_equal(res.status_code, 200)
+        assert_equal(res.content_type, 'application/vnd.api+json')
+
+    def test_get_projects_logged_in(self):
+        url = "/{}users/{}/nodes/".format(API_BASE, self.user_one._id)
+        res = self.app.get(url, auth=self.auth_one)
+        node_json = res.json['data']
+
+        ids = [each['id'] for each in node_json]
+        assert_in(self.public_project_user_one._id, ids)
+        assert_in(self.private_project_user_one._id, ids)
+        assert_not_in(self.public_project_user_two._id, ids)
+        assert_not_in(self.private_project_user_two._id, ids)
+        assert_not_in(self.folder._id, ids)
+        assert_not_in(self.deleted_folder._id, ids)
+        assert_not_in(self.deleted_project_user_one._id, ids)
+
+    def test_get_projects_not_logged_in(self):
+        url = "/{}users/{}/nodes/".format(API_BASE, self.user_one._id)
+        res = self.app.get(url)
+        node_json = res.json['data']
+
+        ids = [each['id'] for each in node_json]
+        assert_in(self.public_project_user_one._id, ids)
+        assert_not_in(self.private_project_user_one._id, ids)
+        assert_not_in(self.public_project_user_two._id, ids)
+        assert_not_in(self.private_project_user_two._id, ids)
+        assert_not_in(self.folder._id, ids)
+        assert_not_in(self.deleted_project_user_one._id, ids)
+
+    def test_get_projects_logged_in_as_different_user(self):
+        url = "/{}users/{}/nodes/".format(API_BASE, self.user_two._id)
+        res = self.app.get(url, auth=self.auth_one)
+        node_json = res.json['data']
+
+        ids = [each['id'] for each in node_json]
+        assert_in(self.public_project_user_two._id, ids)
+        assert_not_in(self.public_project_user_one._id, ids)
+        assert_not_in(self.private_project_user_one._id, ids)
+        assert_not_in(self.private_project_user_two._id, ids)
+        assert_not_in(self.folder._id, ids)
+        assert_not_in(self.deleted_project_user_one._id, ids)
+
+
+class TestUserIncludeQueryParameters(ApiTestCase):
+
+    def setUp(self):
+        super(TestUserIncludeQueryParameters, self).setUp()
+        self.user = UserFactory.build()
+        self.user.set_password('justapoorboy')
+        self.user.save()
+        self.auth_one = (self.user.username, 'justapoorboy')
+
+        self.project = ProjectFactory.build(title='project', is_public=True, creator=self.user)
+        self.project.save()
+
+        self.user_base_url = '/{}users/'.format(API_BASE, self.user._id)
+        self.contributor_base_url = '/{}nodes/{}/contributors/'.format(API_BASE, self.project._id)
+
+    def test_get_detail_invalid_key(self):
+        url = self.user_base_url+'?include=nope'
+        res = self.app.get(url, expect_errors=True)
+        assert_equal(res.status_code, 400)
+
+    def test_get_list_include_values(self):
+        url = self.user_base_url+'?include=nodes'
+        res = self.app.get(url)
+        assert_equal(res.status_code, 200)
+        node_list = res.json['data'][0]['relationships']['nodes']['links']['meta']['list']
+        node_in_list = False
+        for node in node_list:
+            if node['data']['id'] == self.project._id:
+                node_in_list = True
+                break
+        assert_true(node_in_list)
+
+    def test_get_detail_include_values(self):
+        url = self.user_base_url+'{}/?include=nodes'.format(self.user._id)
+        res = self.app.get(url)
+        assert_equal(res.status_code, 200)
+        node_list = res.json['data']['relationships']['nodes']['links']['meta']['list']
+        node_in_list = False
+        for node in node_list:
+            if node['data']['id'] == self.project._id:
+                node_in_list = True
+                break
+        assert_true(node_in_list)
+
+    def test_get_node_contributors_include_values(self):
+        url = self.contributor_base_url+'?include=nodes'
+        res = self.app.get(url)
+        assert_equal(res.status_code, 200)
+        node_list = res.json['data'][0]['relationships']['nodes']['links']['meta']['list']
+        node_in_list = False
+        for node in node_list:
+            if node['data']['id'] == self.project._id:
+                node_in_list = True
+                break
+        assert_true(node_in_list)
