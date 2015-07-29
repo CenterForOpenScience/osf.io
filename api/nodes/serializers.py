@@ -232,6 +232,8 @@ class NodeContributorsSerializer(JSONAPISerializer):
         else:
             raise ValidationError('Must have at least one admin contributor')
 
+        node.save()
+
 
 class NodeContributorDetailSerializer(NodeContributorsSerializer):
 
