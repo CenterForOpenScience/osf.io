@@ -2326,6 +2326,8 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
             if save:
                 self.save()
 
+            project_signals.contributor_added.send(self, contributor=contributor)
+
             return True
 
         #Permissions must be overridden if changed when contributor is added to parent he/she is already on a child of.
@@ -2347,12 +2349,10 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         :param save: Save after adding contributor
         """
         for contrib in contributors:
-            added = self.add_contributor(
+            self.add_contributor(
                 contributor=contrib['user'], permissions=contrib['permissions'],
                 visible=contrib['visible'], auth=auth, log=False, save=False,
             )
-            if added:
-                project_signals.contributor_added.send(self, contributor=contrib['user'])
         if log and contributors:
             self.add_log(
                 action=NodeLog.CONTRIB_ADDED,
