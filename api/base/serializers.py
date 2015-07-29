@@ -22,19 +22,20 @@ def _url_val(val, obj, serializer, **kwargs):
     schema.
     """
     if isinstance(val, Link):  # If a Link is passed, get the url value
-        ret = {}
-        ret['href'] = val.resolve_url(obj, **kwargs)
-        if val.query:
-            ret['meta'] = val.query
+        data = {
+            'href': val.resolve_url(obj, **kwargs)
+        }
+        query = val.query
+        if query:
+            meta = getattr(serializer, 'get_objects_data')(obj, query)
+            if meta:
+                data['meta'] = meta
+        ret = {
+            'links': {
+                'related': data
+            }
+        }
         return ret
-    elif isinstance(val, basestring):  # if a string is passed, it's a method of the serializer
-        data = val.split(':', 1)  # if string includes ':', then everything after the colon is made into an argument
-        method = data[0]
-        argument = data[1] if len(data) > 1 else None
-        if argument:
-            return getattr(serializer, method)(obj, argument)
-        else:
-            return getattr(serializer, method)(obj)
     else:
         return val
 
@@ -126,6 +127,9 @@ class Link(object):
         self.args = args or tuple()
         self.reverse_kwargs = kw
         self.query_kwargs = query_kwargs or {}
+
+    def __repr__(self):
+        return self.query
 
     def resolve_url(self, obj):
         kwarg_values = {key: _get_attr_from_tpl(attr_tpl, obj) for key, attr_tpl in self.kwargs.items()}
