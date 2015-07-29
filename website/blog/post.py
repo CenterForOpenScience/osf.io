@@ -1,6 +1,7 @@
 from file_handler import FileHandler
 from website.models import User
 from website.profile.utils import get_gravatar
+from website.addons import signals
 import subprocess
 
 
@@ -91,3 +92,8 @@ def parse_posts(posts, guid):
 
 def _md(content):
     return subprocess.check_output(["/usr/local/bin/node", "website/static/js/pages/blog.js", content])
+
+@signals.blog_change.connect
+def _blog_change(*args, **kwargs):
+    dict = parse_header(args[0], args[0].node)
+    print dict

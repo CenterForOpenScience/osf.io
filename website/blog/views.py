@@ -6,7 +6,8 @@ import post
 from file_handler import FileHandler
 from render import Renderer
 from HTMLParser import HTMLParser
-import ghostpy._compiler as compiler
+# import ghostpy._compiler as compiler
+import compiler
 
 from website.models import User, Node
 from website.util import rubeus

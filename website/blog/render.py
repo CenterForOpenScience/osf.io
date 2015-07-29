@@ -1,5 +1,7 @@
-from ghostpy import Compiler
-from ghostpy._compiler import _ghostpy_
+# from ghostpy import Compiler
+# from ghostpy._compiler import _ghostpy_
+from compiler import Compiler
+from compiler import _ghostpy_
 
 class Renderer:
 

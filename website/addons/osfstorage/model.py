@@ -20,7 +20,6 @@ from website.addons.osfstorage import utils
 from website.addons.osfstorage import errors
 from website.addons.osfstorage import settings
 
-
 logger = logging.getLogger(__name__)
 
 

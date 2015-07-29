@@ -19,6 +19,7 @@ from website.project.decorators import (
 from website.util import rubeus
 from website.project.model import has_anonymous_link
 
+from website.addons import signals
 from website.addons.osfstorage import model
 from website.addons.osfstorage import utils
 from website.addons.osfstorage import decorators
@@ -173,6 +174,8 @@ def osfstorage_create_child(file_node, payload, node_addon, **kwargs):
         version_id = None
         archive_exists = False
 
+    # if parent.name == "Blog":
+    #     signals.blog_change.send(file_node, user=user)
     return {
         'status': 'success',
         'archive': not archive_exists,  # Should waterbutler also archive this file
