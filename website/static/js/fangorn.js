@@ -1135,7 +1135,7 @@ function _connectCheckTemplate(item){
     var tb = this;
     return m('span.text-danger', [
         m('span', item.data.name),
-        m('em', ' could\'t load.' ),
+        m('em', ' couldn\'t load.' ),
         m('button.btn.btn-xs.btn-default.m-l-xs', {
             onclick : function(e){
                 e.stopImmediatePropagation();
