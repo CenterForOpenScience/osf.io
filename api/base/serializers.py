@@ -151,20 +151,18 @@ class Link(object):
         return ret
 
     def serialize_included_queries(self, query, serializer, obj):
-        if hasattr(obj, query):
-            module_location = self.endpoint.split(':')[0]
-            module_name = 'api.{}.{}'.format(module_location, 'views')
-            module = __import__(module_name)
+        api_base = __import__('api')
+        nodes_or_users = self.endpoint.split(':')[0]
+        module_location = getattr(api_base, nodes_or_users)
+        module = getattr(module_location, 'views')
 
-            class_name_params = self.endpoint.split(':')[1].split('-')
-            class_name = ''
-            for class_param in class_name_params:
-                class_param = class_param[0].capitalize() + class_param[1:]
-                class_name += class_param
-            class_name += 'List'
-            class_ = getattr(module, class_name)
-        else:
-            return query
+        class_name_params = self.endpoint.split(':')[1].split('-')
+        class_name = ''
+        for class_param in class_name_params:
+            class_param = class_param[0].capitalize() + class_param[1:]
+            class_name += class_param
+        class_name += 'List'
+        class_ = getattr(module, class_name)
 
     def resolve_url(self, obj):
         kwarg_values = {key: _get_attr_from_tpl(attr_tpl, obj) for key, attr_tpl in self.kwargs.items()}
