@@ -1,6 +1,5 @@
 import httplib
 import functools
-import datetime
 
 from modularodm.exceptions import NoResultsFound
 from modularodm.storage.base import KeyExistsException

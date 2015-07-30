@@ -3,7 +3,6 @@ from __future__ import unicode_literals
 import os
 import bson
 import logging
-import datetime
 import furl
 
 from modularodm import fields, Q

@@ -2,7 +2,6 @@ from __future__ import unicode_literals
 
 import httplib
 import logging
-import datetime
 
 from modularodm import Q
 from modularodm.storage.base import KeyExistsException
