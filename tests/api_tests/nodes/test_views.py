@@ -2,15 +2,15 @@
 import datetime
 import mock
 import urlparse
+import datetime as dt
 from nose.tools import *  # flake8: noqa
-
 from website.models import Node
 from framework.auth.core import Auth
 from website.util.sanitize import strip_html
 from api.base.settings.defaults import API_BASE
 from website.settings import API_DOMAIN
 
-from tests.base import ApiTestCase, fake
+from tests.base import ApiTestCase, fake, assert_datetime_equal
 from tests.factories import (
     DashboardFactory,
     FolderFactory,
@@ -1358,21 +1358,31 @@ class TestNodeLogList(ApiTestCase):
         self.public_project = ProjectFactory(is_public=True, creator=self.user)
         self.public_url = '/{}nodes/{}/logs/'.format(API_BASE, self.public_project._id)
 
+    def assert_datetime_equal(dt1, dt2, allowance=500):
+        assert_less(dt1 - dt2, dt.timedelta(milliseconds=allowance))
+
+
     def test_log_create_on_public_project(self):
+        datetime.datetime.strptime('2015-07-28 21:06:34.965114','%Y-%m-%d %H:%M:%S.%f')
+        date_str = "2008-11-10 17:53:59"
+        dt_obj = datetime.datetime.strptime(date_str, "%Y-%m-%d %H:%M:%S")
+        print repr(dt_obj)
         res = self.app.get(self.public_url)
         assert_equal(res.status_code, 200)
-        assert_equal(len(res.json['data']), 1)
+        (len(res.json['data']), 1)
+        assert_datetime_equal(datetime.datetime.strptime(res.json['data'][0]['date'], "%Y-%m-%dT%H:%M:%S.%f"),
+                              self.public_project.logs[0].date)
         assert_equal(res.json['data'][0]['id'], self.public_project.logs[0]._id)
         assert_equal(res.json['data'][0]['action'], self.public_project.logs[0].action)
         assert_equal(res.json['data'][0]['version'], self.public_project._version)
         assert_equal(res.json['data'][0]['name'], self.public_project.logs[0]._name)
 
-
     def test_log_create_on_private_project(self):
-        now = datetime.datetime.utcnow()
         res = self.app.get(self.public_url)
         assert_equal(res.status_code, 200)
         assert_equal(len(res.json['data']), 1)
+        assert_datetime_equal(datetime.datetime.strptime(res.json['data'][0]['date'], "%Y-%m-%dT%H:%M:%S.%f"),
+                              self.private_project.logs[0].date)
         assert_equal(res.json['data'][0]['id'], self.public_project.logs[0]._id)
         assert_equal(res.json['data'][0]['action'], self.private_project.logs[0].action)
         assert_equal(res.json['data'][0]['version'], self.private_project.logs[0]._version)

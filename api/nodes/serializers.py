@@ -200,7 +200,7 @@ class NodeFilesSerializer(JSONAPISerializer):
 
 
 class NodeLogSerializer(JSONAPISerializer):
-    date = ser.DateTimeField(read_only=True, )
+    date = ser.DateTimeField(read_only=True)
     id = ser.CharField(read_only=True, source='_id')
     action = ser.CharField(read_only=True)
     version = ser.IntegerField(read_only=True, source='_version')
