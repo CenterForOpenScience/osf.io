@@ -133,12 +133,7 @@ class Link(object):
 
     def get_links(self, query, serializer, url, obj):
         context = serializer.context
-        meta = {}
-        meta['count'] = 5000000000
-        if 'request' in context and 'include' in context['request'].query_params:
-            additional_query_params = serializer.context['request'].query_params['include']
-            if query in additional_query_params:
-                meta['data'] = self.serialize_included_queries(query, serializer, obj)
+        meta = self.get_meta(query, serializer, obj, context)
         ret = {
             'links': {
                 'related': {
@@ -149,7 +144,7 @@ class Link(object):
         }
         return ret
 
-    def serialize_included_queries(self, query, serializer, obj):
+    def get_meta(self, query,  serializer, obj, context):
         api_base = __import__('api')
         nodes_or_users = self.endpoint.split(':')[0]
         module_location = getattr(api_base, nodes_or_users)
@@ -165,13 +160,21 @@ class Link(object):
 
         if nodes_or_users == 'nodes':
             instance = class_(kwargs={'node_id': obj._id})
-            instance.request = serializer.context['request']
-            queryset = instance.get_queryset()
-        else:
-            instance = None
-            queryset = None
 
-        return instance.serializer_class(queryset, many=True).data
+        else:
+            instance = class_(kwargs={'user_id': obj._id})
+        instance.request = serializer.context['request']
+        queryset = instance.get_queryset()
+        serialized_objects = instance.serializer_class(queryset, many=True).data
+
+        meta = {}
+        meta['count'] = len(serialized_objects)
+        if 'request' in context and 'include' in context['request'].query_params:
+            additional_query_params = serializer.context['request'].query_params['include']
+            if query in additional_query_params:
+                meta['data'] = serialized_objects
+
+        return meta
 
     def resolve_url(self, obj):
         kwarg_values = {key: _get_attr_from_tpl(attr_tpl, obj) for key, attr_tpl in self.kwargs.items()}
