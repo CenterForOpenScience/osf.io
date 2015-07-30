@@ -175,77 +175,96 @@ h6 {
 #logo .circle:hover:after {
     bottom: -5px;
 }
+
 #logo.off {
-    transform: rotate(180deg);
-    -webkit-transform: rotate(180deg);
+  -webkit-transform: rotate(180deg);
+  -ms-transform: rotate(180deg);
+  -o-transform: rotate(180deg);
+  transform: rotate(180deg);
 }
 #logo.off .circle:before {
-    top: -200px;
-    opacity: 0;
+  top: -200px;
+  opacity: 0;
 }
 #logo.off .circle:after {
-    bottom: 200px;
-    opacity: 0;
+  bottom: 200px;
+  opacity: 0;
 }
 #logo #circle-1 {
-    transform: rotate(0deg);
-    -webkit-transform: rotate(0deg);
-    left: 75px;
-    top: 0;
+  -webkit-transform: rotate(0deg);
+  -ms-transform: rotate(0deg);
+  -o-transform: rotate(0deg);
+  transform: rotate(0deg);
+  left: 75px;
+  top: 0;
 }
 #logo #circle-2 {
-    transform: rotate(45deg);
-    -webkit-transform: rotate(45deg);
-    left: 128px;
-    top: 22px;
+  -webkit-transform: rotate(45deg);
+  -ms-transform: rotate(45deg);
+  -o-transform: rotate(45deg);
+  transform: rotate(45deg);
+  left: 128px;
+  top: 22px;
 }
 #logo #circle-2:after {
-    z-index: -1;
+  z-index: -1;
 }
 #logo #circle-3 {
-    transform: rotate(90deg);
-    -webkit-transform: rotate(90deg);
-    left: 150px;
-    top: 75px;
+  -webkit-transform: rotate(90deg);
+  -ms-transform: rotate(90deg);
+  -o-transform: rotate(90deg);
+  transform: rotate(90deg);
+  left: 150px;
+  top: 75px;
 }
 #logo #circle-4 {
-    transform: rotate(135deg);
-    -webkit-transform: rotate(135deg);
-    left: 128px;
-    top: 128px;
+  -webkit-transform: rotate(135deg);
+  -ms-transform: rotate(135deg);
+  -o-transform: rotate(135deg);
+  transform: rotate(135deg);
+  left: 128px;
+  top: 128px;
 }
 #logo #circle-4:after {
-    z-index: -1;
+  z-index: -1;
 }
 #logo #circle-5 {
-    transform: rotate(180deg);
-    -webkit-transform: rotate(180deg);
-    left: 75px;
-    top: 150px;
+  -webkit-transform: rotate(180deg);
+  -ms-transform: rotate(180deg);
+  -o-transform: rotate(180deg);
+  transform: rotate(180deg);
+  left: 75px;
+  top: 150px;
 }
 #logo #circle-6 {
-    transform: rotate(225deg);
-    -webkit-transform: rotate(225deg);
-    left: 22px;
-    top: 128px;
+  -webkit-transform: rotate(225deg);
+  -ms-transform: rotate(225deg);
+  -o-transform: rotate(225deg);
+  transform: rotate(225deg);
+  left: 22px;
+  top: 128px;
 }
 #logo #circle-6:after {
-    z-index: -1;
+  z-index: -1;
 }
 #logo #circle-7 {
-    transform: rotate(270deg);
-    -webkit-transform: rotate(270deg);
-    left: 0;
-    top: 75px;
+  -webkit-transform: rotate(270deg);
+  -ms-transform: rotate(270deg);
+  -o-transform: rotate(270deg);
+  transform: rotate(270deg);
+  left: 0;
+  top: 75px;
 }
 #logo #circle-8 {
-    transform: rotate(315deg);
-    -webkit-transform: rotate(315deg);
-    left: 22px;
-    top: 22px;
+  -webkit-transform: rotate(315deg);
+  -ms-transform: rotate(315deg);
+  -o-transform: rotate(315deg);
+  transform: rotate(315deg);
+  left: 22px;
+  top: 22px;
 }
 #logo #circle-8:after {
-    z-index: -1;
+  z-index: -1;
 }
 .student-image {
     width: 90%;
