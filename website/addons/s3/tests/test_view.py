@@ -53,6 +53,34 @@ class TestS3ViewsConfig(OsfTestCase):
         super(TestS3ViewsConfig, self).tearDown()
         self.patcher.stop()
 
+    def test_s3_settings_input_empty_keys(self):
+        url = self.project.api_url_for('s3_post_user_settings')
+        rv = self.app.post_json(url,{
+            'access_key': '',
+            'secret_key': ''
+        }, auth=self.user.auth, expect_errors=True)
+        assert_equals(rv.status_int, http.BAD_REQUEST)
+        assert_in('All the fields above are required.', rv.body)
+
+    def test_s3_settings_input_empty_access_key(self):
+        url = self.project.api_url_for('s3_post_user_settings')
+        rv = self.app.post_json(url,{
+            'access_key': '',
+            'secret_key': 'Non-empty-secret-key'
+        }, auth=self.user.auth, expect_errors=True)
+        assert_equals(rv.status_int, http.BAD_REQUEST)
+        assert_in('All the fields above are required.', rv.body)
+
+
+    def test_s3_settings_input_empty_secret_key(self):
+        url = self.project.api_url_for('s3_post_user_settings')
+        rv = self.app.post_json(url,{
+            'access_key': 'Non-empty-access-key',
+            'secret_key': ''
+        }, auth=self.user.auth, expect_errors=True)
+        assert_equals(rv.status_int, http.BAD_REQUEST)
+        assert_in('All the fields above are required.', rv.body)
+
     def test_s3_settings_no_bucket(self):
         rv = self.app.post_json(
             self.project.api_url_for('s3_post_node_settings'),
@@ -322,6 +350,36 @@ class TestS3ViewsConfig(OsfTestCase):
         }
         res = self.app.post_json(url, cred, auth=self.user.auth, expect_errors=True)
         assert_in('Unable to list buckets', res.json['message'])
+        assert_equal(res.status_code, 400)
+
+    def test_s3_authorize_input_empty_keys(self):
+        url = self.project.api_url_for('s3_authorize_node')
+        cred = {
+            'access_key': '',
+            'secret_key': '',
+        }
+        res = self.app.post_json(url, cred, auth=self.user.auth, expect_errors=True)
+        assert_in('All the fields above are required', res.json['message'])
+        assert_equal(res.status_code, 400)
+
+    def test_s3_authorize_input_empty_access_key(self):
+        url = self.project.api_url_for('s3_authorize_node')
+        cred = {
+            'access_key': '',
+            'secret_key': 'Non-empty-secret-key',
+        }
+        res = self.app.post_json(url, cred, auth=self.user.auth, expect_errors=True)
+        assert_in('All the fields above are required', res.json['message'])
+        assert_equal(res.status_code, 400)
+
+    def test_s3_authorize_input_empty_secret_key(self):
+        url = self.project.api_url_for('s3_authorize_node')
+        cred = {
+            'access_key': 'Non-empty-access-key',
+            'secret_key': '',
+        }
+        res = self.app.post_json(url, cred, auth=self.user.auth, expect_errors=True)
+        assert_in('All the fields above are required', res.json['message'])
         assert_equal(res.status_code, 400)
 
     @mock.patch('website.addons.s3.views.config.utils.can_list', return_value=True)
