@@ -10,7 +10,7 @@ var $osf = require('js/osfHelpers');
 
 var node = window.contextVars.node;
 
-var NO_FILE = 'no file selected';
+var NO_FILE = 'No file selected';
 
 var limitOsfStorage = function(item) {
     if (item.data.provider !== undefined && item.data.provider !== 'osfstorage') {
