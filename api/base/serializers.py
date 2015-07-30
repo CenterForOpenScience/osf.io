@@ -31,6 +31,7 @@ def _url_val(val, obj, serializer, **kwargs):
         if query == 'parent':
             return {'links': {'self': val.resolve_url(obj)}}
         if query:
+            return val.get_meta(query, serializer)
             meta = getattr(serializer, 'get_objects_data')(obj, query)
             if meta:
                 data['meta'] = meta
@@ -134,6 +135,26 @@ class Link(object):
 
     def __repr__(self):
         return self.query
+
+    def get_meta(self, query, serializer):
+        context = serializer.context
+        meta = {}
+        meta['count'] = 5000000000
+        if 'request' in context and 'include' in context['request'].query_params:
+            additional_query_params = serializer.context['request'].query_params['include']
+            if query in additional_query_params:
+                meta['data'] = self.serialize_included_objects(query)
+        ret = {
+            'links': {
+                'related': {
+                    'meta': meta
+                }
+            }
+        }
+        return ret
+
+    def serializer_included_objects(self, query):
+        return query
 
     def resolve_url(self, obj):
         kwarg_values = {key: _get_attr_from_tpl(attr_tpl, obj) for key, attr_tpl in self.kwargs.items()}
