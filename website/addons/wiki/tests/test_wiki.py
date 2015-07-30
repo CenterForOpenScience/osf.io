@@ -1135,21 +1135,33 @@ class TestPublicWiki(OsfTestCase):
 
     def test_set_editing(self):
         parent = ProjectFactory()
-        node = NodeFactory(parent=parent, category='project')
+        node = NodeFactory(parent=parent, category='project', is_public=True)
         wiki = node.get_addon('wiki')
+        # Set as publicly editable
         wiki.set_editing(True, self.consolidate_auth, True)
         assert_true(wiki.is_publicly_editable)
         assert_equal(node.logs[-1].action, 'made_wiki_public')
+        # Try to set public when the wiki is already public
+        with assert_raises(NodeStateError):
+            wiki.set_editing(True, self.consolidate_auth)
+        # Turn off public editing
         wiki.set_editing(False, self.consolidate_auth, True)
         assert_false(wiki.is_publicly_editable)
         assert_equal(node.logs[-1].action, 'made_wiki_private')
 
-        # If you try to set to private if it is already private
+        node = NodeFactory(parent=parent, category='project')
+        wiki = node.get_addon('wiki')
+
+        # Try to set to private wiki already private
         with assert_raises(NodeStateError):
-            wiki.set_editing(False, self.consolidate_auth, True)
+            wiki.set_editing(False, self.consolidate_auth)
+
+        # Try to set public when the project is private
+        with assert_raises(NodeStateError):
+            wiki.set_editing(True, self.consolidate_auth)
 
     def test_serialize_wiki_settings(self):
-        node = NodeFactory(parent=self.project, creator=self.user)
+        node = NodeFactory(parent=self.project, creator=self.user, is_public=True)
         node.get_addon('wiki').set_editing(
             True, self.consolidate_auth, True)
         data = serialize_wiki_settings(self.user, [node._id])

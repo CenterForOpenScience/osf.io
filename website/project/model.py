@@ -2449,6 +2449,23 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
             self.save()
         return True
 
+    def admin_public_wiki(self, user):
+        return (
+            self.has_addon('wiki') and
+            self.has_permission(user, 'admin') and
+            self.is_public
+        )
+
+    def include_wiki_settings(self, user):
+        """Check if node meets requirements to make publicly editable."""
+        return (
+            self.admin_public_wiki(user) or
+            any(
+                each.admin_public_wiki(user)
+                for each in self.get_descendants_recursive()
+            )
+        )
+
     # TODO: Move to wiki add-on
     def get_wiki_page(self, name=None, version=None, id=None):
         from website.addons.wiki.model import NodeWikiPage

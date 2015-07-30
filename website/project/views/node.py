@@ -290,12 +290,6 @@ def node_setting(auth, node, **kwargs):
 
     addon_enabled_settings = sorted(addon_enabled_settings, key=lambda addon: addon['addon_full_name'].lower())
 
-    admin_on_wiki = (
-        lambda x: x.has_addon('wiki')
-                  and x.has_permission(auth.user, 'admin')
-                  and x.is_public
-    )
-
     ret['addon_categories'] = settings.ADDON_CATEGORIES
     ret['addons_available'] = sorted([
         addon
@@ -305,11 +299,7 @@ def node_setting(auth, node, **kwargs):
     ], key=lambda addon: addon.full_name.lower())
 
     ret['addons_enabled'] = addons_enabled
-    ret['include_wiki_settings'] = (
-        admin_on_wiki(node) or any(
-            (admin_on_wiki(each) for each in node.get_descendants_recursive())
-        )
-    )
+    ret['include_wiki_settings'] = node.include_wiki_settings(auth.user)
 
     ret['addon_enabled_settings'] = addon_enabled_settings
     ret['addon_capabilities'] = settings.ADDON_CAPABILITIES
