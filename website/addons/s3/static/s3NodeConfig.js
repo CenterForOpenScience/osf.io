@@ -203,9 +203,11 @@ ViewModel.prototype.createCredentials = function() {
         self.updateFromData(response);
     }).fail(function(xhr, status, error) {
         self.creatingCredentials(false);
-        var message = 'Could not add S3 credentials at ' +
-            'this time. Please refresh the page. If the problem persists, email ' +
-            '<a href="mailto:support@osf.io">support@osf.io</a>.';
+        var message = 'Error: ';
+        var response = JSON.parse(xhr.responseText);
+        if (response && response.message) {
+            message += response.message;
+        }
         self.changeMessage(message, 'text-danger');
         Raven.captureMessage('Could not add S3 credentials', {
             url: self.urls().importAuth,
