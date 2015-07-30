@@ -60,8 +60,8 @@
       <div class="col-md-12">
         <div class="form-group">
           <label class="control-label" data-bind="text: title"></label>
-          <p class="help-block" data-bind="text: description"></p>
-          <span class="example-block">
+          <p class="help-block" data-bind="text: description"></p>          
+          <span data-bind="if: help" class="example-block">
             <a data-bind="click: toggleExample">Show Example</a>
             <p data-bind="visible: showExample, text: help"></p>
           </span>

@@ -7,7 +7,7 @@
         "questions": {
             "item29": {
                 "type": "string",
-                "format": "textfield",
+                "format": "text",
                 "title": "The finalized materials, procedures, analysis plan etc of the replication are registered here",
                 "nav": "Finalized materials"
             }

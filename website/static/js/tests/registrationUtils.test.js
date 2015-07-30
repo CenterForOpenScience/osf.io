@@ -579,7 +579,7 @@ describe('RegistrationEditor', () => {
     var editor;
     var createUrl = faker.internet.ip();
     var updateUrl = faker.internet.ip() + '/{draft_pk}/';
-    beforeEach(() => {
+    before(() => {
         editor = new RegistrationEditor({
             create: createUrl,
             update: updateUrl
@@ -598,13 +598,18 @@ describe('RegistrationEditor', () => {
     });
     describe('#create', () => {        
         var postJSONStub;
+        var updateDataStub;
         before(() => {
             postJSONStub = sinon.stub($osf, 'postJSON', function() {
-                return $.Deferred();
+                var ret = $.Deferred();
+                ret.resolve();
+                return ret;                
             });
+            updateDataStub = sinon.stub(editor, 'updateData');
         });
         after(() => {
             $osf.postJSON.restore();
+            editor.updateData.restore();
         });
         it('POSTs to the create URL with the current draft state', (done) => {
             editor.create({}).always(function() {
@@ -625,13 +630,18 @@ describe('RegistrationEditor', () => {
     });
     describe('#save', () => {
         var putSaveDataStub;
-        before(() => {
+        var updateDataStub;
+        beforeEach(() => {
             putSaveDataStub = sinon.stub(editor, 'putSaveData', function() {
-                return $.Deferred();
-            });            
+                var ret = $.Deferred();
+                ret.resolve();
+                return ret;
+            });
+            updateDataStub = sinon.stub(editor, 'updateData');
         });
-        after(() => {
+        afterEach(() => {
             editor.putSaveData.restore();
+            editor.updateData.restore();
         });
         it('PUTs to the update URL with the current draft state', () => {
             var metaSchema = draft.metaSchema;

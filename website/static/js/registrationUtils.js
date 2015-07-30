@@ -167,7 +167,7 @@ var Question = function(data, id) {
     self.format = data.format || 'text';
     self.required = data.required || false;
     self.description = data.description || '';
-    self.help = data.help || 'no help text provided';
+    self.help = data.help;
     self.options = data.options || [];
     self.properties = data.properties || {};
     self.match = data.match || '';
@@ -652,11 +652,11 @@ RegistrationEditor.prototype.nextQuestion = function() {
     });
     if(index + 1 === questions.length) {
         self.currentQuestion(questions.shift());
-        self.viewComments();
+        //self.viewComments();
     }
     else {
         self.currentQuestion(questions[index + 1]);
-        self.viewComments();
+        //self.viewComments();
     }
 };
 /**
@@ -673,11 +673,11 @@ RegistrationEditor.prototype.previousQuestion = function() {
     });
     if(index - 1 < 0){
         self.currentQuestion(questions.pop());
-        self.viewComments();
+        //self.viewComments();
     }
     else {
         self.currentQuestion(questions[index - 1]);
-        self.viewComments();
+        //self.viewComments();
     }
 };
 /**
@@ -688,7 +688,7 @@ RegistrationEditor.prototype.selectPage = function(page) {
 
     var firstQuestion = page.questions[Object.keys(page.questions)[0]];
     self.currentQuestion(firstQuestion);
-    self.viewComments();
+    //self.viewComments();
 };
 /**
  * Update draft primary key and updated time on server response
@@ -791,22 +791,20 @@ RegistrationEditor.prototype.save = function() {
                 var value = {};
                 $.each(question.properties, function(prop, subQuestion) {
                     value[prop] = {
-                        value: subQuestion.value(),
-                        comments: ko.toJS(subQuestion.comments())
+                        value: subQuestion.value()
                     };
                 });
                 data[qid] = value;
             }
             else {
                 data[qid] = {
-                    value: question.value(),
-                    comments: ko.toJS(question.comments())
+                    value: question.value()
                 };
             }
         });
     });
 
-    if (!self.draft().pk){
+    if (typeof self.draft().pk === 'undefined'){
         self.create(self);
     }
     else{

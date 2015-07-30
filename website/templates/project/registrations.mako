@@ -12,7 +12,9 @@
 <div class="tab-content registrations-view">
   <div role="tabpanel" class="tab-pane active" id="registrations">
     <div class="row" style="min-height: 150px">
-      <h2> Registrations </h2>
+      <div class="col-md-9">
+        <h2> Registrations </h2>
+      </div>
       <div class="col-md-9">
         % if node["registration_count"]:
         <div mod-meta='{
@@ -47,7 +49,9 @@
   <div role="tabpanel" class="tab-pane" id="drafts">
     <div id="draftRegistrationScope" class="row" style="min-height: 150px">
       <div data-bind="visible: !preview()">
-        <h2> Draft Registrations </h2>
+        <div class="col-md-9">
+          <h2> Draft Registrations </h2>
+        </div>
         <div class="col-md-9">
           <div>
             % if 'admin' in user['permissions'] and not disk_saving_mode:
