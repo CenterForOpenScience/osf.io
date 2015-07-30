@@ -14,7 +14,7 @@ import datetime
 from nose.tools import *  # noqa PEP8 asserts
 from tests.test_features import requires_search
 
-from modularodm import Q
+from modularodm import Q, fields
 from dateutil.parser import parse as parse_date
 
 from framework import auth
@@ -56,11 +56,22 @@ from tests.factories import (
     UserFactory, ProjectFactory, WatchConfigFactory,
     NodeFactory, NodeLogFactory, AuthUserFactory, UnregUserFactory,
     RegistrationFactory, CommentFactory, PrivateLinkFactory, UnconfirmedUserFactory, DashboardFactory, FolderFactory,
-    ProjectWithAddonFactory,
+    ProjectWithAddonFactory, MockAddonNodeSettings,
 )
-
 from website.settings import ALL_MY_REGISTRATIONS_ID, ALL_MY_PROJECTS_ID
 
+class Addon(MockAddonNodeSettings):
+    @property
+    def complete(self):
+        return True
+    def archive_errors(self):
+        return 'Error'
+class Addon2(MockAddonNodeSettings):
+    @property
+    def complete(self):
+        return True
+    def archive_errors(self):
+        return 'Error'
 
 class TestViewingProjectWithPrivateLink(OsfTestCase):
 
@@ -135,6 +146,15 @@ class TestViewingProjectWithPrivateLink(OsfTestCase):
 
 
 class TestProjectViews(OsfTestCase):
+
+    ADDONS_UNDER_TEST = {
+        'addon1': {
+            'node_settings': Addon,
+        },
+        'addon2': {
+            'node_settings': Addon2,
+        },
+    }
 
     def setUp(self):
         super(TestProjectViews, self).setUp()
@@ -521,6 +541,7 @@ class TestProjectViews(OsfTestCase):
         assert_not_in("foo'ta#@%#%^&g?", self.project.tags)
         assert_equal("tag_removed", self.project.logs[-1].action)
         assert_equal("foo'ta#@%#%^&g?", self.project.logs[-1].params['tag'])
+
     # Regression test for https://github.com/CenterForOpenScience/osf.io/issues/1478
     @mock.patch('website.archiver.tasks.archive.si')
     def test_registered_projects_contributions(self, mock_archive):
