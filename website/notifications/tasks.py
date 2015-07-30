@@ -41,8 +41,8 @@ def check_and_send_later(user, time_start, time_to_send, send_type):
         task.get(timeout=0.001)
     except TimeoutError:
         task = None
-    if task is None or task.state == 'SUCCESS' or task.state == 'FAILURE':
-        send_user_email.apply_async(args=(user_id, send_type), eta=time_to_send, task_id=task_id)
+    if task is None or task.state == 'FAILURE' or task.state == 'SUCCESS':
+        send_user_email.apply_async(args=(user_id, send_type), eta=time_to_send, task_id=task_id, ignore_result=True)
     else:
         print task.state
 
@@ -50,14 +50,16 @@ def check_and_send_later(user, time_start, time_to_send, send_type):
         # send_user_email(user_id, time_start)
 
 
-@celery_app.task(name='notify.send_user_email', max_retries=0)
-def send_user_email(user_id, send_type):
+@celery_app.task(bind=True, name='notify.send_user_email', max_retries=0)
+def send_user_email(self, user_id, send_type):
     """
     Finds pending Emails and amalgamates them into a single Email
     :param user_id: User id to send mails to.
     :return:
     """
     count = 0
+    self.update_state(state='PENDING')
+    print self.state
     for i in range(5):
         current_count = get_email_count(user_id, send_type)
         if count == current_count:
@@ -80,6 +82,7 @@ def send_user_email(user_id, send_type):
             message=grouped_emails,
             callback=remove_notifications(email_notification_ids=notification_ids)
         )
+    self.update_state(state='SUCCESS')
 
 
 def get_email_count(user, send_type):
