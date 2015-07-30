@@ -75,6 +75,9 @@
                     <h4 class="m-t-lg f-w-lg">What if I don't want to register anything in the OSF?</h4>
                         <p>Registering is an optional feature of the OSF.</p>
 
+                    <h4 class="m-t-lg f-w-lg">How much storage space do I get?</h4>
+                    <p>Every OSF user is provided 2.0 GB of OSF Storage to be used across all of their projects. Add-ons can be used to create additional space. Files of up to 128 MB can be uploaded to OSF Storage. If you have larger files to upload and do not want to use an add-on, contact <a href="mailto:support@osf.io">support@osf.io</a>.</p>
+
                     <h4 class="m-t-lg f-w-lg">What is the cap on data per user?</h4>
                         <p>There is a limit on the size of individual files uploaded to the OSF. This limit is 128 MB. If you have larger files to upload, you might consider utilizing add-ons. When archiving files during the registration process, there is a 1 GB total limit across all storage add-ons being archived.</p>
 
