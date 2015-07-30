@@ -39,6 +39,9 @@ def main(dry_run):
 
     for node in get_old_registered_nodes():
         schemas = node.registered_meta
+        if not schemas:
+            logger.info('Node: {0} is registerd but has no registered_meta'.format(node._id))
+            schemas = {}
         # there is only ever one key in this dict
         for name, schema in schemas.iteritems():
             name = from_mongo(name)
@@ -55,7 +58,7 @@ def main(dry_run):
                     Q('schema_version', 'eq', 2)
                 )
             except Exception:
-                import ipdb; ipdb.set_trace()
+                logger.info('No MetaSchema matching name: {0}, version: {1} found'.format(name, 2))
             node.registered_schema = meta_schema
             node.registered_meta = {
                 key: {
