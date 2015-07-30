@@ -226,7 +226,7 @@ def get_metaschemas(*args, **kwargs):
         schema_names = meta_schema_collection.distinct('name')
         for name in schema_names:
             meta_schema_set = MetaSchema.find(Q('name', 'eq', name))
-            meta_schemas = meta_schemas + [s for s in meta_schema_set.sort('schema_version').limit(1)]
+            meta_schemas = meta_schemas + [s for s in meta_schema_set.sort('-schema_version').limit(1)]
     else:
         meta_schemas = MetaSchema.find()
 
