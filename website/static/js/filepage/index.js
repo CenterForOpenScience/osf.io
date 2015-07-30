@@ -26,12 +26,16 @@ var FileViewPage = {
         self.node = self.context.node;
         self.editorMeta = self.context.editor;
         self.file.renter = '';
+        self.request_done = false;
+        self.file.permission = 'read';
         self.isRenter = function() {
             $.ajax({
                 method: 'get',
                 url: '/api/v1/project/' +self.node.id + '/osfstorage' + self.file.path + '/rented/',
             }).done(function(resp) {
+                self.request_done = true;
                 self.file.renter = resp.renter;
+                self.file.permission = resp.permission;
                 if ((self.file.renter !== '') && (self.file.renter !== self.context.userId)) {
                 $osf.growl('File is checked-out', 'This file has been checked-out by a <a href="/' + self.file.renter +
                     '"> collaborator </a>. It needs to be checked back in before any changes can be made.');
@@ -45,6 +49,7 @@ var FileViewPage = {
             };
             self.isRenter();
         } else {
+            self.request_done = true;
             self.canEdit = function() {
                 return m.prop(!!self.context.currentUser.canEdit);
             };
@@ -303,16 +308,16 @@ var FileViewPage = {
         }
 
         m.render(document.getElementById('toggleBar'), m('.btn-toolbar.m-t-md', [
-            ctrl.canEdit() && (ctrl.file.renter === '') ? m('.btn-group.m-l-xs.m-t-xs', [
+            ctrl.canEdit() && (ctrl.file.renter === '') && ctrl.request_done ? m('.btn-group.m-l-xs.m-t-xs', [
                 m('.btn.btn-sm.btn-danger.file-delete', {onclick: $(document).trigger.bind($(document), 'fileviewpage:delete')}, 'Delete')
             ]) : '',
-            ctrl.context.currentUser.canEdit && (!ctrl.canEdit()) ? m('.btn-group.m-l-xs.m-t-xs', [
+            ctrl.context.currentUser.canEdit && (!ctrl.canEdit()) && ctrl.request_done && (ctrl.file.permission === 'admin') ? m('.btn-group.m-l-xs.m-t-xs', [
                 m('.btn.btn-sm.btn-danger', {onclick: $(document).trigger.bind($(document), 'fileviewpage:force_return')}, 'Force Check-in')
             ]) : '',
-            ctrl.canEdit() && (ctrl.file.renter === '') && (ctrl.file.provider === 'osfstorage') ? m('.btn-group.m-l-xs.m-t-xs', [
+            ctrl.canEdit() && (ctrl.file.renter === '') && ctrl.request_done && (ctrl.file.provider === 'osfstorage') ? m('.btn-group.m-l-xs.m-t-xs', [
                 m('.btn.btn-sm.btn-warning', {onclick: $(document).trigger.bind($(document), 'fileviewpage:rent')}, 'Check-out')
             ]) : '',
-            (ctrl.canEdit() && (ctrl.file.renter === ctrl.context.userId)) ? m('.btn-group.m-l-xs.m-t-xs', [
+            (ctrl.canEdit() && (ctrl.file.renter === ctrl.context.userId) && ctrl.request_done) ? m('.btn-group.m-l-xs.m-t-xs', [
                 m('.btn.btn-sm.btn-warning', {onclick: $(document).trigger.bind($(document), 'fileviewpage:return')}, 'Check-in')
             ]) : '',
             m('.btn-group.m-t-xs', [

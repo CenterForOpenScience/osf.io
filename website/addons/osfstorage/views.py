@@ -10,7 +10,7 @@ from flask import request
 
 from framework.auth import Auth
 from framework.exceptions import HTTPError
-from framework.auth.decorators import must_be_signed
+from framework.auth.decorators import must_be_signed, collect_auth
 
 from website.models import User
 from website.project.decorators import (
@@ -251,9 +251,14 @@ def osfstorage_return(file_node, auth, **kwargs):
         return {'status': 'success'}
     return {'status': 'failure'}
 
+@collect_auth
 @decorators.autoload_filenode(must_be='file')
-def osfstorage_rented(file_node, **kwargs):
-    return {'renter': file_node.rented}
+def osfstorage_rented(file_node, auth, **kwargs):
+    permission = 'read'
+    if kwargs['node'].has_permission(auth.user, permissions.ADMIN):
+        permission = 'admin'
+    return {'renter': file_node.rented,
+            'permission': permission}
 
 @must_have_permission(permissions.ADMIN)
 @decorators.autoload_filenode(must_be='file')
