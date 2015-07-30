@@ -157,9 +157,6 @@ def osfstorage_create_child(file_node, payload, node_addon, **kwargs):
 
     if not is_folder:
         try:
-            if file_node.renter is not None:
-                    if file_node.end_date < datetime.datetime.utcnow():
-                        file_node.return_rent()
             if file_node.renter is None or file_node.renter == user:
                 version = file_node.create_version(
                     user,
@@ -191,7 +188,7 @@ def osfstorage_create_child(file_node, payload, node_addon, **kwargs):
 
 @must_be_signed
 @must_not_be_registration
-@decorators.autoload_filenode(check_rent=True)
+@decorators.autoload_filenode()
 def osfstorage_delete(file_node, payload, node_addon, **kwargs):
     auth = Auth(User.load(payload['user']))
 
@@ -238,13 +235,12 @@ def osfstorage_download(file_node, payload, node_addon, **kwargs):
     }
 
 @must_have_permission(permissions.WRITE)
-@decorators.autoload_filenode(must_be='file', check_rent=True)
+@decorators.autoload_filenode(must_be='file')
 def osfstorage_rent(file_node, auth, **kwargs):
     message = 'failure'
     if file_node.renter is None:
-        data = request.get_json()
         if auth:
-            file_node.rent(renter=auth.user, end_date=data['end_date'])
+            file_node.rent(renter=auth.user)
             message = 'success'
     return {'status': message}
 
@@ -256,10 +252,9 @@ def osfstorage_return(file_node, auth, **kwargs):
         return {'status': 'success'}
     return {'status': 'failure'}
 
-@decorators.autoload_filenode(must_be='file', check_rent=True)
+@decorators.autoload_filenode(must_be='file')
 def osfstorage_rented(file_node, **kwargs):
-    return {'renter': file_node.rented,
-            'end_date': file_node.end_date.toordinal()}
+    return {'renter': file_node.rented}
 
 @must_have_permission(permissions.ADMIN)
 @decorators.autoload_filenode(must_be='file')
@@ -269,17 +264,16 @@ def osfstorage_force_return(file_node, auth, **kwargs):
 
 @decorators.handle_odm_errors
 @must_have_permission(permissions.WRITE)
-@decorators.autoload_filenode(check_rent=True, default_root=True)
+@decorators.autoload_filenode(default_root=True)
 def osfstorage_rent_all(file_node, auth, **kwargs):
-    data = request.get_json()
-    worked = file_node.node_settings.rent_all_files(user=auth.user, end_date=data['end_date'])
+    worked = file_node.node_settings.rent_all_files(user=auth.user)
     if worked:
         return {'status': 'success'}
     return {'status': 'failure'}
 
 @decorators.handle_odm_errors
 @must_have_permission(permissions.WRITE)
-@decorators.autoload_filenode(check_rent=True, default_root=True)
+@decorators.autoload_filenode(default_root=True)
 def osfstorage_return_all(file_node, auth, **kwargs):
     worked = file_node.node_settings.return_all_files(auth.user)
     if worked:

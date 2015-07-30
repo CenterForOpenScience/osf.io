@@ -1506,9 +1506,7 @@ var FGItemButtons = {
                             onclick: function(event) {
                                 $osf.postJSON(
                                      item.data.nodeApiUrl + 'osfstorage' + item.data.path +'/rent/',
-                                    {
-                                        'end_date': 'week',
-                                    }
+                                    {}
                                 ).done(function(resp) {
                                     if (resp.status === 'success') {
                                         window.location.reload();
@@ -1584,6 +1582,7 @@ var FGItemButtons = {
                             m('h3.break-word', 'Unlock all OSF Storage files.'),
                             m('p', 'This will unlock all files in OSF Storage, allowing them to be edited. Do you want to unlock them?')
                         ]), m('', [
+                            m('span.tb-modal-btn.text-default', {onclick: function() {tb.modal.dismiss();}}, 'Cancel'), //jshint ignore:line
                             m('span.tb-modal-btn.text-primary', {onclick: function() {
                                 $osf.postJSON(
                                      item.data.nodeApiUrl + 'osfstorage/return_all/',
@@ -1598,7 +1597,6 @@ var FGItemButtons = {
                                     $osf.growl('Error', 'Unable to unlock OSF Storage. Make sure all files are unlocked, or locked by you.');
                                 });
                             }}, 'Unlock all'),
-                            m('span.tb-modal-btn.text-default', {onclick: function() {tb.modal.dismiss();}}, 'Cancel'), //jshint ignore:line
                         ]));
                     },
                     icon: 'fa fa-unlock',
@@ -1609,15 +1607,14 @@ var FGItemButtons = {
                 m.component(FGButton, {
                     onclick: function() {
                         tb.modal.update(m('', [
-                            m('h3.break-word', 'Lock all OSF Storage files.'),
-                            m('p', 'This will lock all files in OSF Storage, preventing them from being edited by anyone but you (for 1 week, or until unlocked). This does not prevent new files from being uploaded.')
+                            m('h3.break-word', 'Lock all OSF Storage files ?'),
+                            m('p', 'This will lock all files in OSF Storage, preventing them from being edited by anyone but you. This does not prevent new files from being uploaded.')
                         ]), m('', [
+                            m('span.tb-modal-btn.text-default', {onclick: function() {tb.modal.dismiss();}}, 'Cancel'), //jshint ignore:line
                             m('span.tb-modal-btn.text-primary', {onclick: function(){
                                 $osf.postJSON(
                                     item.data.nodeApiUrl + 'osfstorage/rent_all/',
-                                    {
-                                        'end_date': 'week'
-                                    }
+                                    {}
                                 ).done(function(resp) {
                                     if (resp.status === 'success') {
                                         window.location.reload();
@@ -1628,7 +1625,6 @@ var FGItemButtons = {
                                     $osf.growl('Error', 'Unable to lock OSF Storage. Make sure all files are unlocked, or locked by you.');
                                 });
                             }}, 'Lock all'),
-                            m('span.tb-modal-btn.text-default', {onclick: function() {tb.modal.dismiss();}}, 'Cancel'), //jshint ignore:line
                         ]));
                     },
                     icon: 'fa fa-lock',

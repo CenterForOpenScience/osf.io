@@ -86,65 +86,28 @@ var FileViewPage = {
             });
         });
         $(document).on('fileviewpage:rent', function() {
-            bootbox.dialog({
-                title: 'Confirm file lock',
-                message: '<div><p>Are you sure you want to lock this file? This would mean ' +
+            bootbox.confirm({
+                title: 'Confirm file lock ?',
+                message: 'This would mean ' +
                     'other contributors cannot edit, delete or upload new versions of this file ' +
-                    'as long as it is locked. You can unlock it at anytime or extend the lock period.' +
-                    'Please select the locking period below:</p></div>' +
-                    '<div class="row"><div class="col-md-12""> <div class="control-group">' +
-                    '<div class="radio align-center col-xs-4"><input type="radio" name="date" value="day">1 day</div></div>'+
-                    '<div class="radio align-center col-xs-4"><input type="radio" name="date" value="week">1 week</div></div>'+
-                    '<div class="radio align-center col-xs-4"><input type="radio" name="date" value="month">1 month</div></div></div></div></div>',
-                buttons:{
-                    confirm:{
-                        label: 'Lock file',
-                        className: 'btn-warning',
-                        callback: function() {
-                            var date = $('input[name="date"]:checked').val();
-                            $osf.postJSON(
-                                '/api/v1/project/' + self.node.id + '/osfstorage' + self.file.path +'/rent/',
-                                {
-                                    'end_date': date || 'month'
-                                }
-                            ).done(function(resp) {
-                                window.location.reload();
-                            }).fail(function(resp) {
-                                $osf.growl('Error', 'Unable to lock file');
-                            });
-                        }
+                    'as long as it is locked. You can unlock it at anytime',
+                callback: function(confirm) {
+                    if (!confirm) {
+                        return;
                     }
-                }
-            });
-        });
-        $(document).on('fileviewpage:extend', function() {
-            bootbox.dialog({
-                title: 'Extend file lock',
-                message: '<div><p>Are you sure you want to extend the lock on this file? This would mean ' +
-                    'other contributors cannot edit, delete or upload new versions of this file ' +
-                    'as long as it is locked. You can unlock it at anytime or extend the lock period (if no time period is chosen, it will be locked for 1 month.' +
-                    'Please select the locking period below:</p></div>' +
-                    '<div class="row"><div class="col-md-12""> <div class="control-group">' +
-                    '<div class="radio align-center col-xs-4"><input type="radio" name="date" value="day">1 day</div></div>'+
-                    '<div class="radio align-center col-xs-4"><input type="radio" name="date" value="week">1 week</div></div>'+
-                    '<div class="radio align-center col-xs-4"><input type="radio" name="date" value="month">1 month</div></div></div></div></div>',
+                    $osf.postJSON(
+                        '/api/v1/project/' + self.node.id + '/osfstorage' + self.file.path +'/rent/',
+                        {}
+                    ).done(function(resp) {
+                        window.location.reload();
+                    }).fail(function(resp) {
+                        $osf.growl('Error', 'Unable to lock file');
+                    });
+                },
                 buttons:{
                     confirm:{
                         label: 'Lock file',
-                        className: 'btn-warning',
-                        callback: function() {
-                            var date = $('input[name="date"]:checked').val();
-                            $osf.postJSON(
-                                '/api/v1/project/' + self.node.id + '/osfstorage' + self.file.path +'/rent/',
-                                {
-                                    'end_date': date || 'month'
-                                }
-                            ).done(function(resp) {
-                                window.location.reload();
-                            }).fail(function(resp) {
-                                $osf.growl('Error', 'Unable to lock file');
-                            });
-                        }
+                        className: 'btn-warning'
                     }
                 }
             });
@@ -161,9 +124,9 @@ var FileViewPage = {
         });
         $(document).on('fileviewpage:force_return', function() {
             bootbox.confirm({
-                title: 'Force unlock file',
+                title: 'Force unlock file ?',
                 message: 'This will unlock the file for all contributors, and it will only work if you are an ' +
-                'administrator. Are you sure?',
+                'administrator.',
                 buttons: {
                     confirm:{
                         label: 'Force unlock',
@@ -338,9 +301,6 @@ var FileViewPage = {
             ]) : '',
             (ctrl.canEdit() && (ctrl.file.renter === ctrl.context.userId)) ? m('.btn-group.m-l-xs.m-t-xs', [
                 m('.btn.btn-sm.btn-warning', {onclick: $(document).trigger.bind($(document), 'fileviewpage:return')}, 'Unlock')
-            ]) : '',
-            (ctrl.canEdit() && (ctrl.file.renter === ctrl.context.userId)) ? m('.btn-group.m-l-xs.m-t-xs', [
-                m('.btn.btn-sm.btn-warning', {onclick: $(document).trigger.bind($(document), 'fileviewpage:extend')}, 'Extend Lock')
             ]) : '',
             m('.btn-group.m-t-xs', [
                 m('.btn.btn-sm.btn-primary.file-download', {onclick: $(document).trigger.bind($(document), 'fileviewpage:download')}, 'Download')

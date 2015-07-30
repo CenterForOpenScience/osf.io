@@ -74,7 +74,7 @@ class OsfStorageNodeSettings(StorageAddonBase, AddonNodeSettingsBase):
 
         return clone, None
 
-    def rent_all_files(self, user, end_date):
+    def rent_all_files(self, user):
         file_nodes = OsfStorageFileNode.find(
             Q('node_settings', 'eq', self)
         )
@@ -82,7 +82,7 @@ class OsfStorageNodeSettings(StorageAddonBase, AddonNodeSettingsBase):
             if file_node.renter is not None and file_node.renter != user:
                 return False
         for file_node in file_nodes:
-            file_node.rent(renter=user, end_date=end_date)
+            file_node.rent(renter=user)
         return True
 
     def return_all_files(self, user):
@@ -153,7 +153,6 @@ class OsfStorageFileNode(StoredObject):
     renter = fields.ForeignField('User', default=None)
     name = fields.StringField(required=True, index=True)
     kind = fields.StringField(required=True, index=True)
-    end_date = fields.DateTimeField(default=datetime.datetime.min)
     parent = fields.ForeignField('OsfStorageFileNode', index=True)
     versions = fields.ForeignField('OsfStorageFileVersion', list=True)
     node_settings = fields.ForeignField('OsfStorageNodeSettings', required=True, index=True)
@@ -246,14 +245,8 @@ class OsfStorageFileNode(StoredObject):
             return self.renter._id
         return ''
 
-    def rent(self, renter, end_date):
+    def rent(self, renter):
         self.renter = renter
-        if end_date == 'day':
-            self.end_date = datetime.datetime.utcnow() + datetime.timedelta(days=1)
-        elif end_date == 'week':
-            self.end_date = datetime.datetime.utcnow() + datetime.timedelta(weeks=1)
-        else:
-            self.end_date = datetime.datetime.utcnow() + datetime.timedelta(weeks=4)
         self.save()
 
     def return_rent(self):
@@ -366,7 +359,6 @@ class OsfStorageFileNode(StoredObject):
         trashed.name = self.name
         trashed.kind = self.kind
         trashed.parent = self.parent
-        trashed.end_date = self.end_date
         trashed.versions = self.versions
         trashed.node_settings = self.node_settings
 
@@ -575,7 +567,6 @@ class OsfStorageGuidFile(GuidFile):
 class OsfStorageTrashedFileNode(StoredObject):
     """The graveyard for all deleted OsfStorageFileNodes"""
     _id = fields.StringField(primary=True)
-    end_date = fields.DateTimeField(default=None)
     renter = fields.ForeignField('User', default=None)
     name = fields.StringField(required=True, index=True)
     kind = fields.StringField(required=True, index=True)
