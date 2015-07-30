@@ -214,13 +214,14 @@ ViewModel.prototype.createCredentials = function() {
     });
 };
 
-ViewModel.prototype.createBucket = function(bucketName) {
+ViewModel.prototype.createBucket = function(bucketName, bucketLocation) {
     var self = this;
     self.creating(true);
     bucketName = bucketName.toLowerCase();
     return $osf.postJSON(
         self.urls().create_bucket, {
-            bucket_name: bucketName
+            bucket_name: bucketName,
+            bucket_location: bucketLocation
         }
     ).done(function(response) {
         self.creating(false);
@@ -261,16 +262,78 @@ ViewModel.prototype.openCreateBucket = function() {
 
     var isValidBucket = /^(?!.*(\.\.|-\.))[^.][a-z0-9\d.-]{2,61}[^.]$/;
 
-    bootbox.prompt('Name your new bucket', function(bucketName) {
-        if (!bucketName) {
-            return;
-        } else if (isValidBucket.exec(bucketName) == null) {
-            bootbox.confirm({
-                title: 'Invalid bucket name',
-                message: 'Sorry, that\'s not a valid bucket name. Try another name?',
-                callback: function(result) {
-                    if (result) {
-                        self.openCreateBucket();
+    // Maps internal values used by API to display names
+    var BUCKET_LOCATION_MAP = $.extend(
+        {},
+        {
+            '': 'US Standard',
+            'EU': 'Europe Standard',
+            'us-west-1': 'California',
+            'us-west-2': 'Oregon',
+            'ap-northeast-1': 'Tokyo',
+            'ap-southeast-1': 'Singapore',
+            'ap-southeast-2': 'Sydney',
+            'cn-north-1': 'Beijing'
+        },
+        window.contextVars.s3Settings.bucketLocations
+    );
+
+    // Generates html options for key-value pairs in BUCKET_LOCATION_MAP
+    function generateBucketOptions(locations) {
+        var options;
+        for (var location in locations) {
+            if (BUCKET_LOCATION_MAP.hasOwnProperty(location)) {
+                options = options + ['<option value="', location, '">', locations[location], '</option>', '\n'].join('');
+            }
+        }
+        return options;
+    }
+
+    bootbox.dialog({
+        title: 'Create a new bucket',
+        message:
+                '<div class="row"> ' +
+                    '<div class="col-md-12"> ' +
+                        '<form class="form-horizontal"> ' +
+                            '<div class="form-group"> ' +
+                                '<label class="col-md-4 control-label" for="bucketName">Bucket Name</label> ' +
+                                '<div class="col-md-4"> ' +
+                                    '<input id="bucketName" name="bucketName" type="text" placeholder="Enter bucket\'s name" class="form-control" autofocus> ' +
+                                '</div>' +
+                            '</div>' +
+                            '<div class="form-group"> ' +
+                                '<label class="col-md-4 control-label" for="bucketLocation">Bucket Location</label> ' +
+                                '<div class="col-md-4"> ' +
+                                    '<select id="bucketLocation" name="bucketLocation" class="form-control"> ' +
+                                        generateBucketOptions(BUCKET_LOCATION_MAP) +
+                                    '</select>' +
+                                '</div>' +
+                            '</div>' +
+                        '</form>' +
+                    '</div>' +
+                '</div>',
+        buttons: {
+            confirm: {
+                label: 'Save',
+                className: 'btn-success',
+                callback: function () {
+                    var bucketName = $('#bucketName').val();
+                    var bucketLocation = $('#bucketLocation').val();
+
+                    if (!bucketName) {
+                        return;
+                    } else if (isValidBucket.exec(bucketName) == null) {
+                        bootbox.confirm({
+                            title: 'Invalid bucket name',
+                            message: 'Sorry, that\'s not a valid bucket name. Try another name?',
+                            callback: function(result) {
+                                if (result) {
+                                    self.openCreateBucket();
+                                }
+                            }
+                        });
+                    } else {
+                        self.createBucket(bucketName, bucketLocation);
                     }
                 },
                 buttons:{
@@ -278,9 +341,11 @@ ViewModel.prototype.openCreateBucket = function() {
                         label:'Try new one'
                     }
                 }
-            });
-        } else {
-            self.createBucket(bucketName);
+            },
+            cancel: {
+                label: 'Cancel',
+                className: 'btn-default'
+            }
         }
     });
 };
