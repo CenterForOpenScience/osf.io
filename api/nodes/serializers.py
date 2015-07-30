@@ -38,12 +38,12 @@ class NodeSerializer(JSONAPISerializer):
                               )
 
     relationships = LinksField({
-        'children': Link('nodes:node-children', 'children', kwargs={'node_id': '<pk>'}),
-        'contributors':  Link('nodes:node-contributors', 'contributors', kwargs={'node_id': '<pk>'}),
-        'pointers': Link('nodes:node-pointers', 'pointers', kwargs={'node_id': '<pk>'}),
-        'registrations': Link('nodes:node-registrations', 'registrations', kwargs={'node_id': '<pk>'}),
+        'children': Link('nodes:node-children', kwargs={'node_id': '<pk>'}),
+        'contributors':  Link('nodes:node-contributors', kwargs={'node_id': '<pk>'}),
+        'pointers': Link('nodes:node-pointers', kwargs={'node_id': '<pk>'}),
+        'registrations': Link('nodes:node-registrations', kwargs={'node_id': '<pk>'}),
         'files': Link('nodes:node-files', kwargs={'node_id': '<pk>'}),
-        'parent': Link('nodes:node-detail', 'parent', kwargs={'node_id': '<parent_id>'})
+        'parent': Link('nodes:node-detail', kwargs={'node_id': '<parent_id>'})
     })
 
     # TODO: finish me
