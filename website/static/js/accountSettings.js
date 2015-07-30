@@ -217,7 +217,7 @@ var UserProfileViewModel = oop.extend(ChangeMessageMixin, {
         var addrText = $osf.htmlEscape(email.address());
         bootbox.confirm({
             title: 'Resend Email Confirmation?',
-            message: 'Are you sure that you want to resend email confirmation to ' + '<em>' + addrText + '</em>',
+            message: 'Are you sure that you want to resend email confirmation to ' + '<em>' + addrText + '</em>?',
             callback: function (confirmed) {
                 if (confirmed) {
                     self.client.update(self.profile(), email).done(function () {
