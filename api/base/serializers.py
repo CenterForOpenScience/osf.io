@@ -29,9 +29,7 @@ def _url_val(val, obj, serializer, **kwargs):
         if query == 'files':
              return data
         if query == 'parent':
-            data = {
-                'self': val.resolve_url(obj)
-            }
+            return {'links': {'self': val.resolve_url(obj)}}
         if query:
             meta = getattr(serializer, 'get_objects_data')(obj, query)
             if meta:
