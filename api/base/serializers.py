@@ -22,27 +22,23 @@ def _url_val(val, obj, serializer, **kwargs):
     schema.
     """
     if isinstance(val, Link):  # If a Link is passed, get the url value
+        url = val.resolve_url(obj)
         data = {
-            'href': val.resolve_url(obj)
+            'href': url
         }
-        query = val.query
+        query = val.endpoint.split('-')[1]
         if query == 'files':
-             return data
+            return data
         if query == 'parent':
-            return {'links': {'self': val.resolve_url(obj)}}
-        if query:
-            return val.get_meta(query, serializer)
-            meta = getattr(serializer, 'get_objects_data')(obj, query)
-            if meta:
-                data['meta'] = meta
-        ret = {
-            'links': {
-                'related': data
+            return {
+                'links': {
+                    'self': url
+                }
             }
-        }
-        return ret
-    else:
-        return val
+        else:
+            return val.get_meta(query, serializer, url, obj)
+    elif isinstance(val, basestring):
+        return getattr(serializer, val)(obj)
 
 
 class LinksFieldWIthSelfLink(ser.Field):
@@ -136,25 +132,39 @@ class Link(object):
     def __repr__(self):
         return self.query
 
-    def get_meta(self, query, serializer):
+    def get_meta(self, query, serializer, url, obj):
         context = serializer.context
         meta = {}
         meta['count'] = 5000000000
         if 'request' in context and 'include' in context['request'].query_params:
             additional_query_params = serializer.context['request'].query_params['include']
             if query in additional_query_params:
-                meta['data'] = self.serialize_included_queries(query)
+                meta['data'] = self.serialize_included_queries(query, serializer, obj)
         ret = {
             'links': {
                 'related': {
+                    'href': url,
                     'meta': meta
                 }
             }
         }
         return ret
 
-    def serialize_included_queries(self, query):
-        return query
+    def serialize_included_queries(self, query, serializer, obj):
+        if hasattr(obj, query):
+            module_location = self.endpoint.split(':')[0]
+            module_name = 'api.{}.{}'.format(module_location, 'views')
+            module = __import__(module_name)
+
+            class_name_params = self.endpoint.split(':')[1].split('-')
+            class_name = ''
+            for class_param in class_name_params:
+                class_param = class_param[0].capitalize() + class_param[1:]
+                class_name += class_param
+            class_name += 'List'
+            class_ = getattr(module, class_name)
+        else:
+            return query
 
     def resolve_url(self, obj):
         kwarg_values = {key: _get_attr_from_tpl(attr_tpl, obj) for key, attr_tpl in self.kwargs.items()}
