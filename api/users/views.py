@@ -87,7 +87,7 @@ class UserList(generics.ListAPIView, ODMFilterMixin, UserIncludeMixin):
         return User.find(query)
 
 
-class UserDetail(generics.RetrieveAPIView, UserMixin):
+class UserDetail(generics.RetrieveAPIView, UserMixin, UserIncludeMixin):
     """Details about a specific user.
     """
     serializer_class = UserSerializer
