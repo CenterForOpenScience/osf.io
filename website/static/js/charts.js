@@ -4,6 +4,9 @@ var c3 = require('c3');
 var m = require('mithril');
 var $ = require('jquery');
 var $osf = require('js/osfHelpers');
+
+require('c3/c3.css');
+require('../css/share-search.css');
 //This module contains a bunch of generic charts and parsers for formating the correct data for them
 
 var COLORBREWER_COLORS = [[166, 206, 227], [31, 120, 180], [178, 223, 138], [51, 160, 44], [251, 154, 153], [227, 26, 28], [253, 191, 111], [255, 127, 0], [202, 178, 214], [106, 61, 154], [255, 255, 153], [177, 89, 40]]
@@ -26,8 +29,8 @@ function timeSinceEpochInMsToMMYY(timeSinceEpochInMs) {
     return d.getMonth().toString() + '/' + d.getFullYear().toString().substring(2);
 }
 
-charts.donutChart = function (data, name, callback) {
-    if (callback){data.onclick = callback.onclick; }
+charts.donutChart = function (data, vm, name, callback) {
+    data.onclick = callback ? callback.onclick.bind(vm) : undefined;
     data.type = 'donut';
     return c3.generate({
         bindto: '#' + name,
@@ -38,7 +41,7 @@ charts.donutChart = function (data, name, callback) {
         donut: {
             title: data.title,
             label: {
-                format: function (ratio) {
+                format: function (value, ratio, id) {
                     return Math.round(ratio * 100) + '%';
                 }
             }
@@ -49,7 +52,7 @@ charts.donutChart = function (data, name, callback) {
     });
 };
 
-charts.timeseriesChart = function (data, name, callback) { //TODO this should be made dumber, data need only be the data for this graph, not all...
+charts.timeseriesChart = function (data, vm, name, callback) { //TODO this should be made dumber, data need only be the data for this graph, not all...
     data.type = 'area-spline';
     return c3.generate({
         bindto: '#' + name,

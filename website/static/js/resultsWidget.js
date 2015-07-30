@@ -6,7 +6,11 @@ var m = require('mithril');
 var $osf = require('js/osfHelpers');
 var utils = require('./utils');
 var Results = {};
+var ResultsWidget = {};
 
+ResultsWidget.results = function(data,vm,name,callback){
+    return m.component(Results,{data: data, vm: vm, name: name});
+};
 
 Results.view = function(ctrl) {
     var res = [];
@@ -199,4 +203,4 @@ Results.controller = function(vm) {
     // });
 };
 
-module.exports = Results;
+module.exports = ResultsWidget;

@@ -1,7 +1,7 @@
 'use strict';
 
 require('c3/c3.css');
-require('../../css/share-search.css');
+require('../../css/share-search.css'); //TODO make own stylesheet for c3
 
 var $ = require('jquery');
 var m = require('mithril');
@@ -19,6 +19,7 @@ var ShareApp = {};
 ShareApp.ViewModel = function() {
     var self = this;
 
+    self.elasticURL = '/api/v1/share/search/';
     self.time = 0;
     self.page = 0;
     self.count = 0;

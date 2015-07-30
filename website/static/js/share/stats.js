@@ -83,9 +83,8 @@ function timeGraph(data, vm) {
 }
 
 Stats.sourcesAgg = function () {
-    var sourcesQuery = {'match_all': {} };
     var sourcesAgg = {'sources': utils.termsFilter('field', '_type')};
-    return {'query' : sourcesQuery, 'aggregations': sourcesAgg, 'filters' : {}};
+    return sourcesAgg;
 };
 
 Stats.sourcesByDatesAgg = function () {
@@ -103,7 +102,7 @@ Stats.sourcesByDatesAgg = function () {
             }
         }
     };
-    return {aggregations: dateHistogramAgg};
+    return dateHistogramAgg;
 };
 
 Stats.timeSinceEpochInMsToMMYY = function (timeSinceEpochInMs) {
@@ -208,8 +207,9 @@ Stats.controller = function (vm) {
     self.vm.graphs = {}; //holds actual c3 chart objects
     self.vm.statsData = {'charts': {}}; //holds data for charts
     self.vm.loadStats = true; //we want to turn stats on
+    self.vm.processStats = true;//we want to process the stats too TODO will be made more intuative after @bdyetton refactor
     //request these querys/aggregations for charts
-    self.vm.statsQueries = {
+    self.vm.aggregations = {
         'shareTimeGraph' : Stats.sourcesByDatesAgg(),
         'shareDonutGraph' : Stats.sourcesAgg()
     };
@@ -222,7 +222,7 @@ Stats.controller = function (vm) {
 
     self.vm.totalCount = 0;
     self.vm.latestDate = undefined;
-    self.vm.statsLoaded = m.prop(false);
+    self.vm.dataLoaded = m.prop(false);
 
     self.drawGraph = function (divId, graphFunction) {
         return m('div', {id: divId, config: function (e, i) {

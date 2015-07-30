@@ -56,7 +56,9 @@ utils.updateVM = function(vm, data) {
         result.description = utils.highlightField(result, 'description');
     });
     vm.results.push.apply(vm.results, data.results);
-    m.redraw();
+    vm.data = data; //TODO this is for search widgets, make for all (i.e. inc. share)
+    vm.dataLoaded(true);
+    m.redraw(); //TODO @bdyetton remove this, no need for readraw here if we update an m.prop (but share needs that m.prop too...)
     $.map(callbacks, function(cb) {
         cb();
     });
@@ -75,7 +77,7 @@ utils.loadMore = function(vm) {
             method: 'post',
             background: true,
             data: utils.buildQuery(vm),
-            url: '/api/v1/share/search/'
+            url: vm.elasticURL
         }).then(function (data) {
             vm.resultsLoading(false);
             ret.resolve(data);
@@ -88,6 +90,7 @@ utils.loadMore = function(vm) {
 };
 
 utils.search = function(vm) {
+    vm.dataLoaded(false);
     vm.showFooter = false;
     var ret = m.deferred();
     if (!vm.query() || vm.query().length === 0) {
@@ -115,7 +118,7 @@ utils.search = function(vm) {
         }
         utils.loadMore(vm)
             .then(function (data) {
-                if (vm.loadStats) {
+                if (vm.processStats) {
                     utils.processStats(vm, data);
                 }
                 utils.updateVM(vm, data);
@@ -411,8 +414,8 @@ utils.updateAggs = function (currentAgg, newAgg, global) {
 
 utils.buildStatsAggs = function (vm) {
     var currentAggs = {};
-    $.map(Object.keys(vm.statsQueries), function (statQuery) {
-        currentAggs = utils.updateAggs(currentAggs, vm.statsQueries[statQuery].aggregations);
+    $.map(Object.keys(vm.aggregations), function (statQuery) {
+        currentAggs = utils.updateAggs(currentAggs, vm.aggregations[statQuery]);
     });
     return currentAggs;
 };
