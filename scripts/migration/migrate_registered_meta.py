@@ -21,7 +21,7 @@ logger.setLevel(logging.INFO)
 def get_old_registered_nodes(dry_run=True):
     if not dry_run:
         # nullify old registered_schema refs
-        MetaSchema.remove()
+        MetaSchema.remove(Q('schema_version', 'eq', 1))
         ensure_schemas()
 
     return Node.find(
