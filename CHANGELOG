@@ -2,6 +2,14 @@
 Changelog
 *********
 
+0.44.0 (2015-07-29)
+===================
+
+- Add "View on" links to files stored in figshare, GitHub, and Google Drive.
+- API: Allow "me" to be used as a shortcut in URLs for the current authenticated user, e.g. "/users/me", "users/me/nodes/".
+- API: Bug fixes.
+- UI and language fixes.
+
 0.43.0 (2015-07-22)
 ===================
 

@@ -20,6 +20,11 @@ def s3_post_user_settings(auth, **kwargs):
     except KeyError:
         raise HTTPError(httplib.BAD_REQUEST)
 
+    if not (access_key and secret_key):
+        return {
+            'message': ('All the fields above are required.')
+        }, httplib.BAD_REQUEST
+
     if not utils.can_list(access_key, secret_key):
         return {
             'message': ('Unable to list buckets.\n'

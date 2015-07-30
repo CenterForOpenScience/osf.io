@@ -37,6 +37,16 @@ var _figshareItemButtons = {
         // Files can be deleted if private or if it is in a dataset that contains more than one file
         var privateOrSiblings = (item.data.extra && item.data.extra.status !== 'public') ||
             (!item.parent().data.isAddonRoot && item.parent().children.length > 1);
+        if (item.kind === 'file' && item.data.permissions && item.data.permissions.view) {
+            buttons.push(
+                m.component(Fangorn.Components.button, {
+                    onclick: function(event) {
+                        Fangorn.ButtonEvents._gotoFileEvent.call(tb, item);
+                    },
+                    icon: 'fa fa-file-o',
+                    className : 'text-info'
+                }, 'View'));
+        }
         if (item.kind === 'file' && privateOrSiblings && item.data.permissions && item.data.permissions.edit) {
             buttons.push(
                 m.component(Fangorn.Components.button, {
@@ -48,15 +58,13 @@ var _figshareItemButtons = {
                 }, 'Delete')
             );
         }
-        if (item.kind === 'file' && item.data.permissions && item.data.permissions.view) {
+        if (item.kind === 'file' && item.data.permissions && item.data.permissions.view && item.data.extra.status === 'public') {
             buttons.push(
-                m.component(Fangorn.Components.button, {
-                    onclick: function(event) {
-                        Fangorn.ButtonEvents._gotoFileEvent.call(tb, item);
-                    },
-                    icon: 'fa fa-file-o',
-                    className : 'text-info'
-                }, 'View'));
+                m('a.text-info.fangorn-toolbar-icon', {href: item.data.extra.webView}, [
+                    m('i.fa.fa-external-link'),
+                    m('span', 'View on figshare')
+                ])
+            );
         }
         return m('span', buttons); // Tell fangorn this function is used.
     }

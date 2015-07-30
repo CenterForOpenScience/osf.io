@@ -15,6 +15,7 @@ var $osf = require('js/osfHelpers');
 var waterbutler = require('js/waterbutler');
 
 var iconmap = require('js/iconmap');
+var storageAddons = require('json!storageAddons.json');
 
 // CSS
 require('css/fangorn.css');
@@ -1493,45 +1494,62 @@ var FGItemButtons = {
                     className : 'text-primary'
                 }, 'Download')
             );
-            if (item.data.permissions && item.data.permissions.edit && (item.data.extra.renter === '')) {
+            if (item.data.permissions && item.data.permissions.view) {
                 rowButtons.push(
+                    m.component(FGButton, {
+                        onclick: function(event) {
+                            gotoFileEvent.call(tb, item);
+                        },
+                        icon: 'fa fa-file-o',
+                        className : 'text-info'
+                    }, 'View'));
+            }
+            if (item.data.permissions && item.data.permissions.edit) {
+                if (item.data.provider === 'osfstorage') {
+                    if (item.data.extra.renter === ''){
+                        rowButtons.push(
+                            m.component(FGButton, {
+                                onclick: function(event) { _removeEvent.call(tb, event, [item]);  },
+                                icon: 'fa fa-trash',
+                                className : 'text-danger'
+                            }, 'Delete'));
+                        rowButtons.push(
+                            m.component(FGButton, {
+                                onclick: function(event) {
+                                    tb.modal.update(m('', [
+                                        m('h3.break-word', 'Confirm file lock?'),
+                                        m('p', 'This would mean ' +
+                                            'other contributors cannot edit, delete or upload new versions of this file ' +
+                                            'as long as it is locked. You can unlock it at anytime.')
+                                    ]), m('', [
+                                        m('span.tb-modal-btn.text-default', {onclick: function() {tb.modal.dismiss();}}, 'Cancel'), //jshint ignore:line
+                                        m('span.tb-modal-btn.text-primary', {onclick: function() {
+                                            $osf.postJSON(
+                                                 item.data.nodeApiUrl + 'osfstorage' + item.data.path +'/rent/',
+                                                {}
+                                            ).done(function(resp) {
+                                                if (resp.status === 'success') {
+                                                    window.location.reload();
+                                                } else {
+                                                    $osf.growl('Error', 'Unable to lock file.');
+                                                }
+                                            }).fail(function(resp) {
+                                                $osf.growl('Error', 'Unable to lock file.');
+                                            });
+                                        }}, 'Lock file')
+                                    ]));
+                                },
+                                icon: 'fa fa-lock',
+                                className : 'text-warning'
+                            }, 'Lock file'));
+                }} else {
+                    rowButtons.push(
                     m.component(FGButton, {
                         onclick: function(event) { _removeEvent.call(tb, event, [item]);  },
                         icon: 'fa fa-trash',
                         className : 'text-danger'
                     }, 'Delete'));
-                if (item.data.provider === 'osfstorage') {
-                    rowButtons.push(
-                        m.component(FGButton, {
-                            onclick: function(event) {
-                                tb.modal.update(m('', [
-                                    m('h3.break-word', 'Confirm file lock?'),
-                                    m('p', 'This would mean ' +
-                                        'other contributors cannot edit, delete or upload new versions of this file ' +
-                                        'as long as it is locked. You can unlock it at anytime.')
-                                ]), m('', [
-                                    m('span.tb-modal-btn.text-default', {onclick: function() {tb.modal.dismiss();}}, 'Cancel'), //jshint ignore:line
-                                    m('span.tb-modal-btn.text-primary', {onclick: function() {
-                                        $osf.postJSON(
-                                             item.data.nodeApiUrl + 'osfstorage' + item.data.path +'/rent/',
-                                            {}
-                                        ).done(function(resp) {
-                                            if (resp.status === 'success') {
-                                                window.location.reload();
-                                            } else {
-                                                $osf.growl('Error', 'Unable to lock file.');
-                                            }
-                                        }).fail(function(resp) {
-                                            $osf.growl('Error', 'Unable to lock file.');
-                                        });
-                                    }}, 'Lock file')
-                                ]));
-                            },
-                            icon: 'fa fa-lock',
-                            className : 'text-warning'
-                        }, 'Lock file'));
                 }
-
             }
             if (item.data.permissions && item.data.permissions.edit && (item.data.extra.renter === window.contextVars.currentUser.id) && item.data.provider === 'osfstorage') {
                 rowButtons.push(
@@ -1554,15 +1572,14 @@ var FGItemButtons = {
                         className : 'text-warning'
                     }, 'Unlock file'));
             }
-            if (item.data.permissions && item.data.permissions.view) {
+            if(storageAddons[item.data.provider].externalView) {
+                var providerFullName = storageAddons[item.data.provider].fullName;
                 rowButtons.push(
-                    m.component(FGButton, {
-                        onclick: function(event) {
-                            gotoFileEvent.call(tb, item);
-                        },
-                        icon: 'fa fa-file-o',
-                        className : 'text-info'
-                    }, 'View'));
+                    m('a.text-info.fangorn-toolbar-icon', {href: item.data.extra.webView}, [
+                        m('i.fa.fa-external-link'),
+                        m('span', 'View on ' + providerFullName)
+                    ])
+                );
             }
         } else if(item.data.provider && item.children.length !== 0) {
             rowButtons.push(

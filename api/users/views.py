@@ -10,14 +10,19 @@ from .serializers import UserSerializer
 
 class UserMixin(object):
     """Mixin with convenience methods for retrieving the current node based on the
-    current URL. By default, fetches the user based on the pk kwarg.
+    current URL. By default, fetches the user based on the user_id kwarg.
     """
 
     serializer_class = UserSerializer
     node_lookup_url_kwarg = 'user_id'
 
     def get_user(self, check_permissions=True):
-        obj = get_object_or_404(User, self.kwargs[self.node_lookup_url_kwarg])
+        key = self.kwargs[self.node_lookup_url_kwarg]
+
+        if key == 'me':
+            return self.request.user
+
+        obj = get_object_or_404(User, key)
         if check_permissions:
             # May raise a permission denied
             self.check_object_permissions(self.request, obj)
