@@ -53,10 +53,6 @@ class NodeSerializer(JSONAPISerializer):
     def get_absolute_url(self, obj):
         return obj.absolute_url
 
-    def get_objects_data(self, obj, object_type):
-        if 'view' in self.context:
-            return self.context['view'].get_relationship_meta_data(obj, object_type)
-
     @staticmethod
     def get_tags(obj):
         ret = {

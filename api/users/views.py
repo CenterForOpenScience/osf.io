@@ -1,5 +1,4 @@
 from rest_framework import generics, permissions as drf_permissions
-from rest_framework.exceptions import ValidationError
 from modularodm import Q
 
 from website.models import User, Node
@@ -7,7 +6,6 @@ from framework.auth.core import Auth
 from api.base.utils import get_object_or_404
 from api.base.filters import ODMFilterMixin
 from api.nodes.serializers import NodeSerializer
-from api.nodes.views import NodeIncludeMixin
 from .serializers import UserSerializer
 
 class UserMixin(object):
@@ -26,42 +24,7 @@ class UserMixin(object):
         return obj
 
 
-class UserIncludeMixin(object):
-
-    def get_user_nodes_meta_data(self, obj, object_name):
-        include = False
-        query_parmas = self.request.query_params
-        if 'include' in query_parmas:
-            additional_query_params = query_parmas['include']
-            if additional_query_params == 'nodes':
-                include = True
-            elif additional_query_params is not None:
-                invalid_params = additional_query_params.split(',')
-                if 'node' in invalid_params:
-                    invalid_params.remove('node')
-                raise ValidationError('{} are not valid parameters.'.format(invalid_params))
-        return self.get_node_data(obj, include)
-
-    def get_node_data(self, obj, include):
-        ret = {}
-        auth = Auth(self.request.user)
-        query = (
-            Q('contributors', 'eq', obj) &
-            Q('is_folder', 'ne', True) &
-            Q('is_deleted', 'ne', True)
-        )
-        raw_nodes = Node.find(query)
-        nodes = [each for each in raw_nodes if each.is_public or each.can_view(auth)]
-        ret['count'] = len(nodes)
-        if include:
-            ret['data'] = []
-            for node in nodes:
-                serialized_node = NodeSerializer(node)
-                ret['data'].append(serialized_node.data['data'])
-        return ret
-
-
-class UserList(generics.ListAPIView, ODMFilterMixin, UserIncludeMixin):
+class UserList(generics.ListAPIView, ODMFilterMixin):
     """Users registered on the OSF.
 
     You can filter on users by their id, fullname, given_name, middle_name, or family_name.
@@ -87,7 +50,7 @@ class UserList(generics.ListAPIView, ODMFilterMixin, UserIncludeMixin):
         return User.find(query)
 
 
-class UserDetail(generics.RetrieveAPIView, UserMixin, UserIncludeMixin):
+class UserDetail(generics.RetrieveAPIView, UserMixin):
     """Details about a specific user.
     """
     serializer_class = UserSerializer
@@ -97,7 +60,7 @@ class UserDetail(generics.RetrieveAPIView, UserMixin, UserIncludeMixin):
         return self.get_user()
 
 
-class UserNodes(generics.ListAPIView, UserMixin, ODMFilterMixin, NodeIncludeMixin):
+class UserNodes(generics.ListAPIView, UserMixin, ODMFilterMixin):
     """Nodes belonging to a user.
 
     Return a list of nodes that the user contributes to. """
