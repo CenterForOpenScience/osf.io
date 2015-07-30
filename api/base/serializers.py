@@ -2,6 +2,7 @@ import collections
 import re
 
 from rest_framework import serializers as ser
+from rest_framework.exceptions import ValidationError
 from website.util.sanitize import strip_html
 from api.base.utils import absolute_reverse, waterbutler_url_for
 
@@ -23,6 +24,8 @@ def _url_val(val, obj, serializer, **kwargs):
     """
     if isinstance(val, Link):  # If a Link is passed, get the url value
         url = val.resolve_url(obj)
+        if isinstance(val, WaterbutlerLink):
+            return url
         query = val.endpoint.split('-')[1]
         if query == 'files':
             return {
@@ -120,9 +123,8 @@ class Link(object):
     URLs given an endpoint name and attributed enclosed in `<>`.
     """
 
-    def __init__(self, endpoint, query=None, args=None, kwargs=None, query_kwargs=None, **kw):
+    def __init__(self, endpoint, args=None, kwargs=None, query_kwargs=None, **kw):
         self.endpoint = endpoint
-        self.query = query
         self.kwargs = kwargs or {}
         self.args = args or tuple()
         self.reverse_kwargs = kw
