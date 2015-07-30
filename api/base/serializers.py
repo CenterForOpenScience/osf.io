@@ -143,7 +143,7 @@ class Link(object):
         if 'request' in context and 'include' in context['request'].query_params:
             additional_query_params = serializer.context['request'].query_params['include']
             if query in additional_query_params:
-                meta['data'] = self.serialize_included_objects(query)
+                meta['data'] = self.serialize_included_queries(query)
         ret = {
             'links': {
                 'related': {
@@ -153,7 +153,7 @@ class Link(object):
         }
         return ret
 
-    def serializer_included_objects(self, query):
+    def serialize_included_queries(self, query):
         return query
 
     def resolve_url(self, obj):
