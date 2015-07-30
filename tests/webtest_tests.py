@@ -1,12 +1,13 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-'''Functional tests using WebTest.'''
+"""Functional tests using WebTest."""
 import httplib as http
-import unittest
-import re
-import mock
 import logging
+import mock
+import re
+import unittest
 
+import markupsafe
 from nose.tools import *  # flake8: noqa (PEP8 asserts)
 
 from framework.mongo.utils import to_mongo_key
@@ -27,6 +28,10 @@ from website.util import web_url_for, api_url_for
 
 logging.getLogger('website.project.model').setLevel(logging.ERROR)
 
+def assert_in_html(member, container, **kwargs):
+    """Looks for the specified member in markupsafe-escaped HTML output"""
+    member = markupsafe.escape(member)
+    return assert_in(member, container, **kwargs)
 
 class TestDisabledUser(OsfTestCase):
 
@@ -784,7 +789,7 @@ class TestClaiming(OsfTestCase):
         claim_url = new_user.get_claim_url(self.project._primary_key)
         res = self.app.get(claim_url)
         # Correct name (different_name) should be on page
-        assert_in(different_name, res)
+        assert_in_html(different_name, res)
 
 
 class TestConfirmingEmail(OsfTestCase):
@@ -958,15 +963,15 @@ class TestAUserProfile(OsfTestCase):
         url = web_url_for('profile_view_id', uid=self.me._primary_key)
         # I see the title of both my project and component
         res = self.app.get(url, auth=self.me.auth)
-        assert_in(self.component.title, res)
-        assert_in(self.project.title, res)
+        assert_in_html(self.component.title, res)
+        assert_in_html(self.project.title, res)
 
         # Another user can also see my public project and component
         url = web_url_for('profile_view_id', uid=self.me._primary_key)
         # I see the title of both my project and component
         res = self.app.get(url, auth=self.user.auth)
-        assert_in(self.component.title, res)
-        assert_in(self.project.title, res)
+        assert_in_html(self.component.title, res)
+        assert_in_html(self.project.title, res)
 
     def test_user_no_public_projects_or_components(self):
         # I go to other user's profile
