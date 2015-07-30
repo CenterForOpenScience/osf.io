@@ -1716,8 +1716,7 @@ class TestAddingContributorViews(OsfTestCase):
             contributor.username,
             mails.CONTRIBUTOR_ADDED,
             user=contributor,
-            node=project,
-            sharing_page=project.web_url_for('node_contributors', _absolute=True))
+            node=project)
         assert_equal(project.contributor_record[contributor._id]['last_sent'], int(time.time()))
 
     @mock.patch('website.mails.send_mail')
