@@ -23,12 +23,11 @@ def _url_val(val, obj, serializer, **kwargs):
     """
     if isinstance(val, Link):  # If a Link is passed, get the url value
         url = val.resolve_url(obj)
-        data = {
-            'href': url
-        }
         query = val.endpoint.split('-')[1]
         if query == 'files':
-            return data
+            return {
+                'href': url
+            }
         if query == 'parent':
             return {
                 'links': {
@@ -36,7 +35,7 @@ def _url_val(val, obj, serializer, **kwargs):
                 }
             }
         else:
-            return val.get_meta(query, serializer, url, obj)
+            return val.get_links(query, serializer, url, obj)
     elif isinstance(val, basestring):
         return getattr(serializer, val)(obj)
 
@@ -132,7 +131,7 @@ class Link(object):
     def __repr__(self):
         return self.query
 
-    def get_meta(self, query, serializer, url, obj):
+    def get_links(self, query, serializer, url, obj):
         context = serializer.context
         meta = {}
         meta['count'] = 5000000000
@@ -163,6 +162,16 @@ class Link(object):
             class_name += class_param
         class_name += 'List'
         class_ = getattr(module, class_name)
+
+        if nodes_or_users == 'nodes':
+            instance = class_(kwargs={'node_id': obj._id})
+            instance.request = serializer.context['request']
+            queryset = instance.get_queryset()
+        else:
+            instance = None
+            queryset = None
+
+        return instance.serializer_class(queryset, many=True).data
 
     def resolve_url(self, obj):
         kwarg_values = {key: _get_attr_from_tpl(attr_tpl, obj) for key, attr_tpl in self.kwargs.items()}
