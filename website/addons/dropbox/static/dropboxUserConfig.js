@@ -96,7 +96,7 @@ function ViewModel(url) {
     /** Pop up confirm dialog for deleting user's access token. */
     self.deleteKey = function() {
         bootbox.confirm({
-            title: 'Delete Dropbox Token?',
+            title: 'Disconnect Dropbox Account?',
             message: language.confirmDeauth,
             callback: function(confirmed) {
                 if (confirmed) {
@@ -105,7 +105,7 @@ function ViewModel(url) {
             },
             buttons:{
                 confirm:{
-                    label:'Delete',
+                    label:'Disconnect',
                     className:'btn-danger'
                 }
             }

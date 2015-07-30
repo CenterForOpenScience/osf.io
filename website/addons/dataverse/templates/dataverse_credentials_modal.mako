@@ -19,7 +19,7 @@
                                 <select class="form-control"
                                         id="hostSelect"
                                         data-bind="options: visibleHosts,
-                                                   optionsCaption: 'Select an item...',
+                                                   optionsCaption: 'Select a Dataverse repository',
                                                    value: selectedHost,
                                                    event: { change: selectionChanged }">
                                 </select>

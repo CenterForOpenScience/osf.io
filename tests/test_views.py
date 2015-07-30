@@ -13,7 +13,7 @@ import math
 from nose.tools import *  # noqa PEP8 asserts
 from tests.test_features import requires_search
 
-from modularodm import Q
+from modularodm import Q, fields
 from dateutil.parser import parse as parse_date
 
 from framework import auth
@@ -55,11 +55,22 @@ from tests.factories import (
     UserFactory, ProjectFactory, WatchConfigFactory,
     NodeFactory, NodeLogFactory, AuthUserFactory, UnregUserFactory,
     RegistrationFactory, CommentFactory, PrivateLinkFactory, UnconfirmedUserFactory, DashboardFactory, FolderFactory,
-    ProjectWithAddonFactory,
+    ProjectWithAddonFactory, MockAddonNodeSettings,
 )
-
 from website.settings import ALL_MY_REGISTRATIONS_ID, ALL_MY_PROJECTS_ID
 
+class Addon(MockAddonNodeSettings):
+    @property
+    def complete(self):
+        return True
+    def archive_errors(self):
+        return 'Error'
+class Addon2(MockAddonNodeSettings):
+    @property
+    def complete(self):
+        return True
+    def archive_errors(self):
+        return 'Error'
 
 class TestViewingProjectWithPrivateLink(OsfTestCase):
 
@@ -134,6 +145,15 @@ class TestViewingProjectWithPrivateLink(OsfTestCase):
 
 
 class TestProjectViews(OsfTestCase):
+
+    ADDONS_UNDER_TEST = {
+        'addon1': {
+            'node_settings': Addon,
+        },
+        'addon2': {
+            'node_settings': Addon2,
+        },
+    }
 
     def setUp(self):
         super(TestProjectViews, self).setUp()
@@ -447,7 +467,7 @@ class TestProjectViews(OsfTestCase):
         assert_equal(len(res.json['others_count']), 1)
         assert_equal(res.json['contributors'][0]['separator'], ',')
         assert_equal(res.json['contributors'][1]['separator'], ',')
-        assert_equal(res.json['contributors'][2]['separator'], '&')
+        assert_equal(res.json['contributors'][2]['separator'], ' &')
 
     def test_edit_node_title(self):
         url = "/api/v1/project/{0}/edit/".format(self.project._id)
@@ -575,6 +595,20 @@ class TestProjectViews(OsfTestCase):
         res = self.app.get(url, expect_errors=True, auth=self.auth)
         assert_equal(res.status_code, 404)
         assert_in('Template not found', res)
+
+    def test_register_project_with_multiple_errors(self):
+        self.project.add_addon('addon1', auth=Auth(self.user1))
+        component = NodeFactory(parent=self.project, creator=self.user1)
+        component.add_addon('addon1', auth=Auth(self.user1))
+        component.add_addon('addon2', auth=Auth(self.user1))
+        self.project.save()
+        component.save()
+        url = self.project.api_url_for('project_before_register')
+        res = self.app.get(url, auth=self.auth)
+        data = res.json
+        assert_equal(res.status_code, 200)
+        assert_equal(len(data['errors']), 2)
+
 
     # Regression test for https://github.com/CenterForOpenScience/osf.io/issues/1478
     @mock.patch('website.archiver.tasks.archive.si')
@@ -1694,7 +1728,7 @@ class TestAddingContributorViews(OsfTestCase):
     @mock.patch('website.project.views.contributor.send_claim_email')
     def test_add_contributors_post_only_sends_one_email_to_unreg_user(
             self, mock_send_claim_email):
-        # Project has components
+        # Project has s
         comp1, comp2 = NodeFactory(
             creator=self.creator), NodeFactory(creator=self.creator)
         self.project.nodes.append(comp1)
