@@ -80,19 +80,27 @@
                                                         optionsText: 'label',
                                                         value: selectedCategory"></select>
                         </h5>
-                        <p data-bind="if: !disabled">
-                            <button data-bind="css: {disabled: !dirty()},
-                                               click: cancelUpdateCategory"
-                                    class="btn btn-default">Cancel</button>
-                            <button data-bind="css: {disabled: !dirty()},
-                                               click: updateCategory"
-                                    class="btn btn-primary">Change</button>
-                        </p>
-                        <span data-bind="css: messageClass, html: message"></span>
+                        <div style="display: none" data-bind="visible: disableButtons()">
 
-                        <span data-bind="if: disabled" class="help-block">
-                            A top-level project's category cannot be changed
-                        </span>
+                             <span class="help-block">
+                                A top-level project's category cannot be changed
+                            </span>
+                        </div>
+
+                        <div style="display: none" data-bind="visible: !disableButtons()">
+                            <button data-bind="visible : disable() css: {disabled: !dirty()},
+                                click: cancelUpdateCategory"
+                                class="btn btn-default">
+                                Cancel</button>
+
+                            <button data-bind="css: {disabled: !dirty()},
+                                click: updateCategory"
+                                class="btn btn-primary">
+                                Change</button>
+
+                            <span data-bind="css: messageClass, html: message"></span>
+                        </div>
+
                     </div>
 
                     % if 'admin' in user['permissions']:

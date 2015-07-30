@@ -17,7 +17,7 @@ var NodeCategorySettings = oop.extend(
             var self = this;
 
             self.disabled = disabled || false;
-
+            self.disableButtons = ko.observable(disabled || false);
             self.UPDATE_SUCCESS_MESSAGE = 'Category updated successfully';
             self.UPDATE_ERROR_MESSAGE = 'Error updating category, please try again. If the problem persists, email ' +
                 '<a href="mailto:support@osf.io">support@osf.io</a>.';
