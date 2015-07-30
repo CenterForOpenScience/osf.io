@@ -278,7 +278,7 @@ ViewModel.prototype.openCreateBucket = function() {
         var options = '';
         for (var location in locations) {
             if (self.settings.bucketLocations.hasOwnProperty(location)) {
-                options = options + ['<option value="', locations[location], '">', location, '</option>', '\n'].join('');
+                options = options + ['<option value="', location, '">', locations[location], '</option>', '\n'].join('');
             }
         }
         return options;
