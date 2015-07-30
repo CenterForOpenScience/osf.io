@@ -33,8 +33,8 @@ var FileViewPage = {
             }).done(function(resp) {
                 self.file.renter = resp.renter;
                 if ((self.file.renter !== '') && (self.file.renter !== self.context.userId)) {
-                $osf.growl('File is locked', 'This file has been locked by a <a href="/' + self.file.renter +
-                    '"> collaborator </a>. It needs to be unlocked before any changes can be made.');
+                $osf.growl('File is checked-out', 'This file has been checked-out by a <a href="/' + self.file.renter +
+                    '"> collaborator </a>. It needs to be checked back in before any changes can be made.');
             }
             }).fail(function(resp) {
             });
@@ -93,10 +93,10 @@ var FileViewPage = {
         });
         $(document).on('fileviewpage:rent', function() {
             bootbox.confirm({
-                title: 'Confirm file lock?',
+                title: 'Confirm file check-out?',
                 message: 'This would mean ' +
                     'other contributors cannot edit, delete or upload new versions of this file ' +
-                    'as long as it is locked. You can unlock it at anytime.',
+                    'as long as it is checked-out. You can check it back in at anytime.',
                 callback: function(confirm) {
                     if (!confirm) {
                         return;
@@ -107,12 +107,12 @@ var FileViewPage = {
                     ).done(function(resp) {
                         window.location.reload();
                     }).fail(function(resp) {
-                        $osf.growl('Error', 'Unable to lock file');
+                        $osf.growl('Error', 'Unable to check-out file');
                     });
                 },
                 buttons:{
                     confirm:{
-                        label: 'Lock file',
+                        label: 'Check-out file',
                         className: 'btn-warning'
                     }
                 }
@@ -125,17 +125,17 @@ var FileViewPage = {
             ).done(function(resp) {
                 window.location.reload();
             }).fail(function(resp) {
-                $osf.growl('Error', 'Unable to unlock file');
+                $osf.growl('Error', 'Unable to check-in file');
             });
         });
         $(document).on('fileviewpage:force_return', function() {
             bootbox.confirm({
-                title: 'Force unlock file?',
-                message: 'This will unlock the file for all contributors, and it will only work if you are an ' +
+                title: 'Force check-in file?',
+                message: 'This will allow all users to edit again, and it will only work if you are an ' +
                 'administrator.',
                 buttons: {
                     confirm:{
-                        label: 'Force unlock',
+                        label: 'Force check-in',
                         className: 'btn-danger'
                     }
                 },
@@ -149,7 +149,7 @@ var FileViewPage = {
                     ).done(function(resp) {
                         window.location.reload();
                     }).fail(function(resp) {
-                        $osf.growl('Error', 'Unable to force unlock file, make sure you have admin privileges.');
+                        $osf.growl('Error', 'Unable to force check-in file, make sure you have admin privileges.');
                     });
                 }
 
@@ -279,7 +279,6 @@ var FileViewPage = {
             } else {
                 // edit | revisions
                 mfrIframeParentLayout = '';
-                fileViewPanelsLayout = 'col-sm-12';
             }
         } else {
             // view
@@ -308,13 +307,13 @@ var FileViewPage = {
                 m('.btn.btn-sm.btn-danger.file-delete', {onclick: $(document).trigger.bind($(document), 'fileviewpage:delete')}, 'Delete')
             ]) : '',
             ctrl.context.currentUser.canEdit && (!ctrl.canEdit()) ? m('.btn-group.m-l-xs.m-t-xs', [
-                m('.btn.btn-sm.btn-danger', {onclick: $(document).trigger.bind($(document), 'fileviewpage:force_return')}, 'Force Unlock')
+                m('.btn.btn-sm.btn-danger', {onclick: $(document).trigger.bind($(document), 'fileviewpage:force_return')}, 'Force Check-in')
             ]) : '',
             ctrl.canEdit() && (ctrl.file.renter === '') && (ctrl.file.provider === 'osfstorage') ? m('.btn-group.m-l-xs.m-t-xs', [
-                m('.btn.btn-sm.btn-warning', {onclick: $(document).trigger.bind($(document), 'fileviewpage:rent')}, 'Lock')
+                m('.btn.btn-sm.btn-warning', {onclick: $(document).trigger.bind($(document), 'fileviewpage:rent')}, 'Check-out')
             ]) : '',
             (ctrl.canEdit() && (ctrl.file.renter === ctrl.context.userId)) ? m('.btn-group.m-l-xs.m-t-xs', [
-                m('.btn.btn-sm.btn-warning', {onclick: $(document).trigger.bind($(document), 'fileviewpage:return')}, 'Unlock')
+                m('.btn.btn-sm.btn-warning', {onclick: $(document).trigger.bind($(document), 'fileviewpage:return')}, 'Check-in')
             ]) : '',
             m('.btn-group.m-t-xs', [
                 m('.btn.btn-sm.btn-primary.file-download', {onclick: $(document).trigger.bind($(document), 'fileviewpage:download')}, 'Download')

@@ -1118,7 +1118,7 @@ function _fangornTitleColumn(item, col) {
                         event.stopImmediatePropagation();
                         gotoFileEvent.call(tb, item);
                     }
-                }, item.data.name + ' (Locked)');
+                }, item.data.name + ' (Checked-out)');
             }
         }
         return m('span.fg-file-links',{
@@ -1134,7 +1134,7 @@ function _fangornTitleColumn(item, col) {
     }
     if (item.data.provider === 'osfstorage' && item.kind === 'file'){
         if (item.data.extra.renter !== ''){
-            return m('span', item.data.name + ' (Locked)');
+            return m('span', item.data.name + ' (Checked-out)');
         }
     }
     return m('span', item.data.name);
@@ -1517,10 +1517,10 @@ var FGItemButtons = {
                             m.component(FGButton, {
                                 onclick: function(event) {
                                     tb.modal.update(m('', [
-                                        m('h3.break-word', 'Confirm file lock?'),
+                                        m('h3.break-word', 'Confirm file check-out?'),
                                         m('p', 'This would mean ' +
                                             'other contributors cannot edit, delete or upload new versions of this file ' +
-                                            'as long as it is locked. You can unlock it at anytime.')
+                                            'as long as it is checked-out. You can check it back in at anytime.')
                                     ]), m('', [
                                         m('span.tb-modal-btn.text-default', {onclick: function() {tb.modal.dismiss();}}, 'Cancel'), //jshint ignore:line
                                         m('span.tb-modal-btn.text-primary', {onclick: function() {
@@ -1531,17 +1531,17 @@ var FGItemButtons = {
                                                 if (resp.status === 'success') {
                                                     window.location.reload();
                                                 } else {
-                                                    $osf.growl('Error', 'Unable to lock file.');
+                                                    $osf.growl('Error', 'Unable to check-out file.');
                                                 }
                                             }).fail(function(resp) {
-                                                $osf.growl('Error', 'Unable to lock file.');
+                                                $osf.growl('Error', 'Unable to check-out file.');
                                             });
-                                        }}, 'Lock file')
+                                        }}, 'Check-out file')
                                     ]));
                                 },
-                                icon: 'fa fa-lock',
+                                icon: 'fa fa-sign-out',
                                 className : 'text-warning'
-                            }, 'Lock file'));
+                            }, 'Check-out file'));
                 }} else {
                     rowButtons.push(
                     m.component(FGButton, {
@@ -1562,15 +1562,15 @@ var FGItemButtons = {
                                 if (resp.status === 'success') {
                                     window.location.reload();
                                 } else {
-                                    $osf.growl('Error', 'Unable to unlock file.');
+                                    $osf.growl('Error', 'Unable to check-in file.');
                                 }
                             }).fail(function(resp) {
-                                $osf.growl('Error', 'Unable to unlock file.');
+                                $osf.growl('Error', 'Unable to check-in file.');
                             });
                         },
-                        icon: 'fa fa-unlock',
+                        icon: 'fa fa-sign-in',
                         className : 'text-warning'
-                    }, 'Unlock file'));
+                    }, 'Check-in file'));
             }
             if(storageAddons[item.data.provider].externalView) {
                 var providerFullName = storageAddons[item.data.provider].fullName;
@@ -1606,8 +1606,8 @@ var FGItemButtons = {
                 m.component(FGButton, {
                     onclick: function() {
                         tb.modal.update(m('', [
-                            m('h3.break-word', 'Unlock all OSF Storage files?'),
-                            m('p', 'This will unlock all files in OSF Storage, allowing them to be edited.')
+                            m('h3.break-word', 'Check-in all OSF Storage files?'),
+                            m('p', 'This will allow files in OSF Storage to be edited.')
                         ]), m('', [
                             m('span.tb-modal-btn.text-default', {onclick: function() {tb.modal.dismiss();}}, 'Cancel'), //jshint ignore:line
                             m('span.tb-modal-btn.text-primary', {onclick: function() {
@@ -1618,24 +1618,24 @@ var FGItemButtons = {
                                     if (resp.status === 'success') {
                                         window.location.reload();
                                     } else {
-                                        $osf.growl('Error', 'Unable to unlock OSF Storage. Make sure all files are unlocked, or locked by you.');
+                                        $osf.growl('Error', 'Unable to check-in OSF Storage. Make sure all files are checked-in, or checked-out by you.');
                                     }
                                 }).fail(function(resp) {
-                                    $osf.growl('Error', 'Unable to unlock OSF Storage. Make sure all files are unlocked, or locked by you.');
+                                    $osf.growl('Error', 'Unable to check-in OSF Storage. Make sure all files are checked-in, or checked-out by you.');
                                 });
-                            }}, 'Unlock all'),
+                            }}, 'Check-in all'),
                         ]));
                     },
-                    icon: 'fa fa-unlock',
+                    icon: 'fa fa-sign-in',
                     className: 'text-warning'
-                }, 'Unlock all')
+                }, 'Check-in all')
             );
             rowButtons.push(
                 m.component(FGButton, {
                     onclick: function() {
                         tb.modal.update(m('', [
-                            m('h3.break-word', 'Lock all OSF Storage files?'),
-                            m('p', 'This will lock all files in OSF Storage, preventing them from being edited by anyone but you. This does not prevent new files from being uploaded.')
+                            m('h3.break-word', 'Check-out all OSF Storage files?'),
+                            m('p', 'This will check-out all files in OSF Storage, preventing them from being edited by anyone but you. This does not prevent new files from being uploaded.')
                         ]), m('', [
                             m('span.tb-modal-btn.text-default', {onclick: function() {tb.modal.dismiss();}}, 'Cancel'), //jshint ignore:line
                             m('span.tb-modal-btn.text-primary', {onclick: function(){
@@ -1646,17 +1646,17 @@ var FGItemButtons = {
                                     if (resp.status === 'success') {
                                         window.location.reload();
                                     } else {
-                                        $osf.growl('Error', 'Unable to lock OSF Storage. Make sure all files are unlocked, or locked by you.');
+                                        $osf.growl('Error', 'Unable to check-out OSF Storage. Make sure all files are checked-in, or checked-out by you.');
                                     }
                                 }).fail(function(resp) {
-                                    $osf.growl('Error', 'Unable to lock OSF Storage. Make sure all files are unlocked, or locked by you.');
+                                    $osf.growl('Error', 'Unable to check-out OSF Storage. Make sure all files are checked-in, or checked-out by you.');
                                 });
-                            }}, 'Lock all'),
+                            }}, 'Check-out all'),
                         ]));
                     },
-                    icon: 'fa fa-lock',
+                    icon: 'fa fa-sign-out',
                     className: 'text-warning'
-                }, 'Lock all')
+                }, 'Check-out all')
             );
         }
         return m('span', rowButtons);
