@@ -1504,18 +1504,28 @@ var FGItemButtons = {
                     rowButtons.push(
                         m.component(FGButton, {
                             onclick: function(event) {
-                                $osf.postJSON(
-                                     item.data.nodeApiUrl + 'osfstorage' + item.data.path +'/rent/',
-                                    {}
-                                ).done(function(resp) {
-                                    if (resp.status === 'success') {
-                                        window.location.reload();
-                                    } else {
-                                        $osf.growl('Error', 'Unable to lock file.');
-                                    }
-                                }).fail(function(resp) {
-                                    $osf.growl('Error', 'Unable to lock file.');
-                                });
+                                tb.modal.update(m('', [
+                                    m('h3.break-word', 'Confirm file lock?'),
+                                    m('p', 'This would mean ' +
+                                        'other contributors cannot edit, delete or upload new versions of this file ' +
+                                        'as long as it is locked. You can unlock it at anytime.')
+                                ]), m('', [
+                                    m('span.tb-modal-btn.text-default', {onclick: function() {tb.modal.dismiss();}}, 'Cancel'), //jshint ignore:line
+                                    m('span.tb-modal-btn.text-primary', {onclick: function() {
+                                        $osf.postJSON(
+                                             item.data.nodeApiUrl + 'osfstorage' + item.data.path +'/rent/',
+                                            {}
+                                        ).done(function(resp) {
+                                            if (resp.status === 'success') {
+                                                window.location.reload();
+                                            } else {
+                                                $osf.growl('Error', 'Unable to lock file.');
+                                            }
+                                        }).fail(function(resp) {
+                                            $osf.growl('Error', 'Unable to lock file.');
+                                        });
+                                    }}, 'Lock file')
+                                ]));
                             },
                             icon: 'fa fa-lock',
                             className : 'text-warning'
@@ -1579,8 +1589,8 @@ var FGItemButtons = {
                 m.component(FGButton, {
                     onclick: function() {
                         tb.modal.update(m('', [
-                            m('h3.break-word', 'Unlock all OSF Storage files.'),
-                            m('p', 'This will unlock all files in OSF Storage, allowing them to be edited. Do you want to unlock them?')
+                            m('h3.break-word', 'Unlock all OSF Storage files?'),
+                            m('p', 'This will unlock all files in OSF Storage, allowing them to be edited.')
                         ]), m('', [
                             m('span.tb-modal-btn.text-default', {onclick: function() {tb.modal.dismiss();}}, 'Cancel'), //jshint ignore:line
                             m('span.tb-modal-btn.text-primary', {onclick: function() {
@@ -1607,7 +1617,7 @@ var FGItemButtons = {
                 m.component(FGButton, {
                     onclick: function() {
                         tb.modal.update(m('', [
-                            m('h3.break-word', 'Lock all OSF Storage files ?'),
+                            m('h3.break-word', 'Lock all OSF Storage files?'),
                             m('p', 'This will lock all files in OSF Storage, preventing them from being edited by anyone but you. This does not prevent new files from being uploaded.')
                         ]), m('', [
                             m('span.tb-modal-btn.text-default', {onclick: function() {tb.modal.dismiss();}}, 'Cancel'), //jshint ignore:line

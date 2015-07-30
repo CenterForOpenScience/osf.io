@@ -87,10 +87,10 @@ var FileViewPage = {
         });
         $(document).on('fileviewpage:rent', function() {
             bootbox.confirm({
-                title: 'Confirm file lock ?',
+                title: 'Confirm file lock?',
                 message: 'This would mean ' +
                     'other contributors cannot edit, delete or upload new versions of this file ' +
-                    'as long as it is locked. You can unlock it at anytime',
+                    'as long as it is locked. You can unlock it at anytime.',
                 callback: function(confirm) {
                     if (!confirm) {
                         return;
@@ -124,7 +124,7 @@ var FileViewPage = {
         });
         $(document).on('fileviewpage:force_return', function() {
             bootbox.confirm({
-                title: 'Force unlock file ?',
+                title: 'Force unlock file?',
                 message: 'This will unlock the file for all contributors, and it will only work if you are an ' +
                 'administrator.',
                 buttons: {
