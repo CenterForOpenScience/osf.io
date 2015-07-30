@@ -126,10 +126,12 @@
           </div>
         </div>
         <div class="col-md-6">
-          <div class="student-image">
-            <div class="quote">
-              <span class="main">“The OSF is a great way to collaborate and stay organized while still using your favorite external services."</span>
-              <span class="attrib"><strong>Kara Woo</strong> - Information Manager, Aquatic Ecology, Washington State</span>
+          <div class="student-wrap">
+            <div class="student-image">
+              <div class="quote">
+                <span class="main">“The OSF is a great way to collaborate and stay organized while still using your favorite external services."</span>
+                <span class="attrib"><strong>Kara Woo</strong> - Information Manager, Aquatic Ecology, Washington State</span>
+              </div>
             </div>
           </div>
         </div>
