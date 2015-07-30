@@ -21,7 +21,9 @@ def s3_post_user_settings(auth, **kwargs):
         raise HTTPError(httplib.BAD_REQUEST)
 
     if not (access_key and secret_key):
-        return {'message': 'All the fields above are required.'}, httplib.BAD_REQUEST
+        return {
+            'message': ('All the fields above are required.')
+        }, httplib.BAD_REQUEST
 
     if not utils.can_list(access_key, secret_key):
         return {
@@ -45,7 +47,9 @@ def s3_authorize_node(auth, node_addon, **kwargs):
         raise HTTPError(httplib.BAD_REQUEST)
 
     if not (access_key and secret_key):
-        return {'message': 'All the fields above are required.'}, httplib.BAD_REQUEST
+        return {
+            'message': 'All the fields above are required.'
+        }, httplib.BAD_REQUEST
 
     if not utils.can_list(access_key, secret_key):
         return {

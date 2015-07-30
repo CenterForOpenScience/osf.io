@@ -425,7 +425,7 @@ class AddonGitHubNodeSettings(StorageAddonBase, AddonNodeSettingsBase):
             else:
                 message += (
                     ' The files in this GitHub repo can be viewed on GitHub '
-                    '<a href="https://github.com/{user}/{repo}/">here</a>.'
+                    '<u><a href="https://github.com/{user}/{repo}/">here</a></u>.'
                 ).format(
                     user=self.user,
                     repo=self.repo,
