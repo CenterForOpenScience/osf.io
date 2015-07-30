@@ -192,12 +192,6 @@ ViewModel.prototype.createCredentials = function() {
     var self = this;
     self.creatingCredentials(true);
 
-    if ( !(self.secretKey() && self.accessKey()) ){
-        var message = 'All those fields above are required.';
-        self.changeMessage(message, 'text-danger');
-        self.creatingCredentials(false);
-        return false;
-    }
     return $osf.postJSON(
         self.urls().create_auth, {
             secret_key: self.secretKey(),

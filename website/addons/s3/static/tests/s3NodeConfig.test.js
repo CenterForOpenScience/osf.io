@@ -381,22 +381,10 @@ describe('s3NodeConfigViewModel', () => {
                 server.autoRespond = true;
             });
             var expected = endpoints[0].response;
-            it('makes a POST request to test the case when inputing empty secret key and access key', (done) => {
-                var vm = new s3NodeConfigVM('/api/v1/12345/s3/settings/', '', '/12345');
-                vm.updateFromData()
-                    .always(function() {
-                        assert.isFalse(vm.createCredentials());
-                        assert.isFalse(vm.creatingCredentials());
-                        done();
-                    });
-            });
-
             it('makes a POST request to create auth and updates settings on success', (done) => {
                 var vm = new s3NodeConfigVM('/api/v1/12345/s3/settings/', '', '/12345');
                 vm.updateFromData()
                     .always(function() {
-                        vm.secretKey("nonEmptySecretKey");
-                        vm.accessKey("nonEmptyAccessKey");
                         var promise = vm.createCredentials();
                         assert.isTrue(vm.creatingCredentials());
                         assert.isFalse(vm.userHasAuth());
