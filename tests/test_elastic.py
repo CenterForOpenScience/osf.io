@@ -764,7 +764,7 @@ class TestUpdateFiles(SearchTestCase):
         self.fake_file_doc_one = {
             'id': 'aaaaa',
             'name': 'test_file_one.txt',
-            'path': '/00001',
+            'path': '00001',
             'content': 'this is a test file.',
             'parent_id': self.parent_project._id,
             'size': 1000,
@@ -773,7 +773,7 @@ class TestUpdateFiles(SearchTestCase):
         self.fake_file_doc_two = {
             'id': 'bbbbb',
             'name': 'test_file_two.txt',
-            'path': '/00002',
+            'path': '00002',
             'content': 'the rain in spain rains mainly on the plain',
             'parent_id': self.parent_project._id,
             'size': 2000,
@@ -842,7 +842,7 @@ class TestDeleteFiles(SearchTestCase):
         self.fake_file_doc_one = {
             'id': 'aaaaa',
             'name': 't_one.txt',
-            'path': '/000000001',
+            'path': '000000001',
             'content': 'this is a test file.',
             'parent_id': self.parent_project._id,
             'size': 1000,
@@ -850,7 +850,7 @@ class TestDeleteFiles(SearchTestCase):
         self.fake_file_doc_two = {
             'id': 'bbbbb',
             'name': 't_two.txt',
-            'path': '/000000002',
+            'path': '000000002',
             'content': 'the rain in spain rains mainly on the plain',
             'parent_id': self.parent_project._id,
             'size': 1000,

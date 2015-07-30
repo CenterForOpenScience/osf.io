@@ -13,6 +13,8 @@ from framework.auth import User
 from website.models import Node
 from website.app import init_app
 import website.search.search as search
+from website.search.file_util import collect_files
+from website.search.search import update_file
 from scripts import utils as script_utils
 from website.search.elastic_search import es
 
@@ -51,9 +53,12 @@ def migrate_files(index=None, app=None):
 
     logger.info("Migrating files to index: {}".format(index))
     nodes = Node.find(Q('is_public', 'eq', True) & Q('is_deleted', 'eq', False))
+    n_iter = 0
     for node in nodes:
-        search.update_all_files(node, index=index)
-    logger.info('Files migrated')
+        for file_dict in collect_files(node):
+            update_file(file_dict['name'], file_dict['path'], file_dict['addon'], index)
+            n_iter += 1
+    logger.info('Files migrated: {}'.format(n_iter))
 
     ctx.pop()
 

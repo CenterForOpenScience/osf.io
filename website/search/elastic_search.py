@@ -20,6 +20,7 @@ from elasticsearch import (
 )
 
 from framework import sentry
+from framework.tasks import handlers
 
 from website import settings
 from website.filters import gravatar
@@ -297,6 +298,7 @@ def update_node(node, index=None):
         es.index(index=index, doc_type=category, id=elastic_document_id, body=elastic_document, refresh=True)
 
 
+
 @file_util.file_indexing
 @requires_search
 def update_file(name, path, addon, index=None):
@@ -306,16 +308,41 @@ def update_file(name, path, addon, index=None):
     :param path: Path of file to index.
     :param addon: Instance of storage containing the file.
     """
+    index = index or INDEX
     if file_util.is_indexed(name, addon):
-        index = index or INDEX
         file_doc = file_util.build_file_document(name, path, addon, include_content=True)
+
         if not file_doc['size'] < settings.MAX_INDEXED_FILE_SIZE:
             return
+
         # elastic-search-mapper takes base64 encoded files.
         file_doc.update({'attachment': base64.encodestring(file_doc.pop('content'))})
         file_doc.update({'category': 'file'})
         parent_id = file_doc['parent_id']
-        es.index(index=index, doc_type='file', parent=parent_id, id=file_doc['path'], body=file_doc, refresh=True)
+        es.index(index=index,
+                 doc_type='file',
+                 parent=parent_id,
+                 id=file_doc['path'],
+                 body=file_doc,
+                 refresh=True,
+                 )
+
+
+@file_util.file_indexing
+@requires_search
+def delete_file(name, path, addon, index=None):
+    """Remove a single file from search index.
+
+    :param file_path:
+    """
+    index = index or INDEX
+    path = file_util.norm_path(path)
+    es.delete(index=index,
+              doc_type='file',
+              id=path,
+              refresh=True,
+              ignore=404,
+              )
 
 
 @file_util.file_indexing
@@ -333,18 +360,6 @@ def update_all_files(node, index=None):
             addon=file_dict['addon'],
             index=index,
         )
-
-
-@file_util.file_indexing
-@requires_search
-def delete_file(name, path, addon, index=None):
-    """Remove a single file from search index.
-
-    :param file_path:
-    """
-    index = index or INDEX
-    file_doc = file_util.build_file_document(name, path, addon, include_content=False)
-    es.delete(index=index, doc_type='file', id=file_doc['path'], refresh=True, ignore=404)
 
 
 @file_util.file_indexing
