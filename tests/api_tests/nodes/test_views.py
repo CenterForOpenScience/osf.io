@@ -1517,10 +1517,10 @@ class TestNodeIncludeQueryParams(ApiTestCase):
         self.url_detail += '?include=children'
         res = self.app.get(self.url_detail)
         assert_equal(res.status_code, 200)
-        child_list = res.json['data']['relationships']['children']['links']['related']['meta']['list']
+        child_list = res.json['data']['relationships']['children']['links']['related']['meta']['data']
         child_in_list = False
         for child in child_list:
-            if child['data']['id'] == self.child._id:
+            if child['id'] == self.child._id:
                 child_in_list = True
                 break
         assert_true(child_in_list)
@@ -1529,10 +1529,10 @@ class TestNodeIncludeQueryParams(ApiTestCase):
         self.url_detail += '?include=contributors'
         res = self.app.get(self.url_detail)
         assert_equal(res.status_code, 200)
-        contributor_list = res.json['data']['relationships']['contributors']['links']['related']['meta']['list']
+        contributor_list = res.json['data']['relationships']['contributors']['links']['related']['meta']['data']
         contributor_in_list = False
         for contributor in contributor_list:
-            if contributor['data']['id'] == self.contributor._id:
+            if contributor['id'] == self.contributor._id:
                 contributor_in_list = True
                 break
         assert_true(contributor_in_list)
@@ -1541,10 +1541,10 @@ class TestNodeIncludeQueryParams(ApiTestCase):
         self.url_detail += '?include=pointers'
         res = self.app.get(self.url_detail)
         assert_equal(res.status_code, 200)
-        pointer_list = res.json['data']['relationships']['pointers']['links']['related']['meta']['list']
+        pointer_list = res.json['data']['relationships']['pointers']['links']['related']['meta']['data']
         pointer_in_list = False
         for pointer in pointer_list:
-            if pointer['data']['id'] == self.pointer._id:
+            if pointer['id'] == self.pointer._id:
                 pointer_in_list = True
                 break
         assert_true(pointer_in_list)
@@ -1553,10 +1553,10 @@ class TestNodeIncludeQueryParams(ApiTestCase):
         self.url_detail += '?include=registrations'
         res = self.app.get(self.url_detail)
         assert_equal(res.status_code, 200)
-        registration_list = res.json['data']['relationships']['registrations']['links']['related']['meta']['list']
+        registration_list = res.json['data']['relationships']['registrations']['links']['related']['meta']['data']
         registration_in_list = False
         for registration in registration_list:
-            if registration['data']['id'] == self.registration._id:
+            if registration['id'] == self.registration._id:
                 registration_in_list = True
                 break
         assert_true(registration_in_list)
@@ -1565,10 +1565,10 @@ class TestNodeIncludeQueryParams(ApiTestCase):
         self.url_detail += '?include=children,contributors,pointers,registrations'
         res = self.app.get(self.url_detail)
         assert_equal(res.status_code, 200)
-        registration_list = res.json['data']['relationships']['registrations']['links']['related']['meta']['list']
+        registration_list = res.json['data']['relationships']['registrations']['links']['related']['meta']['data']
         registration_in_list = False
         for registration in registration_list:
-            if registration['data']['id'] == self.registration._id:
+            if registration['id'] == self.registration._id:
                 registration_in_list = True
                 break
         assert_true(registration_in_list)
@@ -1584,10 +1584,10 @@ class TestNodeIncludeQueryParams(ApiTestCase):
                 serialized_project = node
         relationship_list = serialized_project['relationships']
         for key in self.object_dict.keys():
-            object_list = relationship_list[key]['links']['related']['meta']['list']
+            object_list = relationship_list[key]['links']['related']['meta']['data']
             object_in_list = False
             for serialized_object in object_list:
-                if getattr(self, self.object_dict[key])._id == serialized_object['data']['id']:
+                if getattr(self, self.object_dict[key])._id == serialized_object['id']:
                     object_in_list = True
                     break
             assert_true(object_in_list)
@@ -1604,10 +1604,10 @@ class TestNodeIncludeQueryParams(ApiTestCase):
                 serialized_project = node
         relationship_list = serialized_project['relationships']
         for key in self.object_dict.keys():
-            object_list = relationship_list[key]['links']['related']['meta']['list']
+            object_list = relationship_list[key]['links']['related']['meta']['data']
             object_in_list = False
             for serialized_object in object_list:
-                if getattr(self, self.object_dict[key])._id == serialized_object['data']['id']:
+                if getattr(self, self.object_dict[key])._id == serialized_object['id']:
                     object_in_list = True
                     break
             assert_true(object_in_list)
@@ -1623,14 +1623,14 @@ class TestNodeIncludeQueryParams(ApiTestCase):
         registered_pointer = self.registration.nodes_pointer[0]
 
         for key in self.object_dict.keys():
-            object_list = relationship_list[key]['links']['related']['meta']['list']
+            object_list = relationship_list[key]['links']['related']['meta']['data']
             object_in_list = False
             if key == 'registrations':
                 object_in_list = (object_list == [])
                 assert_true(object_in_list)
                 continue
             for serialized_object in object_list:
-                serialized_object_id = serialized_object['data']['id']
+                serialized_object_id = serialized_object['id']
                 if registered_child._id == serialized_object_id:
                     object_in_list = True
                     break

@@ -327,10 +327,10 @@ class TestUserIncludeQueryParameters(ApiTestCase):
         url = self.user_base_url+'?include=nodes'
         res = self.app.get(url)
         assert_equal(res.status_code, 200)
-        node_list = res.json['data'][0]['relationships']['nodes']['links']['meta']['list']
+        node_list = res.json['data'][0]['relationships']['nodes']['related']['links']['meta']['data']
         node_in_list = False
         for node in node_list:
-            if node['data']['id'] == self.project._id:
+            if node['id'] == self.project._id:
                 node_in_list = True
                 break
         assert_true(node_in_list)
@@ -339,10 +339,10 @@ class TestUserIncludeQueryParameters(ApiTestCase):
         url = self.user_base_url+'{}/?include=nodes'.format(self.user._id)
         res = self.app.get(url)
         assert_equal(res.status_code, 200)
-        node_list = res.json['data']['relationships']['nodes']['links']['meta']['list']
+        node_list = res.json['data']['relationships']['nodes']['related']['links']['meta']['data']
         node_in_list = False
         for node in node_list:
-            if node['data']['id'] == self.project._id:
+            if node['id'] == self.project._id:
                 node_in_list = True
                 break
         assert_true(node_in_list)
@@ -351,10 +351,10 @@ class TestUserIncludeQueryParameters(ApiTestCase):
         url = self.contributor_base_url+'?include=nodes'
         res = self.app.get(url)
         assert_equal(res.status_code, 200)
-        node_list = res.json['data'][0]['relationships']['nodes']['links']['meta']['list']
+        node_list = res.json['data'][0]['relationships']['nodes']['related']['links']['meta']['data']
         node_in_list = False
         for node in node_list:
-            if node['data']['id'] == self.project._id:
+            if node['id'] == self.project._id:
                 node_in_list = True
                 break
         assert_true(node_in_list)
