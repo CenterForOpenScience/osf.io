@@ -81,17 +81,3 @@
         <p data-bind="html: message, attr.class: messageClass"></p>
     </div>
 </div>
-
- <script>
-    // Make s3 settings variables globally accessible for relevant JS
-    <%
-      from website.addons.s3.settings import BUCKET_LOCATIONS, ENCRYPT_UPLOADS_DEFAULT
-      from website.util.sanitize import safe_json as sjson
-    %>
-    window.contextVars = $.extend(true, {}, window.contextVars, {
-        s3Settings: {
-            encryptUploads: ${ ENCRYPT_UPLOADS_DEFAULT | sjson, n },
-            bucketLocations: ${ BUCKET_LOCATIONS | sjson, n }
-          }
-    })
- </script>

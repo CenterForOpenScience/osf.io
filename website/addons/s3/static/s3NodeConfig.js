@@ -7,14 +7,14 @@ var Raven = require('raven-js');
 
 var $osf = require('js/osfHelpers');
 
-var bucketLocations = require('json!./bucketLocations.json');
+var s3Settings = require('json!./settings.json');
 
 ko.punches.enableAll();
 
 var defaultSettings = {
     url: '',
-    encryptUploads: true,
-    bucketLocations: bucketLocations
+    encryptUploads: s3Settings.encryptUploads,
+    bucketLocations: s3Settings.bucketLocations
 };
 
 var ViewModel = function(selector, settings) {
@@ -36,7 +36,7 @@ var ViewModel = function(selector, settings) {
     self.loadedBucketList = ko.observable(false);
     self.currentBucket = ko.observable('');
     self.selectedBucket = ko.observable('');
-    self.encryptUploads = ko.observable(settings.defaultEncryptUploads);
+    self.encryptUploads = ko.observable(self.settings.encryptUploads);
 
     self.accessKey = ko.observable('');
     self.secretKey = ko.observable('');
