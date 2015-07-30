@@ -85,8 +85,14 @@ class LinksFieldWIthSelfLink(ser.Field):
 
 class LinksField(LinksFieldWIthSelfLink):
     def to_representation(self, obj):
-        if 'request' in self.parent.context:
-            request = self.parent.context['request']
+
+        self.check_parameters(self.parent.context, obj)
+        ret = _rapply(self.links, _url_val, obj=obj, serializer=self.parent)
+        return ret
+
+    def check_parameters(self, context, obj):
+        if 'request' in context:
+            request = context['request']
             if 'include' in request.query_params:
                 if hasattr(obj, 'title'):
                     allowed_params = ['children', 'contributors', 'pointers', 'registrations']
@@ -97,8 +103,6 @@ class LinksField(LinksFieldWIthSelfLink):
                 for param in request.query_params['include'].split(','):
                     if param not in allowed_params:
                         raise ValidationError('{} is not a valid parameter.'.format(param))
-        ret = _rapply(self.links, _url_val, obj=obj, serializer=self.parent)
-        return ret
 
 _tpl_pattern = re.compile(r'\s*<\s*(\S*)\s*>\s*')
 
