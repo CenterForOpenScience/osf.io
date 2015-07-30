@@ -34,7 +34,7 @@ def _url_val(val, obj, serializer, **kwargs):
                     'self': url
                 }
             }
-        else:
+        elif 'request' in serializer.context:
             return val.get_links(query, serializer, url, obj)
     elif isinstance(val, basestring):
         return getattr(serializer, val)(obj)
@@ -145,24 +145,14 @@ class Link(object):
         return ret
 
     def get_meta(self, query,  serializer, obj, context):
-        api_base = __import__('api')
         nodes_or_users = self.endpoint.split(':')[0]
-        module_location = getattr(api_base, nodes_or_users)
-        module = getattr(module_location, 'views')
-
-        class_name_params = self.endpoint.split(':')[1].split('-')
-        class_name = ''
-        for class_param in class_name_params:
-            class_param = class_param[0].capitalize() + class_param[1:]
-            class_name += class_param
-        class_name += 'List'
-        class_ = getattr(module, class_name)
+        class_ = self.get_class(nodes_or_users)
 
         if nodes_or_users == 'nodes':
             instance = class_(kwargs={'node_id': obj._id})
-
         else:
             instance = class_(kwargs={'user_id': obj._id})
+
         instance.request = serializer.context['request']
         queryset = instance.get_queryset()
         serialized_objects = instance.serializer_class(queryset, many=True).data
@@ -175,6 +165,20 @@ class Link(object):
                 meta['data'] = serialized_objects
 
         return meta
+
+    def get_class(self, nodes_or_users):
+        api_base = __import__('api')
+        module_location = getattr(api_base, nodes_or_users)
+        module = getattr(module_location, 'views')
+
+        class_name_params = self.endpoint.split(':')[1].split('-')
+        class_name = ''
+        for class_param in class_name_params:
+            class_param = class_param[0].capitalize() + class_param[1:]
+            class_name += class_param
+        if class_name != 'UserNodes':
+            class_name += 'List'
+        return getattr(module, class_name)
 
     def resolve_url(self, obj):
         kwarg_values = {key: _get_attr_from_tpl(attr_tpl, obj) for key, attr_tpl in self.kwargs.items()}
