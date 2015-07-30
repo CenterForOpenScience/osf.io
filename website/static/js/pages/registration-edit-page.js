@@ -23,7 +23,5 @@ $(document).ready(function() {
 
     var draft = new registrationUtils.Draft(window.contextVars.draft);
     draftEditor.init(draft);
-    window.draftEditor = draftEditor;
     $osf.applyBindings(draftEditor, '#draftRegistrationScope');
-
 });
