@@ -28,7 +28,7 @@ def _url_val(val, obj, serializer, **kwargs):
             return {
                 'href': url
             }
-        if query == 'parent':
+        if query == 'detail':
             return {
                 'links': {
                     'self': url
