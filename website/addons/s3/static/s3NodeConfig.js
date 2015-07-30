@@ -203,10 +203,10 @@ ViewModel.prototype.createCredentials = function() {
         self.updateFromData(response);
     }).fail(function(xhr, status, error) {
         self.creatingCredentials(false);
-        var message = 'Error: ';
+        var message = '';
         var response = JSON.parse(xhr.responseText);
         if (response && response.message) {
-            message += response.message;
+            message = response.message;
         }
         self.changeMessage(message, 'text-danger');
         Raven.captureMessage('Could not add S3 credentials', {
