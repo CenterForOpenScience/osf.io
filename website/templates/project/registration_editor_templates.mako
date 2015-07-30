@@ -139,10 +139,18 @@
         </li>
     </ul>
     <div class="input-group">
-      <input class="form-control registration-editor-comment" type="text" data-bind="value: nextComment, valueUpdate: 'keyup', event: {'keyup': $root.save}" />
+      <input class="form-control registration-editor-comment" type="text" 
+             data-bind="value: nextComment,
+                        valueUpdate: 'keyup',
+                        event: {'keyup': $root.save},
+                        onKeyPress: {
+                          keyCode: 13,
+                          listener: addComment.bind($data, root.save)
+                        }" />
       <span class="input-group-btn">
-        <button class="btn btn primary" data-bind="click: $data.addComment.bind($data, $root.save),
-                                                   enable: $data.allowAddNext">Add</button>
+        <button class="btn btn primary" 
+                data-bind="click: addComment.bind($data, $root.save),
+                           enable: allowAddNext">Add</button>
       </span>
     </div>
 </script>

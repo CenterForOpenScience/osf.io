@@ -213,7 +213,17 @@ ko.bindingHandlers.tooltip = {
         $(el).tooltip(params);
     }
 };
-
+// Attach view model logic to global keypress events
+ko.bindingHandlers.onKeyPress = {
+    init: function(el, valueAccessor) {
+        $(window).keydown(function(e) {
+            var params = valueAccessor();
+            if (e.keyCode === params.keyCode) {
+                params.listener(e);
+            }
+        });
+    }
+};
 
 // Expose public utilities
 

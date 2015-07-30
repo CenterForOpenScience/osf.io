@@ -2,7 +2,10 @@
 'use strict';
 var assert = require('chai').assert;
 var $ = require('jquery');
+var utils = require('tests/utils');
 var faker = require('faker');
+
+var bootbox = require('bootbox');
 
 window.contextVars.currentUser = {
     fullname: faker.name.findName(),
@@ -426,6 +429,97 @@ describe('Draft', () => {
 
             assert.equal(draft.completion(), 100);
         });
+    });
+    describe('#beforeRegister', () => {
+        var ms = mkMetaSchema()[2];
+        
+        var beforeRegisterUrl = faker.internet.ip();
+        var params = {
+            pk: faker.random.number(),
+            registration_metadata: {},
+            initiator: {
+                name: faker.name.findName(),
+                id: faker.internet.ip()
+            },
+            initiated: faker.date.past(),
+            updated: faker.date.past(),
+            urls: {
+                before_register: beforeRegisterUrl
+            }
+        };
+
+        var draft = new Draft(
+            params, ms
+        );
+        var endpoints = [{
+            method: 'GET',
+            url: beforeRegisterUrl,
+            response: {
+                errors: ['Error'],
+                prompts: ['Prompt']
+            }
+        }];
+        var server;
+        var getJSONSpy;
+        var preRegisterErrorsStub;
+        var preRegisterPromptsStub;
+        var registerStub;
+        before(() => {            
+            server = utils.createServer(sinon, endpoints);
+            getJSONSpy = sinon.spy($, 'getJSON');
+            preRegisterErrorsStub = sinon.stub(draft, 'preRegisterErrors');
+            preRegisterPromptsStub = sinon.stub(draft, 'preRegisterPrompts');
+            registerStub = sinon.stub(draft, 'register');
+        });
+        after(() => {
+            server.restore();
+            $.getJSON.restore();
+            draft.preRegisterErrors.restore();
+            draft.preRegisterPrompts.restore();
+            draft.register.restore();
+        });
+        afterEach(() => {
+            preRegisterErrorsStub.reset();
+            preRegisterPromptsStub.reset();
+            registerStub.reset();
+        });
+        it('fetches pre-register messages', (done) => {
+            draft.beforeRegister().always(function() {
+                assert.isTrue(getJSONSpy.calledOnce);
+                done();
+            });
+        });
+        it('calls Draft#preRegisterErrors if there are errors', (done) => {
+            draft.beforeRegister().always(function() {
+                assert.isTrue(preRegisterErrorsStub.calledOnce);
+                done();
+            });            
+        });
+        it('calls Draft#preRegisterPrompts if there are prompts and no errors', (done) => {
+            server.respondWith(
+                beforeRegisterUrl, 
+                function (xhr, id) {
+                    xhr.respond(200, 
+                                {'Content-Type': 'application/json'}, 
+                                JSON.stringify({
+                                    prompts: ['Warn']
+                                }));
+                });
+            draft.beforeRegister().always(function() {
+                assert.isTrue(preRegisterPromptsStub.calledOnce);
+                done();
+            });           
+        });
+        it('calls Draft#register if there are no errors and no prompts', (done) => {
+            server.respondWith(
+                beforeRegisterUrl, 
+                '{}'
+            );
+            draft.beforeRegister().always(function() {
+                assert.isTrue(registerStub.calledOnce);
+                done();
+            });            
+        });        
     });
 });
 

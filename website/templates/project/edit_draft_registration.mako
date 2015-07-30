@@ -56,10 +56,20 @@
                 </ul>
               </div>
               <div class="span8 col-md-9 columns eight large-8">
-                <a id="editorPreviousQuestion" data-bind="click: previousQuestion" style="padding-left: 5px;">
+                <a id="editorPreviousQuestion" 
+                   data-bind="click: previousQuestion,
+                              onKeyPress: {
+                                keyCode: 37,
+                                listener: previousQuestion.bind($data)
+                              }" style="padding-left: 5px;">
                   <i style="display:inline-block; padding-left: 5px; padding-right: 5px;" class="fa fa-arrow-left"></i>Previous
                 </a>
-                <a id="editorNextQuestion" data-bind="click: nextQuestion" style="float:right; padding-right:5px;">Next
+                <a id="editorNextQuestion" 
+                   data-bind="click: nextQuestion,
+                              onKeyPress: {
+                                keyCode: 39,
+                                listener: nextQuestion.bind($data)
+                              }" style="float:right; padding-right:5px;">Next
                   <i style="display:inline-block; padding-right: 5px; padding-left: 5px;" class="fa fa-arrow-right"></i>
                 </a>
                 <br />

@@ -52,10 +52,6 @@ function Comment(data) {
     });
 
     self.seenBy = ko.observableArray([self.user.id] || []);
-    self.viewComment = function(user) {
-        self.seenBy.push(user.id);
-    };
-
     /**
      * Returns the author as the actual user, not 'You'
      **/
@@ -88,6 +84,7 @@ function Comment(data) {
         return !self.isDeleted() && self.saved() && self.user.id === currentUser.id;
     });
 }
+/** Toggle the comment's save state **/
 Comment.prototype.toggleSaved = function(save) {
     var self = this;
 
@@ -96,30 +93,17 @@ Comment.prototype.toggleSaved = function(save) {
         save();
     }
 };
+/** Indicate that a comment is deleted **/
 Comment.prototype.delete = function(save) {
     var self = this;
 
     self.isDeleted(true);
     save();
 };
-// Let ENTER keypresses add a comment if comment <input> is in focus
-$(document).keydown(function(e) {
-    if (e.keyCode === 13) {
-        $target = $(e.target);
-        if ($target.hasClass('registration-editor-comment')) {
-            var $button = $target.siblings('span').find('button');
-            if(!$button.is(':disabled')) {
-                $button.click();
-            }
-        }
-    }
-    if (e.keyCode === 39) {
-        $('#editorNextQuestion').click();
-    }
-    if (e.keyCode === 37) {
-        $('#editorPreviousQuestion').click();
-    }
-});
+/** Indicate that a user has seen a comment **/
+Comment.prototype.viewComment = function(user) {
+    this.seenBy.push(user.id);
+};
 
 var validate = function(checks, message, value, required) {
     required = required || false;        
@@ -164,6 +148,7 @@ var validators = {
  * @param {String} data.required
  * @param {String[]} data.options: array of options for 'choose' types
  * @param {Object[]} data.properties: object of sub-Question properties for 'object' types
+ * @param {String} data.match: optional string that must be matched
  * @param {String} id: unique identifier
  **/
 var Question = function(data, id) {
@@ -212,10 +197,16 @@ var Question = function(data, id) {
         return !$osf.isBlank(self.value());
     });
 
+    /**
+     * @returns {String}
+     **/
     self.validationMessages = ko.computed(function() {
         var valid = self.valid();
         return valid.message;
     });
+    /**
+     * @returns {Boolean}
+     **/ 
     self.validationStatus = ko.computed(function() {
         var valid = self.valid();
         return {
@@ -279,7 +270,6 @@ Question.prototype.valid = function() {
         return validate([], '', value, self.required); 
     }
 };
-
 
 /**
  * Model for MetaSchema instances
@@ -403,45 +393,45 @@ var Draft = function(params, metaSchema) {
         return 0;
     });
 };
+Draft.prototype.preRegisterPrompts = function(response, confirm) {
+    var self = this;
+    bootbox.confirm(
+        {
+            size: 'large',
+            title : language.registerConfirm,
+            message : $osf.joinPrompts(response.prompts),
+            callback: function(result) {
+                if (result) {
+                    confirm();
+                }
+            }
+        }
+    );
+};
+Draft.prototype.preRegisterErrors = function(response, confirm) {
+    bootbox.confirm(
+        $osf.joinPrompts(
+            response.errors,
+            'Before you continue...'
+        ) + '<br />' + language.registerSkipAddons,
+        function(result) {
+            if(result) {
+                confirm();
+            }
+        }
+    );
+};
 Draft.prototype.beforeRegister = function(data) {
     var self = this;
 
     $osf.block();
-
-    $.getJSON(self.urls.before_register).then(function(response) {
-        var preRegisterWarnings = function() {
-            bootbox.confirm(
-                {
-                    size: 'large',
-                    title : language.registerConfirm,
-                    message : $osf.joinPrompts(response.prompts),
-                    callback: function(result) {
-                        if (result) {
-                            self.register(data);
-                        }
-                    }
-                }
-            );
-        };
-        var preRegisterErrors = function(confirm, reject) {
-            bootbox.confirm(
-                $osf.joinPrompts(
-                    response.errors,
-                    'Before you continue...'
-                ) + '<br />' + language.registerSkipAddons,
-                function(result) {
-                    if(result) {
-                        confirm();
-                    }
-                }
-            );
-        };
-
+    
+    return $.getJSON(self.urls.before_register).then(function(response) {
         if (response.errors && response.errors.length) {
-            preRegisterErrors(preRegisterWarnings);
+            self.preRegisterErrors(response, self.preRegisterWarnings);
         }
         else if (response.prompts && response.prompts.length) {
-            preRegisterWarnings();
+            self.preRegisterPrompts(response, self.register.bind(self, data));
         }
         else {
             self.register(data);
