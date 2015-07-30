@@ -434,6 +434,16 @@ h6 {
 footer {
     margin-top: -20px;
 }
+
+.network-bg {
+  background: url("/img/bg-web.png") repeat;
+  background-size: contain;
+  height: 1000px;
+  margin-bottom: -1000px;
+  opacity: 0.25;
+  -ms-filter: "progid:DXImageTransform.Microsoft.Alpha(Opacity=25)";
+}
+
 @media (max-width: 767px) {
     #hero-signup {
         width: 100%;

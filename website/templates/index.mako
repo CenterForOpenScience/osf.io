@@ -16,6 +16,7 @@
     <!-- Main jumbotron for a primary marketing message or call to action -->
     <div id="home-hero">
       <div class="container text-center">
+        <div class="visible-xs-block visible-sm-block visible-md-block network-bg"></div>
         <h1><strong>Simplified</strong> scientific collaboration</h1>
         <h3>Powerful end-to-end support for your research.</h3>
 
