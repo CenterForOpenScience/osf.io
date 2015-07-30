@@ -5,21 +5,39 @@ require('EasePack');
 require('vendor/youtube');
 
 // ANIMATION FOR FRONT PAGE
+
 $( document ).ready(function() {
-    $('#logo').removeClass('off');
-    $('.youtube').YouTubeModal({autoplay:1, width:640, height:480});
+  $('#logo').removeClass('off');
+  $(".youtube").YouTubeModal({autoplay:1, width:640, height:480});
 });
 
+(function(){
+  if ($(window).scrollTop() > 650) {
+      $('.navbar').addClass('off');
+  }
+  else {
+      $('.navbar').removeClass('off');
+  }
+    setTimeout(arguments.callee, 40);
+})();
+
+var waitForFinalEvent = (function () {
+  var timers = {};
+  return function (callback, ms, uniqueId) {
+    if (!uniqueId) {
+      uniqueId = "Don't call this twice without a uniqueId";
+    }
+    if (timers[uniqueId]) {
+      clearTimeout (timers[uniqueId]);
+    }
+    timers[uniqueId] = setTimeout(callback, ms);
+  };
+})();
 
 (function() {
-    var width;
-    var height;
-    var largeHeader;
-    var canvas;
-    var ctx;
-    var points;
-    var target;
-    var animateHeader = true;
+
+    var width, height, largeHeader, canvas, ctx, points, target, animateHeader = true;
+
     // Main
     initHeader();
     initAnimation();
@@ -32,8 +50,8 @@ $( document ).ready(function() {
 
         largeHeader = document.getElementById('home-hero');
 
-        canvas = document.getElementById('demo-canvas');
-        canvas.width = width - 20;
+        canvas = $('#demo-canvas')[0];
+        canvas.width = width;
         canvas.height = height;
         ctx = canvas.getContext('2d');
 
@@ -53,21 +71,22 @@ $( document ).ready(function() {
             var closest = [];
             var p1 = points[i];
             for(var j = 0; j < points.length; j++) {
-                var p2 = points[j];
-                if(p1 !== p2) {
+                var p2 = points[j]
+                if(!(p1 == p2)) {
                     var placed = false;
                     for(var k = 0; k < 5; k++) {
                         if(!placed) {
-                            if(closest[k] === undefined) {
+                            if(closest[k] == undefined) {
                                 closest[k] = p2;
                                 placed = true;
                             }
                         }
                     }
-                    for(var l = 0; l < 5; l++) {
+
+                    for(var k = 0; k < 5; k++) {
                         if(!placed) {
-                            if(getDistance(p1, p2) < getDistance(p1, closest[l])) {
-                                closest[l] = p2;
+                            if(getDistance(p1, p2) < getDistance(p1, closest[k])) {
+                                closest[k] = p2;
                                 placed = true;
                             }
                         }
@@ -78,9 +97,9 @@ $( document ).ready(function() {
         }
 
         // assign a circle to each point
-        for(var m in points) {
-            var c = new Circle(points[m], 2+Math.random()*2, 'rgba(255,255,255,0.3)');
-            points[m].circle = c;
+        for(var i in points) {
+            var c = new Circle(points[i], 2+Math.random()*2, 'rgba(255,255,255,0.3)');
+            points[i].circle = c;
         }
     }
 
@@ -97,16 +116,19 @@ $( document ).ready(function() {
     }
 
     function scrollCheck() {
-        if(document.body.scrollTop > height) {
-            animateHeader = false;
-        } else {
-            animateHeader = true;
-        }
+        if(document.body.scrollTop > height) animateHeader = false;
+        else animateHeader = true;
     }
 
     function resize() {
-        target.x = window.innerWidth/2;
-        canvas.width = window.innerWidth - 20;
+        if (window.innerWidth > 990) {
+            waitForFinalEvent(function(){
+                $('#demo-canvas').remove();
+                $('#canavs-container').append('<canvas id="demo-canvas"></canvas>');
+                initHeader();
+                initAnimation();
+            }, 300, "resize");
+        }
     }
 
     // animation
@@ -135,6 +157,7 @@ $( document ).ready(function() {
                     points[i].active = 0;
                     points[i].circle.active = 0;
                 }
+
                 drawLines(points[i]);
                 points[i].circle.draw();
             }
@@ -152,9 +175,7 @@ $( document ).ready(function() {
 
     // Canvas manipulation
     function drawLines(p) {
-        if(!p.active) {
-            return;
-        }
+        if(!p.active) return;
         for(var i in p.closest) {
             ctx.beginPath();
             ctx.moveTo(p.x, p.y);
@@ -165,22 +186,20 @@ $( document ).ready(function() {
     }
 
     function Circle(pos,rad,color) {
-        var self = this;
+        var _this = this;
 
         // constructor
         (function() {
-            self.pos = pos || null;
-            self.radius = rad || null;
-            self.color = color || null;
+            _this.pos = pos || null;
+            _this.radius = rad || null;
+            _this.color = color || null;
         })();
 
         this.draw = function() {
-            if(!self.active) {
-                return;
-            }
+            if(!_this.active) return;
             ctx.beginPath();
-            ctx.arc(self.pos.x, self.pos.y, self.radius, 0, 2 * Math.PI, false);
-            ctx.fillStyle = 'rgba(156,217,249,'+ self.active+')';
+            ctx.arc(_this.pos.x, _this.pos.y, _this.radius, 0, 2 * Math.PI, false);
+            ctx.fillStyle = 'rgba(156,217,249,'+ _this.active+')';
             ctx.fill();
         };
     }
