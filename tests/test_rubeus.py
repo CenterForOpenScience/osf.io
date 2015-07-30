@@ -231,7 +231,7 @@ class TestRubeus(OsfTestCase):
 
         # Private  (Can't View)
         registration_private = RegistrationFactory(creator=user)
-        registration_private.is_publick = False
+        registration_private.is_public = False
         registration_private.save()
         collector = rubeus.NodeFileCollector(node=registration_private, auth=another_auth)
         assert_equal(collector._get_node_name(registration_private), u'Private Registration')
