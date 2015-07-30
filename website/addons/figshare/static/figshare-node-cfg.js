@@ -74,9 +74,9 @@ var $osf = require('osfHelpers');
         var $select = $elm.find('select');
 
         bootbox.prompt({
-            message: 'Name your new file set',
+            title: 'Name your new file set',
             callback: function (filesetName) {
-                if (filesetName && filesetName.trim() != '') {
+                if (filesetName && filesetName.trim() !== '') {
                     $osf.postJSON(nodeApiUrl + 'figshare/new/fileset/',
                         {name: filesetName}
                     ).done(function (response) {
