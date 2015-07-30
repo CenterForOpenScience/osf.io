@@ -24,7 +24,7 @@
         <div class="panel-toggle col-sm-${'3' if 'menu' in panels_used else '1' | n}">
 
             <!-- Menu with toggle normal -->
-            <div class="osf-panel panel panel-default reset-height ${'' if 'menu' in panels_used else 'hidden' | n}" data-bind="css: {  'osf-panel-flex': !$root.singleVis() }">
+            <div class="osf-panel panel panel-default reset-height ${'' if 'menu' in panels_used else 'hidden visible-xs' | n}" data-bind="css: {  'osf-panel-flex': !$root.singleVis() }">
                 <div class="panel-heading clearfix" data-bind="css: {  'osf-panel-heading-flex': !$root.singleVis()}">
                     % if user['can_edit']:
                         <div class="wiki-toolbar-icon text-success" data-toggle="modal" data-target="#newWiki">
@@ -48,15 +48,16 @@
                         <p class="m-t-sm fg-load-message"> Loading wiki pages...  </p>
                     </div>
                 </div>
+                <div class="hidden text-danger" id="wikiErrorMessage" style="padding: 15px"></div>
             </div>
 
             <!-- Menu with toggle collapsed -->
-            <div class="osf-panel panel panel-default panel-collapsed text-center ${'hidden' if 'menu' in panels_used else '' | n}" >
+            <div class="osf-panel panel panel-default panel-collapsed hidden-xs text-center ${'hidden' if 'menu' in panels_used else '' | n}" >
                 <div class="panel-heading pointer">
                     <i class="fa fa-list"> </i>
                     <i class="fa fa-angle-right"> </i>
                 </div>
-                <div class="panel-body">
+                <div>
                     <%include file="wiki/templates/nav.mako"/>
                 </div>
             </div>
@@ -228,7 +229,7 @@
   <div class="modal-dialog">
     <div class="modal-content">
       <div class="modal-header">
-        <h3 class="modal-title">The permissions for this page have changed</h3>
+        <h3 class="modal-title">Page permissions have changed</h3>
       </div>
       <div class="modal-body">
         <p>Your browser should refresh shortly&hellip;</p>
@@ -241,7 +242,7 @@
   <div class="modal-dialog">
     <div class="modal-content">
       <div class="modal-header">
-        <h3 class="modal-title">The content of this wiki has been moved to a different page</h3>
+        <h3 class="modal-title">Wiki content has moved</h3>
       </div>
       <div class="modal-body">
         <p>Your browser should refresh shortly&hellip;</p>
@@ -254,7 +255,7 @@
   <div class="modal-dialog">
     <div class="modal-content">
       <div class="modal-header">
-        <h3 class="modal-title">This wiki page has been deleted</h3>
+        <h3 class="modal-title">Wiki page deleted</h3>
       </div>
       <div class="modal-body">
         <p>Press Confirm to return to the project wiki home page.</p>

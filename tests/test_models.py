@@ -2744,6 +2744,15 @@ class TestTemplateNode(OsfTestCase):
         assert_equal(new.wiki_pages_current, {})
         assert_equal(new.wiki_pages_versions, {})
 
+    def test_user_who_makes_node_from_template_has_creator_permission(self):
+        project = ProjectFactory(is_public=True)
+        user = UserFactory()
+        auth = Auth(user)
+
+        templated = project.use_as_template(auth)
+
+        assert_equal(templated.get_permissions(user), ['read', 'write', 'admin'])
+
     def test_template_security(self):
         """Create a templated node from a node with public and private children
 
@@ -2973,6 +2982,9 @@ class TestForkNode(OsfTestCase):
         user2_auth = Auth(user=user2)
         fork = self.project.fork_node(user2_auth)
         assert_true(fork)
+        # Forker has admin permissions
+        assert_equal(len(fork.contributors), 1)
+        assert_equal(fork.get_permissions(user2), ['read', 'write', 'admin'])
 
     def test_fork_registration(self):
         self.registration = RegistrationFactory(project=self.project)

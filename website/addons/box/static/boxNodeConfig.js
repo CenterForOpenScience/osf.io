@@ -215,11 +215,17 @@ var ViewModel = function(url, selector, folderPicker) {
     */
     self.deauthorize = function() {
         bootbox.confirm({
-            title: 'Deauthorize Box?',
+            title: 'Disconnect Box?',
             message: 'Are you sure you want to remove this Box authorization?',
             callback: function(confirmed) {
                 if (confirmed) {
                     return sendDeauth();
+                }
+            },
+            buttons:{
+                confirm:{
+                    label:'Disconnect',
+                    className:'btn-danger'
                 }
             }
         });
@@ -247,13 +253,18 @@ var ViewModel = function(url, selector, folderPicker) {
         */
     self.importAuth = function() {
         bootbox.confirm({
-            title: 'Import Box Access Token?',
+            title: 'Import Box access token',
             message: 'Are you sure you want to authorize this project with your Box access token?',
             callback: function(confirmed) {
                 if (confirmed) {
                     return $osf.putJSON(self.urls().importAuth, {})
                         .done(onImportSuccess)
                         .fail(onImportError);
+                }
+            },
+            buttons:{
+                confirm:{
+                    label:'Import'
                 }
             }
         });
