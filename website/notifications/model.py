@@ -57,9 +57,9 @@ class NotificationSubscription(StoredObject):
 
 class NotificationDigest(StoredObject):
     _id = fields.StringField(primary=True, default=lambda: str(ObjectId()))
-    user_id = fields.StringField()
+    user_id = fields.StringField(index=True)
     timestamp = fields.DateTimeField()
-    time_to_send = fields.DateTimeField()
+    send_type = fields.StringField(index=True)
     event = fields.StringField()
     message = fields.StringField()
     node_lineage = fields.StringField(list=True)

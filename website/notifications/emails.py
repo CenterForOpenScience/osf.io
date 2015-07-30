@@ -82,7 +82,7 @@ def store_emails(recipient_ids, notification_type, event, user, node, timestamp,
 
         digest = NotificationDigest(
             timestamp=timestamp,
-            time_to_send=time_to_send,
+            send_type=notification_type,
             event=event,
             user_id=user_id,
             message=message,
