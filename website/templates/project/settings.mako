@@ -238,7 +238,7 @@
                         <h3 class="panel-title">Configure Wiki</h3>
                     </div>
                     <div class="help-block" style="padding-left: 15px">
-                        <p class="text-info">Setting a wiki's editing to public allows any OSF user to edit that wiki. This only takes effect on public projects/components.</p>
+                        <p class="text-info">These settings control who can edit your wiki. To make a wiki editable by all OSF users, make your project/component public.</p>
                     </div>
                     <form id="wikiSettings" class="osf-treebeard-minimal">
                         <div id="wgrid">

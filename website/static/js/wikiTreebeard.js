@@ -62,9 +62,8 @@ function before_change_permissions(item, permission){
         bootbox.confirm({
             title: 'Make publicly editable',
             message: 'Are you sure you want to make the wiki of ' + title +
-                ' publicly editable? This will allow any logged in user to edit the content of your wiki. ' +
-                'Non-contributor users will not be able to add or remove pages. ' +
-                '<b>Note:</b> ' + title + ' must be public for public editing to be available.',
+                ' publicly editable? This will allow any logged in user to edit the content of this wiki. ' +
+                '<b>Note</b>: Users without write access will not be able to add or remove pages.',
             callback: function(confirm) {
             if (confirm) {
                 change_permissions(item, permission);
@@ -200,7 +199,7 @@ function ProjectWiki(data) {
                     css : iconcss,
                     sortInclude : false,
                     custom : function() {
-                        return 'Editing Settings';
+                        return 'Who can edit';
 
                     }
                 },
@@ -215,8 +214,8 @@ function ProjectWiki(data) {
                                     before_change_permissions(item, ev.target.value);
                                 }},
                                 [
-                                    m('option', {value: 'private', selected : item.data.event.permission === 'private' ? 'selected': ''}, 'Private'),
-                                    m('option', {value: 'public', selected : item.data.event.permission === 'public' ? 'selected': ''}, 'Public')
+                                    m('option', {value: 'private', selected : item.data.event.permission === 'public' ? 'selected': ''}, 'Contributors (with write access)'),
+                                    m('option', {value: 'public', selected : item.data.event.permission === 'public' ? 'selected': '' }, 'All OSF users')
                             ])
                         ]);
                     }

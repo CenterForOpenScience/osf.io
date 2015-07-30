@@ -165,25 +165,31 @@ def serialize_wiki_settings(user, node_ids):
     """
     items = []
 
+    admin_on_wiki = (
+        lambda x: x.has_addon('wiki')
+                  and x.has_permission(user, 'admin')
+                  and x.is_public
+    )
+
     for node_id in node_ids:
         node = Node.load(node_id)
         assert node, '{} is not a valid Node.'.format(node_id)
 
         can_read = node.has_permission(user, 'read')
         admin = node.has_permission(user, 'admin')
+        public = node.is_public
         has_wiki = node.has_addon('wiki')
-        admin_on_children = node.has_permission_on_children(user, 'admin')
-        wiki_on_children = node.has_addon_on_children('wiki')
+        include_wiki_settings = (admin_on_wiki(node) or any(
+            (admin_on_wiki(each) for each in node.get_descendants_recursive())
+        )
+        )
 
-        if not admin and not admin_on_children:
-            continue
-
-        if not has_wiki and not wiki_on_children:
+        if not include_wiki_settings:
             continue
 
         children = []
 
-        if admin and has_wiki:
+        if admin and has_wiki and public:
             children.append({
                 'event': {
                     'title': "permission",

@@ -291,7 +291,9 @@ def node_setting(auth, node, **kwargs):
     addon_enabled_settings = sorted(addon_enabled_settings, key=lambda addon: addon['addon_full_name'].lower())
 
     admin_on_wiki = (
-        lambda x: x.has_addon('wiki') and x.has_permission(auth.user, 'admin')
+        lambda x: x.has_addon('wiki')
+                  and x.has_permission(auth.user, 'admin')
+                  and x.is_public
     )
 
     ret['addon_categories'] = settings.ADDON_CATEGORIES

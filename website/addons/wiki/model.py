@@ -43,12 +43,14 @@ class AddonWikiNodeSettings(AddonNodeSettingsBase):
         """Set the editing permissions for this node.
 
         :param auth: All the auth informtion including user, API key
+        :param bool permissions: True = publicly editable
         :param bool save: Whether to save the privacy change
         :param bool log: Whether to add a NodeLog for the privacy change
             if true the node object is also saved
         """
+        node = self.owner
 
-        if permissions and not self.is_publicly_editable:
+        if permissions and node.is_public and not self.is_publicly_editable:
             self.is_publicly_editable = True
         elif not permissions and self.is_publicly_editable:
             self.is_publicly_editable = False
@@ -56,7 +58,6 @@ class AddonWikiNodeSettings(AddonNodeSettingsBase):
             raise NodeStateError
 
         if log:
-            node = self.owner
             node.add_log(
                 action=(NodeLog.MADE_WIKI_PUBLIC
                         if self.is_publicly_editable
@@ -79,6 +80,23 @@ class AddonWikiNodeSettings(AddonNodeSettingsBase):
         if save:
             clone.save()
         return clone, None
+
+    def after_set_privacy(self, node, permissions):
+        """
+
+        :param Node node:
+        :param str permissions:
+        :return str: Alert message
+
+        """
+        if permissions == 'private':
+            if self.is_publicly_editable:
+                self.set_editing(False)
+                return (
+                    'The wiki of {name} is no longer publicly editable.'.format(
+                        name=node.title,
+                    )
+                )
 
     def to_json(self, user):
         return {}
