@@ -42,14 +42,14 @@
                     <div class="btn-group" style="display: none;" data-bind="visible: true">
 
                         <!-- ko ifnot: inDashboard -->
-                           <a data-bind="click: addToDashboard, tooltip: {title: 'Add to Dashboard Folder',
+                           <a id="addDashboardFolder" data-bind="click: addToDashboard, tooltip: {title: 'Add to Dashboard Folder',
                             placement: 'bottom', container : 'body'}" class="btn btn-default">
                                <i class="fa fa-folder-open"></i>
                                <i class="fa fa-plus"></i>
                            </a>
                         <!-- /ko -->
                         <!-- ko if: inDashboard -->
-                           <a data-bind="click: removeFromDashboard, tooltip: {title: 'Remove from Dashboard Folder',
+                           <a id="removeDashboardFolder" data-bind="click: removeFromDashboard, tooltip: {title: 'Remove from Dashboard Folder',
                             placement: 'bottom', container : 'body'}" class="btn btn-default">
                                <i class="fa fa-folder-open"></i>
                                <i class="fa fa-minus"></i>
