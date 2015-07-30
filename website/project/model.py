@@ -1182,8 +1182,8 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
 
         # set attributes which may NOT be overridden by `changes`
         new.creator = auth.user
-        new.add_contributor(contributor=auth.user, log=False, save=False)
         new.template_node = self
+        new.add_contributor(contributor=auth.user, log=False, save=False)
         new.is_fork = False
         new.is_registration = False
         new.piwik_site_id = None

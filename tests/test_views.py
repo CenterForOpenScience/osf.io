@@ -1730,7 +1730,25 @@ class TestAddingContributorViews(OsfTestCase):
         project = ProjectFactory()
         project.add_contributors(contributors, auth=Auth(self.project.creator))
         project.save()
-        send_mail.assert_not_called()
+        assert_false(send_mail.called)
+
+    @mock.patch('website.mails.send_mail')
+    def test_forking_project_does_not_send_contributor_added_email(self, send_mail):
+        project = ProjectFactory()
+        project.fork_node(auth=Auth(project.creator))
+        assert_false(send_mail.called)
+
+    @mock.patch('website.mails.send_mail')
+    def test_templating_project_does_not_send_contributor_added_email(self, send_mail):
+        project = ProjectFactory()
+        project.use_as_template(auth=Auth(project.creator))
+        assert_false(send_mail.called)
+
+    @mock.patch('website.mails.send_mail')
+    def test_registering_project_does_not_send_contributor_added_email(self, send_mail):
+        project = ProjectFactory()
+        project.register_node(None, Auth(user=project.creator), '', None)
+        assert_false(send_mail.called)
 
     @mock.patch('website.mails.send_mail')
     def test_notify_contributor_email_sent_before_throttle_expires(self, send_mail):
@@ -1741,7 +1759,7 @@ class TestAddingContributorViews(OsfTestCase):
 
         # 2nd call does not send email because throttle period has not expired
         notify_contributor(project, contributor)
-        send_mail.assert_not_called()
+        assert_false(send_mail.called)
 
     def test_add_multiple_contributors_only_adds_one_log(self):
         n_logs_pre = len(self.project.logs)
