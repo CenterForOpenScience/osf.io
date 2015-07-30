@@ -1539,13 +1539,20 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         try:
             if self.is_public:
                 tasks.enqueue_task(tasks.update_all_files_task.s(self))
-            else:
-                tasks.enqueue_task(tasks.delete_all_files_task.s(self))
         except search.exceptions.SearchUnavailableError as e:
             logger.exception(e)
             log_exception()
 
-    def update_search_file(self, action, addon, name, path):
+    def delete_search_files(self):
+        from website import search
+        from website.search import tasks
+        try:
+            tasks.enqueue_task(tasks.delete_all_files_task.s(self))
+        except search.exceptions.SearchUnavailableError as e:
+            logger.exception(e)
+            log_exception()
+
+    def update_search_file(self, addon, name, path):
         """ Update a single file in the node based on the action given.
 
         :param action: 'update', 'create', or 'delete'.
@@ -1553,15 +1560,26 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         :param name: Name of the file to be updated.
         :param path: Path of the file to be updated.
         """
+        from website import search
         from website.search import tasks
+
         if not self.is_public:
             return
-        if action in ('update', 'create', 'copy'):
+
+        try:
             tasks.enqueue_task(tasks.update_file_task.s(name, path, addon))
-        elif action in ('delete',):
+        except search.exceptions.SearchUnavailableError as e:
+            logger.exception(e)
+            log_exception()
+
+    def delete_search_file(self, addon, name, path):
+        from website import search
+        from website.search import tasks
+        try:
             tasks.enqueue_task(tasks.delete_file_task.s(name, path, addon))
-        else:
-            raise ValueError('{} is not a valid action'.format(action))
+        except search.exceptions.SearchUnavailableError as e:
+            logger.exception(e)
+            log_exception()
 
     def delete_search_entry(self):
         from website import search

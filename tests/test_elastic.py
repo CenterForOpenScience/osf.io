@@ -38,6 +38,10 @@ class SearchTestCase(OsfTestCase):
         settings.ELASTIC_INDEX = TEST_INDEX
         search.delete_index(elastic_search.INDEX)
         search.create_index(elastic_search.INDEX)
+        mock.patch('website.project.model.Node.update_search_files', search.update_all_files).start()
+        mock.patch('website.project.model.Node.update_search_file', search.update_file).start()
+        mock.patch('website.project.model.Node.delete_search_files', search.delete_all_files).start()
+        mock.patch('website.project.model.Node.delete_search_file', search.delete_file).start()
 
 
 def query(term, doc_type=None):
@@ -761,6 +765,7 @@ class TestUpdateFiles(SearchTestCase):
 
         self.parent_project = ProjectFactory()
         self.parent_project.set_privacy('public')
+
         self.fake_file_doc_one = {
             'id': 'aaaaa',
             'name': 'test_file_one.txt',
@@ -902,45 +907,6 @@ class TestDeleteFiles(SearchTestCase):
         res_two = query('spain rains')['results']
         assert_equal(len(res_one), 0)
         assert_equal(len(res_two), 0)
-
-
-class TestSearchUpdate(SearchTestCase):
-    def setUp(self):
-        super(TestSearchUpdate, self).setUp()
-        self.project = ProjectFactory()
-        self.project.set_privacy('public')
-
-    @mock.patch('website.project.model.Node.update_search_files')
-    def test_update_called_on_make_public(self, mock_update_search_files):
-        self.project.set_privacy('private')
-        mock_update_search_files.reset_mock()
-        assert_false(mock_update_search_files.called)
-        self.project.set_privacy('public')
-        assert_true(mock_update_search_files.called)
-
-    @mock.patch('website.project.model.Node.update_search_files')
-    def test_update_called_on_make_private(self, mock_update_search_files):
-        assert_false(mock_update_search_files.called)
-        self.project.set_privacy('private')
-        assert_true(mock_update_search_files.called)
-
-    @mock.patch('website.search.search.update_file')
-    def test_update_called_on_file_created(self, mock_update_file):
-        assert_false(mock_update_file.called)
-        self.project.update_search_file('create', 'some addon', 'some name', 'some path')
-        assert_true(mock_update_file.called)
-
-    @mock.patch('website.project.model.Node.update_search_file')
-    def test_update_called_on_file_update(self, mock_update_file):
-        assert_false(mock_update_file.called)
-        self.project.update_search_file('update', 'some addon', 'some name', 'some path')
-        assert_true(mock_update_file.called)
-
-    @mock.patch('website.project.model.Node.update_search_file')
-    def test_remove_called_on_file_delete(self, mock_remove_file):
-        assert_false(mock_remove_file.called)
-        self.project.update_search_file('delete', 'some addon', 'some name', 'some path')
-        assert_true(mock_remove_file.called)
 
 
 # @unittest.skip('Travis dosn\'t seem to like loading files in tests.')

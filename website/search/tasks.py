@@ -4,6 +4,7 @@ from framework.tasks import app
 from framework.tasks.handlers import enqueue_task
 from website.search import search
 
+
 @app.task
 def update_file_task(name, path, addon, index=None):
     logging.info('UPDATE FROM CELERY\n')

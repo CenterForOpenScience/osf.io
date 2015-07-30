@@ -188,7 +188,7 @@ def osfstorage_delete(file_node, payload, node_addon, **kwargs):
     if file_node == node_addon.root_node:
         raise HTTPError(httplib.BAD_REQUEST)
     project_node = file_node.node_settings.owner
-    project_node.update_search_file('delete', node_addon, file_node.name, file_node.path)
+    project_node.delete_search_file(node_addon, file_node.name, file_node.path)
     file_node.delete()
 
     return {'status': 'success'}
