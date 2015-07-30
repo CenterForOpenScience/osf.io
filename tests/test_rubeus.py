@@ -220,7 +220,7 @@ class TestRubeus(OsfTestCase):
     def test_get_node_name(self):
         user = UserFactory()
         auth = Auth(user=user)
-        another_user = UserFactory(username='bono@u2.com', fullname='Bono')
+        another_user = UserFactory()
         another_auth = Auth(user=another_user)
 
         # Public (Can View)
@@ -230,9 +230,8 @@ class TestRubeus(OsfTestCase):
         assert_equal(collector._get_node_name(public_project), node_name)
 
         # Private  (Can't View)
-        project = ProjectFactory(creator=user, is_public=True)
-        registration_private = project.register_node(None, auth, '', None)
-        registration_private.is_public = False
+        registration_private = RegistrationFactory(creator=user)
+        registration_private.is_publick = False
         registration_private.save()
         collector = rubeus.NodeFileCollector(node=registration_private, auth=another_auth)
         assert_equal(collector._get_node_name(registration_private), u'Private Registration')
