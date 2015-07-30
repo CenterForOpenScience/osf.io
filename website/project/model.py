@@ -1556,7 +1556,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         from website.search import tasks
         if not self.is_public:
             return
-        if action in ('update', 'create'):
+        if action in ('update', 'create', 'copy'):
             tasks.enqueue_task(tasks.update_file_task.s(name, path, addon))
         elif action in ('delete',):
             tasks.enqueue_task(tasks.delete_file_task.s(name, path, addon))
