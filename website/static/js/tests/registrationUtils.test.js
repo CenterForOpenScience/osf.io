@@ -7,6 +7,8 @@ var faker = require('faker');
 
 var bootbox = require('bootbox');
 
+var $osf = require('js/osfHelpers');
+
 window.contextVars.currentUser = {
     fullname: faker.name.findName(),
     id: 1
@@ -382,23 +384,31 @@ describe('MetaSchema', () => {
 });
 
 describe('Draft', () => {
+    var ms = mkMetaSchema()[2];
+    
+    var beforeRegisterUrl = faker.internet.ip();
+    var registerUrl = faker.internet.ip();
+    var params = {
+        pk: faker.random.number(),
+        registration_metadata: {},
+        initiator: {
+            name: faker.name.findName(),
+            id: faker.internet.ip()
+        },
+        initiated: faker.date.past(),
+        updated: faker.date.past(),
+        urls: {
+            before_register: beforeRegisterUrl,
+            register: registerUrl
+        }
+    };
+
+    var draft = new Draft(
+        params, ms
+    );
+
     describe('#constructor', () => {
         it('loads optional instantiation data and metaSchema instance', () => {
-            var ms = mkMetaSchema()[2];
-
-            var params = {
-                pk: faker.random.number(),
-                registration_metadata: {},
-                initiator: {
-                    name: faker.name.findName(),
-                    id: faker.internet.ip()
-                },
-                initiated: faker.date.past(),
-                updated: faker.date.past()
-            };
-
-            var draft = new Draft(params, ms);
-
             assert.equal(draft.metaSchema.name, ms.name);
             assert.equal(draft.initiator.id, params.initiator.id);
             assert.equal(draft.updated.toString(), params.updated.toString());
@@ -431,26 +441,6 @@ describe('Draft', () => {
         });
     });
     describe('#beforeRegister', () => {
-        var ms = mkMetaSchema()[2];
-        
-        var beforeRegisterUrl = faker.internet.ip();
-        var params = {
-            pk: faker.random.number(),
-            registration_metadata: {},
-            initiator: {
-                name: faker.name.findName(),
-                id: faker.internet.ip()
-            },
-            initiated: faker.date.past(),
-            updated: faker.date.past(),
-            urls: {
-                before_register: beforeRegisterUrl
-            }
-        };
-
-        var draft = new Draft(
-            params, ms
-        );
         var endpoints = [{
             method: 'GET',
             url: beforeRegisterUrl,
@@ -521,8 +511,149 @@ describe('Draft', () => {
             });            
         });        
     });
+    describe('#register', () => {
+        var server;
+        var postJSONStub;
+        before(() => {
+            server = utils.createServer(sinon, []);
+            postJSONStub = sinon.stub($osf, 'postJSON', function() {
+                return $.Deferred();
+            });
+        });
+        after(() => {
+            server.restore();
+            $osf.postJSON.restore();
+        });
+        it('POSTS the data passed into beforeRegister, and redirects on a success response', (done) => {
+            server.respondWith(
+                beforeRegisterUrl, 
+                '{}'
+            );
+            var data = {some: 'data'};
+            draft.beforeRegister(data).always(() => {                
+                assert.isTrue(
+                    postJSONStub.calledOnce && 
+                    postJSONStub.calledWith(
+                        registerUrl,
+                        data
+                    )
+                );
+                done();
+            });            
+        });
+    });
 });
 
 describe('RegistrationEditor', () => {
+    var ms = mkMetaSchema()[2];
+    var questions = ms.flatQuestions();
 
+    var metaData = {};
+    $.each(questions, function(i, q) {
+        metaData[q.id] = {
+            value: faker.company.bsNoun()
+        };
+    });
+            
+    var beforeRegisterUrl = faker.internet.ip();
+    var registerUrl = faker.internet.ip();
+    var params = {
+        pk: faker.random.number(),
+        registration_metadata: metaData,
+        initiator: {
+            name: faker.name.findName(),
+            id: faker.internet.ip()
+        },
+        initiated: faker.date.past(),
+        updated: faker.date.past(),
+        urls: {
+            before_register: beforeRegisterUrl,
+            register: registerUrl
+        }
+    };
+
+    var draft = new Draft(
+        params, ms
+    );
+
+    var editor;
+    var createUrl = faker.internet.ip();
+    var updateUrl = faker.internet.ip() + '/{draft_pk}/';
+    beforeEach(() => {
+        editor = new RegistrationEditor({
+            create: createUrl,
+            update: updateUrl
+        }, '#id');
+        editor.init(draft);
+    });
+    describe('#init', () => {
+        it('loads draft data', () => {
+            assert.equal(editor.draft(), draft);
+        });
+        it('#loads schema data into the schema', () => {
+            $.each(questions, function(i, q) {
+                assert.equal(q.value(), metaData[q.id].value);
+            });
+        });
+    });
+    describe('#create', () => {        
+        var postJSONStub;
+        before(() => {
+            postJSONStub = sinon.stub($osf, 'postJSON', function() {
+                return $.Deferred();
+            });
+        });
+        after(() => {
+            $osf.postJSON.restore();
+        });
+        it('POSTs to the create URL with the current draft state', (done) => {
+            editor.create({}).always(function() {
+                var metaSchema = draft.metaSchema;
+                assert.isTrue(
+                    postJSONStub.calledWith(
+                        createUrl,
+                        {
+                            schema_name: metaSchema.name,
+                            schema_version: metaSchema.version,
+                            schema_data: {}
+                        }
+                    )
+                );
+                done();
+            });            
+        });
+    });
+    describe('#save', () => {
+        var putSaveDataStub;
+        before(() => {
+            putSaveDataStub = sinon.stub(editor, 'putSaveData', function() {
+                return $.Deferred();
+            });            
+        });
+        after(() => {
+            editor.putSaveData.restore();
+        });
+        it('PUTs to the update URL with the current draft state', () => {
+            var metaSchema = draft.metaSchema;
+            questions[0].value('Updated');
+            editor.save();
+            
+            var data = {};
+            $.each(questions, function(i, q) {
+                data[q.id] = {
+                    value: q.value()
+                };
+            });
+            
+            assert.isTrue(
+                putSaveDataStub.calledWith(
+                    {
+                        schema_name: metaSchema.name,
+                        schema_version: metaSchema.version,
+                        schema_data: data
+                    }
+                )
+            );
+        });
+    });
 });

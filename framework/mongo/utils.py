@@ -66,13 +66,14 @@ def get_or_http_error(Model, pk_or_query, display_name=None):
     """Load an instance of Model by primary key or modularodm.Q query. Raise an appropriate
     HTTPError if no record is found or if the query fails to find a unique record
 
-    param Model: <StoredObject> subclass
-    param pk_or_query: either-
+    :param type Model: StoredObject subclass to query
+    :param pk_or_query:
+    :type pk_or_query: either
       - a <basestring> representation of the record's primary key, e.g. 'abcdef'
       - a <QueryBase> subclass query to uniquely select a record, e.g.
         Q('title', 'eq', 'Entitled') & Q('version', 'eq', 1)
-    param display_name
-    return Model instance
+    :param basestring display_name:
+    :return: Model instance
     """
     display_name = display_name or ''
 
@@ -105,11 +106,11 @@ def autoload(Model, extract_key, inject_key, func):
     """Decorator to autoload a StoredObject instance by primary key and inject into kwargs. Raises
     an appropriate HTTPError (see #get_or_http_error)
 
-    params model: <StoredObject> subclass
-    param extract_key: <basestring> key to extract Model instance's primary key
-    param inject_key: <basestring> key to inject loaded Model instance into kwargs
+    :param type Model: StoredObject subclass to query
+    :param basetring extract_key: kwargs key to extract Model instance's primary key
+    :param basestring inject_key: kwargs key to inject loaded Model instance into kwargs
 
-    Example usage:
+    Example usage: ::
       def get_node(node_id):
           node = Node.load(node_id)
           ...

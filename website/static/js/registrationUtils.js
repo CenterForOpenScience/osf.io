@@ -447,20 +447,15 @@ Draft.prototype.register = function(data) {
 
     $osf.block();
 
-    $.ajax({
-        url:  self.urls.register,
-        type: 'POST',
-        data: JSON.stringify(data),
-        contentType: 'application/json',
-        dataType: 'json'
-    }).done(function(response) {
-        if (response.status === 'initiated') {
-            window.location.assign(response.urls.registrations);
-        }
-        else if (response.status === 'error') {
-            self.onRegisterFail();
-        }
-    }).always($osf.unblock).fail(self.onRegisterFail);
+    $osf.postJSON(self.urls.register, data)
+        .done(function(response) {
+            if (response.status === 'initiated') {
+                window.location.assign(response.urls.registrations);
+            }
+            else if (response.status === 'error') {
+                self.onRegisterFail();
+            }
+        }).always($osf.unblock).fail(self.onRegisterFail);
 };
 
 
@@ -515,13 +510,15 @@ var RegistrationEditor = function(urls, editorId) {
         var t = self.lastSaveTime();
         if (t) {
             return t.toGMTString();
-        } else {
+        } 
+        else {
             return 'never';
         }
     });
 
     self.iterObject = $osf.iterObject;
 
+    // TODO: better extensions system? 
     self.extensions = {
         'osf-upload': editorExtensions.Uploader
     };
@@ -551,17 +548,19 @@ RegistrationEditor.prototype.init = function(draft) {
                     val = schemaData[question.id][prop];
                     if(val) {
                         subQuestion.value(val.value);
-                        subQuestion.comments($.map(val.comments, function(data) {
-                            return new Comment(data);
-                        }));
+                        // TODO: uncomment when we support comments
+                        //subQuestion.comments($.map(val.comments, function(data) {
+                        //    return new Comment(data);
+                        //}));
                     }
                 });
             }
             else {
                 question.value(val.value);
-                question.comments($.map(val.comments, function(data) {
-                    return new Comment(data);
-                }));
+                // TODO: uncomment when we support comments
+                //question.comments($.map(val.comments, function(data) {
+                //    return new Comment(data);
+                //}));
             }
         }
     });
@@ -595,14 +594,8 @@ RegistrationEditor.prototype.context = function(data) {
     return data;
 };
 /**
- * Extend the editor's recognized types
- *
- * @param {String} type: unique type
- * @param {Constructor} ViewModel
- **/
-RegistrationEditor.prototype.extendEditor = function(type, ViewModel) {
-    this.extensions[type] = ViewModel;
-};
+ * Check that the Draft is valid before registering
+ */
 RegistrationEditor.prototype.check = function() {
     var self = this;
 
@@ -618,33 +611,36 @@ RegistrationEditor.prototype.check = function() {
         window.location = self.draft().urls.register_page;
     }
 };
-
-RegistrationEditor.prototype.viewComments = function() {
-  var self = this;
-
-  var comments = self.currentQuestion().comments();
-  $.each(comments, function(index, comment) {
-    if (comment.seenBy().indexOf(currentUser.id) === -1) {
-      comment.seenBy.push(currentUser.id);
-    }
-  });
-};
-RegistrationEditor.prototype.getUnseenComments = function(qid) {
-    var self = this;
-
-    var question = self.draft().schemaData[qid];
-    var comments = question.comments || [];
-    for (var key in question) {
-        if (key === 'comments') {
-            for (var i = 0; i < question[key].length - 1; i++) {
-                if (question[key][i].indexOf(currentUser.id) === -1) {
-                    comments.push(question[key][i]);
-                }
-            }
-        }
-    }
-    return comments.length !== 0 ? comments.length : '';
-};
+// TODO: uncomment when we support commenting
+//RegistrationEditor.prototype.viewComments = function() {
+//    var self = this;
+//    
+//    var comments = self.currentQuestion().comments();
+//    $.each(comments, function(index, comment) {
+//        if (comment.seenBy().indexOf(currentUser.id) === -1) {
+//            comment.seenBy.push(currentUser.id);
+//        }
+//    });
+//};
+//RegistrationEditor.prototype.getUnseenComments = function(qid) {
+//    var self = this;
+//
+//    var question = self.draft().schemaData[qid];
+//    var comments = question.comments || [];
+//    for (var key in question) {
+//        if (key === 'comments') {
+//            for (var i = 0; i < question[key].length - 1; i++) {
+//                if (question[key][i].indexOf(currentUser.id) === -1) {
+//                    comments.push(question[key][i]);
+//                }
+//            }
+//        }
+//    }
+//    return comments;
+//};
+/**
+ * Load the next question into the editor, wrapping around if needed
+ **/
 RegistrationEditor.prototype.nextQuestion = function() {
     var self = this;
 
@@ -663,6 +659,9 @@ RegistrationEditor.prototype.nextQuestion = function() {
         self.viewComments();
     }
 };
+/**
+ * Load the previous question into the editor, wrapping around if needed
+ **/
 RegistrationEditor.prototype.previousQuestion = function() {
     var self = this;
 
@@ -681,6 +680,9 @@ RegistrationEditor.prototype.previousQuestion = function() {
         self.viewComments();
     }
 };
+/**
+ * Select a page, selecting the first question on that page
+ **/
 RegistrationEditor.prototype.selectPage = function(page) {
     var self = this;
 
@@ -688,6 +690,9 @@ RegistrationEditor.prototype.selectPage = function(page) {
     self.currentQuestion(firstQuestion);
     self.viewComments();
 };
+/**
+ * Update draft primary key and updated time on server response
+ **/
 RegistrationEditor.prototype.updateData = function(response) {
     var self = this;
 
@@ -722,6 +727,40 @@ RegistrationEditor.prototype.updateData = function(response) {
 //	}
 //    });
 //};
+// TODO: uncomment when we allow submitting for review
+//RegistrationEditor.prototype.submit = function() {
+//    var self = this;
+//
+//    var currentNode = window.contextVars.node;
+//    var currentUser = window.contextVars.currentUser;
+//
+//    var messages = self.draft().messages;
+//    bootbox.confirm(messages.beforeSubmitForApproval, function(result) {
+//        if(result) {
+//            $osf.postJSON(self.urls.submit.replace('{draft_pk}', self.draft().pk), {
+//                node: currentNode,
+//                auth: currentUser
+//            }).then(function() {
+//                bootbox.dialog({
+//                    message: messages.afterSubmitForApproval,
+//                    title: 'Pre-Registration Prize Submission',
+//                    buttons: {
+//                        registrations: {
+//                            label: 'Return to registrations page',
+//                            className: 'btn-primary pull-right',
+//                            callback: function() {
+//                                window.location.href = self.draft().urls.registrations;
+//                            }
+//                        }
+//                    }
+//                });
+//            }).fail($osf.growl.bind(null, 'Error submitting for review', language.submitForReviewFail));
+//        }
+//    });
+//};
+/**
+ * Create a new draft
+ **/
 RegistrationEditor.prototype.create = function(schemaData) {
     var self = this;
 
@@ -733,36 +772,13 @@ RegistrationEditor.prototype.create = function(schemaData) {
         schema_data: schemaData
     }).then(self.updateData.bind(self));
 };
-RegistrationEditor.prototype.submit = function() {
+RegistrationEditor.prototype.putSaveData = function(payload) {
     var self = this;
-
-    var currentNode = window.contextVars.node;
-    var currentUser = window.contextVars.currentUser;
-
-    var messages = self.draft().messages;
-    bootbox.confirm(messages.beforeSubmitForApproval, function(result) {
-        if(result) {
-            $osf.postJSON(self.urls.submit.replace('{draft_pk}', self.draft().pk), {
-                node: currentNode,
-                auth: currentUser
-            }).then(function() {
-                bootbox.dialog({
-                    message: messages.afterSubmitForApproval,
-                    title: 'Pre-Registration Prize Submission',
-                    buttons: {
-                        registrations: {
-                            label: 'Return to registrations page',
-                            className: 'btn-primary pull-right',
-                            callback: function() {
-                                window.location.href = self.draft().urls.registrations;
-                            }
-                        }
-                    }
-                });
-            }).fail($osf.growl.bind(null, 'Error submitting for review', language.submitForReviewFail));
-        }
-    });
+    $osf.putJSON(self.urls.update.replace('{draft_pk}', self.draft().pk), payload).then(self.updateData.bind(self));
 };
+/**
+ * Save the current Draft
+ **/
 RegistrationEditor.prototype.save = function() {
     var self = this;
 
@@ -791,13 +807,15 @@ RegistrationEditor.prototype.save = function() {
     });
 
     if (!self.draft().pk){
-        return self.create(data);
+        self.create(self);
     }
-    $osf.putJSON(self.urls.update.replace('{draft_pk}', self.draft().pk), {
-        schema_name: metaSchema.name,
-        schema_version: metaSchema.version,
-        schema_data: data
-    }).then(self.updateData.bind(self));
+    else{
+        self.putSaveData({
+            schema_name: metaSchema.name,
+            schema_version: metaSchema.version,
+            schema_data: data
+        });
+    }
 
     return true;
 };
