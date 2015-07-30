@@ -1110,6 +1110,16 @@ function _fangornTitleColumn(item, col) {
         return _connectCheckTemplate.call(this, item);
     }
     if (item.kind === 'file' && item.data.permissions.view) {
+        if (item.data.provider === 'osfstorage'){
+            if (item.data.extra.renter != ''){
+              return m('span.fg-file-links',{
+                    onclick: function(event) {
+                        event.stopImmediatePropagation();
+                        gotoFileEvent.call(tb, item);
+                    }
+                }, item.data.name + ' (Locked)');
+            }
+        }
         return m('span.fg-file-links',{
             onclick: function(event) {
                 event.stopImmediatePropagation();
@@ -1120,6 +1130,11 @@ function _fangornTitleColumn(item, col) {
     if ((item.data.nodeType === 'project') || (item.data.nodeType ==='component')) {
         return m('a.fg-file-links',{ href: '/' + item.data.nodeID.toString() + '/'},
                 item.data.name);
+    }
+    if (item.data.provider === 'osfstorage' && item.kind === 'file'){
+        if (item.data.extra.renter != ''){
+            return m('span', item.data.name + ' (Locked)');
+        }
     }
     return m('span', item.data.name);
 }
