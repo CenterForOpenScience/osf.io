@@ -124,7 +124,7 @@ var waitForFinalEvent = (function () {
         if (window.innerWidth > 990) {
             waitForFinalEvent(function(){
                 $('#demo-canvas').remove();
-                $('#canavs-container').append('<canvas id="demo-canvas"></canvas>');
+                $('#canvas-container').append('<canvas id="demo-canvas"></canvas>');
                 initHeader();
                 initAnimation();
             }, 300, "resize");

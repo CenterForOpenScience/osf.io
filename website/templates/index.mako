@@ -20,7 +20,9 @@
         <h1><strong>Simplified</strong> scientific collaboration</h1>
         <h3>Powerful end-to-end support for your research.</h3>
 
-        <canvas id="demo-canvas"></canvas>
+        <div id="canvas-container">
+          <canvas id="demo-canvas"></canvas>
+        </div>
 
         <div id="logo" class="off">
           <div class="circle" id="circle-1"><span></span></div>
@@ -243,7 +245,7 @@
         </div>
 
         <div class="row">
-          <div class="col-xs-3">
+          <div class="col-xs-4 col-md-3">
             <img src="/static/img/front-page/user2.jpg" class="img-circle img-responsive" alt="Richard Ball" />
           </div>
           <div class="col-xs-8">
