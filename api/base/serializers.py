@@ -85,6 +85,18 @@ class LinksFieldWIthSelfLink(ser.Field):
 
 class LinksField(LinksFieldWIthSelfLink):
     def to_representation(self, obj):
+        if 'request' in self.parent.context:
+            request = self.parent.context['request']
+            if 'include' in request.query_params:
+                if hasattr(obj, 'title'):
+                    allowed_params = ['children', 'contributors', 'pointers', 'registrations']
+                elif hasattr(obj, 'username'):
+                    allowed_params = ['nodes']
+                else:
+                    raise ValidationError('Include query params not allowed in this request')
+                for param in request.query_params['include'].split(','):
+                    if param not in allowed_params:
+                        raise ValidationError('{} is not a valid parameter.'.format(param))
         ret = _rapply(self.links, _url_val, obj=obj, serializer=self.parent)
         return ret
 
