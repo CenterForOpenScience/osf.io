@@ -299,6 +299,21 @@ class TestWikiViews(OsfTestCase):
         res = self.app.get(url, auth=self.user.auth)
         assert_equal(res.status_code, 200)
 
+    def test_wiki_validate_name_creates_blank_page(self):
+        url = self.project.api_url_for('project_wiki_validate_name', wname='newpage', auth=self.consolidate_auth)
+        res = self.app.get(url, auth=self.user.auth)
+        self.project.reload()
+        assert_in('newpage', self.project.wiki_pages_current)
+
+    def test_wiki_validate_name_collision_doesnt_clear(self):
+        self.project.update_node_wiki('oldpage', 'some text', self.consolidate_auth)
+        url = self.project.api_url_for('project_wiki_validate_name', wname='oldpage', auth=self.consolidate_auth)
+        res = self.app.get(url, auth=self.user.auth, expect_errors=True)
+        assert_equal(res.status_code, 409)
+        url = self.project.api_url_for('wiki_page_content', wname='oldpage', auth=self.consolidate_auth)
+        res = self.app.get(url, auth=self.user.auth)
+        assert_equal(res.json['wiki_content'], 'some text')
+
     def test_wiki_validate_name_cannot_create_home(self):
         url = self.project.api_url_for('project_wiki_validate_name', wname='home')
         res = self.app.get(url, auth=self.user.auth, expect_errors=True)

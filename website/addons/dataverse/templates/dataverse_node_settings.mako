@@ -109,8 +109,8 @@
                     </span>
 
                     <span class="text-info" data-bind="ifnot: hasDataverses">
-                        The Dataverse user associated with this node does not currently have any Dataverses.
-                    </span>
+                         There are no dataverses, datasets, or files associated with the connected account.
+                   </span>
 
                 <!-- Save button for set info -->
                     <span data-bind="if: showSubmitDataset">

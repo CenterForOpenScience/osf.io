@@ -454,3 +454,8 @@ button.close {
     word-break: break-all;
     word-break: break-word; /* Non standard for webkit*/
 }
+
+/* growlBox style */
+.alert.growl-animated {
+    padding-right: 35px; /* work as alert-dismissable in bootstrap */
+}

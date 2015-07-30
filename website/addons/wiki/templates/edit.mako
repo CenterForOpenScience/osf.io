@@ -230,7 +230,7 @@
   <div class="modal-dialog">
     <div class="modal-content">
       <div class="modal-header">
-        <h3 class="modal-title">The permissions for this page have changed</h3>
+        <h3 class="modal-title">Page permissions have changed</h3>
       </div>
       <div class="modal-body">
         <p>Your browser should refresh shortly&hellip;</p>
@@ -243,7 +243,7 @@
   <div class="modal-dialog">
     <div class="modal-content">
       <div class="modal-header">
-        <h3 class="modal-title">The content of this wiki has been moved to a different page</h3>
+        <h3 class="modal-title">Wiki content has moved</h3>
       </div>
       <div class="modal-body">
         <p>Your browser should refresh shortly&hellip;</p>
@@ -256,7 +256,7 @@
   <div class="modal-dialog">
     <div class="modal-content">
       <div class="modal-header">
-        <h3 class="modal-title">This wiki page has been deleted</h3>
+        <h3 class="modal-title">Wiki page deleted</h3>
       </div>
       <div class="modal-body">
         <p>Press Confirm to return to the project wiki home page.</p>

@@ -220,6 +220,7 @@ var ProjectViewModel = function(data) {
      * Add project to the Project Organizer.
      */
     self.addToDashboard = function() {
+        $('#addDashboardFolder').tooltip('hide');
         self.inDashboard(true);
         var jsonData = {
             'toNodeID': self.dashboard,
@@ -235,6 +236,7 @@ var ProjectViewModel = function(data) {
      * Remove project from the Project Organizer.
      */
     self.removeFromDashboard = function() {
+        $('#removeDashboardFolder').tooltip('hide');
         self.inDashboard(false);
         var deleteUrl = '/api/v1/folder/' + self.dashboard + '/pointer/' + self._id;
         $.ajax({url: deleteUrl, type: 'DELETE'})
