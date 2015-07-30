@@ -1,6 +1,6 @@
 <p>An add-on is a connection between the OSF to another tool such as Google Drive or GitHub.</p>
 
-<p>You can connect an add-on from a project's "Settings" page.  Select the add-on to connect your project.
+<p>You can connect an add-on from a project's "Settings" page.  Select the add-on to connect to your project.
     In the "Configure Add-ons" section of the page, click "Connect Account" and log in to the third-party service,
     if necessary. Once connected, you will be sent back to the "Settings" page, where you can choose what
     you want to share.</p>
