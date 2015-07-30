@@ -262,6 +262,13 @@ class TestGoogleDriveUtils(OsfTestCase):
         # Log user in
         self.app.authenticate(*self.user.auth)
 
+        self.patcher = mock.patch('website.addons.googledrive.model.GoogleDriveUserSettings.fetch_access_token')
+        self.patcher.return_value = 'fakeaccesstoken'
+        self.patcher.start()
+
+    def tearDown(self):
+        self.patcher.stop()
+
     def test_serialize_settings_helper_returns_correct_urls(self):
         result = serialize_settings(self.node_settings, self.user)
         urls = result['urls']
