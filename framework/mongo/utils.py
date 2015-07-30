@@ -62,7 +62,7 @@ def unique_on(*groups):
     return wrapper
 
 
-def get_or_http_error(Model, pk_or_query):
+def get_or_http_error(Model, pk_or_query, display_name=None):
     """Load an instance of Model by primary key or modularodm.Q query. Raise an appropriate
     HTTPError if no record is found or if the query fails to find a unique record
 
@@ -71,32 +71,32 @@ def get_or_http_error(Model, pk_or_query):
       - a <basestring> representation of the record's primary key, e.g. 'abcdef'
       - a <QueryBase> subclass query to uniquely select a record, e.g.
         Q('title', 'eq', 'Entitled') & Q('version', 'eq', 1)
+    param display_name
     return Model instance
     """
-
-    name = str(Model)
+    display_name = display_name or ''
 
     if isinstance(pk_or_query, QueryBase):
         try:
             instance = Model.find_one(pk_or_query)
         except NoResultsFound:
             raise HTTPError(http.NOT_FOUND, data=dict(
-                message_long="No {name} record matching that query could be found".format(name=name)
+                message_long="No {name} record matching that query could be found".format(name=display_name)
             ))
         except MultipleResultsFound:
             raise HTTPError(http.BAD_REQUEST, data=dict(
-                message_long="The query must match exactly one {name} record".format(name=name)
+                message_long="The query must match exactly one {name} record".format(name=display_name)
             ))
         return instance
     else:
         instance = Model.load(pk_or_query)
         if not instance:
             raise HTTPError(http.NOT_FOUND, data=dict(
-                message_long="No {name} record with that primary key could be found".format(name=name)
+                message_long="No {name} record with that primary key could be found".format(name=display_name)
             ))
         if getattr(instance, 'is_deleted', False):
             raise HTTPError(http.GONE, data=dict(
-                message_long="This {name} record has been deleted".format(name=name)
+                message_long="This {name} record has been deleted".format(name=display_name)
             ))
         else:
             return instance
