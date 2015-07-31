@@ -5,13 +5,13 @@ from framework.exceptions import HTTPError
 from website import settings
 
 
-INDEXED_TYPES = [
-    'txt',
-    'md',
-    'rtf',
-    'docx',
-    'pdf',
-]
+INDEXED_TYPES = (
+    '.txt',
+    '.md',
+    '.rtf',
+    '.docx',
+    '.pdf',
+)
 
 
 def file_indexing(func):
@@ -23,11 +23,14 @@ def file_indexing(func):
     return wrapper
 
 
-def is_indexed(filename, addon):
+def is_indexed(file_node):
+    addon = file_node.node_settings
+    file_name = file_node.name
     if not addon.config.short_name == 'osfstorage':
         return False
-
-    return filename.rsplit('.')[-1] in INDEXED_TYPES
+    if not file_name.endswith(INDEXED_TYPES):
+        return False
+    return True
 
 
 def get_file_content(file_):
@@ -69,7 +72,6 @@ def build_file_document(file_node, include_content=True):
 
 
 def collect_files_from_filenode(file_node):
-    logging.info('NODE: {}'.format(repr(file_node)))
     children = [] if file_node.is_file else file_node.children
     if file_node.is_file:
         yield file_node
@@ -85,5 +87,5 @@ def collect_files_from_filenode(file_node):
 def collect_files(node):
     osf_addon = node.get_addon('osfstorage')
     root_node = osf_addon.root_node
-    for file_dict in collect_files_from_filenode(root_node):
-        yield file_dict
+    for file_node in collect_files_from_filenode(root_node):
+        yield file_node

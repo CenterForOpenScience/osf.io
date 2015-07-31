@@ -312,7 +312,7 @@ def update_file(file_node, index=None):
     name = file_node.name
     addon = file_node.node_settings
 
-    if file_util.is_indexed(name, addon):
+    if file_util.is_indexed(file_node):
         file_doc = file_util.build_file_document(file_node, include_content=True)
 
         if not file_doc['size'] < settings.MAX_INDEXED_FILE_SIZE:
