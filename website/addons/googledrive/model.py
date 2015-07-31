@@ -55,6 +55,10 @@ class GoogleDriveGuidFile(GuidFile):
         return '{0}_{1}_{2}.html'.format(self._id, self.unique_identifier, base64.b64encode(self.folder))
 
     @property
+    def external_url(self):
+        return self._metadata_cache['extra']['webView']
+
+    @property
     def mfr_temp_path(self):
         """Files names from Google Docs metadata doesn't necessarily correspond
         to download file names. Use the `downloadExt` field in the Docs metadata

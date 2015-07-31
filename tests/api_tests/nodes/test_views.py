@@ -1333,3 +1333,22 @@ class TestDeleteNodePointer(ApiTestCase):
     def test_deletes_private_node_pointer_logged_in_non_contributor(self):
         res = self.app.delete(self.private_url, auth=self.basic_auth_two, expect_errors=True)
         assert_equal(res.status_code, 403)
+
+
+    def test_return_deleted_public_node_pointer(self):
+        res = self.app.delete(self.public_url, auth=self.basic_auth)
+        self.public_project.reload() # Update the model to reflect changes made by post request
+        assert_equal(res.status_code, 204)
+
+        #check that deleted pointer can not be returned
+        res = self.app.get(self.public_url, auth=self.basic_auth, expect_errors=True)
+        assert_equal(res.status_code, 404)
+
+    def test_return_deleted_private_node_pointer(self):
+        res = self.app.delete(self.private_url, auth=self.basic_auth)
+        self.project.reload()  # Update the model to reflect changes made by post request
+        assert_equal(res.status_code, 204)
+
+        #check that deleted pointer can not be returned
+        res = self.app.get(self.private_url, auth=self.basic_auth, expect_errors=True)
+        assert_equal(res.status_code, 404)

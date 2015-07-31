@@ -15,6 +15,7 @@ var $osf = require('js/osfHelpers');
 var waterbutler = require('js/waterbutler');
 
 var iconmap = require('js/iconmap');
+var storageAddons = require('json!storageAddons.json');
 
 // CSS
 require('css/fangorn.css');
@@ -1134,7 +1135,7 @@ function _connectCheckTemplate(item){
     var tb = this;
     return m('span.text-danger', [
         m('span', item.data.name),
-        m('em', ' could\'t load.' ),
+        m('em', ' couldn\'t load.' ),
         m('button.btn.btn-xs.btn-default.m-l-xs', {
             onclick : function(e){
                 e.stopImmediatePropagation();
@@ -1477,15 +1478,6 @@ var FGItemButtons = {
                     className : 'text-primary'
                 }, 'Download')
             );
-            if (item.data.permissions && item.data.permissions.edit) {
-                rowButtons.push(
-                    m.component(FGButton, {
-                        onclick: function(event) { _removeEvent.call(tb, event, [item]); },
-                        icon: 'fa fa-trash',
-                        className : 'text-danger'
-                    }, 'Delete'));
-
-            }
             if (item.data.permissions && item.data.permissions.view) {
                 rowButtons.push(
                     m.component(FGButton, {
@@ -1495,6 +1487,24 @@ var FGItemButtons = {
                         icon: 'fa fa-file-o',
                         className : 'text-info'
                     }, 'View'));
+            }
+            if (item.data.permissions && item.data.permissions.edit) {
+                rowButtons.push(
+                    m.component(FGButton, {
+                        onclick: function(event) { _removeEvent.call(tb, event, [item]); },
+                        icon: 'fa fa-trash',
+                        className : 'text-danger'
+                    }, 'Delete'));
+
+            }
+            if(storageAddons[item.data.provider].externalView) {
+                var providerFullName = storageAddons[item.data.provider].fullName;
+                rowButtons.push(
+                    m('a.text-info.fangorn-toolbar-icon', {href: item.data.extra.webView}, [
+                        m('i.fa.fa-external-link'),
+                        m('span', 'View on ' + providerFullName)
+                    ])
+                );
             }
         } else if(item.data.provider && item.children.length !== 0) {
             rowButtons.push(

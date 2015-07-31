@@ -69,6 +69,10 @@ class GithubGuidFile(GuidFile):
         return os.path.split(self.path)[1]
 
     @property
+    def external_url(self):
+        return self._metadata_cache['extra']['webView']
+
+    @property
     def extra(self):
         if not self._metadata_cache:
             return {}
@@ -421,7 +425,7 @@ class AddonGitHubNodeSettings(StorageAddonBase, AddonNodeSettingsBase):
             else:
                 message += (
                     ' The files in this GitHub repo can be viewed on GitHub '
-                    '<a href="https://github.com/{user}/{repo}/">here</a>.'
+                    '<u><a href="https://github.com/{user}/{repo}/">here</a></u>.'
                 ).format(
                     user=self.user,
                     repo=self.repo,

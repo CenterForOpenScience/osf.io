@@ -230,10 +230,7 @@ function _fangornDataverseTitle(item, col) {
             m('dataverse-name.fg-file-links', {
                 onclick: function () {
                     gotoFile(item);
-                },
-                'data-toggle': 'tooltip',
-                title: 'View file',
-                'data-placement': 'bottom'
+                }
             }, item.data.name
                 )
         ]);
