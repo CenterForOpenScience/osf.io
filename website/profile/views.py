@@ -211,7 +211,7 @@ def update_user(auth):
 
             for node in user.node__contributed:
                 if node.discussions:
-                    node.discussions.update_email(user.username, username)
+                    node.discussions.update_email(user._id, username)
 
             user.username = username
 

@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 import uuid
 
-from .model import Node, PrivateLink, MailingList
+from .model import Node, PrivateLink
 from framework.forms.utils import sanitize
 from framework.mongo.utils import from_mongo
 from modularodm import Q
@@ -47,16 +47,12 @@ def new_node(category, title, user, description=None, parent=None):
     if description:
         description = sanitize(description.strip())
 
-    discussions = MailingList()
-    discussions.save()
-
     node = Node(
         title=title,
         category=category,
         creator=user,
         description=description,
-        parent=parent,
-        discussions=discussions
+        parent=parent
     )
 
     node.save()

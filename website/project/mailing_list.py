@@ -55,9 +55,6 @@ def create_list(node_id, node_title, emails, subscriptions):
     if res.status_code != 200:
         raise HTTPError(400)
 
-    # Add the list sender, so that the OSF can send messages through the list
-    add_member(node_id, address(node_id), False)
-
     for email in emails:
         add_member(node_id, email, subscriptions[email])
 
@@ -132,7 +129,7 @@ def update_member(node_id, email, subscription):
 @app.task(bind=True, default_retry_delay=120)
 def update_list(self, node_id, node_title, list_enabled, emails, subscriptions):
     # Need to put the sender in the list of members to avoid potential conflicts
-    emails.append(address(node_id))
+    emails.add(address(node_id))
     # Convert subscriptions to a dictionary for ease of use in functions
     subscriptions = {email: email in subscriptions for email in emails}
 
@@ -148,8 +145,8 @@ def update_list(self, node_id, node_title, list_enabled, emails, subscriptions):
                 if info['name'] != '{} Mailing List'.format(node_title):
                     update_title(node_id, node_title)
 
-                emails = set(emails)
                 list_emails = set([member['address'] for member in members])
+                list_subscriptions = {member['address']: member['subscribed'] for member in members}
 
                 emails_to_add = emails.difference(list_emails)
                 for email in emails_to_add:
@@ -159,9 +156,7 @@ def update_list(self, node_id, node_title, list_enabled, emails, subscriptions):
                 for email in emails_to_remove:
                     remove_member(node_id, email)
 
-                list_subscriptions = {member['address']: member['subscribed'] for member in members}
-
-                for email in emails:
+                for email in emails.intersection(list_emails):
                     if subscriptions[email] != list_subscriptions[email]:
                         update_member(node_id, email, subscriptions[email])
 

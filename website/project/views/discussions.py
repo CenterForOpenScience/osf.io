@@ -29,14 +29,14 @@ from website.models import Node
 @must_have_permission(ADMIN)
 @must_not_be_registration
 def enable(node, **kwargs):
-    node.discussions.enable()
+    node.discussions.enable(save=True)
 
 
 @must_be_valid_project
 @must_have_permission(ADMIN)
 @must_not_be_registration
 def disable(node, **kwargs):
-    node.discussions.disable()
+    node.discussions.disable(save=True)
 
 
 @must_be_valid_project
@@ -47,9 +47,9 @@ def set_subscription(node, auth, **kwargs):
     subscription = request.json.get('discussionsSub')
     subscribed = True if subscription == 'subscribed' else False
     if subscribed:
-        node.discussions.subscribe_member(auth.user.email)
+        node.discussions.subscribe_member(auth.user._id, save=True)
     else:
-        node.discussions.unsubscribe_member(auth.user.email)
+        node.discussions.unsubscribe_member(auth.user._id, save=True)
 
 
 ###############################################################################
