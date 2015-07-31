@@ -4,6 +4,8 @@ var $ = require('jquery');
 var ko = require('knockout');
 require('knockout.validation');
 
+var iconmap = require('js/iconmap');
+
 var makeExtender = function(interceptor) {
     return function(target, options) {
         var result = ko.computed({
