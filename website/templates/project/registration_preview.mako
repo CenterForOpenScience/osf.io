@@ -21,14 +21,12 @@
       <div class="span8 col-md-9 columns eight large-8" style="padding-left: 30px">
         <div data-bind="foreach: {data: schema.pages, as: 'page'}">
           <h3 data-bind="attr.id: page.id, text: page.title"></h3>
-          <div class="row">
-            <div data-bind="foreach: {data: Object.keys(page.questions), as: 'qid'}">
-              <div class="row" data-bind="with: $parent.questions[qid]">
-                <h4 data-bind="attr.id: id, text: title"></h4>
-                <span data-bind="text: description"></span>
-              </div>
-            </div>              
-          </div>
+          <div data-bind="foreach: {data: Object.keys(page.questions), as: 'qid'}">
+            <span data-bind="with: $parent.questions[qid]">
+              <h4 data-bind="attr.id: id, text: title"></h4>
+              <span data-bind="text: description"></span>
+            </span>
+          </div>              
         </div>
       </div>
     </div>

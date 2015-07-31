@@ -93,19 +93,19 @@
             "item14": {
                 "type": "string",
                 "format": "text",
-                "label": "Experimenter knowledge of overall hypotheses",
+                "title": "Experimenter knowledge of overall hypotheses",
                 "nav": "Experimenter knowledge (hypothesis)"
             },
             "item15": {
                 "type": "string",
                 "format": "text",
-                "label": "My target sample size is",
+                "title": "My target sample size is",
                 "nav": "Sample size"
             },
             "item16": {
                 "type": "string",
                 "format": "text",
-                "label": "The rationale for my sample size is",
+                "title": "The rationale for my sample size is",
                 "nav": "Sample size rationale"
             }
         }
