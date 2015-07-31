@@ -818,12 +818,24 @@ RegistrationEditor.prototype.save = function() {
     return true;
 };
 
-var RegistrationManager = function(node, draftsSelector, editorSelector, urls) {
+/**
+ * @class RegistrationManager
+ * Model for listing DraftRegistrations
+ *
+ * @param {Object} node: optional data to instatiate model with
+ * @param {String} draftsSelector: DOM node to bind VM to
+ * @param {Object} urls:
+ * @param {String} urls.list:
+ * @param {String} urls.get:
+ * @param {String} urls.delete:
+ * @param {String} urls.edit:
+ * @param {String} urls.schemas:
+ **/
+var RegistrationManager = function(node, draftsSelector, urls) {
     var self = this;
 
     self.node = node;
     self.draftsSelector = draftsSelector;
-    self.editorSelector = editorSelector;
 
     self.urls = urls;
 
@@ -843,12 +855,6 @@ var RegistrationManager = function(node, draftsSelector, editorSelector, urls) {
     // bound functions
     self.getDraftRegistrations = $.getJSON.bind(null, self.urls.list);
     self.getSchemas = $.getJSON.bind(null, self.urls.schemas);
-
-    self.sortedDrafts = ko.computed(function() {
-        return self.drafts().sort(function(a, b) {
-            return a.initiated > b.initiated;
-        });
-    });
 
     self.previewSchema = ko.computed(function() {
         var schema = self.selectedSchema();
@@ -887,33 +893,11 @@ RegistrationManager.prototype.init = function() {
         self.loading(false);
     });
 };
-RegistrationManager.prototype.refresh = function() {
-    var self = this;
-
-    var getSchemas = self.getSchemas();
-
-    getSchemas.then(function(response) {
-        self.schemas(
-            $.map(response.meta_schemas, function(schema) {
-                return new MetaSchema(schema);
-            })
-        );
-    });
-
-    var getDraftRegistrations = self.getDraftRegistrations();
-
-    getDraftRegistrations.then(function(response) {
-        self.drafts(
-            $.map(response.drafts, function(draft) {
-                return new Draft(draft);
-            })
-        );
-    });
-
-    $.when(getSchemas, getDraftRegistrations).then(function() {
-        self.loading(false);
-    });
-};
+/**
+ * Confirm and delete a draft registration
+ *
+ * @param {Draft} draft:
+ **/
 RegistrationManager.prototype.deleteDraft = function(draft) {
     var self = this;
 
@@ -930,6 +914,9 @@ RegistrationManager.prototype.deleteDraft = function(draft) {
         }
     });
 };
+/**
+ * Show the draft registration preview pane
+ **/
 RegistrationManager.prototype.beforeCreateDraft = function() {
     var self = this;
 
@@ -938,6 +925,9 @@ RegistrationManager.prototype.beforeCreateDraft = function() {
     self.selectedSchema(self.schemas()[0]);
     self.preview(true);
 };
+/**
+ * Redirect to the draft register page
+ **/
 RegistrationManager.prototype.maybeWarn = function(draft) {
     var redirect = function() {
         window.location.href = draft.urls.edit;

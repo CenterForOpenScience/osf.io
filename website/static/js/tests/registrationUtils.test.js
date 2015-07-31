@@ -314,6 +314,13 @@ describe('Question', () => {
             q.type = 'number';
             assert.isFalse(q.valid().status);
         });
+        it('is false with a message if the field is required and blank', () => {
+            q.value(null);
+            q.required = true;
+            var valid = q.valid();
+            assert.isFalse(valid.status);
+            assert.isNotNull(valid.message);
+        });
     });
     describe('#init', () => {
         it('maps object-type Question\'s properties property to sub-Questions', () => {
