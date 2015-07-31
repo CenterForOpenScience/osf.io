@@ -90,7 +90,8 @@ function findByTempID(parent, tmpID) {
 
 function cancelUploads (row) {
     var tb = this;
-    var filesArr = tb.dropzone.getQueuedFiles();
+    var uploading = tb.dropzone.getUploadingFiles();
+    var filesArr = uploading.concat(tb.dropzone.getQueuedFiles());
     for (var i = 0; i < filesArr.length; i++) {
         var j = filesArr[i];
         if(!row){
@@ -762,7 +763,9 @@ function _fangornDropzoneError(treebeard, file, message, xhr) {
             child.removeSelf();
         }
     }
-    $osf.growl('Error', msgText);
+    if (msgText !== 'Upload canceled.') {
+        $osf.growl('Error', msgText);
+    }
     treebeard.options.uploadInProgress = false;
 }
 
@@ -1135,7 +1138,7 @@ function _connectCheckTemplate(item){
     var tb = this;
     return m('span.text-danger', [
         m('span', item.data.name),
-        m('em', ' could\'t load.' ),
+        m('em', ' couldn\'t load.' ),
         m('button.btn.btn-xs.btn-default.m-l-xs', {
             onclick : function(e){
                 e.stopImmediatePropagation();

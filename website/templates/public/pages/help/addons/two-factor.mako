@@ -9,11 +9,4 @@
         code into your phone. Your phone will return with a six figure code; enter this on the OSF and click "Submit." Now that you
         have authenticated your account, you will need to input a code every time you log in. The code on your phone will
         change at least every minute.</p>
-    <div class="row">
-        <div class="col-md-8 col-md-offset-2 col-sm-12">
-           <div class="gs-video embed-responsive embed-responsive-16by9">
-                <div class="embed-responsive-item youtube-loader" id="mSJWqP48ZLE"></div>
-            </div>
-        </div>
-    </div>
 </div>

@@ -617,7 +617,7 @@ ko.bindingHandlers.listing = {
 
 /* Responsive Affix for side nav */
 var fixAffixWidth = function() {
-    $('.affix, .affix-top, .affix-bottom').each(function (){
+    $('.osf-affix').each(function (){
         var el = $(this);
         var colsize = el.parent('.affix-parent').width();
         el.outerWidth(colsize);
