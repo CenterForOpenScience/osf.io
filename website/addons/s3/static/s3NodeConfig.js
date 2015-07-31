@@ -292,13 +292,13 @@ ViewModel.prototype.openCreateBucket = function() {
                         '<form class="form-horizontal"> ' +
                             '<div class="form-group"> ' +
                                 '<label class="col-md-4 control-label" for="bucketName">Bucket Name</label> ' +
-                                '<div class="col-md-4"> ' +
+                                '<div class="col-md-8"> ' +
                                     '<input id="bucketName" name="bucketName" type="text" placeholder="Enter bucket name" class="form-control" autofocus> ' +
                                 '</div>' +
                             '</div>' +
                             '<div class="form-group"> ' +
                                 '<label class="col-md-4 control-label" for="bucketLocation">Bucket Location</label> ' +
-                                '<div class="col-md-4"> ' +
+                                '<div class="col-md-8"> ' +
                                     '<select id="bucketLocation" name="bucketLocation" class="form-control"> ' +
                                         generateBucketOptions(self.settings.bucketLocations) +
                                     '</select>' +
