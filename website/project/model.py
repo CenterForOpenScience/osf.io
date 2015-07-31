@@ -1555,7 +1555,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
             logger.exception(e)
             log_exception()
 
-    def update_search_file(self, addon, name, path):
+    def update_search_file(self, file_node):
         """ Update a single file in the node based on the action given.
 
         :param action: 'update', 'create', or 'delete'.
@@ -1570,18 +1570,18 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
             return
 
         try:
-            tasks.queue_update_file(name, path, addon)
-            # tasks.enqueue_task(tasks.update_file_task.s(name, path, addon))
+            tasks.queue_update_file(file_node)
+            # tasks.enqueue_task(tasks.update_file_task.s(file_node))
         except search.exceptions.SearchUnavailableError as e:
             logger.exception(e)
             log_exception()
 
-    def delete_search_file(self, addon, name, path):
+    def delete_search_file(self, file_node):
         from website import search
         from website.search import tasks
         try:
-            tasks.queue_delete_file(name, path, addon)
-            # tasks.enqueue_task(tasks.delete_file_task.s(name, path, addon))
+            tasks.queue_delete_file(file_node)
+            # tasks.enqueue_task(tasks.delete_file_task.s(file_node))
         except search.exceptions.SearchUnavailableError as e:
             logger.exception(e)
             log_exception()

@@ -34,9 +34,16 @@ def update_node(node, index=None):
 
 @file_util.file_indexing
 @requires_search
-def update_file(name, path, addon, index=None):
+def update_file(file_node, index=None):
     index = index or settings.ELASTIC_INDEX
-    search_engine.update_file(name, path, addon, index=index)
+    search_engine.update_file(file_node, index=index)
+
+
+@file_util.file_indexing
+@requires_search
+def delete_file(file_node, index=None):
+    index = index or settings.ELASTIC_INDEX
+    search_engine.delete_file(file_node, index=index)
 
 
 @file_util.file_indexing
@@ -44,13 +51,6 @@ def update_file(name, path, addon, index=None):
 def update_all_files(node, index=None):
     index = index or settings.ELASTIC_INDEX
     search_engine.update_all_files(node, index=index)
-
-
-@file_util.file_indexing
-@requires_search
-def delete_file(name, path, addon, index=None):
-    index = index or settings.ELASTIC_INDEX
-    search_engine.delete_file(name, path, addon, index=index)
 
 
 @file_util.file_indexing

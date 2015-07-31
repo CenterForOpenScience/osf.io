@@ -288,19 +288,19 @@ def create_waterbutler_log(payload, **kwargs):
     # file indexing/updates
     action = payload['action']
     metadata = payload.get('metadata') or payload['destination']
-    path = metadata['path']
+    # path = metadata['path']
     name = metadata['name']
     if action in ('create', 'update', 'copy'):
         node_addon = node.get_addon(metadata['provider'])
-        node.update_search_file(node_addon, name, path)
+        file_node = node_addon.root_node.find_child_by_name(name)
+        node.update_search_file(file_node)
 
     if action in ('move'):
-        source_node = Node.load(payload['source']['nid'])
-        source_addon = source_node.get_addon(payload['source']['provider'])
         dest_addon = node.get_addon(metadata['provider'])
+        file_node = dest_addon.root_node.find_child_by_name(name)
 
-        source_node.delete_search_file(source_addon, name, path)
-        node.update_search_file(dest_addon, name, path)
+        source_node.delete_search_file(file_node)
+        node.update_search_file(file_node)
 
     return {'status': 'success'}
 

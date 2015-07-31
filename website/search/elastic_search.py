@@ -298,19 +298,22 @@ def update_node(node, index=None):
         es.index(index=index, doc_type=category, id=elastic_document_id, body=elastic_document, refresh=True)
 
 
-
 @file_util.file_indexing
 @requires_search
-def update_file(name, path, addon, index=None):
+def update_file(file_node, index=None):
     """Add file to elastic_search.
 
-    :param name: Name of file to index.
+    :param file_node:
     :param path: Path of file to index.
     :param addon: Instance of storage containing the file.
     """
     index = index or INDEX
+
+    name = file_node.name
+    addon = file_node.node_settings
+
     if file_util.is_indexed(name, addon):
-        file_doc = file_util.build_file_document(name, path, addon, include_content=True)
+        file_doc = file_util.build_file_document(file_node, include_content=True)
 
         if not file_doc['size'] < settings.MAX_INDEXED_FILE_SIZE:
             return
@@ -330,13 +333,13 @@ def update_file(name, path, addon, index=None):
 
 @file_util.file_indexing
 @requires_search
-def delete_file(name, path, addon, index=None):
+def delete_file(file_node, index=None):
     """Remove a single file from search index.
 
     :param file_path:
     """
     index = index or INDEX
-    path = file_util.norm_path(path)
+    path = file_util.norm_path(file_node.path)
     es.delete(index=index,
               doc_type='file',
               id=path,
@@ -353,13 +356,8 @@ def update_all_files(node, index=None):
     :param node: Instance of Node.
     """
     index = index or INDEX
-    for file_dict in file_util.collect_files(node):
-        update_file(
-            name=file_dict['name'],
-            path=file_dict['path'],
-            addon=file_dict['addon'],
-            index=index,
-        )
+    for file_node in file_util.collect_files(node):
+        update_file(file_node, index=index)
 
 
 @file_util.file_indexing
@@ -370,8 +368,8 @@ def delete_all_files(node, index=None):
     :param node:
     """
     index = index or INDEX
-    for file_dict in file_util.collect_files(node):
-        delete_file(name=file_dict['name'], path=file_dict['path'], addon=file_dict['addon'], index=index)
+    for file_node in file_util.collect_files(node):
+        delete_file(file_node, index=index)
 
 
 def bulk_update_contributors(nodes, index=INDEX):

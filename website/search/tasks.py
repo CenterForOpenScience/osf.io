@@ -3,23 +3,21 @@ import logging
 from framework.tasks import app
 from framework.tasks.handlers import enqueue_task
 from website.search import search
-from website.search.file_util import file_indexing
-
 
 
 def _enqueue(func):
-    return lambda *args, **kwargs : enqueue_task(func.s(*args, **kwargs))
+    return lambda *args, **kwargs: enqueue_task(func.s(*args, **kwargs))
 
 @app.task
-def update_file_task(name, path, addon, index=None):
+def update_file_task(file_node, index=None):
     logging.info('UPDATE FROM CELERY\n')
-    search.update_file(name, path, addon, index)
+    search.update_file(file_node, index)
 
 
 @app.task
-def delete_file_task(name, path, addon, index=None):
+def delete_file_task(file_node, index=None):
     logging.info('DELETE FROM CELERY\n')
-    search.delete_file(name, path, addon, index)
+    search.delete_file(file_node, index)
 
 
 @app.task
