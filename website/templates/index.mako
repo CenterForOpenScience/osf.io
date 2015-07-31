@@ -16,10 +16,13 @@
     <!-- Main jumbotron for a primary marketing message or call to action -->
     <div id="home-hero">
       <div class="container text-center">
+        <div class="visible-xs-block visible-sm-block visible-md-block network-bg"></div>
         <h1><strong>Simplified</strong> scientific collaboration</h1>
         <h3>Powerful end-to-end support for your research.</h3>
 
-        <canvas id="demo-canvas"></canvas>
+        <div id="canvas-container">
+          <canvas id="demo-canvas"></canvas>
+        </div>
 
         <div id="logo" class="off">
           <div class="circle" id="circle-1"><span></span></div>
@@ -123,10 +126,12 @@
           </div>
         </div>
         <div class="col-md-6">
-          <div class="student-image">
-            <div class="quote">
-              <span class="main">“The OSF is a great way to collaborate and stay organized while still using your favorite external services."</span>
-              <span class="attrib"><strong>Kara Woo</strong> - Information Manager, Aquatic Ecology, Washington State</span>
+          <div class="student-wrap">
+            <div class="student-image">
+              <div class="quote">
+                <span class="main">“The OSF is a great way to collaborate and stay organized while still using your favorite external services."</span>
+                <span class="attrib"><strong>Kara Woo</strong> - Information Manager, Aquatic Ecology, Washington State</span>
+              </div>
             </div>
           </div>
         </div>
@@ -242,7 +247,7 @@
         </div>
 
         <div class="row">
-          <div class="col-xs-3">
+          <div class="col-xs-4 col-md-3">
             <img src="/static/img/front-page/user2.jpg" class="img-circle img-responsive" alt="Richard Ball" />
           </div>
           <div class="col-xs-8">
