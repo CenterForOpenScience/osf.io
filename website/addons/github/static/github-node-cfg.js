@@ -28,6 +28,7 @@ var GithubConfigHelper = (function() {
 
         bootbox.prompt({
             title: 'Name your new repo',
+            placeholder: 'Repo name',
             callback: function (repoName) {
                 // Return if cancelled
                 if (repoName === null) {
