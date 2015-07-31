@@ -194,12 +194,14 @@ class MockUpdateNodeCase(unittest.TestCase):
     """
     def setUp(self):
         super(MockUpdateNodeCase, self).setUp()
+        settings.USE_FILE_INDEXING = False
         self.search_patch = mock.patch('website.search.file_util.collect_files',
                                        side_effect=lambda n: [])
         self.search_patch.start()
 
     def tearDown(self):
         super(MockUpdateNodeCase, self).tearDown()
+        settings.USE_FILE_INDEXING = True
         self.search_patch.stop()
 
 

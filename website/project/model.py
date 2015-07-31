@@ -39,6 +39,7 @@ from framework.transactions.context import TokuTransaction
 from framework.utils import iso8601format
 
 from website import language, settings, security
+from website.search import file_util
 from website.util import web_url_for
 from website.util import api_url_for
 from website.exceptions import (
@@ -1538,7 +1539,8 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         from website.search import tasks
         try:
             if self.is_public:
-                tasks.enqueue_task(tasks.update_all_files_task.s(self))
+                tasks.queue_update_all_files(self)
+                # tasks.enqueue_task(tasks.update_all_files_task.s(self))
         except search.exceptions.SearchUnavailableError as e:
             logger.exception(e)
             log_exception()
@@ -1547,7 +1549,8 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         from website import search
         from website.search import tasks
         try:
-            tasks.enqueue_task(tasks.delete_all_files_task.s(self))
+            tasks.queue_delete_all_files(self)
+            # tasks.enqueue_task(tasks.delete_all_files_task.s(self))
         except search.exceptions.SearchUnavailableError as e:
             logger.exception(e)
             log_exception()
@@ -1567,7 +1570,8 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
             return
 
         try:
-            tasks.enqueue_task(tasks.update_file_task.s(name, path, addon))
+            tasks.queue_update_file(name, path, addon)
+            # tasks.enqueue_task(tasks.update_file_task.s(name, path, addon))
         except search.exceptions.SearchUnavailableError as e:
             logger.exception(e)
             log_exception()
@@ -1576,7 +1580,8 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         from website import search
         from website.search import tasks
         try:
-            tasks.enqueue_task(tasks.delete_file_task.s(name, path, addon))
+            tasks.queue_delete_file(name, path, addon)
+            # tasks.enqueue_task(tasks.delete_file_task.s(name, path, addon))
         except search.exceptions.SearchUnavailableError as e:
             logger.exception(e)
             log_exception()
