@@ -1,6 +1,8 @@
 # -*- coding: utf-8 -*-
 import mock
 import urlparse
+import datetime
+import datetime as dt
 from nose.tools import *  # flake8: noqa
 
 from website.models import Node
@@ -9,14 +11,15 @@ from website.util.sanitize import strip_html
 from api.base.settings.defaults import API_BASE
 from website.settings import API_DOMAIN
 
-from tests.base import ApiTestCase, fake
+from tests.base import ApiTestCase, fake, assert_datetime_equal
 from tests.factories import (
     DashboardFactory,
     FolderFactory,
     NodeFactory,
     ProjectFactory,
     RegistrationFactory,
-    UserFactory
+    UserFactory,
+    NodeLogFactory
 )
 
 class TestWelcomeToApi(ApiTestCase):
@@ -1331,7 +1334,6 @@ class TestDeleteNodePointer(ApiTestCase):
         res = self.app.delete(self.private_url, auth=self.basic_auth_two, expect_errors=True)
         assert_equal(res.status_code, 403)
 
-
     def test_return_deleted_public_node_pointer(self):
         res = self.app.delete(self.public_url, auth=self.basic_auth)
         self.public_project.reload() # Update the model to reflect changes made by post request
@@ -1349,3 +1351,115 @@ class TestDeleteNodePointer(ApiTestCase):
         #check that deleted pointer can not be returned
         res = self.app.get(self.private_url, auth=self.basic_auth, expect_errors=True)
         assert_equal(res.status_code, 404)
+
+
+class TestNodeLogList(ApiTestCase):
+
+    def setUp(self):
+        super(TestNodeLogList, self).setUp()
+        self.user = UserFactory.build()
+        password = fake.password()
+        self.logs = NodeLogFactory.build()
+        self.password = password
+        self.user.set_password(password)
+        self.user.save()
+        self.basic_auth = (self.user.username, password)
+
+        self.user_two = UserFactory.build()
+        self.user_two.set_password(self.password)
+        self.user_two.save()
+        self.add = ProjectFactory(is_added=True)
+        self.basic_auth_two = (self.user_two.username, self.password)
+        self.private_project = ProjectFactory(is_public=False, creator=self.user)
+        self.private_url = '/{}nodes/{}/logs/'.format(API_BASE, self.private_project._id)
+        self.public_project = ProjectFactory(is_public=True, creator=self.user)
+        self.public_url = '/{}nodes/{}/logs/'.format(API_BASE, self.public_project._id)
+
+    def assert_datetime_equal(dt1, dt2, allowance=500):
+        assert_less(dt1 - dt2, dt.timedelta(milliseconds=allowance))
+
+    def test_log_create_on_public_project(self):
+        datetime.datetime.strptime('2015-07-28 21:06:34.965114','%Y-%m-%d %H:%M:%S.%f')
+        date_str = "2008-11-10 17:53:59"
+        dt_obj = datetime.datetime.strptime(date_str, "%Y-%m-%d %H:%M:%S")
+        print repr(dt_obj)
+        res = self.app.get(self.public_url)
+        assert_equal(res.status_code, 200)
+        (len(res.json['data']), 1)
+        assert_datetime_equal(datetime.datetime.strptime(res.json['data'][0]['date'], "%Y-%m-%dT%H:%M:%S.%f"),
+                              self.public_project.logs[0].date)
+        assert_equal(res.json['data'][0]['id'], self.public_project.logs[0]._id)
+        assert_equal(res.json['data'][0]['action'], self.public_project.logs[0].action)
+        assert_equal(res.json['data'][0]['version'], self.public_project._version)
+        assert_equal(res.json['data'][0]['name'], self.public_project.logs[0]._name)
+
+    def test_log_create_on_private_project(self):
+        res = self.app.get(self.private_url, auth=self.basic_auth)
+        assert_equal(res.status_code, 200)
+        (len(res.json['data']), 1)
+        assert_datetime_equal(datetime.datetime.strptime(res.json['data'][0]['date'], "%Y-%m-%dT%H:%M:%S.%f"),
+                              self.private_project.logs[0].date)
+        assert_equal(res.json['data'][0]['id'], self.private_project.logs[0]._id)
+        assert_equal(res.json['data'][0]['action'], self.private_project.logs[0].action)
+        assert_equal(res.json['data'][0]['version'], self.private_project.logs[0]._version)
+        assert_equal(res.json['data'][0]['name'], self.private_project.logs[0]._name)
+
+    def test_return_logs_private_project_details(self):
+        res = self.app.get(self.private_url, auth=self.basic_auth_two, expect_errors=True)
+        assert_equal(res.status_code, 403)
+
+    def test_log_add_contributor_on_public_project(self):
+        res = self.app.get(self.public_url)
+        assert_equal(res.status_code, 200)
+        (len(res.json['data']), 1)
+        # 1 project create log, 1 add contributor log, then 5 generated logs
+        assert_equal(res.json['links']['first'], None)
+        assert_equal(res.json['links']['last'], None)
+        assert_equal(res.json['links']['prev'], None)
+        assert_equal(res.json['links']['next'], None)
+        assert_equal(res.json['links']['meta']['total'], 1)
+        assert_equal(res.json['links']['meta']['per_page'], 10)
+
+    def test_get_logs_defaults_to_ten(self):
+        res = self.app.get(self.public_url)
+        (len(res.json['data']), 5)
+        # 1 project create log, 1 add contributor log, then 5 generated logs
+        assert_equal(res.json['links']['meta']['total'], 1)
+        assert_equal(res.json['links']['meta']['total'], 1)
+        assert_equal(res.json['links']['meta']['per_page'], 10)
+
+    def test_get_more_logs(self):
+        res = self.app.get(self.public_url)
+        (len(res.json['links']), 12)
+        #1 project create log, 1 add contributor log, then 12 generated logs
+        assert_equal(res.json['links']['meta']['total'], 1)
+        assert_equal(res.json['links']['meta']['per_page'], 10)
+
+    def test_user_can_not_access_logs_on_private_project(self):
+        self.project = ProjectFactory()
+        self.project.add_contributor(self.user_two, permissions=['read'])
+        self.project.save()
+        res = self.app.get(self.private_url, auth=self.basic_auth_two, expect_errors=True)
+        self.project.reload()
+        assert_equal(res.status_code, 403)
+        self.public_project.permissions = ['read']
+
+    def test_private_project_in_logs(self):
+        res = self.app.get(self.private_url, auth=self.basic_auth, expect_errors=True)
+        self.private_project.reload()
+        assert_equal(res.status_code, 200)
+        self.public_project.permissions = ['read', 'write']
+
+    def test_private_log_in_non_contributor(self):
+        res = self.app.get(self.private_url, auth=self.basic_auth_two, expect_errors=True)
+        self.private_project.reload()
+        assert_equal(res.status_code, 403)
+        self.private_project.permissions = ['read']
+
+    def test_private_log_in_read_only_contributor(self):
+        self.public_project.add_contributor(self.user_two, permissions=['read'])
+        self.public_project.save()
+        res = self.app.get(self.private_url, auth=self.basic_auth_two, expect_errors=True)
+        self.private_project.reload()
+        assert_equal(res.status_code, 403)
+        self.private_project.permissions = ['read']
