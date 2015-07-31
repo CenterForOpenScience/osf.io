@@ -226,7 +226,24 @@ class MockRequestTestCase(unittest.TestCase):
         httpretty.disable()
 
 
-class OsfTestCase(DbTestCase, AppTestCase, UploadTestCase, MockRequestTestCase):
+class MockEmailDiscussionsCase(unittest.TestCase):
+    """
+    """
+    @classmethod
+    def setUpClass(cls):
+        super(MockEmailDiscussionsCase, cls).setUpClass()
+        cls.update_patch = mock.patch('website.project.model.update_list')
+
+        cls.update_patch.start()
+
+    @classmethod
+    def tearDownClass(cls):
+        super(MockEmailDiscussionsCase, cls).tearDownClass()
+        cls.update_patch.stop()
+
+
+class OsfTestCase(DbTestCase, AppTestCase, UploadTestCase, MockRequestTestCase,
+                  MockEmailDiscussionsCase):
     """Base `TestCase` for tests that require both scratch databases and the OSF
     application. Note: superclasses must call `super` in order for all setup and
     teardown methods to be called correctly.
@@ -234,7 +251,8 @@ class OsfTestCase(DbTestCase, AppTestCase, UploadTestCase, MockRequestTestCase):
     pass
 
 
-class ApiTestCase(DbTestCase, ApiAppTestCase, UploadTestCase, MockRequestTestCase):
+class ApiTestCase(DbTestCase, ApiAppTestCase, UploadTestCase, MockRequestTestCase,
+                  MockEmailDiscussionsCase):
     """Base `TestCase` for tests that require both scratch databases and the OSF
     API application. Note: superclasses must call `super` in order for all setup and
     teardown methods to be called correctly.

@@ -2017,7 +2017,8 @@ class TestProject(OsfTestCase):
         # The user is removed
         self.project.remove_contributor(
             auth=self.consolidate_auth,
-            contributor=user2
+            contributor=user2,
+            save=True
         )
 
         self.project.reload()
@@ -2093,7 +2094,8 @@ class TestProject(OsfTestCase):
         assert_in(self.project._primary_key, new_user.unclaimed_records)
         self.project.remove_contributor(
             auth=self.consolidate_auth,
-            contributor=new_user
+            contributor=new_user,
+            save=True
         )
         self.project.save()
         assert_not_in(self.project._primary_key, new_user.unclaimed_records)

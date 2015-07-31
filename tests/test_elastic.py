@@ -422,7 +422,7 @@ class TestPublicNodes(SearchTestCase):
         user2 = UserFactory(fullname='Brian May')
 
         self.project.add_contributor(user2, save=True)
-        self.project.remove_contributor(user2, self.consolidate_auth)
+        self.project.remove_contributor(user2, self.consolidate_auth, save=True)
 
         docs = query('category:project AND "{}"'.format(user2.fullname))['results']
         assert_equal(len(docs), 0)

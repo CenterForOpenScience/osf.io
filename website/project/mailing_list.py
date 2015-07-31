@@ -28,7 +28,7 @@ def get_list(node_id):
         auth=('api', settings.MAILGUN_API_KEY),
     )
     if info.status_code != 200 and info.status_code != 404:
-        raise HTTPError(400)
+        return {},{}
     info = json.loads(info.text)
 
     members = requests.get(
@@ -36,7 +36,7 @@ def get_list(node_id):
         auth=('api', settings.MAILGUN_API_KEY),
     )
     if members.status_code != 200 and members.status_code != 404:
-        raise HTTPError(400)
+        return {}, {}
     members = json.loads(members.text)
 
     return info, members
@@ -53,7 +53,7 @@ def create_list(node_id, node_title, emails, subscriptions):
         }
     )
     if res.status_code != 200:
-        raise HTTPError(400)
+        return
 
     for email in emails:
         add_member(node_id, email, subscriptions[email])
@@ -70,7 +70,7 @@ def delete_list(node_id):
         auth=('api', settings.MAILGUN_API_KEY)
     )
     if res.status_code != 200:
-        raise HTTPError(400)
+        return
 
 
 def update_title(node_id, node_title):
@@ -82,7 +82,7 @@ def update_title(node_id, node_title):
         }
     )
     if res.status_code != 200:
-        raise HTTPError(400)
+        return
 
 
 def add_member(node_id, email, subscription):
@@ -96,7 +96,7 @@ def add_member(node_id, email, subscription):
         }
     )
     if res.status_code != 200:
-        raise HTTPError(400)
+        return
 
 
 def remove_member(node_id, email):
@@ -105,7 +105,7 @@ def remove_member(node_id, email):
         auth=('api', settings.MAILGUN_API_KEY)
     )
     if res.status_code != 200:
-        raise HTTPError(400)
+        return
 
 
 def update_member(node_id, email, subscription):
@@ -117,7 +117,7 @@ def update_member(node_id, email, subscription):
         }
     )
     if res.status_code != 200:
-        raise HTTPError(400)
+        return
 
 
 ###############################################################################
@@ -126,66 +126,58 @@ def update_member(node_id, email, subscription):
 
 
 @queued_task
-@app.task(bind=True, default_retry_delay=120)
-def update_list(self, node_id, node_title, list_enabled, emails, subscriptions):
+@app.task
+def update_list(node_id, node_title, list_enabled, emails, subscriptions):
     # Need to put the sender in the list of members to avoid potential conflicts
     emails.add(address(node_id))
     # Convert subscriptions to a dictionary for ease of use in functions
     subscriptions = {email: email in subscriptions for email in emails}
 
-    try:
-        info, members = get_list(node_id)
+    info, members = get_list(node_id)
 
-        if list_enabled:
+    if list_enabled:
 
-            if 'list' in info.keys():
-                info = info['list']
-                members = members['items']
+        if 'list' in info.keys():
+            info = info['list']
+            members = members['items']
 
-                if info['name'] != '{} Mailing List'.format(node_title):
-                    update_title(node_id, node_title)
+            if info['name'] != '{} Mailing List'.format(node_title):
+                update_title(node_id, node_title)
 
-                list_emails = set([member['address'] for member in members])
-                list_subscriptions = {member['address']: member['subscribed'] for member in members}
+            list_emails = set([member['address'] for member in members])
+            list_subscriptions = {member['address']: member['subscribed'] for member in members}
 
-                emails_to_add = emails.difference(list_emails)
-                for email in emails_to_add:
-                    add_member(node_id, email, subscriptions[email])
+            emails_to_add = emails.difference(list_emails)
+            for email in emails_to_add:
+                add_member(node_id, email, subscriptions[email])
 
-                emails_to_remove = list_emails.difference(emails)
-                for email in emails_to_remove:
-                    remove_member(node_id, email)
+            emails_to_remove = list_emails.difference(emails)
+            for email in emails_to_remove:
+                remove_member(node_id, email)
 
-                for email in emails.intersection(list_emails):
-                    if subscriptions[email] != list_subscriptions[email]:
-                        update_member(node_id, email, subscriptions[email])
-
-            else:
-                create_list(node_id, node_title, emails, subscriptions)
-                return
+            for email in emails.intersection(list_emails):
+                if subscriptions[email] != list_subscriptions[email]:
+                    update_member(node_id, email, subscriptions[email])
 
         else:
+            create_list(node_id, node_title, emails, subscriptions)
+            return
 
-            if 'list' in info.keys():
-                delete_list(node_id)
+    else:
 
-    except (HTTPError, requests.ConnectionError):
-        self.retry()
+        if 'list' in info.keys():
+            delete_list(node_id)
 
 
 @queued_task
-@app.task(bind=True, default_retry_delay=120)
-def send_message(self, node_id, node_title, message):
-    try:
-        res = requests.post(
-            'https://api.mailgun.net/v3/{}/messages'.format(settings.MAILGUN_DOMAIN),
-            auth=('api', settings.MAILGUN_API_KEY),
-            data={'from': '{0} Mailing List <{1}>'.format(node_title, address(node_id)),
-                  'to': address(node_id),
-                  'subject': message['subject'],
-                  'html': '<html>{}</html>'.format(message['text'])})
-        if res.status_code != 200:
-            raise HTTPError(400)
-
-    except (HTTPError, requests.ConnectionError):
-        self.retry()
+@app.task
+def send_message(node_id, node_title, message):
+    res = requests.post(
+        'https://api.mailgun.net/v3/{}/messages'.format(settings.MAILGUN_DOMAIN),
+        auth=('api', settings.MAILGUN_API_KEY),
+        data={'from': '{0} Mailing List <{1}>'.format(node_title, address(node_id)),
+              'to': address(node_id),
+              'subject': message['subject'],
+              'html': '<html>{}</html>'.format(message['text'])})
+    if res.status_code != 200:
+        return
