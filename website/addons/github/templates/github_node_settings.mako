@@ -39,7 +39,7 @@
 
         <div class="row">
 
-            <div class="col-md-6">
+            <div class="col-md-6 m-b-sm">
                 <select id="githubSelectRepo" class="form-control" ${'disabled' if not is_owner or is_registration else ''}>
                     <option>-----</option>
                         % if is_owner:
@@ -53,7 +53,7 @@
             </div>
 
             % if is_owner and not is_registration:
-                <div class="col-md-6">
+                <div class="col-md-6 m-b-sm">
                     <a id="githubCreateRepo" class="btn btn-success">Create Repo</a>
                     <button class="btn btn-success addon-settings-submit pull-right">
                         Save

@@ -109,7 +109,7 @@ ViewModel.prototype.selectBucket = function() {
             var message = 'Could not change S3 bucket at this time. ' +
                 'Please refresh the page. If the problem persists, email ' +
                 '<a href="mailto:support@osf.io">support@osf.io</a>.';
-            self.changeMessage(message, 'text-warning');
+            self.changeMessage(message, 'text-danger');
             Raven.captureMessage('Could not set S3 bucket', {
                 url: self.urls().setBucket,
                 textStatus: status,
@@ -132,7 +132,7 @@ ViewModel.prototype._deauthorizeNodeConfirm = function() {
         var message = 'Could not disconnect S3 at ' +
             'this time. Please refresh the page. If the problem persists, email ' +
             '<a href="mailto:support@osf.io">support@osf.io</a>.';
-        self.changeMessage(message, 'text-warning');
+        self.changeMessage(message, 'text-danger');
         Raven.captureMessage('Could not remove S3 authorization.', {
             url: self.urls().deauthorize,
             textStatus: status,
@@ -171,7 +171,7 @@ ViewModel.prototype._importAuthConfirm = function() {
         var message = 'Could not import S3 credentials at ' +
             'this time. Please refresh the page. If the problem persists, email ' +
             '<a href="mailto:support@osf.io">support@osf.io</a>.';
-        self.changeMessage(message, 'text-warning');
+        self.changeMessage(message, 'text-danger');
         Raven.captureMessage('Could not import S3 credentials', {
             url: self.urls().importAuth,
             textStatus: status,
@@ -202,6 +202,7 @@ ViewModel.prototype.importAuth = function() {
 ViewModel.prototype.createCredentials = function() {
     var self = this;
     self.creatingCredentials(true);
+
     return $osf.postJSON(
         self.urls().create_auth, {
             secret_key: self.secretKey(),
@@ -213,10 +214,12 @@ ViewModel.prototype.createCredentials = function() {
         self.updateFromData(response);
     }).fail(function(xhr, status, error) {
         self.creatingCredentials(false);
-        var message = 'Could not add S3 credentials at ' +
-            'this time. Please refresh the page. If the problem persists, email ' +
-            '<a href="mailto:support@osf.io">support@osf.io</a>.';
-        self.changeMessage(message, 'text-warning');
+        var message = '';
+        var response = JSON.parse(xhr.responseText);
+        if (response && response.message) {
+            message = response.message;
+        }
+        self.changeMessage(message, 'text-danger');
         Raven.captureMessage('Could not add S3 credentials', {
             url: self.urls().importAuth,
             textStatus: status,
@@ -360,7 +363,7 @@ ViewModel.prototype.fetchBucketList = function() {
             var message = 'Could not retrieve list of S3 buckets at ' +
                 'this time. Please refresh the page. If the problem persists, email ' +
                 '<a href="mailto:support@osf.io">support@osf.io</a>.';
-            self.changeMessage(message, 'text-warning');
+            self.changeMessage(message, 'text-danger');
             Raven.captureMessage('Could not GET s3 bucket list', {
                 url: self.urls().bucketList,
                 textStatus: status,
@@ -430,7 +433,7 @@ ViewModel.prototype.fetchFromServer = function() {
         var message = 'Could not retrieve S3 settings at ' +
                 'this time. Please refresh the page. If the problem persists, email ' +
                 '<a href="mailto:support@osf.io">support@osf.io</a>.';
-        self.changeMessage(message, 'text-warning');
+        self.changeMessage(message, 'text-danger');
         Raven.captureMessage('Could not GET s3 settings', {
             url: self.url,
             textStatus: status,

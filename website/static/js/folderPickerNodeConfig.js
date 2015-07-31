@@ -277,7 +277,7 @@ var FolderPickerViewModel = oop.defclass({
             ret.resolve(response.result);
         });
         request.fail(function(xhr, textStatus, error) {
-            self.changeMessage(self.messages.cantRetrieveSettings(), 'text-warning');
+            self.changeMessage(self.messages.cantRetrieveSettings(), 'text-danger');
             Raven.captureMessage('Could not GET ' + self.addonName + 'settings', {
                 url: self.url,
                 textStatus: textStatus,
@@ -462,7 +462,7 @@ var FolderPickerViewModel = oop.defclass({
             ajaxOptions: {
                 error: function(xhr, textStatus, error) {
                     self.loading(false);
-                    self.changeMessage(self.messages.connectError(), 'text-warning');
+                    self.changeMessage(self.messages.connectError(), 'text-danger');
                     Raven.captureMessage('Could not GET get ' + self.addonName + ' contents.', {
                         textStatus: textStatus,
                         error: error
