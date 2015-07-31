@@ -1630,6 +1630,25 @@ class TestNode(OsfTestCase):
             self.node.set_visible(user=self.user, visible=False, auth=None)
             assert_equal(e.exception.message, 'Must have at least one visible contributor')
 
+    @mock.patch('website.project.signals.after_create_registration')
+    def test_register_node_propagates_schema_and_data_to_children(self, mock_signal):
+        root = ProjectFactory(creator=self.user)
+        c1 = ProjectFactory(creator=self.user, parent=root)
+        ProjectFactory(creator=self.user, parent=c1)
+        
+        ensure_schemas()
+        meta_schema = MetaSchema.find_one(
+            Q('name', 'eq', 'Open-Ended Registration') &
+            Q('schema_version', 'eq', 1)
+        )
+        data = {'some': 'data'}
+        reg = root.register_node(meta_schema, self.consolidate_auth, data)
+        r1 = reg.nodes[0]
+        r1a = r1.nodes[0]
+        for r in [reg, r1, r1a]:
+            assert_equal(r.registered_meta, data)
+            assert_equal(r.registered_schema, meta_schema)
+
 class TestNodeTraversals(OsfTestCase):
 
     def setUp(self):
@@ -3780,6 +3799,36 @@ class TestDraftRegistration(OsfTestCase):
             self.auth,
             self.draft.registration_metadata
         )
+
+    def test_update_metadata_tracks_changes(self):
+        self.draft.registration_metadata = {
+            'foo': {
+                'value': 'bar',
+            },
+            'a': {
+                'value': 1,
+            },
+            'b': {
+                'value': True
+            },
+        }
+        changes =  self.draft.update_metadata({
+            'foo': {
+                'value': 'foobar',
+            },
+            'a': {
+                'value': 1,
+            },
+            'b': {
+                'value': True,
+            },
+            'c': {
+                'value': 2,
+            },
+        })
+        for key in ['foo', 'c']:
+            assert_in(key, changes)
+        
 
 if __name__ == '__main__':
     unittest.main()

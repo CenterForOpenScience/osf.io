@@ -3056,34 +3056,54 @@ class DraftRegistration(AddonModelMixin, StoredObject):
     initiator = fields.ForeignField('user')
 
     # Dictionary field mapping question id to a question's comments and answer
-    # {<qid>: { 'comments': [<Comment1>, <Comment2>], 'value': 'string answer }
+    # {
+    #   <qid>: {
+    #     'comments': [{
+    #       'user': {
+    #         'id': <uid>,
+    #         'name': <name>
+    #       },
+    #       value: <value>,
+    #       lastModified: <datetime>
+    #     }],
+    #     'value': <value>
+    #   }
+    # }
     registration_metadata = fields.DictionaryField(default=dict)
     registration_schema = fields.ForeignField('metaschema')
     registered_node = fields.ForeignField('node')
 
-    storage = fields.ForeignField('osfstoragenodesettings')
+    # TODO (samchrisinger): It would be better to run Archiver tasks when a new
+    # DraftRegistration gets created. Files could be copied to a DraftRegistration
+    # rather than a Node, which would be much much cleaner in the event of a
+    # failure during archival.
+    # Additionally, future registration schemas will require users to select files
+    # that fulfill a certain requirement. Right now we will have to restrict those
+    # choices to OsfStorage files, but this is a non-issue if the third-party files
+    # have already been archived.
+    # storage = fields.ForeignField('osfstoragenodesettings')
 
     # Dictionary field mapping
-    # { 'requiresApproval': true, 'fulfills': [{ 'name': 'Prereg Prize', 'info': <infourl>  }]  }
-    config = fields.DictionaryField()
+    # { 'requiresApproval': true, 'fulfills': [{ 'name': 'Prereg Prize', 'info': <infourl> }]}
+    # config = fields.DictionaryField()
 
     # Dictionary field mapping a draft's states during the review process to their value
     # { 'isApproved': false, 'isPendingReview': false, 'paymentSent': false }
-    flags = fields.DictionaryField()
+    # flags = fields.DictionaryField()
 
     def __init__(self, *args, **kwargs):
         super(DraftRegistration, self).__init__(*args, **kwargs)
-
-        meta_schema = self.registration_schema  # or kwargs.get('registration_schema')
-        if meta_schema:
-            schema = meta_schema.schema
-            config = schema.get('config', {})
-            self.config = config
-            # TODO: uncomment to set flags
-            # if not self.registration_schema:
-            #    flags = schema.get('flags', {})
-            #    for flag, value in flags.iteritems():
-            #        self.flags[flag] = value
+        # TODO (samchrisinger): uncomment when we have flags/config
+        #meta_schema = self.registration_schema  # or kwargs.get('registration_schema')
+        #if meta_schema:
+        #    schema = meta_schema.schema
+        #    config = schema.get('config', {})
+        #    self.config = config
+        # TODO: uncomment to set flags
+        #     if not self.registration_schema:
+        #         flags = schema.get('flags', {})
+        #         for flag, value in flags.iteritems():
+        #             self.flags[flag] = value
 
     # TODO: uncomment to expose approval/review properties
     #    @property
@@ -3117,6 +3137,7 @@ class DraftRegistration(AddonModelMixin, StoredObject):
         # TODO: uncomment to nullify approval state if edited
         # project_signals.draft_edited.send(self, changes)
         # self.after_edit(changes)
+        return changes
 
     def before_edit(self, auth):
         messages = []
@@ -3144,25 +3165,26 @@ class DraftRegistration(AddonModelMixin, StoredObject):
                 if question_id == qid:
                     return question
 
-    def get_comments(self):
-        """ Returns a list of all comments made on a draft in the format of :
-        [{
-          [QUESTION_ID]: {
-            'question': [QUESTION],
-            'comments': [LIST_OF_COMMENTS]
-            }
-        },]
-        """
-
-        all_comments = []
-        for question_id, value in self.registration_metadata.iteritems():
-            all_comments.append({
-                question_id: {
-                    'question': self.find_question(question_id),
-                    'comments': value['comments'] if 'comments' in value else ''
-                }
-            })
-        return all_comments
+    # TODO: uncomment when we support commenting
+    # def get_comments(self):
+    #    """ Returns a list of all comments made on a draft in the format of :
+    #    [{
+    #      [QUESTION_ID]: {
+    #        'question': [QUESTION],
+    #        'comments': [LIST_OF_COMMENTS]
+    #        }
+    #    },]
+    #    """
+    #
+    #    all_comments = []
+    #    for question_id, value in self.registration_metadata.iteritems():
+    #        all_comments.append({
+    #            question_id: {
+    #                'question': self.find_question(question_id),
+    #                'comments': value['comments'] if 'comments' in value else ''
+    #            }
+    #        })
+    #    return all_comments
 
     def register(self, auth):
 

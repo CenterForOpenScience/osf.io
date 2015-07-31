@@ -116,6 +116,7 @@
         </div>
       </div>
       <div data-bind="if: preview">
+        <br />
         <button data-bind="click: preview.bind($root, false)"
                 class="btn btn-primary"><i class="fa fa-arrow-circle-o-left"></i>&nbsp;&nbsp;&nbsp;Back</button>
         <br />

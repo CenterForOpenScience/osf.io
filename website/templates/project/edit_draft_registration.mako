@@ -1,7 +1,7 @@
 <%inherit file="project/project_base.mako" />
 <%def name="title()">Edit ${node['title']} registration</%def>
 
-<div id="draftRegistrationScope">
+<div id="draftRegistrationScope" class="scripted">
   <div class="row">
     <h3>
       <div class="row">

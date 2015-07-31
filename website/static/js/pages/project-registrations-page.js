@@ -18,7 +18,7 @@ $(document).ready(function() {
         $(this).tab('show');
     });
 
-    var draftManager = new RegistrationManager(node, '#draftRegistrationScope', '#registrationEditorScope', {
+    var draftManager = new RegistrationManager(node, '#draftRegistrationScope', {
         list: node.urls.api + 'draft/',
 	submit: node.urls.api + 'draft/{draft_pk}/submit/',
         get: node.urls.api + 'draft/{draft_pk}/',
@@ -27,10 +27,6 @@ $(document).ready(function() {
         edit: node.urls.web + 'draft/{draft_pk}/'
     });
     draftManager.init();
-
-    $('#draftsControl').click(function(event) {
-        draftManager.refresh();
-    });
 
     $('#registerNode').click(function(event) {
         event.preventDefault();
