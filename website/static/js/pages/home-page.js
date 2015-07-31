@@ -8,7 +8,7 @@ require('vendor/youtube');
 
 $( document ).ready(function() {
   $('#logo').removeClass('off');
-  $(".youtube").YouTubeModal({autoplay:1, width:640, height:480});
+  $('.youtube').YouTubeModal({autoplay:1, width:640, height:480});
 });
 
 (function(){
@@ -25,7 +25,7 @@ var waitForFinalEvent = (function () {
   var timers = {};
   return function (callback, ms, uniqueId) {
     if (!uniqueId) {
-      uniqueId = "Don't call this twice without a uniqueId";
+      uniqueId = 'Don\'t call this twice without a uniqueId';
     }
     if (timers[uniqueId]) {
       clearTimeout (timers[uniqueId]);
@@ -71,22 +71,22 @@ var waitForFinalEvent = (function () {
             var closest = [];
             var p1 = points[i];
             for(var j = 0; j < points.length; j++) {
-                var p2 = points[j]
-                if(!(p1 == p2)) {
+                var p2 = points[j];
+                if (p1 !== p2) {
                     var placed = false;
                     for(var k = 0; k < 5; k++) {
                         if(!placed) {
-                            if(closest[k] == undefined) {
+                            if(closest[k] === undefined) {
                                 closest[k] = p2;
                                 placed = true;
                             }
                         }
                     }
 
-                    for(var k = 0; k < 5; k++) {
+                    for(var m = 0; m < 5; m++) {
                         if(!placed) {
-                            if(getDistance(p1, p2) < getDistance(p1, closest[k])) {
-                                closest[k] = p2;
+                            if(getDistance(p1, p2) < getDistance(p1, closest[m])) {
+                                closest[m] = p2;
                                 placed = true;
                             }
                         }
@@ -97,9 +97,9 @@ var waitForFinalEvent = (function () {
         }
 
         // assign a circle to each point
-        for(var i in points) {
-            var c = new Circle(points[i], 2+Math.random()*2, 'rgba(255,255,255,0.3)');
-            points[i].circle = c;
+        for(var n in points) {
+            var c = new Circle(points[n], 2+Math.random()*2, 'rgba(255,255,255,0.3)');
+            points[n].circle = c;
         }
     }
 
@@ -127,7 +127,7 @@ var waitForFinalEvent = (function () {
                 $('#canvas-container').append('<canvas id="demo-canvas"></canvas>');
                 initHeader();
                 initAnimation();
-            }, 300, "resize");
+            }, 300, 'resize');
         }
     }
 
