@@ -137,10 +137,11 @@ class FileNode(object):
         """Tries to find a FileNode with node and path
         See FileNode.create
         """
+        path = '/' + path.lstrip('/')
         try:
             return cls.find_one(
                 Q('node', 'eq', node) &
-                Q('path', 'eq', '/' + path.lstrip('/'))
+                Q('path', 'eq', path)
             )
         except NoResultsFound:
             return cls.create(node=node, path=path)
