@@ -11,16 +11,6 @@ $( document ).ready(function() {
   $('.youtube').YouTubeModal({autoplay:1, width:640, height:480});
 });
 
-(function(){
-  if ($(window).scrollTop() > 650) {
-      $('.navbar').addClass('off');
-  }
-  else {
-      $('.navbar').removeClass('off');
-  }
-    setTimeout(arguments.callee, 40);
-})();
-
 var waitForFinalEvent = (function () {
   var timers = {};
   return function (callback, ms, uniqueId) {
