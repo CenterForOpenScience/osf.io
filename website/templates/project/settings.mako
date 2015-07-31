@@ -313,19 +313,16 @@
                                     <p id="configureDiscussionsMessage"></p>
                                 </div>
                             </form>
-                        </div>
-                        % if 'admin' in user['permissions']:
-                            <hr />
-                            <div class="panel-body">
+                            % if 'admin' in user['permissions']:
+                                <hr />
                                 <div class="help-block">
                                     Disabling email discussions for this ${node['node_type']} will preserve
                                     the subscription status of all members, but will ignore email communications and
                                     recording through the list until it is enabled again.
                                 </div>
                                 <button id="disableDiscussions" class="btn btn-warning">Disable</button>
-                            </div>
-                        % endif
-                        <div></div>
+                            % endif
+                        </div>
                     % else:
                         <div class="help-block" style="padding-left: 15px">
                             <p>Email discussions are currently disabled for this ${node['node_type']}.</p>
