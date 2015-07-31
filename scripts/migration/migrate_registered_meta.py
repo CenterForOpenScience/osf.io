@@ -32,15 +32,14 @@ def get_old_registered_nodes(dry_run=True):
 def main(dry_run):
     init_app(routes=False)
     count = 0
-
     if not dry_run:
         scripts_utils.add_file_logger(logger, __file__)
         logger.info("Iterating over all registrations")
 
-    for node in get_old_registered_nodes():
+    for node in get_old_registered_nodes(dry_run):
         schemas = node.registered_meta
         if not schemas:
-            logger.info('Node: {0} is registerd but has no registered_meta'.format(node._id))
+            logger.info('Node: {0} is registered but has no registered_meta'.format(node._id))
             schemas = {}
         # there is only ever one key in this dict
         for name, schema in schemas.iteritems():
@@ -59,6 +58,8 @@ def main(dry_run):
                 )
             except Exception:
                 logger.info('No MetaSchema matching name: {0}, version: {1} found'.format(name, 2))
+                # Skip over missing schemas
+                continue
             node.registered_schema = meta_schema
             node.registered_meta = {
                 key: {
