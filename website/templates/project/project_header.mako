@@ -33,7 +33,7 @@
                         <li><a href="${node['url']}"  class="project-title"> ${node['title'] | n}  </a></li>
 
                     % if not node['is_retracted']:
-                        <li><a href="${node['url']}files/">Files</a></li>
+                        <li id="project-nav-files"><a href="${node['url']}files/">Files</a></li>
                         <!-- Add-on tabs -->
                         % for addon in addons_enabled:
 
