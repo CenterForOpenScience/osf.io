@@ -592,7 +592,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
     retraction = fields.ForeignField('retraction')
     embargo = fields.ForeignField('embargo')
 
-    draft_registrations = fields.ForeignField('draftregistration', backref='branched')
+    draft_registrations = fields.ForeignField('draftregistration', backref='branched', list=True, default=[])
 
     is_fork = fields.BooleanField(default=False, index=True)
     forked_date = fields.DateTimeField(index=True)
@@ -3128,13 +3128,15 @@ class DraftRegistration(AddonModelMixin, StoredObject):
         return messages
 
     def after_edit(self, changes):
-        # revoke approval and review status if changed
-        if changes:
-            self.flags.update({
-                'isPendingReview': False,
-                'isApproved': False
-            })
-            self.save()
+        pass
+        # TODO: uncomment when we support review/approval
+        ## revoke approval and review status if changed
+        #if changes:
+        #    self.flags.update({
+        #        'isPendingReview': False,
+        #        'isApproved': False
+        #    })
+        #    self.save()
 
     def find_question(self, qid):
         for page in self.registration_schema.schema['pages']:

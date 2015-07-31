@@ -106,9 +106,7 @@ def get_draft_registrations(auth, node, *args, **kwargs):
 
     count = request.args.get('count', 100)
 
-    drafts = DraftRegistration.find(
-        Q('branched_from', 'eq', node) &
-        Q('initiator', 'eq', auth.user) &
+    drafts = node.draft_registrations.find(
         Q('registered_node', 'eq', None)
     )[:count]
     return {
@@ -139,6 +137,8 @@ def create_draft_registration(auth, node, *args, **kwargs):
         registration_metadata=schema_data,
     )
     draft.save()
+    node.draft_registrations.append(draft)
+    node.save()
     return serialize_draft_registration(draft, auth), http.CREATED
 
 @must_have_permission(ADMIN)

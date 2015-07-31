@@ -31,7 +31,7 @@ from website.exceptions import NodeStateError
 from website.profile.utils import serialize_user
 from website.project.model import (
     Comment, Node, NodeLog, Pointer, ensure_schemas, has_anonymous_link,
-    get_pointer_parent, Embargo,
+    get_pointer_parent, Embargo, MetaSchema, DraftRegistration
 )
 from website.util.permissions import CREATOR_PERMISSIONS
 from website.util import web_url_for, api_url_for
@@ -3745,22 +3745,41 @@ class TestPrivateLink(OsfTestCase):
         node = NodeFactory(project=project)
         link.nodes.extend([project, node])
         link.save()
-        assert_equal(link.node_scale(node), -40)
 
 class TestDraftRegistration(OsfTestCase):
 
-    @unittest.skip
-    def test_register(self):
-        self.node.reload()
-        archiver_utils.archive_success(self.node.node__registrations[0], self.node.creator)
-        # A registration was added to the project's registration list
-        assert_equal(len(self.node.node__registrations), 1)
-        # A log event was saved
-        assert_equal(self.logs[-1].action, "project_registered")
-        # Most recent node is a registration
-        reg = Node.load(self.node__registrations[-1])
-        assert_true(reg.is_registration)
+    def setUp(self, *args, **kwargs):
+        super(TestDraftRegistration, self).setUp(*args, **kwargs)
 
+        self.user = AuthUserFactory()
+        self.auth = self.user.auth
+        self.node = ProjectFactory(creator=self.user)
+
+        MetaSchema.remove()
+        ensure_schemas()
+        self.meta_schema = MetaSchema.find_one(
+            Q('name', 'eq', 'Open-Ended Registration') &
+            Q('schema_version', 'eq', 1)
+        )
+        self.draft = DraftRegistration(
+            initiator=self.user,
+            branched_from=self.node,
+            registration_schema=self.meta_schema,
+            registration_metadata={
+                'summary': {'value': 'Some airy'}
+            }
+        )
+        self.draft.save()
+
+    @mock.patch('website.project.model.Node.register_node')
+    def test_register(self, mock_register_node):
+
+        self.draft.register(self.auth)
+        mock_register_node.assert_called_with(
+            self.draft.registration_schema,
+            self.auth,
+            self.draft.registration_metadata
+        )
 
 if __name__ == '__main__':
     unittest.main()
