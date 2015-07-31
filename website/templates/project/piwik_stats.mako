@@ -2,32 +2,24 @@
 <%inherit file="project/project_base.mako"/>
 <%def name="title()">${node['title']} Statistics</%def>
 
-<div class="row">
-    <div class="col-md-3">
+<div id="statistics" class="row">
+    <div class="col-xs-6 col-md-6">
         <input type="text" id="datepicker" class="hidden">
-        <button type="button" class="btn btn-default" id="datepickerButton">Select Date</button>
-        <button type="button" class="btn btn-default" id="rangeButton">Select Range</button>
+        <button type="button" class="btn btn-default" id="datePicker" data-toggle="popover" title="Select a Date" data-placement="bottom">
+            Select Date <span class="fa fa-calendar"></span>
+        </button>
     </div>
-    <div class="col-md-3" id="rangeDiv">
-        <input type="text" id="startPicker">
-        <input type="text" id="endPicker">
-    </div>
-    <div class="col-md-6">
+    <div class="col-xs-6 col-md-6">
         <div class="btn-group pull-right">
-            <button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown" aria-expanded="false">
-                Statistics <span class="fa fa-caret-down"></span>
+            <button id="changeStatsBtn" type="button" class="btn btn-default dropdown-toggle" data-bind="html: optionsButtonHTML"
+                    data-toggle="dropdown" aria-expanded="false">
             </button>
-            <ul class="dropdown-menu" role="menu">
-                <li><a href="#">Visits</a></li>
-                <li><a href="#">Page Views</a></li>
-                <li><a href="#">Unique Page Views</a></li>
-                <li><a href="#">Unique Visitors</a></li>
+            <ul class="dropdown-menu" role="menu" data-bind="foreach: dataTypeOptions">
+                <li><a href="#" data-bind="text: $data, click: $parent.changeDataType"></a></li>
             </ul>
         </div>
     </div>
-</div>
-<div class="row">
-    <div class="col-md-12">
+    <div class="col-xs-12 col-md-12">
         <div class="panel panel-default">
              <div class="panel-heading clearfix">
                 <h3 class="panel-title">Statistics for ${node['title']}</h3>
@@ -37,23 +29,55 @@
             </div>
         </div>
     </div>
-    <div class="col-md-6">
+    <div class="col-xs-12 col-md-6">
         <div class="panel panel-default">
             <div class="panel-heading clearfix">
                 <h3 class="panel-title">Components </h3>
             </div>
             <div class="panel-body">
-                <table id="componentStats" class="table"></table>
+                <!-- ko if: children().length -->
+                <table id="componentStats" class="table scripted">
+                    <thead>
+                        <th>Title</th>
+                        <th data-bind="text: dataType"></th>
+                        <th>Over Time</th>
+                    </thead>
+                    <tbody data-bind="foreach: children">
+                        <td><a data-bind="attr: {href: '/' + guid}, text: title"></a></td>
+                        <td data-bind="text: total"></td>
+                        <td data-bind="attr: {id: guid + 'Spark'}"></td>
+                    </tbody>
+                </table>
+                <!-- /ko -->
+                <!-- ko ifnot: children().length -->
+                <h4 class="scripted">This ${node['category'].lower()} does not have any components.</h4>
+                <!-- /ko -->
             </div>
         </div>
     </div>
-    <div class="col-md-6">
+    <div class="col-xs-12 col-md-6">
         <div class="panel panel-default">
             <div class="panel-heading clearfix">
                 <h3 class="panel-title">Files</h3>
             </div>
             <div class="panel-body">
-                <table id="fileStats" class="table"></table>
+                <!-- ko if: files().length -->
+                <table id="fileStats" class="table scripted">
+                    <thead>
+                        <th>Title</th>
+                        <th data-bind="text: dataType"></th>
+                        <th>Over Time</th>
+                    </thead>
+                    <tbody data-bind="foreach: files">
+                        <td><a data-bind="attr: {href: '/' + guid}, text: title"></a></td>
+                        <td data-bind="text: total"></td>
+                        <td data-bind="attr: {id: guid + 'Spark'}"></td>
+                    </tbody>
+                </table>
+                <!-- /ko -->
+                <!-- ko ifnot: files().length -->
+                <h4 class="scripted">This ${node['category'].lower()} does not have any visited files.</h4>
+                <!-- /ko -->
             </div>
         </div>
     </div>
@@ -69,4 +93,9 @@
 </script>
 % endif
 
-<script type="text/javascript" src=${"/static/public/js/piwikStats-page.js" | webpack_asset}></script>
+<%def name="javascript_bottom()">
+
+    ${parent.javascript_bottom()}
+    <script type="text/javascript" src=${"/static/public/js/piwikStats-page.js" | webpack_asset}></script>
+
+</%def>
