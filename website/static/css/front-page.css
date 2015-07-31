@@ -177,94 +177,94 @@ h6 {
 }
 
 #logo.off {
-  -webkit-transform: rotate(180deg);
-  -ms-transform: rotate(180deg);
-  -o-transform: rotate(180deg);
-  transform: rotate(180deg);
+    -webkit-transform: rotate(180deg);
+    -ms-transform: rotate(180deg);
+    -o-transform: rotate(180deg);
+    transform: rotate(180deg);
 }
 #logo.off .circle:before {
-  top: -200px;
-  opacity: 0;
+    top: -200px;
+    opacity: 0;
 }
 #logo.off .circle:after {
-  bottom: 200px;
-  opacity: 0;
+    bottom: 200px;
+    opacity: 0;
 }
 #logo #circle-1 {
-  -webkit-transform: rotate(0deg);
-  -ms-transform: rotate(0deg);
-  -o-transform: rotate(0deg);
-  transform: rotate(0deg);
-  left: 75px;
-  top: 0;
+    -webkit-transform: rotate(0deg);
+    -ms-transform: rotate(0deg);
+    -o-transform: rotate(0deg);
+    transform: rotate(0deg);
+    left: 75px;
+    top: 0;
 }
 #logo #circle-2 {
-  -webkit-transform: rotate(45deg);
-  -ms-transform: rotate(45deg);
-  -o-transform: rotate(45deg);
-  transform: rotate(45deg);
-  left: 128px;
-  top: 22px;
+    -webkit-transform: rotate(45deg);
+    -ms-transform: rotate(45deg);
+    -o-transform: rotate(45deg);
+    transform: rotate(45deg);
+    left: 128px;
+    top: 22px;
 }
 #logo #circle-2:after {
-  z-index: -1;
+    z-index: -1;
 }
 #logo #circle-3 {
-  -webkit-transform: rotate(90deg);
-  -ms-transform: rotate(90deg);
-  -o-transform: rotate(90deg);
-  transform: rotate(90deg);
-  left: 150px;
-  top: 75px;
+    -webkit-transform: rotate(90deg);
+    -ms-transform: rotate(90deg);
+    -o-transform: rotate(90deg);
+    transform: rotate(90deg);
+    left: 150px;
+    top: 75px;
 }
 #logo #circle-4 {
-  -webkit-transform: rotate(135deg);
-  -ms-transform: rotate(135deg);
-  -o-transform: rotate(135deg);
-  transform: rotate(135deg);
-  left: 128px;
-  top: 128px;
+    -webkit-transform: rotate(135deg);
+    -ms-transform: rotate(135deg);
+    -o-transform: rotate(135deg);
+    transform: rotate(135deg);
+    left: 128px;
+    top: 128px;
 }
 #logo #circle-4:after {
-  z-index: -1;
+    z-index: -1;
 }
 #logo #circle-5 {
-  -webkit-transform: rotate(180deg);
-  -ms-transform: rotate(180deg);
-  -o-transform: rotate(180deg);
-  transform: rotate(180deg);
-  left: 75px;
-  top: 150px;
+    -webkit-transform: rotate(180deg);
+    -ms-transform: rotate(180deg);
+    -o-transform: rotate(180deg);
+    transform: rotate(180deg);
+    left: 75px;
+    top: 150px;
 }
 #logo #circle-6 {
-  -webkit-transform: rotate(225deg);
-  -ms-transform: rotate(225deg);
-  -o-transform: rotate(225deg);
-  transform: rotate(225deg);
-  left: 22px;
-  top: 128px;
+    -webkit-transform: rotate(225deg);
+    -ms-transform: rotate(225deg);
+    -o-transform: rotate(225deg);
+    transform: rotate(225deg);
+    left: 22px;
+    top: 128px;
 }
 #logo #circle-6:after {
-  z-index: -1;
+    z-index: -1;
 }
 #logo #circle-7 {
-  -webkit-transform: rotate(270deg);
-  -ms-transform: rotate(270deg);
-  -o-transform: rotate(270deg);
-  transform: rotate(270deg);
-  left: 0;
-  top: 75px;
+    -webkit-transform: rotate(270deg);
+    -ms-transform: rotate(270deg);
+    -o-transform: rotate(270deg);
+    transform: rotate(270deg);
+    left: 0;
+    top: 75px;
 }
 #logo #circle-8 {
-  -webkit-transform: rotate(315deg);
-  -ms-transform: rotate(315deg);
-  -o-transform: rotate(315deg);
-  transform: rotate(315deg);
-  left: 22px;
-  top: 22px;
+    -webkit-transform: rotate(315deg);
+    -ms-transform: rotate(315deg);
+    -o-transform: rotate(315deg);
+    transform: rotate(315deg);
+    left: 22px;
+    top: 22px;
 }
 #logo #circle-8:after {
-  z-index: -1;
+    z-index: -1;
 }
 .student-image {
     width: 100%;
@@ -455,132 +455,139 @@ footer {
 }
 
 .network-bg {
-  background: url("/static/img/front-page/bg-web.png") repeat;
-  background-size: contain;
-  height: 1000px;
-  margin-bottom: -1000px;
-  opacity: 0.25;
-  -ms-filter: "progid:DXImageTransform.Microsoft.Alpha(Opacity=25)";
+    background: url("/static/img/front-page/bg-web.png") repeat;
+    background-size: contain;
+    height: 1000px;
+    margin-bottom: -1000px;
+    opacity: 0.25;
+    -ms-filter: "progid:DXImageTransform.Microsoft.Alpha(Opacity=25)";
 }
 
 @media (min-width: 992px) and (max-width: 1199px) {
-  .student-image .quote {
-    min-height: 100px;
-    width: 120%;
-  }
-  .student-image .quote:before {
-    left: 250px;
-  }
-  .copyright {
-    padding-top: 14px;
-  }
+    .student-image .quote {
+        min-height: 100px;
+        width: 120%;
+    }
+    .student-image .quote:before {
+        left: 250px;
+    }
+    .copyright {
+        padding-top: 14px;
+    }
 }
 @media (min-width: 768px) and (max-width: 1199px) {
-  canvas {
-    display: none;
-  }
-  .student-wrap {
-    padding: 0 10%;
-  }
-  .student-image .quote {
-    bottom: -90px;
-    min-height: 100px;
-    width: 100%;
-  }
-  .student-image .quote:before {
-    left: 125px;
-  }
-  .network-bg {
-    height: 750px;
-    margin-bottom: -750px;
-  }
-  .feature-1 .icon {
-    font-size: 100px;
-    left: -40px;
-    top: 0;
-  }
+    canvas {
+        display: none;
+    }
+    .student-wrap {
+        padding: 0 10%;
+    }
+    .student-image .quote {
+        bottom: -90px;
+        min-height: 100px;
+        width: 100%;
+    }
+    .student-image .quote:before {
+        left: 125px;
+    }
+    .network-bg {
+        height: 750px;
+        margin-bottom: -750px;
+    }
+    .feature-1 .icon {
+        font-size: 100px;
+        left: -40px;
+        top: 0;
+    }
 }
 @media (max-width: 991px) {
-  .feature-4 .col-md-4:last-child {
-    padding-top: 30px;
-  }
-  .feature-6 .btn {
-    margin-bottom: 45px;
-  }
-  .feature-3 .text-left,
-  .feature-3 .text-right {
-    text-align: center;
-  }
-  .feature-3 .text-right h3:after,
-  .feature-3 .text-left h3:after {
-    display: none;
-  }
-  .integrations {
-    margin-top: 0px;
-  }
-  .integrations img {
-    padding: 20px 10% 0 10%;
-  }
-  .student-image {
-    margin: 30px 0 0 0;
-    width: 100%;
-    padding-bottom: 100%;
-  }
-  #home-hero {
-    padding-top: 0;
-  }
-  #hero-signup .icon {
-    top: -20px;
-  }
-  .space-top {
-    padding-top: 20px;
-  }
-  .space-bottom {
-    padding-bottom: 25px;
-  }
-  .grey-pullout {
-    padding-bottom: 90px;
-  }
+    .feature-4 .col-md-4:last-child {
+        padding-top: 30px;
+    }
+    .feature-6 .btn {
+        margin-bottom: 45px;
+    }
+    .feature-3 .text-left,
+    .feature-3 .text-right {
+        text-align: center;
+    }
+    .feature-3 .text-right h3:after,
+    .feature-3 .text-left h3:after {
+        display: none;
+    }
+    .integrations {
+        margin-top: 0px;
+    }
+    .integrations img {
+        padding: 20px 10% 0 10%;
+    }
+    .student-image {
+        margin: 30px 0 0 0;
+        width: 100%;
+        padding-bottom: 100%;
+    }
+    #home-hero {
+        padding-top: 0;
+    }
+    #hero-signup .icon {
+        top: -20px;
+    }
+    .space-top {
+        padding-top: 20px;
+    }
+    .space-bottom {
+        padding-bottom: 25px;
+    }
+    .grey-pullout {
+        padding-bottom: 90px;
+    }
 }
 @media (max-width: 767px) {
-  canvas {
-    display: none;
-  }
-  #hero-signup {
-    width: 100%;
-  }
-  #home-hero canvas {
-    top: 80px;
-  }
-  .student-wrap {
-    padding: 0 5%;
-  }
-  .student-image .quote {
-    bottom: -70px;
-    min-height: 100px;
-  }
-  .student-image .quote:before {
-    left: 90px;
-  }
-  .student-image .main {
-    font-size: 1.0em !important;
-  }
-  .sign-in .btn-group {
-    width: 90%;
-    padding-left: 5%;
-  }
-  .sign-in .btn {
-    width: 100%;
-    margin-bottom: 20px;
-  }
-  #formLogin {
-    padding: 0;
-    width: 100%;
-  }
-  .grey-pullout {
-    padding-bottom: 90px;
-  }
-  .integrations .mob-clear {
-    clear: left;
-  }
+    canvas {
+        display: none;
+    }
+    #hero-signup {
+        width: 100%;
+    }
+    #home-hero canvas {
+        top: 80px;
+    }
+    .student-wrap {
+        padding: 0 5%;
+    }
+    .student-image .quote {
+        bottom: -70px;
+        min-height: 100px;
+    }
+    .student-image .quote:before {
+        left: 90px;
+    }
+    .student-image .main {
+        font-size: 1.0em !important;
+    }
+    .sign-in .btn-group {
+        width: 90%;
+        padding-left: 5%;
+    }
+    .sign-in .btn {
+        width: 100%;
+        margin-bottom: 20px;
+    }
+    #formLogin {
+        padding: 0;
+        width: 100%;
+    }
+    .grey-pullout {
+        padding-bottom: 90px;
+    }
+    .integrations .mob-clear {
+        clear: left;
+    }
+}
+.alert-front {
+    border-radius: 0;
+    margin-bottom: 0;
+}
+#alert-container {
+    margin-top: 0 !important;
 }
