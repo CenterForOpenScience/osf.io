@@ -6,7 +6,7 @@ var $ = require('jquery');
 var $osf = require('js/osfHelpers');
 var utils = require('js/share/utils');
 var charts = require('js/charts');
-var searchWidget = require('js/searchWidget');
+var ResultsWidget = require('js/resultsWidget');
 var searchDashboard = require('js/searchDashboard');
 
 var profileDashboard = {};
@@ -27,27 +27,41 @@ profileDashboard.contributersByTimesAgg = function() {
 
 //sets up the profile dashboard, then returns set up searchDashboard object
 profileDashboard.controller = function(params) {
-    var levelsA = ['sources'];
+
     var contributers = {
         title: 'Your contributers',
-        levelNames: levelsA,
-        chart: charts.donutChart,
+        size: ['.col-md-3'],
+        levelNames: ['sources'],
+        display: charts.donutChart,
         aggregation: profileDashboard.contributersAgg(),
-        parser: charts.singleLevelAggParser,
-        callback: {'onclick': function (d) {utils.updateFilter(this, 'match:shareProperties.source:' + d.name, true); }} //TODO check "this" usage
+        callback: {'onclick': function (d) {
+            utils.updateFilter(this.vm, 'match:shareProperties.source:' + d.name, true);
+            utils.signalWidgetsToUpdate(this.vm,this.widget.thisWidgetUpdates);
+        }},
+        thisWidgetUpdates: ['sources', 'sourcesByTimes', 'results']
     };
 
-    var levelsB = ['sourcesByTimes','sources'];
     var contributersByTimes = {
         title: 'Your contributers over time',
-        levelNames: levelsB,
-        chart: charts.timeseriesChart,
+        size: ['.col-md-9'],
+        levelNames: ['sourcesByTimes','sources'],
+        display: charts.timeseriesChart,
         aggregation: profileDashboard.contributersByTimesAgg(),
-        parser: charts.twoLevelAggParser,
-        callback: null //no callbacks, this is purely for display
+        callback: null, //no callbacks, this is purely for display
+        thisWidgetUpdates: ['sources', 'sourcesByTimes', 'results']
     };
 
-    this.widgets = [contributers, contributersByTimes];
+    var results = {
+        title: 'Projects and Components',
+        size: ['.col-md-12'],
+        levelNames: ['results'],
+        display: ResultsWidget.display,
+        aggregation: null, //this displays no stats, so needs no aggregations
+        callback: null, //callbacks are all prebuilt into this widget
+        thisWidgetUpdates: ['sources', 'sourcesByTimes', 'results']
+    };
+
+    this.widgets = [contributers, contributersByTimes, results];
 };
 
 profileDashboard.view = function(ctrl, params, children){

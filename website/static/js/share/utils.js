@@ -58,13 +58,11 @@ utils.updateVM = function(vm, data) {
     vm.results.push.apply(vm.results, data.results);
     vm.data = data; //TODO this is for search widgets, make for all (i.e. inc. share)
     vm.dataLoaded(true);
-    m.redraw(); //TODO @bdyetton remove this, no need for readraw here if we update an m.prop (but share needs that m.prop too...)
-    $.map(callbacks, function(cb) {
-        cb();
-    });
+    m.endComputation();
 };
 
 utils.loadMore = function(vm) {
+    m.startComputation();
     var ret = m.deferred();
     if (vm.query().length === 0) {
         ret.resolve(null);
@@ -125,6 +123,7 @@ utils.search = function(vm) {
                 ret.resolve(vm);
             });
     }
+
     return ret.promise;
 };
 
@@ -458,6 +457,23 @@ utils.getNewColors = function (colorsUsed) {
         newColors.push(calculateDistanceBetweenColors(colorsUsed[i], colorsUsed[i + 1]));
     }
     return newColors;
+};
+
+utils.updateTriggered = function(widgetName, vm){ //TODO @bdyetton move to widget utils
+    if (vm.widgetsToUpdate.indexOf(widgetName) === -1){
+        return false;
+    }
+    vm.widgetsToUpdate.splice($.inArray(widgetName, vm.widgetsToUpdate), 1); //signal that this widget has been redrawn
+    return true;
+};
+
+utils.signalWidgetsToUpdate = function(vm, thisWidgetUpdates){
+    vm.widgetsToUpdate = utils.concatUnique(vm.widgetsToUpdate, thisWidgetUpdates);
+};
+
+utils.concatUnique = function(array1, array2){ //TODO @bdyetton move to widget utils
+     var temp = array1.concat(array2);
+     return temp.filter(function(item, i, arr){ return arr.indexOf(item) === i; }); //make unique so we dont redraw widgets more than we have to
 };
 
 module.exports = utils;

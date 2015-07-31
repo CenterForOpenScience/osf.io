@@ -4,9 +4,12 @@ var c3 = require('c3');
 var m = require('mithril');
 var $ = require('jquery');
 var $osf = require('js/osfHelpers');
+var utils = require('js/share/utils');
 
 require('c3/c3.css');
 require('../css/share-search.css');
+
+
 //This module contains a bunch of generic charts and parsers for formating the correct data for them
 
 var COLORBREWER_COLORS = [[166, 206, 227], [31, 120, 180], [178, 223, 138], [51, 160, 44], [251, 154, 153], [227, 26, 28], [253, 191, 111], [255, 127, 0], [202, 178, 214], [106, 61, 154], [255, 255, 153], [177, 89, 40]]
@@ -29,11 +32,21 @@ function timeSinceEpochInMsToMMYY(timeSinceEpochInMs) {
     return d.getMonth().toString() + '/' + d.getFullYear().toString().substring(2);
 }
 
-charts.donutChart = function (data, vm, name, callback) {
-    data.onclick = callback ? callback.onclick.bind(vm) : undefined;
+charts.c3componetize = function(c3ChartSetup, vm, divID) {
+    return m('div', {id: divID,
+                    config: function(element, isInit, context){
+                        if (!utils.updateTriggered(divID,vm)) {return; }
+                        return c3.generate(c3ChartSetup);
+                    }
+            });
+};
+
+charts.donutChart = function (rawData, vm, widget) {
+    var data = charts.singleLevelAggParser(rawData, widget.levelNames);
+    data.onclick = widget.callback ? widget.callback.onclick.bind({vm: vm, widget: widget}) : undefined;
     data.type = 'donut';
-    return c3.generate({
-        bindto: '#' + name,
+    var chartSetup = {
+        bindto: '#' + widget.levelNames[0],
         size: {
             height: 200
         },
@@ -49,13 +62,15 @@ charts.donutChart = function (data, vm, name, callback) {
         legend: {
             show: false
         }
-    });
+    };
+    return charts.c3componetize(chartSetup,vm, widget.levelNames[0]);
 };
 
-charts.timeseriesChart = function (data, vm, name, callback) { //TODO this should be made dumber, data need only be the data for this graph, not all...
+charts.timeseriesChart = function (rawData, vm, widget) {
+    var data = charts.twoLevelAggParser(rawData, widget.levelNames);
     data.type = 'area-spline';
-    return c3.generate({
-        bindto: '#' + name,
+    var chartSetup = {
+        bindto: '#' + widget.levelNames[0],
         size: {
             height: 250
         },
@@ -65,7 +80,7 @@ charts.timeseriesChart = function (data, vm, name, callback) { //TODO this shoul
             size: {
                 height: 30
             },
-            onbrush: callback ? callback.onbrush : undefined
+            onbrush: widget.callback ? widget.callback.onbrush.bind({vm: vm, widget: widget}) : undefined
         },
         axis: {
             x: {
@@ -91,7 +106,8 @@ charts.timeseriesChart = function (data, vm, name, callback) { //TODO this shoul
         tooltip: {
             grouped: false
         }
-    });
+    };
+    return charts.c3componetize(chartSetup, vm, widget.levelNames[0]);
 };
 
 //Parsers
@@ -101,18 +117,18 @@ charts.singleLevelAggParser = function (data, levelNames) {
     chartData.columns = [];
     chartData.colors = {};
     chartData.type = 'donut';
-    var providerCount = 0;
+    var count = 0;
     var hexColors = charts.generateColors(data.aggregations[levelNames[0]].buckets.length);
     var i = 0;
     data.aggregations[levelNames[0]].buckets.forEach(
         function (bucket) {
             chartData.columns.push([bucket.key, bucket.doc_count]);
-            providerCount = providerCount + (bucket.doc_count ? 1 : 0); //TODO @bdyetton generalise this...
+            count = count + (bucket.doc_count ? 1 : 0); //TODO @bdyetton generalise this...
             chartData.colors[bucket.key] = hexColors[i];
             i = i + 1;
         }
     );
-    chartData.title = providerCount.toString() + ' Provider' + (providerCount !== 1 ? 's' : '');
+    chartData.title = count.toString() + ' ' + (count !== 1 ? levelNames[0] : levelNames[0].slice(0,-1)); //TODO generalize more!
     $('.c3-chart-arcs-title').text(chartData.title); //dynamically update chart title
     return chartData;
 };

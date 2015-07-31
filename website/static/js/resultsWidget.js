@@ -4,13 +4,9 @@ var pd = require('pretty-data').pd;
 var $ = require('jquery');
 var m = require('mithril');
 var $osf = require('js/osfHelpers');
-var utils = require('./utils');
+var utils = require('js/share/utils');
 var Results = {};
 var ResultsWidget = {};
-
-ResultsWidget.results = function(data,vm,name,callback){
-    return m.component(Results,{data: data, vm: vm, name: name});
-};
 
 Results.view = function(ctrl) {
     var res = [];
@@ -20,7 +16,7 @@ Results.view = function(ctrl) {
         len = ctrl.vm.results.length;
     }
     return m('', [
-        m('.row', m('.col-md-12', (!utils.arrayEqual(res, [])) ? res : (!ctrl.vm.resultsLoading() && (ctrl.vm.results !== null)) ? m('span', {style: {margin: 'auto'}}, 'No results for this query') : [])),
+        m('.row', m('.col-md-12', (!utils.arrayEqual(res, [])) ? res : (!ctrl.vm.resultsLoading() && (ctrl.vm.results !== null)) ? m('span', {style: {margin: 'auto'}}, 'No results') : [])),
         m('.row', m('.col-md-12', ctrl.vm.resultsLoading() ? utils.loadingIcon : [])),
         m('.row', m('.col-md-12', m('div', {style: {display: 'block', margin: 'auto', 'text-align': 'center'}},
             len > 0 && len < ctrl.vm.count ?
@@ -36,9 +32,9 @@ Results.view = function(ctrl) {
     ]);
 };
 
-Results.controller = function(vm) {
+Results.controller = function(params) {
     var self = this;
-    self.vm = vm;
+    self.vm = params.vm;
     self.vm.resultsLoading = m.prop(false);
 
     self.renderTitleBar = function(result) {
@@ -66,6 +62,7 @@ Results.controller = function(vm) {
                 onclick: function() {
                     utils.updateFilter(self.vm, 'match:contributors.familyName:' + person.familyName, true);
                     utils.updateFilter(self.vm, 'match:contributors.givenName:' + person.givenName, true);
+                    utils.signalWidgetsToUpdate(self.vm, params.widget.thisWidgetUpdates);
                 }
             }, person.name)
         ]);
@@ -92,6 +89,7 @@ Results.controller = function(vm) {
             return [
                 m('.badge.pointer', {onclick: function(){
                     utils.updateFilter(self.vm, 'match:subjects:"' + subject + '"', true);
+                    utils.signalWidgetsToUpdate(self.vm, params.widget.thisWidgetUpdates);
                 }}, subject.length < 50 ? subject : subject.substring(0, 47) + '...'),
                 ' '
             ];
@@ -111,7 +109,7 @@ Results.controller = function(vm) {
         return m('div', [
                     m('span',
                         'Released on ' + new $osf.FormattableDate(result.providerUpdatedDateTime).local,
-                        vm.rawNormedLoaded() ?  m('span', [
+                        self.vm.rawNormedLoaded() ?  m('span', [
                             m('span', {style: {'margin-right': '5px', 'margin-left': '5px'}}, ' | '),
                             m('a', {
                                 onclick: function() {
@@ -126,11 +124,13 @@ Results.controller = function(vm) {
                     m('span.pull-right', [
                         m('img', {src: self.vm.ProviderMap[result.shareProperties.source].favicon, style: {width: '16px', height: '16px'}}),
                         ' ',
-                        m('a', {onclick: function() {utils.updateFilter(self.vm, 'shareProperties.source:' + result.shareProperties.source);}}, self.vm.ProviderMap[result.shareProperties.source].long_name),
+                        m('a', {onclick: function() {
+                            utils.updateFilter(self.vm, 'shareProperties.source:' + result.shareProperties.source);
+                            utils.signalWidgetsToUpdate(self.vm, params.widget.thisWidgetUpdates);
+                        }}, self.vm.ProviderMap[result.shareProperties.source].long_name),
                         m('br')
                     ])
                 ]);
-
     };
 
     self.renderRawNormalizedData = function(result) {
@@ -188,7 +188,7 @@ Results.controller = function(vm) {
                     )
                 ]),
                 m('br'),
-                m('div', self.renderResultFooter(result)),
+                //m('div', self.renderResultFooter(result)),
                 self.renderRawNormalizedData(result)
             ]),
             m('hr')
@@ -201,6 +201,12 @@ Results.controller = function(vm) {
     //         utils.loadMore(self.vm);
     //     }
     // });
+};
+
+ResultsWidget.display = function(data, vm, widget){
+    //results will always update regardless of callback location (no mapping)
+    //if (!utils.updateTriggered(widget.levelNames[0], vm)) {return null; }
+    return m.component(Results,{data: data, vm: vm, widget: widget});
 };
 
 module.exports = ResultsWidget;
