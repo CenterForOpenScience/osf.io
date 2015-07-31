@@ -417,7 +417,7 @@ select {
     word-wrap: normal;
 }
 
-tr a, b, em {
+tr a, b, em, td {
     word-break: break-word;
 }
 
