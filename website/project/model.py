@@ -39,7 +39,6 @@ from framework.transactions.context import TokuTransaction
 from framework.utils import iso8601format
 
 from website import language, settings, security
-from website.search import file_util
 from website.util import web_url_for
 from website.util import api_url_for
 from website.exceptions import (
@@ -1535,25 +1534,14 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
     def update_search_files(self):
         """Update all files associated with node based on node's privacy.
         """
-        from website import search
-        from website.search import tasks
-        try:
-            if self.is_public:
-                tasks.queue_update_all_files(self)
-                # tasks.enqueue_task(tasks.update_all_files_task.s(self))
-        except search.exceptions.SearchUnavailableError as e:
-            logger.exception(e)
-            log_exception()
+        from website.search import file_indexing
+        if not self.is_public:
+            file_indexing.update_search_files(self)
 
     def delete_search_files(self):
-        from website import search
-        from website.search import tasks
-        try:
-            tasks.queue_delete_all_files(self)
-            # tasks.enqueue_task(tasks.delete_all_files_task.s(self))
-        except search.exceptions.SearchUnavailableError as e:
-            logger.exception(e)
-            log_exception()
+        from website.search import file_indexing
+        file_indexing.delete_search_files(self)
+        # tasks.enqueue_task(tasks.delete_all_files_task.s(self))
 
     def update_search_file(self, file_node):
         """ Update a single file in the node based on the action given.
@@ -1563,28 +1551,17 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         :param name: Name of the file to be updated.
         :param path: Path of the file to be updated.
         """
-        from website import search
-        from website.search import tasks
-
+        from website.search import file_indexing
         if not self.is_public:
             return
 
-        try:
-            tasks.queue_update_file(file_node)
-            # tasks.enqueue_task(tasks.update_file_task.s(file_node))
-        except search.exceptions.SearchUnavailableError as e:
-            logger.exception(e)
-            log_exception()
+        file_indexing.update_search_file(file_node)
+        # tasks.enqueue_task(tasks.update_file_task.s(file_node))
 
     def delete_search_file(self, file_node):
-        from website import search
-        from website.search import tasks
-        try:
-            tasks.queue_delete_file(file_node)
-            # tasks.enqueue_task(tasks.delete_file_task.s(file_node))
-        except search.exceptions.SearchUnavailableError as e:
-            logger.exception(e)
-            log_exception()
+        from website.search import file_indexing
+        file_indexing.delete_search_file(file_node)
+        # tasks.enqueue_task(tasks.delete_file_task.s(file_node))
 
     def delete_search_entry(self):
         from website import search
