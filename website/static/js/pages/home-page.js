@@ -25,7 +25,14 @@ var waitForFinalEvent = (function () {
 
 (function() {
 
-    var width, height, largeHeader, canvas, ctx, points, target, animateHeader = true;
+    var width;
+    var height;
+    var largeHeader;
+    var canvas;
+    var ctx;
+    var points;
+    var target;
+    var animateHeader = true;
 
     // Main
     initHeader();
