@@ -83,7 +83,7 @@ var FolderPickerViewModel = oop.defclass({
                 return 'Could not retrieve ' + self.addonName + ' settings at ' +
                     'this time. The credentials associated with this ' + self.addonName + ' account may no longer be valid.' +
                     ' Try disconnecting and reconnecting the ' + self.addonName + ' account on your <a href="' +
-                    self.urls().settings + 'addons/">account settings page</a>.';
+                    self.urls().settings + '">account settings page</a>.';
             }),
             invalidCredNotOwner: ko.pureComputed(function() {
                 return 'Could not retrieve ' + self.addonName + ' settings at ' +
