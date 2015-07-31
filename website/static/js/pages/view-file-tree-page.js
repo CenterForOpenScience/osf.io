@@ -32,5 +32,6 @@ $(document).ready(function() {
         panelVisible.show();
         panelHidden.hide();
     });
+    $('.osf-project-navbar li:contains("Files")').addClass('active');
 
 });
