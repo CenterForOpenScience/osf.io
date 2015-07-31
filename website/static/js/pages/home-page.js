@@ -5,23 +5,22 @@ require('EasePack');
 require('vendor/youtube');
 
 // ANIMATION FOR FRONT PAGE
-
 $( document ).ready(function() {
-  $('#logo').removeClass('off');
-  $('.youtube').YouTubeModal({autoplay:1, width:640, height:480});
+    $('#logo').removeClass('off');
+    $('.youtube').YouTubeModal({autoplay:1, width:640, height:480});
 });
 
 var waitForFinalEvent = (function () {
-  var timers = {};
-  return function (callback, ms, uniqueId) {
-    if (!uniqueId) {
-      uniqueId = 'Don\'t call this twice without a uniqueId';
-    }
-    if (timers[uniqueId]) {
-      clearTimeout (timers[uniqueId]);
-    }
-    timers[uniqueId] = setTimeout(callback, ms);
-  };
+    var timers = {};
+    return function (callback, ms, uniqueId) {
+        if (!uniqueId) {
+          uniqueId = 'Don\'t call this twice without a uniqueId';
+        }
+        if (timers[uniqueId]) {
+          clearTimeout (timers[uniqueId]);
+        }
+        timers[uniqueId] = setTimeout(callback, ms);
+    };
 })();
 
 (function() {
