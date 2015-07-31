@@ -42,7 +42,10 @@ var waitForFinalEvent = (function () {
     function initHeader() {
         width = window.innerWidth;
         height = '800';
-        target = {x: width/2, y: height/2};
+        target = {
+            x: width/2,
+            y: height/2
+        };
 
         largeHeader = document.getElementById('home-hero');
 
@@ -63,25 +66,24 @@ var waitForFinalEvent = (function () {
         }
 
         // for each point find the 5 closest points
-        for(var i = 0; i < points.length; i++) {
+        for (var i = 0; i < points.length; i++) {
             var closest = [];
             var p1 = points[i];
-            for(var j = 0; j < points.length; j++) {
+            for (var j = 0; j < points.length; j++) {
                 var p2 = points[j];
                 if (p1 !== p2) {
                     var placed = false;
-                    for(var k = 0; k < 5; k++) {
-                        if(!placed) {
+                    for (var k = 0; k < 5; k++) {
+                        if (!placed) {
                             if(closest[k] === undefined) {
                                 closest[k] = p2;
                                 placed = true;
                             }
                         }
                     }
-
-                    for(var m = 0; m < 5; m++) {
-                        if(!placed) {
-                            if(getDistance(p1, p2) < getDistance(p1, closest[m])) {
+                    for (var m = 0; m < 5; m++) {
+                        if (!placed) {
+                            if (getDistance(p1, p2) < getDistance(p1, closest[m])) {
                                 closest[m] = p2;
                                 placed = true;
                             }
@@ -112,8 +114,11 @@ var waitForFinalEvent = (function () {
     }
 
     function scrollCheck() {
-        if(document.body.scrollTop > height) animateHeader = false;
-        else animateHeader = true;
+        if (document.body.scrollTop > height) {
+            animateHeader = false;
+        } else {
+            animateHeader = true;
+        }
     }
 
     function resize() {
@@ -153,7 +158,6 @@ var waitForFinalEvent = (function () {
                     points[i].active = 0;
                     points[i].circle.active = 0;
                 }
-
                 drawLines(points[i]);
                 points[i].circle.draw();
             }
@@ -171,7 +175,9 @@ var waitForFinalEvent = (function () {
 
     // Canvas manipulation
     function drawLines(p) {
-        if(!p.active) return;
+        if (!p.active) {
+            return;
+        }
         for(var i in p.closest) {
             ctx.beginPath();
             ctx.moveTo(p.x, p.y);
@@ -192,7 +198,9 @@ var waitForFinalEvent = (function () {
         })();
 
         this.draw = function() {
-            if(!self.active) return;
+            if (!self.active) {
+                return;
+            }
             ctx.beginPath();
             ctx.arc(self.pos.x, self.pos.y, self.radius, 0, 2 * Math.PI, false);
             ctx.fillStyle = 'rgba(156,217,249,'+ self.active+')';
