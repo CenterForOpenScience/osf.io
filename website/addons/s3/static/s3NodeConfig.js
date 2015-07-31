@@ -261,7 +261,7 @@ ViewModel.prototype.createBucket = function(bucketName, bucketLocation) {
             },
             buttons:{
                 confirm:{
-                    label:'Try new one'
+                    label:'Try again'
                 }
             }
         });
@@ -308,8 +308,12 @@ ViewModel.prototype.openCreateBucket = function() {
                     '</div>' +
                 '</div>',
         buttons: {
+            cancel: {
+                label: 'Cancel',
+                className: 'btn-default'
+            },
             confirm: {
-                label: 'Save',
+                label: 'Create',
                 className: 'btn-success',
                 callback: function () {
                     var bucketName = $('#bucketName').val();
@@ -330,16 +334,7 @@ ViewModel.prototype.openCreateBucket = function() {
                     } else {
                         self.createBucket(bucketName, bucketLocation);
                     }
-                },
-                buttons:{
-                    confirm:{
-                        label:'Try new one'
-                    }
                 }
-            },
-            cancel: {
-                label: 'Cancel',
-                className: 'btn-default'
             }
         }
     });
@@ -401,7 +396,7 @@ ViewModel.prototype.updateFromData = function(data) {
             else {
                 message = 'Could not retrieve S3 settings at ' +
                     'this time. The S3 addon credentials may no longer be valid.' +
-                    ' Contact ' + self.ownerName() + ' to verify.';                    
+                    ' Contact ' + self.ownerName() + ' to verify.';
             }
             self.changeMessage(message, 'text-danger');
         }
