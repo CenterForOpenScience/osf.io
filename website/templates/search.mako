@@ -37,7 +37,7 @@
                                 <h4> Improve your search:</h4>
                                 <span class="tag-cloud" data-bind="foreach: tags">
                                     <!-- ko if: count === $parent.tagMaxCount() && count > $parent.tagMaxCount()/2  -->
-                                    <span class="tag tag-big pointer tag-container"
+                                    <span class="tag tag-big tag-container"
                                           data-bind="click: $root.clickTag.bind($parentContext, name, 'add')">
                                         <span class="cloud-text">
                                             {{name}}
@@ -47,7 +47,7 @@
                                     </span>
                                     <!-- /ko -->
                                     <!-- ko if: count < $parent.tagMaxCount() && count > $parent.tagMaxCount()/2 -->
-                                    <span class="tag tag-med pointer tag-container"
+                                    <span class="tag tag-med tag-container"
                                           data-bind="click: $root.clickTag.bind($parentContext, name, 'add')">
                                         <span class="cloud-text">
                                             {{name}}
@@ -57,7 +57,7 @@
                                     </span>
                                     <!-- /ko -->
                                     <!-- ko if: count <= $parent.tagMaxCount()/2-->
-                                    <span class="tag tag-sm pointer tag-container"
+                                    <span class="tag tag-sm tag-container"
                                           data-bind="click: $root.clickTag.bind($parentContext, name, 'add')">
                                         <span class="cloud-text">
                                             {{name}}
