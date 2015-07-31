@@ -1064,7 +1064,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
                 raise NodeStateError("Only one dashboard allowed per user.")
 
         if first_save and not self.discussions:
-            self.discussions = MailingList.new_saved(is_enabled=False if self.is_folder else not self.parent)
+            self.discussions = MailingList.new_saved()
 
         is_original = not self.is_registration and not self.is_fork
         if 'suppress_log' in kwargs.keys():
@@ -2836,6 +2836,11 @@ class MailingList(StoredObject):
         self.node_id = node._id
         self.node_title = node.title
         self.match_members(node.contributors, save=False)
+
+        try:
+            self.is_enabled = not node.parent
+        except AttributeError:
+            pass
 
         if save:
             self.save()
