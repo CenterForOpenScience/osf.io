@@ -182,20 +182,20 @@ var waitForFinalEvent = (function () {
     }
 
     function Circle(pos,rad,color) {
-        var _this = this;
+        var self = this;
 
         // constructor
         (function() {
-            _this.pos = pos || null;
-            _this.radius = rad || null;
-            _this.color = color || null;
+            self.pos = pos || null;
+            self.radius = rad || null;
+            self.color = color || null;
         })();
 
         this.draw = function() {
-            if(!_this.active) return;
+            if(!self.active) return;
             ctx.beginPath();
-            ctx.arc(_this.pos.x, _this.pos.y, _this.radius, 0, 2 * Math.PI, false);
-            ctx.fillStyle = 'rgba(156,217,249,'+ _this.active+')';
+            ctx.arc(self.pos.x, self.pos.y, self.radius, 0, 2 * Math.PI, false);
+            ctx.fillStyle = 'rgba(156,217,249,'+ self.active+')';
             ctx.fill();
         };
     }
