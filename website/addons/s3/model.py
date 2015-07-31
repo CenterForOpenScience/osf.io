@@ -238,7 +238,7 @@ class AddonS3NodeSettings(StorageAddonBase, AddonNodeSettingsBase):
         else:
             message = (
                 'Amazon Simple Storage authorization not copied to forked {cat}. You may '
-                'authorize this fork on the <a href={url}>Settings</a> '
+                'authorize this fork on the <u><a href={url}>Settings</a></u> '
                 'page.'
             ).format(
                 cat=fork.project_or_component,
@@ -290,7 +290,7 @@ class AddonS3NodeSettings(StorageAddonBase, AddonNodeSettingsBase):
             if not auth or auth.user != removed:
                 url = node.web_url_for('node_setting')
                 message += (
-                    u' You can re-authenticate on the <a href="{url}">Settings</a> page.'
+                    u' You can re-authenticate on the <u><a href="{url}">Settings</a></u> page.'
                 ).format(url=url)
             #
             return message
