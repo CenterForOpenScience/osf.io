@@ -68,7 +68,7 @@
     ${self.on_submit()}
 
     % if node_has_auth and not valid_credentials:
-        <div class="addon-settings-message text-danger" style="padding-top: 10px;">
+        <div class="addon-settings-message text-danger p-t-sm">
             % if is_owner:
                 Could not retrieve GitHub settings at this time. The GitHub addon credentials
                 may no longer be valid. Try deauthorizing and reauthorizing GitHub on your
@@ -79,7 +79,7 @@
             % endif
         </div>
     % else:
-        <div class="addon-settings-message" style="display: none; padding-top: 10px;"></div>
+        <div class="addon-settings-message p-t-sm" style="display: none"></div>
     % endif
 
 </form>

@@ -27,7 +27,11 @@
                 </h2>
             </div>
             <div class="col-sm-6 col-md-5">
-                <div class="btn-toolbar node-control pull-right">
+                <div class="btn-toolbar node-control pull-right"
+                    % if not user_name:
+                        data-bind="tooltip: {title: 'Log-in or create an account to watch/duplicate this project', placement: 'bottom'}"
+                    % endif
+                        >
                     <div class="btn-group">
                     % if not node["is_public"]:
                         <button class='btn btn-default disabled'>Private</button>
@@ -45,14 +49,14 @@
                     <div class="btn-group" style="display: none;" data-bind="visible: true">
 
                         <!-- ko ifnot: inDashboard -->
-                           <a data-bind="click: addToDashboard, tooltip: {title: 'Add to Dashboard Folder',
+                           <a id="addDashboardFolder" data-bind="click: addToDashboard, tooltip: {title: 'Add to Dashboard Folder',
                             placement: 'bottom', container : 'body'}" class="btn btn-default">
                                <i class="fa fa-folder-open"></i>
                                <i class="fa fa-plus"></i>
                            </a>
                         <!-- /ko -->
                         <!-- ko if: inDashboard -->
-                           <a data-bind="click: removeFromDashboard, tooltip: {title: 'Remove from Dashboard Folder',
+                           <a id="removeDashboardFolder" data-bind="click: removeFromDashboard, tooltip: {title: 'Remove from Dashboard Folder',
                             placement: 'bottom', container : 'body'}" class="btn btn-default">
                                <i class="fa fa-folder-open"></i>
                                <i class="fa fa-minus"></i>
@@ -61,11 +65,7 @@
 
                     </div>
                     <!-- /ko -->
-                    <div
-                        % if not user_name:
-                            data-bind="tooltip: {title: 'Log-in or create an account to watch/duplicate this project', placement: 'bottom'}"
-                        % endif
-                            class="btn-group">
+                    <div class="btn-group">
                         <a
                         % if user_name and (node['is_public'] or user['has_read_permissions']) and not node['is_registration']:
                             data-bind="click: toggleWatch, tooltip: {title: watchButtonAction, placement: 'bottom', container : 'body'}"
@@ -77,6 +77,8 @@
                             <i class="fa fa-eye"></i>
                             <span data-bind="text: watchButtonDisplay" id="watchCount"></span>
                         </a>
+                    </div>
+                    <div class="btn-group">
                         <a
                         % if user_name:
                             class="btn btn-default"

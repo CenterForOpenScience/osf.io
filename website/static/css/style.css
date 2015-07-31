@@ -488,3 +488,8 @@ button.close {
     overflow: hidden;
 }
 
+/* growlBox style */
+.alert.growl-animated {
+    padding-right: 35px; /* work as alert-dismissable in bootstrap */
+}
+
