@@ -2102,7 +2102,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
                 return True
         return False
 
-    def remove_contributor(self, contributor, auth, log=True):
+    def remove_contributor(self, contributor, auth, log=True, save=False):
         """Remove a contributor from this node.
 
         :param contributor: User object, the contributor to be removed
@@ -2152,7 +2152,8 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
                 save=False,
             )
 
-        self.save()
+        if save:
+            self.save()
 
         #send signal to remove this user from project subscriptions
         auth_signals.contributor_removed.send(contributor, node=self)
@@ -2166,7 +2167,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
 
         for contrib in contributors:
             outcome = self.remove_contributor(
-                contributor=contrib, auth=auth, log=False,
+                contributor=contrib, auth=auth, log=False, save=False
             )
             results.append(outcome)
             removed.append(contrib._id)
@@ -2839,14 +2840,14 @@ class MailingList(StoredObject):
         if save:
             self.save()
 
-    def match_members(self, users, save=True):
-        user_dict = {user.email: user for user in users}
-        users_added = [user_dict[email] for email in set(user_dict.keys()).difference(self.emails)]
-        users_removed = [user_dict[email] for email in self.emails.difference(set(user_dict.keys()))]
-        for user in users_added:
-            self.add_member(user)
-        for user in users_removed:
-            self.remove_member(user)
+    def match_members(self, node_contributors, save=True):
+        new_info = {}
+        for user in node_contributors:
+            new_info[user._id] = self.mailing_info.get(user._id) or {
+                'address': user.email,
+                'subscribed': True
+            }
+        self.mailing_info = new_info
 
         if save:
             self.save()
@@ -2912,7 +2913,6 @@ class MailingList(StoredObject):
             self.save()
 
     def save(self, *args, **kwargs):
-        self.changed = False
         if self.node_id:
             update_list(self.node_id, self.node_title, self.is_enabled, self.emails, self.subscriptions)
 
