@@ -282,6 +282,14 @@ class TestOsfstorageFileNode(StorageTestCase):
         assert_equal(to_move.name, 'Tuna')
         assert_equal(moved.parent, move_to)
 
+    def test_rent(self):
+        self.node_settings.root_node.rent(self.user)
+        assert_equal('9kfw2', self.node_settings.root_node.rented)
+
+    def test_return_rent(self):
+        self.node_settings.root_node.return_rent()
+        assert_equal('', self.node_settings.root_node.rented)
+
     @unittest.skip
     def test_move_folder(self):
         pass
@@ -346,6 +354,7 @@ class TestOsfStorageFileVersion(StorageTestCase):
     def setUp(self):
         super(TestOsfStorageFileVersion, self).setUp()
         self.user = factories.AuthUserFactory()
+        self.user._id = 'user'
         self.mock_date = datetime.datetime(1991, 10, 31)
 
     def test_fields(self):

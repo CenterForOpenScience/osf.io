@@ -553,3 +553,40 @@ class TestDeleteHook(HookTestCase):
         resp = self.delete(self.root_node, expect_errors=True)
 
         assert_equal(resp.status_code, 400)
+
+    def test_attempt_delete_rented_file(self):
+        url = self.project.api_url_for('osfstorage_rent')
+        self.app.get(url, auth=self.auth)
+
+        res = self.delete()
+        assert_equal(res.status_code, 405)
+
+class TestFileRenting(StorageTestCase):
+
+    def test_file_rent(self):
+        url = self.project.api_url_for('osfstorage_rent')
+        res = self.app.get(url, auth=self.auth)
+
+        assert_equal(res.status_code, 200)
+        assert_equal(res.json()['status'], 'success')
+
+    def test_file_return(self):
+        url = self.project.api_url_for('osfstorage_return')
+        res = self.app.get(url, auth=self.auth)
+
+        assert_equal(res.status_code, 200)
+        assert_equal(res.json()['status'], 'success')
+
+    def test_rent_all(self):
+        url = self.project.api_url_for('osfstorage_rent_all')
+        res = self.app.get(url, auth=self.auth)
+
+        assert_equal(res.status_code, 200)
+        assert_equal(res.json()['status'], 'success')
+
+    def test_return_all(self):
+        url = self.project.api_url_for('osfstorage_return_all')
+        res = self.app.get(url, auth=self.auth)
+
+        assert_equal(res.status_code, 200)
+        assert_equal(res.json()['status'], 'success')
