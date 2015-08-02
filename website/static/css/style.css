@@ -156,9 +156,6 @@ a {
         color: #FFF;
     }
 
-    .osf-search {
-        z-index: 1028;
-    }
     #searchControls > .osf-search {
         z-index: 99;
     }
@@ -194,9 +191,6 @@ a {
     .navbar-brand {
         margin-left: 0 !important;
         padding-left: 0;
-    }
-    .osf-search {
-        z-index: 1028; /* should be less than 1030 to not cover navbar */
     }
 }
 
