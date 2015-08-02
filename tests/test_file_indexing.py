@@ -1,6 +1,7 @@
 import functools
 import logging
 import mock
+import os
 import time
 import unittest
 
@@ -15,6 +16,7 @@ from tests.factories import ModularOdmFactory
 from tests.factories import ProjectWithAddonFactory
 from tests.test_elastic import SearchTestCase
 from tests.base import OsfTestCase
+from tests.utils import PatchedContext
 from website import settings
 from website.search import elastic_search
 from website.search import search
@@ -26,33 +28,6 @@ from website.addons.osfstorage.model import OsfStorageFileNode, OsfStorageNodeSe
 FILE_SIZE = 1000
 FILE_CONTENT = 'You must talk to him; tell him that he is a good cat, and a pretty cat, and...'
 
-class PatchedContext(object):
-    """Create a context with multiple patches."""
-    def __init__(self, *args, **kwargs):
-        self.mocks = []
-        self.named_mocks = {}
-        self.patches = args
-        self.named_patches = kwargs
-
-    def __enter__(self):
-        for patch in self.patches:
-            self.mocks.append(patch.start())
-
-        for name, patch in self.named_patches.iteritems():
-            self.named_mocks.update({name: patch.start()})
-
-        return self
-
-    def __exit__(self, exc_type, exc_val, exc_tb):
-        for patch in self.patches:
-            patch.stop()
-
-    def get_named_patch(self, name):
-        return self.named_patches.get(name)
-
-    def get_named_mock(self, name):
-        return self.named_mocks.get(name)
-
 
 # patch for GuidFile.enrich
 def _guid_file_enrich_patch(node, should_raise=None):
@@ -60,10 +35,18 @@ def _guid_file_enrich_patch(node, should_raise=None):
 
 
 # patch for file_utils.get_file_content
-def _get_file_content_patch(guid_file):
+def _get_file_content_patch(guid_file, include_content=None):
     return FILE_CONTENT
 
-mock.patch('website.search.file_indexing.update_search_files'),
+
+def _load_local_file_content_patch(guid_file, include_content=None):
+    file_node = OsfStorageFileNode.load(guid_file.path)
+    cur_path = os.path.dirname(os.path.abspath(__file__))
+    file_path = os.path.join(cur_path, 'test_files', file_node.name)
+    with open(file_path, 'rb') as f:
+        content = f.read()
+    return content
+
 
 PATCH_CONTEXT = PatchedContext(
     mock._patch_object(GuidFile, 'enrich', _guid_file_enrich_patch),
@@ -77,6 +60,11 @@ TRIGGER_CONTEXT = PatchedContext(
     delete_search_files=mock.patch('website.search.file_indexing.delete_search_files'),
 )
 
+LOAD_LOCAL_FILE_CONTEXT = PatchedContext(
+    mock.patch('website.search.file_util.get_file_content', _load_local_file_content_patch)
+)
+
+
 def patch_context(func):
     @functools.wraps(func)
     def wrapper(*args, **kwargs):
@@ -84,20 +72,23 @@ def patch_context(func):
             return func(*args, **kwargs)
     return wrapper
 
+
 class OsfStorageFileNodeFactory(ModularOdmFactory):
     FACTORY_FOR = OsfStorageFileNode
     name = 'test file node'
     kind = 'file'
+    node_settings=None
 
 
 class FileIndexingTestCase(SearchTestCase):
+    @patch_context
     def setUp(self):
         super(FileIndexingTestCase, self).setUp()
         settings.USE_FILE_INDEXING = True
         self.project = ProjectWithAddonFactory()
         self.addon = self.project.get_addon('osfstorage')
         self.file_node = self.addon.root_node.append_file('Test_File_Node.txt', save=True)
-        #OsfStorageFileNodeFactory(node_settings=self.addon)
+        # OsfStorageFileNodeFactory(node_settings=self.addon)
 
 
 ## But who shall test the tests themselves? ##
@@ -190,11 +181,11 @@ class TestIsIndexed(FileIndexingTestCase):
 
     def test_true_for_indexed_types(self):
         for file_node in self.indexed:
-            assert_true(file_util.is_indexed(file_node), '{} was indexed'.format(repr(file_node)))
+            assert_true(file_util.is_indexed(file_node=file_node), '{} was indexed'.format(repr(file_node)))
 
     def test_false_for_not_indexed_types(self):
         for file_node in self.not_indexed:
-            assert_false(file_util.is_indexed(file_node), '{} was not indexed'.format(repr(file_node)))
+            assert_false(file_util.is_indexed(file_node=file_node), '{} was not indexed'.format(repr(file_node)))
 
 
 class TestCollectFiles(FileIndexingTestCase):
@@ -272,3 +263,44 @@ class TestSearchFileFunctions(FileIndexingTestCase):
         time.sleep(1)
         assert_equal(len(query('cat')), 0, 'failed to delete')
 
+
+class TestIndexRealFiles(FileIndexingTestCase):
+    def setUp(self):
+        super(TestIndexRealFiles, self).setUp()
+        self.root = self.addon.root_node
+        self.file_node_txt = self.root.append_file('index_test.txt')
+        self.file_node_rtf = self.root.append_file('index_test.rtf')
+        self.file_node_pdf = self.root.append_file('index_test.pdf')
+        self.file_node_docx = self.root.append_file('index_test.docx')
+
+    @patch_context
+    def test_txt_file_searchable(self):
+        with LOAD_LOCAL_FILE_CONTEXT:
+            assert_equal(len(query('diamond')), 0)
+            search.update_file(self.file_node_txt, settings.ELASTIC_INDEX)
+            time.sleep(1)
+            assert_equal(len(query('diamond')), 1)
+
+    @patch_context
+    def test_rtf_file_searchable(self):
+        with LOAD_LOCAL_FILE_CONTEXT:
+            assert_equal(len(query('diamond')), 0)
+            search.update_file(self.file_node_rtf, settings.ELASTIC_INDEX)
+            time.sleep(1)
+            assert_equal(len(query('diamond')), 1)
+
+    @patch_context
+    def test_pdf_file_searchable(self):
+        with LOAD_LOCAL_FILE_CONTEXT:
+            assert_equal(len(query('diamond')), 0)
+            search.update_file(self.file_node_pdf, settings.ELASTIC_INDEX)
+            time.sleep(1)
+            assert_equal(len(query('diamond')), 1)
+
+    @patch_context
+    def test_docx_file_searchable(self):
+        with LOAD_LOCAL_FILE_CONTEXT:
+            assert_equal(len(query('diamond')), 0)
+            search.update_file(self.file_node_docx, settings.ELASTIC_INDEX)
+            time.sleep(1)
+            assert_equal(len(query('diamond')), 1)
