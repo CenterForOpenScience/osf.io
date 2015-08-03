@@ -217,16 +217,16 @@ class TestUserUpdate(ApiTestCase):
         self.user_one.given_name = 'Martin'
         self.user_one.family_name = 'King'
         self.user_one.suffix = 'Jr.'
-        self.user_one.github = 'userOneGithub'
-        self.user_one.scholar = 'userOneScholar'
-        self.user_one.personal_website = 'http://www.useronepersonalwebsite.com'
-        self.user_one.twitter = 'userOneTwitter'
-        self.user_one.linkedIn = 'userOneLinkedIn'
-        self.user_one.impactStory = 'userOneImpactStory'
-        self.user_one.orcid = 'userOneOrcid'
-        self.user_one.researcherId = 'userOneResearcherId'
+        self.user_one.social['github'] = 'userOneGithub'
+        self.user_one.social['scholar'] = 'userOneScholar'
+        self.user_one.social['personal'] = 'http://www.useronepersonalwebsite.com'
+        self.user_one.social['twitter'] = 'userOneTwitter'
+        self.user_one.social['linkedIn'] = 'userOneLinkedIn'
+        self.user_one.social['impactStory'] = 'userOneImpactStory'
+        self.user_one.social['orcid'] = 'userOneOrcid'
+        self.user_one.social['researcherId'] = 'userOneResearcherId'
 
-        self.user_one.employment_institutions = [
+        self.user_one.jobs = [
             {
                 'startYear': '1995',
                 'title': '',
@@ -303,7 +303,6 @@ class TestUserUpdate(ApiTestCase):
             'fullname': self.new_fullname,
 
         }, auth=self.auth_one)
-        print res
         assert_equal(res.status_code, 200)
         assert_not_equal(res.json['data']['employment_institutions'], self.new_employment_institutions)
         assert_not_equal(res.json['data']['educational_institutions'], self.new_educational_institutions)
@@ -340,7 +339,7 @@ class TestUserUpdate(ApiTestCase):
         assert_equal(res.json['data']['researcherId'], self.newResearcherId)
 
     def test_put_user_logged_out(self):
-        res = self.app.put_json(self.user_one_url, {
+        put = self.app.put_json(self.user_one_url, {
             'id': self.user_one._id,
             'fullname': self.new_fullname,
             'given_name': self.new_given_name,
@@ -357,11 +356,26 @@ class TestUserUpdate(ApiTestCase):
         # This is 403 instead of 401 because basic authentication is only for unit tests and, in order to keep from
         # presenting a basic authentication dialog box in the front end. We may change this as we understand CAS
         # a little better
-        assert_equal(res.status_code, 403)
+        assert_equal(put.status_code, 403)
+        res = self.app.get(self.user_one_url)
+        assert_not_equal(res.json['data']['fullname'], self.new_fullname)
+        assert_not_equal(res.json['data']['given_name'], self.new_given_name)
+        assert_not_equal(res.json['data']['family_name'], self.new_family_name)
+        assert_not_equal(res.json['data']['suffix'], self.new_suffix)
+        assert_not_equal(res.json['data']['github'], self.newGithub)
+        assert_not_equal(res.json['data']['personal_website'], self.newPersonal_website)
+        assert_not_equal(res.json['data']['twitter'], self.newTwitter)
+        assert_not_equal(res.json['data']['linkedIn'], self.newLinkedIn)
+        assert_not_equal(res.json['data']['impactStory'], self.newImpactStory)
+        assert_not_equal(res.json['data']['orcid'], self.newOrcid)
+        assert_not_equal(res.json['data']['researcherId'], self.newResearcherId)
 
-    def test_put_user_not_logged_in(self):
+
+
+
+    def test_put_wrong_user(self):
         # User tries to update someone else's user information via put
-        res = self.app.put_json(self.user_one_url, {
+        put = self.app.put_json(self.user_one_url, {
             'id': self.user_one._id,
             'fullname': self.new_fullname,
             'given_name': self.new_given_name,
@@ -378,17 +392,42 @@ class TestUserUpdate(ApiTestCase):
         # This is 403 instead of 401 because basic authentication is only for unit tests and, in order to keep from
         # presenting a basic authentication dialog box in the front end. We may change this as we understand CAS
         # a little better
-        assert_equal(res.status_code, 403)
+        assert_equal(put.status_code, 403)
+        res = self.app.get(self.user_one_url)
+        assert_not_equal(res.json['data']['fullname'], self.new_fullname)
+        assert_not_equal(res.json['data']['given_name'], self.new_given_name)
+        assert_not_equal(res.json['data']['family_name'], self.new_family_name)
+        assert_not_equal(res.json['data']['suffix'], self.new_suffix)
+        assert_not_equal(res.json['data']['github'], self.newGithub)
+        assert_not_equal(res.json['data']['personal_website'], self.newPersonal_website)
+        assert_not_equal(res.json['data']['twitter'], self.newTwitter)
+        assert_not_equal(res.json['data']['linkedIn'], self.newLinkedIn)
+        assert_not_equal(res.json['data']['impactStory'], self.newImpactStory)
+        assert_not_equal(res.json['data']['orcid'], self.newOrcid)
+        assert_not_equal(res.json['data']['researcherId'], self.newResearcherId)
+
 
     def test_patch_wrong_user(self):
         # User tries to update someone else's user information via patch
-        res = self.app.patch_json(self.user_one_url, {
+        patch = self.app.patch_json(self.user_one_url, {
             'fullname': self.new_fullname,
         }, auth=self.auth_two, expect_errors=True)
         # This is 403 instead of 401 because basic authentication is only for unit tests and, in order to keep from
         # presenting a basic authentication dialog box in the front end. We may change this as we understand CAS
         # a little better
-        assert_equal(res.status_code, 403)
+        assert_equal(patch.status_code, 403)
+        res = self.app.get(self.user_one_url)
+        assert_not_equal(res.json['data']['fullname'], self.new_fullname)
+        assert_not_equal(res.json['data']['given_name'], self.new_given_name)
+        assert_not_equal(res.json['data']['family_name'], self.new_family_name)
+        assert_not_equal(res.json['data']['suffix'], self.new_suffix)
+        assert_not_equal(res.json['data']['github'], self.newGithub)
+        assert_not_equal(res.json['data']['personal_website'], self.newPersonal_website)
+        assert_not_equal(res.json['data']['twitter'], self.newTwitter)
+        assert_not_equal(res.json['data']['linkedIn'], self.newLinkedIn)
+        assert_not_equal(res.json['data']['impactStory'], self.newImpactStory)
+        assert_not_equal(res.json['data']['orcid'], self.newOrcid)
+        assert_not_equal(res.json['data']['researcherId'], self.newResearcherId)
 
     def test_update_user_sanitizes_html_properly(self):
         """Post request should update resource, and any HTML in fields should be stripped"""
