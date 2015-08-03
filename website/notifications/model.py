@@ -63,3 +63,8 @@ class NotificationDigest(StoredObject):
     event = fields.StringField()
     message = fields.StringField()
     node_lineage = fields.StringField(list=True)
+
+
+# class PendingUserEmail(StoredObject):
+#     _id = fields.StringField(primary=True)
+#     task_id = fields.StringField()

@@ -60,17 +60,6 @@ def store_emails(recipient_ids, notification_type, event, user, node, timestamp,
     if notification_type == 'none':
         return
 
-    delta = 0
-    if notification_type == 'email_transactional':
-        delay = 60  # TODO: Look into making this adjustable, learn how fast users generally check Email
-        n_seconds = timestamp.minute * 60 + timestamp.second + timestamp.microsecond * 1e-6
-        delta = (n_seconds // delay) * delay + delay - n_seconds
-    elif notification_type == 'email_digest':
-        delay = 86400
-        n_seconds = timestamp.hour * 3600 + timestamp.minute * 60 + timestamp.second + timestamp.microsecond * 1e-6
-        delta = (n_seconds // delay) * delay + delay - n_seconds
-    time_to_send = timestamp + timedelta(seconds=delta)
-
     template = event + '.html.mako'
     context['user'] = user
     node_lineage_ids = get_node_lineage(node) if node else []
@@ -89,8 +78,6 @@ def store_emails(recipient_ids, notification_type, event, user, node, timestamp,
             node_lineage=node_lineage_ids
         )
         digest.save()
-
-        tasks.check_and_send_later(user_id, timestamp, time_to_send, notification_type)
 
 
 def compile_subscriptions(node, event_type, event=None, level=0):

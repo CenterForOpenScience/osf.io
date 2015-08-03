@@ -93,3 +93,4 @@ website/static/img/badges
 
 # GUIDS
 scripts/guid_blacklist.txt
+celerybeat-schedule.db

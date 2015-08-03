@@ -9,6 +9,7 @@ import os
 import json
 import hashlib
 from datetime import timedelta
+from celery.schedules import crontab
 
 os_env = os.environ
 
@@ -182,6 +183,20 @@ BROKER_URL = 'amqp://'
 # Default RabbitMQ backend
 CELERY_RESULT_BACKEND = 'amqp://'
 
+# Setting up a scheduler
+CELERYBEAT_SCHEDULE = {
+    '5-minute-emails': {
+        'task': 'notify.send_users_email',
+        'schedule': crontab(minute='*/5'),
+        'args': ('email_transactional',),
+    },
+    'daily-emails': {
+        'task': 'notify.send_users_email',
+        'schedule': crontab(minute=0, hour=0),
+        'args': ('email_digest',),
+    },
+}
+
 # Modules to import when celery launches
 CELERY_IMPORTS = (
     'framework.tasks',
@@ -189,7 +204,8 @@ CELERY_IMPORTS = (
     'framework.email.tasks',
     'framework.analytics.tasks',
     'website.mailchimp_utils',
-    'scripts.send_digest'
+    'scripts.send_digest',
+    'website.notifications.tasks'
 )
 
 # Add-ons
