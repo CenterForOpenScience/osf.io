@@ -98,13 +98,6 @@ def validate_social(value):
     validate_personal_site(value.get('personal'))
 
 
-def validate_email(item):
-    if not (item
-            and re.match(r'^.+@[^.].*\.[a-z]{2,10}$', item, re.IGNORECASE)
-            and item == item.strip().lower()):
-        raise ValidationError("Invalid Email")
-
-
 # TODO - rename to _get_current_user_from_session /HRYBACKI
 def _get_current_user():
     uid = session._get_current_object() and session.data.get('auth_user_id')
@@ -683,7 +676,7 @@ class User(GuidStoredObject, AddonModelMixin):
         if email in self.emails:
             raise ValueError("Email already confirmed to this user.")
 
-        validate_email(email)
+        utils.validate_email(email)
 
         # If the unconfirmed email is already present, refresh the token
         if email in self.unconfirmed_emails:
@@ -721,11 +714,13 @@ class User(GuidStoredObject, AddonModelMixin):
         mails.send_mail(to_addr=self.username,
                         mail=mails.REMOVED_EMAIL,
                         user=self,
-                        removed_email=email)
+                        removed_email=email,
+                        security_addr='alternative email address ({})'.format(email))
         mails.send_mail(to_addr=email,
                         mail=mails.REMOVED_EMAIL,
                         user=self,
-                        removed_email=email)
+                        removed_email=email,
+                        security_addr='primary email address ({})'.format(self.username))
 
     def get_confirmation_token(self, email, force=False):
         """Return the confirmation token for a given email.

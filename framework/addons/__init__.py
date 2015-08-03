@@ -75,7 +75,6 @@ class AddonModelMixin(StoredObject):
         :return bool: Add-on was added
 
         """
-
         if not override and addon_name in settings.SYSTEM_ADDED_ADDONS[self._name]:
             return False
 

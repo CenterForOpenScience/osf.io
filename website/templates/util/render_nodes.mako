@@ -25,7 +25,7 @@
               $('.sortable').sortable({
                   containment: '#containment',
                   tolerance: 'pointer',
-                  items: '> li',
+                  items: '#components > li',
                   stop: function(event, ui){
                       var sortListElm = this;
                       var idList = $(sortListElm).sortable(
