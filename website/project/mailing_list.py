@@ -36,7 +36,7 @@ def get_list(node_id):
         auth=('api', settings.MAILGUN_API_KEY),
     )
     if members.status_code != 200 and members.status_code != 404:
-        return {}, {}
+        raise HTTPError(400)
     members = json.loads(members.text)
 
     return info, members
@@ -53,7 +53,7 @@ def create_list(node_id, node_title, emails, subscriptions):
         }
     )
     if res.status_code != 200:
-        return
+        raise HTTPError(400)
 
     for email in emails:
         add_member(node_id, email, subscriptions[email])
@@ -70,7 +70,7 @@ def delete_list(node_id):
         auth=('api', settings.MAILGUN_API_KEY)
     )
     if res.status_code != 200:
-        return
+        raise HTTPError(400)
 
 
 def update_title(node_id, node_title):
@@ -82,7 +82,7 @@ def update_title(node_id, node_title):
         }
     )
     if res.status_code != 200:
-        return
+        raise HTTPError(400)
 
 
 def add_member(node_id, email, subscription):
@@ -96,7 +96,7 @@ def add_member(node_id, email, subscription):
         }
     )
     if res.status_code != 200:
-        return
+        raise HTTPError(400)
 
 
 def remove_member(node_id, email):
@@ -105,7 +105,7 @@ def remove_member(node_id, email):
         auth=('api', settings.MAILGUN_API_KEY)
     )
     if res.status_code != 200:
-        return
+        raise HTTPError(400)
 
 
 def update_member(node_id, email, subscription):
@@ -117,7 +117,7 @@ def update_member(node_id, email, subscription):
         }
     )
     if res.status_code != 200:
-        return
+        raise HTTPError(400)
 
 
 ###############################################################################
@@ -180,4 +180,4 @@ def send_message(node_id, node_title, message):
               'subject': message['subject'],
               'html': '<html>{}</html>'.format(message['text'])})
     if res.status_code != 200:
-        return
+        raise HTTPError(400)
