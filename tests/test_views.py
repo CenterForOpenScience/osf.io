@@ -4359,5 +4359,60 @@ class TestUserConfirmSignal(OsfTestCase):
         assert_equal(mock_signals.signals_sent(), set([auth.signals.user_confirmed]))
 
 
+class TestDiscussionsViews(OsfTestCase):
+
+    def setUp(self):
+        super(TestDiscussionsViews, self).setUp()
+        self.user = AuthUserFactory()
+
+        self.project = ProjectFactory(creator=self.user, parent=None)
+        self.discussions = self.project.discussions
+
+    def test_disable_and_enable_project_discussions(self):
+        url = api_url_for('enable_discussions', pid=self.project._id)
+        payload = {}
+
+        assert_true(self.discussions.is_enabled)
+
+        self.app.delete(url, payload, auth=self.user.auth)
+        self.discussions.reload()
+        assert_false(self.discussions.is_enabled, False)
+
+        self.app.post(url, payload, auth=self.user.auth)
+        self.discussions.reload()
+        assert_true(self.discussions.is_enabled, True)
+
+    def test_enable_and_disable_component_discussions(self):
+        component = NodeFactory(parent=self.project, creator=self.user)
+        discussions = component.discussions
+        url = api_url_for('enable_discussions', pid=component._id)
+        payload = {}
+
+        assert_false(discussions.is_enabled)
+
+        self.app.post(url, payload, auth=self.user.auth)
+        discussions.reload()
+        assert_true(discussions.is_enabled, False)
+
+        self.app.delete(url, payload, auth=self.user.auth)
+        discussions.reload()
+        assert_false(discussions.is_enabled, True)
+
+    def test_set_subscription_false_then_true(self):
+        url = api_url_for('set_subscription', pid=self.project._id)
+
+        assert_in(self.user.email, self.discussions.subscriptions)
+
+        payload = {'discussionsSub': 'unsubscribed'}
+        self.app.post_json(url, payload, auth=self.user.auth)
+        self.discussions.reload()
+        assert_not_in(self.user.email, self.discussions.subscriptions)
+
+        payload = {'discussionsSub': 'subscribed'}
+        self.app.post_json(url, payload, auth=self.user.auth)
+        self.discussions.reload()
+        assert_in(self.user.email, self.discussions.subscriptions)
+
+
 if __name__ == '__main__':
     unittest.main()
