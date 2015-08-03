@@ -244,7 +244,7 @@ var ViewModel = function(params) {
 
                     self.results.push(result);
                 }
-                if(result.category === 'project')
+                if(result.category === 'registration')
                     result.date_created = new $osf.FormattableDate(result.date_created);
             });
 
