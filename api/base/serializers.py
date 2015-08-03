@@ -85,8 +85,8 @@ class LinksFieldWIthSelfLink(ser.Field):
 
 class LinksField(LinksFieldWIthSelfLink):
     def to_representation(self, obj):
-        if 'include' in self.context:
-            _rapply(self.context['include'], self.check_parameter, obj=obj)
+        if 'request' in self.context and 'include' in self.context['request'].query_params:
+            _rapply(self.context['request'].query_params, self.check_parameter, obj=obj)
         ret = _rapply(self.links, _url_val, obj=obj, serializer=self.parent)
         return ret
 
