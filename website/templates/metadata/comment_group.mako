@@ -1,3 +1,4 @@
+## TODO: Only seems to be referenced in show_comments.mako. Is this deprecated?
 <div
         class="accordion"
         id="comments-${guid}"

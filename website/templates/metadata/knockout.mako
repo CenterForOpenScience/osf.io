@@ -1,3 +1,5 @@
+## TODO: Is this file used anywhere?
+
 ## TODO: Put this is site.js
 <script type="text/javascript">
 
