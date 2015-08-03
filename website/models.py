@@ -10,7 +10,7 @@ from website.project.model import (
     Node, NodeLog,
     Tag, WatchConfig, MetaSchema, Pointer,
     Comment, PrivateLink, MetaData, Retraction,
-    Embargo,
+    Embargo, Sanction
 )
 from website.oauth.models import ExternalAccount
 from website.identifiers.model import Identifier
@@ -26,8 +26,9 @@ MODELS = (
     Tag, WatchConfig, Session, Guid, MetaSchema, Pointer,
     MailRecord, Comment, PrivateLink, MetaData, Conference,
     NotificationSubscription, NotificationDigest, CitationStyle,
-    CitationStyle, ExternalAccount, Identifier, Retraction,
-    Embargo, ArchiveJob, ArchiveTarget, BlacklistGuid
+    CitationStyle, ExternalAccount, Identifier,
+    Sanction, Embargo, Retraction,
+    ArchiveJob, ArchiveTarget, BlacklistGuid
 )
 
 GUID_MODELS = (User, Node, Comment, MetaData)

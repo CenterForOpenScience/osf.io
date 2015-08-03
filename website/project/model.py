@@ -42,9 +42,8 @@ from website import language, settings, security
 from website.util import web_url_for
 from website.util import api_url_for
 from website.exceptions import (
-    NodeStateError, InvalidRetractionApprovalToken,
-    InvalidRetractionDisapprovalToken, InvalidEmbargoApprovalToken,
-    InvalidEmbargoDisapprovalToken,
+    NodeStateError,
+    InvalidSanctionApprovalToken, InvalidSanctionRejectionToken
 )
 from website.citations.utils import datetime_to_csl
 from website.identifiers.model import IdentifierMixin
@@ -2621,24 +2620,14 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         :param justification: Justification, if given, for retraction
         """
 
-        retraction = Retraction()
-        retraction.initiated_by = user
-        if justification:
-            retraction.justification = justification
-        retraction.state = Retraction.PENDING
-
+        retraction = Retraction(
+            initiated_by=user,
+            justification=justification,
+            state=Retraction.PENDING
+        )
         admins = [contrib for contrib in self.contributors if self.has_permission(contrib, 'admin') and contrib.is_active]
-
-        approval_state = {}
-        # Create approve/disapprove tokens
         for admin in admins:
-            approval_state[admin._id] = {
-                'approval_token': security.random_string(30),
-                'disapproval_token': security.random_string(30),
-                'has_approved': False
-            }
-
-        retraction.approval_state = approval_state
+            retraction.add_authorizer(admin)
         # Retraction record needs to be saved to ensure the forward reference Node->Retraction
         if save:
             retraction.save()
@@ -2680,21 +2669,14 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         :param user: User who initiated the retraction
         :param end_date: Date when the registration should be made public
         """
-
-        embargo = Embargo()
-        embargo.initiated_by = user
-        embargo.for_existing_registration = for_existing_registration
-        # Convert Date to Datetime
-        embargo.end_date = datetime.datetime.combine(end_date, datetime.datetime.min.time())
-
+        embargo = Embargo(
+            initiated_by=user,
+            end_date=datetime.datetime.combine(end_date, datetime.datetime.min.time()),
+            for_existing_registration=for_existing_registration
+        )
         admins = [contrib for contrib in self.contributors if self.has_permission(contrib, 'admin') and contrib.is_active]
-        embargo.approval_state = {
-            admin._id: {
-                'approval_token': security.random_string(30),
-                'disapproval_token': security.random_string(30),
-                'has_approved': False
-            } for admin in admins
-        }
+        for admin in admins:
+            embargo.add_authorizer(admin)
         if save:
             embargo.save()
         return embargo
@@ -2825,139 +2807,31 @@ class PrivateLink(StoredObject):
             "anonymous": self.anonymous
         }
 
-
-def validate_retraction_state(value):
-    acceptable_states = [Retraction.PENDING, Retraction.RETRACTED, Retraction.CANCELLED]
-    if value not in acceptable_states:
-        raise ValidationValueError('Invalid retraction state assignment.')
-
-    return True
-
-
-class Retraction(StoredObject):
-    """Retraction object for public registrations."""
-
-    PENDING = 'pending'
-    RETRACTED = 'retracted'
-    CANCELLED = 'cancelled'
-
-    _id = fields.StringField(primary=True, default=lambda: str(ObjectId()))
-    justification = fields.StringField(default=None, validate=MaxLengthValidator(2048))
-    initiation_date = fields.DateTimeField(auto_now_add=datetime.datetime.utcnow)
-    initiated_by = fields.ForeignField('user', backref='retracted')
-    # Expanded: Dictionary field mapping admin IDs their approval status and relevant tokens:
-    # {
-    #   'b3k97': {
-    #     'has_approved': False,
-    #     'approval_token': 'Cru7wj1Puf7DENUPFPnXSwa1rf3xPN',
-    #     'disapproval_token': 'UotzClTFOic2PYxHDStby94bCQMwJy'}
-    # }
-    approval_state = fields.DictionaryField()
-    # One of 'pending', 'retracted', or 'cancelled'
-    state = fields.StringField(default='pending', validate=validate_retraction_state)
-
-    def __repr__(self):
-        parent_registration = Node.find_one(Q('retraction', 'eq', self))
-        return ('<Retraction(parent_registration={0}, initiated_by={1}) '
-                'with _id {2}>').format(
-            parent_registration,
-            self.initiated_by,
-            self._id
-        )
-
-    @property
-    def is_retracted(self):
-        return self.state == self.RETRACTED
-
-    @property
-    def pending_retraction(self):
-        return self.state == self.PENDING
-
-    def disapprove_retraction(self, user, token):
-        """Cancels retraction if user is admin and token verifies."""
-        try:
-            if self.approval_state[user._id]['disapproval_token'] != token:
-                raise InvalidRetractionDisapprovalToken('Invalid retraction disapproval token provided.')
-        except KeyError:
-            raise PermissionsError('User must be an admin to disapprove retraction of a registration.')
-
-        self.state = self.CANCELLED
-        parent_registration = Node.find_one(Q('retraction', 'eq', self))
-        parent_registration.registered_from.add_log(
-            action=NodeLog.RETRACTION_CANCELLED,
-            params={
-                'node': parent_registration._id,
-                'retraction_id': self._id,
-            },
-            auth=Auth(user),
-            save=True,
-        )
-
-    def approve_retraction(self, user, token):
-        """Add user to approval list if user is admin and token verifies."""
-        try:
-            if self.approval_state[user._id]['approval_token'] != token:
-                raise InvalidRetractionApprovalToken('Invalid retraction approval token provided.')
-        except KeyError:
-            raise PermissionsError('User must be an admin to disapprove retraction of a registration.')
-
-        self.approval_state[user._id]['has_approved'] = True
-        if all(val['has_approved'] for val in self.approval_state.values()):
-            self.state = self.RETRACTED
-
-            parent_registration = Node.find_one(Q('retraction', 'eq', self))
-            parent_registration.registered_from.add_log(
-                action=NodeLog.RETRACTION_APPROVED,
-                params={
-                    'node': parent_registration._id,
-                    'retraction_id': self._id,
-                },
-                auth=Auth(user),
-            )
-            # Remove any embargoes associated with the registration
-            if parent_registration.embargo_end_date or parent_registration.pending_embargo:
-                parent_registration.embargo.state = self.CANCELLED
-                parent_registration.registered_from.add_log(
-                    action=NodeLog.EMBARGO_CANCELLED,
-                    params={
-                        'node': parent_registration._id,
-                        'embargo_id': parent_registration.embargo._id,
-                    },
-                    auth=Auth(user),
-                )
-                parent_registration.embargo.save()
-            # Ensure retracted registration is public
-            if not parent_registration.is_public:
-                parent_registration.set_privacy('public')
-            parent_registration.update_search()
-            # Retraction status is inherited from the root project, so we
-            # need to recursively update search for every descendant node
-            # so that retracted subrojects/components don't appear in search
-            for node in parent_registration.get_descendants_recursive():
-                node.update_search()
-
-
-def validate_embargo_state(value):
+def validate_sanction_state(value):
     acceptable_states = [
-        Embargo.UNAPPROVED, Embargo.ACTIVE, Embargo.CANCELLED, Embargo.COMPLETED
+        Sanction.UNAPPROVED, Sanction.ACTIVE, Sanction.CANCELLED, Sanction.COMPLETED
     ]
     if value not in acceptable_states:
         raise ValidationValueError('Invalid embargo state assignment.')
     return True
 
-
-class Embargo(StoredObject):
-    """Embargo object for registrations waiting to go public."""
+class Sanction(StoredObject):
+    """Sancion object is a generic way to track approval states"""
 
     UNAPPROVED = 'unapproved'
     ACTIVE = 'active'
     CANCELLED = 'cancelled'
     COMPLETED = 'completed'
 
+    APPROVAL_NOT_AUTHORIZED_MESSAGE = 'This user is not authorized to approve this sanction'
+    APPROVAL_INVALID_TOKEN_MESSAGE = 'Invalid approval token provided.'
+    REJECTION_NOT_AUTHORIZED_MESSAGE = 'This user is not authorized to reject this sanction'
+    REJECTION_INVALID_TOKEN_MESSAGE = 'Invalid rejection token provided.'
+
     _id = fields.StringField(primary=True, default=lambda: str(ObjectId()))
     initiation_date = fields.DateTimeField(auto_now_add=datetime.datetime.utcnow)
+    end_date = fields.DateTimeField(default=None)
     initiated_by = fields.ForeignField('user', backref='embargoed')
-    end_date = fields.DateTimeField()
     # Expanded: Dictionary field mapping admin IDs their approval status and relevant tokens:
     # {
     #   'b3k97': {
@@ -2967,7 +2841,81 @@ class Embargo(StoredObject):
     # }
     approval_state = fields.DictionaryField()
     # One of 'unapproved', 'active', 'cancelled', or 'completed
-    state = fields.StringField(default='unapproved', validate=validate_embargo_state)
+    state = fields.StringField(default='unapproved', validate=validate_sanction_state)
+
+    def __repr__(self):
+        return '<Sanction(initiated_by={0}, end_date={1}) with _id {2}>'.format(
+            self.initiated_by,
+            self.end_date,
+            self._id
+        )
+
+    @property
+    def pending_approval(self):
+        return self.state == Sanction.UNAPPROVED
+
+    def _validate_authorizer(self, user):
+        return True
+
+    def add_authorizer(self, user, approved=False):
+        self._validate_authorizer(user)
+        if user._id not in self.approval_state:
+            self.approval_state[user._id] = {
+                'has_approved': approved,
+                'approval_token': security.random_string(30),
+                'disapproval_token': security.random_string(30),
+            }
+            self.save()
+            return True
+        return False
+
+    def remove_authorizer(self, user):
+        if user._id in self.approval_state:
+            del self.approval_state[user._id]
+            self.save()
+            return True
+        return False
+
+    def _on_complete(self, user):
+        pass
+
+    def _on_approve(self, user, token):
+        pass
+
+    def _on_reject(self, user, token):
+        raise NotImplementedError("Sanction subclasses must implement an #_on_reject callback")
+
+    def approve(self, user, token):
+        """Add user to approval list if user is admin and token verifies."""
+        try:
+            if self.approval_state[user._id]['approval_token'] != token:
+                raise InvalidSanctionApprovalToken(self.APPROVAL_INVALID_TOKEN_MESSAGE)
+        except KeyError:
+            raise PermissionsError(self.APPROVAL_NOT_AUTHORIZED_MESSAGE)
+        self.approval_state[user._id]['has_approved'] = True
+        if all(authorizer['has_approved'] for authorizer in self.approval_state.values()):
+            self.state = Sanction.ACTIVE
+            self._on_complete(user)
+        self._on_approve(user, token)
+
+    def reject(self, user, token):
+        """Cancels sanction if user is admin and token verifies."""
+        try:
+            if self.approval_state[user._id]['disapproval_token'] != token:
+                raise InvalidSanctionRejectionToken(self.REJECTION_INVALID_TOKEN_MESSAGE)
+        except KeyError:
+            raise PermissionsError(self.REJECTION_NOT_AUTHORIZED_MESSAGE)
+        self.state = Sanction.CANCELLED
+        self._on_reject(user, token)
+
+class Embargo(Sanction):
+    """Embargo object for registrations waiting to go public."""
+
+    APPROVAL_NOT_AUTHORIZED_MESSAGE = 'User must be an admin to disapprove embargoing of a registration.'
+    APPROVAL_INVALID_TOKEN_MESSAGE = 'Invalid embargo approval token provided.'
+    REJECTION_NOT_AUTHORIZED_MESSAGE = 'User must be an admin to disapprove embargoing of a registration.'
+    REJECTION_INVALID_TOKEN_MESSAGE = 'Invalid embargo disapproval token provided.'
+
     for_existing_registration = fields.BooleanField(default=False)
 
     def __repr__(self):
@@ -2982,13 +2930,11 @@ class Embargo(StoredObject):
 
     @property
     def embargo_end_date(self):
-        if self.state == Embargo.ACTIVE:
-            return self.end_date
-        return False
+        return self.end_date
 
     @property
     def pending_embargo(self):
-        return self.state == Embargo.UNAPPROVED
+        return self.pending_approval
 
     # NOTE(hrybacki): Old, private registrations are grandfathered and do not
     # require to be made public or embargoed. This field differentiates them
@@ -2998,15 +2944,7 @@ class Embargo(StoredObject):
     def pending_registration(self):
         return not self.for_existing_registration and self.pending_embargo
 
-    def disapprove_embargo(self, user, token):
-        """Cancels retraction if user is admin and token verifies."""
-        try:
-            if self.approval_state[user._id]['disapproval_token'] != token:
-                raise InvalidEmbargoDisapprovalToken('Invalid embargo disapproval token provided.')
-        except KeyError:
-            raise PermissionsError('User must be an admin to disapprove embargoing of a registration.')
-
-        self.state = Embargo.CANCELLED
+    def _on_reject(self, user, token):
         parent_registration = Node.find_one(Q('embargo', 'eq', self))
         parent_registration.registered_from.add_log(
             action=NodeLog.EMBARGO_CANCELLED,
@@ -3016,31 +2954,120 @@ class Embargo(StoredObject):
             },
             auth=Auth(user),
         )
-        # Remove backref to parent project if embargo was for a new registration
+        # Remove backref to parent project if embargo was for a new regist
         if not self.for_existing_registration:
             parent_registration.registered_from = None
         # Delete parent registration if it was created at the time the embargo was initiated
         if not self.for_existing_registration:
             parent_registration.is_deleted = True
-            parent_registration.save()
+        parent_registration.save()
+
+    def disapprove_embargo(self, user, token):
+        """Cancels retraction if user is admin and token verifies."""
+        self.reject(user, token)
+
+    def _on_complete(self, user):
+        parent_registration = Node.find_one(Q('embargo', 'eq', self))
+        parent_registration.registered_from.add_log(
+            action=NodeLog.EMBARGO_APPROVED,
+            params={
+                'node': parent_registration._id,
+                'embargo_id': self._id,
+            },
+            auth=Auth(user),
+        )
 
     def approve_embargo(self, user, token):
         """Add user to approval list if user is admin and token verifies."""
-        try:
-            if self.approval_state[user._id]['approval_token'] != token:
-                raise InvalidEmbargoApprovalToken('Invalid embargo approval token provided.')
-        except KeyError:
-            raise PermissionsError('User must be an admin to disapprove embargoing of a registration.')
+        self.approve(user, token)
 
-        self.approval_state[user._id]['has_approved'] = True
-        if all(val['has_approved'] for val in self.approval_state.values()):
-            self.state = Embargo.ACTIVE
-            parent_registration = Node.find_one(Q('embargo', 'eq', self))
+
+def validate_retraction_state(value):
+    acceptable_states = [Retraction.PENDING, Retraction.RETRACTED, Retraction.CANCELLED]
+    if value not in acceptable_states:
+        raise ValidationValueError('Invalid retraction state assignment.')
+
+    return True
+
+
+class Retraction(Sanction):
+    """Retraction object for public registrations."""
+
+    ACTIVE = 'retracted'
+
+    justification = fields.StringField(default=None, validate=MaxLengthValidator(2048))
+
+    def __repr__(self):
+        parent_registration = Node.find_one(Q('retraction', 'eq', self))
+        return ('<Retraction(parent_registration={0}, initiated_by={1}) '
+                'with _id {2}>').format(
+            parent_registration,
+            self.initiated_by,
+            self._id
+        )
+
+    @property
+    def is_retracted(self):
+        return self.state == self.ACTIVE
+
+    @property
+    def pending_retraction(self):
+        return self.state == self.UNAPPROVED
+
+    def _on_reject(self, user, token):
+        parent_registration = Node.find_one(Q('retraction', 'eq', self))
+        parent_registration.registered_from.add_log(
+            action=NodeLog.RETRACTION_CANCELLED,
+            params={
+                'node': parent_registration._id,
+                'retraction_id': self._id,
+            },
+            auth=Auth(user),
+            save=True,
+        )
+
+    def _on_complete(self, user, token):
+        parent_registration = Node.find_one(Q('retraction', 'eq', self))
+        parent_registration.registered_from.add_log(
+            action=NodeLog.RETRACTION_APPROVED,
+            params={
+                'node': parent_registration._id,
+                'retraction_id': self._id,
+            },
+            auth=Auth(user),
+        )
+        # Remove any embargoes associated with the registration
+        if parent_registration.embargo_end_date or parent_registration.pending_embargo:
+            parent_registration.embargo.state = self.CANCELLED
             parent_registration.registered_from.add_log(
-                action=NodeLog.EMBARGO_APPROVED,
+                action=NodeLog.EMBARGO_CANCELLED,
                 params={
                     'node': parent_registration._id,
-                    'embargo_id': self._id,
+                    'embargo_id': parent_registration.embargo._id,
                 },
                 auth=Auth(user),
             )
+            parent_registration.embargo.save()
+        # Ensure retracted registration is public
+        if not parent_registration.is_public:
+            parent_registration.set_privacy('public')
+        parent_registration.update_search()
+        # Retraction status is inherited from the root project, so we
+        # need to recursively update search for every descendant node
+        # so that retracted subrojects/components don't appear in search
+        for node in parent_registration.get_descendants_recursive():
+            node.update_search()
+
+    def approve_retraction(self, user, token):
+        self.approve(user, token)
+
+    def disapprove_retraction(self, user, token):
+        self.reject(user, token)
+
+class RegistrationApproval(Sanction):
+
+    def _on_complete(self, user, token):
+        pass
+
+    def _on_reject(self, user, token):
+        pass
