@@ -46,8 +46,6 @@ var User = function(result){
     self.degree = result.degree;
     self.school = result.school;
     self.url = result.url;
-    self.wikiUrl = result.url+'wiki/';
-    self.filesUrl = result.url+'files/';
     self.user = result.user;
 
     $.ajax('/api/v1'+ result.url).success(function(data){
@@ -243,13 +241,11 @@ var ViewModel = function(params) {
                         result.wikiUrl = result.url+'wiki/';
                         result.filesUrl = result.url+'files/';
                     }
+
                     self.results.push(result);
                 }
                 if(result.category === 'project')
                     result.date_created = new $osf.FormattableDate(result.date_created);
-
-                if(result.category === 'registration')
-                    result.date_registered = new $osf.FormattableDate(result.date_registered);
             });
 
             //Load our categories
