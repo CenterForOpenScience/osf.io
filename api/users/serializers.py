@@ -4,29 +4,25 @@ from website.models import User
 from rest_framework.parsers import JSONParser
 
 
-class JobsSerializer(ser.ListField):
-    startYear = ser.CharField(allow_blank=True, allow_null=True)
-    title = ser.CharField()
-    startMonth = ser.IntegerField(allow_null=True)
-    endMonth = ser.IntegerField(max_value=12, min_value=1, allow_null=True)
-    endYear = ser.CharField(allow_blank=True, allow_null=True)
+class ProfileDictSerializer(ser.ListField):
+    start_year = ser.CharField(allow_blank=True, allow_null=True)
+    start_month = ser.IntegerField(allow_null=True)
+    end_month = ser.IntegerField(max_value=12, min_value=1, allow_null=True)
+    end_year = ser.CharField(allow_blank=True, allow_null=True)
     ongoing = ser.BooleanField()
     department = ser.CharField()
     institution = ser.CharField()
+
+
+class JobsSerializer(ProfileDictSerializer):
+    title = ser.CharField()
 
     class Meta:
         type_ = 'jobs'
 
 
-class SchoolsSerializer(ser.ListField):
-    startYear = ser.CharField(allow_blank=True, allow_null=True)
+class SchoolsSerializer(ProfileDictSerializer):
     degree = ser.CharField()
-    startMonth = ser.IntegerField(max_value=12, min_value=1, allow_null=True)
-    endMonth = ser.IntegerField(max_value=12, min_value=1, allow_null=True)
-    endYear = ser.CharField(allow_blank=True, allow_null=True)
-    ongoing = ser.BooleanField()
-    department = ser.CharField()
-    institution = ser.CharField()
 
     class Meta:
         type_ = 'schools'
