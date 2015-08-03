@@ -335,7 +335,7 @@
 </%def>
 
 % for name, capabilities in addon_capabilities.iteritems():
-    <script id="capabilities-${name}" type="text/html">${capabilities}</script>
+    <script id="capabilities-${name}" type="text/html">${ capabilities | n }</script>
 % endfor
 
 
