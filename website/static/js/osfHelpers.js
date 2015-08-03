@@ -394,67 +394,6 @@ ko.bindingHandlers.anchorScroll = {
 };
 
 /**
- * Adds an expansion toggle for too tall items
- * Example:
- * <span data-bind='toggleHeight : { height : 100}'></span>
- */
-ko.bindingHandlers.toggleHeight = {
-    init: function(elem, valueAccessor) {
-        var height = valueAccessor().height || 50;
-        var iconDown = valueAccessor().iconDown || 'fa fa-angle-down';
-        var iconUp = valueAccessor().iconUp || 'fa fa-angle-up';
-        var $el = $(elem);
-        var collapsed = true;
-        var showToggle = false;
-        var gradientDiv = $('<div class="' + elem.id + '-gradient toggle-height-gradient" style="display:none"></div>').appendTo(elem);
-        var toggleDiv = $('<div class="' + elem.id + '-toggle toggle-height-toggle text-center" style="display:none"></div>').insertAfter(elem);
-        var noToggle = function _noToggle () {
-            $el.css('height', 'auto');
-            gradientDiv.hide();
-            toggleDiv.hide();
-            showToggle = false;
-            $el.removeClass('toggle-height-parent');
-        };
-        var toggleCollapse = function _toggleCollapse () {
-            $el.css('height', height + 'px');
-            gradientDiv.show();
-            toggleDiv.html('<i class="' + iconDown +'"></i>').show();
-        };
-        var toggleOpen = function _toggleOpen (){
-            $el.css('height', 'auto');
-            gradientDiv.hide();
-            toggleDiv.html('<i class="' + iconUp + '"></i>').show();
-        };
-        var checkCollapse = function _checkCollapse () {
-            if ($el[0].scrollHeight <= height){
-                noToggle();
-            } else if (!showToggle){
-                showToggle = true;
-                $el.addClass('toggle-height-parent');
-                if (collapsed){
-                    toggleCollapse();
-                } else {
-                    toggleOpen();
-                }
-            }
-        };
-        var toggle = function _toggle() {
-            if (collapsed) {
-                toggleOpen();
-            } else {
-                toggleCollapse();
-            }
-            collapsed = !collapsed;
-        };
-        $('.' + elem.id + '-toggle.toggle-height-toggle').click(toggle);
-        checkCollapse();
-        $(window).resize(checkCollapse);
-    }
-};
-
-
-
-/**
  * Adds class returned from iconmap to the element. The value accessor should be the
  * category of the node.
  * Example:
