@@ -24,7 +24,8 @@ class NodeSerializer(JSONAPISerializer):
                                                'user and system. Any tag that a user will define in the UI will be '
                                                'a user tag')
     # children = ser.HyperlinkedRelatedField(source='nodes', read_only=True, view_name='nodes:node-children', lookup_field= 'pk', lookup_url_kwarg='_id')
-
+    # contributors = ser.HyperlinkedRelatedField(read_only=True, many=True, view_name='nodes:node-contributors', lookup_field='pk', lookup_url_kwarg='node_id')
+    # nodes = ser.HyperlinkedRelatedField(many=True, read_only=True, view_name='nodes:node-children', lookup_field='pk', lookup_url_kwarg='node_id')
     links = LinksField({
         'html': 'get_absolute_url',
         'children': {
@@ -50,12 +51,7 @@ class NodeSerializer(JSONAPISerializer):
             'self': Link('nodes:node-detail', kwargs={'node_id': '<parent_id>'})
         }
     })
-    properties = ser.SerializerMethodField(help_text='A dictionary of read-only booleans: registration, collection,'
-                                                     'and dashboard. Collections are special nodes used by the Project '
-                                                     'Organizer to, as you would imagine, organize projects. '
-                                                     'A dashboard is a collection node that serves as the root of '
-                                                     'Project Organizer collections. Every user will always have '
-                                                     'one Dashboard')
+
     # TODO: When we have 'admin' permissions, make this writable for admins
     public = ser.BooleanField(source='is_public', read_only=True,
                               help_text='Nodes that are made public will give read-only access '
@@ -64,10 +60,17 @@ class NodeSerializer(JSONAPISerializer):
                                                             'public and private nodes. Administrators on a parent '
                                                             'node have implicit read permissions for all child nodes',
                               )
+
+    registration = ser.BooleanField(source='is_registration', read_only=True)
+    collection = ser.BooleanField(source='is_folder', read_only=True)
+    dashboard = ser.BooleanField(source='is_dashboard', read_only=True)
+
+
     # TODO: finish me
 
     class Meta:
         type_ = 'nodes'
+        model = Node
 
     def get_absolute_url(self, obj):
         return obj.absolute_url
@@ -97,15 +100,6 @@ class NodeSerializer(JSONAPISerializer):
 
     def get_pointers_count(self, obj):
         return len(obj.nodes_pointer)
-
-    @staticmethod
-    def get_properties(obj):
-        ret = {
-            'registration': obj.is_registration,
-            'collection': obj.is_folder,
-            'dashboard': obj.is_dashboard,
-        }
-        return ret
 
     @staticmethod
     def get_tags(obj):
