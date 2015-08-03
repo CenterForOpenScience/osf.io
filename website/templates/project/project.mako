@@ -314,9 +314,6 @@
         </div><!-- end addon-widget-body -->
     </div><!-- end components -->
 %endif
-% for name, capabilities in addon_capabilities.iteritems():
-    <script id="capabilities-${name}" type="text/html">${capabilities}</script>
-% endfor
 
 </%def>
 
