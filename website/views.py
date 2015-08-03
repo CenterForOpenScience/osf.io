@@ -244,10 +244,11 @@ def validate_page_num(page, pages):
 
 
 def paginate(items, total, page, size):
-    try:
+
+    if size != 0:
         pages = math.ceil(total / float(size))
-    except ZeroDivisionError:
-        pages = total
+    else:
+        pages = 0
 
     validate_page_num(page, pages)
 

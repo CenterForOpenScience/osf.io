@@ -39,6 +39,7 @@ var AddContributorViewModel = oop.extend(Paginator, {
         self.title = title;
         self.parentId = parentId;
         self.parentTitle = parentTitle;
+        self.searchParams = {};
 
         //list of permission objects for select.
         self.permissionList = [
@@ -121,15 +122,16 @@ var AddContributorViewModel = oop.extend(Paginator, {
                 self.url() + '?size=' + RESULTS_PER_PAGE + '&page='+ this.pageToGet(),
                 this.searchParams,
                 function(result) {
-                    var contributors = result.users.map(function(userData) {
-                        return new Contributor(userData);
-                    });
-                    if (!contributors.length) {
-                    self.notification({
-                        'message': 'No Contributors Found.',
-                        'level': 'info'
-                    });
-                }
+                    if (!result.users.length) {
+                        self.notification({
+                            'message': 'No Contributors Found.',
+                            'level': 'info'
+                        });
+                    } else {
+                        var contributors = result.users.map(function(userData) {
+                            return new Contributor(userData);
+                        });
+                    }
                 self.results(contributors);
                 self.currentPage(result.page);
                 self.numberOfPages(result.pages);

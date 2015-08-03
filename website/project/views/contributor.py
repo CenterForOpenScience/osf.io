@@ -136,18 +136,9 @@ def get_contributors_from_parent(auth, node, **kwargs):
         if contrib._id not in node.visible_contributor_ids
     ]
 
-    size = int(request.args.get('size', len(contribs)))
-    page = int(request.args.get('page', 0))
+    return paginateContributorSearch(contribs)
 
-    contribs, pages = paginate(contribs,
-                               len(contribs),
-                               page,
-                               size)
-    contribs = list(contribs)
 
-    return {'users': contribs,
-            'page': page,
-            'pages': pages}
 
 
 @must_be_contributor_or_public
@@ -177,18 +168,7 @@ def get_most_in_common_contributors(auth, node, **kwargs):
         for most_contrib, count in sorted(contrib_objs, key=lambda t: (-t[1], t[0].fullname))
     ]
 
-    size = int(request.args.get('size', len(contribs)))
-    page = int(request.args.get('page', 0))
-
-    contribs, pages = paginate(contribs,
-                               len(contribs),
-                               page,
-                               size)
-    contribs = list(contribs)
-
-    return {'users': contribs,
-            'page': page,
-            'pages': pages}
+    return paginateContributorSearch(contribs)
 
 
 @must_be_contributor_or_public
@@ -216,18 +196,7 @@ def get_recently_added_contributors(auth, node, **kwargs):
         utils.add_contributor_json(contrib, auth.user)
         for contrib in limited_contribs
     ]
-    size = int(request.args.get('size', len(contribs)))
-    page = int(request.args.get('page', 0))
-
-    contribs, pages = paginate(contribs,
-                               len(contribs),
-                               page,
-                               size)
-    contribs = list(contribs)
-
-    return {'users': contribs,
-            'page': page,
-            'pages': pages}
+    return paginateContributorSearch(contribs)
 
 
 @must_be_valid_project  # returns project
@@ -767,3 +736,17 @@ def claim_user_post(node, **kwargs):
         'email': email,
         'fullname': unclaimed_data['name']
     }
+
+def paginateContributorSearch(contribs, **kwargs):
+    size = int(request.args.get('size', len(contribs)))
+    page = int(request.args.get('page', 0))
+
+    contribs, pages = paginate(contribs,
+                               len(contribs),
+                               page,
+                               size)
+    contribs = list(contribs)
+
+    return {'users': contribs,
+            'page': page,
+            'pages': pages}
