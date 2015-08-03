@@ -23,9 +23,7 @@ class NodeSerializer(JSONAPISerializer):
     tags = ser.SerializerMethodField(help_text='A dictionary that contains two lists of tags: '
                                                'user and system. Any tag that a user will define in the UI will be '
                                                'a user tag')
-    # children = ser.HyperlinkedRelatedField(source='nodes', read_only=True, view_name='nodes:node-children', lookup_field= 'pk', lookup_url_kwarg='_id')
-    # contributors = ser.HyperlinkedRelatedField(read_only=True, many=True, view_name='nodes:node-contributors', lookup_field='pk', lookup_url_kwarg='node_id')
-    # nodes = ser.HyperlinkedRelatedField(many=True, read_only=True, view_name='nodes:node-children', lookup_field='pk', lookup_url_kwarg='node_id')
+    # children = ser.HyperlinkedRelatedField(source='nodes', read_only=True, view_name='nodes:node-children', lookup_field= 'pk', lookup_url_kwarg='node_id')
     links = LinksField({
         'html': 'get_absolute_url',
         'children': {
