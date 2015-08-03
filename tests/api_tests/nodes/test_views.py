@@ -34,7 +34,8 @@ class TestWelcomeToApi(ApiTestCase):
         assert_equal(res.json['meta']['current_user'], None)
 
     def test_returns_current_user_info_when_logged_in(self):
-        res = self.app.get(self.url, auth=self.basic_auth)
+        res = self.app.get(self.url, auth=self.basic_auth, expect_errors=True)
+        print res
         assert_equal(res.status_code, 200)
         assert_equal(res.json['meta']['current_user']['data']['given_name'], self.user.given_name)
 
@@ -413,7 +414,8 @@ class TestNodeDetail(ApiTestCase):
         assert_equal(res.json['data']['category'], self.public_project.category)
 
     def test_return_public_project_details_logged_in(self):
-        res = self.app.get(self.public_url, auth=self.basic_auth)
+        res = self.app.get(self.public_url, auth=self.basic_auth, expect_errors=True)
+        print res
         assert_equal(res.status_code, 200)
         assert_equal(res.json['data']['title'], self.public_project.title)
         assert_equal(res.json['data']['description'], self.public_project.description)
