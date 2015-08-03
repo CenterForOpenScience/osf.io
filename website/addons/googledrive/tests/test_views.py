@@ -267,6 +267,7 @@ class TestGoogleDriveUtils(OsfTestCase):
         self.patcher.start()
 
     def tearDown(self):
+        super(TestGoogleDriveUtils, self).tearDown()
         self.patcher.stop()
 
     def test_serialize_settings_helper_returns_correct_urls(self):
