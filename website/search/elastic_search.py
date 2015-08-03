@@ -297,6 +297,8 @@ def update_node(node, index=None):
         es.index(index=index, doc_type=category, id=elastic_document_id, body=elastic_document, refresh=True)
 
 
+## FILE INDEXING ##
+
 @file_util.file_indexing
 @requires_search
 def update_file(file_node, index=None):
@@ -366,6 +368,9 @@ def delete_all_files(node, index=None):
     index = index or INDEX
     for file_node in file_util.collect_files(node):
         delete_file(file_node, index=index)
+
+
+## FILE INDEXING  ##
 
 
 def bulk_update_contributors(nodes, index=INDEX):

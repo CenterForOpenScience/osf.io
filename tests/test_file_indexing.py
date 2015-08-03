@@ -368,3 +368,29 @@ class TestWaterbutlerUpdateSearch(FileIndexingTestCase):
             wb_update_search(self.project, 'move', self.addon, self.file_node.name, other_project._id)
             delete_search_mock.assert_called_once_with(self.file_node)
             update_seach_mock.assert_called_once_with(self.file_node)
+
+
+class TestProjectPrivacyUpdatesSearch(FileIndexingTestCase):
+    def test_update_on_make_public(self):
+        with TRIGGER_CONTEXT as patches:
+
+            self.project.set_privacy('public')
+            update_all_mock = patches.get_named_mock('update_search_files')
+            delete_all_mock = patches.get_named_mock('delete_search_files')
+            assert_true(update_all_mock.called)
+            assert_false(delete_all_mock.called)
+
+    def test_delete_on_make_private(self):
+        with TRIGGER_CONTEXT as patches:
+            self.project.set_privacy('public')
+
+            update_all_mock = patches.get_named_mock('update_search_files')
+            update_all_mock.reset_mock()
+
+            delete_all_mock = patches.get_named_mock('delete_search_files')
+            delete_all_mock.reset_mock()
+
+            self.project.set_privacy('private')
+
+            assert_true(delete_all_mock.called)
+            assert_false(update_all_mock.called)

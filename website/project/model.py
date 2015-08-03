@@ -1535,7 +1535,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         """Update all files associated with node based on node's privacy.
         """
         from website.search import file_indexing
-        if not self.is_public:
+        if self.is_public:
             file_indexing.update_search_files(self)
 
     def delete_search_files(self):

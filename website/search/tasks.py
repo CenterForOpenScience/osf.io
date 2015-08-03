@@ -1,5 +1,3 @@
-import logging
-
 from framework.tasks import app
 from website.search import search
 
