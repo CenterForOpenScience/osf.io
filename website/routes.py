@@ -1426,7 +1426,7 @@ def make_url_map(app):
                 '/project/<pid>/node/<nid>/discussions/',
             ],
             'post',
-            project_views.discussions.enable,
+            project_views.discussions.enable_discussions,
             json_renderer,
         ),
 
@@ -1436,7 +1436,7 @@ def make_url_map(app):
                 '/project/<pid>/node/<nid>/discussions/',
             ],
             'delete',
-            project_views.discussions.disable,
+            project_views.discussions.disable_discussions,
             json_renderer,
         ),
 

@@ -28,14 +28,14 @@ from website.models import Node
 @must_be_valid_project
 @must_have_permission(ADMIN)
 @must_not_be_registration
-def enable(node, **kwargs):
+def enable_discussions(node, **kwargs):
     node.discussions.enable(save=True)
 
 
 @must_be_valid_project
 @must_have_permission(ADMIN)
 @must_not_be_registration
-def disable(node, **kwargs):
+def disable_discussions(node, **kwargs):
     node.discussions.disable(save=True)
 
 
