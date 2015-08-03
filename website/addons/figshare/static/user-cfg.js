@@ -1,5 +1,6 @@
 var $ = require('jquery');
 var bootbox = require('bootbox');
+var language = require('js/osfLanguage').Addons.figshare;
 
 $(document).ready(function() {
 
@@ -9,9 +10,8 @@ $(document).ready(function() {
 
         $('#figshareDelKey').on('click', function() {
             bootbox.confirm({
-                title: 'Remove access key?',
-                message: 'Are you sure you want to remove your figshare access key? This will ' +
-                        'revoke access to figshare for all projects you have authorized.',
+                title: 'Disconnect figshare Account?',
+                message: language.confirmDeauth,
                 callback: function(result) {
                     if(result) {
                         $.ajax({
@@ -23,6 +23,12 @@ $(document).ready(function() {
                                 window.location.reload();
                             }
                         });
+                    }
+                },
+                buttons:{
+                    confirm:{
+                        label:'Disconnect',
+                        className:'btn-danger'
                     }
                 }
             });

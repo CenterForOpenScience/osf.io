@@ -23,7 +23,9 @@ from website.archiver import (
     ARCHIVER_SUCCESS,
     ARCHIVER_FAILURE,
     ARCHIVER_NETWORK_ERROR,
-    ARCHIVER_SIZE_EXCEEDED,)
+    ARCHIVER_SIZE_EXCEEDED,
+    NO_ARCHIVE_LIMIT,
+)
 from website.archiver import utils as archiver_utils
 from website.app import *  # noqa
 from website.archiver import listeners
@@ -39,7 +41,7 @@ from website.addons.base import StorageAddonBase
 from website.util import api_url_for
 
 from tests import factories
-from tests.base import OsfTestCase, fake
+from tests.base import OsfTestCase
 
 
 SILENT_LOGGERS = (
@@ -264,6 +266,24 @@ class TestArchiverTasks(ArchiverTestCase):
         mock_archive_addon.assert_not_called()
 
     @use_fake_addons
+    @mock.patch('website.archiver.tasks.archive_addon.delay')
+    def test_archive_node_no_archive_size_limit(self, mock_archive_addon):
+        settings.MAX_ARCHIVE_SIZE = 100
+        self.archive_job.initiator.system_tags.append(NO_ARCHIVE_LIMIT)
+        self.archive_job.initiator.save()
+        with mock.patch.object(StorageAddonBase, '_get_file_tree') as mock_file_tree:
+            mock_file_tree.return_value = FILE_TREE
+            results = [stat_addon(addon, self.archive_job._id) for addon in ['osfstorage', 'dropbox']]
+        with mock.patch.object(celery, 'group') as mock_group:
+            archive_node(results, self.archive_job._id)
+        archive_dropbox_signature = archive_addon.si(
+            'dropbox',
+            self.archive_job._id,
+            results
+        )
+        assert(mock_group.called_with(archive_dropbox_signature))
+
+    @use_fake_addons
     @mock.patch('website.archiver.tasks.make_copy_request.delay')
     def test_archive_addon(self, mock_make_copy_request):
         result = archiver_utils.aggregate_file_tree_metadata('dropbox', FILE_TREE, self.user)
@@ -289,28 +309,6 @@ class TestArchiverTasks(ArchiverTestCase):
                 rename='Archive of DropBox',
             )
         ))
-
-    @httpretty.activate
-    def test_make_copy_request_20X(self):
-        def callback_OK(request, uri, headers):
-            return (200, headers, json.dumps({}))
-        self.dst.archive_job.update_target(
-            'dropbox',
-            ARCHIVER_INITIATED
-        )
-        url = 'http://' + fake.ipv4()
-        httpretty.register_uri(httpretty.POST,
-                               url,
-                               body=callback_OK,
-                               content_type='application/json')
-        with mock.patch.object(project_signals, 'archive_callback') as mock_callback:
-            make_copy_request(self.archive_job._id,
-                              url, {
-                                  'source': {
-                                      'provider': 'dropbox'
-                                  }
-                              })
-        assert(mock_callback.called_with(self.dst))
 
 class TestArchiverUtils(ArchiverTestCase):
 

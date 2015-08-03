@@ -15,7 +15,6 @@ from framework.flask import redirect  # VOL-aware redirect
 from framework.sessions import session
 from framework.exceptions import HTTPError
 from framework.auth.decorators import must_be_logged_in
-from framework.status import push_status_message as flash
 
 from website.util import api_url_for
 from website.util import web_url_for
@@ -96,9 +95,8 @@ def box_oauth_start(auth, **kwargs):
     if nid:
         session.data['box_auth_nid'] = nid
 
-    # If user has already authorized box, flash error message
+    # Handle if user has already authorized box
     if user.has_addon('box') and user.get_addon('box').has_auth:
-        flash('You have already authorized Box for this account', 'warning')
         return redirect(web_url_for('user_addons'))
 
     return redirect(get_auth_flow(csrf_token))
@@ -114,7 +112,6 @@ def box_oauth_finish(auth, **kwargs):
 
     # Handle request cancellations from Box's API
     if request.args.get('error'):
-        flash('Box authorization request cancelled.')
         if node:
             return redirect(node.web_url_for('node_setting'))
         return redirect(web_url_for('user_addons'))
@@ -152,8 +149,6 @@ def box_oauth_finish(auth, **kwargs):
 
     user_settings.save()
 
-    flash('Successfully authorized Box', 'success')
-
     if node:
         # Automatically use newly-created auth
         if node.has_addon('box'):
@@ -173,8 +168,7 @@ def box_oauth_delete_user(user_addon, auth, **kwargs):
 
 
 @must_be_logged_in
-@must_have_addon('box', 'user')
-def box_user_config_get(user_addon, auth, **kwargs):
+def box_user_config_get(auth, **kwargs):
     """View for getting a JSON representation of the logged-in user's
     Box user settings.
     """
@@ -184,19 +178,29 @@ def box_user_config_get(user_addon, auth, **kwargs):
     }
     valid_credentials = True
 
-    if user_addon.has_auth:
+    user_addon = auth.user.get_addon('box')
+
+    if user_addon and user_addon.has_auth:
         try:
             client = get_client_from_user_settings(user_addon)
             client.get_user_info()
         except BoxClientException:
             valid_credentials = False
 
+    username = ''
+    n_nodes_authorized = 0
+    user_has_auth = False
+    if user_addon:
+        username = user_addon.username
+        n_nodes_authorized = len(user_addon.nodes_authorized)
+        user_has_auth = user_addon.has_auth
+
     return {
         'result': {
             'urls': urls,
-            'boxName': user_addon.username,
-            'userHasAuth': user_addon.has_auth,
+            'boxName': username,
+            'userHasAuth': user_has_auth,
             'validCredentials': valid_credentials,
-            'nNodesAuthorized': len(user_addon.nodes_authorized),
+            'nNodesAuthorized': n_nodes_authorized,
         },
     }

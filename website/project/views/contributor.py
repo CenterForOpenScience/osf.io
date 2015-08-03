@@ -38,7 +38,7 @@ from website.project.decorators import (must_have_permission, must_be_valid_proj
 @must_be_valid_project(retractions_valid=True)
 def get_node_contributors_abbrev(auth, node, **kwargs):
     anonymous = has_anonymous_link(node, auth)
-
+    formatter = 'surname'
     max_count = kwargs.get('max_count', 3)
     if 'user_ids' in kwargs:
         users = [
@@ -59,19 +59,19 @@ def get_node_contributors_abbrev(auth, node, **kwargs):
     for index, user in enumerate(users[:max_count]):
 
         if index == max_count - 1 and len(users) > max_count:
-            separator = '&nbsp;&'
+            separator = ' &'
             others_count = str(n_contributors - 3)
         elif index == len(users) - 1:
             separator = ''
         elif index == len(users) - 2:
-            separator = '&nbsp&'
+            separator = ' &'
         else:
             separator = ','
+        contributor = user.get_summary(formatter)
+        contributor['user_id'] = user._primary_key
+        contributor['separator'] = separator
 
-        contributors.append({
-            'user_id': user._primary_key,
-            'separator': separator,
-        })
+        contributors.append(contributor)
 
     return {
         'contributors': contributors,
@@ -207,6 +207,12 @@ def project_before_remove_contributor(auth, node, **kwargs):
         if auth.user != contributor:
             raise HTTPError(http.FORBIDDEN)
 
+    if len(node.visible_contributor_ids) == 1 \
+            and node.visible_contributor_ids[0] == contributor._id:
+        raise HTTPError(http.FORBIDDEN, data={
+            'message_long': 'Must have at least one bibliographic contributor'
+        })
+
     prompts = node.callback(
         'before_remove_contributor', removed=contributor,
     )
@@ -234,15 +240,21 @@ def project_removecontributor(auth, node, **kwargs):
         if auth.user != contributor:
             raise HTTPError(http.FORBIDDEN)
 
+    if len(node.visible_contributor_ids) == 1 \
+            and node.visible_contributor_ids[0] == contributor._id:
+        raise HTTPError(http.FORBIDDEN, data={
+            'message_long': 'Must have at least one bibliographic contributor'
+        })
+
     outcome = node.remove_contributor(
         contributor=contributor, auth=auth,
     )
 
     if outcome:
         if auth.user == contributor:
-            status.push_status_message('Removed self from project', 'info')
+            status.push_status_message('Removed self from project', 'success')
             return {'redirectUrl': web_url_for('dashboard')}
-        status.push_status_message('Contributor removed', 'info')
+        status.push_status_message('Contributor removed', 'success')
         return {}
 
     raise HTTPError(
@@ -379,7 +391,7 @@ def project_manage_contributors(auth, node, **kwargs):
     if not node.is_contributor(auth.user):
         status.push_status_message(
             'You have removed yourself as a contributor from this project',
-            'info'
+            'success'
         )
         if node.is_public:
             return {'redirectUrl': node.url}
@@ -389,7 +401,7 @@ def project_manage_contributors(auth, node, **kwargs):
     if not node.has_permission(auth.user, ADMIN):
         status.push_status_message(
             'You have removed your administrative privileges for this project',
-            'info'
+            'success'
         )
     # Else stay on current page
     return {}
@@ -539,7 +551,7 @@ def claim_user_registered(auth, node, **kwargs):
         logout_url = web_url_for('auth_logout', redirect_url=request.url)
         data = {
             'message_short': 'Already a contributor',
-            'message_long': ('The logged-in user is already a contributor to this'
+            'message_long': ('The logged-in user is already a contributor to this '
                 'project. Would you like to <a href="{}">log out</a>?').format(logout_url)
         }
         raise HTTPError(http.BAD_REQUEST, data=data)

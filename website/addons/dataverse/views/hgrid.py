@@ -12,7 +12,6 @@ from website.util import rubeus
 
 def dataverse_hgrid_root(node_addon, auth, **kwargs):
     node = node_addon.owner
-    user_settings = node_addon.user_settings
 
     default_version = 'latest-published'
     version = 'latest-published' if not node.can_edit(auth) else default_version
@@ -29,7 +28,7 @@ def dataverse_hgrid_root(node_addon, auth, **kwargs):
     }
 
     try:
-        connection = connect_from_settings(user_settings)
+        connection = connect_from_settings(node_addon)
         dataverse = get_dataverse(connection, node_addon.dataverse_alias)
         dataset = get_dataset(dataverse, node_addon.dataset_doi)
     except SSLError:
@@ -54,7 +53,6 @@ def dataverse_hgrid_root(node_addon, auth, **kwargs):
 
     urls = {
         'publish': node.api_url_for('dataverse_publish_dataset'),
-        'publishBoth': node.api_url_for('dataverse_publish_both')
     }
 
     return [rubeus.build_addon_root(

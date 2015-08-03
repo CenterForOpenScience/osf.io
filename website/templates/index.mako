@@ -5,18 +5,7 @@
 <%def name="content_wrap()">
     <div class="watermarked">
             % if status:
-                <div id="alert-container">
-                % for message, css_class, dismissible in status:
-                      <div class='alert alert-block alert-${css_class} fade in alert-front text-center'>
-                        % if dismissible:
-                        <button type="button" class="close" data-dismiss="alert" aria-label="Close">
-                          <span aria-hidden="true">&times;</span>
-                        </button>
-                        % endif
-                        <p>${message}</p>
-                      </div>
-                % endfor
-                </div>
+                <%include file="alert.mako" args="extra_css='alert-front text-center'"/>
             % endif
             ${self.content()}
     </div><!-- end watermarked -->
@@ -27,10 +16,13 @@
     <!-- Main jumbotron for a primary marketing message or call to action -->
     <div id="home-hero">
       <div class="container text-center">
+        <div class="visible-xs-block visible-sm-block visible-md-block network-bg"></div>
         <h1><strong>Simplified</strong> scientific collaboration</h1>
         <h3>Powerful end-to-end support for your research.</h3>
 
-        <canvas id="demo-canvas"></canvas>
+        <div id="canvas-container">
+          <canvas id="demo-canvas"></canvas>
+        </div>
 
         <div id="logo" class="off">
           <div class="circle" id="circle-1"><span></span></div>
@@ -58,26 +50,26 @@
                         <div class="form-group" data-bind="css: {'has-error': fullName() && !fullName.isValid(), 'has-success': fullName() && fullName.isValid()}">
                               <label class="placeholder-replace" style="display:none">Full Name</label>
                               <input class="form-control" placeholder="Full Name" data-bind=" value: fullName, disable: submitted(), event: { blur: trim.bind($data, fullName)}">
-                              <p class="help-block signup-help" data-bind="validationMessage: fullName" style="display: none;"></p>
+                              <p class="help-block osf-box-lt" data-bind="validationMessage: fullName" style="display: none;"></p>
                           </div>
                           <div class="form-group" data-bind="css: {'has-error': email1() && !email1.isValid(), 'has-success': email1() && email1.isValid()}">
                               <label class="placeholder-replace" style="display:none">Contact Email</label>
                               <input class="form-control" placeholder="Contact Email" data-bind=" value: email1, disable: submitted(), event: { blur: trim.bind($data, email1)}">
-                              <p class="help-block signup-help" data-bind="validationMessage: email1" style="display: none;"></p>
+                              <p class="help-block osf-box-lt" data-bind="validationMessage: email1" style="display: none;"></p>
                           </div>
                           <div class="form-group" data-bind="css: {'has-error': email2() && !email2.isValid(),'has-success': email2() && email2.isValid()}">
                               <label class="placeholder-replace" style="display:none">Confirm Email</label>
                               <input class="form-control" placeholder="Confirm Email" data-bind="value: email2, disable: submitted(), event: { blur: trim.bind($data, email2)}">
-                              <p class="help-block signup-help" data-bind="validationMessage: email2" style="display: none;"></p>
+                              <p class="help-block osf-box-lt" data-bind="validationMessage: email2" style="display: none;"></p>
                           </div>
                           <div class="form-group" data-bind="css: {'has-error': password() && !password.isValid(), 'has-success': password() && password.isValid()}">
                               <label class="placeholder-replace" style="display:none">Password</label>
                               <input type="password" class="form-control" placeholder="Password (Must be 6 to 256 characters)" data-bind=" value: password, disable: submitted(), event: {blur: trim.bind($data, password)}">
-                                <p class="help-block signup-help" data-bind="validationMessage: password" style="display: none;"></p>
+                                <p class="help-block osf-box-lt" data-bind="validationMessage: password" style="display: none;"></p>
                           </div>
 
                           <!-- Flashed Messages -->
-                          <div class="help-block signup-help" >
+                          <div class="help-block osf-box-lt" >
                               <p data-bind="html: flashMessage, attr.class: flashMessageClass" class=""></p>
                           </div>
                           <div>
@@ -134,10 +126,12 @@
           </div>
         </div>
         <div class="col-md-6">
-          <div class="student-image">
-            <div class="quote">
-              <span class="main">“The OSF is a great way to collaborate and stay organized while still using your favorite external services."</span>
-              <span class="attrib"><strong>Kara Woo</strong> - Information Manager, Aquatic Ecology, Washington State</span>
+          <div class="student-wrap">
+            <div class="student-image">
+              <div class="quote">
+                <span class="main">“The OSF is a great way to collaborate and stay organized while still using your favorite external services."</span>
+                <span class="attrib"><strong>Kara Woo</strong> - Information Manager, Aquatic Ecology, Washington State</span>
+              </div>
             </div>
           </div>
         </div>
@@ -253,7 +247,7 @@
         </div>
 
         <div class="row">
-          <div class="col-xs-3">
+          <div class="col-xs-4 col-md-3">
             <img src="/static/img/front-page/user2.jpg" class="img-circle img-responsive" alt="Richard Ball" />
           </div>
           <div class="col-xs-8">
@@ -315,6 +309,12 @@
 
 <%def name="footer()">
 
+</%def>
+
+<%def name="stylesheets()">
+    ${parent.stylesheets()}
+    <link rel="stylesheet" href="/static/css/pages/home-page.css">
+    <link rel="stylesheet" href="/static/css/front-page.css">
 </%def>
 
 <%def name="javascript_bottom()">

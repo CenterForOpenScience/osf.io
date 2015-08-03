@@ -21,17 +21,17 @@
 <div class="row">
 
   <div id="file-navigation" class="panel-toggle col-sm-3 file-tree">
-    <div class="osf-panel osf-panel-hide osf-panel-flex reset-height">
-      <div class="osf-panel-header osf-panel-header-flex" style="display:none">
+    <div class="osf-panel panel panel-default osf-panel-hide osf-panel-flex reset-height">
+      <div class="panel-heading clearfix osf-panel-header-flex" style="display:none">
         <div id="filesSearch"></div>
         <div id="toggleIcon" class="pull-right">
           <div class="panel-collapse"><i class="fa fa-angle-left"></i></div>
         </div>
       </div>
 
-      <div class="osf-panel-body osf-panel-body-flex file-page reset-height">
+      <div class="osf-panel-body-flex file-page reset-height">
         <div id="grid">
-          <div class="fangorn-loading">
+          <div class="spinner-loading-wrapper">
             <div class="logo-spin text-center"><img src="/static/img/logo_spin.png" alt="loader"> </div>
             <p class="m-t-sm fg-load-message"> Loading files...  </p>
           </div>
@@ -40,9 +40,8 @@
     </div>
 
     <!-- Menu toggle closed -->
-    <div class="osf-panel osf-panel-show text-center reset-height"  style="display: none">
-      <div class="osf-panel-header">
-        <i class="fa fa-file"></i>
+    <div class="panel panel-default osf-panel-show text-center reset-height pointer"  style="display: none">
+      <div class="panel-heading">
         <i class="fa fa-angle-right"></i>
       </div>
     </div>
@@ -51,9 +50,11 @@
   <div id="fileViewPanelLeft" class="col-sm-9 panel-expand">
     <div class="row">
       <div id="mfrIframeParent" class="col-sm-9">
+        <div id="externalView"></div>
         <div id="mfrIframe" class="mfr mfr-file"></div>
       </div>
 
+    <!-- This section is built by mithril in revisions.js -->
       <div class="file-view-panels col-sm-3"></div>
     </div>
   </div>
@@ -76,6 +77,9 @@
           but not published until you click the "Save" button.
         </p>
       </div>
+      <div class="modal-footer">
+          <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+      </div>
     </div>
   </div>
 </div>
@@ -92,6 +96,9 @@
           This page is currently attempting to connect to collaborative file editing. You may continue to make edits.
           <strong>Changes will not be saved until you press the "Save" button.</strong>
         </p>
+      </div>
+      <div class="modal-footer">
+          <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
       </div>
     </div>
   </div>
@@ -110,6 +117,9 @@
           <strong>Changes will not be saved until you press the "Save" button.</strong>
         </p>
       </div>
+      <div class="modal-footer">
+          <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+      </div>
     </div>
   </div>
 </div>
@@ -126,6 +136,9 @@
           Your browser does not support collaborative editing. You may continue to make edits.
           <strong>Changes will not be saved until you press the "Save" button.</strong>
         </p>
+      </div>
+      <div class="modal-footer">
+          <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
       </div>
     </div>
   </div>
@@ -150,12 +163,14 @@
             size: ${size},
             extra: ${extra},
             error: '${error | js_str}',
+            privateRepo: ${private | sjson, n},
             name: '${file_name | js_str}',
             path: '${file_path | js_str}',
             provider: '${provider | js_str}',
             safeName: '${file_name | h,js_str}',
             materializedPath: '${materialized_path | js_str}',
           urls: {
+              external: '${(urls['external'] or '') | js_str}',
         %if error is None:
               render: '${urls['render']}',
         %endif
@@ -182,6 +197,7 @@
       });
     </script>
 
+    <link href="/static/css/pages/file-view-page.css" rel="stylesheet">
     <link href="${urls['mfr']}/static/css/mfr.css" media="all" rel="stylesheet" />
     <script src="${urls['mfr']}/static/js/mfr.js"></script>
 
