@@ -791,7 +791,7 @@ def _view_project(node, auth, primary=False):
         },
         'discussions': {
             'enabled': discussions.is_enabled if discussions else False,
-            'user_subscribed': user.email in discussions.subscriptions if discussions else False
+            'user_subscribed': (user.email if user else '') in discussions.subscriptions if discussions else False
         },
         'badges': _get_badge(user),
         # TODO: Namespace with nested dicts
