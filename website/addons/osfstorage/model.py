@@ -3,6 +3,7 @@ from __future__ import unicode_literals
 import os
 import bson
 import logging
+
 import furl
 
 from modularodm import fields, Q
@@ -19,7 +20,9 @@ from website.addons.osfstorage import utils
 from website.addons.osfstorage import errors
 from website.addons.osfstorage import settings
 
+
 logger = logging.getLogger(__name__)
+
 
 class OsfStorageNodeSettings(StorageAddonBase, AddonNodeSettingsBase):
     complete = True
@@ -349,7 +352,6 @@ class OsfStorageFileNode(StoredObject):
         raise errors.VersionNotFoundError
 
     def delete(self, recurse=True):
-        # This shouldn't be failing silently with a simple return
         if self.renter is not None:
             return False
         trashed = OsfStorageTrashedFileNode()

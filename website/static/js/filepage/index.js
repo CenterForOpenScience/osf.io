@@ -59,7 +59,7 @@ var FileViewPage = {
             delete: waterbutler.buildDeleteUrl(self.file.path, self.file.provider, self.node.id),
             metadata: waterbutler.buildMetadataUrl(self.file.path, self.file.provider, self.node.id),
             revisions: waterbutler.buildRevisionsUrl(self.file.path, self.file.provider, self.node.id),
-            content: waterbutler.buildDownloadUrl(self.file.path, self.file.provider, self.node.id, {accept_url: false, mode: 'render'}),
+            content: waterbutler.buildDownloadUrl(self.file.path, self.file.provider, self.node.id, {accept_url: false, mode: 'render'})
         });
 
         if ($osf.urlParams().branch) {
@@ -72,7 +72,7 @@ var FileViewPage = {
                 title: 'Delete file?',
                 message: '<p class="overflow">' +
                         'Are you sure you want to delete <strong>' +
-                       self.file.safeName + '</strong>?' +
+                        self.file.safeName + '</strong>?' +
                     '</p>',
                 callback: function(confirm) {
                     if (!confirm) {
