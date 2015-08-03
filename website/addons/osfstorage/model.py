@@ -15,10 +15,12 @@ from framework.mongo import StoredObject
 from framework.mongo.utils import unique_on
 from framework.analytics import get_basic_counters
 
-from website.addons.base import AddonNodeSettingsBase, GuidFile, StorageAddonBase
+from website.files import utils as files_utils
+from website.files.models import OsfStorageFolder
 from website.addons.osfstorage import utils
 from website.addons.osfstorage import errors
 from website.addons.osfstorage import settings
+from website.addons.base import AddonNodeSettingsBase, GuidFile, StorageAddonBase
 
 
 logger = logging.getLogger(__name__)
@@ -28,16 +30,14 @@ class OsfStorageNodeSettings(StorageAddonBase, AddonNodeSettingsBase):
     complete = True
     has_auth = True
 
-    root_node = fields.ForeignField('OsfStorageFileNode')
-    file_tree = fields.ForeignField('OsfStorageFileTree')
-
-    # Temporary field to mark that a record has been migrated by the
-    # migrate_from_oldels scripts
-    _migrated_from_old_models = fields.BooleanField(default=False)
+    root_node = fields.ForeignField('StoredFileNode')
 
     @property
     def folder_name(self):
         return self.root_node.name
+
+    def get_root(self):
+        return self.root_node.wrapped()
 
     def on_add(self):
         if self.root_node:
@@ -48,9 +48,9 @@ class OsfStorageNodeSettings(StorageAddonBase, AddonNodeSettingsBase):
         # in the database and thus odm cannot attach foreign fields to it
         self.save()
         # Note: The "root" node will always be "named" empty string
-        root = OsfStorageFileNode(name='', kind='folder', node_settings=self)
+        root = OsfStorageFolder(name='', node=self.owner)
         root.save()
-        self.root_node = root
+        self.root_node = root.stored_object
         self.save()
 
     def find_or_create_file_guid(self, path):
@@ -63,7 +63,7 @@ class OsfStorageNodeSettings(StorageAddonBase, AddonNodeSettingsBase):
         if not self.root_node:
             self.on_add()
 
-        clone.root_node = utils.copy_files(self.root_node, clone)
+        clone.root_node = files_utils.copy_files(self.get_root(), clone.owner).stored_object
         clone.save()
 
         return clone, None
