@@ -5,6 +5,7 @@ var $ = require('jquery');
 require('../../vendor/bower_components/jquery.tagsinput/jquery.tagsinput.css');
 require('jquery-tagsinput');
 require('bootstrap-editable');
+require('js/osfToggleHeight');
 
 var m = require('mithril');
 var Fangorn = require('js/fangorn');
@@ -20,7 +21,6 @@ var CitationList = require('js/citationList');
 var CitationWidget = require('js/citationWidget');
 var mathrender = require('js/mathrender');
 var md = require('js/markdown').full;
-
 
 var ctx = window.contextVars;
 var nodeApiUrl = ctx.node.urls.api;
@@ -51,6 +51,8 @@ if (!ctx.node.anonymous && !ctx.node.isRetracted) {
     new CitationWidget('#citationStyleInput', '#citationText');
 }
 $(document).ready(function () {
+
+    $('#contributors-list').osfToggleHeight();
 
     if (!ctx.node.isRetracted) {
         // Treebeard Files view
