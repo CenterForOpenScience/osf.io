@@ -16,17 +16,10 @@
 ##    </div>
 ##</div>
 
-<div class="row">
+<div id="profileSettings" class="row">
 
-    <div class="col-sm-3">
-        <div class="panel panel-default">
-            <ul class="nav nav-stacked nav-pills">
-                <li><a href="#">Profile Information</a></li>
-                <li><a href="${ web_url_for('user_account') }">Account Settings</a></li>
-                <li><a href="${ web_url_for('user_addons') }">Configure Add-ons</a></li>
-                <li><a href="${ web_url_for('user_notifications') }">Notifications</a></li>
-            </ul>
-        </div><!-- end sidebar -->
+    <div class="col-sm-3 affix-parent">
+      <%include file="include/profile/settings_navpanel.mako" args="current_page='profile'"/>
     </div>
 
     <div class="col-sm-9 col-md-7">
@@ -87,17 +80,17 @@
     ## modules. Not sure if this is a good idea.
     window.contextVars = window.contextVars || {};
     window.contextVars.nameUrls = {
-        crud: '${ api_url_for('serialize_names') }',
-        impute: '${ api_url_for('impute_names') }'
+        crud: ${ api_url_for('serialize_names') | sjson, n },
+        impute: ${ api_url_for('impute_names') | sjson, n }
     };
     window.contextVars.socialUrls = {
-        crud: '${ api_url_for('serialize_social') }'
+        crud: ${ api_url_for('serialize_social') | sjson, n }
     };
     window.contextVars.jobsUrls = {
-        crud: '${ api_url_for('serialize_jobs') }'
+        crud: ${ api_url_for('serialize_jobs') | sjson, n }
     };
     window.contextVars.schoolsUrls = {
-        crud: '${ api_url_for('serialize_schools') }'
+        crud: ${ api_url_for('serialize_schools') | sjson, n }
     };
 </script>
 <script src=${"/static/public/js/profile-settings-page.js" | webpack_asset}></script>

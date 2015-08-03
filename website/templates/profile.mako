@@ -2,7 +2,7 @@
 <%def name="title()">${profile["fullname"]}</%def>
 <%def name="stylesheets()">
    ${parent.stylesheets()}
-   <link rel="stylesheet" href='/static/css/pages/profile-page.css'>;
+   <link rel="stylesheet" href='/static/css/pages/profile-page.css'>
 </%def>
 
 <%def name="javascript_bottom()">
@@ -22,7 +22,7 @@
 
 <div class="page-header">
     <div class="profile-fullname">
-        <span class="m-r-sm">
+        <span>
             % if user['is_profile']:
                 <a href="#changeAvatarModal" data-toggle="modal"><img class='profile-gravatar' src="${profile['gravatar_url']}"
                         rel="tooltip" title="Click to change avatar"/></a>
@@ -30,7 +30,7 @@
                 <img class='profile-gravatar' src="${profile['gravatar_url']}"/>
             % endif
         </span>
-        <span id="profileFullname" class="h1 overflow ">
+        <span id="profileFullname" class="h1 overflow m-l-sm">
             ${profile["fullname"]}
         </span>
         <span class="edit-profile-settings">
@@ -137,7 +137,6 @@
 ##        </div>
 ##    </div>
 ##</div>
-<% import json %>
 <hr />
 <div class="row">
     <div class="col-sm-6">
@@ -150,7 +149,7 @@
                    "tpl" : "util/render_nodes.mako",
                    "uri" : "/api/v1/profile/${profile["id"]}/public_projects/",
                    "replace" : true,
-                   "kwargs" : {"sortable" : true, "user": ${json.dumps(user)}, "pluralized_node_type": "projects", "skipBindings": true}
+                   "kwargs" : {"sortable" : true, "user": ${ user | sjson, n }, "pluralized_node_type": "projects", "skipBindings": true}
                  }'></div>
             </div>
         </div>
@@ -165,7 +164,7 @@
                   "tpl" : "util/render_nodes.mako",
                   "uri" : "/api/v1/profile/${profile["id"]}/public_components/",
                   "replace" : true,
-                  "kwargs" : {"sortable" : true,  "user": ${json.dumps(user)}, "pluralized_node_type": "components"}
+                  "kwargs" : {"sortable" : true,  "user": ${ user | sjson, n }, "pluralized_node_type": "components"}
               }'></div>
             </div>
         </div>
@@ -179,13 +178,13 @@
 <script type="text/javascript">
   (function() {
       var socialUrls = {
-          crud: '${ api_url_for('serialize_social', uid=profile['id']) }'
+          crud: ${ api_url_for('serialize_social', uid=profile['id']) | sjson, n }
       };
       var jobsUrls = {
-          crud: '${ api_url_for('serialize_jobs', uid=profile['id']) }'
+          crud: ${ api_url_for('serialize_jobs', uid=profile['id']) | sjson, n }
       };
       var schoolsUrls = {
-          crud: '${ api_url_for('serialize_schools', uid=profile['id']) }'
+          crud: ${ api_url_for('serialize_schools', uid=profile['id']) | sjson, n }
       };
 
       window.contextVars = $.extend(true, {}, window.contextVars, {

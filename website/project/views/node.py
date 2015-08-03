@@ -182,7 +182,7 @@ def project_new_node(auth, node, **kwargs):
     user = auth.user
     if form.validate():
         try:
-            node = new_node(
+            new_component = new_node(
                 title=strip_html(form.title.data),
                 user=user,
                 category=form.category.data,
@@ -196,13 +196,13 @@ def project_new_node(auth, node, **kwargs):
 
         message = (
             'Your component was created successfully. You can keep working on the component page below, '
-            'or return to the <u><a href="{url}">Project Page</a></u>.'
+            'or return to the <u><a href="{url}">project page</a></u>.'
         ).format(url=node.url)
         status.push_status_message(message, 'info')
 
         return {
             'status': 'success',
-        }, 201, None, node.url
+        }, 201, None, new_component.url
     else:
         status.push_errors_to_status(form.errors)
     raise HTTPError(http.BAD_REQUEST, redirect_url=node.url)
@@ -285,6 +285,7 @@ def node_setting(auth, node, **kwargs):
             # inject the MakoTemplateLookup into the template context
             # TODO inject only short_name and render fully client side
             config['template_lookup'] = addon.config.template_lookup
+            config['addon_icon_url'] = addon.config.icon_url
             addon_enabled_settings.append(config)
     addon_enabled_settings = sorted(addon_enabled_settings, key=lambda addon: addon['addon_full_name'].lower())
 
@@ -594,7 +595,7 @@ def component_remove(auth, node, **kwargs):
     message = '{} deleted'.format(
         node.project_or_component.capitalize()
     )
-    status.push_status_message(message)
+    status.push_status_message(message, 'success')
     parent = node.parent_node
     if parent and parent.can_view(auth):
         redirect_url = node.node__parent[0].url
@@ -698,7 +699,7 @@ def _view_project(node, auth, primary=False):
         for addon in node.get_addons():
             messages = addon.before_page_load(node, user) or []
             for message in messages:
-                status.push_status_message(message, dismissible=False)
+                status.push_status_message(message, 'info', dismissible=False)
     data = {
         'node': {
             'id': node._primary_key,

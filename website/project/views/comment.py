@@ -252,7 +252,7 @@ def delete_comment(auth, **kwargs):
 @must_be_contributor_or_public
 def undelete_comment(auth, **kwargs):
 
-    cid = kwargs.get('comment')
+    cid = kwargs.get('cid')
     comment = get_comment(cid, auth, owner=True)
     comment.undelete(auth=auth, save=True)
 

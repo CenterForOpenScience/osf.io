@@ -2,12 +2,13 @@
     <span data-owner="user"></span>
     <div>
         <h4 class="addon-title">
+          <img class="addon-icon" src="${addon_icon_url}"></img>
             Amazon S3
 
             <small class="authorized-by">
                 % if has_auth:
-                    authorized
-                    <a id="s3RemoveAccess" class="text-danger pull-right addon-auth">Delete Credentials</a>
+                    authorized by <em>${name}</em>
+                    <a id="s3RemoveAccess" class="text-danger pull-right addon-auth">Disconnect Account</a>
                 % endif
             </small>
 
