@@ -555,38 +555,44 @@ class TestDeleteHook(HookTestCase):
         assert_equal(resp.status_code, 400)
 
     def test_attempt_delete_rented_file(self):
-        url = self.project.api_url_for('osfstorage_rent')
-        self.app.get(url, auth=self.auth)
+        file = self.root_node.append_file('Newfile')
+        view_kwargs = {'fid': file._id}
+        url = self.project.api_url_for('osfstorage_rent', **view_kwargs)
+        self.app.post_json(url, auth=self.user.auth)
 
-        res = self.delete()
+        res = self.delete(file, expect_errors=True)
         assert_equal(res.status_code, 405)
 
-class TestFileRenting(StorageTestCase):
+class TestFileRenting(HookTestCase):
 
-    def test_file_rent(self):
-        url = self.project.api_url_for('osfstorage_rent')
-        res = self.app.get(url, auth=self.auth)
+    def setUp(self):
+        super(TestFileRenting, self).setUp()
+        self.root_node = self.node_settings.root_node
+        self.file = self.root_node.append_file('Newfile2')
+        self.view_kwargs = {'fid': self.file._id}
 
-        assert_equal(res.status_code, 200)
-        assert_equal(res.json()['status'], 'success')
+    def test_file_rent_and_return(self):
+        url = self.project.api_url_for('osfstorage_rent', **self.view_kwargs)
+        resp = self.app.post_json(url, auth=self.user.auth)
 
-    def test_file_return(self):
-        url = self.project.api_url_for('osfstorage_return')
-        res = self.app.get(url, auth=self.auth)
+        assert_equal(resp.status_code, 200)
+        assert_equal(resp.json['status'], 'success')
 
-        assert_equal(res.status_code, 200)
-        assert_equal(res.json()['status'], 'success')
+        url = self.project.api_url_for('osfstorage_return', **self.view_kwargs)
+        resp = self.app.post_json(url, auth=self.user.auth)
 
-    def test_rent_all(self):
+        assert_equal(resp.status_code, 200)
+        assert_equal(resp.json['status'], 'success')
+
+    def test_rent_and_return_all(self):
         url = self.project.api_url_for('osfstorage_rent_all')
-        res = self.app.get(url, auth=self.auth)
+        resp = self.app.post_json(url, auth=self.user.auth)
 
-        assert_equal(res.status_code, 200)
-        assert_equal(res.json()['status'], 'success')
+        assert_equal(resp.status_code, 200)
+        assert_equal(resp.json['status'], 'success')
 
-    def test_return_all(self):
         url = self.project.api_url_for('osfstorage_return_all')
-        res = self.app.get(url, auth=self.auth)
+        resp = self.app.post_json(url, auth=self.user.auth)
 
-        assert_equal(res.status_code, 200)
-        assert_equal(res.json()['status'], 'success')
+        assert_equal(resp.status_code, 200)
+        assert_equal(resp.json['status'], 'success')

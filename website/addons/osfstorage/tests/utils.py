@@ -2,7 +2,7 @@
 # encoding: utf-8
 
 from tests.base import OsfTestCase
-from tests.factories import ProjectFactory
+from tests.factories import ProjectFactory, AuthUserFactory
 
 import collections
 
@@ -36,8 +36,8 @@ class StorageTestCase(OsfTestCase):
     def setUp(self):
         super(StorageTestCase, self).setUp()
 
-        self.project = ProjectFactory()
-        self.user = self.project.creator
+        self.user = AuthUserFactory()
+        self.project = ProjectFactory(creator=self.user)
         self.node_settings = self.project.get_addon('osfstorage')
         self.auth_obj = Auth(user=self.project.creator)
 

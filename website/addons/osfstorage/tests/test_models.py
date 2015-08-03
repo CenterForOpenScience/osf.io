@@ -283,8 +283,9 @@ class TestOsfstorageFileNode(StorageTestCase):
         assert_equal(moved.parent, move_to)
 
     def test_rent(self):
+        name_user = self.user._id
         self.node_settings.root_node.rent(self.user)
-        assert_equal('9kfw2', self.node_settings.root_node.rented)
+        assert_equal(name_user, self.node_settings.root_node.rented)
 
     def test_return_rent(self):
         self.node_settings.root_node.return_rent()
