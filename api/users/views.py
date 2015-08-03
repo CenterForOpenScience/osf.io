@@ -60,7 +60,7 @@ class UserDetail(generics.RetrieveAPIView, UserMixin):
         return self.get_user()
 
 
-class UserNodes(generics.ListAPIView, UserMixin, ODMFilterMixin):
+class UserNodesList(generics.ListAPIView, UserMixin, ODMFilterMixin):
     """Nodes belonging to a user.
 
     Return a list of nodes that the user contributes to. """
