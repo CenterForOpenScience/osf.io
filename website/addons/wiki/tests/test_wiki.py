@@ -17,8 +17,8 @@ from tests.factories import (
 )
 
 from website.addons.wiki import settings
+from website.addons.wiki import views
 from website.addons.wiki.exceptions import InvalidVersionError
-from website.addons.wiki.views import _serialize_wiki_toc, _get_wiki_web_urls, _get_wiki_api_urls
 from website.addons.wiki.model import NodeWikiPage, render_content
 from website.addons.wiki.utils import (
     get_sharejs_uuid, generate_private_uuid, share_db, delete_share_doc,
@@ -148,36 +148,6 @@ class TestWikiViews(OsfTestCase):
         res = self.app.get(url)
         assert_equal(res.status_code, 200)
 
-    def test_serialize_wiki_toc(self):
-        project = ProjectFactory()
-        auth = Auth(project.creator)
-        NodeFactory(parent=project, creator=project.creator)
-        no_wiki = NodeFactory(parent=project, creator=project.creator)
-        project.save()
-
-        serialized = _serialize_wiki_toc(project, auth=auth)
-        assert_equal(len(serialized), 2)
-        no_wiki.delete_addon('wiki', auth=auth)
-        serialized = _serialize_wiki_toc(project, auth=auth)
-        assert_equal(len(serialized), 1)
-
-    def test_get_wiki_url_pointer_component(self):
-        """Regression test for issues
-        https://github.com/CenterForOpenScience/osf/issues/363 and
-        https://github.com/CenterForOpenScience/openscienceframework.org/issues/574
-
-        """
-        user = UserFactory()
-        pointed_node = NodeFactory(creator=user)
-        project = ProjectFactory(creator=user)
-        auth = Auth(user=user)
-        project.add_pointer(pointed_node, auth=auth, save=True)
-
-        serialized = _serialize_wiki_toc(project, auth)
-        assert_equal(
-            serialized[0]['url'],
-            pointed_node.web_url_for('project_wiki_view', wname='home', _guid=True)
-        )
 
     def test_project_wiki_edit_post(self):
         self.project.update_node_wiki(
@@ -317,6 +287,21 @@ class TestWikiViews(OsfTestCase):
         url = self.project.api_url_for('project_wiki_validate_name', wname='Capslock')
         res = self.app.get(url, auth=self.user.auth)
         assert_equal(res.status_code, 200)
+
+    def test_wiki_validate_name_creates_blank_page(self):
+        url = self.project.api_url_for('project_wiki_validate_name', wname='newpage', auth=self.consolidate_auth)
+        res = self.app.get(url, auth=self.user.auth)
+        self.project.reload()
+        assert_in('newpage', self.project.wiki_pages_current)
+
+    def test_wiki_validate_name_collision_doesnt_clear(self):
+        self.project.update_node_wiki('oldpage', 'some text', self.consolidate_auth)
+        url = self.project.api_url_for('project_wiki_validate_name', wname='oldpage', auth=self.consolidate_auth)
+        res = self.app.get(url, auth=self.user.auth, expect_errors=True)
+        assert_equal(res.status_code, 409)
+        url = self.project.api_url_for('wiki_page_content', wname='oldpage', auth=self.consolidate_auth)
+        res = self.app.get(url, auth=self.user.auth)
+        assert_equal(res.json['wiki_content'], 'some text')
 
     def test_wiki_validate_name_cannot_create_home(self):
         url = self.project.api_url_for('project_wiki_validate_name', wname='home')
@@ -463,14 +448,14 @@ class TestViewHelpers(OsfTestCase):
         self.project.update_node_wiki(self.wname, 'some content', Auth(self.project.creator))
 
     def test_get_wiki_web_urls(self):
-        urls = _get_wiki_web_urls(self.project, self.wname)
+        urls = views._get_wiki_web_urls(self.project, self.wname)
         assert_equal(urls['base'], self.project.web_url_for('project_wiki_home', _guid=True))
         assert_equal(urls['edit'], self.project.web_url_for('project_wiki_view', wname=self.wname, _guid=True))
         assert_equal(urls['home'], self.project.web_url_for('project_wiki_home', _guid=True))
         assert_equal(urls['page'], self.project.web_url_for('project_wiki_view', wname=self.wname, _guid=True))
 
     def test_get_wiki_api_urls(self):
-        urls = _get_wiki_api_urls(self.project, self.wname)
+        urls = views._get_wiki_api_urls(self.project, self.wname)
         assert_equal(urls['base'], self.project.api_url_for('project_wiki_home'))
         assert_equal(urls['delete'], self.project.api_url_for('project_wiki_delete', wname=self.wname))
         assert_equal(urls['rename'], self.project.api_url_for('project_wiki_rename', wname=self.wname))
@@ -1104,3 +1089,123 @@ class TestWikiUtils(OsfTestCase):
         with assert_raises(InvalidVersionError):
             format_wiki_version('nonsense', 5, True)
 
+
+class TestWikiMenu(OsfTestCase):
+
+    def setUp(self):
+        super(TestWikiMenu, self).setUp()
+        self.user = UserFactory()
+        self.project = ProjectFactory(creator=self.user, is_public=True)
+        self.component = NodeFactory(creator=self.user, parent=self.project, is_public=True)
+        self.consolidate_auth = Auth(user=self.project.creator)
+        self.non_contributor = UserFactory()
+
+    def test_format_home_wiki_page_no_content(self):
+        data = views.format_home_wiki_page(self.project)
+        expected = {
+            'page': {
+                'url': self.project.web_url_for('project_wiki_home'),
+                'name': 'Home',
+                'id': 'None',
+            }
+        }
+        assert_equal(data, expected)
+
+    def test_format_project_wiki_pages_contributor(self):
+        self.project.update_node_wiki('home', 'content here', self.consolidate_auth)
+        self.project.update_node_wiki('zoo', 'koala', self.consolidate_auth)
+        home_page = self.project.get_wiki_page(name='home')
+        zoo_page = self.project.get_wiki_page(name='zoo')
+        data = views.format_project_wiki_pages(self.project, self.consolidate_auth)
+        expected = [
+            {
+                'page': {
+                    'url': self.project.web_url_for('project_wiki_view', wname='home', _guid=True),
+                    'name': 'Home',
+                    'id': home_page._primary_key,
+                }
+            },
+            {
+                'page': {
+                    'url': self.project.web_url_for('project_wiki_view', wname='zoo', _guid=True),
+                    'name': 'zoo',
+                    'id': zoo_page._primary_key,
+                }
+            }
+        ]
+        assert_equal(data, expected)
+
+    def test_format_project_wiki_pages_no_content_non_contributor(self):
+        self.project.update_node_wiki('home', 'content here', self.consolidate_auth)
+        self.project.update_node_wiki('zoo', '', self.consolidate_auth)
+        home_page = self.project.get_wiki_page(name='home')
+        data = views.format_project_wiki_pages(self.project, auth=Auth(self.non_contributor))
+        expected = [
+            {
+                'page': {
+                    'url': self.project.web_url_for('project_wiki_view', wname='home', _guid=True),
+                    'name': 'Home',
+                    'id': home_page._primary_key,
+                }
+            }
+        ]
+        assert_equal(data, expected)
+
+    def test_format_component_wiki_pages_contributor(self):
+        self.component.update_node_wiki('home', 'home content', self.consolidate_auth)
+        self.component.update_node_wiki('zoo', 'koala', self.consolidate_auth)
+        zoo_page = self.component.get_wiki_page(name='zoo')
+        expected = [
+            {
+                'page': {
+                    'name': 'The meaning of life',
+                    'url': self.component.web_url_for('project_wiki_view', wname='home', _guid=True),
+                },
+                'children': [
+                    {
+                        'page': {
+                            'url': self.component.web_url_for('project_wiki_view', wname='home', _guid=True),
+                            'name': 'Home',
+                            'id': self.component._primary_key,
+                        }
+                    },
+                    {
+                        'page': {
+                            'url': self.component.web_url_for('project_wiki_view', wname='zoo', _guid=True),
+                            'name': 'zoo',
+                            'id': zoo_page._primary_key,
+                        },
+                    }
+                ],
+                'kind': 'component',
+                'category': self.component.category,
+                'pointer': False,
+            }
+        ]
+        data = views.format_component_wiki_pages(node=self.project, auth=self.consolidate_auth)
+        assert_equal(data, expected)
+
+    def test_format_component_wiki_pages_no_content_non_contributor(self):
+        data = views.format_component_wiki_pages(node=self.project, auth=Auth(self.non_contributor))
+        expected = []
+        assert_equal(data, expected)
+
+    def test_project_wiki_grid_data(self):
+        self.project.update_node_wiki('home', 'project content', self.consolidate_auth)
+        self.component.update_node_wiki('home', 'component content', self.consolidate_auth)
+        data = views.project_wiki_grid_data(auth=self.consolidate_auth, wname='home', node=self.project)
+        expected = [
+            {
+                'title': 'Project Wiki Pages',
+                'kind': 'folder',
+                'type': 'heading',
+                'children': views.format_project_wiki_pages(node=self.project, auth=self.consolidate_auth),
+            },
+            {
+                'title': 'Component Wiki Pages',
+                'kind': 'folder',
+                'type': 'heading',
+                'children': views.format_component_wiki_pages(node=self.project, auth=self.consolidate_auth)
+            }
+        ]
+        assert_equal(data, expected)

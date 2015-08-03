@@ -137,7 +137,7 @@ ko.bindingHandlers.projectSearch = {
         }
         if (Array.isArray(nodesOrURL)) {
             var nodes = params.data;
-            // Compute relevant URLs for each search result
+            // Compute relevant URLs for each search result.
             initTypeahead(element, nodes, viewModel, params);
         } else if (typeof nodesOrURL === 'string') { // params.data is a URL
             var url = nodesOrURL;
@@ -183,6 +183,7 @@ function ProjectSearchViewModel(params) {
     self.showComponents = ko.observable(self.enableComponents);
     self.selectedProject = ko.observable(null);
     self.selectedComponent = ko.observable(null);
+    self.btnClass = params.btnClass || 'btn btn-primary pull-right';
     // The current user input. we store these so that we can show an error message
     // if the user clicks "Submit" when their selection isn't complete
     self.projectInput = ko.observable('');

@@ -61,7 +61,7 @@
                                 </thead>
                                 <tbody data-bind="foreach:{data:results, as: 'contributor', afterRender:addTips}">
                                     <tr data-bind="if:!($root.selected($data))">
-                                        <td style="padding-right: 10px;">
+                                        <td class="p-r-sm osf-icon-td" >
                                             <a
                                                     class="btn btn-success contrib-button btn-mini"
                                                     data-bind="click:$root.add, tooltip: {title: 'Add contributor'}"
@@ -69,7 +69,7 @@
                                         </td>
                                         <td>
                                             <!-- height and width are explicitly specified for faster rendering -->
-                                            <img data-bind="attr: {src: contributor.gravatar_url}" height=40 width=40 />
+                                            <img data-bind="attr: {src: contributor.gravatar_url}" height=35 width=35 />
                                         </td>
                                         <td width="75%">
                                             <a data-bind = "attr: {href: contributor.profile_url}" target="_blank">
@@ -148,14 +148,14 @@
                                 </thead>
                                 <tbody data-bind="sortable: {data: selection, as: 'contributor', afterRender: makeAfterRender(), options: {containment: 'parent'}}">
                                     <tr>
-                                        <td style="padding-right: 10px;">
+                                        <td class="p-r-sm" class="osf-icon-td">
                                             <a
                                                     class="btn btn-default contrib-button btn-mini"
                                                     data-bind="click:$root.remove, tooltip: {title: 'Remove contributor'}"
                                                 ><i class="fa fa-minus"></i></a>
                                         </td>
                                         <td>
-                                            <img data-bind="attr: {src: contributor.gravatar_url}" />
+                                            <img class="m-v-xs" data-bind="attr: {src: contributor.gravatar_url}" width=35 height=35/>
                                         </td>
 
                                         <td>
@@ -167,7 +167,7 @@
                                         </td>
 
                                         <td>
-                                            <select class="form-control" data-bind="
+                                            <select class="form-control input-sm" data-bind="
                                                 options: $root.permissionList,
                                                 value: permission,
                                                 optionsText: 'text'">

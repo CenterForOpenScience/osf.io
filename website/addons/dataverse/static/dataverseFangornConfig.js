@@ -201,6 +201,9 @@ function gotoFile (item) {
 
 function _fangornDataverseTitle(item, col) {
     var tb = this;
+    if (item.data.isAddonRoot && item.connected === false) { // as opposed to undefined, avoids unnecessary setting of this value
+        return Fangorn.Utils.connectCheckTemplate.call(this, item);
+    }
     var version = item.data.version === 'latest-published' ? 'Published' : 'Draft';
     if (item.data.addonFullname) {
         var contents = [m('dataverse-name', item.data.name + ' (' + version + ')')];
@@ -227,10 +230,7 @@ function _fangornDataverseTitle(item, col) {
             m('dataverse-name.fg-file-links', {
                 onclick: function () {
                     gotoFile(item);
-                },
-                'data-toggle': 'tooltip',
-                title: 'View file',
-                'data-placement': 'bottom'
+                }
             }, item.data.name
                 )
         ]);

@@ -88,6 +88,12 @@ function ViewModel(url) {
 
     /** Send POST request to authorize Dataverse */
     self.sendAuth = function() {
+        // Selection should not be empty
+        if( !self.selectedHost() ){
+            self.changeMessage("Please select a Dataverse repository.", 'text-danger');
+            return;
+        }
+
         var url = self.urls().create;
         return osfHelpers.postJSON(
             url,
@@ -113,14 +119,20 @@ function ViewModel(url) {
     self.askDisconnect = function(account) {
         var self = this;
         bootbox.confirm({
-            title: 'Delete account?',
+            title: 'Disconnect Dataverse Account?',
             message: '<p class="overflow">' +
-                'Are you sure you want to delete account <strong>' +
-                account.name + '</strong>?' +
+                'Are you sure you want to disconnect the Dataverse account on <strong>' +
+                account.name + '</strong>? This will revoke access to Dataverse for all projects associated with this account.' +
                 '</p>',
             callback: function (confirm) {
                 if (confirm) {
                     self.disconnectAccount(account);
+                }
+            },
+            buttons:{
+                confirm:{
+                    label:'Disconnect',
+                    className:'btn-danger'
                 }
             }
         });
@@ -173,7 +185,7 @@ function ViewModel(url) {
             self.loaded(true);
             self.updateAccounts();
         }).fail(function (xhr, textStatus, error) {
-            self.changeMessage(language.userSettingsError, 'text-warning');
+            self.changeMessage(language.userSettingsError, 'text-danger');
             Raven.captureMessage('Could not GET Dataverse settings', {
                 url: url,
                 textStatus: textStatus,

@@ -197,6 +197,16 @@ var _githubItemButtons = {
                     className: 'text-primary'
                 }, 'Download')
             );
+            if (item.data.permissions && item.data.permissions.view) {
+                buttons.push(
+                    m.component(Fangorn.Components.button, {
+                        onclick: function(event) {
+                            gotoFile.call(tb, item);
+                        },
+                        icon: 'fa fa-file-o',
+                        className : 'text-info'
+                    }, 'View'));
+            }
             if (item.data.permissions && item.data.permissions.edit) {
                 buttons.push(
                     m.component(Fangorn.Components.button, {
@@ -208,16 +218,13 @@ var _githubItemButtons = {
                     }, 'Delete')
                 );
             }
-            if (item.data.permissions && item.data.permissions.view) {
+            if (item.data.permissions && item.data.permissions.view && !item.data.permissions.private) {
                 buttons.push(
-                    m.component(Fangorn.Components.button, {
-                        onclick: function(event) {
-                            gotoFile.call(tb, item);
-                        },
-                        icon: 'fa fa-file-o',
-                        className : 'text-info'
-                    }, 'View'));
-
+                    m('a.text-info.fangorn-toolbar-icon', {href: item.data.extra.webView}, [
+                        m('i.fa.fa-external-link'),
+                        m('span', 'View on GitHub')
+                    ])
+                );
             }
         }
 
@@ -274,6 +281,9 @@ function gotoFile (item) {
 }
 function _fangornGithubTitle(item, col)  {
     var tb = this;
+    if (item.data.isAddonRoot && item.connected === false) { // as opposed to undefined, avoids unnecessary setting of this value
+        return Fangorn.Utils.connectCheckTemplate.call(this, item);
+    }
     if (item.data.addonFullname) {
         var branch = item.data.branch || item.data.defaultBranch;
         return m('span',[

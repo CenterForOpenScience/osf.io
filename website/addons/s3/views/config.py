@@ -12,13 +12,18 @@ from website.project.decorators import must_not_be_registration
 
 
 @must_be_logged_in
-@must_have_addon('s3', 'user')
-def s3_post_user_settings(user_addon, **kwargs):
+def s3_post_user_settings(auth, **kwargs):
+    user_addon = auth.user.get_or_add_addon('s3')
     try:
         access_key = request.json['access_key']
         secret_key = request.json['secret_key']
     except KeyError:
         raise HTTPError(httplib.BAD_REQUEST)
+
+    if not (access_key and secret_key):
+        return {
+            'message': ('All the fields above are required.')
+        }, httplib.BAD_REQUEST
 
     if not utils.can_list(access_key, secret_key):
         return {
@@ -40,6 +45,11 @@ def s3_authorize_node(auth, node_addon, **kwargs):
         secret_key = request.json['secret_key']
     except KeyError:
         raise HTTPError(httplib.BAD_REQUEST)
+
+    if not (access_key and secret_key):
+        return {
+            'message': 'All the fields above are required.'
+        }, httplib.BAD_REQUEST
 
     if not utils.can_list(access_key, secret_key):
         return {

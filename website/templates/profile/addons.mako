@@ -11,6 +11,7 @@
 <style>
 .addon-icon {
     width: 20px;
+    margin-top: -2px;
 }
 </style>
 
@@ -51,7 +52,7 @@
        template = config['user_settings_template']
        tpl = template.render(**config)
     %>
-    ${tpl}
+    ${ tpl | n }
 </%def>
 
 <%def name="stylesheets()">
@@ -63,11 +64,10 @@
 
 
 <%def name="javascript_bottom()">
-    <% import json %>
     ${parent.javascript_bottom()}
 
    <script type="text/javascript">
-        window.contextVars = $.extend({}, window.contextVars, {'addonEnabledSettings': ${json.dumps(addon_enabled_settings)}});
+        window.contextVars = $.extend({}, window.contextVars, {'addonEnabledSettings': ${ addon_enabled_settings | sjson, n }});
     </script>
     <script src="${"/static/public/js/profile-settings-addons-page.js" | webpack_asset}"></script>
 

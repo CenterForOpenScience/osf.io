@@ -372,3 +372,15 @@ def resolve_guid(guid, suffix=None):
 
     # GUID not found
     raise HTTPError(http.NOT_FOUND)
+
+##### Redirects #####
+
+# Redirect /about/ to OSF wiki page
+# https://github.com/CenterForOpenScience/osf.io/issues/3862
+# https://github.com/CenterForOpenScience/community/issues/294
+def redirect_about(**kwargs):
+    return redirect('https://osf.io/4znzp/wiki/home/')
+
+
+def redirect_howosfworks(**kwargs):
+    return redirect('/getting-started/')

@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 from time import sleep
 import requests
-import urlparse
 import httplib as http
 
 import pymongo
@@ -193,14 +192,7 @@ class AddonDataverseNodeSettings(StorageAddonBase, AddonOAuthNodeSettingsBase):
         }
 
     def create_waterbutler_log(self, auth, action, metadata):
-        path = metadata['path']
-        if 'name' in metadata:
-            name = metadata['name']
-        else:
-            query_string = urlparse.urlparse(metadata['full_path']).query
-            name = urlparse.parse_qs(query_string).get('name')
-
-        url = self.owner.web_url_for('addon_view_or_download_file', path=path, provider='dataverse')
+        url = self.owner.web_url_for('addon_view_or_download_file', path=metadata['path'], provider='dataverse')
         self.owner.add_log(
             'dataverse_{0}'.format(action),
             auth=auth,
@@ -208,7 +200,7 @@ class AddonDataverseNodeSettings(StorageAddonBase, AddonOAuthNodeSettingsBase):
                 'project': self.owner.parent_id,
                 'node': self.owner._id,
                 'dataset': self.dataset,
-                'filename': name,
+                'filename': metadata['materialized'].strip('/'),
                 'urls': {
                     'view': url,
                     'download': url + '?action=download'
@@ -233,24 +225,6 @@ class AddonDataverseNodeSettings(StorageAddonBase, AddonOAuthNodeSettingsBase):
 
     # backwards compatibility
     before_register = before_register_message
-
-    def before_fork_message(self, node, user):
-        """Return warning text to display if user auth will be copied to a
-        fork.
-        """
-        category = node.project_or_component
-        if self.user_settings and self.user_settings.owner == user:
-            return ('Because you have authorized the Dataverse add-on for this '
-                '{category}, forking it will also transfer your authentication '
-                'to the forked {category}.').format(category=category)
-
-        else:
-            return ('Because the Dataverse add-on has been authorized by a different '
-                    'user, forking it will not transfer authentication to the forked '
-                    '{category}.').format(category=category)
-
-    # backwards compatibility
-    before_fork = before_fork_message
 
     def before_remove_contributor_message(self, node, removed):
         """Return warning text to display if removed contributor is the user
@@ -305,7 +279,7 @@ class AddonDataverseNodeSettings(StorageAddonBase, AddonOAuthNodeSettingsBase):
         else:
             message = (
                 'Dataverse authorization not copied to forked {cat}. You may '
-                'authorize this fork on the <a href="{url}">Settings</a> '
+                'authorize this fork on the <u><a href="{url}">Settings</a></u> '
                 'page.'
             ).format(
                 url=fork.web_url_for('node_setting'),
@@ -336,7 +310,7 @@ class AddonDataverseNodeSettings(StorageAddonBase, AddonOAuthNodeSettingsBase):
             if not auth or auth.user != removed:
                 url = node.web_url_for('node_setting')
                 message += (
-                    u' You can re-authenticate on the <a href="{url}">Settings</a> page.'
+                    u' You can re-authenticate on the <u><a href="{url}">Settings</a></u> page.'
                 ).format(url=url)
             #
             return message

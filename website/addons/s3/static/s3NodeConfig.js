@@ -7,13 +7,22 @@ var Raven = require('raven-js');
 
 var $osf = require('js/osfHelpers');
 
+var s3Settings = require('json!./settings.json');
+
 ko.punches.enableAll();
 
-var ViewModel = function(url, selector) {
+var defaultSettings = {
+    url: '',
+    encryptUploads: s3Settings.encryptUploads,
+    bucketLocations: s3Settings.bucketLocations
+};
+
+var ViewModel = function(selector, settings) {
     var self = this;
 
-    self.url = url;
+    self.url = settings.url;
     self.selector = selector;
+    self.settings = $.extend({}, defaultSettings, settings);
 
     self.nodeHasAuth = ko.observable(false);
     self.userHasAuth = ko.observable(false);
@@ -27,6 +36,7 @@ var ViewModel = function(url, selector) {
     self.loadedBucketList = ko.observable(false);
     self.currentBucket = ko.observable('');
     self.selectedBucket = ko.observable('');
+    self.encryptUploads = ko.observable(self.settings.encryptUploads);
 
     self.accessKey = ko.observable('');
     self.secretKey = ko.observable('');
@@ -61,6 +71,7 @@ var ViewModel = function(url, selector) {
     self.allowSelectBucket = ko.pureComputed(function() {
         return (self.bucketList().length > 0 || self.loadedBucketList()) && (!self.loading());
     });
+
 };
 
 ViewModel.prototype.toggleSelect = function() {
@@ -83,7 +94,8 @@ ViewModel.prototype.selectBucket = function() {
     self.loading(true);
     return $osf.postJSON(
             self.urls().set_bucket, {
-                's3_bucket': self.selectedBucket()
+                's3_bucket': self.selectedBucket(),
+                'encrypt_uploads': self.encryptUploads()
             }
         )
         .done(function(response) {
@@ -97,7 +109,7 @@ ViewModel.prototype.selectBucket = function() {
             var message = 'Could not change S3 bucket at this time. ' +
                 'Please refresh the page. If the problem persists, email ' +
                 '<a href="mailto:support@osf.io">support@osf.io</a>.';
-            self.changeMessage(message, 'text-warning');
+            self.changeMessage(message, 'text-danger');
             Raven.captureMessage('Could not set S3 bucket', {
                 url: self.urls().setBucket,
                 textStatus: status,
@@ -115,11 +127,12 @@ ViewModel.prototype._deauthorizeNodeConfirm = function() {
         dataType: 'json'
     }).done(function(response) {
         self.updateFromData(response);
+        self.changeMessage('Disconnected S3.', 'text-warning', 3000);
     }).fail(function(xhr, status, error) {
-        var message = 'Could not deauthorize S3 at ' +
+        var message = 'Could not disconnect S3 at ' +
             'this time. Please refresh the page. If the problem persists, email ' +
             '<a href="mailto:support@osf.io">support@osf.io</a>.';
-        self.changeMessage(message, 'text-warning');
+        self.changeMessage(message, 'text-danger');
         Raven.captureMessage('Could not remove S3 authorization.', {
             url: self.urls().deauthorize,
             textStatus: status,
@@ -131,11 +144,17 @@ ViewModel.prototype._deauthorizeNodeConfirm = function() {
 ViewModel.prototype.deauthorizeNode = function() {
     var self = this;
     bootbox.confirm({
-        title: 'Deauthorize S3?',
-        message: 'Are you sure you want to remove this S3 authorization?',
+        title: 'Disconnect S3 Account?',
+        message: 'Are you sure you want to remove this S3 account?',
         callback: function(confirm) {
             if (confirm) {
                 self._deauthorizeNodeConfirm();
+            }
+        },
+        buttons:{
+            confirm:{
+                label: 'Disconnect',
+                className: 'btn-danger'
             }
         }
     });
@@ -152,7 +171,7 @@ ViewModel.prototype._importAuthConfirm = function() {
         var message = 'Could not import S3 credentials at ' +
             'this time. Please refresh the page. If the problem persists, email ' +
             '<a href="mailto:support@osf.io">support@osf.io</a>.';
-        self.changeMessage(message, 'text-warning');
+        self.changeMessage(message, 'text-danger');
         Raven.captureMessage('Could not import S3 credentials', {
             url: self.urls().importAuth,
             textStatus: status,
@@ -171,6 +190,11 @@ ViewModel.prototype.importAuth = function() {
             if (confirmed) {
                 return self._importAuthConfirm();
             }
+        },
+        buttons:{
+            confirm:{
+                label:'Import'
+            }
         }
     });
 };
@@ -178,6 +202,7 @@ ViewModel.prototype.importAuth = function() {
 ViewModel.prototype.createCredentials = function() {
     var self = this;
     self.creatingCredentials(true);
+
     return $osf.postJSON(
         self.urls().create_auth, {
             secret_key: self.secretKey(),
@@ -189,10 +214,12 @@ ViewModel.prototype.createCredentials = function() {
         self.updateFromData(response);
     }).fail(function(xhr, status, error) {
         self.creatingCredentials(false);
-        var message = 'Could not add S3 credentials at ' +
-            'this time. Please refresh the page. If the problem persists, email ' +
-            '<a href="mailto:support@osf.io">support@osf.io</a>.';
-        self.changeMessage(message, 'text-warning');
+        var message = '';
+        var response = JSON.parse(xhr.responseText);
+        if (response && response.message) {
+            message = response.message;
+        }
+        self.changeMessage(message, 'text-danger');
         Raven.captureMessage('Could not add S3 credentials', {
             url: self.urls().importAuth,
             textStatus: status,
@@ -201,13 +228,14 @@ ViewModel.prototype.createCredentials = function() {
     });
 };
 
-ViewModel.prototype.createBucket = function(bucketName) {
+ViewModel.prototype.createBucket = function(bucketName, bucketLocation) {
     var self = this;
     self.creating(true);
     bucketName = bucketName.toLowerCase();
     return $osf.postJSON(
         self.urls().create_bucket, {
-            bucket_name: bucketName
+            bucket_name: bucketName,
+            bucket_location: bucketLocation
         }
     ).done(function(response) {
         self.creating(false);
@@ -233,6 +261,11 @@ ViewModel.prototype.createBucket = function(bucketName) {
                 if (result) {
                     self.openCreateBucket();
                 }
+            },
+            buttons:{
+                confirm:{
+                    label:'Try again'
+                }
             }
         });
     });
@@ -243,21 +276,69 @@ ViewModel.prototype.openCreateBucket = function() {
 
     var isValidBucket = /^(?!.*(\.\.|-\.))[^.][a-z0-9\d.-]{2,61}[^.]$/;
 
-    bootbox.prompt('Name your new bucket', function(bucketName) {
-        if (!bucketName) {
-            return;
-        } else if (isValidBucket.exec(bucketName) == null) {
-            bootbox.confirm({
-                title: 'Invalid bucket name',
-                message: 'Sorry, that\'s not a valid bucket name. Try another name?',
-                callback: function(result) {
-                    if (result) {
-                        self.openCreateBucket();
+    // Generates html options for key-value pairs in BUCKET_LOCATION_MAP
+    function generateBucketOptions(locations) {
+        var options = '';
+        for (var location in locations) {
+            if (self.settings.bucketLocations.hasOwnProperty(location)) {
+                options = options + ['<option value="', location, '">', locations[location], '</option>', '\n'].join('');
+            }
+        }
+        return options;
+    }
+
+    bootbox.dialog({
+        title: 'Create a new bucket',
+        message:
+                '<div class="row"> ' +
+                    '<div class="col-md-12"> ' +
+                        '<form class="form-horizontal"> ' +
+                            '<div class="form-group"> ' +
+                                '<label class="col-md-4 control-label" for="bucketName">Bucket Name</label> ' +
+                                '<div class="col-md-8"> ' +
+                                    '<input id="bucketName" name="bucketName" type="text" placeholder="Enter bucket name" class="form-control" autofocus> ' +
+                                '</div>' +
+                            '</div>' +
+                            '<div class="form-group"> ' +
+                                '<label class="col-md-4 control-label" for="bucketLocation">Bucket Location</label> ' +
+                                '<div class="col-md-8"> ' +
+                                    '<select id="bucketLocation" name="bucketLocation" class="form-control"> ' +
+                                        generateBucketOptions(self.settings.bucketLocations) +
+                                    '</select>' +
+                                '</div>' +
+                            '</div>' +
+                        '</form>' +
+                    '</div>' +
+                '</div>',
+        buttons: {
+            cancel: {
+                label: 'Cancel',
+                className: 'btn-default'
+            },
+            confirm: {
+                label: 'Create',
+                className: 'btn-success',
+                callback: function () {
+                    var bucketName = $('#bucketName').val();
+                    var bucketLocation = $('#bucketLocation').val();
+
+                    if (!bucketName) {
+                        return;
+                    } else if (isValidBucket.exec(bucketName) == null) {
+                        bootbox.confirm({
+                            title: 'Invalid bucket name',
+                            message: 'Sorry, that\'s not a valid bucket name. Try another name?',
+                            callback: function(result) {
+                                if (result) {
+                                    self.openCreateBucket();
+                                }
+                            }
+                        });
+                    } else {
+                        self.createBucket(bucketName, bucketLocation);
                     }
                 }
-            });
-        } else {
-            self.createBucket(bucketName);
+            }
         }
     });
 };
@@ -282,7 +363,7 @@ ViewModel.prototype.fetchBucketList = function() {
             var message = 'Could not retrieve list of S3 buckets at ' +
                 'this time. Please refresh the page. If the problem persists, email ' +
                 '<a href="mailto:support@osf.io">support@osf.io</a>.';
-            self.changeMessage(message, 'text-warning');
+            self.changeMessage(message, 'text-danger');
             Raven.captureMessage('Could not GET s3 bucket list', {
                 url: self.urls().bucketList,
                 textStatus: status,
@@ -318,7 +399,7 @@ ViewModel.prototype.updateFromData = function(data) {
             else {
                 message = 'Could not retrieve S3 settings at ' +
                     'this time. The S3 addon credentials may no longer be valid.' +
-                    ' Contact ' + self.ownerName() + ' to verify.';                    
+                    ' Contact ' + self.ownerName() + ' to verify.';
             }
             self.changeMessage(message, 'text-danger');
         }
@@ -352,7 +433,7 @@ ViewModel.prototype.fetchFromServer = function() {
         var message = 'Could not retrieve S3 settings at ' +
                 'this time. Please refresh the page. If the problem persists, email ' +
                 '<a href="mailto:support@osf.io">support@osf.io</a>.';
-        self.changeMessage(message, 'text-warning');
+        self.changeMessage(message, 'text-danger');
         Raven.captureMessage('Could not GET s3 settings', {
             url: self.url,
             textStatus: status,
@@ -378,8 +459,8 @@ ViewModel.prototype.changeMessage = function(text, css, timeout) {
     }
 };
 
-var S3Config = function(selector, url) {
-    var viewModel = new ViewModel(url, selector);
+var S3Config = function(selector, settings) {
+    var viewModel = new ViewModel(selector, settings);
     $osf.applyBindings(viewModel, selector);
     viewModel.updateFromData();
 };

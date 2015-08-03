@@ -3,11 +3,10 @@
 
 <%def name="stylesheets()">
    ${parent.stylesheets()}
-   <link rel="stylesheet" href='/static/css/pages/account-setting-page.css'>;
+   <link rel="stylesheet" href='/static/css/pages/account-setting-page.css'>
 </%def>
 
 <%def name="content()">
-<% import json %>
 <% from website import settings%>
 <h2 class="page-header">Notifications</h2>
 
@@ -64,10 +63,9 @@
 
 <%def name="javascript()">
     <% import website %>
-    <% import json %>
     ${parent.javascript()}
     <script type="text/javascript">
-        window.contextVars = $.extend({}, window.contextVars, {'mailingList': '${website.settings.MAILCHIMP_GENERAL_LIST}'});
+        window.contextVars = $.extend({}, window.contextVars, {'mailingList': ${website.settings.MAILCHIMP_GENERAL_LIST | sjson, n }});
     </script>
 </%def>
 

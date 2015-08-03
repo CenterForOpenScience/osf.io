@@ -15,7 +15,6 @@ from framework.flask import redirect  # VOL-aware redirect
 from framework.sessions import session
 from framework.exceptions import HTTPError
 from framework.auth.decorators import must_be_logged_in
-from framework.status import push_status_message as flash
 
 from website.util import api_url_for
 from website.util import web_url_for
@@ -96,9 +95,8 @@ def box_oauth_start(auth, **kwargs):
     if nid:
         session.data['box_auth_nid'] = nid
 
-    # If user has already authorized box, flash error message
+    # Handle if user has already authorized box
     if user.has_addon('box') and user.get_addon('box').has_auth:
-        flash('You have already authorized Box for this account', 'warning')
         return redirect(web_url_for('user_addons'))
 
     return redirect(get_auth_flow(csrf_token))
@@ -114,7 +112,6 @@ def box_oauth_finish(auth, **kwargs):
 
     # Handle request cancellations from Box's API
     if request.args.get('error'):
-        flash('Box authorization request cancelled.')
         if node:
             return redirect(node.web_url_for('node_setting'))
         return redirect(web_url_for('user_addons'))
@@ -151,8 +148,6 @@ def box_oauth_finish(auth, **kwargs):
     user_settings.oauth_settings = oauth_settings
 
     user_settings.save()
-
-    flash('Successfully authorized Box', 'success')
 
     if node:
         # Automatically use newly-created auth
