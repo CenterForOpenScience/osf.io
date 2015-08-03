@@ -24,7 +24,6 @@ from api.users.serializers import UserSerializer
 #     })
 
 
-
 from rest_framework.views import APIView
 
 

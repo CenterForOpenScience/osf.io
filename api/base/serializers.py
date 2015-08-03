@@ -146,7 +146,7 @@ class JSONAPIListSerializer(ser.ListSerializer):
     def to_representation(self, data):
         # Don't envelope when serializing collection
         return [
-            self.child.to_representation(item, envelope=None) for item in data
+            self.child.to_representation(item) for item in data
         ]
 
 
@@ -162,7 +162,7 @@ class JSONAPISerializer(ser.Serializer):
         return JSONAPIListSerializer(*args, **kwargs)
 
     # overrides Serializer
-    def to_representation(self, obj, envelope='data'):
+    def to_representation(self, obj):
         """Serialize to final representation.
 
         :param obj: Object to be serialized.
@@ -174,10 +174,7 @@ class JSONAPISerializer(ser.Serializer):
         assert type_ is not None, 'Must define Meta.type_'
         data = super(JSONAPISerializer, self).to_representation(obj)
         data['type'] = type_
-        if envelope:
-            ret[envelope] = data
-        else:
-            ret = data
+        ret = data
         return ret
 
     # overrides Serializer: Add HTML-sanitization similar to that used by APIv1 front-end views
