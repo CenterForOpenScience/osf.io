@@ -85,24 +85,20 @@ class LinksFieldWIthSelfLink(ser.Field):
 
 class LinksField(LinksFieldWIthSelfLink):
     def to_representation(self, obj):
-
-        self.check_parameters(self.parent.context, obj)
+        if 'include' in self.context:
+            _rapply(self.context['include'], self.check_parameter, obj=obj)
         ret = _rapply(self.links, _url_val, obj=obj, serializer=self.parent)
         return ret
 
-    def check_parameters(self, context, obj):
-        if 'request' in context:
-            request = context['request']
-            if 'include' in request.query_params:
-                if hasattr(obj, 'title'):
-                    allowed_params = ['children', 'contributors', 'pointers', 'registrations']
-                elif hasattr(obj, 'username'):
-                    allowed_params = ['nodes']
-                else:
-                    raise ValidationError('Include query params not allowed in this request')
-                for param in request.query_params['include'].split(','):
-                    if param not in allowed_params:
-                        raise ValidationError('{} is not a valid parameter.'.format(param))
+    def check_parameter(self, param, obj):
+        if hasattr(obj, 'title'):
+            allowed_params = ['children', 'contributors', 'pointers', 'registrations']
+        elif hasattr(obj, 'username'):
+            allowed_params = ['nodes']
+        else:
+            raise ValidationError('Include query params not allowed in this request')
+        if param not in allowed_params:
+            raise ValidationError('{} is not a valid parameter.'.format(param))
 
 _tpl_pattern = re.compile(r'\s*<\s*(\S*)\s*>\s*')
 
@@ -150,8 +146,7 @@ class Link(object):
         return self.query
 
     def get_links(self, query, serializer, url, obj):
-        context = serializer.context
-        meta = self.get_meta(query, serializer, obj, context)
+        meta = self.get_meta(query, serializer, obj)
         ret = {
             'links': {
                 'related': {
@@ -162,41 +157,21 @@ class Link(object):
         }
         return ret
 
-    def get_meta(self, query,  serializer, obj, context):
-        nodes_or_users = self.endpoint.split(':')[0]
-        class_ = self.get_class(nodes_or_users)
+    def get_meta(self, query,  serializer, obj):
+        context = serializer.context
+        instance = type(context['view'])(kwargs={context['view'].node_lookup_url_kwarg: obj._id})
+        instance.request = context['request']
 
-        if nodes_or_users == 'nodes':
-            instance = class_(kwargs={'node_id': obj._id})
-        else:
-            instance = class_(kwargs={'user_id': obj._id})
-
-        instance.request = serializer.context['request']
         queryset = instance.get_queryset()
         serialized_objects = instance.serializer_class(queryset, many=True).data
 
         meta = {}
         meta['count'] = len(serialized_objects)
         if 'request' in context and 'include' in context['request'].query_params:
-            additional_query_params = serializer.context['request'].query_params['include']
+            additional_query_params = serializer.context['request'].query_params['include'].split()
             if query in additional_query_params:
                 meta['data'] = serialized_objects
-
         return meta
-
-    def get_class(self, nodes_or_users):
-        api_base = __import__('api')
-        module_location = getattr(api_base, nodes_or_users)
-        module = getattr(module_location, 'views')
-
-        class_name_params = self.endpoint.split(':')[1].split('-')
-        class_name = ''
-        for class_param in class_name_params:
-            class_param = class_param[0].capitalize() + class_param[1:]
-            class_name += class_param
-        if class_name != 'UserNodes':
-            class_name += 'List'
-        return getattr(module, class_name)
 
     def resolve_url(self, obj):
         kwarg_values = {key: _get_attr_from_tpl(attr_tpl, obj) for key, attr_tpl in self.kwargs.items()}
