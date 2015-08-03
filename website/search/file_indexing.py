@@ -23,18 +23,12 @@ def update_search_files(node):
     """Update all files associated with node based on node's privacy.
     """
     if node.is_public:
-        logging.info('CALLED UPDATE ALL TASK!\n')
         tasks.update_all_files_task(node=node)
-        # tasks.queue_update_all_files(node)
-        # tasks.enqueue_task(tasks.update_all_files_task.s(self))
 
 
 @except_search_unavailable
 def delete_search_files(node):
-    logging.info('CALLED DELETE ALL TASK!\n')
     tasks.delete_all_files_task(node=node)
-    # tasks.queue_delete_all_files(node)
-    # tasks.enqueue_task(tasks.delete_all_files_task.s(self))
 
 
 @except_search_unavailable
@@ -42,16 +36,9 @@ def update_search_file(file_node):
     """ Update a single file in the node based on the action given.
     """
     if file_node.node.is_public:
-        logging.info('CALLED UPDATE TASK!\n')
         tasks.update_file_task(file_node=file_node)
-        # tasks.queue_update_file(file_node)
-        # tasks.enqueue_task(tasks.update_file_task.s(file_node))
 
 
 @except_search_unavailable
 def delete_search_file(file_node):
-    logging.info('CALLED DELETE TASK!\n')
     tasks.delete_file_task(file_node=file_node)
-    # tasks.enqueue_task(tasks.delete_file_task.s(file_node))
-
-

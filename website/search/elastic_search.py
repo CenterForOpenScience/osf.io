@@ -20,7 +20,6 @@ from elasticsearch import (
 )
 
 from framework import sentry
-from framework.tasks import handlers
 
 from website import settings
 from website.filters import gravatar
@@ -308,9 +307,6 @@ def update_file(file_node, index=None):
     :param addon: Instance of storage containing the file.
     """
     index = index or INDEX
-
-    name = file_node.name
-    addon = file_node.node_settings
 
     if file_util.is_indexed(file_node):
         file_doc = file_util.build_file_document(file_node, include_content=True)

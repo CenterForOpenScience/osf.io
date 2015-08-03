@@ -1,33 +1,70 @@
 import functools
-import logging
 import mock
 import os
 import time
 import unittest
 
-from nose import tools
 from nose.tools import *
 
-from framework.auth import Auth
 from tests import factories
-from tests.test_archiver import use_fake_addons
 from tests.test_elastic import query
 from tests.factories import ModularOdmFactory
 from tests.factories import ProjectWithAddonFactory
 from tests.test_elastic import SearchTestCase
 from tests.base import OsfTestCase
-from tests.utils import PatchedContext
 from website import settings
 from website.search import elastic_search
 from website.search import search
 from website.search import file_util
 from website.search import file_indexing
 from website.addons.base import GuidFile
-from website.addons.osfstorage.model import OsfStorageFileNode, OsfStorageNodeSettings
+from website.addons.osfstorage.model import OsfStorageFileNode
 from website.addons.base.views import update_search as wb_update_search
 
 FILE_SIZE = 1000
 FILE_CONTENT = 'You must talk to him; tell him that he is a good cat, and a pretty cat, and...'
+
+
+class PatchedContext(object):
+    """ Create a context with multiple patches.
+
+    some_useful_patches = PatchContext(
+        method_one = mock.patch('some.far.away.method_one'),
+        method_two = mock.patch('some.other.method'),
+    )
+
+    with some_useful_patches as patches:
+        run_tests()
+        patches.get('method_one').assert_called_once_with('something')
+
+    """
+    def __init__(self, *args, **kwargs):
+        self.mocks = []
+        self.named_mocks = {}
+        self.patches = args
+        self.named_patches = kwargs
+
+    def __enter__(self):
+        for patch in self.patches:
+            self.mocks.append(patch.start())
+
+        for name, patch in self.named_patches.iteritems():
+            self.named_mocks.update({name: patch.start()})
+
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        for patch in self.patches:
+            patch.stop()
+
+        for patch in self.named_patches.values():
+            patch.stop()
+
+    def get_named_patch(self, name):
+        return self.named_patches.get(name)
+
+    def get_named_mock(self, name):
+        return self.named_mocks.get(name)
 
 
 # patch for GuidFile.enrich

@@ -1,8 +1,6 @@
 # -*- coding: utf-8 -*-
 import unittest
 import logging
-import time
-import os
 
 from nose.tools import *  # flake8: noqa (PEP8 asserts)
 import mock
@@ -38,14 +36,10 @@ class SearchTestCase(OsfTestCase):
         settings.ELASTIC_INDEX = TEST_INDEX
         search.delete_index(elastic_search.INDEX)
         search.create_index(elastic_search.INDEX)
-        mock.patch('website.project.model.Node.update_search_files', search.update_all_files).start()
-        # mock.patch('website.project.model.Node.update_search_file', search.update_file).start()
-        mock.patch('website.project.model.Node.delete_search_files', search.delete_all_files).start()
-        # mock.patch('website.project.model.Node.delete_search_file', search.delete_file).start()
 
 
-def query(term, doc_type=None):
-    results = search.search(build_query(term), index=elastic_search.INDEX, doc_type=doc_type)
+def query(term):
+    results = search.search(build_query(term), index=elastic_search.INDEX)
     return results
 
 
@@ -656,7 +650,7 @@ class TestUserSearchResults(SearchTestCase):
             self.user_five
         ]
 
-    # @unittest.skip('Cannot guarentee always passes')
+    @unittest.skip('Cannot guarentee always passes')
     def test_current_job_first_in_results(self):
         results = query_user('Star Fleet')['results']
         result_names = [r['names']['fullname'] for r in results]
@@ -745,6 +739,5 @@ class TestSearchMigration(SearchTestCase):
 
             migrate(delete=True, index=settings.ELASTIC_INDEX, app=self.app.app)
             var = self.es.indices.get_aliases()
-            assert_equal(var[settings.ELASTIC_INDEX + '_v{}'.format(n + 1)]['aliases'].keys()[0],
-                         settings.ELASTIC_INDEX)
+            assert_equal(var[settings.ELASTIC_INDEX + '_v{}'.format(n + 1)]['aliases'].keys()[0], settings.ELASTIC_INDEX)
             assert not var.get(settings.ELASTIC_INDEX + '_v{}'.format(n))

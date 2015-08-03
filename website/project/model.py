@@ -1550,11 +1550,9 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
             return
         file_indexing.update_search_file(file_node)
 
-
     def delete_search_file(self, file_node):
         from website.search import file_indexing
         file_indexing.delete_search_file(file_node)
-
 
     def delete_search_entry(self):
         from website import search

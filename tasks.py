@@ -342,7 +342,6 @@ def rebuild_search():
     migrate_search()
 
 
-
 @task
 def mailserver(port=1025):
     """Run a SMTP test server."""
@@ -830,4 +829,3 @@ def update_citation_styles():
     from scripts import parse_citation_styles
     total = parse_citation_styles.main()
     print("Parsed {} styles".format(total))
-

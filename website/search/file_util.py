@@ -1,7 +1,5 @@
-import logging
 import requests
 
-from framework.exceptions import HTTPError
 from website import settings
 
 
