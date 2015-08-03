@@ -328,9 +328,14 @@ ViewModel.prototype.openCreateBucket = function() {
                         bootbox.confirm({
                             title: 'Invalid bucket name',
                             message: 'Sorry, that\'s not a valid bucket name. Try another name?',
-                            callback: function(result) {
+                            callback: function (result) {
                                 if (result) {
                                     self.openCreateBucket();
+                                }
+                            },
+                            buttons: {
+                                cancel: {
+                                    label: 'Try again'
                                 }
                             }
                         });
