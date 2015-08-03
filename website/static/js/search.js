@@ -245,7 +245,7 @@ var ViewModel = function(params) {
                     self.results.push(result);
                 }
                 if(result.category === 'registration'){
-                    result.registered_date = new $osf.FormattableDate(result.registered_date);
+                    result.dateRegistered = new $osf.FormattableDate(result.registered_date);
                 }
             });
 
