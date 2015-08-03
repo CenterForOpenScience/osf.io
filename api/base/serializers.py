@@ -155,7 +155,18 @@ class Link(object):
 
     def get_meta(self, query,  serializer, obj):
         context = serializer.context
-        instance = type(context['view'])(kwargs={context['view'].node_lookup_url_kwarg: obj._id})
+        module = __import__('api.{}.views'.format(self.endpoint.split(':')[0]),
+                            globals(), locals(), ['object'], -1)
+
+        class_name_data = self.endpoint.split(':')[1].split('-')
+        class_name = ''
+        for name_data in class_name_data:
+            name_data = name_data[0].capitalize() + name_data[1:]
+            class_name += (name_data)
+        if hasattr(module, class_name):
+            instance = getattr(module, class_name)
+        else:
+            instance = getattr(module, class_name+'List')
         instance.request = context['request']
 
         queryset = instance.get_queryset()
