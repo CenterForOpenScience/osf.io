@@ -237,7 +237,7 @@
     <script type="text/html" id="registration">
         <h4><a data-bind="attr.href: url">{{ title }}</a>  (<!-- ko if: is_retracted --><span class="text-danger">Retracted</span> <!-- /ko -->Registration)</h4>
 
-        <strong><span data-bind="text: 'Date Registered: ' + date_registered['local'], tooltip: {title: date_registered['utc']}">></span></strong>
+        <strong><span data-bind="text: 'Date Registered: ' + registered_date['local'], tooltip: {title: registered_date['utc']}"></span></strong>
 
         <p data-bind="visible: description"><strong>Description:</strong> {{ description | fit:500 }}</p>
 
