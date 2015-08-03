@@ -244,6 +244,9 @@ var ViewModel = function(params) {
 
                     self.results.push(result);
                 }
+                if(result.category === 'registration'){
+                    result.dateRegistered = new $osf.FormattableDate(result.registered_date);
+                }
             });
 
             //Load our categories

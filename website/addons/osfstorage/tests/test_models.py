@@ -285,7 +285,7 @@ class TestOsfstorageFileNode(StorageTestCase):
     def test_rent(self):
         name_user = self.user._id
         self.node_settings.root_node.rent(self.user)
-        assert_equal(name_user, self.node_settings.root_node.rented)
+        assert_equal(na, self.node_settings.root_node.rented)
 
     def test_return_rent(self):
         self.node_settings.root_node.return_rent()
@@ -355,7 +355,6 @@ class TestOsfStorageFileVersion(StorageTestCase):
     def setUp(self):
         super(TestOsfStorageFileVersion, self).setUp()
         self.user = factories.AuthUserFactory()
-        self.user._id = 'user'
         self.mock_date = datetime.datetime(1991, 10, 31)
 
     def test_fields(self):
