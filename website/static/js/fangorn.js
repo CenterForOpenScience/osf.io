@@ -15,6 +15,7 @@ var $osf = require('js/osfHelpers');
 var waterbutler = require('js/waterbutler');
 
 var iconmap = require('js/iconmap');
+var storageAddons = require('json!storageAddons.json');
 
 // CSS
 require('css/fangorn.css');
@@ -89,7 +90,8 @@ function findByTempID(parent, tmpID) {
 
 function cancelUploads (row) {
     var tb = this;
-    var filesArr = tb.dropzone.getQueuedFiles();
+    var uploading = tb.dropzone.getUploadingFiles();
+    var filesArr = uploading.concat(tb.dropzone.getQueuedFiles());
     for (var i = 0; i < filesArr.length; i++) {
         var j = filesArr[i];
         if(!row){
@@ -760,7 +762,9 @@ function _fangornDropzoneError(treebeard, file, message, xhr) {
             child.removeSelf();
         }
     }
-    $osf.growl('Error', msgText);
+    if (msgText !== 'Upload canceled.') {
+        $osf.growl('Error', msgText);
+    }
     treebeard.options.uploadInProgress = false;
 }
 
@@ -1002,6 +1006,7 @@ function _removeEvent (event, items, col) {
  * @private
  */
 function _fangornResolveLazyLoad(item) {
+    item.connected = true;
     var configOption = resolveconfigOption.call(this, item, 'lazyload', [item]);
     if (configOption) {
         return configOption;
@@ -1020,10 +1025,8 @@ function _fangornResolveLazyLoad(item) {
  * @private
  */
 function _fangornLazyLoadError (item) {
+    item.connected = false;
     var configOption = resolveconfigOption.call(this, item, 'lazyLoadError', [item]);
-    if (!configOption) {
-        item.notify.update('Files couldn\'t load. Please try again later.', 'deleting', undefined, 3000);
-    }
 }
 
 /**
@@ -1103,6 +1106,9 @@ function gotoFileEvent (item) {
  */
 function _fangornTitleColumn(item, col) {
     var tb = this;
+    if (item.data.isAddonRoot && item.connected === false) { // as opposed to undefined, avoids unnecessary setting of this value
+        return _connectCheckTemplate.call(this, item);
+    }
     if (item.kind === 'file' && item.data.permissions.view) {
         return m('span.fg-file-links',{
             onclick: function(event) {
@@ -1111,11 +1117,34 @@ function _fangornTitleColumn(item, col) {
             }
         }, item.data.name);
     }
-    else if ((item.data.nodeType === 'project') || (item.data.nodeType ==='component')) {
+    if ((item.data.nodeType === 'project') || (item.data.nodeType ==='component')) {
         return m('a.fg-file-links',{ href: '/' + item.data.nodeID.toString() + '/'},
                 item.data.name);
     }
     return m('span', item.data.name);
+}
+
+/**
+ * Returns a reusable template for column titles when there is no connection
+ * @param {Object} item A Treebeard _item object for the row involved. Node information is inside item.data
+ * @this Treebeard.controller
+ * @private
+ */
+function _connectCheckTemplate(item){
+    var tb = this;
+    return m('span.text-danger', [
+        m('span', item.data.name),
+        m('em', ' couldn\'t load.' ),
+        m('button.btn.btn-xs.btn-default.m-l-xs', {
+            onclick : function(e){
+                e.stopImmediatePropagation();
+                if (tb.options.togglecheck.call(tb, item)) {
+                    var index = tb.returnIndex(item.id);
+                    tb.toggleFolder(index, e);
+                }
+            }
+        }, [m('i.fa.fa-refresh'), ' Retry'])
+    ]);
 }
 
 /**
@@ -1448,15 +1477,6 @@ var FGItemButtons = {
                     className : 'text-primary'
                 }, 'Download')
             );
-            if (item.data.permissions && item.data.permissions.edit) {
-                rowButtons.push(
-                    m.component(FGButton, {
-                        onclick: function(event) { _removeEvent.call(tb, event, [item]); },
-                        icon: 'fa fa-trash',
-                        className : 'text-danger'
-                    }, 'Delete'));
-
-            }
             if (item.data.permissions && item.data.permissions.view) {
                 rowButtons.push(
                     m.component(FGButton, {
@@ -1466,6 +1486,24 @@ var FGItemButtons = {
                         icon: 'fa fa-file-o',
                         className : 'text-info'
                     }, 'View'));
+            }
+            if (item.data.permissions && item.data.permissions.edit) {
+                rowButtons.push(
+                    m.component(FGButton, {
+                        onclick: function(event) { _removeEvent.call(tb, event, [item]); },
+                        icon: 'fa fa-trash',
+                        className : 'text-danger'
+                    }, 'Delete'));
+
+            }
+            if(storageAddons[item.data.provider].externalView) {
+                var providerFullName = storageAddons[item.data.provider].fullName;
+                rowButtons.push(
+                    m('a.text-info.fangorn-toolbar-icon', {href: item.data.extra.webView}, [
+                        m('i.fa.fa-external-link'),
+                        m('span', 'View on ' + providerFullName)
+                    ])
+                );
             }
         } else if(item.data.provider && item.children.length !== 0) {
             rowButtons.push(
@@ -1663,7 +1701,11 @@ var FGToolbar = {
             }, '')
         );
 
-        templates[toolbarModes.DEFAULT] =  m('.col-xs-12', m('.pull-right', [finalRowButtons,  m('span', generalButtons)]));
+        if (item && item.connected !== false){ // as opposed to undefined, avoids unnecessary setting of this value
+            templates[toolbarModes.DEFAULT] =  m('.col-xs-12', m('.pull-right', [finalRowButtons,  m('span', generalButtons)]));
+        } else {
+            templates[toolbarModes.DEFAULT] =  m('.col-xs-12', m('.pull-right', m('span', generalButtons)));
+        }
         return m('.row.tb-header-row', [
             m('#folderRow', { config : function () {
                 $('#folderRow input').focus();
@@ -2191,7 +2233,8 @@ Fangorn.Utils = {
     dismissToolbar : dismissToolbar,
     uploadRowTemplate : uploadRowTemplate,
     resolveIconView: resolveIconView,
-    orderFolder: orderFolder
+    orderFolder: orderFolder,
+    connectCheckTemplate : _connectCheckTemplate
 };
 
 Fangorn.DefaultOptions = tbOptions;

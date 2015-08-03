@@ -14,6 +14,7 @@ def strip_html(unclean):
     return bleach.clean(unclean, strip=True, tags=[], attributes=[], styles=[])
 
 
+# TODO: Not used anywhere except unit tests? Review for deletion
 def clean_tag(data):
     """Format as a valid Tag
 
@@ -32,7 +33,7 @@ def is_iterable_but_not_string(obj):
 
 
 def escape_html(data):
-    """Escape HTML characters in data.
+    """Escape HTML characters in data (as opposed to stripping them out entirely). Will ignore whitelisted tags.
 
     :param data: A string, dict, or list to clean of HTML characters
 
@@ -54,6 +55,7 @@ def escape_html(data):
     return data
 
 
+# FIXME: Not sure what this function is trying to accomplish. Candidate for deletion?
 def assert_clean(data):
     """Ensure that data is cleaned
 
@@ -97,6 +99,14 @@ def safe_unescape_html(value):
             value = value.replace(escape_sequence, character)
         return value
     return value
+
+
+def temp_ampersand_fixer(s):
+    """As a workaround for ampersands stored as escape sequences in database, unescape text before use on a safe page
+
+    Explicitly differentiate from safe_unescape_html in case use cases/behaviors diverge
+    """
+    return s.replace('&amp;', '&')
 
 
 def safe_json(value):

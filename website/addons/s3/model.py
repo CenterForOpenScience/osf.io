@@ -10,6 +10,7 @@ from website.addons.base import AddonUserSettingsBase, AddonNodeSettingsBase, Gu
 from website.addons.base import StorageAddonBase
 
 from website.addons.s3 import utils
+from website.addons.s3.settings import ENCRYPT_UPLOADS_DEFAULT
 
 class S3GuidFile(GuidFile):
     __indices__ = [
@@ -73,9 +74,11 @@ class AddonS3UserSettings(AddonUserSettingsBase):
 
         return True
 
+
 class AddonS3NodeSettings(StorageAddonBase, AddonNodeSettingsBase):
 
     bucket = fields.StringField()
+    encrypt_uploads = fields.BooleanField(default=ENCRYPT_UPLOADS_DEFAULT)
     user_settings = fields.ForeignField(
         'addons3usersettings', backref='authorized'
     )
@@ -139,7 +142,10 @@ class AddonS3NodeSettings(StorageAddonBase, AddonNodeSettingsBase):
     def serialize_waterbutler_settings(self):
         if not self.bucket:
             raise exceptions.AddonError('Cannot serialize settings for S3 addon')
-        return {'bucket': self.bucket}
+        return {
+            'bucket': self.bucket,
+            'encrypt_uploads': self.encrypt_uploads
+        }
 
     def create_waterbutler_log(self, auth, action, metadata):
         url = self.owner.web_url_for('addon_view_or_download_file', path=metadata['path'], provider='s3')
@@ -166,6 +172,7 @@ class AddonS3NodeSettings(StorageAddonBase, AddonNodeSettingsBase):
 
         ret.update({
             'bucket': self.bucket or '',
+            'encrypt_uploads': self.encrypt_uploads,
             'has_bucket': self.bucket is not None,
             'user_is_owner': (
                 self.user_settings and self.user_settings.owner == user
@@ -231,7 +238,7 @@ class AddonS3NodeSettings(StorageAddonBase, AddonNodeSettingsBase):
         else:
             message = (
                 'Amazon Simple Storage authorization not copied to forked {cat}. You may '
-                'authorize this fork on the <a href={url}>Settings</a> '
+                'authorize this fork on the <u><a href={url}>Settings</a></u> '
                 'page.'
             ).format(
                 cat=fork.project_or_component,
@@ -242,31 +249,6 @@ class AddonS3NodeSettings(StorageAddonBase, AddonNodeSettingsBase):
             clone.save()
 
         return clone, message
-
-    def before_fork(self, node, user):
-        """
-
-        :param Node node:
-        :param User user:
-        :return str: Alert message
-
-        """
-
-        if self.user_settings and self.user_settings.owner == user:
-            return (
-                'Because you have authenticated the S3 add-on for this '
-                '{cat}, forking it will also transfer your authorization to '
-                'the forked {cat}.'
-            ).format(
-                cat=node.project_or_component,
-            )
-        return (
-            'Because this S3 add-on has been authenticated by a different '
-            'user, forking it will not transfer authentication to the forked '
-            '{cat}.'
-        ).format(
-            cat=node.project_or_component,
-        )
 
     def before_remove_contributor(self, node, removed):
         """
@@ -308,7 +290,7 @@ class AddonS3NodeSettings(StorageAddonBase, AddonNodeSettingsBase):
             if not auth or auth.user != removed:
                 url = node.web_url_for('node_setting')
                 message += (
-                    u' You can re-authenticate on the <a href="{url}">Settings</a> page.'
+                    u' You can re-authenticate on the <u><a href="{url}">Settings</a></u> page.'
                 ).format(url=url)
             #
             return message
