@@ -28,6 +28,7 @@ from website.util import rubeus
 from website.profile.utils import get_gravatar
 from website.project.decorators import must_be_valid_project, must_be_contributor_or_public
 from website.project.utils import serialize_node
+from website.search import file_util
 
 
 @decorators.must_have_permission('write')
@@ -284,26 +285,39 @@ def create_waterbutler_log(payload, **kwargs):
 
         node_addon.create_waterbutler_log(auth, action, metadata)
 
-
-    # file indexing/updates
-    _update_search(node, payload)
+    # file indexing
+    logging.info(payload)
+    metadata = payload.get('metadata') or payload['destination']
+    name = metadata.get('name') or metadata['path']
+    action = payload['action']
+    provider = payload.get('provider')
+    source_node_id = payload['source']['nid'] if 'source' in payload else None
+    node_addon = node.get_addon(provider)
+    update_search(node, action, node_addon, name, source_node_id)
 
     return {'status': 'success'}
 
-def _update_search(node, payload):
-    action = payload['action']
-    metadata = payload.get('metadata') or payload['destination']
-    name = metadata['name']
+
+@file_util.file_indexing
+def update_search(node, action, addon, file_name, source_node_id=None):
+    file_node = addon.root_node.find_child_by_name(file_name)
+    if not file_util.is_indexed(file_node):
+        return
+
+    if addon.config.short_name != 'osfstorage':
+        return
+
+    # wb does not give filenode's path on deletes
+    if action == 'delete':
+        return
+
     if action in ('create', 'update', 'copy'):
-        node_addon = node.get_addon(metadata['provider'])
-        file_node = node_addon.root_node.find_child_by_name(name)
         node.update_search_file(file_node)
 
-    if action in ('move'):
-        source_node = Node.load(payload['source']['nid'])
-        dest_addon = node.get_addon(metadata['provider'])
-        file_node = dest_addon.root_node.find_child_by_name(name)
-
+    if action in ('move', ):
+        if not source_node_id:
+            raise ValueError('{} requires source_node_id'.format(action))
+        source_node = Node.load(source_node_id)
         source_node.delete_search_file(file_node)
         node.update_search_file(file_node)
 

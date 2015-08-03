@@ -1544,24 +1544,17 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         # tasks.enqueue_task(tasks.delete_all_files_task.s(self))
 
     def update_search_file(self, file_node):
-        """ Update a single file in the node based on the action given.
-
-        :param action: 'update', 'create', or 'delete'.
-        :param addon: Instance of a storage addon.
-        :param name: Name of the file to be updated.
-        :param path: Path of the file to be updated.
-        """
+        """ Update a single file in the node based on the action given."""
         from website.search import file_indexing
         if not self.is_public:
             return
-
         file_indexing.update_search_file(file_node)
-        # tasks.enqueue_task(tasks.update_file_task.s(file_node))
+
 
     def delete_search_file(self, file_node):
         from website.search import file_indexing
         file_indexing.delete_search_file(file_node)
-        # tasks.enqueue_task(tasks.delete_file_task.s(file_node))
+
 
     def delete_search_entry(self):
         from website import search
@@ -2426,7 +2419,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
                 raise NodeStateError("Public registrations must be retracted, not made private.")
             else:
                 self.is_public = False
-                self.update_search_files()
+                self.delete_search_files()
 
         else:
             return False

@@ -24,6 +24,7 @@ from website.search import file_util
 from website.search import file_indexing
 from website.addons.base import GuidFile
 from website.addons.osfstorage.model import OsfStorageFileNode, OsfStorageNodeSettings
+from website.addons.base.views import update_search as wb_update_search
 
 FILE_SIZE = 1000
 FILE_CONTENT = 'You must talk to him; tell him that he is a good cat, and a pretty cat, and...'
@@ -304,3 +305,29 @@ class TestIndexRealFiles(FileIndexingTestCase):
             search.update_file(self.file_node_docx, settings.ELASTIC_INDEX)
             time.sleep(1)
             assert_equal(len(query('diamond')), 1)
+
+
+class TestWaterbutlerUpdateSearch(FileIndexingTestCase):
+    def test_update_on_create(self):
+        self.project.is_public = True
+        with TRIGGER_CONTEXT as patches:
+            update_seach_mock = patches.get_named_mock('update_search_file')
+            wb_update_search(self.project, 'create', self.addon, self.file_node.name, None)
+            update_seach_mock.assert_called_once_with(self.file_node)
+
+    def test_update_on_copy(self):
+        self.project.is_public = True
+        with TRIGGER_CONTEXT as patches:
+            update_seach_mock = patches.get_named_mock('update_search_file')
+            wb_update_search(self.project, 'copy', self.addon, self.file_node.name, None)
+            update_seach_mock.assert_called_once_with(self.file_node)
+
+    def test_update_on_move(self):
+        other_project = ProjectWithAddonFactory()
+        self.project.is_public = True
+        with TRIGGER_CONTEXT as patches:
+            update_seach_mock = patches.get_named_mock('update_search_file')
+            delete_search_mock = patches.get_named_mock('delete_search_file')
+            wb_update_search(self.project, 'move', self.addon, self.file_node.name, other_project._id)
+            delete_search_mock.assert_called_once_with(self.file_node)
+            update_seach_mock.assert_called_once_with(self.file_node)
