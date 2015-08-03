@@ -86,19 +86,15 @@ class LinksFieldWIthSelfLink(ser.Field):
 class LinksField(LinksFieldWIthSelfLink):
     def to_representation(self, obj):
         if 'request' in self.context and 'include' in self.context['request'].query_params:
-            _rapply(self.context['request'].query_params, self.check_parameter, obj=obj)
+            include_params = self.context['request'].query_params['include'].split(',')
+            self.check_parameters(include_params)
         ret = _rapply(self.links, _url_val, obj=obj, serializer=self.parent)
         return ret
 
-    def check_parameter(self, param, obj):
-        if hasattr(obj, 'title'):
-            allowed_params = ['children', 'contributors', 'pointers', 'registrations']
-        elif hasattr(obj, 'username'):
-            allowed_params = ['nodes']
-        else:
-            raise ValidationError('Include query params not allowed in this request')
-        if param not in allowed_params:
-            raise ValidationError('{} is not a valid parameter.'.format(param))
+    def check_parameters(self, params):
+        for param in params:
+            if param not in self.links:
+                raise ValidationError('{} is not a valid parameter.'.format(param))
 
 _tpl_pattern = re.compile(r'\s*<\s*(\S*)\s*>\s*')
 
@@ -168,7 +164,7 @@ class Link(object):
         meta = {}
         meta['count'] = len(serialized_objects)
         if 'request' in context and 'include' in context['request'].query_params:
-            additional_query_params = serializer.context['request'].query_params['include'].split()
+            additional_query_params = serializer.context['request'].query_params['include'].split(',')
             if query in additional_query_params:
                 meta['data'] = serialized_objects
         return meta
