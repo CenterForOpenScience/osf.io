@@ -62,7 +62,7 @@
     window.contextVars.node.urls = window.contextVars.node.urls || {};
     window.contextVars.node.urls.api = ${ node['api_url'] | sjson, n };
     window.contextVars.node.id = ${ str(node['id']) | sjson, n };
-    window.contextVars.node.children = ${[str(each) for each in children_ids]};
+    window.contextVars.node.children = ${ [str(each) for each in children_ids] | sjson, n };
     window.contextVars.regTemplate = ${ template_name or '' | sjson, n };
     window.contextVars.regSchema = ${ schema | n };
     window.contextVars.regPayload = ${ payload | sjson, n };
