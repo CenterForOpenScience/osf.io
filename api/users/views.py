@@ -39,6 +39,8 @@ class UserList(generics.ListAPIView, ODMFilterMixin):
     )
     serializer_class = UserSerializer
     ordering = ('-date_registered')
+    action = 'list'
+    resource_name = 'users'
 
     # overrides ODMFilterMixin
     def get_default_odm_query(self):
@@ -59,6 +61,8 @@ class UserDetail(generics.RetrieveAPIView, UserMixin):
     """Details about a specific user.
     """
     serializer_class = UserSerializer
+    action = ''
+    resource_name = 'users'
 
     # overrides RetrieveAPIView
     def get_object(self):
@@ -70,6 +74,8 @@ class UserNodes(generics.ListAPIView, UserMixin, ODMFilterMixin):
 
     Return a list of nodes that the user contributes to. """
     serializer_class = NodeSerializer
+    action = 'list'
+    resource_name = 'nodes'
 
     # overrides ODMFilterMixin
     def get_default_odm_query(self):
