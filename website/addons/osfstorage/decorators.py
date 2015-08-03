@@ -9,7 +9,7 @@ from framework.exceptions import HTTPError
 
 from website.models import User
 from website.models import Node
-from website.addons.osfstorage import model
+from website.files import models
 from website.addons.osfstorage import errors
 from website.project.decorators import (
     must_not_be_registration, must_have_addon,
@@ -40,12 +40,12 @@ def autoload_filenode(must_be=None, default_root=False):
         @must_have_addon('osfstorage', 'node')
         @functools.wraps(func)
         def wrapped(*args, **kwargs):
-            node_addon = kwargs['node_addon']
+            node = kwargs['node']
 
             if 'fid' not in kwargs and default_root:
-                file_node = node_addon.root_node
+                file_node = kwargs['node_addon'].get_root()
             else:
-                file_node = model.OsfStorageFileNode.get(kwargs.get('fid'), node_addon)
+                file_node = models.OsfStorageFileNode.get(kwargs.get('fid'), node)
 
             if must_be and file_node.kind != must_be:
                 raise HTTPError(httplib.BAD_REQUEST, data={
@@ -72,8 +72,8 @@ def waterbutler_opt_hook(func):
         try:
             user = User.load(payload['user'])
             dest_node = Node.load(payload['destination']['node'])
-            source = model.OsfStorageFileNode.get(payload['source'], kwargs['node_addon'])
-            dest_parent = model.OsfStorageFileNode.get_folder(payload['destination']['parent'], dest_node.get_addon('osfstorage'))
+            source = models.OsfStorageFileNode.get(payload['source'], kwargs['node'])
+            dest_parent = models.OsfStorageFolder.get(payload['destination']['parent'], dest_node)
 
             kwargs.update({
                 'user': user,

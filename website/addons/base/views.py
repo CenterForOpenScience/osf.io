@@ -328,7 +328,7 @@ def addon_view_or_download_file_legacy(**kwargs):
         node_settings = node.get_addon('osfstorage')
 
         try:
-            path = node_settings.root_node.find_child_by_name(path)._id
+            path = node_settings.get_root().find_child_by_name(path)._id
         except NoResultsFound:
             raise HTTPError(
                 404, data=dict(
