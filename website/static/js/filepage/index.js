@@ -284,6 +284,7 @@ var FileViewPage = {
             } else {
                 // edit | revisions
                 mfrIframeParentLayout = '';
+                fileViewPanelsLayout = 'col-sm-12';
             }
         } else {
             // view
