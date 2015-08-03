@@ -244,6 +244,8 @@ var ViewModel = function(params) {
 
                     self.results.push(result);
                 }
+                if(result.category === 'project')
+                    result.date_created = new $osf.FormattableDate(result.date_created);
             });
 
             //Load our categories
