@@ -1111,7 +1111,7 @@ function _fangornTitleColumn(item, col) {
     }
     if (item.kind === 'file' && item.data.permissions.view) {
         if (item.data.provider === 'osfstorage'){
-            if (item.data.extra.renter !== ''){
+            if (item.data.extra.renter != ''){
               return m('span.fg-file-links',{
                     onclick: function(event) {
                         event.stopImmediatePropagation();
@@ -1132,7 +1132,7 @@ function _fangornTitleColumn(item, col) {
                 item.data.name);
     }
     if (item.data.provider === 'osfstorage' && item.kind === 'file'){
-        if (item.data.extra.renter !== ''){
+        if (item.data.extra.renter != ''){
             return m('span', item.data.name + ' (Checked-out)');
         }
     }
