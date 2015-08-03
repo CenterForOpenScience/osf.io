@@ -43,7 +43,9 @@ from website.util import web_url_for
 from website.util import api_url_for
 from website.exceptions import (
     NodeStateError,
-    InvalidSanctionApprovalToken, InvalidSanctionRejectionToken
+    InvalidSanctionApprovalToken, InvalidSanctionRejectionToken,
+    InvalidEmbargoApprovalToken, InvalidEmbargoDisapprovalToken,
+    InvalidRetractionApprovalToken, InvalidRetractionDisapprovalToken
 )
 from website.citations.utils import datetime_to_csl
 from website.identifiers.model import IdentifierMixin
@@ -2622,8 +2624,8 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
 
         retraction = Retraction(
             initiated_by=user,
-            justification=justification,
-            state=Retraction.PENDING
+            justification=justification or None,  # make empty strings None
+            state=Retraction.UNAPPROVED
         )
         admins = [contrib for contrib in self.contributors if self.has_permission(contrib, 'admin') and contrib.is_active]
         for admin in admins:
@@ -2823,17 +2825,17 @@ class Sanction(StoredObject):
     CANCELLED = 'cancelled'
     COMPLETED = 'completed'
 
-    APPROVAL_NOT_AUTHORIZED_MESSAGE = 'This user is not authorized to approve this sanction'
-    APPROVAL_INVALID_TOKEN_MESSAGE = 'Invalid approval token provided.'
-    REJECTION_NOT_AUTHORIZED_MESSAGE = 'This user is not authorized to reject this sanction'
-    REJECTION_INVALID_TOKEN_MESSAGE = 'Invalid rejection token provided.'
+    ApprovalNotAuthorized = PermissionsError('This user is not authorized to approve this sanction')
+    ApprovalInvalidToken = InvalidSanctionApprovalToken('Invalid approval token provided.')
+    RejectionNotAuthorized = PermissionsError('This user is not authorized to reject this sanction')
+    RejectionInvalidTokeni = InvalidSanctionRejectionToken('Invalid rejection token provided.')
 
     abstract = True
-    
+
     _id = fields.StringField(primary=True, default=lambda: str(ObjectId()))
     initiation_date = fields.DateTimeField(auto_now_add=datetime.datetime.utcnow)
     end_date = fields.DateTimeField(default=None)
-    initiated_by = fields.ForeignField('user', backref='embargoed')
+    initiated_by = fields.ForeignField('user', backref='initiated')
     # Expanded: Dictionary field mapping admin IDs their approval status and relevant tokens:
     # {
     #   'b3k97': {
@@ -2859,7 +2861,7 @@ class Sanction(StoredObject):
     def _validate_authorizer(self, user):
         return True
 
-    def add_authorizer(self, user, approved=False):
+    def add_authorizer(self, user, approved=False, save=False):
         self._validate_authorizer(user)
         if user._id not in self.approval_state:
             self.approval_state[user._id] = {
@@ -2867,7 +2869,8 @@ class Sanction(StoredObject):
                 'approval_token': security.random_string(30),
                 'disapproval_token': security.random_string(30),
             }
-            self.save()
+            if save:
+                self.save()
             return True
         return False
 
@@ -2882,7 +2885,9 @@ class Sanction(StoredObject):
         pass
 
     def _on_approve(self, user, token):
-        pass
+        if all(authorizer['has_approved'] for authorizer in self.approval_state.values()):
+            self.state = Sanction.ACTIVE
+            self._on_complete(user)
 
     def _on_reject(self, user, token):
         raise NotImplementedError("Sanction subclasses must implement an #_on_reject callback")
@@ -2891,32 +2896,29 @@ class Sanction(StoredObject):
         """Add user to approval list if user is admin and token verifies."""
         try:
             if self.approval_state[user._id]['approval_token'] != token:
-                raise InvalidSanctionApprovalToken(self.APPROVAL_INVALID_TOKEN_MESSAGE)
+                raise self.ApprovalInvalidToken
         except KeyError:
-            raise PermissionsError(self.APPROVAL_NOT_AUTHORIZED_MESSAGE)
+            raise self.ApprovalNotAuthorized
         self.approval_state[user._id]['has_approved'] = True
-        if all(authorizer['has_approved'] for authorizer in self.approval_state.values()):
-            self.state = Sanction.ACTIVE
-            self._on_complete(user)
         self._on_approve(user, token)
 
     def reject(self, user, token):
         """Cancels sanction if user is admin and token verifies."""
         try:
             if self.approval_state[user._id]['disapproval_token'] != token:
-                raise InvalidSanctionRejectionToken(self.REJECTION_INVALID_TOKEN_MESSAGE)
+                raise self.RejectionInvalidToken
         except KeyError:
-            raise PermissionsError(self.REJECTION_NOT_AUTHORIZED_MESSAGE)
+            raise self.RejectionNotAuthorized
         self.state = Sanction.CANCELLED
         self._on_reject(user, token)
 
 class Embargo(Sanction):
     """Embargo object for registrations waiting to go public."""
 
-    APPROVAL_NOT_AUTHORIZED_MESSAGE = 'User must be an admin to disapprove embargoing of a registration.'
-    APPROVAL_INVALID_TOKEN_MESSAGE = 'Invalid embargo approval token provided.'
-    REJECTION_NOT_AUTHORIZED_MESSAGE = 'User must be an admin to disapprove embargoing of a registration.'
-    REJECTION_INVALID_TOKEN_MESSAGE = 'Invalid embargo disapproval token provided.'
+    ApprovalNotAuthorized = PermissionsError('User must be an admin to disapprove embargoing of a registration.')
+    ApprovalInvalidToken = InvalidEmbargoApprovalToken('Invalid embargo approval token provided.')
+    RejectionNotAuthorized = PermissionsError('User must be an admin to disapprove embargoing of a registration.')
+    RejectionInvalidToken = InvalidEmbargoDisapprovalToken('Invalid embargo disapproval token provided.')
 
     for_existing_registration = fields.BooleanField(default=False)
 
@@ -2985,7 +2987,7 @@ class Embargo(Sanction):
 
 
 def validate_retraction_state(value):
-    acceptable_states = [Retraction.PENDING, Retraction.RETRACTED, Retraction.CANCELLED]
+    acceptable_states = [Retraction.UNAPPROVED, Retraction.RETRACTED, Retraction.CANCELLED]
     if value not in acceptable_states:
         raise ValidationValueError('Invalid retraction state assignment.')
 
@@ -2995,7 +2997,10 @@ def validate_retraction_state(value):
 class Retraction(Sanction):
     """Retraction object for public registrations."""
 
-    ACTIVE = 'retracted'
+    ApprovalNotAuthorized = PermissionsError('User must be an admin to disapprove a retraction of a registration.')
+    ApprovalInvalidToken = InvalidRetractionApprovalToken('Invalid retraction approval token provided.')
+    RejectionNotAuthorized = PermissionsError('User must be an admin to disapprove a retraction of a registration.')
+    RejectionInvalidToken = InvalidRetractionDisapprovalToken('Invalid retraction disapproval token provided.')
 
     justification = fields.StringField(default=None, validate=MaxLengthValidator(2048))
 
@@ -3028,7 +3033,7 @@ class Retraction(Sanction):
             save=True,
         )
 
-    def _on_complete(self, user, token):
+    def _on_complete(self, user):
         parent_registration = Node.find_one(Q('retraction', 'eq', self))
         parent_registration.registered_from.add_log(
             action=NodeLog.RETRACTION_APPROVED,
