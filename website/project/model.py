@@ -2828,6 +2828,8 @@ class Sanction(StoredObject):
     REJECTION_NOT_AUTHORIZED_MESSAGE = 'This user is not authorized to reject this sanction'
     REJECTION_INVALID_TOKEN_MESSAGE = 'Invalid rejection token provided.'
 
+    abstract = True
+    
     _id = fields.StringField(primary=True, default=lambda: str(ObjectId()))
     initiation_date = fields.DateTimeField(auto_now_add=datetime.datetime.utcnow)
     end_date = fields.DateTimeField(default=None)

@@ -10,7 +10,7 @@ from website.project.model import (
     Node, NodeLog,
     Tag, WatchConfig, MetaSchema, Pointer,
     Comment, PrivateLink, MetaData, Retraction,
-    Embargo, Sanction
+    Embargo
 )
 from website.oauth.models import ExternalAccount
 from website.identifiers.model import Identifier
@@ -27,7 +27,7 @@ MODELS = (
     MailRecord, Comment, PrivateLink, MetaData, Conference,
     NotificationSubscription, NotificationDigest, CitationStyle,
     CitationStyle, ExternalAccount, Identifier,
-    Sanction, Embargo, Retraction,
+    Embargo, Retraction,
     ArchiveJob, ArchiveTarget, BlacklistGuid
 )
 
