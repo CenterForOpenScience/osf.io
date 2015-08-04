@@ -1459,15 +1459,6 @@ def make_url_map(app):
             json_renderer,
         ),
 
-        # Rule(
-        #     [
-        #         '/discussions/unsubscribe/',
-        #     ],
-        #     'post',
-        #     project_views.node.unsubscribe_by_mail,
-        #     json_renderer,
-        # ),
-
         # Invite Users
         Rule(
             [

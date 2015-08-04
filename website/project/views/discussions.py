@@ -130,23 +130,3 @@ def route_message(**kwargs):
                         is_admin='admin' in node.get_permissions(sender),
                         reason='discussions_disabled')
         return
-
-    # TODO: Put rest of email logging functionality here
-    # attachments = request.files.values()
-    # parsed_message = {
-    #     'From': sender_email,
-    #     'subject': message['subject'],
-    #     'text': message['stripped-text'],
-    #     'attachments': attachments
-    # }
-
-
-# def unsubscribe_by_mail(**kwargs):
-#     info = request.form
-#     node_id = re.search(r'[a-z0-9]*@', info['mailing-list']).group(0)[:-1]
-#     email = info['recipient']
-#     # allow for both "{email}" syntax and "{name} <{email}>" syntax
-#     if ' ' in email:
-#         email = re.search(r'<\S*>$', email).group(0)[1:-1]
-#     node = Node.find_one(Q('_id','eq',node_id))
-#     node.unsubscribe_by_mail(email)
