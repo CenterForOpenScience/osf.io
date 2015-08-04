@@ -41,3 +41,9 @@ class InvalidEmbargoApprovalToken(InvalidSanctionApprovalToken):
 
 class InvalidEmbargoDisapprovalToken(InvalidSanctionRejectionToken):
     pass
+
+class InvalidRegistrationApprovalToken(InvalidSanctionApprovalToken):
+    pass
+
+class InvalidRegistrationDisapprovalToken(InvalidSanctionRejectionToken):
+    pass

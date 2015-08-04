@@ -66,10 +66,13 @@ def archive_callback(dst):
                     contributor,
                     urls=root_job.meta['embargo_urls'].get(contributor._id),
                 )
-        else:
-            archiver_utils.send_archiver_success_mail(root)
-        for node in node_and_primary_descendants(root):
-            node.update_search()  # update search if public
+        else:  # requires approval
+            for contributor in root.active_contributors():
+                project_utils.send_registration_approval_email(
+                    root,
+                    contributor,
+                    urls=root_job.meta['registration_approval_urls'].get(contributor._id),
+                )
     else:
         archiver_utils.handle_archive_fail(
             ARCHIVER_UNCAUGHT_ERROR,

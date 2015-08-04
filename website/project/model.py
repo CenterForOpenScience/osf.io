@@ -54,6 +54,7 @@ from website.util.permissions import CREATOR_PERMISSIONS
 from website.project.metadata.schemas import OSF_META_SCHEMAS
 from website.util.permissions import DEFAULT_CONTRIBUTOR_PERMISSIONS
 from website.project import signals as project_signals
+from website.archiver.utils import delete_registration_tree, node_and_primary_descendants
 
 html_parser = HTMLParser()
 
@@ -592,6 +593,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
     registered_user = fields.ForeignField('user', backref='registered')
     registered_schema = fields.ForeignField('metaschema', backref='registered')
     registered_meta = fields.DictionaryField()
+    registration_approval = fields.ForeignField('registrationapproval')
     retraction = fields.ForeignField('retraction')
     embargo = fields.ForeignField('embargo')
 
@@ -2716,6 +2718,38 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         if self.is_public:
             self.set_privacy('private', Auth(user))
 
+    def _initiate_approval(self, user, save=False):
+        end_date = datetime.datetime.now() + settings.REGISTRATION_APPROVAL_PERIOD
+        approval = RegistrationApproval(
+            initiated_by=user,
+            end_date=end_date,
+        )
+        admins = [contrib for contrib in self.contributors if self.has_permission(contrib, 'admin') and contrib.is_active]
+        for admin in admins:
+            approval.add_authorizer(admin)
+        if save:
+            approval.save()
+        return approval
+
+    def require_approval(self, user):
+        if not self.is_registration:
+            raise NodeStateError('Only registrations may be embargoed')
+        if not self.has_permission(user, 'admin'):
+            raise PermissionsError('Only admins may embargo a registration')
+
+        approval = self._initiate_approval(user, save=True)
+
+        self.registered_from.add_log(
+            action=NodeLog.REGISTRATION_APPROVAL_INITIATED,
+            params={
+                'node': self._id,
+                'registration_approval_id': approval._id,
+            },
+            auth=Auth(user),
+            save=True,
+        )
+        self.registration_approval = approval
+        # TOD make private?
 
 @Node.subscribe('before_save')
 def validate_permissions(schema, instance):
@@ -2819,6 +2853,7 @@ def validate_sanction_state(value):
 
 class Sanction(StoredObject):
     """Sancion object is a generic way to track approval states"""
+    abstract = True
 
     UNAPPROVED = 'unapproved'
     ACTIVE = 'active'
@@ -2830,12 +2865,11 @@ class Sanction(StoredObject):
     RejectionNotAuthorized = PermissionsError('This user is not authorized to reject this sanction')
     RejectionInvalidTokeni = InvalidSanctionRejectionToken('Invalid rejection token provided.')
 
-    abstract = True
-
     _id = fields.StringField(primary=True, default=lambda: str(ObjectId()))
     initiation_date = fields.DateTimeField(auto_now_add=datetime.datetime.utcnow)
     end_date = fields.DateTimeField(default=None)
     initiated_by = fields.ForeignField('user', backref='initiated')
+
     # Expanded: Dictionary field mapping admin IDs their approval status and relevant tokens:
     # {
     #   'b3k97': {
@@ -2881,16 +2915,18 @@ class Sanction(StoredObject):
             return True
         return False
 
-    def _on_complete(self, user):
-        pass
-
     def _on_approve(self, user, token):
         if all(authorizer['has_approved'] for authorizer in self.approval_state.values()):
             self.state = Sanction.ACTIVE
             self._on_complete(user)
 
     def _on_reject(self, user, token):
-        raise NotImplementedError("Sanction subclasses must implement an #_on_reject callback")
+        """Early termination of a Santion"""
+        raise NotImplementedError('Sanction subclasses must implement an #_on_reject method')
+
+    def _on_complete(self, user):
+        """When a Sanction has unanimous approval"""
+        raise NotImplementedError('Sanction subclasses must implement an #_on_complete method')
 
     def approve(self, user, token):
         """Add user to approval list if user is admin and token verifies."""
@@ -2920,6 +2956,7 @@ class Embargo(Sanction):
     RejectionNotAuthorized = PermissionsError('User must be an admin to disapprove embargoing of a registration.')
     RejectionInvalidToken = InvalidEmbargoDisapprovalToken('Invalid embargo disapproval token provided.')
 
+    initiated_by = fields.ForeignField('user', backref='embargoed')
     for_existing_registration = fields.BooleanField(default=False)
 
     def __repr__(self):
@@ -2964,7 +3001,7 @@ class Embargo(Sanction):
         # Delete parent registration if it was created at the time the embargo was initiated
         if not self.for_existing_registration:
             parent_registration.is_deleted = True
-        parent_registration.save()
+            parent_registration.save()
 
     def disapprove_embargo(self, user, token):
         """Cancels retraction if user is admin and token verifies."""
@@ -2985,15 +3022,6 @@ class Embargo(Sanction):
         """Add user to approval list if user is admin and token verifies."""
         self.approve(user, token)
 
-
-def validate_retraction_state(value):
-    acceptable_states = [Retraction.UNAPPROVED, Retraction.RETRACTED, Retraction.CANCELLED]
-    if value not in acceptable_states:
-        raise ValidationValueError('Invalid retraction state assignment.')
-
-    return True
-
-
 class Retraction(Sanction):
     """Retraction object for public registrations."""
 
@@ -3002,6 +3030,7 @@ class Retraction(Sanction):
     RejectionNotAuthorized = PermissionsError('User must be an admin to disapprove a retraction of a registration.')
     RejectionInvalidToken = InvalidRetractionDisapprovalToken('Invalid retraction disapproval token provided.')
 
+    initiated_by = fields.ForeignField('user', backref='retracted')
     justification = fields.StringField(default=None, validate=MaxLengthValidator(2048))
 
     def __repr__(self):
@@ -3073,8 +3102,26 @@ class Retraction(Sanction):
 
 class RegistrationApproval(Sanction):
 
+    initiated_by = fields.ForeignField('user', backref='registration_approved')
+
     def _on_complete(self, user, token):
-        pass
+        register = Node.find(Q('registration_approval', 'eq', self))
+        auth = Auth(self.initiated_by)
+        register.set_privacy('public', auth, log=False)
+        for child in register.get_descendants_recursive(lambda n: n.primary):
+            child.set_privacy('public', auth, log=False)
+        for node in node_and_primary_descendants(register.root):
+            node.update_search()  # update search if public
 
     def _on_reject(self, user, token):
-        pass
+        register = Node.find(Q('registration_approval', 'eq', self))
+        registered_from = register.registered_from
+        delete_registration_tree(register)
+        registered_from.add_log(
+            action=NodeLog.REGISTRATION_CANCELLED,
+            params={
+                'node': registered_from._id,
+                'registration_approval_id': self._id,
+            },
+            auth=Auth(user),
+        )
