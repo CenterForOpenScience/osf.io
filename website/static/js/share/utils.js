@@ -293,13 +293,13 @@ utils.termFilter = function (field, value) {
 };
 
 /* Creates a terms filter (their names, not ours) */
-utils.termsFilter = function (field, value, min_doc_count) {
-    min_doc_count = min_doc_count || 0;
+utils.termsFilter = function (field, value, minDocCount) {
+    minDocCount = minDocCount || 0;
     var ret = {'terms': {}};
     ret.terms[field] = value;
     ret.terms.size = 0;
     ret.terms.exclude = 'of|and|or';
-    ret.terms.min_doc_count = min_doc_count;
+    ret.terms.min_doc_count = minDocCount;
     return ret;
 };
 
