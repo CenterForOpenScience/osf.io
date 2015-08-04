@@ -283,13 +283,14 @@ var ViewModel = function(params) {
             }
 
             $osf.postJSON('/api/v1/share/search/?count&v=1', jsonData).success(function(data) {
-                var share_check = true;
+                var shareCheck = true;
                 for (var i = 0; i < self.categories.length; i++){
                     if (self.categories[i].name === 'SHARE' && self.categories[i].count === data.count && self.jsonData() === jsonData){
-                        share_check = false;
+                        shareCheck = false;
+                        break;
                     }
                 }
-                if(share_check) {
+                if(shareCheck) {
                     self.categories.push(new Category('SHARE', data.count, 'SHARE'));
                     self.jsonData(jsonData);
                 }
