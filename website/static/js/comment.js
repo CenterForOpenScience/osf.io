@@ -421,7 +421,7 @@ var CommentModel = function(data, $parent, $root) {
                 cleaned += path[path.length - 1];
                 break;
             case 'node':
-                cleaned = '(Overview';
+                cleaned = '(Project Overview';
                 break;
         }
         cleaned += ')';

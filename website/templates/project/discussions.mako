@@ -14,7 +14,7 @@
                 <div class="row">
                     <a href="${node['url']}discussions/">
                         <div class="col-xs-12">
-                            <span style="font-size: 16pt; font-weight: bold">Total</span>
+                            <span style="font-size: 16pt;">All Comments</span>
                         </div>
                     </a>
                 </div>
@@ -25,7 +25,7 @@
             <li ${'class="active"' if comment_target == 'node' else '' | n}>
                 <div class="row">
                     <a href="${node['url']}discussions/?page=overview">
-                        <div class="col-xs-12">Overview
+                        <div class="col-xs-12">Project Overview
                             % if user['unread_comments']['node'] > 0:
                                 <span class="badge pull-right">${user['unread_comments']['node']}</span>
                             % endif
@@ -74,7 +74,9 @@
             <!-- All comments for Overview, Files and Wiki -->
             <h3>
             % if comment_target == 'node':
-                Overview
+                Project Overview
+            % elif comment_target == 'total':
+                All Comments
             % else:
                 ${comment_target.title()}
             % endif
