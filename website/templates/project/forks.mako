@@ -6,19 +6,25 @@
 </div>
 
 <div class="row">
-	<div class="col-md-8 col-md-offset-2">
+        <div class="col-xs-9 col-sm-8">
 
     % if node['fork_count']:
-        <div mod-meta='{
-            "tpl": "util/render_nodes.mako",
-            "uri": "${node["api_url"]}get_forks/",
-            "replace": true,
-            "kwargs": {"sortable": false, "pluralized_node_type": "forks"}
-        }'></div>
+            <div mod-meta='{
+                "tpl": "util/render_nodes.mako",
+                "uri": "${node["api_url"]}get_forks/",
+                "replace": true,
+                "kwargs": {"sortable": false, "pluralized_node_type": "forks"}
+            }'></div>
     % else:
-        <div>There have been no forks of this project.</div>
+            <p class="m-md">This project has no forks. A fork is a copy of a project that you can change without
+            affecting the original project.</p>
     % endif
-
-
     </div>
+        <div class="col-xs-3 col-sm-4">
+                <div class="m-md">
+                    % if user_name and (user['is_contributor'] or node['is_public']) and not disk_saving_mode:
+                        <a class="btn btn-success" type="button" onclick="NodeActions.forkNode();">New Fork</a>
+                    % endif
+                </div>
+        </div>
 </div>

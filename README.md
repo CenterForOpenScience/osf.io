@@ -9,8 +9,10 @@
 ## Table of contents
 - [Help](#help)
 - [Running the OSF](#running-the-osf)
+- [Running the API Server] (#running-the-api-server)
 - [Installation](#installation)
 - [Common Development Tasks](#common-development-tasks)
+
 
 
 ## Help
@@ -48,6 +50,17 @@ In order to log in on your local server, you will also need to run the authentic
 
 - For daily use, run fakeCAS. See [CenterForOpenScience/fakeCAS](https://github.com/CenterForOpenScience/fakeCAS) for information on how to set up this service.
 - For developing authentication-related features, run CAS. See [CenterForOpenScience/docker-library/cas](https://github.com/CenterForOpenScience/docker-library/tree/master/cas) for information on how to set up this service.
+
+## Running the API Server
+
+If you have already installed all of the required services and Python packages, and activated your virtual environment,
+then you can start a working local API server with the sequence delineated under [Running the OSF] (#running-the-osf) and:
+
+```bash
+invoke apiserver
+```
+
+Browse to `localhost:8000/v2/` in your browser to go to the root of the browse-able API.
 
 
 ### Livereload support
@@ -90,6 +103,10 @@ installed. Consult the Waterbutler
 [repository](https://github.com/CenterForOpenScience/waterbutler) and
 [documentation](https://waterbutler.readthedocs.org/en/latest/) for information on how to set up and run this service.
 
+#### Modular File Renderer
+
+The Modular File Renderer (MFR) is used to render uploaded files to HTML via an iFrame so that they can be viewed directly on the OSF. Files will not be rendered if the MFR is not running. Consult the MFR [repository] (https://github.com/CenterForOpenScience/modular-file-renderer) for information on how to install and run the MFR.
+
 ## Installation
 
 These instructions assume a working knowledge of package managers and the command line.
@@ -124,7 +141,10 @@ virtualenv env
 source env/bin/activate
 ```
 
-- Copy `website/settings/local-dist.py` to `website/settings/local.py.`  NOTE: This is your local settings file,
+- Copy `cp website/settings/local-dist.py` to `website/settings/local.py`.  NOTE: This is your local settings file,
+which overrides the settings in `website/settings/defaults.py`. It will not be added to source control, so change
+it as you wish.
+- Copy `cp api/base/settings/local-dist.py` to `api/base/settings/local.py`.  NOTE: This is your local settings file,
 which overrides the settings in `website/settings/defaults.py`. It will not be added to source control, so change
 it as you wish.
 

@@ -49,7 +49,7 @@ def reset_password(auth, **kwargs):
         user_obj.verification_key = security.random_string(20)
         user_obj.set_password(form.password.data)
         user_obj.save()
-        status.push_status_message('Password reset')
+        status.push_status_message('Password reset', 'success')
         # Redirect to CAS and authenticate the user with a verification key.
         return redirect(cas.get_login_url(
             web_url_for('user_account', _absolute=True),
@@ -88,11 +88,10 @@ def forgot_password_post():
                 reset_link=reset_link
             )
         status.push_status_message(
-            'An email with instructions on how to reset the password for the '
-            'account associated with {0} has been sent. If you do not receive '
-            'an email and believe you should have please '
-            'contact OSF Support.'.format(email)
-        )
+            ('An email with instructions on how to reset the password '
+             'for the account associated with {0} has been sent. If you '
+             'do not receive an email and believe you should have please '
+             'contact OSF Support.').format(email), 'success')
 
     forms.push_errors_to_status(form.errors)
     return auth_login(forgot_password_form=form)
@@ -125,7 +124,7 @@ def auth_login(auth, **kwargs):
         # redirect user to CAS for logout, return here w/o authentication
         return auth_logout(redirect_url=request.url)
     if kwargs.get('first', False):
-        status.push_status_message('You may now log in')
+        status.push_status_message('You may now log in', 'info')
 
     status_message = request.args.get('status', '')
     if status_message == 'expired':
@@ -373,7 +372,7 @@ def merge_user_post(auth, **kwargs):
             master.merge_user(merged_user)
             master.save()
             if request.form:
-                status.push_status_message("Successfully merged {0} with this account".format(merged_username))
+                status.push_status_message("Successfully merged {0} with this account".format(merged_username), 'success')
                 return redirect("/settings/")
             return {"status": "success"}
         else:

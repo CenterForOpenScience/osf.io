@@ -68,15 +68,13 @@ class TestAuthObject(OsfTestCase):
     def test_factory(self):
         auth_obj = AuthFactory()
         assert_true(isinstance(auth_obj.user, auth.User))
-        assert_true(auth_obj.api_key)
 
     def test_from_kwargs(self):
         user = UserFactory()
         request_args = {'view_only': 'mykey'}
-        kwargs = {'user': user, 'api_key': 'myapikey', 'api_node': '123v'}
+        kwargs = {'user': user}
         auth_obj = Auth.from_kwargs(request_args, kwargs)
         assert_equal(auth_obj.user, user)
-        assert_equal(auth_obj.api_key, kwargs['api_key'])
         assert_equal(auth_obj.private_key, request_args['view_only'])
 
     def test_logged_in(self):
@@ -154,8 +152,6 @@ class TestMustBeContributorDecorator(AuthAppTestCase):
     def test_must_be_contributor_when_user_is_contributor(self):
         result = view_that_needs_contributor(
             pid=self.project._primary_key,
-            api_key=self.contrib.auth[1],
-            api_node=self.project,
             user=self.contrib)
         assert_equal(result, self.project)
 
@@ -164,8 +160,6 @@ class TestMustBeContributorDecorator(AuthAppTestCase):
         with assert_raises(HTTPError):
             view_that_needs_contributor(
                 pid=self.project._primary_key,
-                api_key=non_contributor.auth[1],
-                api_node=non_contributor.auth[1],
                 user=non_contributor
             )
 
@@ -173,8 +167,6 @@ class TestMustBeContributorDecorator(AuthAppTestCase):
         res = view_that_needs_contributor(
             pid=self.project._primary_key,
             user=None,
-            api_key='123',
-            api_node='abc',
         )
         assert_is_redirect(res)
         # redirects to login url

@@ -1,17 +1,6 @@
 /* class css */
-
-ul.ob-widget-list li.ob-list-item {
-	margin-bottom: 10px;
-	border-style: dashed;
-}
-
 .ob-heading {
 	display:inline;
-	margin: 5px;
-}
-
-.ob-header {
-    margin-bottom: 15px;
 }
 
 .ob-search{
@@ -23,16 +12,6 @@ ul.ob-widget-list li.ob-list-item {
 	height: 14px;
 }
 
-.typeAheadDisabled{
-    height: 110%;
-    font-size: 18px;
-    border: 2px solid #ccc;
-    -webkit-border-radius: 8px;
-    -moz-border-radius: 8px;
-    border-radius: 8px;
-    outline: none;
-}
-
 ul.ob-widget-list {
     padding: 0;
 }
@@ -41,24 +20,18 @@ ul.ob-widget-list {
 	display: none;
 }
 
-.ob-suggestion-date {
-    margin-left: 15px;
-}
-
 .ob-reveal-btn {
 	height: 100%;
 	width: 100%;
 }
 
 .ob-dropzone-box {
-	border-radius:8px;
 	position:relative;
-	float:left;
 	height: 150px;
 	width: 100%;
 	font-size: 12px;
 	text-align: center;
-	border: solid 2px #ccc;
+	cursor: pointer;
 }
 
 .ob-clear-button{
@@ -93,28 +66,9 @@ ul.ob-widget-list {
 	cursor: pointer;
 }
 
-
-.projectSearchAddFile{
-	width:100%;
-}
-
 /*this exists to force sizing properly as typeahead tries desperately to overwrite it...*/
 .twitter-typeahead{
 	display: block !important;
-}
-
-.ob-tab-head {
-    padding-bottom: 5px;
-    margin: 25px 0 5px;
-}
-
-ul.nav.nav-tabs {
-    border-bottom:1px solid #eee
-}
-
-div.ob-dropzone-filename{
-	margin-top:10px;
-	font-family: "Lucida Console", Monaco, monospace;
 }
 
 .ob-dropzone{
@@ -132,7 +86,6 @@ div.ob-dropzone-selected{
 
 img.ob-dropzone-icon{
 	height:90px;
-	margin-top:10px;
 	margin-left:auto;
 	margin-right:auto;
 }
