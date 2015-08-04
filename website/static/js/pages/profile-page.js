@@ -16,4 +16,4 @@ new profile.Social('#social', ctx.socialUrls, ['view']);
 new profile.Jobs('#jobs', ctx.jobsUrls, ['view']);
 new profile.Schools('#schools', ctx.schoolsUrls, ['view']);
 
-m.mount(document.getElementById('profileDashboard'), ProfileDashboard.controller(ctx));
+m.mount(document.getElementById('profileDashboard'), ProfileDashboard);

@@ -59,8 +59,12 @@ charts.c3componetize = function(c3ChartSetup, vm, divID) {
  */
 charts.donutChart = function (rawData, vm, widget) {
     var data = charts.singleLevelAggParser(rawData, widget.levelNames);
-    data.onclick = widget.callback ? widget.callback.onclick.bind({vm: vm, widget: widget}) : undefined;
+    data.onclick = widget.displayArgs.callback.onclick ? widget.displayArgs.callback.onclick.bind({
+        vm: vm,
+        widget: widget
+    }) : undefined;
     data.type = 'donut';
+
     var chartSetup = {
         bindto: '#' + widget.levelNames[0],
         size: {
@@ -99,12 +103,13 @@ charts.timeseriesChart = function (rawData, vm, widget) {
             height: widget.size[1]
         },
         data: data,
-        subchart: { //TODO @bdyetton fix the aggregation that the subchart pulls from so it always has the global range results
+        //TODO @bdyetton fix the aggregation that the subchart pulls from so it always has the global range results
+        subchart: {
             show: true,
             size: {
                 height: 30
             },
-            onbrush: widget.callback ? widget.callback.onbrush.bind({vm: vm, widget: widget}) : undefined
+            onbrush: widget.displayArgs.callback ? widget.callback.displayArgs.onbrush.bind({vm: vm, widget: widget}) : undefined
         },
         axis: {
             x: {
@@ -152,13 +157,14 @@ charts.singleLevelAggParser = function (data, levelNames) {
     var i = 0;
     data.aggregations[levelNames[0]].buckets.forEach(
         function (bucket) {
+            console.log(bucket.key);
             chartData.columns.push([bucket.key, bucket.doc_count]);
-            count = count + (bucket.doc_count ? 1 : 0); //TODO @bdyetton generalise this...
+            count = count + (bucket.doc_count ? 1 : 0);
             chartData.colors[bucket.key] = hexColors[i];
             i = i + 1;
         }
     );
-    chartData.title = count.toString() + ' ' + (count !== 1 ? levelNames[0] : levelNames[0].slice(0,-1)); //TODO generalize more!
+    chartData.title = count.toString() + ' ' + (count !== 1 ? levelNames[0] : levelNames[0].slice(0,-1));
     $('.c3-chart-arcs-title').text(chartData.title); //dynamically update chart title
     return chartData;
 };

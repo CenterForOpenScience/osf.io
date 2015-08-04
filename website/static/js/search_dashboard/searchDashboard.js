@@ -45,6 +45,7 @@ searchDashboard.controller = function (params) {
     //search dashboard state
     self.widgets = params.widgets || [];
     self.error = m.prop('');
+    self.rows = params.rows;
 
     //search model state
     self.vm = searchDashboard.vm;

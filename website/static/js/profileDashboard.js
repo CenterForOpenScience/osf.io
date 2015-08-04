@@ -12,13 +12,17 @@ var searchDashboard = require('js/search_dashboard/searchDashboard');
 
 var profileDashboard = {};
 
+var ctx = window.contextVars;
 /**
  * Setups elastic aggregations to get contributers.
  *
  * @return {object} JSON elastic search aggregation
  */
-profileDashboard.contributersAgg = function(){
-    return {'sources': utils.termsFilter('field', '_type')};
+profileDashboard.contributorsAgg = function(){
+    var agg = {'contributors': utils.termsFilter('field', 'contributors.url')};
+    //agg.contributors.aggregations = {'contributorsName' :
+    //    utils.termsFilter('field','contributors.fullname')};
+    return agg;
 };
 
 /**
@@ -26,60 +30,58 @@ profileDashboard.contributersAgg = function(){
  *
  * @return {object} JSON elastic search aggregation
  */
-profileDashboard.contributersByTimesAgg = function() {
+profileDashboard.contributorsByTimesAgg = function() {
     var dateTemp = new Date(); //get current time
     dateTemp.setMonth(dateTemp.getMonth() - 3);
     var threeMonthsAgo = dateTemp.getTime();
-    var agg = {'sourcesByTimes': utils.termsFilter('field', '_type')};
-    agg.sourcesByTimes.aggregations = {'sources' :
-        utils.dateHistogramFilter('providerUpdatedDateTime', threeMonthsAgo)};
+    var agg = {'ContributorsByTimes': utils.termsFilter('field', 'projects.properties.contributors.fullname')};
+    agg.ContributorsByTimes.aggregations = {'contributors' :
+        utils.dateHistogramFilter('date_created', threeMonthsAgo)};
     return agg;
 };
 
 /**
 * View function for the profile dashboard
 *
-* @param {Object} controller Object automatically passed in by mithril
+* @param {Object} ctrl: controller Object automatically passed in by mithril
 * @return {m.component object}  initialised searchDashboard component
 */
-profileDashboard.view = function(ctrl, params, children){
-   return m.component(searchDashboard, {elasticURL: '/api/v1/share/search/', widgets : ctrl.widgets, rows: 2});
+profileDashboard.view = function(ctrl) {
+    return m.component(searchDashboard, ctrl.searchSetup);
 };
 
 /**
  * controller function for the ProfileDashboard. Basically a constructor that sets up a SearchDashboard.
  * Contains settings for all widgets. Contains Elastic Data.
  *
- * @return {m.component.controller}  returns itself
+ * @return {m.component.controller} returns itself
  */
 profileDashboard.controller = function(params) {
-    this.user = params.user;
-
-    var userFilter = {}
-
-    var contributers = {
-        title: 'Contributers',
+    var contributors = {
+        title: 'Contributors',
         size: ['.col-md-3', 260],
         row: 1,
-        levelNames: ['sources'],
+        levelNames: ['contributors','contributorsName'],
         display: charts.donutChart,
-        aggregation: profileDashboard.contributersAgg(),
-        callback: {'onclick': function (d) {
-            utils.updateFilter(this.vm, 'match:shareProperties.source:' + d.name, true);
-            widgetUtils.signalWidgetsToUpdate(this.vm,this.widget.thisWidgetUpdates);
-        }},
-        thisWidgetUpdates: ['sources', 'sourcesByTimes', 'results']
+        displayArgs: {
+            callback: { onclick : function (key) {
+                utils.updateFilter(this.vm, 'match:contributors.url:' + key.name, true);
+                widgetUtils.signalWidgetsToUpdate(this.vm, this.widget.thisWidgetUpdates);
+            }},
+        },
+        aggregation: profileDashboard.contributorsAgg(),
+        thisWidgetUpdates: ['Contributors', 'ContributorsByTimes', 'results'] //TODO give simple 'all' option
     };
 
-    var contributersByTimes = {
-        title: 'Contributers over time',
+    var contributorsByTimes = {
+        title: 'Contributors over time',
         size: ['.col-md-9', 260],
         row: 1,
-        levelNames: ['sourcesByTimes','sources'],
+        levelNames: ['contributorsByTimes','sources'],
         display: charts.timeseriesChart,
-        aggregation: profileDashboard.contributersByTimesAgg(),
-        callback: null, //no callbacks, this is purely for display
-        thisWidgetUpdates: ['sources', 'sourcesByTimes', 'results']
+        displayArgs: {},
+        aggregation: profileDashboard.contributorsByTimesAgg(),
+        thisWidgetUpdates: ['Contributors', 'ContributorsByTimes', 'results']
     };
 
     var results = {
@@ -88,12 +90,18 @@ profileDashboard.controller = function(params) {
         row: 2,
         levelNames: ['results'],
         display: ResultsWidget.display,
+        displayArgs: {},
         aggregation: null, //this displays no stats, so needs no aggregations
-        callback: null, //callbacks are all prebuilt into this widget
-        thisWidgetUpdates: ['sources', 'sourcesByTimes', 'results']
+        thisWidgetUpdates: ['Contributors', 'ContributorsByTimes', 'results']
     };
 
-    this.widgets = [contributers, contributersByTimes, results];
+    this.searchSetup = {
+        elasticURL: '/api/v1/search/',
+        user: ctx.user,
+        widgets : [contributors, results],
+        rows:2,
+        requiredFilters: ['match:contributors.url:' + ctx.user]
+    };
 };
 
 module.exports = profileDashboard;

@@ -52,7 +52,8 @@ var searchWidgetPanel = {
     /**
      * View function for a search widget panel. Returns search widget nicely wrapped in panel with minimize actions.
      *
-     * @param {Object} controller object automatically passed in by mithril
+     * @param {Object} ctrl: controller object automatically passed in by mithril
+     * @param {Object} params: params containing vm
      * @return {m.component object}  initialised searchWidgetPanel component
      */
     view : function (ctrl, params, children) {
@@ -61,7 +62,7 @@ var searchWidgetPanel = {
                 m('.panel-heading clearfix', {},[
                     m('h3.panel-title',params.widget.title),
                     m('.pull-right', {},
-                        m('a.stats-expand', {onclick: function () {
+                        m('a.widget-expand', {onclick: function () {
                                 ctrl.hidden(!ctrl.hidden());
                                 m.redraw(true);
                             }},

@@ -51,12 +51,12 @@ utils.updateVM = function(vm, data) {
     }
     vm.time = data.time;
     vm.count = data.count;
-    data.results.forEach(function(result) {
-        result.title = utils.highlightField(result, 'title');
-        result.description = utils.highlightField(result, 'description');
-    });
-    vm.results.push.apply(vm.results, data.results);
-    vm.data = data; //TODO this is for search widgets, make for all (i.e. inc. share)
+    //data.results.forEach(function(result) { //TODO @bdyetton to @fabianvf: results should be generic at this point... and only parsed at the final widget stage
+    //    result.title = utils.highlightField(result, 'title');
+    //    result.description = utils.highlightField(result, 'description');
+    //});
+    //vm.results.push.apply(vm.results, data.results);
+    vm.data = data; //TODO this is return data (results) for search widgets, make for all (i.e. inc. share)
     vm.dataLoaded(true);
     m.endComputation();
 };

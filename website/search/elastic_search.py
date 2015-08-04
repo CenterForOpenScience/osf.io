@@ -153,7 +153,9 @@ def search(query, index=None, doc_type='_all'):
         'results': format_results(results),
         'counts': counts,
         'tags': tags,
-        'typeAliases': ALIASES
+        'typeAliases': ALIASES,
+        'aggs': raw_results.get('aggs', False),
+        'aggregations': raw_results.get('aggregations', False)
     }
     return return_value
 
