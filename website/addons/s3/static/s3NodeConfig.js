@@ -89,33 +89,53 @@ ViewModel.prototype.updateBucketList = function(){
         });
 };
 
+var isValidBucketName = function(bucketName, allowPeriods) {
+    var isValidBucket;
+
+    if (allowPeriods === true) {
+        isValidBucket = /^(?!.*(\.\.|-\.))[^.][a-z0-9\d.-]{2,61}[^.]$/;
+    } else {isValidBucket = /^(?!.*(\.\.|-\.))[^.][a-z0-9\d-]{2,61}[^.]$/;}
+
+    return isValidBucket.exec(bucketName) == null;
+};
+
 ViewModel.prototype.selectBucket = function() {
     var self = this;
+
     self.loading(true);
-    return $osf.postJSON(
-            self.urls().set_bucket, {
-                's3_bucket': self.selectedBucket(),
-                'encrypt_uploads': self.encryptUploads()
-            }
-        )
-        .done(function(response) {
-            self.updateFromData(response);
-            self.changeMessage('Successfully linked S3 bucket "' + self.currentBucket() + '". Go to the <a href="' +
-                               self.urls().files + '">Files page</a> to view your content.', 'text-success');
-            self.loading(false);
-        })
-        .fail(function(xhr, status, error) {
-            self.loading(false);
-            var message = 'Could not change S3 bucket at this time. ' +
-                'Please refresh the page. If the problem persists, email ' +
-                '<a href="mailto:support@osf.io">support@osf.io</a>.';
-            self.changeMessage(message, 'text-danger');
-            Raven.captureMessage('Could not set S3 bucket', {
-                url: self.urls().setBucket,
-                textStatus: status,
-                error: error
-            });
+
+    if (isValidBucketName(self.selectedBucket(), false)) {
+        self.loading(false);
+        bootbox.alert({
+            title: 'Invalid bucket name',
+            message: 'Sorry, the S3 addon only supports bucket names without periods.'
         });
+    } else {
+        return $osf.postJSON(
+                self.urls().set_bucket, {
+                    's3_bucket': self.selectedBucket(),
+                    'encrypt_uploads': self.encryptUploads()
+                }
+            )
+            .done(function (response) {
+                self.updateFromData(response);
+                self.changeMessage('Successfully linked S3 bucket "' + self.currentBucket() + '". Go to the <a href="' +
+                    self.urls().files + '">Files page</a> to view your content.', 'text-success');
+                self.loading(false);
+            })
+            .fail(function (xhr, status, error) {
+                self.loading(false);
+                var message = 'Could not change S3 bucket at this time. ' +
+                    'Please refresh the page. If the problem persists, email ' +
+                    '<a href="mailto:support@osf.io">support@osf.io</a>.';
+                self.changeMessage(message, 'text-danger');
+                Raven.captureMessage('Could not set S3 bucket', {
+                    url: self.urls().setBucket,
+                    textStatus: status,
+                    error: error
+                });
+            });
+    }
 };
 
 ViewModel.prototype._deauthorizeNodeConfirm = function() {
@@ -324,7 +344,7 @@ ViewModel.prototype.openCreateBucket = function() {
 
                     if (!bucketName) {
                         return;
-                    } else if (isValidBucket.exec(bucketName) == null) {
+                    } else if (isValidBucketName(bucketName, true)) {
                         bootbox.confirm({
                             title: 'Invalid bucket name',
                             message: 'Sorry, that\'s not a valid bucket name. Try another name?',
