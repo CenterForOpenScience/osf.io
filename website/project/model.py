@@ -93,6 +93,10 @@ class MetaSchema(StoredObject):
     # Version of the schema to use (e.g. if questions, responses change)
     schema_version = fields.IntegerField()
 
+    @property
+    def requires_approval(self):
+        return self.schema.get('config', {}).get('requiresApproval', False)
+
 def ensure_schema(schema, name, version=1):
     try:
         schema_obj = MetaSchema.find_one(
@@ -3288,11 +3292,10 @@ class DraftRegistration(AddonModelMixin, StoredObject):
         return changes
 
     def before_edit(self, auth):
-		# TOOD(samchrisinger): Make sure we still need this
         messages = []
-        if self.flags.get('isApproved'):
+        if self.is_approved:
             messages.append('The draft registration you are editing is currently approved. Please note that if you make any changes (excluding comments) this approval status will be revoked and you will need to submit for approval again.')
-        if self.flags.get('isPendingReview'):
+        if self.requires_approval:
             messages.append('The draft registration you are editing is currently pending review. Please note that if you make any changes (excluding comments) this request will be cancelled and you will need to submit for approval again.')
         return messages
 

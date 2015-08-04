@@ -18,7 +18,6 @@ from website.project.decorators import (
     must_have_permission,
     http_error_if_disk_saving_mode
 )
-from website import settings
 from website.mails import Mail, send_mail
 from website.project import utils as project_utils
 from website.project.model import MetaSchema, DraftRegistration, DraftRegistrationApproval
@@ -28,13 +27,16 @@ from website.project.utils import serialize_node
 get_schema_or_fail = lambda query: get_or_http_error(MetaSchema, query)
 autoload_draft = functools.partial(autoload, DraftRegistration, 'draft_id', 'draft')
 
+@autoload_draft
 @must_have_permission(ADMIN)
 @must_be_valid_project
-def submit_draft_for_review(auth, node, draft_pk, *args, **kwargs):
+def submit_draft_for_review(auth, node, draft, *args, **kwargs):
     user = auth.user
 
-    draft = get_draft_or_fail(draft_pk)
-    draft.is_pending_review = True
+    draft.approval = DraftRegistrationApproval(
+        initiated_by=auth.user,
+        end_date=None,  # TODO: expire me?
+    )
     draft.save()
 
     REVIEW_EMAIL = Mail(tpl_prefix='prereg_review', subject='New Prereg Prize registration ready for review')
