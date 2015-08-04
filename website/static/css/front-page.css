@@ -124,7 +124,7 @@ h6 {
 #hero-signup a:hover {
     text-decoration: none;
 }
-#signUpScope button {
+#signUpScope button, #signUpScope input, #signUpScope .help-block {
     z-index: 9;
     position: relative;
 }
