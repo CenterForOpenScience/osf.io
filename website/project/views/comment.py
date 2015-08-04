@@ -98,12 +98,6 @@ def comment_discussion(comments, node, anonymous=False, widget=False):
         if not widget:
             update_discussion(comment, comments_dict=comments_dict)
 
-    sorted_users_frequency = sorted(
-        comments_dict.keys(),
-        key=lambda item: len(comments_dict[item]),
-        reverse=True,
-    )
-
     def get_most_recent_comment(item):
         """Gets the most recent comment made by a user"""
         most_recent = comments_dict[item][0].date_created
@@ -119,10 +113,6 @@ def comment_discussion(comments, node, anonymous=False, widget=False):
     )
 
     return {
-        'discussionByFrequency': [
-            serialize_user(user, node=node, n_comments=len(comments_dict[user]), anonymous=anonymous)
-            for user in sorted_users_frequency
-        ],
         'discussionByRecency': [
             serialize_user(user, node=node, n_comments=len(comments_dict[user]), anonymous=anonymous)
             for user in sorted_users_recency

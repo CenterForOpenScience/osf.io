@@ -173,7 +173,6 @@ BaseComment.prototype.fetch = function(isCommentList, nodeId, thread) {
                 })
             );
             if (isCommentList) {
-                self.discussionByFrequency(response.discussionByFrequency);
                 self.discussionByRecency(response.discussionByRecency);
             }
             self.unreadComments(response.nUnread);
@@ -237,7 +236,7 @@ BaseComment.prototype.checkFileExistsAndConfigure = function(nodeId) {
     });
     request.fail(function (xhl) {
         self.isHidden(true);
-        $.map([self.$root.discussionByFrequency, self.$root.discussionByRecency], function(discussion){
+        $.map([self.$root.discussionByRecency], function(discussion){
             return self.decrementUserFromDiscussion(discussion);
         });
         self.loading(false);
@@ -300,7 +299,6 @@ BaseComment.prototype.submitReply = function() {
         }
         if (!hasCommented) {
             self.$root.discussionByRecency.unshift(response.comment.author);
-            self.$root.discussionByFrequency.push(response.comment.author);
         }
         self.onSubmitSuccess(response);
         if (self.level >= self.MAXLEVEL) {
@@ -636,16 +634,9 @@ var CommentListModel = function(options) {
     self.canComment = ko.observable(options.canComment);
     self.hasChildren = ko.observable(options.hasChildren);
 
-    self.discussionByFrequency = ko.observableArray();
     self.discussionByRecency = ko.observableArray();
-    self.byRecency = ko.observable(true); // Default sorting is by recency
-
     self.discussion = ko.computed(function(){
-        if (self.byRecency()) {
-            return self.discussionByRecency();
-        } else {
-            return self.discussionByFrequency();
-        }
+        return self.discussionByRecency();
     });
 
     self.page(options.hostPage);
@@ -692,14 +683,6 @@ var CommentListModel = function(options) {
 CommentListModel.prototype = new BaseComment();
 
 CommentListModel.prototype.onSubmitSuccess = function() {};
-
-CommentListModel.prototype.showRecent = function() {
-    this.byRecency(true);
-};
-
-CommentListModel.prototype.showFrequent = function() {
-    this.byRecency(false);
-};
 
 CommentListModel.prototype.initListeners = function() {
     var self = this;
