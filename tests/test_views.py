@@ -1762,6 +1762,19 @@ class TestAddingContributorViews(OsfTestCase):
         notify_contributor(project, contributor)
         assert_equal(send_mail.call_count, 1)
 
+    @mock.patch('website.mails.send_mail')
+    def test_notify_contributor_email_sends_after_throttle_expires(self, send_mail):
+        throttle = 0.5
+
+        contributor = UserFactory()
+        project = ProjectFactory()
+        notify_contributor(project, contributor, throttle=throttle)
+        assert_true(send_mail.called)
+
+        time.sleep(1)  # throttle period expires
+        notify_contributor(project, contributor, throttle=throttle)
+        assert_equal(send_mail.call_count, 2)
+
     def test_add_multiple_contributors_only_adds_one_log(self):
         n_logs_pre = len(self.project.logs)
         reg_user = UserFactory()
