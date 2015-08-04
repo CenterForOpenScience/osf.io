@@ -635,11 +635,6 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
 
     creator = fields.ForeignField('user', backref='created')
     contributors = fields.ForeignField('user', list=True, backref='contributed')
-    # Time of last sent notification email to newly added contributors
-    # {<User._id>:
-    #   {'last_sent': time.time()}
-    # }
-    contributor_record = fields.DictionaryField(default=dict)
     users_watching_node = fields.ForeignField('user', list=True, backref='watched')
 
     logs = fields.ForeignField('nodelog', list=True, backref='logged')

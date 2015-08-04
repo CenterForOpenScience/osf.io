@@ -514,14 +514,14 @@ def notify_added_contributor(node, contributor, throttle=None):
     # Exclude forks and templates because the user forking/templating the project
     # gets added via 'add_contributor' but does not need to get notified
     if contributor.is_registered and not node.template_node and not node.is_fork:
-        contributor_record = node.contributor_record.get(contributor._id, {})
+        contributor_record = contributor.contributor_added_email_records.get(node._id, {})
         if contributor_record:
             timestamp = contributor_record.get('last_sent', None)
             if timestamp:
                 if not throttle_period_expired(timestamp, throttle):
                     return
         else:
-            node.contributor_record[contributor._id] = {}
+            contributor.contributor_added_email_records[node._id] = {}
 
         mails.send_mail(
             contributor.username,
@@ -530,8 +530,8 @@ def notify_added_contributor(node, contributor, throttle=None):
             node=node
         )
 
-        node.contributor_record[contributor._id]['last_sent'] = get_timestamp()
-        node.save()
+        contributor.contributor_added_email_records[node._id]['last_sent'] = get_timestamp()
+        contributor.save()
 
 
 def verify_claim_token(user, token, pid):

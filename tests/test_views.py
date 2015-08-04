@@ -1717,7 +1717,7 @@ class TestAddingContributorViews(OsfTestCase):
             mails.CONTRIBUTOR_ADDED,
             user=contributor,
             node=project)
-        assert_equal(project.contributor_record[contributor._id]['last_sent'], int(time.time()))
+        assert_equal(contributor.contributor_added_email_records[project._id]['last_sent'], int(time.time()))
 
     @mock.patch('website.mails.send_mail')
     def test_contributor_added_email_not_sent_to_unreg_user(self, send_mail):
