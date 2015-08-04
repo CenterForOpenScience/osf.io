@@ -118,6 +118,9 @@
                         }'></div>
 
                     </ol>
+                    % if discussions['enabled'] and user['is_contributor']:
+                        <span data-bind="tooltip: {title: 'Send an email to the email discussions list of this ${node['node_type']}', placement: right"><a href="mailto:${node['id']}@osf.io">&#9993&#65039</a></span>
+                    % endif
                 % endif
                 % if node['is_fork']:
                     <br />Forked from <a class="node-forked-from" href="/${node['forked_from_id']}/">${node['forked_from_display_absolute_url']}</a> on
