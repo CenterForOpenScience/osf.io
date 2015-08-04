@@ -9,7 +9,7 @@
         ">
 
         <h4 class="list-group-item-heading">
-            <span class="component-overflow" style="line-height: 1.5;">
+            <span class="component-overflow f-w-lg" style="line-height: 1.5;">
             % if not summary['primary']:
               <i class="fa fa-link" data-toggle="tooltip" title="Linked ${summary['node_type']}"></i>
             % endif
@@ -36,7 +36,7 @@
                 <a href="${summary['url']}">${summary['title']}</a>
             % endif
             % if summary['archiving']:
-                <span>${summary['title']}</span>
+                <span class="f-w-lg">${summary['title']}</span>
             % endif
 
 
@@ -48,18 +48,23 @@
             <!-- Show/Hide recent activity log -->
             % if not summary['archiving']:
             <div class="pull-right">
-                % if not summary['primary'] and 'admin' in user['permissions']:
+                % if not summary['primary'] and 'admin' in user['permissions'] and not node['is_registration']:
                     <i class="fa fa-times remove-pointer" data-id="${summary['id']}" data-toggle="tooltip" title="Remove link"></i>
                     <i class="fa fa-code-fork" onclick="NodeActions.forkPointer('${summary['id']}', '${summary['primary_id']}');" data-toggle="tooltip" title="Fork this ${summary['node_type']} into ${node['node_type']} ${node['title']}"></i>
                 % endif
-                <i id="icon-${summary['id']}" class="pointer fa fa-plus" onclick="NodeActions.openCloseNode('${summary['id']}');" data-toggle="tooltip" title="More"></i>
+                <i id="icon-${summary['id']}" class="pointer fa fa-angle-down" onclick="NodeActions.openCloseNode('${summary['id']}');" style="font-weight:bold;"></i>
             </div>
             % endif
         </h4>
 
         % if summary['show_path'] and summary['node_type'] == 'component':
             <div style="padding-bottom: 10px">
-                ${summary['parent_title'] if summary['parent_is_public'] else "<em>-- private project --</em>"} / <b>${summary['title']}</b>
+                % if summary['parent_is_public']:
+                    ${summary['parent_title']}
+                % else:
+                    <em>-- private project --</em>
+                % endif
+                 / <b>${summary['title']}</b>
             </div>
         % endif
 
@@ -81,7 +86,7 @@
         <!--Stacked bar to visualize user activity level against total activity level of a project -->
         <!--Length of the stacked bar is normalized over all projects -->
         % if not summary['anonymous']:
-            <div class="progress progress-user-activity">
+            <div class="progress progress-bar-sm progress-user-activity">
                 % if summary['ua']:
                     <div class="progress-bar progress-bar-success ${'last' if not summary['non_ua'] else ''}" style="width: ${summary['ua']}%"  data-toggle="tooltip" title="${user_full_name} made ${summary['ua_count']} contributions"></div>
                 % endif
@@ -101,7 +106,7 @@
                     <dt><span class="date log-date" data-bind="text: log.date.local, tooltip: {title: log.date.utc}"></span></dt>
                     <dd class="log-content">
                         <span data-bind="if:log.anonymous">
-                            <span><em>A user</em></span>
+                           <span data-bind="html: $parent.anonymousUserName"></span>
                         </span>
                         <span data-bind="ifnot:log.anonymous">
                             <a data-bind="text: log.userFullName || log.apiKey, attr: {href: log.userURL}"></a>
@@ -119,8 +124,8 @@
 % else:
     <li
         node_reference="${summary['id']}:${'node' if summary['primary'] else 'pointer'}"
-        class="project list-group-item list-group-item-node unavailable">
-        <h4 class="list-group-item-heading">
+        class="project list-group-item list-group-item-node">
+        <p class="list-group-item-heading f-w-lg">
             %if summary['is_registration']:
                 Private Registration
             %elif summary['is_fork']:
@@ -130,7 +135,7 @@
             %else:
                 Private Component
             %endif
-        </h4>
+        </p>
     </li>
 
 % endif

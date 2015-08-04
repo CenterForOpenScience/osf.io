@@ -14,6 +14,7 @@ from website.archiver import (
     ARCHIVER_SIZE_EXCEEDED,
     ARCHIVER_NETWORK_ERROR,
     ARCHIVER_UNCAUGHT_ERROR,
+    NO_ARCHIVE_LIMIT,
     AggregateStatResult,
 )
 from website.archiver import utils
@@ -24,6 +25,7 @@ from website.project import signals as project_signals
 from website import settings
 from website.app import init_addons, do_set_backends
 
+
 def create_app_context():
     try:
         init_addons(settings)
@@ -33,6 +35,7 @@ def create_app_context():
 
 
 logger = get_task_logger(__name__)
+
 
 class ArchiverSizeExceeded(Exception):
 
@@ -46,6 +49,7 @@ class ArchiverStateError(Exception):
     def __init__(self, info, *args, **kwargs):
         super(ArchiverStateError, self).__init__(*args, **kwargs)
         self.info = info
+
 
 class ArchiverTask(celery.Task):
     abstract = True
@@ -114,6 +118,7 @@ def stat_addon(addon_short_name, job_pk):
     )
     return result
 
+
 @celery_app.task(base=ArchiverTask, name="archiver.make_copy_request")
 @logged('make_copy_request')
 def make_copy_request(job_pk, url, data):
@@ -131,6 +136,7 @@ def make_copy_request(job_pk, url, data):
     provider = data['source']['provider']
     logger.info("Sending copy request for addon: {0} on node: {1}".format(provider, dst._id))
     requests.post(url, data=json.dumps(data))
+
 
 def make_waterbutler_payload(src, dst, addon_short_name, rename, cookie, revision=None):
     ret = {
@@ -151,6 +157,7 @@ def make_waterbutler_payload(src, dst, addon_short_name, rename, cookie, revisio
     if revision:
         ret['source']['revision'] = revision
     return ret
+
 
 @celery_app.task(base=ArchiverTask, name="archiver.archive_addon")
 @logged('archive_addon')
@@ -211,7 +218,7 @@ def archive_node(results, job_pk):
         src.title,
         targets=results,
     )
-    if stat_result.disk_usage > settings.MAX_ARCHIVE_SIZE:
+    if (NO_ARCHIVE_LIMIT not in job.initiator.system_tags) and (stat_result.disk_usage > settings.MAX_ARCHIVE_SIZE):
         raise ArchiverSizeExceeded(result=stat_result)
     else:
         if not results:
@@ -227,6 +234,7 @@ def archive_node(results, job_pk):
                     stat_result=result,
                 )
         project_signals.archive_callback.send(dst)
+
 
 @celery_app.task(bind=True, base=ArchiverTask, name='archiver.archive')
 @logged('archive')

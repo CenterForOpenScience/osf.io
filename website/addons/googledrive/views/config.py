@@ -48,8 +48,7 @@ def googledrive_config_put(node_addon, auth, **kwargs):
 
 
 @must_be_logged_in
-@must_have_addon('googledrive', 'user')
-def googledrive_user_config_get(user_addon, **kwargs):
+def googledrive_user_config_get(auth, **kwargs):
     """View for getting a JSON representation of the logged-in user's
     Google Drive user settings.
     """
@@ -58,10 +57,18 @@ def googledrive_user_config_get(user_addon, **kwargs):
         'delete': api_url_for('googledrive_oauth_delete_user'),
     }
 
+    user_addon = auth.user.get_addon('googledrive')
+
+    user_has_auth = False
+    username = ''
+    if user_addon:
+        user_has_auth = user_addon.has_auth
+        username = user_addon.username
+
     return {
         'result': {
             'urls': urls,
-            'username': user_addon.username,
-            'userHasAuth': user_addon.has_auth,
+            'username': username,
+            'userHasAuth': user_has_auth,
         },
     }

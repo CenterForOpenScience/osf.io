@@ -17,7 +17,7 @@ var socialRules = {
     researcherId: /researcherid\.com\/rid\/([-\w]+)/i,
     scholar: /scholar\.google\.com\/citations\?user=(\w+)/i,
     twitter: /twitter\.com\/(\w+)/i,
-    linkedIn: /linkedin\.com\/profile\/view\?id=(\d+)/i,
+    linkedIn: /.*\/?(in\/.*|profile\/.*|pub\/.*)/i,
     impactStory: /impactstory\.org\/([\w\.-]+)/i,
     github: /github\.com\/(\w+)/i
 };
@@ -264,6 +264,9 @@ BaseViewModel.prototype.handleSuccess = function() {
 BaseViewModel.prototype.handleError = function(response) {
     var defaultMsg = 'Could not update settings';
     var msg = response.message_long || defaultMsg;
+
+ 
+
     this.changeMessage(
         msg,
         'text-danger',
@@ -308,6 +311,12 @@ BaseViewModel.prototype.cancel = function(data, event) {
                         self.mode('view');
                     }
                 }
+            },
+            buttons:{
+                confirm:{
+                    label:'Discard',
+                    className:'btn-danger'
+                }
             }
         });
     } else {
@@ -333,6 +342,7 @@ BaseViewModel.prototype.submit = function() {
     } else {
         this.showMessages(true);
     }
+
 };
 
 var NameViewModel = function(urls, modes, preventUnsaved, fetchCallback) {
@@ -384,9 +394,10 @@ var NameViewModel = function(urls, modes, preventUnsaved, fetchCallback) {
         });
     };
 
-    var initials = function(names) {
+    self.initials = function(names) {
+        names = $.trim(names);
         return names
-            .split(' ')
+            .split(/\s+/)
             .map(function(name) {
                 return name[0].toUpperCase() + '.';
             })
@@ -411,7 +422,7 @@ var NameViewModel = function(urls, modes, preventUnsaved, fetchCallback) {
         var given = $.trim(self.given() + ' ' + self.middle());
 
         if (given) {
-            cite = cite + ', ' + initials(given);
+            cite = cite + ', ' + self.initials(given);
         }
         if (self.suffix()) {
             cite = cite + ', ' + suffix(self.suffix());
@@ -424,7 +435,7 @@ var NameViewModel = function(urls, modes, preventUnsaved, fetchCallback) {
         if (self.given()) {
             cite = cite + ', ' + self.given();
             if (self.middle()) {
-                cite = cite + ' ' + initials(self.middle());
+                cite = cite + ' ' + self.initials(self.middle());
             }
         }
         if (self.suffix()) {
@@ -499,7 +510,7 @@ var SocialViewModel = function(urls, modes) {
     );
     self.linkedIn = extendLink(
         ko.observable().extend({trimmed: true, cleanup: cleanByRule(socialRules.linkedIn)}),
-        self, 'linkedIn', 'https://www.linkedin.com/profile/view?id='
+        self, 'linkedIn', 'https://www.linkedin.com/'
     );
     self.impactStory = extendLink(
         ko.observable().extend({trimmed: true, cleanup: cleanByRule(socialRules.impactStory)}),

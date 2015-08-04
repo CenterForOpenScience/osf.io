@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 import bleach
+import json
 
 
-#Thank you Lyndsy
 def strip_html(unclean):
     """Sanitize a string, removing (as opposed to escaping) HTML tags
 
@@ -14,6 +14,7 @@ def strip_html(unclean):
     return bleach.clean(unclean, strip=True, tags=[], attributes=[], styles=[])
 
 
+# TODO: Not used anywhere except unit tests? Review for deletion
 def clean_tag(data):
     """Format as a valid Tag
 
@@ -22,15 +23,17 @@ def clean_tag(data):
     :return: cleaned string
     :rtype: str
     """
-    #TODO: make this a method of Tag?
+    # TODO: make this a method of Tag?
     return escape_html(data).replace('"', '&quot;').replace("'", '&#39')
+
 
 def is_iterable_but_not_string(obj):
     """Return True if ``obj`` is an iterable object that isn't a string."""
     return (hasattr(obj, '__iter__') and not hasattr(obj, 'strip'))
 
+
 def escape_html(data):
-    """Escape HTML characters in data.
+    """Escape HTML characters in data (as opposed to stripping them out entirely). Will ignore whitelisted tags.
 
     :param data: A string, dict, or list to clean of HTML characters
 
@@ -52,6 +55,7 @@ def escape_html(data):
     return data
 
 
+# FIXME: Not sure what this function is trying to accomplish. Candidate for deletion?
 def assert_clean(data):
     """Ensure that data is cleaned
 
@@ -69,7 +73,7 @@ def safe_unescape_html(value):
     """
     Return data without html escape characters.
 
-    :param s: A string, dict, or list
+    :param value: A string, dict, or list
     :return: A string or list or dict without html escape characters
 
     """
@@ -78,6 +82,7 @@ def safe_unescape_html(value):
         '&lt;': '<',
         '&gt;': '>',
     }
+
     if isinstance(value, dict):
         return {
             key: safe_unescape_html(value)
@@ -94,3 +99,24 @@ def safe_unescape_html(value):
             value = value.replace(escape_sequence, character)
         return value
     return value
+
+
+def temp_ampersand_fixer(s):
+    """As a workaround for ampersands stored as escape sequences in database, unescape text before use on a safe page
+
+    Explicitly differentiate from safe_unescape_html in case use cases/behaviors diverge
+    """
+    return s.replace('&amp;', '&')
+
+
+def safe_json(value):
+    """
+    Dump a string to JSON in a manner that can be used for JS strings in mako templates.
+
+    Providing additional forward-slash escaping to prevent injection of closing markup in strings. See:
+     http://benalpert.com/2012/08/03/preventing-xss-json.html
+
+    :param value: A string to be converted
+    :return: A JSON-formatted string that explicitly escapes forward slashes when needed
+    """
+    return json.dumps(value).replace('</', '<\\/')  # Fix injection of closing markup in strings

@@ -16,21 +16,16 @@
 </div>
 
 <div class="row project-page">
-
     <!-- Begin left column -->
-    <div class="col-sm-3 affix-parent">
+    <div class="col-sm-3 affix-parent scrollspy">
 
         % if 'write' in user['permissions']:
 
-            <div class="panel panel-default" data-spy="affix" data-offset-top="60" data-offset-bottom="268"><!-- Begin sidebar -->
+            <div class="panel panel-default osf-affix" data-spy="affix" data-offset-top="60" data-offset-bottom="263"><!-- Begin sidebar -->
                 <ul class="nav nav-stacked nav-pills">
 
                     % if not node['is_registration']:
                         <li><a href="#configureNodeAnchor">Configure ${node['node_type'].capitalize()}</a></li>
-
-                        % if 'admin' in user['permissions']:
-                            <li><a href="#configureCommentingAnchor">Configure Commenting</a></li>
-                        % endif
 
                         % if 'write' in user['permissions']:
                             <li><a href="#selectAddonsAnchor">Select Add-ons</a></li>
@@ -40,7 +35,11 @@
                             % endif
 
                             <li><a href="#configureNotificationsAnchor">Configure Notifications</a></li>
-                        %endif
+                        % endif
+
+                        % if 'admin' in user['permissions']:
+                            <li><a href="#configureCommentingAnchor">Configure Commenting</a></li>
+                        % endif
 
                     % endif
 
@@ -65,13 +64,12 @@
         % if 'write' in user['permissions']:  ## Begin Configure Project
 
             % if not node['is_registration']:
-
                 <div class="panel panel-default">
                     <span id="configureNodeAnchor" class="anchor"></span>
-
-                    <div class="panel-heading">
+                    <div class="panel-heading clearfix">
                         <h3 id="configureNode" class="panel-title">Configure ${node['node_type'].capitalize()}</h3>
                     </div>
+
                     <div id="projectSettings" class="panel-body">
                         <div class="form-group">
                             <label>Category:</label>
@@ -105,7 +103,6 @@
                             </span>
                             <br>
                             <span data-bind="css: messageClass, html: message"></span>
-                    </div>
 
                     % if 'admin' in user['permissions']:
                         <hr />
@@ -125,58 +122,13 @@
 
         % endif  ## End Configure Project
 
-        % if 'admin' in user['permissions']:  ## Begin Configure Commenting
-
-            % if not node['is_registration']:
-
-                <div class="panel panel-default">
-                    <span id="configureCommentingAnchor" class="anchor"></span>
-
-                    <div class="panel-heading">
-                        <h3 class="panel-title">Configure Commenting</h3>
-                    </div>
-
-                    <div class="panel-body">
-
-                        <form class="form" id="commentSettings">
-
-                            <div class="radio">
-                                <label>
-                                    <input type="radio" name="commentLevel" value="private" ${'checked' if comments['level'] == 'private' else ''}>
-                                    Only contributors can post comments
-                                </label>
-                            </div>
-                            <div class="radio">
-                                <label>
-                                    <input type="radio" name="commentLevel" value="public" ${'checked' if comments['level'] == 'public' else ''}>
-                                    When the ${node['node_type']} is public, any OSF user can post comments
-                                </label>
-                            </div>
-
-                            <button class="btn btn-success">Submit</button>
-
-                            <!-- Flashed Messages -->
-                            <div class="help-block">
-                                <p id="configureCommentingMessage"></p>
-                            </div>
-                        </form>
-
-                    </div>
-
-                </div>
-
-            % endif
-
-        % endif  ## End Configure Commenting
-
-
         % if 'write' in user['permissions']:  ## Begin Select Addons
 
             % if not node['is_registration']:
 
                 <div class="panel panel-default">
                     <span id="selectAddonsAnchor" class="anchor"></span>
-                    <div class="panel-heading">
+                    <div class="panel-heading clearfix">
                         <h3 class="panel-title">Select Add-ons</h3>
                     </div>
                     <div class="panel-body">
@@ -217,11 +169,11 @@
                             <br />
 
                             <button id="settings-submit" class="btn btn-success">
-                                Submit
+                                Apply
                             </button>
                             <div class="addon-settings-message text-success" style="padding-top: 10px;"></div>
 
-                     </form>
+                        </form>
 
                     </div>
                 </div>
@@ -231,10 +183,9 @@
 
                     <div id="configureAddons" class="panel panel-default">
 
-                        <div class="panel-heading">
+                        <div class="panel-heading clearfix">
                             <h3 class="panel-title">Configure Add-ons</h3>
                         </div>
-
                         <div class="panel-body">
 
                         % for node_settings_dict in addon_enabled_settings or []:
@@ -252,7 +203,6 @@
                 % endif
 
             % endif
-
         % endif  ## End Select Addons
 
         % if user['has_read_permissions']:  ## Begin Configure Notifications
@@ -261,16 +211,18 @@
 
                 <div class="panel panel-default">
                     <span id="configureNotificationsAnchor" class="anchor"></span>
-
-                    <div class="panel-heading">
+                    <div class="panel-heading clearfix">
                         <h3 class="panel-title">Configure Notifications</h3>
                     </div>
                     <div class="help-block" style="padding-left: 15px">
-                        <p>These notification settings only apply to you. They do NOT affect any other contributor on this project.</p>
+                        <p class="text-info">These notification settings only apply to you. They do NOT affect any other contributor on this project.</p>
                     </div>
                     <form id="notificationSettings" class="osf-treebeard-minimal">
                         <div id="grid">
-                            <div class="notifications-loading"> <i class="fa fa-spinner notifications-spin"></i> <p class="m-t-sm fg-load-message"> Loading notification settings...  </p> </div>
+                            <div class="notifications-loading">
+                                <i class="fa fa-spinner notifications-spin"></i>
+                                <p class="m-t-sm fg-load-message"> Loading notification settings...  </p>
+                            </div>
                         </div>
                         <div class="help-block" style="padding-left: 15px">
                             <p id="configureNotificationsMessage"></p>
@@ -280,7 +232,54 @@
 
             %endif
 
-        % endif  ## End Configure Addons
+        % endif ## End Configure Notifications
+
+
+
+        % if 'admin' in user['permissions']:  ## Begin Configure Commenting
+
+            % if not node['is_registration']:
+
+                <div class="panel panel-default">
+                    <span id="configureCommentingAnchor" class="anchor"></span>
+                    <div class="panel-heading clearfix">
+                        <h3 class="panel-title">Configure Commenting</h3>
+                    </div>
+
+                    <div class="panel-body">
+
+                        <form class="form" id="commentSettings">
+
+                            <div class="radio">
+                                <label>
+                                    <input type="radio" name="commentLevel" value="private" ${'checked' if comments['level'] == 'private' else ''}>
+                                    Only contributors can post comments
+                                </label>
+                            </div>
+                            <div class="radio">
+                                <label>
+                                    <input type="radio" name="commentLevel" value="public" ${'checked' if comments['level'] == 'public' else ''}>
+                                    When the ${node['node_type']} is public, any OSF user can post comments
+                                </label>
+                            </div>
+
+                            <button class="btn btn-success">Save</button>
+
+                            <!-- Flashed Messages -->
+                            <div class="help-block">
+                                <p id="configureCommentingMessage"></p>
+                            </div>
+                        </form>
+
+                    </div>
+
+                </div>
+
+            % endif
+
+        % endif  ## End Configure Commenting
+
+
 
         % if 'admin' in user['permissions']:  ## Begin Retract Registration
 
@@ -291,7 +290,7 @@
                     <div class="panel panel-default">
                         <span id="retractRegistrationAnchor" class="anchor"></span>
 
-                        <div class="panel-heading">
+                        <div class="panel-heading clearfix">
                             <h3 class="panel-title">Retract Registration</h3>
                         </div>
 
@@ -347,6 +346,14 @@
 % for name, capabilities in addon_capabilities.iteritems():
     <script id="capabilities-${name}" type="text/html">${capabilities}</script>
 % endfor
+
+
+<%def name="stylesheets()">
+    ${parent.stylesheets()}
+
+    <link rel="stylesheet" href="/static/css/pages/project-page.css">
+</%def>
+
 
 <%def name="javascript_bottom()">
     <% import json %>

@@ -40,10 +40,12 @@ var AddPointerViewModel = oop.extend(Paginator, {
     },
     searchAllProjects: function() {
         this.includePublic(true);
+        this.pageToGet(0);
         this.fetchResults();
     },
     searchMyProjects: function() {
         this.includePublic(false);
+        this.pageToGet(0);
         this.fetchResults();
     },
     fetchResults: function() {
@@ -57,7 +59,7 @@ var AddPointerViewModel = oop.extend(Paginator, {
                     query: self.query(),
                     nodeId: nodeId,
                     includePublic: self.includePublic(),
-                    page: self.currentPage()
+                    page: self.pageToGet()
                 }
             ).done(function(result) {
                 if (!result.nodes.length) {

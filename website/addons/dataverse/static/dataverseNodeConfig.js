@@ -76,24 +76,25 @@ function ViewModel(url) {
                 'problem persists.';
         }),
         confirmDeauth: ko.pureComputed(function() {
-            return 'Are you sure you want to remove this ' + self.addonName + ' authorization?';
+            return 'Are you sure you want to remove this ' + self.addonName + ' account?';
         }),
         confirmAuth: ko.pureComputed(function() {
             return 'Are you sure you want to authorize this project with your ' + self.addonName + ' access token?';
         }),
         deauthorizeSuccess: ko.pureComputed(function() {
-            return 'Deauthorized ' + self.addonName + '.';
+            return 'Disconnected ' + self.addonName + '.';
         }),
         deauthorizeFail: ko.pureComputed(function() {
-            return 'Could not deauthorize because of an error. Please try again later.';
+            return 'Could not disconnect because of an error. Please try again later.';
         }),
         authInvalid: ko.pureComputed(function() {
             return 'The API token provided for ' + self.host() + ' is invalid.';
         }),
         authError: ko.pureComputed(function() {
-            return 'There was a problem connecting to the Dataverse. Please refresh the page or ' +
-                'contact <a href="mailto: support@osf.io">support@osf.io</a> if the ' +
-                'problem persists.';
+            return 'Sorry, but there was a problem connecting to that instance of Dataverse. It ' +
+                'is likely that the instance hasn\'t been upgraded to Dataverse 4.0. If you ' +
+                'have any questions or believe this to be an error, please contact ' +
+                'support@osf.io.';
         }),
         tokenImportSuccess: ko.pureComputed(function() {
             return 'Successfully imported access token from profile.';
@@ -220,13 +221,17 @@ function ViewModel(url) {
         self.updateFromData(response.result);
         self.loadedSettings(true);
     }).fail(function(xhr, textStatus, error) {
-        self.changeMessage(self.messages.userSettingsError, 'text-warning');
+        self.changeMessage(self.messages.userSettingsError, 'text-danger');
         Raven.captureMessage('Could not GET dataverse settings', {
             url: url,
             textStatus: textStatus,
             error: error
         });
     });
+
+    self.selectionChanged = function() {
+        self.changeMessage('','');
+    };
 }
 
 /**
@@ -344,6 +349,12 @@ ViewModel.prototype.getDatasets = function() {
 /** Send POST request to authorize Dataverse */
 ViewModel.prototype.sendAuth = function() {
     var self = this;
+
+    // Selection should not be empty
+    if( !self.selectedHost() ){
+        self.changeMessage("Please select a Dataverse repository.", 'text-danger');
+        return;
+    }
     var url = self.urls().create;
     return $osf.postJSON(
         url,
@@ -354,6 +365,7 @@ ViewModel.prototype.sendAuth = function() {
     ).done(function() {
         self.clearModal();
         $modal.modal('hide');
+        self.userHasAuth(true);
         self.importAuth();
     }).fail(function(xhr, textStatus, error) {
         var errorMessage = (xhr.status === 401) ? self.messages.authInvalid : self.messages.authError;
@@ -374,7 +386,7 @@ ViewModel.prototype.fetchAccounts = function() {
         ret.resolve(data.accounts);
     });
     request.fail(function(xhr, textStatus, error) {
-        self.changeMessage(self.messages.updateAccountsError(), 'text-warning');
+        self.changeMessage(self.messages.updateAccountsError(), 'text-danger');
         Raven.captureMessage('Could not GET ' + self.addonName + ' accounts for user', {
             url: self.url,
             textStatus: textStatus,
@@ -463,7 +475,16 @@ ViewModel.prototype.importAuth = function() {
                         }
                     ),
                     value: self.accounts()[0].id,
-                    callback: (self.connectExistingAccount.bind(self))
+                    callback: function(accountId) {
+                        if (accountId) {
+                            self.connectExistingAccount.call(self, (accountId));
+                        }
+                    },
+                    buttons:{
+                        confirm:{
+                            label: 'Import'
+                        }
+                    }
                 });
             } else {
                 bootbox.confirm({
@@ -472,6 +493,11 @@ ViewModel.prototype.importAuth = function() {
                     callback: function(confirmed) {
                         if (confirmed) {
                             self.connectExistingAccount.call(self, (self.accounts()[0].id));
+                        }
+                    },
+                    buttons:{
+                        confirm:{
+                            label:'Import'
                         }
                     }
                 });
@@ -511,11 +537,17 @@ ViewModel.prototype._deauthorizeConfirm = function() {
 ViewModel.prototype.deauthorize = function() {
     var self = this;
     bootbox.confirm({
-        title: 'Deauthorize ' + self.addonName + '?',
+        title: 'Disconnect ' + self.addonName + ' Account?',
         message: self.messages.confirmDeauth(),
         callback: function(confirmed) {
             if (confirmed) {
                 self._deauthorizeConfirm();
+            }
+        },
+        buttons:{
+            confirm:{
+                label: 'Disconnect',
+                className: 'btn-danger'
             }
         }
     });

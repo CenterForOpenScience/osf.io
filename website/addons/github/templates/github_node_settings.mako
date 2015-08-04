@@ -2,6 +2,7 @@
 
     <div>
         <h4 class="addon-title">
+            <img class="addon-icon" src="${addon_icon_url}"></img>
             GitHub
             <small class="authorized-by">
                 % if node_has_auth:
@@ -10,16 +11,18 @@
                             ${auth_osf_name}
                         </a>
                     % if not is_registration:
-                        <a id="githubRemoveToken" class="text-danger pull-right addon-auth" >Deauthorize</a>
+                        <a id="githubRemoveToken" class="text-danger pull-right addon-auth" >
+                          Disconnect Account
+                        </a>
                     % endif
                 % else:
                     % if user_has_auth:
                         <a id="githubImportToken" class="text-primary pull-right addon-auth">
-                            Import Access Token
+                           Import Account from Profile
                         </a>
                     % else:
                         <a id="githubCreateToken" class="text-primary pull-right addon-auth">
-                            Create Access Token
+                           Connect Account
                         </a>
                     % endif
                 % endif
@@ -36,7 +39,7 @@
 
         <div class="row">
 
-            <div class="col-md-6">
+            <div class="col-md-6 m-b-sm">
                 <select id="githubSelectRepo" class="form-control" ${'disabled' if not is_owner or is_registration else ''}>
                     <option>-----</option>
                         % if is_owner:
@@ -50,10 +53,10 @@
             </div>
 
             % if is_owner and not is_registration:
-                <div class="col-md-6">
-                    <a id="githubCreateRepo" class="btn btn-default">Create Repo</a>
-                    <button class="btn btn-primary addon-settings-submit pull-right">
-                        Submit
+                <div class="col-md-6 m-b-sm">
+                    <a id="githubCreateRepo" class="btn btn-success">Create Repo</a>
+                    <button class="btn btn-success addon-settings-submit pull-right">
+                        Save
                     </button>
                 </div>
             % endif
@@ -65,7 +68,7 @@
     ${self.on_submit()}
 
     % if node_has_auth and not valid_credentials:
-        <div class="addon-settings-message text-danger" style="padding-top: 10px;">
+        <div class="addon-settings-message text-danger p-t-sm">
             % if is_owner:
                 Could not retrieve GitHub settings at this time. The GitHub addon credentials
                 may no longer be valid. Try deauthorizing and reauthorizing GitHub on your
@@ -76,7 +79,7 @@
             % endif
         </div>
     % else:
-        <div class="addon-settings-message" style="display: none; padding-top: 10px;"></div>
+        <div class="addon-settings-message p-t-sm" style="display: none"></div>
     % endif
 
 </form>
