@@ -2871,21 +2871,36 @@ def validate_sanction_state(value):
     return True
 
 class Sanction(StoredObject):
-    """Sancion object is a generic way to track approval states"""
+    """Sanction class is a generic way to track approval states"""
+    # Tell modularodm not to attach backends
     abstract = True
 
-    UNAPPROVED = 'unapproved'
-    ACTIVE = 'active'
-    CANCELLED = 'cancelled'
-    COMPLETED = 'completed'
+    _id = fields.StringField(primary=True, default=lambda: str(ObjectId()))
 
+    # Neither approved not cancelled
+    UNAPPROVED = 'unapproved'
+    # Has unanious approval
+    ACTIVE = 'active'
+    # Rejected by at least one person
+    CANCELLED = 'cancelled'
+    # One of 'unapproved', 'active', 'cancelled', or 'completed
+    state = fields.StringField(default='unapproved', validate=validate_sanction_state)
+
+    # Controls whether or not the Sanction needs unanimous approval or just a single approval
+    ANY = 'any'
+    UNANIMOUS = 'unanimous'
+    # Default mode is unanimous
+    mode = UNANIMOUS
+
+    # Default excepetions
     ApprovalNotAuthorized = PermissionsError('This user is not authorized to approve this sanction')
     ApprovalInvalidToken = InvalidSanctionApprovalToken('Invalid approval token provided.')
     RejectionNotAuthorized = PermissionsError('This user is not authorized to reject this sanction')
-    RejectionInvalidTokeni = InvalidSanctionRejectionToken('Invalid rejection token provided.')
+    RejectionInvalidToken = InvalidSanctionRejectionToken('Invalid rejection token provided.')
 
-    _id = fields.StringField(primary=True, default=lambda: str(ObjectId()))
     initiation_date = fields.DateTimeField(auto_now_add=datetime.datetime.utcnow)
+    # Expiration date-- Sanctions in the UNAPPROVED state that are older than their end_date
+    # are automatically made ACTIVE by a daily cron job
     end_date = fields.DateTimeField(default=None)
 
     # Sanction subclasses must have an initiated_by field
@@ -2899,8 +2914,6 @@ class Sanction(StoredObject):
     #     'disapproval_token': 'TwozClTFOic2PYxHDStby94bCQMwJy'}
     # }
     approval_state = fields.DictionaryField()
-    # One of 'unapproved', 'active', 'cancelled', or 'completed
-    state = fields.StringField(default='unapproved', validate=validate_sanction_state)
 
     def __repr__(self):
         return '<Sanction(end_date={1}) with _id {2}>'.format(
@@ -2909,26 +2922,46 @@ class Sanction(StoredObject):
         )
 
     @property
-    def pending_approval(self):
+    def is_pending_approval(self):
         return self.state == Sanction.UNAPPROVED
 
+    @property
+    def is_approved(self):
+        return self.state == Sanction.ACTIVE
+
     def _validate_authorizer(self, user):
+        """Subclasses may choose to provide extra restrictions on who can be an authorizer
+
+        :return Boolean: True if user is allowed to be an authorizer else False
+        """
         return True
 
     def add_authorizer(self, user, approved=False, save=False):
-        self._validate_authorizer(user)
-        if user._id not in self.approval_state:
-            self.approval_state[user._id] = {
-                'has_approved': approved,
-                'approval_token': security.random_string(30),
-                'disapproval_token': security.random_string(30),
-            }
-            if save:
-                self.save()
-            return True
+        """Add a user as an authorizer and generate approval/disapproval tokens
+
+        :param User user:
+        :param Boolean approved: optional approval state on instantiation
+        :param Boolean save: optionally save the Sanction
+        :return Boolean: True if the user is added else False
+        """
+        if self._validate_authorizer(user):
+            if user._id not in self.approval_state:
+                self.approval_state[user._id] = {
+                    'has_approved': approved,
+                    'approval_token': security.random_string(30),
+                    'disapproval_token': security.random_string(30),
+                }
+                if save:
+                    self.save()
+                return True
         return False
 
     def remove_authorizer(self, user):
+        """Remove a user as an authorizer
+
+        :param User user:
+        :return Boolean: True if user is removed else False
+        """
         if user._id in self.approval_state:
             del self.approval_state[user._id]
             self.save()
@@ -2936,16 +2969,30 @@ class Sanction(StoredObject):
         return False
 
     def _on_approve(self, user, token):
-        if all(authorizer['has_approved'] for authorizer in self.approval_state.values()):
+        """Callback for when a single user approves a Sanction. Calls #_on_complete under two conditions:
+        - mode is ANY and the Sanction has not already been cancelled
+        - mode is UNANIMOUS and all users have given approval
+
+        :param User user:
+        :param str token: user's approval token
+        """
+        if (not self.state == self.CANCELLED and self.mode == self.ANY) or all(authorizer['has_approved'] for authorizer in self.approval_state.values()):
             self.state = Sanction.ACTIVE
             self._on_complete(user)
 
     def _on_reject(self, user, token):
-        """Early termination of a Santion"""
+        """Callback for rejection of a Sanction
+
+        :param User user:
+        :param str token: user's approval token
+        """
         raise NotImplementedError('Sanction subclasses must implement an #_on_reject method')
 
     def _on_complete(self, user):
-        """When a Sanction has unanimous approval"""
+        """Callback for when a Sanction has approval and enters the ACTIVE state
+
+        :param User user:
+        """
         raise NotImplementedError('Sanction subclasses must implement an #_on_complete method')
 
     def approve(self, user, token):
@@ -2995,7 +3042,7 @@ class Embargo(Sanction):
 
     @property
     def pending_embargo(self):
-        return self.pending_approval
+        return self.is_pending_approval
 
     # NOTE(hrybacki): Old, private registrations are grandfathered and do not
     # require to be made public or embargoed. This field differentiates them
@@ -3148,11 +3195,13 @@ class RegistrationApproval(Sanction):
 
 class DraftRegistrationApproval(Sanction):
 
+    mode = Sanction.ANY
+
     def _on_complete(self, user, token):
         pass  # draft approval state gets loaded dynamically from this record
 
     def _on_reject(self, user, token):
-        pass
+        pass  # draft approval state gets loaded dynamically from this record
 
 class DraftRegistration(AddonModelMixin, StoredObject):
 
@@ -3195,11 +3244,7 @@ class DraftRegistration(AddonModelMixin, StoredObject):
     # have already been archived.
     # storage = fields.ForeignField('osfstoragenodesettings')
 
-    requires_approval = fields.BooleanField(default=False)
     approval = fields.ForeignField('draftregistrationapproval', default=None)
-    # Dictionary field mapping
-    # { 'requiresApproval': true, 'fulfills': [{ 'name': 'Prereg Prize', 'info': <infourl> }]}
-    # config = fields.DictionaryField()
 
     # Dictionary field mapping a draft's states during the review process to their value
     # { 'isApproved': false, 'isPendingReview': false, 'paymentSent': false }
@@ -3219,22 +3264,17 @@ class DraftRegistration(AddonModelMixin, StoredObject):
         #         for flag, value in flags.iteritems():
         #             self.flags[flag] = value
 
-    # TODO: uncomment to expose approval/review properties
-    #    @property
-    #    def is_pending_review(self):
-    #        return self.flags.get('isPendingReview')
-    #
-    #    @is_pending_review.setter
-    #    def is_pending_review(self, value):
-    #        self.flags['isPendingReview'] = value
-    #
-    #    @property
-    #    def is_approved(self):
-    #        self.flags.get('isApproved')
-    #
-    #    @is_approved.setter
-    #    def is_approved(self, value):
-    #        self.flags['isApproved'] = value
+    @property
+    def requires_approval(self):
+        return self.approval is not None
+
+    @property
+    def is_pending_review(self):
+        return self.approval.is_pending_review if self.requires_approval else False
+
+    @property
+    def is_approved(self):
+        return self.approval.is_approved if self.requires_approval else True
 
     def update_metadata(self, metadata, save=True):
         # TODO: uncommnet to disallow editing drafts that are approved or pending approval

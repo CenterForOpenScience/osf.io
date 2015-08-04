@@ -18,10 +18,9 @@ from website.project.decorators import (
     must_have_permission,
     http_error_if_disk_saving_mode
 )
-from website import settings
 # from website.mails import Mail, send_mail
 from website.project import utils as project_utils
-from website.project.model import MetaSchema, DraftRegistration
+from website.project.model import MetaSchema, DraftRegistration, DraftRegistrationApproval
 from website.project.metadata.utils import serialize_meta_schema, serialize_draft_registration
 from website.project.utils import serialize_node
 
@@ -129,6 +128,11 @@ def make_draft_registraton(user, node, schema, data):
         registration_schema=schema,
         registration_metadata=data,
     )
+    if schema.requires_approval:
+        draft.approval = DraftRegistrationApproval(
+            initiated_by=user,
+            end_date=None,  # TODO: expire me?
+        )
     draft.save()
     node.draft_registrations.append(draft)
     node.save()
