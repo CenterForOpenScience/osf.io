@@ -345,6 +345,10 @@ class NodeLog(StoredObject):
     RETRACTION_CANCELLED = 'retraction_cancelled'
     RETRACTION_INITIATED = 'retraction_initiated'
 
+    REGISTRATION_APPROVAL_CANCELLED = 'registration_approval_cancelled'
+    REGISTRATION_APPROVAL_INITIATED = 'registration_approval_initiated'
+    # REGISTRATION_APPROVAL_COMPLETE = 'registration_approval_complete'
+
     def __repr__(self):
         return ('<NodeLog({self.action!r}, params={self.params!r}) '
                 'with id {self._id!r}>').format(self=self)
@@ -2765,7 +2769,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
             save=True,
         )
         self.registration_approval = approval
-        # TOD make private?
+        # TODO make private?
 
 @Node.subscribe('before_save')
 def validate_permissions(schema, instance):
@@ -2884,7 +2888,9 @@ class Sanction(StoredObject):
     _id = fields.StringField(primary=True, default=lambda: str(ObjectId()))
     initiation_date = fields.DateTimeField(auto_now_add=datetime.datetime.utcnow)
     end_date = fields.DateTimeField(default=None)
-    initiated_by = fields.ForeignField('user', backref='initiated')
+
+    # Sanction subclasses must have an initiated_by field
+    # initiated_by = fields.ForeignField('user', backref='initiated')
 
     # Expanded: Dictionary field mapping admin IDs their approval status and relevant tokens:
     # {
@@ -2898,8 +2904,7 @@ class Sanction(StoredObject):
     state = fields.StringField(default='unapproved', validate=validate_sanction_state)
 
     def __repr__(self):
-        return '<Sanction(initiated_by={0}, end_date={1}) with _id {2}>'.format(
-            self.initiated_by,
+        return '<Sanction(end_date={1}) with _id {2}>'.format(
             self.end_date,
             self._id
         )
@@ -3134,7 +3139,7 @@ class RegistrationApproval(Sanction):
         registered_from = register.registered_from
         register.delete_registration_tree()
         registered_from.add_log(
-            action=NodeLog.REGISTRATION_CANCELLED,
+            action=NodeLog.REGISTRATION_APPROVAL_CANCELLED,
             params={
                 'node': registered_from._id,
                 'registration_approval_id': self._id,

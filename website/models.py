@@ -9,8 +9,8 @@ from framework.sessions.model import Session
 from website.project.model import (
     Node, NodeLog,
     Tag, WatchConfig, MetaSchema, Pointer,
-    Comment, PrivateLink, MetaData, Retraction,
-    Embargo
+    Comment, PrivateLink, MetaData,
+    Retraction, Embargo, RegistrationApproval
 )
 from website.oauth.models import ExternalAccount
 from website.identifiers.model import Identifier
@@ -27,7 +27,7 @@ MODELS = (
     MailRecord, Comment, PrivateLink, MetaData, Conference,
     NotificationSubscription, NotificationDigest, CitationStyle,
     CitationStyle, ExternalAccount, Identifier,
-    Embargo, Retraction,
+    Embargo, Retraction, RegistrationApproval,
     ArchiveJob, ArchiveTarget, BlacklistGuid
 )
 

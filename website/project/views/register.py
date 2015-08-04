@@ -533,19 +533,23 @@ def node_register_template_page_post(auth, node, **kwargs):
     except ValidationValueError as err:
         raise HTTPError(http.BAD_REQUEST, data=dict(message_long=err.message))
 
-    if settings.ENABLE_ARCHIVER:
-        for contrib in node.active_contributors():
-            meta = {}
-            if embargoed:
-                meta = {
-                    'embargo_urls': project_utils.get_embargo_urls(register, contrib)
-                }
-            else:
-                meta = {
-                    'registration_approval_urls': project_utils.get_registration_approval_urls(register, contrib)
-                }
-            register.archive_job.meta[contrib._id] = meta
-        register.archive_job.save()
+    meta = {}
+    if embargoed:
+        meta = {
+            'embargo_urls': {
+                contrib._id: project_utils.get_embargo_urls(register, contrib)
+                for contrib in node.active_contributors()
+            }
+        }
+    else:
+        meta = {
+            'registration_approval_urls': {
+                contrib._id: project_utils.get_registration_approval_urls(register, contrib)
+                for contrib in node.active_contributors()
+            }
+        }
+    register.archive_job.meta = meta
+    register.archive_job.save()
 
     push_status_message((
         'Files are being copied to the newly created registration, '
