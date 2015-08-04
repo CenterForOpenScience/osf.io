@@ -1,16 +1,17 @@
 # -*- coding: utf-8 -*-
 
+import bson.objectid
 import furl
+import httplib as http
 import urllib
 import urlparse
-import bson.objectid
-import httplib as http
 
 import itsdangerous
 
 from werkzeug.local import LocalProxy
 from weakref import WeakKeyDictionary
 from flask import request, make_response
+from framework.exceptions import HTTPError
 from framework.flask import redirect
 
 from website import settings
@@ -133,6 +134,10 @@ def before_request():
     # Central Authentication Server OAuth Bearer Token
     authorization = request.headers.get('Authorization')
     if authorization and authorization.startswith('Bearer '):
+        # Non-API routes should only respond to bearer tokens if the request comes from a whitelisted service
+        if request.remote_addr not in settings.WATERBUTLER_ADDRS:
+            raise HTTPError(http.FORBIDDEN)
+
         client = cas.get_client()
         try:
             access_token = cas.parse_auth_header(authorization)
