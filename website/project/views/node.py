@@ -916,10 +916,14 @@ def _get_summary(node, auth, rescale_ratio, primary=True, link_id=None, show_pat
             'title': node.title,
             'category': node.category,
             'node_type': node.project_or_component,
+            'is_fork': node.is_fork,
             'is_registration': node.is_registration,
             'anonymous': has_anonymous_link(node, auth),
             'registered_date': node.registered_date.strftime('%Y-%m-%d %H:%M UTC')
             if node.is_registration
+            else None,
+            'forked_date': node.forked_date.strftime('%Y-%m-%d %H:%M UTC')
+            if node.is_fork
             else None,
             'nlogs': None,
             'ua_count': None,
@@ -999,7 +1003,8 @@ def get_folder_pointers(auth, node, **kwargs):
 
 @must_be_contributor_or_public
 def get_forks(auth, node, **kwargs):
-    return _render_nodes(nodes=node.forks, auth=auth)
+    fork_list = sorted(node.forks, key=lambda fork: fork.forked_date, reverse=True)
+    return _render_nodes(nodes=fork_list, auth=auth)
 
 
 @must_be_contributor_or_public
