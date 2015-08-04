@@ -1018,6 +1018,30 @@ class TestNodeChildrenList(ApiTestCase):
 
         Node.remove()
 
+    def test_node_children_list_creates_child_logged_out(self):
+        res = self.app.post_json(self.public_project_url, {
+            'title': 'test',
+            'description': 'test description',
+            'category': 'data'
+        }, expect_errors=True)
+        # This is 403 instead of 401 because basic authentication is only for unit tests and, in order to keep from
+        # presenting a basic authentication dialog box in the front end. We may change this as we understand CAS
+        # a little better
+        assert_equal(res.status_code, 403)
+        assert 'detail' in res.json['errors'][0].keys()
+
+    def test_node_children_list_creates_child_logged_in(self):
+        res = self.app.post_json(self.public_project_url, {
+            'title': 'test',
+            'description': 'test description',
+            'category': 'data'
+        }, auth=self.basic_auth)
+        assert_equal(res.status_code, 201)
+        assert_equal(res.json['data']['attributes']['title'], 'test')
+        assert_equal(res.json['data']['attributes']['description'], 'test description')
+        assert_equal(res.json['data']['attributes']['category'], 'data')
+        assert_equal(res.content_type, 'application/vnd.api+json')
+
 
 class TestNodePointersList(ApiTestCase):
 

@@ -167,7 +167,7 @@ class NodeRegistrationsList(generics.ListAPIView, NodeMixin):
         return registrations
 
 
-class NodeChildrenList(generics.ListAPIView, NodeMixin):
+class NodeChildrenList(generics.ListCreateAPIView, NodeMixin):
     """Children of the current node.
 
     This will get the next level of child nodes for the selected node if the current user has read access for those
@@ -192,6 +192,11 @@ class NodeChildrenList(generics.ListAPIView, NodeMixin):
             auth = Auth(user)
         children = [node for node in nodes if node.can_view(auth) and node.primary]
         return children
+
+    # overrides ListCreateAPIView
+    def perform_create(self, serializer):
+        user = self.request.user
+        serializer.save(creator=user, parent=self.get_node())
 
 
 class NodePointersList(generics.ListCreateAPIView, NodeMixin):
