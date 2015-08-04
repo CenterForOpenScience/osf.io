@@ -1,7 +1,5 @@
 # -*- coding: utf-8 -*-
 """Various node-related utilities."""
-import itertools
-
 from modularodm import Q
 
 from website import mails

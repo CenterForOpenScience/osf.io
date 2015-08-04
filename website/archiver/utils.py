@@ -10,7 +10,6 @@ from website.archiver.model import ArchiveJob
 from website import mails
 from website import settings
 from website.project.model import NodeLog
-from website.project import utils as project_utils
 
 
 def send_archiver_success_mail(dst):
