@@ -7,6 +7,7 @@ from boto.s3.connection import OrdinaryCallingFormat
 
 from framework.exceptions import HTTPError
 from website.util import web_url_for
+from website.addons.s3.settings import BUCKET_LOCATIONS
 
 
 def connect_s3(access_key=None, secret_key=None, user_settings=None):
@@ -31,13 +32,17 @@ def get_bucket_names(user_settings):
     return [bucket.name for bucket in buckets]
 
 
+def validate_bucket_location(location):
+    return location in BUCKET_LOCATIONS
+
+
 def validate_bucket_name(name):
     validate_name = re.compile('^(?!.*(\.\.|-\.))[^.][a-z0-9\d.-]{2,61}[^.]$')
     return bool(validate_name.match(name))
 
 
-def create_bucket(user_settings, bucket_name):
-    return connect_s3(user_settings=user_settings).create_bucket(bucket_name)
+def create_bucket(user_settings, bucket_name, location=''):
+    return connect_s3(user_settings=user_settings).create_bucket(bucket_name, location=location)
 
 
 def bucket_exists(access_key, secret_key, bucket_name):

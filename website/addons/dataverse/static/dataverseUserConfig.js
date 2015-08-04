@@ -185,7 +185,7 @@ function ViewModel(url) {
             self.loaded(true);
             self.updateAccounts();
         }).fail(function (xhr, textStatus, error) {
-            self.changeMessage(language.userSettingsError, 'text-warning');
+            self.changeMessage(language.userSettingsError, 'text-danger');
             Raven.captureMessage('Could not GET Dataverse settings', {
                 url: url,
                 textStatus: textStatus,

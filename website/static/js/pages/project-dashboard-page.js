@@ -2,7 +2,6 @@
 'use strict';
 
 var $ = require('jquery');
-require('../../vendor/bower_components/jquery.tagsinput/jquery.tagsinput.css');
 require('jquery-tagsinput');
 require('bootstrap-editable');
 

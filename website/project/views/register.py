@@ -21,6 +21,7 @@ from website import settings
 from website.exceptions import (
     InvalidRetractionApprovalToken, InvalidRetractionDisapprovalToken,
     InvalidEmbargoApprovalToken, InvalidEmbargoDisapprovalToken,
+    InvalidRegistrationApprovalToken, InvalidRegistrationDisapprovalToken,
     NodeStateError
 )
 from website.project.decorators import (
@@ -289,6 +290,73 @@ def node_registration_embargo_disapprove(auth, node, token, **kwargs):
     return redirect(redirect_url)
 
 @must_be_valid_project
+@must_have_permission(ADMIN)
+def node_registration_approve(auth, node, token, **kwargs):
+    """Handles disapproval of registration retractions
+    :param auth: User wanting to disapprove retraction
+    :return: Redirect to registration or
+    :raises: HTTPError if invalid token or user is not admin
+    """
+
+    if not node.pending_retraction:
+        raise HTTPError(http.BAD_REQUEST, data={
+            'message_short': 'Invalid Token',
+            'message_long': 'This registration is not pending a retraction.'
+        })
+
+    try:
+        node.registration_approval.approve(auth.user, token)
+        node.registration_approval.save()
+
+    except InvalidRegistrationApprovalToken as e:
+        raise HTTPError(http.BAD_REQUEST, data={
+            'message_short': e.message_short,
+            'message_long': e.message_long
+        })
+    except PermissionsError as e:
+        raise HTTPError(http.BAD_REQUEST, data={
+            'message_short': 'Unauthorized access',
+            'message_long': e.message
+        })
+
+    status.push_status_message('Your approval has been accepted.', 'success')
+    return redirect(node.web_url_for('view_project'))
+
+@must_be_valid_project
+@must_have_permission(ADMIN)
+@must_be_public_registration
+def node_registration_disapprove(auth, node, token, **kwargs):
+    """Handles approval of registration retractions
+    :param auth: User wanting to approve retraction
+    :param kwargs:
+    :return: Redirect to registration or
+    :raises: HTTPError if invalid token or user is not admin
+    """
+
+    if not node.pending_retraction:
+        raise HTTPError(http.BAD_REQUEST, data={
+            'message_short': 'Invalid Token',
+            'message_long': 'This registration is not pending a retraction.'
+        })
+
+    try:
+        node.registration_approval.disapprove(auth.user, token)
+        node.registration_approval.save()
+    except InvalidRegistrationDisapprovalToken as e:
+        raise HTTPError(http.BAD_REQUEST, data={
+            'message_short': e.message_short,
+            'message_long': e.message_long
+        })
+    except PermissionsError as e:
+        raise HTTPError(http.BAD_REQUEST, data={
+            'message_short': 'Unauthorized access',
+            'message_long': e.message
+        })
+
+    status.push_status_message('Your disapproval has been accepted and the registration has been cancelled.', 'success')
+    return redirect(node.web_url_for('view_project'))
+
+@must_be_valid_project
 @must_be_contributor_or_public
 def node_register_template_page(auth, node, **kwargs):
 
@@ -392,6 +460,76 @@ def project_before_register(auth, node, **kwargs):
         'prompts': prompts,
         'errors': error_messages
     }
+
+
+@must_be_valid_project
+@must_have_permission(ADMIN)
+@must_not_be_registration
+def node_register_template_page_post(auth, node, **kwargs):
+    data = request.json
+
+    if settings.DISK_SAVING_MODE:
+        raise HTTPError(
+            http.METHOD_NOT_ALLOWED,
+            redirect_url=node.url
+        )
+
+    # Sanitize payload data
+    clean_data = process_payload(data)
+
+    template = kwargs['template']
+    # TODO: Using json.dumps because node_to_use.registered_meta's values are
+    # expected to be strings (not dicts). Eventually migrate all these to be
+    # dicts, as this is unnecessary
+    schema = MetaSchema.find(
+        Q('name', 'eq', template)
+    ).sort('-schema_version')[0]
+
+    # Create the registration
+    register = node.register_node(
+        schema, auth, template, json.dumps(clean_data),
+    )
+
+    embargoed = False
+    try:
+        register = None
+        if data.get('registrationChoice', 'immediate') == 'embargo':
+            # Initiate embargo
+            embargoed = True
+            embargo_end_date = parse_date(data['embargoEndDate'], ignoretz=True)
+            register.embargo_registration(auth.user, embargo_end_date)
+        else:
+            register.require_approval(auth.user)
+        register.save()
+    except ValidationValueError as err:
+        raise HTTPError(http.BAD_REQUEST, data=dict(message_long=err.message))
+
+    if settings.ENABLE_ARCHIVER:
+        for contrib in node.active_contributors():
+            meta = {}
+            if embargoed:
+                meta = {
+                    'embargo_urls': project_utils.get_embargo_urls(register, contrib)
+                }
+            else:
+                meta = {
+                    'registration_approval_urls': project_utils.get_registration_approval_urls(register, contrib)
+                }
+            register.archive_job.meta[contrib._id] = meta
+        register.archive_job.save()
+
+    push_status_message((
+        'Files are being copied to the newly created registration, '
+        'and you will receive an email notification containing a link'
+        ' to the registration when the copying is finished.'), 'info')
+
+    return {
+        'status': 'initiated',
+        'urls': {
+            'registrations': node.web_url_for('node_registrations')
+        }
+    }, http.CREATED
+
 
 def _build_ezid_metadata(node):
     """Build metadata for submission to EZID using the DataCite profile. See

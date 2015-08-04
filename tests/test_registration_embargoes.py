@@ -1,6 +1,8 @@
 """Tests related to embargoes of registrations"""
 import datetime
+import json
 
+import mock
 from nose.tools import *  # noqa
 from tests.base import fake, OsfTestCase
 from tests.factories import (
@@ -13,7 +15,8 @@ from modularodm.exceptions import ValidationValueError
 from website.exceptions import (
     InvalidEmbargoDisapprovalToken, InvalidEmbargoApprovalToken, NodeStateError,
 )
-from website.models import Embargo
+from website.models import Embargo, Node
+from website.project.model import ensure_schemas
 
 
 class RegistrationEmbargoModelsTestCase(OsfTestCase):
@@ -146,7 +149,6 @@ class RegistrationEmbargoModelsTestCase(OsfTestCase):
         with assert_raises(InvalidEmbargoApprovalToken):
             self.registration.embargo.approve_embargo(self.user, invalid_approval_token)
         assert_true(self.registration.pending_embargo)
-        assert_false(self.registration.embargo_end_date)
 
     def test_non_admin_approval_token_raises_PermissionsError(self):
         non_admin = UserFactory()
@@ -224,7 +226,6 @@ class RegistrationEmbargoModelsTestCase(OsfTestCase):
         with assert_raises(InvalidEmbargoDisapprovalToken):
             self.registration.embargo.disapprove_embargo(self.user, fake.sentence())
         assert_true(self.registration.pending_embargo)
-        assert_false(self.registration.embargo_end_date)
 
     def test_non_admin_disapproval_token_raises_PermissionsError(self):
         non_admin = UserFactory()
@@ -252,7 +253,6 @@ class RegistrationEmbargoModelsTestCase(OsfTestCase):
         self.registration.embargo.disapprove_embargo(self.user, disapproval_token)
         assert_equal(self.registration.embargo.state, Embargo.CANCELLED)
         assert_false(self.registration.pending_embargo)
-        assert_false(self.registration.embargo_end_date)
 
     def test_disapproval_adds_to_parent_projects_log(self):
         initial_project_logs = len(self.registration.registered_from.logs)
@@ -380,7 +380,6 @@ class RegistrationWithChildNodesEmbargoModelTestCase(OsfTestCase):
         disapproval_token = self.registration.embargo.approval_state[self.user._id]['disapproval_token']
         self.registration.embargo.disapprove_embargo(self.user, disapproval_token)
         assert_false(self.registration.pending_embargo)
-        assert_false(self.registration.embargo_end_date)
         assert_equal(self.registration.embargo.state, Embargo.CANCELLED)
 
         # Ensure descendant nodes' embargoes are cancelled
@@ -560,7 +559,6 @@ class RegistrationEmbargoApprovalDisapprovalViewsTestCase(OsfTestCase):
         )
         registration.embargo.reload()
         assert_equal(registration.embargo.state, Embargo.CANCELLED)
-        assert_false(registration.embargo_end_date)
         assert_false(registration.pending_embargo)
         assert_equal(res.status_code, 302)
         assert_true(project._id in res.location)
@@ -581,7 +579,6 @@ class RegistrationEmbargoApprovalDisapprovalViewsTestCase(OsfTestCase):
         )
         self.registration.embargo.reload()
         assert_equal(self.registration.embargo.state, Embargo.CANCELLED)
-        assert_false(self.registration.embargo_end_date)
         assert_false(self.registration.pending_embargo)
         assert_equal(res.status_code, 302)
         assert_true(self.registration._id in res.location)

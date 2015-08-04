@@ -2522,7 +2522,6 @@ class TestProject(OsfTestCase):
             self.user,
             datetime.datetime.utcnow() + datetime.timedelta(days=10)
         )
-        assert_false(registration.embargo_end_date)
         assert_true(registration.pending_embargo)
 
         func = lambda: registration.set_privacy('public', auth=self.consolidate_auth)
@@ -2536,17 +2535,14 @@ class TestProject(OsfTestCase):
             datetime.datetime.utcnow() + datetime.timedelta(days=10)
         )
         registration.save()
-        assert_false(registration.embargo_end_date)
         assert_true(registration.pending_embargo)
 
         approval_token = registration.embargo.approval_state[self.user._id]['approval_token']
         registration.embargo.approve_embargo(self.user, approval_token)
-        assert_true(registration.embargo_end_date)
         assert_false(registration.pending_embargo)
 
         registration.set_privacy('public', auth=self.consolidate_auth)
         registration.save()
-        assert_false(registration.embargo_end_date)
         assert_false(registration.pending_embargo)
         assert_equal(registration.embargo.state, Embargo.CANCELLED)
         assert_true(registration.is_public)

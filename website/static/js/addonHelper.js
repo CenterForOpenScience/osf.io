@@ -37,12 +37,12 @@ var AddonHelper = (function() {
                 .removeClass('text-danger').addClass('text-success')
                 .fadeOut(100).fadeIn();
         }).fail(function(response) {
-            var message = 'Error: ';
+            var message = '';
             response = JSON.parse(response.responseText);
             if (response && response.message) {
-                message += response.message;
+                message = response.message;
             } else {
-                message += 'Settings not updated.';
+                message = 'Settings not updated.';
             }
             msgElm.text(message)
                 .removeClass('text-success').addClass('text-danger')
