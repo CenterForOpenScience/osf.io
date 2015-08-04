@@ -27,7 +27,7 @@ class NodeSerializer(JSONAPISerializer):
     links = LinksField({
         'html': 'get_absolute_url',
         'children': {
-            'related': Link('nodes:node-children', kwargs={'node_id': '<pk>'}),
+            'related': Link('nodes:node-children', kwargs={'node_id': '<nerd._id>'}),
             'count': 'get_node_count',
         },
         'contributors': {

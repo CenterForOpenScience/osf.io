@@ -58,11 +58,15 @@ class LinksField(ser.Field):
         self.links = links
 
     def get_attribute(self, obj):
+        obj.nerd = lambda:None
+        obj.nerd._id = "9000"
         # We pass the object instance onto `to_representation`,
         # not just the field attribute.
         return obj
 
     def to_representation(self, obj):
+        obj.nerd = lambda:None
+        obj.nerd._id = "9000"
         ret = _recursive_apply(self.links, _url_val, obj=obj, serializer=self.parent)
         if hasattr(obj, 'get_absolute_url'):
             ret['self'] = obj.get_absolute_url()
@@ -73,7 +77,7 @@ _tpl_pattern = re.compile(r'\s*<\s*(\S*)\s*>\s*')
 
 
 def _get_attr_name_from_tpl(attr_tpl):
-    """Return value within ``< >`` if possible, else return ``None``."""
+    """Return value within ``<>`` if possible, else return ``None``."""
     match = _tpl_pattern.match(attr_tpl)
     if match:
         return match.groups()[0]
@@ -82,10 +86,11 @@ def _get_attr_name_from_tpl(attr_tpl):
 
 def _get_attr_from_tpl(attr_tpl, obj):
     """Takes attr_tpl (e.g.,) """
+    obj.nerd = lambda:None
+    obj.nerd._id = "9000"
     attr_name = _get_attr_name_from_tpl(str(attr_tpl))
-    if attr_name:
-        attribute_value = getattr(obj, attr_name, ser.empty)
-        logging.warning('#')
+    if attr_name:    
+        attribute_value = reduce(getattr, attr_name.split(".",), obj, ser.empty)
         try:
             if attribute_value is not ser.empty:
                 return attribute_value
@@ -108,7 +113,7 @@ def _get_attr_from_tpl(attr_tpl, obj):
 # TODO: Make this a Field that is usable on its own?
 class Link(object):
     """Link object to use in conjunction with Links field. Does reverse lookup of
-    URLs given an endpoint name and attributed enclosed in `<>`.
+    URLs given an endpoint name and attribute enclosed in `<>`.
     """
 
     def __init__(self, endpoint, args=None, kwargs=None, query_kwargs=None, **kw):
