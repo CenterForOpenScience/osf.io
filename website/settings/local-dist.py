@@ -52,4 +52,3 @@ USE_CDN_FOR_CLIENT_LIBS = False
 
 # File indexing
 USE_FILE_INDEXING = True
-MAX_INDEXED_FILE_SIZE = 250 * int(1000**2)  # bytes
