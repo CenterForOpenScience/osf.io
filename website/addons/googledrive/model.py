@@ -125,8 +125,8 @@ class GoogleDriveOAuthSettings(StoredObject):
     refresh_token = fields.StringField()
     expires_at = fields.DateTimeField()
 
-    def fetch_access_token(self):
-        self.refresh_access_token()
+    def fetch_access_token(self, force_refresh=False):
+        self.refresh_access_token(force=force_refresh)
         return self.access_token
 
     def refresh_access_token(self, force=False):
@@ -223,9 +223,9 @@ class GoogleDriveUserSettings(AddonUserSettingsBase):
             return self.oauth_settings.access_token is not None
         return False
 
-    def fetch_access_token(self):
+    def fetch_access_token(self, force_refresh=False):
         if self.oauth_settings:
-            return self.oauth_settings.fetch_access_token()
+            return self.oauth_settings.fetch_access_token(force_refresh)
         return None
 
     def clear(self):

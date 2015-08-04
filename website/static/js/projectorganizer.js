@@ -1010,7 +1010,7 @@ function showLegend() {
         type:'button',
         onclick : function(event) { tb.modal.dismiss(); } }, 'Close');
 
-    tb.modal.update(legendView(data, repr, opts), closeBtn);
+    tb.modal.update(legendView(data, repr, opts), closeBtn, m('h3.modal-title', 'Legend'));
     tb.modal.show();
 }
 
@@ -1405,7 +1405,10 @@ var tbOptions = {
         return m('i.fa.fa-refresh.fa-spin');
     },
     toolbarComponent : POToolbar,
-    naturalScrollLimit : 0
+    naturalScrollLimit : 0,
+    removeIcon : function(){
+        return m.trust('&times;');
+    },
 };
 
 /**

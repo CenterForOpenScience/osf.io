@@ -97,6 +97,9 @@
           <strong>Changes will not be saved until you press the "Save" button.</strong>
         </p>
       </div>
+      <div class="modal-footer">
+          <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+      </div>
     </div>
   </div>
 </div>
@@ -114,6 +117,9 @@
           <strong>Changes will not be saved until you press the "Save" button.</strong>
         </p>
       </div>
+      <div class="modal-footer">
+          <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+      </div>
     </div>
   </div>
 </div>
@@ -130,6 +136,9 @@
           Your browser does not support collaborative editing. You may continue to make edits.
           <strong>Changes will not be saved until you press the "Save" button.</strong>
         </p>
+      </div>
+      <div class="modal-footer">
+          <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
       </div>
     </div>
   </div>

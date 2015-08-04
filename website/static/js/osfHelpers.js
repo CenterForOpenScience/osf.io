@@ -747,7 +747,7 @@ var confirmDangerousAction = function (options) {
             },
             success: {
                 label: 'Confirm',
-                className: 'btn-success',
+                className: 'btn-danger',
                 callback: handleConfirmAttempt
             }
         },
