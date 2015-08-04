@@ -78,3 +78,5 @@ $.fn.osfToggleHeight = function ( options ) {
         }
     });
 };
+
+module.exports = ToggleHeight;
