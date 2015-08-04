@@ -7,6 +7,9 @@ from api.base.utils import get_object_or_404
 from api.base.filters import ODMFilterMixin
 from api.nodes.serializers import NodeSerializer
 from .serializers import UserSerializer
+from django.contrib.auth.models import AnonymousUser
+from rest_framework.exceptions import PermissionDenied, NotFound, NotAuthenticated, APIException
+
 
 class UserMixin(object):
     """Mixin with convenience methods for retrieving the current node based on the
@@ -62,7 +65,12 @@ class UserDetail(generics.RetrieveAPIView, UserMixin):
 
     # overrides RetrieveAPIView
     def get_object(self):
-        return self.get_user()
+        user = self.get_user()
+        key = self.kwargs[self.node_lookup_url_kwarg]
+
+        if key == 'me' and isinstance(user, AnonymousUser):
+            raise NotAuthenticated
+        return user
 
 
 class UserNodes(generics.ListAPIView, UserMixin, ODMFilterMixin):
