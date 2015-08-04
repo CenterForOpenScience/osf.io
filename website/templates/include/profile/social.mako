@@ -85,7 +85,8 @@
                 <button
                         type="submit"
                         class="btn btn-success"
-                    >Save</button>
+                        data-bind="text: savingText(), enable : !saving()">
+                 </button>
 
             </div>
 
