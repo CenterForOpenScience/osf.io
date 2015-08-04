@@ -311,20 +311,20 @@ utils.matchQuery = function (field, value) {
 };
 
 /* Creates a range filter */
-utils.rangeFilter = function (field_name, gte, lte) {
+utils.rangeFilter = function (feildName, gte, lte) {
     lte = lte || new Date().getTime();
     gte = gte || 0;
     var ret = {'range': {}};
-    ret.range[field_name] = {'gte': gte, 'lte': lte};
+    ret.range[feildName] = {'gte': gte, 'lte': lte};
     return ret;
 };
 
 /* Creates a bool query */
-utils.boolQuery = function (must, must_not, should, minimum) {
+utils.boolQuery = function (must, mustNot, should, minimum) {
     var ret = {
         'bool': {
             'must': (must || []),
-            'must_not': (must_not || []),
+            'must_not': (mustNot || []),
             'should': (should || [])
         }
     };
@@ -426,22 +426,25 @@ utils.processStats = function (vm, data) {
 };
 
 
-utils.updateAggs = function (currentAgg, newAgg, global) {
-    global = global || false;
+utils.updateAggs = function (currentAgg, newAgg, globalAgg) {
+    globalAgg = globalAgg || false;
+
+    //var returnAgg = currentAgg;
     if (currentAgg) {
-        if (currentAgg.all && global) {
-            $.extend(currentAgg.all.aggregations, newAgg);
+        var returnAgg = $.extend({},currentAgg);
+        if (returnAgg.all && globalAgg) {
+            $.extend(returnAgg.all.aggregations, newAgg);
         } else {
-            $.extend(currentAgg, newAgg);
+            $.extend(returnAgg, newAgg);
         }
-        return currentAgg;
+        return returnAgg;
     }
 
-    if (global) {
+    if (globalAgg) {
         return {'all': {'global': {}, 'aggregations': newAgg}};
     }
 
-    return newAgg;
+    return newAgg; //else, do nothing
 };
 
 
@@ -468,7 +471,6 @@ utils.generateColors = function (numColors) {
     var colorsToGenerate = COLORBREWER_COLORS.slice();
     var colorsUsed = [];
     var colorsOut = [];
-    var colorsNorm = [];
     var color;
     while (colorsOut.length < numColors) {
         color = colorsToGenerate.shift();
@@ -477,7 +479,6 @@ utils.generateColors = function (numColors) {
             colorsUsed = [];
         } else {
             colorsUsed.push(color);
-            colorsNorm.push(color);
             colorsOut.push(rgbToHex(color));
         }
     }
