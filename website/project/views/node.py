@@ -1004,7 +1004,7 @@ def get_forks(auth, node, **kwargs):
 
 @must_be_contributor_or_public
 def get_registrations(auth, node, **kwargs):
-    registrations = [n for n in node.node__registrations if not n.is_deleted]  # get all registrations, including archiving
+    registrations = [n for n in reversed(node.node__registrations) if not n.is_deleted]  # get all registrations, including archiving
     return _render_nodes(registrations, auth)
 
 
