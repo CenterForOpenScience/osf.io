@@ -53,6 +53,8 @@ from website.util.permissions import CREATOR_PERMISSIONS
 from website.project.metadata.schemas import OSF_META_SCHEMAS
 from website.util.permissions import DEFAULT_CONTRIBUTOR_PERMISSIONS
 from website.project import signals as project_signals
+from website.search import file_util
+
 
 html_parser = HTMLParser()
 
@@ -1531,6 +1533,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
             logger.exception(e)
             log_exception()
 
+    @file_util.file_indexing
     def update_search_files(self):
         """Update all files associated with node based on node's privacy.
         """
@@ -1543,6 +1546,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         file_indexing.delete_search_files(self)
         # tasks.enqueue_task(tasks.delete_all_files_task.s(self))
 
+    @file_util.file_indexing
     def update_search_file(self, file_node):
         """ Update a single file in the node based on the action given."""
         from website.search import file_indexing
