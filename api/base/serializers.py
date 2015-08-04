@@ -160,13 +160,14 @@ class Link(object):
 
         class_name_data = self.endpoint.split(':')[1].split('-')
         class_name = ''
+        kwargs = {context['view'].node_lookup_url_kwarg: obj._id}
         for name_data in class_name_data:
             name_data = name_data[0].capitalize() + name_data[1:]
             class_name += (name_data)
         if hasattr(module, class_name):
-            instance = getattr(module, class_name)
+            instance = getattr(module, class_name)(kwargs=kwargs)
         else:
-            instance = getattr(module, class_name+'List')
+            instance = getattr(module, class_name+'List')(kwargs=kwargs)
         instance.request = context['request']
 
         queryset = instance.get_queryset()
@@ -195,6 +196,11 @@ class Link(object):
             query_kwargs=query_kwarg_values,
             **self.reverse_kwargs
         )
+
+
+class MetaLink(Link):
+
+    pass
 
 
 class WaterbutlerLink(Link):

@@ -1,6 +1,7 @@
 from rest_framework import serializers as ser
 
-from api.base.serializers import JSONAPISerializer, LinksFieldWIthSelfLink, Link, LinksField
+from api.base.serializers import JSONAPISerializer, LinksFieldWIthSelfLink, MetaLink,\
+    Link, LinksField
 
 class UserSerializer(JSONAPISerializer):
     filterable_fields = frozenset([
