@@ -100,8 +100,8 @@ var FileRevisionsTable = {
                     'padding: 5px; width: 80px" id="copyBtn" data-clipboard-text="' +
                     hash + '"> Copy </a>'+
                     '</div></div></div>',
-                callback: function() {
-                    client = null;
+                onEscape: function() {
+                    client.destroy();
                 }
             });
             showModal.on('show.bs.modal', function() {

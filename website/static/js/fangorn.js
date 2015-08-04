@@ -991,6 +991,7 @@ function _removeEvent (event, items, col) {
  * @this Treebeard.controller
  * @returns {String|Boolean} Returns the fetch URL in string or false if there is no url.
  * @private
+ * debugger;
  */
 function _fangornResolveLazyLoad(item) {
     var configOption = resolveconfigOption.call(this, item, 'lazyload', [item]);
