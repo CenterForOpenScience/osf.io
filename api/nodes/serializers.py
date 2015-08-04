@@ -1,4 +1,4 @@
-from rest_framework.exceptions import ValidationError, PermissionDenied
+from rest_framework.exceptions import ValidationError
 from rest_framework import serializers as ser
 
 from website.models import Node, User
@@ -222,7 +222,6 @@ class NodeContributorsSerializer(JSONAPISerializer):
             return ['read']
 
 
-
 class NodeContributorDetailSerializer(NodeContributorsSerializer):
 
     id = ser.CharField(read_only=True, source='_id')
@@ -260,7 +259,6 @@ class NodeContributorDetailSerializer(NodeContributorsSerializer):
                 node.set_permissions(user, ['read'])
         else:
             raise ValidationError('Must have at least one admin contributor')
-
         node.save()
 
 
