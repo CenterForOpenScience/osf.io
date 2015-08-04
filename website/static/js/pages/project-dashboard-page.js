@@ -2,7 +2,6 @@
 'use strict';
 
 var $ = require('jquery');
-require('../../vendor/bower_components/jquery.tagsinput/jquery.tagsinput.css');
 require('jquery-tagsinput');
 require('bootstrap-editable');
 
@@ -70,7 +69,7 @@ $(document).ready(function () {
                     return [
                         {
                             title: 'Name',
-                            width : '90%',
+                            width : '100%',
                             sort : true,
                             sortType : 'text'
                         }

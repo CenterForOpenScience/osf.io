@@ -37,7 +37,7 @@
                                 <h4> Improve your search:</h4>
                                 <span class="tag-cloud" data-bind="foreach: tags">
                                     <!-- ko if: count === $parent.tagMaxCount() && count > $parent.tagMaxCount()/2  -->
-                                    <span class="cloud-tag tag-big pointer tag-container"
+                                    <span class="tag tag-big tag-container"
                                           data-bind="click: $root.clickTag.bind($parentContext, name, 'add')">
                                         <span class="cloud-text">
                                             {{name}}
@@ -47,7 +47,7 @@
                                     </span>
                                     <!-- /ko -->
                                     <!-- ko if: count < $parent.tagMaxCount() && count > $parent.tagMaxCount()/2 -->
-                                    <span class="cloud-tag tag-med pointer tag-container"
+                                    <span class="tag tag-med tag-container"
                                           data-bind="click: $root.clickTag.bind($parentContext, name, 'add')">
                                         <span class="cloud-text">
                                             {{name}}
@@ -57,7 +57,7 @@
                                     </span>
                                     <!-- /ko -->
                                     <!-- ko if: count <= $parent.tagMaxCount()/2-->
-                                    <span class="cloud-tag tag-sm pointer tag-container"
+                                    <span class="tag tag-sm tag-container"
                                           data-bind="click: $root.clickTag.bind($parentContext, name, 'add')">
                                         <span class="cloud-text">
                                             {{name}}
@@ -220,11 +220,13 @@
         <!-- /ko -->
         <!-- ko if: tags.length > 0 -->
         <div data-bind="template: 'tag-cloud'"></div>
+        <!-- /ko -->
         <p><strong>Jump to:</strong>
+            <!-- ko if: n_wikis > 0 -->
             <a data-bind="attr.href: wikiUrl">Wiki</a> -
+            <!-- /ko -->
             <a data-bind="attr.href: filesUrl">Files</a>
         </p>
-        <!-- /ko -->
     </script>
     <script type="text/html" id="project">
       <div data-bind="template: {name: 'node', data: $data}"></div>
@@ -234,6 +236,9 @@
     </script>
     <script type="text/html" id="registration">
         <h4><a data-bind="attr.href: url">{{ title }}</a>  (<!-- ko if: is_retracted --><span class="text-danger">Retracted</span> <!-- /ko -->Registration)</h4>
+
+        <strong><span data-bind="text: 'Date Registered: ' + dateRegistered['local'], tooltip: {title: dateRegistered['utc']}"></span></strong>
+
         <p data-bind="visible: description"><strong>Description:</strong> {{ description | fit:500 }}</p>
 
         <!-- ko if: contributors.length > 0 -->
@@ -253,22 +258,24 @@
         <!-- /ko -->
         <!-- ko if: tags.length > 0 -->
         <div data-bind="template: 'tag-cloud'"></div>
+        <!-- /ko -->
         <p><strong>Jump to:</strong>
+            <!-- ko if: n_wikis > 0 -->
             <a data-bind="attr.href: wikiUrl">Wiki</a> -
+            <!-- /ko -->
             <a data-bind="attr.href: filesUrl">Files</a>
         </p>
-        <!-- /ko -->
     </script>
     <script id="tag-cloud" type="text/html">
         <p data-bind="visible: tags.length"><strong>Tags:</strong>
-            <span class="tag-cloud" data-bind="foreach: tags">
-                <span class="cloud-tag tag-sm pointer tag-container"
+            <div data-bind="foreach: tags">
+                <span class="tag pointer tag-container"
                       data-bind="click: $root.clickTag.bind($parentContext, $data, 'add')">
-                    <span class="cloud-text" data-bind="text: $data"></span>
+                    <span class="tag-text" data-bind="text: $data"></span>
                     <i class="fa fa-times-circle remove-tag"
                        data-bind="click: $root.clickTag.bind($parentContext, $data, 'remove')"></i>
                 </span>
-            </span>
+            </div>
         </p>
     </script>
 </%def>

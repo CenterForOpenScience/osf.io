@@ -55,6 +55,10 @@ class GoogleDriveGuidFile(GuidFile):
         return '{0}_{1}_{2}.html'.format(self._id, self.unique_identifier, base64.b64encode(self.folder))
 
     @property
+    def external_url(self):
+        return self._metadata_cache['extra']['webView']
+
+    @property
     def mfr_temp_path(self):
         """Files names from Google Docs metadata doesn't necessarily correspond
         to download file names. Use the `downloadExt` field in the Docs metadata
@@ -121,8 +125,8 @@ class GoogleDriveOAuthSettings(StoredObject):
     refresh_token = fields.StringField()
     expires_at = fields.DateTimeField()
 
-    def fetch_access_token(self):
-        self.refresh_access_token()
+    def fetch_access_token(self, force_refresh=False):
+        self.refresh_access_token(force=force_refresh)
         return self.access_token
 
     def refresh_access_token(self, force=False):
@@ -219,9 +223,9 @@ class GoogleDriveUserSettings(AddonUserSettingsBase):
             return self.oauth_settings.access_token is not None
         return False
 
-    def fetch_access_token(self):
+    def fetch_access_token(self, force_refresh=False):
         if self.oauth_settings:
-            return self.oauth_settings.fetch_access_token()
+            return self.oauth_settings.fetch_access_token(force_refresh)
         return None
 
     def clear(self):
@@ -366,24 +370,6 @@ class GoogleDriveNodeSettings(StorageAddonBase, AddonNodeSettingsBase):
     # backwards compatibility
     before_register = before_register_message
 
-    def before_fork_message(self, node, user):
-        """Return warning text to display if user auth will be copied to a
-        fork.
-        """
-        category = node.project_or_component
-        if self.user_settings and self.user_settings.owner == user:
-            return (u'Because you have authorized the Google Drive add-on for this '
-                    '{category}, forking it will also transfer your authentication token to '
-                    'the forked {category}.').format(category=category)
-
-        else:
-            return (u'Because the Google Drive add-on has been authorized by a different '
-                    'user, forking it will not transfer authentication token to the forked '
-                    '{category}.').format(category=category)
-
-    # backwards compatibility
-    before_fork = before_fork_message
-
     def before_remove_contributor_message(self, node, removed):
         """Return warning text to display if removed contributor is the user
         who authorized the GoogleDrive addon
@@ -414,7 +400,7 @@ class GoogleDriveNodeSettings(StorageAddonBase, AddonNodeSettingsBase):
             message = 'Google Drive authorization copied to fork.'
         else:
             message = ('Google Drive authorization not copied to forked {cat}. You may '
-                       'authorize this fork on the <a href="{url}">Settings</a> '
+                       'authorize this fork on the <u><a href="{url}">Settings</a></u> '
                        'page.').format(
                 url=fork.web_url_for('node_setting'),
                 cat=fork.project_or_component
@@ -441,7 +427,7 @@ class GoogleDriveNodeSettings(StorageAddonBase, AddonNodeSettingsBase):
             if not auth or auth.user != removed:
                 url = node.web_url_for('node_setting')
                 message += (
-                    u' You can re-authenticate on the <a href="{url}">Settings</a> page.'
+                    u' You can re-authenticate on the <u><a href="{url}">Settings</a></u> page.'
                 ).format(url=url)
             #
             return message

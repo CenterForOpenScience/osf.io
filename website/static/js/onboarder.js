@@ -137,7 +137,7 @@ ko.bindingHandlers.projectSearch = {
         }
         if (Array.isArray(nodesOrURL)) {
             var nodes = params.data;
-            // Compute relevant URLs for each search result
+            // Compute relevant URLs for each search result.
             initTypeahead(element, nodes, viewModel, params);
         } else if (typeof nodesOrURL === 'string') { // params.data is a URL
             var url = nodesOrURL;
