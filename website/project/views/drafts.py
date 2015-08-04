@@ -63,27 +63,33 @@ def register_draft_registration(auth, node, draft, *args, **kwargs):
     data = request.get_json()
     register = draft.register(auth)
 
-    if data.get('registrationChoice', 'immediate') == 'embargo':
-        embargo_end_date = parse_date(data['embargoEndDate'], ignoretz=True)
-
-        # Initiate embargo
-        try:
+    embargoed = False
+    try:
+        register = None
+        if data.get('registrationChoice', 'immediate') == 'embargo':
+            # Initiate embargo
+            embargoed = True
+            embargo_end_date = parse_date(data['embargoEndDate'], ignoretz=True)
             register.embargo_registration(auth.user, embargo_end_date)
-            register.save()
-        except ValidationValueError as err:
-            raise HTTPError(http.BAD_REQUEST, data=dict(message_long=err.message))
-        if settings.ENABLE_ARCHIVER:
-            register.archive_job.meta = {
-                'embargo_urls': {
-                    contrib._id: project_utils.get_embargo_urls(register, contrib)
-                    for contrib in node.active_contributors()
+        else:
+            register.require_approval(auth.user)
+        register.save()
+    except ValidationValueError as err:
+        raise HTTPError(http.BAD_REQUEST, data=dict(message_long=err.message))
+
+    if settings.ENABLE_ARCHIVER:
+        for contrib in node.active_contributors():
+            meta = {}
+            if embargoed:
+                meta = {
+                    'embargo_urls': project_utils.get_embargo_urls(register, contrib)
                 }
-            }
-            register.archive_job.save()
-    else:
-        register.set_privacy('public', auth, log=False)
-        for child in register.get_descendants_recursive(lambda n: n.primary):
-            child.set_privacy('public', auth, log=False)
+            else:
+                meta = {
+                    'registration_approval_urls': project_utils.get_registration_approval_urls(register, contrib)
+                }
+            register.archive_job.meta[contrib._id] = meta
+        register.archive_job.save()
 
     push_status_message('Files are being copied to the newly created registration, and you will receive an email notification containing a link to the registration when the copying is finished.')
 

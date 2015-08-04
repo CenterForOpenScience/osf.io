@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 import os
 import re
-import urllib
 import logging
 import datetime
 import urlparse
@@ -16,8 +15,11 @@ from HTMLParser import HTMLParser
 from modularodm import Q
 from modularodm import fields
 from modularodm.validators import MaxLengthValidator
-from modularodm.exceptions import ValidationTypeError
-from modularodm.exceptions import ValidationValueError
+from modularodm.exceptions import (
+    ValidationTypeError,
+    ValidationValueError,
+    NoResultsFound,
+)
 
 from api.base.utils import absolute_reverse
 from framework import status
@@ -3080,7 +3082,7 @@ class Retraction(Sanction):
                 },
                 auth=Auth(user),
             )
-		            parent_registration.embargo.save()
+            parent_registration.embargo.save()
         # Ensure retracted registration is public
         if not parent_registration.is_public:
             parent_registration.set_privacy('public')
@@ -3122,8 +3124,6 @@ class RegistrationApproval(Sanction):
             },
             auth=Auth(user),
         )
-
-
 
 class DraftRegistration(AddonModelMixin, StoredObject):
 
