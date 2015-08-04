@@ -32,7 +32,7 @@ var FileRevisionsTable = {
         self.canEdit = canEdit;
         self.enableEditing = enableEditing;
         self.baseUrl = (window.location.href).split('?')[0];
-        model.hasHashes = model.revisions[0].extra.hashes ? true : false;
+        model.hasHashes = model.revisions ? (model.revisions[0] ? (model.revisions[0].extra.hashes ? true : false): false): false;
         model.hasDate = self.file.provider !== 'dataverse';
 
         self.reload = function() {
@@ -139,12 +139,12 @@ var FileRevisionsTable = {
                 model.hasHashes ? m('td', m('div.btn-group',
                     m( 'a.btn.btn-primary.btn-sm', {
                         onclick: function() {
-                            self.showModal('MD5', revision.displayVersion, revision.displayMd5);
+                            self.showModal('MD5', revision.displayVersion, revision.extra.hashes.md5);
                         }
                     }, m('td', 'MD5') ),
                     m( 'a.btn.btn-primary.btn-sm', {
                         onclick: function() {
-                            self.showModal('SHA256', revision.displayVersion, revision.displaySha256);
+                            self.showModal('SHA256', revision.displayVersion, revision.extra.hashes.sha256);
                         }
                     }, m('td', 'SHA2') )
                 )) : false,
@@ -226,8 +226,6 @@ var FileRevisionsTable = {
                 options.displayName = parts.slice(0, parts.length - 1).join('') + '-' + revision.modified + '.' + parts[parts.length - 1];
             }
         }
-        revision.displayMd5 = revision.extra.hashes.md5;
-        revision.displaySha256 = revision.extra.hashes.sha256;
 
         revision.osfViewUrl = '?' + $.param(options);
         revision.osfDownloadUrl = '?' + $.param($.extend({action: 'download'}, options));
