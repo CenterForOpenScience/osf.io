@@ -130,9 +130,6 @@ class Link(object):
         self.reverse_kwargs = kw
         self.query_kwargs = query_kwargs or {}
 
-    def __repr__(self):
-        return self.query
-
     def resolve_url(self, obj):
         kwarg_values = {key: _get_attr_from_tpl(attr_tpl, obj) for key, attr_tpl in self.kwargs.items()}
         arg_values = [_get_attr_from_tpl(attr_tpl, obj) for attr_tpl in self.args]
@@ -151,7 +148,9 @@ class Link(object):
 
 
 class MetaLink(Link):
-
+    """Custom link object that allows for returning of relationship url, count and serialized
+    information if requested
+    """
     def get_links(self, serializer, url, obj):
         meta = self.get_meta(serializer, obj)
         ret = {
