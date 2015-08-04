@@ -45,8 +45,8 @@ utils.errorState = function(vm){
 };
 
 /* handles field highlighting for returned results */
-utils.highlightField = function(result, field_name) {
-    return utils.scrubHTML(result.highlight[field_name] ? result.highlight[field_name][0] : result[field_name] || '');
+utils.highlightField = function(result, fieldName) {
+    return utils.scrubHTML(result.highlight[fieldName] ? result.highlight[fieldName][0] : result[fieldName] || '');
 };
 
 /** Updates the vm with new search results
@@ -234,7 +234,6 @@ utils.arrayEqual = function (a, b) {
 };
 
 utils.addFiltersToQuery = function (query, filters) {
-    var new_query = null;
     if (filters) {
         filters.forEach(function (filter) {
             query = utils.filteredQuery(query, filter.filter);
@@ -305,20 +304,20 @@ utils.matchQuery = function (field, value) {
 };
 
 /* Creates a range filter */
-utils.rangeFilter = function (field_name, gte, lte) {
+utils.rangeFilter = function (fieldName, gte, lte) {
     lte = lte || new Date().getTime();
     gte = gte || 0;
     var ret = {'range': {}};
-    ret.range[field_name] = {'gte': gte, 'lte': lte};
+    ret.range[fieldName] = {'gte': gte, 'lte': lte};
     return ret;
 };
 
 /* Creates a bool query */
-utils.boolQuery = function (must, must_not, should, minimum) {
+utils.boolQuery = function (must, mustNot, should, minimum) {
     var ret = {
         'bool': {
             'must': (must || []),
-            'must_not': (must_not || []),
+            'must_not': (mustNot || []),
             'should': (should || [])
         }
     };
@@ -350,11 +349,11 @@ utils.dateHistogramFilter = function (field, gte, lte, interval) {
 };
 
 /* Creates a common query */
-utils.commonQuery = function (query_string, field) {
+utils.commonQuery = function (queryString, field) {
     field = field || '_all';
     var ret = {'common': {}};
     ret.common[field] = {
-        query: query_string
+        query: queryString
     };
     return ret;
 };
