@@ -28,7 +28,7 @@ class NodeMixin(object):
         return obj
 
 
-class NodeList(generics.ListCreateAPIView, ODMFilterMixin, NodeMixin):
+class NodeList(generics.ListCreateAPIView, ODMFilterMixin):
     """Projects and components.
 
     On the front end, nodes are considered 'projects' or 'components'. The difference between a project and a component
@@ -44,6 +44,7 @@ class NodeList(generics.ListCreateAPIView, ODMFilterMixin, NodeMixin):
         drf_permissions.IsAuthenticatedOrReadOnly,
     )
     serializer_class = NodeSerializer
+    meta_lookup_url_kwarg = 'node_id'
     ordering = ('-date_modified', )  # default ordering
 
     # overrides ODMFilterMixin

@@ -33,6 +33,7 @@ class UserList(generics.ListAPIView, ODMFilterMixin):
         drf_permissions.IsAuthenticatedOrReadOnly,
     )
     serializer_class = UserSerializer
+    meta_lookup_url_kwarg = 'user_id'
     ordering = ('-date_registered')
 
     # overrides ODMFilterMixin
