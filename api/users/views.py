@@ -65,6 +65,7 @@ class UserNodesList(generics.ListAPIView, UserMixin, ODMFilterMixin):
 
     Return a list of nodes that the user contributes to. """
     serializer_class = NodeSerializer
+    meta_lookup_url_kwarg = 'node_id'
 
     # overrides ODMFilterMixin
     def get_default_odm_query(self):

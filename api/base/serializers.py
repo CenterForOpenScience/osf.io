@@ -166,12 +166,17 @@ class MetaLink(Link):
     def get_meta(self, serializer, obj):
         query = self.endpoint.split('-')[1]
         context = serializer.context
+        request = serializer.context['request']
+        view = serializer.context['view']
         module = __import__('api.{}.views'.format(self.endpoint.split(':')[0]),
                             globals(), locals(), ['object'], -1)
 
         class_name_data = self.endpoint.split(':')[1].split('-')
         class_name = ''
-        kwargs = {context['view'].node_lookup_url_kwarg: obj._id}
+        if hasattr(view, 'meta_lookup_url_kwarg'):
+            kwargs = {view.meta_lookup_url_kwarg: obj._id}
+        else:
+            kwargs = {view.node_lookup_url_kwarg: obj._id}
         for name_data in class_name_data:
             name_data = name_data[0].capitalize() + name_data[1:]
             class_name += (name_data)

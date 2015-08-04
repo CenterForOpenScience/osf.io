@@ -131,6 +131,7 @@ class NodeContributorsList(generics.ListAPIView, ListFilterMixin, NodeMixin):
     )
 
     serializer_class = ContributorSerializer
+    meta_lookup_url_kwarg = 'user_id'
 
     def get_default_queryset(self):
         node = self.get_node()
