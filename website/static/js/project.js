@@ -256,10 +256,10 @@ $(document).ready(function() {
         trigger: 'hover'
     });
 
-    var DiscussionsInfoHtml = 'A contributor who is not subscribed to email discussions will ' +
-        'not recieve any of the emails sent to it. They will, however, still be able to send ' +
-        'emails themselves, which will be distributed as per how the discussions list was set.' +
-        '<br><br>You can change your subscription setting on the settings page.';
+    var DiscussionsInfoHtml = '<p>A contributor who is not subscribed to email discussions ' +
+        'will not recieve any of the emails sent to it, but will still be able to send emails ' +
+        'to it themselves, which will be distributed normally.</p>' +
+        '<p>You can change your subscription setting on the settings page.</p>';
 
     $('.discussions-info').attr(
         'data-content', DiscussionsInfoHtml
