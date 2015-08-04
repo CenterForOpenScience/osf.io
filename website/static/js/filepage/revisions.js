@@ -140,7 +140,7 @@ var FileRevisionsTable = {
                         return m('.alert.alert-warning', {style:{margin: '10px'}}, model.errorMessage);
                     }
 
-                    return m('table.table',{style:{'margin-bottom': '0'}}, [
+                    return m('table.table',{style: {marginBottom: '0'}}, [
                         ctrl.getTableHead(),
                         m('tbody', model.revisions.map(ctrl.makeTableRow))
                     ]);
