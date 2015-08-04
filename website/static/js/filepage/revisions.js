@@ -133,18 +133,18 @@ var FileRevisionsTable = {
                             m('a', {href: revision.extra.user.url}, revision.extra.user.name) :
                             revision.extra.user.name
                     ) : false,
-                model.hasHashes ? m('td',
-                    m( 'a.btn.btn-primary.btn-xs', {
+                model.hasHashes ? m('td', m('div.btn-group',
+                    m( 'a.btn.btn-primary.btn-sm', {
                         onclick: function() {
                             self.showModal('MD5', revision.displayVersion, revision.displayMd5);
                         }
                     }, m('td', 'MD5') ),
-                    m( 'a.btn.btn-primary.btn-xs', {
+                    m( 'a.btn.btn-primary.btn-sm', {
                         onclick: function() {
                             self.showModal('SHA256', revision.displayVersion, revision.displaySha256);
                         }
                     }, m('td', 'SHA2') )
-                ) : false,
+                )) : false,
                 m('td', revision.extra.downloads > -1 ? m('.badge', revision.extra.downloads) : ''),
                 m('td',
                     m('a.btn.btn-primary.btn-sm.file-download', {
