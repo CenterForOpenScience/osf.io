@@ -507,7 +507,7 @@ select {
 }
 
 tr a, b, em, td {
-    word-break: break-word;
+    word-wrap: break-word;
 }
 
 .btn-link.project-toggle {
