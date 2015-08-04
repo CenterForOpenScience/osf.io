@@ -5,9 +5,17 @@ var $ = require('jquery');
 var m = require('mithril');
 var $osf = require('js/osfHelpers');
 var utils = require('js/share/utils');
+var widgetUtils = require('js/search_dashboard/widgetUtils');
 var Results = {};
 var ResultsWidget = {};
 
+
+/**
+* View function for the results widget (displays each of the results of the search)
+*
+* @param {Object} controller object automatically passed in by mithril
+* @return {m.component object}  initialised resultsWidget component
+*/
 Results.view = function(ctrl) {
     var res = [];
     var len = 0;
@@ -62,7 +70,7 @@ Results.controller = function(params) {
                 onclick: function() {
                     utils.updateFilter(self.vm, 'match:contributors.familyName:' + person.familyName, true);
                     utils.updateFilter(self.vm, 'match:contributors.givenName:' + person.givenName, true);
-                    utils.signalWidgetsToUpdate(self.vm, params.widget.thisWidgetUpdates);
+                    widgetUtils.signalWidgetsToUpdate(self.vm, params.widget.thisWidgetUpdates);
                 }
             }, person.name)
         ]);
@@ -89,7 +97,7 @@ Results.controller = function(params) {
             return [
                 m('.badge.pointer', {onclick: function(){
                     utils.updateFilter(self.vm, 'match:subjects:"' + subject + '"', true);
-                    utils.signalWidgetsToUpdate(self.vm, params.widget.thisWidgetUpdates);
+                    widgetUtils.signalWidgetsToUpdate(self.vm, params.widget.thisWidgetUpdates);
                 }}, subject.length < 50 ? subject : subject.substring(0, 47) + '...'),
                 ' '
             ];
@@ -126,7 +134,7 @@ Results.controller = function(params) {
                         ' ',
                         m('a', {onclick: function() {
                             utils.updateFilter(self.vm, 'shareProperties.source:' + result.shareProperties.source);
-                            utils.signalWidgetsToUpdate(self.vm, params.widget.thisWidgetUpdates);
+                            widgetUtils.signalWidgetsToUpdate(self.vm, params.widget.thisWidgetUpdates);
                         }}, self.vm.ProviderMap[result.shareProperties.source].long_name),
                         m('br')
                     ])

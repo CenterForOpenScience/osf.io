@@ -1,0 +1,44 @@
+'use strict';
+var $ = require('jquery');
+
+var widgetUtils = {};
+
+/**
+ * Checks if an update has been requested for this widget
+ *
+ * @params {string} name of widget to check
+ * @vm {object} searchDashboard vm containing a list of widgets that need to be updated (vm.widgetsToUpdate)
+ * @return {bool}  returns itself
+ */
+widgetUtils.updateTriggered = function(widgetName, vm){
+    if (vm.widgetsToUpdate.indexOf(widgetName) === -1){
+        return false;
+    }
+    vm.widgetsToUpdate.splice($.inArray(widgetName, vm.widgetsToUpdate), 1); //signal that this widget has been redrawn
+    return true;
+};
+
+/**
+ * Adds the widget to the list of widgets that need to be updated (will actually update at next redraw)
+ *
+ * @param {object} searchDashboard vm containing a list of widgets that need to be updated (vm.widgetsToUpdate)
+ * @param {string} list of widgets that need to be added to the list of widgets to update
+ * @return {bool}  returns itself
+ */
+widgetUtils.signalWidgetsToUpdate = function(vm, widgetsToAdd){
+    vm.widgetsToUpdate = widgetUtils.concatUnique(vm.widgetsToUpdate, widgetsToAdd);
+};
+
+/**
+ * Concatenates too arrays and removes non-unique values
+ *
+ * @param {array} array to add to
+ * @param {array} array to add
+ * @return {bool}  concatenation of the unique values of the two arrays
+ */
+widgetUtils.concatUnique = function(array1, array2){
+     var temp = array1.concat(array2);
+     return temp.filter(function(item, i, arr){ return arr.indexOf(item) === i; }); //make unique so we dont redraw widgets more than we have to
+};
+
+module.exports = widgetUtils;

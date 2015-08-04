@@ -5,42 +5,67 @@ var m = require('mithril');
 var $ = require('jquery');
 var $osf = require('js/osfHelpers');
 var utils = require('js/share/utils');
-var SearchWidgetPanel = require('js/searchWidget');
+var widgetUtils = require('js/search_dashboard/widgetUtils');
+var SearchWidgetPanel = require('js/search_dashboard/searchWidget');
 var History = require('exports?History!history');
 
 var searchDashboard = {};
 
+/**
+ * View function for the search dashboard. Gridifys the contained
+ * widgets depending on their row.
+ *
+ * @param {Object} ctrl: controller object automatically passed in by mithril
+ * @return {m.component object}  initialised searchDashboard component
+ */
 searchDashboard.view = function (ctrl, params, children) {
-    return m('.col-lg-12', [] ,ctrl.hidden() ? [] : [ctrl.widgets.map(function(widget){
-                return m.component(SearchWidgetPanel,{key : widget.name, widget: widget, vm: ctrl.vm});
-            })]);
+    var grid = [];
+    var row;
+    for(row = 1; row <= ctrl.rows; row++){
+        grid.push(m('.row',{},ctrl.widgets.map(function(widget) {
+            if (widget.row === row) {
+                return m.component(SearchWidgetPanel, {key: widget.levelNames[0], widget: widget, vm: ctrl.vm});
+            }
+        })));
+    };
+    return m('.col-lg-12', {} ,grid);
+
 };
 
 searchDashboard.vm = {};
 
+/**
+ * controller function for a search Dashboard component.
+ * Setups vm for dashboard, elastic searches, and params for widgets
+ *
+ * @return {m.component.controller}  returns itself
+ */
 searchDashboard.controller = function (params) {
     var self = this;
     //search dashboard state
     self.widgets = params.widgets || [];
-    self.hidden = m.prop(false);
     self.error = m.prop('');
 
     //search model state
     self.vm = searchDashboard.vm;
     self.vm.elasticURL = params.elasticURL;
-    self.vm.query =  params.query || m.prop('*'); //query will be pushed from widgets? maybe
-    self.vm.optionalFilters = []; //filters will be pushed from widgets, init at zero
+    self.vm.pageTitle = params.pageTitle;
+    self.vm.query =  params.query || m.prop('*');
+    self.vm.optionalFilters = [];
     self.vm.requiredFilters = [];
     self.vm.aggregations = [];
     self.vm.widgetsToUpdate = [];
+    self.vm.widgetNames = [];
     if (self.widgets){
         self.widgets.forEach(function(widget){
             self.vm.aggregations.push(widget.aggregation);
+            self.vm.widgetNames.push(widget.levelNames[0]);
             self.vm.widgetsToUpdate.push(widget.levelNames[0]); //redraw all to start with
         });
     }
+    self.vm.rowHeights = {};
     self.vm.loadStats = true;
-    self.vm.results = null; //unused, only for backwards compadibility with utils TODO remove
+    self.vm.results = null; //unused, only for backwards compatibility with utils TODO remove
     self.vm.data = null;
     self.vm.dataLoaded = m.prop(false);
 
@@ -53,6 +78,11 @@ searchDashboard.controller = function (params) {
     };
 
     utils.search(self.vm); //initial search to init charts, redraw called inside utils, and will update widgets...
+
+    History.Adapter.bind(window, 'statechange', function(e) {
+        widgetUtils.signalWidgetsToUpdate(self.vm, self.vm.widgetNames);
+        utils.updateHistory(self.vm);
+    });
 };
 
 

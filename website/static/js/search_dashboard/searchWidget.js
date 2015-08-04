@@ -5,7 +5,9 @@ var m = require('mithril');
 var $ = require('jquery');
 var $osf = require('js/osfHelpers');
 
-function loadingIcon(container){
+require('../../css/search_widget.css');
+
+function loadingIcon(){
     return m('.spinner-loading-wrapper', [
             m('.logo-spin.text-center', [
                 m('img[src=/static/img/logo_spin.png][alt=loader]')
@@ -16,12 +18,28 @@ function loadingIcon(container){
 
 var SearchWidget = {
 //renders the c3 graph widget
+    /**
+     * View function for a search widget. Returns display widget if data ready, otherwise loading spinner
+     *
+     * @param {Object} controller object automatically passed in by mithril
+     * @return {m.component object}  initialised searchWidget component
+     */
     view: function (ctrl, params) { //this should always be a component, and c3 should be wrapped!
         //m('.pull-left', params.vm.dataLoaded() ? [] : m('.logo-spin.logo-sm', m('img[src=/static/img/logo_spin.png][alt=loader]'))),
         return m('div',{}, params.vm.dataLoaded() ? ctrl.drawChart(params.widget, params.vm, params.vm.data) : loadingIcon());
     },
 
+    /**
+     * controller function for a search widget.
+     *
+     * @return {m.component.controller}  returns itself
+     */
     controller : function (params) {
+        /**
+         * Creates display component, and passes data to it.
+         *
+         * @return {m.component} display component
+         */
         this.drawChart = function (widget, vm, data) {
             if ((data.aggregations[widget.levelNames[0]] !== undefined) || (data[widget.levelNames[0]] !== undefined)) {
                 return widget.display(data, vm, widget);
@@ -31,6 +49,12 @@ var SearchWidget = {
 };
 
 var searchWidgetPanel = {
+    /**
+     * View function for a search widget panel. Returns search widget nicely wrapped in panel with minimize actions.
+     *
+     * @param {Object} controller object automatically passed in by mithril
+     * @return {m.component object}  initialised searchWidgetPanel component
+     */
     view : function (ctrl, params, children) {
         return m(params.widget.size[0], {},
             m('.panel.panel-default', {}, [
@@ -49,6 +73,12 @@ var searchWidgetPanel = {
             ])
         );
     },
+
+    /**
+     * controller function for a search widget pannel. Initialises component.
+     *
+     * @return {m.component.controller}  returns itself
+     */
     controller : function(params) {
         this.hidden = m.prop(false);
     }

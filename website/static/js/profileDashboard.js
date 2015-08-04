@@ -5,16 +5,27 @@ var m = require('mithril');
 var $ = require('jquery');
 var $osf = require('js/osfHelpers');
 var utils = require('js/share/utils');
-var charts = require('js/charts');
-var ResultsWidget = require('js/resultsWidget');
-var searchDashboard = require('js/searchDashboard');
+var widgetUtils = require('js/search_dashboard/widgetUtils');
+var charts = require('js/search_dashboard/charts');
+var ResultsWidget = require('js/search_dashboard/resultsWidget');
+var searchDashboard = require('js/search_dashboard/searchDashboard');
 
 var profileDashboard = {};
 
+/**
+ * Setups elastic aggregations to get contributers.
+ *
+ * @return {object} JSON elastic search aggregation
+ */
 profileDashboard.contributersAgg = function(){
     return {'sources': utils.termsFilter('field', '_type')};
 };
 
+/**
+ * Setups elastic aggregations to get contributers by time data.
+ *
+ * @return {object} JSON elastic search aggregation
+ */
 profileDashboard.contributersByTimesAgg = function() {
     var dateTemp = new Date(); //get current time
     dateTemp.setMonth(dateTemp.getMonth() - 3);
@@ -25,25 +36,42 @@ profileDashboard.contributersByTimesAgg = function() {
     return agg;
 };
 
-//sets up the profile dashboard, then returns set up searchDashboard object
+/**
+* View function for the profile dashboard
+*
+* @param {Object} controller Object automatically passed in by mithril
+* @return {m.component object}  initialised searchDashboard component
+*/
+profileDashboard.view = function(ctrl, params, children){
+   return m.component(searchDashboard, {elasticURL: '/api/v1/share/search/', widgets : ctrl.widgets, rows: 2});
+};
+
+/**
+ * controller function for the ProfileDashboard. Basically a constructor that sets up a SearchDashboard.
+ * Contains settings for all widgets. Contains Elastic Data.
+ *
+ * @return {m.component.controller}  returns itself
+ */
 profileDashboard.controller = function(params) {
 
     var contributers = {
-        title: 'Your contributers',
-        size: ['.col-md-3'],
+        title: 'Contributers',
+        size: ['.col-md-3', 260],
+        row: 1,
         levelNames: ['sources'],
         display: charts.donutChart,
         aggregation: profileDashboard.contributersAgg(),
         callback: {'onclick': function (d) {
             utils.updateFilter(this.vm, 'match:shareProperties.source:' + d.name, true);
-            utils.signalWidgetsToUpdate(this.vm,this.widget.thisWidgetUpdates);
+            widgetUtils.signalWidgetsToUpdate(this.vm,this.widget.thisWidgetUpdates);
         }},
         thisWidgetUpdates: ['sources', 'sourcesByTimes', 'results']
     };
 
     var contributersByTimes = {
-        title: 'Your contributers over time',
-        size: ['.col-md-9'],
+        title: 'Contributers over time',
+        size: ['.col-md-9', 260],
+        row: 1,
         levelNames: ['sourcesByTimes','sources'],
         display: charts.timeseriesChart,
         aggregation: profileDashboard.contributersByTimesAgg(),
@@ -54,6 +82,7 @@ profileDashboard.controller = function(params) {
     var results = {
         title: 'Projects and Components',
         size: ['.col-md-12'],
+        row: 2,
         levelNames: ['results'],
         display: ResultsWidget.display,
         aggregation: null, //this displays no stats, so needs no aggregations
@@ -62,10 +91,6 @@ profileDashboard.controller = function(params) {
     };
 
     this.widgets = [contributers, contributersByTimes, results];
-};
-
-profileDashboard.view = function(ctrl, params, children){
-   return m('.row', [], [m.component(searchDashboard, {elasticURL: '/api/v1/share/search/', widgets : ctrl.widgets})]);
 };
 
 module.exports = profileDashboard;

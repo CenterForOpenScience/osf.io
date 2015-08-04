@@ -98,7 +98,7 @@ utils.search = function(vm) {
         vm.optionalFilters = [];
         vm.requiredFilters = [];
         vm.sort('Relevance');
-        History.pushState({}, 'OSF | SHARE', '?');
+        History.pushState({}, vm.pageTitle || $(document).find("title").text(), '?');
         ret.resolve(null);
     } else if (vm.query().length === 0) {
         ret.resolve(null);
@@ -106,13 +106,13 @@ utils.search = function(vm) {
         vm.page = 0;
         vm.results = [];
         if (utils.stateChanged(vm)) {
-            // TODO remove of range filter should update range on subgraph
+            // TODO @bdyetton remove of range filter should update range on subgraph
             History.pushState({
                 optionalFilters: vm.optionalFilters,
                 requiredFilters: vm.requiredFilters,
                 query: vm.query(),
                 sort: vm.sort()
-            }, 'OSF | SHARE', '?' + utils.buildURLParams(vm));
+            }, vm.pageTitle || $(document).find("title").text(), '?' + utils.buildURLParams(vm));
         }
         utils.loadMore(vm)
             .then(function (data) {
@@ -126,6 +126,19 @@ utils.search = function(vm) {
 
     return ret.promise;
 };
+
+utils.updateHistory = function(vm){
+    var state = History.getState().data;
+    if (!utils.stateChanged(vm)){
+        return;
+    }
+
+    vm.optionalFilters = state.optionalFilters;
+    vm.requiredFilters = state.requiredFilters;
+    vm.query(state.query);
+    vm.sort(state.sort);
+    utils.search(vm);
+}
 
 utils.stateChanged = function (vm) {
     var state = History.getState().data;
@@ -457,23 +470,6 @@ utils.getNewColors = function (colorsUsed) {
         newColors.push(calculateDistanceBetweenColors(colorsUsed[i], colorsUsed[i + 1]));
     }
     return newColors;
-};
-
-utils.updateTriggered = function(widgetName, vm){ //TODO @bdyetton move to widget utils
-    if (vm.widgetsToUpdate.indexOf(widgetName) === -1){
-        return false;
-    }
-    vm.widgetsToUpdate.splice($.inArray(widgetName, vm.widgetsToUpdate), 1); //signal that this widget has been redrawn
-    return true;
-};
-
-utils.signalWidgetsToUpdate = function(vm, thisWidgetUpdates){
-    vm.widgetsToUpdate = utils.concatUnique(vm.widgetsToUpdate, thisWidgetUpdates);
-};
-
-utils.concatUnique = function(array1, array2){ //TODO @bdyetton move to widget utils
-     var temp = array1.concat(array2);
-     return temp.filter(function(item, i, arr){ return arr.indexOf(item) === i; }); //make unique so we dont redraw widgets more than we have to
 };
 
 module.exports = utils;

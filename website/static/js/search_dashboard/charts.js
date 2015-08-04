@@ -4,11 +4,10 @@ var c3 = require('c3');
 var m = require('mithril');
 var $ = require('jquery');
 var $osf = require('js/osfHelpers');
-var utils = require('js/share/utils');
+var widgetUtils = require('js/search_dashboard/widgetUtils');
 
 require('c3/c3.css');
-require('../css/share-search.css');
-
+require('../../css/search_widget.css');
 
 //This module contains a bunch of generic charts and parsers for formating the correct data for them
 
@@ -32,15 +31,32 @@ function timeSinceEpochInMsToMMYY(timeSinceEpochInMs) {
     return d.getMonth().toString() + '/' + d.getFullYear().toString().substring(2);
 }
 
+/**
+ * Wraps and returns a c3 chart in a component
+ * Only creates new component when an update to this widget has been requested
+ *
+ * @param {Object} c3ChartSetup: A fully setup c3 chart object
+ * @param {Object} vm: vm of the searchDashboard
+ * @param {Object} divID: id of the chart (name of widget)
+ * @return {m.component object}  c3 chart wrapped in component
+ */
 charts.c3componetize = function(c3ChartSetup, vm, divID) {
-    return m('div', {id: divID,
+    return m('div.c3-chart-padding', {id: divID,
                     config: function(element, isInit, context){
-                        if (!utils.updateTriggered(divID,vm)) {return; }
+                        if (!widgetUtils.updateTriggered(divID,vm)) {return; }
                         return c3.generate(c3ChartSetup);
                     }
             });
 };
 
+/**
+ * Creates a c3 donut chart component
+ *
+ * @param {Object} rawData: Data to populate chart after parsing raw data
+ * @param {Object} vm: vm of the searchDashboard
+ * @param {Object} widget: params of the widget that chart is being created for
+ * @return {m.component object}  c3 chart wrapped in component
+ */
 charts.donutChart = function (rawData, vm, widget) {
     var data = charts.singleLevelAggParser(rawData, widget.levelNames);
     data.onclick = widget.callback ? widget.callback.onclick.bind({vm: vm, widget: widget}) : undefined;
@@ -48,7 +64,7 @@ charts.donutChart = function (rawData, vm, widget) {
     var chartSetup = {
         bindto: '#' + widget.levelNames[0],
         size: {
-            height: 200
+            height: widget.size[1]
         },
         data: data,
         donut: {
@@ -66,13 +82,21 @@ charts.donutChart = function (rawData, vm, widget) {
     return charts.c3componetize(chartSetup,vm, widget.levelNames[0]);
 };
 
+/**
+ * Creates a c3 timeseries chart component after parsing raw data
+ *
+ * @param {Object} rawData: Data to populate chart
+ * @param {Object} vm: vm of the searchDashboard
+ * @param {Object} widget: params of the widget that chart is being created for
+ * @return {m.component object}  c3 chart wrapped in component
+ */
 charts.timeseriesChart = function (rawData, vm, widget) {
     var data = charts.twoLevelAggParser(rawData, widget.levelNames);
     data.type = 'area-spline';
     var chartSetup = {
         bindto: '#' + widget.levelNames[0],
         size: {
-            height: 250
+            height: widget.size[1]
         },
         data: data,
         subchart: { //TODO @bdyetton fix the aggregation that the subchart pulls from so it always has the global range results
@@ -110,7 +134,13 @@ charts.timeseriesChart = function (rawData, vm, widget) {
     return charts.c3componetize(chartSetup, vm, widget.levelNames[0]);
 };
 
-//Parsers
+/**
+ * Parses a single level of elastic search data for a c3 single level chart (such as a donut)
+ *
+ * @param {Object} data: raw elastic aggregation Data to parse
+ * @param {Object} levelNames: names of each level (one in this case)
+ * @return {m.component object}  parsed data
+ */
 charts.singleLevelAggParser = function (data, levelNames) {
     var chartData = {};
     chartData.name = levelNames[0];
@@ -133,6 +163,13 @@ charts.singleLevelAggParser = function (data, levelNames) {
     return chartData;
 };
 
+/**
+ * Parses a single level of elastic search data for a c3 two level chart (such as a timeseries or histogram)
+ *
+ * @param {Object} data: raw elastic aggregation Data to parse
+ * @param {Object} levelNames: names of each level (two in this case)
+ * @return {m.component object}  parsed data
+ */
 charts.twoLevelAggParser = function (data, levelNames) {
     var chartData = {};
     chartData.name = levelNames[0];
@@ -166,6 +203,12 @@ charts.twoLevelAggParser = function (data, levelNames) {
     return chartData;
 };
 
+/**
+ * Returns a requested number of unique complementary colors
+ *
+ * @param {integer} numColors: number of colors to return
+ * @return {array}  Array of Hex color values
+ */
 charts.generateColors = function(numColors) {
     var colorsToGenerate = COLORBREWER_COLORS.slice();
     var colorsUsed = [];
@@ -186,6 +229,12 @@ charts.generateColors = function(numColors) {
     return colorsOut;
 };
 
+/**
+ * Returns a colors in the middle of current colors
+ *
+ * @param {array} colorsUsed: colors used
+ * @return {array}  new colors to use
+ */
 charts.getNewColors = function(colorsUsed) {
     var newColors = [];
     for (var i=0; i < colorsUsed.length-1; i++) {

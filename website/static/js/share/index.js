@@ -20,6 +20,7 @@ ShareApp.ViewModel = function() {
     var self = this;
 
     self.elasticURL = '/api/v1/share/search/';
+    self.pageTitle = 'OSF | SHARE';
     self.time = 0;
     self.page = 0;
     self.count = 0;
@@ -76,7 +77,7 @@ ShareApp.controller = function() {
         sort: self.vm.sort(),
         optionalFilters: self.vm.optionalFilters,
         requiredFilters: self.vm.requiredFilters
-    }, 'OSF | SHARE', '?' + utils.buildURLParams(self.vm));
+    }, self.vm.pageTitle, '?' + utils.buildURLParams(self.vm));
 
     m.request({
         method: 'get',
@@ -103,16 +104,7 @@ ShareApp.controller = function() {
     });
 
     History.Adapter.bind(window, 'statechange', function(e) {
-        var state = History.getState().data;
-        if (!utils.stateChanged(self.vm)){
-            return;
-        }
-
-        self.vm.optionalFilters = state.optionalFilters;
-        self.vm.requiredFilters = state.requiredFilters;
-        self.vm.query(state.query);
-        self.vm.sort(state.sort);
-        utils.search(self.vm);
+        utils.updateHistory(self.vm);w
     });
 };
 
