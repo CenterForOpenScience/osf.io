@@ -3104,7 +3104,7 @@ class RegistrationApproval(Sanction):
     initiated_by = fields.ForeignField('user', backref='registration_approved')
 
     def _on_complete(self, user, token):
-        register = Node.find(Q('registration_approval', 'eq', self))
+        register = Node.find_one(Q('registration_approval', 'eq', self))
         auth = Auth(self.initiated_by)
         register.set_privacy('public', auth, log=False)
         for child in register.get_descendants_recursive(lambda n: n.primary):
@@ -3113,7 +3113,7 @@ class RegistrationApproval(Sanction):
             node.update_search()  # update search if public
 
     def _on_reject(self, user, token):
-        register = Node.find(Q('registration_approval', 'eq', self))
+        register = Node.find_one(Q('registration_approval', 'eq', self))
         registered_from = register.registered_from
         delete_registration_tree(register)
         registered_from.add_log(
@@ -3124,6 +3124,14 @@ class RegistrationApproval(Sanction):
             },
             auth=Auth(user),
         )
+
+class DraftRegistrationApproval(Sanction):
+
+    def _on_complete(self, user, token):
+        pass  # draft approval state gets loaded dynamically from this record
+
+    def _on_reject(self, user, token):
+        pass
 
 class DraftRegistration(AddonModelMixin, StoredObject):
 
@@ -3166,6 +3174,8 @@ class DraftRegistration(AddonModelMixin, StoredObject):
     # have already been archived.
     # storage = fields.ForeignField('osfstoragenodesettings')
 
+    requires_approval = fields.BooleanField(default=False)
+    approval = fields.ForeignField('draftregistrationapproval', default=None)
     # Dictionary field mapping
     # { 'requiresApproval': true, 'fulfills': [{ 'name': 'Prereg Prize', 'info': <infourl> }]}
     # config = fields.DictionaryField()
