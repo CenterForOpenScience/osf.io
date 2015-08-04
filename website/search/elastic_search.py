@@ -20,6 +20,7 @@ from elasticsearch import (
 from flask import request
 
 from framework import sentry
+from framework.exceptions import HTTPError
 
 from website import settings
 from website.filters import gravatar
@@ -441,8 +442,12 @@ def search_contributor(query, exclude=None, current_user=None, **kwargs):
         most recent employment and education, gravatar URL of an OSF user
 
     """
-    page = int(request.args.get('page', 0))
-    size = int(request.args.get('size', 5))
+    try:
+        page = int(request.args.get('page', 0))
+        size = int(request.args.get('size', 5))
+    except ValueError:
+        raise HTTPError(http.BAD_REQUEST)
+
 
     start = (page * size)
     items = re.split(r'[\s-]+', query)
