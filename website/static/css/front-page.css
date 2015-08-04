@@ -124,6 +124,10 @@ h6 {
 #hero-signup a:hover {
     text-decoration: none;
 }
+#signUpScope button {
+    z-index: 9;
+    position: relative;
+}
 #screenshot {
     margin-top: -10%;
 }
