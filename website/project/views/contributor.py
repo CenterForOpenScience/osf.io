@@ -138,9 +138,6 @@ def get_contributors_from_parent(auth, node, **kwargs):
 
     return paginateContributorSearch(contribs)
 
-
-
-
 @must_be_contributor_or_public
 def get_most_in_common_contributors(auth, node, **kwargs):
     node_contrib_ids = set(node.contributors._to_primary_keys())

@@ -127,15 +127,17 @@ var AddContributorViewModel = oop.extend(Paginator, {
                             'message': 'No Contributors Found.',
                             'level': 'info'
                         });
+                        self.results([]);
                     } else {
                         var contributors = result.users.map(function(userData) {
                             return new Contributor(userData);
                         });
+                        self.results(contributors);
+                        self.currentPage(result.page);
+                        self.numberOfPages(result.pages);
+                        self.addNewPaginators();
                     }
-                self.results(contributors);
-                self.currentPage(result.page);
-                self.numberOfPages(result.pages);
-                self.addNewPaginators();
+
                 }
 
             );
