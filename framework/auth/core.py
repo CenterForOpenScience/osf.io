@@ -714,11 +714,13 @@ class User(GuidStoredObject, AddonModelMixin):
         mails.send_mail(to_addr=self.username,
                         mail=mails.REMOVED_EMAIL,
                         user=self,
-                        removed_email=email)
+                        removed_email=email,
+                        security_addr='alternate email address ({})'.format(email))
         mails.send_mail(to_addr=email,
                         mail=mails.REMOVED_EMAIL,
                         user=self,
-                        removed_email=email)
+                        removed_email=email,
+                        security_addr='primary email address ({})'.format(self.username))
 
     def get_confirmation_token(self, email, force=False):
         """Return the confirmation token for a given email.

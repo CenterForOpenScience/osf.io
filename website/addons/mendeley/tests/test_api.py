@@ -35,4 +35,4 @@ class MendeleyApiTestCase(OsfTestCase):
         client = APISession(self.mock_partial, self.mock_credentials)
         client.request()
         args, kwargs = mock_request.call_args
-        assert_equal(kwargs['params'], {'view': 'all'})
+        assert_equal(kwargs['params'], {'view': 'all', 'limit': '500'})

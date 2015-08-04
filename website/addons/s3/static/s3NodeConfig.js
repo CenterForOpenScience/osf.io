@@ -89,33 +89,53 @@ ViewModel.prototype.updateBucketList = function(){
         });
 };
 
+var isValidBucketName = function(bucketName, allowPeriods) {
+    var isValidBucket;
+
+    if (allowPeriods === true) {
+        isValidBucket = /^(?!.*(\.\.|-\.))[^.][a-z0-9\d.-]{2,61}[^.]$/;
+    } else {isValidBucket = /^(?!.*(\.\.|-\.))[^.][a-z0-9\d-]{2,61}[^.]$/;}
+
+    return isValidBucket.exec(bucketName) == null;
+};
+
 ViewModel.prototype.selectBucket = function() {
     var self = this;
+
     self.loading(true);
-    return $osf.postJSON(
-            self.urls().set_bucket, {
-                's3_bucket': self.selectedBucket(),
-                'encrypt_uploads': self.encryptUploads()
-            }
-        )
-        .done(function(response) {
-            self.updateFromData(response);
-            self.changeMessage('Successfully linked S3 bucket "' + self.currentBucket() + '". Go to the <a href="' +
-                               self.urls().files + '">Files page</a> to view your content.', 'text-success');
-            self.loading(false);
-        })
-        .fail(function(xhr, status, error) {
-            self.loading(false);
-            var message = 'Could not change S3 bucket at this time. ' +
-                'Please refresh the page. If the problem persists, email ' +
-                '<a href="mailto:support@osf.io">support@osf.io</a>.';
-            self.changeMessage(message, 'text-warning');
-            Raven.captureMessage('Could not set S3 bucket', {
-                url: self.urls().setBucket,
-                textStatus: status,
-                error: error
-            });
+
+    if (isValidBucketName(self.selectedBucket(), false)) {
+        self.loading(false);
+        bootbox.alert({
+            title: 'Invalid bucket name',
+            message: 'Sorry, the S3 addon only supports bucket names without periods.'
         });
+    } else {
+        return $osf.postJSON(
+                self.urls().set_bucket, {
+                    's3_bucket': self.selectedBucket(),
+                    'encrypt_uploads': self.encryptUploads()
+                }
+            )
+            .done(function (response) {
+                self.updateFromData(response);
+                self.changeMessage('Successfully linked S3 bucket "' + self.currentBucket() + '". Go to the <a href="' +
+                    self.urls().files + '">Files page</a> to view your content.', 'text-success');
+                self.loading(false);
+            })
+            .fail(function (xhr, status, error) {
+                self.loading(false);
+                var message = 'Could not change S3 bucket at this time. ' +
+                    'Please refresh the page. If the problem persists, email ' +
+                    '<a href="mailto:support@osf.io">support@osf.io</a>.';
+                self.changeMessage(message, 'text-danger');
+                Raven.captureMessage('Could not set S3 bucket', {
+                    url: self.urls().setBucket,
+                    textStatus: status,
+                    error: error
+                });
+            });
+    }
 };
 
 ViewModel.prototype._deauthorizeNodeConfirm = function() {
@@ -132,7 +152,7 @@ ViewModel.prototype._deauthorizeNodeConfirm = function() {
         var message = 'Could not disconnect S3 at ' +
             'this time. Please refresh the page. If the problem persists, email ' +
             '<a href="mailto:support@osf.io">support@osf.io</a>.';
-        self.changeMessage(message, 'text-warning');
+        self.changeMessage(message, 'text-danger');
         Raven.captureMessage('Could not remove S3 authorization.', {
             url: self.urls().deauthorize,
             textStatus: status,
@@ -171,7 +191,7 @@ ViewModel.prototype._importAuthConfirm = function() {
         var message = 'Could not import S3 credentials at ' +
             'this time. Please refresh the page. If the problem persists, email ' +
             '<a href="mailto:support@osf.io">support@osf.io</a>.';
-        self.changeMessage(message, 'text-warning');
+        self.changeMessage(message, 'text-danger');
         Raven.captureMessage('Could not import S3 credentials', {
             url: self.urls().importAuth,
             textStatus: status,
@@ -202,6 +222,7 @@ ViewModel.prototype.importAuth = function() {
 ViewModel.prototype.createCredentials = function() {
     var self = this;
     self.creatingCredentials(true);
+
     return $osf.postJSON(
         self.urls().create_auth, {
             secret_key: self.secretKey(),
@@ -213,10 +234,12 @@ ViewModel.prototype.createCredentials = function() {
         self.updateFromData(response);
     }).fail(function(xhr, status, error) {
         self.creatingCredentials(false);
-        var message = 'Could not add S3 credentials at ' +
-            'this time. Please refresh the page. If the problem persists, email ' +
-            '<a href="mailto:support@osf.io">support@osf.io</a>.';
-        self.changeMessage(message, 'text-warning');
+        var message = '';
+        var response = JSON.parse(xhr.responseText);
+        if (response && response.message) {
+            message = response.message;
+        }
+        self.changeMessage(message, 'text-danger');
         Raven.captureMessage('Could not add S3 credentials', {
             url: self.urls().importAuth,
             textStatus: status,
@@ -321,13 +344,18 @@ ViewModel.prototype.openCreateBucket = function() {
 
                     if (!bucketName) {
                         return;
-                    } else if (isValidBucket.exec(bucketName) == null) {
+                    } else if (isValidBucketName(bucketName, true)) {
                         bootbox.confirm({
                             title: 'Invalid bucket name',
                             message: 'Sorry, that\'s not a valid bucket name. Try another name?',
-                            callback: function(result) {
+                            callback: function (result) {
                                 if (result) {
                                     self.openCreateBucket();
+                                }
+                            },
+                            buttons: {
+                                cancel: {
+                                    label: 'Try again'
                                 }
                             }
                         });
@@ -360,7 +388,7 @@ ViewModel.prototype.fetchBucketList = function() {
             var message = 'Could not retrieve list of S3 buckets at ' +
                 'this time. Please refresh the page. If the problem persists, email ' +
                 '<a href="mailto:support@osf.io">support@osf.io</a>.';
-            self.changeMessage(message, 'text-warning');
+            self.changeMessage(message, 'text-danger');
             Raven.captureMessage('Could not GET s3 bucket list', {
                 url: self.urls().bucketList,
                 textStatus: status,
@@ -430,7 +458,7 @@ ViewModel.prototype.fetchFromServer = function() {
         var message = 'Could not retrieve S3 settings at ' +
                 'this time. Please refresh the page. If the problem persists, email ' +
                 '<a href="mailto:support@osf.io">support@osf.io</a>.';
-        self.changeMessage(message, 'text-warning');
+        self.changeMessage(message, 'text-danger');
         Raven.captureMessage('Could not GET s3 settings', {
             url: self.url,
             textStatus: status,

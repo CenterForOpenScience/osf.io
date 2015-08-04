@@ -125,8 +125,8 @@ class GoogleDriveOAuthSettings(StoredObject):
     refresh_token = fields.StringField()
     expires_at = fields.DateTimeField()
 
-    def fetch_access_token(self):
-        self.refresh_access_token()
+    def fetch_access_token(self, force_refresh=False):
+        self.refresh_access_token(force=force_refresh)
         return self.access_token
 
     def refresh_access_token(self, force=False):
@@ -223,9 +223,9 @@ class GoogleDriveUserSettings(AddonUserSettingsBase):
             return self.oauth_settings.access_token is not None
         return False
 
-    def fetch_access_token(self):
+    def fetch_access_token(self, force_refresh=False):
         if self.oauth_settings:
-            return self.oauth_settings.fetch_access_token()
+            return self.oauth_settings.fetch_access_token(force_refresh)
         return None
 
     def clear(self):
@@ -400,7 +400,7 @@ class GoogleDriveNodeSettings(StorageAddonBase, AddonNodeSettingsBase):
             message = 'Google Drive authorization copied to fork.'
         else:
             message = ('Google Drive authorization not copied to forked {cat}. You may '
-                       'authorize this fork on the <a href="{url}">Settings</a> '
+                       'authorize this fork on the <u><a href="{url}">Settings</a></u> '
                        'page.').format(
                 url=fork.web_url_for('node_setting'),
                 cat=fork.project_or_component
@@ -427,7 +427,7 @@ class GoogleDriveNodeSettings(StorageAddonBase, AddonNodeSettingsBase):
             if not auth or auth.user != removed:
                 url = node.web_url_for('node_setting')
                 message += (
-                    u' You can re-authenticate on the <a href="{url}">Settings</a> page.'
+                    u' You can re-authenticate on the <u><a href="{url}">Settings</a></u> page.'
                 ).format(url=url)
             #
             return message
