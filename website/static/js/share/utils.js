@@ -253,19 +253,6 @@ utils.loadRawNormalized = function(result){
         method: 'GET',
         url: '/api/v1/share/documents/' + source + '/' + docID + '/',
         extract: nonJsonErrors
-    }).then(function(data) {
-
-        var normed = JSON.parse(data.normalized);
-        normed = JSON.stringify(normed, undefined, 2);
-
-        var all_raw = JSON.parse(data.raw);
-        result.raw = all_raw.doc;
-        result.rawfiletype = all_raw.filetype;
-        result.normalized = normed;
-    }, function(error) {
-        result.rawfiletype = 'json';
-        result.normalized = null;
-        result.raw = null;
     });
 };
 
@@ -382,24 +369,25 @@ utils.queryFilter = function (query) {
 /**
  * Parses a filter string into one of the above filters
  *
+ * parses a filter of the form
+ *  filterName:fieldName:param1:param2...
+ *  ex: range:providerUpdatedDateTime:2015-06-05:2015-06-16
  * @param {String} filterString A string representation of a filter dictionary
  */
 utils.parseFilter = function (filterString) {
-    // parses a filter of the form
-    // filterName:fieldName:param1:param2...
-    // range:providerUpdatedDateTime:2015-06-05:2015-06-16
-    var parts = filterString.split(':');
+        var parts = filterString.split(':');
     var type = parts[0];
     var field = parts[1];
-    if (type === 'range') {
-        return utils.rangeFilter(field, parts[2], parts[3]);
-    } else if (type === 'match') {
-        return utils.queryFilter(
-            utils.matchQuery(field, parts[2])
-        );
-    }
+
     // Any time you add a filter, put it here
-    // TODO: Maybe this would be better as a map?
+    switch(type) {
+        case 'range':
+            return utils.rangeFilter(field, parts[2], parts[3]);
+        case 'match':
+            return utils.queryFilter(
+                utils.matchQuery(field, parts[2])
+            );
+    }
 };
 
 utils.processStats = function (vm, data) {

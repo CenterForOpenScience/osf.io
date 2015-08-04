@@ -108,7 +108,7 @@ Results.controller = function(vm) {
             m('div', m('a', {onclick: function() {result.showAllsubjects = result.showAllsubjects ? false : true;}},'See All'))
         ]);
     };
-    
+
     /* Renders the footer of a result, including release date, provider information and the raw/normalized records */
     self.renderResultFooter = function(result) {
         return m('div', [
@@ -120,7 +120,20 @@ Results.controller = function(vm) {
                         onclick: function() {
                             result.showRawNormed = result.showRawNormed ? false : true;
                             if (!result.raw) {
-                                utils.loadRawNormalized(result);
+                                utils.loadRawNormalized(result)
+                                    .then(function(data) {
+                                        var normed = JSON.parse(data.normalized);
+                                        normed = JSON.stringify(normed, undefined, 2);
+
+                                        var all_raw = JSON.parse(data.raw);
+                                        result.raw = all_raw.doc;
+                                        result.rawfiletype = all_raw.filetype;
+                                        result.normalized = normed;
+                                    }, function(error) {
+                                        result.rawfiletype = 'json';
+                                        result.normalized = '"Normalized data not found"';
+                                        result.raw = '"Raw data not found"';
+                                    });
                             }
                         }
                     }, 'Data')
@@ -153,7 +166,7 @@ Results.controller = function(vm) {
                                                 return pd.xml(result.raw);
                                             }
                                             else {
-                                                var rawjson = JSON.parse(result.raw || '"Raw data not found"');
+                                                var rawjson = JSON.parse(result.raw);
                                                 return JSON.stringify(rawjson, undefined, 2);
                                             }
                                         }())
