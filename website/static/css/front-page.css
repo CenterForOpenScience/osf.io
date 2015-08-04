@@ -81,6 +81,8 @@ h6 {
 #home-hero h1 {
     font-size: 3.5em;
     margin-bottom: -20px;
+    z-index: 9;
+    position: relative;
 }
 #home-hero h2 {
     margin-top: -50px;
