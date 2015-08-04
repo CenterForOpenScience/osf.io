@@ -1420,7 +1420,7 @@ def make_url_map(app):
             json_renderer,
         ),
 
-                Rule(
+        Rule(
             [
                 '/project/<pid>/discussions/',
                 '/project/<pid>/node/<nid>/discussions/',

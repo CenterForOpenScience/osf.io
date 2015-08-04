@@ -2894,7 +2894,7 @@ class MailingList(StoredObject):
         self.is_enabled = False
 
         if deleted:
-            self.node_deleted=True
+            self.node_deleted = True
 
         if save:
             self.save()

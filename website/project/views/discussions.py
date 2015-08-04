@@ -80,7 +80,7 @@ def route_message(**kwargs):
         return
 
     try:
-        node = Node.find_one(Q('_id','eq',node_id))
+        node = Node.find_one(Q('_id', 'eq', node_id))
     except NoResultsFound:
         mails.send_mail(to_addr=sender_email,
                         mail=mails.DISCUSSIONS_EMAIL_REJECTED,
