@@ -204,6 +204,12 @@ def create_waterbutler_log(payload, **kwargs):
     node = kwargs['node'] or kwargs['project']
 
     if action in (NodeLog.FILE_MOVED, NodeLog.FILE_COPIED):
+
+        for bundle in ('source', 'destination'):
+            for key in ('provider', 'materialized', 'name', 'nid'):
+                if key not in payload[bundle]:
+                    raise HTTPError(httplib.BAD_REQUEST)
+
         dest = payload['destination']
         src = payload['source']
 
@@ -218,11 +224,6 @@ def create_waterbutler_log(payload, **kwargs):
                     if dest['nid'] == src['nid']:
                         if dest['name'] != src['name']:
                             action = LOG_ACTION_MAP['rename']
-
-        for bundle in ('source', 'destination'):
-            for key in ('provider', 'materialized', 'name', 'nid'):
-                if key not in payload[bundle]:
-                    raise HTTPError(httplib.BAD_REQUEST)
 
         destination_node = node  # For clarity
         source_node = Node.load(payload['source']['nid'])
