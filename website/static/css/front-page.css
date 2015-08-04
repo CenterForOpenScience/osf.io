@@ -570,7 +570,9 @@ footer {
         min-height: 100px;
     }
     .student-image .quote:before {
-        left: 90px;
+        left: 80px;
+        border-width: 0 14px 26px 14px;
+        top: -26px;
     }
     .student-image .main {
         font-size: 1.0em !important;
