@@ -285,13 +285,6 @@ utils.filteredQuery = function(query, filter) {
     return ret;
 };
 
-/* Creates a term filter */
-utils.termFilter = function (field, value) {
-    var ret = {'term': {}};
-    ret.term[field] = value;
-    return ret;
-};
-
 /* Creates a terms filter (their names, not ours) */
 utils.termsFilter = function (field, value, minDocCount) {
     minDocCount = minDocCount || 0;
