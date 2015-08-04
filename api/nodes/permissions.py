@@ -38,9 +38,8 @@ class AdminOrPublic(permissions.BasePermission):
 
 
 class Contributor(permissions.BasePermission):
-    '''
-        Permissions for contributor detail page.
-    '''
+    """Permissions for contributor detail page."""
+
     def has_object_permission(self, request, view, obj):
         assert isinstance(obj, (Node, User)), 'obj must be a Node or User, got {}'.format(obj)
         auth = get_user_auth(request)
@@ -72,6 +71,7 @@ class ContributorOrPublicForPointers(permissions.BasePermission):
         else:
             has_auth = parent_node.can_edit(auth) and pointer_node.can_edit(auth)
             return has_auth
+
 
 class ReadOnlyIfRegistration(permissions.BasePermission):
     """Makes PUT and POST forbidden for registrations."""

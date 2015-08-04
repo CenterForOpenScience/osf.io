@@ -200,17 +200,46 @@ class NodeContributorsSerializer(JSONAPISerializer):
         auth = Auth(current_user)
         node = self.context['view'].get_node()
         user = get_object_or_404(User, validated_data['_id'])
-        added = node.add_contributor(contributor=user, auth=auth, save=True)
-        if not added:
-            raise ValidationError('User {} already is a contributor.'.format(user.username))
 
         bibliographic = validated_data['bibliographic'] == "True"
 
-        self.set_bibliographic(bibliographic, node, user)
         permission_field = validated_data['permission']
-        self.set_permissions(permission_field, user, node)
+        permissions = self.get_permissions_list(permission_field)
+        added = node.add_contributor(contributor=user, auth=auth, save=True,
+                                     permissions=permissions, visible=bibliographic)
+        if not added:
+            raise ValidationError('User {} already is a contributor.'.format(user.username))
         user.node_id = node._id
         user.bibliographic = node.get_visible(user)
+        return user
+
+    def get_permissions_list(self, field):
+        if field == 'admin':
+            return ['read', 'write', 'admin']
+        elif field == 'write':
+            return ['read', 'write']
+        elif field == 'read':
+            return 'read'
+
+
+
+class NodeContributorDetailSerializer(NodeContributorsSerializer):
+
+    id = ser.CharField(read_only=True, source='_id')
+
+    # Overridden to allow blank for user to not change status by using initial blank value
+    permission = ser.ChoiceField(choices=['read', 'write', 'admin'], write_only=True, allow_blank=True)
+
+    def update(self, user, validated_data):
+        node = self.context['view'].get_node()
+        current_user = self.context['request'].user
+        bibliographic = validated_data['bibliographic'] == "True"
+        permission_field = validated_data['permission']
+        is_current = user is current_user
+        self.set_bibliographic(bibliographic, node, user)
+        self.set_permissions(permission_field, user, node, is_current=is_current)
+        user.bibliographic = node.get_visible(user)
+        user.permissions = node.get_permissions(user)
         return user
 
     def set_bibliographic(self, bibliographic, node, user):
@@ -233,26 +262,6 @@ class NodeContributorsSerializer(JSONAPISerializer):
             raise ValidationError('Must have at least one admin contributor')
 
         node.save()
-
-
-class NodeContributorDetailSerializer(NodeContributorsSerializer):
-
-    id = ser.CharField(read_only=True, source='_id')
-
-    # Overridden to allow blank for user to not change status by using initial blank value
-    permission = ser.ChoiceField(choices=['read', 'write', 'admin'], write_only=True, allow_blank=True)
-
-    def update(self, user, validated_data):
-        node = self.context['view'].get_node()
-        current_user = self.context['request'].user
-        bibliographic = validated_data['bibliographic'] == "True"
-        permission_field = validated_data['permission']
-        is_current = user is current_user
-        self.set_bibliographic(bibliographic, node, user)
-        self.set_permissions(permission_field, user, node, is_current=is_current)
-        user.bibliographic = node.get_visible(user)
-        user.permissions = node.get_permissions(user)
-        return user
 
 
 class NodePointersSerializer(JSONAPISerializer):
