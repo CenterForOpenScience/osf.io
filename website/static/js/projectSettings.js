@@ -145,7 +145,7 @@ ProjectSettings.subscribeDiscussions = function(nodetype) {
     var request = $.ajax({
         type: 'post',
         dataType: 'json',
-        url: nodeApiUrl + "discussions/sub/"
+        url: nodeApiUrl + 'discussions/sub/'
     });
     request.done(function() {
         window.location.reload();
@@ -165,7 +165,7 @@ ProjectSettings.unsubscribeDiscussions = function(nodeType) {
                 var request = $.ajax({
                     type: 'delete',
                     dataType: 'json',
-                    url: nodeApiUrl + "discussions/sub/"
+                    url: nodeApiUrl + 'discussions/sub/'
                 });
                 request.done(function () {
                     window.location.reload();
@@ -180,7 +180,7 @@ ProjectSettings.enableDiscussions = function(nodeType) {
     var request = $.ajax({
         type: 'post',
         dataType: 'json',
-        url: nodeApiUrl + "discussions/"
+        url: nodeApiUrl + 'discussions/'
     });
     request.done(function() {
         window.location.reload();
@@ -190,7 +190,7 @@ ProjectSettings.enableDiscussions = function(nodeType) {
 
 ProjectSettings.disableDiscussions = function(nodeType) {
 
-    var message = "<p>Are you sure that you want to disable email discussions for this " + nodeType + "?";
+    var message = '<p>Are you sure that you want to disable email discussions for this ' + nodeType + '?';
 
     bootbox.confirm({
         title: 'Email discussions disable confirmation',
@@ -200,7 +200,7 @@ ProjectSettings.disableDiscussions = function(nodeType) {
                 var request = $.ajax({
                     type: 'delete',
                     dataType: 'json',
-                    url: nodeApiUrl + "discussions/"
+                    url: nodeApiUrl + 'discussions/'
                 });
                 request.done(function () {
                     window.location.reload();
