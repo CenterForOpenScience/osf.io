@@ -508,7 +508,9 @@ def send_claim_email(email, user, node, notify=True, throttle=24 * 3600):
 
 
 @contributor_added.connect
-def notify_contributor(node, contributor, throttle=24 * 3600):
+def notify_contributor(node, contributor, throttle=None):
+    throttle = throttle or settings.CONTRIBUTOR_ADDED_EMAIL_THROTTLE
+
     if contributor.is_registered and not node.template_node and not node.is_fork:
         contributor_record = node.contributor_record.get(contributor._id, {})
         if contributor_record:
