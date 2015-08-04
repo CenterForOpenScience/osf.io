@@ -78,9 +78,9 @@ def separate_users(node, user_ids):
     removed = []
     subbed = []
     for user_id in user_ids:
-        if not isinstance(user_id, User):
+        try:
             user = User.load(user_id)
-        else:
+        except TypeError:
             user = user_id
         if node.has_permission(user, 'read'):
             subbed.append(user_id)
