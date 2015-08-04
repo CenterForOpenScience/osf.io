@@ -5,4 +5,4 @@ from rest_framework import status
 
 class Gone(APIException):
     status_code = status.HTTP_410_GONE
-    default_detail = 'Gone: The requested resource is no longer available.'
+    default_detail = ('The requested resource is no longer available.')
