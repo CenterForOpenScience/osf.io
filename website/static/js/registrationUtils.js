@@ -238,8 +238,8 @@ Question.prototype.addComment = function(save) {
         value: self.nextComment()
     });
     comment.seenBy.push(currentUser.id);
-    self.nextComment('');
     self.comments.push(comment);
+    self.nextComment('');
 };
 /**
  * Shows/hides the Question example
@@ -361,17 +361,18 @@ var Draft = function(params, metaSchema) {
 
     self.urls = params.urls || {};
 
-    self.fulfills = params.fulfills || [];
-    self.isPendingReview = params.flags.isPendingReview || false;
-    self.requiresApproval = params.config.requiresApproval || false;
-    self.isApproved = params.flags.isApproved || true;
-
-    $.each(params.config || {}, function(key, value) {
-        self[key] = value;
-    });
-    $.each(params.flags || {}, function(key, value) {
-        self[key] = value;
-    });
+    // TODO: uncomment to support draft approval states
+    //    self.fulfills = params.fulfills || [];
+    //    self.isPendingReview = params.flags.isPendingReview || false;
+    //    self.requiresApproval = params.config.requiresApproval || false;
+    //    self.isApproved = params.flags.isApproved || true;
+    //
+    //   $.each(params.config || {}, function(key, value) {
+    //        self[key] = value;
+    //    });
+    //    $.each(params.flags || {}, function(key, value) {
+    //        self[key] = value;
+    //    });
 
     self.completion = ko.computed(function() {
         var total = 0;
@@ -648,11 +649,11 @@ RegistrationEditor.prototype.nextQuestion = function() {
     });
     if(index + 1 === questions.length) {
         self.currentQuestion(questions.shift());
-        //self.viewComments();
+        self.viewComments();
     }
     else {
         self.currentQuestion(questions[index + 1]);
-        //self.viewComments();
+        self.viewComments();
     }
 };
 /**
@@ -669,11 +670,11 @@ RegistrationEditor.prototype.previousQuestion = function() {
     });
     if(index - 1 < 0){
         self.currentQuestion(questions.pop());
-        //self.viewComments();
+        self.viewComments();
     }
     else {
         self.currentQuestion(questions[index - 1]);
-        //self.viewComments();
+        self.viewComments();
     }
 };
 /**
@@ -684,7 +685,7 @@ RegistrationEditor.prototype.selectPage = function(page) {
 
     var firstQuestion = page.questions[Object.keys(page.questions)[0]];
     self.currentQuestion(firstQuestion);
-    //self.viewComments();
+    self.viewComments();
 };
 /**
  * Update draft primary key and updated time on server response
@@ -697,61 +698,62 @@ RegistrationEditor.prototype.updateData = function(response) {
     draft.updated = new Date(response.updated);
     self.draft(draft);
 };
-RegistrationEditor.prototype.submitForReview = function() {
-    var self = this;
+// TODO: uncomment to allow submit for review
+// RegistrationEditor.prototype.submitForReview = function() {
+//     var self = this;
 
-    var messages = self.draft().messages;
-    bootbox.confirm(messages.beforeSubmitForApproval, function(result) {
-        if(result) {
-            $osf.postJSON(self.urls.submit.replace('{draft_pk}', self.draft().pk), {}).then(function() {
-                bootbox.dialog({
-                    closeButton: false,
-                    message: messages.afterSubmitForApproval,
-                    title: 'Pre-Registration Prize Submission',
-                    buttons: {
-                        registrations: {
-                            label: 'Return to registrations page',
-                            className: 'btn-primary pull-right',
-                            callback: function() {
-                                window.location.href = self.draft().urls.registrations;
-                            }
-                        }
-                    }
-                });
-            }).fail($osf.growl.bind(null, 'Error submitting for review', language.submitForReviewFail));
-        }
-    });
-};
-RegistrationEditor.prototype.submit = function() {
-    var self = this;
+//     var messages = self.draft().messages;
+//     bootbox.confirm(messages.beforeSubmitForApproval, function(result) {
+//         if(result) {
+//             $osf.postJSON(self.urls.submit.replace('{draft_pk}', self.draft().pk), {}).then(function() {
+//                 bootbox.dialog({
+//                     closeButton: false,
+//                     message: messages.afterSubmitForApproval,
+//                     title: 'Pre-Registration Prize Submission',
+//                     buttons: {
+//                         registrations: {
+//                             label: 'Return to registrations page',
+//                             className: 'btn-primary pull-right',
+//                             callback: function() {
+//                                 window.location.href = self.draft().urls.registrations;
+//                             }
+//                         }
+//                     }
+//                 });
+//             }).fail($osf.growl.bind(null, 'Error submitting for review', language.submitForReviewFail));
+//         }
+//     });
+// };
+// RegistrationEditor.prototype.submit = function() {
+//     var self = this;
 
-    var currentNode = window.contextVars.node;
-    var currentUser = window.contextVars.currentUser;
+//     var currentNode = window.contextVars.node;
+//     var currentUser = window.contextVars.currentUser;
 
-    var messages = self.draft().messages;
-    bootbox.confirm(messages.beforeSubmitForApproval, function(result) {
-        if(result) {
-            $osf.postJSON(self.urls.submit.replace('{draft_pk}', self.draft().pk), {
-                node: currentNode,
-                auth: currentUser
-            }).then(function() {
-                bootbox.dialog({
-                    message: messages.afterSubmitForApproval,
-                    title: 'Pre-Registration Prize Submission',
-                    buttons: {
-                        registrations: {
-                            label: 'Return to registrations page',
-                            className: 'btn-primary pull-right',
-                            callback: function() {
-                                window.location.href = self.draft().urls.registrations;
-                            }
-                        }
-                    }
-                });
-            }).fail($osf.growl.bind(null, 'Error submitting for review', language.submitForReviewFail));
-        }
-    });
-};
+//     var messages = self.draft().messages;
+//     bootbox.confirm(messages.beforeSubmitForApproval, function(result) {
+//         if(result) {
+//             $osf.postJSON(self.urls.submit.replace('{draft_pk}', self.draft().pk), {
+//                 node: currentNode,
+//                 auth: currentUser
+//             }).then(function() {
+//                 bootbox.dialog({
+//                     message: messages.afterSubmitForApproval,
+//                     title: 'Pre-Registration Prize Submission',
+//                     buttons: {
+//                         registrations: {
+//                             label: 'Return to registrations page',
+//                             className: 'btn-primary pull-right',
+//                             callback: function() {
+//                                 window.location.href = self.draft().urls.registrations;
+//                             }
+//                         }
+//                     }
+//                 });
+//             }).fail($osf.growl.bind(null, 'Error submitting for review', language.submitForReviewFail));
+//         }
+//     });
+// };
 /**
  * Create a new draft
  **/
@@ -785,14 +787,16 @@ RegistrationEditor.prototype.save = function() {
                 var value = {};
                 $.each(question.properties, function(prop, subQuestion) {
                     value[prop] = {
-                        value: subQuestion.value()
+                        value: subQuestion.value(),
+                        comments: ko.toJS(subQuestion.comments())
                     };
                 });
                 data[qid] = value;
             }
             else {
                 data[qid] = {
-                    value: question.value()
+                    value: question.value(),
+                    comments: ko.toJS(question.comments())
                 };
             }
         });
@@ -808,7 +812,6 @@ RegistrationEditor.prototype.save = function() {
             schema_data: data
         });
     }
-    debugger;
     return true;
 };
 
@@ -931,15 +934,16 @@ RegistrationManager.prototype.maybeWarn = function(draft) {
             redirect();
         }
     };
-    if (draft.isApproved) {
-        bootbox.confirm(language.beforeEditIsApproved, callback);
-    }
-    else if (draft.isPendingReview) {
-        bootbox.confirm(language.beforeEditIsPendingReview, callback);
-    }
-    else {
-        redirect();
-    }
+    // TODO: Uncomment to support approvals
+    // if (draft.isApproved) {
+    //     bootbox.confirm(language.beforeEditIsApproved, callback);
+    // }
+    // else if (draft.isPendingReview) {
+    //     bootbox.confirm(language.beforeEditIsPendingReview, callback);
+    // }
+    // else {
+    redirect();
+    // }
 };
 
 module.exports = {

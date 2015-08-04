@@ -3095,17 +3095,17 @@ class DraftRegistration(AddonModelMixin, StoredObject):
         super(DraftRegistration, self).__init__(*args, **kwargs)
         meta_schema = self.registration_schema or kwargs.get('registration_schema')
         if meta_schema:
-           schema = meta_schema.schema
-           config = schema.get('config', {})
-           self.config = config
-           if not self.registration_schema:
-               flags = schema.get('flags', {})
-               for flag, value in flags.iteritems():
-                   self.flags[flag] = value
+            schema = meta_schema.schema
+            config = schema.get('config', {})
+            self.config = config
+            if not self.registration_schema:
+                flags = schema.get('flags', {})
+                for flag, value in flags.iteritems():
+                    self.flags[flag] = value
 
     @property
     def is_pending_review(self):
-           return self.flags.get('isPendingReview')
+        return self.flags.get('isPendingReview')
 
     @is_pending_review.setter
     def is_pending_review(self, value):
@@ -3121,7 +3121,7 @@ class DraftRegistration(AddonModelMixin, StoredObject):
 
     def update_metadata(self, metadata, save=True):
         if self.is_pending_review or self.is_approved:
-           raise NodeStateError('Cannot edit while this draft is being reviewed')
+            raise NodeStateError('Cannot edit while this draft is being reviewed')
         changes = []
         for key, value in metadata.iteritems():
             old_value = self.registration_metadata.get(key)
@@ -3145,11 +3145,11 @@ class DraftRegistration(AddonModelMixin, StoredObject):
     def after_edit(self, changes):
 
         if changes:
-           self.flags.update({
-               'isPendingReview': False,
-               'isApproved': False
-           })
-           self.save()
+            self.flags.update({
+                'isPendingReview': False,
+                'isApproved': False
+            })
+            self.save()
 
     def find_question(self, qid):
         for page in self.registration_schema.schema['pages']:
@@ -3158,24 +3158,24 @@ class DraftRegistration(AddonModelMixin, StoredObject):
                     return question
 
     def get_comments(self):
-       """ Returns a list of all comments made on a draft in the format of :
-       [{
-         [QUESTION_ID]: {
-           'question': [QUESTION],
-           'comments': [LIST_OF_COMMENTS]
+        """ Returns a list of all comments made on a draft in the format of :
+        [{
+          [QUESTION_ID]: {
+            'question': [QUESTION],
+            'comments': [LIST_OF_COMMENTS]
            }
-       },]
+        },]
        """
 
-       all_comments = []
-       for question_id, value in self.registration_metadata.iteritems():
-           all_comments.append({
-               question_id: {
-                   'question': self.find_question(question_id),
-                   'comments': value['comments'] if 'comments' in value else ''
-               }
-           })
-       return all_comments
+        all_comments = []
+        for question_id, value in self.registration_metadata.iteritems():
+            all_comments.append({
+                question_id: {
+                    'question': self.find_question(question_id),
+                    'comments': value['comments'] if 'comments' in value else ''
+                }
+            })
+        return all_comments
 
     def register(self, auth):
 

@@ -8,7 +8,6 @@
         <div class="col-md-9">
           Edit draft registration
         </div>
-        <!-- TODO: uncomment to allow submit for review
         <div class="col-md-3" data-bind="with: draft">
           <span class="btn-group" data-bind="if: requiresApproval">
             <a data-bind="click: $root.submitForReview,
@@ -21,9 +20,8 @@
                           }" class="btn btn-default" type="button">
               <i class="fa fa-save"></i> Submit for review
             </a>
-          </span>   
+          </span>
         </div>
-        -->
       </div>
     </h3>
     <hr />
@@ -56,7 +54,7 @@
                 </ul>
               </div>
               <div class="span8 col-md-9 columns eight large-8">
-                <a id="editorPreviousQuestion" 
+                <a id="editorPreviousQuestion"
                    data-bind="click: previousQuestion,
                               onKeyPress: {
                                 keyCode: 37,
@@ -64,7 +62,7 @@
                               }" style="padding-left: 5px;">
                   <i style="display:inline-block; padding-left: 5px; padding-right: 5px;" class="fa fa-arrow-left"></i>Previous
                 </a>
-                <a id="editorNextQuestion" 
+                <a id="editorNextQuestion"
                    data-bind="click: nextQuestion,
                               onKeyPress: {
                                 keyCode: 39,
