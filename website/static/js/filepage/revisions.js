@@ -1,11 +1,11 @@
 var m = require('mithril');
 var $ = require('jquery');
+var bootbox = require('bootbox');
 var $osf = require('js/osfHelpers');
 var waterbutler = require('js/waterbutler');
-var bootbox = require('bootbox');
-var makeClient = require('js/clipboard.js');
 
 var util = require('./util.js');
+var makeClient = require('js/clipboard');
 
 // Helper for filtering
 function TRUTHY(item) {
@@ -32,8 +32,7 @@ var FileRevisionsTable = {
         self.canEdit = canEdit;
         self.enableEditing = enableEditing;
         self.baseUrl = (window.location.href).split('?')[0];
-
-        model.hasHashes = self.file.provider === 'osfstorage';
+        model.hasHashes = model.revisions[0].extra.hashes ? true : false;
         model.hasDate = self.file.provider !== 'dataverse';
 
         self.reload = function() {
@@ -91,6 +90,7 @@ var FileRevisionsTable = {
         };
 
         self.showModal = function(hashName, index, hash) {
+            var client;
             var showModal = bootbox.dialog({
                 title: 'Version ' + index + ' ' + hashName + ' hash',
                 message: '<div class="row">  ' +
@@ -99,11 +99,14 @@ var FileRevisionsTable = {
                     '<a class="btn-sm btn-primary col-xs-2" style="align: right; text-align: center; ' +
                     'padding: 5px; width: 80px" id="copyBtn" data-clipboard-text="' +
                     hash + '"> Copy </a>'+
-                    '</div></div></div>'
+                    '</div></div></div>',
+                callback: function() {
+                    client = null;
+                }
             });
             showModal.on('show.bs.modal', function() {
                 var $copyBtn = $('#copyBtn');
-                new makeClient($copyBtn);
+                client = makeClient($copyBtn);
             });
             showModal.modal('show');
         };
