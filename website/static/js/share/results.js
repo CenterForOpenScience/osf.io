@@ -38,6 +38,7 @@ Results.controller = function(vm) {
     self.vm = vm;
     self.vm.resultsLoading = m.prop(false);
 
+    /* Render the title bar of a single result. Will highlight the matched text */
     self.renderTitleBar = function(result) {
         return [m(
             'a[href=' + result.uris.canonicalUri + ']', ((result.title || '').length > 0) ? m.trust(result.title) : 'No title provided'),
@@ -45,6 +46,7 @@ Results.controller = function(vm) {
             self.renderDescription(result)];
     };
 
+    /* Render the description of a single result. Will highlight the matched text */
     self.renderDescription = function(result) {
         if ((result.description || '').length > 350) {
             return m('p.readable.pointer',
@@ -56,6 +58,7 @@ Results.controller = function(vm) {
 
     };
 
+    /* Renders a single contributor for a result */
     self.renderPerson = function(person, index) {
         return m('span', [
             m('span', index !== 0 ? ' · ' : ''),
@@ -68,6 +71,7 @@ Results.controller = function(vm) {
         ]);
     };
 
+    /* Renders all the contributors for a given result */
     self.renderContributors = function(result) {
         var renderPeople = function(people) {
             return $.map(people, self.renderPerson);
@@ -84,6 +88,7 @@ Results.controller = function(vm) {
         );
     };
 
+    /* Renders the subjects (sort of like tags) for a result */
     self.renderSubjects = function(result) {
         var rendersubject = function(subject) {
             return [
@@ -103,33 +108,34 @@ Results.controller = function(vm) {
             m('div', m('a', {onclick: function() {result.showAllsubjects = result.showAllsubjects ? false : true;}},'See All'))
         ]);
     };
-
+    
+    /* Renders the footer of a result, including release date, provider information and the raw/normalized records */
     self.renderResultFooter = function(result) {
         return m('div', [
-                    m('span',
-                        'Released on ' + new $osf.FormattableDate(result.providerUpdatedDateTime).local,
-                        vm.rawNormedLoaded() ?  m('span', [
-                            m('span', {style: {'margin-right': '5px', 'margin-left': '5px'}}, ' | '),
-                            m('a', {
-                                onclick: function() {
-                                    result.showRawNormed = result.showRawNormed ? false : true;
-                                    if (!result.raw) {
-                                        utils.loadRawNormalized(result);
-                                    }
-                                }
-                            }, 'Data')
-                        ]) : []
-                    ),
-                    m('span.pull-right', [
-                        m('img', {src: self.vm.ProviderMap[result.shareProperties.source].favicon, style: {width: '16px', height: '16px'}}),
-                        ' ',
-                        m('a', {onclick: function() {utils.updateFilter(self.vm, 'shareProperties.source:' + result.shareProperties.source);}}, self.vm.ProviderMap[result.shareProperties.source].long_name),
-                        m('br')
-                    ])
-                ]);
-
+            m('span',
+                'Released on ' + new $osf.FormattableDate(result.providerUpdatedDateTime).local,
+                vm.rawNormedLoaded() ?  m('span', [
+                    m('span', {style: {'margin-right': '5px', 'margin-left': '5px'}}, ' | '),
+                    m('a', {
+                        onclick: function() {
+                            result.showRawNormed = result.showRawNormed ? false : true;
+                            if (!result.raw) {
+                                utils.loadRawNormalized(result);
+                            }
+                        }
+                    }, 'Data')
+                ]) : []
+            ),
+            m('span.pull-right', [
+                m('img', {src: self.vm.ProviderMap[result.shareProperties.source].favicon, style: {width: '16px', height: '16px'}}),
+                ' ',
+                m('a', {onclick: function() {utils.updateFilter(self.vm, 'shareProperties.source:' + result.shareProperties.source);}}, self.vm.ProviderMap[result.shareProperties.source].long_name),
+                m('br')
+            ])
+        ]);
     };
 
+    /* Renders raw and normalized records from the API. Fails gracefully if the API is not up or if it can't find a document */
     self.renderRawNormalizedData = function(result) {
         return m('.row', [
                     m('.col-md-12',
@@ -165,6 +171,12 @@ Results.controller = function(vm) {
                 ]);
     };
 
+    /**
+     * Formats a single search result for display
+     *
+     * @param {Object} result A map containing a single search result
+     * @param {Integer} index Just ignore this, it doesn't matter
+     */
     self.renderResult = function(result, index) {
         return m( '.animated.fadeInUp', [
             m('div', [

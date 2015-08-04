@@ -14,6 +14,7 @@ utils.onSearch = function(fb) {
 var COLORBREWER_COLORS = [[166, 206, 227], [31, 120, 180], [178, 223, 138], [51, 160, 44], [251, 154, 153], [227, 26, 28], [253, 191, 111], [255, 127, 0], [202, 178, 214], [106, 61, 154], [255, 255, 153], [177, 89, 40]];
 var tags = ['div', 'i', 'b', 'sup', 'p', 'span', 'sub', 'bold', 'strong', 'italic', 'a', 'small'];
 
+/* Removes certain HTML tags from the source */
 utils.scrubHTML = function(text) {
     tags.forEach(function(tag) {
         text = text.replace(new RegExp('<' + tag + '>', 'g'), '');
@@ -22,6 +23,7 @@ utils.scrubHTML = function(text) {
     return text;
 };
 
+/* */
 utils.formatNumber = function(num) {
     while (/(\d+)(\d{3})/.test(num.toString())){
         num = num.toString().replace(/(\d+)(\d{3})/, '$1'+','+'$2');
@@ -31,6 +33,7 @@ utils.formatNumber = function(num) {
 
 var loadingIcon = m('img[src=/static/img/loading.gif]',{style: {margin: 'auto', display: 'block'}});
 
+/* This resets the state of the vm on error */
 utils.errorState = function(vm){
     vm.results = null;
     vm.statsData = undefined;
@@ -41,10 +44,16 @@ utils.errorState = function(vm){
     $osf.growl('Error', 'invalid query');
 };
 
+/* handles field highlighting for returned results */
 utils.highlightField = function(result, field_name) {
     return utils.scrubHTML(result.highlight[field_name] ? result.highlight[field_name][0] : result[field_name] || '');
 };
 
+/** Updates the vm with new search results
+ *
+ * @param {Object} vm The current state of the vm
+ * @param {Object} data New search results
+ */
 utils.updateVM = function(vm, data) {
     if (data === null) {
         return;
@@ -62,6 +71,7 @@ utils.updateVM = function(vm, data) {
     });
 };
 
+/* Handles searching via the search API */
 utils.loadMore = function(vm) {
     var ret = m.deferred();
     if (vm.query().length === 0) {
@@ -87,6 +97,7 @@ utils.loadMore = function(vm) {
     return ret.promise;
 };
 
+/* Makes sure the state we are in is valid for searching, passes the work to loadMore if so */
 utils.search = function(vm) {
     vm.showFooter = false;
     var ret = m.deferred();
@@ -125,6 +136,7 @@ utils.search = function(vm) {
     return ret.promise;
 };
 
+/* Checks to see if the state of the vm has changed */
 utils.stateChanged = function (vm) {
     var state = History.getState().data;
     return !(state.query === vm.query() && state.sort === vm.sort() &&
@@ -132,6 +144,7 @@ utils.stateChanged = function (vm) {
             utils.arrayEqual(state.requiredFilters, vm.requiredFilters));
 };
 
+/* Turns the vm state into a nice-ish to look at representation that can be stored in a URL */
 utils.buildURLParams = function(vm){
     var d = {};
     if (vm.query()) {
@@ -149,6 +162,7 @@ utils.buildURLParams = function(vm){
     return $.param(d);
 };
 
+/* Builds the elasticsearch query that will be POSTed to the search API */
 utils.buildQuery = function (vm) {
     var must = $.map(vm.requiredFilters, utils.parseFilter);
     var should = $.map(vm.optionalFilters, utils.parseFilter);
@@ -191,6 +205,7 @@ utils.maybeQuashEvent = function (event) {
     }
 };
 
+/* Adds a filter to the list of filters if it doesn't already exist */
 utils.updateFilter = function (vm, filter, required) {
     if (required && vm.requiredFilters.indexOf(filter) === -1) {
         vm.requiredFilters.push(filter);
@@ -200,6 +215,7 @@ utils.updateFilter = function (vm, filter, required) {
     utils.search(vm);
 };
 
+/* Removes a filter from the list of filters */
 utils.removeFilter = function (vm, filter) {
     var reqIndex = vm.requiredFilters.indexOf(filter);
     var optIndex = vm.optionalFilters.indexOf(filter);
@@ -212,6 +228,7 @@ utils.removeFilter = function (vm, filter) {
     utils.search(vm);
 };
 
+/* Tests array equality */
 utils.arrayEqual = function (a, b) {
     return $(a).not(b).length === 0 && $(b).not(a).length === 0;
 };
@@ -225,6 +242,7 @@ utils.addFiltersToQuery = function (query, filters) {
     return query;
 };
 
+/* Loads the raw and normalized data for a specific result */
 utils.loadRawNormalized = function(result){
     var nonJsonErrors = function(xhr) {
         return xhr.status > 200 ? JSON.stringify(xhr.responseText) : xhr.responseText;
@@ -251,6 +269,9 @@ utils.loadRawNormalized = function(result){
     });
 };
 
+/*** Elasticsearch functions below ***/
+
+/* Creates a filtered query */
 utils.filteredQuery = function(query, filter) {
     var ret = {
         'filtered': {}
@@ -264,12 +285,14 @@ utils.filteredQuery = function(query, filter) {
     return ret;
 };
 
+/* Creates a term filter */
 utils.termFilter = function (field, value) {
     var ret = {'term': {}};
     ret.term[field] = value;
     return ret;
 };
 
+/* Creates a terms filter (their names, not ours) */
 utils.termsFilter = function (field, value, min_doc_count) {
     min_doc_count = min_doc_count || 0;
     var ret = {'terms': {}};
@@ -280,12 +303,14 @@ utils.termsFilter = function (field, value, min_doc_count) {
     return ret;
 };
 
+/* Creates a match query */
 utils.matchQuery = function (field, value) {
     var ret = {'match': {}};
     ret.match[field] = value;
     return ret;
 };
 
+/* Creates a range filter */
 utils.rangeFilter = function (field_name, gte, lte) {
     lte = lte || new Date().getTime();
     gte = gte || 0;
@@ -294,6 +319,7 @@ utils.rangeFilter = function (field_name, gte, lte) {
     return ret;
 };
 
+/* Creates a bool query */
 utils.boolQuery = function (must, must_not, should, minimum) {
     var ret = {
         'bool': {
@@ -309,6 +335,7 @@ utils.boolQuery = function (must, must_not, should, minimum) {
     return ret;
 };
 
+/* Creates a date histogram filter */
 utils.dateHistogramFilter = function (field, gte, lte, interval) {
     //gte and lte in ms since epoch
     lte = lte || new Date().getTime();
@@ -328,6 +355,7 @@ utils.dateHistogramFilter = function (field, gte, lte, interval) {
     };
 };
 
+/* Creates a common query */
 utils.commonQuery = function (query_string, field) {
     field = field || '_all';
     var ret = {'common': {}};
@@ -337,24 +365,32 @@ utils.commonQuery = function (query_string, field) {
     return ret;
 };
 
+/* Creates a match_all query */
 utils.matchAllQuery = function () {
     return {
         match_all: {}
     };
 };
 
+/* Creates an and filter */
 utils.andFilter = function (filters) {
     return {
         'and': filters
     };
 };
 
+/* Creates a query filter */
 utils.queryFilter = function (query) {
     return {
         query: query
     };
 };
 
+/**
+ * Parses a filter string into one of the above filters
+ *
+ * @param {String} filterString A string representation of a filter dictionary
+ */
 utils.parseFilter = function (filterString) {
     // parses a filter of the form
     // filterName:fieldName:param1:param2...

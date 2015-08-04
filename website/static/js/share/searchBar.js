@@ -69,6 +69,7 @@ SearchBar.controller = function(vm) {
     self.vm.latestDate = undefined;
     self.vm.showStats = true;
 
+    /* Dumps the json query for elasticsearch to a URI formatted string */
     self.atomParams = function(){
         return $.param({
             jsonQuery: encodeURIComponent(JSON.stringify(utils.buildQuery(vm)))

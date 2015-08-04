@@ -30,6 +30,7 @@ SideBar.controller = function(vm) {
     var self = this;
     self.vm = vm;
 
+    /* Renders the dropdown sort box */
     self.renderSort = function(){
         return $.map(Object.keys(self.vm.sortMap), function(a) {
             return m('li',
@@ -43,6 +44,7 @@ SideBar.controller = function(vm) {
         });
     };
 
+    /* Renders the filters that appear to the left of the search results */
     self.renderFilters = function(){
         return $.map(self.vm.optionalFilters.concat(self.vm.requiredFilters), function(filter){
             return m('li.render-filter', [
@@ -56,6 +58,7 @@ SideBar.controller = function(vm) {
         });
     };
 
+    /* Renders a single provider for the sidebar (if clicked, will filter search by that provider */
     self.renderProvider = function(result, index) {
         var checked = (self.vm.optionalFilters.indexOf('match:shareProperties.source:' + result.short_name) > -1 || self.vm.requiredFilters.indexOf('match:shareProperties.source:' + result.short_name) > -1) ? 'in-filter' : '';
 
@@ -77,6 +80,7 @@ SideBar.controller = function(vm) {
     };
 
 
+    /* Renders the provider list in the sidebar */
     self.renderProviders = function () {
         return $.map(self.vm.sortProviders(), self.renderProvider);
     };

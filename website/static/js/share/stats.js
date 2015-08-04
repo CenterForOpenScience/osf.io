@@ -32,6 +32,12 @@ function donutGraph(data, vm) {
     });
 }
 
+/**
+ * Creates a c3 time graph from the parsed elasticsearch data
+ *
+ * @param {Object} data The formatted elasticsearch results
+ * @param {Object} vm The state of the view model
+ */
 function timeGraph(data, vm) {
     return c3.generate({
         bindto: '#shareTimeGraph',
@@ -86,12 +92,14 @@ function timeGraph(data, vm) {
     });
 }
 
+/* Creates an Elasticsearch aggregation by source */
 Stats.sourcesAgg = function () {
     var sourcesQuery = {'match_all': {} };
     var sourcesAgg = {'sources': utils.termsFilter('field', '_type')};
     return {'query' : sourcesQuery, 'aggregations': sourcesAgg, 'filters' : {}};
 };
 
+/* Creates an Elasticsearch aggregation that breaks down sources by date (and number of things published on those dates) */
 Stats.sourcesByDatesAgg = function () {
     var dateTemp = new Date(); //get current time
     dateTemp.setMonth(dateTemp.getMonth() - 3);
@@ -110,12 +118,14 @@ Stats.sourcesByDatesAgg = function () {
     return {aggregations: dateHistogramAgg};
 };
 
+/* Helper function for dealing with epoch times returned by elasticsearch */
 Stats.timeSinceEpochInMsToMMYY = function (timeSinceEpochInMs) {
     var d = new Date(0);
     d.setUTCSeconds(timeSinceEpochInMs / 1000);
     return d.getMonth().toString() + '/' + d.getFullYear().toString().substring(2);
 };
 
+/* Parses elasticsearch data so that it can be fed into a c3 donut graph */
 Stats.shareDonutGraphParser = function (data) {
     var chartData = {};
     chartData.name = 'shareDonutGraph';
@@ -139,6 +149,7 @@ Stats.shareDonutGraphParser = function (data) {
     return chartData;
 };
 
+/* Parses elasticsearch data so that it can be fed into a c3 time graph */
 Stats.shareTimeGraphParser = function (data) {
     var chartData = {};
     chartData.name = 'shareTimeGraph';

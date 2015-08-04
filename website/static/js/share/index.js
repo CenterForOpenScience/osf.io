@@ -36,6 +36,7 @@ ShareApp.ViewModel = function() {
         Relevance: null
     };
 
+    /** Sort the SHARE provider list for display. **/
     self.sortProviders = function() {
         return $.map(Object.keys(self.ProviderMap), function(result, index){
             return self.ProviderMap[result];
