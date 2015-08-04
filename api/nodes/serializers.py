@@ -219,7 +219,7 @@ class NodeContributorsSerializer(JSONAPISerializer):
         elif field == 'write':
             return ['read', 'write']
         elif field == 'read':
-            return 'read'
+            return ['read']
 
 
 
