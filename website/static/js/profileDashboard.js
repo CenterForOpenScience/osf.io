@@ -53,6 +53,9 @@ profileDashboard.view = function(ctrl, params, children){
  * @return {m.component.controller}  returns itself
  */
 profileDashboard.controller = function(params) {
+    this.user = params.user;
+
+    var userFilter = {}
 
     var contributers = {
         title: 'Contributers',
