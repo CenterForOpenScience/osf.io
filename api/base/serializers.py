@@ -29,7 +29,7 @@ def _url_val(val, obj, serializer, **kwargs):
         elif isinstance(val, MetaLink):
             return val.get_links(serializer, url, obj)
         else:
-                return val.resolve_url(obj)
+            return val.resolve_url(obj)
     elif isinstance(val, basestring):
         return getattr(serializer, val)(obj)
 
@@ -165,7 +165,6 @@ class MetaLink(Link):
 
     def get_meta(self, serializer, obj):
         query = self.endpoint.split('-')[1]
-        context = serializer.context
         request = serializer.context['request']
         view = serializer.context['view']
         module = __import__('api.{}.views'.format(self.endpoint.split(':')[0]),
@@ -173,28 +172,22 @@ class MetaLink(Link):
 
         class_name_data = self.endpoint.split(':')[1].split('-')
         class_name = ''
+        for name_data in class_name_data:
+            name_data = name_data[0].capitalize() + name_data[1:]
+            class_name += (name_data)
+        class_name += 'List'
         if hasattr(view, 'meta_lookup_url_kwarg'):
             kwargs = {view.meta_lookup_url_kwarg: obj._id}
         else:
             kwargs = {view.node_lookup_url_kwarg: obj._id}
-        for name_data in class_name_data:
-            name_data = name_data[0].capitalize() + name_data[1:]
-            class_name += (name_data)
-        if hasattr(module, class_name):
-            instance = getattr(module, class_name)(kwargs=kwargs)
-        else:
-            instance = getattr(module, class_name+'List')(kwargs=kwargs)
-        instance.request = context['request']
 
+        instance = getattr(module, class_name)(request=request, kwargs=kwargs)
         queryset = instance.get_queryset()
-        serialized_objects = instance.serializer_class(queryset, many=True).data
-
-        meta = {}
-        meta['count'] = len(serialized_objects)
-        if 'request' in context and 'include' in context['request'].query_params:
-            additional_query_params = serializer.context['request'].query_params['include'].split(',')
-            if query in additional_query_params:
-                meta['data'] = serialized_objects
+        meta = dict()
+        meta['count'] = len(queryset)
+        if 'include' in request.query_params:
+            if query in request.query_params['include'].split(','):
+                meta['data'] = instance.serializer_class(queryset, many=True).data
         return meta
 
 
