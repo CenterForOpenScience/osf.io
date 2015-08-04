@@ -51,7 +51,7 @@ if (!ctx.node.anonymous && !ctx.node.isRetracted) {
 }
 $(document).ready(function () {
 
-    $('#contributors-list').osfToggleHeight();
+    $('#contributorsList').osfToggleHeight();
 
     if (!ctx.node.isRetracted) {
         // Treebeard Files view

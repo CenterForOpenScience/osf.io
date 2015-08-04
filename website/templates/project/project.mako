@@ -103,7 +103,7 @@
         </div>
         <div id="contributors" class="row" style="line-height:25px">
             <div class="col-sm-12">
-                <div id="contributors-list" style="height: 25px; overflow: hidden">
+                <div id="contributorsList" style="height: 25px; overflow: hidden">
                 % if user['is_contributor']:
                     <a class="link-dashed" href="${node['url']}contributors/">Contributors</a>:
                 % else:
