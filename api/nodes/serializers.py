@@ -1,9 +1,9 @@
 from rest_framework import serializers as ser
 
-from api.base.serializers import JSONAPISerializer, LinksField, Link, WaterbutlerLink
 from website.models import Node
 from framework.auth.core import Auth
 from rest_framework import exceptions
+from api.base.serializers import JSONAPISerializer, LinksField, Link, WaterbutlerLink
 
 
 class NodeSerializer(JSONAPISerializer):
@@ -45,6 +45,9 @@ class NodeSerializer(JSONAPISerializer):
         'files': {
             'related': Link('nodes:node-files', kwargs={'node_id': '<pk>'})
         },
+        'parent': {
+            'self': Link('nodes:node-detail', kwargs={'node_id': '<parent_id>'})
+        }
     })
     properties = ser.SerializerMethodField(help_text='A dictionary of read-only booleans: registration, collection,'
                                                      'and dashboard. Collections are special nodes used by the Project '
@@ -130,7 +133,7 @@ class NodeSerializer(JSONAPISerializer):
 class NodePointersSerializer(JSONAPISerializer):
 
     id = ser.CharField(read_only=True, source='_id')
-    node_id = ser.CharField(source='node._id', help_text='The ID of the node that this pointer points to')
+    target_node_id = ser.CharField(source='node._id', help_text='The ID of the node that this pointer points to')
     title = ser.CharField(read_only=True, source='node.title', help_text='The title of the node that this pointer '
                                                                          'points to')
 
@@ -161,6 +164,7 @@ class NodePointersSerializer(JSONAPISerializer):
 
     def update(self, instance, validated_data):
         pass
+
 
 class NodeFilesSerializer(JSONAPISerializer):
 

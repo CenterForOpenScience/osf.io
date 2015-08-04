@@ -39,7 +39,7 @@ function FileViewTreebeard(data) {
         onload: function(tree) {
             var tb = this;
             Fangorn.DefaultOptions.onload.call(tb, tree);
-            $('.osf-panel-header.osf-panel-header-flex').show();
+            $('.panel-heading.osf-panel-header-flex').show();
             tb.select('.tb-header-row').hide();
 
         },
@@ -76,6 +76,9 @@ function FileViewTreebeard(data) {
             Fangorn.Utils.setCurrentFileID.call(tb, tree, window.contextVars.node.id, window.contextVars.file);
             if(!event) {
                 Fangorn.Utils.scrollToFile.call(tb, tb.currentFileID);
+            }
+            if (tree.depth > 1) {
+                Fangorn.Utils.orderFolder.call(this, tree);
             }
         },
         resolveRows: function (item) {

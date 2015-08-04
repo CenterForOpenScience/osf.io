@@ -15,7 +15,7 @@
         </span>
 
         <div style="margin-bottom: 10px;">
-            <a class="btn btn-default" data-bind="enabled: hasFirst(), click: impute">Auto-fill</a>
+            <a class="btn btn-primary" data-bind="enabled: hasFirst(), click: impute">Auto-fill</a>
         </div>
 
         <div class="form-group">
@@ -60,7 +60,7 @@
             </tbody>
         </table>
 
-        <div class="padded">
+        <div class="p-t-lg p-b-lg">
 
             <button
                     type="button"
@@ -70,8 +70,8 @@
 
             <button
                     type="submit"
-                    class="btn btn-primary"
-                >Submit</button>
+                    class="btn btn-success"
+                >Save</button>
 
         </div>
 

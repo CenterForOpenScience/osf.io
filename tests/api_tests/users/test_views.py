@@ -1,9 +1,8 @@
 # -*- coding: utf-8 -*-
 from nose.tools import *  # flake8: noqa
 
-from framework.auth.core import Auth
 from website.models import Node
-from tests.base import ApiTestCase, fake
+from tests.base import ApiTestCase
 from api.base.settings.defaults import API_BASE
 from tests.factories import UserFactory, ProjectFactory, FolderFactory, DashboardFactory
 
@@ -11,15 +10,14 @@ from tests.factories import UserFactory, ProjectFactory, FolderFactory, Dashboar
 class TestUsers(ApiTestCase):
 
     def setUp(self):
-        ApiTestCase.setUp(self)
+        super(TestUsers, self).setUp()
         self.user_one = UserFactory.build()
         self.user_one.save()
         self.user_two = UserFactory.build()
         self.user_two.save()
 
     def tearDown(self):
-        ApiTestCase.tearDown(self)
-        Node.remove()
+        super(TestUsers, self).tearDown()
 
     def test_returns_200(self):
         res = self.app.get('/{}users/'.format(API_BASE))
@@ -75,7 +73,7 @@ class TestUsers(ApiTestCase):
 class TestUserDetail(ApiTestCase):
 
     def setUp(self):
-        ApiTestCase.setUp(self)
+        super(TestUserDetail, self).setUp()
         self.user_one = UserFactory.build()
         self.user_one.set_password('justapoorboy')
         self.user_one.social['twitter'] = 'howtopizza'
@@ -87,8 +85,7 @@ class TestUserDetail(ApiTestCase):
         self.auth_two = (self.user_two.username, 'justapoorboy')
 
     def tearDown(self):
-        ApiTestCase.tearDown(self)
-        Node.remove()
+        super(TestUserDetail, self).tearDown()
 
     def test_gets_200(self):
         url = "/{}users/{}/".format(API_BASE, self.user_one._id)
@@ -119,7 +116,7 @@ class TestUserDetail(ApiTestCase):
 class TestUserNodes(ApiTestCase):
 
     def setUp(self):
-        ApiTestCase.setUp(self)
+        super(TestUserNodes, self).setUp()
         self.user_one = UserFactory.build()
         self.user_one.set_password('justapoorboy')
         self.user_one.social['twitter'] = 'howtopizza'
@@ -129,18 +126,31 @@ class TestUserNodes(ApiTestCase):
         self.user_two.set_password('justapoorboy')
         self.user_two.save()
         self.auth_two = (self.user_two.username, 'justapoorboy')
-        self.public_project_user_one = ProjectFactory(title="Public Project User One", is_public=True, creator=self.user_one)
-        self.private_project_user_one = ProjectFactory(title="Private Project User One", is_public=False, creator=self.user_one)
-        self.public_project_user_two = ProjectFactory(title="Public Project User Two", is_public=True, creator=self.user_two)
-        self.private_project_user_two = ProjectFactory(title="Private Project User Two", is_public=False, creator=self.user_two)
-        self.deleted_project_user_one = FolderFactory(title="Deleted Project User One", is_public=False, creator=self.user_one, is_deleted=True)
+        self.public_project_user_one = ProjectFactory(title="Public Project User One",
+                                                      is_public=True,
+                                                      creator=self.user_one)
+        self.private_project_user_one = ProjectFactory(title="Private Project User One",
+                                                       is_public=False,
+                                                       creator=self.user_one)
+        self.public_project_user_two = ProjectFactory(title="Public Project User Two",
+                                                      is_public=True,
+                                                      creator=self.user_two)
+        self.private_project_user_two = ProjectFactory(title="Private Project User Two",
+                                                       is_public=False,
+                                                       creator=self.user_two)
+        self.deleted_project_user_one = FolderFactory(title="Deleted Project User One",
+                                                      is_public=False,
+                                                      creator=self.user_one,
+                                                      is_deleted=True)
         self.folder = FolderFactory()
-        self.deleted_folder = FolderFactory(title="Deleted Folder User One", is_public=False, creator=self.user_one, is_deleted=True)
+        self.deleted_folder = FolderFactory(title="Deleted Folder User One",
+                                            is_public=False,
+                                            creator=self.user_one,
+                                            is_deleted=True)
         self.dashboard = DashboardFactory()
 
     def tearDown(self):
-        ApiTestCase.tearDown(self)
-        Node.remove()
+        super(TestUserNodes, self).tearDown()
 
     def test_authorized_in_gets_200(self):
         url = "/{}users/{}/nodes/".format(API_BASE, self.user_one._id)
@@ -191,3 +201,138 @@ class TestUserNodes(ApiTestCase):
         assert_not_in(self.private_project_user_two._id, ids)
         assert_not_in(self.folder._id, ids)
         assert_not_in(self.deleted_project_user_one._id, ids)
+
+
+class TestUserRoutesNodeRoutes(ApiTestCase):
+
+    def setUp(self):
+        super(TestUserRoutesNodeRoutes, self).setUp()
+        self.user_one = UserFactory.build()
+        self.user_one.set_password('justapoorboy')
+        self.user_one.social['twitter'] = 'howtopizza'
+        self.user_one.save()
+        self.auth_one = (self.user_one.username, 'justapoorboy')
+        self.user_two = UserFactory.build()
+        self.user_two.set_password('justapoorboy')
+        self.user_two.save()
+        self.auth_two = (self.user_two.username, 'justapoorboy')
+        self.public_project_user_one = ProjectFactory(title="Public Project User One", is_public=True, creator=self.user_one)
+        self.private_project_user_one = ProjectFactory(title="Private Project User One", is_public=False, creator=self.user_one)
+        self.public_project_user_two = ProjectFactory(title="Public Project User Two", is_public=True, creator=self.user_two)
+        self.private_project_user_two = ProjectFactory(title="Private Project User Two", is_public=False, creator=self.user_two)
+        self.deleted_project_user_one = FolderFactory(title="Deleted Project User One", is_public=False, creator=self.user_one, is_deleted=True)
+        self.folder = FolderFactory()
+        self.deleted_folder = FolderFactory(title="Deleted Folder User One", is_public=False, creator=self.user_one, is_deleted=True)
+        self.dashboard = DashboardFactory()
+
+    def tearDown(self):
+        super(TestUserRoutesNodeRoutes, self).tearDown()
+        Node.remove()
+
+    def test_path_Users_User_id_Nodes_user_not_logged_in(self):  #~WORK
+        url = "/{}users/{}/nodes/".format(API_BASE, self.user_one._id)
+        res = self.app.get(url)
+        node_json = res.json['data']
+
+        ids = [each['id'] for each in node_json]
+        assert_in(self.public_project_user_one._id, ids)
+        assert_not_in(self.private_project_user_one._id, ids)
+        assert_not_in(self.public_project_user_two._id, ids)
+        assert_not_in(self.private_project_user_two._id, ids)
+        assert_not_in(self.folder._id, ids)
+        assert_not_in(self.deleted_project_user_one._id, ids)
+
+    def test_get_404_path_users_user_id_user_not_logged_in(self):
+        url = "/{}users/{}/".format(API_BASE, self.private_project_user_two._id)
+        res = self.app.get(url, auth=self.auth_one, expect_errors=True)
+        assert_equal(res.status_code, 404)
+
+    def test_get_404_path_nodes_me_user_logged_in(self):
+        url = "/{}nodes/me/".format(API_BASE, self.user_one._id)
+        res = self.app.get(url, auth=self.auth_one, expect_errors=True)
+        assert_equal(res.status_code, 404)
+
+    def test_get_200_path_users_user_id_user_logged_in(self):
+        url = "/{}users/{}/".format(API_BASE, self.user_one._id)
+        res = self.app.get(url, auth=self.auth_one)
+        assert_equal(res.status_code, 200)
+
+    def test_get_200_path_users_me_user_logged_in(self):
+        url = "/{}users/me/".format(API_BASE, self.user_one._id)
+        res = self.app.get(url, auth=self.auth_one)
+        assert_equal(res.status_code, 200)
+
+    def test_path_users_me_nodes_user_logged_in(self):
+        url = "/{}users/me/nodes/".format(API_BASE, self.user_one._id)
+        res = self.app.get(url, auth=self.auth_one)
+        assert_equal(res.status_code, 200)
+
+        ids = {each['id'] for each in res.json['data']}
+        assert_in(self.public_project_user_one._id, ids)
+        assert_in(self.private_project_user_one._id, ids)
+        assert_not_in(self.public_project_user_two._id, ids)
+        assert_not_in(self.private_project_user_two._id, ids)
+        assert_not_in(self.folder._id, ids)
+        assert_not_in(self.deleted_folder._id, ids)
+        assert_not_in(self.deleted_project_user_one._id, ids)
+
+    def test_path_users_user_id_nodes_user_logged_in(self):
+        url = "/{}users/{}/nodes/".format(API_BASE, self.user_one._id)
+        res = self.app.get(url, auth=self.auth_one)
+        assert_equal(res.status_code, 200)
+
+        node_json = res.json['data']
+
+        ids = [each['id'] for each in node_json]
+        assert_in(self.public_project_user_one._id, ids)
+        assert_in(self.private_project_user_one._id, ids)
+        assert_not_in(self.public_project_user_two._id, ids)
+        assert_not_in(self.private_project_user_two._id, ids)
+        assert_not_in(self.folder._id, ids)
+        assert_not_in(self.deleted_folder._id, ids)
+        assert_not_in(self.deleted_project_user_one._id, ids)
+
+    def test_get_404_path_users_user_id_me_user_logged_in(self):
+        url = "/{}users/{}/me/".format(API_BASE, self.user_one._id)
+        res = self.app.get(url, auth=self.auth_one, expect_errors=True)
+        assert_equal(res.status_code, 404)
+
+    def test_get_404_path_users_user_id_me_user_not_logged_in(self):
+        url = "/{}users/{}/me/".format(API_BASE, self.user_one._id)
+        res = self.app.get(url, auth=self.auth_two, expect_errors=True)
+        assert_equal(res.status_code, 404)
+
+    def test_get_404_path_users_user_id_nodes_me_user_logged_in(self):
+        url = "/{}users/{}/nodes/me/".format(API_BASE, self.user_one._id)
+        res = self.app.get(url, auth=self.auth_one, expect_errors=True)
+        assert_equal(res.status_code, 404)
+
+    def test_get_404_path_users_user_id_nodes_me_user_not_logged_in(self):
+        url = "/{}users/{}/nodes/me/".format(API_BASE, self.user_one._id)
+        res = self.app.get(url, auth=self.auth_two, expect_errors=True)
+        assert_equal(res.status_code, 404)
+
+    def test_get_404_path_nodes_user_id_user_logged_in(self):
+        url = "/{}nodes/{}/".format(API_BASE, self.user_one._id)
+        res = self.app.get(url, auth=self.auth_one, expect_errors=True)
+        assert_equal(res.status_code, 404)
+
+    def test_get_404_path_nodes_user_id_user_not_logged_in(self):
+        url = "/{}nodes/{}/".format(API_BASE, self.user_one._id)
+        res = self.app.get(url, auth=self.auth_two, expect_errors=True)
+        assert_equal(res.status_code, 404)
+
+    def test_get_404_path_nodes_me_user_not_logged_in(self):
+        url = "/{}nodes/me/".format(API_BASE, self.user_one._id)
+        res = self.app.get(url, auth=self.auth_two, expect_errors=True)
+        assert_equal(res.status_code, 404)
+
+    def test_get_404_path_users_me_no_user(self):
+        url = "/users/me/".format(API_BASE)
+        res = self.app.get(url, expect_errors=True)
+        assert_equal(res.status_code, 404)
+
+    def test_get_400_path_nodes_me_no_user(self):
+        url = "/nodes/me/".format(API_BASE)
+        res = self.app.get(url, auth=self.auth_one, expect_errors=True)
+        assert_equal(res.status_code, 404)

@@ -1,12 +1,13 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-'''Functional tests using WebTest.'''
+"""Functional tests using WebTest."""
 import httplib as http
-import unittest
-import re
-import mock
 import logging
+import mock
+import re
+import unittest
 
+import markupsafe
 from nose.tools import *  # flake8: noqa (PEP8 asserts)
 
 from framework.mongo.utils import to_mongo_key
@@ -14,7 +15,7 @@ from framework.auth import exceptions as auth_exc
 from framework.auth.core import Auth
 from tests.base import OsfTestCase, fake
 from tests.factories import (UserFactory, AuthUserFactory, ProjectFactory,
-                             WatchConfigFactory, ApiKeyFactory,
+                             WatchConfigFactory,
                              NodeFactory, NodeWikiFactory, RegistrationFactory,
                              UnregUserFactory, UnconfirmedUserFactory,
                              PrivateLinkFactory)
@@ -27,6 +28,10 @@ from website.util import web_url_for, api_url_for
 
 logging.getLogger('website.project.model').setLevel(logging.ERROR)
 
+def assert_in_html(member, container, **kwargs):
+    """Looks for the specified member in markupsafe-escaped HTML output"""
+    member = markupsafe.escape(member)
+    return assert_in(member, container, **kwargs)
 
 class TestDisabledUser(OsfTestCase):
 
@@ -57,12 +62,7 @@ class TestAUser(OsfTestCase):
     def setUp(self):
         super(TestAUser, self).setUp()
         self.user = AuthUserFactory()
-        self.user.set_password('science')
-        # Add an API key for quicker authentication
-        api_key = ApiKeyFactory()
-        self.user.api_keys.append(api_key)
-        self.user.save()
-        self.auth = ('test', api_key._primary_key)
+        self.auth = self.user.auth
 
     def test_can_see_profile_url(self):
         res = self.app.get(self.user.url).maybe_follow()
@@ -107,12 +107,9 @@ class TestAUser(OsfTestCase):
     def test_sees_log_events_on_watched_projects(self):
         # Another user has a public project
         u2 = UserFactory(username='bono@u2.com', fullname='Bono')
-        key = ApiKeyFactory()
-        u2.api_keys.append(key)
-        u2.save()
         project = ProjectFactory(creator=u2, is_public=True)
         project.add_contributor(u2)
-        auth = Auth(user=u2, api_key=key)
+        auth = Auth(user=u2)
         project.save()
         # User watches the project
         watch_config = WatchConfigFactory(node=project)
@@ -274,12 +271,8 @@ class TestRegistrations(OsfTestCase):
     def setUp(self):
         super(TestRegistrations, self).setUp()
         ensure_schemas()
-        self.user = UserFactory()
-        # Add an API key for quicker authentication
-        api_key = ApiKeyFactory()
-        self.user.api_keys.append(api_key)
-        self.user.save()
-        self.auth = ('test', api_key._primary_key)
+        self.user = AuthUserFactory()
+        self.auth = self.user.auth
         self.original = ProjectFactory(creator=self.user, is_public=True)
         # A registration
         self.project = RegistrationFactory(
@@ -334,13 +327,6 @@ class TestRegistrations(OsfTestCase):
         # Settings is not in the project navigation bar
         subnav = res.html.select('#projectSubnav')[0]
         assert_not_in('Registrations', subnav.text)
-
-    def test_settings_nav_not_seen(self):
-        # Goes to project's page
-        res = self.app.get(self.project.url, auth=self.auth).maybe_follow()
-        # Settings is not in the project navigation bar
-        subnav = res.html.select('#projectSubnav')[0]
-        assert_not_in('Settings', subnav.text)
 
 
 class TestComponents(OsfTestCase):
@@ -490,6 +476,7 @@ class TestPrivateLinkView(OsfTestCase):
             res.body
         )
 
+
 class TestMergingAccounts(OsfTestCase):
 
     def setUp(self):
@@ -542,12 +529,8 @@ class TestSearching(OsfTestCase):
         super(TestSearching, self).setUp()
         import website.search.search as search
         search.delete_all()
-        self.user = UserFactory()
-        # Add an API key for quicker authentication
-        api_key = ApiKeyFactory()
-        self.user.api_keys.append(api_key)
-        self.user.save()
-        self.auth = ('test', api_key._primary_key)
+        self.user = AuthUserFactory()
+        self.auth = self.user.auth
 
     @unittest.skip(reason='¯\_(ツ)_/¯ knockout.')
     def test_a_user_from_home_page(self):
@@ -590,13 +573,9 @@ class TestShortUrls(OsfTestCase):
 
     def setUp(self):
         super(TestShortUrls, self).setUp()
-        self.user = UserFactory()
-        # Add an API key for quicker authentication
-        api_key = ApiKeyFactory()
-        self.user.api_keys.append(api_key)
-        self.user.save()
-        self.auth = ('test', api_key._primary_key)
-        self.consolidate_auth = Auth(user=self.user, api_key=api_key)
+        self.user = AuthUserFactory()
+        self.auth = self.user.auth
+        self.consolidate_auth = Auth(user=self.user)
         self.project = ProjectFactory(creator=self.user)
         # A non-project componenet
         self.component = NodeFactory(category='hypothesis', creator=self.user)
@@ -810,7 +789,7 @@ class TestClaiming(OsfTestCase):
         claim_url = new_user.get_claim_url(self.project._primary_key)
         res = self.app.get(claim_url)
         # Correct name (different_name) should be on page
-        assert_in(different_name, res)
+        assert_in_html(different_name, res)
 
 
 class TestConfirmingEmail(OsfTestCase):
@@ -884,9 +863,7 @@ class TestClaimingAsARegisteredUser(OsfTestCase):
         self.project.save()
 
     def test_claim_user_registered_with_correct_password(self):
-        reg_user = AuthUserFactory()
-        reg_user.set_password('killerqueen')
-        reg_user.save()
+        reg_user = AuthUserFactory()  # NOTE: AuthUserFactory sets password as 'password'
         url = self.user.get_claim_url(self.project._primary_key)
         # Follow to password re-enter page
         res = self.app.get(url, auth=reg_user.auth).follow(auth=reg_user.auth)
@@ -895,7 +872,7 @@ class TestClaimingAsARegisteredUser(OsfTestCase):
         assert_in('Claim Contributor', res.body)
 
         form = res.forms['claimContributorForm']
-        form['password'] = 'killerqueen'
+        form['password'] = 'password'
         res = form.submit(auth=reg_user.auth).follow(auth=reg_user.auth)
 
         self.project.reload()
@@ -986,15 +963,15 @@ class TestAUserProfile(OsfTestCase):
         url = web_url_for('profile_view_id', uid=self.me._primary_key)
         # I see the title of both my project and component
         res = self.app.get(url, auth=self.me.auth)
-        assert_in(self.component.title, res)
-        assert_in(self.project.title, res)
+        assert_in_html(self.component.title, res)
+        assert_in_html(self.project.title, res)
 
         # Another user can also see my public project and component
         url = web_url_for('profile_view_id', uid=self.me._primary_key)
         # I see the title of both my project and component
         res = self.app.get(url, auth=self.user.auth)
-        assert_in(self.component.title, res)
-        assert_in(self.project.title, res)
+        assert_in_html(self.component.title, res)
+        assert_in_html(self.project.title, res)
 
     def test_user_no_public_projects_or_components(self):
         # I go to other user's profile

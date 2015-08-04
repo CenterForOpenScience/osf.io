@@ -20,7 +20,7 @@ FULL_NAME = 'Google Drive'
 OWNERS = ['user', 'node']  # can include any of ['user', 'node']
 
 VIEWS = []  # page, widget
-CONFIGS = ['user', 'node']  # any of ['user', 'node']
+CONFIGS = ['accounts', 'node']  # any of ['user', 'node']
 
 CATEGORIES = ['storage']
 

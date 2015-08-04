@@ -13,6 +13,8 @@ from website.addons.base import AddonNodeSettingsBase
 
 class ForwardNodeSettings(AddonNodeSettingsBase):
 
+    complete = True
+
     url = fields.StringField(validate=URLValidator())
     label = fields.StringField(validate=sanitized)
     redirect_bool = fields.BooleanField(default=True, validate=True)
@@ -24,6 +26,15 @@ class ForwardNodeSettings(AddonNodeSettingsBase):
     @property
     def link_text(self):
         return self.label if self.label else self.url
+
+    def on_delete(self):
+        self.reset()
+
+    def reset(self):
+        self.url = None
+        self.label = None
+        self.redirect_bool = True
+        self.redirect_secs = 15
 
 
 @ForwardNodeSettings.subscribe('before_save')

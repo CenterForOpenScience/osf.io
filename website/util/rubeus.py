@@ -292,7 +292,7 @@ class NodeProjectCollector(object):
         try:
             user = node.logs[-1].user
             modified_by = user.family_name or user.given_name
-        except AttributeError:
+        except (AttributeError, IndexError):
             modified_by = ''
         child_nodes = node.nodes
         readable_children = []
@@ -366,6 +366,7 @@ class NodeProjectCollector(object):
             'registeredMeta': node.registered_meta,
             'childrenCount': children_count,
             'nodeType': node.project_or_component,
+            'archiving': node.archive_job and not node.archive_job.done,
         }
 
     def _collect_addons(self, node):
@@ -432,6 +433,24 @@ class NodeFileCollector(object):
                 rv.append(self._serialize_node(child, visited=visited))
         return rv
 
+    def _get_node_name(self, node):
+        """Input node object, return the project name to be display.
+        """
+        can_view = node.can_view(auth=self.auth)
+
+        if can_view:
+            node_name = u'{0}: {1}'.format(node.project_or_component.capitalize(), sanitize.safe_unescape_html(node.title))
+        elif node.is_registration:
+            node_name = u'Private Registration'
+        elif node.is_fork:
+            node_name = u'Private Fork'
+        elif not node.primary:
+            node_name = u'Private Link'
+        else:
+            node_name = u'Private Component'
+
+        return node_name
+
     def _serialize_node(self, node, visited=None):
         """Returns the rubeus representation of a node folder.
         """
@@ -442,11 +461,10 @@ class NodeFileCollector(object):
             children = self._collect_addons(node) + self._collect_components(node, visited)
         else:
             children = []
+
         return {
             # TODO: Remove safe_unescape_html when mako html safe comes in
-            'name': u'{0}: {1}'.format(node.project_or_component.capitalize(), sanitize.safe_unescape_html(node.title))
-            if can_view
-            else u'Private Component',
+            'name': self._get_node_name(node),
             'category': node.category,
             'kind': FOLDER,
             'permissions': {

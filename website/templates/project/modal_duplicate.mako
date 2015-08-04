@@ -4,60 +4,48 @@
             <div class="modal-body">
                 <div class="row">
                     <div class="col-md-4">
-                        <h4>Links
-                            % if node['points'] > 0:
-                                <a class="btn btn-primary pull-right"
-                                   href="#showLinks"
-                                   data-toggle="modal"
-                                   data-dismiss="modal"
-                                >
-                                    ${ node['points'] }
-                                </a>
-                            % else:
-                                 <span class="well well-inline pull-right">
+                        <h4 class="f-w-lg">Links To This Project
+                                 <span class="btn btn-default disabled  pull-right">
                                     ${ node['points'] }
                                 </span>
-                            % endif
                         </h4>
                         ${ language.LINK_DESCRIPTION }
+                        % if node['points'] > 0:
+
+                        <a class="btn btn-info btn-block" href="#showLinks"
+                                                        data-toggle="modal"
+                                                        data-dismiss="modal"
+                                                    >View Links </a>
+                        % endif
+
                     </div>
                     <div class="col-md-4">
-                        <h4>Templated From
-                            <span class="well well-inline pull-right">
+                        <h4 class="f-w-lg">Templated From
+                            <span class="btn btn-default disabled pull-right">
                                 ${ node['templated_count'] }
                             </span>
                         </h4>
                         ${ language.TEMPLATE_DESCRIPTION }
-                    </div>
-                    <div class="col-md-4">
-                        <h4>Forks
-                            <a class="btn btn-primary pull-right"
-                               href="${ node['url'] }forks/"
-                            >
-                                ${ node['fork_count'] }
-                            </a>
-                        </h4>
-                        % if not disk_saving_mode:
-                            ${ language.FORK_DESCRIPTION }
-                        % else:
-                            ${ language.DISK_SAVING_MODE}
-                        % endif
-                    </div>
-                </div>
-                <div class="row">
-                    <div class="col-md-4">
-##                        <a class="btn btn-primary form-control disabled">${ language.LINK_ACTION }</a>
-                    </div>
-                    <div class="col-md-4">
                         <a class="btn btn-primary form-control${'' if user_name and (user['is_contributor'] or node['is_public']) else ' disabled'}"
                            data-dismiss="modal"
                            onclick="NodeActions.useAsTemplate();"
                         >
                             ${ language.TEMPLATE_ACTION }
                         </a>
-                    </div>
 
+                    </div>
                     <div class="col-md-4">
+                        <h4 class="f-w-lg">Forks
+                            <button class="btn btn-default disabled pull-right"
+                            >
+                                ${ node['fork_count'] }
+                            </button>
+                        </h4>
+                        % if not disk_saving_mode:
+                            ${ language.FORK_DESCRIPTION }
+                        % else:
+                            ${ language.DISK_SAVING_MODE}
+                        % endif
                         % if not disk_saving_mode:
                             <a class="btn btn-primary form-control${ '' if user_name and (user['is_contributor'] or node['is_public']) else ' disabled'}"
                                data-dismiss="modal"
@@ -65,12 +53,13 @@
                             >
                                 ${ language.FORK_ACTION }
                             </a>
+                            <a class="btn btn-info btn-block m-t-xs" href="${ node['url'] }forks/">View Forks</a>
                         % endif
                     </div>
                 </div>
             </div>
             <div class="modal-footer">
-                <button type="button" class="btn btn-default" data-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
             </div>
         </div><!-- /.modal-content -->
     </div><!-- /.modal-dialog -->

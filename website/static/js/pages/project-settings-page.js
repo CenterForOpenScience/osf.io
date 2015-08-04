@@ -16,26 +16,20 @@ var ctx = window.contextVars;
 var ProjectNotifications = require('js/notificationsTreebeard.js');
 var $notificationsMsg = $('#configureNotificationsMessage');
 var notificationsURL = ctx.node.urls.api  + 'subscriptions/';
-$.ajax({
-    url: notificationsURL,
-    type: 'GET',
-    dataType: 'json'
-}).done(function(response) {
-    new ProjectNotifications(response);
-}).fail(function(xhr, status, error) {
-    $notificationsMsg.addClass('text-danger');
-    $notificationsMsg.text('Could not retrieve notification settings.');
-    Raven.captureMessage('Could not GET notification settings', {
-        url: notificationsURL, status: status, error: error
-    });
-});
-
-// Reusable function to fix affix widths to columns.
-function fixAffixWidth() {
-    $('.affix, .affix-top, .affix-bottom').each(function (){
-        var el = $(this);
-        var colsize = el.parent('.affix-parent').width();
-        el.outerWidth(colsize);
+// Need check because notifications settings don't exist on registration's settings page
+if ($('#grid').length) {
+    $.ajax({
+        url: notificationsURL,
+        type: 'GET',
+        dataType: 'json'
+    }).done(function(response) {
+        new ProjectNotifications(response);
+    }).fail(function(xhr, status, error) {
+        $notificationsMsg.addClass('text-danger');
+        $notificationsMsg.text('Could not retrieve notification settings.');
+        Raven.captureMessage('Could not GET notification settings', {
+            url: notificationsURL, status: status, error: error
+        });
     });
 }
 
@@ -51,16 +45,16 @@ $(document).ready(function() {
         });
     }
     var disableCategory = !window.contextVars.node.parentExists;
-    var categorySettingsVM = new ProjectSettings.NodeCategorySettings(
-        window.contextVars.node.category,
-        categories,
-        window.contextVars.node.urls.update,
-        disableCategory
-    );
-    ko.applyBindings(categorySettingsVM, $('#nodeCategorySettings')[0]);
-
-    $(window).resize(function (){ fixAffixWidth(); });
-    $('.project-page .panel').on('affixed.bs.affix', function(){ fixAffixWidth(); });
+    // need check because node category doesn't exist for registrations
+    if ($('#nodeCategorySettings').length) {
+        var categorySettingsVM = new ProjectSettings.NodeCategorySettings(
+            window.contextVars.node.category,
+            categories,
+            window.contextVars.node.urls.update,
+            disableCategory
+        );
+        ko.applyBindings(categorySettingsVM, $('#nodeCategorySettings')[0]);
+    }
 
     $('#deleteNode').on('click', function() {
         ProjectSettings.getConfirmationCode(ctx.node.nodeType);
@@ -81,7 +75,15 @@ $(document).ready(function() {
             $commentMsg.text('Successfully updated settings.');
             window.location.reload();
         }).fail(function() {
-            bootbox.alert('Could not set commenting configuration. Please try again.');
+            bootbox.alert({
+                message: 'Could not set commenting configuration. Please try again.',
+                buttons:{
+                    ok:{
+                        label:'Close',
+                        className:'btn-default'
+                    }
+                }
+            });
         });
 
         return false;
@@ -139,14 +141,19 @@ $(document).ready(function() {
             var name = $that.attr('name');
             var capabilities = $('#capabilities-' + name).html();
             if (capabilities) {
-                bootbox.confirm(
-                    capabilities,
-                    function(result) {
+                bootbox.confirm({
+                    message: capabilities,
+                    callback: function(result) {
                         if (!result) {
                             $(that).attr('checked', false);
                         }
+                    },
+                    buttons:{
+                        confirm:{
+                            label:'Confirm'
+                        }
                     }
-                );
+               });
             }
         }
     });
