@@ -27,7 +27,7 @@ class UserSerializer(JSONAPISerializer):
                                                                'identifiers including an array of user-defined URLs')
     links = LinksFieldWIthSelfLink({'html': 'absolute_url'})
     relationships = LinksField({
-        'nodes': Link('users:user-nodes', kwargs={'user_id': '<pk>'}),
+        'nodes': MetaLink('users:user-nodes', kwargs={'user_id': '<pk>'}),
     })
 
     class Meta:

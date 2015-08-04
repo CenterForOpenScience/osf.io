@@ -39,12 +39,21 @@ class NodeSerializer(JSONAPISerializer):
                               )
 
     relationships = LinksField({
-        'children': Link('nodes:node-children', kwargs={'node_id': '<pk>'}),
-        'contributors':  Link('nodes:node-contributors', kwargs={'node_id': '<pk>'}),
-        'pointers': Link('nodes:node-pointers', kwargs={'node_id': '<pk>'}),
-        'registrations': Link('nodes:node-registrations', kwargs={'node_id': '<pk>'}),
-        'files': Link('nodes:node-files', kwargs={'node_id': '<pk>'}),
-        'parent': Link('nodes:node-detail', kwargs={'node_id': '<parent_id>'})
+        'children': MetaLink('nodes:node-children', kwargs={'node_id': '<pk>'}),
+        'contributors':  MetaLink('nodes:node-contributors', kwargs={'node_id': '<pk>'}),
+        'pointers': MetaLink('nodes:node-pointers', kwargs={'node_id': '<pk>'}),
+        'registrations': MetaLink('nodes:node-registrations', kwargs={'node_id': '<pk>'}),
+
+        'files': {
+            'links': {
+                'related': Link('nodes:node-files', kwargs={'node_id': '<pk>'})
+            }
+        },
+        'parent': {
+            'links': {
+                'self': Link('nodes:node-detail', kwargs={'node_id': '<parent_id>'})
+            }
+        }
     })
 
     # TODO: finish me

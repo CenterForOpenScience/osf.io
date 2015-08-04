@@ -26,19 +26,10 @@ def _url_val(val, obj, serializer, **kwargs):
         url = val.resolve_url(obj)
         if isinstance(val, WaterbutlerLink):
             return url
-        query = val.endpoint.split('-')[1]
-        if query == 'files':
-            return {
-                'href': url
-            }
-        if query == 'detail':
-            return {
-                'links': {
-                    'self': url
-                }
-            }
-        elif 'request' in serializer.context:
-            return val.get_links(query, serializer, url, obj)
+        elif isinstance(val, MetaLink):
+            return val.get_links(serializer, url, obj)
+        else:
+                return val.resolve_url(obj)
     elif isinstance(val, basestring):
         return getattr(serializer, val)(obj)
 
@@ -85,11 +76,12 @@ class LinksFieldWIthSelfLink(ser.Field):
 
 class LinksField(LinksFieldWIthSelfLink):
     def to_representation(self, obj):
-        if 'request' in self.context and 'include' in self.context['request'].query_params:
-            include_params = self.context['request'].query_params['include'].split(',')
-            self.check_parameters(include_params)
-        ret = _rapply(self.links, _url_val, obj=obj, serializer=self.parent)
-        return ret
+        if 'request' in self.context:
+            if 'include' in self.context['request'].query_params:
+                include_params = self.context['request'].query_params['include'].split(',')
+                self.check_parameters(include_params)
+            ret = _rapply(self.links, _url_val, obj=obj, serializer=self.parent)
+            return ret
 
     def check_parameters(self, params):
         for param in params:
@@ -141,8 +133,27 @@ class Link(object):
     def __repr__(self):
         return self.query
 
-    def get_links(self, query, serializer, url, obj):
-        meta = self.get_meta(query, serializer, obj)
+    def resolve_url(self, obj):
+        kwarg_values = {key: _get_attr_from_tpl(attr_tpl, obj) for key, attr_tpl in self.kwargs.items()}
+        arg_values = [_get_attr_from_tpl(attr_tpl, obj) for attr_tpl in self.args]
+        query_kwarg_values = {key: _get_attr_from_tpl(attr_tpl, obj) for key, attr_tpl in self.query_kwargs.items()}
+        # Presumably, if you have are expecting a value but the value is empty, then the link is invalid.
+        for item in kwarg_values:
+            if kwarg_values[item] is None:
+                return None
+        return absolute_reverse(
+            self.endpoint,
+            args=arg_values,
+            kwargs=kwarg_values,
+            query_kwargs=query_kwarg_values,
+            **self.reverse_kwargs
+        )
+
+
+class MetaLink(Link):
+
+    def get_links(self, serializer, url, obj):
+        meta = self.get_meta(serializer, obj)
         ret = {
             'links': {
                 'related': {
@@ -153,7 +164,8 @@ class Link(object):
         }
         return ret
 
-    def get_meta(self, query,  serializer, obj):
+    def get_meta(self, serializer, obj):
+        query = self.endpoint.split('-')[1]
         context = serializer.context
         module = __import__('api.{}.views'.format(self.endpoint.split(':')[0]),
                             globals(), locals(), ['object'], -1)
@@ -180,27 +192,6 @@ class Link(object):
             if query in additional_query_params:
                 meta['data'] = serialized_objects
         return meta
-
-    def resolve_url(self, obj):
-        kwarg_values = {key: _get_attr_from_tpl(attr_tpl, obj) for key, attr_tpl in self.kwargs.items()}
-        arg_values = [_get_attr_from_tpl(attr_tpl, obj) for attr_tpl in self.args]
-        query_kwarg_values = {key: _get_attr_from_tpl(attr_tpl, obj) for key, attr_tpl in self.query_kwargs.items()}
-        # Presumably, if you have are expecting a value but the value is empty, then the link is invalid.
-        for item in kwarg_values:
-            if kwarg_values[item] is None:
-                return None
-        return absolute_reverse(
-            self.endpoint,
-            args=arg_values,
-            kwargs=kwarg_values,
-            query_kwargs=query_kwarg_values,
-            **self.reverse_kwargs
-        )
-
-
-class MetaLink(Link):
-
-    pass
 
 
 class WaterbutlerLink(Link):
