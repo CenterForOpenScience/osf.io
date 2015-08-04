@@ -1,5 +1,4 @@
 import celery
-import itertools
 
 from framework.tasks import handlers
 
@@ -14,15 +13,6 @@ from website.archiver import signals as archiver_signals
 from website.project import signals as project_signals
 from website.project import utils as project_utils
 
-
-def node_and_primary_descendants(node):
-    """Gets an iterator for a node and all of its visible descendants
-
-    :param node Node: target Node
-    """
-    return itertools.chain([node], node.get_descendants_recursive(lambda n: n.primary))
-
-
 @project_signals.after_create_registration.connect
 def after_register(src, dst, user):
     """Blinker listener for registration initiations. Enqueqes a chain
@@ -35,7 +25,7 @@ def after_register(src, dst, user):
     archiver_utils.before_archive(dst, user)
     if dst.root != dst:  # if not top-level registration
         return
-    archive_tasks = [archive.si(job_pk=t.archive_job._id) for t in node_and_primary_descendants(dst)]
+    archive_tasks = [archive.si(job_pk=t.archive_job._id) for t in dst.node_and_primary_descendants()]
     handlers.enqueue_task(
         celery.chain(*archive_tasks)
     )

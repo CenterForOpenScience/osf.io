@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+import itertools
 import os
 import re
 import urllib
@@ -54,7 +55,6 @@ from website.util.permissions import CREATOR_PERMISSIONS
 from website.project.metadata.schemas import OSF_META_SCHEMAS
 from website.util.permissions import DEFAULT_CONTRIBUTOR_PERMISSIONS
 from website.project import signals as project_signals
-from website.archiver.utils import delete_registration_tree, node_and_primary_descendants
 
 html_parser = HTMLParser()
 
@@ -1318,6 +1318,13 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
             if node.primary
         ]
 
+    def node_and_primary_descendants(self):
+        """Gets an iterator for a node and all of its visible descendants
+
+        :param node Node: target Node
+        """
+        return itertools.chain([self], self.get_descendants_recursive(lambda n: n.primary))
+
     @property
     def depth(self):
         return len(self.parents)
@@ -1545,6 +1552,15 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         except search.exceptions.SearchUnavailableError as e:
             logger.exception(e)
             log_exception()
+
+    def delete_registration_tree(self):
+        self.is_deleted = True
+        if not getattr(self.embargo, 'for_existing_registration', False):
+            self.registered_from = None
+        self.save()
+        self.update_search()
+        for child in self.nodes_primary:
+            child.delete_registration_tree()
 
     def remove_node(self, auth, date=None):
         """Marks a node as deleted.
@@ -3110,13 +3126,13 @@ class RegistrationApproval(Sanction):
         register.set_privacy('public', auth, log=False)
         for child in register.get_descendants_recursive(lambda n: n.primary):
             child.set_privacy('public', auth, log=False)
-        for node in node_and_primary_descendants(register.root):
+        for node in register.root.node_and_primary_descendants():
             node.update_search()  # update search if public
 
     def _on_reject(self, user, token):
         register = Node.find(Q('registration_approval', 'eq', self))
         registered_from = register.registered_from
-        delete_registration_tree(register)
+        register.delete_registration_tree()
         registered_from.add_log(
             action=NodeLog.REGISTRATION_CANCELLED,
             params={
