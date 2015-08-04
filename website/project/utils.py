@@ -73,8 +73,8 @@ def send_embargo_email(node, user, urls=None):
 def get_registration_approval_urls(node, user):
     approval_token, disapproval_token = None, None
     if node.has_permission(user, ADMIN):
-        approval_token = node.embargo.approval_state[user._id]['approval_token']
-        disapproval_token = node.embargo.approval_state[user._id]['disapproval_token']
+        approval_token = node.registration_approval.approval_state[user._id]['approval_token']
+        disapproval_token = node.registration_approval.approval_state[user._id]['disapproval_token']
 
     return {
         'view': node.web_url_for('view_project', _absolute=True),
@@ -90,7 +90,7 @@ def get_registration_approval_urls(node, user):
         ) if disapproval_token else None,
     }
 
-def send_registration_appoval_email(node, user, urls=None):
+def send_registration_approval_email(node, user, urls=None):
     """ Sends pending embargo announcement email to contributors. Project
     admins will also receive approval/disapproval information.
     :param node: Node being embargoed
@@ -98,13 +98,12 @@ def send_registration_appoval_email(node, user, urls=None):
     """
     urls = urls or get_registration_approval_urls(node, user)
 
-    embargo_end_date = node.embargo.end_date
+    end_date = node.registration_approval.end_date
     registration_link = urls['view']
-    initiators_fullname = node.embargo.initiated_by.fullname
+    initiators_fullname = node.registration_approval.initiated_by.fullname
     if node.has_permission(user, ADMIN):
         approval_link = urls['approve']
         disapproval_link = urls['disapprove']
-        approval_time_span = settings.EMBARGO_PENDING_TIME.days * 24
 
         mails.send_mail(
             user.username,
@@ -115,8 +114,7 @@ def send_registration_appoval_email(node, user, urls=None):
             approval_link=approval_link,
             disapproval_link=disapproval_link,
             registration_link=registration_link,
-            embargo_end_date=embargo_end_date,
-            approval_time_span=approval_time_span
+            end_date=end_date,
         )
     else:
         mails.send_mail(
@@ -125,7 +123,7 @@ def send_registration_appoval_email(node, user, urls=None):
             user=user,
             initiated_by=initiators_fullname,
             registration_link=registration_link,
-            embargo_end_date=embargo_end_date,
+            end_date=end_date,
         )
 
 def recent_public_registrations(n=10):

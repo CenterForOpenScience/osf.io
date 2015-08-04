@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+import itertools
 import os
 import re
 import logging
@@ -56,7 +57,6 @@ from website.util.permissions import CREATOR_PERMISSIONS
 from website.project.metadata.schemas import OSF_META_SCHEMAS
 from website.util.permissions import DEFAULT_CONTRIBUTOR_PERMISSIONS
 from website.project import signals as project_signals
-from website.archiver.utils import delete_registration_tree, node_and_primary_descendants
 
 html_parser = HTMLParser()
 
@@ -342,6 +342,10 @@ class NodeLog(StoredObject):
     RETRACTION_APPROVED = 'retraction_approved'
     RETRACTION_CANCELLED = 'retraction_cancelled'
     RETRACTION_INITIATED = 'retraction_initiated'
+
+    REGISTRATION_APPROVAL_CANCELLED = 'registration_approval_cancelled'
+    REGISTRATION_APPROVAL_INITIATED = 'registration_approval_initiated'
+    # REGISTRATION_APPROVAL_COMPLETE = 'registration_approval_complete'
 
     def __repr__(self):
         return ('<NodeLog({self.action!r}, params={self.params!r}) '
@@ -1320,6 +1324,13 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
             if node.primary
         ]
 
+    def node_and_primary_descendants(self):
+        """Gets an iterator for a node and all of its visible descendants
+
+        :param node Node: target Node
+        """
+        return itertools.chain([self], self.get_descendants_recursive(lambda n: n.primary))
+
     @property
     def depth(self):
         return len(self.parents)
@@ -1547,6 +1558,15 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         except search.exceptions.SearchUnavailableError as e:
             logger.exception(e)
             log_exception()
+
+    def delete_registration_tree(self):
+        self.is_deleted = True
+        if not getattr(self.embargo, 'for_existing_registration', False):
+            self.registered_from = None
+        self.save()
+        self.update_search()
+        for child in self.nodes_primary:
+            child.delete_registration_tree()
 
     def remove_node(self, auth, date=None):
         """Marks a node as deleted.
@@ -2748,7 +2768,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
             save=True,
         )
         self.registration_approval = approval
-        # TOD make private?
+        # TODO make private?
 
 @Node.subscribe('before_save')
 def validate_permissions(schema, instance):
@@ -2867,7 +2887,9 @@ class Sanction(StoredObject):
     _id = fields.StringField(primary=True, default=lambda: str(ObjectId()))
     initiation_date = fields.DateTimeField(auto_now_add=datetime.datetime.utcnow)
     end_date = fields.DateTimeField(default=None)
-    initiated_by = fields.ForeignField('user', backref='initiated')
+
+    # Sanction subclasses must have an initiated_by field
+    # initiated_by = fields.ForeignField('user', backref='initiated')
 
     # Expanded: Dictionary field mapping admin IDs their approval status and relevant tokens:
     # {
@@ -2881,8 +2903,7 @@ class Sanction(StoredObject):
     state = fields.StringField(default='unapproved', validate=validate_sanction_state)
 
     def __repr__(self):
-        return '<Sanction(initiated_by={0}, end_date={1}) with _id {2}>'.format(
-            self.initiated_by,
+        return '<Sanction(end_date={1}) with _id {2}>'.format(
             self.end_date,
             self._id
         )
@@ -3109,15 +3130,15 @@ class RegistrationApproval(Sanction):
         register.set_privacy('public', auth, log=False)
         for child in register.get_descendants_recursive(lambda n: n.primary):
             child.set_privacy('public', auth, log=False)
-        for node in node_and_primary_descendants(register.root):
+        for node in register.root.node_and_primary_descendants():
             node.update_search()  # update search if public
 
     def _on_reject(self, user, token):
         register = Node.find_one(Q('registration_approval', 'eq', self))
         registered_from = register.registered_from
-        delete_registration_tree(register)
+        register.delete_registration_tree()
         registered_from.add_log(
-            action=NodeLog.REGISTRATION_CANCELLED,
+            action=NodeLog.REGISTRATION_APPROVAL_CANCELLED,
             params={
                 'node': registered_from._id,
                 'registration_approval_id': self._id,

@@ -32,6 +32,7 @@ from website.project.model import (
 from website.notifications.model import NotificationSubscription, NotificationDigest
 from website.archiver import utils as archiver_utils
 from website.archiver.model import ArchiveTarget, ArchiveJob
+from website.project import utils as project_utils
 
 from website.addons.wiki.model import NodeWikiPage
 from tests.base import fake
@@ -207,9 +208,26 @@ class RegistrationFactory(AbstractNodeFactory):
                     reg,
                     reg.registered_user
                 )
+        if embargo:
+            reg.embargo = embargo
+        if approval:
+            reg.registration_approval = approval
+        else:
+            reg.require_approval(reg.creator)
+        meta = {
+            'embargo_urls': {
+                contrib._id: project_utils.get_embargo_urls(reg, contrib)
+                for contrib in reg.active_contributors()
+            } if embargo else {},
+            'registration_approval_urls': {
+                contrib._id: project_utils.get_registration_approval_urls(reg, contrib)
+                for contrib in reg.active_contributors()
+            }
+        }            
+        reg.archive_job.meta = meta
+        reg.archive_job.save()
+        reg.save()
         return reg
-
-
 
 class PointerFactory(ModularOdmFactory):
     FACTORY_FOR = Pointer
