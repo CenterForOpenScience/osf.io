@@ -234,6 +234,7 @@ utils.arrayEqual = function (a, b) {
 };
 
 utils.addFiltersToQuery = function (query, filters) {
+    var new_query = null;
     if (filters) {
         filters.forEach(function (filter) {
             query = utils.filteredQuery(query, filter.filter);
@@ -264,8 +265,8 @@ utils.loadRawNormalized = function(result){
         result.normalized = normed;
     }, function(error) {
         result.rawfiletype = 'json';
-        result.normalized = '"Normalized data not found."';
-        result.raw = '"Raw data not found."';
+        result.normalized = null;
+        result.raw = null;
     });
 };
 

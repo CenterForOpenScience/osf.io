@@ -153,7 +153,7 @@ Results.controller = function(vm) {
                                                 return pd.xml(result.raw);
                                             }
                                             else {
-                                                var rawjson = JSON.parse(result.raw);
+                                                var rawjson = JSON.parse(result.raw || '"Raw data not found"');
                                                 return JSON.stringify(rawjson, undefined, 2);
                                             }
                                         }())
@@ -162,7 +162,7 @@ Results.controller = function(vm) {
                                 m('div',
                                     {class: 'tab-pane', id:'normalized'},
                                     m('pre',
-                                        result.normalized
+                                        result.normalized || '"Normalized data not found"'
                                     )
                                 )
                             )
