@@ -7,6 +7,7 @@ import copy
 import math
 import logging
 import unicodedata
+import httplib as http
 
 import six
 
@@ -447,7 +448,6 @@ def search_contributor(query, exclude=None, current_user=None, **kwargs):
         size = int(request.args.get('size', 5))
     except ValueError:
         raise HTTPError(http.BAD_REQUEST)
-
 
     start = (page * size)
     items = re.split(r'[\s-]+', query)
