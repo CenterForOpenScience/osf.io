@@ -58,6 +58,10 @@ function timeGraph(data, vm) {
         axis: {
             x: {
                 type: 'timeseries',
+                label: {
+                    text: 'Date',
+                    position: 'outer-center'
+                },
                 tick: {
                     format: function (d) {return Stats.timeSinceEpochInMsToMMYY(d); }
                 }
