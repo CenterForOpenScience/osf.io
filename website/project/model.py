@@ -2826,13 +2826,15 @@ class MailingList(StoredObject):
     mailing_info = fields.DictionaryField()
 
     @classmethod
-    def new_saved(cls, is_enabled=False):
-        new_list = cls(is_enabled=is_enabled)
+    def new_saved(cls, **kwargs):
+        """Creates a new mailing list and saves it so that it can be an attribute of a node"""
+        new_list = cls(**kwargs)
         new_list.save()
 
         return new_list
 
     def set_node(self, node, save=True):
+        """Sets object variables to match node and allows it to start updating Mailgun"""
         self.node_id = node._id
         self.node_title = node.title
         self.match_members(node.contributors, save=False)
@@ -2846,6 +2848,10 @@ class MailingList(StoredObject):
             self.save()
 
     def match_members(self, node_contributors, save=True):
+        """ Matches list members with parent node
+        :param node_contributors: List of contributors on the node
+        :param save: Automatically saves if True
+        """
         new_info = {}
         for user in node_contributors:
             new_info[user._id] = self.mailing_info.get(user._id) or {

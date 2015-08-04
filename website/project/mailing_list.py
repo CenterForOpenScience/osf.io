@@ -18,17 +18,21 @@ def address(node_id):
     return node_id + '@' + settings.MAILGUN_DOMAIN
 
 
-def project_url(node_id):
+def node_url(node_id):
     return settings.DOMAIN + node_id
 
 
 def get_list(node_id):
+    """ Returns information about the mailing list from Mailgun
+    :param node_id: The id of the node in question
+    :returns: info, members: Two dictionaries about list and members
+    """
     info = requests.get(
         'https://api.mailgun.net/v3/lists/{}'.format(address(node_id)),
         auth=('api', settings.MAILGUN_API_KEY),
     )
     if info.status_code != 200 and info.status_code != 404:
-        return {},{}
+        raise HTTPError(400)
     info = json.loads(info.text)
 
     members = requests.get(
@@ -43,6 +47,12 @@ def get_list(node_id):
 
 
 def create_list(node_id, node_title, emails, subscriptions):
+    """ Creates a new mailing list on Mailgun with all emails and subscriptions
+    :param node_id: The id of the node in question
+    :param node_title: The title of the node in question
+    :param emails: List of emails on the mailing list
+    :param subscriptions: List of subscribed emails on the mailing list
+    """
     res = requests.post(
         'https://api.mailgun.net/v3/lists',
         auth=('api', settings.MAILGUN_API_KEY),
@@ -58,13 +68,16 @@ def create_list(node_id, node_title, emails, subscriptions):
     for email in emails:
         add_member(node_id, email, subscriptions[email])
 
-    send_message(node_id, node_title, {
-        'subject': 'Mailing List Created for {}'.format(node_title),
-        'text': 'A mailing list has been created/enabled for the project {}.'.format(node_title)
-    })
+    # send_message(node_id, node_title, {
+    #     'subject': 'Mailing List Created for {}'.format(node_title),
+    #     'text': 'A mailing list has been created/enabled for the project {}.'.format(node_title)
+    # })
 
 
 def delete_list(node_id):
+    """ Deletes a mailing list from Mailgun
+    :param node_id: The id of the node in question
+    """
     res = requests.delete(
         'https://api.mailgun.net/v3/lists/{}'.format(address(node_id)),
         auth=('api', settings.MAILGUN_API_KEY)
@@ -74,6 +87,10 @@ def delete_list(node_id):
 
 
 def update_title(node_id, node_title):
+    """ Updates the title of a mailing list to match the list's project
+    :param node_id: The id of the node in question
+    :param node_title: The new title
+    """
     res = requests.put(
         'https://api.mailgun.net/v3/lists/{}'.format(address(node_id)),
         auth=('api', settings.MAILGUN_API_KEY),
@@ -86,13 +103,18 @@ def update_title(node_id, node_title):
 
 
 def add_member(node_id, email, subscription):
+    """ Adds a member to a mailing list on Mailgun
+    :param node_id: The id of the node in question
+    :param email: The email of the member being added
+    :param subscription: The initial subscription status
+    """
     res = requests.post(
         'https://api.mailgun.net/v3/lists/{}/members'.format(address(node_id)),
         auth=('api', settings.MAILGUN_API_KEY),
         data={
             'subscribed': subscription,
             'address': email,
-            'vars': json.dumps({'project_url': project_url(node_id)})
+            'vars': json.dumps({'project_url': node_url(node_id)})
         }
     )
     if res.status_code != 200:
@@ -100,6 +122,10 @@ def add_member(node_id, email, subscription):
 
 
 def remove_member(node_id, email):
+    """ Removes a member from a mailing list on Mailgun
+    :param node_id: The id of the node in question
+    :param email: The email of the member to be removed
+    """
     res = requests.delete(
         'https://api.mailgun.net/v3/lists/{0}/members/{1}'.format(address(node_id), email),
         auth=('api', settings.MAILGUN_API_KEY)
@@ -109,6 +135,11 @@ def remove_member(node_id, email):
 
 
 def update_member(node_id, email, subscription):
+    """ Updates the subscription status of a member on Mailgun
+    :param node_id: The id of the node in question
+    :param email: The email of the member that needs to be updated
+    :param subscription: The new subscription status
+    """
     res = requests.put(
         'https://api.mailgun.net/v3/lists/{0}/members/{1}'.format(address(node_id), email),
         auth=('api', settings.MAILGUN_API_KEY),
@@ -128,6 +159,13 @@ def update_member(node_id, email, subscription):
 @queued_task
 @app.task
 def update_list(node_id, node_title, list_enabled, emails, subscriptions):
+    """ Updates Mailgun to match the current status of a node's discussions
+    :param node_id: The id of the node whose mailing list is being updated
+    :param node_title: The title of the node in question
+    :param list_enabled: The status of the node's email discussions (is_enabled)
+    :param emails: List of emails on the node's mailing list
+    :param subscriptions: List of emails subscribed to the node's mailing list
+    """
     # Need to put the sender in the list of members to avoid potential conflicts
     emails.add(address(node_id))
     # Convert subscriptions to a dictionary for ease of use in functions
@@ -172,6 +210,12 @@ def update_list(node_id, node_title, list_enabled, emails, subscriptions):
 @queued_task
 @app.task
 def send_message(node_id, node_title, message):
+    """ Sends a message from the node through the given mailing list
+    :param node_id:
+    :param node_title:
+    :param message:
+    :return:
+    """
     res = requests.post(
         'https://api.mailgun.net/v3/{}/messages'.format(settings.MAILGUN_DOMAIN),
         auth=('api', settings.MAILGUN_API_KEY),
