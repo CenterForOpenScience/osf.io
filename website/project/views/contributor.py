@@ -337,7 +337,7 @@ def project_contributors_post(auth, node, **kwargs):
 
     # Disconnect listeners to avoid multiple invite or notification emails
     unreg_contributor_added.disconnect(finalize_invitation)
-    contributor_added.disconnect(notify_contributor)
+    contributor_added.disconnect(notify_added_contributor)
 
     for child_id in node_ids:
         child = Node.load(child_id)
@@ -349,7 +349,7 @@ def project_contributors_post(auth, node, **kwargs):
         child.save()
     # Reconnect listeners
     unreg_contributor_added.connect(finalize_invitation)
-    contributor_added.connect(notify_contributor)
+    contributor_added.connect(notify_added_contributor)
     return {'status': 'success'}, 201
 
 
@@ -508,7 +508,7 @@ def send_claim_email(email, user, node, notify=True, throttle=24 * 3600):
 
 
 @contributor_added.connect
-def notify_contributor(node, contributor, throttle=None):
+def notify_added_contributor(node, contributor, throttle=None):
     throttle = throttle or settings.CONTRIBUTOR_ADDED_EMAIL_THROTTLE
 
     if contributor.is_registered and not node.template_node and not node.is_fork:

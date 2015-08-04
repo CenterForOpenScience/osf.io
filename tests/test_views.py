@@ -33,7 +33,7 @@ from website.project.views.contributor import (
     send_claim_email,
     deserialize_contributors,
     send_claim_registered_email,
-    notify_contributor
+    notify_added_contributor
 )
 from website.profile.utils import add_contributor_json, serialize_unregistered
 from website.profile.views import fmt_date_or_none
@@ -1755,11 +1755,11 @@ class TestAddingContributorViews(OsfTestCase):
     def test_notify_contributor_email_does_not_send_before_throttle_expires(self, send_mail):
         contributor = UserFactory()
         project = ProjectFactory()
-        notify_contributor(project, contributor)
+        notify_added_contributor(project, contributor)
         assert_true(send_mail.called)
 
         # 2nd call does not send email because throttle period has not expired
-        notify_contributor(project, contributor)
+        notify_added_contributor(project, contributor)
         assert_equal(send_mail.call_count, 1)
 
     @mock.patch('website.mails.send_mail')
@@ -1768,11 +1768,11 @@ class TestAddingContributorViews(OsfTestCase):
 
         contributor = UserFactory()
         project = ProjectFactory()
-        notify_contributor(project, contributor, throttle=throttle)
+        notify_added_contributor(project, contributor, throttle=throttle)
         assert_true(send_mail.called)
 
         time.sleep(1)  # throttle period expires
-        notify_contributor(project, contributor, throttle=throttle)
+        notify_added_contributor(project, contributor, throttle=throttle)
         assert_equal(send_mail.call_count, 2)
 
     def test_add_multiple_contributors_only_adds_one_log(self):
