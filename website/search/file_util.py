@@ -18,7 +18,7 @@ def file_indexing(func):
     def wrapper(*args, **kwargs):
         if settings.USE_FILE_INDEXING:
             return func(*args, **kwargs)
-        raise exceptions.FileIndexingNotEnabledError('file indexing is not currently enabled.')
+        return None
     return wrapper
 
 

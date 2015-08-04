@@ -398,29 +398,3 @@ class TestProjectPrivacyUpdatesSearch(FileIndexingTestCase):
 
             assert_true(delete_all_mock.called)
             assert_false(update_all_mock.called)
-
-
-class TestIndexingDisablable(FileIndexingTestCase):
-    @patch_context
-    def test_create_follows_settings(self):
-        self.project.set_privacy('public')
-        settings.USE_FILE_INDEXING = False
-        with self.assertRaises(exceptions.FileIndexingNotEnabledError):
-            wb_update_search(self.project, 'create', self.addon, self.file_node.name, None)
-
-    @patch_context
-    def test_copy_follows_settings(self):
-        self.project.set_privacy('public')
-        settings.USE_FILE_INDEXING = False
-        with self.assertRaises(exceptions.FileIndexingNotEnabledError):
-            wb_update_search(self.project, 'copy', self.addon, self.file_node.name, None)
-
-
-    @patch_context
-    def test_move_follows_settings(self):
-        other_project = ProjectWithAddonFactory()
-        other_project.set_privacy('public')
-        self.project.set_privacy('public')
-        settings.USE_FILE_INDEXING = False
-        with self.assertRaises(exceptions.FileIndexingNotEnabledError):
-            wb_update_search(other_project, 'move', self.addon, self.file_node.name, self.project._id)

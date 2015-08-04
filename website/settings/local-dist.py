@@ -22,6 +22,8 @@ USE_CELERY = False
 # Comment out to use GnuPG in development
 USE_GNUPG = False  # Changing this may require you to re-enter encrypted fields
 
+USE_FILE_INDEXING = True
+
 # Email
 USE_EMAIL = False
 MAIL_SERVER = 'localhost:1025'  # For local testing
@@ -50,6 +52,3 @@ USE_CDN_FOR_CLIENT_LIBS = False
 # Example of extending default settings
 # defaults.IMG_FMTS += ["pdf"]
 
-# File indexing
-USE_FILE_INDEXING = True
-MAX_INDEXED_FILE_SIZE = 250 * int(1000**2)  # bytes

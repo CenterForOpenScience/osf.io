@@ -25,9 +25,9 @@ from website import settings
 from website.filters import gravatar
 from website.models import User, Node
 from website.search import exceptions
+from website.search import file_util
 from website.search.util import build_query
 from website.util import sanitize
-from website.search import file_util
 from website.views import validate_page_num
 
 logger = logging.getLogger(__name__)
