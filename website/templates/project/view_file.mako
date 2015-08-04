@@ -170,7 +170,6 @@
             safeName: '${file_name | h,js_str}',
             materializedPath: '${materialized_path | js_str}',
           urls: {
-              external: '${(urls['external'] or '') | js_str}',
         %if error is None:
               render: '${urls['render']}',
         %endif
@@ -195,6 +194,7 @@
           canEdit: ${int(user['can_edit'])}
         }
       });
+    window.contextVars.file.urls.external = window.contextVars.file.extra.webView;
     </script>
 
     <link href="/static/css/pages/file-view-page.css" rel="stylesheet">
