@@ -4519,7 +4519,8 @@ class TestDraftRegistrationViews(OsfTestCase):
             auth=self.user.auth
         )
 
-        assert_equal(res.status_code, 201)
+        # register_draft_registration returns http.ACCEPTED not CREATED
+        assert_equal(res.status_code, 202)
 
         registration = Node.find().sort('-registered_date')[0]
 

@@ -3248,21 +3248,17 @@ class DraftRegistration(AddonModelMixin, StoredObject):
 
     # Dictionary field mapping a draft's states during the review process to their value
     # { 'isApproved': false, 'isPendingReview': false, 'paymentSent': false }
-    # flags = fields.DictionaryField()
+    flags = fields.DictionaryField()
 
     def __init__(self, *args, **kwargs):
         super(DraftRegistration, self).__init__(*args, **kwargs)
-        # TODO (samchrisinger): uncomment when we have flags/config
-        #meta_schema = self.registration_schema  # or kwargs.get('registration_schema')
-        #if meta_schema:
-        #    schema = meta_schema.schema
-        #    config = schema.get('config', {})
-        #    self.config = config
-        # TODO: uncomment to set flags
-        #     if not self.registration_schema:
-        #         flags = schema.get('flags', {})
-        #         for flag, value in flags.iteritems():
-        #             self.flags[flag] = value
+        meta_schema = self.registration_schema or kwargs.get('registration_schema')
+        if meta_schema:
+            schema = meta_schema.schema
+            if not self.registration_schema:
+                flags = schema.get('flags', {})
+                for flag, value in flags.iteritems():
+                    self.flags[flag] = value
 
     @property
     def requires_approval(self):
@@ -3277,9 +3273,8 @@ class DraftRegistration(AddonModelMixin, StoredObject):
         return self.approval.is_approved if self.requires_approval else True
 
     def update_metadata(self, metadata, save=True):
-        # TODO: uncommnet to disallow editing drafts that are approved or pending approval
-        # if self.is_pending_review or self.is_approved:
-        #    raise NodeStateError('Cannot edit while this draft is being reviewed')
+        if self.is_pending_review or self.is_approved:
+            raise NodeStateError('Cannot edit while this draft is being reviewed')
         changes = []
         for key, value in metadata.iteritems():
             old_value = self.registration_metadata.get(key)
@@ -3288,30 +3283,27 @@ class DraftRegistration(AddonModelMixin, StoredObject):
         self.registration_metadata.update(metadata)
         if save:
             self.save()
-        # TODO: uncomment to nullify approval state if edited
-        # project_signals.draft_edited.send(self, changes)
-        # self.after_edit(changes)
+        project_signals.draft_edited.send(changes)
+        self.after_edit(changes)
         return changes
 
     def before_edit(self, auth):
+		# TOOD(samchrisinger): Make sure we still need this
         messages = []
-        # TODO: uncomment to provide pre-edit warnings for drafts that are approved or are pending approval
-        # if self.flags.get('isApproved'):
-        #     messages.append('The draft registration you are editing is currently approved. Please note that if you make any changes (excluding comments) this approval status will be revoked and you will need to submit for approval again.')
-        # if self.flags.get('isPendingReview'):
-        #     messages.append('The draft registration you are editing is currently pending review. Please note that if you make any changes (excluding comments) this request will be cancelled and you will need to submit for approval again.')
+        if self.flags.get('isApproved'):
+            messages.append('The draft registration you are editing is currently approved. Please note that if you make any changes (excluding comments) this approval status will be revoked and you will need to submit for approval again.')
+        if self.flags.get('isPendingReview'):
+            messages.append('The draft registration you are editing is currently pending review. Please note that if you make any changes (excluding comments) this request will be cancelled and you will need to submit for approval again.')
         return messages
 
     def after_edit(self, changes):
-        pass
-        # TODO: uncomment when we support review/approval
-        ## revoke approval and review status if changed
-        #if changes:
-        #    self.flags.update({
-        #        'isPendingReview': False,
-        #        'isApproved': False
-        #    })
-        #    self.save()
+
+        if changes:
+            self.flags.update({
+                'isPendingReview': False,
+                'isApproved': False
+            })
+            self.save()
 
     def find_question(self, qid):
         for page in self.registration_schema.schema['pages']:
@@ -3319,26 +3311,25 @@ class DraftRegistration(AddonModelMixin, StoredObject):
                 if question_id == qid:
                     return question
 
-    # TODO: uncomment when we support commenting
-    # def get_comments(self):
-    #    """ Returns a list of all comments made on a draft in the format of :
-    #    [{
-    #      [QUESTION_ID]: {
-    #        'question': [QUESTION],
-    #        'comments': [LIST_OF_COMMENTS]
-    #        }
-    #    },]
-    #    """
-    #
-    #    all_comments = []
-    #    for question_id, value in self.registration_metadata.iteritems():
-    #        all_comments.append({
-    #            question_id: {
-    #                'question': self.find_question(question_id),
-    #                'comments': value['comments'] if 'comments' in value else ''
-    #            }
-    #        })
-    #    return all_comments
+    def get_comments(self):
+        """ Returns a list of all comments made on a draft in the format of :
+        [{
+          [QUESTION_ID]: {
+            'question': [QUESTION],
+            'comments': [LIST_OF_COMMENTS]
+           }
+        },]
+       """
+
+        all_comments = []
+        for question_id, value in self.registration_metadata.iteritems():
+            all_comments.append({
+                question_id: {
+                    'question': self.find_question(question_id),
+                    'comments': value['comments'] if 'comments' in value else ''
+                }
+            })
+        return all_comments
 
     def register(self, auth):
 

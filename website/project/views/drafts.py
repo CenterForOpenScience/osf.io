@@ -18,7 +18,8 @@ from website.project.decorators import (
     must_have_permission,
     http_error_if_disk_saving_mode
 )
-# from website.mails import Mail, send_mail
+from website import settings
+from website.mails import Mail, send_mail
 from website.project import utils as project_utils
 from website.project.model import MetaSchema, DraftRegistration, DraftRegistrationApproval
 from website.project.metadata.utils import serialize_meta_schema, serialize_draft_registration
@@ -27,22 +28,21 @@ from website.project.utils import serialize_node
 get_schema_or_fail = lambda query: get_or_http_error(MetaSchema, query)
 autoload_draft = functools.partial(autoload, DraftRegistration, 'draft_id', 'draft')
 
-# TODO: uncomment to allow submitting drafts for review
-# @must_have_permission(ADMIN)
-# @must_be_valid_project
-# def submit_draft_for_review(auth, node, draft_pk, *args, **kwargs):
-#     user = auth.user
-#
-#     draft = get_draft_or_fail(draft_pk)
-#     draft.is_pending_review = True
-#     draft.save()
-#
-#     REVIEW_EMAIL = Mail(tpl_prefix='prereg_review', subject='New Prereg Prize registration ready for review')
-#     send_mail(draft.initiator.email, REVIEW_EMAIL, user=user, src=node)
-#
-#     ret = project_utils.serialize_node(node, auth)
-#     ret['success'] = True
-#     return ret
+@must_have_permission(ADMIN)
+@must_be_valid_project
+def submit_draft_for_review(auth, node, draft_pk, *args, **kwargs):
+    user = auth.user
+
+    draft = get_draft_or_fail(draft_pk)
+    draft.is_pending_review = True
+    draft.save()
+
+    REVIEW_EMAIL = Mail(tpl_prefix='prereg_review', subject='New Prereg Prize registration ready for review')
+    send_mail(draft.initiator.email, REVIEW_EMAIL, user=user, src=node)
+
+    ret = project_utils.serialize_node(node, auth)
+    ret['success'] = True
+    return ret
 
 @autoload_draft
 @must_have_permission(ADMIN)

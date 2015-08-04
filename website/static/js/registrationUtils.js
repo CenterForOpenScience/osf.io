@@ -46,9 +46,9 @@ function Comment(data) {
 
     self.isDeleted = ko.observable(data.isDeleted || false);
     self.isDeleted.subscribe(function(isDeleted) {
-      if (isDeleted) {
-        self.value('');
-      }
+        if (isDeleted) {
+            self.value('');
+        }
     });
 
     self.seenBy = ko.observableArray([self.user.id] || []);
@@ -56,19 +56,19 @@ function Comment(data) {
      * Returns the author as the actual user, not 'You'
      **/
     self.author = ko.pureComputed(function() {
-      return self.user.fullname;
+        return self.user.fullname;
     });
 
     /**
      * Returns 'You' if the current user is the commenter, else the commenter's name
      */
     self.getAuthor = ko.pureComputed(function() {
-      if (self.user.id === currentUser.id) {
-        return 'You';
-      }
-      else {
-        return self.user.fullname;
-      }
+        if (self.user.id === currentUser.id) {
+            return 'You';
+        }
+        else {
+            return self.user.fullname;
+        }
     });
 
     /**
@@ -106,19 +106,19 @@ Comment.prototype.viewComment = function(user) {
 };
 
 var validate = function(checks, message, value, required) {
-    required = required || false;        
+    required = required || false;
     var valid = true;
     var blank = $osf.isBlank(value);
     if (required && blank) {
         return {
-            status: false, 
+            status: false,
             messages: ['This field is required']
         };
     }
     else if (!required && blank) {
         return {
             status: true
-        };            
+        };
     }
     $.each(checks, function(i, check) {
         var passed = check(value);
@@ -127,7 +127,7 @@ var validate = function(checks, message, value, required) {
     return {
         status: valid,
         message: !valid ? message: ''
-    }; 
+    };
 };
 
 var validators = {
@@ -206,7 +206,7 @@ var Question = function(data, id) {
     });
     /**
      * @returns {Boolean}
-     **/ 
+     **/
     self.validationStatus = ko.computed(function() {
         var valid = self.valid();
         return {
@@ -238,8 +238,8 @@ Question.prototype.addComment = function(save) {
         value: self.nextComment()
     });
     comment.seenBy.push(currentUser.id);
-    self.nextComment('');
     self.comments.push(comment);
+    self.nextComment('');
 };
 /**
  * Shows/hides the Question example
@@ -254,7 +254,7 @@ Question.prototype.toggleUploader = function(){
     this.showUploader(!this.showUploader());
 };
 /**
- * @returns {object} valid 
+ * @returns {object} valid
  * @returns {Boolean} valid.status
  * @returns {String[]} valid.messages
  **/
@@ -267,7 +267,7 @@ Question.prototype.valid = function() {
         return validator(value, self.required);
     }
     else {
-        return validate([], '', value, self.required); 
+        return validate([], '', value, self.required);
     }
 };
 
@@ -388,7 +388,7 @@ var Draft = function(params, metaSchema) {
                     total++;
                 });
             });
-	    return Math.ceil(100 * (complete / total));
+            return Math.ceil(100 * (complete / total));
         }
         return 0;
     });
@@ -425,7 +425,7 @@ Draft.prototype.beforeRegister = function(data) {
     var self = this;
 
     $osf.block();
-    
+
     return $.getJSON(self.urls.before_register).then(function(response) {
         if (response.errors && response.errors.length) {
             self.preRegisterErrors(response, self.preRegisterWarnings);
@@ -510,7 +510,7 @@ var RegistrationEditor = function(urls, editorId) {
         var t = self.lastSaveTime();
         if (t) {
             return t.toGMTString();
-        } 
+        }
         else {
             return 'never';
         }
@@ -518,7 +518,7 @@ var RegistrationEditor = function(urls, editorId) {
 
     self.iterObject = $osf.iterObject;
 
-    // TODO: better extensions system? 
+    // TODO: better extensions system?
     self.extensions = {
         'osf-upload': editorExtensions.Uploader
     };
@@ -548,19 +548,17 @@ RegistrationEditor.prototype.init = function(draft) {
                     val = schemaData[question.id][prop];
                     if(val) {
                         subQuestion.value(val.value);
-                        // TODO: uncomment when we support comments
-                        //subQuestion.comments($.map(val.comments, function(data) {
-                        //    return new Comment(data);
-                        //}));
+                        subQuestion.comments($.map(val.comments, function(data) {
+                            return new Comment(data);
+                        }));
                     }
                 });
             }
             else {
                 question.value(val.value);
-                // TODO: uncomment when we support comments
-                //question.comments($.map(val.comments, function(data) {
-                //    return new Comment(data);
-                //}));
+                question.comments($.map(val.comments, function(data) {
+                    return new Comment(data);
+                }));
             }
         }
     });
@@ -605,39 +603,38 @@ RegistrationEditor.prototype.check = function() {
         proceed = proceed && valid.status;
     });
     if (!proceed) {
-        self.showValidation(true);    
+        self.showValidation(true);
     }
     else {
         window.location = self.draft().urls.register_page;
     }
 };
-// TODO: uncomment when we support commenting
-//RegistrationEditor.prototype.viewComments = function() {
-//    var self = this;
-//    
-//    var comments = self.currentQuestion().comments();
-//    $.each(comments, function(index, comment) {
-//        if (comment.seenBy().indexOf(currentUser.id) === -1) {
-//            comment.seenBy.push(currentUser.id);
-//        }
-//    });
-//};
-//RegistrationEditor.prototype.getUnseenComments = function(qid) {
-//    var self = this;
-//
-//    var question = self.draft().schemaData[qid];
-//    var comments = question.comments || [];
-//    for (var key in question) {
-//        if (key === 'comments') {
-//            for (var i = 0; i < question[key].length - 1; i++) {
-//                if (question[key][i].indexOf(currentUser.id) === -1) {
-//                    comments.push(question[key][i]);
-//                }
-//            }
-//        }
-//    }
-//    return comments;
-//};
+RegistrationEditor.prototype.viewComments = function() {
+    var self = this;
+
+    var comments = self.currentQuestion().comments();
+    $.each(comments, function(index, comment) {
+        if (comment.seenBy().indexOf(currentUser.id) === -1) {
+            comment.seenBy.push(currentUser.id);
+        }
+    });
+};
+RegistrationEditor.prototype.getUnseenComments = function(qid) {
+    var self = this;
+
+    var question = self.draft().schemaData[qid];
+    var comments = question.comments || [];
+    for (var key in question) {
+        if (key === 'comments') {
+            for (var i = 0; i < question[key].length - 1; i++) {
+                if (question[key][i].indexOf(currentUser.id) === -1) {
+                    comments.push(question[key][i]);
+                }
+            }
+        }
+    }
+    return comments;
+};
 /**
  * Load the next question into the editor, wrapping around if needed
  **/
@@ -652,11 +649,11 @@ RegistrationEditor.prototype.nextQuestion = function() {
     });
     if(index + 1 === questions.length) {
         self.currentQuestion(questions.shift());
-        //self.viewComments();
+        self.viewComments();
     }
     else {
         self.currentQuestion(questions[index + 1]);
-        //self.viewComments();
+        self.viewComments();
     }
 };
 /**
@@ -673,11 +670,11 @@ RegistrationEditor.prototype.previousQuestion = function() {
     });
     if(index - 1 < 0){
         self.currentQuestion(questions.pop());
-        //self.viewComments();
+        self.viewComments();
     }
     else {
         self.currentQuestion(questions[index - 1]);
-        //self.viewComments();
+        self.viewComments();
     }
 };
 /**
@@ -688,7 +685,7 @@ RegistrationEditor.prototype.selectPage = function(page) {
 
     var firstQuestion = page.questions[Object.keys(page.questions)[0]];
     self.currentQuestion(firstQuestion);
-    //self.viewComments();
+    self.viewComments();
 };
 /**
  * Update draft primary key and updated time on server response
@@ -702,62 +699,61 @@ RegistrationEditor.prototype.updateData = function(response) {
     self.draft(draft);
 };
 // TODO: uncomment to allow submit for review
-//RegistrationEditor.prototype.submitForReview = function() {
-//    var self = this;
-//
-//    var messages = self.draft().messages;
-//    bootbox.confirm(messages.beforeSubmitForApproval, function(result) {
-//	if(result) {
-//	    $osf.postJSON(self.urls.submit.replace('{draft_pk}', self.draft().pk), {}).then(function() {
-//		bootbox.dialog({
-//                    closeButton: false,
-//		    message: messages.afterSubmitForApproval,
-//		    title: 'Pre-Registration Prize Submission',
-//		    buttons: {
-//                        registrations: {
-//                            label: 'Return to registrations page',
-//                            className: 'btn-primary pull-right',
-//                            callback: function() {
-//                                window.location.href = self.draft().urls.registrations;
-//                            }
-//                        }
-//		    }
-//		});
-//            }).fail($osf.growl.bind(null, 'Error submitting for review', language.submitForReviewFail));
-//	}
-//    });
-//};
-// TODO: uncomment when we allow submitting for review
-//RegistrationEditor.prototype.submit = function() {
-//    var self = this;
-//
-//    var currentNode = window.contextVars.node;
-//    var currentUser = window.contextVars.currentUser;
-//
-//    var messages = self.draft().messages;
-//    bootbox.confirm(messages.beforeSubmitForApproval, function(result) {
-//        if(result) {
-//            $osf.postJSON(self.urls.submit.replace('{draft_pk}', self.draft().pk), {
-//                node: currentNode,
-//                auth: currentUser
-//            }).then(function() {
-//                bootbox.dialog({
-//                    message: messages.afterSubmitForApproval,
-//                    title: 'Pre-Registration Prize Submission',
-//                    buttons: {
-//                        registrations: {
-//                            label: 'Return to registrations page',
-//                            className: 'btn-primary pull-right',
-//                            callback: function() {
-//                                window.location.href = self.draft().urls.registrations;
-//                            }
-//                        }
-//                    }
-//                });
-//            }).fail($osf.growl.bind(null, 'Error submitting for review', language.submitForReviewFail));
-//        }
-//    });
-//};
+// RegistrationEditor.prototype.submitForReview = function() {
+//     var self = this;
+
+//     var messages = self.draft().messages;
+//     bootbox.confirm(messages.beforeSubmitForApproval, function(result) {
+//         if(result) {
+//             $osf.postJSON(self.urls.submit.replace('{draft_pk}', self.draft().pk), {}).then(function() {
+//                 bootbox.dialog({
+//                     closeButton: false,
+//                     message: messages.afterSubmitForApproval,
+//                     title: 'Pre-Registration Prize Submission',
+//                     buttons: {
+//                         registrations: {
+//                             label: 'Return to registrations page',
+//                             className: 'btn-primary pull-right',
+//                             callback: function() {
+//                                 window.location.href = self.draft().urls.registrations;
+//                             }
+//                         }
+//                     }
+//                 });
+//             }).fail($osf.growl.bind(null, 'Error submitting for review', language.submitForReviewFail));
+//         }
+//     });
+// };
+// RegistrationEditor.prototype.submit = function() {
+//     var self = this;
+
+//     var currentNode = window.contextVars.node;
+//     var currentUser = window.contextVars.currentUser;
+
+//     var messages = self.draft().messages;
+//     bootbox.confirm(messages.beforeSubmitForApproval, function(result) {
+//         if(result) {
+//             $osf.postJSON(self.urls.submit.replace('{draft_pk}', self.draft().pk), {
+//                 node: currentNode,
+//                 auth: currentUser
+//             }).then(function() {
+//                 bootbox.dialog({
+//                     message: messages.afterSubmitForApproval,
+//                     title: 'Pre-Registration Prize Submission',
+//                     buttons: {
+//                         registrations: {
+//                             label: 'Return to registrations page',
+//                             className: 'btn-primary pull-right',
+//                             callback: function() {
+//                                 window.location.href = self.draft().urls.registrations;
+//                             }
+//                         }
+//                     }
+//                 });
+//             }).fail($osf.growl.bind(null, 'Error submitting for review', language.submitForReviewFail));
+//         }
+//     });
+// };
 /**
  * Create a new draft
  **/
@@ -791,14 +787,16 @@ RegistrationEditor.prototype.save = function() {
                 var value = {};
                 $.each(question.properties, function(prop, subQuestion) {
                     value[prop] = {
-                        value: subQuestion.value()
+                        value: subQuestion.value(),
+                        comments: ko.toJS(subQuestion.comments())
                     };
                 });
                 data[qid] = value;
             }
             else {
                 data[qid] = {
-                    value: question.value()
+                    value: question.value(),
+                    comments: ko.toJS(question.comments())
                 };
             }
         });
@@ -814,7 +812,6 @@ RegistrationEditor.prototype.save = function() {
             schema_data: data
         });
     }
-
     return true;
 };
 
@@ -932,21 +929,21 @@ RegistrationManager.prototype.maybeWarn = function(draft) {
     var redirect = function() {
         window.location.href = draft.urls.edit;
     };
-    // TODO: uncomment this for pre-edit warnings
-    //var callback = function(confirmed) {
-    //   if(confirmed) {
-    //        redirect();
-    //    }
-    //};
-    //if (draft.isApproved) {
-    //    bootbox.confirm(language.beforeEditIsApproved, callback);
-    //}
-    //else if (draft.isPendingReview) {
-    //    bootbox.confirm(language.beforeEditIsPendingReview, callback);
-    //}
-    //else {
+    var callback = function(confirmed) {
+        if(confirmed) {
+            redirect();
+        }
+    };
+    // TODO: Uncomment to support approvals
+    // if (draft.isApproved) {
+    //     bootbox.confirm(language.beforeEditIsApproved, callback);
+    // }
+    // else if (draft.isPendingReview) {
+    //     bootbox.confirm(language.beforeEditIsPendingReview, callback);
+    // }
+    // else {
     redirect();
-    //}
+    // }
 };
 
 module.exports = {
