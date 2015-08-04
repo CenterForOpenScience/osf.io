@@ -746,7 +746,7 @@ var confirmDangerousAction = function (options) {
                 className: 'btn-default'
             },
             success: {
-                label: 'Confirm',
+                label: options.confirmBtnLabel,
                 className: 'btn-danger',
                 callback: handleConfirmAttempt
             }
