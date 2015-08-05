@@ -237,15 +237,6 @@ utils.arrayEqual = function (a, b) {
     return $(a).not(b).length === 0 && $(b).not(a).length === 0;
 };
 
-utils.addFiltersToQuery = function (query, filters) {
-    if (filters) {
-        filters.forEach(function (filter) {
-            query = utils.filteredQuery(query, filter.filter);
-        });
-    }
-    return query;
-};
-
 /* Loads the raw and normalized data for a specific result */
 utils.loadRawNormalized = function(result){
     var nonJsonErrors = function(xhr) {
