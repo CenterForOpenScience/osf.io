@@ -43,8 +43,10 @@ from website.util import rubeus
 from website.project.views.node import _view_project, abbrev_authors, _should_show_wiki_widget
 from website.project.views.comment import serialize_comment
 from website.project.decorators import check_can_access
+from website.project.signals import contributor_added
 from website.addons.github.model import AddonGitHubOauthSettings
 from website.archiver import utils as archiver_utils
+
 
 from tests.base import (
     OsfTestCase,
@@ -1626,6 +1628,7 @@ class TestAddingContributorViews(OsfTestCase):
         self.project = ProjectFactory(creator=self.creator)
         # Authenticate all requests
         self.app.authenticate(*self.creator.auth)
+        contributor_added.connect(notify_added_contributor)
 
     def test_serialize_unregistered_without_record(self):
         name, email = fake.name(), fake.email()
@@ -1935,6 +1938,10 @@ class TestAddingContributorViews(OsfTestCase):
         child.reload()
         assert_equal(len(child.contributors),
                      n_contributors_pre + len(payload['users']))
+
+    def tearDown(self):
+        super(TestAddingContributorViews, self).tearDown()
+        contributor_added.disconnect(notify_added_contributor)
 
 
 class TestUserInviteViews(OsfTestCase):
