@@ -2883,7 +2883,7 @@ class Sanction(StoredObject):
     ApprovalNotAuthorized = PermissionsError('This user is not authorized to approve this sanction')
     ApprovalInvalidToken = InvalidSanctionApprovalToken('Invalid approval token provided.')
     RejectionNotAuthorized = PermissionsError('This user is not authorized to reject this sanction')
-    RejectionInvalidTokeni = InvalidSanctionRejectionToken('Invalid rejection token provided.')
+    RejectionInvalidToken = InvalidSanctionRejectionToken('Invalid rejection token provided.')
 
     _id = fields.StringField(primary=True, default=lambda: str(ObjectId()))
     initiation_date = fields.DateTimeField(auto_now_add=datetime.datetime.utcnow)
@@ -2897,7 +2897,7 @@ class Sanction(StoredObject):
     #   'b3k97': {
     #     'has_approved': False,
     #     'approval_token': 'Pew7wj1Puf7DENUPFPnXSwa1rf3xPN',
-    #     'disapproval_token': 'TwozClTFOic2PYxHDStby94bCQMwJy'}
+    #     'rejection_token': 'TwozClTFOic2PYxHDStby94bCQMwJy'}
     # }
     approval_state = fields.DictionaryField()
     # One of 'unapproved', 'active', 'cancelled', or 'completed
@@ -2922,7 +2922,7 @@ class Sanction(StoredObject):
             self.approval_state[user._id] = {
                 'has_approved': approved,
                 'approval_token': security.random_string(30),
-                'disapproval_token': security.random_string(30),
+                'rejection_token': security.random_string(30),
             }
             if save:
                 self.save()
@@ -2935,19 +2935,6 @@ class Sanction(StoredObject):
             self.save()
             return True
         return False
-
-    def _notify_authorizer(self, authorizer):
-        pass
-
-    def _notify_non_authorizer(self, user):
-        pass
-
-    def ask(self, group):
-        for user in group:
-            if user._id in self.approval_state:
-                self._notify_authorizer(user)
-            else:
-                self._nofify_non_authorizer(user)
 
     def _on_approve(self, user, token):
         if all(authorizer['has_approved'] for authorizer in self.approval_state.values()):
@@ -2986,6 +2973,38 @@ class EmailApprovableSanction(Sanction):
 
     AUTHORIZER_NOTIFY_TEMPLATE = None
     NON_AUTHORIZER_NOTIFY_TEMPLATE = None
+
+    # Store a persistant copy of urls for use when needed outside of a request context.
+    # This field gets automagically updated whenever models approval_state is modified
+    # and the model is saved
+    # {
+    #   'abcde': {
+    #     'approve': [APPROVAL_URL],
+    #     'reject': [REJECT_URL],
+    #   }
+    # }
+    stashed_urls = fields.DictionaryField(default={})
+
+    def _view_url(self, user_id):
+        return ''
+
+    def _approval_url(self, user_id):
+        return ''
+
+    def _rejection_url(self, user_id):
+        return ''
+
+    def save(self, *args, **kwargs):
+        fields_changed = super(EmailApprovableSanction, self).save(*args, **kwargs)
+        if 'approval_state' in fields_changed:
+            self.stashed_urls = {
+                user_id: {
+                    'view': self._view_url(user_id),
+                    'approve': self._approval_url(user_id),
+                    'reject': self._rejection_url(user_id)
+                } for user_id in self.approval_state.keys()
+            }
+            self.save()  # Recursive, but terminating after 1 call
 
     def _send_approval_request_email(self, user, template, context):
         mails.send_mail(
@@ -3029,50 +3048,6 @@ class Embargo(EmailApprovableSanction):
             self.end_date,
             self._id
         )
-
-    def _get_embargo_urls(self, node, user):
-        approval_token, disapproval_token = None, None
-        if node.has_permission(user, ADMIN):
-            approval_token = node.embargo.approval_state[user._id]['approval_token']
-            disapproval_token = node.embargo.approval_state[user._id]['disapproval_token']
-
-        return {
-            'view': node.web_url_for('view_project', _absolute=True),
-            'approve': node.web_url_for(
-                'node_registration_embargo_approve',
-                token=approval_token,
-                _absolute=True
-            ) if approval_token else None,
-            'disapprove': node.web_url_for(
-                'node_registration_embargo_disapprove',
-                token=disapproval_token,
-                _absolute=True
-            ) if disapproval_token else None,
-        }
-
-    def _email_template_context(self, user, is_authorizer=False, urls=None):
-        registration = Node.find_one(Q('embargo', 'eq', self))
-        urls = urls or self._get_embargo_urls(registration, user)
-        registration_link = urls['view']
-        if is_authorizer:
-            approval_link = urls['approve']
-            disapproval_link = urls['disapprove']
-            approval_time_span = settings.EMBARGO_PENDING_TIME.days * 24
-
-            return {
-                'initiated_by': self.initiated_by.fullname,
-                'registration_link': registration_link,
-                'approval_link': approval_link,
-                'dispproval_link': disapproval_link,
-                'embargo_end_date': self.end_date,
-                'approval_time_span': approval_time_span,
-            }
-        else:
-            return {
-                'initiated_by': self.initiated_by.fullname,
-                'registration_link': registration_link,
-                'embargo_end_date': self.end_date,
-            }
 
     @property
     def embargo_end_date(self):
@@ -3121,7 +3096,7 @@ class Embargo(EmailApprovableSanction):
                 'embargo_id': self._id,
             },
             auth=Auth(user),
-        )
+        )    
 
     def approve_embargo(self, user, token):
         """Add user to approval list if user is admin and token verifies."""
@@ -3134,6 +3109,9 @@ class Retraction(EmailApprovableSanction):
     ApprovalInvalidToken = InvalidRetractionApprovalToken('Invalid retraction approval token provided.')
     RejectionNotAuthorized = PermissionsError('User must be an admin to disapprove a retraction of a registration.')
     RejectionInvalidToken = InvalidRetractionDisapprovalToken('Invalid retraction disapproval token provided.')
+    
+    AUTHORIZER_NOTIFY_TEMPLATE = mails.PENDING_RETRACTION_ADMIN
+    NON_AUTHORIZER_NOTIFY_TEMPLATE = mails.PENDING_RETRACTION_ADMIN_NON_ADMIN
 
     initiated_by = fields.ForeignField('user', backref='retracted')
     justification = fields.StringField(default=None, validate=MaxLengthValidator(2048))
@@ -3147,48 +3125,51 @@ class Retraction(EmailApprovableSanction):
             self._id
         )
 
-    def _get_embargo_urls(self, node, user):
-        approval_token, disapproval_token = None, None
-        if node.has_permission(user, ADMIN):
-            approval_token = node.embargo.approval_state[user._id]['approval_token']
-            disapproval_token = node.embargo.approval_state[user._id]['disapproval_token']
+    def _view_url(self, user_id):
+        registration = Node.find_one(Q('embargo', 'eq', self))
+        return registration.web_url_for('view_project', _absolute=True)
 
-        return {
-            'view': node.web_url_for('view_project', _absolute=True),
-            'approve': node.web_url_for(
-                'node_registration_embargo_approve',
+    def _approve_url(self, user_id):
+        approval_token = self.approval_state.get(user_id, {}).get('approval_token')
+        if approval_token:
+            registration = Node.find_one(Q('embargo', 'eq', self))
+            return registration.web_url_for(
+                'node_registration_retraction_approve',
                 token=approval_token,
                 _absolute=True
-            ) if approval_token else None,
-            'disapprove': node.web_url_for(
-                'node_registration_embargo_disapprove',
-                token=disapproval_token,
+            ) if approval_token else None
+        return None
+
+    def _rejection_url(self, user_id):
+        rejection_token = self.approval_state.get(user_id, {}).get('rejection_token')
+        if rejection_token:
+            registration = Node.find_one(Q('embargo', 'eq', self))
+            return registration.web_url_for(
+                'node_registration_retraction_disapprove',
+                token=rejection_token,
                 _absolute=True
-            ) if disapproval_token else None,
-        }
+            ) if rejection_token else None
+        return None
 
     def _email_template_context(self, user, is_authorizer=False, urls=None):
-        registration = Node.find_one(Q('embargo', 'eq', self))
-        urls = urls or self._get_embargo_urls(registration, user)
+        urls = urls or self.stashed_urls
         registration_link = urls['view']
         if is_authorizer:
             approval_link = urls['approve']
-            disapproval_link = urls['disapprove']
-            approval_time_span = settings.EMBARGO_PENDING_TIME.days * 24
+            disapproval_link = urls['reject']
+            approval_time_span = settings.RETRACTION_PENDING_TIME.days * 24
 
             return {
                 'initiated_by': self.initiated_by.fullname,
                 'registration_link': registration_link,
                 'approval_link': approval_link,
                 'dispproval_link': disapproval_link,
-                'embargo_end_date': self.end_date,
                 'approval_time_span': approval_time_span,
             }
         else:
             return {
                 'initiated_by': self.initiated_by.fullname,
                 'registration_link': registration_link,
-                'embargo_end_date': self.end_date,
             }
 
     @property
@@ -3249,9 +3230,62 @@ class Retraction(EmailApprovableSanction):
     def disapprove_retraction(self, user, token):
         self.reject(user, token)
 
-class RegistrationApproval(Sanction):
+class RegistrationApproval(EmailApprovableSanction):
 
     initiated_by = fields.ForeignField('user', backref='registration_approved')
+
+    # TODO (HarryRybacki): Add email templates
+    AUTHORIZER_NOTIFY_TEMPLATE = None
+    NON_AUTHORIZER_NOTIFY_TEMPLATE = None
+
+    def _view_url(self, user_id):
+        registration = Node.find_one(Q('embargo', 'eq', self))
+        return registration.web_url_for('view_project', _absolute=True)
+
+    def _approval_url(self, user_id):
+        approval_token = self.approval_state.get(user_id, {}).get('approval_token')
+        if approval_token:
+            registration = Node.find_one(Q('embargo', 'eq', self))
+            return registration.web_url_for(
+                'node_registration_embargo_approve',
+                token=approval_token,
+                _absolute=True
+            )
+        return None
+
+    def _rejection_url(self, user_id):
+        rejection_token = self.approval_state.get(user_id, {}).get('rejection_token')
+        if rejection_token:
+            registration = Node.find_one(Q('embargo', 'eq', self))
+            return registration.web_url_for(
+                'node_registration_embargo_disapprove',
+                token=rejection_token,
+                _absolute=True
+            )
+        return None
+
+    def _email_template_context(self, user, is_authorizer=False, urls=None):
+        urls = urls or self.stashed_urls
+        registration_link = urls['view']
+        if is_authorizer:
+            approval_link = urls['approve']
+            disapproval_link = urls['reject']
+            approval_time_span = settings.EMBARGO_PENDING_TIME.days * 24
+
+            return {
+                'initiated_by': self.initiated_by.fullname,
+                'registration_link': registration_link,
+                'approval_link': approval_link,
+                'dispproval_link': disapproval_link,
+                'embargo_end_date': self.end_date,
+                'approval_time_span': approval_time_span,
+            }
+        else:
+            return {
+                'initiated_by': self.initiated_by.fullname,
+                'registration_link': registration_link,
+                'embargo_end_date': self.end_date,
+            }
 
     def _on_complete(self, user, token):
         register = Node.find(Q('registration_approval', 'eq', self))

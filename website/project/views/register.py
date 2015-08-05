@@ -115,11 +115,9 @@ def node_registration_retraction_post(auth, node, **kwargs):
     try:
         node.retract_registration(auth.user, data.get('justification', None))
         node.save()
+        node.retraction.ask()
     except NodeStateError as err:
         raise HTTPError(http.FORBIDDEN, data=dict(message_long=err.message))
-
-    for contributor in node.active_contributors():
-        _send_retraction_email(node, contributor)
 
     return {'redirectUrl': node.web_url_for('view_project')}
 
@@ -519,12 +517,10 @@ def node_register_template_page_post(auth, node, **kwargs):
         schema, auth, template, json.dumps(clean_data),
     )
 
-    embargoed = False
     try:
         register = None
         if data.get('registrationChoice', 'immediate') == 'embargo':
             # Initiate embargo
-            embargoed = True
             embargo_end_date = parse_date(data['embargoEndDate'], ignoretz=True)
             register.embargo_registration(auth.user, embargo_end_date)
         else:
@@ -532,24 +528,6 @@ def node_register_template_page_post(auth, node, **kwargs):
         register.save()
     except ValidationValueError as err:
         raise HTTPError(http.BAD_REQUEST, data=dict(message_long=err.message))
-
-    meta = {}
-    if embargoed:
-        meta = {
-            'embargo_urls': {
-                contrib._id: project_utils.get_embargo_urls(register, contrib)
-                for contrib in node.active_contributors()
-            }
-        }
-    else:
-        meta = {
-            'registration_approval_urls': {
-                contrib._id: project_utils.get_registration_approval_urls(register, contrib)
-                for contrib in node.active_contributors()
-            }
-        }
-    register.archive_job.meta = meta
-    register.archive_job.save()
 
     push_status_message((
         'Files are being copied to the newly created registration, '
