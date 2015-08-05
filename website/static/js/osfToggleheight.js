@@ -18,7 +18,7 @@ var $ = require('jquery');
 // Create the defaults once
 var pluginName = 'osfToggleHeight';
 var defaults = {
-    height:  50,
+    height:  75,
     iconDown : 'fa fa-angle-down',
     iconUp : 'fa fa-angle-up'
 };
