@@ -127,10 +127,14 @@ utils.search = function(vm) {
         utils.loadMore(vm)
             .then(function (data) {
                 if (vm.loadStats) {
-                    utils.processStats(vm, data);
+                    if (data.aggregations) {
+                        utils.processStats(vm, data);
+                    } else {
+                        $osf.growl('Error', 'Could not load search statistics', 'danger');
+                    }
+                    utils.updateVM(vm, data);
+                    ret.resolve(vm);
                 }
-                utils.updateVM(vm, data);
-                ret.resolve(vm);
             });
     }
     return ret.promise;
@@ -391,38 +395,37 @@ utils.parseFilter = function (filterString) {
 };
 
 utils.processStats = function (vm, data) {
-    if (data.aggregations) {
-        $.map(Object.keys(data.aggregations), function (key) { //parse data and load correctly
-            if (vm.statsParsers[key]) {
-                var chartData = vm.statsParsers[key](data);
-                vm.statsData.charts[chartData.name] = chartData;
-                if (chartData.name in vm.graphs) {
-                    vm.graphs[chartData.name].load(chartData);
-                }
+    $.map(Object.keys(data.aggregations), function (key) { //parse data and load correctly
+        if (vm.statsParsers[key]) {
+            var chartData = vm.statsParsers[key](data);
+            vm.statsData.charts[chartData.name] = chartData;
+            if (chartData.name in vm.graphs) {
+                vm.graphs[chartData.name].load(chartData);
             }
-        });
-    } else {
-        $osf.growl('Error', 'Could not load search statistics', 'danger');
-    }
+        }
+    });
 };
 
 
-utils.updateAggs = function (currentAgg, newAgg, global) {
-    global = global || false;
+utils.updateAggs = function (currentAgg, newAgg, globalAgg) {
+    globalAgg = globalAgg || false;
+
+    //var returnAgg = currentAgg;
     if (currentAgg) {
-        if (currentAgg.all && global) {
-            $.extend(currentAgg.all.aggregations, newAgg);
+        var returnAgg = $.extend({},currentAgg);
+        if (returnAgg.all && globalAgg) {
+            $.extend(returnAgg.all.aggregations, newAgg);
         } else {
-            $.extend(currentAgg, newAgg);
+            $.extend(returnAgg, newAgg);
         }
-        return currentAgg;
+        return returnAgg;
     }
 
-    if (global) {
+    if (globalAgg) {
         return {'all': {'global': {}, 'aggregations': newAgg}};
     }
 
-    return newAgg;
+    return newAgg; //else, do nothing
 };
 
 
@@ -449,7 +452,6 @@ utils.generateColors = function (numColors) {
     var colorsToGenerate = COLORBREWER_COLORS.slice();
     var colorsUsed = [];
     var colorsOut = [];
-    var colorsNorm = [];
     var color;
     while (colorsOut.length < numColors) {
         color = colorsToGenerate.shift();
@@ -458,7 +460,6 @@ utils.generateColors = function (numColors) {
             colorsUsed = [];
         } else {
             colorsUsed.push(color);
-            colorsNorm.push(color);
             colorsOut.push(rgbToHex(color));
         }
     }
