@@ -12,7 +12,7 @@ var Results = {
         self.vm.resultsLoading = m.prop(false);
     },
     view: function(ctrl) {
-        var resultViews = $.map(ctrl.vm.results, function(result, i) {
+        var resultViews = $.map(ctrl.vm.results || [], function(result, i) {
             return m.component(Result, {result: result, vm: ctrl.vm});
         });
 
@@ -204,7 +204,7 @@ var Footer = {
                 ]) : []
             ),
             m('span.pull-right', [
-                m('img', {src: vm.ProviderMap[result.shareProperties.source].favicon, style: {width: '16px', height: '16px'}}),
+                m('img', {src: vm.ProviderMap[result.shareProperties.source].favicon, alt: 'favicon for ' + result.shareProperties.source, style: {width: '16px', height: '16px'}}),
                 ' ',
                 m('a', {onclick: function() {utils.updateFilter(vm, 'shareProperties.source:' + result.shareProperties.source);}}, vm.ProviderMap[result.shareProperties.source].long_name),
                 m('br')
