@@ -1,4 +1,17 @@
 
+/**
+* A simple UI component to use with divs that need to be collapsed or expanded.
+* Requires element to have an ID set. Options are optional, defaults are below
+*
+* Usage:
+*
+*     $('#myPicker').osfToggleHeight({
+*         height: 100, // the height that will be visible when collapsed
+*         iconDown: 'fa fa-angle-down', // icon classes for the Down icon
+*         iconUp : 'fa fa-angle-up' // icon classes for the Up icon
+*     });
+*/
+
 'use strict';
 var $ = require('jquery');
 
