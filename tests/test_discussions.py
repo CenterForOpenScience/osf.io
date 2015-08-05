@@ -166,14 +166,14 @@ class TestEmailRejections(OsfTestCase):
 
     def setUp(self):
         super(TestEmailRejections, self).setUp()
-        self.user = UserFactory()
+        self.user = AuthUserFactory()
         self.user.reload()
         self.project = ProjectFactory(creator=self.user, parent=None)
         # TODO this email will need to be updated when we start logging, since an actual message,
         # and potentially other dictionary items, will become necessary
         self.message = {
             'To': '{}@osf.io'.format(self.project._id),
-            'From': unicode(self.user.email),
+            'From': self.user.email,
             'subject': 'Hi, Friend!',
             'stripped-text': 'Are you really my friend?'
         }
@@ -192,13 +192,14 @@ class TestEmailRejections(OsfTestCase):
         self.app.post(self.post_url, self.message)
 
         mock_send_mail.assert_called_with(
-            node_url='',
-            to_addr='non-email@osf.fake',
-            node_type='',
-            target_address=self.message['To'],
             reason='no_user',
+            to_addr='non-email@osf.fake',
+            mail=mails.DISCUSSIONS_EMAIL_REJECTED,
+            target_address='{}@osf.io'.format(self.project._id),
             user=None,
-            mail=mails.DISCUSSIONS_EMAIL_REJECTED
+            node_type='project',
+            node_url=self.project.absolute_url,
+            is_admin=False
         )
 
     @mock.patch('website.mails.send_mail')
@@ -208,51 +209,71 @@ class TestEmailRejections(OsfTestCase):
         self.app.post(self.post_url, self.message)
 
         mock_send_mail.assert_called_with(
-            node_url='',
+            reason='node_dne',
             to_addr=self.user.email,
-            node_type='',
-            target_address=self.message['To'],
-            reason='project_dne',
+            mail=mails.DISCUSSIONS_EMAIL_REJECTED,
+            target_address='notarealprojectid@osf.io',
             user=self.user,
-            mail=mails.DISCUSSIONS_EMAIL_REJECTED
+            node_type='',
+            node_url='',
+            is_admin=False
         )
 
     @mock.patch('website.mails.send_mail')
-    def test_email_to_private_project_without_access(self, mock_send_mail):
-        user2 = UserFactory()
-        user2.reload()
-        self.message['From'] = user2.email
+    def test_email_to_deleted_project(self, mock_send_mail):
+        self.project.remove_node(auth=Auth(user=self.user))
 
         self.app.post(self.post_url, self.message)
 
         mock_send_mail.assert_called_with(
-            node_url='',
-            to_addr=user2.email,
-            node_type='',
-            target_address=self.message['To'],
-            reason='project_dne',
-            user=user2,
-            mail=mails.DISCUSSIONS_EMAIL_REJECTED
+            reason='node_deleted',
+            to_addr=self.user.email,
+            mail=mails.DISCUSSIONS_EMAIL_REJECTED,
+            target_address='{}@osf.io'.format(self.project._id),
+            user=self.user,
+            node_type='project',
+            node_url=self.project.absolute_url,
+            is_admin=True
+        )
+
+    @mock.patch('website.mails.send_mail')
+    def test_email_to_private_project_without_access(self, mock_send_mail):
+        self.user = UserFactory()
+        self.user.reload()
+        self.message['From'] = self.user.email
+
+        self.app.post(self.post_url, self.message)
+
+        mock_send_mail.assert_called_with(
+            reason='private_no_access',
+            to_addr=self.user.email,
+            mail=mails.DISCUSSIONS_EMAIL_REJECTED,
+            target_address='{}@osf.io'.format(self.project._id),
+            user=self.user,
+            node_type='project',
+            node_url=self.project.absolute_url,
+            is_admin=False
         )
 
     @mock.patch('website.mails.send_mail')
     def test_email_to_public_project_without_access(self, mock_send_mail):
         self.project.is_public = True
         self.project.save()
-        user2 = UserFactory()
-        user2.reload()
-        self.message['From'] = user2.email
+        self.user = UserFactory()
+        self.user.reload()
+        self.message['From'] = self.user.email
 
         self.app.post(self.post_url, self.message)
 
         mock_send_mail.assert_called_with(
-            node_url=self.project.absolute_url,
-            to_addr=user2.email,
-            node_type='project',
-            target_address=self.message['To'],
             reason='no_access',
-            user=user2,
-            mail=mails.DISCUSSIONS_EMAIL_REJECTED
+            to_addr=self.user.email,
+            mail=mails.DISCUSSIONS_EMAIL_REJECTED,
+            target_address='{}@osf.io'.format(self.project._id),
+            user=self.user,
+            node_type='project',
+            node_url=self.project.absolute_url,
+            is_admin=False
         )
 
     @mock.patch('website.mails.send_mail')
@@ -262,33 +283,33 @@ class TestEmailRejections(OsfTestCase):
         self.app.post(self.post_url, self.message)
 
         mock_send_mail.assert_called_with(
-            node_url=self.project.absolute_url,
-            to_addr=self.user.email,
-            node_type='project',
-            target_address=self.message['To'],
             reason='discussions_disabled',
-            user=self.user,
+            to_addr=self.user.email,
             mail=mails.DISCUSSIONS_EMAIL_REJECTED,
+            target_address='{}@osf.io'.format(self.project._id),
+            user=self.user,
+            node_type='project',
+            node_url=self.project.absolute_url,
             is_admin=True
         )
 
     @mock.patch('website.mails.send_mail')
-    def test_email_to_project_with_discussions_disabled_as_admin(self, mock_send_mail):
-        user2 = UserFactory()
-        user2.reload()
-        self.project.add_contributor(user2, save=True)
+    def test_email_to_project_with_discussions_disabled_as_non_admin(self, mock_send_mail):
+        self.user = UserFactory()
+        self.user.reload()
+        self.project.add_contributor(self.user, save=True)
         self.project.discussions.disable(save=True)
-        self.message['From'] = user2.email
+        self.message['From'] = self.user.email
 
         self.app.post(self.post_url, self.message)
 
         mock_send_mail.assert_called_with(
-            node_url=self.project.absolute_url,
-            to_addr=user2.email,
-            node_type='project',
-            target_address=self.message['To'],
             reason='discussions_disabled',
-            user=user2,
+            to_addr=self.user.email,
             mail=mails.DISCUSSIONS_EMAIL_REJECTED,
+            target_address='{}@osf.io'.format(self.project._id),
+            user=self.user,
+            node_type='project',
+            node_url=self.project.absolute_url,
             is_admin=False
         )
