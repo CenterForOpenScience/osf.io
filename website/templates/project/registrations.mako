@@ -77,6 +77,7 @@
                 <p>initiated by: <span data-bind="text: initiator.fullname"></span>
                 <p>started: <span data-bind="text: initiated"></span></p>
                 <p>last updated: <span data-bind="text: updated"></span></p>
+                <!--
                 <span data-bind="if: requiresApproval">
                     <div data-bind="if: isApproved">
                         <div class="draft-status-badge bg-success"> Approved</div>
@@ -88,7 +89,7 @@
                         <div class="draft-status-badge bg-warning"> Pending Review</div>
                     </div>
                 </span>
-
+                -->
                 </small>
                 <div class="row">
                   <div class="col-md-10">
@@ -98,12 +99,12 @@
                             data-bind="click: $root.deleteDraft"><i style="margin-right: 5px;" class="fa fa-times"></i>Delete</button>
                   </div>
                   <div class="col-md-1">
-                    <a class="btn btn-success" data-bind="attr.href: urls.register_page,
-                                                          tooltip: {
-                                                            placement: top,
-                                                            title: isApproved ? 'Finialize this draft' : 'This draft must be approved before it can be registered'
-                                                          },
-                                                          css: {'disabled': !isApproved}">Register</a>
+                    <!-- <a class="btn btn-success" data-bind="attr.href: urls.register_page, -->
+                    <!--                                       tooltip: { -->
+                    <!--                                         placement: top, -->
+                    <!--                                         title: isApproved ? 'Finialize this draft' : 'This draft must be approved before it can be registered' -->
+                    <!--                                       }, -->
+                    <!--                                       css: {'disabled': !isApproved}">Register</a> -->
                   </div>
                 </div>
               </h4>

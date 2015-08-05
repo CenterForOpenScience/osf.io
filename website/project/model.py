@@ -3273,14 +3273,34 @@ class DraftRegistration(AddonModelMixin, StoredObject):
         return self.approval.is_approved if self.requires_approval else True
 
     def update_metadata(self, metadata, save=True):
-        if self.is_pending_review or self.is_approved:
-            raise NodeStateError('Cannot edit while this draft is being reviewed')
+        # TODO(barbour-em): delete or implement in schema
+        # if self.is_pending_review or self.is_approved:
+        #     raise NodeStateError('Cannot edit while this draft is being reviewed')
+
         changes = []
+        old_comment_ids = list()
+        for key, value in self.registration_metadata.iteritems():
+            for comment in value['comments']:
+                # we are using the `created` attribute sort of as a primary key
+                old_comment_ids.append(comment['created'])
+
         for key, value in metadata.iteritems():
             old_value = self.registration_metadata.get(key)
+            old_comments = old_value['comments']
+            new_comments = value['comments']
+
+            # Handle comment conflicts
+            for old_comment in old_comments:
+                for new_comment in new_comments:
+                    new_created = new_comment['created']
+                    # if the primary key is already in use and the old comment is more recent,
+                    if new_created in old_comment_ids and old_comment['lastModified'] > new_comment['lastModified']:
+                        # use the old one instead
+                        new_comments[new_comment] = old_comment
             if not old_value or old_value.get('value') != value.get('value'):
                 changes.append(key)
-        self.registration_metadata.update(metadata)
+            self.registration_metadata.update(metadata)
+
         if save:
             self.save()
         project_signals.draft_edited.send(changes)
@@ -3288,12 +3308,12 @@ class DraftRegistration(AddonModelMixin, StoredObject):
         return changes
 
     def before_edit(self, auth):
-		# TOOD(samchrisinger): Make sure we still need this
+        # TODO(samchrisinger): Make sure we still need this
         messages = []
         if self.flags.get('isApproved'):
             messages.append('The draft registration you are editing is currently approved. Please note that if you make any changes (excluding comments) this approval status will be revoked and you will need to submit for approval again.')
         if self.flags.get('isPendingReview'):
-            messages.append('The draft registration you are editing is currently pending review. Please note that if you make any changes (excluding comments) this request will be cancelled and you will need to submit for approval again.')
+            messages.append('The draft registration you are editing is currently pending review. Please note that if you make any changes (excluding comments) this request will be canceled and you will need to submit for approval again.')
         return messages
 
     def after_edit(self, changes):

@@ -128,11 +128,12 @@ def make_draft_registraton(user, node, schema, data):
         registration_schema=schema,
         registration_metadata=data,
     )
-    if schema.requires_approval:
-        draft.approval = DraftRegistrationApproval(
-            initiated_by=user,
-            end_date=None,  # TODO: expire me?
-        )
+    # TODO: implement in schema first
+    # if schema.requires_approval:
+    #     draft.approval = DraftRegistrationApproval(
+    #         initiated_by=user,
+    #         end_date=None,  # TODO: expire me?
+    #     )
     draft.save()
     node.draft_registrations.append(draft)
     node.save()

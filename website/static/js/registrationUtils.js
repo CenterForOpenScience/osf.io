@@ -1,3 +1,4 @@
+/*global  */
 require('css/registrations.css');
 
 var $ = require('jquery');
@@ -43,6 +44,8 @@ function Comment(data) {
     self.value.subscribe(function() {
         self.lastModified = new Date();
     });
+
+    self.created = data.created || new Date();
 
     self.isDeleted = ko.observable(data.isDeleted || false);
     self.isDeleted.subscribe(function(isDeleted) {
