@@ -157,16 +157,16 @@ class AppTestCase(unittest.TestCase):
         self.context.push()
         with self.context:
             g._celery_tasks = []
-        for signal in AppTestCase.DISCONNECTED_SIGNALS:
-            for receiver in AppTestCase.DISCONNECTED_SIGNALS[signal]:
+        for signal in self.DISCONNECTED_SIGNALS:
+            for receiver in self.DISCONNECTED_SIGNALS[signal]:
                 signal.disconnect(receiver)
 
     def tearDown(self):
         super(AppTestCase, self).tearDown()
         with mock.patch('website.mailchimp_utils.get_mailchimp_api'):
             self.context.pop()
-        for signal in AppTestCase.DISCONNECTED_SIGNALS:
-            for receiver in AppTestCase.DISCONNECTED_SIGNALS[signal]:
+        for signal in self.DISCONNECTED_SIGNALS:
+            for receiver in self.DISCONNECTED_SIGNALS[signal]:
                 signal.connect(receiver)
 
 
