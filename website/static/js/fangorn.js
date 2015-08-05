@@ -355,8 +355,8 @@ function checkConflicts(tb, item, folder, cb) {
             tb.modal.update(m('', [
                     m('p', 'An item named "' + item.data.name + '" already exists in this location.')
                 ]), m('', [
-                    m('span.btn.btn-info', {onclick: cb.bind(tb, 'keep')}, 'Keep Both'),
                     m('span.btn.btn-default', {onclick: function() {tb.modal.dismiss();}}, 'Cancel'), //jshint ignore:line
+                    m('span.btn.btn-primary', {onclick: cb.bind(tb, 'keep')}, 'Keep Both'),
                     m('span.btn.btn-primary', {onclick: cb.bind(tb, 'replace')},'Replace'),
                 ]), m('h3.break-word.modal-title', 'Replace "' + item.data.name + '"?')
             );

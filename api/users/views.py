@@ -32,8 +32,6 @@ class UserMixin(object):
         obj = get_object_or_404(User, key)
 
         if check_permissions:
-            # if (isinstance(current_user, AnonymousUser)):
-            #     raise NotFound
             # May raise a permission denied
             self.check_object_permissions(self.request, obj)
 
