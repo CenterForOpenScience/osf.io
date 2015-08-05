@@ -252,9 +252,7 @@ utils.loadRawNormalized = function(result){
     var docID = encodeURIComponent(result.shareProperties.docID);
     return m.request({
         method: 'GET',
-        // url: 'http://localhost:8000/documents/' + source + '/' + docID + '/',
         url: 'api/v1/share/documents/' + source + '/' + docID + '/',
-
         unwrapSuccess: function(data) {
             var unwrapped = {};
             var normed = JSON.parse(data.normalized);
@@ -263,33 +261,19 @@ utils.loadRawNormalized = function(result){
             unwrapped.raw = allRaw.doc;
             unwrapped.rawfiletype = allRaw.filetype;
             unwrapped.normalized = normed;
-            console.log(unwrapped);
 
             return unwrapped;
         },
         unwrapError: function(data) {
-            var unwrapped = {};
-            unwrapped.rawfiletype = 'json';
-            unwrapped.normalized = '"Normalized data not found."';
-            unwrapped.raw = '"Raw data not found."';
+            var error = {};
+            error.rawfiletype = 'json';
+            error.normalized = 'Normalized data not found.';
+            error.raw = '"Raw data not found."';
 
-            return unwrapped;
+            return error;
         }
     });
 };
-
-utils.loadRawNormalized_orig = function(result){
-    var nonJsonErrors = function(xhr) {
-        return xhr.status > 200 ? JSON.stringify(xhr.responseText) : xhr.responseText;
-    };
-    return m.request({
-        method: 'GET',
-        // url: 'http://localhost:8000/documents/' + result.shareProperties.docID,
-        url: '/api/v1/share/documents/' + result.shareProperties.docID,  // TODO where will the postgres API live??
-        extract: nonJsonErrors
-    });
-};
-
 
 /*** Elasticsearch functions below ***/
 
