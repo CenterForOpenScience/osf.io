@@ -51,7 +51,7 @@ from website.exceptions import (
 from website.citations.utils import datetime_to_csl
 from website.identifiers.model import IdentifierMixin
 from website.util.permissions import expand_permissions
-from website.util.permissions import CREATOR_PERMISSIONS
+from website.util.permissions import CREATOR_PERMISSIONS, DEFAULT_CONTRIBUTOR_PERMISSIONS
 from website.project.metadata.schemas import OSF_META_SCHEMAS
 from website.project import signals as project_signals
 
@@ -3095,7 +3095,7 @@ class Embargo(EmailApprovableSanction):
                 'embargo_id': self._id,
             },
             auth=Auth(user),
-        )    
+        )
 
     def approve_embargo(self, user, token):
         """Add user to approval list if user is admin and token verifies."""
