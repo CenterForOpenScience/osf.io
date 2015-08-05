@@ -219,13 +219,13 @@ var RawNormalizedData = {
         return m('.row', [
             m('.col-md-12',
                 result.showRawNormed && result.raw ? m('div', [
-                    m('ul', {class: 'nav nav-tabs'}, [
+                    m('ul', {className: 'nav nav-tabs'}, [
                         m('li', m('a', {href: '#raw', 'data-toggle': 'tab'}, 'Raw')),
                         m('li', m('a', {href: '#normalized', 'data-toggle': 'tab'}, 'Normalized'))
                     ]),
-                    m('div', {class: 'tab-content'},
+                    m('div', {className: 'tab-content'},
                         m('div',
-                            {class: 'tab-pane active', id:'raw'},
+                            {className: 'tab-pane active', id:'raw'},
                             m('pre',
                                 (function(){
                                     if (result.rawfiletype === 'xml') {
@@ -239,7 +239,7 @@ var RawNormalizedData = {
                             )
                         ),
                         m('div',
-                            {class: 'tab-pane', id:'normalized'},
+                            {className: 'tab-pane', id:'normalized'},
                             m('pre',
                                 result.normalized || '"Normalized data not found"'
                             )
