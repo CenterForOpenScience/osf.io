@@ -127,10 +127,14 @@ utils.search = function(vm) {
         utils.loadMore(vm)
             .then(function (data) {
                 if (vm.loadStats) {
-                    utils.processStats(vm, data);
+                    if (data.aggregations) {
+                        utils.processStats(vm, data);
+                    } else {
+                        $osf.growl('Error', 'Could not load search statistics', 'danger');
+                    }
+                    utils.updateVM(vm, data);
+                    ret.resolve(vm);
                 }
-                utils.updateVM(vm, data);
-                ret.resolve(vm);
             });
     }
     return ret.promise;
@@ -410,19 +414,15 @@ utils.parseFilter = function (filterString) {
 };
 
 utils.processStats = function (vm, data) {
-    if (data.aggregations) {
-        $.map(Object.keys(data.aggregations), function (key) { //parse data and load correctly
-            if (vm.statsParsers[key]) {
-                var chartData = vm.statsParsers[key](data);
-                vm.statsData.charts[chartData.name] = chartData;
-                if (chartData.name in vm.graphs) {
-                    vm.graphs[chartData.name].load(chartData);
-                }
+    $.map(Object.keys(data.aggregations), function (key) { //parse data and load correctly
+        if (vm.statsParsers[key]) {
+            var chartData = vm.statsParsers[key](data);
+            vm.statsData.charts[chartData.name] = chartData;
+            if (chartData.name in vm.graphs) {
+                vm.graphs[chartData.name].load(chartData);
             }
-        });
-    } else {
-        $osf.growl('Error', 'Could not load search statistics', 'danger');
-    }
+        }
+    });
 };
 
 
