@@ -30,9 +30,10 @@ BCRYPT_LOG_ROUNDS = 12
 EMAIL_TOKEN_EXPIRATION = 24
 CITATION_STYLES_PATH = os.path.join(BASE_PATH, 'static', 'vendor', 'bower_components', 'styles')
 
-# Hours before pending embargo/retraction automatically becomes active
+# Hours before pending embargo/retraction/registration automatically becomes active
 RETRACTION_PENDING_TIME = datetime.timedelta(days=2)
 EMBARGO_PENDING_TIME = datetime.timedelta(days=2)
+REGISTRATION_APPROVAL_TIME = datetime.timedelta(days=2)
 # Date range for embargo periods
 EMBARGO_END_DATE_MIN = datetime.timedelta(days=2)
 EMBARGO_END_DATE_MAX = datetime.timedelta(days=1460)  # Four years

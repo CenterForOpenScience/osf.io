@@ -3322,7 +3322,7 @@ class RegistrationApproval(EmailApprovableSanction):
         )
         src.save()
 
-    def _on_complete(self, user, token):
+    def _on_complete(self, user):
         register = Node.find(Q('registration_approval', 'eq', self))
         registered_from = register.registered_from
         auth = Auth(self.initiated_by)
