@@ -1330,7 +1330,6 @@ class TestDeleteNodePointer(ApiTestCase):
         res = self.app.delete(self.private_url, auth=self.basic_auth_two, expect_errors=True)
         assert_equal(res.status_code, 403)
 
-
     def test_return_deleted_public_node_pointer(self):
         res = self.app.delete(self.public_url, auth=self.basic_auth)
         self.public_project.reload() # Update the model to reflect changes made by post request
