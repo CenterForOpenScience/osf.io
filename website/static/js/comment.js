@@ -173,7 +173,7 @@ BaseComment.prototype.fetch = function(isCommentList, nodeId, thread) {
                 })
             );
             if (isCommentList) {
-                self.discussionByRecency(response.discussionByRecency);
+                self.discussion(response.discussion);
             }
             self.unreadComments(response.nUnread);
             deferred.resolve(self.comments());
@@ -236,7 +236,7 @@ BaseComment.prototype.checkFileExistsAndConfigure = function(nodeId) {
     });
     request.fail(function (xhl) {
         self.isHidden(true);
-        $.map([self.$root.discussionByRecency], function(discussion){
+        $.map([self.$root.discussion], function(discussion){
             return self.decrementUserFromDiscussion(discussion);
         });
         self.loading(false);
@@ -298,7 +298,7 @@ BaseComment.prototype.submitReply = function() {
             }
         }
         if (!hasCommented) {
-            self.$root.discussionByRecency.unshift(response.comment.author);
+            self.$root.discussion.unshift(response.comment.author);
         }
         self.onSubmitSuccess(response);
         if (self.level >= self.MAXLEVEL) {
@@ -633,11 +633,7 @@ var CommentListModel = function(options) {
     self.userName = ko.observable(options.userName);
     self.canComment = ko.observable(options.canComment);
     self.hasChildren = ko.observable(options.hasChildren);
-
-    self.discussionByRecency = ko.observableArray();
-    self.discussion = ko.computed(function(){
-        return self.discussionByRecency();
-    });
+    self.discussion = ko.observableArray();
 
     self.page(options.hostPage);
     self.id = ko.observable(options.hostName);

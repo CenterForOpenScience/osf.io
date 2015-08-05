@@ -106,16 +106,16 @@ def comment_discussion(comments, node, anonymous=False, widget=False):
                 most_recent = comment.date_created
         return most_recent
 
-    sorted_users_recency = sorted(
+    sorted_users = sorted(
         comments_dict.keys(),
         key=get_most_recent_comment,
         reverse=True,
     )
 
     return {
-        'discussionByRecency': [
+        'discussion': [
             serialize_user(user, node=node, n_comments=len(comments_dict[user]), anonymous=anonymous)
-            for user in sorted_users_recency
+            for user in sorted_users
         ]
     }
 
