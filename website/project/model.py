@@ -3284,6 +3284,21 @@ class RegistrationApproval(EmailApprovableSanction):
                 'embargo_end_date': self.end_date,
             }
 
+    def _add_success_logs(self, user, node):
+        src = node.registered_from
+        src.add_log(
+            action=NodeLog.PROJECT_REGISTERED,
+            params={
+                'parent_node': src.parent_id,
+                'node': src._primary_key,
+                'registration': node._primary_key,
+            },
+            auth=Auth(user),
+            log_date=node.registered_date,
+            save=False
+        )
+        src.save()
+
     def _on_complete(self, user, token):
         register = Node.find(Q('registration_approval', 'eq', self))
         auth = Auth(self.initiated_by)
@@ -3291,6 +3306,7 @@ class RegistrationApproval(EmailApprovableSanction):
         for child in register.get_descendants_recursive(lambda n: n.primary):
             child.set_privacy('public', auth, log=False)
         for node in register.root.node_and_primary_descendants():
+            self._add_success_logs(node, user)
             node.update_search()  # update search if public
 
     def _on_reject(self, user, token):

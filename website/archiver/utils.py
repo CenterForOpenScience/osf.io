@@ -9,19 +9,6 @@ from website.archiver.model import ArchiveJob
 
 from website import mails
 from website import settings
-from website.project.model import NodeLog
-
-
-def send_archiver_success_mail(dst):
-    user = dst.creator
-    mails.send_mail(
-        to_addr=user.username,
-        mail=mails.ARCHIVE_SUCCESS,
-        user=user,
-        src=dst,
-        mimetype='html',
-    )
-
 
 def send_archiver_size_exceeded_mails(src, user, stat_result):
     mails.send_mail(
@@ -162,25 +149,3 @@ def before_archive(node, user):
         initiator=user
     )
     job.set_targets()
-
-
-def add_archive_success_logs(node, user):
-    src = node.registered_from
-    src.add_log(
-        action=NodeLog.PROJECT_REGISTERED,
-        params={
-            'parent_node': src.parent_id,
-            'node': src._primary_key,
-            'registration': node._primary_key,
-        },
-        auth=Auth(user),
-        log_date=node.registered_date,
-        save=False
-    )
-    src.save()
-
-
-def archive_success(node, user):
-    add_archive_success_logs(node, user)
-    for child in node.get_descendants_recursive(include=lambda n: n.primary):
-        add_archive_success_logs(child, user)

@@ -3099,11 +3099,8 @@ class TestRegisterNode(OsfTestCase):
         assert_equal(registration.creator, self.user)
 
     def test_logs(self):
-        # Registered node has all logs except the Project Registered log
+        # Registered node has all logs except for registration approval initiated
         assert_equal(self.registration.logs, self.project.logs[:-1])
-
-    def test_registration_log(self):
-        assert_equal(self.project.logs[-1].action, 'project_registered')
 
     def test_tags(self):
         assert_equal(self.registration.tags, self.project.tags)
