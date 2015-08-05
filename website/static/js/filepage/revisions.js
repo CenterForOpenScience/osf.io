@@ -135,7 +135,7 @@ var FileRevisionsTable = {
             });
         };
 
-        self.getSub();
+        // self.getSub();    #uncomment to get subscriptions
 
         self.bell = function() {
             if(self.subscription() === 'email_transactional') {
@@ -224,7 +224,8 @@ var FileRevisionsTable = {
         return self;
     },
     view: function(ctrl) {
-        return m('', [ctrl.subscriptions(), m('#revisionsPanel.panel.panel-default', [
+        //return m('', [ctrl.subscriptions(), m('#revisionsPanel.panel.panel-default', [  #replace line below
+        return m('#revisionsPanel.panel.panel-default', [
             m('.panel-heading.clearfix', m('h3.panel-title', 'Revisions')),
             m('.panel-body', {style:{'padding-right': '0','padding-left':'0', 'padding-bottom' : '0'}}, (function() {
                 if (!model.loaded()) {
@@ -238,7 +239,8 @@ var FileRevisionsTable = {
                     m('tbody', model.revisions.map(ctrl.makeTableRow))
                 ]);
             })())
-        ])]);
+        ]);
+        //])]);   #Replace line above
     },
     postProcessRevision: function(file, node, revision, index) {
         var options = {};
