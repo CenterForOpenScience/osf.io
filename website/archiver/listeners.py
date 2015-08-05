@@ -11,7 +11,6 @@ from website.archiver.decorators import fail_archive_on_error
 from website.archiver import signals as archiver_signals
 
 from website.project import signals as project_signals
-from website.project import utils as project_utils
 
 @project_signals.after_create_registration.connect
 def after_register(src, dst, user):
@@ -52,12 +51,7 @@ def archive_callback(dst):
         if dst.pending_embargo:
             dst.emabargo.ask(root.active_contributors())
         else:  # requires approval
-            for contributor in root.active_contributors():
-                project_utils.send_registration_approval_email(
-                    root,
-                    contributor,
-                    urls=root_job.meta['registration_approval_urls'].get(contributor._id),
-                )
+            dst.registration_approval.ask(root.active_contributors())
     else:
         archiver_utils.handle_archive_fail(
             ARCHIVER_UNCAUGHT_ERROR,

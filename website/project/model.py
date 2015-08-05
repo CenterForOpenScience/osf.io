@@ -53,7 +53,6 @@ from website.identifiers.model import IdentifierMixin
 from website.util.permissions import expand_permissions
 from website.util.permissions import CREATOR_PERMISSIONS
 from website.project.metadata.schemas import OSF_META_SCHEMAS
-from website.util.permissions import DEFAULT_CONTRIBUTOR_PERMISSIONS, ADMIN
 from website.project import signals as project_signals
 
 html_parser = HTMLParser()
@@ -3109,9 +3108,9 @@ class Retraction(EmailApprovableSanction):
     ApprovalInvalidToken = InvalidRetractionApprovalToken('Invalid retraction approval token provided.')
     RejectionNotAuthorized = PermissionsError('User must be an admin to disapprove a retraction of a registration.')
     RejectionInvalidToken = InvalidRetractionDisapprovalToken('Invalid retraction disapproval token provided.')
-    
+
     AUTHORIZER_NOTIFY_TEMPLATE = mails.PENDING_RETRACTION_ADMIN
-    NON_AUTHORIZER_NOTIFY_TEMPLATE = mails.PENDING_RETRACTION_ADMIN_NON_ADMIN
+    NON_AUTHORIZER_NOTIFY_TEMPLATE = mails.PENDING_RETRACTION_NON_ADMIN
 
     initiated_by = fields.ForeignField('user', backref='retracted')
     justification = fields.StringField(default=None, validate=MaxLengthValidator(2048))
