@@ -11,7 +11,6 @@ import warnings
 import pytz
 from flask import request
 from django.core.urlresolvers import reverse
-from HTMLParser import HTMLParser
 
 from modularodm import Q
 from modularodm import fields
