@@ -3,8 +3,6 @@
 import re
 
 from flask import request
-from modularodm import Q
-from modularodm.exceptions import NoResultsFound
 
 from framework.auth.decorators import collect_auth
 from framework.auth.core import get_user
