@@ -19,6 +19,11 @@
             %if file_name:
                 <span data-bind="if: page() == 'files'">Files | ${file_name} Discussion</span>
             %endif
+            <span data-bind="foreach: {data: discussion, afterAdd: setupToolTips}" class="pull-right">
+                <a data-toggle="tooltip" data-bind="attr: {href: url, title: fullname}" data-placement="bottom">
+                    <img data-bind="attr: {src: gravatar_url}"/>
+                </a>
+            </span>
         </h4>
 
         <div data-bind="if: canComment" style="margin-top: 20px">
