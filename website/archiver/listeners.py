@@ -50,12 +50,7 @@ def archive_callback(dst):
     if root_job.success:
         archiver_utils.archive_success(root, root.registered_user)
         if dst.pending_embargo:
-            for contributor in root.active_contributors():
-                project_utils.send_embargo_email(
-                    root,
-                    contributor,
-                    urls=root_job.meta['embargo_urls'].get(contributor._id),
-                )
+            dst.emabargo.ask(root.active_contributors())
         else:  # requires approval
             for contributor in root.active_contributors():
                 project_utils.send_registration_approval_email(

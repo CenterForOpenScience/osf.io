@@ -39,7 +39,7 @@ from framework.sentry import log_exception
 from framework.transactions.context import TokuTransaction
 from framework.utils import iso8601format
 
-from website import language, settings, security
+from website import language, settings, security, mails
 from website.util import web_url_for
 from website.util import api_url_for
 from website.exceptions import (
@@ -53,7 +53,7 @@ from website.identifiers.model import IdentifierMixin
 from website.util.permissions import expand_permissions
 from website.util.permissions import CREATOR_PERMISSIONS
 from website.project.metadata.schemas import OSF_META_SCHEMAS
-from website.util.permissions import DEFAULT_CONTRIBUTOR_PERMISSIONS
+from website.util.permissions import DEFAULT_CONTRIBUTOR_PERMISSIONS, ADMIN
 from website.project import signals as project_signals
 
 html_parser = HTMLParser()
@@ -2936,6 +2936,19 @@ class Sanction(StoredObject):
             return True
         return False
 
+    def _notify_authorizer(self, authorizer):
+        pass
+
+    def _notify_non_authorizer(self, user):
+        pass
+
+    def ask(self, group):
+        for user in group:
+            if user._id in self.approval_state:
+                self._notify_authorizer(user)
+            else:
+                self._nofify_non_authorizer(user)
+
     def _on_approve(self, user, token):
         if all(authorizer['has_approved'] for authorizer in self.approval_state.values()):
             self.state = Sanction.ACTIVE
@@ -2969,13 +2982,40 @@ class Sanction(StoredObject):
         self.state = Sanction.CANCELLED
         self._on_reject(user, token)
 
-class Embargo(Sanction):
+class EmailApprovableSanction(Sanction):
+
+    AUTHORIZER_NOTIFY_TEMPLATE = None
+    NON_AUTHORIZER_NOTIFY_TEMPLATE = None
+
+    def _send_approval_request_email(self, user, template, context):
+        mails.send_mail(
+            self.initiated_by,
+            template,
+            user=user,
+            **context
+        )
+
+    def _email_template_context(self, is_authorizer=False):
+        return {}
+
+    def _notify_authorizer(self, authorizer):
+        context = self._email_template_context(True)
+        self._send_approval_request_email(authorizer, self.AUTHORIZER_NOTIFY_TEMPLATE, context)
+
+    def _notify_non_authorizer(self, user):
+        context = self._email_template_context()
+        self._send_approval_request_email(user, self.NON_AUTHORIZER_NOTIFY_TEMPLATE, context)
+
+class Embargo(EmailApprovableSanction):
     """Embargo object for registrations waiting to go public."""
 
     ApprovalNotAuthorized = PermissionsError('User must be an admin to disapprove embargoing of a registration.')
     ApprovalInvalidToken = InvalidEmbargoApprovalToken('Invalid embargo approval token provided.')
     RejectionNotAuthorized = PermissionsError('User must be an admin to disapprove embargoing of a registration.')
     RejectionInvalidToken = InvalidEmbargoDisapprovalToken('Invalid embargo disapproval token provided.')
+
+    AUTHORIZER_NOTIFY_TEMPLATE = mails.PENDING_EMBARGO_ADMIN
+    NON_AUTHORIZER_NOTIFY_TEMPLATE = mails.PENDING_EMBARGO_NON_ADMIN
 
     initiated_by = fields.ForeignField('user', backref='embargoed')
     for_existing_registration = fields.BooleanField(default=False)
@@ -2989,6 +3029,50 @@ class Embargo(Sanction):
             self.end_date,
             self._id
         )
+
+    def _get_embargo_urls(self, node, user):
+        approval_token, disapproval_token = None, None
+        if node.has_permission(user, ADMIN):
+            approval_token = node.embargo.approval_state[user._id]['approval_token']
+            disapproval_token = node.embargo.approval_state[user._id]['disapproval_token']
+
+        return {
+            'view': node.web_url_for('view_project', _absolute=True),
+            'approve': node.web_url_for(
+                'node_registration_embargo_approve',
+                token=approval_token,
+                _absolute=True
+            ) if approval_token else None,
+            'disapprove': node.web_url_for(
+                'node_registration_embargo_disapprove',
+                token=disapproval_token,
+                _absolute=True
+            ) if disapproval_token else None,
+        }
+
+    def _email_template_context(self, user, is_authorizer=False, urls=None):
+        registration = Node.find_one(Q('embargo', 'eq', self))
+        urls = urls or self._get_embargo_urls(registration, user)
+        registration_link = urls['view']
+        if is_authorizer:
+            approval_link = urls['approve']
+            disapproval_link = urls['disapprove']
+            approval_time_span = settings.EMBARGO_PENDING_TIME.days * 24
+
+            return {
+                'initiated_by': self.initiated_by.fullname,
+                'registration_link': registration_link,
+                'approval_link': approval_link,
+                'dispproval_link': disapproval_link,
+                'embargo_end_date': self.end_date,
+                'approval_time_span': approval_time_span,
+            }
+        else:
+            return {
+                'initiated_by': self.initiated_by.fullname,
+                'registration_link': registration_link,
+                'embargo_end_date': self.end_date,
+            }
 
     @property
     def embargo_end_date(self):
@@ -3043,7 +3127,7 @@ class Embargo(Sanction):
         """Add user to approval list if user is admin and token verifies."""
         self.approve(user, token)
 
-class Retraction(Sanction):
+class Retraction(EmailApprovableSanction):
     """Retraction object for public registrations."""
 
     ApprovalNotAuthorized = PermissionsError('User must be an admin to disapprove a retraction of a registration.')
@@ -3062,6 +3146,50 @@ class Retraction(Sanction):
             self.initiated_by,
             self._id
         )
+
+    def _get_embargo_urls(self, node, user):
+        approval_token, disapproval_token = None, None
+        if node.has_permission(user, ADMIN):
+            approval_token = node.embargo.approval_state[user._id]['approval_token']
+            disapproval_token = node.embargo.approval_state[user._id]['disapproval_token']
+
+        return {
+            'view': node.web_url_for('view_project', _absolute=True),
+            'approve': node.web_url_for(
+                'node_registration_embargo_approve',
+                token=approval_token,
+                _absolute=True
+            ) if approval_token else None,
+            'disapprove': node.web_url_for(
+                'node_registration_embargo_disapprove',
+                token=disapproval_token,
+                _absolute=True
+            ) if disapproval_token else None,
+        }
+
+    def _email_template_context(self, user, is_authorizer=False, urls=None):
+        registration = Node.find_one(Q('embargo', 'eq', self))
+        urls = urls or self._get_embargo_urls(registration, user)
+        registration_link = urls['view']
+        if is_authorizer:
+            approval_link = urls['approve']
+            disapproval_link = urls['disapprove']
+            approval_time_span = settings.EMBARGO_PENDING_TIME.days * 24
+
+            return {
+                'initiated_by': self.initiated_by.fullname,
+                'registration_link': registration_link,
+                'approval_link': approval_link,
+                'dispproval_link': disapproval_link,
+                'embargo_end_date': self.end_date,
+                'approval_time_span': approval_time_span,
+            }
+        else:
+            return {
+                'initiated_by': self.initiated_by.fullname,
+                'registration_link': registration_link,
+                'embargo_end_date': self.end_date,
+            }
 
     @property
     def is_retracted(self):
