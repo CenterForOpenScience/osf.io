@@ -39,9 +39,10 @@
                 <span class="f-w-lg">${summary['title']}</span>
             % endif
 
-
             % if summary['is_registration']:
                 | Registered: ${summary['registered_date']}
+            % elif summary['is_fork']:
+                | Forked: ${summary['forked_date']}
             % endif
             </span>
 
