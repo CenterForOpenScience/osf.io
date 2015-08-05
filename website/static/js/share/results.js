@@ -215,7 +215,6 @@ var Footer = {
 var RawNormalizedData = {
     view: function(ctrl, params) {
         var result = params.result();
-        // console.log('RESULT IS: ' + result);
         return m('.row', [
             m('.col-md-12',
                 m('div', [
