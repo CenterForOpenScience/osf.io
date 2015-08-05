@@ -6,7 +6,6 @@ import urllib
 import uuid
 import logging
 import datetime
-import random
 import urlparse
 from collections import OrderedDict
 import warnings
@@ -57,6 +56,7 @@ from website.util.permissions import CREATOR_PERMISSIONS
 from website.project.metadata.schemas import OSF_META_SCHEMAS
 from website.util.permissions import DEFAULT_CONTRIBUTOR_PERMISSIONS
 from website.project import signals as project_signals
+from website.security import random_string
 
 html_parser = HTMLParser()
 
@@ -81,22 +81,7 @@ def has_anonymous_link(node, auth):
         if link.key == view_only_link
     )
 
-def generate_token(length=40, chars=None):
-    """Generate a random string of the specified length. See:
-    https://github.com/idan/oauthlib/blob/master/oauthlib/common.py#L220
-
-    Prefer this over uuid4 because we control length, and some chars in uuid4 aren't random
-
-    :param length int: The desired secret key length
-    :param chars str: The default sequence of characters to use. Recommend limiting to ASCII set.
-    :rtype str: A randomized string
-    """
-    # TODO: Is there a better place for this utility function?
-    chars = chars or 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz1234567890'
-    rng = random.SystemRandom()
-    return ''.join(rng.choice(chars) for i in xrange(length))
-
-generate_client_secret = functools.partial(generate_token, length=40)
+generate_client_secret = functools.partial(random_string, length=40)
 
 
 class MetaSchema(StoredObject):
