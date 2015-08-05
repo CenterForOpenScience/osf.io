@@ -61,8 +61,8 @@ utils.updateVM = function(vm, data) {
     vm.time = data.time;
     vm.count = data.count;
     data.results.forEach(function(result) {
-        result.title = utils.highlightField(result, 'title');
-        result.description = utils.highlightField(result, 'description');
+        result.title = $osf.htmlDecode(result.title);
+        result.description = $osf.htmlDecode(result.description || '');
     });
     vm.results.push.apply(vm.results, data.results);
     m.redraw();
@@ -235,15 +235,6 @@ utils.removeFilter = function (vm, filter) {
 /* Tests array equality */
 utils.arrayEqual = function (a, b) {
     return $(a).not(b).length === 0 && $(b).not(a).length === 0;
-};
-
-utils.addFiltersToQuery = function (query, filters) {
-    if (filters) {
-        filters.forEach(function (filter) {
-            query = utils.filteredQuery(query, filter.filter);
-        });
-    }
-    return query;
 };
 
 /* Loads the raw and normalized data for a specific result */
