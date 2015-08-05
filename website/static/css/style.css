@@ -506,10 +506,6 @@ select {
     cursor: pointer;
 }
 
-tr a, b, em, td {
-    word-break: break-word;
-}
-
 .btn-link.project-toggle {
     padding-top: 0;
     padding-bottom:0;
