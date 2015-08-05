@@ -7,7 +7,6 @@ MODELS = [
     model.GoogleDriveUserSettings,
     model.GoogleDriveNodeSettings,
     model.GoogleDriveOAuthSettings,
-    model.GoogleDriveGuidFile,
 ]
 USER_SETTINGS_MODEL = model.GoogleDriveUserSettings
 NODE_SETTINGS_MODEL = model.GoogleDriveNodeSettings

@@ -4,7 +4,6 @@ from website.addons.box import model, routes, utils
 
 
 MODELS = [
-    model.BoxFile,
     model.BoxUserSettings,
     model.BoxNodeSettings,
     model.BoxOAuthSettings,

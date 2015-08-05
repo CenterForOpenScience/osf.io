@@ -2,113 +2,21 @@
 """Persistence layer for the google drive addon.
 """
 import os
-import base64
 from urllib import unquote
 from datetime import datetime
 
-import pymongo
-from modularodm import fields, Q
-from modularodm.exceptions import ModularOdmException
+from modularodm import fields
 
 from framework.auth import Auth
 from framework.mongo import StoredObject
 
-from website import settings
 from website.addons.base import exceptions
-from website.addons.base import AddonUserSettingsBase, AddonNodeSettingsBase, GuidFile
+from website.addons.base import AddonUserSettingsBase, AddonNodeSettingsBase
 from website.addons.base import StorageAddonBase
 
 from website.addons.googledrive.client import GoogleAuthClient
 from website.addons.googledrive import settings as drive_settings
 from website.addons.googledrive.utils import GoogleDriveNodeLogger
-
-
-class GoogleDriveGuidFile(GuidFile):
-    __indices__ = [
-        {
-            'key_or_list': [
-                ('node', pymongo.ASCENDING),
-                ('path', pymongo.ASCENDING),
-            ],
-            'unique': True,
-        }
-    ]
-
-    path = fields.StringField(index=True)
-
-    @property
-    def waterbutler_path(self):
-        return self.path.replace(self.folder, '', 1)
-
-    @property
-    def provider(self):
-        return 'googledrive'
-
-    @property
-    def version_identifier(self):
-        return 'revision'
-
-    @property
-    def file_name(self):
-        if self.revision:
-            return '{0}_{1}_{2}.html'.format(self._id, self.revision, base64.b64encode(self.folder))
-        return '{0}_{1}_{2}.html'.format(self._id, self.unique_identifier, base64.b64encode(self.folder))
-
-    @property
-    def external_url(self):
-        return self._metadata_cache['extra']['webView']
-
-    @property
-    def mfr_temp_path(self):
-        """Files names from Google Docs metadata doesn't necessarily correspond
-        to download file names. Use the `downloadExt` field in the Docs metadata
-        to save the temporary file with the appropriate extension.
-        """
-        ext = (
-            self._metadata_cache['extra'].get('downloadExt') or
-            os.path.splitext(self.name)[-1]
-        )
-        return os.path.join(
-            settings.MFR_TEMP_PATH,
-            self.node._id,
-            self.provider,
-            # Attempt to keep the original extension of the file for MFR detection
-            self.file_name + ext,
-        )
-
-    @property
-    def folder(self):
-        addon = self.node.get_addon('googledrive')
-        if not addon:
-            return ''  # Must return a str value this will error out properly later
-
-        folder = addon.folder_path
-
-        if not folder or folder == '/':
-            return ''
-
-        return '/' + folder
-
-    @property
-    def unique_identifier(self):
-        return self._metadata_cache['extra']['revisionId']
-
-    @classmethod
-    def get_or_create(cls, node, path):
-        """Get or create a new file record. Return a tuple of the form (obj, created)
-        """
-        try:
-            new = cls.find_one(
-                Q('node', 'eq', node) &
-                Q('path', 'eq', path)
-            )
-            created = False
-        except ModularOdmException:
-            # Create new
-            new = cls(node=node, path=path)
-            new.save()
-            created = True
-        return new, created
 
 
 class GoogleDriveOAuthSettings(StoredObject):
@@ -346,12 +254,6 @@ class GoogleDriveNodeSettings(StorageAddonBase, AddonNodeSettingsBase):
                 },
             },
         )
-
-    def find_or_create_file_guid(self, path):
-        path = os.path.join(self.folder_path, path.lstrip('/'))
-        if self.folder_path != '/':
-            path = '/' + path
-        return GoogleDriveGuidFile.get_or_create(node=self.owner, path=path)
 
     # #### Callback overrides #####
 

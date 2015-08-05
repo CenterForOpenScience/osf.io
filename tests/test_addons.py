@@ -20,7 +20,7 @@ from website import settings
 from website.files import models
 from website.files.models.base import PROVIDER_MAP
 from website.util import api_url_for, rubeus
-from website.addons.base import exceptions, GuidFile
+from website.addons.base import exceptions
 from website.project import new_private_link
 from website.project.views.node import _view_project as serialize_node
 from website.addons.base import AddonConfig, AddonNodeSettingsBase, views
@@ -28,31 +28,6 @@ from website.addons.github.model import AddonGitHubOauthSettings
 from tests.base import OsfTestCase
 from tests.factories import AuthUserFactory, ProjectFactory
 from website.addons.github.exceptions import ApiError
-
-
-class DummyGuidFile(GuidFile):
-
-    file_name = 'foo.md'
-    name = 'bar.md'
-
-    @property
-    def provider(self):
-        return 'dummy'
-
-    @property
-    def version_identifier(self):
-        return 'versionidentifier'
-
-    @property
-    def unique_identifier(self):
-        return 'dummyid'
-
-    @property
-    def waterbutler_path(self):
-        return '/path/to/file/'
-
-    def enrich(self):
-        pass
 
 
 class TestAddonConfig(unittest.TestCase):
@@ -345,39 +320,6 @@ class TestCheckAuth(OsfTestCase):
         assert_false(component.has_permission(self.user, 'write'))
         res = views.check_access(component, self.user, 'copyfrom')
         assert_true(res)
-
-
-class OsfFileTestCase(OsfTestCase):
-
-    @classmethod
-    def setUpClass(cls):
-        super(OsfTestCase, cls).setUpClass()
-        set_up_storage([DummyGuidFile], storage.MongoStorage)
-
-
-# class TestAddonFileViewHelpers(OsfFileTestCase):
-
-#     def test_key_error_raises_attr_error_for_name(self):
-#         class TestGuidFile(GuidFile):
-#             pass
-
-#         with assert_raises(AttributeError):
-#             TestGuidFile().name
-
-#     def test_getattrname_catches(self):
-#         class TestGuidFile(GuidFile):
-#             pass
-
-#         assert_equals(getattr(TestGuidFile(), 'name', 'foo'), 'foo')
-
-#     def test_getattrname(self):
-#         class TestGuidFile(GuidFile):
-#             pass
-
-#         guid = TestGuidFile()
-#         guid._metadata_cache = {'name': 'test'}
-
-#         assert_equals(getattr(guid, 'name', 'foo'), 'test')
 
 
 def assert_urls_equal(url1, url2):
