@@ -7,110 +7,140 @@ var $osf = require('js/osfHelpers');
 var utils = require('./utils');
 var Results = {};
 
+var Result = {
+    /**
+     * Formats a single search result for display
+     *
+     * @param {Object} result A map containing a single search result
+     * @param {Integer} index Just ignore this, it doesn't matter
+     */
+    view: function(ctrl, params) {
+        return m( '.animated.fadeInUp', [
+            m('div', [
+                m('h4', [
+                    m.component(TitleBar, params)
+                ]),
+                m('.row', [
+                    m('.col-md-7',
+                      m('span.pull-left',
+                        m.component(Contributors, params)
+                      )
+                    ),
+                    m('.col-md-5',
+                        m('.pull-right',
+                          {style: {'text-align': 'right'}},
+                          m.component(Subjects, params)
+                        )
+                    )
+                ]),
+                m('br'),
+                m.component(Footer, params),
+                // self.renderRawNormalizedData(result)
+            ]),
+            m('hr')
+        ]);
 
-Results.view = function(ctrl) {
-    var res = [];
-    var len = 0;
-    if (ctrl.vm.results){
-        res = $.map(ctrl.vm.results, ctrl.renderResult);
-        len = ctrl.vm.results.length;
     }
-    return m('', [
-        m('.row', m('.col-md-12', (!utils.arrayEqual(res, [])) ? res : (!ctrl.vm.resultsLoading() && (ctrl.vm.results !== null)) ? m('span', {style: {margin: 'auto'}}, 'No results for this query') : [])),
-        m('.row', m('.col-md-12', ctrl.vm.resultsLoading() ? utils.loadingIcon : [])),
-        m('.row', m('.col-md-12', m('div', {style: {display: 'block', margin: 'auto', 'text-align': 'center'}},
-            len > 0 && len < ctrl.vm.count ?
-            m('a.btn.btn-md.btn-default', {
-                onclick: function(){
-                    utils.loadMore(ctrl.vm)
-                        .then(function(data) {
-                            utils.updateVM(ctrl.vm, data);
-                        });
-                }
-            }, 'More') : [])
-         ))
-    ]);
-
 };
 
-Results.controller = function(vm) {
-    var self = this;
-    self.vm = vm;
-    self.vm.resultsLoading = m.prop(false);
-
-    /* Render the title bar of a single result. Will highlight the matched text */
-    self.renderTitleBar = function(result) {
-        return [m(
-            'a[href=' + result.uris.canonicalUri + ']', ((result.title || '').length > 0) ? m.trust(result.title) : 'No title provided'),
+var TitleBar = {
+    view: function(ctrl, params) {
+        var result = params.result;
+        return m('span', {}, [
+            m('a[href=]' + result.canonicalUri + ']', ((result.title || 'No title provided'))),
             m('br'),
-            self.renderDescription(result)];
-    };
-
-    /* Render the description of a single result. Will highlight the matched text */
-    self.renderDescription = function(result) {
-        if ((result.description || '').length > 350) {
-            return m('p.readable.pointer',
-                {onclick:function(){result.showAll = result.showAll ? false : true;}},
-                m.trust(result.showAll ? result.description : $.trim(result.description.substring(0, 350)) + '...')
-            );
-        }
-        return m('p.readable', m.trust(result.description));
-
-    };
-
-    /* Renders a single contributor for a result */
-    self.renderPerson = function(person, index) {
-        return m('span', [
-            m('span', index !== 0 ? ' · ' : ''),
-            m('a', {
-                onclick: function() {
-                    utils.updateFilter(self.vm, 'match:contributors.familyName:' + person.familyName, true);
-                    utils.updateFilter(self.vm, 'match:contributors.givenName:' + person.givenName, true);
-                }
-            }, person.name)
+            m.component(Description, params)
         ]);
-    };
+    }
+};
 
-    /* Renders all the contributors for a given result */
-    self.renderContributors = function(result) {
-        var renderPeople = function(people) {
-            return $.map(people, self.renderPerson);
-        };
+/* Render the description of a single result. Will highlight the matched text */
+var Description = {
+    view: function(ctrl, params) {
+        var result = params.result;
+        if ((result.description || '').length > 350) {
+                return m('p.readable.pointer', {
+                    onclick:function(){
+                        result.showAll = result.showAll ? false : true;
+                        }
+                    },
+                    result.showAll ? result.description : $.trim(result.description.substring(0, 350)) + '...'
+                );
+            }
+            return m('p.readable', result.description);
+    }
+};
+
+var Contributors = {
+    view: function(ctrl, params) {
+        var result = params.result;
+        var contributorViews = $.map(result.contributors, function(contributor, i) {
+                return m.component(Contributor, $.extend({contributor: contributor, index: i}, params));
+            });
 
         return m('span.pull-left', {style: {'text-align': 'left'}},
             result.showAllContrib || result.contributors.length < 8 ?
-                renderPeople(result.contributors) :
+                contributorViews :
                 m('span', [
-                    renderPeople(result.contributors.slice(0, 7)),
+                    contributorViews.slice(0, 7),
                     m('br'),
                     m('a', {onclick: function(){result.showAllContrib = result.showAllContrib ? false : true;}}, 'See All')
                 ])
         );
-    };
 
-    /* Renders the subjects (sort of like tags) for a result */
-    self.renderSubjects = function(result) {
-        var rendersubject = function(subject) {
-            return [
-                m('.badge.pointer', {onclick: function(){
-                    utils.updateFilter(self.vm, 'match:subjects:"' + subject + '"', true);
-                }}, subject.length < 50 ? subject : subject.substring(0, 47) + '...'),
-                ' '
-            ];
-        };
+    }
+};
 
-        if (result.showAllsubjects || (result.subjects || []).length < 5) {
-            return $.map((result.subjects || []), rendersubject);
+var Contributor = {
+    view: function(ctrl, params) {
+        var contributor = params.contributor;
+        var index = params.index;
+        var vm = params.vm;
+        return m('span', [
+            m('span', index !== 0 ? ' · ' : ''),
+            m('a', {
+                onclick: function() {
+                    utils.updateFilter(vm, 'match:contributors.familyName:' + contributor.familyName, true);
+                    utils.updateFilter(vm, 'match:contributors.givenName:' + contributor.givenName, true);
+                }
+            }, contributor.name)
+        ]);
+    }
+};
+
+var Subjects = {
+    view: function(ctrl, params){
+        var result = params.result;
+        var subjectViews = $.map(result.subjects || [], function(subject, i) {
+            return m.component(Subject, $.extend({subject: subject}, params));
+        });
+        if (result.showAllsubjects || (result.subjects || []).length <= 5) {
+            return m('span', subjectViews);
         }
         return m('span', [
-            $.map((result.subjects || []).slice(0, 5), rendersubject),
+            subjectViews.slice(0, 5),
             m('br'),
             m('div', m('a', {onclick: function() {result.showAllsubjects = result.showAllsubjects ? false : true;}},'See All'))
         ]);
-    };
 
-    /* Renders the footer of a result, including release date, provider information and the raw/normalized records */
-    self.renderResultFooter = function(result) {
+    }
+};
+
+var Subject = {
+    view: function(ctrl, params) {
+        var subject = params.subject;
+        var vm = params.vm;
+        return m('span', m('.badge.pointer', {onclick: function(){
+                utils.updateFilter(vm, 'match:subjects:"' + subject + '"', true);
+            }}, subject.length < 50 ? subject : subject.substring(0, 47) + '...'),
+            ' ');
+    }
+};
+
+var Footer = {
+    view: function(ctrl, params) {
+        var result = params.result;
+        var vm = params.vm;
         return m('div', [
             m('span',
                 'Released on ' + new $osf.FormattableDate(result.providerUpdatedDateTime).local,
@@ -140,13 +170,49 @@ Results.controller = function(vm) {
                 ]) : []
             ),
             m('span.pull-right', [
-                m('img', {src: self.vm.ProviderMap[result.shareProperties.source].favicon, style: {width: '16px', height: '16px'}}),
+                m('img', {src: vm.ProviderMap[result.shareProperties.source].favicon, style: {width: '16px', height: '16px'}}),
                 ' ',
-                m('a', {onclick: function() {utils.updateFilter(self.vm, 'shareProperties.source:' + result.shareProperties.source);}}, self.vm.ProviderMap[result.shareProperties.source].long_name),
+                m('a', {onclick: function() {utils.updateFilter(vm, 'shareProperties.source:' + result.shareProperties.source);}}, vm.ProviderMap[result.shareProperties.source].long_name),
                 m('br')
             ])
         ]);
-    };
+    }
+};
+
+
+Results.view = function(ctrl) {
+    var resultViews = $.map(ctrl.vm.results, function(result, i) {
+        return m.component(Result, {result: result, vm: ctrl.vm});
+    });
+
+
+
+    var len = 0;
+    if (ctrl.vm.results){
+        len = ctrl.vm.results.length;
+    }
+    return m('', [
+        m('.row', m('.col-md-12', (!utils.arrayEqual(resultViews, [])) ? resultViews : (!ctrl.vm.resultsLoading() && (ctrl.vm.results !== null)) ? m('span', {style: {margin: 'auto'}}, 'No results for this query') : [])),
+        m('.row', m('.col-md-12', ctrl.vm.resultsLoading() ? utils.loadingIcon : [])),
+        m('.row', m('.col-md-12', m('div', {style: {display: 'block', margin: 'auto', 'text-align': 'center'}},
+            len > 0 && len < ctrl.vm.count ?
+            m('a.btn.btn-md.btn-default', {
+                onclick: function(){
+                    utils.loadMore(ctrl.vm)
+                        .then(function(data) {
+                            utils.updateVM(ctrl.vm, data);
+                        });
+                }
+            }, 'More') : [])
+         ))
+    ]);
+
+};
+
+Results.controller = function(vm) {
+    var self = this;
+    self.vm = vm;
+    self.vm.resultsLoading = m.prop(false);
 
     /* Renders raw and normalized records from the API. Fails gracefully if the API is not up or if it can't find a document */
     self.renderRawNormalizedData = function(result) {
@@ -182,39 +248,6 @@ Results.controller = function(vm) {
                         ]) : m('span')
                     )
                 ]);
-    };
-
-    /**
-     * Formats a single search result for display
-     *
-     * @param {Object} result A map containing a single search result
-     * @param {Integer} index Just ignore this, it doesn't matter
-     */
-    self.renderResult = function(result, index) {
-        return m( '.animated.fadeInUp', [
-            m('div', [
-                m('h4', [
-                    self.renderTitleBar(result)
-                ]),
-                m('.row', [
-                    m('.col-md-7',
-                      m('span.pull-left',
-                        self.renderContributors(result)
-                      )
-                    ),
-                    m('.col-md-5',
-                        m('.pull-right',
-                          {style: {'text-align': 'right'}},
-                          self.renderSubjects(result)
-                        )
-                    )
-                ]),
-                m('br'),
-                m('div', self.renderResultFooter(result)),
-                self.renderRawNormalizedData(result)
-            ]),
-            m('hr')
-        ]);
     };
 
     // Uncomment for infinite scrolling!
