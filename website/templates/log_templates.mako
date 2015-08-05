@@ -4,6 +4,7 @@
 ## log templates. An addon's log templates are located in
 ## website/addons/<addon_name>/templates/log_templates.mako.
 
+## Embargo related logs
 <script type="text/html" id="embargo_approved">
 approved embargo of
 <a class="log-node-title-link overflow" data-bind="text: nodeTitle, attr: {href: nodeUrl}"></a>
@@ -34,6 +35,7 @@ initiated an embargoed registration of
 <a class="log-node-title-link overflow" data-bind="text: nodeTitle, attr: {href: nodeUrl}"></a>
 </script>
 
+## Retraction related logs
 <script type="text/html" id="retraction_approved">
 approved retraction of
 <a class="log-node-title-link overflow" data-bind="text: nodeTitle, attr: {href: nodeUrl}"></a>
@@ -49,6 +51,23 @@ initiated retraction of
 <a class="log-node-title-link overflow" data-bind="text: nodeTitle, attr: {href: nodeUrl}"></a>
 </script>
 
+## Registration related Logs
+<script type="text/html" id="registration_initiated">
+initiated retraction of
+<a class="log-node-title-link overflow" data-bind="text: nodeTitle, attr: {href: nodeUrl}"></a>
+</script>
+
+<script type="text/html" id="registration_cancelled">
+cancelled registration of
+<a class="log-node-title-link overflow" data-bind="text: nodeTitle, attr: {href: nodeUrl}"></a>
+</script>
+
+<script type="text/html" id="registration_approved">
+approved registration of
+<a class="log-node-title-link overflow" data-bind="text: nodeTitle, attr: {href: nodeUrl}"></a>
+</script>
+
+## Project related logs
 <script type="text/html" id="project_created">
 created
 <a class="log-node-title-link overflow" data-bind="text: nodeTitle, attr: {href: nodeUrl}"></a>

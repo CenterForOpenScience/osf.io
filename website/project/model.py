@@ -279,7 +279,7 @@ class NodeLog(StoredObject):
 
     DATE_FORMAT = '%m/%d/%Y %H:%M UTC'
 
-    # Log action constants
+    # Log action constants -- NOTE: templates stored in log_templates.mako
     CREATED_FROM = 'created_from'
 
     PROJECT_CREATED = 'project_created'
@@ -346,7 +346,7 @@ class NodeLog(StoredObject):
 
     REGISTRATION_APPROVAL_CANCELLED = 'registration_approval_cancelled'
     REGISTRATION_APPROVAL_INITIATED = 'registration_approval_initiated'
-    # REGISTRATION_APPROVAL_COMPLETE = 'registration_approval_complete'
+    REGISTRATION_APPROVAL_COMPLETE = 'registration_approval_complete'
 
     def __repr__(self):
         return ('<NodeLog({self.action!r}, params={self.params!r}) '
@@ -2872,7 +2872,7 @@ def validate_sanction_state(value):
     return True
 
 class Sanction(StoredObject):
-    """Sancion object is a generic way to track approval states"""
+    """Sanction object is a generic way to track approval states"""
     abstract = True
 
     UNAPPROVED = 'unapproved'
@@ -3105,7 +3105,7 @@ class Embargo(EmailApprovableSanction):
                 'node': parent_registration._id,
                 'embargo_id': self._id,
             },
-            auth=Auth(user),
+            auth=Auth(self.initiated_by),
         )
 
     def approve_embargo(self, user, token):
@@ -3210,7 +3210,7 @@ class Retraction(EmailApprovableSanction):
                 'node': parent_registration._id,
                 'retraction_id': self._id,
             },
-            auth=Auth(user),
+            auth=Auth(self.initiated_by),
         )
         # Remove any embargoes associated with the registration
         if parent_registration.embargo_end_date or parent_registration.pending_embargo:
@@ -3221,7 +3221,7 @@ class Retraction(EmailApprovableSanction):
                     'node': parent_registration._id,
                     'embargo_id': parent_registration.embargo._id,
                 },
-                auth=Auth(user),
+                auth=Auth(self.initiated_by),
             )
             parent_registration.embargo.save()
         # Ensure retracted registration is public
@@ -3314,6 +3314,7 @@ class RegistrationApproval(EmailApprovableSanction):
 
     def _on_complete(self, user, token):
         register = Node.find(Q('registration_approval', 'eq', self))
+        registered_from = register.registered_from
         auth = Auth(self.initiated_by)
         register.set_privacy('public', auth, log=False)
         for child in register.get_descendants_recursive(lambda n: n.primary):
@@ -3321,6 +3322,14 @@ class RegistrationApproval(EmailApprovableSanction):
         for node in register.root.node_and_primary_descendants():
             self._add_success_logs(node, user)
             node.update_search()  # update search if public
+        registered_from.add_log(
+            actions=NodeLog.REGISTRATION_APPROVAL_COMPLETE,
+            params={
+                'node': registered_from._id,
+                'registration_approval_id': self._id,
+            },
+            auth=Auth(self.initiated_by),
+        )
 
     def _on_reject(self, user, token):
         register = Node.find(Q('registration_approval', 'eq', self))
