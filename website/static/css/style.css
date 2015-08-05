@@ -437,6 +437,10 @@ select {
     position: relative;
 }
 
+span.tag.tag-big.tag-container {
+    word-break: break-all;
+}
+
 .remove-tag
 {
     visibility: hidden;

@@ -753,7 +753,7 @@ var confirmDangerousAction = function (options) {
         },
         message: ''
     };
-    options.buttons.success.callback = handleConfirmAttempt
+    options.buttons.success.callback = handleConfirmAttempt;
 
     var bootboxOptions = $.extend({}, defaults, options);
 
