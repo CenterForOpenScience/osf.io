@@ -31,57 +31,67 @@ function ToggleHeight ( element, options ) {
     self.settings = $.extend( {}, defaults, options );
     self._defaults = defaults;
     self._name = pluginName;
-
-    self.init =  function () {
-        self.collapsed = true;
-        self.showToggle = false;
-        self.gradientDiv = $('<div class="' + self.element.id + '-gradient toggle-height-gradient" style="display:none"></div>').appendTo(self.element);
-        self.toggleDiv = $('<div class="' + self.element.id + '-toggle toggle-height-toggle text-center" style="display:none"></div>').insertAfter(self.element);
-        $('.' + self.element.id + '-toggle.toggle-height-toggle').click(self.toggle);
-        self.checkCollapse();
-        $(window).resize(self.checkCollapse);
-    };
-    self.removeToggle = function () {
-        self.$el.css('height', 'auto');
-        self.gradientDiv.hide();
-        self.toggleDiv.hide();
-        self.showToggle = false;
-        self.$el.removeClass('toggle-height-parent');
-    },
-    self.collapse = function () {
-        self.$el.css('height', self.settings.height + 'px');
-        self.gradientDiv.show();
-        self.toggleDiv.html('<i class="' + self.settings.iconDown +'"></i>').show();
-    };
-    self.open = function (){
-        self.$el.css('height', 'auto');
-        self.gradientDiv.hide();
-        self.toggleDiv.html('<i class="' + self.settings.iconUp + '"></i>').show();
-    };
-    self.checkCollapse = function _checkCollapse () {
-        if (self.element.scrollHeight <= self.settings.height){
-            self.removeToggle();
-        } else if (!self.showToggle){
-            self.showToggle = true;
-            self.$el.addClass('toggle-height-parent');
-            if (self.collapsed){
-                this.collapse();
-            } else {
-                self.open();
-            }
-        }
-    };
-    self.toggle = function () {
-        if (self.collapsed) {
-            self.open();
-        } else {
-            self.collapse();
-        }
-        self.collapsed = !self.collapsed;
-    };
-
     self.init();
 }
+
+ToggleHeight.prototype.init =  function () {
+    var self = this;
+    self.collapsed = true;
+    self.showToggle = false;
+    self.gradientDiv = $('<div class="' + self.element.id + '-gradient toggle-height-gradient" style="display:none"></div>').appendTo(self.element);
+    self.toggleDiv = $('<div class="' + self.element.id + '-toggle toggle-height-toggle text-center" style="display:none"></div>').insertAfter(self.element);
+    $('.' + self.element.id + '-toggle.toggle-height-toggle').click(self.toggle.bind(this));
+    self.checkCollapse();
+    $(window).resize(self.checkCollapse.bind(this));
+};
+
+ToggleHeight.prototype.removeToggle = function () {
+    var self = this;
+    self.$el.css('height', 'auto');
+    self.gradientDiv.hide();
+    self.toggleDiv.hide();
+    self.showToggle = false;
+    self.$el.removeClass('toggle-height-parent');
+};
+
+ToggleHeight.prototype.collapse = function () {
+    var self = this;
+    self.$el.css('height', self.settings.height + 'px');
+    self.gradientDiv.show();
+    self.toggleDiv.html('<i class="' + self.settings.iconDown +'"></i>').show();
+};
+
+ToggleHeight.prototype.open = function (){
+    var self = this;
+    self.$el.css('height', 'auto');
+    self.gradientDiv.hide();
+    self.toggleDiv.html('<i class="' + self.settings.iconUp + '"></i>').show();
+};
+
+ToggleHeight.prototype.checkCollapse = function () {
+    var self = this;
+    if (self.element.scrollHeight <= self.settings.height){
+        self.removeToggle();
+    } else if (!self.showToggle){
+        self.showToggle = true;
+        self.$el.addClass('toggle-height-parent');
+        if (self.collapsed){
+            this.collapse();
+        } else {
+            self.open();
+        }
+    }
+};
+
+ToggleHeight.prototype.toggle = function () {
+    var self = this;
+    if (self.collapsed) {
+        self.open();
+    } else {
+        self.collapse();
+    }
+    self.collapsed = !self.collapsed;
+};
 
 
 $.fn.osfToggleHeight = function ( options ) {
