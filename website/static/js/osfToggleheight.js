@@ -1,7 +1,7 @@
 
 /**
 * A simple UI component to use with divs that need to be collapsed or expanded.
-* Requires html element to have an ID set. Options are optional, defaults are below
+* Requires html element to have an ID set and have display block rule, (preferably a div tag). Options are optional, defaults are below
 *
 * Usage:
 *
