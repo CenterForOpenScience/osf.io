@@ -138,7 +138,16 @@ ProjectSettings.getConfirmationCode = function(nodeType) {
             });
             request.fail($osf.handleJSONError);
         },
-        confirmBtnLabel: 'Delete'
+        buttons: {
+            cancel: {
+                label: 'Cancel',
+                className: 'btn-default'
+            },
+            success: {
+                label: 'Delete',
+                className: 'btn-danger'
+            }
+        }
     });
 };
 

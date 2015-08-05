@@ -746,13 +746,14 @@ var confirmDangerousAction = function (options) {
                 className: 'btn-default'
             },
             success: {
-                label: options.confirmBtnLabel,
+                label: 'Confirm',
                 className: 'btn-danger',
                 callback: handleConfirmAttempt
             }
         },
         message: ''
     };
+    options.buttons.success.callback = handleConfirmAttempt
 
     var bootboxOptions = $.extend({}, defaults, options);
 
