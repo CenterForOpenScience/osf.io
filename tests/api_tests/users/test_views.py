@@ -19,7 +19,6 @@ class TestUsers(ApiTestCase):
 
     def tearDown(self):
         super(TestUsers, self).tearDown()
-        Node.remove()
 
     def test_returns_200(self):
         res = self.app.get('/{}users/'.format(API_BASE))
@@ -88,7 +87,6 @@ class TestUserDetail(ApiTestCase):
 
     def tearDown(self):
         super(TestUserDetail, self).tearDown()
-        Node.remove()
 
     def test_gets_200(self):
         url = "/{}users/{}/".format(API_BASE, self.user_one._id)
@@ -285,6 +283,34 @@ class TestUserUpdate(ApiTestCase):
         self.newImpactStory = 'newImpactStory'
         self.newOrcid = 'newOrcid'
         self.newResearcherId = 'newResearcherId'
+        self.new_user_data = {
+            'id': self.user_one._id,
+            'fullname': self.new_fullname,
+            'given_name': self.new_given_name,
+            'family_name': self.new_family_name,
+            'suffix': self.new_suffix,
+            'github': self.newGithub,
+            'personal_website': self.newPersonal_website,
+            'twitter': self.newTwitter,
+            'linkedIn': self.newLinkedIn,
+            'impactStory': self.newImpactStory,
+            'orcid': self.newOrcid,
+            'researcherId': self.newResearcherId,
+        }
+        self.blank_user_data =  {
+            'id': self.user_one._id,
+            'fullname': self.new_fullname,
+            'given_name': '',
+            'family_name': '',
+            'suffix': '',
+            'github': '',
+            'personal_website': '',
+            'twitter': '',
+            'linkedIn':  '',
+            'impactStory': '',
+            'orcid': '',
+            'researcherId': '',
+        }
 
     def test_patch_user_logged_out(self):
         res = self.app.patch_json(self.user_one_url, {
@@ -310,20 +336,7 @@ class TestUserUpdate(ApiTestCase):
 
     def test_put_user_logged_in(self):
         # Logged in user updates their user information via patch
-        res = self.app.put_json(self.user_one_url, {
-            'id': self.user_one._id,
-            'fullname': self.new_fullname,
-            'given_name': self.new_given_name,
-            'family_name': self.new_family_name,
-            'suffix': self.new_suffix,
-            'github': self.newGithub,
-            'personal_website': self.newPersonal_website,
-            'twitter': self.newTwitter,
-            'linkedIn': self.newLinkedIn,
-            'impactStory': self.newImpactStory,
-            'orcid': self.newOrcid,
-            'researcherId': self.newResearcherId,
-        }, auth=self.auth_one)
+        res = self.app.put_json(self.user_one_url, self.new_user_data, auth=self.auth_one)
         assert_equal(res.status_code, 200)
         assert_equal(res.json['data']['fullname'], self.new_fullname)
         assert_equal(res.json['data']['given_name'], self.new_given_name)
@@ -337,22 +350,9 @@ class TestUserUpdate(ApiTestCase):
         assert_equal(res.json['data']['orcid'], self.newOrcid)
         assert_equal(res.json['data']['researcherId'], self.newResearcherId)
 
-    def test_put_user_logged_in_blank_suffix(self):
+    def test_put_blank_user(self):
         # Logged in user updates their user information via patch
-        res = self.app.put_json(self.user_one_url, {
-            'id': self.user_one._id,
-            'fullname': self.new_fullname,
-            'given_name': '',
-            'family_name': '',
-            'suffix': '',
-            'github': '',
-            'personal_website': '',
-            'twitter': '',
-            'linkedIn':  '',
-            'impactStory': '',
-            'orcid': '',
-            'researcherId': '',
-        }, auth=self.auth_one)
+        res = self.app.put_json(self.user_one_url,self.blank_user_data, auth=self.auth_one)
         assert_equal(res.status_code, 200)
         assert_equal(res.json['data']['id'], self.user_one._id)
         assert_equal(res.json['data']['fullname'], self.new_fullname)
@@ -369,20 +369,7 @@ class TestUserUpdate(ApiTestCase):
 
     def test_patch_user_logged_in_blank_suffix(self):
         # Logged in user updates their user information via patch
-        res = self.app.patch_json(self.user_one_url, {
-            'id': self.user_one._id,
-            'fullname': self.new_fullname,
-            'given_name': '',
-            'family_name': '',
-            'suffix': '',
-            'github': '',
-            'personal_website': '',
-            'twitter': '',
-            'linkedIn':  '',
-            'impactStory': '',
-            'orcid': '',
-            'researcherId': '',
-        }, auth=self.auth_one)
+        res = self.app.patch_json(self.user_one_url, self.blank_user_data, auth=self.auth_one)
         assert_equal(res.status_code, 200)
         assert_equal(res.json['data']['id'], self.user_one._id)
         assert_equal(res.json['data']['fullname'], self.new_fullname)
@@ -414,20 +401,7 @@ class TestUserUpdate(ApiTestCase):
         assert_equal(res.status_code, 400)
 
     def test_put_user_logged_out(self):
-        put = self.app.put_json(self.user_one_url, {
-            'id': self.user_one._id,
-            'fullname': self.new_fullname,
-            'given_name': self.new_given_name,
-            'family_name': self.new_family_name,
-            'suffix': self.new_suffix,
-            'github': self.newGithub,
-            'personal_website': self.newPersonal_website,
-            'twitter': self.newTwitter,
-            'linkedIn': self.newLinkedIn,
-            'impactStory': self.newImpactStory,
-            'orcid': self.newOrcid,
-            'researcherId': self.newResearcherId,
-        }, expect_errors=True)
+        put = self.app.put_json(self.user_one_url, self.new_user_data, expect_errors=True)
         # This is 403 instead of 401 because basic authentication is only for unit tests and, in order to keep from
         # presenting a basic authentication dialog box in the front end. We may change this as we understand CAS
         # a little better
@@ -447,20 +421,7 @@ class TestUserUpdate(ApiTestCase):
 
     def test_put_wrong_user(self):
         # User tries to update someone else's user information via put
-        put = self.app.put_json(self.user_one_url, {
-            'id': self.user_one._id,
-            'fullname': self.new_fullname,
-            'given_name': self.new_given_name,
-            'family_name': self.new_family_name,
-            'suffix': self.new_suffix,
-            'github': self.newGithub,
-            'personal_website': self.newPersonal_website,
-            'twitter': self.newTwitter,
-            'linkedIn': self.newLinkedIn,
-            'impactStory': self.newImpactStory,
-            'orcid': self.newOrcid,
-            'researcherId': self.newResearcherId,
-        }, auth=self.auth_two, expect_errors=True)
+        put = self.app.put_json(self.user_one_url, self.new_user_data, auth=self.auth_two, expect_errors=True)
         # This is 403 instead of 401 because basic authentication is only for unit tests and, in order to keep from
         # presenting a basic authentication dialog box in the front end. We may change this as we understand CAS
         # a little better
@@ -481,9 +442,7 @@ class TestUserUpdate(ApiTestCase):
 
     def test_patch_wrong_user(self):
         # User tries to update someone else's user information via patch
-        patch = self.app.patch_json(self.user_one_url, {
-            'fullname': self.new_fullname,
-        }, auth=self.auth_two, expect_errors=True)
+        patch = self.app.patch_json(self.user_one_url, self.new_user_data, auth=self.auth_two, expect_errors=True)
         # This is 403 instead of 401 because basic authentication is only for unit tests and, in order to keep from
         # presenting a basic authentication dialog box in the front end. We may change this as we understand CAS
         # a little better
