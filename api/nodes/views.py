@@ -203,6 +203,20 @@ class NodeChildrenList(generics.ListAPIView, NodeMixin):
         children = [node for node in nodes if node.can_view(auth) and node.primary]
         return children
 
+    # def get_user_auth(self, request):
+    #     user = request.user
+    #     if user.is_anonymous():
+    #         auth = Auth(None)
+    #     else:
+    #         auth = Auth(user)
+    #     return auth
+    #
+    # def get_node_count(self):
+    #     obj = self.get_node()
+    #     auth = self.get_user_auth(self.request)
+    #     nodes = [node for node in obj.nodes if node.can_view(auth) and node.primary]
+    #     return len(nodes)
+
 
 class NodePointersList(generics.ListCreateAPIView, NodeMixin):
     """Pointers to other nodes.

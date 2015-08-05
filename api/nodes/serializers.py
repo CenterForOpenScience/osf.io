@@ -52,9 +52,12 @@ class NodeSerializer(JSONAPISerializer):
     contributors = ser.HyperlinkedIdentityField(view_name='nodes:node-contributors', lookup_field='pk', lookup_url_kwarg='node_id')
     pointers = ser.HyperlinkedIdentityField(view_name='nodes:node-pointers', lookup_field='pk', lookup_url_kwarg='node_id')
     registrations = ser.HyperlinkedIdentityField(view_name='nodes:node-registrations', lookup_field='pk', lookup_url_kwarg='node_id')
-    files = ser.HyperlinkedIdentityField(view_name='nodes:node-files', lookup_field='pk', lookup_url_kwarg='node_id')
-    parent = ser.HyperlinkedIdentityField(view_name='nodes:node-detail', lookup_field='parent_id', lookup_url_kwarg='node_id')
-
+    # files = ser.HyperlinkedIdentityField(view_name='nodes:node-files', lookup_field='pk', lookup_url_kwarg='node_id')
+    # parent = ser.HyperlinkedIdentityField(view_name='nodes:node-detail', lookup_field='parent_id', lookup_url_kwarg='node_id')
+    children_count = ser.SerializerMethodField()
+    contributors_count = ser.SerializerMethodField()
+    pointers_count = ser.SerializerMethodField()
+    registrations_count = ser.SerializerMethodField()
 
     # TODO: When we have 'admin' permissions, make this writable for admins
     public = ser.BooleanField(source='is_public', read_only=True,
@@ -89,15 +92,15 @@ class NodeSerializer(JSONAPISerializer):
             auth = Auth(user)
         return auth
 
-    def get_node_count(self, obj):
+    def get_children_count(self, obj):
         auth = self.get_user_auth(self.context['request'])
         nodes = [node for node in obj.nodes if node.can_view(auth) and node.primary]
         return len(nodes)
 
-    def get_contrib_count(self, obj):
+    def get_contributors_count(self, obj):
         return len(obj.contributors)
 
-    def get_registration_count(self, obj):
+    def get_registrations_count(self, obj):
         auth = self.get_user_auth(self.context['request'])
         registrations = [node for node in obj.node__registrations if node.can_view(auth)]
         return len(registrations)
