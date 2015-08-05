@@ -138,6 +138,7 @@
 ##    </div>
 ##</div>
 
+## Add search dashboard
 <hr />
 <div id="profileDashboard" class="row">
 </div>
@@ -193,7 +194,6 @@
       var schoolsUrls = {
           crud: '${ api_url_for('serialize_schools', uid=profile['id']) }'
       };
-
       window.contextVars = $.extend(true, {}, window.contextVars, {
           socialUrls: socialUrls,
           jobsUrls: jobsUrls,

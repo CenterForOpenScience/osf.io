@@ -285,13 +285,13 @@ utils.termFilter = function (field, value) {
     return ret;
 };
 
-utils.termsFilter = function (field, value, min_doc_count) {
-    min_doc_count = min_doc_count || 0;
+utils.termsFilter = function (field, value, minDocCount) {
+    minDocCount = minDocCount || 0;
     var ret = {'terms': {}};
     ret.terms[field] = value;
     ret.terms.size = 0;
     ret.terms.exclude = 'of|and|or';
-    ret.terms.min_doc_count = min_doc_count;
+    ret.terms.min_doc_count = minDocCount;
     return ret;
 };
 
@@ -301,19 +301,19 @@ utils.matchQuery = function (field, value) {
     return ret;
 };
 
-utils.rangeFilter = function (field_name, gte, lte) {
+utils.rangeFilter = function (fieldName, gte, lte) {
     lte = lte || new Date().getTime();
     gte = gte || 0;
     var ret = {'range': {}};
-    ret.range[field_name] = {'gte': gte, 'lte': lte};
+    ret.range[fieldName] = {'gte': gte, 'lte': lte};
     return ret;
 };
 
-utils.boolQuery = function (must, must_not, should, minimum) {
+utils.boolQuery = function (must, mustNot, should, minimum) {
     var ret = {
         'bool': {
             'must': (must || []),
-            'must_not': (must_not || []),
+            'must_not': (mustNot || []),
             'should': (should || [])
         }
     };
@@ -343,11 +343,11 @@ utils.dateHistogramFilter = function (field, gte, lte, interval) {
     };
 };
 
-utils.commonQuery = function (query_string, field) {
+utils.commonQuery = function (queryString, field) {
     field = field || '_all';
     var ret = {'common': {}};
     ret.common[field] = {
-        query: query_string
+        query: queryString
     };
     return ret;
 };
@@ -405,22 +405,25 @@ utils.processStats = function (vm, data) {
 };
 
 
-utils.updateAggs = function (currentAgg, newAgg, global) {
-    global = global || false;
+utils.updateAggs = function (currentAgg, newAgg, globalAgg) {
+    globalAgg = globalAgg || false;
+
+    //var returnAgg = currentAgg;
     if (currentAgg) {
-        if (currentAgg.all && global) {
-            $.extend(currentAgg.all.aggregations, newAgg);
+        var returnAgg = $.extend({},currentAgg);
+        if (returnAgg.all && globalAgg) {
+            $.extend(returnAgg.all.aggregations, newAgg);
         } else {
-            $.extend(currentAgg, newAgg);
+            $.extend(returnAgg, newAgg);
         }
-        return currentAgg;
+        return returnAgg;
     }
 
-    if (global) {
+    if (globalAgg) {
         return {'all': {'global': {}, 'aggregations': newAgg}};
     }
 
-    return newAgg;
+    return newAgg; //else, do nothing
 };
 
 

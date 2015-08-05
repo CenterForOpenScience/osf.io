@@ -55,7 +55,7 @@ charts.c3componetize = function(c3ChartSetup, vm, divID) {
  * @param {Object} rawData: Data to populate chart after parsing raw data
  * @param {Object} vm: vm of the searchDashboard
  * @param {Object} widget: params of the widget that chart is being created for
- * @return {m.component object}  c3 chart wrapped in component
+ * @return {m.component object} c3 chart wrapped in component
  */
 charts.donutChart = function (rawData, vm, widget) {
     var data = charts.singleLevelAggParser(rawData, widget.levelNames);
