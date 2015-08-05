@@ -1,7 +1,7 @@
 
 /**
 * A simple UI component to use with divs that need to be collapsed or expanded.
-* Requires element to have an ID set. Options are optional, defaults are below
+* Requires html element to have an ID set. Options are optional, defaults are below
 *
 * Usage:
 *
@@ -41,41 +41,41 @@ function ToggleHeight ( element, options ) {
         self.checkCollapse();
         $(window).resize(self.checkCollapse);
     };
-    self.noToggle = function () {
+    self.removeToggle = function () {
         self.$el.css('height', 'auto');
         self.gradientDiv.hide();
         self.toggleDiv.hide();
         self.showToggle = false;
         self.$el.removeClass('toggle-height-parent');
     },
-    self.toggleCollapse = function () {
+    self.collapse = function () {
         self.$el.css('height', self.settings.height + 'px');
         self.gradientDiv.show();
         self.toggleDiv.html('<i class="' + self.settings.iconDown +'"></i>').show();
     };
-    self.toggleOpen = function (){
+    self.open = function (){
         self.$el.css('height', 'auto');
         self.gradientDiv.hide();
         self.toggleDiv.html('<i class="' + self.settings.iconUp + '"></i>').show();
     };
     self.checkCollapse = function _checkCollapse () {
         if (self.element.scrollHeight <= self.settings.height){
-            self.noToggle();
+            self.removeToggle();
         } else if (!self.showToggle){
             self.showToggle = true;
             self.$el.addClass('toggle-height-parent');
             if (self.collapsed){
-                this.toggleCollapse();
+                this.collapse();
             } else {
-                self.toggleOpen();
+                self.open();
             }
         }
     };
     self.toggle = function () {
         if (self.collapsed) {
-            self.toggleOpen();
+            self.open();
         } else {
-            self.toggleCollapse();
+            self.collapse();
         }
         self.collapsed = !self.collapsed;
     };
