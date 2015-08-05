@@ -95,8 +95,7 @@ ShareApp.controller = function() {
 
     m.request({
         method: 'GET',
-        // url: '/api/v1/share/documents/' // TODO where will the postgres API live??
-        url: 'http://localhost:8000/documents/' // TODO where will the postgres API live??
+        url: '/api/v1/share/documents/' // TODO where will the postgres API live??
     }).then(function(data) {
         self.vm.rawNormedLoaded(true);
     }, function(err) {
