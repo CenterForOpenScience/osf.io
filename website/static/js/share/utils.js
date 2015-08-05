@@ -45,8 +45,8 @@ utils.errorState = function(vm){
 };
 
 /* handles field highlighting for returned results */
-utils.highlightField = function(result, field_name) {
-    return utils.scrubHTML(result.highlight[field_name] ? result.highlight[field_name][0] : result[field_name] || '');
+utils.highlightField = function(result, fieldName) {
+    return utils.scrubHTML(result.highlight[fieldName] ? result.highlight[fieldName][0] : result[fieldName] || '');
 };
 
 /** Updates the vm with new search results
@@ -127,10 +127,14 @@ utils.search = function(vm) {
         utils.loadMore(vm)
             .then(function (data) {
                 if (vm.loadStats) {
-                    utils.processStats(vm, data);
+                    if (data.aggregations) {
+                        utils.processStats(vm, data);
+                    } else {
+                        $osf.growl('Error', 'Could not load search statistics', 'danger');
+                    }
+                    utils.updateVM(vm, data);
+                    ret.resolve(vm);
                 }
-                utils.updateVM(vm, data);
-                ret.resolve(vm);
             });
     }
     return ret.promise;
@@ -283,19 +287,6 @@ utils.loadRawNormalized_orig = function(result){
         // url: 'http://localhost:8000/documents/' + result.shareProperties.docID,
         url: '/api/v1/share/documents/' + result.shareProperties.docID,  // TODO where will the postgres API live??
         extract: nonJsonErrors
-    }).then(function(data) {
-
-        var normed = JSON.parse(data.normalized);
-        normed = JSON.stringify(normed, undefined, 2);
-
-        var all_raw = JSON.parse(data.raw);
-        result.raw = all_raw.doc;
-        result.rawfiletype = all_raw.filetype;
-        result.normalized = normed;
-    }, function(error) {
-        result.rawfiletype = 'json';
-        result.normalized = '"Normalized data not found."';
-        result.raw = '"Raw data not found."';
     });
 };
 
@@ -316,21 +307,14 @@ utils.filteredQuery = function(query, filter) {
     return ret;
 };
 
-/* Creates a term filter */
-utils.termFilter = function (field, value) {
-    var ret = {'term': {}};
-    ret.term[field] = value;
-    return ret;
-};
-
 /* Creates a terms filter (their names, not ours) */
-utils.termsFilter = function (field, value, min_doc_count) {
-    min_doc_count = min_doc_count || 0;
+utils.termsFilter = function (field, value, minDocCount) {
+    minDocCount = minDocCount || 0;
     var ret = {'terms': {}};
     ret.terms[field] = value;
     ret.terms.size = 0;
     ret.terms.exclude = 'of|and|or';
-    ret.terms.min_doc_count = min_doc_count;
+    ret.terms.min_doc_count = minDocCount;
     return ret;
 };
 
@@ -342,20 +326,20 @@ utils.matchQuery = function (field, value) {
 };
 
 /* Creates a range filter */
-utils.rangeFilter = function (field_name, gte, lte) {
+utils.rangeFilter = function (fieldName, gte, lte) {
     lte = lte || new Date().getTime();
     gte = gte || 0;
     var ret = {'range': {}};
-    ret.range[field_name] = {'gte': gte, 'lte': lte};
+    ret.range[fieldName] = {'gte': gte, 'lte': lte};
     return ret;
 };
 
 /* Creates a bool query */
-utils.boolQuery = function (must, must_not, should, minimum) {
+utils.boolQuery = function (must, mustNot, should, minimum) {
     var ret = {
         'bool': {
             'must': (must || []),
-            'must_not': (must_not || []),
+            'must_not': (mustNot || []),
             'should': (should || [])
         }
     };
@@ -387,11 +371,11 @@ utils.dateHistogramFilter = function (field, gte, lte, interval) {
 };
 
 /* Creates a common query */
-utils.commonQuery = function (query_string, field) {
+utils.commonQuery = function (queryString, field) {
     field = field || '_all';
     var ret = {'common': {}};
     ret.common[field] = {
-        query: query_string
+        query: queryString
     };
     return ret;
 };
@@ -420,59 +404,59 @@ utils.queryFilter = function (query) {
 /**
  * Parses a filter string into one of the above filters
  *
+ * parses a filter of the form
+ *  filterName:fieldName:param1:param2...
+ *  ex: range:providerUpdatedDateTime:2015-06-05:2015-06-16
  * @param {String} filterString A string representation of a filter dictionary
  */
 utils.parseFilter = function (filterString) {
-    // parses a filter of the form
-    // filterName:fieldName:param1:param2...
-    // range:providerUpdatedDateTime:2015-06-05:2015-06-16
-    var parts = filterString.split(':');
+        var parts = filterString.split(':');
     var type = parts[0];
     var field = parts[1];
-    if (type === 'range') {
-        return utils.rangeFilter(field, parts[2], parts[3]);
-    } else if (type === 'match') {
-        return utils.queryFilter(
-            utils.matchQuery(field, parts[2])
-        );
-    }
+
     // Any time you add a filter, put it here
-    // TODO: Maybe this would be better as a map?
+    switch(type) {
+        case 'range':
+            return utils.rangeFilter(field, parts[2], parts[3]);
+        case 'match':
+            return utils.queryFilter(
+                utils.matchQuery(field, parts[2])
+            );
+    }
 };
 
 utils.processStats = function (vm, data) {
-    if (data.aggregations) {
-        $.map(Object.keys(data.aggregations), function (key) { //parse data and load correctly
-            if (vm.statsParsers[key]) {
-                var chartData = vm.statsParsers[key](data);
-                vm.statsData.charts[chartData.name] = chartData;
-                if (chartData.name in vm.graphs) {
-                    vm.graphs[chartData.name].load(chartData);
-                }
+    $.map(Object.keys(data.aggregations), function (key) { //parse data and load correctly
+        if (vm.statsParsers[key]) {
+            var chartData = vm.statsParsers[key](data);
+            vm.statsData.charts[chartData.name] = chartData;
+            if (chartData.name in vm.graphs) {
+                vm.graphs[chartData.name].load(chartData);
             }
-        });
-    } else {
-        $osf.growl('Error', 'Could not load search statistics', 'danger');
-    }
+        }
+    });
 };
 
 
-utils.updateAggs = function (currentAgg, newAgg, global) {
-    global = global || false;
+utils.updateAggs = function (currentAgg, newAgg, globalAgg) {
+    globalAgg = globalAgg || false;
+
+    //var returnAgg = currentAgg;
     if (currentAgg) {
-        if (currentAgg.all && global) {
-            $.extend(currentAgg.all.aggregations, newAgg);
+        var returnAgg = $.extend({},currentAgg);
+        if (returnAgg.all && globalAgg) {
+            $.extend(returnAgg.all.aggregations, newAgg);
         } else {
-            $.extend(currentAgg, newAgg);
+            $.extend(returnAgg, newAgg);
         }
-        return currentAgg;
+        return returnAgg;
     }
 
-    if (global) {
+    if (globalAgg) {
         return {'all': {'global': {}, 'aggregations': newAgg}};
     }
 
-    return newAgg;
+    return newAgg; //else, do nothing
 };
 
 
@@ -499,7 +483,6 @@ utils.generateColors = function (numColors) {
     var colorsToGenerate = COLORBREWER_COLORS.slice();
     var colorsUsed = [];
     var colorsOut = [];
-    var colorsNorm = [];
     var color;
     while (colorsOut.length < numColors) {
         color = colorsToGenerate.shift();
@@ -508,7 +491,6 @@ utils.generateColors = function (numColors) {
             colorsUsed = [];
         } else {
             colorsUsed.push(color);
-            colorsNorm.push(color);
             colorsOut.push(rgbToHex(color));
         }
     }
