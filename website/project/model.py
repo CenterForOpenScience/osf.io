@@ -686,15 +686,19 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
 
     @property
     def embargo_end_date(self):
-        if self.embargo is None and self.parent_node:
-            return self.parent_node.embargo_end_date
-        return getattr(self.embargo, 'embargo_end_date', False)
+        if self.embargo is None:
+            if self.parent_node:
+                return self.parent_node.embargo_end_date
+            return False
+        return self.embargo.embargo_end_date
 
     @property
     def pending_embargo(self):
-        if self.embargo is None and self.parent_node:
-            return self.parent_node.pending_embargo
-        return getattr(self.embargo, 'pending_embargo', False)
+        if self.embargo is None:
+            if self.parent_node:
+                return self.parent_node.pending_embargo
+            return False
+        return self.embargo.pending_embargo
 
     @property
     def pending_registration(self):
@@ -3065,6 +3069,55 @@ class Embargo(EmailApprovableSanction):
             self._id
         )
 
+    def _view_url(self, user_id):
+        registration = Node.find_one(Q('embargo', 'eq', self))
+        return registration.web_url_for('view_project', _absolute=True)
+
+    def _approve_url(self, user_id):
+        approval_token = self.approval_state.get(user_id, {}).get('approval_token')
+        if approval_token:
+            registration = Node.find_one(Q('embargo', 'eq', self))
+            return registration.web_url_for(
+                'node_registration_embargo_approve',
+                token=approval_token,
+                _absolute=True
+            ) if approval_token else None
+        return None
+
+    def _rejection_url(self, user_id):
+        rejection_token = self.approval_state.get(user_id, {}).get('rejection_token')
+        if rejection_token:
+            registration = Node.find_one(Q('embargo', 'eq', self))
+            return registration.web_url_for(
+                'node_registration_embargo_disapprove',
+                token=rejection_token,
+                _absolute=True
+            ) if rejection_token else None
+        return None
+
+    def _email_template_context(self, user, is_authorizer=False, urls=None):
+        urls = urls or self.stashed_urls[user._id]
+        registration_link = urls['view']
+        if is_authorizer:
+            approval_link = urls['approve']
+            disapproval_link = urls['reject']
+            approval_time_span = settings.RETRACTION_PENDING_TIME.days * 24
+
+            return {
+                'initiated_by': self.initiated_by.fullname,
+                'registration_link': registration_link,
+                'approval_link': approval_link,
+                'disapproval_link': disapproval_link,
+                'embargo_end_date': self.end_date,
+                'approval_time_span': approval_time_span,
+            }
+        else:
+            return {
+                'initiated_by': self.initiated_by.fullname,
+                'registration_link': registration_link,
+                'embargo_end_date': self.end_date,
+            }
+
     @property
     def embargo_end_date(self):
         return self.end_date
@@ -3179,7 +3232,7 @@ class Retraction(EmailApprovableSanction):
                 'initiated_by': self.initiated_by.fullname,
                 'registration_link': registration_link,
                 'approval_link': approval_link,
-                'dispproval_link': disapproval_link,
+                'disapproval_link': disapproval_link,
                 'approval_time_span': approval_time_span,
             }
         else:
@@ -3290,21 +3343,19 @@ class RegistrationApproval(EmailApprovableSanction):
         if is_authorizer:
             approval_link = urls['approve']
             disapproval_link = urls['reject']
-            approval_time_span = settings.EMBARGO_PENDING_TIME.days * 24
+            approval_time_span = settings.REGISTRATION_APPROVAL_PERIOD
 
             return {
                 'initiated_by': self.initiated_by.fullname,
                 'registration_link': registration_link,
                 'approval_link': approval_link,
-                'dispproval_link': disapproval_link,
-                'embargo_end_date': self.end_date,
+                'disapproval_link': disapproval_link,
                 'approval_time_span': approval_time_span,
             }
         else:
             return {
                 'initiated_by': self.initiated_by.fullname,
                 'registration_link': registration_link,
-                'embargo_end_date': self.end_date,
             }
 
     def _add_success_logs(self, user, node):
