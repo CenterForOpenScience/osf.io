@@ -244,14 +244,44 @@ utils.addFiltersToQuery = function (query, filters) {
 
 /* Loads the raw and normalized data for a specific result */
 utils.loadRawNormalized = function(result){
-    var nonJsonErrors = function(xhr) {
-        return xhr.status > 200 ? JSON.stringify(xhr.responseText) : xhr.responseText;
-    };
     var source = encodeURIComponent(result.shareProperties.source);
     var docID = encodeURIComponent(result.shareProperties.docID);
     return m.request({
         method: 'GET',
-        url: '/api/v1/share/documents/' + source + '/' + docID + '/',
+        // url: 'http://localhost:8000/documents/' + source + '/' + docID + '/',
+        url: 'api/v1/share/documents/' + source + '/' + docID + '/',
+
+        unwrapSuccess: function(data) {
+            var unwrapped = {};
+            var normed = JSON.parse(data.normalized);
+            var allRaw = JSON.parse(data.raw);
+            unwrapped.normalized = JSON.parse(data.normalized);
+            unwrapped.raw = allRaw.doc;
+            unwrapped.rawfiletype = allRaw.filetype;
+            unwrapped.normalized = normed;
+            console.log(unwrapped);
+
+            return unwrapped;
+        },
+        unwrapError: function(data) {
+            var unwrapped = {};
+            unwrapped.rawfiletype = 'json';
+            unwrapped.normalized = '"Normalized data not found."';
+            unwrapped.raw = '"Raw data not found."';
+
+            return unwrapped;
+        }
+    });
+};
+
+utils.loadRawNormalized_orig = function(result){
+    var nonJsonErrors = function(xhr) {
+        return xhr.status > 200 ? JSON.stringify(xhr.responseText) : xhr.responseText;
+    };
+    return m.request({
+        method: 'GET',
+        // url: 'http://localhost:8000/documents/' + result.shareProperties.docID,
+        url: '/api/v1/share/documents/' + result.shareProperties.docID,  // TODO where will the postgres API live??
         extract: nonJsonErrors
     }).then(function(data) {
 
@@ -268,6 +298,7 @@ utils.loadRawNormalized = function(result){
         result.raw = '"Raw data not found."';
     });
 };
+
 
 /*** Elasticsearch functions below ***/
 
