@@ -68,8 +68,7 @@ var Result = {
                     )
                 ]),
                 m('br'),
-                m.component(Footer, params),
-                m.component(RawNormalizedData, params)
+                m.component(Footer, params)
             ]),
             m('hr')
         ]);
@@ -172,6 +171,18 @@ var Subject = {
 };
 
 var Footer = {
+    controller: function(params) {
+        var self = this;
+        this.result = params.result;
+        this.cleanResult = m.prop(null);
+        this.loadRawNorm = function() {
+            utils.loadRawNormalized(this.result).then(
+                function(cleanData) {
+                    self.cleanResult(cleanData);
+                }
+            )
+        };
+    },
     view: function(ctrl, params) {
         var result = params.result;
         var vm = params.vm;
@@ -182,43 +193,29 @@ var Footer = {
                     m('span', {style: {'margin-right': '5px', 'margin-left': '5px'}}, ' | '),
                     m('a', {
                         onclick: function() {
-                            result.showRawNormed = result.showRawNormed ? false : true;
-                            if (!result.raw) {
-                                utils.loadRawNormalized(result)
-                                    .then(function(data) {
-                                        var normed = JSON.parse(data.normalized);
-                                        normed = JSON.stringify(normed, undefined, 2);
-
-                                        var all_raw = JSON.parse(data.raw);
-                                        result.raw = all_raw.doc;
-                                        result.rawfiletype = all_raw.filetype;
-                                        result.normalized = normed;
-                                    }, function(error) {
-                                        result.rawfiletype = 'json';
-                                        result.normalized = '"Normalized data not found"';
-                                        result.raw = '"Raw data not found"';
-                                    });
-                            }
+                            ctrl.showRawNormed = ctrl.showRawNormed ? false : true;
+                            ctrl.loadRawNorm();
                         }
                     }, 'Data')
-                ]) : []
+                ]) : m('span', [])
             ),
             m('span.pull-right', [
                 m('img', {src: vm.ProviderMap[result.shareProperties.source].favicon, alt: 'favicon for ' + result.shareProperties.source, style: {width: '16px', height: '16px'}}),
                 ' ',
                 m('a', {onclick: function() {utils.updateFilter(vm, 'shareProperties.source:' + result.shareProperties.source);}}, vm.ProviderMap[result.shareProperties.source].long_name),
                 m('br')
-            ])
+            ]),
+            ctrl.showRawNormed ? m.component(RawNormalizedData, {result: ctrl.cleanResult}) : '',
         ]);
     }
 };
 
 var RawNormalizedData = {
     view: function(ctrl, params) {
-        var result = params.result;
+        var result = params.result();
         return m('.row', [
             m('.col-md-12',
-                result.showRawNormed && result.raw ? m('div', [
+                m('div', [
                     m('ul', {class: 'nav nav-tabs'}, [
                         m('li', m('a', {href: '#raw', 'data-toggle': 'tab'}, 'Raw')),
                         m('li', m('a', {href: '#normalized', 'data-toggle': 'tab'}, 'Normalized'))
@@ -241,11 +238,13 @@ var RawNormalizedData = {
                         m('div',
                             {class: 'tab-pane', id:'normalized'},
                             m('pre',
-                                result.normalized || '"Normalized data not found"'
+                                (function(){
+                                    return JSON.stringify(result.normalized, undefined, 2);
+                                }())
                             )
                         )
                     )
-                ]) : m('span')
+                ])
             )
         ]);
     }
