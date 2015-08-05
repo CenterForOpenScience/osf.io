@@ -81,8 +81,8 @@ function subscribe(item, notification_type) {
 
 function displayParentNotificationType(item){
     var notificationTypeDescriptions = {
-        'email_transactional': 'Immediate Emails',
-        'email_digest': 'Daily Digest',
+        'email_transactional': 'Instantly',
+        'email_digest': 'Daily',
         'adopt_parent': 'Adopt setting from parent project',
         'none': 'Never'
     };
@@ -209,8 +209,8 @@ function ProjectNotifications(data) {
                                 }},
                                 [
                                     m('option', {value: 'none', selected : item.data.event.notificationType === 'none' ? 'selected': ''}, 'Never'),
-                                    m('option', {value: 'email_transactional', selected : item.data.event.notificationType === 'email_transactional' ? 'selected': ''}, 'Immediate Emails'),
-                                    m('option', {value: 'email_digest', selected : item.data.event.notificationType === 'email_digest' ? 'selected': ''}, 'Daily Digest')
+                                    m('option', {value: 'email_transactional', selected : item.data.event.notificationType === 'email_transactional' ? 'selected': ''}, 'Instantly'),
+                                    m('option', {value: 'email_digest', selected : item.data.event.notificationType === 'email_digest' ? 'selected': ''}, 'Daily')
                             ])
                         ]);
                     }
@@ -244,8 +244,8 @@ function ProjectNotifications(data) {
                                                  selected: item.data.event.notificationType === 'adopt_parent' ? 'selected' : ''},
                                                  'Adopt setting from parent project ' + displayParentNotificationType(item)),
                                     m('option', {value: 'none', selected : item.data.event.notificationType === 'none' ? 'selected': ''}, 'Never'),
-                                    m('option', {value: 'email_transactional',  selected : item.data.event.notificationType === 'email_transactional' ? 'selected': ''}, 'Immediate Emails'),
-                                    m('option', {value: 'email_digest', selected : item.data.event.notificationType === 'email_digest' ? 'selected': ''}, 'Daily Digest')
+                                    m('option', {value: 'email_transactional',  selected : item.data.event.notificationType === 'email_transactional' ? 'selected': ''}, 'Instantly'),
+                                    m('option', {value: 'email_digest', selected : item.data.event.notificationType === 'email_digest' ? 'selected': ''}, 'Daily')
                             ])
                         ]);
                     }

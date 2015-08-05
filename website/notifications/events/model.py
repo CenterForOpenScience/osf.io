@@ -274,6 +274,20 @@ class AddonFileMoved(ComplexFileEvent):
                                     self.timestamp, message=remove_message,
                                     gravatar_url=self.gravatar_url, url=self.source_url.url)
 
+    def form_message(self):
+        super(AddonFileMoved, self).form_message()
+        source = self.payload['source']['materialized'].rstrip('/').split('/')
+        destination = self.payload['destination']['materialized'].rstrip('/').split('/')
+        if source[:-1] == destination[:-1]:
+            self._html_message = 'renamed {} "<b>{}</b>" to "<b>{}</b>".'.format(
+                self.payload['destination']['kind'], self.payload['source']['materialized'],
+                self.payload['destination']['materialized']
+            )
+            self._text_message = 'renamed {} "{}" to "{}".'.format(
+                self.payload['destination']['kind'], self.payload['source']['materialized'],
+                self.payload['destination']['materialized']
+            )
+
 
 class AddonFileCopied(ComplexFileEvent):
     """

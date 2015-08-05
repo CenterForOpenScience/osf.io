@@ -36,7 +36,7 @@
                                 <li><a href="#configureAddonsAnchor">Configure Add-ons</a></li>
                             % endif
 
-                            <li><a href="#configureNotificationsAnchor">Configure Notifications</a></li>
+                            <li><a href="#configureNotificationsAnchor">Configure Email Notifications</a></li>
                         % endif
 
                         % if 'admin' in user['permissions']:
@@ -203,7 +203,7 @@
                 <div class="panel panel-default">
                     <span id="configureNotificationsAnchor" class="anchor"></span>
                     <div class="panel-heading clearfix">
-                        <h3 class="panel-title">Configure Notifications</h3>
+                        <h3 class="panel-title">Configure Email Notifications</h3>
                     </div>
                     <div class="help-block" style="padding-left: 15px">
                         <p class="text-info">These notification settings only apply to you. They do NOT affect any other contributor on this project.</p>
