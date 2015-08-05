@@ -226,7 +226,8 @@ class RegistrationFactory(AbstractNodeFactory):
             with patch.object(reg.archive_job, 'archive_tree_finished', Mock(return_value=True)):
                 reg.archive_job.status = ARCHIVER_SUCCESS
                 reg.archive_job.save()
-                archiver_listeners.archive_callback(reg)
+                with patch('website.mails.send_mail'):
+                    archiver_listeners.archive_callback(reg)
         reg.save()
         return reg
 

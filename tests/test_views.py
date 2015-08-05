@@ -547,11 +547,10 @@ class TestProjectViews(OsfTestCase):
             self.project._primary_key)
         self.app.post_json(url, {'registrationChoice': 'Make registration public immediately'}, auth=self.auth)
         self.project.reload()
-        archiver_utils.archive_success(self.project.node__registrations[0], self.project.creator)
         # A registration was added to the project's registration list
         assert_equal(len(self.project.node__registrations), 1)
         # A log event was saved
-        assert_equal(self.project.logs[-1].action, "project_registered")
+        assert_equal(self.project.logs[-1].action, "registration_approval_initiated")
         # Most recent node is a registration
         reg = Node.load(self.project.node__registrations[-1])
         assert_true(reg.is_registration)

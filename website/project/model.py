@@ -2969,6 +2969,19 @@ class Sanction(StoredObject):
         self.state = Sanction.CANCELLED
         self._on_reject(user, token)
 
+    def _notify_authorizer(self, user):
+        pass
+
+    def _notify_non_authorizer(self, user):
+        pass
+
+    def ask(self, group):
+        for contrib in group:
+            if contrib._id in self.approval_state:
+                self._notify_authorizer(contrib)
+            else:
+                self._notify_non_authorizer(contrib)
+
 class EmailApprovableSanction(Sanction):
 
     AUTHORIZER_NOTIFY_TEMPLATE = None
@@ -3006,11 +3019,11 @@ class EmailApprovableSanction(Sanction):
         return {}
 
     def _notify_authorizer(self, authorizer):
-        context = self._email_template_context(True)
+        context = self._email_template_context(authorizer, True)
         self._send_approval_request_email(authorizer, self.AUTHORIZER_NOTIFY_TEMPLATE, context)
 
     def _notify_non_authorizer(self, user):
-        context = self._email_template_context()
+        context = self._email_template_context(user)
         self._send_approval_request_email(user, self.NON_AUTHORIZER_NOTIFY_TEMPLATE, context)
 
     def add_authorizer(self, user, **kwargs):
@@ -3149,7 +3162,7 @@ class Retraction(EmailApprovableSanction):
         return None
 
     def _email_template_context(self, user, is_authorizer=False, urls=None):
-        urls = urls or self.stashed_urls
+        urls = urls or self.stashed_urls[user._id]
         registration_link = urls['view']
         if is_authorizer:
             approval_link = urls['approve']
@@ -3262,7 +3275,7 @@ class RegistrationApproval(EmailApprovableSanction):
         return None
 
     def _email_template_context(self, user, is_authorizer=False, urls=None):
-        urls = urls or self.stashed_urls
+        urls = urls or self.stashed_urls[user._id]
         registration_link = urls['view']
         if is_authorizer:
             approval_link = urls['approve']
