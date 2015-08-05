@@ -5,7 +5,41 @@ var $ = require('jquery');
 var m = require('mithril');
 var $osf = require('js/osfHelpers');
 var utils = require('./utils');
-var Results = {};
+var Results = {
+    controller: function(vm) {
+        var self = this;
+        self.vm = vm;
+        self.vm.resultsLoading = m.prop(false);
+    },
+    view: function(ctrl) {
+        var resultViews = $.map(ctrl.vm.results, function(result, i) {
+            return m.component(Result, {result: result, vm: ctrl.vm});
+        });
+
+
+
+        var len = 0;
+        if (ctrl.vm.results){
+            len = ctrl.vm.results.length;
+        }
+        return m('', [
+            m('.row', m('.col-md-12', (!utils.arrayEqual(resultViews, [])) ? resultViews : (!ctrl.vm.resultsLoading() && (ctrl.vm.results !== null)) ? m('span', {style: {margin: 'auto'}}, 'No results for this query') : [])),
+            m('.row', m('.col-md-12', ctrl.vm.resultsLoading() ? utils.loadingIcon : [])),
+            m('.row', m('.col-md-12', m('div', {style: {display: 'block', margin: 'auto', 'text-align': 'center'}},
+                len > 0 && len < ctrl.vm.count ?
+                m('a.btn.btn-md.btn-default', {
+                    onclick: function(){
+                        utils.loadMore(ctrl.vm)
+                            .then(function(data) {
+                                utils.updateVM(ctrl.vm, data);
+                            });
+                    }
+                }, 'More') : [])
+            ))
+        ]);
+
+    }
+};
 
 var Result = {
     /**
@@ -35,7 +69,7 @@ var Result = {
                 ]),
                 m('br'),
                 m.component(Footer, params),
-                // self.renderRawNormalizedData(result)
+                m.component(RawNormalizedData, params)
             ]),
             m('hr')
         ]);
@@ -179,83 +213,42 @@ var Footer = {
     }
 };
 
-
-Results.view = function(ctrl) {
-    var resultViews = $.map(ctrl.vm.results, function(result, i) {
-        return m.component(Result, {result: result, vm: ctrl.vm});
-    });
-
-
-
-    var len = 0;
-    if (ctrl.vm.results){
-        len = ctrl.vm.results.length;
-    }
-    return m('', [
-        m('.row', m('.col-md-12', (!utils.arrayEqual(resultViews, [])) ? resultViews : (!ctrl.vm.resultsLoading() && (ctrl.vm.results !== null)) ? m('span', {style: {margin: 'auto'}}, 'No results for this query') : [])),
-        m('.row', m('.col-md-12', ctrl.vm.resultsLoading() ? utils.loadingIcon : [])),
-        m('.row', m('.col-md-12', m('div', {style: {display: 'block', margin: 'auto', 'text-align': 'center'}},
-            len > 0 && len < ctrl.vm.count ?
-            m('a.btn.btn-md.btn-default', {
-                onclick: function(){
-                    utils.loadMore(ctrl.vm)
-                        .then(function(data) {
-                            utils.updateVM(ctrl.vm, data);
-                        });
-                }
-            }, 'More') : [])
-         ))
-    ]);
-
-};
-
-Results.controller = function(vm) {
-    var self = this;
-    self.vm = vm;
-    self.vm.resultsLoading = m.prop(false);
-
-    /* Renders raw and normalized records from the API. Fails gracefully if the API is not up or if it can't find a document */
-    self.renderRawNormalizedData = function(result) {
+var RawNormalizedData = {
+    view: function(ctrl, params) {
+        var result = params.result;
         return m('.row', [
-                    m('.col-md-12',
-                        result.showRawNormed && result.raw ? m('div', [
-                            m('ul', {class: 'nav nav-tabs'}, [
-                                m('li', m('a', {href: '#raw', 'data-toggle': 'tab'}, 'Raw')),
-                                m('li', m('a', {href: '#normalized', 'data-toggle': 'tab'}, 'Normalized'))
-                            ]),
-                            m('div', {class: 'tab-content'},
-                                m('div',
-                                    {class: 'tab-pane active', id:'raw'},
-                                    m('pre',
-                                        (function(){
-                                            if (result.rawfiletype === 'xml') {
-                                                return pd.xml(result.raw);
-                                            }
-                                            else {
-                                                var rawjson = JSON.parse(result.raw);
-                                                return JSON.stringify(rawjson, undefined, 2);
-                                            }
-                                        }())
-                                    )
-                                ),
-                                m('div',
-                                    {class: 'tab-pane', id:'normalized'},
-                                    m('pre',
-                                        result.normalized || '"Normalized data not found"'
-                                    )
-                                )
+            m('.col-md-12',
+                result.showRawNormed && result.raw ? m('div', [
+                    m('ul', {class: 'nav nav-tabs'}, [
+                        m('li', m('a', {href: '#raw', 'data-toggle': 'tab'}, 'Raw')),
+                        m('li', m('a', {href: '#normalized', 'data-toggle': 'tab'}, 'Normalized'))
+                    ]),
+                    m('div', {class: 'tab-content'},
+                        m('div',
+                            {class: 'tab-pane active', id:'raw'},
+                            m('pre',
+                                (function(){
+                                    if (result.rawfiletype === 'xml') {
+                                        return pd.xml(result.raw);
+                                    }
+                                    else {
+                                        var rawjson = JSON.parse(result.raw);
+                                        return JSON.stringify(rawjson, undefined, 2);
+                                    }
+                                }())
                             )
-                        ]) : m('span')
+                        ),
+                        m('div',
+                            {class: 'tab-pane', id:'normalized'},
+                            m('pre',
+                                result.normalized || '"Normalized data not found"'
+                            )
+                        )
                     )
-                ]);
-    };
-
-    // Uncomment for infinite scrolling!
-    // $(window).scroll(function() {
-    //     if  ($(window).scrollTop() === $(document).height() - $(window).height()){
-    //         utils.loadMore(self.vm);
-    //     }
-    // });
+                ]) : m('span')
+            )
+        ]);
+    }
 };
 
 module.exports = Results;
