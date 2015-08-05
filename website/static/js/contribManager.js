@@ -35,9 +35,7 @@ var sortMap = {
     }
 };
 
-// TODO: We shouldn't need both pageOwner (the current user) and currentUserCanEdit. Separate
-// out the permissions-related functions and remove currentUserCanEdit.
-var ContributorModel = function(contributor, currentUserCanEdit, pageOwner, isRegistration, isAdmin) {
+var ContributorModel = function(contributor, pageOwner, isRegistration, isAdmin) {
 
     var self = this;
     $.extend(self, contributor);
@@ -56,7 +54,6 @@ var ContributorModel = function(contributor, currentUserCanEdit, pageOwner, isRe
         return self.permissionList[0];
     };
 
-    self.currentUserCanEdit = currentUserCanEdit;
     self.isAdmin = isAdmin;
     self.visible = ko.observable(contributor.visible);
     self.permission = ko.observable(contributor.permission);
@@ -69,7 +66,7 @@ var ContributorModel = function(contributor, currentUserCanEdit, pageOwner, isRe
     };
 
     self.canEdit = ko.computed(function() {
-      return self.currentUserCanEdit && !self.isAdmin;
+      return  $.inArray('admin', pageOwner.permissions) !== -1;
     });
 
     self.remove = function() {
@@ -192,10 +189,9 @@ var ContributorsViewModel = function(contributors, adminContributors, user, isRe
     self.adminContributors = adminContributors;
 
     self.user = ko.observable(user);
-    // TODO: Does this need to be an observable?
-    self.userIsAdmin  = ko.observable($.inArray('admin', user.permissions) !== -1);
+    self.userIsAdmin  = $.inArray('admin', user.permissions) !== -1;
     self.canEdit = ko.computed(function() {
-        return (self.userIsAdmin()) && !isRegistration;
+        return (self.userIsAdmin) && !isRegistration;
     });
 
     self.messages = ko.observableArray([]);
@@ -274,16 +270,18 @@ var ContributorsViewModel = function(contributors, adminContributors, user, isRe
                     'error'
                 )
             );
+        } else {
+            self.messages([]);
         }
     });
 
     self.init = function() {
         self.messages([]);
         self.contributors(self.original().map(function(item) {
-            return new ContributorModel(item, self.canEdit(), self.user(), isRegistration);
+            return new ContributorModel(item, self.user(), isRegistration);
         }));
         self.adminContributors = adminContributors.map(function(contributor) {
-          return new ContributorModel(contributor, self.canEdit(), self.user(), isRegistration, true);
+          return new ContributorModel(contributor, self.user(), isRegistration, true);
         });
     };
 
@@ -303,9 +301,10 @@ var ContributorsViewModel = function(contributors, adminContributors, user, isRe
         // Warn on URL change if pending changes
         $(window).on('beforeunload', function() {
             if (self.changed() && !self.forceSubmit()) {
-                // TODO: Use GrowlBox.
-                return 'There are unsaved changes to your contributor ' +
-                    'settings. Are you sure you want to leave this page?';
+                $osf.growl('Error','There are unsaved changes to your contributor ' +
+                    'settings. Are you sure you want to leave this page?'
+                );
+                return false;
             }
         });
     };
