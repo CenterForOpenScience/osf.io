@@ -81,10 +81,10 @@ function subscribe(item, notification_type) {
 
 function displayParentNotificationType(item){
     var notificationTypeDescriptions = {
-        'email_transactional': 'Emails',
-        'email_digest': 'Email Digest',
+        'email_transactional': 'Immediate Emails',
+        'email_digest': 'Daily Digest',
         'adopt_parent': 'Adopt setting from parent project',
-        'none': 'None'
+        'none': 'Never'
     };
 
     if (item.data.event.parent_notification_type) {
@@ -208,9 +208,8 @@ function ProjectNotifications(data) {
                                     subscribe(item, ev.target.value);
                                 }},
                                 [
-                                    m('option', {value: 'none', selected : item.data.event.notificationType === 'none' ? 'selected': ''}, 'None'),
+                                    m('option', {value: 'none', selected : item.data.event.notificationType === 'none' ? 'selected': ''}, 'Never'),
                                     m('option', {value: 'email_transactional', selected : item.data.event.notificationType === 'email_transactional' ? 'selected': ''}, 'Immediate Emails'),
-                                    m('option', {value: 'email_hour', selected : item.data.event.notificationType === 'email_hour' ? 'selected': ''}, 'Hourly Digest'),
                                     m('option', {value: 'email_digest', selected : item.data.event.notificationType === 'email_digest' ? 'selected': ''}, 'Daily Digest')
                             ])
                         ]);
@@ -244,9 +243,8 @@ function ProjectNotifications(data) {
                                     m('option', {value: 'adopt_parent',
                                                  selected: item.data.event.notificationType === 'adopt_parent' ? 'selected' : ''},
                                                  'Adopt setting from parent project ' + displayParentNotificationType(item)),
-                                    m('option', {value: 'none', selected : item.data.event.notificationType === 'none' ? 'selected': ''}, 'None'),
+                                    m('option', {value: 'none', selected : item.data.event.notificationType === 'none' ? 'selected': ''}, 'Never'),
                                     m('option', {value: 'email_transactional',  selected : item.data.event.notificationType === 'email_transactional' ? 'selected': ''}, 'Immediate Emails'),
-                                    m('option', {value: 'email_hour', selected : item.data.event.notificationType === 'email_hour' ? 'selected': ''}, 'Hourly Digest'),
                                     m('option', {value: 'email_digest', selected : item.data.event.notificationType === 'email_digest' ? 'selected': ''}, 'Daily Digest')
                             ])
                         ]);
