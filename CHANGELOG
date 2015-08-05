@@ -2,7 +2,14 @@
 Changelog
 *********
 
-0.44.0 (unreleased)
+0.45.0 (unreleased)
+===================
+
+- S3: Uploads to S3 are encrypted.
+- S3: When creating a bucket, allow selecting bucket location.
+- UI fixes.
+
+0.44.0 (2015-07-29)
 ===================
 
 - Add "View on" links to files stored in figshare, GitHub, and Google Drive.

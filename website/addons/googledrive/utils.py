@@ -72,6 +72,7 @@ def serialize_urls(node_settings):
         'importAuth': node.api_url_for('googledrive_import_user_auth'),
         'folders': node.api_url_for('googledrive_folders'),
         'auth': node.api_url_for('googledrive_oauth_start'),
+        'settings': web_url_for('user_addons'),
     }
 
 
@@ -88,7 +89,7 @@ def serialize_settings(node_settings, current_user):
     valid_credentials = True
     if user_settings:
         try:
-            user_settings.fetch_access_token()
+            user_settings.fetch_access_token(force_refresh=True)
         except ExpiredAuthError:
             valid_credentials = False
     ret = {
