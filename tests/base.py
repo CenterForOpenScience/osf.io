@@ -49,9 +49,6 @@ test_app = init_app(
 )
 test_app.testing = True
 
-DISCONNECTED_SIGNALS = {
-    contributor_added: [notify_added_contributor]
-}
 
 # Silence some 3rd-party logging and some "loud" internal loggers
 SILENT_LOGGERS = [
@@ -148,6 +145,11 @@ class AppTestCase(unittest.TestCase):
     """Base `TestCase` for OSF tests that require the WSGI app (but no database).
     """
 
+    DISCONNECTED_SIGNALS = {
+        # disconnect notify_add_contributor so that add_contributor does not send "fake" emails in tests
+        contributor_added: [notify_added_contributor]
+    }
+
     def setUp(self):
         super(AppTestCase, self).setUp()
         self.app = TestApp(test_app)
@@ -155,16 +157,16 @@ class AppTestCase(unittest.TestCase):
         self.context.push()
         with self.context:
             g._celery_tasks = []
-        for signal in DISCONNECTED_SIGNALS:
-            for receiver in DISCONNECTED_SIGNALS[signal]:
+        for signal in AppTestCase.DISCONNECTED_SIGNALS:
+            for receiver in AppTestCase.DISCONNECTED_SIGNALS[signal]:
                 signal.disconnect(receiver)
 
     def tearDown(self):
         super(AppTestCase, self).tearDown()
         with mock.patch('website.mailchimp_utils.get_mailchimp_api'):
             self.context.pop()
-        for signal in DISCONNECTED_SIGNALS:
-            for receiver in DISCONNECTED_SIGNALS[signal]:
+        for signal in AppTestCase.DISCONNECTED_SIGNALS:
+            for receiver in AppTestCase.DISCONNECTED_SIGNALS[signal]:
                 signal.connect(receiver)
 
 

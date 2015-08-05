@@ -1756,7 +1756,7 @@ class TestAddingContributorViews(OsfTestCase):
 
         # send request
         url = self.project.api_url_for('project_contributors_post')
-        assert self.project.can_edit(user=self.creator)
+        assert_true(self.project.can_edit(user=self.creator))
         self.app.post_json(url, payload, auth=self.creator.auth)
 
         # finalize_invitation should only have been called once
