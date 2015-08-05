@@ -429,8 +429,8 @@ utils.updateAggs = function (currentAgg, newAgg, globalAgg) {
 
 utils.buildStatsAggs = function (vm) {
     var currentAggs = {};
-    $.map(Object.keys(vm.aggregations), function (statQuery) {
-        currentAggs = utils.updateAggs(currentAggs, vm.aggregations[statQuery]);
+    $.map(Object.keys(vm.aggregations), function (agg) {
+        currentAggs = utils.updateAggs(currentAggs, vm.aggregations[agg]);
     });
     return currentAggs;
 };

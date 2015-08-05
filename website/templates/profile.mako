@@ -139,9 +139,9 @@
 ##</div>
 
 ## Add search dashboard
-<hr />
-<div id="profileDashboard" class="row">
-</div>
+## <hr />
+## <div id="profileDashboard" class="row">
+## </div>
 
 
 <% import json %>
