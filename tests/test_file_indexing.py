@@ -80,8 +80,7 @@ def _get_file_content_patch(guid_file, include_content=None):
     return FILE_CONTENT
 
 
-def _load_local_file_content_patch(guid_file, include_content=None):
-    file_node = OsfStorageFileNode.load(guid_file.path)
+def _load_local_file_content_patch(file_node, include_content=None):
     cur_path = os.path.dirname(os.path.abspath(__file__))
     file_path = os.path.join(cur_path, 'test_files', file_node.name)
     with open(file_path, 'rb') as f:
@@ -118,7 +117,7 @@ class OsfStorageFileNodeFactory(ModularOdmFactory):
     FACTORY_FOR = OsfStorageFileNode
     name = 'test file node'
     kind = 'file'
-    node_settings=None
+    node_settings = None
 
 
 class FileIndexingTestCase(SearchTestCase):

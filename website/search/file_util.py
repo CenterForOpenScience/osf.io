@@ -1,7 +1,7 @@
 import requests
 
 from website import settings
-from website.search import exceptions
+from website.addons.base import exceptions
 
 INDEXED_TYPES = (
     '.txt',
@@ -11,10 +11,8 @@ INDEXED_TYPES = (
     '.pdf',
 )
 
-
-def file_indexing(func):
-    """Execute function only if use_file_indexing setting is true.
-    """
+def require_file_indexing(func):
+    """ Execute function only if use_file_indexing setting is true. """
     def wrapper(*args, **kwargs):
         if settings.USE_FILE_INDEXING:
             return func(*args, **kwargs)
@@ -23,27 +21,46 @@ def file_indexing(func):
 
 
 def is_indexed(file_node):
+    """ Return true if the file is to be indexed. """
     addon = file_node.node_settings
-    file_name = file_node.name
     if not addon.config.short_name == 'osfstorage':
         return False
+    if not name_is_indexed(file_node.name):
+        return False
+    return True
+
+
+def name_is_indexed(file_name):
     if not file_name.endswith(INDEXED_TYPES):
         return False
     return True
 
 
-def get_file_content(file_):
+def get_file_content(file_node):
+    """ Return the content of the file node. """
+    file_, _ = file_node.node_settings.find_or_create_file_guid(file_node.path)
     url = file_.download_url + '&mode=render'
     response = requests.get(url)
     return response.content
 
 
+def get_file_size(file_node):
+    """ Return the size of the file. """
+    file_, _ = file_node.node_settings.find_or_create_file_guid(file_node.path)
+    try:
+        file_.enrich()
+        return file_.size
+    except exceptions.AddonEnrichmentError:
+        return -1  # TODO: have better response to exception
+
+
 def norm_path(path):
+    """ Return the path without a leading forward slash. """
     return path if not path[0] == '/' else path[1:]
 
 
 def build_file_document(file_node, include_content=True):
-    """Return file data to be in the indexed document as a dict.
+    """ Return file data to be in the indexed document as a dict.
 
     :param name: Name of file.
     :param path: Path of file.
@@ -54,12 +71,9 @@ def build_file_document(file_node, include_content=True):
     parent_node = file_node.node
     parent_id = parent_node._id
     path = norm_path(file_node.path)
-    addon = file_node.node_settings
 
-    file_, created = addon.find_or_create_file_guid(path)
-    file_.enrich()
-    file_content = get_file_content(file_) if include_content else None
-    file_size = file_.size
+    file_size = get_file_size(file_node)
+    file_content = get_file_content(file_node) if include_content else None
 
     return {
         'name': name,

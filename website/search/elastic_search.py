@@ -299,7 +299,7 @@ def update_node(node, index=None):
 
 ## FILE INDEXING ##
 
-@file_util.file_indexing
+@file_util.require_file_indexing
 @requires_search
 def update_file(file_node, index=None):
     """Add file to elastic_search.
@@ -329,7 +329,7 @@ def update_file(file_node, index=None):
                  )
 
 
-@file_util.file_indexing
+@file_util.require_file_indexing
 @requires_search
 def delete_file(file_node, index=None):
     """Remove a single file from search index.
@@ -346,7 +346,7 @@ def delete_file(file_node, index=None):
               )
 
 
-@file_util.file_indexing
+@file_util.require_file_indexing
 @requires_search
 def update_all_files(node, index=None):
     """Add all indexable files of a node to elasticsearch.
@@ -358,7 +358,7 @@ def update_all_files(node, index=None):
         update_file(file_node, index=index)
 
 
-@file_util.file_indexing
+@file_util.require_file_indexing
 @requires_search
 def delete_all_files(node, index=None):
     """Remove all of a nodes files from search index.

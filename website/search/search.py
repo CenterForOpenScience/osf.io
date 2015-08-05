@@ -32,28 +32,28 @@ def update_node(node, index=None):
     search_engine.update_node(node, index=index)
 
 
-@file_util.file_indexing
+@file_util.require_file_indexing
 @requires_search
 def update_file(file_node, index=None):
     index = index or settings.ELASTIC_INDEX
     search_engine.update_file(file_node, index=index)
 
 
-@file_util.file_indexing
+@file_util.require_file_indexing
 @requires_search
 def delete_file(file_node, index=None):
     index = index or settings.ELASTIC_INDEX
     search_engine.delete_file(file_node, index=index)
 
 
-@file_util.file_indexing
+@file_util.require_file_indexing
 @requires_search
 def update_all_files(node, index=None):
     index = index or settings.ELASTIC_INDEX
     search_engine.update_all_files(node, index=index)
 
 
-@file_util.file_indexing
+@file_util.require_file_indexing
 @requires_search
 def delete_all_files(node, index=None):
     index = index or settings.ELASTIC_INDEX

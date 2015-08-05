@@ -1533,7 +1533,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
             logger.exception(e)
             log_exception()
 
-    @file_util.file_indexing
+    @file_util.require_file_indexing
     def update_search_files(self):
         """Update all files associated with node based on node's privacy.
         """
@@ -1546,7 +1546,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         file_indexing.delete_search_files(self)
         # tasks.enqueue_task(tasks.delete_all_files_task.s(self))
 
-    @file_util.file_indexing
+    @file_util.require_file_indexing
     def update_search_file(self, file_node):
         """ Update a single file in the node based on the action given."""
         from website.search import file_indexing

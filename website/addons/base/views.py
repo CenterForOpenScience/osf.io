@@ -298,7 +298,7 @@ def create_waterbutler_log(payload, **kwargs):
     return {'status': 'success'}
 
 
-@file_util.file_indexing
+@file_util.require_file_indexing
 def update_search(node, action, addon, file_name, source_node_id=None):
     file_node = addon.root_node.find_child_by_name(file_name)
     if not file_util.is_indexed(file_node):
