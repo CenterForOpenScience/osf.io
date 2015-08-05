@@ -179,8 +179,10 @@ var Footer = {
             utils.loadRawNormalized(this.result).then(
                 function(cleanData) {
                     self.cleanResult(cleanData);
+                }, function(error) {
+                    self.cleanResult(error);
                 }
-            )
+            );
         };
     },
     view: function(ctrl, params) {
@@ -213,6 +215,7 @@ var Footer = {
 var RawNormalizedData = {
     view: function(ctrl, params) {
         var result = params.result();
+        // console.log('RESULT IS: ' + result);
         return m('.row', [
             m('.col-md-12',
                 m('div', [
