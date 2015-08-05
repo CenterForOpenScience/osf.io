@@ -437,10 +437,6 @@ select {
     position: relative;
 }
 
-span.tag.tag-big.tag-container {
-    word-break: break-all;
-}
-
 .remove-tag
 {
     visibility: hidden;
@@ -511,7 +507,7 @@ span.tag.tag-big.tag-container {
 }
 
 tr a, b, em, td {
-    word-wrap: break-word;
+    word-break: break-word;
 }
 
 .btn-link.project-toggle {
