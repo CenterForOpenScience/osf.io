@@ -44,13 +44,7 @@ class RegistrationRetractionModelsTestCase(OsfTestCase):
 
         assert_true(self.registration.is_public)
 
-    # Node#_initiate_retraction tests
-    def test_initiate_retraction_does_not_save_retraction(self):
-        initial_count = Retraction.find().count()
-        self.registration._initiate_retraction(self.user)
-        self.assertEqual(Retraction.find().count(), initial_count)
-
-    def test_initiate_retraction_with_save_does_save_retraction(self):
+    def test_initiate_retraction_saves_retraction(self):
         initial_count = Retraction.find().count()
         self.registration._initiate_retraction(self.user, save=True)
         self.assertEqual(Retraction.find().count(), initial_count + 1)
@@ -328,7 +322,7 @@ class RegistrationRetractionModelsTestCase(OsfTestCase):
         self.registration.save()
         assert_true(self.registration.pending_retraction)
 
-        disapproval_token = self.registration.retraction.approval_state[self.user._id]['disapproval_token']
+        disapproval_token = self.registration.retraction.approval_state[self.user._id]['rejection_token']
         with assert_raises(PermissionsError):
             self.registration.retraction.disapprove_retraction(non_admin, disapproval_token)
         assert_true(self.registration.pending_retraction)
@@ -339,7 +333,7 @@ class RegistrationRetractionModelsTestCase(OsfTestCase):
         self.registration.save()
         self.registration.reload()
 
-        disapproval_token = self.registration.retraction.approval_state[self.user._id]['disapproval_token']
+        disapproval_token = self.registration.retraction.approval_state[self.user._id]['rejection_token']
         assert_equal(self.registration.retraction.state, Retraction.UNAPPROVED)
         self.registration.retraction.disapprove_retraction(self.user, disapproval_token)
         assert_equal(self.registration.retraction.state, Retraction.CANCELLED)
@@ -350,7 +344,7 @@ class RegistrationRetractionModelsTestCase(OsfTestCase):
         self.registration.save()
         self.registration.reload()
 
-        disapproval_token = self.registration.retraction.approval_state[self.user._id]['disapproval_token']
+        disapproval_token = self.registration.retraction.approval_state[self.user._id]['rejection_token']
         self.registration.retraction.disapprove_retraction(self.user, disapproval_token)
         # Logs: Created, registered, retraction initiated, retraction cancelled
         assert_equal(len(self.registration.registered_from.logs), initial_project_logs + 2)
@@ -422,7 +416,7 @@ class RegistrationWithChildNodesRetractionModelTestCase(OsfTestCase):
             assert_true(node.pending_retraction)
 
         # Disapprove parent registration's retraction
-        disapproval_token = self.registration.retraction.approval_state[self.user._id]['disapproval_token']
+        disapproval_token = self.registration.retraction.approval_state[self.user._id]['rejection_token']
         self.registration.retraction.disapprove_retraction(self.user, disapproval_token)
         assert_false(self.registration.pending_retraction)
         assert_false(self.registration.is_retracted)
@@ -620,7 +614,7 @@ class RegistrationRetractionApprovalDisapprovalViewsTestCase(OsfTestCase):
         assert_true(self.registration.pending_retraction)
         assert_equal(len(self.registration.retraction.approval_state), 2)
 
-        wrong_disapproval_token = self.registration.retraction.approval_state[user2._id]['disapproval_token']
+        wrong_disapproval_token = self.registration.retraction.approval_state[user2._id]['rejection_token']
         res = self.app.get(
             self.registration.web_url_for('node_registration_retraction_disapprove', token=wrong_disapproval_token),
             auth=self.auth,
@@ -634,7 +628,7 @@ class RegistrationRetractionApprovalDisapprovalViewsTestCase(OsfTestCase):
         self.registration.save()
         assert_true(self.registration.pending_retraction)
 
-        disapproval_token = self.registration.retraction.approval_state[self.user._id]['disapproval_token']
+        disapproval_token = self.registration.retraction.approval_state[self.user._id]['rejection_token']
         res = self.app.get(
             self.registration.web_url_for('node_registration_retraction_disapprove', token=disapproval_token),
             auth=self.auth,
@@ -734,7 +728,7 @@ class RegistrationRetractionViewsTestCase(OsfTestCase):
         assert_is_none(self.registration.retraction)
 
     # https://trello.com/c/bYyt6nYT/89-clicking-retract-registration-with-unregistered-users-as-project-admins-gives-500-error
-    @mock.patch('website.project.views.register.mails.send_mail')
+    @mock.patch('website.mails.send_mail')
     def test_POST_retraction_does_not_send_email_to_unregistered_admins(self, mock_send_mail):
         unreg = UnregUserFactory()
         self.registration.add_contributor(
@@ -775,7 +769,8 @@ class RegistrationRetractionViewsTestCase(OsfTestCase):
         self.registration.reload()
         assert_is_none(self.registration.retraction)
 
-    def test_POST_retraction_without_justification_returns_HTTPOK(self):
+    @mock.patch('website.mails.send_mail')
+    def test_POST_retraction_without_justification_returns_HTTPOK(self, mock_send):
         res = self.app.post_json(
             self.retraction_post_url,
             {'justification': ''},
@@ -787,7 +782,8 @@ class RegistrationRetractionViewsTestCase(OsfTestCase):
         assert_equal(self.registration.retraction.state, Retraction.UNAPPROVED)
         assert_is_none(self.registration.retraction.justification)
 
-    def test_valid_POST_retraction_adds_to_parent_projects_log(self):
+    @mock.patch('website.mails.send_mail')
+    def test_valid_POST_retraction_adds_to_parent_projects_log(self, mock_send):
         initial_project_logs = len(self.registration.registered_from.logs)
         self.app.post_json(
             self.retraction_post_url,

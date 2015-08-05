@@ -2962,7 +2962,7 @@ class Sanction(StoredObject):
     def reject(self, user, token):
         """Cancels sanction if user is admin and token verifies."""
         try:
-            if self.approval_state[user._id]['disapproval_token'] != token:
+            if self.approval_state[user._id]['rejection_token'] != token:
                 raise self.RejectionInvalidToken
         except KeyError:
             raise self.RejectionNotAuthorized
@@ -3129,7 +3129,7 @@ class Retraction(EmailApprovableSanction):
     AUTHORIZER_NOTIFY_TEMPLATE = mails.PENDING_RETRACTION_ADMIN
     NON_AUTHORIZER_NOTIFY_TEMPLATE = mails.PENDING_RETRACTION_NON_ADMIN
 
-    initiated_by = fields.ForeignField('user', backref='retracted')
+    initiated_by = fields.ForeignField('user', backref='initiated')
     justification = fields.StringField(default=None, validate=MaxLengthValidator(2048))
 
     def __repr__(self):

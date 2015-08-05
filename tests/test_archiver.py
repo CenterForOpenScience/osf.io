@@ -1,4 +1,4 @@
-# -*- coding: utf-8 -*-
+#-*- coding: utf-8 -*-
 import datetime
 import functools
 import json
@@ -469,13 +469,13 @@ class TestArchiverListeners(ArchiverTestCase):
             ARCHIVER_SUCCESS
         )
         self.dst.archive_job.save()
-        with mock.patch('website.project.utils.send_registration_approval_email') as mock_send:
+        with mock.patch('website.mails.send_mail') as mock_send:
             with mock.patch('website.archiver.utils.handle_archive_fail') as mock_fail:
                 listeners.archive_callback(self.dst)
         assert_false(mock_send.called)
         assert_false(mock_fail.called)
 
-    @mock.patch('website.project.utils.send_registration_approval_email')
+    @mock.patch('website.mails.send_mail')
     def test_archive_callback_done_success(self, mock_send):
         for addon in ['osfstorage', 'dropbox']:
             self.dst.archive_job.update_target(addon, ARCHIVER_SUCCESS)
@@ -483,7 +483,7 @@ class TestArchiverListeners(ArchiverTestCase):
         listeners.archive_callback(self.dst)
         mock_send.assert_called()
 
-    @mock.patch('website.project.utils.send_embargo_email')
+    @mock.patch('website.mails.send_mail')
     def test_archive_callback_done_embargoed(self, mock_send):
         end_date = datetime.datetime.now() + datetime.timedelta(days=30)
         self.dst.archive_job.meta = {
@@ -559,7 +559,7 @@ class TestArchiverListeners(ArchiverTestCase):
         for node in [reg, rchild, rchild2]:
             assert_false(node.archive_job.archive_tree_finished())
 
-    @mock.patch('website.project.utils.send_registration_approval_email')
+    @mock.patch('website.mails.send_mail')
     def test_archive_callback_on_tree_sends_only_one_email(self, mock_send_success):
         proj = factories.NodeFactory()
         child = factories.NodeFactory(parent=proj)
@@ -616,6 +616,7 @@ class TestArchiverScripts(ArchiverTestCase):
             for addon in ['osfstorage', 'dropbox']:
                 reg.archive_job._set_target(addon)
                 reg.archive_job.update_target(addon, ARCHIVER_INITIATED)
+            reg.archive_job.sent = False
             reg.archive_job.save()
             failures.append(reg._id)
         pending = []
@@ -653,7 +654,7 @@ class TestArchiverDebugRoutes(ArchiverTestCase):
 
 class TestArchiverDecorators(ArchiverTestCase):
 
-    @mock.patch('website.archiver.utils.handle_archive_fail')
+    @mock.patch('website.archiver.signals.archive_fail.send')
     def test_fail_archive_on_error(self, mock_fail):
         e = HTTPError(418)
         def error(*args, **kwargs):
@@ -662,11 +663,8 @@ class TestArchiverDecorators(ArchiverTestCase):
         func = fail_archive_on_error(error)
         func(node=self.dst)
         mock_fail.assert_called_with(
-            ARCHIVER_NETWORK_ERROR,
-            self.src,
             self.dst,
-            self.user,
-            [e.message]
+            errors=[None]
         )
 
 class TestArchiverBehavior(OsfTestCase):
@@ -680,7 +678,7 @@ class TestArchiverBehavior(OsfTestCase):
 
 
     @mock.patch('website.project.model.Node.update_search')
-    @mock.patch('website.project.utils.send_registration_approval_email')
+    @mock.patch('website.mails.send_mail')
     def test_archiving_nodes_added_to_search_on_archive_success_if_public(self, mock_send, mock_update_search):
         proj = factories.ProjectFactory()
         reg = factories.RegistrationFactory(project=proj)
@@ -694,7 +692,7 @@ class TestArchiverBehavior(OsfTestCase):
         mock_update_search.assert_called_once()
 
     @mock.patch('website.project.model.Node.update_search')
-    @mock.patch('website.project.utils.send_registration_approval_email')
+    @mock.patch('website.mails.send_mail')
     def test_archiving_nodes_not_added_to_search_on_archive_failure(self, mock_send, mock_update_search):
         proj = factories.ProjectFactory()
         reg = factories.RegistrationFactory(project=proj)
@@ -708,7 +706,7 @@ class TestArchiverBehavior(OsfTestCase):
         mock_update_search.assert_not_called()
 
     @mock.patch('website.project.model.Node.update_search')
-    @mock.patch('website.project.utils.send_registration_approval_email')
+    @mock.patch('website.mails.send_mail')
     def test_archiving_nodes_not_added_to_search_on_archive_incomplete(self, mock_send, mock_update_search):
         proj = factories.ProjectFactory()
         reg = factories.RegistrationFactory(project=proj)
