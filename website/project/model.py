@@ -3020,11 +3020,17 @@ class EmailApprovableSanction(Sanction):
 
     def _notify_authorizer(self, authorizer):
         context = self._email_template_context(authorizer, True)
-        self._send_approval_request_email(authorizer, self.AUTHORIZER_NOTIFY_TEMPLATE, context)
+        if self.AUTHORIZER_NOTIFY_TEMPLATE:
+            self._send_approval_request_email(authorizer, self.AUTHORIZER_NOTIFY_TEMPLATE, context)
+        else:
+            raise NotImplementedError
 
     def _notify_non_authorizer(self, user):
         context = self._email_template_context(user)
-        self._send_approval_request_email(user, self.NON_AUTHORIZER_NOTIFY_TEMPLATE, context)
+        if self.NON_AUTHORIZER_NOTIFY_TEMPLATE:
+            self._send_approval_request_email(user, self.NON_AUTHORIZER_NOTIFY_TEMPLATE, context)
+        else:
+            raise NotImplementedError
 
     def add_authorizer(self, user, **kwargs):
         super(EmailApprovableSanction, self).add_authorizer(user, **kwargs)
@@ -3242,11 +3248,15 @@ class Retraction(EmailApprovableSanction):
 
 class RegistrationApproval(EmailApprovableSanction):
 
-    initiated_by = fields.ForeignField('user', backref='registration_approved')
+    ApprovalNotAuthorized = PermissionsError('User must be an admin to disapprove a approval of a registration.')
+    ApprovalInvalidToken = InvalidRetractionApprovalToken('Invalid retraction approval token provided.')
+    RejectionNotAuthorized = PermissionsError('User must be an admin to disapprove a rejection of a registration.')
+    RejectionInvalidToken = InvalidRetractionDisapprovalToken('Invalid retraction disapproval token provided.')
 
-    # TODO (HarryRybacki): Add email templates
-    AUTHORIZER_NOTIFY_TEMPLATE = None
-    NON_AUTHORIZER_NOTIFY_TEMPLATE = None
+    AUTHORIZER_NOTIFY_TEMPLATE = mails.PENDING_REGISTRATION_ADMIN
+    NON_AUTHORIZER_NOTIFY_TEMPLATE = mails.PENDING_REGISTRATION_NON_ADMIN
+
+    initiated_by = fields.ForeignField('user', backref='registration_approved')
 
     def _view_url(self, user_id):
         registration = Node.find_one(Q('registration_approval', 'eq', self))
