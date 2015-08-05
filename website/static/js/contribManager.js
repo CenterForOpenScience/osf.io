@@ -306,8 +306,8 @@ var ContributorsViewModel = function(contributors, adminContributors, user, isRe
                 );
                 return false;
             }
-        }
-    )};
+        });
+    };
 
     self.init();
     self.initListeners();
