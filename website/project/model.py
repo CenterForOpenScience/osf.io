@@ -462,8 +462,7 @@ class Pointer(StoredObject):
         return self.node
 
     def __getattr__(self, item):
-        """Delegate attribute access to the node being pointed to.
-        """
+        """Delegate attribute access to the node being pointed to."""
         # Prevent backref lookups from being overriden by proxied node
         try:
             return super(Pointer, self).__getattr__(item)
@@ -815,9 +814,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
                                            Q('is_registration', 'ne', True)))
 
     def add_permission(self, user, permission, save=False):
-        """Grant permission to a user.
-
-        :param User user: User to grant permission to
+        """Grant **kwargs):*r, **kwargsr, **kwargso
         :param str permission: Permission to grant
         :param bool save: Save changes
         :raises: ValueError if user already has permission
@@ -2648,12 +2645,13 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
             justification=justification or None,  # make empty strings None
             state=Retraction.UNAPPROVED
         )
+        retraction.save()
+        self.retraction = retraction
+        self.save()
         admins = [contrib for contrib in self.contributors if self.has_permission(contrib, 'admin') and contrib.is_active]
         for admin in admins:
             retraction.add_authorizer(admin)
-        # Retraction record needs to be saved to ensure the forward reference Node->Retraction
-        if save:
-            retraction.save()
+        retraction.save()
         return retraction
 
     def retract_registration(self, user, justification=None, save=True):
@@ -2697,11 +2695,13 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
             end_date=datetime.datetime.combine(end_date, datetime.datetime.min.time()),
             for_existing_registration=for_existing_registration
         )
+        embargo.save()
+        self.embargo = embargo
+        self.save()
         admins = [contrib for contrib in self.contributors if self.has_permission(contrib, 'admin') and contrib.is_active]
         for admin in admins:
             embargo.add_authorizer(admin)
-        if save:
-            embargo.save()
+        embargo.save()
         return embargo
 
     def embargo_registration(self, user, end_date, for_existing_registration=False):
@@ -2743,11 +2743,13 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
             initiated_by=user,
             end_date=end_date,
         )
+        approval.save()
+        self.registration_approval = approval
+        self.save()
         admins = [contrib for contrib in self.contributors if self.has_permission(contrib, 'admin') and contrib.is_active]
         for admin in admins:
             approval.add_authorizer(admin)
-        if save:
-            approval.save()
+        approval.save()
         return approval
 
     def require_approval(self, user):
@@ -2767,7 +2769,6 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
             auth=Auth(user),
             save=True,
         )
-        self.registration_approval = approval
         # TODO make private?
 
 @Node.subscribe('before_save')
@@ -2993,18 +2994,6 @@ class EmailApprovableSanction(Sanction):
     def _rejection_url(self, user_id):
         return ''
 
-    def save(self, *args, **kwargs):
-        fields_changed = super(EmailApprovableSanction, self).save(*args, **kwargs)
-        if 'approval_state' in fields_changed:
-            self.stashed_urls = {
-                user_id: {
-                    'view': self._view_url(user_id),
-                    'approve': self._approval_url(user_id),
-                    'reject': self._rejection_url(user_id)
-                } for user_id in self.approval_state.keys()
-            }
-            self.save()  # Recursive, but terminating after 1 call
-
     def _send_approval_request_email(self, user, template, context):
         mails.send_mail(
             self.initiated_by,
@@ -3023,6 +3012,15 @@ class EmailApprovableSanction(Sanction):
     def _notify_non_authorizer(self, user):
         context = self._email_template_context()
         self._send_approval_request_email(user, self.NON_AUTHORIZER_NOTIFY_TEMPLATE, context)
+
+    def add_authorizer(self, user, **kwargs):
+        super(EmailApprovableSanction, self).add_authorizer(user, **kwargs)
+        self.stashed_urls[user._id] = {
+            'view': self._view_url(user._id),
+            'approve': self._approval_url(user._id),
+            'reject': self._rejection_url(user._id)
+        }
+        self.save()
 
 class Embargo(EmailApprovableSanction):
     """Embargo object for registrations waiting to go public."""
@@ -3125,13 +3123,13 @@ class Retraction(EmailApprovableSanction):
         )
 
     def _view_url(self, user_id):
-        registration = Node.find_one(Q('embargo', 'eq', self))
+        registration = Node.find_one(Q('retraction', 'eq', self))
         return registration.web_url_for('view_project', _absolute=True)
 
     def _approve_url(self, user_id):
         approval_token = self.approval_state.get(user_id, {}).get('approval_token')
         if approval_token:
-            registration = Node.find_one(Q('embargo', 'eq', self))
+            registration = Node.find_one(Q('retraction', 'eq', self))
             return registration.web_url_for(
                 'node_registration_retraction_approve',
                 token=approval_token,
@@ -3142,7 +3140,7 @@ class Retraction(EmailApprovableSanction):
     def _rejection_url(self, user_id):
         rejection_token = self.approval_state.get(user_id, {}).get('rejection_token')
         if rejection_token:
-            registration = Node.find_one(Q('embargo', 'eq', self))
+            registration = Node.find_one(Q('retraction', 'eq', self))
             return registration.web_url_for(
                 'node_registration_retraction_disapprove',
                 token=rejection_token,
@@ -3238,13 +3236,13 @@ class RegistrationApproval(EmailApprovableSanction):
     NON_AUTHORIZER_NOTIFY_TEMPLATE = None
 
     def _view_url(self, user_id):
-        registration = Node.find_one(Q('embargo', 'eq', self))
+        registration = Node.find_one(Q('registration_approval', 'eq', self))
         return registration.web_url_for('view_project', _absolute=True)
 
     def _approval_url(self, user_id):
         approval_token = self.approval_state.get(user_id, {}).get('approval_token')
         if approval_token:
-            registration = Node.find_one(Q('embargo', 'eq', self))
+            registration = Node.find_one(Q('registration_approval', 'eq', self))
             return registration.web_url_for(
                 'node_registration_embargo_approve',
                 token=approval_token,
@@ -3255,7 +3253,7 @@ class RegistrationApproval(EmailApprovableSanction):
     def _rejection_url(self, user_id):
         rejection_token = self.approval_state.get(user_id, {}).get('rejection_token')
         if rejection_token:
-            registration = Node.find_one(Q('embargo', 'eq', self))
+            registration = Node.find_one(Q('registration_approval', 'eq', self))
             return registration.web_url_for(
                 'node_registration_embargo_disapprove',
                 token=rejection_token,
