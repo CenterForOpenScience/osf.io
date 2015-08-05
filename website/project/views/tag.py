@@ -58,27 +58,28 @@ def project_remove_tag(auth, node, **kwargs):
 @must_be_valid_project  # injects project
 @must_have_permission('write')
 @must_not_be_registration
-def file_add_tag(auth, node, guid, **kwargs):
+def file_add_tag(auth, guid, **kwargs):
     data = request.get_json()
-    tag = data['tag']
-    file_name = data['fileName']
-    if tag:
-        try:
-            fileobject = Guid.load(guid).referent
-            fileobject.add_tag(tag, auth, node, file_name)
-            return {'status': 'success'}, http.CREATED
-        except ValidationError:
-            return {'status': 'error'}, http.BAD_REQUEST
+    tag = data.get('tag')
+    file_name = data.get('fileName')
+    if tag and file_name:
+        fileobject = Guid.load(guid).referent
+        fileobject.add_tag(tag, auth, file_name)
+        return {'status': 'success'}, http.CREATED
+    else:
+        return {'status': 'error'}, http.BAD_REQUEST
 
 
 @must_be_valid_project  # injects project
 @must_have_permission('write')
 @must_not_be_registration
-def file_remove_tag(auth, node, guid, **kwargs):
+def file_remove_tag(auth, guid, **kwargs):
     data = request.get_json()
-    tag = data['tag']
-    file_name = data['fileName']
-    if tag:
+    tag = data.get('tag')
+    file_name = data.get('fileName')
+    if tag and file_name:
         fileobject = Guid.load(guid).referent
-        fileobject.remove_tag(tag, auth, node, file_name)
+        fileobject.remove_tag(tag, auth, file_name)
         return {'status': 'success'}
+    else:
+        return {'status': 'error'}, http.BAD_REQUEST

@@ -532,7 +532,7 @@ class TestProjectViews(OsfTestCase):
         assert_equal("foo'ta#@%#%^&g?", self.project.logs[-1].params['tag'])
 
     def test_remove_tag(self):
-        self.project.add_tag("foo'ta#@%#%^&g?", auth=self.consolidate_auth1, save=True)
+        self.project.add_tag("foo'ta#@%#%^&g?", auth=self.consolidate_auth1)
         assert_in("foo'ta#@%#%^&g?", self.project.tags)
         url = self.project.api_url_for("project_remove_tag")
         self.app.delete_json(url, {"tag": "foo'ta#@%#%^&g?"}, auth=self.auth)
@@ -983,7 +983,7 @@ class TestFileTagViews(OsfTestCase):
         assert_in('footag', self.guid.tags)
 
     def test_file_remove_tag(self):
-        self.guid.add_tag('footag', auth=Auth(self.user), node=self.project, file_name='test.pdf', save=True)
+        self.guid.add_tag('footag', auth=Auth(self.user), file_name='test.pdf')
         assert_in('footag', self.guid.tags)
         url = "/api/v1/project/{pid}/file/tags/{guid}/".format(
             pid=self.project._primary_key,

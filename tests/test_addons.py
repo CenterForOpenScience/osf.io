@@ -788,7 +788,7 @@ class TestFileTags(OsfTestCase):
         self.guid, _ = self.node_addon.find_or_create_file_guid('/' + self.path)
 
     def test_add_tag(self):
-        self.guid.add_tag('footag', auth=Auth(self.user), node=self.project, file_name='file.txt')
+        self.guid.add_tag('footag', auth=Auth(self.user), file_name='file.txt')
         assert_in('footag', self.guid.tags)
         assert_equal(
             self.project.logs[-1].action,
@@ -797,21 +797,21 @@ class TestFileTags(OsfTestCase):
 
     def test_add_tag_too_long(self):
         with assert_raises(ValidationError):
-            self.guid.add_tag('a' * 129, auth=Auth(self.user), node=self.project, file_name='file.txt')
+            self.guid.add_tag('a' * 129, auth=Auth(self.user), file_name='file.txt')
         assert_equal(0, len(self.guid.tags))
 
     def test_add_tag_already_present(self):
         assert_equal(0, len(self.guid.tags))
-        self.guid.add_tag('footag', auth=Auth(self.user), node=self.project, file_name='file.txt')
+        self.guid.add_tag('footag', auth=Auth(self.user), file_name='file.txt')
         assert_in('footag', self.guid.tags)
         assert_equal(1, len(self.guid.tags))
-        self.guid.add_tag('footag', auth=Auth(self.user), node=self.project, file_name='file.txt')
+        self.guid.add_tag('footag', auth=Auth(self.user), file_name='file.txt')
         assert_equal(1, len(self.guid.tags))
 
     def test_remove_tag(self):
-        self.guid.add_tag('footag', auth=Auth(self.user), node=self.project, file_name='file.txt')
+        self.guid.add_tag('footag', auth=Auth(self.user), file_name='file.txt')
         assert_in('footag', self.guid.tags)
-        self.guid.remove_tag('footag', auth=Auth(self.user), node=self.project, file_name='file.txt')
+        self.guid.remove_tag('footag', auth=Auth(self.user), file_name='file.txt')
         assert_not_in('footag', self.guid.tags)
         assert_equal(
             self.project.logs[-1].action,
@@ -820,7 +820,7 @@ class TestFileTags(OsfTestCase):
 
     def test_remove_tag_not_present(self):
         assert_equal(0, len(self.guid.tags))
-        self.guid.remove_tag('footag', auth=Auth(self.user), node=self.project, file_name='file.txt')
+        self.guid.remove_tag('footag', auth=Auth(self.user), file_name='file.txt')
         assert_equal(
             self.project.logs[-1].action,
             NodeLog.ADDON_ADDED

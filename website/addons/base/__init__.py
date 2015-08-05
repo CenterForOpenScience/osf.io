@@ -17,6 +17,7 @@ from modularodm.storage.base import KeyExistsException
 from framework.sessions import session
 from framework.mongo import StoredObject
 from framework.routing import process_rules
+from framework.tags import TaggableMixin
 from framework.guid.model import GuidStoredObject
 from framework.exceptions import (
     PermissionsError,
@@ -26,7 +27,7 @@ from framework.exceptions import (
 from website import settings
 from website.addons.base import exceptions
 from website.addons.base import serializer
-from website.project.model import Node, Tag, NodeLog
+from website.project.model import Node
 from website.util import waterbutler_url_for
 
 from website.oauth.signals import oauth_complete
@@ -205,7 +206,7 @@ class AddonConfig(object):
         return os.path.join(settings.BASE_PATH, self.short_name)
 
 
-class GuidFile(GuidStoredObject):
+class GuidFile(GuidStoredObject, TaggableMixin):
 
     _metadata_cache = None
     _id = fields.StringField(primary=True)
@@ -350,46 +351,6 @@ class GuidFile(GuidStoredObject):
     @property
     def revision(self):
         return getattr(self, '_revision', None)
-
-    def add_tag(self, tag, auth, node, file_name, save=True):
-        if tag not in self.tags:
-            new_tag = Tag.load(tag)
-            if not new_tag:
-                new_tag = Tag(_id=tag)
-            new_tag.save()
-            self.tags.append(new_tag)
-            node.add_log(
-                action=NodeLog.FILETAG_ADDED,
-                params={
-                    'node': node._primary_key,
-                    'fileName': file_name,
-                    'tag': tag,
-                    'url': self.guid_url
-                },
-                auth=auth,
-                save=False,
-            )
-            if save:
-                self.save()
-                node.save()
-
-    def remove_tag(self, tag, auth, node, file_name, save=True):
-        if tag in self.tags:
-            self.tags.remove(tag)
-            node.add_log(
-                action=NodeLog.FILETAG_REMOVED,
-                params={
-                    'node': node._primary_key,
-                    'fileName': file_name,
-                    'tag': tag,
-                    'url': self.guid_url
-                },
-                auth=auth,
-                save=False,
-            )
-            if save:
-                self.save()
-                node.save()
 
     def maybe_set_version(self, **kwargs):
         self._revision = kwargs.get(self.version_identifier)
