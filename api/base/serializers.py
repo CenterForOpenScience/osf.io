@@ -4,6 +4,10 @@ import re
 from rest_framework import serializers as ser
 from website.util.sanitize import strip_html
 from api.base.utils import absolute_reverse, waterbutler_url_for
+from django.core.urlresolvers import NoReverseMatch
+from django.core.exceptions import ObjectDoesNotExist, ImproperlyConfigured
+
+
 
 
 def _rapply(d, func, *args, **kwargs):
@@ -27,6 +31,44 @@ def _url_val(val, obj, serializer, **kwargs):
         return getattr(serializer, val)(obj)
     else:
         return val
+
+class HyperLinkedIdentityFieldWithMeta(ser.HyperlinkedIdentityField):
+
+    def __init__(self, view_name=None, **kwargs):
+        assert view_name is not None, 'The `view_name` argument is required.'
+        kwargs['read_only'] = True
+        kwargs['source'] = '*'
+        self.count = kwargs.pop('count', None)
+        super(ser.HyperlinkedIdentityField, self).__init__(view_name, **kwargs)
+    def get_attribute(self, obj):
+        # We pass the object instance onto `to_representation`,
+        # not just the field attribute.
+        return obj
+
+    def to_representation(self, value):
+        request = self.context.get('request', None)
+        format = self.context.get('format', None)
+
+        assert request is not None, (
+            "`%s` requires the request in the serializer"
+            " context. Add `context={'request': request}` when instantiating "
+            "the serializer." % self.__class__.__name__
+        )
+
+        if format and self.format and self.format != format:
+            format = self.format
+
+        # Return the hyperlink, or error if incorrectly configured.
+        try:
+            return [self.get_url(value, self.view_name, request, format), _rapply(self.count, _url_val, obj=value, serializer=self.parent)]
+        except NoReverseMatch:
+            msg = (
+                'Could not resolve URL for hyperlinked relationship using '
+                'view name "%s". You may have failed to include the related '
+                'model in your API, or incorrectly configured the '
+                '`lookup_field` attribute on this field.'
+            )
+            raise ImproperlyConfigured(msg % self.view_name)
 
 
 class LinksField(ser.Field):

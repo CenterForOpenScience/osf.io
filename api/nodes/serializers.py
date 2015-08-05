@@ -3,7 +3,7 @@ from rest_framework import serializers as ser
 from website.models import Node
 from framework.auth.core import Auth
 from rest_framework import exceptions
-from api.base.serializers import JSONAPISerializer, LinksField, Link, WaterbutlerLink
+from api.base.serializers import JSONAPISerializer, LinksField, Link, WaterbutlerLink, HyperLinkedIdentityFieldWithMeta
 
 
 class NodeSerializer(JSONAPISerializer):
@@ -48,16 +48,16 @@ class NodeSerializer(JSONAPISerializer):
     #         'self': Link('nodes:node-detail', kwargs={'node_id': '<parent_id>'})
     #     }
     # })
-    children = ser.HyperlinkedIdentityField(view_name='nodes:node-children', lookup_field='pk', lookup_url_kwarg='node_id')
-    contributors = ser.HyperlinkedIdentityField(view_name='nodes:node-contributors', lookup_field='pk', lookup_url_kwarg='node_id')
-    pointers = ser.HyperlinkedIdentityField(view_name='nodes:node-pointers', lookup_field='pk', lookup_url_kwarg='node_id')
-    registrations = ser.HyperlinkedIdentityField(view_name='nodes:node-registrations', lookup_field='pk', lookup_url_kwarg='node_id')
+    children = HyperLinkedIdentityFieldWithMeta(view_name='nodes:node-children', lookup_field='pk', lookup_url_kwarg='node_id', count='get_children_count')
+    # contributors = ser.HyperlinkedIdentityField(view_name='nodes:node-contributors', lookup_field='pk', lookup_url_kwarg='node_id')
+    # pointers = ser.HyperlinkedIdentityField(view_name='nodes:node-pointers', lookup_field='pk', lookup_url_kwarg='node_id')
+    # registrations = ser.HyperlinkedIdentityField(view_name='nodes:node-registrations', lookup_field='pk', lookup_url_kwarg='node_id')
     # files = ser.HyperlinkedIdentityField(view_name='nodes:node-files', lookup_field='pk', lookup_url_kwarg='node_id')
-    # parent = ser.HyperlinkedIdentityField(view_name='nodes:node-detail', lookup_field='parent_id', lookup_url_kwarg='node_id')
-    children_count = ser.SerializerMethodField()
-    contributors_count = ser.SerializerMethodField()
-    pointers_count = ser.SerializerMethodField()
-    registrations_count = ser.SerializerMethodField()
+    # # parent = ser.HyperlinkedIdentityField(view_name='nodes:node-detail', lookup_field='parent_id', lookup_url_kwarg='node_id')
+    # children_count = ser.SerializerMethodField()
+    # contributors_count = ser.SerializerMethodField()
+    # pointers_count = ser.SerializerMethodField()
+    # registrations_count = ser.SerializerMethodField()
 
     # TODO: When we have 'admin' permissions, make this writable for admins
     public = ser.BooleanField(source='is_public', read_only=True,
