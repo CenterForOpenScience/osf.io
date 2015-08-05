@@ -3275,31 +3275,37 @@ class DraftRegistration(AddonModelMixin, StoredObject):
     def update_metadata(self, metadata, save=True):
         # TODO(barbour-em): delete or implement in schema
         # if self.is_pending_review or self.is_approved:
-        #     raise NodeStateError('Cannot edit while this draft is being reviewed')
+        #    raise NodeStateError('Cannot edit while this draft is being reviewed')
 
         changes = []
-        old_comment_ids = list()
-        for key, value in self.registration_metadata.iteritems():
-            for comment in value['comments']:
-                # we are using the `created` attribute sort of as a primary key
-                old_comment_ids.append(comment['created'])
-
         for key, value in metadata.iteritems():
             old_value = self.registration_metadata.get(key)
-            old_comments = old_value['comments']
-            new_comments = value['comments']
-
-            # Handle comment conflicts
-            for old_comment in old_comments:
-                for new_comment in new_comments:
-                    new_created = new_comment['created']
-                    # if the primary key is already in use and the old comment is more recent,
-                    if new_created in old_comment_ids and old_comment['lastModified'] > new_comment['lastModified']:
-                        # use the old one instead
-                        new_comments[new_comment] = old_comment
             if not old_value or old_value.get('value') != value.get('value'):
                 changes.append(key)
-            self.registration_metadata.update(metadata)
+
+            if old_value:
+                old_comments = old_value.get('comments', [])
+            try:
+                new_comments = value['comments']
+
+            # this means this is the first save
+            except(TypeError, KeyError):
+                pass
+            else:
+                old_comment_ids = [comment['created'] for comment in old_comments]
+
+                # Handle comment conflicts
+                for old_comment in old_comments:
+                    for new_comment in new_comments:
+                        new_id = new_comment['created']
+                        # if the primary key is already in use and the old comment is more recent,
+                        if new_id in old_comment_ids and old_comment['lastModified'] > new_comment['lastModified']:
+                            # use the old one instead
+                            new_comments[new_comment] = old_comment
+                if not old_value or old_value.get('value') != value.get('value'):
+                    changes.append(key)
+
+        self.registration_metadata.update(metadata)
 
         if save:
             self.save()

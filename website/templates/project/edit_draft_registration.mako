@@ -9,18 +9,20 @@
           Edit draft registration
         </div>
         <div class="col-md-3" data-bind="with: draft">
-          <!-- <span class="btn-group" data-bind="if: requiresApproval"> -->
-          <!--   <a data-bind="click: $root.submitForReview, -->
-          <!--                 css: { -->
-          <!--                   'disable': isPendingReview -->
-          <!--                 }, -->
-          <!--                 tooltip: { -->
-          <!--                   position: 'top', -->
-          <!--                   title: isPendingReview ? 'Request for review already sent' : 'Submit for review' -->
-          <!--                 }" class="btn btn-default" type="button"> -->
+          <!-- TODO
+          <span class="btn-group" data-bind="if: requiresApproval">
+            <a data-bind="click: $root.submitForReview,
+                          css: {
+                          'disable': isPendingReview
+                          },
+                          tooltip: {
+                          position: 'top',
+                          title: isPendingReview ? 'Request for review already sent' : 'Submit for review'
+                          }" class="btn btn-default" type="button">
               <i class="fa fa-save"></i> Submit for review
             </a>
           </span>
+          -->
         </div>
       </div>
     </h3>
