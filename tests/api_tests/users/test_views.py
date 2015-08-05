@@ -252,7 +252,7 @@ class TestUserRoutesNodeRoutes(ApiTestCase):
         res = self.app.get(url, auth=self.auth_one, expect_errors=True)
         assert_equal(res.status_code, 404)
 
-    def test_get_404_path_users_user_id_me_unauthorized_user(self):
+    def test_get_404_path_users_user_id_me_no_user(self):
         url = "/{}users/{}/me/".format(API_BASE, self.user_one._id)
         res = self.app.get(url, expect_errors=True)
         assert_equal(res.status_code, 404)
@@ -269,39 +269,85 @@ class TestUserRoutesNodeRoutes(ApiTestCase):
 
     def test_get_200_path_users_user_id_no_user(self):
         url = "/{}users/{}/".format(API_BASE, self.user_two._id)
-        res = self.app.get(url, expect_errors=True)
+        res = self.app.get(url)
         assert_equal(res.status_code, 200)
 
     def test_get_200_path_users_user_id_unauthorized_user(self):
         url = "/{}users/{}/".format(API_BASE, self.user_two._id)
-        res = self.app.get(url, auth=self.auth_one, expect_errors=True)
+        res = self.app.get(url, auth=self.auth_one)
         assert_equal(res.status_code, 200)
+
+        ids = {each['id'] for each in res.json['data']}
+        assert_in(self.public_project_user_one._id, ids)
+        assert_in(self.private_project_user_one._id, ids)
+        assert_not_in(self.public_project_user_two._id, ids)
+        assert_not_in(self.private_project_user_two._id, ids)
+        assert_not_in(self.folder._id, ids)
+        assert_not_in(self.deleted_folder._id, ids)
+        assert_not_in(self.deleted_project_user_one._id, ids)
 
     def test_get_200_path_users_me_nodes_user_logged_in(self):
         url = "/{}users/me/nodes/".format(API_BASE, self.user_one._id)
         res = self.app.get(url, auth=self.auth_one)
         assert_equal(res.status_code, 200)
 
+        ids = {each['id'] for each in res.json['data']}
+        assert_in(self.public_project_user_one._id, ids)
+        assert_in(self.private_project_user_one._id, ids)
+        assert_not_in(self.public_project_user_two._id, ids)
+        assert_not_in(self.private_project_user_two._id, ids)
+        assert_not_in(self.folder._id, ids)
+        assert_not_in(self.deleted_folder._id, ids)
+        assert_not_in(self.deleted_project_user_one._id, ids)
+
     def test_get_404_path_users_me_nodes_no_user(self):
         url = "/{}users/me/nodes/".format(API_BASE)
         res = self.app.get(url, expect_errors=True)
         assert_equal(res.status_code, 404)
-
 
     def test_get_200_path_users_user_id_nodes_user_logged_in(self):
         url = "/{}users/{}/nodes/".format(API_BASE, self.user_one._id)
         res = self.app.get(url, auth= self.auth_one)
         assert_equal(res.status_code, 200)
 
+        ids = {each['id'] for each in res.json['data']}
+        assert_in(self.public_project_user_one._id, ids)
+        assert_in(self.private_project_user_one._id, ids)
+        assert_not_in(self.public_project_user_two._id, ids)
+        assert_not_in(self.private_project_user_two._id, ids)
+        assert_not_in(self.folder._id, ids)
+        assert_not_in(self.deleted_folder._id, ids)
+        assert_not_in(self.deleted_project_user_one._id, ids)
+
     def test_get_200_path_users_user_id_nodes_no_user(self):
         url = "/{}users/{}/nodes/".format(API_BASE, self.user_one._id)
-        res = self.app.get(url, expect_errors=True)
+        res = self.app.get(url)
         assert_equal(res.status_code, 200)
+
+        # an anonymous/unauthorized user can only see the public projects user_one contributes to.
+        ids = {each['id'] for each in res.json['data']}
+        assert_in(self.public_project_user_one._id, ids)
+        assert_not_in(self.private_project_user_one._id, ids)
+        assert_not_in(self.public_project_user_two._id, ids)
+        assert_not_in(self.private_project_user_two._id, ids)
+        assert_not_in(self.folder._id, ids)
+        assert_not_in(self.deleted_folder._id, ids)
+        assert_not_in(self.deleted_project_user_one._id, ids)
 
     def test_get_200_path_users_user_id_unauthorized_user(self):
         url = "/{}users/{}/nodes/".format(API_BASE, self.user_one._id)
-        res = self.app.get(url, auth=self.auth_one, expect_errors=True)
+        res = self.app.get(url, auth=self.auth_two)
         assert_equal(res.status_code, 200)
+
+        # an anonymous/unauthorized user can only see the public projects user_one contributes to.
+        ids = {each['id'] for each in res.json['data']}
+        assert_in(self.public_project_user_one._id, ids)
+        assert_not_in(self.private_project_user_one._id, ids)
+        assert_not_in(self.public_project_user_two._id, ids)
+        assert_not_in(self.private_project_user_two._id, ids)
+        assert_not_in(self.folder._id, ids)
+        assert_not_in(self.deleted_folder._id, ids)
+        assert_not_in(self.deleted_project_user_one._id, ids)
 
     def test_get_404_path_users_user_id_nodes_me_user_logged_in(self):
         url = "/{}users/{}/nodes/me/".format(API_BASE, self.user_one._id)
@@ -319,13 +365,8 @@ class TestUserRoutesNodeRoutes(ApiTestCase):
         assert_equal(res.status_code, 404)
 
     def test_get_404_path_nodes_me_user_logged_in(self):
-        url = "/{}nodes/me/".format(API_BASE, self.user_one._id)
+        url = "/{}nodes/me/".format(API_BASE)
         res = self.app.get(url, auth=self.auth_one, expect_errors=True)
-        assert_equal(res.status_code, 404)
-
-    def test_get_404_path_nodes_me_unauthorized_user(self):
-        url = "/{}nodes/me/".format(API_BASE, self.user_one._id)
-        res = self.app.get(url, auth=self.auth_two, expect_errors=True)
         assert_equal(res.status_code, 404)
 
     def test_get_404_path_nodes_me_no_user(self):

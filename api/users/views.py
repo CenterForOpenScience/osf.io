@@ -22,8 +22,9 @@ class UserMixin(object):
     def get_user(self, check_permissions=True):
         key = self.kwargs[self.node_lookup_url_kwarg]
         current_user = self.request.user
+
         if key == 'me':
-            if (isinstance(current_user, AnonymousUser)):
+            if isinstance(current_user, AnonymousUser):
                 raise NotFound
             else:
                 return self.request.user
@@ -33,7 +34,6 @@ class UserMixin(object):
         if check_permissions:
             # May raise a permission denied
             self.check_object_permissions(self.request, obj)
-
         return obj
 
 
