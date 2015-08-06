@@ -139,9 +139,12 @@ class NodePointersSerializer(JSONAPISerializer):
     class Meta:
         type_ = 'pointers'
 
-    links = LinksField({
-        'html': 'get_absolute_url',
-    })
+    # links = LinksField({
+    #     'html': 'get_absolute_url',
+    # })
+
+    url = ser.HyperlinkedIdentityField(view_name='nodes:node-detail', lookup_field='pk', lookup_url_kwarg='node_id')
+
 
     def get_absolute_url(self, obj):
         pointer_node = Node.load(obj.node._id)
