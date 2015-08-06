@@ -48,7 +48,7 @@ var ActiveFilters = {
                         onclick: function(event){
                             utils.removeFilter(vm, filter);
                         }
-                    }, [m('i.fa.fa-close'), ' ' + filter.split('.').slice(1).join('.')
+                    }, [m('i.fa.fa-close'), ' ' + filter.split(':').slice(1).join(':')
                     ])
                 ]);
         }));
