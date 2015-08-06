@@ -220,12 +220,16 @@ class RegistrationFactory(AbstractNodeFactory):
         else:
             with patch('framework.tasks.handlers.enqueue_task'):
                 reg = register()
-                add_approval_step(reg)
-            with patch.object(reg.archive_job, 'archive_tree_finished', Mock(return_value=True)):
-                reg.archive_job.status = ARCHIVER_SUCCESS
-                reg.archive_job.save()
-                with patch('website.mails.send_mail'):
-                    archiver_listeners.archive_callback(reg)
+                archiver_utils.archive_success(
+                    reg,
+                    reg.registered_user
+                )
+        if embargo:
+            reg.embargo = embargo
+        if approval:
+            reg.registration_approval = approval
+        else:
+            reg.require_approval(reg.creator)
         reg.save()
         return reg
 

@@ -49,7 +49,7 @@ from website.exceptions import (
 from website.citations.utils import datetime_to_csl
 from website.identifiers.model import IdentifierMixin
 from website.util.permissions import expand_permissions
-from website.util.permissions import CREATOR_PERMISSIONS, DEFAULT_CONTRIBUTOR_PERMISSIONS
+from website.util.permissions import CREATOR_PERMISSIONS, DEFAULT_CONTRIBUTOR_PERMISSIONS, ADMIN
 from website.project.metadata.schemas import OSF_META_SCHEMAS
 from website.project import signals as project_signals
 
@@ -2923,8 +2923,8 @@ class Sanction(StoredObject):
         return True
 
     def add_authorizer(self, user, approved=False, save=False):
-        self._validate_authorizer(user)
-        if user._id not in self.approval_state:
+        valid = self._validate_authorizer(user)
+        if valid and user._id not in self.approval_state:
             self.approval_state[user._id] = {
                 'has_approved': approved,
                 'approval_token': security.random_string(30),
@@ -3153,6 +3153,10 @@ class Embargo(EmailApprovableSanction):
     @property
     def pending_registration(self):
         return not self.for_existing_registration and self.pending_embargo
+
+    def _validate_authorizer(self, user):
+        registration = Node.find_one(Q('embargo', 'eq', self))
+        return registration.has_permission(user, ADMIN)
 
     def _on_reject(self, user, token):
         parent_registration = Node.find_one(Q('embargo', 'eq', self))
