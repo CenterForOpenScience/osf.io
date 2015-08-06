@@ -393,68 +393,6 @@ def project_before_register(auth, node, **kwargs):
         'errors': error_messages
     }
 
-@must_be_valid_project
-@must_have_permission(ADMIN)
-@must_not_be_registration
-def node_register_template_page_post(auth, node, **kwargs):
-    data = request.json
-
-    if settings.DISK_SAVING_MODE:
-        raise HTTPError(
-            http.METHOD_NOT_ALLOWED,
-            redirect_url=node.url
-        )
-
-    # Sanitize payload data
-    clean_data = process_payload(data)
-
-    template = kwargs['template']
-    # TODO: Using json.dumps because node_to_use.registered_meta's values are
-    # expected to be strings (not dicts). Eventually migrate all these to be
-    # dicts, as this is unnecessary
-    schema = MetaSchema.find(
-        Q('name', 'eq', template)
-    ).sort('-schema_version')[0]
-
-    # Create the registration
-    register = node.register_node(
-        schema, auth, template, json.dumps(clean_data),
-    )
-
-    if data.get('registrationChoice', 'immediate') == 'embargo':
-        embargo_end_date = parse_date(data['embargoEndDate'], ignoretz=True)
-
-        # Initiate embargo
-        try:
-            register.embargo_registration(auth.user, embargo_end_date)
-            register.save()
-        except ValidationValueError as err:
-            raise HTTPError(http.BAD_REQUEST, data=dict(message_long=err.message))
-        if settings.ENABLE_ARCHIVER:
-            register.archive_job.meta = {
-                'embargo_urls': {
-                    contrib._id: project_utils.get_embargo_urls(register, contrib)
-                    for contrib in node.active_contributors()
-                }
-            }
-            register.archive_job.save()
-    else:
-        register.set_privacy('public', auth, log=False)
-        for child in register.get_descendants_recursive(lambda n: n.primary):
-            child.set_privacy('public', auth, log=False)
-
-    push_status_message('Files are being copied to the newly created registration, and you will receive an email '
-                        'notification containing a link to the registration when the copying is finished.',
-                        kind='info',
-                        trust=False)
-
-    return {
-        'status': 'initiated',
-        'urls': {
-            'registrations': node.web_url_for('node_registrations')
-        }
-    }, http.CREATED
-
 def _build_ezid_metadata(node):
     """Build metadata for submission to EZID using the DataCite profile. See
     http://ezid.cdlib.org/doc/apidoc.html for details.
