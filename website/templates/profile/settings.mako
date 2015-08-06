@@ -38,23 +38,18 @@
             </ul>
 
             <div class="tab-content" id="containDrag">
-
                 <div class="m-t-md tab-pane active" id="names">
                     <div data-bind="template: {name: 'profileName'}"></div>
                 </div>
-
                 <div class="m-t-md tab-pane" id="social">
                     <div data-bind="template: {name: 'profileSocial'}"></div>
                 </div>
-
                 <div class="m-t-md tab-pane" id="jobs">
                     <div data-bind="template: {name: 'profileJobs'}"></div>
                 </div>
-
                 <div class="m-t-md tab-pane" id="schools">
                     <div data-bind="template: {name: 'profileSchools'}"></div>
                 </div>
-
             </div>
 
         </div>
