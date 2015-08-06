@@ -85,13 +85,10 @@ var ViewModel = function(params) {
     };
 
     self.allCategories = ko.pureComputed(function(){
-        var categoryList = self.categories();
         if(self.shareCategory()){
-            categoryList.push(self.shareCategory());
-            return categoryList;
+            return self.categories().concat(self.shareCategory());
         }
-        categoryList.push(new Category('SHARE', 0, 'SHARE'));
-        return categoryList;
+        return self.categories().concat(new Category('SHARE', 0, 'SHARE'));
     });
 
     self.totalCount = ko.pureComputed(function() {
