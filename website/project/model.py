@@ -11,7 +11,6 @@ import warnings
 import pytz
 from flask import request
 from django.core.urlresolvers import reverse
-from HTMLParser import HTMLParser
 
 from modularodm import Q
 from modularodm import fields
@@ -42,6 +41,7 @@ from framework.utils import iso8601format
 from website import language, settings, security
 from website.util import web_url_for
 from website.util import api_url_for
+from website.util import sanitize
 from website.exceptions import (
     NodeStateError, InvalidRetractionApprovalToken,
     InvalidRetractionDisapprovalToken, InvalidEmbargoApprovalToken,
@@ -54,8 +54,6 @@ from website.util.permissions import CREATOR_PERMISSIONS
 from website.project.metadata.schemas import OSF_META_SCHEMAS
 from website.util.permissions import DEFAULT_CONTRIBUTOR_PERMISSIONS
 from website.project import signals as project_signals
-
-html_parser = HTMLParser()
 
 logger = logging.getLogger(__name__)
 
@@ -1162,8 +1160,8 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, TaggableMixin):
 
         # set attributes which may NOT be overridden by `changes`
         new.creator = auth.user
-        new.add_contributor(contributor=auth.user, permissions=CREATOR_PERMISSIONS, log=False, save=False)
         new.template_node = self
+        new.add_contributor(contributor=auth.user, permissions=CREATOR_PERMISSIONS, log=False, save=False)
         new.is_fork = False
         new.is_registration = False
         new.piwik_site_id = None
@@ -1578,7 +1576,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, TaggableMixin):
         for addon in self.get_addons():
             message = addon.after_delete(self, auth.user)
             if message:
-                status.push_status_message(message, 'info')
+                status.push_status_message(message, kind='info', trust=False)
 
         log_date = date or datetime.datetime.utcnow()
 
@@ -1692,7 +1690,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, TaggableMixin):
         for addon in original.get_addons():
             _, message = addon.after_fork(original, forked, user)
             if message:
-                status.push_status_message(message, 'info')
+                status.push_status_message(message, kind='info', trust=True)
 
         return forked
 
@@ -1703,7 +1701,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, TaggableMixin):
         :param auth: All the auth information including user, API key.
         :param template: Template name
         :param data: Form data
-        :param parent Node: parent registration of regitstration to be created
+        :param parent Node: parent registration of registration to be created
         """
         # NOTE: Admins can register child nodes even if they don't have write access them
         if not self.can_edit(auth=auth) and not self.is_admin_parent(user=auth.user):
@@ -1756,7 +1754,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, TaggableMixin):
         for addon in original.get_addons():
             _, message = addon.after_register(original, registered, auth.user)
             if message:
-                status.push_status_message(message, 'info')
+                status.push_status_message(message, kind='info', trust=False)
 
         for node_contained in original.nodes:
             if not node_contained.is_deleted:
@@ -1847,7 +1845,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, TaggableMixin):
         """
         csl = {
             'id': self._id,
-            'title': html_parser.unescape(self.title),
+            'title': sanitize.unescape_entities(self.title),
             'author': [
                 contributor.csl_name  # method in auth/model.py which parses the names of authors
                 for contributor in self.visible_contributors
@@ -2084,7 +2082,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, TaggableMixin):
         for addon in self.get_addons():
             message = addon.after_remove_contributor(self, contributor, auth)
             if message:
-                status.push_status_message(message, 'info')
+                status.push_status_message(message, kind='info', trust=True)
 
         if log:
             self.add_log(
@@ -2276,7 +2274,8 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, TaggableMixin):
             if save:
                 self.save()
 
-            project_signals.contributor_added.send(self, contributor=contributor, auth=auth)
+            project_signals.contributor_added.send(self, contributor=contributor)
+
             return True
 
         #Permissions must be overridden if changed when contributor is added to parent he/she is already on a child of.
@@ -2385,7 +2384,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, TaggableMixin):
         for addon in self.get_addons():
             message = addon.after_set_privacy(self, permissions)
             if message:
-                status.push_status_message(message, 'info')
+                status.push_status_message(message, kind='info', trust=False)
 
         if log:
             action = NodeLog.MADE_PUBLIC if permissions == 'public' else NodeLog.MADE_PRIVATE
@@ -2581,7 +2580,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, TaggableMixin):
             'node_type': self.project_or_component,
             'url': self.url,
             # TODO: Titles shouldn't contain escaped HTML in the first place
-            'title': html_parser.unescape(self.title),
+            'title': sanitize.unescape_entities(self.title),
             'path': self.path_above(auth),
             'api_url': self.api_url,
             'is_public': self.is_public,
