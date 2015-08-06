@@ -27,7 +27,8 @@ var GithubConfigHelper = (function() {
         var $select = $elm.find('select');
 
         bootbox.prompt({
-            message: 'Name your new repo',
+            title: 'Name your new repo',
+            placeholder: 'Repo name',
             callback: function (repoName) {
                 // Return if cancelled
                 if (repoName === null) {

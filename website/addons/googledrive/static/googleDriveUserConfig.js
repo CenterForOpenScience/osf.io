@@ -38,7 +38,7 @@ var ViewModel = function(url) {
         self.changeMessage(
             'Could not retrieve settings. Please refresh the page or ' +
             'contact <a href="mailto: support@osf.io">support@osf.io</a> if the ' +
-            'problem persists.', 'text-warning'
+            'problem persists.', 'text-danger'
         );
         Raven.captureMessage('Could not GET Google Drive settings', {
             url: url,

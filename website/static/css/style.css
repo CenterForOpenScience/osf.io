@@ -156,9 +156,6 @@ a {
         color: #FFF;
     }
 
-    .osf-search {
-        z-index: 1028;
-    }
     #searchControls > .osf-search {
         z-index: 99;
     }
@@ -194,9 +191,6 @@ a {
     .navbar-brand {
         margin-left: 0 !important;
         padding-left: 0;
-    }
-    .osf-search {
-        z-index: 1028; /* should be less than 1030 to not cover navbar */
     }
 }
 
@@ -417,8 +411,103 @@ select {
     word-wrap: normal;
 }
 
-tr a, b, em {
-    word-break: break-word;
+.tag:hover
+{
+    background-color: #337ab7;
+}
+.tag:hover > .tag-text
+{
+    color: #E0EBF3;
+}
+.tag:hover > .remove-tag
+{
+    visibility: visible;
+}
+.tag-big
+{
+    font-size: 13pt;
+}
+
+.tag-med
+{
+    font-size: 11pt;
+}
+.tag-container
+{
+    position: relative;
+}
+
+.remove-tag
+{
+    visibility: hidden;
+    position: absolute;
+    top: -5px;
+    right: -5px;
+    color: #AAAAAA;
+}
+
+.remove-tag.big
+{
+    top: -8px;
+    right: -8px;
+}
+
+.remove-tag.med
+{
+    top: -6px;
+    right: -6px;
+}
+
+.tagsinput {
+    border:1px solid #CCC;
+    float: left;
+    padding: 5px;
+    background: #FFF;
+    padding:5px;
+    width:300px;
+    height:100px;
+    overflow-y: auto;
+}
+
+.tagsinput div {
+    float: left;
+}
+
+.tagsinput span.tag {
+    float: left;
+    padding: 5px;
+}
+
+.tagsinput input {
+    width:80px;
+    margin:0px;
+    font-family: helvetica;
+    font-size: 13px;
+    border:1px solid transparent;
+    padding:5px;
+    margin-right:5px;
+    margin-bottom:5px;
+}
+
+.tag a {
+    font-weight: bold;
+    color: #000;
+    text-decoration:none;
+    font-size: 11px;
+
+}
+
+.tag {
+    text-decoration:none;
+    display: inline-block;
+    background: #DEF;
+    margin-right: 5px;
+    margin-bottom:5px;
+    font-size:13px;
+    padding:5px;
+    border:1px solid transparent;
+    border-radius: 5px;
+    cursor: pointer;
 }
 
 .btn-link.project-toggle {
@@ -453,4 +542,14 @@ button.close {
     position: relative;
     word-break: break-all;
     word-break: break-word; /* Non standard for webkit*/
+}
+
+/* growlBox style */
+.alert.growl-animated {
+    padding-right: 35px; /* work as alert-dismissable in bootstrap */
+}
+
+.tb-modal-shade {
+    /*  Override z-index here to avoid clashing with navigation elements */
+    z-index: 98 !important;
 }

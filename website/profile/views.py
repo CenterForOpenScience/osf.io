@@ -170,7 +170,9 @@ def update_user(auth):
             try:
                 user.add_unconfirmed_email(address)
             except (ValidationError, ValueError):
-                continue
+                raise HTTPError(http.BAD_REQUEST, data=dict(
+                    message_long="Invalid Email")
+                )
 
             # TODO: This setting is now named incorrectly.
             if settings.CONFIRM_REGISTRATIONS_BY_EMAIL:
