@@ -181,12 +181,14 @@ class NodeFilesSerializer(JSONAPISerializer):
     class Meta:
         type_ = 'files'
 
-    links = LinksField({
-        'self': WaterbutlerLink(kwargs={'node_id': '<node_id>'}),
-        'self_methods': 'valid_self_link_methods',
-        'related': Link('nodes:node-files', kwargs={'node_id': '<node_id>'},
-                        query_kwargs={'path': '<path>', 'provider': '<provider>'}),
-    })
+    # links = LinksField({
+    #     'self': WaterbutlerLink(kwargs={'node_id': '<node_id>'}),
+    #     'self_methods': 'valid_self_link_methods',
+    #     'related': Link('nodes:node-files', kwargs={'node_id': '<node_id>'},
+    #                     query_kwargs={'path': '<path>', 'provider': '<provider>'}),
+    # })
+
+    url = LinksField(WaterbutlerLink(kwargs={'node_id': '<node_id>'}))
 
     @staticmethod
     def get_id(obj):
@@ -204,5 +206,48 @@ class NodeFilesSerializer(JSONAPISerializer):
     def update(self, instance, validated_data):
         # TODO
         pass
+
+# class NodeFilesSerializer(JSONAPISerializer):
+#     id = ser.SerializerMethodField()
+#     provider = ser.CharField(read_only=True)
+#     path = ser.CharField(read_only=True)
+#     item_type = ser.CharField(read_only=True)
+#     name = ser.CharField(read_only=True)
+#     content_type = ser.CharField(read_only=True)
+#     modified = ser.DateTimeField(read_only=True)
+#     size = ser.CharField(read_only=True)
+#     extra = ser.DictField(read_only=True)
+#
+#     class Meta:
+#         type_ = 'files'
+#
+#     links = LinksFieldWIthSelfLink({
+#         'self': WaterbutlerLink(kwargs={'node_id': '<node_id>'}),
+#         'related': {
+#             'href': Link('nodes:node-files', kwargs={'node_id': '<node_id>'},
+#                         query_kwargs={'path': '<path>', 'provider': '<provider>'}),
+#             'meta': {
+#                 'self_methods': 'valid_self_link_methods'
+#             }
+#         }
+#     })
+#
+#     @staticmethod
+#     def get_id(obj):
+#         ret = obj['provider'] + obj['path']
+#         return ret
+#
+#     @staticmethod
+#     def valid_self_link_methods(obj):
+#         return obj['valid_self_link_methods']
+#
+#     def create(self, validated_data):
+#         # TODO
+#         pass
+#
+#     def update(self, instance, validated_data):
+#         # TODO
+#         pass
+
 
 
