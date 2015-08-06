@@ -2317,6 +2317,7 @@ class TestProject(OsfTestCase):
         assert_in(creator, project.contributors)
         # Creator is removed from project
         project.remove_contributor(creator, auth=Auth(user=contrib))
+        project.save()
         assert_false(project.can_view(Auth(user=creator)))
         assert_false(project.can_edit(Auth(user=creator)))
         assert_false(project.is_contributor(creator))

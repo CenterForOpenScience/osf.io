@@ -217,13 +217,13 @@ class TestRemoveContributor(OsfTestCase):
 
     def test_removed_non_admin_contributor_is_removed_from_subscriptions(self):
         assert_in(self.contributor, self.subscription.email_transactional)
-        self.project.remove_contributor(self.contributor, auth=Auth(self.project.creator))
+        self.project.remove_contributor(self.contributor, auth=Auth(self.project.creator), save=True)
         assert_not_in(self.contributor, self.project.contributors)
         assert_not_in(self.contributor, self.subscription.email_transactional)
 
     def test_removed_non_parent_admin_contributor_is_removed_from_subscriptions(self):
         assert_in(self.node.creator, self.node_subscription.email_transactional)
-        self.node.remove_contributor(self.node.creator, auth=Auth(self.node.creator))
+        self.node.remove_contributor(self.node.creator, auth=Auth(self.node.creator), save=True)
         assert_not_in(self.node.creator, self.node.contributors)
         assert_not_in(self.node.creator, self.node_subscription.email_transactional)
 
@@ -232,13 +232,13 @@ class TestRemoveContributor(OsfTestCase):
         #     that admin is not removed from component subscriptions, as the admin
         #     now has read-only access.
         assert_in(self.project.creator, self.node_subscription.email_transactional)
-        self.node.remove_contributor(self.project.creator, auth=Auth(self.project.creator))
+        self.node.remove_contributor(self.project.creator, auth=Auth(self.project.creator), save=True)
         assert_not_in(self.project.creator, self.node.contributors)
         assert_in(self.project.creator, self.node_subscription.email_transactional)
 
     def test_remove_contributor_signal_called_when_contributor_is_removed(self):
         with capture_signals() as mock_signals:
-            self.project.remove_contributor(self.contributor, auth=Auth(self.project.creator))
+            self.project.remove_contributor(self.contributor, auth=Auth(self.project.creator), save=True)
         assert_equal(mock_signals.signals_sent(), set([contributor_removed]))
 
 
