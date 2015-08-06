@@ -105,6 +105,7 @@ utils.search = function(vm) {
         vm.query = m.prop('');
         vm.results = null;
         vm.showFooter = true;
+        vm.showStats = false;
         vm.optionalFilters = [];
         vm.requiredFilters = [];
         vm.sort('Relevance');
@@ -113,6 +114,7 @@ utils.search = function(vm) {
     } else if (vm.query().length === 0) {
         ret.resolve(null);
     } else {
+        vm.showStats = true;
         vm.page = 0;
         vm.results = [];
         if (utils.stateChanged(vm)) {
