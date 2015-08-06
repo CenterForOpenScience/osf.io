@@ -273,8 +273,6 @@ def node_registration_approve(auth, node, token, **kwargs):
 
     try:
         node.registration_approval.approve(auth.user, token)
-        node.registration_approval.save()
-
     except InvalidSanctionApprovalToken as e:
         raise HTTPError(http.BAD_REQUEST, data={
             'message_short': e.message_short,
@@ -285,7 +283,7 @@ def node_registration_approve(auth, node, token, **kwargs):
             'message_short': 'Unauthorized access',
             'message_long': e.message
         })
-
+    node.registration_approval.save()
     status.push_status_message('Your approval has been accepted.', 'success')
     return redirect(node.web_url_for('view_project'))
 

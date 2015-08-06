@@ -55,7 +55,7 @@ class TestSanction(SanctionsTestCase):
 
     def test_pending_approval(self):
         assert_true(self.sanction.pending_approval)
-        self.sanction.state = Sanction.ACTIVE
+        self.sanction.state = Sanction.APPROVED
         assert_false(self.sanction.pending_approval)
 
     def test_validate_authorizer(self):

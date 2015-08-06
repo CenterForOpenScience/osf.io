@@ -1343,7 +1343,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         ]
 
     def node_and_primary_descendants(self):
-        """Gets an iterator for a node and all of its visible descendants
+        """Gets an iterator for a node and all of its primary (non-pointer) descendants
 
         :param node Node: target Node
         """
@@ -2894,15 +2894,6 @@ class PrivateLink(StoredObject):
             "anonymous": self.anonymous
         }
 
-# TODO(hryabcki): Need to design a better way to allow subclasses to extend this validator
-def validate_sanction_state(value):
-    acceptable_states = [
-        Sanction.UNAPPROVED, Sanction.APPROVED, Sanction.REJECTED, Embargo.COMPLETED
-    ]
-    if value not in acceptable_states:
-        raise ValidationValueError('Invalid sanction state assignment.')
-    return True
-
 class Sanction(StoredObject):
     """Sanction object is a generic way to track approval states"""
 
@@ -2934,8 +2925,8 @@ class Sanction(StoredObject):
     #     'rejection_token': 'TwozClTFOic2PYxHDStby94bCQMwJy'}
     # }
     approval_state = fields.DictionaryField()
-    # One of 'unapproved', 'active', 'cancelled', or 'completed
-    state = fields.StringField(default='unapproved', validate=validate_sanction_state)
+    # One of 'unapproved', 'approved', or 'rejected'
+    state = fields.StringField(default='unapproved')
 
     def __repr__(self):
         return '<Sanction(end_date={1}) with _id {2}>'.format(
@@ -2984,7 +2975,7 @@ class Sanction(StoredObject):
             self._on_complete(user)
 
     def _on_reject(self, user, token):
-        """Early termination of a Santion"""
+        """Early termination of a Sanction"""
         raise NotImplementedError('Sanction subclasses must implement an #_on_reject method')
 
     def _on_complete(self, user):
@@ -3207,7 +3198,7 @@ class Embargo(EmailApprovableSanction):
             },
             auth=Auth(user),
         )
-        # Remove backref to parent project if embargo was for a new regist
+        # Remove backref to parent project if embargo was for a new registration
         if not self.for_existing_registration:
             parent_registration.registered_from = None
         # Delete parent registration if it was created at the time the embargo was initiated
