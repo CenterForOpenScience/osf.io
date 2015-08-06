@@ -4,7 +4,7 @@
 <% from website import settings %>
 <h2 class="page-header">Settings
     <div class="pull-right">
-        <a href="/profile" class="btn btn-link"><i class="fa fa-user m-r-sm"></i>View Profile </a>
+        <a href="/profile" class="btn btn-link"><i class="fa fa-user m-r-sm"></i>View your profile </a>
     </div>
 </h2>
 
