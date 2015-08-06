@@ -28,6 +28,9 @@ class UserMixin(object):
         key = self.kwargs[self.node_lookup_url_kwarg]
 
         if key == 'me':
+            # TODO: change exception from PermissionDenied to NotAuthenticated/AuthenticationFailed
+            # TODO: for unauthorized users
+
             if isinstance(current_user, AnonymousUser):
                 raise PermissionDenied
             else:

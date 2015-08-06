@@ -243,6 +243,8 @@ class TestUserRoutesNodeRoutes(ApiTestCase):
         assert_equal(res.status_code, 200)
 
     def test_get_403_path_users_me_no_user(self):
+        # TODO: change expected exception from 403 to 401 for unauthorized users
+
         url = "/{}users/me/".format(API_BASE)
         res = self.app.get(url, expect_errors=True)
         # This is 403 instead of 401 because basic authentication is only for unit tests and, in order to keep from
@@ -285,6 +287,8 @@ class TestUserRoutesNodeRoutes(ApiTestCase):
         assert_not_in(self.deleted_project_user_one._id, ids)
 
     def test_get_403_path_users_me_nodes_no_user(self):
+        # TODO: change expected exception from 403 to 401 for unauthorized users
+
         url = "/{}users/me/nodes/".format(API_BASE)
         res = self.app.get(url, expect_errors=True)
         # This is 403 instead of 401 because basic authentication is only for unit tests and, in order to keep from
