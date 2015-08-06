@@ -789,7 +789,7 @@ def _view_project(node, auth, primary=False):
         },
         'discussions': {
             'enabled': node.mailing_enabled,
-            'user_subscribed': user.email not in node.mailing_unsubs if user else False
+            'user_subscribed': user not in node.mailing_unsubs if user else False
         },
         'badges': _get_badge(user),
         # TODO: Namespace with nested dicts
