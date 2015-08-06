@@ -18,6 +18,7 @@
 {
     font-size: 16px;
 }
+<<<<<<< HEAD
 .tag-cloud
 {
     word-break: break-all;
@@ -92,6 +93,8 @@
     top: -6px;
     right: -6px;
 }
+=======
+>>>>>>> 0fea25a5a49341c6f21cb7a46c4b10ca1cabeca2
 
 .registration a {
     color: #666;
@@ -101,7 +104,11 @@
     color: #000000;
 }
 
+<<<<<<< HEAD
 .registration .tag-cloud .cloud-tag {
+=======
+.registration {
+>>>>>>> 0fea25a5a49341c6f21cb7a46c4b10ca1cabeca2
     background-color: #AAA;
     color: #ffffff;
 }

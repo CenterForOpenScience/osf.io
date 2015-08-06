@@ -104,11 +104,14 @@ projectOrganizer.myProjects = new Bloodhound({
  */
 function _poTitleColumn(item) {
     var tb = this;
+    var preventSelect = function(e){
+        e.stopImmediatePropagation();
+    };
     var css = item.data.isSmartFolder ? 'project-smart-folder smart-folder' : '';
     if(item.data.archiving) {
         return  m('span', {'class': 'registration-archiving'}, item.data.name + ' [Archiving]');
     } else if(item.data.urls.fetch){
-        return m('a.fg-file-links', { 'class' : css, href : item.data.urls.fetch}, item.data.name);
+        return m('a.fg-file-links', { 'class' : css, href : item.data.urls.fetch, onclick : preventSelect}, item.data.name);
     } else {
         return  m('span', { 'class' : css}, item.data.name);
     }
@@ -193,7 +196,7 @@ function saveExpandState(item, callback) {
 }
 
 /**
- * Contributors have first person's name and then number of contributors. This functio nreturns the proper html
+ * Contributors have first person's name and then number of contributors. This function returns the proper html
  * @param {Object} item A Treebeard _item object for the row involved. Node information is inside item.data
  * @returns {Object} A Mithril virtual DOM template object
  * @private
@@ -921,7 +924,7 @@ function applyTypeahead() {
                     $('#add-link-button').click(); //submits if the control is active
                 }
             } else {
-                $('#add-link-warning').text('');
+                $('#add-link-warning').removeClass('p-sm').text('');
                 $('#add-link-button').addClass('tb-disabled');
                 linkName = '';
                 linkID = '';
@@ -937,7 +940,7 @@ function applyTypeahead() {
                     linkName = datum.name;
                     linkID = datum.node_id;
                 } else {
-                    $('#add-link-warning').text('This project is already in the folder');
+                    $('#add-link-warning').addClass('p-sm').text('This project is already in the folder');
                 }
             }).fail($osf.handleJSONError);
         });
@@ -1002,7 +1005,12 @@ function showLegend() {
             ' )'
             ])
     };
-    tb.modal.update(legendView(data, repr, opts));
+    var closeBtn = m('button', {
+        class:'btn btn-default',
+        type:'button',
+        onclick : function(event) { tb.modal.dismiss(); } }, 'Close');
+
+    tb.modal.update(legendView(data, repr, opts), closeBtn, m('h3.modal-title', 'Legend'));
     tb.modal.show();
 }
 
@@ -1115,7 +1123,6 @@ var _dismissToolbar = function () {
     m.redraw();
 };
 
-
 var POToolbar = {
     controller: function (args) {
         var self = this;
@@ -1190,8 +1197,7 @@ var POToolbar = {
                     id : 'renameInput',
                     helpTextId : 'renameHelpText',
                     placeholder : null,
-                    value : ctrl.tb.inputValue(),
-                    tooltip: 'Rename this item'
+                    value : ctrl.tb.inputValue()
                 }, ctrl.helpText())
                 ),
             m('.col-xs-3.tb-buttons-col',
@@ -1223,7 +1229,7 @@ var POToolbar = {
                     type : 'text',
                     placeholder : 'Name of the project to find'
                 }),
-                m('#add-link-warning.text-warning.p-sm')
+                m('#add-link-warning.text-warning')
             ]
                 ),
             m('.col-xs-3.tb-buttons-col',
@@ -1245,7 +1251,6 @@ var POToolbar = {
             m.component(Fangorn.Components.button, {
                 onclick: function (event) {
                     ctrl.mode(Fangorn.Components.toolbarModes.SEARCH);
-                    ctrl.tb.clearMultiselect();
                 },
                 icon: 'fa fa-search',
                 className : 'text-primary'
@@ -1318,15 +1323,14 @@ function _deleteFolder(item) {
         });
     }
     var mithrilContent = m('div', [
-            m('h3.break-word', 'Delete "' + theItem.name + '"?'),
             m('p', 'Are you sure you want to delete this Collection? This will also delete any Collections ' +
                 'inside this one. You will not delete any projects in this Collection.')
         ]);
     var mithrilButtons = m('div', [
-            m('span.tb-modal-btn', { 'class' : 'text-primary', onclick : function() { tb.modal.dismiss(); } }, 'Cancel'),
-            m('span.tb-modal-btn', { 'class' : 'text-danger', onclick : function() { runDeleteFolder(); }  }, 'Delete')
+            m('span.btn.btn-default', { onclick : function() { tb.modal.dismiss(); } }, 'Cancel'),
+            m('span.btn.btn-danger', { onclick : function() { runDeleteFolder(); }  }, 'Delete')
         ]);
-    tb.modal.update(mithrilContent, mithrilButtons);
+    tb.modal.update(mithrilContent, mithrilButtons,  m('h3.break-word.modal-title', 'Delete "' + theItem.name + '"?'));
 }
 
 /**
@@ -1399,7 +1403,11 @@ var tbOptions = {
     resolveRefreshIcon : function () {
         return m('i.fa.fa-refresh.fa-spin');
     },
-    toolbarComponent : POToolbar
+    toolbarComponent : POToolbar,
+    naturalScrollLimit : 0,
+    removeIcon : function(){
+        return m.trust('&times;');
+    },
 };
 
 /**

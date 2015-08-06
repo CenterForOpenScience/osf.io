@@ -1,3 +1,4 @@
+import mock
 import datetime
 
 from modularodm import Q
@@ -10,6 +11,7 @@ from website import models
 from tests import base
 from tests.base import fake
 from tests import factories
+from framework.tasks import handlers
 
 
 class TestUser(base.OsfTestCase):
@@ -134,6 +136,8 @@ class TestUserMerging(base.OsfTestCase):
     def setUp(self):
         super(TestUserMerging, self).setUp()
         self.user = factories.UserFactory()
+        with self.context:
+            handlers.celery_before_request()
 
     def _add_unconfirmed_user(self):
 
@@ -141,9 +145,6 @@ class TestUserMerging(base.OsfTestCase):
 
         self.user.system_tags = ['shared', 'user']
         self.unconfirmed.system_tags = ['shared', 'unconfirmed']
-
-        self.user.aka = ['shared', 'user']
-        self.unconfirmed.aka = ['shared', 'unconfirmed']
 
     def _add_unregistered_user(self):
         self.unregistered = factories.UnregUserFactory()
@@ -221,19 +222,14 @@ class TestUserMerging(base.OsfTestCase):
         with assert_raises(exceptions.MergeConflictError):
             self.user.merge_user(unregistered)
 
-    def test_merge(self):
+    @mock.patch('website.mailchimp_utils.get_mailchimp_api')
+    def test_merge(self, mock_get_mailchimp_api):
         other_user = factories.UserFactory()
         other_user.save()
 
         # define values for users' fields
         today = datetime.datetime.now()
         yesterday = today - datetime.timedelta(days=1)
-
-        self.user.aka = ['foo']
-        other_user.aka = ['bar']
-
-        self.user.api_keys = [factories.ApiKeyFactory()]
-        other_user.api_keys = [factories.ApiKeyFactory()]
 
         self.user.comments_viewed_timestamp['shared_gt'] = today
         other_user.comments_viewed_timestamp['shared_gt'] = yesterday
@@ -306,14 +302,10 @@ class TestUserMerging(base.OsfTestCase):
             'timezone',
             'username',
             'verification_key',
+            'contributor_added_email_records'
         ]
 
         calculated_fields = {
-            'aka': ['foo', 'bar'],
-            'api_keys': [
-                self.user.api_keys[0]._id,
-                other_user.api_keys[0]._id,
-            ],
             'comments_viewed_timestamp': {
                 'user': yesterday,
                 'other': yesterday,
@@ -363,9 +355,15 @@ class TestUserMerging(base.OsfTestCase):
             set(self.user._fields),
         )
 
+        # mock mailchimp
+        mock_client = mock.MagicMock()
+        mock_get_mailchimp_api.return_value = mock_client
+        mock_client.lists.list.return_value = {'data': [{'id': x, 'list_name': list_name} for x, list_name in enumerate(self.user.mailing_lists)]}
+
         # perform the merge
         self.user.merge_user(other_user)
         self.user.save()
+        handlers.celery_teardown_request()
 
         # check each field/value pair
         for k, v in expected.iteritems():
@@ -401,13 +399,11 @@ class TestUserMerging(base.OsfTestCase):
         # TODO: test mailing_lists
 
         assert_equal(self.user.system_tags, ['shared', 'user', 'unconfirmed'])
-        assert_equal(self.user.aka, ['shared', 'user', 'unconfirmed'])
 
         # TODO: test emails
         # TODO: test watched
         # TODO: test external_accounts
 
-        # TODO: test api_keys
         assert_equal(self.unconfirmed.email_verifications, {})
         assert_is_none(self.unconfirmed.username)
         assert_is_none(self.unconfirmed.password)

@@ -38,4 +38,13 @@ table.table.table-plain th, table.table.table-plain td {
 .profile-gravatar {
     width:70px;
     height:70px;
+<<<<<<< HEAD
+=======
+}
+
+
+
+#social td:first-child {
+    word-break: inherit;
+>>>>>>> 0fea25a5a49341c6f21cb7a46c4b10ca1cabeca2
 }

@@ -8,7 +8,9 @@ ALL_SIGNALS = [
     auth.contributor_removed,
     auth.node_deleted,
     project.unreg_contributor_added,
+    project.contributor_added,
     auth.user_confirmed,
     auth.user_email_removed,
     auth.user_registered,
+    auth.user_merged
 ]

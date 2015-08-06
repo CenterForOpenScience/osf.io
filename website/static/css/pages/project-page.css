@@ -27,6 +27,13 @@
     content: "";
 }
 
+<<<<<<< HEAD
+=======
+#contributors p {
+    margin: 0;
+}
+
+>>>>>>> 0fea25a5a49341c6f21cb7a46c4b10ca1cabeca2
 /* Project Navigation */
 #projectSubnav .navbar-collapse {
     padding-left: 0;
@@ -113,4 +120,12 @@
     position: relative;
     word-break: break-all;
     word-break: break-word; /* Non standard for webkit*/
+<<<<<<< HEAD
+=======
+}
+
+/* Disable word-break in project addon-settings table */
+.table-addon-terms td:first-child {
+    word-break: normal;
+>>>>>>> 0fea25a5a49341c6f21cb7a46c4b10ca1cabeca2
 }

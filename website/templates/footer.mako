@@ -1,10 +1,9 @@
-<footer class="footer">
+<footer class="footer m-t-lg m-b-lg p-lg bg-color-light">
     <div class="container">
         <div class="row">
             <div class="col-sm-2 col-md-2 col-md-offset-1">
                 <h4>OSF</h4>
                 <ul>
-                    <li><a href="/4znzp/wiki/home">About</a></li>
                     <li><a href="/explore/activity/">Explore</a></li>
                     <li><script type="text/javascript">document.write("<n uers=\"znvygb:pbagnpg@bfs.vb\" ery=\"absbyybj\">Pbagnpg</n>".replace(/[a-zA-Z]/g,function(e){return String.fromCharCode((e<="Z"?90:122)>=(e=e.charCodeAt(0)+13)?e:e-26)}));</script><noscript>Contact OSF: <span class="obfuscated-email-noscript"><strong><u>cont<span style="display:none;">null</span>act@<span style="display:none;">null</span>osf.<span style="display:none;">null</span>io</u></strong></span></noscript></li>
                 </ul>
@@ -15,6 +14,7 @@
                     <li><a href="http://cos.io">Home</a></li>
                     <li><a href="/ezcuj/wiki/home/">Reproducibility Project: Psychology</a></li>
                     <li><a href="/e81xl/wiki/home/">Reproducibility Project: Cancer Biology</a></li>
+                    <li><a href="http://cos.io/top/">TOP Guidelines</a></li>
                      <li><a href="https://www.givinglibrary.org/organizations/center-for-open-science">Donate</a></li>
                </ul>
             </div>
@@ -38,13 +38,3 @@
         </div>
     </div>
 </footer><!-- end footer -->
-<div class="container copyright">
-    <div class="row">
-        <div class="col-md-12">
-            <p>Copyright &copy; 2011-2015 <a href="http://centerforopenscience.org">Center for Open Science</a> |
-                <a href="https://github.com/CenterForOpenScience/centerforopenscience.org/blob/master/TERMS_OF_USE.md">Terms of Use</a> |
-                <a href="https://github.com/CenterForOpenScience/centerforopenscience.org/blob/master/PRIVACY_POLICY.md">Privacy Policy</a>
-            </p>
-        </div>
-    </div>
-</div><!-- end container copyright -->
