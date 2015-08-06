@@ -8,7 +8,7 @@ from api.base.filters import ODMFilterMixin
 from api.nodes.serializers import NodeSerializer
 from .serializers import UserSerializer
 from django.contrib.auth.models import AnonymousUser
-from rest_framework.exceptions import NotFound
+from rest_framework.exceptions import PermissionDenied
 
 
 class UserMixin(object):
@@ -25,7 +25,7 @@ class UserMixin(object):
 
         if key == 'me':
             if isinstance(current_user, AnonymousUser):
-                raise NotFound
+                raise PermissionDenied
             else:
                 return self.request.user
 
