@@ -11,7 +11,7 @@
         <div class="row">
             <div class="col-md-12">
                 <div class="row m-t-md">
-                    <!-- ko if: categories().length > 0-->
+                    <!-- ko if: allCategories().length > 0-->
                     <div class="col-md-3">
                         <div class="row">
                             <div class="col-md-12">

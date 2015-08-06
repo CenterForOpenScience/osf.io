@@ -75,7 +75,6 @@ var ViewModel = function(params) {
     self.categories = ko.observableArray([]);
     self.shareCategory = ko.observable('');
     self.searchStarted = ko.observable(false);
-    self.jsonData = ko.observable('');
     self.showSearch = true;
     self.showClose = false;
     self.searchCSS = ko.observable('active');
@@ -91,6 +90,8 @@ var ViewModel = function(params) {
             categoryList.push(self.shareCategory());
             return categoryList;
         }
+        categoryList.push(new Category('SHARE', 0, 'SHARE'));
+        return categoryList;
     });
 
     self.totalCount = ko.pureComputed(function() {
