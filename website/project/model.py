@@ -3193,22 +3193,6 @@ class Embargo(EmailApprovableSanction):
                 'embargo_end_date': self.end_date,
             }
 
-    @property
-    def embargo_end_date(self):
-        return self.end_date
-
-    @property
-    def pending_embargo(self):
-        return self.pending_approval
-
-    # NOTE(hrybacki): Old, private registrations are grandfathered and do not
-    # require to be made public or embargoed. This field differentiates them
-    # from new registrations entering into an embargo field which should not
-    # show up in any search related fields.
-    @property
-    def pending_registration(self):
-        return not self.for_existing_registration and self.pending_embargo
-
     def _validate_authorizer(self, user):
         registration = Node.find_one(Q('embargo', 'eq', self))
         return registration.has_permission(user, ADMIN)
