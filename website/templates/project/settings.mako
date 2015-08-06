@@ -223,7 +223,7 @@
 
             %endif
 
-        % endif End Configure Notifications
+        % endif ## End Configure Notifications
 
 
 

@@ -1,9 +1,8 @@
 from babel import dates, core, Locale
-from datetime import timedelta
 
 from website import mails
 from website import models as website_models
-from website.notifications import constants, tasks
+from website.notifications import constants
 from website.notifications import utils
 from website.notifications.model import NotificationDigest
 from website.notifications.model import NotificationSubscription

@@ -3,9 +3,8 @@ import datetime
 import mock
 import pytz
 from babel import dates, Locale
-from schema import Schema, And, Use, Optional, Or
+from schema import Schema, And, Use, Or
 
-from mako.lookup import Template
 from modularodm import Q
 from modularodm.exceptions import NoResultsFound
 from nose.tools import *  # noqa PEP8 asserts
@@ -14,10 +13,7 @@ from framework.auth import Auth
 from framework.auth.core import User
 from framework.auth.signals import contributor_removed
 from framework.auth.signals import node_deleted
-from scripts.send_digest import group_digest_notifications_by_user
-from scripts.send_digest import group_messages_by_node
-from scripts.send_digest import remove_sent_digest_notifications
-from scripts.send_digest import send_digest
+from website.notifications.tasks import get_users_emails, send_users_email, group_by_node, remove_notifications
 from website.notifications import constants
 from website.notifications.model import NotificationDigest
 from website.notifications.model import NotificationSubscription
@@ -319,7 +315,8 @@ def subscription_schema(project, structure, level=0):
             'title': Use(type(project.title), error="node_title{}".format(level)),
             'url': Use(type(project.url), error="node_{}".format(level))
         },
-        'kind': And(str, Use(lambda s: s in ('node', 'folder'), error="kind didn't match node or folder {}".format(level))),
+        'kind': And(str, Use(lambda s: s in ('node', 'folder'),
+                             error="kind didn't match node or folder {}".format(level))),
         'nodeType': Use(lambda s: s in ('project', 'component'), error='nodeType not project or component'),
         'category': Use(lambda s: s in Node.CATEGORY_MAP, error='category not in Node.CATEGORY_MAP'),
         'permissions': {
@@ -633,7 +630,6 @@ class TestNotificationUtils(OsfTestCase):
                 'kind': 'heading',
                 'children': utils.format_data(self.user, utils.get_configured_projects(self.user))
             }]
-
         assert_equal(data, expected)
 
     def test_serialize_user_level_event(self):
@@ -1047,7 +1043,6 @@ class TestSendEmails(OsfTestCase):
     @mock.patch('website.mails.send_mail')
     @mock.patch('website.notifications.emails.store_emails')
     def test_notify_does_not_send_comment_if_they_reply_to_their_own_comment(self, mock_store, mock_send_mail):
-        user = factories.UserFactory()
         time_now = datetime.datetime.utcnow()
         emails.notify('comments', user=self.project.creator, node=self.project, timestamp=time_now,
                       target_user=self.project.creator)
@@ -1169,67 +1164,129 @@ class TestSendEmails(OsfTestCase):
 
 
 class TestSendDigest(OsfTestCase):
-    def test_group_digest_notifications_by_user(self):
+    def test_group_notifications_by_user_transactional(self):
+        send_type = 'email_transactional'
         user = factories.UserFactory()
         user2 = factories.UserFactory()
         project = factories.ProjectFactory()
         timestamp = (datetime.datetime.utcnow() - datetime.timedelta(hours=1)).replace(microsecond=0)
         d = factories.NotificationDigestFactory(
             user_id=user._id,
+            send_type=send_type,
             timestamp=timestamp,
             message='Hello',
-            node_lineage=[project._id],
-            time_to_send=datetime.datetime.utcnow()
+            node_lineage=[project._id]
         )
         d.save()
         d2 = factories.NotificationDigestFactory(
             user_id=user2._id,
+            send_type=send_type,
             timestamp=timestamp,
             message='Hello',
-            node_lineage=[project._id],
-            time_to_send=datetime.datetime.utcnow()
+            node_lineage=[project._id]
         )
         d2.save()
-        user_groups = group_digest_notifications_by_user()
-        expected = [{
-                    u'user_id': user._id,
-                    u'info': [{
-                        u'message': u'Hello',
-                        u'node_lineage': [unicode(project._id)],
-                        u'_id': d._id
-                    }]
-                    },
-                    {
+        d3 = factories.NotificationDigestFactory(
+            user_id=user2._id,
+            send_type='email_digest',
+            timestamp=timestamp,
+            message='Hello, but this should not appear',
+            node_lineage=[project._id]
+        )
+        d3.save()
+        user_groups = get_users_emails(send_type)
+        expected = \
+            [{
+                u'user_id': user._id,
+                u'info': [{
+                    u'message': u'Hello',
+                    u'node_lineage': [unicode(project._id)],
+                    u'_id': d._id
+                }]
+                },
+                {
+                u'user_id': user2._id,
+                u'info': [{
+                    u'message': u'Hello',
+                    u'node_lineage': [unicode(project._id)],
+                    u'_id': d2._id
+                }]
+            }]
+
+        assert_equal(len(user_groups), 2)
+        assert_equal(user_groups, expected)
+
+    def test_group_notifications_by_user_digest(self):
+        send_type = 'email_digest'
+        user = factories.UserFactory()
+        user2 = factories.UserFactory()
+        project = factories.ProjectFactory()
+        timestamp = (datetime.datetime.utcnow() - datetime.timedelta(hours=1)).replace(microsecond=0)
+        d = factories.NotificationDigestFactory(
+            user_id=user._id,
+            send_type=send_type,
+            timestamp=timestamp,
+            message='Hello',
+            node_lineage=[project._id]
+        )
+        d.save()
+        d2 = factories.NotificationDigestFactory(
+            user_id=user2._id,
+            send_type=send_type,
+            timestamp=timestamp,
+            message='Hello',
+            node_lineage=[project._id]
+        )
+        d2.save()
+        d3 = factories.NotificationDigestFactory(
+            user_id=user2._id,
+            send_type='email_transactiona;',
+            timestamp=timestamp,
+            message='Hello, but this should not appear',
+            node_lineage=[project._id]
+        )
+        d3.save()
+        user_groups = get_users_emails(send_type)
+        expected = \
+            [{
+                u'user_id': user._id,
+                u'info': [{
+                    u'message': u'Hello',
+                    u'node_lineage': [unicode(project._id)],
+                    u'_id': d._id
+                }]
+            },
+                {
                     u'user_id': user2._id,
                     u'info': [{
                         u'message': u'Hello',
                         u'node_lineage': [unicode(project._id)],
                         u'_id': d2._id
                     }]
-        }]
+                }]
 
         assert_equal(len(user_groups), 2)
         assert_equal(user_groups, expected)
 
-    @mock.patch('scripts.send_digest.remove_sent_digest_notifications')
     @mock.patch('website.mails.send_mail')
-    def test_send_digest_called_with_correct_args(self, mock_send_mail, mock_callback):
+    def test_send_users_email_called_with_correct_args(self, mock_send_mail):
+        send_type = 'email_transactional'
         d = factories.NotificationDigestFactory(
             user_id=factories.UserFactory()._id,
+            send_type=send_type,
             timestamp=datetime.datetime.utcnow(),
             message='Hello',
-            node_lineage=[factories.ProjectFactory()._id],
-            time_to_send=datetime.datetime.utcnow()
+            node_lineage=[factories.ProjectFactory()._id]
         )
         d.save()
-        user_groups = group_digest_notifications_by_user()
-        send_digest(user_groups)
+        user_groups = get_users_emails(send_type)
+        send_users_email(send_type)
         assert_true(mock_send_mail.called)
         assert_equals(mock_send_mail.call_count, len(user_groups))
 
         last_user_index = len(user_groups) - 1
         user = User.load(user_groups[last_user_index]['user_id'])
-        digest_notification_ids = [message['_id'] for message in user_groups[last_user_index]['info']]
+        email_notification_ids = [message['_id'] for message in user_groups[last_user_index]['info']]
 
         args, kwargs = mock_send_mail.call_args
 
@@ -1237,10 +1294,9 @@ class TestSendDigest(OsfTestCase):
         assert_equal(kwargs['mimetype'], 'html')
         assert_equal(kwargs['mail'], mails.DIGEST)
         assert_equal(kwargs['name'], user.fullname)
-        message = group_messages_by_node(user_groups[last_user_index]['info'])
+        message = group_by_node(user_groups[last_user_index]['info'])
         assert_equal(kwargs['message'], message)
-        assert_equal(kwargs['callback'],
-                mock_callback.si(digest_notification_ids=digest_notification_ids))
+        assert_equal(kwargs['callback'], remove_notifications(email_notification_ids=email_notification_ids))
 
     def test_remove_sent_digest_notifications(self):
         d = factories.NotificationDigestFactory(
@@ -1250,8 +1306,6 @@ class TestSendDigest(OsfTestCase):
             node_lineage=[factories.ProjectFactory()._id]
         )
         digest_id = d._id
-        remove_sent_digest_notifications(digest_notification_ids=[digest_id])
+        remove_notifications(email_notification_ids=[digest_id])
         with assert_raises(NoResultsFound):
             NotificationDigest.find_one(Q('_id', 'eq', digest_id))
-
-            
