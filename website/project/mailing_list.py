@@ -18,6 +18,16 @@ def address(node_id):
     return node_id + '@' + settings.MAILGUN_DOMAIN
 
 
+def require_project_mailing(func):
+    """ Execute function only if enable_project_mailing setting is true """
+    def wrapper(*args, **kwargs):
+        if settings.ENABLE_PROJECT_MAILING:
+            return func(*args, **kwargs)
+        return None
+    return wrapper
+
+
+@require_project_mailing
 def get_list(node_id):
     """ Returns information about the mailing list from Mailgun
     :param node_id: The id of the node in question
@@ -42,6 +52,7 @@ def get_list(node_id):
     return info, members
 
 
+@require_project_mailing
 def enable_list(node_id, title, url, contributors, unsubs):
     """Creates a new mailing list on Mailgun with all emails and subscriptions
     :param node_id: The id of the node in question
@@ -73,6 +84,7 @@ def enable_list(node_id, title, url, contributors, unsubs):
     update_members(node_id, members_list)
 
 
+@require_project_mailing
 def disable_list(node_id):
     res = requests.delete(
         'https://api.mailgun.net/v3/lists/{}'.format(address(node_id)),
@@ -82,22 +94,7 @@ def disable_list(node_id):
         raise HTTPError(400)
 
 
-def update_title(node_id, node_title):
-    """ Updates the title of a mailing list to match the list's project
-    :param node_id: The id of the node in question
-    :param node_title: The new title
-    """
-    res = requests.put(
-        'https://api.mailgun.net/v3/lists/{}'.format(address(node_id)),
-        auth=('api', settings.MAILGUN_API_KEY),
-        data={
-            'name': '{} Mailing List'.format(node_title)
-        }
-    )
-    if res.status_code != 200:
-        raise HTTPError(400)
-
-
+@require_project_mailing
 def update_members(node_id, members):
     """ Adds/updates members of a mailing list on Mailgun
     :param node_id: The id of the node in question
@@ -115,6 +112,7 @@ def update_members(node_id, members):
         raise HTTPError(400)
 
 
+@require_project_mailing
 def remove_member(node_id, email):
     """ Removes a member from a mailing list on Mailgun
     :param node_id: The id of the node in question
@@ -128,6 +126,7 @@ def remove_member(node_id, email):
         raise HTTPError(400)
 
 
+@require_project_mailing
 def update_subscription(node_id, email, subscription):
     """ Updates the subscription status of a member on Mailgun
     :param node_id: The id of the node in question
@@ -150,6 +149,7 @@ def update_subscription(node_id, email, subscription):
 ###############################################################################
 
 
+@require_project_mailing
 @queued_task
 @app.task
 def create_list(**params):
@@ -165,6 +165,7 @@ def create_list(**params):
     # })
 
 
+@require_project_mailing
 @queued_task
 @app.task
 def match_members(node_id, url, contributors, unsubs):
@@ -209,6 +210,7 @@ def match_members(node_id, url, contributors, unsubs):
         remove_member(node_id, member)
 
 
+@require_project_mailing
 @queued_task
 @app.task
 def delete_list(node_id):
@@ -216,6 +218,25 @@ def delete_list(node_id):
     :param node_id: The id of the node in question
     """
     disable_list(node_id)
+
+
+@require_project_mailing
+@queued_task
+@app.task
+def update_title(node_id, node_title):
+    """ Updates the title of a mailing list to match the list's project
+    :param node_id: The id of the node in question
+    :param node_title: The new title
+    """
+    res = requests.put(
+        'https://api.mailgun.net/v3/lists/{}'.format(address(node_id)),
+        auth=('api', settings.MAILGUN_API_KEY),
+        data={
+            'name': '{} Mailing List'.format(node_title)
+        }
+    )
+    if res.status_code != 200:
+        raise HTTPError(400)
 
 
 @queued_task

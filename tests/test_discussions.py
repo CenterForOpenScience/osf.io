@@ -9,48 +9,43 @@ from tests.base import OsfTestCase
 
 from framework.auth.decorators import Auth
 
-from website import mails
+from website import mails, settings
 from website.util import api_url_for
 
 
-class TestNewNodeDiscussions(OsfTestCase):
+class TestNewNodeMailingEnabled(OsfTestCase):
 
-    def test_node_creates_discussions(self):
-        node = NodeFactory()
-        assert_true(node.discussions)
+    @mock.patch('website.project.model.mailing_list.create_list')
+    def test_node_with_mailing_enabled_creates_discussions(self, mock_create_list):
+        node = NodeFactory(mailing_enabled=True)
+        mock_create_list.assert_called()
 
-    def test_node_adds_and_subscribes_creator(self):
-        user = UserFactory()
-        node = NodeFactory(creator=user)
-        assert_in(user.email, node.discussions.emails)
-        assert_in(user.email, node.discussions.subscriptions)
+    # def test_node_adds_and_subscribes_creator(self):
+    #     user = UserFactory()
+    #     node = NodeFactory(creator=user)
+    #     assert_in(user.email, node.discussions.emails)
+    #     assert_in(user.email, node.discussions.subscriptions)
 
     def test_top_level_project_enables_discussions(self):
         project = ProjectFactory(parent=None)
-        assert_true(project.discussions.is_enabled)
+        assert_true(project.mailing_enabled)
 
     def test_project_with_parent_disables_discussions(self):
         parent = ProjectFactory(parent=None)
         child = ProjectFactory(parent=parent)
-        assert_false(child.discussions.is_enabled)
-
-    def test_forking_node_creates_discussions(self):
-        user = AuthUserFactory()
-        node = NodeFactory(is_public=True)
-        fork = node.fork_node(Auth(user=user))
-        assert_true(fork.discussions)
-
-    def test_forking_node_adds_forker(self):
-        user1 = AuthUserFactory()
-        user2 = AuthUserFactory()
-        project = ProjectFactory(creator=user1, parent=None, is_public=True)
-
-        fork1 = project.fork_node(Auth(user=user1))
-        assert_in(user1.email, fork1.discussions.emails)
-
-        fork2 = project.fork_node(Auth(user=user2))
-        assert_in(user2.email, fork2.discussions.emails)
-        assert_not_in(user1.email, fork2.discussions.emails)
+        assert_false(child.mailing_enabled)
+    #
+    # def test_forking_node_adds_forker(self):
+    #     user1 = AuthUserFactory()
+    #     user2 = AuthUserFactory()
+    #     project = ProjectFactory(creator=user1, parent=None, is_public=True)
+    #
+    #     fork1 = project.fork_node(Auth(user=user1))
+    #     assert_in(user1.email, fork1.discussions.emails)
+    #
+    #     fork2 = project.fork_node(Auth(user=user2))
+    #     assert_in(user2.email, fork2.discussions.emails)
+    #     assert_not_in(user1.email, fork2.discussions.emails)
 
     def test_forking_with_child_enables_only_parent(self):
         user = AuthUserFactory()
@@ -60,26 +55,8 @@ class TestNewNodeDiscussions(OsfTestCase):
         parent_fork = parent.fork_node(Auth(user=user))
         child_fork = parent_fork.nodes[0]
 
-        assert_true(parent_fork.discussions.is_enabled)
-        assert_false(child_fork.discussions.is_enabled)
-
-    def test_using_as_template_creates_discussions(self):
-        user = AuthUserFactory()
-        node = NodeFactory(is_public=True)
-        new = node.use_as_template(Auth(user=user))
-        assert_true(new.discussions)
-
-    def test_using_as_template_adds_templater(self):
-        user1 = AuthUserFactory()
-        user2 = AuthUserFactory()
-        project = ProjectFactory(creator=user1, parent=None, is_public=True)
-
-        new1 = project.use_as_template(Auth(user=user1))
-        assert_in(user1.email, new1.discussions.emails)
-
-        new2 = project.use_as_template(Auth(user=user2))
-        assert_in(user2.email, new2.discussions.emails)
-        assert_not_in(user1.email, new2.discussions.emails)
+        assert_true(parent_fork.mailing_enabled)
+        assert_false(child_fork.mailing_enabled)
 
     def test_template_with_child_enables_only_parent(self):
         user = AuthUserFactory()
@@ -89,14 +66,51 @@ class TestNewNodeDiscussions(OsfTestCase):
         new_parent = parent.use_as_template(Auth(user=user))
         new_child = new_parent.nodes[0]
 
-        assert_true(new_parent.discussions.is_enabled)
-        assert_false(new_child.discussions.is_enabled)
+        assert_true(new_parent.mailing_enabled)
+        assert_false(new_child.mailing_enabled)
 
     def test_registration_creates_discussions_with_no_setup(self):
         reg = RegistrationFactory()
+        assert_false(reg.mailing_enabled)
 
-        assert_true(reg.discussions)
-        assert_false(reg.discussions.node_id)
+
+class TestListCreation(OsfTestCase):
+
+    @classmethod
+    def setUpClass(cls):
+        super(TestListCreation, cls).setUpClass()
+        settings.ENABLE_PROJECT_MAILING = True
+
+    @mock.patch('website.project.model.mailing_list.create_list')
+    def test_node_with_mailing_enabled_creates_discussions(self, mock_create_list):
+        node = NodeFactory(mailing_enabled=True)
+        mock_create_list.assert_called()
+
+    @mock.patch('website.project.model.mailing_list.create_list')
+    def test_forking_node_creates_unique_discussions(self, mock_create_list):
+        user = AuthUserFactory()
+        node = NodeFactory(is_public=True)
+        fork = node.fork_node(Auth(user=user))
+        mock_create_list.assert_called_with(
+            node_id=fork._id,
+            title=fork.title,
+            url=fork.absolute_url,
+            contributors=[user.email],
+            unsubs=[]
+        )
+
+    @mock.patch('website.project.model.mailing_list.create_list')
+    def test_using_as_template_creates_unique_discussions(self, mock_create_list):
+        user = AuthUserFactory()
+        node = NodeFactory(is_public=True)
+        new = node.use_as_template(Auth(user=user))
+        mock_create_list.assert_called_with(
+            node_id=new._id,
+            title=new.title,
+            url=new.absolute_url,
+            contributors=[user.email],
+            unsubs=[]
+        )
 
 
 class TestDiscussionsOnProjectActions(OsfTestCase):
@@ -278,7 +292,8 @@ class TestEmailRejections(OsfTestCase):
 
     @mock.patch('website.mails.send_mail')
     def test_email_to_project_with_discussions_disabled_as_admin(self, mock_send_mail):
-        self.project.discussions.disable(save=True)
+        self.project.mailing_enabled = False
+        self.project.save()
 
         self.app.post(self.post_url, self.message)
 
@@ -297,9 +312,11 @@ class TestEmailRejections(OsfTestCase):
     def test_email_to_project_with_discussions_disabled_as_non_admin(self, mock_send_mail):
         self.user = UserFactory()
         self.user.reload()
+        self.project.mailing_enabled = False
         self.project.add_contributor(self.user, save=True)
-        self.project.discussions.disable(save=True)
         self.message['From'] = self.user.email
+
+        self.project.reload()
 
         self.app.post(self.post_url, self.message)
 

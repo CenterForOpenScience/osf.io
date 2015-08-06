@@ -4363,55 +4363,53 @@ class TestDiscussionsViews(OsfTestCase):
 
     def setUp(self):
         super(TestDiscussionsViews, self).setUp()
+        settings.ENABLE_PROJECT_MAILING = True
         self.user = AuthUserFactory()
-
         self.project = ProjectFactory(creator=self.user, parent=None)
-        self.discussions = self.project.discussions
 
     def test_disable_and_enable_project_discussions(self):
         url = api_url_for('enable_discussions', pid=self.project._id)
         payload = {}
 
-        assert_true(self.discussions.is_enabled)
+        assert_true(self.project.mailing_enabled)
 
         self.app.delete(url, payload, auth=self.user.auth)
-        self.discussions.reload()
-        assert_false(self.discussions.is_enabled, False)
+        self.project.reload()
+        assert_false(self.project.mailing_enabled)
 
         self.app.post(url, payload, auth=self.user.auth)
-        self.discussions.reload()
-        assert_true(self.discussions.is_enabled, True)
+        self.project.reload()
+        assert_true(self.project.mailing_enabled_enabled)
 
     def test_enable_and_disable_component_discussions(self):
         component = NodeFactory(parent=self.project, creator=self.user)
-        discussions = component.discussions
         url = api_url_for('enable_discussions', pid=component._id)
         payload = {}
 
-        assert_false(discussions.is_enabled)
+        assert_false(component.mailing_enabled)
 
         self.app.post(url, payload, auth=self.user.auth)
-        discussions.reload()
-        assert_true(discussions.is_enabled, False)
+        component.reload()
+        assert_true(component.mailing_enabled)
 
         self.app.delete(url, payload, auth=self.user.auth)
-        discussions.reload()
-        assert_false(discussions.is_enabled, True)
+        component.reload()
+        assert_false(component.mailing_enabled)
 
     def test_set_subscription_false_then_true(self):
         url = api_url_for('set_subscription', pid=self.project._id)
 
-        assert_in(self.user.email, self.discussions.subscriptions)
+        assert_not_in(self.user, self.project.mailing_unsubs)
 
         payload = {'discussionsSub': 'unsubscribed'}
         self.app.post_json(url, payload, auth=self.user.auth)
-        self.discussions.reload()
-        assert_not_in(self.user.email, self.discussions.subscriptions)
+        self.project.reload()
+        assert_in(self.user.email, self.project.mailing_unsubs)
 
         payload = {'discussionsSub': 'subscribed'}
         self.app.post_json(url, payload, auth=self.user.auth)
-        self.discussions.reload()
-        assert_in(self.user.email, self.discussions.subscriptions)
+        self.project.reload()
+        assert_not_in(self.user.email, self.project.mailing_unsubs)
 
 
 if __name__ == '__main__':

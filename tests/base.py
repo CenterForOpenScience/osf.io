@@ -189,6 +189,20 @@ class UploadTestCase(unittest.TestCase):
         settings.UPLOADS_PATH = cls._old_uploads_path
 
 
+class MockEmailDiscussionsCase(unittest.TestCase):
+    """
+    """
+    @classmethod
+    def setUpClass(cls):
+        super(MockEmailDiscussionsCase, cls).setUpClass()
+        settings.ENABLE_PROJECT_MAILING = False
+
+    @classmethod
+    def tearDownClass(cls):
+        super(MockEmailDiscussionsCase, cls).tearDownClass()
+        settings.ENABLE_PROJECT_MAILING = True
+
+
 methods = [
     httpretty.GET,
     httpretty.PUT,
@@ -224,22 +238,6 @@ class MockRequestTestCase(unittest.TestCase):
         super(MockRequestTestCase, cls).tearDownClass()
         httpretty.reset()
         httpretty.disable()
-
-
-class MockEmailDiscussionsCase(unittest.TestCase):
-    """
-    """
-    @classmethod
-    def setUpClass(cls):
-        super(MockEmailDiscussionsCase, cls).setUpClass()
-        cls.update_patch = mock.patch('website.project.model.update_list')
-
-        cls.update_patch.start()
-
-    @classmethod
-    def tearDownClass(cls):
-        super(MockEmailDiscussionsCase, cls).tearDownClass()
-        cls.update_patch.stop()
 
 
 class OsfTestCase(DbTestCase, AppTestCase, UploadTestCase, MockRequestTestCase,

@@ -1073,7 +1073,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
             if existing_dashboards.count() > 0:
                 raise NodeStateError("Only one dashboard allowed per user.")
 
-        if not (getattr(self, 'parent', True) or self.is_registration):
+        if first_save and not (getattr(self, 'parent', True) or self.is_registration):
             self.mailing_enabled = True
 
         is_original = not self.is_registration and not self.is_fork

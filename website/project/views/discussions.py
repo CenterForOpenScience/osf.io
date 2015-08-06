@@ -14,7 +14,12 @@ from website.project.decorators import (
     must_not_be_registration,
     must_be_contributor
 )
-from website.project import mailing_list
+from website.project.mailing_list import (
+    require_project_mailing,
+    enable_list,
+    disable_list,
+    update_subscription
+)
 from website.util.permissions import ADMIN
 from website.models import Node
 
@@ -28,7 +33,7 @@ from website.models import Node
 @must_have_permission(ADMIN)
 @must_not_be_registration
 def enable_discussions(node, **kwargs):
-    mailing_list.enable_list(title=node.title, **node.mailing_params)
+    enable_list(title=node.title, **node.mailing_params)
     node.mailing_enabled = True
     node.save()
 
@@ -37,7 +42,7 @@ def enable_discussions(node, **kwargs):
 @must_have_permission(ADMIN)
 @must_not_be_registration
 def disable_discussions(node, **kwargs):
-    mailing_list.disable_list(node._id)
+    disable_list(node._id)
     node.mailing_enabled = False
     node.save()
 
@@ -51,7 +56,7 @@ def set_subscription(node, auth, **kwargs):
     subscribed = True if subscription == 'subscribed' else False
     user = auth.user
 
-    mailing_list.update_subscription(node._id, user.email, subscribed)
+    update_subscription(node._id, user.email, subscribed)
 
     if subscribed and user in node.mailing_unsubs:
         node.mailing_unsubs.remove(user)
@@ -101,7 +106,7 @@ def route_message(**kwargs):
         reason = 'node_deleted'
     elif sender not in node.contributors:
         reason = 'no_access' if node.is_public else 'private_no_access'
-    elif not node.discussions.is_enabled:
+    elif not node.mailing_enabled:
         reason = 'discussions_disabled'
     else:
         reason = ''
