@@ -3116,7 +3116,7 @@ class Embargo(EmailApprovableSanction):
             }
 
     def _email_template_context(self, user, is_authorizer=False, urls=None):
-        urls = urls or self.stashed_urls[user._id]
+        urls = urls or self.stashed_urls.get(user._id, {})
         registration_link = urls.get('view', self._view_url(user._id))
         if is_authorizer:
             approval_link = urls.get('approve', '')
@@ -3240,7 +3240,7 @@ class Retraction(EmailApprovableSanction):
             }
 
     def _email_template_context(self, user, is_authorizer=False, urls=None):
-        urls = urls or self.stashed_urls[user._id]
+        urls = urls or self.stashed_urls.get(user._id, {})
         registration_link = urls.get('view', self._view_url(user._id))
         if is_authorizer:
             approval_link = urls.get('approve', '')
@@ -3356,7 +3356,7 @@ class RegistrationApproval(EmailApprovableSanction):
             }
 
     def _email_template_context(self, user, is_authorizer=False, urls=None):
-        urls = urls or self.stashed_urls[user._id]
+        urls = urls or self.stashed_urls.get(user._id, {})
         registration_link = urls.get('view', self._view_url(user._id))
         if is_authorizer:
             approval_link = urls.get('approve', '')
