@@ -2786,6 +2786,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
 
         approval = self._initiate_approval(user, save=True)
 
+        # TODO(hrybacki): Figureo ut why this is being called twice (only in tests maybe)
         self.registered_from.add_log(
             action=NodeLog.REGISTRATION_APPROVAL_INITIATED,
             params={
@@ -3415,7 +3416,7 @@ class RegistrationApproval(EmailApprovableSanction):
                 'registration_link': registration_link,
             }
 
-    def _add_success_logs(self, user, node):
+    def _add_success_logs(self, node, user):
         src = node.registered_from
         src.add_log(
             action=NodeLog.PROJECT_REGISTERED,
@@ -3431,7 +3432,7 @@ class RegistrationApproval(EmailApprovableSanction):
         src.save()
 
     def _on_complete(self, user):
-        register = Node.find(Q('registration_approval', 'eq', self))
+        register = Node.find_one(Q('registration_approval', 'eq', self))
         registered_from = register.registered_from
         auth = Auth(self.initiated_by)
         register.set_privacy('public', auth, log=False)
@@ -3441,7 +3442,7 @@ class RegistrationApproval(EmailApprovableSanction):
             self._add_success_logs(node, user)
             node.update_search()  # update search if public
         registered_from.add_log(
-            actions=NodeLog.REGISTRATION_APPROVAL_COMPLETE,
+            action=NodeLog.REGISTRATION_APPROVAL_COMPLETE,
             params={
                 'node': registered_from._id,
                 'registration_approval_id': self._id,
@@ -3452,7 +3453,7 @@ class RegistrationApproval(EmailApprovableSanction):
         self.save()
 
     def _on_reject(self, user, token):
-        register = Node.find(Q('registration_approval', 'eq', self))
+        register = Node.find_one(Q('registration_approval', 'eq', self))
         registered_from = register.registered_from
         register.delete_registration_tree()
         registered_from.add_log(

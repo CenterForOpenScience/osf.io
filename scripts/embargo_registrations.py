@@ -34,7 +34,7 @@ def main(dry_run=True):
             if not dry_run:
                 with TokuTransaction():
                     try:
-                        embargo.state = models.Embargo.ACTIVE
+                        embargo.state = models.Embargo.APPROVED
                         parent_registration.registered_from.add_log(
                             action=NodeLog.EMBARGO_APPROVED,
                             params={
@@ -50,7 +50,7 @@ def main(dry_run=True):
                             'registration {}. Continuing...'.format(parent_registration))
                         logger.exception(err)
 
-    active_embargoes = models.Embargo.find(Q('state', 'eq', models.Embargo.ACTIVE))
+    active_embargoes = models.Embargo.find(Q('state', 'eq', models.Embargo.APPROVED))
     for embargo in active_embargoes:
         if embargo.end_date < datetime.datetime.utcnow():
             if dry_run:
