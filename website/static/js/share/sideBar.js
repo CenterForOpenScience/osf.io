@@ -10,11 +10,11 @@ var SideBar = {
         if (vm.results === null){
             return [];
         }
-        var ad_params = {vm: vm};
+        var new_params = {vm: vm};
         return m('', [
-                m.component(ActiveFiltersHeader, ad_params),
-                m.component(ActiveFilters, ad_params),
-                m.component(ProviderList, ad_params)
+                m.component(ActiveFiltersHeader, new_params),
+                m.component(ActiveFilters, new_params),
+                m.component(ProviderList, new_params)
         ]);
     },
 };
@@ -85,10 +85,9 @@ var Provider = {
                     }
                 }
             }, [
-                m('img.provider-favicon', {src: provider.favicon}), ' ', provider.long_name
+                m('img.provider-favicon', {src: provider.favicon, alt: 'favicon for ' + provider.long_name}), ' ', provider.long_name
             ])
         );
-
     }
 };
 
