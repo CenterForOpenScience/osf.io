@@ -1,6 +1,5 @@
 import collections
 import re
-import logging
 from rest_framework import serializers as ser
 from website.util.sanitize import strip_html
 from api.base.utils import absolute_reverse, waterbutler_url_for
