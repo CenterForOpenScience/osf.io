@@ -469,6 +469,10 @@ select {
     overflow-y: auto;
 }
 
+.tagsinput div {
+    float: left;
+}
+
 .tagsinput span.tag {
     float: left;
     padding: 5px;
@@ -543,4 +547,9 @@ button.close {
 /* growlBox style */
 .alert.growl-animated {
     padding-right: 35px; /* work as alert-dismissable in bootstrap */
+}
+
+.tb-modal-shade {
+    /*  Override z-index here to avoid clashing with navigation elements */
+    z-index: 98 !important;
 }
