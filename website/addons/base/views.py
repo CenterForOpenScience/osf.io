@@ -4,7 +4,6 @@ import os
 import json
 import uuid
 import httplib
-import logging
 import functools
 
 import furl

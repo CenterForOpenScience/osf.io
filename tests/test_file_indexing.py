@@ -7,13 +7,11 @@ import unittest
 from nose.tools import *
 
 from tests import factories
-from tests.test_elastic import query
 from tests.factories import ModularOdmFactory
 from tests.factories import ProjectWithAddonFactory
 from tests.test_elastic import SearchTestCase
 from tests.base import OsfTestCase
 from website import settings
-from website.search import exceptions
 from website.search import elastic_search
 from website.search import search
 from website.search import file_util
@@ -89,7 +87,7 @@ def _load_local_file_content_patch(file_node, include_content=None):
 
 
 PATCH_CONTEXT = PatchedContext(
-    mock._patch_object(GuidFile, 'enrich', _guid_file_enrich_patch),
+    mock.patch.object(GuidFile, 'enrich', _guid_file_enrich_patch),
     mock.patch('website.search.file_util.get_file_content', _get_file_content_patch),
 )
 
@@ -121,18 +119,17 @@ class OsfStorageFileNodeFactory(ModularOdmFactory):
 
 
 class FileIndexingTestCase(SearchTestCase):
-    @patch_context
     def setUp(self):
         super(FileIndexingTestCase, self).setUp()
-        settings.USE_FILE_INDEXING = True
-        self.project = ProjectWithAddonFactory()
-        self.project.is_public = True
-        self.addon = self.project.get_addon('osfstorage')
-        self.file_node = self.addon.root_node.append_file('Test_File_Node.txt', save=True)
-        # OsfStorageFileNodeFactory(node_settings=self.addon)
+        with PATCH_CONTEXT:
+            settings.USE_FILE_INDEXING = True
+            self.project = ProjectWithAddonFactory()
+            self.project.is_public = True
+            self.addon = self.project.get_addon('osfstorage')
+            self.file_node = self.addon.root_node.append_file('Test_File_Node.txt', save=True)
 
 
-## But who shall test the tests themselves? ##
+# But who shall test the tests themselves?
 class TestFileIndexingTestCase(FileIndexingTestCase):
     def setUp(self):
         super(TestFileIndexingTestCase, self).setUp()
@@ -180,7 +177,7 @@ class TestFileIndexingTestCase(FileIndexingTestCase):
             patch.assert_called_once_with(self.file_node)
 
 
-## file_util.py ##
+# file_util.py
 
 
 class TestBuildFileDocument(FileIndexingTestCase):
@@ -233,12 +230,14 @@ class TestIsIndexed(FileIndexingTestCase):
 class TestCollectFiles(FileIndexingTestCase):
     def setUp(self):
         super(TestCollectFiles, self).setUp()
-        self.addon.root_node.append_file(factories.fake.file_name(), save=True)
-        self.addon.root_node.append_file(factories.fake.file_name(), save=True)
-        folder = self.addon.root_node.append_folder('folder one', save=True)
-        folder.append_file(factories.fake.file_name(), save=True)
-        folder.append_file(factories.fake.file_name(), save=True)
+        with PATCH_CONTEXT:
+            self.addon.root_node.append_file(factories.fake.file_name(), save=True)
+            self.addon.root_node.append_file(factories.fake.file_name(), save=True)
+            folder = self.addon.root_node.append_folder('folder one', save=True)
+            folder.append_file(factories.fake.file_name(), save=True)
+            folder.append_file(factories.fake.file_name(), save=True)
 
+    @patch_context
     def test_addon_has_correct_number_of_children(self):
         count = len(self.addon.root_node.children)
         assert_equal(count, 4)
@@ -255,10 +254,11 @@ class TestCollectFiles(FileIndexingTestCase):
     def test_collects_from_component(self):
         component = ProjectWithAddonFactory(parent=self.project)
         addon = component.get_addon('osfstorage')
-        component.is_public = True
-        addon.root_node.append_file(factories.fake.file_name(), save=True)
-        addon.root_node.append_file(factories.fake.file_name(), save=True)
-        addon.root_node.append_file(factories.fake.file_name(), save=True)
+        with PATCH_CONTEXT:
+            component.is_public = True
+            addon.root_node.append_file(factories.fake.file_name(), save=True)
+            addon.root_node.append_file(factories.fake.file_name(), save=True)
+            addon.root_node.append_file(factories.fake.file_name(), save=True)
 
         count = len([f for f in file_util.collect_files(self.addon.owner)])
         assert_equal(count, 8)
@@ -266,20 +266,22 @@ class TestCollectFiles(FileIndexingTestCase):
     def test_no_collection_from_private_component(self):
         component = ProjectWithAddonFactory(parent=self.project)
         addon = component.get_addon('osfstorage')
-        addon.root_node.append_file(factories.fake.file_name(), save=True)
-        addon.root_node.append_file(factories.fake.file_name(), save=True)
-        addon.root_node.append_file(factories.fake.file_name(), save=True)
+
+        with PATCH_CONTEXT:
+            addon.root_node.append_file(factories.fake.file_name(), save=True)
+            addon.root_node.append_file(factories.fake.file_name(), save=True)
+            addon.root_node.append_file(factories.fake.file_name(), save=True)
 
         count = len([f for f in file_util.collect_files(self.addon.owner)])
         assert_equal(count, 5)
 
 
-#TODO: Test file_util.get_file_content
+# TODO: Test file_util.get_file_content
 class TestGetFileContent(FileIndexingTestCase):
     pass
 
 
-## elastic_search.py / search.py ##
+# elastic_search.py / search.py
 
 
 def query(text, index=None):
@@ -293,37 +295,30 @@ def query(text, index=None):
 class TestSearchFileFunctions(FileIndexingTestCase):
     def setUp(self):
         super(TestSearchFileFunctions, self).setUp()
-        root = self.addon.root_node
-        root.append_file(factories.fake.file_name(extension='txt'))
-        folder = root.append_folder(factories.fake.first_name())
-        folder.append_file(factories.fake.file_name(extension='txt'))
+        self.root = self.addon.root_node
 
     @patch_context
     def test_update_delete_single_file(self):
-        assert_equal(len(query('cat')), 0)
-
-        search.update_file(self.file_node, settings.ELASTIC_INDEX)
-
-        time.sleep(1)
-        assert_equal(len(query('cat')), 1, 'failed to update')
+        assert_equal(len(query('cat')), 1)
 
         search.delete_file(self.file_node, settings.ELASTIC_INDEX)
-
-        time.sleep(1)
         assert_equal(len(query('cat')), 0, 'failed to delete')
+
+        search.update_file(self.file_node, settings.ELASTIC_INDEX)
+        assert_equal(len(query('cat')), 1, 'failed to update')
 
     @patch_context
     def test_update_delete_all_files(self):
-        assert_equal(len(query('cat')), 0)
+        assert_equal(len(query('cat')), 1)
+
+        self.root.append_file(factories.fake.file_name(extension='txt'))
+        folder = self.root.append_folder(factories.fake.first_name())
+        folder.append_file(factories.fake.file_name(extension='txt'))
 
         search.update_all_files(self.project, settings.ELASTIC_INDEX)
-
-        time.sleep(1)
         assert_equal(len(query('cat')), 3, 'failed to update')
 
         search.delete_all_files(self.project, settings.ELASTIC_INDEX)
-
-        time.sleep(1)
         assert_equal(len(query('cat')), 0, 'failed to delete')
 
 
@@ -331,13 +326,10 @@ class TestIndexRealFiles(FileIndexingTestCase):
     def setUp(self):
         super(TestIndexRealFiles, self).setUp()
         self.root = self.addon.root_node
-        self.file_node_txt = self.root.append_file('index_test.txt')
-        self.file_node_rtf = self.root.append_file('index_test.rtf')
-        self.file_node_pdf = self.root.append_file('index_test.pdf')
-        self.file_node_docx = self.root.append_file('index_test.docx')
 
     @patch_context
     def test_txt_file_searchable(self):
+        self.file_node_txt = self.root.append_file('index_test.txt')
         with LOAD_LOCAL_FILE_CONTEXT:
             assert_equal(len(query('diamond')), 0)
             search.update_file(self.file_node_txt, settings.ELASTIC_INDEX)
@@ -346,6 +338,7 @@ class TestIndexRealFiles(FileIndexingTestCase):
 
     @patch_context
     def test_rtf_file_searchable(self):
+        self.file_node_rtf = self.root.append_file('index_test.rtf')
         with LOAD_LOCAL_FILE_CONTEXT:
             assert_equal(len(query('diamond')), 0)
             search.update_file(self.file_node_rtf, settings.ELASTIC_INDEX)
@@ -354,6 +347,7 @@ class TestIndexRealFiles(FileIndexingTestCase):
 
     @patch_context
     def test_pdf_file_searchable(self):
+        self.file_node_pdf = self.root.append_file('index_test.pdf')
         with LOAD_LOCAL_FILE_CONTEXT:
             assert_equal(len(query('diamond')), 0)
             search.update_file(self.file_node_pdf, settings.ELASTIC_INDEX)
@@ -362,6 +356,7 @@ class TestIndexRealFiles(FileIndexingTestCase):
 
     @patch_context
     def test_docx_file_searchable(self):
+        self.file_node_docx = self.root.append_file('index_test.docx')
         with LOAD_LOCAL_FILE_CONTEXT:
             assert_equal(len(query('diamond')), 0)
             search.update_file(self.file_node_docx, settings.ELASTIC_INDEX)
