@@ -672,16 +672,36 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         return self.CATEGORY_MAP[self.category]
 
     @property
+    def pending_registration(self):
+        if self.registration_approval is None:
+            if self.parent_node:
+                return self.parent_node.pending_registration
+            return False
+        return self.registration_approval.pending_approval
+
+    @property
+    def is_registered(self):
+        if self.registration_approval is None:
+            if self.parent_node:
+                return self.parent_node.is_registered
+            return False
+        return self.registration_approval.is_approved
+
+    @property
     def is_retracted(self):
-        if self.retraction is None and self.parent_node:
-            return self.parent_node.is_retracted
-        return getattr(self.retraction, 'is_retracted', False)
+        if self.retraction is None:
+            if self.parent_node:
+                return self.parent_node.is_retracted
+            return False
+        return self.retraction.is_approved
 
     @property
     def pending_retraction(self):
-        if self.retraction is None and self.parent_node:
-            return self.parent_node.pending_retraction
-        return getattr(self.retraction, 'pending_retraction', False)
+        if self.retraction is None:
+            if self.parent_node:
+                return self.parent_node.pending_retraction
+            return False
+        return self.retraction.pending_approval
 
     @property
     def embargo_end_date(self):
@@ -697,13 +717,16 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
             if self.parent_node:
                 return self.parent_node.pending_embargo
             return False
-        return self.embargo.pending_embargo
+        return self.embargo.pending_approval
 
+    # FIXME(hrybacki): Need a more meaningful name
     @property
-    def pending_registration(self):
-        if self.embargo is None and self.parent_node:
-            return self.parent_node.pending_registration
-        return getattr(self.embargo, 'pending_registration', False)
+    def embargo_pending_registration(self):
+        if self.embargo is None:
+            if self.parent_node:
+                return self.parent_node.pending_registration
+            return False
+        return self.embargo.pending_registration
 
     @property
     def private_links(self):
@@ -2419,7 +2442,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
                 if self.pending_embargo:
                     raise NodeStateError("A registration with an unapproved embargo cannot be made public")
                 if self.embargo_end_date and not self.pending_embargo:
-                    self.embargo.state = Embargo.CANCELLED
+                    self.embargo.state = Embargo.REJECTED
                     self.embargo.save()
             self.is_public = True
         elif permissions == 'private' and self.is_public:
@@ -2763,6 +2786,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
 
         approval = self._initiate_approval(user, save=True)
 
+        # TODO(hrybacki): Figureo ut why this is being called twice (only in tests maybe)
         self.registered_from.add_log(
             action=NodeLog.REGISTRATION_APPROVAL_INITIATED,
             params={
@@ -2866,9 +2890,10 @@ class PrivateLink(StoredObject):
             "anonymous": self.anonymous
         }
 
+# TODO(hryabcki): Need to design a better way to allow subclasses to extend this validator
 def validate_sanction_state(value):
     acceptable_states = [
-        Sanction.UNAPPROVED, Sanction.ACTIVE, Sanction.CANCELLED, Sanction.COMPLETED
+        Sanction.UNAPPROVED, Sanction.APPROVED, Sanction.REJECTED, Embargo.COMPLETED
     ]
     if value not in acceptable_states:
         raise ValidationValueError('Invalid sanction state assignment.')
@@ -2880,9 +2905,8 @@ class Sanction(StoredObject):
     abstract = True
 
     UNAPPROVED = 'unapproved'
-    ACTIVE = 'active'
-    CANCELLED = 'cancelled'
-    COMPLETED = 'completed'
+    APPROVED = 'approved'
+    REJECTED = 'rejected'
 
     DISPLAY_NAME = 'sanction'
 
@@ -2919,6 +2943,14 @@ class Sanction(StoredObject):
     def pending_approval(self):
         return self.state == Sanction.UNAPPROVED
 
+    @property
+    def is_approved(self):
+        return self.state == Sanction.APPROVED
+
+    @property
+    def is_rejected(self):
+        return self.state == Sanction.REJECTED
+
     def _validate_authorizer(self, user):
         return True
 
@@ -2944,7 +2976,7 @@ class Sanction(StoredObject):
 
     def _on_approve(self, user, token):
         if all(authorizer['has_approved'] for authorizer in self.approval_state.values()):
-            self.state = Sanction.ACTIVE
+            self.state = Sanction.APPROVED
             self._on_complete(user)
 
     def _on_reject(self, user, token):
@@ -2972,7 +3004,7 @@ class Sanction(StoredObject):
                 raise InvalidSanctionRejectionToken(self.REJECTION_INVALID_TOKEN_MESSAGE.format(self.DISPLAY_NAME))
         except KeyError:
             raise PermissionsError(self.REJECTION_NOT_AUTHORIZED_MESSAEGE.format(self.DISPLAY_NAME))
-        self.state = Sanction.CANCELLED
+        self.state = Sanction.REJECTED
         self._on_reject(user, token)
 
     def _notify_authorizer(self, user):
@@ -3069,6 +3101,7 @@ class EmailApprovableSanction(Sanction):
 class Embargo(EmailApprovableSanction):
     """Embargo object for registrations waiting to go public."""
 
+    COMPLETED = 'completed'
     DISPLAY_NAME = 'embargo'
 
     AUTHORIZER_NOTIFY_TEMPLATE = mails.PENDING_EMBARGO_ADMIN
@@ -3080,6 +3113,24 @@ class Embargo(EmailApprovableSanction):
 
     initiated_by = fields.ForeignField('user', backref='embargoed')
     for_existing_registration = fields.BooleanField(default=False)
+
+    @property
+    def is_completed(self):
+        return self.state == self.COMPLETED
+
+    @property
+    def embargo_end_date(self):
+        if self.state == self.APPROVED:
+            return self.end_date
+        return False
+
+    # NOTE(hrybacki): Old, private registrations are grandfathered and do not
+    # require to be made public or embargoed. This field differentiates them
+    # from new registrations entering into an embargo field which should not
+    # show up in any search related fields.
+    @property
+    def pending_registration(self):
+        return not self.for_existing_registration and self.pending_approval
 
     def __repr__(self):
         parent_registration = Node.find_one(Q('embargo', 'eq', self))
@@ -3190,6 +3241,8 @@ class Embargo(EmailApprovableSanction):
             },
             auth=Auth(self.initiated_by),
         )
+        self.state == self.COMPLETED
+        self.save()
 
     def approve_embargo(self, user, token):
         """Add user to approval list if user is admin and token verifies."""
@@ -3264,14 +3317,6 @@ class Retraction(EmailApprovableSanction):
                 'registration_link': registration_link,
             }
 
-    @property
-    def is_retracted(self):
-        return self.state == self.ACTIVE
-
-    @property
-    def pending_retraction(self):
-        return self.state == self.UNAPPROVED
-
     def _on_reject(self, user, token):
         parent_registration = Node.find_one(Q('retraction', 'eq', self))
         parent_registration.registered_from.add_log(
@@ -3296,7 +3341,7 @@ class Retraction(EmailApprovableSanction):
         )
         # Remove any embargoes associated with the registration
         if parent_registration.embargo_end_date or parent_registration.pending_embargo:
-            parent_registration.embargo.state = self.CANCELLED
+            parent_registration.embargo.state = self.REJECTED
             parent_registration.registered_from.add_log(
                 action=NodeLog.EMBARGO_CANCELLED,
                 params={
@@ -3315,6 +3360,8 @@ class Retraction(EmailApprovableSanction):
         # so that retracted subrojects/components don't appear in search
         for node in parent_registration.get_descendants_recursive():
             node.update_search()
+        self.state == self.APPROVED
+        self.save()
 
     def approve_retraction(self, user, token):
         self.approve(user, token)
@@ -3380,7 +3427,7 @@ class RegistrationApproval(EmailApprovableSanction):
                 'registration_link': registration_link,
             }
 
-    def _add_success_logs(self, user, node):
+    def _add_success_logs(self, node, user):
         src = node.registered_from
         src.add_log(
             action=NodeLog.PROJECT_REGISTERED,
@@ -3396,7 +3443,7 @@ class RegistrationApproval(EmailApprovableSanction):
         src.save()
 
     def _on_complete(self, user):
-        register = Node.find(Q('registration_approval', 'eq', self))
+        register = Node.find_one(Q('registration_approval', 'eq', self))
         registered_from = register.registered_from
         auth = Auth(self.initiated_by)
         register.set_privacy('public', auth, log=False)
@@ -3406,16 +3453,18 @@ class RegistrationApproval(EmailApprovableSanction):
             self._add_success_logs(node, user)
             node.update_search()  # update search if public
         registered_from.add_log(
-            actions=NodeLog.REGISTRATION_APPROVAL_COMPLETE,
+            action=NodeLog.REGISTRATION_APPROVAL_COMPLETE,
             params={
                 'node': registered_from._id,
                 'registration_approval_id': self._id,
             },
             auth=Auth(self.initiated_by),
         )
+        self.state = self.APPROVED
+        self.save()
 
     def _on_reject(self, user, token):
-        register = Node.find(Q('registration_approval', 'eq', self))
+        register = Node.find_one(Q('registration_approval', 'eq', self))
         registered_from = register.registered_from
         register.delete_registration_tree()
         registered_from.add_log(

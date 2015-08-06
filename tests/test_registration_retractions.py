@@ -72,7 +72,7 @@ class RegistrationRetractionModelsTestCase(OsfTestCase):
         self.registration.save()
         self.registration.reload()
 
-        assert_false(self.registration.retraction.is_retracted)
+        assert_false(self.registration.is_retracted)
         assert_equal(self.registration.retraction.state, Retraction.UNAPPROVED)
         assert_equal(self.registration.retraction.justification, self.valid_justification)
         assert_equal(self.registration.retraction.initiated_by, self.user)
@@ -131,7 +131,7 @@ class RegistrationRetractionModelsTestCase(OsfTestCase):
         assert_false(self.registration.pending_retraction)
         assert_true(self.registration.is_retracted)
         assert_false(self.registration.pending_embargo)
-        assert_equal(self.registration.embargo.state, Retraction.CANCELLED)
+        assert_true(self.registration.embargo.is_rejected)
 
     def test_retraction_of_registration_in_active_embargo_cancels_embargo(self):
         self.registration.embargo_registration(
@@ -156,7 +156,7 @@ class RegistrationRetractionModelsTestCase(OsfTestCase):
         assert_false(self.registration.pending_retraction)
         assert_true(self.registration.is_retracted)
         assert_false(self.registration.pending_embargo)
-        assert_equal(self.registration.embargo.state, Retraction.CANCELLED)
+        assert_true(self.registration.embargo.is_rejected)
 
     # Retraction#approve_retraction_tests
     def test_invalid_approval_token_raises_InvalidSanctionApprovalToken(self):
@@ -186,9 +186,9 @@ class RegistrationRetractionModelsTestCase(OsfTestCase):
         self.registration.save()
 
         approval_token = self.registration.retraction.approval_state[self.user._id]['approval_token']
-        assert_equal(self.registration.retraction.state, Retraction.UNAPPROVED)
+        assert_true(self.registration.pending_retraction)
         self.registration.retraction.approve_retraction(self.user, approval_token)
-        assert_true(self.registration.retraction.is_retracted)
+        assert_true(self.registration.is_retracted)
         num_of_approvals = sum([val['has_approved'] for val in self.registration.retraction.approval_state.values()])
         assert_equal(num_of_approvals, 1)
 
@@ -221,7 +221,7 @@ class RegistrationRetractionModelsTestCase(OsfTestCase):
         assert_false(self.registration.pending_retraction)
         assert_true(self.registration.is_retracted)
         assert_false(self.registration.pending_embargo)
-        assert_equal(self.registration.embargo.state, Retraction.CANCELLED)
+        assert_true(self.registration.embargo.is_rejected)
 
     def test_approval_of_registration_with_embargo_adds_to_parent_projects_log(self):
         initial_project_logs = len(self.registration.registered_from.logs)
@@ -265,7 +265,7 @@ class RegistrationRetractionModelsTestCase(OsfTestCase):
         assert_false(self.registration.pending_retraction)
         assert_true(self.registration.is_retracted)
         assert_false(self.registration.pending_embargo)
-        assert_equal(self.registration.embargo.state, Retraction.CANCELLED)
+        assert_true(self.registration.embargo.is_rejected)
 
     def test_two_approvals_with_two_admins_retracts(self):
         self.admin2 = UserFactory()
@@ -278,7 +278,7 @@ class RegistrationRetractionModelsTestCase(OsfTestCase):
         # First admin approves
         approval_token = self.registration.retraction.approval_state[self.user._id]['approval_token']
         self.registration.retraction.approve_retraction(self.user, approval_token)
-        assert_equal(self.registration.retraction.state, Retraction.UNAPPROVED)
+        assert_true(self.registration.pending_retraction)
         num_of_approvals = sum([val['has_approved'] for val in self.registration.retraction.approval_state.values()])
         assert_equal(num_of_approvals, 1)
 
@@ -287,7 +287,7 @@ class RegistrationRetractionModelsTestCase(OsfTestCase):
         self.registration.retraction.approve_retraction(self.admin2, approval_token)
         num_of_approvals = sum([val['has_approved'] for val in self.registration.retraction.approval_state.values()])
         assert_equal(num_of_approvals, 2)
-        assert_true(self.registration.retraction.is_retracted)
+        assert_true(self.registration.is_retracted)
 
     def test_one_approval_with_two_admins_stays_pending(self):
         self.admin2 = UserFactory()
@@ -301,7 +301,7 @@ class RegistrationRetractionModelsTestCase(OsfTestCase):
         approval_token = self.registration.retraction.approval_state[self.user._id]['approval_token']
         assert_equal(self.registration.retraction.state, Retraction.UNAPPROVED)
         self.registration.retraction.approve_retraction(self.user, approval_token)
-        assert_equal(self.registration.retraction.state, Retraction.UNAPPROVED)
+        assert_true(self.registration.pending_retraction)
         num_of_approvals = sum([val['has_approved'] for val in self.registration.retraction.approval_state.values()])
         assert_equal(num_of_approvals, 1)
 
@@ -336,7 +336,7 @@ class RegistrationRetractionModelsTestCase(OsfTestCase):
         disapproval_token = self.registration.retraction.approval_state[self.user._id]['rejection_token']
         assert_equal(self.registration.retraction.state, Retraction.UNAPPROVED)
         self.registration.retraction.disapprove_retraction(self.user, disapproval_token)
-        assert_equal(self.registration.retraction.state, Retraction.CANCELLED)
+        assert_true(self.registration.retraction.is_rejected)
 
     def test_disapproval_adds_to_parent_projects_log(self):
         initial_project_logs = len(self.registration.registered_from.logs)
@@ -420,7 +420,7 @@ class RegistrationWithChildNodesRetractionModelTestCase(OsfTestCase):
         self.registration.retraction.disapprove_retraction(self.user, disapproval_token)
         assert_false(self.registration.pending_retraction)
         assert_false(self.registration.is_retracted)
-        assert_equal(self.registration.retraction.state, Retraction.CANCELLED)
+        assert_true(self.registration.retraction.is_rejected)
 
         # Ensure descendant nodes' retractions are cancelled
         descendants = self.registration.get_descendants_recursive()
@@ -636,7 +636,7 @@ class RegistrationRetractionApprovalDisapprovalViewsTestCase(OsfTestCase):
         self.registration.retraction.reload()
         assert_false(self.registration.is_retracted)
         assert_false(self.registration.pending_retraction)
-        assert_equal(self.registration.retraction.state, Retraction.CANCELLED)
+        assert_true(self.registration.retraction.is_rejected)
         assert_equal(res.status_code, 302)
 
 class ComponentRegistrationRetractionViewsTestCase(OsfTestCase):
@@ -778,8 +778,8 @@ class RegistrationRetractionViewsTestCase(OsfTestCase):
         )
         assert_equal(res.status_code, 200)
         self.registration.reload()
-        assert_false(self.registration.retraction.is_retracted)
-        assert_equal(self.registration.retraction.state, Retraction.UNAPPROVED)
+        assert_false(self.registration.is_retracted)
+        assert_true(self.registration.pending_retraction)
         assert_is_none(self.registration.retraction.justification)
 
     @mock.patch('website.mails.send_mail')

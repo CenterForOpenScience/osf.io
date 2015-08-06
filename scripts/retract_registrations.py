@@ -19,7 +19,7 @@ logging.basicConfig(level=logging.INFO)
 
 
 def main(dry_run=True):
-    pending_retractions = models.Retraction.find(Q('state', 'eq', models.Retraction.PENDING))
+    pending_retractions = models.Retraction.find(Q('state', 'eq', models.Retraction.UNAPPROVED))
     for retraction in pending_retractions:
         if should_be_retracted(retraction):
             if dry_run:
@@ -37,7 +37,7 @@ def main(dry_run=True):
             )
             if not dry_run:
                 with TokuTransaction():
-                    retraction.state = models.Retraction.RETRACTED
+                    retraction.state = models.Retraction.APPROVED
                     try:
                         parent_registration.registered_from.add_log(
                             action=NodeLog.RETRACTION_APPROVED,

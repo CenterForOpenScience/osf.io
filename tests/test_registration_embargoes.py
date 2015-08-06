@@ -251,7 +251,7 @@ class RegistrationEmbargoModelsTestCase(OsfTestCase):
 
         disapproval_token = self.registration.embargo.approval_state[self.user._id]['rejection_token']
         self.registration.embargo.disapprove_embargo(self.user, disapproval_token)
-        assert_equal(self.registration.embargo.state, Embargo.CANCELLED)
+        assert_equal(self.registration.embargo.state, Embargo.REJECTED)
         assert_false(self.registration.pending_embargo)
 
     def test_disapproval_adds_to_parent_projects_log(self):
@@ -277,7 +277,7 @@ class RegistrationEmbargoModelsTestCase(OsfTestCase):
 
         disapproval_token = self.registration.embargo.approval_state[self.user._id]['rejection_token']
         self.registration.embargo.disapprove_embargo(self.user, disapproval_token)
-        assert_equal(self.registration.embargo.state, Embargo.CANCELLED)
+        assert_equal(self.registration.embargo.state, Embargo.REJECTED)
         assert_true(self.registration.is_deleted)
 
     def test_cancelling_embargo_for_existing_registration_does_not_delete_registration(self):
@@ -290,7 +290,7 @@ class RegistrationEmbargoModelsTestCase(OsfTestCase):
 
         disapproval_token = self.registration.embargo.approval_state[self.user._id]['rejection_token']
         self.registration.embargo.disapprove_embargo(self.user, disapproval_token)
-        assert_equal(self.registration.embargo.state, Embargo.CANCELLED)
+        assert_equal(self.registration.embargo.state, Embargo.REJECTED)
         assert_false(self.registration.is_deleted)
 
     # Embargo property tests
@@ -300,7 +300,7 @@ class RegistrationEmbargoModelsTestCase(OsfTestCase):
             datetime.datetime.utcnow() + datetime.timedelta(days=10)
         )
         self.registration.save()
-        assert_true(self.registration.pending_registration)
+        assert_true(self.registration.embargo_pending_registration)
 
     def test_existing_registration_is_not_pending_registration(self):
         self.registration.embargo_registration(
@@ -309,7 +309,7 @@ class RegistrationEmbargoModelsTestCase(OsfTestCase):
             for_existing_registration=True
         )
         self.registration.save()
-        assert_false(self.registration.pending_registration)
+        assert_false(self.registration.embargo_pending_registration)
 
 
 class RegistrationWithChildNodesEmbargoModelTestCase(OsfTestCase):
@@ -380,7 +380,7 @@ class RegistrationWithChildNodesEmbargoModelTestCase(OsfTestCase):
         disapproval_token = self.registration.embargo.approval_state[self.user._id]['rejection_token']
         self.registration.embargo.disapprove_embargo(self.user, disapproval_token)
         assert_false(self.registration.pending_embargo)
-        assert_equal(self.registration.embargo.state, Embargo.CANCELLED)
+        assert_equal(self.registration.embargo.state, Embargo.REJECTED)
 
         # Ensure descendant nodes' embargoes are cancelled
         descendants = self.registration.get_descendants_recursive()
@@ -558,7 +558,7 @@ class RegistrationEmbargoApprovalDisapprovalViewsTestCase(OsfTestCase):
             auth=self.user.auth,
         )
         registration.embargo.reload()
-        assert_equal(registration.embargo.state, Embargo.CANCELLED)
+        assert_equal(registration.embargo.state, Embargo.REJECTED)
         assert_false(registration.pending_embargo)
         assert_equal(res.status_code, 302)
         assert_true(project._id in res.location)
@@ -578,7 +578,7 @@ class RegistrationEmbargoApprovalDisapprovalViewsTestCase(OsfTestCase):
             auth=self.user.auth,
         )
         self.registration.embargo.reload()
-        assert_equal(self.registration.embargo.state, Embargo.CANCELLED)
+        assert_equal(self.registration.embargo.state, Embargo.REJECTED)
         assert_false(self.registration.pending_embargo)
         assert_equal(res.status_code, 302)
         assert_true(self.registration._id in res.location)
@@ -680,7 +680,7 @@ class RegistrationEmbargoViewsTestCase(OsfTestCase):
 
         assert_true(registration.is_registration)
         assert_false(registration.is_public)
-        assert_true(registration.pending_registration)
+        assert_true(registration.embargo_pending_registration)
         assert_is_not_none(registration.embargo)
 
     @mock.patch('framework.tasks.handlers.enqueue_task')
