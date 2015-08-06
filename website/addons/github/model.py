@@ -448,7 +448,7 @@ class AddonGitHubNodeSettings(StorageAddonBase, AddonNodeSettingsBase):
                 'by {user}. Removing this user will also remove write access '
                 'to GitHub unless another contributor re-authenticates. You '
                 'can download the contents of this repository before removing '
-                'this contributor <a href="{url}">here</a>.'
+                'this contributor <u><a href="{url}">here</a></u>.'
             ).format(
                 category=node.project_or_component,
                 user=removed.fullname,
@@ -480,7 +480,7 @@ class AddonGitHubNodeSettings(StorageAddonBase, AddonNodeSettingsBase):
             if not auth or auth.user != removed:
                 url = node.web_url_for('node_setting')
                 message += (
-                    u' You can re-authenticate on the <a href="{url}">Settings</a> page.'
+                    u' You can re-authenticate on the <u><a href="{url}">Settings</a></u> page.'
                 ).format(url=url)
             #
             return message
@@ -549,7 +549,7 @@ class AddonGitHubNodeSettings(StorageAddonBase, AddonNodeSettingsBase):
         else:
             message = (
                 'GitHub authorization not copied to forked {cat}. You may '
-                'authorize this fork on the <a href={url}>Settings</a> '
+                'authorize this fork on the <u><a href={url}>Settings</a></u> '
                 'page.'
             ).format(
                 cat=fork.project_or_component,

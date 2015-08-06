@@ -34,7 +34,6 @@
 
 <script>
 
-    <% import json %>
     ## TODO: Move this logic into badges add-on
     % if 'badges' in addons_enabled and badges and badges['can_award']:
     ## TODO: port to commonjs
@@ -43,10 +42,10 @@
     ## });
     % endif
 
-    var nodeId = '${node['id']}';
-    var userApiUrl = '${user_api_url}';
-    var nodeApiUrl = '${node['api_url']}';
-    var absoluteUrl = '${node['display_absolute_url']}';
+    var nodeId = ${ node['id'] |sjson, n };
+    var userApiUrl = ${ user_api_url | sjson, n };
+    var nodeApiUrl = ${ node['api_url'] | sjson, n };
+    var absoluteUrl = ${ node['display_absolute_url'] | sjson, n };
     <%
        parent_exists = parent_node['exists']
        parent_title = ''
@@ -63,20 +62,20 @@
     window.contextVars = $.extend(true, {}, window.contextVars, {
         currentUser: {
             ## TODO: Abstract me
-            username: ${json.dumps(user['username']) | n},
-            id: '${user_id}',
+            username: ${ user['username'] | sjson, n },
+            id: ${ user_id | sjson, n },
             urls: {api: userApiUrl},
-            isContributor: ${json.dumps(user.get('is_contributor', False))},
-            fullname: ${json.dumps(user['fullname']) | n}
+            isContributor: ${ user.get('is_contributor', False) | sjson, n },
+            fullname: ${ user['fullname'] | sjson, n }
         },
         node: {
             ## TODO: Abstract me
             id: nodeId,
-            title: ${json.dumps(node['title']) | n},
+            title: ${ node['title'] | sjson, n },
             urls: {
                 api: nodeApiUrl,
-                web: ${json.dumps(node['url'])},
-                update: ${json.dumps(node['update_url'])}
+                web: ${ node['url'] | sjson, n },
+                update: ${ node['update_url'] | sjson, n }
             },
             isPublic: ${json.dumps(node.get('is_public', False))},
             isRetracted: ${json.dumps(node.get('is_retracted', False))},

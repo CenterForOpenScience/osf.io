@@ -4,7 +4,6 @@
             <div class="col-sm-2 col-md-2 col-md-offset-1">
                 <h4>OSF</h4>
                 <ul>
-                    <li><a href="/4znzp/wiki/home">About</a></li>
                     <li><a href="/explore/activity/">Explore</a></li>
                     <li><script type="text/javascript">document.write("<n uers=\"znvygb:pbagnpg@bfs.vb\" ery=\"absbyybj\">Pbagnpg</n>".replace(/[a-zA-Z]/g,function(e){return String.fromCharCode((e<="Z"?90:122)>=(e=e.charCodeAt(0)+13)?e:e-26)}));</script><noscript>Contact OSF: <span class="obfuscated-email-noscript"><strong><u>cont<span style="display:none;">null</span>act@<span style="display:none;">null</span>osf.<span style="display:none;">null</span>io</u></strong></span></noscript></li>
                 </ul>

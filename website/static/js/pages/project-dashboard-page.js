@@ -2,9 +2,9 @@
 'use strict';
 
 var $ = require('jquery');
-require('../../vendor/bower_components/jquery.tagsinput/jquery.tagsinput.css');
 require('jquery-tagsinput');
 require('bootstrap-editable');
+require('js/osfToggleHeight');
 
 var language = require('js/osfLanguage').projects;
 
@@ -22,6 +22,7 @@ var CitationList = require('js/citationList');
 var CitationWidget = require('js/citationWidget');
 var mathrender = require('js/mathrender');
 var md = require('js/markdown').full;
+
 var FilesWidget = require('js/filesWidget');
 var registrationUtils = require('js/registrationUtils');
 
@@ -64,7 +65,6 @@ $(document).ready(function () {
     else if(node.isDraftRegistration) {
         registrationUtils.remind();
     }
-
     if (!ctx.node.isRetracted) {
         // Treebeard Files view
         var filesWidget = new FilesWidget('treeGrid', nodeApiUrl + 'files/grid/');

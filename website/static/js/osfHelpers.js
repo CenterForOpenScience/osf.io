@@ -506,7 +506,7 @@ var tableResize = function(selector, checker) {
 
 /* Responsive Affix for side nav */
 var fixAffixWidth = function() {
-    $('.affix, .affix-top, .affix-bottom').each(function (){
+    $('.osf-affix').each(function (){
         var el = $(this);
         var colsize = el.parent('.affix-parent').width();
         el.outerWidth(colsize);
@@ -636,14 +636,14 @@ var confirmDangerousAction = function (options) {
             },
             success: {
                 label: 'Confirm',
-                className: 'btn-success',
+                className: 'btn-danger',
                 callback: handleConfirmAttempt
             }
         },
         message: ''
     };
 
-    var bootboxOptions = $.extend({}, defaults, options);
+    var bootboxOptions = $.extend(true, {}, defaults, options);
 
     bootboxOptions.message += [
         '<p>Type the following to continue: <strong>',
