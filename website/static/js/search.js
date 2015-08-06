@@ -73,6 +73,7 @@ var ViewModel = function(params) {
     self.searching = ko.observable(false);
     self.resultsPerPage = ko.observable(10);
     self.categories = ko.observableArray([]);
+    self.shareCategory = ko.observable('');
     self.searchStarted = ko.observable(false);
     self.jsonData = ko.observable('');
     self.showSearch = true;
@@ -232,6 +233,7 @@ var ViewModel = function(params) {
             self.tagMaxCount(1);
             self.results.removeAll();
             self.categories.removeAll();
+            self.shareCategory('');
 
             data.results.forEach(function(result){
                 if(result.category === 'user'){
@@ -282,18 +284,13 @@ var ViewModel = function(params) {
             }
 
             $osf.postJSON('/api/v1/share/search/?count&v=1', jsonData).success(function(data) {
-                var shareCheck = true;
-                for (var i = 0; i < self.categories.length; i++){
-                    if (self.categories[i].name === 'SHARE' && self.categories[i].count === data.count && self.jsonData() === jsonData){
-                        shareCheck = false;
-                        break;
-                    }
-                }
-                if(shareCheck) {
-                    self.categories.push(new Category('SHARE', data.count, 'SHARE'));
-                    self.jsonData(jsonData);
-                }
+                self.shareCategory(new Category('SHARE', data.count, 'SHARE'));
             });
+
+            if (!(self.shareCategory() in self.categories())){
+                self.categories.push(self.shareCategory());
+            }
+
         }).fail(function(response){
             self.totalResults(0);
             self.currentPage(0);
