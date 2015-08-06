@@ -469,6 +469,10 @@ select {
     overflow-y: auto;
 }
 
+.tagsinput div {
+    float: left;
+}
+
 .tagsinput span.tag {
     float: left;
     padding: 5px;
