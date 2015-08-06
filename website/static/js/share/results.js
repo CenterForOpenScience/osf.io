@@ -10,10 +10,11 @@ var Results = {
         var self = this;
         self.vm = vm;
         self.vm.resultsLoading = m.prop(false);
+        self.vm.oneDataShowing = m.prop(false);
     },
     view: function(ctrl) {
         var resultViews = $.map(ctrl.vm.results || [], function(result, i) {
-            return m.component(Result, {result: result, vm: ctrl.vm});
+            return m.component(Result, {result: result, vm: ctrl.vm, i: i});
         });
 
 
@@ -188,6 +189,7 @@ var Footer = {
     view: function(ctrl, params) {
         var result = params.result;
         var vm = params.vm;
+        var index = params.i;
         return m('div', [
             m('span',
                 'Released on ' + new $osf.FormattableDate(result.providerUpdatedDateTime).local,
@@ -215,16 +217,17 @@ var Footer = {
 var RawNormalizedData = {
     view: function(ctrl, params) {
         var result = params.result();
+        var divID = (result.normalized.shareProperties.docID + result.normalized.shareProperties.source).replace( /(:|\.|\[|\]|,)/g, "-" );
         return m('.row', [
             m('.col-md-12',
                 m('div', [
                     m('ul', {class: 'nav nav-tabs'}, [
-                        m('li', m('a', {href: '#raw', 'data-toggle': 'tab'}, 'Raw')),
-                        m('li', m('a', {href: '#normalized', 'data-toggle': 'tab'}, 'Normalized'))
+                        m('li', m('a', {href: '#raw' + divID, 'data-toggle': 'tab'}, 'Raw')),
+                        m('li', m('a', {href: '#normalized' + divID, 'data-toggle': 'tab'}, 'Normalized'))
                     ]),
                     m('div', {class: 'tab-content'},
                         m('div',
-                            {class: 'tab-pane active', id:'raw'},
+                            {class: 'tab-pane active', id:'raw' + divID},
                             m('pre',
                                 (function(){
                                     if (result.rawfiletype === 'xml') {
@@ -238,7 +241,7 @@ var RawNormalizedData = {
                             )
                         ),
                         m('div',
-                            {class: 'tab-pane', id:'normalized'},
+                            {class: 'tab-pane', id:'normalized' + divID},
                             m('pre',
                                 (function(){
                                     return JSON.stringify(result.normalized, undefined, 2);
