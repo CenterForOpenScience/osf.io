@@ -195,9 +195,9 @@ class NodeChildrenList(generics.ListAPIView, NodeMixin):
 
 
 class NodeLinksList(generics.ListCreateAPIView, NodeMixin):
-    """Node_links to other nodes.
+    """Node Links to other nodes.
 
-    Node_links are essentially aliases or symlinks: All they do is point to another node.
+    Node Links are essentially aliases or symlinks: All they do is point to another node.
     """
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
@@ -212,9 +212,9 @@ class NodeLinksList(generics.ListCreateAPIView, NodeMixin):
 
 
 class NodeLinksDetail(generics.RetrieveDestroyAPIView, NodeMixin):
-    """Detail of a node_link to another node.
+    """Detail of a Node Link to another node.
 
-    Node_links are essentially aliases or symlinks: All they do is point to another node.
+    Node Links are essentially aliases or symlinks: All they do is point to another node.
     """
     permission_classes = (
         ContributorOrPublicForPointers,

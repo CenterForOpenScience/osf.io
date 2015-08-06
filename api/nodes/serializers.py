@@ -133,8 +133,8 @@ class NodeSerializer(JSONAPISerializer):
 class NodeLinksSerializer(JSONAPISerializer):
 
     id = ser.CharField(read_only=True, source='_id')
-    target_node_id = ser.CharField(source='node._id', help_text='The ID of the node that this node_link points to')
-    title = ser.CharField(read_only=True, source='node.title', help_text='The title of the node that this node_link '
+    target_node_id = ser.CharField(source='node._id', help_text='The ID of the node that this Node Link points to')
+    title = ser.CharField(read_only=True, source='node.title', help_text='The title of the node that this Node Link '
                                                                          'points to')
 
     class Meta:
@@ -160,7 +160,7 @@ class NodeLinksSerializer(JSONAPISerializer):
             pointer = node.add_pointer(pointer_node, auth, save=True)
             return pointer
         except ValueError:
-            raise exceptions.ValidationError('Node_link to node {} already in list'.format(pointer_node._id))
+            raise exceptions.ValidationError('Pointer to node {} already in list'.format(pointer_node._id))
 
     def update(self, instance, validated_data):
         pass
