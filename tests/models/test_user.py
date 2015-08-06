@@ -302,6 +302,7 @@ class TestUserMerging(base.OsfTestCase):
             'timezone',
             'username',
             'verification_key',
+            'contributor_added_email_records'
         ]
 
         calculated_fields = {

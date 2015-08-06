@@ -1323,15 +1323,14 @@ function _deleteFolder(item) {
         });
     }
     var mithrilContent = m('div', [
-            m('h3.break-word', 'Delete "' + theItem.name + '"?'),
             m('p', 'Are you sure you want to delete this Collection? This will also delete any Collections ' +
                 'inside this one. You will not delete any projects in this Collection.')
         ]);
     var mithrilButtons = m('div', [
-            m('span.tb-modal-btn', { 'class' : 'text-primary', onclick : function() { tb.modal.dismiss(); } }, 'Cancel'),
-            m('span.tb-modal-btn', { 'class' : 'text-danger', onclick : function() { runDeleteFolder(); }  }, 'Delete')
+            m('span.btn.btn-default', { onclick : function() { tb.modal.dismiss(); } }, 'Cancel'),
+            m('span.btn.btn-danger', { onclick : function() { runDeleteFolder(); }  }, 'Delete')
         ]);
-    tb.modal.update(mithrilContent, mithrilButtons);
+    tb.modal.update(mithrilContent, mithrilButtons,  m('h3.break-word.modal-title', 'Delete "' + theItem.name + '"?'));
 }
 
 /**
