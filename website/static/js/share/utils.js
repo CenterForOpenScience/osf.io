@@ -239,15 +239,30 @@ utils.arrayEqual = function (a, b) {
 
 /* Loads the raw and normalized data for a specific result */
 utils.loadRawNormalized = function(result){
-    var nonJsonErrors = function(xhr) {
-        return xhr.status > 200 ? JSON.stringify(xhr.responseText) : xhr.responseText;
-    };
     var source = encodeURIComponent(result.shareProperties.source);
     var docID = encodeURIComponent(result.shareProperties.docID);
     return m.request({
         method: 'GET',
-        url: '/api/v1/share/documents/' + source + '/' + docID + '/',
-        extract: nonJsonErrors
+        url: 'api/v1/share/documents/' + source + '/' + docID + '/',
+        unwrapSuccess: function(data) {
+            var unwrapped = {};
+            var normed = JSON.parse(data.normalized);
+            var allRaw = JSON.parse(data.raw);
+            unwrapped.normalized = JSON.parse(data.normalized);
+            unwrapped.raw = allRaw.doc;
+            unwrapped.rawfiletype = allRaw.filetype;
+            unwrapped.normalized = normed;
+
+            return unwrapped;
+        },
+        unwrapError: function(data) {
+            var error = {};
+            error.rawfiletype = 'json';
+            error.normalized = 'Normalized data not found.';
+            error.raw = '"Raw data not found."';
+
+            return error;
+        }
     });
 };
 
