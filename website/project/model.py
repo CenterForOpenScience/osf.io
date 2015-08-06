@@ -45,8 +45,6 @@ from website.util import api_url_for
 from website.exceptions import (
     NodeStateError,
     InvalidSanctionApprovalToken, InvalidSanctionRejectionToken,
-    InvalidEmbargoApprovalToken, InvalidEmbargoDisapprovalToken,
-    InvalidRetractionApprovalToken, InvalidRetractionDisapprovalToken
 )
 from website.citations.utils import datetime_to_csl
 from website.identifiers.model import IdentifierMixin
@@ -59,6 +57,7 @@ html_parser = HTMLParser()
 
 logger = logging.getLogger(__name__)
 
+VIEW_PROJECT_URL_TEMPLATE = settings.DOMAIN + '{node_id}/'
 
 def has_anonymous_link(node, auth):
     """check if the node is anonymous to the user
@@ -686,15 +685,19 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
 
     @property
     def embargo_end_date(self):
-        if self.embargo is None and self.parent_node:
-            return self.parent_node.embargo_end_date
-        return getattr(self.embargo, 'embargo_end_date', False)
+        if self.embargo is None:
+            if self.parent_node:
+                return self.parent_node.embargo_end_date
+            return False
+        return self.embargo.embargo_end_date
 
     @property
     def pending_embargo(self):
-        if self.embargo is None and self.parent_node:
-            return self.parent_node.pending_embargo
-        return getattr(self.embargo, 'pending_embargo', False)
+        if self.embargo is None:
+            if self.parent_node:
+                return self.parent_node.pending_embargo
+            return False
+        return self.embargo.pending_embargo
 
     @property
     def pending_registration(self):
@@ -2868,11 +2871,12 @@ def validate_sanction_state(value):
         Sanction.UNAPPROVED, Sanction.ACTIVE, Sanction.CANCELLED, Sanction.COMPLETED
     ]
     if value not in acceptable_states:
-        raise ValidationValueError('Invalid embargo state assignment.')
+        raise ValidationValueError('Invalid sanction state assignment.')
     return True
 
 class Sanction(StoredObject):
     """Sanction object is a generic way to track approval states"""
+
     abstract = True
 
     UNAPPROVED = 'unapproved'
@@ -2880,10 +2884,12 @@ class Sanction(StoredObject):
     CANCELLED = 'cancelled'
     COMPLETED = 'completed'
 
-    ApprovalNotAuthorized = PermissionsError('This user is not authorized to approve this sanction')
-    ApprovalInvalidToken = InvalidSanctionApprovalToken('Invalid approval token provided.')
-    RejectionNotAuthorized = PermissionsError('This user is not authorized to reject this sanction')
-    RejectionInvalidToken = InvalidSanctionRejectionToken('Invalid rejection token provided.')
+    DISPLAY_NAME = 'sanction'
+
+    APPROVAL_NOT_AUTHORIZED_MESSAGE = 'This user is not authorized to approve this {0}'
+    APPROVAL_INVALID_TOKEN_MESSAGE = 'Invalid approval token provided for this {0}.'
+    REJECTION_NOT_AUTHORIZED_MESSAEGE = 'This user is not authorized to reject this {0}'
+    REJECTION_INVALID_TOKEN_MESSAGE = 'Invalid rejection token provided for this {0}.'
 
     _id = fields.StringField(primary=True, default=lambda: str(ObjectId()))
     initiation_date = fields.DateTimeField(auto_now_add=datetime.datetime.utcnow)
@@ -2953,19 +2959,19 @@ class Sanction(StoredObject):
         """Add user to approval list if user is admin and token verifies."""
         try:
             if self.approval_state[user._id]['approval_token'] != token:
-                raise self.ApprovalInvalidToken
+                raise InvalidSanctionApprovalToken(self.APPROVAL_INVALID_TOKEN_MESSAGE.format(self.DISPLAY_NAME))
         except KeyError:
-            raise self.ApprovalNotAuthorized
+            raise PermissionsError(self.APPROVAL_NOT_AUTHORIZED_MESSAGE.format(self.DISPLAY_NAME))
         self.approval_state[user._id]['has_approved'] = True
         self._on_approve(user, token)
 
     def reject(self, user, token):
         """Cancels sanction if user is admin and token verifies."""
         try:
-            if self.approval_state[user._id]['disapproval_token'] != token:
-                raise self.RejectionInvalidToken
+            if self.approval_state[user._id]['rejection_token'] != token:
+                raise InvalidSanctionRejectionToken(self.REJECTION_INVALID_TOKEN_MESSAGE.format(self.DISPLAY_NAME))
         except KeyError:
-            raise self.RejectionNotAuthorized
+            raise PermissionsError(self.REJECTION_NOT_AUTHORIZED_MESSAEGE.format(self.DISPLAY_NAME))
         self.state = Sanction.CANCELLED
         self._on_reject(user, token)
 
@@ -2987,6 +2993,10 @@ class EmailApprovableSanction(Sanction):
     AUTHORIZER_NOTIFY_TEMPLATE = None
     NON_AUTHORIZER_NOTIFY_TEMPLATE = None
 
+    VIEW_URL_TEMPLATE = ''
+    APPROVE_URL_TEMPLATE = ''
+    REJECT_URL_TEMPLATE = ''
+
     # Store a persistant copy of urls for use when needed outside of a request context.
     # This field gets automagically updated whenever models approval_state is modified
     # and the model is saved
@@ -2998,14 +3008,29 @@ class EmailApprovableSanction(Sanction):
     # }
     stashed_urls = fields.DictionaryField(default={})
 
-    def _view_url(self, user_id):
+    @staticmethod
+    def _format_or_empty(template, context):
+        if context:
+            return template.format(**context)
         return ''
+
+    def _view_url(self, user_id):
+        return self._format_or_empty(self.VIEW_URL_TEMPLATE, self._view_url_context(user_id))
+
+    def _view_url_context(self, user_id):
+        return None
 
     def _approval_url(self, user_id):
-        return ''
+        return self._format_or_empty(self.APPROVE_URL_TEMPLATE, self._approval_url_context(user_id))
+
+    def _approval_url_context(self, user_id):
+        return None
 
     def _rejection_url(self, user_id):
-        return ''
+        return self._format_or_empty(self.REJECT_URL_TEMPLATE, self._rejection_url_context(user_id))
+
+    def _rejection_url_context(self, user_id):
+        return None
 
     def _send_approval_request_email(self, user, template, context):
         mails.send_mail(
@@ -3044,13 +3069,14 @@ class EmailApprovableSanction(Sanction):
 class Embargo(EmailApprovableSanction):
     """Embargo object for registrations waiting to go public."""
 
-    ApprovalNotAuthorized = PermissionsError('User must be an admin to disapprove embargoing of a registration.')
-    ApprovalInvalidToken = InvalidEmbargoApprovalToken('Invalid embargo approval token provided.')
-    RejectionNotAuthorized = PermissionsError('User must be an admin to disapprove embargoing of a registration.')
-    RejectionInvalidToken = InvalidEmbargoDisapprovalToken('Invalid embargo disapproval token provided.')
+    DISPLAY_NAME = 'embargo'
 
     AUTHORIZER_NOTIFY_TEMPLATE = mails.PENDING_EMBARGO_ADMIN
     NON_AUTHORIZER_NOTIFY_TEMPLATE = mails.PENDING_EMBARGO_NON_ADMIN
+
+    VIEW_URL_TEMPLATE = VIEW_PROJECT_URL_TEMPLATE
+    APPROVE_URL_TEMPLATE = '/project/{node_id}/embargo/approve/{token}/'
+    REJECT_URL_TEMPLATE = '/project/{node_id}/embargo/disapprove/{token}/'
 
     initiated_by = fields.ForeignField('user', backref='embargoed')
     for_existing_registration = fields.BooleanField(default=False)
@@ -3064,6 +3090,53 @@ class Embargo(EmailApprovableSanction):
             self.end_date,
             self._id
         )
+
+    def _view_url_context(self, user_id):
+        registration = Node.find_one(Q('embargo', 'eq', self))
+        return {
+            'node_id': registration._id
+        }
+
+    def _approve_url_context(self, user_id):
+        approval_token = self.approval_state.get(user_id, {}).get('approval_token')
+        if approval_token:
+            registration = Node.find_one(Q('embargo', 'eq', self))
+            return {
+                'node_id': registration._id,
+                'token': approval_token,
+            }
+
+    def _rejection_url_context(self, user_id):
+        rejection_token = self.approval_state.get(user_id, {}).get('rejection_token')
+        if rejection_token:
+            registration = Node.find_one(Q('embargo', 'eq', self))
+            return {
+                'node_id': registration._id,
+                'token': rejection_token,
+            }
+
+    def _email_template_context(self, user, is_authorizer=False, urls=None):
+        urls = urls or self.stashed_urls[user._id]
+        registration_link = urls.get('view', self._view_url(user._id))
+        if is_authorizer:
+            approval_link = urls.get('approve', '')
+            disapproval_link = urls.get('reject', '')
+            approval_time_span = settings.RETRACTION_PENDING_TIME.days * 24
+
+            return {
+                'initiated_by': self.initiated_by.fullname,
+                'registration_link': registration_link,
+                'approval_link': approval_link,
+                'disapproval_link': disapproval_link,
+                'embargo_end_date': self.end_date,
+                'approval_time_span': approval_time_span,
+            }
+        else:
+            return {
+                'initiated_by': self.initiated_by.fullname,
+                'registration_link': registration_link,
+                'embargo_end_date': self.end_date,
+            }
 
     @property
     def embargo_end_date(self):
@@ -3121,15 +3194,16 @@ class Embargo(EmailApprovableSanction):
 class Retraction(EmailApprovableSanction):
     """Retraction object for public registrations."""
 
-    ApprovalNotAuthorized = PermissionsError('User must be an admin to disapprove a retraction of a registration.')
-    ApprovalInvalidToken = InvalidRetractionApprovalToken('Invalid retraction approval token provided.')
-    RejectionNotAuthorized = PermissionsError('User must be an admin to disapprove a retraction of a registration.')
-    RejectionInvalidToken = InvalidRetractionDisapprovalToken('Invalid retraction disapproval token provided.')
+    DISPLAY_NAME = 'retraction'
 
     AUTHORIZER_NOTIFY_TEMPLATE = mails.PENDING_RETRACTION_ADMIN
     NON_AUTHORIZER_NOTIFY_TEMPLATE = mails.PENDING_RETRACTION_NON_ADMIN
 
-    initiated_by = fields.ForeignField('user', backref='retracted')
+    VIEW_URL_TEMPLATE = VIEW_PROJECT_URL_TEMPLATE
+    APPROVE_URL_TEMPLATE = '/project/{node_id}/retraction/approve/{token}/'
+    REJECT_URL_TEMPLATE = '/project/{node_id}/retraction/disapprove/{token}/'
+
+    initiated_by = fields.ForeignField('user', backref='initiated')
     justification = fields.StringField(default=None, validate=MaxLengthValidator(2048))
 
     def __repr__(self):
@@ -3141,45 +3215,43 @@ class Retraction(EmailApprovableSanction):
             self._id
         )
 
-    def _view_url(self, user_id):
+    def _view_url_context(self, user_id):
         registration = Node.find_one(Q('retraction', 'eq', self))
-        return registration.web_url_for('view_project', _absolute=True)
+        return {
+            'node_id': registration._id
+        }
 
-    def _approve_url(self, user_id):
+    def _approve_url_context(self, user_id):
         approval_token = self.approval_state.get(user_id, {}).get('approval_token')
         if approval_token:
             registration = Node.find_one(Q('retraction', 'eq', self))
-            return registration.web_url_for(
-                'node_registration_retraction_approve',
-                token=approval_token,
-                _absolute=True
-            ) if approval_token else None
-        return None
+            return {
+                'node_id': registration._id,
+                'token': approval_token,
+            }
 
-    def _rejection_url(self, user_id):
+    def _rejection_url_context(self, user_id):
         rejection_token = self.approval_state.get(user_id, {}).get('rejection_token')
         if rejection_token:
             registration = Node.find_one(Q('retraction', 'eq', self))
-            return registration.web_url_for(
-                'node_registration_retraction_disapprove',
-                token=rejection_token,
-                _absolute=True
-            ) if rejection_token else None
-        return None
+            return {
+                'node_id': registration._id,
+                'token': rejection_token,
+            }
 
     def _email_template_context(self, user, is_authorizer=False, urls=None):
         urls = urls or self.stashed_urls[user._id]
-        registration_link = urls['view']
+        registration_link = urls.get('view', self._view_url(user._id))
         if is_authorizer:
-            approval_link = urls['approve']
-            disapproval_link = urls['reject']
+            approval_link = urls.get('approve', '')
+            disapproval_link = urls.get('reject', '')
             approval_time_span = settings.RETRACTION_PENDING_TIME.days * 24
 
             return {
                 'initiated_by': self.initiated_by.fullname,
                 'registration_link': registration_link,
                 'approval_link': approval_link,
-                'dispproval_link': disapproval_link,
+                'disapproval_link': disapproval_link,
                 'approval_time_span': approval_time_span,
             }
         else:
@@ -3248,63 +3320,60 @@ class Retraction(EmailApprovableSanction):
 
 class RegistrationApproval(EmailApprovableSanction):
 
-    ApprovalNotAuthorized = PermissionsError('User must be an admin to disapprove a approval of a registration.')
-    ApprovalInvalidToken = InvalidRetractionApprovalToken('Invalid retraction approval token provided.')
-    RejectionNotAuthorized = PermissionsError('User must be an admin to disapprove a rejection of a registration.')
-    RejectionInvalidToken = InvalidRetractionDisapprovalToken('Invalid retraction disapproval token provided.')
+    DISPLAY_NAME = 'registration approval'
 
     AUTHORIZER_NOTIFY_TEMPLATE = mails.PENDING_REGISTRATION_ADMIN
     NON_AUTHORIZER_NOTIFY_TEMPLATE = mails.PENDING_REGISTRATION_NON_ADMIN
 
+    VIEW_URL_TEMPLATE = VIEW_PROJECT_URL_TEMPLATE
+    APPROVE_URL_TEMPLATE = '/project/{node_id}/registration/approve/{token}/'
+    REJECT_URL_TEMPLATE = '/project/{node_id}/registration/disapprove/{token}/'
+
     initiated_by = fields.ForeignField('user', backref='registration_approved')
 
-    def _view_url(self, user_id):
+    def _view_url_context(self, user_id):
         registration = Node.find_one(Q('registration_approval', 'eq', self))
-        return registration.web_url_for('view_project', _absolute=True)
+        return {
+            'node_id': registration._id
+        }
 
-    def _approval_url(self, user_id):
+    def _approval_url_context(self, user_id):
         approval_token = self.approval_state.get(user_id, {}).get('approval_token')
         if approval_token:
             registration = Node.find_one(Q('registration_approval', 'eq', self))
-            return registration.web_url_for(
-                'node_registration_embargo_approve',
-                token=approval_token,
-                _absolute=True
-            )
-        return None
+            return {
+                'node_id': registration._id,
+                'token': approval_token,
+            }
 
-    def _rejection_url(self, user_id):
+    def _rejection_url_context(self, user_id):
         rejection_token = self.approval_state.get(user_id, {}).get('rejection_token')
         if rejection_token:
             registration = Node.find_one(Q('registration_approval', 'eq', self))
-            return registration.web_url_for(
-                'node_registration_embargo_disapprove',
-                token=rejection_token,
-                _absolute=True
-            )
-        return None
+            return {
+                'node_id': registration._id,
+                'token': rejection_token,
+            }
 
     def _email_template_context(self, user, is_authorizer=False, urls=None):
         urls = urls or self.stashed_urls[user._id]
-        registration_link = urls['view']
+        registration_link = urls.get('view', self._view_url(user._id))
         if is_authorizer:
-            approval_link = urls['approve']
-            disapproval_link = urls['reject']
-            approval_time_span = settings.EMBARGO_PENDING_TIME.days * 24
+            approval_link = urls.get('approve', '')
+            disapproval_link = urls.get('reject', '')
+            approval_time_span = settings.REGISTRATION_APPROVAL_PERIOD
 
             return {
                 'initiated_by': self.initiated_by.fullname,
                 'registration_link': registration_link,
                 'approval_link': approval_link,
-                'dispproval_link': disapproval_link,
-                'embargo_end_date': self.end_date,
+                'disapproval_link': disapproval_link,
                 'approval_time_span': approval_time_span,
             }
         else:
             return {
                 'initiated_by': self.initiated_by.fullname,
                 'registration_link': registration_link,
-                'embargo_end_date': self.end_date,
             }
 
     def _add_success_logs(self, user, node):

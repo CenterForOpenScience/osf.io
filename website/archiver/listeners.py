@@ -48,7 +48,7 @@ def archive_callback(dst):
     root_job.save()
     if root_job.success:
         if dst.pending_embargo:
-            dst.emabargo.ask(root.active_contributors())
+            dst.embargo.ask(root.active_contributors())
         else:  # requires approval
             dst.registration_approval.ask(root.active_contributors())
     else:

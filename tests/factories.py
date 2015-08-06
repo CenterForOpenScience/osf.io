@@ -212,8 +212,6 @@ class RegistrationFactory(AbstractNodeFactory):
                 reg.require_approval(reg.creator)
             if not embargo:
                 target = reg.registration_approval
-            for contrib in reg.registered_from.active_contributors():
-                target.add_authorizer(contrib)
             target.save()
 
         if archive:

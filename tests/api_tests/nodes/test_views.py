@@ -844,12 +844,12 @@ class TestNodeRegistrationList(ApiTestCase):
         self.user.save()
         self.basic_auth = (self.user.username, password)
         self.project = ProjectFactory(is_public=False, creator=self.user)
-        self.registration_project = RegistrationFactory(creator=self.user, project=self.project)
+        self.registration_project = RegistrationFactory(creator=self.user, project=self.project, no_context=True)
         self.project.save()
         self.private_url = '/{}nodes/{}/registrations/'.format(API_BASE, self.project._id)
 
         self.public_project = ProjectFactory(is_public=True, creator=self.user)
-        self.public_registration_project = RegistrationFactory(creator=self.user, project=self.public_project)
+        self.public_registration_project = RegistrationFactory(creator=self.user, project=self.public_project, no_context=True)
         self.public_project.save()
         self.public_url = '/{}nodes/{}/registrations/'.format(API_BASE, self.public_project._id)
 

@@ -262,7 +262,7 @@ class TestRegistrationRetractions(SearchTestCase):
 
         # Retract registration
         self.registration.retract_registration(self.user, '')
-        self.registration.retraction.state = 'retracted'
+        self.registration.retraction.state = 'active'
         self.registration.retraction.save()
         self.registration.save()
         self.registration.update_search()

@@ -21,9 +21,7 @@ from website.archiver import ARCHIVER_SUCCESS, ARCHIVER_FAILURE
 
 from website import settings
 from website.exceptions import (
-    InvalidRetractionApprovalToken, InvalidRetractionDisapprovalToken,
-    InvalidEmbargoApprovalToken, InvalidEmbargoDisapprovalToken,
-    InvalidRegistrationApprovalToken, InvalidRegistrationDisapprovalToken,
+    InvalidSanctionApprovalToken, InvalidSanctionRejectionToken,
     NodeStateError
 )
 from website.project.decorators import (
@@ -114,7 +112,7 @@ def node_registration_retraction_post(auth, node, **kwargs):
     try:
         node.retract_registration(auth.user, data.get('justification', None))
         node.save()
-        node.retraction.ask()
+        node.retraction.ask(node.active_contributors())
     except NodeStateError as err:
         raise HTTPError(http.FORBIDDEN, data=dict(message_long=err.message))
 
@@ -140,7 +138,7 @@ def node_registration_retraction_approve(auth, node, token, **kwargs):
         node.retraction.save()
         if node.is_retracted:
             node.update_search()
-    except InvalidRetractionApprovalToken as e:
+    except InvalidSanctionApprovalToken as e:
         raise HTTPError(http.BAD_REQUEST, data={
             'message_short': e.message_short,
             'message_long': e.message_long
@@ -174,7 +172,7 @@ def node_registration_retraction_disapprove(auth, node, token, **kwargs):
     try:
         node.retraction.disapprove_retraction(auth.user, token)
         node.retraction.save()
-    except InvalidRetractionDisapprovalToken as e:
+    except InvalidSanctionRejectionToken as e:
         raise HTTPError(http.BAD_REQUEST, data={
             'message_short': e.message_short,
             'message_long': e.message_long
@@ -207,7 +205,7 @@ def node_registration_embargo_approve(auth, node, token, **kwargs):
     try:
         node.embargo.approve_embargo(auth.user, token)
         node.embargo.save()
-    except InvalidEmbargoApprovalToken as e:
+    except InvalidSanctionApprovalToken as e:
         raise HTTPError(http.BAD_REQUEST, data={
             'message_short': e.message_short,
             'message_long': e.message_long
@@ -243,7 +241,7 @@ def node_registration_embargo_disapprove(auth, node, token, **kwargs):
     try:
         node.embargo.disapprove_embargo(auth.user, token)
         node.embargo.save()
-    except InvalidEmbargoDisapprovalToken as e:
+    except InvalidSanctionRejectionToken as e:
         raise HTTPError(http.BAD_REQUEST, data={
             'message_short': e.message_short,
             'message_long': e.message_long
@@ -277,7 +275,7 @@ def node_registration_approve(auth, node, token, **kwargs):
         node.registration_approval.approve(auth.user, token)
         node.registration_approval.save()
 
-    except InvalidRegistrationApprovalToken as e:
+    except InvalidSanctionApprovalToken as e:
         raise HTTPError(http.BAD_REQUEST, data={
             'message_short': e.message_short,
             'message_long': e.message_long
@@ -311,7 +309,7 @@ def node_registration_disapprove(auth, node, token, **kwargs):
     try:
         node.registration_approval.disapprove(auth.user, token)
         node.registration_approval.save()
-    except InvalidRegistrationDisapprovalToken as e:
+    except InvalidSanctionRejectionToken as e:
         raise HTTPError(http.BAD_REQUEST, data={
             'message_short': e.message_short,
             'message_long': e.message_long
