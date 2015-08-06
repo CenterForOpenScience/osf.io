@@ -318,7 +318,7 @@ ViewModel.prototype.openCreateBucket = function() {
                                 '<div class="col-md-8"> ' +
                                     '<input id="bucketName" name="bucketName" type="text" placeholder="Enter bucket name" class="form-control" autofocus> ' +
                                     '<div>' +
-                                        '<span id="errorMessage" ></span>' +
+                                        '<span id="bucketModalErrorMessage" ></span>' +
                                     '</div>'+
                                 '</div>' +
                             '</div>' +
@@ -346,7 +346,7 @@ ViewModel.prototype.openCreateBucket = function() {
                     var bucketLocation = $('#bucketLocation').val();
 
                     if (!bucketName) {
-                        var errorMessage = $('#errorMessage');
+                        var errorMessage = $('bucketModalErrorMessage');
                         errorMessage.text('Bucket name cannot be empty');
                         errorMessage[0].classList.add('text-danger');
                         return false;
