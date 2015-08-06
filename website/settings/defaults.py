@@ -9,7 +9,7 @@ import os
 import json
 import hashlib
 from datetime import timedelta
-from celery.schedules import crontab
+from celery import schedules
 
 os_env = os.environ
 
@@ -187,12 +187,12 @@ CELERY_RESULT_BACKEND = 'amqp://'
 CELERYBEAT_SCHEDULE = {
     '5-minute-emails': {
         'task': 'notify.send_users_email',
-        'schedule': crontab(minute='*/5'),
+        'schedule': schedules.crontab(minute='*/5'),
         'args': ('email_transactional',),
     },
     'daily-emails': {
         'task': 'notify.send_users_email',
-        'schedule': crontab(minute=0, hour=0),
+        'schedule': schedules.crontab(minute=0, hour=0),
         'args': ('email_digest',),
     },
 }
@@ -204,7 +204,6 @@ CELERY_IMPORTS = (
     'framework.email.tasks',
     'framework.analytics.tasks',
     'website.mailchimp_utils',
-    'scripts.send_digest',
     'website.notifications.tasks'
 )
 
