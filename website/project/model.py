@@ -1,4 +1,4 @@
-# -*- coding: utf-8 -*-
+0;95;c# -*- coding: utf-8 -*-
 import itertools
 import os
 import re
@@ -2963,11 +2963,12 @@ class Sanction(StoredObject):
         return False
 
     def remove_authorizer(self, user):
-        if user._id in self.approval_state:
-            del self.approval_state[user._id]
-            self.save()
-            return True
-        return False
+        if user._id not in self.approval_state:
+            return False
+
+        del self.approval_state[user._id]
+        self.save()
+        return True
 
     def _on_approve(self, user, token):
         if all(authorizer['has_approved'] for authorizer in self.approval_state.values()):
