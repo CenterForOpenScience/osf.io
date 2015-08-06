@@ -348,7 +348,7 @@ ViewModel.prototype.openCreateBucket = function() {
                     if (!bucketName) {
                         var errorMessage = $('#errorMessage');
                         errorMessage.text('Bucket name cannot be empty');
-                        errorMessage[0].classList.add('text-warning');
+                        errorMessage[0].classList.add('text-error');
                         return false;
                     } else if (isValidBucketName(bucketName, true)) {
                         bootbox.confirm({
