@@ -62,7 +62,7 @@ ShareApp.view = function(ctrl) {
                     m.component(Results, {vm: ctrl.vm})
                 ])
             ]) : [],
-            Footer.view(ctrl.footerController),
+            m.component(Footer, {vm: ctrl.vm})
         ])
     ]);
 };
@@ -88,7 +88,6 @@ ShareApp.controller = function() {
 
         self.statsController = new Stats.controller(self.vm);
         self.searchBarController = new SearchBar.controller(self.vm);
-        self.footerController = new Footer.controller(self.vm);
 
     });
 
