@@ -203,8 +203,7 @@ class NodeContributorsSerializer(JSONAPISerializer):
 
         bibliographic = validated_data['bibliographic'] == "True"
 
-        permission_field = validated_data['permission']
-        permissions = self.get_permissions_list(permission_field)
+        permissions = self.get_permissions_list(validated_data['permission'])
         added = node.add_contributor(contributor=user, auth=auth, save=True,
                                      permissions=permissions, visible=bibliographic)
         if not added:
