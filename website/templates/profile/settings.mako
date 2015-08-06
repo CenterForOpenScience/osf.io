@@ -2,7 +2,7 @@
 <%def name="title()">Settings</%def>
 <%def name="content()">
 <% from website import settings %>
-<h2 class="page-header">Profile Information</h2>
+<h2 class="page-header">Settings</h2>
 
 ## TODO: Review and un-comment
 ##<div class="row">
