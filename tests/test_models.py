@@ -1634,7 +1634,7 @@ class TestNode(OsfTestCase):
         root = ProjectFactory(creator=self.user)
         c1 = ProjectFactory(creator=self.user, parent=root)
         ProjectFactory(creator=self.user, parent=c1)
-        
+
         ensure_schemas()
         meta_schema = MetaSchema.find_one(
             Q('name', 'eq', 'Open-Ended Registration') &
@@ -1647,6 +1647,26 @@ class TestNode(OsfTestCase):
         for r in [reg, r1, r1a]:
             assert_equal(r.registered_meta, data)
             assert_equal(r.registered_schema, meta_schema)
+
+    def test_create_draft_registration(self):
+        ensure_schemas()
+        proj = ProjectFactory()
+        user = proj.creator
+        schema = MetaSchema.find()[0]
+        data = {'some': 'data'}
+        draft = proj.create_draft_registration(user, schema, data)
+        assert_equal(user, draft.initiator)
+        assert_equal(schema, draft.registration_schema)
+        assert_equal(data, draft.registration_metadata)
+        
+    def test_create_draft_registration_adds_to_draft_registrations_list(self):
+        ensure_schemas()
+        proj = ProjectFactory()
+        user = proj.creator
+        schema = MetaSchema.find()[0]
+        data = {'some': 'data'}
+        draft = proj.create_draft_registration(user, schema, data)
+        assert_equal(proj.draft_registrations[0], draft)
 
 class TestNodeTraversals(OsfTestCase):
 
