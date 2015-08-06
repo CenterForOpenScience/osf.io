@@ -38,8 +38,8 @@ ToggleHeight.prototype.init =  function () {
     var self = this;
     self.collapsed = true;
     self.showToggle = false;
-    self.gradientDiv = $('<div class="' + self.element.id + '-gradient toggle-height-gradient" style="display:none"></div>').appendTo(self.element);
-    self.toggleDiv = $('<div class="' + self.element.id + '-toggle toggle-height-toggle text-center" style="display:none"></div>').insertAfter(self.element);
+    self.gradientDiv = $('<div id="' + self.element.id + '-gradient" class="toggle-height-gradient" style="display:none"></div>').appendTo(self.element);
+    self.toggleDiv = $('<div id="' + self.element.id + '-toggle" class="toggle-height-toggle text-center" style="display:none"></div>').insertAfter(self.element);
     $('.' + self.element.id + '-toggle.toggle-height-toggle').click(self.toggle.bind(this));
     self.checkCollapse();
     $(window).resize(self.checkCollapse.bind(this));
