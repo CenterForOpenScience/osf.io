@@ -274,8 +274,6 @@ class TestCollectFiles(FileIndexingTestCase):
         assert_equal(count, 5)
 
 
-
-
 #TODO: Test file_util.get_file_content
 class TestGetFileContent(FileIndexingTestCase):
     pass
@@ -395,6 +393,70 @@ class TestWaterbutlerUpdateSearch(FileIndexingTestCase):
             wb_update_search(self.project, 'move', self.addon, self.file_node.name, other_project._id)
             delete_search_mock.assert_called_once_with(self.file_node)
             update_seach_mock.assert_called_once_with(self.file_node)
+
+    def test_no_action_on_delete(self):
+        with TRIGGER_CONTEXT as patches:
+            wb_update_search(self.project, 'delete', self.addon, self.file_node, None)
+            update_seach_mock = patches.get_named_mock('update_search_file')
+            delete_search_mock = patches.get_named_mock('delete_search_file')
+            assert_false(update_seach_mock.called)
+            assert_false(delete_search_mock.called)
+
+
+class TestFileNodeUpdateSearch(FileIndexingTestCase):
+    def test_update_on_delete(self):
+        with TRIGGER_CONTEXT as patches:
+            update_search_mock = patches.get_named_mock('update_search_file')
+            delete_search_mock = patches.get_named_mock('delete_search_file')
+            assert_false(delete_search_mock.called)
+            assert_false(update_search_mock.called)
+
+            self.file_node.delete()
+
+            delete_search_mock.assert_called_once_with(self.file_node)
+            assert_false(update_search_mock.called)
+
+    def test_update_on_create(self):
+        with TRIGGER_CONTEXT as patches:
+            update_search_mock = patches.get_named_mock('update_search_file')
+            delete_search_mock = patches.get_named_mock('delete_search_file')
+            assert_false(update_search_mock.called)
+            assert_false(delete_search_mock.called)
+
+            self.addon.root_node.append_file('a_new_file.txt')
+
+            assert_true(update_search_mock.called)
+            assert_false(delete_search_mock.called)
+
+    def test_update_on_copy(self):
+        other_node = ProjectWithAddonFactory()
+        other_addon = other_node.get_addon('osfstorage')
+        with TRIGGER_CONTEXT as patches:
+            update_search_mock = patches.get_named_mock('update_search_file')
+            delete_search_mock = patches.get_named_mock('delete_search_file')
+
+            assert_false(update_search_mock.called)
+            assert_false(delete_search_mock.called)
+
+            copied_node = self.file_node.copy_under(other_addon.root_node)
+
+            update_search_mock.assert_called_once_with(copied_node)
+            assert_false(delete_search_mock.called)
+
+    def test_update_on_move(self):
+        other_node = ProjectWithAddonFactory()
+        other_addon = other_node.get_addon('osfstorage')
+        with TRIGGER_CONTEXT as patches:
+            update_search_mock = patches.get_named_mock('update_search_file')
+            delete_search_mock = patches.get_named_mock('delete_search_file')
+
+            assert_false(update_search_mock.called)
+            assert_false(delete_search_mock.called)
+
+            self.file_node.move_under(other_addon.root_node)
+
+            update_search_mock.assert_called_once_with(self.file_node)
+            update_search_mock.assert_called_once_with(self.file_node)
 
 
 class TestProjectPrivacyUpdatesSearch(FileIndexingTestCase):

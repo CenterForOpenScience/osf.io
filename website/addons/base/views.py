@@ -299,15 +299,15 @@ def create_waterbutler_log(payload, **kwargs):
 
 @file_util.require_file_indexing
 def update_search(node, action, addon, file_name, source_node_id=None):
+    # deletion handled in OsfFileNode.delete
+    if action == 'delete':
+        return
+
     file_node = addon.root_node.find_child_by_name(file_name)
     if not file_util.is_indexed(file_node):
         return
 
     if addon.config.short_name != 'osfstorage':
-        return
-
-    # wb does not give filenode's path on deletes
-    if action == 'delete':
         return
 
     if action in ('create', 'update', 'copy'):

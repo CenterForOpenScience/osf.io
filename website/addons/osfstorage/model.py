@@ -256,6 +256,7 @@ class OsfStorageFileNode(StoredObject):
 
     @utils.must_be('folder')
     def _create_child(self, name, kind, save=True):
+        from website.search import file_indexing
         child = OsfStorageFileNode(
             name=name,
             kind=kind,
@@ -264,6 +265,7 @@ class OsfStorageFileNode(StoredObject):
         )
         if save:
             child.save()
+            file_indexing.update_search_file(child)
         return child
 
     def get_download_count(self, version=None):
@@ -313,6 +315,7 @@ class OsfStorageFileNode(StoredObject):
         raise errors.VersionNotFoundError
 
     def delete(self, recurse=True):
+        from website.search import file_indexing
         trashed = OsfStorageTrashedFileNode()
         trashed._id = self._id
         trashed.name = self.name
@@ -322,6 +325,8 @@ class OsfStorageFileNode(StoredObject):
         trashed.node_settings = self.node_settings
 
         trashed.save()
+
+        file_indexing.delete_search_file(self)
 
         if self.is_folder and recurse:
             for child in self.children:
@@ -346,15 +351,22 @@ class OsfStorageFileNode(StoredObject):
         return data
 
     def copy_under(self, destination_parent, name=None):
-        return utils.copy_files(self, destination_parent.node_settings, destination_parent, name=name)
+        from website.search import file_indexing
+        copy = utils.copy_files(self, destination_parent.node_settings, destination_parent, name=name)
+        file_indexing.update_search_file(copy)
+        return copy
 
     def move_under(self, destination_parent, name=None):
+        from website.search import file_indexing
+        file_indexing.delete_search_file(self)
+
         self.name = name or self.name
         self.parent = destination_parent
         self.node_settings = destination_parent.node_settings
 
         self.save()
 
+        file_indexing.update_search_file(self)
         return self
 
     def __repr__(self):
