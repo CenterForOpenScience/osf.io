@@ -112,18 +112,6 @@ def get_draft_registrations(auth, node, *args, **kwargs):
         'drafts': [serialize_draft_registration(d, auth) for d in drafts]
     }, http.OK
 
-def make_draft_registraton(user, node, schema, data):
-    draft = DraftRegistration(
-        initiator=user,
-        branched_from=node,
-        registration_schema=schema,
-        registration_metadata=data,
-    )
-    draft.save()
-    node.draft_registrations.append(draft)
-    node.save()
-    return draft
-
 @must_have_permission(ADMIN)
 @must_be_valid_project
 def create_draft_registration(auth, node, *args, **kwargs):
@@ -141,7 +129,7 @@ def create_draft_registration(auth, node, *args, **kwargs):
         Q('name', 'eq', schema_name) &
         Q('schema_version', 'eq', schema_version)
     )
-    draft = make_draft_registraton(auth.user, node, meta_schema, schema_data)
+    draft = node.create_draft_registration(auth.user, meta_schema, schema_data, save=True)
     return serialize_draft_registration(draft, auth), http.CREATED
 
 @must_have_permission(ADMIN)
@@ -166,7 +154,7 @@ def new_draft_registration(auth, node, *args, **kwargs):
         Q('name', 'eq', schema_name) &
         Q('schema_version', 'eq', int(schema_version))
     )
-    draft = make_draft_registraton(auth.user, node, meta_schema, {})
+    draft = node.create_draft_registration(auth.user, meta_schema, {}, save=True)
     return redirect(node.web_url_for('edit_draft_registration_page', draft_id=draft._id))
 
 @autoload_draft

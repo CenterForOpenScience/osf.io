@@ -14,7 +14,7 @@ import datetime
 from nose.tools import *  # noqa PEP8 asserts
 from tests.test_features import requires_search
 
-from modularodm import Q, fields
+from modularodm import Q
 from dateutil.parser import parse as parse_date
 
 from framework import auth
@@ -56,7 +56,7 @@ from tests.factories import (
     UserFactory, ProjectFactory, WatchConfigFactory,
     NodeFactory, NodeLogFactory, AuthUserFactory, UnregUserFactory,
     RegistrationFactory, CommentFactory, PrivateLinkFactory, UnconfirmedUserFactory, DashboardFactory, FolderFactory,
-    ProjectWithAddonFactory, MockAddonNodeSettings,
+    ProjectWithAddonFactory, MockAddonNodeSettings, DraftRegistrationFactory
 )
 from website.settings import ALL_MY_REGISTRATIONS_ID, ALL_MY_PROJECTS_ID
 
@@ -4339,7 +4339,7 @@ class TestDraftRegistrationViews(OsfTestCase):
             Q('name', 'eq', 'Open-Ended Registration') &
             Q('schema_version', 'eq', 1)
         )
-        self.draft = DraftRegistration(
+        self.draft = DraftRegistrationFactory(
             initiator=self.user,
             branched_from=self.node,
             registration_schema=self.meta_schema,
@@ -4452,7 +4452,7 @@ class TestDraftRegistrationViews(OsfTestCase):
             auth=self.user.auth
         )
 
-        assert_equal(res.status_code, 201)
+        assert_equal(res.status_code, 202)
 
         registration = Node.find().sort('-registered_date')[0]
 
@@ -4473,11 +4473,11 @@ class TestDraftRegistrationViews(OsfTestCase):
 
         assert_equal(res.status_code, 400)
 
-    def test_get_draft_registrations_gets_drafts_for_node_and_user(self):
+    def test_get_draft_registrations_gets_drafts_for_node(self):
 
         dummy = NodeFactory()
         for i in range(5):
-            d = DraftRegistration(
+            d = DraftRegistrationFactory(
                 initiator=self.user,
                 branched_from=dummy,
                 meta_schema=self.meta_schema,
@@ -4486,7 +4486,7 @@ class TestDraftRegistrationViews(OsfTestCase):
             d.save()
         found = [self.draft]
         for i in range(3):
-            d = DraftRegistration(
+            d = DraftRegistrationFactory(
                 initiator=self.user,
                 branched_from=self.node,
                 meta_schema=self.meta_schema,
