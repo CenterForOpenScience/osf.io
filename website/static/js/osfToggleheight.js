@@ -61,7 +61,7 @@ ToggleHeight.prototype.collapse = function () {
     self.toggleDiv.html('<i class="' + self.settings.iconDown +'"></i>').show();
 };
 
-ToggleHeight.prototype.open = function (){
+ToggleHeight.prototype.expand = function (){
     var self = this;
     self.$el.css('height', 'auto');
     self.gradientDiv.hide();
@@ -78,7 +78,7 @@ ToggleHeight.prototype.checkCollapse = function () {
         if (self.collapsed){
             this.collapse();
         } else {
-            self.open();
+            self.expand();
         }
     }
 };
@@ -86,7 +86,7 @@ ToggleHeight.prototype.checkCollapse = function () {
 ToggleHeight.prototype.toggle = function () {
     var self = this;
     if (self.collapsed) {
-        self.open();
+        self.expand();
     } else {
         self.collapse();
     }
