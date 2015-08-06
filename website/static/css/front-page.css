@@ -317,11 +317,7 @@ h6 {
 }
 .grey-pullout {
     background: #eeeeee url("/static/img/front-page/circles.png") no-repeat bottom right;
-<<<<<<< HEAD
-    border-bottom: 1px solid #777777;
-=======
     border-bottom: 1px solid #CCCCCC;
->>>>>>> 0fea25a5a49341c6f21cb7a46c4b10ca1cabeca2
     position: relative;
     z-index: 2;
 }
