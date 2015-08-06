@@ -8,7 +8,12 @@ from api.base.filters import ODMFilterMixin
 from api.nodes.serializers import NodeSerializer
 from .serializers import UserSerializer
 from django.contrib.auth.models import AnonymousUser
-from rest_framework.exceptions import PermissionDenied, NotFound, NotAuthenticated, APIException
+from rest_framework.exceptions import (
+    APIException,
+    NotAuthenticated,
+    NotFound,
+    PermissionDenied,
+)
 
 
 class UserMixin(object):
@@ -23,7 +28,10 @@ class UserMixin(object):
         key = self.kwargs[self.node_lookup_url_kwarg]
 
         if key == 'me':
-            return self.request.user
+            if isinstance(current_user, AnonymousUser):
+                raise PermissionDenied
+            else:
+                return self.request.user
 
         obj = get_object_or_404(User, key)
         if check_permissions:

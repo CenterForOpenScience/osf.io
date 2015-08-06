@@ -237,9 +237,17 @@ class TestUserRoutesNodeRoutes(ApiTestCase):
         res = self.app.get(url, expect_errors=True)
         assert_equal(res.status_code, 403)
 
-    def test_get_404_path_users_user_id_user_not_logged_in(self):
-        url = "/{}users/{}/".format(API_BASE, self.user_two._id)
+    def test_get_200_path_users_me_usertwo_logged_in(self):
+        url = "/{}users/me/".format(API_BASE)
+        res = self.app.get(url, auth=self.auth_two)
+        assert_equal(res.status_code, 200)
+
+    def test_get_403_path_users_me_no_user(self):
+        url = "/{}users/me/".format(API_BASE)
         res = self.app.get(url, expect_errors=True)
+        # This is 403 instead of 401 because basic authentication is only for unit tests and, in order to keep from
+        # presenting a basic authentication dialog box in the front end. We may change this as we understand CAS
+        # a little better
         assert_equal(res.status_code, 403)
 
     def test_get_404_path_nodes_me_user_logged_in(self):
@@ -276,7 +284,15 @@ class TestUserRoutesNodeRoutes(ApiTestCase):
         assert_not_in(self.deleted_folder._id, ids)
         assert_not_in(self.deleted_project_user_one._id, ids)
 
-    def test_path_users_user_id_nodes_user_logged_in(self):
+    def test_get_403_path_users_me_nodes_no_user(self):
+        url = "/{}users/me/nodes/".format(API_BASE)
+        res = self.app.get(url, expect_errors=True)
+        # This is 403 instead of 401 because basic authentication is only for unit tests and, in order to keep from
+        # presenting a basic authentication dialog box in the front end. We may change this as we understand CAS
+        # a little better
+        assert_equal(res.status_code, 403)
+
+    def test_get_200_path_users_user_id_nodes_user_logged_in(self):
         url = "/{}users/{}/nodes/".format(API_BASE, self.user_one._id)
         res = self.app.get(url, auth=self.auth_one)
         assert_equal(res.status_code, 200)
