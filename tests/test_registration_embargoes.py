@@ -13,7 +13,7 @@ from tests.factories import (
 from framework.exceptions import PermissionsError
 from modularodm.exceptions import ValidationValueError
 from website.exceptions import (
-    InvalidEmbargoDisapprovalToken, InvalidEmbargoApprovalToken, NodeStateError,
+    InvalidSanctionRejectionToken, InvalidSanctionApprovalToken, NodeStateError,
 )
 from website.models import Embargo, Node
 from website.project.model import ensure_schemas
@@ -137,7 +137,7 @@ class RegistrationEmbargoModelsTestCase(OsfTestCase):
         assert_false(self.registration.pending_embargo)
 
     # Embargo#approve_embargo tests
-    def test_invalid_approval_token_raises_InvalidEmbargoApprovalToken(self):
+    def test_invalid_approval_token_raises_InvalidSanctionApprovalToken(self):
         self.registration.embargo_registration(
             self.user,
             datetime.datetime.utcnow() + datetime.timedelta(days=10)
@@ -146,7 +146,7 @@ class RegistrationEmbargoModelsTestCase(OsfTestCase):
         assert_true(self.registration.pending_embargo)
 
         invalid_approval_token = 'not a real token'
-        with assert_raises(InvalidEmbargoApprovalToken):
+        with assert_raises(InvalidSanctionApprovalToken):
             self.registration.embargo.approve_embargo(self.user, invalid_approval_token)
         assert_true(self.registration.pending_embargo)
 
@@ -216,14 +216,14 @@ class RegistrationEmbargoModelsTestCase(OsfTestCase):
         assert_equal(num_of_approvals, 2)
 
     # Embargo#disapprove_embargo tests
-    def test_invalid_disapproval_token_raises_InvalidEmbargoDisapprovalToken(self):
+    def test_invalid_disapproval_token_raises_InvalidSanctionRejectionToken(self):
         self.registration.embargo_registration(
             self.user,
             datetime.datetime.utcnow() + datetime.timedelta(days=10)
         )
         self.registration.save()
         assert_true(self.registration.pending_embargo)
-        with assert_raises(InvalidEmbargoDisapprovalToken):
+        with assert_raises(InvalidSanctionRejectionToken):
             self.registration.embargo.disapprove_embargo(self.user, fake.sentence())
         assert_true(self.registration.pending_embargo)
 

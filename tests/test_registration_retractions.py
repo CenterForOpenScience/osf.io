@@ -15,7 +15,7 @@ from modularodm.exceptions import ValidationValueError
 from framework.auth import Auth
 from framework.exceptions import PermissionsError
 from website.exceptions import (
-    InvalidRetractionApprovalToken, InvalidRetractionDisapprovalToken,
+    InvalidSanctionApprovalToken, InvalidSanctionRejectionToken,
     NodeStateError,
 )
 from website.models import Retraction
@@ -159,12 +159,12 @@ class RegistrationRetractionModelsTestCase(OsfTestCase):
         assert_equal(self.registration.embargo.state, Retraction.CANCELLED)
 
     # Retraction#approve_retraction_tests
-    def test_invalid_approval_token_raises_InvalidRetractionApprovalToken(self):
+    def test_invalid_approval_token_raises_InvalidSanctionApprovalToken(self):
         self.registration.retract_registration(self.user)
         self.registration.save()
         assert_true(self.registration.pending_retraction)
 
-        with assert_raises(InvalidRetractionApprovalToken):
+        with assert_raises(InvalidSanctionApprovalToken):
             self.registration.retraction.approve_retraction(self.user, fake.sentence())
         assert_true(self.registration.pending_retraction)
         assert_false(self.registration.is_retracted)
@@ -306,12 +306,12 @@ class RegistrationRetractionModelsTestCase(OsfTestCase):
         assert_equal(num_of_approvals, 1)
 
     # Retraction#disapprove_retraction tests
-    def test_invalid_disapproval_token_raises_InvalidRetractionDisapprovalToken(self):
+    def test_invalid_disapproval_token_raises_InvalidSanctionRejectionToken(self):
         self.registration.retract_registration(self.user)
         self.registration.save()
         assert_true(self.registration.pending_retraction)
 
-        with assert_raises(InvalidRetractionDisapprovalToken):
+        with assert_raises(InvalidSanctionRejectionToken):
             self.registration.retraction.disapprove_retraction(self.user, fake.sentence())
         assert_true(self.registration.pending_retraction)
         assert_false(self.registration.is_retracted)
