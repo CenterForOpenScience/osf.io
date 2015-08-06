@@ -66,7 +66,7 @@
                     type="button"
                     class="btn btn-default"
                     data-bind="click: cancel"
-                >Cancel</button>
+                >Discard Changes</button>
 
             <button
                     type="submit"
