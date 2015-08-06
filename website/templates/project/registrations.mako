@@ -98,14 +98,16 @@
                     <button class="btn btn-danger"
                             data-bind="click: $root.deleteDraft"><i style="margin-right: 5px;" class="fa fa-times"></i>Delete</button>
                   </div>
+                  <!--
                   <div class="col-md-1">
-                    <!-- <a class="btn btn-success" data-bind="attr.href: urls.register_page, -->
-                    <!--                                       tooltip: { -->
-                    <!--                                         placement: top, -->
-                    <!--                                         title: isApproved ? 'Finialize this draft' : 'This draft must be approved before it can be registered' -->
-                    <!--                                       }, -->
-                    <!--                                       css: {'disabled': !isApproved}">Register</a> -->
+                     <a class="btn btn-success" data-bind="attr.href: urls.register_page,
+                                                           tooltip: {
+                                                             placement: top,
+                                                             title: isApproved ? 'Finialize this draft' : 'This draft must be approved before it can be registered'
+                                                           },
+                                                           css: {'disabled': !isApproved}">Register</a>
                   </div>
+                  -->
                 </div>
               </h4>
             </li>
