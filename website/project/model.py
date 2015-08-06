@@ -1156,8 +1156,8 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
 
         # set attributes which may NOT be overridden by `changes`
         new.creator = auth.user
-        new.add_contributor(contributor=auth.user, permissions=CREATOR_PERMISSIONS, log=False, save=False)
         new.template_node = self
+        new.add_contributor(contributor=auth.user, permissions=CREATOR_PERMISSIONS, log=False, save=False)
         new.is_fork = False
         new.is_registration = False
         new.piwik_site_id = None
@@ -2306,7 +2306,8 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
             if save:
                 self.save()
 
-            project_signals.contributor_added.send(self, contributor=contributor, auth=auth)
+            project_signals.contributor_added.send(self, contributor=contributor)
+
             return True
 
         #Permissions must be overridden if changed when contributor is added to parent he/she is already on a child of.

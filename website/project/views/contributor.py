@@ -28,7 +28,7 @@ from website.models import Node
 from website.profile import utils
 from website.project.model import has_anonymous_link
 from website.util import web_url_for, is_json_request
-from website.project.signals import unreg_contributor_added
+from website.project.signals import unreg_contributor_added, contributor_added
 from website.util.permissions import expand_permissions, ADMIN
 from website.project.decorators import (must_have_permission, must_be_valid_project,
         must_not_be_registration, must_be_contributor_or_public, must_be_contributor)
@@ -347,8 +347,9 @@ def project_contributors_post(auth, node, **kwargs):
     node.add_contributors(contributors=contribs, auth=auth)
     node.save()
 
-    # Disconnect listener to avoid multiple invite emails
+    # Disconnect listeners to avoid multiple invite or notification emails
     unreg_contributor_added.disconnect(finalize_invitation)
+    contributor_added.disconnect(notify_added_contributor)
 
     for child_id in node_ids:
         child = Node.load(child_id)
@@ -358,8 +359,9 @@ def project_contributors_post(auth, node, **kwargs):
         )
         child.add_contributors(contributors=child_contribs, auth=auth)
         child.save()
-    # Reconnect listener
+    # Reconnect listeners
     unreg_contributor_added.connect(finalize_invitation)
+    contributor_added.connect(notify_added_contributor)
     return {'status': 'success'}, 201
 
 
@@ -517,6 +519,33 @@ def send_claim_email(email, user, node, notify=True, throttle=24 * 3600):
         fullname=unclaimed_record['name']
     )
     return to_addr
+
+
+@contributor_added.connect
+def notify_added_contributor(node, contributor, throttle=None):
+    throttle = throttle or settings.CONTRIBUTOR_ADDED_EMAIL_THROTTLE
+
+    # Exclude forks and templates because the user forking/templating the project
+    # gets added via 'add_contributor' but does not need to get notified
+    if contributor.is_registered and not node.template_node and not node.is_fork:
+        contributor_record = contributor.contributor_added_email_records.get(node._id, {})
+        if contributor_record:
+            timestamp = contributor_record.get('last_sent', None)
+            if timestamp:
+                if not throttle_period_expired(timestamp, throttle):
+                    return
+        else:
+            contributor.contributor_added_email_records[node._id] = {}
+
+        mails.send_mail(
+            contributor.username,
+            mails.CONTRIBUTOR_ADDED,
+            user=contributor,
+            node=node
+        )
+
+        contributor.contributor_added_email_records[node._id]['last_sent'] = get_timestamp()
+        contributor.save()
 
 
 def verify_claim_token(user, token, pid):
