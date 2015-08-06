@@ -43,7 +43,6 @@ from website.addons.wiki.exceptions import (
     PageConflictError,
     PageNotFoundError,
 )
-from website.archiver import utils as archiver_utils
 
 from tests.base import OsfTestCase, Guid, fake, capture_signals
 from tests.factories import (
@@ -51,7 +50,7 @@ from tests.factories import (
     ProjectFactory, NodeLogFactory, WatchConfigFactory,
     NodeWikiFactory, RegistrationFactory, UnregUserFactory,
     ProjectWithAddonFactory, UnconfirmedUserFactory, CommentFactory, PrivateLinkFactory,
-    AuthUserFactory, DashboardFactory, FolderFactory
+    AuthUserFactory, DashboardFactory, FolderFactory, DraftRegistrationFactory
 )
 from tests.test_features import requires_piwik
 
@@ -3789,6 +3788,27 @@ class TestDraftRegistration(OsfTestCase):
             }
         )
         self.draft.save()
+
+    def test_factory(self):
+        draft = DraftRegistrationFactory()
+        assert_is_not_none(draft.branched_from)
+        assert_is_not_none(draft.initiator)
+        assert_is_not_none(draft.registration_schema)
+
+        user = AuthUserFactory()
+        draft = DraftRegistrationFactory(initiator=user)
+        assert_equal(draft.initiator, user)
+
+        node = ProjectFactory()
+        draft = DraftRegistrationFactory(branched_from=node)
+        assert_equal(draft.branched_from, node)
+        assert_equal(draft.initiator, node.creator)
+
+        schema = MetaSchema.find()[1]
+        data = {'some': 'data'}
+        draft = DraftRegistrationFactory(registration_schema=schema, registration_metadata=data)
+        assert_equal(draft.registration_schema, schema)
+        assert_equal(draft.registration_metadata, data)
 
     @mock.patch('website.project.model.Node.register_node')
     def test_register(self, mock_register_node):

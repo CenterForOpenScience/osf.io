@@ -492,16 +492,16 @@ class DraftRegistrationFactory(ModularOdmFactory):
     @classmethod
     def _create(cls, *args, **kwargs):
         branched_from = kwargs.get('branched_from')
-        initiated_by = kwargs.get('initiated_by')
+        initiator = kwargs.get('initiator')
         registration_schema = kwargs.get('registration_schema')
         registration_metadata = kwargs.get('registration_metadata')
         if not branched_from:
             project_params = {}
-            if initiated_by:
-                project_params['creator'] = initiated_by
+            if initiator:
+                project_params['creator'] = initiator
             branched_from = ProjectFactory(**project_params)
-        initiated_by = branched_from.creator
+        initiator = branched_from.creator
         registration_schema = registration_schema or MetaSchema.find()[0]
         registration_metadata = registration_metadata or {}
-        draft = branched_from.create_draft_registration(initiated_by, registration_schema, registration_metadata, save=True)
+        draft = branched_from.create_draft_registration(initiator, registration_schema, registration_metadata, save=True)
         return draft
