@@ -199,7 +199,7 @@ Stats.view = function (ctrl) {
         m('.row', ctrl.vm.showStats ? [
             m('.col-md-12', [
                 m('.row', m('.col-md-12', [
-                    m('.row', (ctrl.vm.statsData && ctrl.vm.count > 0) ? [
+                    m('.row', (ctrl.vm.statsData) ? [
                         m('.col-sm-3', (ctrl.vm.statsData.charts.shareDonutGraph) ? [ctrl.drawGraph('shareDonutGraph', donutGraph)] : []),
                         m('.col-sm-9', (ctrl.vm.statsData.charts.shareTimeGraph) ? [ctrl.drawGraph('shareTimeGraph', timeGraph)] : [])
                     ] : [])
