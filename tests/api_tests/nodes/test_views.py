@@ -1290,7 +1290,7 @@ class TestDeleteNodePointer(ApiTestCase):
         self.public_pointer = self.public_project.add_pointer(self.public_pointer_project,
                                                               auth=Auth(self.user),
                                                               save=True)
-        self.public_url = '/{}nodes/{}/pointers/{}'.format(API_BASE, self.public_project._id, self.public_pointer._id)
+        self.public_url = '/{}nodes/{}/pointers/{}/'.format(API_BASE, self.public_project._id, self.public_pointer._id)
 
     def test_deletes_public_node_pointer_logged_out(self):
         res = self.app.delete(self.public_url, expect_errors=True)
