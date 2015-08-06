@@ -48,10 +48,10 @@ class NodeSerializer(JSONAPISerializer):
     #         'self': Link('nodes:node-detail', kwargs={'node_id': '<parent_id>'})
     #     }
     # })
-    children = HyperLinkedIdentityFieldWithMeta(view_name='nodes:node-children', lookup_field='pk', lookup_url_kwarg='node_id', count='get_children_count')
-    contributors = HyperLinkedIdentityFieldWithMeta(view_name='nodes:node-contributors', lookup_field='pk', lookup_url_kwarg='node_id', count='get_contributors_count')
+    children = HyperLinkedIdentityFieldWithMeta(view_name='nodes:node-children', lookup_field='pk', lookup_url_kwarg='node_id', count='get_node_count')
+    contributors = HyperLinkedIdentityFieldWithMeta(view_name='nodes:node-contributors', lookup_field='pk', lookup_url_kwarg='node_id', count='get_contrib_count')
     pointers = HyperLinkedIdentityFieldWithMeta(view_name='nodes:node-pointers', lookup_field='pk', lookup_url_kwarg='node_id', count='get_pointers_count')
-    registrations = HyperLinkedIdentityFieldWithMeta(view_name='nodes:node-registrations', lookup_field='pk', lookup_url_kwarg='node_id', count='get_registrations_count')
+    registrations = HyperLinkedIdentityFieldWithMeta(view_name='nodes:node-registrations', lookup_field='pk', lookup_url_kwarg='node_id', count='get_registration_count')
     files = HyperLinkedIdentityFieldWithMeta(view_name='nodes:node-files', lookup_field='pk', lookup_url_kwarg='node_id')
     parent = HyperLinkedIdentityFieldWithMeta(view_name='nodes:node-detail', lookup_field='parent_id', lookup_url_kwarg='node_id')
     # children_count = ser.SerializerMethodField()
@@ -92,15 +92,15 @@ class NodeSerializer(JSONAPISerializer):
             auth = Auth(user)
         return auth
 
-    def get_children_count(self, obj):
+    def get_node_count(self, obj):
         auth = self.get_user_auth(self.context['request'])
         nodes = [node for node in obj.nodes if node.can_view(auth) and node.primary]
         return len(nodes)
 
-    def get_contributors_count(self, obj):
+    def get_contrib_count(self, obj):
         return len(obj.contributors)
 
-    def get_registrations_count(self, obj):
+    def get_registration_count(self, obj):
         auth = self.get_user_auth(self.context['request'])
         registrations = [node for node in obj.node__registrations if node.can_view(auth)]
         return len(registrations)
