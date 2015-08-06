@@ -53,7 +53,7 @@ from website.util.permissions import CREATOR_PERMISSIONS
 from website.project.metadata.schemas import OSF_META_SCHEMAS
 from website.util.permissions import DEFAULT_CONTRIBUTOR_PERMISSIONS
 from website.project import signals as project_signals
-from website.project.mailing_list import update_list
+from website.project import mailing_list
 
 html_parser = HTMLParser()
 
@@ -606,7 +606,8 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
     # TODO: Add validator
     comment_level = fields.StringField(default='private')
 
-    discussions = fields.ForeignField('MailingList', backref='node')
+    mailing_enabled = fields.BooleanField(default=False, index=True)
+    mailing_unsubs = fields.ForeignField('user', list=True)
 
     wiki_pages_current = fields.DictionaryField()
     wiki_pages_versions = fields.DictionaryField()
@@ -724,6 +725,15 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
     def ids_above(self):
         parents = self.parents
         return {p._id for p in parents}
+
+    @property
+    def mailing_params(self):
+        return {
+            'node_id': self._id,
+            'url': self.absolute_url,
+            'contributors': [user.email for user in self.contributors],
+            'unsubs': [user.email for user in self.mailing_unsubs]
+        }
 
     def can_edit(self, auth=None, user=None):
         """Return if a user is authorized to edit this node.
@@ -1063,8 +1073,8 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
             if existing_dashboards.count() > 0:
                 raise NodeStateError("Only one dashboard allowed per user.")
 
-        if first_save and not self.discussions:
-            self.discussions = MailingList.new_saved()
+        if not (getattr(self, 'parent', True) or self.is_registration):
+            self.mailing_enabled = True
 
         is_original = not self.is_registration and not self.is_fork
         if 'suppress_log' in kwargs.keys():
@@ -1075,11 +1085,11 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
 
         saved_fields = super(Node, self).save(*args, **kwargs)
 
-        if not self.is_registration and self.discussions:
+        if self.mailing_enabled:
             if first_save:
-                self.discussions.set_node(self)
+                mailing_list.create_list(title=self.title, **self.mailing_params)
             elif 'contributors' in saved_fields:
-                self.discussions.match_members(self.contributors)
+                mailing_list.match_members(**self.mailing_params)
 
         if first_save and is_original and not suppress_log:
             # TODO: This logic also exists in self.use_as_template()
@@ -1175,8 +1185,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         new.is_fork = False
         new.is_registration = False
         new.piwik_site_id = None
-
-        new.discussions = MailingList.new_saved(is_enabled=False if new.is_folder else top_level)
+        new.mailing_enabled = False if new.is_folder else top_level
 
         # If that title hasn't been changed, apply the default prefix (once)
         if (new.title == self.title
@@ -1502,7 +1511,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
 
         original_title = self.title
         self.title = title
-        self.discussions.update_title(title, save=True)
+        mailing_list.update_title(self._id, title)
         self.add_log(
             action=NodeLog.EDITED_TITLE,
             params={
@@ -1576,8 +1585,9 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         if not self.can_edit(auth):
             raise PermissionsError('{0!r} does not have permission to modify this {1}'.format(auth.user, self.category or 'node'))
 
-        if self.discussions:
-            self.discussions.disable(deleted=True, save=True)
+        if self.mailing_enabled:
+            self.mailing_enabled = False
+            mailing_list.delete_list(self._id)
 
         #if this is a folder, remove all the folders that this is pointing at.
         if self.is_folder:
@@ -1674,12 +1684,10 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         forked.forked_from = original
         forked.creator = user
         forked.piwik_site_id = None
+        forked.mailing_enabled = False if forked.is_folder else top_level
 
         # Forks default to private status
         forked.is_public = False
-
-        # Fork needs new email discussions list
-        forked.discussions = MailingList.new_saved(is_enabled=False if forked.is_folder else top_level)
 
         # Clear permissions before adding users
         forked.permissions = {}
@@ -1763,7 +1771,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         registered.logs = self.logs
         registered.tags = self.tags
         registered.piwik_site_id = None
-        registered.discussions = None
+        registered.mailing_enabled = False
 
         registered.save()
 
@@ -2809,126 +2817,6 @@ class WatchConfig(StoredObject):
 
     def __repr__(self):
         return '<WatchConfig(node="{self.node}")>'.format(self=self)
-
-
-class MailingList(StoredObject):
-    """Discussions mailing list object for projects and components"""
-
-    _id = fields.StringField(primary=True, default=lambda: str(ObjectId()))
-    changed = fields.BooleanField(default=False)
-
-    node_id = fields.StringField()
-    node_title = fields.StringField()
-    node_deleted = fields.BooleanField(default=False)
-
-    is_enabled = fields.BooleanField(default=False)
-
-    mailing_info = fields.DictionaryField()
-
-    @classmethod
-    def new_saved(cls, **kwargs):
-        """Creates a new mailing list and saves it so that it can be an attribute of a node"""
-        new_list = cls(**kwargs)
-        new_list.save()
-
-        return new_list
-
-    def set_node(self, node, save=True):
-        """Sets object variables to match node and allows it to start updating Mailgun"""
-        self.node_id = node._id
-        self.node_title = node.title
-        self.match_members(node.contributors, save=False)
-
-        try:
-            self.is_enabled = not node.parent
-        except AttributeError:
-            pass
-
-        if save:
-            self.save()
-
-    def match_members(self, node_contributors, save=True):
-        """ Matches list members with parent node
-        :param node_contributors: List of contributors on the node
-        :param save: Automatically saves if True
-        """
-        new_info = {}
-        for user in node_contributors:
-            new_info[user._id] = self.mailing_info.get(user._id) or {
-                'address': user.email,
-                'subscribed': True
-            }
-        self.mailing_info = new_info
-
-        if save:
-            self.save()
-
-    def add_member(self, user):
-        if user.is_registered:
-            self.mailing_info[user._id] = {
-                'address': user.email,
-                'subscribed': True,
-            }
-
-    def remove_member(self, user):
-        del self.mailing_info[user._id]
-
-    @property
-    def emails(self):
-        return set([info['address'] for info in self.mailing_info.values()])
-
-    @property
-    def subscriptions(self):
-        return set([info['address'] for info in self.mailing_info.values() if info['subscribed']])
-
-    def enable(self, save=False):
-        if self.node_deleted:
-            raise NodeStateError('Deleted nodes cannot have active mailing lists')
-
-        self.is_enabled = True
-
-        if save:
-            self.save()
-
-    def disable(self, deleted=False, save=False):
-        self.is_enabled = False
-
-        if deleted:
-            self.node_deleted = True
-
-        if save:
-            self.save()
-
-    def subscribe_member(self, user_id, save=False):
-        self.mailing_info[user_id]['subscribed'] = True
-
-        if save:
-            self.save()
-
-    def unsubscribe_member(self, user_id, save=False):
-        self.mailing_info[user_id]['subscribed'] = False
-
-        if save:
-            self.save()
-
-    def update_email(self, user_id, new_email, save=False):
-        self.mailing_info[user_id]['address'] = new_email
-
-        if save:
-            self.save()
-
-    def update_title(self, new_title, save=False):
-        self.node_title = new_title
-
-        if save:
-            self.save()
-
-    def save(self, *args, **kwargs):
-        if self.node_id:
-            update_list(self.node_id, self.node_title, self.is_enabled, self.emails, self.subscriptions)
-
-        saved_fields = super(MailingList, self).save(*args, **kwargs)
-        return saved_fields
 
 
 class PrivateLink(StoredObject):

@@ -681,8 +681,6 @@ def _view_project(node, auth, primary=False):
     """
     user = auth.user
 
-    discussions = node.discussions
-
     parent = node.parent_node
     if user:
         dashboard = find_dashboard(user)
@@ -790,8 +788,8 @@ def _view_project(node, auth, primary=False):
             'dashboard_id': dashboard_id,
         },
         'discussions': {
-            'enabled': discussions.is_enabled if discussions else False,
-            'user_subscribed': (user.email if user else '') in discussions.subscriptions if discussions else False
+            'enabled': node.mailing_enabled,
+            'user_subscribed': user.email not in node.mailing_unsubs if user else False
         },
         'badges': _get_badge(user),
         # TODO: Namespace with nested dicts
