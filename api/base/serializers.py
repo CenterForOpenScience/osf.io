@@ -58,22 +58,34 @@ class LinksField(ser.Field):
         self.links = links
 
     def get_attribute(self, obj):
-        obj.nerd = lambda:None
-        obj.nerd._id = "9000"
+
         # We pass the object instance onto `to_representation`,
         # not just the field attribute.
         return obj
 
     def to_representation(self, obj):
-        obj.nerd = lambda:None
-        obj.nerd._id = "9000"
+
         ret = _recursive_apply(self.links, _url_val, obj=obj, serializer=self.parent)
         if hasattr(obj, 'get_absolute_url'):
             ret['self'] = obj.get_absolute_url()
         return ret
 
-""" regular expression to extract the content inside of '<>' e.g., '<blarg>' would store 'blarg' """
+""" regular expression to extract the content inside of ``<>`` e.g., attr string ``<user._id>`` would store ``user._id`` """
 _tpl_pattern = re.compile(r'\s*<\s*(\S*)\s*>\s*')
+
+def _get_deep_attr(obj, attr_name, default=None):
+    """ Takes object and attr_name string
+    Returns deepest attr value or a default
+    e.g., _get_deep_attr(obj, 'user._id') where obj.user._id = 1 would return 1"""
+    inner_obj = obj
+    stack = attr_name.split('.')
+
+    for attr in stack:
+        try:
+            inner_obj = getattr(inner_obj, attr)
+        except AttributeError:
+            return default
+    return inner_obj
 
 
 def _get_attr_name_from_tpl(attr_tpl):
@@ -85,12 +97,10 @@ def _get_attr_name_from_tpl(attr_tpl):
 
 
 def _get_attr_from_tpl(attr_tpl, obj):
-    """Takes attr_tpl (e.g.,) """
-    obj.nerd = lambda:None
-    obj.nerd._id = "9000"
+    """Takes attr_tpl (e.g., ``<user._id``) and obj and returns attr value"""
     attr_name = _get_attr_name_from_tpl(str(attr_tpl))
     if attr_name:    
-        attribute_value = reduce(getattr, attr_name.split(".",), obj, ser.empty)
+        attribute_value = _get_deep_attr(obj, attr_name, default=ser.empty)
         try:
             if attribute_value is not ser.empty:
                 return attribute_value
