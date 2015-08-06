@@ -80,7 +80,7 @@
                         type="button"
                         class="btn btn-default"
                         data-bind="click: cancel"
-                    >Discard Changes</button>
+                    >Discard changes</button>
 
                 <button
                         type="submit"
