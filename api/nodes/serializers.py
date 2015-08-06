@@ -53,8 +53,8 @@ class NodeSerializer(JSONAPISerializer):
     contributors = HyperLinkedIdentityFieldWithMeta(view_name='nodes:node-contributors', lookup_field='pk', lookup_url_kwarg='node_id', count='get_contrib_count')
     pointers = HyperLinkedIdentityFieldWithMeta(view_name='nodes:node-pointers', lookup_field='pk', lookup_url_kwarg='node_id', count='get_pointers_count')
     registrations = HyperLinkedIdentityFieldWithMeta(view_name='nodes:node-registrations', lookup_field='pk', lookup_url_kwarg='node_id', count='get_registration_count')
-    files = ser.HyperlinkedIdentityField(view_name='nodes:node-files', lookup_field='pk', lookup_url_kwarg='node_id')
-    parent = ser.HyperlinkedIdentityField(view_name='nodes:node-detail', lookup_field='parent_id', lookup_url_kwarg='node_id')
+    files = HyperLinkedIdentityFieldWithMeta(view_name='nodes:node-files', lookup_field='pk', lookup_url_kwarg='node_id')
+    parent = HyperLinkedIdentityFieldWithMeta(view_name='nodes:node-detail', lookup_field='parent_id', lookup_url_kwarg='node_id')
 
     # TODO: When we have 'admin' permissions, make this writable for admins
     public = ser.BooleanField(source='is_public', read_only=True,

@@ -46,6 +46,23 @@ class HyperLinkedIdentityFieldWithMeta(ser.HyperlinkedIdentityField):
         # not just the field attribute.
         return obj
 
+    def get_url(self, obj, view_name, request, format):
+        """
+        Given an object, return the URL that hyperlinks to the object.
+
+        May raise a `NoReverseMatch` if the `view_name` and `lookup_field`
+        attributes are not configured to correctly match the URL conf.
+        """
+        # Unsaved objects will not yet have a valid URL.
+        if obj.pk is None:
+            return None
+
+        lookup_value = getattr(obj, self.lookup_field)
+        if lookup_value is None:
+            return None
+        kwargs = {self.lookup_url_kwarg: lookup_value}
+        return self.reverse(view_name, kwargs=kwargs, request=request, format=format)
+
     def to_representation(self, value):
         request = self.context.get('request', None)
         format = self.context.get('format', None)
