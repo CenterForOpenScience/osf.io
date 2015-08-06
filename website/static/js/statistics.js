@@ -17,23 +17,27 @@ var $osf = require('js/osfHelpers');
 var ctx = window.contextVars;
 
 var guidStatsItem = function(guid, title, data) {
-    this.guid = guid;
-    this.title = title;
-    this.data = data;
-    this.total = ko.computed(function(){
+    var self = this;
+    self.guid = guid;
+    self.title = title;
+    self.data = data;
+    self.total = ko.computed(function(){
         var total = 0;
-        for(var i=0; i<this.data.length; i++){
-            total  += this.data[i];
+        for(var i=0; i<self.data.length; i++){
+            total  += self.data[i];
         }
 
         return total;
-    }, this);
+    });
 
 };
 
 var StatisticsViewModel = function() {
 
     var self = this;
+
+    var childrenRenderLimit = 0;
+    var filesRenderLimit = 0;
 
     self.dates = [];
     self.dataType = ko.observable('Visits');
@@ -61,8 +65,14 @@ var StatisticsViewModel = function() {
     });
 
     self.period = ko.observable('day');
-    self.date = ko.computed(function(date){
 
+    self.pikadayDate = ko.observable(moment().format('YYYY-MM-DD'));
+
+    self.date = ko.computed(function() {
+        var endDate = moment(self.pikadayDate());
+        var startDate = moment(endDate).subtract(30, 'days');
+
+        return startDate.format('YYYY-MM-DD') + ',' + endDate.format('YYYY-MM-DD');
     });
 
     self.node = ko.observableArray([]);
@@ -72,6 +82,14 @@ var StatisticsViewModel = function() {
     self.optionsButtonHTML = ko.computed(function(){
         return self.dataType() + ' ' + '<span class="fa fa-caret-down"></span>';
     });
+
+    self.dateButtonHTML = ko.computed(function(){
+        var dates = self.date().split(',');
+        return dates[1] + ' <span class="fa fa-calendar"></span>';
+    });
+
+    self.renderChildren = ko.observableArray();
+    self.renderFiles = ko.observableArray();
 
 
     self.currentPiwikParams = ko.computed(function() {
@@ -85,9 +103,18 @@ var StatisticsViewModel = function() {
     });
 
     var picker = new pikaday({
-        trigger: document.getElementById('datepickerButton'),
+        field: document.getElementById('datePickerField'),
+        trigger: document.getElementById('datePickerButton'),
         onSelect: function(){
-            self.date(picker.toString());
+            self.pikadayDate(picker.toString());
+        }
+    });
+
+    var endPicker = new pikaday({
+        field: document.getElementById('endDatePickerField'),
+        trigger: document.getElementById('datePickerButton'),
+        onSelect: function(){
+            self.pikadayDate(endPicker.toString());
         }
     });
 
@@ -97,11 +124,16 @@ var StatisticsViewModel = function() {
         self.children(self.guidStatsItemize(nodeData['children']));
         self.files(self.guidStatsItemize(fileData['files']));
 
+        self.renderMore('children');
+        self.renderMore();
+
     };
 
     self.guidStatsItemize = function(data) {
         return data.map(function(item) {
             return new guidStatsItem(item.node_id, item.title, self.piwikDataToArray(item.data));
+        }).sort(function(a, b){
+            return b.total() - a.total();
         });
 
     };
@@ -155,7 +187,7 @@ var StatisticsViewModel = function() {
                 x: {
                     type: 'timeseries',
                     tick: {
-                        format: '%b %d %Y',
+                        format: '%Y-%m-%d',
                         culling: {
                             max: 5
                         },
@@ -179,6 +211,63 @@ var StatisticsViewModel = function() {
         });
     };
 
+    self.renderSparkLines = function() {
+        for (var i = 0; i < self.renderChildren().length; i++) {
+            var guidItem = self.renderChildren()[i];
+            var sparkId = '#' + guidItem.guid + 'Spark';
+            $(sparkId).empty();
+        }
+
+        for (var i = 0; i < self.renderFiles().length; i++) {
+            var guidItem = self.renderFiles()[i];
+            var sparkId = '#' + guidItem.guid + 'Spark';
+            $(sparkId).empty();
+        }
+
+        for (var i = 0; i < self.renderChildren().length; i++) {
+            var guidItem = self.renderChildren()[i];
+            var sparkId = '#' + guidItem.guid + 'Spark';
+            $(sparkId).sparkline( guidItem.data,
+            {
+                lineColor: '#204762',
+                fillColor: '#EEEEEE',
+                spotColor: '#337ab7',
+                width: '100%'
+            });
+        }
+
+        for (var i = 0; i < self.renderFiles().length; i++) {
+            var guidItem = self.renderFiles()[i];
+            var sparkId = '#' + guidItem.guid + 'Spark';
+            $(sparkId).sparkline( guidItem.data,
+            {
+                lineColor: '#204762',
+                fillColor: '#EEEEEE',
+                spotColor: '#337ab7',
+                width: '100%'
+            });
+        }
+
+    };
+
+    self.renderMore = function(type) {
+        if(type == 'children'){
+            childrenRenderLimit += 5;
+            if(childrenRenderLimit > self.children().length){
+                self.renderChildren(self.children().slice(0));
+            } else {
+                self.renderChildren(self.children().slice(0, childrenRenderLimit));
+            }
+        } else {
+            filesRenderLimit += 5;
+            if(filesRenderLimit > self.files().length){
+                self.renderFiles(self.files().slice(0));
+            } else {
+                self.renderFiles(self.files().slice(0, filesRenderLimit));
+            }
+        }
+    };
+
     self.changeDataType = function(dataTypeOption) {
         self.dataType(dataTypeOption);
     };
@@ -186,17 +275,18 @@ var StatisticsViewModel = function() {
     self.updateStats = function() {
         self.getData().then(function() {
             self.chart();
+            self.renderSparkLines();
         })
     };
 
-    self.dataType.subscribe(function() {
+    self.currentPiwikParams.subscribe(function() {
         self.updateStats();
     });
 
     //Load initial statistics: Visits
     self.init = function() {
         return self.getData();
-    }
+    };
 
 };
 
@@ -206,6 +296,11 @@ function Statistics(selector) {
     self.viewModel.init().then(function() {
         $osf.applyBindings(self.viewModel, selector);
         self.viewModel.chart();
+        self.viewModel.renderSparkLines();
+        $(window).resize($osf.debounce(function(){
+                self.viewModel.renderSparkLines();
+            }, 100, true));
+
     });
 
 }
