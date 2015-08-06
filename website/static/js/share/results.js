@@ -6,32 +6,28 @@ var m = require('mithril');
 var $osf = require('js/osfHelpers');
 var utils = require('./utils');
 var Results = {
-    controller: function(vm) {
-        var self = this;
-        self.vm = vm;
-        self.vm.resultsLoading = m.prop(false);
-    },
-    view: function(ctrl) {
-        var resultViews = $.map(ctrl.vm.results || [], function(result, i) {
-            return m.component(Result, {result: result, vm: ctrl.vm});
+    view: function(ctrl, params) {
+        var vm = params.vm;
+        var resultViews = $.map(vm.results || [], function(result, i) {
+            return m.component(Result, {result: result, vm: vm});
         });
 
 
 
         var len = 0;
-        if (ctrl.vm.results){
-            len = ctrl.vm.results.length;
+        if (vm.results){
+            len = vm.results.length;
         }
         return m('', [
-            m('.row', m('.col-md-12', (!utils.arrayEqual(resultViews, [])) ? resultViews : (!ctrl.vm.resultsLoading() && (ctrl.vm.results !== null)) ? m('span', {style: {margin: 'auto'}}, 'No results for this query') : [])),
-            m('.row', m('.col-md-12', ctrl.vm.resultsLoading() ? utils.loadingIcon : [])),
+            m('.row', m('.col-md-12', (!utils.arrayEqual(resultViews, [])) ? resultViews : (!vm.resultsLoading() && (vm.results !== null)) ? m('span', {style: {margin: 'auto'}}, 'No results for this query') : [])),
+            m('.row', m('.col-md-12', vm.resultsLoading() ? utils.loadingIcon : [])),
             m('.row', m('.col-md-12', m('div', {style: {display: 'block', margin: 'auto', 'text-align': 'center'}},
-                len > 0 && len < ctrl.vm.count ?
+                len > 0 && len < vm.count ?
                 m('a.btn.btn-md.btn-default', {
                     onclick: function(){
-                        utils.loadMore(ctrl.vm)
+                        utils.loadMore(vm)
                             .then(function(data) {
-                                utils.updateVM(ctrl.vm, data);
+                                utils.updateVM(vm, data);
                             });
                     }
                 }, 'More') : [])
