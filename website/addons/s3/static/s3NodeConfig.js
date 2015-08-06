@@ -354,7 +354,7 @@ ViewModel.prototype.openCreateBucket = function() {
                                 }
                             },
                             buttons: {
-                                success: {
+                                confirm: {
                                     label: 'Try again'
                                 }
                             }
