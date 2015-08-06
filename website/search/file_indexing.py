@@ -3,6 +3,7 @@ import logging
 from framework.sentry import log_exception
 from website import search
 from website.search import tasks
+from website.search import file_util
 
 
 logger = logging.getLogger(__name__)
@@ -18,6 +19,7 @@ def except_search_unavailable(func):
     return wrapper
 
 
+@file_util.require_file_indexing
 @except_search_unavailable
 def update_search_files(node):
     """Update all files associated with node based on node's privacy.
@@ -26,11 +28,13 @@ def update_search_files(node):
         tasks.update_all_files_task(node=node)
 
 
+@file_util.require_file_indexing
 @except_search_unavailable
 def delete_search_files(node):
     tasks.delete_all_files_task(node=node)
 
 
+@file_util.require_file_indexing
 @except_search_unavailable
 def update_search_file(file_node):
     """ Update a single file in the node based on the action given.
@@ -39,6 +43,7 @@ def update_search_file(file_node):
         tasks.update_file_task(file_node=file_node)
 
 
+@file_util.require_file_indexing
 @except_search_unavailable
 def delete_search_file(file_node):
     tasks.delete_file_task(file_node=file_node)
