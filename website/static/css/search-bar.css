@@ -18,11 +18,7 @@
     box-shadow: 0 0 9px -2px #464545;
     left: 0;
     top: 50px;
-<<<<<<< HEAD
-    z-index: 1028;
-=======
     z-index: 1030; /* Should not less than 1030 */
->>>>>>> 0fea25a5a49341c6f21cb7a46c4b10ca1cabeca2
 }
 
 .osf-search-input {

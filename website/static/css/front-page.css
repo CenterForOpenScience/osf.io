@@ -82,13 +82,10 @@ h6 {
     font-size: 3.5em;
     margin-bottom: -20px;
 }
-<<<<<<< HEAD
-=======
 #home-hero h1, #home-hero h3 {
     z-index: 9;
     position: relative;
 }
->>>>>>> 0fea25a5a49341c6f21cb7a46c4b10ca1cabeca2
 #home-hero h2 {
     margin-top: -50px;
     background-color: #ffffff;
@@ -131,13 +128,10 @@ h6 {
 #hero-signup a:hover {
     text-decoration: none;
 }
-<<<<<<< HEAD
-=======
 #signUpScope button, #signUpScope input, #signUpScope .help-block {
     z-index: 9;
     position: relative;
 }
->>>>>>> 0fea25a5a49341c6f21cb7a46c4b10ca1cabeca2
 #screenshot {
     margin-top: -10%;
 }
@@ -189,18 +183,12 @@ h6 {
 #logo .circle:hover:after {
     bottom: -5px;
 }
-<<<<<<< HEAD
-#logo.off {
-    transform: rotate(180deg);
-    -webkit-transform: rotate(180deg);
-=======
 
 #logo.off {
     -webkit-transform: rotate(180deg);
     -ms-transform: rotate(180deg);
     -o-transform: rotate(180deg);
     transform: rotate(180deg);
->>>>>>> 0fea25a5a49341c6f21cb7a46c4b10ca1cabeca2
 }
 #logo.off .circle:before {
     top: -200px;
@@ -211,28 +199,18 @@ h6 {
     opacity: 0;
 }
 #logo #circle-1 {
-<<<<<<< HEAD
-    transform: rotate(0deg);
-    -webkit-transform: rotate(0deg);
-=======
     -webkit-transform: rotate(0deg);
     -ms-transform: rotate(0deg);
     -o-transform: rotate(0deg);
     transform: rotate(0deg);
->>>>>>> 0fea25a5a49341c6f21cb7a46c4b10ca1cabeca2
     left: 75px;
     top: 0;
 }
 #logo #circle-2 {
-<<<<<<< HEAD
-    transform: rotate(45deg);
-    -webkit-transform: rotate(45deg);
-=======
     -webkit-transform: rotate(45deg);
     -ms-transform: rotate(45deg);
     -o-transform: rotate(45deg);
     transform: rotate(45deg);
->>>>>>> 0fea25a5a49341c6f21cb7a46c4b10ca1cabeca2
     left: 128px;
     top: 22px;
 }
@@ -240,28 +218,18 @@ h6 {
     z-index: -1;
 }
 #logo #circle-3 {
-<<<<<<< HEAD
-    transform: rotate(90deg);
-    -webkit-transform: rotate(90deg);
-=======
     -webkit-transform: rotate(90deg);
     -ms-transform: rotate(90deg);
     -o-transform: rotate(90deg);
     transform: rotate(90deg);
->>>>>>> 0fea25a5a49341c6f21cb7a46c4b10ca1cabeca2
     left: 150px;
     top: 75px;
 }
 #logo #circle-4 {
-<<<<<<< HEAD
-    transform: rotate(135deg);
-    -webkit-transform: rotate(135deg);
-=======
     -webkit-transform: rotate(135deg);
     -ms-transform: rotate(135deg);
     -o-transform: rotate(135deg);
     transform: rotate(135deg);
->>>>>>> 0fea25a5a49341c6f21cb7a46c4b10ca1cabeca2
     left: 128px;
     top: 128px;
 }
@@ -269,28 +237,18 @@ h6 {
     z-index: -1;
 }
 #logo #circle-5 {
-<<<<<<< HEAD
-    transform: rotate(180deg);
-    -webkit-transform: rotate(180deg);
-=======
     -webkit-transform: rotate(180deg);
     -ms-transform: rotate(180deg);
     -o-transform: rotate(180deg);
     transform: rotate(180deg);
->>>>>>> 0fea25a5a49341c6f21cb7a46c4b10ca1cabeca2
     left: 75px;
     top: 150px;
 }
 #logo #circle-6 {
-<<<<<<< HEAD
-    transform: rotate(225deg);
-    -webkit-transform: rotate(225deg);
-=======
     -webkit-transform: rotate(225deg);
     -ms-transform: rotate(225deg);
     -o-transform: rotate(225deg);
     transform: rotate(225deg);
->>>>>>> 0fea25a5a49341c6f21cb7a46c4b10ca1cabeca2
     left: 22px;
     top: 128px;
 }
@@ -298,28 +256,18 @@ h6 {
     z-index: -1;
 }
 #logo #circle-7 {
-<<<<<<< HEAD
-    transform: rotate(270deg);
-    -webkit-transform: rotate(270deg);
-=======
     -webkit-transform: rotate(270deg);
     -ms-transform: rotate(270deg);
     -o-transform: rotate(270deg);
     transform: rotate(270deg);
->>>>>>> 0fea25a5a49341c6f21cb7a46c4b10ca1cabeca2
     left: 0;
     top: 75px;
 }
 #logo #circle-8 {
-<<<<<<< HEAD
-    transform: rotate(315deg);
-    -webkit-transform: rotate(315deg);
-=======
     -webkit-transform: rotate(315deg);
     -ms-transform: rotate(315deg);
     -o-transform: rotate(315deg);
     transform: rotate(315deg);
->>>>>>> 0fea25a5a49341c6f21cb7a46c4b10ca1cabeca2
     left: 22px;
     top: 22px;
 }
@@ -327,11 +275,7 @@ h6 {
     z-index: -1;
 }
 .student-image {
-<<<<<<< HEAD
-    width: 90%;
-=======
     width: 100%;
->>>>>>> 0fea25a5a49341c6f21cb7a46c4b10ca1cabeca2
     padding-bottom: 100%;
     background: url("/static/img/front-page/student-1.png") no-repeat center bottom;
     background-size: contain;
@@ -400,20 +344,12 @@ h6 {
     margin-bottom: 20px;
 }
 .feature-1 .icon {
-<<<<<<< HEAD
-    font-size: 120px;
-=======
     font-size: 100px;
->>>>>>> 0fea25a5a49341c6f21cb7a46c4b10ca1cabeca2
     color: #e4e4e4;
     border-radius: 100px;
     background-color: #ffffff;
     position: relative;
-<<<<<<< HEAD
-    left: -74px;
-=======
     left: -34px;
->>>>>>> 0fea25a5a49341c6f21cb7a46c4b10ca1cabeca2
     top: 14px;
     overflow: hidden;
 }
@@ -529,42 +465,6 @@ h6 {
 footer {
     margin-top: -20px;
 }
-<<<<<<< HEAD
-@media (max-width: 767px) {
-    #hero-signup {
-        width: 100%;
-    }
-    .student-image {
-        margin: 20px 0 -25px 0;
-        margin-left: 5%;
-    }
-    .student-image .quote {
-        bottom: 0;
-    }
-    .student-image .main {
-        font-size: 1.0em !important;
-    }
-    .sign-in .btn-group {
-        width: 90%;
-        padding-left: 5%;
-    }
-    .sign-in .btn {
-        width: 100%;
-        margin-bottom: 20px;
-    }
-    #menuLogin {
-        padding: 0;
-        width: 100%;
-    }
-    .grey-pullout {
-        padding-bottom: 90px;
-    }
-    #home-hero {
-        height: 900px;
-    }
-}
-@media (min-width: 768px) and (max-width: 991px)  {
-=======
 
 .network-bg {
     background: url("/static/img/front-page/bg-web.png") repeat;
@@ -619,7 +519,6 @@ footer {
     }
 }
 @media (max-width: 991px) {
->>>>>>> 0fea25a5a49341c6f21cb7a46c4b10ca1cabeca2
     .feature-4 .col-md-4:last-child {
         padding-top: 30px;
     }
@@ -640,28 +539,6 @@ footer {
     .integrations img {
         padding: 20px 10% 0 10%;
     }
-<<<<<<< HEAD
-    .feature-1 .icon {
-        font-size: 40px;
-        left: 0;
-        top: 30px;
-    }
-    .student-image {
-        margin: 0 0 125px 0;
-        margin-left: 25%;
-        width: 50%;
-        padding-bottom: 50%;
-        top: 0;
-    }
-    .student-image .quote {
-        top: 170px;
-    }
-    .student-image .main {
-        font-size: 1.0em !important;
-    }
-    #home-hero {
-        padding-top: 35px;
-=======
     .student-image {
         margin: 30px 0 0 0;
         width: 100%;
@@ -672,7 +549,6 @@ footer {
     }
     #hero-signup .icon {
         top: -20px;
->>>>>>> 0fea25a5a49341c6f21cb7a46c4b10ca1cabeca2
     }
     .space-top {
         padding-top: 20px;
@@ -684,34 +560,6 @@ footer {
         padding-bottom: 90px;
     }
 }
-<<<<<<< HEAD
-@media (min-width: 768px) and (max-width: 1199px) {
-    .student-image {
-        top: 0;
-    }
-    .student-image .quote {
-        margin-top: 100px;
-        bottom: -58px;
-    }
-}
-
-@media (min-width: 1200px) {
-    .container {
-        width: 1170px !important;
-    }
-}
-
-.signup-help {
-    background: rgba(255, 255, 255, 0.8);
-    border-radius: 5px;
-}
-
-#signUpScope {
-    position: relative;
-    z-index: 10;
-}
-
-=======
 @media (max-width: 767px) {
     canvas {
         display: none;
@@ -756,7 +604,6 @@ footer {
         clear: left;
     }
 }
->>>>>>> 0fea25a5a49341c6f21cb7a46c4b10ca1cabeca2
 .alert-front {
     border-radius: 0;
     margin-bottom: 0;

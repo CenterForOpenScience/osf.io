@@ -156,12 +156,6 @@ a {
         color: #FFF;
     }
 
-<<<<<<< HEAD
-    .osf-search {
-        z-index: 1028;
-    }
-=======
->>>>>>> 0fea25a5a49341c6f21cb7a46c4b10ca1cabeca2
     #searchControls > .osf-search {
         z-index: 99;
     }
@@ -198,12 +192,6 @@ a {
         margin-left: 0 !important;
         padding-left: 0;
     }
-<<<<<<< HEAD
-    .osf-search {
-        z-index: 1028; /* should be less than 1030 to not cover navbar */
-    }
-=======
->>>>>>> 0fea25a5a49341c6f21cb7a46c4b10ca1cabeca2
 }
 
 @media (min-width: 992px) {
@@ -423,10 +411,6 @@ select {
     word-wrap: normal;
 }
 
-<<<<<<< HEAD
-tr a, b, em {
-    word-break: break-word;
-=======
 .tag:hover
 {
     background-color: #337ab7;
@@ -524,7 +508,6 @@ tr a, b, em {
     border:1px solid transparent;
     border-radius: 5px;
     cursor: pointer;
->>>>>>> 0fea25a5a49341c6f21cb7a46c4b10ca1cabeca2
 }
 
 .btn-link.project-toggle {
@@ -559,9 +542,6 @@ button.close {
     position: relative;
     word-break: break-all;
     word-break: break-word; /* Non standard for webkit*/
-<<<<<<< HEAD
-}
-=======
 }
 
 /* Style for toggle height knockout helper */
@@ -606,4 +586,3 @@ button.close {
     /*  Override z-index here to avoid clashing with navigation elements */
     z-index: 98 !important;
 }
->>>>>>> 0fea25a5a49341c6f21cb7a46c4b10ca1cabeca2
