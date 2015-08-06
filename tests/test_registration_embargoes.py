@@ -28,12 +28,6 @@ class RegistrationEmbargoModelsTestCase(OsfTestCase):
         self.embargo = EmbargoFactory(user=self.user)
         self.valid_embargo_end_date = datetime.datetime.utcnow() + datetime.timedelta(days=3)
 
-    # Validator tests
-    def test_invalid_state_raises_ValidationValueError(self):
-        with assert_raises(ValidationValueError):
-            self.embargo.state = 'not a valid state'
-            self.embargo.save()
-
     # Node#_initiate_embargo tests
     def test__initiate_embargo_saves_embargo(self):
         initial_count = Embargo.find().count()

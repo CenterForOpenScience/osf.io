@@ -1,4 +1,4 @@
-0;95;c# -*- coding: utf-8 -*-
+# -*- coding: utf-8 -*-
 import itertools
 import os
 import re
