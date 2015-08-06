@@ -85,6 +85,14 @@ var ViewModel = function(params) {
     self.toggleSearch = function() {
     };
 
+    self.allCategories = ko.pureComputed(function(){
+        var categoryList = self.categories();
+        if(self.shareCategory()){
+            categoryList.push(self.shareCategory());
+            return categoryList;
+        }
+    });
+
     self.totalCount = ko.pureComputed(function() {
         if (self.categories().length === 0 || self.categories()[0] === undefined) {
             return 0;
@@ -286,10 +294,6 @@ var ViewModel = function(params) {
             $osf.postJSON('/api/v1/share/search/?count&v=1', jsonData).success(function(data) {
                 self.shareCategory(new Category('SHARE', data.count, 'SHARE'));
             });
-
-            if (!(self.shareCategory() in self.categories())){
-                self.categories.push(self.shareCategory());
-            }
 
         }).fail(function(response){
             self.totalResults(0);

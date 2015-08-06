@@ -15,7 +15,7 @@
                     <div class="col-md-3">
                         <div class="row">
                             <div class="col-md-12">
-                                <ul class="nav nav-pills nav-stacked" data-bind="foreach: categories">
+                                <ul class="nav nav-pills nav-stacked" data-bind="foreach: allCategories">
 
                                     <!-- ko if: $parent.category().name === name -->
                                             <li class="active">
