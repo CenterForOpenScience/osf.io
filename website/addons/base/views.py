@@ -286,7 +286,6 @@ def create_waterbutler_log(payload, **kwargs):
         node_addon.create_waterbutler_log(auth, action, metadata)
 
     # file indexing
-    logging.info(payload)
     metadata = payload.get('metadata') or payload['destination']
     name = metadata.get('name') or metadata['path']
     action = payload['action']

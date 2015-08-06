@@ -1,7 +1,6 @@
 import requests
 
 from website import settings
-from website.addons.base import exceptions
 
 INDEXED_TYPES = (
     '.txt',
@@ -47,11 +46,8 @@ def get_file_content(file_node):
 def get_file_size(file_node):
     """ Return the size of the file. """
     file_, _ = file_node.node_settings.find_or_create_file_guid(file_node.path)
-    try:
-        file_.enrich()
-        return file_.size
-    except exceptions.AddonEnrichmentError:
-        return -1  # TODO: have better response to exception
+    file_.enrich()
+    return file_.size
 
 
 def norm_path(path):
