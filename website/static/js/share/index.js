@@ -53,15 +53,15 @@ ShareApp.view = function(ctrl) {
         m('.col-xs-12', [
             SearchBar.view(ctrl.searchBarController),
             Stats.view(ctrl.statsController),
-            ctrl.vm.results !== null ? renderSort(ctrl) : [],
-            m('.row.search-content', [
+            ctrl.vm.results !== null ? m.component(SortBox, {vm: ctrl.vm}): [],
+            ctrl.vm.results !== null ? m('.row.search-content', [
                m('.col-md-2.col-lg-3', [
                     m.component(SideBar, {vm: ctrl.vm})
                 ]),
                 m('.col-md-10.col-lg-9', [
                     m.component(Results, {vm: ctrl.vm})
                 ])
-            ]),
+            ]) : [],
             Footer.view(ctrl.footerController),
         ])
     ]);
@@ -98,7 +98,7 @@ ShareApp.controller = function() {
     }).then(function(data) {
         self.vm.rawNormedLoaded(true);
     }, function(err) {
-        // We expect this error response while the SHARE posgres API 
+        // We expect this error response while the SHARE posgres API
         // is waiting to be put into production. This error response would also happen
         // if the external SHARE postgres API went down for some reason.
     });
@@ -117,28 +117,39 @@ ShareApp.controller = function() {
     });
 };
 
-var renderSort = function(ctrl){
+var SortBox = {
+    view: function(ctrl, params) {
+        var vm = params.vm;
         return m('.btn-group.pull-right', [
             m('button.btn.btn-default.dropdown-toggle', {
                     'data-toggle': 'dropdown',
                     'aria-expanded': 'false'
-                }, ['Sort by: ' + ctrl.vm.sort() + ' ', m('span.caret')]
+                }, ['Sort by: ' + vm.sort() + ' ', m('span.caret')]
             ),
                 m('ul.dropdown-menu', {'role': 'menu'},
-                    $.map(Object.keys(ctrl.vm.sortMap), function(a) {
-                        return m('li',
-                            m('a', {
-                                'href': '#',
-                                onclick: function(event) {
-                                    ctrl.vm.sort(a);
-                                    utils.search(ctrl.vm);
-                                }
-                            }, a)
-                        );
+                    $.map(Object.keys(vm.sortMap), function(a) {
+                        return m.component(SortItem, {vm: vm, item: a});
                     })
                 )
         ]);
-    };
 
+    }
+};
+
+var SortItem = {
+    view: function(ctrl, params) {
+        var vm = params.vm;
+        var item = params.item;
+        return m('li',
+            m('a', {
+                'href': '#',
+                onclick: function(event) {
+                    vm.sort(item);
+                    utils.search(vm);
+                }
+            }, item)
+        );
+    }
+};
 
 module.exports = ShareApp;
