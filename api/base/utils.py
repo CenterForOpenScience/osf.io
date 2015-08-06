@@ -4,6 +4,7 @@ import furl
 
 from modularodm import Q
 from rest_framework.reverse import reverse
+from api.base.exceptions import Gone
 from rest_framework.exceptions import NotFound
 from modularodm.exceptions import NoResultsFound
 
@@ -19,9 +20,15 @@ def absolute_reverse(view_name, query_kwargs=None, args=None, kwargs=None):
     return url
 
 
-def get_object_or_404(model_cls, query_or_pk):
+def get_object_or_error(model_cls, query_or_pk):
+
     if isinstance(query_or_pk, basestring):
         query = Q('_id', 'eq', query_or_pk)
+
+    if getattr(query_or_pk, 'is_deleted', True):
+        raise Gone
+    if getattr(query_or_pk, 'is_active', False):
+        raise Gone
     else:
         query = query_or_pk
     try:
