@@ -260,8 +260,11 @@ class TestCollectFiles(FileIndexingTestCase):
             addon.root_node.append_file(factories.fake.file_name(), save=True)
             addon.root_node.append_file(factories.fake.file_name(), save=True)
 
+            self.addon.root_node.append_file(factories.fake.file_name(), save=True)
+            folder_two = self.addon.root_node.append_folder('folder two')
+            folder_two.node_settings.root_node.append_file(factories.fake.file_name())
         count = len([f for f in file_util.collect_files(self.addon.owner)])
-        assert_equal(count, 8)
+        assert_equal(count, 10)
 
     def test_no_collection_from_private_component(self):
         component = ProjectWithAddonFactory(parent=self.project)
@@ -301,10 +304,10 @@ class TestSearchFileFunctions(FileIndexingTestCase):
     def test_update_delete_single_file(self):
         assert_equal(len(query('cat')), 1)
 
-        search.delete_file(self.file_node, settings.ELASTIC_INDEX)
+        file_indexing.delete_search_file(self.file_node)
         assert_equal(len(query('cat')), 0, 'failed to delete')
 
-        search.update_file(self.file_node, settings.ELASTIC_INDEX)
+        file_indexing.update_search_file(self.file_node)
         assert_equal(len(query('cat')), 1, 'failed to update')
 
     @patch_context
@@ -315,11 +318,15 @@ class TestSearchFileFunctions(FileIndexingTestCase):
         folder = self.root.append_folder(factories.fake.first_name())
         folder.append_file(factories.fake.file_name(extension='txt'))
 
-        search.update_all_files(self.project, settings.ELASTIC_INDEX)
+        file_indexing.update_search_files(self.project)
         assert_equal(len(query('cat')), 3, 'failed to update')
 
-        search.delete_all_files(self.project, settings.ELASTIC_INDEX)
+        file_indexing.delete_search_files(self.project)
         assert_equal(len(query('cat')), 0, 'failed to delete')
+
+    @patch_context
+    def test_search_unavailable(self):
+        pass
 
 
 class TestIndexRealFiles(FileIndexingTestCase):

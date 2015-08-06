@@ -86,12 +86,8 @@ def collect_files_from_filenode(file_node):
         yield file_node
 
     for child in children:
-        if file_node.is_folder:
-            for file_ in collect_files_from_filenode(child):
-                yield file_
-        elif file_node.is_file:
-            yield file_node
-
+        for file_ in collect_files_from_filenode(child):
+            yield file_
 
 def collect_files(node):
     osf_addon = node.get_addon('osfstorage')
