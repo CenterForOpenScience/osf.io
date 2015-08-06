@@ -5,11 +5,12 @@ var $ = require('jquery');
 var m = require('mithril');
 var $osf = require('js/osfHelpers');
 var utils = require('./utils');
+
 var Results = {
     view: function(ctrl, params) {
         var vm = params.vm;
         var resultViews = $.map(vm.results || [], function(result, i) {
-            return m.component(Result, {result: result, vm: vm});
+            return m.component(Result, {result: result, vm: vm,});
         });
 
 
@@ -76,7 +77,7 @@ var TitleBar = {
     view: function(ctrl, params) {
         var result = params.result;
         return m('span', {}, [
-            m('a[href=]' + result.canonicalUri + ']', ((result.title || 'No title provided'))),
+            m('a[href=' + result.uris.canonicalUri + ']', ((result.title || 'No title provided'))),
             m('br'),
             m.component(Description, params)
         ]);
