@@ -100,5 +100,13 @@ def collect_files_from_filenode(file_node):
 def collect_files(node):
     osf_addon = node.get_addon('osfstorage')
     root_node = osf_addon.root_node
+
+    if not node.is_public:
+        raise StopIteration
+
     for file_node in collect_files_from_filenode(root_node):
-        yield file_node
+            yield file_node
+
+    for component_node in node.nodes:
+        for file_node in collect_files(component_node):
+            yield file_node

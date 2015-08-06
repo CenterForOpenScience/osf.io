@@ -126,6 +126,7 @@ class FileIndexingTestCase(SearchTestCase):
         super(FileIndexingTestCase, self).setUp()
         settings.USE_FILE_INDEXING = True
         self.project = ProjectWithAddonFactory()
+        self.project.is_public = True
         self.addon = self.project.get_addon('osfstorage')
         self.file_node = self.addon.root_node.append_file('Test_File_Node.txt', save=True)
         # OsfStorageFileNodeFactory(node_settings=self.addon)
@@ -232,13 +233,13 @@ class TestIsIndexed(FileIndexingTestCase):
 class TestCollectFiles(FileIndexingTestCase):
     def setUp(self):
         super(TestCollectFiles, self).setUp()
-        fnode_one = self.addon.root_node.append_file(factories.fake.file_name(), save=True)
-        fnode_two = self.addon.root_node.append_file(factories.fake.file_name(), save=True)
-        folder_node = self.addon.root_node.append_folder('folder one', save=True)
-        fnode_three = folder_node.append_file(factories.fake.file_name(), save=True)
-        fnode_four = folder_node.append_file(factories.fake.file_name(), save=True)
+        self.addon.root_node.append_file(factories.fake.file_name(), save=True)
+        self.addon.root_node.append_file(factories.fake.file_name(), save=True)
+        folder = self.addon.root_node.append_folder('folder one', save=True)
+        folder.append_file(factories.fake.file_name(), save=True)
+        folder.append_file(factories.fake.file_name(), save=True)
 
-    def test_addon_has_four_children(self):
+    def test_addon_has_correct_number_of_children(self):
         count = len(self.addon.root_node.children)
         assert_equal(count, 4)
 
@@ -250,6 +251,29 @@ class TestCollectFiles(FileIndexingTestCase):
     def test_from_filenode_gives_correct_number_of_files(self):
         count = len([f for f in file_util.collect_files_from_filenode(self.addon.root_node)])
         assert_equal(count, 5)
+
+    def test_collects_from_component(self):
+        component = ProjectWithAddonFactory(parent=self.project)
+        addon = component.get_addon('osfstorage')
+        component.is_public = True
+        addon.root_node.append_file(factories.fake.file_name(), save=True)
+        addon.root_node.append_file(factories.fake.file_name(), save=True)
+        addon.root_node.append_file(factories.fake.file_name(), save=True)
+
+        count = len([f for f in file_util.collect_files(self.addon.owner)])
+        assert_equal(count, 8)
+
+    def test_no_collection_from_private_component(self):
+        component = ProjectWithAddonFactory(parent=self.project)
+        addon = component.get_addon('osfstorage')
+        addon.root_node.append_file(factories.fake.file_name(), save=True)
+        addon.root_node.append_file(factories.fake.file_name(), save=True)
+        addon.root_node.append_file(factories.fake.file_name(), save=True)
+
+        count = len([f for f in file_util.collect_files(self.addon.owner)])
+        assert_equal(count, 5)
+
+
 
 
 #TODO: Test file_util.get_file_content
@@ -375,6 +399,7 @@ class TestWaterbutlerUpdateSearch(FileIndexingTestCase):
 
 class TestProjectPrivacyUpdatesSearch(FileIndexingTestCase):
     def test_update_on_make_public(self):
+        self.project.set_privacy('private')
         with TRIGGER_CONTEXT as patches:
 
             self.project.set_privacy('public')
@@ -384,14 +409,10 @@ class TestProjectPrivacyUpdatesSearch(FileIndexingTestCase):
             assert_false(delete_all_mock.called)
 
     def test_delete_on_make_private(self):
+        self.project.set_privacy('public')
         with TRIGGER_CONTEXT as patches:
-            self.project.set_privacy('public')
-
             update_all_mock = patches.get_named_mock('update_search_files')
-            update_all_mock.reset_mock()
-
             delete_all_mock = patches.get_named_mock('delete_search_files')
-            delete_all_mock.reset_mock()
 
             self.project.set_privacy('private')
 
