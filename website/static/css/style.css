@@ -510,6 +510,11 @@ select {
     cursor: pointer;
 }
 
+.not_valid {
+    background: #FBD8DB !important;
+    color: #90111A !important;
+}
+
 .btn-link.project-toggle {
     padding-top: 0;
     padding-bottom:0;

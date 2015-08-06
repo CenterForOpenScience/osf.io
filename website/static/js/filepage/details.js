@@ -130,7 +130,6 @@ var FileDetailTable = {
             var name = self.file.name;
             // Tags input
             $('#node-tags').tagsInput({
-                width: '100%',
                 interactive: self.canEdit(),
                 maxChars: 128,
                 onAddTag: function(tag){
@@ -164,6 +163,7 @@ var FileDetailTable = {
                     });
                 }
             });
+
             // Remove delete UI if not contributor
             if (!self.canEdit() || self.node.isRegistration) {
                 $('a[title="Removing tag"]').remove();
