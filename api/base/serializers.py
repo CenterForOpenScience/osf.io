@@ -40,6 +40,7 @@ class HyperLinkedIdentityFieldWithMeta(ser.HyperlinkedIdentityField):
         kwargs['source'] = '*'
         self.count = kwargs.pop('count', None)
         super(ser.HyperlinkedIdentityField, self).__init__(view_name, **kwargs)
+
     def get_attribute(self, obj):
         # We pass the object instance onto `to_representation`,
         # not just the field attribute.
