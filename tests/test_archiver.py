@@ -124,6 +124,7 @@ def use_fake_addons(func):
     @functools.wraps(func)
     def wrapper(*args, **kwargs):
         with nested(
+            mock.patch('framework.addons.AddonModelMixin.add_addon', mock.Mock(side_effect=_mock_get_or_add)),
             mock.patch('framework.addons.AddonModelMixin.get_addon', mock.Mock(side_effect=_mock_get_addon)),
             mock.patch('framework.addons.AddonModelMixin.delete_addon', mock.Mock(side_effect=_mock_delete_addon)),
             mock.patch('framework.addons.AddonModelMixin.get_or_add_addon', mock.Mock(side_effect=_mock_get_or_add))

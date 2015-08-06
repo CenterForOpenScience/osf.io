@@ -1,16 +1,10 @@
 #!/usr/bin/env python
 # encoding: utf-8
 
-from . import routes, views, model, oldels
+from . import routes, views, model
 
 MODELS = [
-    oldels.OsfStorageFileTree,
-    oldels.OsfStorageFileRecord,
-    model.OsfStorageFileNode,
-    model.OsfStorageGuidFile,
-    model.OsfStorageFileVersion,
     model.OsfStorageNodeSettings,
-    model.OsfStorageTrashedFileNode,
 ]
 NODE_SETTINGS_MODEL = model.OsfStorageNodeSettings
 

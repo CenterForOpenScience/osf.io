@@ -1,45 +1,15 @@
 # -*- coding: utf-8 -*-
 
-import pymongo
 from modularodm import fields
 
 from framework.auth.core import Auth
 
 from website.addons.base import exceptions
-from website.addons.base import AddonUserSettingsBase, AddonNodeSettingsBase, GuidFile
+from website.addons.base import AddonUserSettingsBase, AddonNodeSettingsBase
 from website.addons.base import StorageAddonBase
 
 from website.addons.s3 import utils
 from website.addons.s3.settings import ENCRYPT_UPLOADS_DEFAULT
-
-class S3GuidFile(GuidFile):
-    __indices__ = [
-        {
-            'key_or_list': [
-                ('node', pymongo.ASCENDING),
-                ('path', pymongo.ASCENDING),
-            ],
-            'unique': True,
-        }
-    ]
-
-    path = fields.StringField(index=True)
-
-    @property
-    def waterbutler_path(self):
-        return '/' + self.path
-
-    @property
-    def provider(self):
-        return 's3'
-
-    @property
-    def version_identifier(self):
-        return 'version'
-
-    @property
-    def unique_identifier(self):
-        return self._metadata_cache['extra']['md5']
 
 
 class AddonS3UserSettings(AddonUserSettingsBase):
@@ -86,10 +56,6 @@ class AddonS3NodeSettings(StorageAddonBase, AddonNodeSettingsBase):
     @property
     def folder_name(self):
         return self.bucket
-
-    def find_or_create_file_guid(self, path):
-        path = path.lstrip('/')
-        return S3GuidFile.get_or_create(node=self.owner, path=path)
 
     @property
     def display_name(self):

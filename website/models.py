@@ -15,6 +15,9 @@ from website.project.model import (
 from website.oauth.models import ExternalAccount
 from website.identifiers.model import Identifier
 from website.citations.models import CitationStyle
+from website.files.models.base import FileVersion
+from website.files.models.base import StoredFileNode
+from website.files.models.base import TrashedFileNode
 from website.conferences.model import Conference, MailRecord
 from website.notifications.model import NotificationDigest
 from website.notifications.model import NotificationSubscription
@@ -22,7 +25,8 @@ from website.archiver.model import ArchiveJob, ArchiveTarget
 
 # All models
 MODELS = (
-    User, Node, NodeLog,
+    User, Node,
+    NodeLog, StoredFileNode, TrashedFileNode, FileVersion,
     Tag, WatchConfig, Session, Guid, MetaSchema, Pointer,
     MailRecord, Comment, PrivateLink, MetaData, Conference,
     NotificationSubscription, NotificationDigest, CitationStyle,

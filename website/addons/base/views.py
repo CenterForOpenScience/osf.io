@@ -1,6 +1,3 @@
-# -*- coding: utf-8 -*-
-
-import os
 import json
 import uuid
 import httplib
@@ -20,6 +17,7 @@ from framework.auth.decorators import must_be_logged_in, must_be_signed
 
 from website import mails
 from website import settings
+from website.files.models import FileNode
 from website.project import decorators
 from website.addons.base import exceptions
 from website.models import User, Node, NodeLog
@@ -328,7 +326,7 @@ def addon_view_or_download_file_legacy(**kwargs):
         node_settings = node.get_addon('osfstorage')
 
         try:
-            path = node_settings.root_node.find_child_by_name(path)._id
+            path = node_settings.get_root().find_child_by_name(path)._id
         except NoResultsFound:
             raise HTTPError(
                 404, data=dict(
@@ -353,6 +351,7 @@ def addon_view_or_download_file_legacy(**kwargs):
 @must_be_contributor_or_public
 def addon_view_or_download_file(auth, path, provider, **kwargs):
     extras = request.args.to_dict()
+    extras.pop('_', None)  # Clean up our url params a bit
     action = extras.get('action', 'view')
     node = kwargs.get('node') or kwargs['project']
 
@@ -379,84 +378,80 @@ def addon_view_or_download_file(auth, path, provider, **kwargs):
             'message_long': 'The add-on containing this file is no longer configured.'
         })
 
-    if not path.startswith('/'):
-        path = '/' + path
+    file_node = FileNode.resolve_class(provider, FileNode.FILE).get_or_create(node, path)
 
-    guid_file, created = node_addon.find_or_create_file_guid(path)
+    version = file_node.touch(**extras)
 
-    if guid_file.guid_url != request.path:
-        guid_url = furl.furl(guid_file.guid_url)
-        guid_url.args.update(extras)
-        return redirect(guid_url)
-
-    guid_file.maybe_set_version(**extras)
+    if version is None:
+        raise HTTPError(httplib.NOT_FOUND, {
+            'message_short': 'Not Found',
+            'message_long': 'This file does not exist'
+        })
 
     if request.method == 'HEAD':
-        download_url = furl.furl(guid_file.download_url)
-        download_url.args.update(extras)
-        download_url.args['accept_url'] = 'false'
-        return make_response(('', 200, {'Location': download_url.url}))
+        return make_response(('', 200, {
+            'Location': file_node.generate_download_url(**dict(extras, accept_url='false'))
+        }))
 
     if action == 'download':
-        download_url = furl.furl(guid_file.download_url)
-        download_url.args.update(extras)
+        return redirect(file_node.generate_download_url(**dict(extras, accept_url='false')))
 
-        return redirect(download_url.url)
+    if len(request.path.strip('/').split('/')) > 1:
+        guid = file_node.get_guid(create=True)
+        return redirect(furl.furl('/{}/'.format(guid._id)).set(args=extras).url)
 
-    return addon_view_file(auth, node, node_addon, guid_file, extras)
+    return addon_view_file(auth, node, file_node, version)
 
 
-def addon_view_file(auth, node, node_addon, guid_file, extras):
+def addon_view_file(auth, node, file_node, version):
     # TODO: resolve circular import issue
     from website.addons.wiki import settings as wiki_settings
 
-    ret = serialize_node(node, auth, primary=True)
-
-    # Disable OSF Storage file deletion in DISK_SAVING_MODE
-    if settings.DISK_SAVING_MODE and node_addon.config.short_name == 'osfstorage':
-        ret['user']['can_edit'] = False
-
-    try:
-        guid_file.enrich()
-    except exceptions.AddonEnrichmentError as e:
-        error = e.as_html()
+    if isinstance(version, tuple):
+        version, error = version
+        error = error.replace('\n', '').strip()
     else:
         error = None
 
-    if guid_file._id not in node.file_guid_to_share_uuids:
-        node.file_guid_to_share_uuids[guid_file._id] = uuid.uuid4()
+    ret = serialize_node(node, auth, primary=True)
+
+    if file_node._id not in node.file_guid_to_share_uuids:
+        node.file_guid_to_share_uuids[file_node._id] = uuid.uuid4()
         node.save()
 
     if ret['user']['can_edit']:
-        sharejs_uuid = str(node.file_guid_to_share_uuids[guid_file._id])
+        sharejs_uuid = str(node.file_guid_to_share_uuids[file_node._id])
     else:
         sharejs_uuid = None
 
-    size = getattr(guid_file, 'size', None)
-    if size is None:  # Size could be 0 which is a falsey value
-        size = 9966699  # if we dont know the size assume its to big to edit
+    download_url = furl.furl(request.url.encode('utf-8')).set(args=dict(request.args, **{
+        'mode': 'render',
+        'action': 'download',
+        'accept_url': 'false'
+    }))
+
+    render_url = furl.furl(settings.MFR_SERVER_URL).set(
+        path=['render'],
+        args={'url': download_url.url}
+    )
 
     ret.update({
-        'error': error.replace('\n', '') if error else None,
-        'provider': guid_file.provider,
-        'file_path': guid_file.waterbutler_path,
-        'panels_used': ['edit', 'view'],
-        'private': getattr(node_addon, 'is_private', False),
-        'sharejs_uuid': sharejs_uuid,
         'urls': {
-            'files': node.web_url_for('collect_file_trees'),
-            'render': guid_file.mfr_render_url,
-            'sharejs': wiki_settings.SHAREJS_URL,
+            'render': render_url.url,
             'mfr': settings.MFR_SERVER_URL,
+            'sharejs': wiki_settings.SHAREJS_URL,
             'gravatar': get_gravatar(auth.user, 25),
-            'external': getattr(guid_file, 'external_url', None)
+            'files': node.web_url_for('collect_file_trees'),
         },
-        # Note: must be called after get_or_start_render. This is really only for github
-        'size': size,
-        'extra': json.dumps(getattr(guid_file, 'extra', {})),
-        #NOTE: get_or_start_render must be called first to populate name
-        'file_name': getattr(guid_file, 'name', os.path.split(guid_file.waterbutler_path)[1]),
-        'materialized_path': getattr(guid_file, 'materialized', guid_file.waterbutler_path),
+        'error': error,
+        'file_name': file_node.name,
+        'file_path': file_node.path,
+        'sharejs_uuid': sharejs_uuid,
+        'provider': file_node.provider,
+        'materialized_path': file_node.materialized_path,
+        'extra': json.dumps(version.metadata.get('extra', {})),
+        'size': version.size if version.size is not None else 9966699,
+        'private': getattr(node.get_addon(file_node.provider), 'is_private', False),
     })
 
     ret.update(rubeus.collect_addon_assets(node))

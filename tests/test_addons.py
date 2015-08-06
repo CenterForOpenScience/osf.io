@@ -17,8 +17,10 @@ from framework.sessions.model import Session
 from framework.mongo import set_up_storage
 
 from website import settings
+from website.files import models
+from website.files.models.base import PROVIDER_MAP
 from website.util import api_url_for, rubeus
-from website.addons.base import exceptions, GuidFile
+from website.addons.base import exceptions
 from website.project import new_private_link
 from website.project.views.node import _view_project as serialize_node
 from website.addons.base import AddonConfig, AddonNodeSettingsBase, views
@@ -26,31 +28,6 @@ from website.addons.github.model import AddonGitHubOauthSettings
 from tests.base import OsfTestCase
 from tests.factories import AuthUserFactory, ProjectFactory
 from website.addons.github.exceptions import ApiError
-
-
-class DummyGuidFile(GuidFile):
-
-    file_name = 'foo.md'
-    name = 'bar.md'
-
-    @property
-    def provider(self):
-        return 'dummy'
-
-    @property
-    def version_identifier(self):
-        return 'versionidentifier'
-
-    @property
-    def unique_identifier(self):
-        return 'dummyid'
-
-    @property
-    def waterbutler_path(self):
-        return '/path/to/file/'
-
-    def enrich(self):
-        pass
 
 
 class TestAddonConfig(unittest.TestCase):
@@ -345,39 +322,6 @@ class TestCheckAuth(OsfTestCase):
         assert_true(res)
 
 
-class OsfFileTestCase(OsfTestCase):
-
-    @classmethod
-    def setUpClass(cls):
-        super(OsfTestCase, cls).setUpClass()
-        set_up_storage([DummyGuidFile], storage.MongoStorage)
-
-
-class TestAddonFileViewHelpers(OsfFileTestCase):
-
-    def test_key_error_raises_attr_error_for_name(self):
-        class TestGuidFile(GuidFile):
-            pass
-
-        with assert_raises(AttributeError):
-            TestGuidFile().name
-
-    def test_getattrname_catches(self):
-        class TestGuidFile(GuidFile):
-            pass
-
-        assert_equals(getattr(TestGuidFile(), 'name', 'foo'), 'foo')
-
-    def test_getattrname(self):
-        class TestGuidFile(GuidFile):
-            pass
-
-        guid = TestGuidFile()
-        guid._metadata_cache = {'name': 'test'}
-
-        assert_equals(getattr(guid, 'name', 'foo'), 'test')
-
-
 def assert_urls_equal(url1, url2):
     furl1 = furl.furl(url1)
     furl2 = furl.furl(url2)
@@ -387,8 +331,29 @@ def assert_urls_equal(url1, url2):
     assert_equal(furl1, furl2)
 
 
+class TestFileNode(models.FileNode):
+    provider = 'test_addons'
+
+    def touch(self, **kwargs):
+        return models.FileVersion()
+
+
+class TestFile(TestFileNode, models.File):
+    pass
+
+
+class TestFolder(TestFileNode, models.Folder):
+    pass
+
+
 @mock.patch('website.addons.github.model.GitHub.repo', mock.Mock(side_effect=ApiError))
 class TestAddonFileViews(OsfTestCase):
+
+    @classmethod
+    def setUpClass(cls):
+        super(TestAddonFileViews, cls).setUpClass()
+        PROVIDER_MAP['github'] = [TestFolder, TestFile, TestFileNode]
+        TestFileNode.provider = 'github'
 
     def setUp(self):
         super(TestAddonFileViews, self).setUp()
@@ -415,8 +380,21 @@ class TestAddonFileViews(OsfTestCase):
         self.node_addon.user = 'E'
         self.node_addon.save()
 
-        # self.node_addon.user_settings = 'Truthy'
-        # setattr(self.node_addon, 'has_auth', True)
+    @classmethod
+    def tearDownClass(cls):
+        super(TestAddonFileViews, cls).tearDownClass()
+        PROVIDER_MAP['github'] = [models.GithubFolder, models.GithubFile, models.GithubFileNode]
+        del PROVIDER_MAP['test_addons']
+
+    def get_test_file(self):
+        ret = TestFile(
+            name='Test',
+            node=self.project,
+            path='/test/Test',
+            materialized_path='/test/Test'
+        )
+        ret.save()
+        return ret
 
     def get_mako_return(self):
         ret = serialize_node(self.project, Auth(self.user), primary=True)
@@ -443,110 +421,84 @@ class TestAddonFileViews(OsfTestCase):
         return ret
 
     def test_redirects_to_guid(self):
-        path = 'bigdata'
-        guid, _ = self.node_addon.find_or_create_file_guid('/' + path)
+        file_node = self.get_test_file()
+        guid = file_node.get_guid(create=True)
 
         resp = self.app.get(
             self.project.web_url_for(
                 'addon_view_or_download_file',
-                path=path,
+                path=file_node.path.strip('/'),
                 provider='github'
             ),
             auth=self.user.auth
         )
 
         assert_equals(resp.status_code, 302)
-        assert_equals(resp.headers['Location'], 'http://localhost:80{}'.format(guid.guid_url))
+        assert_equals(resp.location, 'http://localhost:80/{}/'.format(guid._id))
 
     def test_action_download_redirects_to_download(self):
-        path = 'cloudfiles'
-        guid, _ = self.node_addon.find_or_create_file_guid('/' + path)
+        file_node = self.get_test_file()
+        guid = file_node.get_guid(create=True)
 
-        resp = self.app.get(guid.guid_url + '?action=download', auth=self.user.auth)
+        resp = self.app.get('/{}/?action=download'.format(guid._id), auth=self.user.auth)
 
         assert_equals(resp.status_code, 302)
-        assert_equals(resp.headers['Location'], guid.download_url + '&action=download')
-
-    @mock.patch('website.addons.base.request')
-    def test_mfr_public_download_url_includes_view_only(self, mock_request):
-        view_only = 'justworkplease'
-        mock_request.args = {
-            'view_only': view_only
-        }
-
-        path = 'cloudfiles'
-        guid, _ = self.node_addon.find_or_create_file_guid('/' + path)
-
-        assert_in('view_only={}'.format(view_only), guid.mfr_public_download_url)
-        assert_in('accept_url=false', guid.mfr_public_download_url)
-
-    @mock.patch('website.addons.base.request')
-    def test_mfr_render_url(self, mock_request):
-        view_only = 'justworkplease'
-        mock_request.args = {
-            'view_only': view_only
-        }
-
-        path = 'cloudfiles'
-        guid, _ = self.node_addon.find_or_create_file_guid('/' + path)
-
-        assert_in(settings.MFR_SERVER_URL + '/render', guid.mfr_render_url)
-        assert_in('?url=', guid.mfr_render_url)
+        location = furl.furl(resp.location)
+        location.args.pop('token')
+        assert_urls_equal(location.url, file_node.generate_download_url(action='download', accept_url='false'))
 
     @mock.patch('website.addons.base.views.addon_view_file')
     def test_action_view_calls_view_file(self, mock_view_file):
         self.user.reload()
         self.project.reload()
 
-        path = 'cloudfiles'
-        mock_view_file.return_value = self.get_mako_return()
-        guid, _ = self.node_addon.find_or_create_file_guid('/' + path)
+        file_node = self.get_test_file()
+        guid = file_node.get_guid(create=True)
 
-        self.app.get(guid.guid_url + '?action=view', auth=self.user.auth)
+        mock_view_file.return_value = self.get_mako_return()
+
+        self.app.get('/{}/?action=view'.format(guid._id), auth=self.user.auth)
 
         args, kwargs = mock_view_file.call_args
         assert_equals(kwargs, {})
-        assert_equals(args[-1], {'action': 'view'})
-        assert_equals(args[1], self.project)
         assert_equals(args[0].user, self.user)
-        assert_equals(args[2], self.node_addon)
+        assert_equals(args[1], self.project)
+        assert_equals(args[2], file_node)
+        assert_true(isinstance(args[3], file_node.touch().__class__))
 
     @mock.patch('website.addons.base.views.addon_view_file')
     def test_no_action_calls_view_file(self, mock_view_file):
         self.user.reload()
         self.project.reload()
 
-        path = 'cloudfiles'
-        mock_view_file.return_value = self.get_mako_return()
-        guid, _ = self.node_addon.find_or_create_file_guid('/' + path)
+        file_node = self.get_test_file()
+        guid = file_node.get_guid(create=True)
 
-        self.app.get(guid.guid_url, auth=self.user.auth)
+        mock_view_file.return_value = self.get_mako_return()
+
+        self.app.get('/{}/'.format(guid._id), auth=self.user.auth)
 
         args, kwargs = mock_view_file.call_args
         assert_equals(kwargs, {})
-        assert_equals(args[-1], {})
-        assert_equals(args[1], self.project)
         assert_equals(args[0].user, self.user)
-        assert_equals(args[2], self.node_addon)
+        assert_equals(args[1], self.project)
+        assert_equals(args[2], file_node)
+        assert_true(isinstance(args[3], file_node.touch().__class__))
 
     def test_download_create_guid(self):
-        path = 'cloudfiles'
+        file_node = self.get_test_file()
+        assert_is(file_node.get_guid(), None)
 
         self.app.get(
             self.project.web_url_for(
                 'addon_view_or_download_file',
-                path=path,
+                path=file_node.path.strip('/'),
                 provider='github',
-                action='download'
             ),
             auth=self.user.auth
         )
 
-        guid, created = self.node_addon.find_or_create_file_guid('/' + path)
-
-        assert_true(guid)
-        assert_false(created)
-        assert_equals(guid.waterbutler_path, '/' + path)
+        assert_true(file_node.get_guid())
 
     def test_unauthorized_addons_raise(self):
         path = 'cloudfiles'
@@ -567,15 +519,13 @@ class TestAddonFileViews(OsfTestCase):
         assert_equals(resp.status_code, 401)
 
     def test_head_returns_url(self):
-        path = 'the little engine that couldnt'
-        guid, _ = self.node_addon.find_or_create_file_guid('/' + path)
+        file_node = self.get_test_file()
+        guid = file_node.get_guid(create=True)
 
-        download_url = furl.furl(guid.download_url)
-        download_url.args['accept_url'] = 'false'
-
-        resp = self.app.head(guid.guid_url, auth=self.user.auth)
-
-        assert_urls_equal(resp.headers['Location'], download_url.url)
+        resp = self.app.head('/{}/'.format(guid._id), auth=self.user.auth)
+        location = furl.furl(resp.location)
+        location.args.pop('token')
+        assert_urls_equal(location.url, file_node.generate_download_url(accept_url='false'))
 
     def test_nonexistent_addons_raise(self):
         path = 'cloudfiles'
@@ -621,7 +571,7 @@ class TestLegacyViews(OsfTestCase):
         self.user = AuthUserFactory()
         self.project = ProjectFactory(creator=self.user)
         self.node_addon = self.project.get_addon('osfstorage')
-        file_record = self.node_addon.root_node.append_file(self.path)
+        file_record = self.node_addon.get_root().append_file(self.path)
         self.expected_path = file_record._id
         self.node_addon.save()
         file_record.save()
