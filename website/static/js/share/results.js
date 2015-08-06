@@ -10,11 +10,10 @@ var Results = {
         var self = this;
         self.vm = vm;
         self.vm.resultsLoading = m.prop(false);
-        self.vm.oneDataShowing = m.prop(false);
     },
     view: function(ctrl) {
         var resultViews = $.map(ctrl.vm.results || [], function(result, i) {
-            return m.component(Result, {result: result, vm: ctrl.vm, i: i});
+            return m.component(Result, {result: result, vm: ctrl.vm});
         });
 
 
@@ -189,7 +188,6 @@ var Footer = {
     view: function(ctrl, params) {
         var result = params.result;
         var vm = params.vm;
-        var index = params.i;
         return m('div', [
             m('span',
                 'Released on ' + new $osf.FormattableDate(result.providerUpdatedDateTime).local,
