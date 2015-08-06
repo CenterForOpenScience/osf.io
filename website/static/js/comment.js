@@ -184,13 +184,13 @@ BaseComment.prototype.fetch = function(isCommentList, nodeId, thread) {
     return deferred.promise();
 };
 
-BaseComment.prototype.getThread = function(thread_id) {
+BaseComment.prototype.getThread = function(threadId) {
     var self = this;
     var deferred = $.Deferred();
     if (self._loaded) {
         deferred.resolve(self.comments());
     }
-    var request = $.getJSON(self.$root.nodeApiUrl + 'comment/' + thread_id + '/');
+    var request = $.getJSON(self.$root.nodeApiUrl + 'comment/' + threadId + '/');
     request.done(function(response){
         self.comments([new CommentModel(response.comment, self, self.$root)]);
         deferred.resolve(self.comments());
@@ -672,7 +672,7 @@ var CommentListModel = function(options) {
         return comments;
     });
 
-    self.fetch(true, options.nodeId, options.thread);
+    self.fetch(true, options.nodeId, options.threadId);
 
 };
 
@@ -718,7 +718,7 @@ var onOpen = function(hostPage, hostName, nodeApiUrl) {
  *      userName: User.fullname,
  *      canComment: User.canComment,
  *      hasChildren: Node.hasChildren,
- *      thread_id: undefined }
+ *      threadId: undefined }
  */
 var init = function(selector, options) {
     new CommentPane(selector, options.mode, {

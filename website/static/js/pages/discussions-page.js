@@ -18,7 +18,7 @@ var options = {
     userName: window.contextVars.currentUser.name,
     canComment: window.contextVars.currentUser.canComment,
     hasChildren: window.contextVars.node.hasChildren,
-    thread_id: id
+    threadId: id
 };
 
 CommentModel.init('.discussion', options);
