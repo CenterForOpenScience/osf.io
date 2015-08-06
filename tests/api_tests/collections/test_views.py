@@ -424,7 +424,7 @@ class TestCollectionPointersList(ApiTestCase):
         res_json = res.json['data']
 
         assert_equal(res.status_code, 200)
-        ids = [node['collection_id'] for node in res_json]
+        ids = [node['id'] for node in res_json]
         assert_in(self.collection_one._id, ids)
         assert_not_in(self.collection_two._id, ids)
         assert_in(self.collection_being_pointed_to._id, ids)
@@ -516,7 +516,7 @@ class TestCollectionPointerDetail(ApiTestCase):
         res = self.app.get(self.collection_two_url, auth=self.basic_auth_two)
         res_json = res.json['data']
         assert_equal(res.status_code, 200)
-        assert_equal(res_json['collection_id'], self.pointer_two._id)
+        assert_equal(res_json['id'], self.pointer_two._id)
 
     def test_not_returns_collection_pointer_detail_logged_out_two(self):
         res = self.app.get(self.collection_one_url, expect_errors=True)

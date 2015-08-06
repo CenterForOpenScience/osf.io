@@ -13,16 +13,16 @@ from .serializers import CollectionSerializer, CollectionPointersSerializer
 
 SMART_FOLDER_QUERIES = {
     'amp': Q('category', 'eq', 'project') &
-           Q('is_deleted', 'eq', False) &
-           Q('is_registration', 'eq', False) &
-           Q('is_folder', 'eq', True) &
-           Q('__backrefs.parent.node.nodes', 'eq', None),
+    Q('is_deleted', 'eq', False) &
+    Q('is_registration', 'eq', False) &
+    Q('is_folder', 'eq', True) &
+    Q('__backrefs.parent.node.nodes', 'eq', None),
 
     'amr': Q('category', 'eq', 'project') &
-           Q('is_deleted', 'eq', False) &
-           Q('is_registration', 'eq', True) &
-           Q('is_folder', 'eq', True) &
-           Q('__backrefs.parent.node.nodes', 'eq', None),
+    Q('is_deleted', 'eq', False) &
+    Q('is_registration', 'eq', True) &
+    Q('is_folder', 'eq', True) &
+    Q('__backrefs.parent.node.nodes', 'eq', None),
 }
 
 

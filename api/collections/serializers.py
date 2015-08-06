@@ -1,4 +1,5 @@
 from rest_framework import serializers as ser
+from rest_framework import exceptions
 
 from website.models import Node
 from website.util import api_v2_url
@@ -94,10 +95,8 @@ class CollectionSerializer(JSONAPISerializer):
 
 
 class CollectionPointersSerializer(JSONAPISerializer):
-    try:
-        collection_id = ser.CharField(read_only=True, source="_id")
-    except AttributeError:
-        collection_id = ser.CharField(read_only=True, source="_id")
+    id = ser.CharField(read_only=True, source='_id')
+    collection_id = ser.CharField(read_only=True, source='node._id')
     title = ser.CharField(read_only=True)
 
     class Meta:
@@ -122,5 +121,10 @@ class CollectionPointersSerializer(JSONAPISerializer):
         auth = Auth(user)
         node = self.context['view'].get_node()
         pointer_node = Node.load(validated_data['node']['_id'])
-        pointer = node.add_pointer(pointer_node, auth, save=True)
-        return pointer
+        if not pointer_node:
+            raise exceptions.NotFound('Node not found.')
+        try:
+            pointer = node.add_pointer(pointer_node, auth, save=True)
+            return pointer
+        except ValueError:
+            raise exceptions.ValidationError('Pointer to node {} already in list'.format(pointer_node._id))
