@@ -3278,32 +3278,32 @@ class DraftRegistration(AddonModelMixin, StoredObject):
         #    raise NodeStateError('Cannot edit while this draft is being reviewed')
 
         changes = []
-        for key, value in metadata.iteritems():
-            old_value = self.registration_metadata.get(key)
-            if not old_value or old_value.get('value') != value.get('value'):
-                changes.append(key)
+        for question_id, value in metadata.iteritems():
+
+            old_value = self.registration_metadata.get(question_id)
+            # if not old_value or old_value.get('value') != value.get('value'):
+            #     changes.append(question_id)
 
             if old_value:
                 old_comments = old_value.get('comments', [])
-            try:
-                new_comments = value['comments']
+                new_comments = value.get('comments', [])
 
-            # this means this is the first save
-            except(TypeError, KeyError):
-                pass
-            else:
+                #  we are using the `created` attribute sort of as a primary key
                 old_comment_ids = [comment['created'] for comment in old_comments]
 
                 # Handle comment conflicts
                 for old_comment in old_comments:
                     for new_comment in new_comments:
-                        new_id = new_comment['created']
+                        new_id = new_comment.get('created', [])
                         # if the primary key is already in use and the old comment is more recent,
                         if new_id in old_comment_ids and old_comment['lastModified'] > new_comment['lastModified']:
                             # use the old one instead
-                            new_comments[new_comment] = old_comment
-                if not old_value or old_value.get('value') != value.get('value'):
-                    changes.append(key)
+                            loc = new_comments.index(new_comment)
+                            new_comments[loc] = old_comment
+
+
+            if not old_value or old_value.get('value') != value.get('value'):
+                changes.append(question_id)
 
         self.registration_metadata.update(metadata)
 
