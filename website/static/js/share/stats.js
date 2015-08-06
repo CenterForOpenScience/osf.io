@@ -205,14 +205,7 @@ Stats.view = function (ctrl) {
                     ] : [])
                 ]))
             ]),
-        ] : []),
-        m('.row', [
-            m('col-md-12', m('a.stats-expand', {
-                onclick: function () {ctrl.vm.showStats = !ctrl.vm.showStats;}
-            },
-                ctrl.vm.showStats ? m('i.fa.fa-angle-up') : m('i.fa.fa-angle-down')
-            ))
-        ])
+        ] : [])
     ];
 };
 
