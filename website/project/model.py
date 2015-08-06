@@ -3281,8 +3281,6 @@ class DraftRegistration(AddonModelMixin, StoredObject):
         for question_id, value in metadata.iteritems():
 
             old_value = self.registration_metadata.get(question_id)
-            # if not old_value or old_value.get('value') != value.get('value'):
-            #     changes.append(question_id)
 
             if old_value:
                 old_comments = old_value.get('comments', [])
