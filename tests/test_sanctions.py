@@ -27,7 +27,9 @@ class SanctionTestClass(Sanction):
         return 'flag' in user.system_tags
 
 class EmailApprovableSanctionTestClass(EmailApprovableSanction):
-    pass
+
+    AUTHORIZER_NOTIFY_TEMPLATE = 'authorizer'
+    NON_AUTHORIZER_NOTIFY_TEMPLATE = 'non-authorizer'
 
 
 class SanctionsTestCase(OsfTestCase):
@@ -140,7 +142,16 @@ class TestSanction(SanctionsTestCase):
         assert_true(mock_notify_non_authorizer.called_once_with(other_user))
         assert_true(mock_notify_authorizer.called_once_with(self.user))
 
-class TestEmailApprovableSanction(OsfTestCase):
+class TestEmailApprovableSanction(SanctionsTestCase):
+
+    def setUp(self, *args, **kwargs):
+        super(TestEmailApprovableSanction, self).setUp(*args, **kwargs)
+        self.user = factories.UserFactory()
+        self.sanction = EmailApprovableSanctionTestClass(
+            initiated_by=self.user,
+            end_date=datetime.datetime.now() + datetime.timedelta(days=2)
+        )
+        self.sanction.add_authorizer(self.user)
 
     def test_format_or_empty(self):
         context = {
@@ -154,35 +165,22 @@ class TestEmailApprovableSanction(OsfTestCase):
         template = 'What a good {key}'
         assert_equal(EmailApprovableSanctionTestClass._format_or_empty(template, context), '')
 
-    def test_view_url(self):
-        pass
+    @mock.patch.object(EmailApprovableSanctionTestClass, '_send_approval_request_email')
+    @mock.patch.object(EmailApprovableSanctionTestClass, '_email_template_context')
+    def test_notify_authorizer(self, mock_get_email_template_context, mock_send_approval_email):
+        mock_get_email_template_context.return_value = 'context'
+        self.sanction._notify_authorizer(self.user)
+        assert_true(mock_get_email_template_context.called_once_with(self.user, True))
+        assert_true(mock_send_approval_email.called_once_with(self.user, 'authorizer', 'context'))
 
-    def test_view_url_context(self):
-        pass
+    @mock.patch.object(EmailApprovableSanctionTestClass, '_send_approval_request_email')
+    @mock.patch.object(EmailApprovableSanctionTestClass, '_email_template_context')
+    def test_notify_non_authorizer(self, mock_get_email_template_context, mock_send_approval_email):
+        mock_get_email_template_context.return_value = 'context'
+        other_user = factories.UserFactory()
+        self.sanction._notify_non_authorizer(other_user)
+        assert_true(mock_get_email_template_context.called_once_with(other_user, False))
+        assert_true(mock_send_approval_email.called_once_with(other_user, 'non-authorizer', 'context'))
 
-    def test_approval_url(self):
-        pass
-
-    def test_approval_url_context(self):
-        pass
-
-    def test_rejection_url(self):
-        pass
-
-    def test_rejection_url_context(self):
-        pass
-
-    def test_send_approval_request_email(self):
-        pass
-
-    def test_email_template_context(self):
-        pass
-
-    def test_notify_authorizer(self):
-        pass
-
-    def test_notify_non_authorizer(self):
-        pass
-
-    def add_authorizer(self):
-        pass
+    def test_add_authorizer(self):
+        assert_is_not_none(self.sanction.stashed_urls.get(self.user._id))
