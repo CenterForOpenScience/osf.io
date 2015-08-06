@@ -170,7 +170,8 @@ class NodePointersSerializer(JSONAPISerializer):
 
 class NodeFilesSerializer(JSONAPISerializer):
 
-    id = ser.CharField(read_only=True, source='_id')
+
+    id = ser.SerializerMethodField()
     provider = ser.CharField(read_only=True)
     path = ser.CharField(read_only=True)
     item_type = ser.CharField(read_only=True)
@@ -188,6 +189,11 @@ class NodeFilesSerializer(JSONAPISerializer):
     })
 
     @staticmethod
+    def get_id(obj):
+        ret = obj['provider'] + obj['path']
+        return ret
+
+    @staticmethod
     def valid_self_link_methods(obj):
         return obj['valid_self_link_methods']
 
@@ -198,3 +204,5 @@ class NodeFilesSerializer(JSONAPISerializer):
     def update(self, instance, validated_data):
         # TODO
         pass
+
+
