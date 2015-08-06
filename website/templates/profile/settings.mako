@@ -2,7 +2,11 @@
 <%def name="title()">Settings</%def>
 <%def name="content()">
 <% from website import settings %>
-<h2 class="page-header">Settings</h2>
+<h2 class="page-header">Settings
+    <div class="pull-right">
+        <a href="/profile" class="btn btn-link"><i class="fa fa-user m-r-sm"></i>View Profile </a>
+    </div>
+</h2>
 
 ## TODO: Review and un-comment
 ##<div class="row">
