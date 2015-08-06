@@ -98,7 +98,7 @@ def _get_attr_name_from_tpl(attr_tpl):
 def _get_attr_from_tpl(attr_tpl, obj):
     """Takes attr_tpl (e.g., ``<user._id``) and obj and returns attr value"""
     attr_name = _get_attr_name_from_tpl(str(attr_tpl))
-    if attr_name:    
+    if attr_name:
         attribute_value = _get_deep_attr(obj, attr_name, default=ser.empty)
         try:
             if attribute_value is not ser.empty:
@@ -110,11 +110,11 @@ def _get_attr_from_tpl(attr_tpl, obj):
                     '{attr_name!r} is not a valid '
                     'attribute of {obj!r}'.format(
                         attr_name=attr_name, obj=obj,
-                    ))
+                        ))
         except TypeError:
             raise TypeError('{attr_name!r} is not a valid primary key in LinksField kwargs'.format(
-                        attr_name=attr_name,
-                    ))
+                attr_name=attr_name,
+                ))
     else:
         return attr_tpl
 
