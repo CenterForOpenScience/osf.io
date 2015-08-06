@@ -26,6 +26,7 @@ ShareApp.ViewModel = function() {
     self.query = m.prop($osf.urlParams().q || '');
     self.sort = m.prop($osf.urlParams().sort || 'Relevance');
     self.showStats = false;
+    self.resultsLoading = m.prop(false);
     self.rawNormedLoaded = m.prop(false);
     self.showFooter = (self.query() === '');
     self.requiredFilters = $osf.urlParams().required ? $osf.urlParams().required.split('|') : [];
@@ -55,10 +56,10 @@ ShareApp.view = function(ctrl) {
             ctrl.vm.results !== null ? renderSort(ctrl) : [],
             m('.row.search-content', [
                m('.col-md-2.col-lg-3', [
-                    SideBar.view(ctrl.sideBarController)
+                    m.component(SideBar, {vm: ctrl.vm})
                 ]),
                 m('.col-md-10.col-lg-9', [
-                    Results.view(ctrl.resultsController)
+                    m.component(Results, {vm: ctrl.vm})
                 ])
             ]),
             Footer.view(ctrl.footerController),
@@ -85,9 +86,7 @@ ShareApp.controller = function() {
     }).then(function(data) {
         self.vm.ProviderMap = data.providerMap;
 
-        self.sideBarController = new SideBar.controller(self.vm);
         self.statsController = new Stats.controller(self.vm);
-        self.resultsController = new Results.controller(self.vm);
         self.searchBarController = new SearchBar.controller(self.vm);
         self.footerController = new Footer.controller(self.vm);
 
@@ -125,7 +124,20 @@ var renderSort = function(ctrl){
                     'aria-expanded': 'false'
                 }, ['Sort by: ' + ctrl.vm.sort() + ' ', m('span.caret')]
             ),
-                m('ul.dropdown-menu', {'role': 'menu'}, ctrl.sideBarController.renderSort())]);
+                m('ul.dropdown-menu', {'role': 'menu'},
+                    $.map(Object.keys(ctrl.vm.sortMap), function(a) {
+                        return m('li',
+                            m('a', {
+                                'href': '#',
+                                onclick: function(event) {
+                                    ctrl.vm.sort(a);
+                                    utils.search(ctrl.vm);
+                                }
+                            }, a)
+                        );
+                    })
+                )
+        ]);
     };
 
 
