@@ -7,11 +7,9 @@ from rest_framework.reverse import reverse
 from rest_framework.exceptions import NotFound
 from modularodm.exceptions import NoResultsFound
 
-from api.base import settings as api_settings
 from framework.auth.core import Auth
 from website import settings as website_settings
 from website import util as website_util  # noqa
-from website import settings as website_settings
 
 
 def absolute_reverse(view_name, query_kwargs=None, args=None, kwargs=None):
