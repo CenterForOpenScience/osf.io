@@ -25,34 +25,28 @@ class ContributorOrPublic(permissions.BasePermission):
 class AdminOrPublic(permissions.BasePermission):
 
     def has_object_permission(self, request, view, obj):
-        assert isinstance(obj, (Node, User)), 'obj must be a Node or User, got {}'.format(obj)
-        if isinstance(obj, Node):
-            node = obj
-        else:
-            node = Node.load(request.parser_context['kwargs']['node_id'])
+        assert isinstance(obj, Node), 'obj must be a Node, got {}'.format(obj)
         auth = get_user_auth(request)
         if request.method in permissions.SAFE_METHODS:
-            return node.is_public or node.can_view(auth)
+            return obj.is_public or obj.can_view(auth)
         else:
-            return node.has_permission(auth.user, 'admin')
+            return obj.has_permission(auth.user, 'admin')
 
 
 class Contributor(permissions.BasePermission):
     """Permissions for contributor detail page."""
 
     def has_object_permission(self, request, view, obj):
-        assert isinstance(obj, (Node, User)), 'obj must be a Node or User, got {}'.format(obj)
+        assert isinstance(obj, (Node, User)), 'obj must be User or Node, got {}'.format(obj)
         auth = get_user_auth(request)
         node = Node.load(request.parser_context['kwargs']['node_id'])
-        is_admin = node.has_permission(auth.user, 'admin')
         user = User.load(request.parser_context['kwargs']['user_id'])
-        is_current_user = auth.user == user
         if request.method in permissions.SAFE_METHODS:
             return node.is_public or node.can_view(auth)
         elif request.method == 'DELETE':
-            return is_admin or is_current_user
+            return node.has_permission(auth.user, 'admin') or auth.user == user
         else:
-            return is_admin
+            return node.has_permission(auth.user, 'admin')
 
 
 class ContributorOrPublicForPointers(permissions.BasePermission):
