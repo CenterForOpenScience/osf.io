@@ -99,6 +99,11 @@
   font-weight: 300;
 }
 
+.unstyled {
+    padding-left: 0;
+    list-style-type: none;
+}
+
 .li.render-filter {
   padding: 1px;
   font-size: 15px;
@@ -130,6 +135,11 @@ stroke: #BAB5B5;
     -webkit-column-gap: 2.5em;
     column-count: 2;
     column-gap: 2.5em;
+}
+
+.provider-favicon {
+    height: 16px;
+    width: 16px;
 }
 
 @media (max-width: 767px) {
