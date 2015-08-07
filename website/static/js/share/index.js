@@ -127,7 +127,7 @@ var SortBox = {
             ),
                 m('ul.dropdown-menu', {'role': 'menu'},
                     $.map(Object.keys(vm.sortMap), function(a) {
-                        return m.component(SortItem, {vm: vm, item: a});
+                        return m.component(SortItem, {vm: vm, key: a});
                     })
                 )
         ]);
@@ -138,10 +138,9 @@ var SortBox = {
 var SortItem = {
     view: function(ctrl, params) {
         var vm = params.vm;
-        var item = params.item;
+        var item = params.key;
         return m('li',
             m('a', {
-                'href': '#',
                 onclick: function(event) {
                     vm.sort(item);
                     utils.search(vm);
