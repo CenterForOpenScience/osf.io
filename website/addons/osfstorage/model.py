@@ -256,7 +256,6 @@ class OsfStorageFileNode(StoredObject):
 
     @utils.must_be('folder')
     def _create_child(self, name, kind, save=True):
-        from website.search import file_indexing
         child = OsfStorageFileNode(
             name=name,
             kind=kind,
@@ -265,7 +264,7 @@ class OsfStorageFileNode(StoredObject):
         )
         if save:
             child.save()
-            file_indexing.update_search_file(child)
+
         return child
 
     def get_download_count(self, version=None):
@@ -351,22 +350,16 @@ class OsfStorageFileNode(StoredObject):
         return data
 
     def copy_under(self, destination_parent, name=None):
-        from website.search import file_indexing
-        copy = utils.copy_files(self, destination_parent.node_settings, destination_parent, name=name)
-        file_indexing.update_search_file(copy)
-        return copy
+        return utils.copy_files(self, destination_parent.node_settings, destination_parent, name=name)
+
 
     def move_under(self, destination_parent, name=None):
-        from website.search import file_indexing
-        file_indexing.delete_search_file(self)
-
         self.name = name or self.name
         self.parent = destination_parent
         self.node_settings = destination_parent.node_settings
 
         self.save()
 
-        file_indexing.update_search_file(self)
         return self
 
     def __repr__(self):
