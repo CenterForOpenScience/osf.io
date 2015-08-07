@@ -48,21 +48,10 @@ def archive_callback(dst):
     root_job.sent = True
     root_job.save()
     if root_job.success:
-        archiver_utils.archive_success(root, root.registered_user)
         if dst.pending_embargo:
-            for contributor in root.active_contributors():
-                project_utils.send_embargo_email(
-                    root,
-                    contributor,
-                    urls=root_job.meta['embargo_urls'].get(contributor._id),
-                )
+            dst.embargo.ask(root.active_contributors())
         else:  # requires approval
-            for contributor in root.active_contributors():
-                project_utils.send_registration_approval_email(
-                    root,
-                    contributor,
-                    urls=root_job.meta['registration_approval_urls'].get(contributor._id),
-                )
+            dst.registration_approval.ask(root.active_contributors())
     else:
         archiver_utils.handle_archive_fail(
             ARCHIVER_UNCAUGHT_ERROR,

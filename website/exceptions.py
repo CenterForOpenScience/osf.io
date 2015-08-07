@@ -28,22 +28,3 @@ class InvalidSanctionApprovalToken(SanctionTokenError):
     """Raised if a embargo disapproval token is not found."""
     message_short = "Invalid Token"
     message_long = "This embargo disapproval link is invalid. Are you logged into the correct account?"
-
-
-class InvalidRetractionApprovalToken(InvalidSanctionApprovalToken):
-    pass
-
-class InvalidRetractionDisapprovalToken(InvalidSanctionRejectionToken):
-    pass
-
-class InvalidEmbargoApprovalToken(InvalidSanctionApprovalToken):
-    pass
-
-class InvalidEmbargoDisapprovalToken(InvalidSanctionRejectionToken):
-    pass
-
-class InvalidRegistrationApprovalToken(InvalidSanctionApprovalToken):
-    pass
-
-class InvalidRegistrationDisapprovalToken(InvalidSanctionRejectionToken):
-    pass

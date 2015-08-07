@@ -4,6 +4,7 @@
 var $ = require('jquery');
 require('jquery-tagsinput');
 require('bootstrap-editable');
+require('js/osfToggleHeight');
 
 var language = require('js/osfLanguage').projects;
 
@@ -55,14 +56,7 @@ if (!ctx.node.anonymous && !ctx.node.isRetracted) {
 }
 $(document).ready(function () {
 
-    var qs = $osf.urlParams();
-    var postRegister = (['True', 'true', 1, '1'].indexOf(qs.postRegister || null) !== -1);
-    if (postRegister) {
-        registrationUtils.postRegister(node);
-    }
-    else if(node.isDraftRegistration) {
-        registrationUtils.remind();
-    }
+    $('#contributorsList').osfToggleHeight();
 
     if (!ctx.node.isRetracted) {
         // Treebeard Files view

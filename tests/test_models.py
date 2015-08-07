@@ -29,6 +29,7 @@ from framework.bcrypt import check_password_hash
 from website import filters, language, settings, mailchimp_utils
 from website.exceptions import NodeStateError
 from website.profile.utils import serialize_user
+from website.project.signals import contributor_added
 from website.project.model import (
     Comment, Node, NodeLog, Pointer, ensure_schemas, has_anonymous_link,
     get_pointer_parent, Embargo, MetaSchema, DraftRegistration
@@ -2002,6 +2003,19 @@ class TestProject(OsfTestCase):
         assert_in(user2, self.project.contributors)
         assert_equal(self.project.logs[-1].action, 'contributor_added')
 
+    def test_add_contributor_sends_contributor_added_signal(self):
+        user = UserFactory()
+        contributors = [{
+            'user': user,
+            'visible': True,
+            'permissions': ['read', 'write']
+        }]
+        with capture_signals() as mock_signals:
+            self.project.add_contributors(contributors=contributors, auth=self.consolidate_auth)
+            self.project.save()
+            assert_in(user, self.project.contributors)
+            assert_equal(mock_signals.signals_sent(), set([contributor_added]))
+
     def test_add_unregistered_contributor(self):
         self.project.add_unregistered_contributor(
             email='foo@bar.com',
@@ -2564,7 +2578,7 @@ class TestProject(OsfTestCase):
         registration.set_privacy('public', auth=self.consolidate_auth)
         registration.save()
         assert_false(registration.pending_embargo)
-        assert_equal(registration.embargo.state, Embargo.CANCELLED)
+        assert_equal(registration.embargo.state, Embargo.REJECTED)
         assert_true(registration.is_public)
         assert_equal(self.project.logs[-1].action, NodeLog.EMBARGO_APPROVED)
 
@@ -3116,11 +3130,8 @@ class TestRegisterNode(OsfTestCase):
         assert_equal(registration.creator, self.user)
 
     def test_logs(self):
-        # Registered node has all logs except the Project Registered log
+        # Registered node has all logs except for registration approval initiated
         assert_equal(self.registration.logs, self.project.logs[:-1])
-
-    def test_registration_log(self):
-        assert_equal(self.project.logs[-1].action, 'project_registered')
 
     def test_tags(self):
         assert_equal(self.registration.tags, self.project.tags)

@@ -39,3 +39,9 @@ table.table.table-plain th, table.table.table-plain td {
     width:70px;
     height:70px;
 }
+
+
+
+#social td:first-child {
+    word-break: inherit;
+}

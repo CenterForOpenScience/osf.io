@@ -17,6 +17,15 @@ TYPE_MAP = {
 }
 
 def push_status_message(message, kind='warning', dismissible=True, trust=True):
+    """
+    Push a status message that will be displayed as a banner on the next page loaded by the user.
+
+    :param message: Text of the message to display
+    :param kind: The type of alert message to use; translates into a bootstrap CSS class of `alert-<kind>`
+    :param dismissible: Whether the status message can be dismissed by the user
+    :param trust: Whether the text is safe to insert directly into HTML as given. (useful if the message includes
+        custom code, eg links) If false, the message will be automatically escaped as an HTML-safe string.
+    """
     # TODO: Change the default to trust=False once conversion to markupsafe rendering is complete
     statuses = session.data.get('status')
     if not statuses:

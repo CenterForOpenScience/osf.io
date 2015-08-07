@@ -126,6 +126,7 @@ CONFIRM_MERGE = Mail('confirm_merge', subject='Confirm account merge')
 REMOVED_EMAIL = Mail('email_removed', subject='Email address removed from your OSF account')
 PRIMARY_EMAIL_CHANGED = Mail('primary_email_changed', subject='Primary email changed')
 INVITE = Mail('invite', subject='You have been added as a contributor to an OSF project.')
+CONTRIBUTOR_ADDED = Mail('contributor_added', subject='You have been added as a contributor to an OSF project.')
 
 FORWARD_INVITE = Mail('forward_invite', subject='Please forward to ${fullname}')
 FORWARD_INVITE_REGiSTERED = Mail('forward_invite_registered', subject='Please forward to ${fullname}')
@@ -153,6 +154,7 @@ CONFERENCE_FAILED = Mail(
 DIGEST = Mail('digest', subject='OSF Email Digest')
 TRANSACTIONAL = Mail('transactional', subject='OSF: ${subject}')
 
+# Retraction related Mail objects
 PENDING_RETRACTION_ADMIN = Mail(
     'pending_retraction_admin',
     subject='Retraction pending for one of your projects.'
@@ -161,13 +163,22 @@ PENDING_RETRACTION_NON_ADMIN = Mail(
     'pending_retraction_non_admin',
     subject='Retraction pending for one of your projects.'
 )
-
+# Embargo related Mail objects
 PENDING_EMBARGO_ADMIN = Mail(
     'pending_embargo_admin',
     subject='Registration pending for one of your projects.'
 )
 PENDING_EMBARGO_NON_ADMIN = Mail(
     'pending_embargo_non_admin',
+    subject='Registration pending for one of your projects.'
+)
+# Registration related Mail Objects
+PENDING_REGISTRATION_ADMIN = Mail(
+    'pending_registration_admin',
+    subject='Registration pending for one of your projects.'
+)
+PENDING_REGISTRATION_NON_ADMIN = Mail(
+    'pending_registration_non_admin',
     subject='Registration pending for one of your projects.'
 )
 FILE_OPERATION_SUCCESS = Mail(
@@ -180,7 +191,7 @@ FILE_OPERATION_FAILED = Mail(
     subject='Your ${action} has failed',
 )
 
-UNESCAPE = "<% from website.util.sanitize import safe_unescape_html %> ${safe_unescape_html(src.title)}"
+UNESCAPE = "<% from website.util.sanitize import unescape_entities %> ${unescape_entities(src.title)}"
 PROBLEM_REGISTERING = "Problem registering " + UNESCAPE
 
 ARCHIVE_SIZE_EXCEEDED_DESK = Mail(

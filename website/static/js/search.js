@@ -74,6 +74,7 @@ var ViewModel = function(params) {
     self.resultsPerPage = ko.observable(10);
     self.categories = ko.observableArray([]);
     self.searchStarted = ko.observable(false);
+    self.jsonData = ko.observable('');
     self.showSearch = true;
     self.showClose = false;
     self.searchCSS = ko.observable('active');
@@ -244,6 +245,9 @@ var ViewModel = function(params) {
 
                     self.results.push(result);
                 }
+                if(result.category === 'registration'){
+                    result.dateRegistered = new $osf.FormattableDate(result.date_registered);
+                }
             });
 
             //Load our categories
@@ -281,7 +285,17 @@ var ViewModel = function(params) {
             }
 
             $osf.postJSON('/api/v1/share/search/?count&v=1', jsonData).success(function(data) {
-                self.categories.push(new Category('SHARE', data.count, 'SHARE'));
+                var shareCheck = true;
+                for (var i = 0; i < self.categories.length; i++){
+                    if (self.categories[i].name === 'SHARE' && self.categories[i].count === data.count && self.jsonData() === jsonData){
+                        shareCheck = false;
+                        break;
+                    }
+                }
+                if(shareCheck) {
+                    self.categories.push(new Category('SHARE', data.count, 'SHARE'));
+                    self.jsonData(jsonData);
+                }
             });
         }).fail(function(response){
             self.totalResults(0);

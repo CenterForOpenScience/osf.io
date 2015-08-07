@@ -16,7 +16,7 @@ Factory boy docs: http://factoryboy.readthedocs.org/
 import datetime
 from factory import base, Sequence, SubFactory, post_generation, LazyAttribute
 
-from mock import patch
+from mock import patch, Mock
 
 from framework.mongo import StoredObject
 from framework.auth import User, Auth
@@ -173,7 +173,7 @@ class RegistrationFactory(AbstractNodeFactory):
 
     @classmethod
     def _create(cls, target_class, project=None, schema=None, user=None,
-                data=None, archive=False, *args, **kwargs):
+                template=None, data=None, archive=False, embargo=None, approval=None, *args, **kwargs):
         save_kwargs(**kwargs)
 
         # Original project to be registered
@@ -198,34 +198,32 @@ class RegistrationFactory(AbstractNodeFactory):
             dst_node=register,
             initiator=user,
         )
-        reg = None
+
+        def add_approval_step(reg):
+            target = None
+            if embargo:
+                reg.embargo = embargo
+                target = embargo
+            if approval:
+                reg.registration_approval = approval
+            else:
+                reg.require_approval(reg.creator)
+            if not embargo:
+                target = reg.registration_approval
+            target.save()
+
         if archive:
             reg = register()
+            add_approval_step(reg)
         else:
             with patch('framework.tasks.handlers.enqueue_task'):
                 reg = register()
-                archiver_utils.archive_success(
-                    reg,
-                    reg.registered_user
-                )
-        if embargo:
-            reg.embargo = embargo
-        if approval:
-            reg.registration_approval = approval
-        else:
-            reg.require_approval(reg.creator)
-        meta = {
-            'embargo_urls': {
-                contrib._id: project_utils.get_embargo_urls(reg, contrib)
-                for contrib in reg.active_contributors()
-            } if embargo else {},
-            'registration_approval_urls': {
-                contrib._id: project_utils.get_registration_approval_urls(reg, contrib)
-                for contrib in reg.active_contributors()
-            }
-        }            
-        reg.archive_job.meta = meta
-        reg.archive_job.save()
+                add_approval_step(reg)
+            with patch.object(reg.archive_job, 'archive_tree_finished', Mock(return_value=True)):
+                reg.archive_job.status = ARCHIVER_SUCCESS
+                reg.archive_job.save()
+                with patch('website.mails.send_mail'):
+                    archiver_listeners.archive_callback(reg)
         reg.save()
         return reg
 

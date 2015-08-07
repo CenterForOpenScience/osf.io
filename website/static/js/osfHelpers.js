@@ -643,7 +643,7 @@ var confirmDangerousAction = function (options) {
         message: ''
     };
 
-    var bootboxOptions = $.extend({}, defaults, options);
+    var bootboxOptions = $.extend(true, {}, defaults, options);
 
     bootboxOptions.message += [
         '<p>Type the following to continue: <strong>',

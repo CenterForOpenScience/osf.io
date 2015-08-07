@@ -1,7 +1,6 @@
 <%inherit file="project/project_base.mako"/>
 
 <%
-    import json
     is_project = node['node_type'] == 'project'
 %>
 
@@ -101,6 +100,7 @@
         </div>
         <div id="contributors" class="row" style="line-height:25px">
             <div class="col-sm-12">
+                <div id="contributorsList" style="height: 25px; overflow: hidden">
                 % if user['is_contributor']:
                     <a class="link-dashed" href="${node['url']}contributors/">Contributors</a>:
                 % else:
@@ -116,27 +116,33 @@
                             "uri": "${node["api_url"]}get_contributors/",
                             "replace": true
                         }'></div>
-
                     </ol>
                 % endif
+                </div>
                 % if node['is_fork']:
-                    <br />Forked from <a class="node-forked-from" href="/${node['forked_from_id']}/">${node['forked_from_display_absolute_url']}</a> on
+                    <p>
+                    Forked from <a class="node-forked-from" href="/${node['forked_from_id']}/">${node['forked_from_display_absolute_url']}</a> on
                     <span data-bind="text: dateForked.local, tooltip: {title: dateForked.utc}"></span>
+                    </p>
                 % endif
                 % if node['is_registration'] and node['registered_meta']:
                     <br />Registration Supplement:
                     <a href="${node['url']}register/">${node['registered_schema']['schema']['title']}</a>
                 % endif
                 % if node['is_registration']:
-                    <br />Date Registered:
+                    <p>
+                    Date Registered:
                     <span data-bind="text: dateRegistered.local, tooltip: {title: dateRegistered.utc}" class="date node-date-registered"></span>
+                    </p>
                 % endif
-                    <br />Date Created:
+                    <p>
+                    Date Created:
                     <span data-bind="text: dateCreated.local, tooltip: {title: dateCreated.utc}" class="date node-date-created"></span>
-                % if not node['is_registration']:
-                    | Last Updated:
-                    <span data-bind="text: dateModified.local, tooltip: {title: dateModified.utc}" class="date node-last-modified-date"></span>
-                % endif
+                    % if not node['is_registration']:
+                        | Last Updated:
+                        <span data-bind="text: dateModified.local, tooltip: {title: dateModified.utc}" class="date node-last-modified-date"></span>
+                    % endif
+                    </p>
                 <span data-bind="if: hasIdentifiers()" class="scripted">
                   <br />
                     Identifiers:
@@ -145,21 +151,28 @@
                 </span>
                 <span data-bind="if: canCreateIdentifiers()" class="scripted">
                   <!-- ko if: idCreationInProgress() -->
-                    <br />
+                    <p>
                       <i class="fa fa-spinner fa-lg fa-spin"></i>
                         <span class="text-info">Creating DOI and ARK. Please wait...</span>
+                    </p>
                   <!-- /ko -->
 
                   <!-- ko ifnot: idCreationInProgress() -->
-                  <br />
+                  <p>
                   <a data-bind="click: askCreateIdentifiers, visible: !idCreationInProgress()">Create DOI / ARK</a>
+                  </p>
                   <!-- /ko -->
                 </span>
-                <br />Category: <span class="node-category">${node['category']}</span>
+                <p>
+                Category: <span class="node-category">${node['category']}</span>
                 &nbsp;
                 <span data-bind="css: icon"></span>
+                </p>
+
                 % if node['description'] or 'write' in user['permissions']:
-                    <br /><span id="description">Description:</span> <span id="nodeDescriptionEditable" class="node-description overflow" data-type="textarea">${node['description']}</span>
+                    <p>
+                    <span id="description">Description:</span> <span id="nodeDescriptionEditable" class="node-description overflow" data-type="textarea">${node['description']}</span>
+                    </p>
                 % endif
             </div>
         </div>
@@ -313,9 +326,6 @@
         </div><!-- end addon-widget-body -->
     </div><!-- end components -->
 %endif
-% for name, capabilities in addon_capabilities.iteritems():
-    <script id="capabilities-${name}" type="text/html">${capabilities}</script>
-% endfor
 
 </%def>
 
@@ -332,7 +342,6 @@
 </%def>
 
 <%def name="javascript_bottom()">
-<% import json %>
 
 ${parent.javascript_bottom()}
 
@@ -344,14 +353,14 @@ ${parent.javascript_bottom()}
     // Hack to allow mako variables to be accessed to JS modules
     window.contextVars = $.extend(true, {}, window.contextVars, {
         currentUser: {
-            name: '${user_full_name | js_str}',
-            canComment: ${json.dumps(user['can_comment'])},
-            canEdit: ${json.dumps(user['can_edit'])}
+            name: ${ user_full_name | sjson, n },
+            canComment: ${ user['can_comment'] | sjson, n },
+            canEdit: ${ user['can_edit'] | sjson, n }
         },
         node: {
-            hasChildren: ${json.dumps(node['has_children'])},
-            isRegistration: ${json.dumps(node['is_registration'])},
-            tags: ${json.dumps(node['tags'])}
+            hasChildren: ${ node['has_children'] | sjson, n },
+            isRegistration: ${ node['is_registration'] | sjson, n },
+            tags: ${ node['tags'] | sjson, n }
         }
     });
 </script>
