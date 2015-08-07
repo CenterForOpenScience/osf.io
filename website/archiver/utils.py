@@ -70,7 +70,7 @@ def handle_archive_fail(reason, src, dst, user, result):
         send_archiver_size_exceeded_mails(src, user, result)
     else:  # reason == ARCHIVER_UNCAUGHT_ERROR
         send_archiver_uncaught_error_mails(src, user, result)
-    dst.root.delete_registration_tree()
+    dst.root.delete_registration_tree(save=True)
 
 
 def archive_provider_for(node, user):
@@ -105,17 +105,6 @@ def link_archive_provider(node, user):
     addon.on_add()
     node.save()
 
-
-def delete_registration_tree(node):
-    node.is_deleted = True
-    if not getattr(node.embargo, 'for_existing_registration', False):
-        node.registered_from = None
-    node.save()
-    node.update_search()
-    for child in node.nodes_primary:
-        delete_registration_tree(child)
-
-
 def aggregate_file_tree_metadata(addon_short_name, fileobj_metadata, user):
     """Recursively traverse the addon's file tree and collect metadata in AggregateStatResult
 
@@ -139,7 +128,6 @@ def aggregate_file_tree_metadata(addon_short_name, fileobj_metadata, user):
             target_name=fileobj_metadata['name'],
             targets=[aggregate_file_tree_metadata(addon_short_name, child, user) for child in fileobj_metadata.get('children', [])],
         )
-
 
 def before_archive(node, user):
     link_archive_provider(node, user)

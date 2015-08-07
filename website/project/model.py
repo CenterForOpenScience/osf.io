@@ -840,7 +840,8 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
                                            Q('is_registration', 'ne', True)))
 
     def add_permission(self, user, permission, save=False):
-        """Grant **kwargs):*r, **kwargsr, **kwargso
+        """Grant permission to a user.
+
         :param str permission: Permission to grant
         :param bool save: Save changes
         :raises: ValueError if user already has permission
@@ -1579,14 +1580,15 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
             logger.exception(e)
             log_exception()
 
-    def delete_registration_tree(self):
+    def delete_registration_tree(self, save=False):
         self.is_deleted = True
         if not getattr(self.embargo, 'for_existing_registration', False):
             self.registered_from = None
-        self.save()
+        if save:
+            self.save()
         self.update_search()
         for child in self.nodes_primary:
-            child.delete_registration_tree()
+            child.delete_registration_tree(save=save)
 
     def remove_node(self, auth, date=None):
         """Marks a node as deleted.
@@ -3448,7 +3450,7 @@ class RegistrationApproval(EmailApprovableSanction):
     def _on_reject(self, user, token):
         register = Node.find_one(Q('registration_approval', 'eq', self))
         registered_from = register.registered_from
-        register.delete_registration_tree()
+        register.delete_registration_tree(save=True)
         registered_from.add_log(
             action=NodeLog.REGISTRATION_APPROVAL_CANCELLED,
             params={
