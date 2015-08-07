@@ -221,13 +221,13 @@ var RawNormalizedData = {
         return m('.row', [
             m('.col-md-12',
                 m('div', [
-                    m('ul', {class: 'nav nav-tabs'}, [
+                    m('ul', {className: 'nav nav-tabs'}, [
                         m('li', m('a', {href: '#raw' + divID, 'data-toggle': 'tab'}, 'Raw')),
                         m('li', m('a', {href: '#normalized' + divID, 'data-toggle': 'tab'}, 'Normalized'))
                     ]),
-                    m('div', {class: 'tab-content'},
+                    m('div', {className: 'tab-content'},
                         m('div',
-                            {class: 'tab-pane active', id:'raw' + divID},
+                            {className: 'tab-pane active', id:'raw' + divID},
                             m('pre',
                                 (function(){
                                     if (result.rawfiletype === 'xml') {
@@ -241,7 +241,7 @@ var RawNormalizedData = {
                             )
                         ),
                         m('div',
-                            {class: 'tab-pane', id:'normalized' + divID},
+                            {className: 'tab-pane', id:'normalized' + divID},
                             m('pre',
                                 (function(){
                                     return JSON.stringify(result.normalized, undefined, 2);
