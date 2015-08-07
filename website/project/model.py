@@ -3402,7 +3402,7 @@ class RegistrationApproval(EmailApprovableSanction):
             registration = Node.find_one(Q('registration_approval', 'eq', self))
 
             return {
-                'is_initiator': self.initated_by == user,
+                'is_initiator': self.initiated_by == user,
                 'initiated_by': self.initiated_by.fullname,
                 'registration_link': registration_link,
                 'approval_link': approval_link,
