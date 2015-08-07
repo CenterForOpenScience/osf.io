@@ -2729,7 +2729,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
                 return True
         return False
 
-    def _initiate_embargo(self, user, end_date, for_existing_registration=False, save=False):
+    def _initiate_embargo(self, user, end_date, for_existing_registration=False):
         """Initiates the retraction process for a registration
         :param user: User who initiated the retraction
         :param end_date: Date when the registration should be made public
@@ -2739,13 +2739,13 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
             end_date=datetime.datetime.combine(end_date, datetime.datetime.min.time()),
             for_existing_registration=for_existing_registration
         )
-        embargo.save()
+        embargo.save()  # Save embargo so it has a primary key
         self.embargo = embargo
-        self.save()
+        self.save()  # Set foreign field reference Node.embargo
         admins = [contrib for contrib in self.contributors if self.has_permission(contrib, 'admin') and contrib.is_active]
         for admin in admins:
             embargo.add_authorizer(admin)
-        embargo.save()
+        embargo.save()  # Save embargo's approval_state
         return embargo
 
     def embargo_registration(self, user, end_date, for_existing_registration=False):
@@ -3032,8 +3032,8 @@ class Sanction(StoredObject):
 
 class EmailApprovableSanction(Sanction):
 
-    AUTHORIZER_NOTIFY_TEMPLATE = None
-    NON_AUTHORIZER_NOTIFY_TEMPLATE = None
+    AUTHORIZER_NOTIFY_EMAIL_TEMPLATE = None
+    NON_AUTHORIZER_NOTIFY_EMAIL_TEMPLATE = None
 
     VIEW_URL_TEMPLATE = ''
     APPROVE_URL_TEMPLATE = ''
@@ -3087,15 +3087,15 @@ class EmailApprovableSanction(Sanction):
 
     def _notify_authorizer(self, authorizer):
         context = self._email_template_context(authorizer, True)
-        if self.AUTHORIZER_NOTIFY_TEMPLATE:
-            self._send_approval_request_email(authorizer, self.AUTHORIZER_NOTIFY_TEMPLATE, context)
+        if self.AUTHORIZER_NOTIFY_EMAIL_TEMPLATE:
+            self._send_approval_request_email(authorizer, self.AUTHORIZER_NOTIFY_EMAIL_TEMPLATE, context)
         else:
             raise NotImplementedError
 
     def _notify_non_authorizer(self, user):
         context = self._email_template_context(user)
-        if self.NON_AUTHORIZER_NOTIFY_TEMPLATE:
-            self._send_approval_request_email(user, self.NON_AUTHORIZER_NOTIFY_TEMPLATE, context)
+        if self.NON_AUTHORIZER_NOTIFY_EMAIL_TEMPLATE:
+            self._send_approval_request_email(user, self.NON_AUTHORIZER_NOTIFY_EMAIL_TEMPLATE, context)
         else:
             raise NotImplementedError
 
@@ -3114,8 +3114,8 @@ class Embargo(EmailApprovableSanction):
     COMPLETED = 'completed'
     DISPLAY_NAME = 'embargo'
 
-    AUTHORIZER_NOTIFY_TEMPLATE = mails.PENDING_EMBARGO_ADMIN
-    NON_AUTHORIZER_NOTIFY_TEMPLATE = mails.PENDING_EMBARGO_NON_ADMIN
+    AUTHORIZER_NOTIFY_EMAIL_TEMPLATE = mails.PENDING_EMBARGO_ADMIN
+    NON_AUTHORIZER_NOTIFY_EMAIL_TEMPLATE = mails.PENDING_EMBARGO_NON_ADMIN
 
     VIEW_URL_TEMPLATE = VIEW_PROJECT_URL_TEMPLATE
     APPROVE_URL_TEMPLATE = settings.DOMAIN + 'project/{node_id}/embargo/approve/{token}/'
@@ -3247,8 +3247,8 @@ class Retraction(EmailApprovableSanction):
 
     DISPLAY_NAME = 'retraction'
 
-    AUTHORIZER_NOTIFY_TEMPLATE = mails.PENDING_RETRACTION_ADMIN
-    NON_AUTHORIZER_NOTIFY_TEMPLATE = mails.PENDING_RETRACTION_NON_ADMIN
+    AUTHORIZER_NOTIFY_EMAIL_TEMPLATE = mails.PENDING_RETRACTION_ADMIN
+    NON_AUTHORIZER_NOTIFY_EMAIL_TEMPLATE = mails.PENDING_RETRACTION_NON_ADMIN
 
     VIEW_URL_TEMPLATE = VIEW_PROJECT_URL_TEMPLATE
     APPROVE_URL_TEMPLATE = settings.DOMAIN + 'project/{node_id}/retraction/approve/{token}/'
@@ -3367,8 +3367,8 @@ class RegistrationApproval(EmailApprovableSanction):
 
     DISPLAY_NAME = 'registration approval'
 
-    AUTHORIZER_NOTIFY_TEMPLATE = mails.PENDING_REGISTRATION_ADMIN
-    NON_AUTHORIZER_NOTIFY_TEMPLATE = mails.PENDING_REGISTRATION_NON_ADMIN
+    AUTHORIZER_NOTIFY_EMAIL_TEMPLATE = mails.PENDING_REGISTRATION_ADMIN
+    NON_AUTHORIZER_NOTIFY_EMAIL_TEMPLATE = mails.PENDING_REGISTRATION_NON_ADMIN
 
     VIEW_URL_TEMPLATE = VIEW_PROJECT_URL_TEMPLATE
     APPROVE_URL_TEMPLATE = settings.DOMAIN + 'project/{node_id}/registration/approve/{token}/'
@@ -3406,14 +3406,19 @@ class RegistrationApproval(EmailApprovableSanction):
         if is_authorizer:
             approval_link = urls.get('approve', '')
             disapproval_link = urls.get('reject', '')
-            approval_time_span = settings.REGISTRATION_APPROVAL_PERIOD
+
+            approval_time_span = (24 * settings.REGISTRATION_APPROVAL_PERIOD.days) + (settings.REGISTRATION_APPROVAL_PERIOD.seconds / 60)
+
+            registration = Node.find_one(Q('registration_approval', 'eq', self))
 
             return {
+                'is_initiator': self.initiated_by == user,
                 'initiated_by': self.initiated_by.fullname,
                 'registration_link': registration_link,
                 'approval_link': approval_link,
                 'disapproval_link': disapproval_link,
                 'approval_time_span': approval_time_span,
+                'project_name': registration.title,
             }
         else:
             return {

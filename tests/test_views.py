@@ -554,7 +554,7 @@ class TestProjectViews(OsfTestCase):
         # A registration was added to the project's registration list
         assert_equal(len(self.project.node__registrations), 1)
         # A log event was saved
-        assert_equal(self.project.logs[-1].action, "registration_approval_initiated")
+        assert_equal(self.project.logs[-1].action, "registration_initiated")
         # Most recent node is a registration
         reg = Node.load(self.project.node__registrations[-1])
         assert_true(reg.is_registration)

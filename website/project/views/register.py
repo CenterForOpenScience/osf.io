@@ -483,8 +483,7 @@ def node_register_template_page_post(auth, node, **kwargs):
     except ValidationValueError as err:
         raise HTTPError(http.BAD_REQUEST, data=dict(message_long=err.message))
 
-    push_status_message('Files are being copied to the newly created registration, and you will receive an email '
-                        'notification containing a link to the registration when the copying is finished.',
+    push_status_message(language.AFTER_REGISTER_ARCHIVING,
                         kind='info',
                         trust=False)
 
