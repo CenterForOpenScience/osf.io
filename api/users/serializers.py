@@ -1,6 +1,6 @@
 from rest_framework import serializers as ser
 
-from api.base.serializers import JSONAPISerializer, HyperLinkedIdentityFieldWithMeta
+from api.base.serializers import JSONAPISerializer, LinksField
 
 
 class UserSerializer(JSONAPISerializer):
@@ -26,13 +26,9 @@ class UserSerializer(JSONAPISerializer):
     social_accounts = ser.DictField(source='social', help_text='A dictionary of various social media account '
                                                                'identifiers including an array of user-defined URLs')
 
-    # links = LinksField({
-    #     'html': 'absolute_url',
-    #     'nodes': {
-    #         'relation': Link('users:user-nodes', kwargs={'user_id': '<pk>'})
-    #     }
-    # })
-    url = ser.HyperlinkedIdentityField(view_name='users:user-detail', lookup_field='pk', lookup_url_kwarg='user_id')
+    url = LinksField({
+        'html': 'absolute_url',
+    })
     nodes = ser.HyperlinkedIdentityField(view_name='users:user-nodes', lookup_field='pk', lookup_url_kwarg='user_id')
 
     class Meta:

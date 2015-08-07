@@ -8,8 +8,6 @@ from django.core.urlresolvers import NoReverseMatch
 from django.core.exceptions import ObjectDoesNotExist, ImproperlyConfigured
 
 
-
-
 def _rapply(d, func, *args, **kwargs):
     """Apply a function to all values in a dictionary, recursively."""
     if isinstance(d, collections.Mapping):
