@@ -1186,6 +1186,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         new.is_registration = False
         new.piwik_site_id = None
         new.mailing_enabled = False if new.is_folder else top_level
+        new.mailing_unsubs = []
 
         # If that title hasn't been changed, apply the default prefix (once)
         if (new.title == self.title
@@ -1685,6 +1686,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         forked.creator = user
         forked.piwik_site_id = None
         forked.mailing_enabled = False if forked.is_folder else top_level
+        forked.mailing_unsubs = []
 
         # Forks default to private status
         forked.is_public = False
@@ -1772,6 +1774,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         registered.tags = self.tags
         registered.piwik_site_id = None
         registered.mailing_enabled = False
+        registered.mailing_unsubs = []
 
         registered.save()
 

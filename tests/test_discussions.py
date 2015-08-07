@@ -20,12 +20,6 @@ class TestNewNodeMailingEnabled(OsfTestCase):
         node = NodeFactory(mailing_enabled=True)
         mock_create_list.assert_called()
 
-    # def test_node_adds_and_subscribes_creator(self):
-    #     user = UserFactory()
-    #     node = NodeFactory(creator=user)
-    #     assert_in(user.email, node.discussions.emails)
-    #     assert_in(user.email, node.discussions.subscriptions)
-
     def test_top_level_project_enables_discussions(self):
         project = ProjectFactory(parent=None)
         assert_true(project.mailing_enabled)
@@ -34,18 +28,6 @@ class TestNewNodeMailingEnabled(OsfTestCase):
         parent = ProjectFactory(parent=None)
         child = ProjectFactory(parent=parent)
         assert_false(child.mailing_enabled)
-    #
-    # def test_forking_node_adds_forker(self):
-    #     user1 = AuthUserFactory()
-    #     user2 = AuthUserFactory()
-    #     project = ProjectFactory(creator=user1, parent=None, is_public=True)
-    #
-    #     fork1 = project.fork_node(Auth(user=user1))
-    #     assert_in(user1.email, fork1.discussions.emails)
-    #
-    #     fork2 = project.fork_node(Auth(user=user2))
-    #     assert_in(user2.email, fork2.discussions.emails)
-    #     assert_not_in(user1.email, fork2.discussions.emails)
 
     def test_forking_with_child_enables_only_parent(self):
         user = AuthUserFactory()
@@ -91,42 +73,38 @@ class TestListCreation(OsfTestCase):
         user = AuthUserFactory()
         node = NodeFactory(is_public=True)
         fork = node.fork_node(Auth(user=user))
-        mock_create_list.assert_called_with(
-            node_id=fork._id,
-            title=fork.title,
-            url=fork.absolute_url,
-            contributors=[user.email],
-            unsubs=[]
-        )
+        mock_create_list.assert_called_with(title=fork.title, **fork.mailing_params)
 
     @mock.patch('website.project.model.mailing_list.create_list')
     def test_using_as_template_creates_unique_discussions(self, mock_create_list):
         user = AuthUserFactory()
         node = NodeFactory(is_public=True)
         new = node.use_as_template(Auth(user=user))
-        mock_create_list.assert_called_with(
-            node_id=new._id,
-            title=new.title,
-            url=new.absolute_url,
-            contributors=[user.email],
-            unsubs=[]
-        )
+        mock_create_list.assert_called_with(title=new.title, **new.mailing_params)
 
 
 class TestNodeMailingParams(OsfTestCase):
 
     def setUp(self):
         super(TestNodeMailingParams, self).setUp()
+        self.creator = UserFactory()
         self.user = UserFactory()
-        self.project = ProjectFactory(creator=self.user, parent=None)
 
-    def test_base_mailing_params(self):
-        assert_equal(self.project.mailing_params, {
+        self.project = ProjectFactory(creator=self.creator, parent=None, is_public=True)
+        self.project.add_contributor(self.user)
+        self.project.mailing_unsubs.append(self.user)
+        self.project.save()
+        self.project.reload()
+
+        self.intended_params = {
             'node_id': self.project._id,
             'url': self.project.absolute_url,
-            'contributors': [self.user.email],
-            'unsubs': []
-        })
+            'contributors': [self.creator.email, self.user.email],
+            'unsubs': [self.user.email]
+        }
+
+    def test_base_mailing_params(self):
+        assert_equal(self.project.mailing_params, self.intended_params)
 
     def test_add_and_unsub_users(self):
         url = api_url_for('set_subscription', pid=self.project._id)
@@ -137,22 +115,36 @@ class TestNodeMailingParams(OsfTestCase):
         self.project.save()
         self.project.reload()
 
-        assert_equal(self.project.mailing_params, {
-            'node_id': self.project._id,
-            'url': self.project.absolute_url,
-            'contributors': [self.user.email] + [user.email for user in users],
-            'unsubs': []
-        })
+        self.intended_params['contributors'].extend([user.email for user in users])
+        assert_equal(self.project.mailing_params, self.intended_params)
 
         for user in users:
             self.app.post_json(url, {'discussionsSub': 'unsubscribed'}, auth=user.auth)
         self.project.reload()
 
-        assert_equal(self.project.mailing_params, {
-            'node_id': self.project._id,
-            'url': self.project.absolute_url,
-            'contributors': [self.user.email] + [user.email for user in users],
-            'unsubs': [user.email for user in users]
+        self.intended_params['unsubs'].extend(user.email for user in users)
+        assert_equal(self.project.mailing_params, self.intended_params)
+
+    def test_fork_has_unique_params(self):
+        user = AuthUserFactory()
+        fork = self.project.fork_node(Auth(user=user))
+
+        assert_equal(fork.mailing_params, {
+            'node_id': fork._id,
+            'url': fork.absolute_url,
+            'contributors': [user.email],
+            'unsubs': []
+        })
+
+    def test_templated_has_unique_params(self):
+        user = AuthUserFactory()
+        new = self.project.use_as_template(Auth(user=user))
+
+        assert_equal(new.mailing_params, {
+            'node_id': new._id,
+            'url': new.absolute_url,
+            'contributors': [user.email],
+            'unsubs': []
         })
 
 
