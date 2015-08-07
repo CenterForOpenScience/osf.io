@@ -119,7 +119,7 @@
 
                     </ol>
                     % if discussions['enabled'] and user['is_contributor']:
-                        <span data-bind="tooltip: {title: 'Send an email to the email discussions list of this ${node['node_type']}', placement: right"><a href="mailto:${node['id']}@osf.io">&#9993&#65039</a></span>
+                        <a href="mailto:${node['id']}@osf.io"> <i class="fa fa-envelope"></i> </a>
                     % endif
                 % endif
                 % if node['is_fork']:
