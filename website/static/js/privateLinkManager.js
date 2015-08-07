@@ -17,7 +17,7 @@ var PrivateLinkViewModel = function(url) {
     self.isPublic = ko.observable('');
     self.name = ko.observable(null);
     self.anonymous = ko.observable(false);
-    self.pageTitle = 'Generate New Link to Share Project';
+    self.pageTitle = 'Create a New Link to Share Your Project';
     self.errorMsg = ko.observable('');
     self.id = ko.observable('');
 
