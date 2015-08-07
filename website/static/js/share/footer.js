@@ -6,7 +6,7 @@ var Footer = {
     view: function(ctrl, params) {
         return m('', [
             m('.col-xs-12.col-lg-10.col-lg-offset-1', m.component(ProviderList, params)),
-            m('.row', m('.col-md-12', {style: 'padding-top: 30px;'}, m('span', m.trust(MESSAGES.ABOUTSHARE))))
+            m('.row', m('.col-md-12', {style: {paddingTop: '30px'}}, m('span', m.trust(MESSAGES.ABOUTSHARE))))
         ]);
     }
 };
