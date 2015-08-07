@@ -53,7 +53,7 @@ initiated retraction of
 
 ## Registration related Logs
 <script type="text/html" id="registration_initiated">
-initiated retraction of
+initiated registration of
 <a class="log-node-title-link overflow" data-bind="text: nodeTitle, attr: {href: nodeUrl}"></a>
 </script>
 

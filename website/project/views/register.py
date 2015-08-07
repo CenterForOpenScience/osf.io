@@ -265,10 +265,10 @@ def node_registration_approve(auth, node, token, **kwargs):
     :raises: HTTPError if invalid token or user is not admin
     """
 
-    if not node.pending_retraction:
+    if not node.is_pending_registration:
         raise HTTPError(http.BAD_REQUEST, data={
             'message_short': 'Invalid Token',
-            'message_long': 'This registration is not pending a retraction.'
+            'message_long': 'This registration is not pending approval.'
         })
 
     try:

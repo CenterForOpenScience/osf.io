@@ -341,9 +341,9 @@ class NodeLog(StoredObject):
     RETRACTION_CANCELLED = 'retraction_cancelled'
     RETRACTION_INITIATED = 'retraction_initiated'
 
-    REGISTRATION_APPROVAL_CANCELLED = 'registration_approval_cancelled'
-    REGISTRATION_APPROVAL_INITIATED = 'registration_approval_initiated'
-    REGISTRATION_APPROVAL_COMPLETE = 'registration_approval_complete'
+    REGISTRATION_APPROVAL_CANCELLED = 'registration_cancelled'
+    REGISTRATION_APPROVAL_INITIATED = 'registration_initiated'
+    REGISTRATION_APPROVAL_COMPLETE = 'registration_complete'
 
     def __repr__(self):
         return ('<NodeLog({self.action!r}, params={self.params!r}) '
@@ -2909,10 +2909,10 @@ class Sanction(StoredObject):
 
     DISPLAY_NAME = 'sanction'
 
-    APPROVAL_NOT_AUTHORIZED_MESSAGE = 'This user is not authorized to approve this {0}'
-    APPROVAL_INVALID_TOKEN_MESSAGE = 'Invalid approval token provided for this {0}.'
-    REJECTION_NOT_AUTHORIZED_MESSAEGE = 'This user is not authorized to reject this {0}'
-    REJECTION_INVALID_TOKEN_MESSAGE = 'Invalid rejection token provided for this {0}.'
+    APPROVAL_NOT_AUTHORIZED_MESSAGE = 'This user is not authorized to approve this {DISPLAY_NAME}'
+    APPROVAL_INVALID_TOKEN_MESSAGE = 'Invalid approval token provided for this {DISPLAY_NAME}.'
+    REJECTION_NOT_AUTHORIZED_MESSAEGE = 'This user is not authorized to reject this {DISPLAY_NAME}'
+    REJECTION_INVALID_TOKEN_MESSAGE = 'Invalid rejection token provided for this {DISPLAY_NAME}.'
 
     _id = fields.StringField(primary=True, default=lambda: str(ObjectId()))
     initiation_date = fields.DateTimeField(auto_now_add=datetime.datetime.utcnow)
@@ -2933,7 +2933,7 @@ class Sanction(StoredObject):
     state = fields.StringField(default='unapproved')
 
     def __repr__(self):
-        return '<Sanction(end_date={1}) with _id {2}>'.format(
+        return '<Sanction(end_date={0}) with _id {1}>'.format(
             self.end_date,
             self._id
         )
@@ -2991,9 +2991,9 @@ class Sanction(StoredObject):
         """Add user to approval list if user is admin and token verifies."""
         try:
             if self.approval_state[user._id]['approval_token'] != token:
-                raise InvalidSanctionApprovalToken(self.APPROVAL_INVALID_TOKEN_MESSAGE.format(self.DISPLAY_NAME))
+                raise InvalidSanctionApprovalToken(self.APPROVAL_INVALID_TOKEN_MESSAGE.format(DISPLAY_NAME=self.DISPLAY_NAME))
         except KeyError:
-            raise PermissionsError(self.APPROVAL_NOT_AUTHORIZED_MESSAGE.format(self.DISPLAY_NAME))
+            raise PermissionsError(self.APPROVAL_NOT_AUTHORIZED_MESSAGE.format(DISPLAY_NAME=self.DISPLAY_NAME))
         self.approval_state[user._id]['has_approved'] = True
         self._on_approve(user, token)
 
@@ -3001,9 +3001,9 @@ class Sanction(StoredObject):
         """Cancels sanction if user is admin and token verifies."""
         try:
             if self.approval_state[user._id]['rejection_token'] != token:
-                raise InvalidSanctionRejectionToken(self.REJECTION_INVALID_TOKEN_MESSAGE.format(self.DISPLAY_NAME))
+                raise InvalidSanctionRejectionToken(self.REJECTION_INVALID_TOKEN_MESSAGE.format(DISPLAY_NAME=self.DISPLAY_NAME))
         except KeyError:
-            raise PermissionsError(self.REJECTION_NOT_AUTHORIZED_MESSAEGE.format(self.DISPLAY_NAME))
+            raise PermissionsError(self.REJECTION_NOT_AUTHORIZED_MESSAEGE.format(DISPLAY_NAME=self.DISPLAY_NAME))
         self.state = Sanction.REJECTED
         self._on_reject(user, token)
 
