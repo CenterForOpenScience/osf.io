@@ -289,7 +289,6 @@ def node_registration_approve(auth, node, token, **kwargs):
 
 @must_be_valid_project
 @must_have_permission(ADMIN)
-@must_be_public_registration
 def node_registration_disapprove(auth, node, token, **kwargs):
     """Handles approval of registration retractions
     :param auth: User wanting to approve retraction
@@ -298,14 +297,14 @@ def node_registration_disapprove(auth, node, token, **kwargs):
     :raises: HTTPError if invalid token or user is not admin
     """
 
-    if not node.pending_retraction:
+    if not node.is_pending_registration:
         raise HTTPError(http.BAD_REQUEST, data={
             'message_short': 'Invalid Token',
             'message_long': 'This registration is not pending a retraction.'
         })
 
     try:
-        node.registration_approval.disapprove(auth.user, token)
+        node.registration_approval.reject(auth.user, token)
         node.registration_approval.save()
     except InvalidSanctionRejectionToken as e:
         raise HTTPError(http.BAD_REQUEST, data={
