@@ -12,7 +12,6 @@ from api.base.utils import get_object_or_error, waterbutler_url_for
 from .serializers import NodeSerializer, NodePointersSerializer, NodeFilesSerializer
 from .permissions import ContributorOrPublic, ReadOnlyIfRegistration, ContributorOrPublicForPointers
 
-from api.base.exceptions import Gone
 
 class NodeMixin(object):
     """Mixin with convenience methods for retrieving the current node based on the
