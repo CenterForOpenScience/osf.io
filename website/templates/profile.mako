@@ -138,46 +138,53 @@
 ##    </div>
 ##</div>
 
+
 ## Add search dashboard
-## <hr />
-## <div id="profileDashboard" class="row">
-## </div>
+<script type="text/javascript">
+  (function() {
+      window.contextVars = $.extend(true, {}, window.contextVars, {name:"${profile["fullname"]}",date_registered:"${profile["date_registered"]}"});
+  })();
+</script>
 
-
-<% import json %>
 <hr />
-<div class="row">
-    <div class="col-sm-6">
-        <div class="panel panel-default">
-            <div class="panel-heading clearfix">
-              <h3 class="panel-title" >Public Projects</h3>
-            </div>
-            <div class="panel-body">
-                <div mod-meta='{
-                   "tpl" : "util/render_nodes.mako",
-                   "uri" : "/api/v1/profile/${profile["id"]}/public_projects/",
-                   "replace" : true,
-                   "kwargs" : {"sortable" : true, "user": ${json.dumps(user)}, "pluralized_node_type": "projects", "skipBindings": true}
-                 }'></div>
-            </div>
-        </div>
-    </div>
-    <div class="col-sm-6">
-        <div class="panel panel-default">
-            <div class="panel-heading clearfix">
-                <h3 class="panel-title">Public Components</h3>
-            </div>
-            <div class="panel-body">
-                <div mod-meta='{
-                  "tpl" : "util/render_nodes.mako",
-                  "uri" : "/api/v1/profile/${profile["id"]}/public_components/",
-                  "replace" : true,
-                  "kwargs" : {"sortable" : true,  "user": ${json.dumps(user)}, "pluralized_node_type": "components"}
-              }'></div>
-            </div>
-        </div>
-    </div>
-</div><!-- end row -->
+<div id="profileDashboard" class="row">
+</div>
+
+
+## <% import json %>
+## <hr />
+## <div class="row">
+##     <div class="col-sm-6">
+##         <div class="panel panel-default">
+##             <div class="panel-heading clearfix">
+##               <h3 class="panel-title" >Public Projects</h3>
+##             </div>
+##             <div class="panel-body">
+##                 <div mod-meta='{
+##                    "tpl" : "util/render_nodes.mako",
+##                    "uri" : "/api/v1/profile/${profile["id"]}/public_projects/",
+##                    "replace" : true,
+##                    "kwargs" : {"sortable" : true, "user": ${ user | sjson, n }, "pluralized_node_type": "projects", "skipBindings": true}
+##                  }'></div>
+##             </div>
+##         </div>
+##     </div>
+##     <div class="col-sm-6">
+##         <div class="panel panel-default">
+##             <div class="panel-heading clearfix">
+##                 <h3 class="panel-title">Public Components</h3>
+##             </div>
+##             <div class="panel-body">
+##                 <div mod-meta='{
+##                   "tpl" : "util/render_nodes.mako",
+##                   "uri" : "/api/v1/profile/${profile["id"]}/public_components/",
+##                   "replace" : true,
+##                   "kwargs" : {"sortable" : true,  "user": ${ user | sjson, n }, "pluralized_node_type": "components"}
+##               }'></div>
+##             </div>
+##         </div>
+##     </div>
+## </div><!-- end row -->
 
 <%include file="_log_templates.mako"/>
 <%include file="include/profile/social.mako" />
@@ -186,14 +193,15 @@
 <script type="text/javascript">
   (function() {
       var socialUrls = {
-          crud: '${ api_url_for('serialize_social', uid=profile['id']) }'
+          crud: ${ api_url_for('serialize_social', uid=profile['id']) | sjson, n }
       };
       var jobsUrls = {
-          crud: '${ api_url_for('serialize_jobs', uid=profile['id']) }'
+          crud: ${ api_url_for('serialize_jobs', uid=profile['id']) | sjson, n }
       };
       var schoolsUrls = {
-          crud: '${ api_url_for('serialize_schools', uid=profile['id']) }'
+          crud: ${ api_url_for('serialize_schools', uid=profile['id']) | sjson, n }
       };
+
       window.contextVars = $.extend(true, {}, window.contextVars, {
           socialUrls: socialUrls,
           jobsUrls: jobsUrls,

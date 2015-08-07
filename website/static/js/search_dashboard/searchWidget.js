@@ -26,7 +26,8 @@ var SearchWidget = {
      */
     view: function (ctrl, params) { //this should always be a component, and c3 should be wrapped!
         //m('.pull-left', params.vm.dataLoaded() ? [] : m('.logo-spin.logo-sm', m('img[src=/static/img/logo_spin.png][alt=loader]'))),
-        return m('div',{}, params.vm.dataLoaded() ? ctrl.drawChart(params.widget, params.vm, params.vm.data) : loadingIcon());
+        var loaded = params.vm.dataLoaded() && params.widget.display.dataReady;
+        return m('div',{}, loaded ? ctrl.drawChart(params.widget, params.vm, params.vm.data) : loadingIcon());
     },
 
     /**
@@ -42,7 +43,7 @@ var SearchWidget = {
          */
         this.drawChart = function (widget, vm, data) {
             if ((data.aggregations[widget.levelNames[0]] !== undefined) || (data[widget.levelNames[0]] !== undefined)) {
-                return widget.display(data, vm, widget);
+                return widget.display.displayWidget(data, vm, widget);
             }
         };
     }

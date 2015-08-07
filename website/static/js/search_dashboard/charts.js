@@ -26,9 +26,8 @@ function rgbToHex(rgb) {
 }
 
 function timeSinceEpochInMsToMMYY(timeSinceEpochInMs) {
-    var d = new Date(0);
-    d.setUTCSeconds(timeSinceEpochInMs / 1000);
-    return d.getMonth().toString() + '/' + d.getFullYear().toString().substring(2);
+    var d = new Date(timeSinceEpochInMs);
+    return (d.getDate()+1).toString() + '/' + (d.getMonth()+1).toString() + '/' + d.getFullYear().toString().substring(2);
 }
 
 /**
@@ -40,11 +39,19 @@ function timeSinceEpochInMsToMMYY(timeSinceEpochInMs) {
  * @param {Object} divID: id of the chart (name of widget)
  * @return {m.component object}  c3 chart wrapped in component
  */
-charts.c3componetize = function(c3ChartSetup, vm, divID) {
+charts.c3Update = function(c3ChartSetup, vm, divID) {
     return m('div.c3-chart-padding', {id: divID,
                     config: function(element, isInit, context){
+                        if (!isInit) {
+                            vm.chartHandles[divID] = c3.generate(c3ChartSetup);
+                            return vm.chartHandles[divID];
+                        }
                         if (!widgetUtils.updateTriggered(divID,vm)) {return; }
-                        return c3.generate(c3ChartSetup);
+                        vm.chartHandles[divID].load({ //TODO unload only what is needed...
+                            columns: c3ChartSetup.data.columns,
+                            unload: vm.chartHandles[divID].columns
+                        });
+                        return;
                     }
             });
 };
@@ -58,8 +65,9 @@ charts.c3componetize = function(c3ChartSetup, vm, divID) {
  * @return {m.component object} c3 chart wrapped in component
  */
 charts.donutChart = function (rawData, vm, widget) {
-    var data = charts.singleLevelAggParser(rawData, widget.levelNames);
-    data.onclick = widget.displayArgs.callback.onclick ? widget.displayArgs.callback.onclick.bind({
+    var data = widget.display.parser(rawData, widget.levelNames, vm, widget);
+    if (!widget.display.dataReady()) return;
+    data.onclick = widget.display.callback.onclick ? widget.display.callback.onclick.bind({
         vm: vm,
         widget: widget
     }) : undefined;
@@ -72,18 +80,75 @@ charts.donutChart = function (rawData, vm, widget) {
         },
         data: data,
         donut: {
-            title: data.title,
+            title: widget.display.title,
             label: {
                 format: function (value, ratio, id) {
-                    return Math.round(ratio * 100) + '%';
+                    return value; //Math.round(ratio * 100) + '%';
                 }
             }
         },
         legend: {
-            show: false
+            show: true,
+            position: 'right',
+            item : {onclick: data.onclick}
         }
     };
-    return charts.c3componetize(chartSetup,vm, widget.levelNames[0]);
+    return charts.c3Update(chartSetup,vm, widget.levelNames[0]);
+};
+
+/**
+ * Creates a c3 histogram chart component
+ *
+ * @param {Object} rawData: Data to populate chart after parsing raw data
+ * @param {Object} vm: vm of the searchDashboard
+ * @param {Object} widget: params of the widget that chart is being created for
+ * @return {m.component object} c3 chart wrapped in component
+ */
+charts.barChart = function (rawData, vm, widget) {
+    var data = widget.display.parser(rawData, widget.levelNames, vm, widget);
+    if (!widget.display.dataReady()) return;
+    data.onclick = widget.display.callback.onclick ? widget.display.callback.onclick.bind({
+        vm: vm,
+        widget: widget
+    }) : undefined;
+    data.type = 'bar';
+
+    var chartSetup = {
+        bindto: '#' + widget.levelNames[0],
+        size: {
+            height: widget.size[1],
+        },
+        data: data,
+        tooltip: {
+            grouped: false
+        },
+        legend: {
+            position: 'right'
+        },
+        axis: {
+            x: {
+                tick: {
+                    format: function (d) {return ''; },
+                }
+            },
+            y: {
+                label: {
+                    text: 'Number of projects contributed to',
+                    position: 'outer-center'
+                },
+                tick: {
+                    format: function (x) {
+                        if (x !== Math.floor(x)) {
+                          return '';
+                        }
+                        return x;
+                    }
+                }
+            },
+            rotated: true
+        }
+    };
+    return charts.c3Update(chartSetup,vm, widget.levelNames[0]);
 };
 
 /**
@@ -95,8 +160,8 @@ charts.donutChart = function (rawData, vm, widget) {
  * @return {m.component object}  c3 chart wrapped in component
  */
 charts.timeseriesChart = function (rawData, vm, widget) {
-    var data = charts.twoLevelAggParser(rawData, widget.levelNames);
-    data.type = 'area-spline';
+    var data = widget.display.parser(rawData, widget.levelNames, vm, widget);
+    data.type = widget.display.type ? widget.display.type : 'area-spline';
     var chartSetup = {
         bindto: '#' + widget.levelNames[0],
         size: {
@@ -109,10 +174,11 @@ charts.timeseriesChart = function (rawData, vm, widget) {
             size: {
                 height: 30
             },
-            onbrush: widget.displayArgs.callback ? widget.callback.displayArgs.onbrush.bind({vm: vm, widget: widget}) : undefined
+            onbrush: widget.display.callback ? widget.display.callback.onbrush.bind({vm: vm, widget: widget}) : undefined
         },
         axis: {
             x: {
+                text: widget.display.xLabel ? widget.display.xLabel : '',
                 type: 'timeseries',
                 tick: {
                     format: function (d) {return timeSinceEpochInMsToMMYY(d); }
@@ -120,23 +186,27 @@ charts.timeseriesChart = function (rawData, vm, widget) {
             },
             y: {
                 label: {
-                    text: 'Number of Events',
+                    text: widget.display.yLabel ? widget.display.yLabel : '',
                     position: 'outer-middle'
                 },
                 tick: {
-                    count: 8,
-                    format: function (d) {return parseInt(d).toFixed(0); }
+                    format: function (x) {
+                        if (x !== Math.floor(x)) {
+                          return '';
+                        }
+                        return x;
+                    }
                 }
             }
         },
         legend: {
-            show: false
+            position: 'inset'
         },
         tooltip: {
             grouped: false
         }
     };
-    return charts.c3componetize(chartSetup, vm, widget.levelNames[0]);
+    return charts.c3Update(chartSetup, vm, widget.levelNames[0]);
 };
 
 /**
@@ -146,18 +216,19 @@ charts.timeseriesChart = function (rawData, vm, widget) {
  * @param {Object} levelNames: names of each level (one in this case)
  * @return {m.component object}  parsed data
  */
-charts.singleLevelAggParser = function (data, levelNames) {
+charts.singleLevelAggParser = function (data, levelNames, vm, widget) {
     var chartData = {};
     chartData.name = levelNames[0];
     chartData.columns = [];
+    chartData.rawX = [];
     chartData.colors = {};
     chartData.type = 'donut';
     var count = 0;
-    var hexColors = charts.generateColors(data.aggregations[levelNames[0]].buckets.length);
+    var hexColors = widget.display.customColors ?
+        widget.display.customColors : charts.generateColors(data.aggregations[levelNames[0]].buckets.length);
     var i = 0;
     data.aggregations[levelNames[0]].buckets.forEach(
         function (bucket) {
-            console.log(bucket.key);
             chartData.columns.push([bucket.key, bucket.doc_count]);
             count = count + (bucket.doc_count ? 1 : 0);
             chartData.colors[bucket.key] = hexColors[i];
@@ -176,7 +247,7 @@ charts.singleLevelAggParser = function (data, levelNames) {
  * @param {Object} levelNames: names of each level (two in this case)
  * @return {m.component object}  parsed data
  */
-charts.twoLevelAggParser = function (data, levelNames) {
+charts.twoLevelAggParser = function (data, levelNames, vm, widget) {
     var chartData = {};
     chartData.name = levelNames[0];
     chartData.columns = [];
@@ -185,29 +256,40 @@ charts.twoLevelAggParser = function (data, levelNames) {
     chartData.groups = [];
     var grouping = [];
     grouping.push('x');
-    var hexColors = charts.generateColors(data.aggregations[levelNames[0]].buckets.length);
+    var hexColors = widget.display.customColors ?
+        widget.display.customColors : charts.generateColors(data.aggregations[levelNames[0]].buckets.length);
     var i = 0;
     var xCol = [];
     data.aggregations[levelNames[0]].buckets.forEach(
-        function (levelTwoItem) {
-            chartData.colors[levelTwoItem.key] = hexColors[i];
-            var column = [levelTwoItem.key];
-            grouping.push(levelTwoItem.key);
-            levelTwoItem[levelNames[1]].buckets.forEach(function(date){
-                column.push(date.doc_count);
+        function (levelOneItem) {
+            chartData.colors[levelOneItem.key] = hexColors[i];
+            var column = [levelOneItem.key];
+            grouping.push(levelOneItem.key);
+            levelOneItem[levelNames[1]].buckets.forEach(function(levelTwoItem){
+                column.push(levelTwoItem.doc_count);
                 if (i === 0) {
-                    xCol.push(date.key);
+                    xCol.push(levelTwoItem.key);
                 }
             });
             chartData.columns.push(column);
             i = i + 1;
         }
     );
+
     chartData.groups.push(grouping);
     xCol.unshift('x');
     chartData.columns.unshift(xCol);
     return chartData;
 };
+
+charts.populateMissingBuckets = function(chartData){
+    var newChartData = $.extend({},chartData);
+    var lengthOfCols = $.map(chartData.columns, function(item){
+        return item.length;
+    });
+    Math.max(lengthOfCols);
+
+}
 
 /**
  * Returns a requested number of unique complementary colors

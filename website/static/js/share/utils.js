@@ -168,9 +168,15 @@ utils.buildQuery = function (vm) {
     var must = $.map(vm.requiredFilters, utils.parseFilter);
     var should = $.map(vm.optionalFilters, utils.parseFilter);
     var sort = {};
+    var size = 10;
+    if (vm.size !== undefined) {
+        size = vm.size;
+    }
 
-    if (vm.sortMap[vm.sort()]) {
-        sort[vm.sortMap[vm.sort()]] = 'desc';
+    if (vm.sortMap) {
+        if (vm.sortMap[vm.sort()]) {
+            sort[vm.sortMap[vm.sort()]] = 'desc';
+        }
     }
 
     return {
@@ -181,8 +187,8 @@ utils.buildQuery = function (vm) {
             }
         },
         'aggregations': vm.loadStats ? utils.buildStatsAggs(vm) : {},
-        'from': (vm.page - 1) * 10,
-        'size': 10,
+        'from': ((vm.page || 1) - 1) * 10,
+        'size': size,
         'sort': [sort],
         'highlight': {
             'fields': {
@@ -285,12 +291,13 @@ utils.termFilter = function (field, value) {
     return ret;
 };
 
-utils.termsFilter = function (field, value, minDocCount) {
+utils.termsFilter = function (field, value, minDocCount, exclustions) {
     minDocCount = minDocCount || 0;
+    exclustions = ('|'+ exclustions) || '';
     var ret = {'terms': {}};
     ret.terms[field] = value;
     ret.terms.size = 0;
-    ret.terms.exclude = 'of|and|or';
+    ret.terms.exclude = 'of|and|or' + exclustions;
     ret.terms.min_doc_count = minDocCount;
     return ret;
 };
@@ -329,13 +336,14 @@ utils.dateHistogramFilter = function (field, gte, lte, interval) {
     lte = lte || new Date().getTime();
     gte = gte || 0;
 
+
     interval = interval || 'week';
-    return {
+    return  {
         'date_histogram': {
             'field': field,
             'interval': interval,
             'min_doc_count': 0,
-            'extended_bounds': {
+             extended_bounds : {
                 'min': gte,
                 'max': lte
             }

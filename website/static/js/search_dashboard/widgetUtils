@@ -1,12 +1,15 @@
 'use strict';
 var $ = require('jquery');
+var m = require('mithril');
+var $osf = require('js/osfHelpers');
+var utils = require('js/share/utils');
 
 var widgetUtils = {};
 
 /**
  * Checks if an update has been requested for this widget
  *
- * @params {string} name of widget to check
+ * @param {string} name of widget to check
  * @vm {object} searchDashboard vm containing a list of widgets that need to be updated (vm.widgetsToUpdate)
  * @return {bool}  returns itself
  */
@@ -39,6 +42,77 @@ widgetUtils.signalWidgetsToUpdate = function(vm, widgetsToAdd){
 widgetUtils.concatUnique = function(array1, array2){
      var temp = array1.concat(array2);
      return temp.filter(function(item, i, arr){ return arr.indexOf(item) === i; }); //make unique so we dont redraw widgets more than we have to
+};
+
+widgetUtils.mapGuidsToName = function(guids){
+    var guidFilters = [];
+    var newGuidMaps = {};
+    for(var guid in guids){
+        guidFilters.push('match:id:' + guids[guid]);
+    }
+    var tempvm = {};
+    tempvm.query = m.prop('*');
+    tempvm.optionalFilters = guidFilters;
+    tempvm.requiredFilters = ['match:category:user'];
+    tempvm.size = guids.length;
+    utils.buildQuery(tempvm);
+    return m.request({
+        method: 'post',
+        background: true,
+        data: utils.buildQuery(tempvm),
+        url: '/api/v1/search/'
+    }).then(function (data) {
+        data.results.forEach(function(user){
+            newGuidMaps[user.id] = user.user;
+        });
+        return newGuidMaps;
+    }, function (xhr, status, err) {
+        $osf.growl('Error','could not load names of collaborators','danger');
+    });
+};
+
+widgetUtils.keysNotInObject = function(keys, object){
+    return $.map(keys, (function(key){
+        if (object[key] === undefined){
+            return key;
+        }
+    }));
+};
+
+widgetUtils.getObjectById = function(listOfObjects,id){
+    var obIndex = $.map(listOfObjects, function(obj, index) {
+        if (obj.levelNames[0] === id) {
+            return index;
+        }
+    });
+    return listOfObjects[obIndex];
+};
+
+widgetUtils.getKeyFromValue = function(object,value){
+  for(var key in object){
+    if(object[key] === value){
+      return key;
+    }
+  }
+  return null;
+};
+
+widgetUtils.getGuidsToNamesMap = function(urls, widget, vm) {
+    var missingKeys = widgetUtils.keysNotInObject(urls, vm.tempData.guidsToNames); //check if we have the names for these urls
+
+    if (missingKeys.length > 0) { //if we have missing keys then we have to add to the map between url and name
+        widget.display.dataReady(false);
+        widgetUtils.mapGuidsToName(missingKeys).then(
+            function (newGuids) {
+                $.extend(vm.tempData.guidsToNames, newGuids);
+                widget.display.dataReady(true);
+                m.redraw(); //cool, now we have the data we need, so lets try creating this chart again...
+                //note that other charts will not update because we haven't signaled there update
+            }
+        );
+        return false;
+    }
+    return vm.tempData.guidsToNames;
 };
 
 module.exports = widgetUtils;

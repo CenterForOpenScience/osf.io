@@ -8,7 +8,7 @@ var profile = require('../profile.js'); // Social, Job, Education classes
 require('../project.js'); // Needed for nodelists to work
 require('../logFeed.js'); // Needed for nodelists to work
 var m = require('mithril');
-//var ProfileDashboard = require('../ProfileDashboard');
+var ProfileDashboard = require('../ProfileDashboard');
 
 var ctx = window.contextVars;
 // Instantiate all the profile modules
@@ -16,4 +16,4 @@ new profile.Social('#social', ctx.socialUrls, ['view']);
 new profile.Jobs('#jobs', ctx.jobsUrls, ['view']);
 new profile.Schools('#schools', ctx.schoolsUrls, ['view']);
 
-//m.mount(document.getElementById('profileDashboard'), ProfileDashboard);
+m.mount(document.getElementById('profileDashboard'), ProfileDashboard);

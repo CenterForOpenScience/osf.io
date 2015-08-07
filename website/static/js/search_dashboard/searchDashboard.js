@@ -4,11 +4,11 @@ var c3 = require('c3');
 var m = require('mithril');
 var $ = require('jquery');
 var $osf = require('js/osfHelpers');
-var utils = require('js/share/utils');
+
 var widgetUtils = require('js/search_dashboard/widgetUtils');
 var SearchWidgetPanel = require('js/search_dashboard/searchWidget');
 var History = require('exports?History!history');
-
+var utils = require('js/share/utils');
 var searchDashboard = {};
 
 /**
@@ -49,6 +49,7 @@ searchDashboard.controller = function (params) {
 
     //search model state
     self.vm = searchDashboard.vm;
+    self.vm.tempData = params.tempData;
     self.vm.elasticURL = params.elasticURL;
     self.vm.pageTitle = params.pageTitle;
     self.vm.query =  params.query || m.prop('*');
@@ -61,9 +62,10 @@ searchDashboard.controller = function (params) {
         self.widgets.forEach(function(widget){
             self.vm.aggregations.push(widget.aggregation);
             self.vm.widgetNames.push(widget.levelNames[0]);
-            self.vm.widgetsToUpdate.push(widget.levelNames[0]); //redraw all to start with
+            //self.vm.widgetsToUpdate.push(widget.levelNames[0]); //redraw all to start with TODO this is getting fucked with somewhere...
         });
     }
+    self.vm.chartHandles = [];
     self.vm.rowHeights = {};
     self.vm.loadStats = true;
     self.vm.results = null; //unused, only for backwards compatibility with utils TODO remove
