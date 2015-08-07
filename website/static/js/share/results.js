@@ -48,12 +48,6 @@ var Results = {
 };
 
 var Result = {
-    /**
-     * Formats a single search result for display
-     *
-     * @param {Object} result A map containing a single search result
-     * @param {Integer} index Just ignore this, it doesn't matter
-     */
     view: function(ctrl, params) {
         return m( '.animated.fadeInUp', [
             m('div', [
@@ -98,15 +92,16 @@ var Description = {
     view: function(ctrl, params) {
         var result = params.result;
         if ((result.description || '').length > 350) {
-                return m('p.readable.pointer', {
-                    onclick:function(){
-                        result.showAll = result.showAll ? false : true;
-                        }
-                    },
-                    result.showAll ? result.description : $.trim(result.description.substring(0, 350)) + '...'
-                );
-            }
+            return m('p.readable.pointer', {
+                onclick: function() {
+                    result.showAll = result.showAll ? false : true;
+                    }
+                },
+                result.showAll ? result.description : $.trim(result.description.substring(0, 350)) + '...'
+            );
+        } else {
             return m('p.readable', result.description);
+        }
     }
 };
 
