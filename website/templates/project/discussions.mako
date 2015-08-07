@@ -82,7 +82,7 @@
             % endif
             </h3>
 
-            <div data-bind="if: discussion().length == 0" style="padding-top: 20px;">
+            <div data-bind="if: comments().length == 0" style="padding-top: 20px;">
                 % if comment_target == 'total':
                     There are no comments on this project yet. Go to the
                     <a href="${node['url']}">Overview page,</a> open the comment pane and make the first one!

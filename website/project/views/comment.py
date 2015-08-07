@@ -80,46 +80,6 @@ def resolve_target(node, page, guid):
     return target.referent
 
 
-def update_discussion(target, comments_dict):
-    if not getattr(target, 'commented', None) is None:
-        for comment in getattr(target, 'commented', []):
-            if not (comment.is_deleted or comment.is_hidden):
-                comments_dict[comment.user].append(comment)
-            update_discussion(comment, comments_dict=comments_dict)
-    return comments_dict
-
-
-def comment_discussion(comments, node, anonymous=False, widget=False):
-
-    comments_dict = collections.defaultdict(list)
-    for comment in comments:
-        if not (comment.is_deleted or comment.is_hidden):
-            comments_dict[comment.user].append(comment)
-        if not widget:
-            update_discussion(comment, comments_dict=comments_dict)
-
-    def get_most_recent_comment(item):
-        """Gets the most recent comment made by a user"""
-        most_recent = comments_dict[item][0].date_created
-        for comment in comments_dict[item][1:]:
-            if comment.date_created > most_recent:
-                most_recent = comment.date_created
-        return most_recent
-
-    sorted_users = sorted(
-        comments_dict.keys(),
-        key=get_most_recent_comment,
-        reverse=True,
-    )
-
-    return {
-        'discussion': [
-            serialize_user(user, node=node, n_comments=len(comments_dict[user]), anonymous=anonymous)
-            for user in sorted_users
-        ]
-    }
-
-
 def serialize_comment(comment, auth, anonymous=False):
     node = comment.node
     if hasattr(comment.root_target, 'page_name'):  # Wiki
@@ -281,14 +241,11 @@ def list_comments(auth, node, **kwargs):
     page = request.args.get('page')
     guid = request.args.get('target')
     root_id = request.args.get('rootId')
-    is_list = request.args.get('isCommentList')
-    is_widget = False
 
     if page == 'total' and not root_id:  # "Total" on discussion page
         comments = list_total_comments(node, auth, 'total')
     elif page == 'total':  # Discussion widget on overview's page
         comments = list_total_comments_widget(node, auth)
-        is_widget = True
     elif not root_id:  # Overview/Files/Wiki page on discussion page
         comments = list_total_comments(node, auth, page)
     else:
@@ -309,9 +266,6 @@ def list_comments(auth, node, **kwargs):
         ],
         'nUnread': n_unread
     }
-    if is_list:
-        discussions = comment_discussion(comments, node, anonymous=anonymous, widget=is_widget)
-        ret.update(discussions)
 
     return ret
 

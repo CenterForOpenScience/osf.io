@@ -149,22 +149,21 @@ BaseComment.prototype.setupToolTips = function(elm) {
     });
 };
 
-BaseComment.prototype.fetch = function(isCommentList, nodeId, thread) {
+BaseComment.prototype.fetch = function(nodeId, threadId) {
     var self = this;
     var deferred = $.Deferred();
     if (self._loaded) {
         deferred.resolve(self.comments());
     }
-    if (thread !== undefined) {
-        return self.getThread(thread);
+    if (threadId !== undefined) {
+        return self.getThread(threadId);
     }
     $.getJSON(
         self.$root.nodeApiUrl + 'comments/',
         {
             page: self.page(),
             target: self.id(),
-            rootId: self.rootId(),
-            isCommentList: (isCommentList || null)
+            rootId: self.rootId()
         },
         function(response) {
             self.comments(
@@ -172,9 +171,7 @@ BaseComment.prototype.fetch = function(isCommentList, nodeId, thread) {
                     return new CommentModel(comment, self, self.$root);
                 })
             );
-            if (isCommentList) {
-                self.discussion(response.discussion);
-            }
+
             self.unreadComments(response.nUnread);
             deferred.resolve(self.comments());
             self.configureCommentsVisibility(nodeId);
@@ -236,28 +233,11 @@ BaseComment.prototype.checkFileExistsAndConfigure = function(nodeId) {
     });
     request.fail(function (xhl) {
         self.isHidden(true);
-        $.map([self.$root.discussion], function(discussion){
-            return self.decrementUserFromDiscussion(discussion);
-        });
         self.loading(false);
     });
     return request;
 };
 
-BaseComment.prototype.decrementUserFromDiscussion = function(discussions) {
-    var self = this;
-    var commenterId = self.author.id;
-    for (var i in discussions()) {
-        if (discussions()[i].id === commenterId) {
-            var commenter = discussions()[i];
-            commenter.numOfComments -= 1;
-            if (commenter.numOfComments === 0) {
-                discussions.splice(i, 1);
-            }
-            break;
-        }
-    }
-};
 
 BaseComment.prototype.submitReply = function() {
     var self = this;
@@ -288,18 +268,6 @@ BaseComment.prototype.submitReply = function() {
             self.hasChildren(true);
         }
         self.replyErrorMessage('');
-        // Update discussion in case we aren't already in it
-        var hasCommented = false;
-        var discussion = self.$root.discussion();
-        for (var i in discussion) {
-            if (discussion[i].id === response.comment.id) {
-                hasCommented = true;
-                break;
-            }
-        }
-        if (!hasCommented) {
-            self.$root.discussion.unshift(response.comment.author);
-        }
         self.onSubmitSuccess(response);
         if (self.level >= self.MAXLEVEL) {
             window.location.href = nodeUrl + 'discussions/' + self.id();
@@ -608,7 +576,7 @@ CommentModel.prototype.stopHoverContent = function() {
 };
 
 CommentModel.prototype.toggle = function () {
-    this.fetch(false);
+    this.fetch();
     this.showChildren(!this.showChildren());
 };
 
@@ -633,7 +601,6 @@ var CommentListModel = function(options) {
     self.userName = ko.observable(options.userName);
     self.canComment = ko.observable(options.canComment);
     self.hasChildren = ko.observable(options.hasChildren);
-    self.discussion = ko.observableArray();
 
     self.page(options.hostPage);
     self.id = ko.observable(options.hostName);
@@ -672,7 +639,7 @@ var CommentListModel = function(options) {
         return comments;
     });
 
-    self.fetch(true, options.nodeId, options.threadId);
+    self.fetch(options.nodeId, options.threadId);
 
 };
 
