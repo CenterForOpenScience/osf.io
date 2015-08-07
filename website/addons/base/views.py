@@ -288,7 +288,7 @@ def create_waterbutler_log(payload, **kwargs):
     metadata = payload.get('metadata') or payload['destination']
     name = metadata.get('name') or metadata['path']
     action = payload['action']
-    provider = payload.get('provider')
+    provider = metadata.get('provider')
     source_node_id = payload['source']['nid'] if 'source' in payload else None
     node_addon = node.get_addon(provider)
     update_search(node, action, node_addon, name, source_node_id)

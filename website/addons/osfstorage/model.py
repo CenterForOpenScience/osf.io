@@ -352,7 +352,6 @@ class OsfStorageFileNode(StoredObject):
     def copy_under(self, destination_parent, name=None):
         return utils.copy_files(self, destination_parent.node_settings, destination_parent, name=name)
 
-
     def move_under(self, destination_parent, name=None):
         self.name = name or self.name
         self.parent = destination_parent

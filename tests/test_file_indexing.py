@@ -302,17 +302,17 @@ class TestSearchFileFunctions(FileIndexingTestCase):
 
     @patch_context
     def test_update_delete_single_file(self):
-        assert_equal(len(query('cat')), 1)
-
-        file_indexing.delete_search_file(self.file_node)
-        assert_equal(len(query('cat')), 0, 'failed to delete')
+        assert_equal(len(query('cat')), 0)
 
         file_indexing.update_search_file(self.file_node)
         assert_equal(len(query('cat')), 1, 'failed to update')
 
+        file_indexing.delete_search_file(self.file_node)
+        assert_equal(len(query('cat')), 0, 'failed to delete')
+
     @patch_context
     def test_update_delete_all_files(self):
-        assert_equal(len(query('cat')), 1)
+        assert_equal(len(query('cat')), 0)
 
         self.root.append_file(factories.fake.file_name(extension='txt'))
         folder = self.root.append_folder(factories.fake.first_name())
@@ -417,49 +417,6 @@ class TestFileNodeUpdateSearch(FileIndexingTestCase):
 
             delete_search_mock.assert_called_once_with(self.file_node)
             assert_false(update_search_mock.called)
-
-    def test_update_on_create(self):
-        with TRIGGER_CONTEXT as patches:
-            update_search_mock = patches.get_named_mock('update_search_file')
-            delete_search_mock = patches.get_named_mock('delete_search_file')
-            assert_false(update_search_mock.called)
-            assert_false(delete_search_mock.called)
-
-            self.addon.root_node.append_file('a_new_file.txt')
-
-            assert_true(update_search_mock.called)
-            assert_false(delete_search_mock.called)
-
-    def test_update_on_copy(self):
-        other_node = ProjectWithAddonFactory()
-        other_addon = other_node.get_addon('osfstorage')
-        with TRIGGER_CONTEXT as patches:
-            update_search_mock = patches.get_named_mock('update_search_file')
-            delete_search_mock = patches.get_named_mock('delete_search_file')
-
-            assert_false(update_search_mock.called)
-            assert_false(delete_search_mock.called)
-
-            copied_node = self.file_node.copy_under(other_addon.root_node)
-
-            update_search_mock.assert_called_once_with(copied_node)
-            assert_false(delete_search_mock.called)
-
-    def test_update_on_move(self):
-        other_node = ProjectWithAddonFactory()
-        other_addon = other_node.get_addon('osfstorage')
-        with TRIGGER_CONTEXT as patches:
-            update_search_mock = patches.get_named_mock('update_search_file')
-            delete_search_mock = patches.get_named_mock('delete_search_file')
-
-            assert_false(update_search_mock.called)
-            assert_false(delete_search_mock.called)
-
-            self.file_node.move_under(other_addon.root_node)
-
-            update_search_mock.assert_called_once_with(self.file_node)
-            update_search_mock.assert_called_once_with(self.file_node)
-
 
 class TestProjectPrivacyUpdatesSearch(FileIndexingTestCase):
     def test_update_on_make_public(self):
