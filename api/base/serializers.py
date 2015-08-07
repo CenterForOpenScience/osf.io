@@ -109,14 +109,10 @@ def _get_attr_from_tpl(attr_tpl, obj):
                 raise AttributeError(
                     '{attr_name!r} is not a valid '
                     'attribute of {obj!r}'.format(
-                        attr_name=attr_name, obj=obj,
-                        )
-                    )
+                        attr_name=attr_name, obj=obj,))
         except TypeError:
             raise TypeError('{attr_name!r} is not a valid primary key in LinksField kwargs'.format(
-                attr_name=attr_name,
-                )
-            )
+                attr_name=attr_name,))
     else:
         return attr_tpl
 
