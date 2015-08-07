@@ -2,7 +2,6 @@
 import itertools
 import os
 import re
-import urllib
 import logging
 import datetime
 import urlparse

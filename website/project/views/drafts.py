@@ -31,14 +31,12 @@ autoload_draft = functools.partial(autoload, DraftRegistration, 'draft_id', 'dra
 @must_have_permission(ADMIN)
 @must_be_valid_project
 def submit_draft_for_review(auth, node, draft, *args, **kwargs):
-    user = auth.user
-
     draft.approval = DraftRegistrationApproval(
         initiated_by=auth.user,
         end_date=None,  # TODO: expire me?
     )
-	draft.approval.ask(node.get_active_contributors)
-	draft.save()
+    draft.approval.ask(node.get_active_contributors)
+    draft.save()
 
     ret = project_utils.serialize_node(node, auth)
     ret['success'] = True
@@ -62,19 +60,24 @@ def register_draft_registration(auth, node, draft, *args, **kwargs):
     data = request.get_json()
     register = draft.register(auth)
 
-    embargoed = False
-    try:
-        register = None
-        if data.get('registrationChoice', 'immediate') == 'embargo':
-            # Initiate embargo
-            embargoed = True
-            embargo_end_date = parse_date(data['embargoEndDate'], ignoretz=True)
+    if data.get('registrationChoice', 'immediate') == 'embargo':
+        embargo_end_date = parse_date(data['embargoEndDate'], ignoretz=True)
+
+        # Initiate embargo
+        try:
             register.embargo_registration(auth.user, embargo_end_date)
-        else:
-            register.require_approval(auth.user)
-        register.save()
-    except ValidationValueError as err:
-        meta = {
+            register.save()
+        except ValidationValueError as err:
+            raise HTTPError(http.BAD_REQUEST, data=dict(message_long=err.message))
+        if settings.ENABLE_ARCHIVER:
+            register.archive_job.meta = {
+                'embargo_urls': {
+                    contrib._id: project_utils.get_embargo_urls(register, contrib)
+                    for contrib in node.active_contributors()
+                }
+            }
+            register.archive_job.save()
+    else:
         register.set_privacy('public', auth, log=False)
         for child in register.get_descendants_recursive(lambda n: n.primary):
             child.set_privacy('public', auth, log=False)
