@@ -239,6 +239,21 @@ def update_title(node_id, node_title):
         raise HTTPError(400)
 
 
+@require_project_mailing
+@queued_task
+@app.task
+def update_email(node_id, old_email, new_email):
+    res = requests.put(
+        'https://api.mailgun.net/v3/lists/{0}/members/{1}'.format(address(node_id), old_email),
+        auth=('api', settings.MAILGUN_API_KEY),
+        data={
+            'address': new_email,
+        }
+    )
+    if res.status_code != 200:
+        raise HTTPError(400)
+
+
 @queued_task
 @app.task
 def update_list(node_id, node_title, list_enabled, emails, subscriptions):

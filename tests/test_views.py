@@ -4367,7 +4367,9 @@ class TestDiscussionsViews(OsfTestCase):
         self.user = AuthUserFactory()
         self.project = ProjectFactory(creator=self.user, parent=None)
 
-    def test_disable_and_enable_project_discussions(self):
+    @mock.patch('website.project.views.discussions.disable_list')
+    @mock.patch('website.project.views.discussions.enable_list')
+    def test_disable_and_enable_project_discussions(self, mock_enable_list, mock_disable_list):
         url = api_url_for('enable_discussions', pid=self.project._id)
         payload = {}
 
@@ -4375,13 +4377,17 @@ class TestDiscussionsViews(OsfTestCase):
 
         self.app.delete(url, payload, auth=self.user.auth)
         self.project.reload()
+        mock_disable_list.assert_called_with(self.project._id)
         assert_false(self.project.mailing_enabled)
 
         self.app.post(url, payload, auth=self.user.auth)
         self.project.reload()
-        assert_true(self.project.mailing_enabled_enabled)
+        mock_enable_list.assert_called_with(title=self.project.title, **self.project.mailing_params)
+        assert_true(self.project.mailing_enabled)
 
-    def test_enable_and_disable_component_discussions(self):
+    @mock.patch('website.project.views.discussions.disable_list')
+    @mock.patch('website.project.views.discussions.enable_list')
+    def test_enable_and_disable_component_discussions(self, mock_enable_list, mock_disable_list):
         component = NodeFactory(parent=self.project, creator=self.user)
         url = api_url_for('enable_discussions', pid=component._id)
         payload = {}
@@ -4390,13 +4396,16 @@ class TestDiscussionsViews(OsfTestCase):
 
         self.app.post(url, payload, auth=self.user.auth)
         component.reload()
+        mock_enable_list.assert_called_with(title=component.title, **component.mailing_params)
         assert_true(component.mailing_enabled)
 
         self.app.delete(url, payload, auth=self.user.auth)
         component.reload()
+        mock_disable_list.assert_called_with(component._id)
         assert_false(component.mailing_enabled)
 
-    def test_set_subscription_false_then_true(self):
+    @mock.patch('website.project.views.discussions.update_subscription')
+    def test_set_subscription_false_then_true(self, mock_update_subscription):
         url = api_url_for('set_subscription', pid=self.project._id)
 
         assert_not_in(self.user, self.project.mailing_unsubs)
@@ -4404,12 +4413,14 @@ class TestDiscussionsViews(OsfTestCase):
         payload = {'discussionsSub': 'unsubscribed'}
         self.app.post_json(url, payload, auth=self.user.auth)
         self.project.reload()
-        assert_in(self.user.email, self.project.mailing_unsubs)
+        mock_update_subscription.assert_called_with(self.project._id, self.user.email, False)
+        assert_in(self.user, self.project.mailing_unsubs)
 
         payload = {'discussionsSub': 'subscribed'}
         self.app.post_json(url, payload, auth=self.user.auth)
         self.project.reload()
-        assert_not_in(self.user.email, self.project.mailing_unsubs)
+        mock_update_subscription.assert_called_with(self.project._id, self.user.email, True)
+        assert_not_in(self.user, self.project.mailing_unsubs)
 
 
 if __name__ == '__main__':

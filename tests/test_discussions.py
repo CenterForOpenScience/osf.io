@@ -113,23 +113,66 @@ class TestListCreation(OsfTestCase):
         )
 
 
+class TestNodeMailingParams(OsfTestCase):
+
+    def setUp(self):
+        super(TestNodeMailingParams, self).setUp()
+        self.user = UserFactory()
+        self.project = ProjectFactory(creator=self.user, parent=None)
+
+    def test_base_mailing_params(self):
+        assert_equal(self.project.mailing_params, {
+            'node_id': self.project._id,
+            'url': self.project.absolute_url,
+            'contributors': [self.user.email],
+            'unsubs': []
+        })
+
+    def test_add_and_unsub_users(self):
+        url = api_url_for('set_subscription', pid=self.project._id)
+        users = [AuthUserFactory() for i in range(10)]
+
+        for user in users:
+            self.project.add_contributor(user)
+        self.project.save()
+        self.project.reload()
+
+        assert_equal(self.project.mailing_params, {
+            'node_id': self.project._id,
+            'url': self.project.absolute_url,
+            'contributors': [self.user.email] + [user.email for user in users],
+            'unsubs': []
+        })
+
+        for user in users:
+            self.app.post_json(url, {'discussionsSub': 'unsubscribed'}, auth=user.auth)
+        self.project.reload()
+
+        assert_equal(self.project.mailing_params, {
+            'node_id': self.project._id,
+            'url': self.project.absolute_url,
+            'contributors': [self.user.email] + [user.email for user in users],
+            'unsubs': [user.email for user in users]
+        })
+
+
 class TestDiscussionsOnProjectActions(OsfTestCase):
 
     def setUp(self):
         super(TestDiscussionsOnProjectActions, self).setUp()
         self.creator = AuthUserFactory()
         self.project = ProjectFactory(creator=self.creator, parent=None)
-        self.discussions = self.project.discussions
 
-    def test_add_single_contributor_adds_and_subscribes(self):
+    @mock.patch('website.project.model.mailing_list.match_members')
+    def test_add_single_contributor_updates(self, mock_match_members):
         user = UserFactory()
 
         self.project.add_contributor(user, save=True)
 
-        assert_equal(self.discussions.emails, {user.email, self.creator.email})
-        assert_equal(self.discussions.subscriptions, {user.email, self.creator.email})
+        mock_match_members.assert_called_with(**self.project.mailing_params)
 
-    def test_add_many_contributors_adds_and_subscribes_all(self):
+    @mock.patch('website.project.model.mailing_list.match_members')
+    def test_add_many_contributors_updates_only_once(self, mock_match_members):
         users = [UserFactory() for i in range(10)]
         emails = {user.email for user in users + [self.creator]}
 
@@ -137,43 +180,27 @@ class TestDiscussionsOnProjectActions(OsfTestCase):
             self.project.add_contributor(user, save=False)
         self.project.save()
 
-        assert_equal(self.discussions.emails, emails)
-        assert_equal(self.discussions.subscriptions, emails)
+        mock_match_members.assert_called_once_with(**self.project.mailing_params)
 
-    def test_add_contributor_then_remove_creator(self):
+    @mock.patch('website.project.model.mailing_list.match_members')
+    def test_add_contributor_then_remove_creator(self, mock_match_members):
         user = UserFactory()
 
         self.project.add_contributor(user, permissions=('read', 'write', 'admin'), save=True)
+        mock_match_members.assert_called_with(**self.project.mailing_params)
+
         self.project.remove_contributor(self.creator, auth=Auth(user=self.creator), save=True)
+        self.project.reload()
+        mock_match_members.assert_called_with(**self.project.mailing_params)
 
-        assert_equal(self.discussions.emails, {user.email})
-        assert_equal(self.discussions.subscriptions, {user.email})
-
-    def test_add_contributors_then_remove_some(self):
-        users = {UserFactory() for i in range(10)}
-
-        for user in users:
-            self.project.add_contributor(user, save=False)
-        self.project.save()
-
-        for i in range(5):
-            user = users.pop()
-            self.project.remove_contributor(user, auth=Auth(self.creator))
-        self.project.save()
-
-        users = list(users)
-        emails = {user.email for user in users + [self.creator]}
-
-        assert_equal(self.discussions.emails, emails)
-        assert_equal(self.discussions.subscriptions, emails)
-
-    def test_delete_project_disables_discussions(self):
-        assert_true(self.discussions.is_enabled)
+    @mock.patch('website.project.model.mailing_list.delete_list')
+    def test_delete_project_disables_discussions(self, mock_delete_list):
+        assert_true(self.project.mailing_enabled)
 
         self.project.remove_node(Auth(user=self.creator))
 
-        assert_false(self.discussions.is_enabled)
-        assert_true(self.discussions.node_deleted)
+        assert_false(self.project.mailing_enabled)
+        mock_delete_list.assert_called()
 
 
 class TestEmailRejections(OsfTestCase):
@@ -315,8 +342,6 @@ class TestEmailRejections(OsfTestCase):
         self.project.mailing_enabled = False
         self.project.add_contributor(self.user, save=True)
         self.message['From'] = self.user.email
-
-        self.project.reload()
 
         self.app.post(self.post_url, self.message)
 

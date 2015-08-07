@@ -15,7 +15,6 @@ from website.project.decorators import (
     must_be_contributor
 )
 from website.project.mailing_list import (
-    require_project_mailing,
     enable_list,
     disable_list,
     update_subscription
