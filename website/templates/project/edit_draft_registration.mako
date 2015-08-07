@@ -95,17 +95,18 @@
 </div>
 
 <%def name="javascript_bottom()">
-    ${parent.javascript_bottom()}
-    <script>
-        <%
-        import json %>
-            window.contextVars = $.extend(true, {}, window.contextVars, {
-                draft: ${json.dumps(draft)}
+  ${parent.javascript_bottom()}
 
-            });
-    </script>
-    <script src=${ "/static/public/js/registration-edit-page.js" | webpack_asset}>
-    </script>
+  <% import json %>
+  <script>
+   window.contextVars = $.extend(true, {}, window.contextVars, {
+     draft: ${draft | sjson, n}
+   });
+
+  </script>
+  <script src=${ "/static/public/js/registration-edit-page.js" | webpack_asset}>
+  </script>
+
 </%def>
 
 <%include file="project/registration_editor_templates.mako" />
