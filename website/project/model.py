@@ -959,7 +959,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         if save:
             self.save()
 
-    def set_visible(self, user, visible, log=True, auth=None, save=False):
+    def set_visible(self, user, visible, user_dicts=None, log=True, auth=None, save=False):
         if not self.is_contributor(user):
             raise ValueError(u'User {0} not in contributors'.format(user))
         if visible and user._id not in self.visible_contributor_ids:
@@ -967,9 +967,10 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
             self.update_visible_ids(save=False)
         elif not visible and user._id in self.visible_contributor_ids:
             if len(self.visible_contributor_ids) == 1:
-                raise ValueError(
-                    'Must have at least one visible contributor'
-                )
+                if user_dicts is None or all([contributor['visible'] is False for contributor in user_dicts]):
+                    raise ValueError(
+                        'Must have at least one visible contributor'
+                    )
             self.visible_contributor_ids.remove(user._id)
         else:
             return
@@ -2197,7 +2198,10 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
                 if set(permissions) != set(self.get_permissions(user)):
                     self.set_permissions(user, permissions, save=False)
                     permissions_changed[user._id] = permissions
-                self.set_visible(user, user_dict['visible'], auth=auth)
+                self.set_visible(user,
+                                 user_dict['visible'],
+                                 user_dicts,
+                                 auth=auth)
                 users.append(user)
                 user_ids.append(user_dict['id'])
 
