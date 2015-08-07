@@ -670,6 +670,16 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         return self.CATEGORY_MAP[self.category]
 
     @property
+    def sanction(self):
+        sanction = self.registration_approval or self.embargo
+        if sanction:
+            return sanction
+        elif self.parent_node:
+            return self.parent_node.sanction
+        else:
+            return None
+
+    @property
     def is_pending_registration(self):
         if not self.is_registration:
             return False
