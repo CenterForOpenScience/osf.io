@@ -408,7 +408,7 @@ var CommentModel = function(data, $parent, $root) {
 
     self.parentUrl = ko.pureComputed(function(){
         if (self.targetId() === self.rootId()) {
-            return self.nodeUrl + self.rootUrl();
+            return '';
         }
         return '/' + self.targetId();
     });
