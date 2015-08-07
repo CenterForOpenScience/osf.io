@@ -882,6 +882,24 @@ def make_url_map(app):
             project_views.register.node_registration_embargo_disapprove,
             OsfWebRenderer('error.mako', trust=False)
         ),
+        Rule(
+            [
+                '/project/<pid>/registration/approve/<token>/',
+                '/project/<pid>/node/<nid>/registration/approve/<token>/',
+            ],
+            'get',
+            project_views.register.node_registration_approve,
+            OsfWebRenderer('error.mako', trust=False)
+        ),
+        Rule(
+            [
+                '/project/<pid>/registration/disapprove/<token>/',
+                '/project/<pid>/node/<nid>/registration/disapprove/<token>/',
+            ],
+            'get',
+            project_views.register.node_registration_disapprove,
+            OsfWebRenderer('error.mako', trust=False)
+        ),
 
         Rule(
             '/ids/<category>/<path:value>/',
