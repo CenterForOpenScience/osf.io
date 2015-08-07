@@ -193,11 +193,6 @@ class RegistrationFactory(AbstractNodeFactory):
             auth=auth,
             data=data,
         )
-        ArchiveJob(
-            src_node=project,
-            dst_node=register,
-            initiator=user,
-        )
 
         def add_approval_step(reg):
             target = None
@@ -224,6 +219,11 @@ class RegistrationFactory(AbstractNodeFactory):
                 reg.archive_job.save()
                 with patch('website.mails.send_mail'):
                     archiver_listeners.archive_callback(reg)
+        ArchiveJob(
+            src_node=project,
+            dst_node=reg,
+            initiator=user,
+        )
         reg.save()
         return reg
 
