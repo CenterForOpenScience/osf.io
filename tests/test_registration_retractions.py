@@ -39,7 +39,7 @@ class RegistrationRetractionModelsTestCase(OsfTestCase):
 
     def test_initiate_retraction_saves_retraction(self):
         initial_count = Retraction.find().count()
-        self.registration._initiate_retraction(self.user, save=True)
+        self.registration._initiate_retraction(self.user)
         self.assertEqual(Retraction.find().count(), initial_count + 1)
 
     def test__initiate_retraction_does_not_create_tokens_for_unregistered_admin(self):
@@ -48,7 +48,7 @@ class RegistrationRetractionModelsTestCase(OsfTestCase):
         self.registration.add_permission(unconfirmed_user, 'admin', save=True)
         assert_true(self.registration.has_permission(unconfirmed_user, 'admin'))
 
-        retraction = self.registration._initiate_retraction(self.user, save=True)
+        retraction = self.registration._initiate_retraction(self.user)
         assert_true(self.user._id in retraction.approval_state)
         assert_false(unconfirmed_user._id in retraction.approval_state)
 

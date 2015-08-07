@@ -2678,7 +2678,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
             'is_registration': self.is_registration,
         }
 
-    def _initiate_retraction(self, user, justification=None, save=False):
+    def _initiate_retraction(self, user, justification=None):
         """Initiates the retraction process for a registration
         :param user: User who initiated the retraction
         :param justification: Justification, if given, for retraction
@@ -2689,13 +2689,13 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
             justification=justification or None,  # make empty strings None
             state=Retraction.UNAPPROVED
         )
-        retraction.save()
+        retraction.save()  # Save retraction so it has a primary key
         self.retraction = retraction
-        self.save()
+        self.save()  # Set foreign field reference Node.retraction
         admins = [contrib for contrib in self.contributors if self.has_permission(contrib, 'admin') and contrib.is_active]
         for admin in admins:
             retraction.add_authorizer(admin)
-        retraction.save()
+        retraction.save()  # Save retraction approval state
         return retraction
 
     def retract_registration(self, user, justification=None, save=True):
@@ -2709,7 +2709,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         if self.root is not self:
             raise NodeStateError('Retraction of non-parent registrations is not permitted.')
 
-        retraction = self._initiate_retraction(user, justification, save=True)
+        retraction = self._initiate_retraction(user, justification)
         self.registered_from.add_log(
             action=NodeLog.RETRACTION_INITIATED,
             params={
@@ -2781,19 +2781,19 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         if self.is_public:
             self.set_privacy('private', Auth(user))
 
-    def _initiate_approval(self, user, save=False):
+    def _initiate_approval(self, user):
         end_date = datetime.datetime.now() + settings.REGISTRATION_APPROVAL_PERIOD
         approval = RegistrationApproval(
             initiated_by=user,
             end_date=end_date,
         )
-        approval.save()
+        approval.save()  # Save approval so it has a primary key
         self.registration_approval = approval
-        self.save()
+        self.save()  # Set foreign field reference Node.registration_approval
         admins = [contrib for contrib in self.contributors if self.has_permission(contrib, 'admin') and contrib.is_active]
         for admin in admins:
             approval.add_authorizer(admin)
-        approval.save()
+        approval.save()  # Save approval's approval_state
         return approval
 
     def require_approval(self, user):
@@ -2802,7 +2802,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         if not self.has_permission(user, 'admin'):
             raise PermissionsError('Only admins may embargo a registration')
 
-        approval = self._initiate_approval(user, save=True)
+        approval = self._initiate_approval(user)
 
         # TODO(hrybacki): Figureo ut why this is being called twice (only in tests maybe)
         self.registered_from.add_log(

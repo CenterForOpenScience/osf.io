@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
-from flask import g
 import mock
-import unittest
+import unittest  # noqa
 from nose.tools import *  # noqa (PEP8 asserts)
 
 import datetime
@@ -28,8 +27,8 @@ class SanctionTestClass(Sanction):
 
 class EmailApprovableSanctionTestClass(EmailApprovableSanction):
 
-    AUTHORIZER_NOTIFY_TEMPLATE = 'authorizer'
-    NON_AUTHORIZER_NOTIFY_TEMPLATE = 'non-authorizer'
+    AUTHORIZER_NOTIFY_EMAIL_TEMPLATE = 'authorizer'
+    NON_AUTHORIZER_NOTIFY_EMAIL_TEMPLATE = 'non-authorizer'
 
 
 class SanctionsTestCase(OsfTestCase):
