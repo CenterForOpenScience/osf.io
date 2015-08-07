@@ -23,31 +23,7 @@ class NodeSerializer(JSONAPISerializer):
     tags = ser.SerializerMethodField(help_text='A dictionary that contains two lists of tags: '
                                                'user and system. Any tag that a user will define in the UI will be '
                                                'a user tag')
-    # links = LinksField({
-    #     'html': 'get_absolute_url',
-    #     'children': {
-    #         'related': Link('nodes:node-children', kwargs={'node_id': '<pk>'}),
-    #         'count': 'get_node_count',
-    #     },
-    #     'contributors': {
-    #         'related': Link('nodes:node-contributors', kwargs={'node_id': '<pk>'}),
-    #         'count': 'get_contrib_count',
-    #     },
-    #     'pointers': {
-    #         'related': Link('nodes:node-pointers', kwargs={'node_id': '<pk>'}),
-    #         'count': 'get_pointers_count',
-    #     },
-    #     'registrations': {
-    #         'related': Link('nodes:node-registrations', kwargs={'node_id': '<pk>'}),
-    #         'count': 'get_registration_count',
-    #     },
-    #     'files': {
-    #         'related': Link('nodes:node-files', kwargs={'node_id': '<pk>'})
-    #     },
-    #     'parent': {
-    #         'self': Link('nodes:node-detail', kwargs={'node_id': '<parent_id>'})
-    #     }
-    # })
+
     url = LinksField({'html': 'get_absolute_url'})
     children = HyperLinkedIdentityFieldWithMeta(view_name='nodes:node-children', lookup_field='pk', lookup_url_kwarg='node_id', count='get_node_count')
     contributors = HyperLinkedIdentityFieldWithMeta(view_name='nodes:node-contributors', lookup_field='pk', lookup_url_kwarg='node_id', count='get_contrib_count')
@@ -55,6 +31,7 @@ class NodeSerializer(JSONAPISerializer):
     registrations = HyperLinkedIdentityFieldWithMeta(view_name='nodes:node-registrations', lookup_field='pk', lookup_url_kwarg='node_id', count='get_registration_count')
     files = HyperLinkedIdentityFieldWithMeta(view_name='nodes:node-files', lookup_field='pk', lookup_url_kwarg='node_id')
     parent = HyperLinkedIdentityFieldWithMeta(view_name='nodes:node-detail', lookup_field='parent_id', lookup_url_kwarg='node_id')
+
     # TODO: When we have 'admin' permissions, make this writable for admins
     public = ser.BooleanField(source='is_public', read_only=True,
                               help_text='Nodes that are made public will give read-only access '
@@ -138,12 +115,7 @@ class NodePointersSerializer(JSONAPISerializer):
     class Meta:
         type_ = 'pointers'
 
-    # links = LinksField({
-    #     'html': 'get_absolute_url',
-    # })
-
     url = LinksField({'html': 'get_absolute_url'})
-
 
     def get_absolute_url(self, obj):
         pointer_node = Node.load(obj.node._id)
