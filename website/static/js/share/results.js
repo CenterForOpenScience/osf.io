@@ -25,13 +25,12 @@ var Results = {
             } else if (!loading && results.length === 0) {
                 return m('p', {class: 'text-muted'}, 'No results for this query');
             } else {
-                return [];
+                return m('', [m('img[src=/static/img/loading.gif]'), 'loading...']);
             }
         };
 
         return m('', [
             m('.row', m('.col-md-12', maybeResults(resultViews, vm.resultsLoading()))),
-            m('.row', m('.col-md-12', vm.resultsLoading() ? utils.loadingIcon : [])),
             m('.row', m('.col-md-12', m('div', {style: {display: 'block', margin: 'auto', 'text-align': 'center'}},
                 len > 0 && len < vm.count ?
                 m('a.btn.btn-md.btn-default', {
