@@ -71,15 +71,7 @@
             <div class="col-md-12">
               <div class="form-group" data-bind="css: {has-success: $data.isComplete}">
                 <span data-bind="with: $root.context($data)">
-                  <span data-bind="if: $root.showValidation">
-                    <ul class="list-group" data-bind="foreach: $data.validationMessages">
-                      <li class="list-group-item">
-                        <span class="text-danger"
-                              data-bind="text: $data">
-                        </span>
-                      </li>
-                    </ul>
-                  </span>
+                  <p data-bind="validationMessage: $data.value"</p>
                   <div data-bind="template: {data: $data, name: type}"></div>
                 </span>
               </div>

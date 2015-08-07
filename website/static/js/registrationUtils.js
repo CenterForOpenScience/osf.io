@@ -172,6 +172,13 @@ var Question = function(data, id) {
     self.properties = data.properties || {};
     self.match = data.match || '';
 
+    if ( self.required ) {
+        self.value.extend({
+            required: true,
+            message: 'You must fill out this field'
+        });
+    }
+
     self.extra = {};
 
     self.showExample = ko.observable(false);
@@ -599,7 +606,7 @@ RegistrationEditor.prototype.check = function() {
 
     var proceed = true;
     $.each(self.flatQuestions(), function(i, question) {
-        var valid = question.valid();
+        var valid = question.value.isValid();
         proceed = proceed && valid.status;
     });
     if (!proceed) {
