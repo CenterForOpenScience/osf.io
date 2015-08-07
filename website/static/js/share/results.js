@@ -89,15 +89,19 @@ var TitleBar = {
 
 /* Render the description of a single result. Will highlight the matched text */
 var Description = {
+    controller: function(vm) {
+        var self = this;
+        self.showAll = false;
+    },
     view: function(ctrl, params) {
         var result = params.result;
         if ((result.description || '').length > 350) {
             return m('p.readable.pointer', {
                 onclick: function() {
-                    result.showAll = result.showAll ? false : true;
+                    ctrl.showAll = !ctrl.showAll;
                     }
                 },
-                result.showAll ? result.description : $.trim(result.description.substring(0, 350)) + '...'
+                ctrl.showAll ? result.description : $.truncate(result.description, {length: 350})
             );
         } else {
             return m('p.readable', result.description);
@@ -106,6 +110,10 @@ var Description = {
 };
 
 var Contributors = {
+    controller: function(vm) {
+        var self = this;
+        self.showAll = false;
+    },
     view: function(ctrl, params) {
         var result = params.result;
         var contributorViews = $.map(result.contributors, function(contributor, i) {
@@ -113,12 +121,12 @@ var Contributors = {
             });
 
         return m('span.pull-left', {style: {'text-align': 'left'}},
-            result.showAllContrib || result.contributors.length < 8 ?
+            ctrl.showAll || result.contributors.length < 8 ?
                 contributorViews :
                 m('span', [
                     contributorViews.slice(0, 7),
                     m('br'),
-                    m('a', {onclick: function(){result.showAllContrib = result.showAllContrib ? false : true;}}, 'See All')
+                    m('a', {onclick: function(){ctrl.showAll = !ctrl.showAll;}}, 'See All')
                 ])
         );
 
@@ -143,18 +151,22 @@ var Contributor = {
 };
 
 var Subjects = {
+    controller: function(vm) {
+        var self = this;
+        self.showAll = false;
+    },
     view: function(ctrl, params){
         var result = params.result;
         var subjectViews = $.map(result.subjects || [], function(subject, i) {
             return m.component(Subject, $.extend({subject: subject}, params));
         });
-        if (result.showAllsubjects || (result.subjects || []).length <= 5) {
+        if (ctrl.showAll || (result.subjects || []).length <= 5) {
             return m('span', subjectViews);
         }
         return m('span', [
             subjectViews.slice(0, 5),
             m('br'),
-            m('div', m('a', {onclick: function() {result.showAllsubjects = result.showAllsubjects ? false : true;}},'See All'))
+            m('div', m('a', {onclick: function() {ctrl.showAll = !ctrl.showAll;}},'See All'))
         ]);
 
     }
