@@ -4,7 +4,6 @@ Tasks for making even transactional emails consolidated.
 from bson.code import Code
 from modularodm import Q
 
-
 from framework.tasks import app as celery_app
 from framework.mongo import database as db
 from framework.auth.core import User

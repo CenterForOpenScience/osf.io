@@ -9,9 +9,10 @@ import os
 import json
 import hashlib
 from datetime import timedelta
-from celery import schedules
+from celery.schedules import crontab
 
 os_env = os.environ
+
 
 def parent_dir(path):
     '''Return the parent of a directory.'''
@@ -183,16 +184,17 @@ BROKER_URL = 'amqp://'
 # Default RabbitMQ backend
 CELERY_RESULT_BACKEND = 'amqp://'
 
+# CELERYBEAT_SCHEDULE_FILENAME = 'celery_beat.py'
 # Setting up a scheduler
 CELERYBEAT_SCHEDULE = {
     '5-minute-emails': {
         'task': 'notify.send_users_email',
-        'schedule': schedules.crontab(minute='*/5'),
+        'schedule': crontab(minute='*/5'),
         'args': ('email_transactional',),
     },
     'daily-emails': {
         'task': 'notify.send_users_email',
-        'schedule': schedules.crontab(minute=0, hour=0),
+        'schedule': crontab(minute=0, hour=0),
         'args': ('email_digest',),
     },
 }
