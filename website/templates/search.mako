@@ -11,11 +11,11 @@
         <div class="row">
             <div class="col-md-12">
                 <div class="row m-t-md">
-                    <!-- ko if: categories().length > 0-->
+                    <!-- ko if: allCategories().length > 0-->
                     <div class="col-md-3">
                         <div class="row">
                             <div class="col-md-12">
-                                <ul class="nav nav-pills nav-stacked" data-bind="foreach: categories">
+                                <ul class="nav nav-pills nav-stacked" data-bind="foreach: allCategories">
 
                                     <!-- ko if: $parent.category().name === name -->
                                             <li class="active">
