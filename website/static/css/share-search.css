@@ -144,7 +144,7 @@ stroke: #BAB5B5;
     width: 16px;
 }
 
-@media (max-width: 996px) {
+@media (max-width: 992px) {
     .provider-footer {
         -moz-column-count: 1;
         -webkit-column-count: 1;
