@@ -19,8 +19,18 @@ var Results = {
         if (vm.results){
             len = vm.results.length;
         }
+        var maybeResults = function(results, loading) {
+            if (results.length > 0) {
+                return results;
+            } else if (!loading && results.length === 0) {
+                return m('p', {class: 'text-muted'}, 'No results for this query');
+            } else {
+                return [];
+            }
+        };
+
         return m('', [
-            m('.row', m('.col-md-12', (!utils.arrayEqual(resultViews, [])) ? resultViews : (!vm.resultsLoading() && (vm.results !== null)) ? m('span', {style: {margin: 'auto'}}, 'No results for this query') : [])),
+            m('.row', m('.col-md-12', maybeResults(resultViews, vm.resultsLoading()))),
             m('.row', m('.col-md-12', vm.resultsLoading() ? utils.loadingIcon : [])),
             m('.row', m('.col-md-12', m('div', {style: {display: 'block', margin: 'auto', 'text-align': 'center'}},
                 len > 0 && len < vm.count ?
