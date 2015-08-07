@@ -2765,7 +2765,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         if not self._is_embargo_date_valid(end_date):
             raise ValidationValueError('Embargo end date must be more than one day in the future')
 
-        embargo = self._initiate_embargo(user, end_date, for_existing_registration=for_existing_registration, save=True)
+        embargo = self._initiate_embargo(user, end_date, for_existing_registration=for_existing_registration)
 
         self.registered_from.add_log(
             action=NodeLog.EMBARGO_INITIATED,
