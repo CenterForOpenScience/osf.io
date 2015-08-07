@@ -4367,9 +4367,9 @@ class TestDiscussionsViews(OsfTestCase):
         self.user = AuthUserFactory()
         self.project = ProjectFactory(creator=self.user, parent=None)
 
-    @mock.patch('website.project.views.discussions.disable_list')
-    @mock.patch('website.project.views.discussions.enable_list')
-    def test_disable_and_enable_project_discussions(self, mock_enable_list, mock_disable_list):
+    @mock.patch('website.project.views.discussions.delete_list')
+    @mock.patch('website.project.views.discussions.create_list')
+    def test_disable_and_enable_project_discussions(self, mock_create_list, mock_delete_list):
         url = api_url_for('enable_discussions', pid=self.project._id)
         payload = {}
 
@@ -4377,17 +4377,17 @@ class TestDiscussionsViews(OsfTestCase):
 
         self.app.delete(url, payload, auth=self.user.auth)
         self.project.reload()
-        mock_disable_list.assert_called_with(self.project._id)
+        mock_delete_list.assert_called_with(self.project._id)
         assert_false(self.project.mailing_enabled)
 
         self.app.post(url, payload, auth=self.user.auth)
         self.project.reload()
-        mock_enable_list.assert_called_with(title=self.project.title, **self.project.mailing_params)
+        mock_create_list.assert_called_with(title=self.project.title, **self.project.mailing_params)
         assert_true(self.project.mailing_enabled)
 
-    @mock.patch('website.project.views.discussions.disable_list')
-    @mock.patch('website.project.views.discussions.enable_list')
-    def test_enable_and_disable_component_discussions(self, mock_enable_list, mock_disable_list):
+    @mock.patch('website.project.views.discussions.delete_list')
+    @mock.patch('website.project.views.discussions.create_list')
+    def test_enable_and_disable_component_discussions(self, mock_create_list, mock_delete_list):
         component = NodeFactory(parent=self.project, creator=self.user)
         url = api_url_for('enable_discussions', pid=component._id)
         payload = {}
@@ -4396,12 +4396,12 @@ class TestDiscussionsViews(OsfTestCase):
 
         self.app.post(url, payload, auth=self.user.auth)
         component.reload()
-        mock_enable_list.assert_called_with(title=component.title, **component.mailing_params)
+        mock_create_list.assert_called_with(title=component.title, **component.mailing_params)
         assert_true(component.mailing_enabled)
 
         self.app.delete(url, payload, auth=self.user.auth)
         component.reload()
-        mock_disable_list.assert_called_with(component._id)
+        mock_delete_list.assert_called_with(component._id)
         assert_false(component.mailing_enabled)
 
     @mock.patch('website.project.views.discussions.update_subscription')

@@ -1087,7 +1087,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
 
         if self.mailing_enabled:
             if first_save:
-                mailing_list.create_list(title=self.title, **self.mailing_params)
+                mailing_list.celery_create_list(title=self.title, **self.mailing_params)
             elif 'contributors' in saved_fields:
                 mailing_list.match_members(**self.mailing_params)
 
@@ -1588,7 +1588,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
 
         if self.mailing_enabled:
             self.mailing_enabled = False
-            mailing_list.delete_list(self._id)
+            mailing_list.celery_delete_list(self._id)
 
         #if this is a folder, remove all the folders that this is pointing at.
         if self.is_folder:

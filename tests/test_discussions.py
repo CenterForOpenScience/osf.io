@@ -15,7 +15,7 @@ from website.util import api_url_for
 
 class TestNewNodeMailingEnabled(OsfTestCase):
 
-    @mock.patch('website.project.model.mailing_list.create_list')
+    @mock.patch('website.project.model.mailing_list.celery_create_list')
     def test_node_with_mailing_enabled_creates_discussions(self, mock_create_list):
         node = NodeFactory(mailing_enabled=True)
         mock_create_list.assert_called()
@@ -63,19 +63,19 @@ class TestListCreation(OsfTestCase):
         super(TestListCreation, cls).setUpClass()
         settings.ENABLE_PROJECT_MAILING = True
 
-    @mock.patch('website.project.model.mailing_list.create_list')
+    @mock.patch('website.project.model.mailing_list.celery_create_list')
     def test_node_with_mailing_enabled_creates_discussions(self, mock_create_list):
         node = NodeFactory(mailing_enabled=True)
         mock_create_list.assert_called()
 
-    @mock.patch('website.project.model.mailing_list.create_list')
+    @mock.patch('website.project.model.mailing_list.celery_create_list')
     def test_forking_node_creates_unique_discussions(self, mock_create_list):
         user = AuthUserFactory()
         node = NodeFactory(is_public=True)
         fork = node.fork_node(Auth(user=user))
         mock_create_list.assert_called_with(title=fork.title, **fork.mailing_params)
 
-    @mock.patch('website.project.model.mailing_list.create_list')
+    @mock.patch('website.project.model.mailing_list.celery_create_list')
     def test_using_as_template_creates_unique_discussions(self, mock_create_list):
         user = AuthUserFactory()
         node = NodeFactory(is_public=True)
@@ -185,7 +185,7 @@ class TestDiscussionsOnProjectActions(OsfTestCase):
         self.project.reload()
         mock_match_members.assert_called_with(**self.project.mailing_params)
 
-    @mock.patch('website.project.model.mailing_list.delete_list')
+    @mock.patch('website.project.model.mailing_list.celery_delete_list')
     def test_delete_project_disables_discussions(self, mock_delete_list):
         assert_true(self.project.mailing_enabled)
 

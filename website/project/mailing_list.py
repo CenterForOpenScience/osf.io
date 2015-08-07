@@ -53,8 +53,8 @@ def get_list(node_id):
 
 
 @require_project_mailing
-def enable_list(node_id, title, url, contributors, unsubs):
-    """Creates a new mailing list on Mailgun with all emails and subscriptions
+def create_list(node_id, title, url, contributors, unsubs):
+    """ Creates a new mailing list on Mailgun with all emails and subscriptions
     :param node_id: The id of the node in question
     :param title: The node's title
     :param url: The url to access the node
@@ -85,7 +85,10 @@ def enable_list(node_id, title, url, contributors, unsubs):
 
 
 @require_project_mailing
-def disable_list(node_id):
+def delete_list(node_id):
+    """ Deletes a mailing list on Mailgun
+    :param node_id: The id of the node in question
+    """
     res = requests.delete(
         'https://api.mailgun.net/v3/lists/{}'.format(address(node_id)),
         auth=('api', settings.MAILGUN_API_KEY)
@@ -152,12 +155,12 @@ def update_subscription(node_id, email, subscription):
 @require_project_mailing
 @queued_task
 @app.task
-def create_list(**params):
-    """ The celery version of enable_list
+def celery_create_list(**params):
+    """ The celery version of create_list
     """
-    enable_list(**params)
+    create_list(**params)
 
-    # TODO decide if this should send an email
+    # TODO decide if this should send an email (only would happen on project creation)
 
     # send_message(node_id, node_title, {
     #     'subject': 'Mailing List Created for {}'.format(node_title),
@@ -168,12 +171,22 @@ def create_list(**params):
 @require_project_mailing
 @queued_task
 @app.task
+def celery_delete_list(node_id):
+    """ The celery version of delete_list
+    :param node_id: The id of the node in question
+    """
+    delete_list(node_id)
+
+
+@require_project_mailing
+@queued_task
+@app.task
 def match_members(node_id, url, contributors, unsubs):
     """ Matches the members of the list on Mailgun with the local one
     :param node_id: The id of the node in question
     :param url: The url to access the node
     :param contributors: The emails of the node's contributors
-    :param unsubs: The emails of the node's unsubbed users
+    :param unsubs: The emails of the node's unsubscribed users
     """
     res = requests.get(
         'https://api.mailgun.net/v3/lists/{}/members'.format(address(node_id)),
@@ -213,16 +226,6 @@ def match_members(node_id, url, contributors, unsubs):
 @require_project_mailing
 @queued_task
 @app.task
-def delete_list(node_id):
-    """ The celery version of disable_list
-    :param node_id: The id of the node in question
-    """
-    disable_list(node_id)
-
-
-@require_project_mailing
-@queued_task
-@app.task
 def update_title(node_id, node_title):
     """ Updates the title of a mailing list to match the list's project
     :param node_id: The id of the node in question
@@ -243,6 +246,11 @@ def update_title(node_id, node_title):
 @queued_task
 @app.task
 def update_email(node_id, old_email, new_email):
+    """ Updates the email of a mailing list's member on Mailgun
+    :param node_id: The id of the node in question
+    :param old_email: The email address being replaced
+    :param new_email: The new email address
+    """
     res = requests.put(
         'https://api.mailgun.net/v3/lists/{0}/members/{1}'.format(address(node_id), old_email),
         auth=('api', settings.MAILGUN_API_KEY),
@@ -256,63 +264,11 @@ def update_email(node_id, old_email, new_email):
 
 @queued_task
 @app.task
-def update_list(node_id, node_title, list_enabled, emails, subscriptions):
-    """ Updates Mailgun to match the current status of a node's discussions
-    :param node_id: The id of the node whose mailing list is being updated
-    :param node_title: The title of the node in question
-    :param list_enabled: The status of the node's email discussions (is_enabled)
-    :param emails: List of emails on the node's mailing list
-    :param subscriptions: List of emails subscribed to the node's mailing list
-    """
-    # Need to put the sender in the list of members to avoid potential conflicts
-    emails.add(address(node_id))
-    # Convert subscriptions to a dictionary for ease of use in functions
-    subscriptions = {email: email in subscriptions for email in emails}
-
-    info, members = get_list(node_id)
-
-    if list_enabled:
-
-        if 'list' in info.keys():
-            info = info['list']
-            members = members['items']
-
-            if info['name'] != '{} Mailing List'.format(node_title):
-                update_title(node_id, node_title)
-
-            list_emails = set([member['address'] for member in members])
-            list_subscriptions = {member['address']: member['subscribed'] for member in members}
-
-            emails_to_add = emails.difference(list_emails)
-            for email in emails_to_add:
-                add_member(node_id, email, subscriptions[email])
-
-            emails_to_remove = list_emails.difference(emails)
-            for email in emails_to_remove:
-                remove_member(node_id, email)
-
-            for email in emails.intersection(list_emails):
-                if subscriptions[email] != list_subscriptions[email]:
-                    update_member(node_id, email, subscriptions[email])
-
-        else:
-            create_list(node_id, node_title, emails, subscriptions)
-            return
-
-    else:
-
-        if 'list' in info.keys():
-            delete_list(node_id)
-
-
-@queued_task
-@app.task
 def send_message(node_id, node_title, message):
     """ Sends a message from the node through the given mailing list
-    :param node_id:
-    :param node_title:
-    :param message:
-    :return:
+    :param node_id: The id of the node in question
+    :param node_title: The title of the node in question
+    :param message: Dictionary with subject and text of the email to be sent
     """
     res = requests.post(
         'https://api.mailgun.net/v3/{}/messages'.format(settings.MAILGUN_DOMAIN),

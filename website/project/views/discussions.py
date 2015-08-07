@@ -15,8 +15,8 @@ from website.project.decorators import (
     must_be_contributor
 )
 from website.project.mailing_list import (
-    enable_list,
-    disable_list,
+    create_list,
+    delete_list,
     update_subscription
 )
 from website.util.permissions import ADMIN
@@ -32,7 +32,7 @@ from website.models import Node
 @must_have_permission(ADMIN)
 @must_not_be_registration
 def enable_discussions(node, **kwargs):
-    enable_list(title=node.title, **node.mailing_params)
+    create_list(title=node.title, **node.mailing_params)
     node.mailing_enabled = True
     node.save()
 
@@ -41,7 +41,7 @@ def enable_discussions(node, **kwargs):
 @must_have_permission(ADMIN)
 @must_not_be_registration
 def disable_discussions(node, **kwargs):
-    disable_list(node._id)
+    delete_list(node._id)
     node.mailing_enabled = False
     node.save()
 
