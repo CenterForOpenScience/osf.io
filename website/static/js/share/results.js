@@ -101,7 +101,7 @@ var Description = {
                     ctrl.showAll = !ctrl.showAll;
                     }
                 },
-                ctrl.showAll ? result.description : $.truncate(result.description, {length: 350})
+                ctrl.showAll ? result.description : $.trim(result.description.substring(0, 350) + '...')
             );
         } else {
             return m('p.readable', result.description);
