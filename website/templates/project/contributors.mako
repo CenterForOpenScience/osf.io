@@ -128,9 +128,9 @@
                             </div>
 
                             <div class="btn-group">
-                                <button class="btn btn-primary btn-sm m-r-xs copy-button"
+                                <button title="Copy to clipboard" class="btn btn-default btn-sm m-r-xs copy-button"
                                         data-bind="attr: {data-clipboard-text: linkUrl}" >
-                                    Copy
+                                    <i class="fa fa-copy"></i>
                                 </button>
                                 <input class="link-url" type="text" data-bind="value: linkUrl, attr:{readonly: readonly}"  />
                             </div>

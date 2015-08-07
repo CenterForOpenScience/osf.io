@@ -24,18 +24,19 @@ def get_object_or_error(model_cls, query_or_pk):
 
     if isinstance(query_or_pk, basestring):
         query = Q('_id', 'eq', query_or_pk)
-
-    if getattr(query_or_pk, 'is_deleted', True):
-        raise Gone
-    if getattr(query_or_pk, 'is_active', False):
-        raise Gone
     else:
         query = query_or_pk
     try:
-        return model_cls.find_one(query)
+        obj = model_cls.find_one(query)
+
+        if getattr(obj, 'is_deleted', False) is True :
+            raise Gone
+        if getattr(obj, 'is_active', None) is False:
+            raise Gone
+        return obj
+
     except NoResultsFound:
         raise NotFound
-
 
 def waterbutler_url_for(request_type, provider, path, node_id, token, obj_args=None, **query):
     """Reverse URL lookup for WaterButler routes
