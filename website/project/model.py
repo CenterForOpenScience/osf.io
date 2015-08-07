@@ -670,7 +670,9 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         return self.CATEGORY_MAP[self.category]
 
     @property
-    def pending_registration(self):
+    def is_pending_registration(self):
+        if not self.is_registration:
+            return False
         if self.registration_approval is None:
             if self.parent_node:
                 return self.parent_node.pending_registration
@@ -678,7 +680,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         return self.registration_approval.pending_approval
 
     @property
-    def is_registered(self):
+    def is_registration_approved(self):
         if self.registration_approval is None:
             if self.parent_node:
                 return self.parent_node.is_registered
