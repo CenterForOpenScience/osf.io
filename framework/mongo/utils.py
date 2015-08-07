@@ -63,7 +63,7 @@ def unique_on(*groups):
 
 def get_or_http_error(Model, pk, allow_deleted=False):
     instance = Model.load(pk)
-    if not allow_deleted and (instance, 'is_deleted', False):
+    if not allow_deleted and getattr(instance, 'is_deleted', False):
         raise HTTPError(http.GONE, data=dict(
             message_long="This resource has been deleted"
         ))
