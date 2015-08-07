@@ -91,6 +91,7 @@
   color: white;
 }
 
+
 .sidebar-header {
   margin: 12px 0 7px 0;
   font-size: 19px;
@@ -143,11 +144,19 @@ stroke: #BAB5B5;
     width: 16px;
 }
 
-@media (max-width: 767px) {
+@media (max-width: 996px) {
     .provider-footer {
         -moz-column-count: 1;
         -webkit-column-count: 1;
         column-count: 1;
+    }
+
+    .provider-list {
+        display: none;
+    }
+
+    ul.unstyled {
+        border-bottom: 1px solid #eee;
     }
 }
 

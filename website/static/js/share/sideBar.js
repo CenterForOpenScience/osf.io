@@ -11,7 +11,7 @@ var SideBar = {
             return [];
         }
         var new_params = {vm: vm};
-        return m('', [
+        return m('.sidebar', [
                 m.component(ActiveFiltersHeader, new_params),
                 m.component(ActiveFilters, new_params),
                 m.component(ProviderList, new_params)
@@ -40,9 +40,10 @@ var ActiveFiltersHeader = {
 var ActiveFilters = {
     view: function(ctrl, params){
         var vm = params.vm;
+        var filters = vm.optionalFilters.concat(vm.requiredFilters);
 
-        return m('ul.unstyled',
-            $.map(vm.optionalFilters.concat(vm.requiredFilters), function(filter){
+        return (filters.length > 0) ? m('ul.unstyled',
+            $.map(filters, function(filter){
                 // Strip out all the extra information from the filter string, for nice
                 // human friendly viewing.
                 var filter_parts = filter.split(':');
@@ -58,7 +59,7 @@ var ActiveFilters = {
                     }, [m('i.fa.fa-close'), ' ' + pretty_string
                     ])
                 ]);
-        }));
+        })) : m('');
 
     }
 };
@@ -66,7 +67,7 @@ var ActiveFilters = {
 var ProviderList = {
     view: function (ctrl, params) {
         var vm = params.vm;
-        return m('', [
+        return m('.provider-list', [
             m('.sidebar-header', 'Providers:'),
             m('ul.unstyled', $.map(vm.sortProviders(), function(provider, index) {
                 return m.component(Provider, {vm: vm, provider: provider});
