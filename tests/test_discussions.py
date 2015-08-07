@@ -88,7 +88,7 @@ class TestNodeMailingParams(OsfTestCase):
     def setUp(self):
         super(TestNodeMailingParams, self).setUp()
         self.creator = UserFactory()
-        self.user = UserFactory()
+        self.user = AuthUserFactory()
 
         self.project = ProjectFactory(creator=self.creator, parent=None, is_public=True)
         self.project.add_contributor(self.user)
@@ -147,6 +147,26 @@ class TestNodeMailingParams(OsfTestCase):
             'unsubs': []
         })
 
+    def test_params_update_on_email_change(self):
+        new_email = 'new_newmail.new'
+        self.user.emails.append(new_email)
+        self.user.save()
+        url = api_url_for('update_user', uid=self.user._id)
+        payload = {
+            'locale': '',
+            'id': self.user._id,
+            'emails': [
+                {'address': self.user.email, 'confirmed': True, 'primary': False},
+                {'address': new_email, 'confirmed': True, 'primary': True}
+            ]
+        }
+
+        self.app.post(url, payload, auth=self.user.auth)
+
+        self.intended_params['unsubs'] = [new_email]
+        self.intended_params['contributors'] = [self.creator.email, new_email]
+        assert_equal(self.project.mailing_params, self.intended_params)
+
 
 class TestDiscussionsOnProjectActions(OsfTestCase):
 
@@ -193,6 +213,53 @@ class TestDiscussionsOnProjectActions(OsfTestCase):
 
         assert_false(self.project.mailing_enabled)
         mock_delete_list.assert_called()
+
+
+class TestDiscussionsOnUserActions(OsfTestCase):
+
+    def setUp(self):
+        super(TestDiscussionsOnUserActions, self).setUp()
+        self.user = AuthUserFactory()
+        self.project = ProjectFactory(creator=self.user, parent=None)
+
+    @mock.patch('website.profile.views.mailing_list.update_email')
+    def test_change_email(self, mock_update_email):
+        new_email = 'new@newmail.new'
+        self.user.emails.append(new_email)
+        self.user.save()
+        url = api_url_for('update_user', uid=self.user._id)
+        payload = {
+            'id': self.user._id,
+            'emails': [
+                {'address': self.user.email, 'confirmed': True, 'primary': False},
+                {'address': new_email, 'confirmed': True, 'primary': True}
+            ]
+        }
+
+        self.app.put_json(url, payload, auth=self.user.auth)
+
+        mock_update_email.assert_called_with(self.project._id, self.user.email, new_email)
+
+    @mock.patch('website.profile.views.mailing_list.update_email')
+    def test_change_email_on_project_without_mailing_enabled(self, mock_update_email):
+        self.project.mailing_enabled = False
+        self.project.save()
+
+        new_email = 'new@newmail.new'
+        self.user.emails.append(new_email)
+        self.user.save()
+        url = api_url_for('update_user', uid=self.user._id)
+        payload = {
+            'id': self.user._id,
+            'emails': [
+                {'address': self.user.email, 'confirmed': True, 'primary': False},
+                {'address': new_email, 'confirmed': True, 'primary': True}
+            ]
+        }
+
+        self.app.put_json(url, payload, auth=self.user.auth)
+
+        mock_update_email.assert_not_called(self.project._id, self.user.email, new_email)
 
 
 class TestEmailRejections(OsfTestCase):

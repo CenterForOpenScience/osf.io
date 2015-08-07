@@ -31,6 +31,7 @@ from website.util.sanitize import escape_html
 from website.util.sanitize import strip_html
 from website.views import _render_nodes
 from website.addons.base import utils as addon_utils
+from website.project import mailing_list
 
 logger = logging.getLogger(__name__)
 
@@ -210,8 +211,8 @@ def update_user(auth):
                     mailchimp_utils.unsubscribe_mailchimp(list_name, user._id, username=user.username)
 
             for node in user.node__contributed:
-                if node.discussions:
-                    node.discussions.update_email(user._id, username)
+                if node.mailing_enabled:
+                    mailing_list.update_email(node._id, user.email, username)
 
             user.username = username
 
