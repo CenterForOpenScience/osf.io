@@ -44,7 +44,6 @@ from website.addons.wiki.exceptions import (
     PageConflictError,
     PageNotFoundError,
 )
-from website.archiver import utils as archiver_utils
 
 from tests.base import OsfTestCase, Guid, fake, capture_signals
 from tests.factories import (
@@ -52,7 +51,7 @@ from tests.factories import (
     ProjectFactory, NodeLogFactory, WatchConfigFactory,
     NodeWikiFactory, RegistrationFactory, UnregUserFactory,
     ProjectWithAddonFactory, UnconfirmedUserFactory, CommentFactory, PrivateLinkFactory,
-    AuthUserFactory, DashboardFactory, FolderFactory
+    AuthUserFactory, DashboardFactory, FolderFactory, DraftRegistrationFactory
 )
 from tests.test_features import requires_piwik
 
@@ -1636,7 +1635,7 @@ class TestNode(OsfTestCase):
         root = ProjectFactory(creator=self.user)
         c1 = ProjectFactory(creator=self.user, parent=root)
         ProjectFactory(creator=self.user, parent=c1)
-        
+
         ensure_schemas()
         meta_schema = MetaSchema.find_one(
             Q('name', 'eq', 'Open-Ended Registration') &
@@ -1649,6 +1648,26 @@ class TestNode(OsfTestCase):
         for r in [reg, r1, r1a]:
             assert_equal(r.registered_meta, data)
             assert_equal(r.registered_schema, meta_schema)
+
+    def test_create_draft_registration(self):
+        ensure_schemas()
+        proj = ProjectFactory()
+        user = proj.creator
+        schema = MetaSchema.find()[0]
+        data = {'some': 'data'}
+        draft = proj.create_draft_registration(user, schema, data)
+        assert_equal(user, draft.initiator)
+        assert_equal(schema, draft.registration_schema)
+        assert_equal(data, draft.registration_metadata)
+        
+    def test_create_draft_registration_adds_to_draft_registrations_list(self):
+        ensure_schemas()
+        proj = ProjectFactory()
+        user = proj.creator
+        schema = MetaSchema.find()[0]
+        data = {'some': 'data'}
+        draft = proj.create_draft_registration(user, schema, data)
+        assert_equal(proj.draft_registrations[0], draft)
 
 class TestNodeTraversals(OsfTestCase):
 
@@ -3816,6 +3835,27 @@ class TestDraftRegistration(OsfTestCase):
             }
         )
         self.draft.save()
+
+    def test_factory(self):
+        draft = DraftRegistrationFactory()
+        assert_is_not_none(draft.branched_from)
+        assert_is_not_none(draft.initiator)
+        assert_is_not_none(draft.registration_schema)
+
+        user = AuthUserFactory()
+        draft = DraftRegistrationFactory(initiator=user)
+        assert_equal(draft.initiator, user)
+
+        node = ProjectFactory()
+        draft = DraftRegistrationFactory(branched_from=node)
+        assert_equal(draft.branched_from, node)
+        assert_equal(draft.initiator, node.creator)
+
+        schema = MetaSchema.find()[1]
+        data = {'some': 'data'}
+        draft = DraftRegistrationFactory(registration_schema=schema, registration_metadata=data)
+        assert_equal(draft.registration_schema, schema)
+        assert_equal(draft.registration_metadata, data)
 
     @mock.patch('website.project.model.Node.register_node')
     def test_register(self, mock_register_node):

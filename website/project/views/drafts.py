@@ -18,7 +18,7 @@ from website.project.decorators import (
     must_have_permission,
     http_error_if_disk_saving_mode
 )
-from website.mails import Mail, send_mail
+from website import settings
 from website.project import utils as project_utils
 from website.project.model import MetaSchema, DraftRegistration, DraftRegistrationApproval
 from website.project.metadata.utils import serialize_meta_schema, serialize_draft_registration
@@ -37,10 +37,8 @@ def submit_draft_for_review(auth, node, draft, *args, **kwargs):
         initiated_by=auth.user,
         end_date=None,  # TODO: expire me?
     )
-    draft.save()
-
-    REVIEW_EMAIL = Mail(tpl_prefix='prereg_review', subject='New Prereg Prize registration ready for review')
-    send_mail(draft.initiator.email, REVIEW_EMAIL, user=user, src=node)
+	draft.approval.ask(node.get_active_contributors)
+	draft.save()
 
     ret = project_utils.serialize_node(node, auth)
     ret['success'] = True
@@ -76,25 +74,10 @@ def register_draft_registration(auth, node, draft, *args, **kwargs):
             register.require_approval(auth.user)
         register.save()
     except ValidationValueError as err:
-        raise HTTPError(http.BAD_REQUEST, data=dict(message_long=err.message))
-
-    meta = {}
-    if embargoed:
         meta = {
-            'embargo_urls': {
-                contrib._id: project_utils.get_embargo_urls(register, contrib)
-                for contrib in node.active_contributors()
-            }
-        }
-    else:
-        meta = {
-            'registration_approval_urls': {
-                contrib._id: project_utils.get_registration_approval_urls(register, contrib)
-                for contrib in node.active_contributors()
-            }
-        }
-    register.archive_job.meta = meta
-    register.archive_job.save()
+        register.set_privacy('public', auth, log=False)
+        for child in register.get_descendants_recursive(lambda n: n.primary):
+            child.set_privacy('public', auth, log=False)
 
     push_status_message('Files are being copied to the newly created registration, and you will receive an email notification containing a link to the registration when the copying is finished.')
 
@@ -123,23 +106,6 @@ def get_draft_registrations(auth, node, *args, **kwargs):
         'drafts': [serialize_draft_registration(d, auth) for d in drafts]
     }, http.OK
 
-def make_draft_registraton(user, node, schema, data):
-    draft = DraftRegistration(
-        initiator=user,
-        branched_from=node,
-        registration_schema=schema,
-        registration_metadata=data,
-    )
-    if schema.requires_approval:
-        draft.approval = DraftRegistrationApproval(
-            initiated_by=user,
-            end_date=None,  # TODO: expire me?
-        )
-    draft.save()
-    node.draft_registrations.append(draft)
-    node.save()
-    return draft
-
 @must_have_permission(ADMIN)
 @must_be_valid_project
 def create_draft_registration(auth, node, *args, **kwargs):
@@ -157,7 +123,7 @@ def create_draft_registration(auth, node, *args, **kwargs):
         Q('name', 'eq', schema_name) &
         Q('schema_version', 'eq', schema_version)
     )
-    draft = make_draft_registraton(auth.user, node, meta_schema, schema_data)
+    draft = node.create_draft_registration(auth.user, meta_schema, schema_data, save=True)
     return serialize_draft_registration(draft, auth), http.CREATED
 
 @must_have_permission(ADMIN)
@@ -182,7 +148,7 @@ def new_draft_registration(auth, node, *args, **kwargs):
         Q('name', 'eq', schema_name) &
         Q('schema_version', 'eq', int(schema_version))
     )
-    draft = make_draft_registraton(auth.user, node, meta_schema, {})
+    draft = node.create_draft_registration(auth.user, meta_schema, {}, save=True)
     return redirect(node.web_url_for('edit_draft_registration_page', draft_id=draft._id))
 
 @autoload_draft

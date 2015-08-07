@@ -1749,6 +1749,19 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
 
         return forked
 
+    def create_draft_registration(self, user, schema, data=None, save=False):
+        draft = DraftRegistration(
+            initiator=user,
+            branched_from=self,
+            registration_schema=schema,
+            registration_metadata=data or {},
+        )
+        draft.save()
+        self.draft_registrations.append(draft)
+        if save:
+            self.save()
+        return draft
+
     def register_node(self, schema, auth, data, parent=None):
         """Make a frozen copy of a node.
 

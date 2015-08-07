@@ -823,7 +823,6 @@ def make_url_map(app):
             project_views.register.node_register_template_page,
             OsfWebRenderer('project/register.mako', trust=False)
         ),
-
         Rule(
             [
                 '/project/<pid>/registrations/',
@@ -833,6 +832,30 @@ def make_url_map(app):
             project_views.node.node_registrations,
             OsfWebRenderer('project/registrations.mako', trust=False)
         ),
+        Rule(
+            [
+                '/project/<pid>/registrations/',
+                '/project/<pid>/node/<nid>/registrations/',
+            ],
+            'post',
+            project_views.drafts.new_draft_registration,
+            OsfWebRenderer('project/draft_registration.mako', trust=False)),
+        Rule(
+            [
+                '/project/<pid>/draft/<draft_id>/',
+                '/project/<pid>/node/<nid>/draft/<draft_id>/',
+            ],
+            'get',
+            project_views.drafts.edit_draft_registration_page,
+            OsfWebRenderer('project/edit_draft_registration.mako', trust=False)),
+        Rule(
+            [
+                '/project/<pid>/draft/<draft_id>/register/',
+                '/project/<pid>/node/<nid>/draft/<draft_id>/register/',
+            ],
+            'get',
+            project_views.drafts.draft_before_register_page,
+            OsfWebRenderer('project/register_draft.mako', trust=False)),
 
         # TODO: Can't create a registration locally, so can't test this one..?
         Rule(

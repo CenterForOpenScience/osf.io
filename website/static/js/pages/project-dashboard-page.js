@@ -22,6 +22,7 @@ var CitationList = require('js/citationList');
 var CitationWidget = require('js/citationWidget');
 var mathrender = require('js/mathrender');
 var md = require('js/markdown').full;
+
 var FilesWidget = require('js/filesWidget');
 var registrationUtils = require('js/registrationUtils');
 

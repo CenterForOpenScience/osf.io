@@ -24,6 +24,7 @@ from framework.auth import User, Auth
 from framework.auth.utils import impute_names_model
 from framework.auth.exceptions import InvalidTokenError
 from framework.tasks import handlers
+from framework.mongo import database
 
 from website import mailchimp_utils
 from website.views import _rescale_ratio
@@ -58,7 +59,7 @@ from tests.factories import (
     UserFactory, ProjectFactory, WatchConfigFactory,
     NodeFactory, NodeLogFactory, AuthUserFactory, UnregUserFactory,
     RegistrationFactory, CommentFactory, PrivateLinkFactory, UnconfirmedUserFactory, DashboardFactory, FolderFactory,
-    ProjectWithAddonFactory, MockAddonNodeSettings,
+    ProjectWithAddonFactory, MockAddonNodeSettings, DraftRegistrationFactory
 )
 from website.settings import ALL_MY_REGISTRATIONS_ID, ALL_MY_PROJECTS_ID
 
@@ -543,62 +544,6 @@ class TestProjectViews(OsfTestCase):
         assert_not_in("foo'ta#@%#%^&g?", self.project.tags)
         assert_equal("tag_removed", self.project.logs[-1].action)
         assert_equal("foo'ta#@%#%^&g?", self.project.logs[-1].params['tag'])
-
-    @mock.patch('website.archiver.tasks.archive.si')
-    def test_register_template_page(self, mock_archive):
-        url = "/api/v1/project/{0}/register/Replication_Recipe_(Brandt_et_al.,_2013):_Post-Completion/".format(
-            self.project._primary_key)
-        self.app.post_json(url, {'registrationChoice': 'Make registration public immediately'}, auth=self.auth)
-        self.project.reload()
-        archiver_utils.archive_success(self.project.node__registrations[0], self.project.creator)
-        # A registration was added to the project's registration list
-        assert_equal(len(self.project.node__registrations), 1)
-        # A log event was saved
-        assert_equal(self.project.logs[-1].action, "registration_approval_initiated")
-        # Most recent node is a registration
-        reg = Node.load(self.project.node__registrations[-1])
-        assert_true(reg.is_registration)
-
-    @mock.patch('website.archiver.tasks.archive.si')
-    def test_register_template_with_embargo_creates_embargo(self, mock_archive):
-        url = "/api/v1/project/{0}/register/Replication_Recipe_(Brandt_et_al.,_2013):_Post-Completion/".format(
-            self.project._primary_key)
-        self.app.post_json(
-            url,
-            {
-                'registrationChoice': 'embargo',
-                'embargoEndDate': "Fri, 01 Jan {year} 05:00:00 GMT".format(year=str(dt.date.today().year + 1))
-            },
-            auth=self.auth)
-
-        self.project.reload()
-        # Most recent node is a registration
-        reg = Node.load(self.project.node__registrations[-1])
-        assert_true(reg.is_registration)
-        # The registration created is not public
-        assert_false(reg.is_public)
-        # The registration is pending an embargo that has not been approved
-        assert_true(reg.pending_embargo)
-
-    def test_register_template_page_with_invalid_template_name(self):
-        url = self.project.web_url_for('node_register_template_page', template='invalid')
-        res = self.app.get(url, expect_errors=True, auth=self.auth)
-        assert_equal(res.status_code, 404)
-        assert_in('Template not found', res)
-
-    def test_register_project_with_multiple_errors(self):
-        self.project.add_addon('addon1', auth=Auth(self.user1))
-        component = NodeFactory(parent=self.project, creator=self.user1)
-        component.add_addon('addon1', auth=Auth(self.user1))
-        component.add_addon('addon2', auth=Auth(self.user1))
-        self.project.save()
-        component.save()
-        url = self.project.api_url_for('project_before_register')
-        res = self.app.get(url, auth=self.auth)
-        data = res.json
-        assert_equal(res.status_code, 200)
-        assert_equal(len(data['errors']), 2)
-
 
     # Regression test for https://github.com/CenterForOpenScience/osf.io/issues/1478
     @mock.patch('website.archiver.tasks.archive.si')
@@ -4508,7 +4453,7 @@ class TestDraftRegistrationViews(OsfTestCase):
             Q('name', 'eq', 'Open-Ended Registration') &
             Q('schema_version', 'eq', 1)
         )
-        self.draft = DraftRegistration(
+        self.draft = DraftRegistrationFactory(
             initiator=self.user,
             branched_from=self.node,
             registration_schema=self.meta_schema,
@@ -4530,7 +4475,7 @@ class TestDraftRegistrationViews(OsfTestCase):
         self.invalid_embargo_date_payload = json.dumps({
             u'embargoEndDate': u"Thu, 01 {month} {year} 05:00:00 GMT".format(
                 month=current_month,
-                year=str(int(current_year)-1)
+                year=str(int(current_year) - 1)
             ),
             u'registrationChoice': 'embargo',
             u'summary': unicode(fake.sentence())
@@ -4621,7 +4566,6 @@ class TestDraftRegistrationViews(OsfTestCase):
             auth=self.user.auth
         )
 
-        # register_draft_registration returns http.ACCEPTED not CREATED
         assert_equal(res.status_code, 202)
 
         registration = Node.find().sort('-registered_date')[0]
@@ -4643,11 +4587,11 @@ class TestDraftRegistrationViews(OsfTestCase):
 
         assert_equal(res.status_code, 400)
 
-    def test_get_draft_registrations_gets_drafts_for_node_and_user(self):
+    def test_get_draft_registrations_gets_drafts_for_node(self):
 
         dummy = NodeFactory()
         for i in range(5):
-            d = DraftRegistration(
+            d = DraftRegistrationFactory(
                 initiator=self.user,
                 branched_from=dummy,
                 meta_schema=self.meta_schema,
@@ -4656,7 +4600,7 @@ class TestDraftRegistrationViews(OsfTestCase):
             d.save()
         found = [self.draft]
         for i in range(3):
-            d = DraftRegistration(
+            d = DraftRegistrationFactory(
                 initiator=self.user,
                 branched_from=self.node,
                 meta_schema=self.meta_schema,
