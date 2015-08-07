@@ -343,7 +343,7 @@ class NodeLog(StoredObject):
 
     REGISTRATION_APPROVAL_CANCELLED = 'registration_cancelled'
     REGISTRATION_APPROVAL_INITIATED = 'registration_initiated'
-    REGISTRATION_APPROVAL_COMPLETE = 'registration_complete'
+    REGISTRATION_APPROVAL_APPROVED = 'registration_approved'
 
     def __repr__(self):
         return ('<NodeLog({self.action!r}, params={self.params!r}) '
@@ -3442,7 +3442,7 @@ class RegistrationApproval(EmailApprovableSanction):
             self._add_success_logs(node, user)
             node.update_search()  # update search if public
         registered_from.add_log(
-            action=NodeLog.REGISTRATION_APPROVAL_COMPLETE,
+            action=NodeLog.REGISTRATION_APPROVAL_APPROVED,
             params={
                 'node': registered_from._id,
                 'registration_approval_id': self._id,

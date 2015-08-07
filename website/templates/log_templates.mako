@@ -64,7 +64,7 @@ cancelled registration of
 
 <script type="text/html" id="registration_approved">
 approved registration of
-<a class="log-node-title-link overflow" data-bind="text: nodeTitle, attr: {href: nodeUrl}"></a>
+<a class="log-node-title-link overflow" data-bind="text: nodeTitlegit , attr: {href: nodeUrl}"></a>
 </script>
 
 ## Project related logs

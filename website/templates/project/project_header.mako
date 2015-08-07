@@ -94,7 +94,7 @@
               }
               </style>
            % else:
-              <div class="alert alert-info">This ${node['node_type']} is currently pending registration, awaiting approval from project administrators. This registration will be final when all project administrators approve the registration or 48 hours pass, whichever comes first.</div>
+              <div class="alert alert-info">This is a pending registration of <a class="link-solid" href="${node['registered_from_url']}">this project</a>, awaiting approval from project administrators. This registration will be final when all project administrators approve the registration or 48 hours pass, whichever comes first.</div>
            % endif
 
 
