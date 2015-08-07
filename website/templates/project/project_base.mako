@@ -77,17 +77,17 @@
                 web: ${ node['url'] | sjson, n },
                 update: ${ node['update_url'] | sjson, n }
             },
-            isPublic: ${json.dumps(node.get('is_public', False))},
-            isRetracted: ${json.dumps(node.get('is_retracted', False))},
-            piwikSiteID: ${json.dumps(node.get('piwik_site_id', None))},
-            piwikHost: ${json.dumps(piwik_host)},
-            anonymous: ${json.dumps(node['anonymous'])},
-            category: '${node['category_short']}',
-            parentTitle: ${json.dumps(parent_title) | n},
-            parentRegisterUrl: '${parent_registration_url}',
-            parentExists: ${json.dumps(parent_exists)},
-            registrationMetaSchema: ${json.dumps(node['registered_schema'])},
-            registrationMetaData: ${json.dumps(node['registered_meta'])}
+            isPublic: ${ node.get('is_public', False) | sjson, n},
+            isRetracted: ${ node.get('is_retracted', False) | sjson, n},
+            piwikSiteID: ${ node.get('piwik_site_id', None) | sjson, n},
+            piwikHost: ${ piwik_host | sjson, n},
+            anonymous: ${ node['anonymous'] | sjson, n},
+            category: ${node['category_short'] | sjson, n},
+            parentTitle: ${ parent_title | sjson, n},
+            parentRegisterUrl: ${parent_registration_url | sjson, n},
+            parentExists: ${ parent_exists | sjson, n},
+            registrationMetaSchema: ${ node['registered_schema'] | sjson, n},
+            registrationMetaData: ${ node['registered_meta'] | sjson, n}
         }
     });
 
