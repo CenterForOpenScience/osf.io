@@ -175,12 +175,14 @@ var Footer = {
         var self = this;
         this.result = params.result;
         this.cleanResult = m.prop(null);
-        this.loadRawNorm = function() {
+        this.missingError = m.prop(null);
+        this.showRawNormalized = false;
+        this.loadRawNormalized = function() {
             utils.loadRawNormalized(this.result).then(
                 function(cleanData) {
                     self.cleanResult(cleanData);
                 }, function(error) {
-                    self.cleanResult(error);
+                    self.missingError(error);
                 }
             );
         };
@@ -195,8 +197,8 @@ var Footer = {
                     m('span', {style: {'margin-right': '5px', 'margin-left': '5px'}}, ' | '),
                     m('a', {
                         onclick: function() {
-                            ctrl.showRawNormed = ctrl.showRawNormed ? false : true;
-                            ctrl.loadRawNorm();
+                            ctrl.showRawNormalized = ctrl.showRawNormalized ? false : true;
+                            ctrl.loadRawNormalized();
                         }
                     }, 'Data')
                 ]) : m('span', [])
@@ -207,14 +209,14 @@ var Footer = {
                 m('a', {onclick: function() {utils.updateFilter(vm, 'shareProperties.source:' + result.shareProperties.source);}}, vm.ProviderMap[result.shareProperties.source].long_name),
                 m('br')
             ]),
-            ctrl.showRawNormed ? m.component(RawNormalizedData, {result: ctrl.cleanResult}) : '',
+            ctrl.showRawNormalized ? m.component(RawNormalizedData, {result: ctrl.cleanResult, missingError: ctrl.missingError}) : '',
         ]);
     }
 };
 
 var RawNormalizedData = {
     view: function(ctrl, params) {
-        var result = params.result();
+        var result = params.result() || params.missingError();
         var divID = (result.normalized.shareProperties.docID + result.normalized.shareProperties.source).replace( /(:|\.|\[|\]|,)/g, '-' );
         return m('.row', [
             m('.col-md-12',
