@@ -3038,7 +3038,7 @@ class EmailApprovableSanction(Sanction):
     #     'reject': [REJECT_URL],
     #   }
     # }
-    stashed_urls = fields.DictionaryField(default={})
+    stashed_urls = fields.DictionaryField()
 
     @staticmethod
     def _format_or_empty(template, context):
