@@ -10,11 +10,11 @@ var SideBar = {
         if (vm.results === null){
             return [];
         }
-        var new_params = {vm: vm};
+        var newParams = {vm: vm};
         return m('.sidebar', [
-                m.component(ActiveFiltersHeader, new_params),
-                m.component(ActiveFilters, new_params),
-                m.component(ProviderList, new_params)
+                m.component(ActiveFiltersHeader, newParams),
+                m.component(ActiveFilters, newParams),
+                m.component(ProviderList, newParams)
         ]);
     },
 };
