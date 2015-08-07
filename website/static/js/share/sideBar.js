@@ -46,17 +46,17 @@ var ActiveFilters = {
             $.map(filters, function(filter){
                 // Strip out all the extra information from the filter string, for nice
                 // human friendly viewing.
-                var filter_parts = filter.split(':');
-                var field = filter_parts[1].split('.').slice(-1);
-                var value = filter_parts.slice(2).join(':');
-                var pretty_string = [field, value].join(':');
+                var filterParts = filter.split(':');
+                var field = filterParts[1].split('.').slice(-1);
+                var value = filterParts.slice(2).join(':');
+                var prettyString = [field, value].join(':');
 
                 return m('li.render-filter', [
                     m('a', {
                         onclick: function(event){
                             utils.removeFilter(vm, filter);
                         }
-                    }, [m('i.fa.fa-close'), ' ' + pretty_string
+                    }, [m('i.fa.fa-close'), ' ' + prettyString
                     ])
                 ]);
         })) : m('');
