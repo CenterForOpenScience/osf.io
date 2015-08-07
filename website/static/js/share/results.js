@@ -182,12 +182,14 @@ var Footer = {
         var self = this;
         this.result = params.result;
         this.cleanResult = m.prop(null);
-        this.loadRawNorm = function() {
+        this.missingError = m.prop(null);
+        this.showRawNormalized = false;
+        this.loadRawNormalized = function() {
             utils.loadRawNormalized(this.result).then(
                 function(cleanData) {
                     self.cleanResult(cleanData);
                 }, function(error) {
-                    self.cleanResult(error);
+                    self.missingError(error);
                 }
             );
         };
@@ -202,8 +204,8 @@ var Footer = {
                     m('span', {style: {'margin-right': '5px', 'margin-left': '5px'}}, ' | '),
                     m('a', {
                         onclick: function() {
-                            ctrl.showRawNormed = ctrl.showRawNormed ? false : true;
-                            ctrl.loadRawNorm();
+                            ctrl.showRawNormalized = !ctrl.showRawNormalized;
+                            ctrl.loadRawNormalized();
                         }
                     }, 'Data')
                 ]) : m('span', [])
@@ -214,25 +216,25 @@ var Footer = {
                 m('a', {onclick: function() {utils.updateFilter(vm, 'shareProperties.source:' + result.shareProperties.source);}}, vm.ProviderMap[result.shareProperties.source].long_name),
                 m('br')
             ]),
-            ctrl.showRawNormed ? m.component(RawNormalizedData, {result: ctrl.cleanResult}) : '',
+            ctrl.showRawNormalized ? m.component(RawNormalizedData, {result: ctrl.cleanResult(), missingError: ctrl.missingError()}) : '',
         ]);
     }
 };
 
 var RawNormalizedData = {
     view: function(ctrl, params) {
-        var result = params.result();
+        var result = params.result || params.missingError;
         var divID = (result.normalized.shareProperties.docID + result.normalized.shareProperties.source).replace( /(:|\.|\[|\]|,)/g, '-' );
         return m('.row', [
             m('.col-md-12',
                 m('div', [
-                    m('ul', {class: 'nav nav-tabs'}, [
+                    m('ul', {className: 'nav nav-tabs'}, [
                         m('li', m('a', {href: '#raw' + divID, 'data-toggle': 'tab'}, 'Raw')),
                         m('li', m('a', {href: '#normalized' + divID, 'data-toggle': 'tab'}, 'Normalized'))
                     ]),
-                    m('div', {class: 'tab-content'},
+                    m('div', {className: 'tab-content'},
                         m('div',
-                            {class: 'tab-pane active', id:'raw' + divID},
+                            {className: 'tab-pane active', id:'raw' + divID},
                             m('pre',
                                 (function(){
                                     if (result.rawfiletype === 'xml') {
@@ -246,7 +248,7 @@ var RawNormalizedData = {
                             )
                         ),
                         m('div',
-                            {class: 'tab-pane', id:'normalized' + divID},
+                            {className: 'tab-pane', id:'normalized' + divID},
                             m('pre',
                                 (function(){
                                     return JSON.stringify(result.normalized, undefined, 2);
