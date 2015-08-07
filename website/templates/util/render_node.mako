@@ -18,17 +18,19 @@
                 <span class="fa fa-lock" data-toggle="tooltip" title="This project is private"></span>
             % endif
                 <span class="project-statuses-lg">
-                  % if summary['is_retracted']:
-                  <span class="label label-danger"><strong>Retracted</strong></span> |
+                  % if summary['is_pending_registration']:
+                    <span class="label label-info"><strong>Pending Registration</strong></span> |
+                  % elif summary['is_retracted']:
+                    <span class="label label-danger"><strong>Retracted</strong></span> |
                   % elif summary['pending_retraction']:
-                  <span class="label label-info"><strong>Pending Retraction</strong></span> |
+                    <span class="label label-info"><strong>Pending Retraction</strong></span> |
                   % elif summary['embargo_end_date']:
-                  <span class="label label-info"><strong>Embargoed</strong></span> |
+                    <span class="label label-info"><strong>Embargoed</strong></span> |
                   % elif summary['pending_embargo']:
-                  <span class="label label-info"><strong>Pending Embargo</strong></span> |
+                    <span class="label label-info"><strong>Pending Embargo</strong></span> |
                   % endif
                   % if summary['archiving']:
-                  <span class="label label-primary"><strong>Archiving</strong></span> |
+                    <span class="label label-primary"><strong>Archiving</strong></span> |
                   % endif
                 </span>
             <span data-bind="getIcon: '${summary['category']}'"></span>
