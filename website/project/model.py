@@ -82,7 +82,7 @@ class MetaSchema(StoredObject):
 
     _id = fields.StringField(default=lambda: str(ObjectId()))
     name = fields.StringField()
-    schema = fields.DictionaryField()
+    schema = fields.DictionaryField(default={})
     category = fields.StringField()
 
     # Deprecated legacy field
@@ -93,6 +93,10 @@ class MetaSchema(StoredObject):
     @property
     def requires_approval(self):
         return self.schema.get('config', {}).get('requiresApproval', False)
+
+    @property
+    def fulfills(self):
+        return self.schema.get('config', {}).get('fulfills', [])
 
 def ensure_schema(schema, name, version=1):
     try:
@@ -2919,6 +2923,10 @@ class Sanction(StoredObject):
     REJECTION_NOT_AUTHORIZED_MESSAEGE = 'This user is not authorized to reject this {0}'
     REJECTION_INVALID_TOKEN_MESSAGE = 'Invalid rejection token provided for this {0}.'
 
+    ANY = 'any'
+    UNANIMOUS = 'unanimous'
+    mode = 'unanimous'
+
     _id = fields.StringField(primary=True, default=lambda: str(ObjectId()))
     initiation_date = fields.DateTimeField(auto_now_add=datetime.datetime.utcnow)
     # Expiration date-- Sanctions in the UNAPPROVED state that are older than their end_date
@@ -2986,7 +2994,7 @@ class Sanction(StoredObject):
         return True
 
     def _on_approve(self, user, token):
-        if all(authorizer['has_approved'] for authorizer in self.approval_state.values()):
+        if self.mode == self.ANY or all(authorizer['has_approved'] for authorizer in self.approval_state.values()):
             self.state = Sanction.APPROVED
             self._on_complete(user)
 
@@ -3444,10 +3452,9 @@ class RegistrationApproval(EmailApprovableSanction):
         register = Node.find_one(Q('registration_approval', 'eq', self))
         registered_from = register.registered_from
         auth = Auth(self.initiated_by)
-        register.set_privacy('public', auth, log=False)
-        for child in register.get_descendants_recursive(lambda n: n.primary):
-            child.set_privacy('public', auth, log=False)
         for node in register.root.node_and_primary_descendants():
+            node.set_privacy('public', auth, log=False)
+        for node in registered_from.root.node_and_primary_descendants():
             self._add_success_logs(node, user)
             node.update_search()  # update search if public
 
@@ -3517,9 +3524,12 @@ class DraftRegistration(AddonModelMixin, StoredObject):
 
     approval = fields.ForeignField('draftregistrationapproval', default=None)
 
-    # Dictionary field mapping a draft's states during the review process to their value
-    # { 'isApproved': false, 'isPendingReview': false, 'paymentSent': false }
-    flags = fields.DictionaryField()
+    # Dictionary field mapping extra fields defined in the MetaSchema.schema to their
+    # values. Defaults should be provided in the schema (e.g. 'paymentSent': false),
+    # and these values are added to the DraftRegistration
+    extra = fields.DictionaryField()
+
+    notes = fields.StringField()
 
     def __init__(self, *args, **kwargs):
         super(DraftRegistration, self).__init__(*args, **kwargs)

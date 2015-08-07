@@ -11,7 +11,6 @@ from website.archiver.decorators import fail_archive_on_error
 from website.archiver import signals as archiver_signals
 
 from website.project import signals as project_signals
-from website.project import utils as project_utils
 
 @project_signals.after_create_registration.connect
 def after_register(src, dst, user):

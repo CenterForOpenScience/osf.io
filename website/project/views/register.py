@@ -1,18 +1,16 @@
 # -*- coding: utf-8 -*-
 import json
 import httplib as http
-from dateutil.parser import parse as parse_date
 import itertools
 
 from flask import request
 from modularodm import Q
-from modularodm.exceptions import NoResultsFound, ValidationValueError
+from modularodm.exceptions import NoResultsFound
 
 from framework import status
 from framework.exceptions import HTTPError, PermissionsError
 from framework.flask import redirect  # VOL-aware redirect
 
-from framework.status import push_status_message
 from framework.mongo.utils import to_mongo
 from framework.forms.utils import unprocess_payload
 from framework.auth.decorators import must_be_signed
@@ -35,7 +33,7 @@ from website.identifiers.metadata import datacite_metadata_for_node
 from website.project.utils import serialize_node
 from website.util.permissions import ADMIN
 from website.models import MetaSchema, NodeLog
-from website import language, mails
+from website import language
 from website.project import signals as project_signals
 from website import util
 
