@@ -11,10 +11,11 @@ logger = logging.getLogger(__name__)
 
 @app.task
 def update_file_task(file_node_id, file_url, index=None):
-    logger.info('\n\nI do declare, Update File has been called\n')
+    logger.info('\n\nI do declare, Update File has been called!\n')
 
-    init_addons(settings)
+    init_addons(settings, routes=False)
     do_set_backends(settings)
+
     file_node = model.OsfStorageFileNode.load(file_node_id)
 
     content = requests.get(file_url).content
@@ -23,8 +24,14 @@ def update_file_task(file_node_id, file_url, index=None):
 
 
 @app.task
-def delete_file_task(file_node, index=None):
-    search.delete_file(file_node, index)
+def delete_file_task(file_node_id, parent_id, index=None):
+    logger.info('\n\n I do declare, Delete File has indeed been called!\n')
+
+    init_addons(settings, routes=False)
+    do_set_backends(settings)
+
+    file_path = file_node_id
+    return search.delete_file_from_path(file_path, file_parent_id=parent_id, index=index)
 
 
 @app.task

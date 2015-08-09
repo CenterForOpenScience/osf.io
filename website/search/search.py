@@ -49,6 +49,11 @@ def delete_file(file_node, index=None):
     search_engine.delete_file(file_node, index=index)
 
 
+def delete_file_from_path(file_path, file_parent_id, index=None):
+    index = index or settings.ELASTIC_INDEX
+    file_path = file_util.norm_path(file_path)
+    return search_engine.delete_file_from_path(file_path, file_parent_id, index=index)
+
 @file_util.require_file_indexing
 @requires_search
 def update_all_files(node, index=None):

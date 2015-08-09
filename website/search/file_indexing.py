@@ -48,4 +48,6 @@ def update_search_file(file_node):
 @file_util.require_file_indexing
 @except_search_unavailable
 def delete_search_file(file_node):
-    tasks.delete_file_task(file_node=file_node)
+    path = file_node.path
+    parent_id = file_node.node._id
+    tasks.delete_file_task.delay(file_node_id=path, parent_id=parent_id)

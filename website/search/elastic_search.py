@@ -380,8 +380,10 @@ def delete_file(file_node, index=None):
     :param file_path:
     """
     index = index or INDEX
+
     path = file_util.norm_path(file_node.path)
     parent_id = file_node.node._id
+
     if not file_util.is_indexed(file_node):
         return False
 
@@ -395,7 +397,20 @@ def delete_file(file_node, index=None):
         id=path,
         refresh=True,
     )
+    return True
 
+
+def delete_file_from_path(file_node_path, file_node_parent_id, index=None):
+    index = index or INDEX
+    file_path = file_util.norm_path(file_node_path)
+    es.delete(
+        index=index,
+        doc_type='file',
+        parent=file_node_parent_id,
+        id=file_path,
+        refresh=True,
+    )
+    return True
 
 @file_util.require_file_indexing
 @requires_search
