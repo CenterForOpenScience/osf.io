@@ -42,6 +42,11 @@ def get_file_content(file_node):
     response = requests.get(url)
     return response.content
 
+def get_file_content_url(file_node):
+    file_, _ = file_node.node_settings.find_or_create_file_guid(file_node.path)
+    url = file_.download_url + '&mode=render'
+    return url
+
 
 def get_file_size(file_node):
     """ Return the size of the file. """

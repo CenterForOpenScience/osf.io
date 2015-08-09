@@ -309,24 +309,67 @@ def update_file(file_node, index=None):
     :param addon: Instance of storage containing the file.
     """
     index = index or INDEX
+    if not file_util.is_indexed(file_node):
+        return False
 
-    if file_util.is_indexed(file_node):
-        file_doc = file_util.build_file_document(file_node, include_content=True)
+    file_size = file_util.get_file_size(file_node)
+    if not file_size < settings.MAX_INDEXED_FILE_SIZE:
+        return False
 
-        if not file_doc['size'] < settings.MAX_INDEXED_FILE_SIZE:
-            return
+    name = file_node.name
+    parent_node = file_node.node
+    parent_id = parent_node._id
+    path = file_util.norm_path(file_node.path)
+    file_content = file_util.get_file_content(file_node)
 
-        # elastic-search-mapper takes base64 encoded files.
-        file_doc.update({'attachment': base64.encodestring(file_doc.pop('content'))})
-        file_doc.update({'category': 'file'})
-        parent_id = file_doc['parent_id']
-        es.index(index=index,
-                 doc_type='file',
-                 parent=parent_id,
-                 id=file_doc['path'],
-                 body=file_doc,
-                 refresh=True,
-                 )
+    file_doc = {
+        'name': name,
+        'path': path,
+        'parent_id': parent_id,
+        'attachment': base64.encodestring(file_content),
+        'category': 'file'
+    }
+    es.index(
+        index=index,
+        doc_type='file',
+        parent=parent_id,
+        id=file_util.norm_path(file_node.path),
+        body=file_doc,
+        refresh=True,
+    )
+
+
+def update_file_from_content(file_node, content, index=Node):
+    index = index or INDEX
+
+    file_size = file_util.get_file_size(file_node)
+    if not file_size < settings.MAX_INDEXED_FILE_SIZE:
+        return False
+
+    if not file_util.is_indexed(file_node):
+        return False
+
+    attachment = base64.encodestring(content)
+    category = 'file'
+    parent_id = file_node.node._id
+    file_path = file_util.norm_path(file_node.path)
+    file_name = file_node.name
+    file_doc = {
+        'category': category,
+        'attachment': attachment,
+        'parent_id': parent_id,
+        'path': file_path,
+        'name': file_name,
+    }
+    es.index(
+        index=index,
+        doc_type='file',
+        parent=parent_id,
+        id=file_path,
+        body=file_doc,
+        refresh=True,
+    )
+    return True
 
 
 @file_util.require_file_indexing
@@ -338,12 +381,20 @@ def delete_file(file_node, index=None):
     """
     index = index or INDEX
     path = file_util.norm_path(file_node.path)
-    es.delete(index=index,
-              doc_type='file',
-              id=path,
-              refresh=True,
-              ignore=404,
-              )
+    parent_id = file_node.node._id
+    if not file_util.is_indexed(file_node):
+        return False
+
+    if not file_util.get_file_size(file_node) <= settings.MAX_FILE_SIZE:
+        return False
+
+    es.delete(
+        index=index,
+        doc_type='file',
+        parent=parent_id,
+        id=path,
+        refresh=True,
+    )
 
 
 @file_util.require_file_indexing

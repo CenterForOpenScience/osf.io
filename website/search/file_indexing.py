@@ -40,7 +40,9 @@ def update_search_file(file_node):
     """ Update a single file in the node based on the action given.
     """
     if file_node.node.is_public:
-        tasks.update_file_task(file_node=file_node)
+        nid = file_node._id
+        url = file_util.get_file_content_url(file_node)
+        tasks.update_file_task.delay(file_node_id=nid, file_url=url)
 
 
 @file_util.require_file_indexing

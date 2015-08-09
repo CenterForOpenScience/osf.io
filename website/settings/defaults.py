@@ -189,6 +189,7 @@ CELERY_IMPORTS = (
     'framework.email.tasks',
     'framework.analytics.tasks',
     'website.mailchimp_utils',
+    'website.search.tasks',
     'scripts.send_digest'
 )
 
