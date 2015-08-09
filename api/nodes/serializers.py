@@ -153,7 +153,6 @@ class NodeSerializer(JSONAPISerializer):
 class NodeContributorsSerializer(JSONAPISerializer):
 
     id = ser.CharField(source='_id')
-    permission = ser.ChoiceField(choices=['read', 'write', 'admin'], initial='write', write_only=True)
     local_filterable = frozenset(['permission', 'bibliographic'])
     filterable_fields = frozenset.union(UserSerializer.filterable_fields, local_filterable)
 
@@ -174,8 +173,9 @@ class NodeContributorsSerializer(JSONAPISerializer):
     social_accounts = ser.DictField(read_only=True, source='social', help_text='A dictionary of various social media '
                                                                                'account identifiers including an array '
                                                                                'of user-defined URLs')
-    permissions = ser.ListField(read_only=True)
-    bibliographic = ser.BooleanField(help_text='Whether the user will be included in citations for '
+    permissions_list = ser.ListField(read_only=True)
+    permissions_choice = ser.ChoiceField(choices=['read', 'write', 'admin'], initial='write', write_only=True)
+    bibliographic = ser.BooleanField(default=True, help_text='Whether the user will be included in citations for '
                                                                'this node or not')
 
     links = LinksFieldWIthSelfLink({'html': 'absolute_url',
