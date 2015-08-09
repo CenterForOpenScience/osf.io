@@ -1127,6 +1127,8 @@ class TestNodeEditContributor(ApiTestCase):
         self.url_contributor = '/{}nodes/{}/contributors/{}/'.format(API_BASE, self.project._id, self.user._id)
         self.url_admin = '/{}nodes/{}/contributors/{}/'.format(API_BASE, self.project._id, self.admin._id)
 
+        self.project.reload()
+
     def test_admin_change_contributor_permissions(self):
         res = self.app.put(self.url_contributor, {'permission': 'read'}, auth=self.admin_auth, expect_errors=False)
 
@@ -1165,6 +1167,16 @@ class TestNodeEditContributor(ApiTestCase):
         assert_false(self.project.get_visible(self.user))
         data = {
             'bibliographic': True,
+            'permission': ''
+        }
+        res = self.app.put(self.url_contributor, data, auth=self.admin_auth, expect_errors=False)
+
+        assert_equal(res.status_code, 200)
+        self.project.reload()
+        assert_true(self.project.get_visible(self.user))
+
+    def test_admin_not_change_contributor_bibliographic_status(self):
+        data = {
             'permission': ''
         }
         res = self.app.put(self.url_contributor, data, auth=self.admin_auth, expect_errors=False)
