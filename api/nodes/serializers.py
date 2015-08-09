@@ -174,9 +174,10 @@ class NodeContributorsSerializer(JSONAPISerializer):
                                                                                'account identifiers including an array '
                                                                                'of user-defined URLs')
     permissions_list = ser.ListField(read_only=True)
-    permissions_choice = ser.ChoiceField(choices=['read', 'write', 'admin'], initial='write', write_only=True)
+    permission = ser.ChoiceField(choices=['read', 'write', 'admin'], default='write', write_only=True,
+                                 help_text='Selection of highest user permission available')
     bibliographic = ser.BooleanField(default=True, help_text='Whether the user will be included in citations for '
-                                                               'this node or not')
+                                                             'this node or not')
 
     links = LinksFieldWIthSelfLink({'html': 'absolute_url',
                                     'detail': Link('nodes:node-contributor-detail',
@@ -227,7 +228,7 @@ class NodeContributorDetailSerializer(NodeContributorsSerializer):
 
     # Overridden to allow blank for user to not change status by using initial blank value
     permission = ser.ChoiceField(choices=['read', 'write', 'admin'], write_only=True, allow_blank=True)
-    bibliographic = ser.NullBooleanField(help_text='Whether the user will be included in citations for '
+    bibliographic = ser.NullBooleanField(default=True, help_text='Whether the user will be included in citations for '
                                                                'this node or not')
 
     def update(self, user, validated_data):
@@ -243,12 +244,10 @@ class NodeContributorDetailSerializer(NodeContributorsSerializer):
         return user
 
     def set_bibliographic(self, bibliographic, node, user):
-        raise ValidationError(bibliographic)
-        if bibliographic in ['True', 'False']:
-            try:
-                node.set_visible(user, bibliographic, save=True)
-            except ValueError as e:
-                raise ValidationError(e)
+        try:
+            node.set_visible(user, bibliographic, save=True)
+        except ValueError as e:
+            raise ValidationError(e)
 
     def set_permissions(self, field, user, node, is_current=False):
         if field == '':

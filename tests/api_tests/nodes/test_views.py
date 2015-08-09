@@ -852,13 +852,20 @@ class TestNodeAddContributor(ApiTestCase):
         self.user_auth = (self.user.username, password)
         self.user.save()
 
-        self.default_user_data = {
-            'id': self.user._id,
-            'permission': 'write',
-            'bibliographic': True
-        }
         self.project = ProjectFactory(is_public=True, creator=self.admin)
         self.url = '/{}nodes/{}/contributors/'.format(API_BASE, self.project._id)
+
+    def test_admin_add_contributor(self):
+        data = {
+            'id': self.user._id,
+        }
+        res = self.app.post(self.url, params=data, auth=self.admin_auth, expect_errors=False)
+
+        self.project.reload()
+        assert_equal(res.status_code, 201)
+        assert_in(self.user, self.project.contributors)
+        assert_equal(self.project.get_permissions(self.user), ['read', 'write'])
+        assert_true(self.project.get_visible(self.user))
 
     def test_admin_add_read_bibliographic_contributor(self):
         data = {
@@ -946,7 +953,10 @@ class TestNodeAddContributor(ApiTestCase):
 
     def test_admin_add_already_existing_contributor(self):
         self.project.add_contributor(contributor=self.user, save=True)
-        res = self.app.post(self.url, params=self.default_user_data, auth=self.admin_auth, expect_errors=True)
+        data = {
+            'id': self.user._id,
+        }
+        res = self.app.post(self.url, params=data, auth=self.admin_auth, expect_errors=True)
         assert_equal(res.status_code, 400)
 
     def test_admin_add_non_existing_contributor(self):
@@ -997,7 +1007,10 @@ class TestNodeAddContributor(ApiTestCase):
         assert_not_in(user_two, self.project.contributors)
 
     def test_non_logged_in_user_add_contributor(self):
-        res = self.app.post(self.url, params=self.default_user_data, expect_errors=True)
+        data = {
+            'id': self.user._id,
+        }
+        res = self.app.post(self.url, params=data, expect_errors=True)
 
         self.project.reload()
         assert_equal(res.status_code, 403)
