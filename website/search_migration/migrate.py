@@ -55,7 +55,7 @@ def migrate_files(index=None, app=None):
     nodes = Node.find(Q('is_public', 'eq', True) & Q('is_deleted', 'eq', False))
     n_iter = 0
     for node in nodes:
-        for file_node in collect_files(node):
+        for file_node in collect_files(node, recur=False):
             update_file(file_node, index)
             n_iter += 1
     logger.info('Files migrated: {}'.format(n_iter))

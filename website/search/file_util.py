@@ -45,9 +45,8 @@ def get_file_content(file_node):
 
 def get_file_size(file_node):
     """ Return the size of the file. """
-    file_, _ = file_node.node_settings.find_or_create_file_guid(file_node.path)
-    file_.enrich()
-    return file_.size
+    latest_version = file_node.get_version()
+    return latest_version.size
 
 
 def norm_path(path):
@@ -89,7 +88,8 @@ def collect_files_from_filenode(file_node):
         for file_ in collect_files_from_filenode(child):
             yield file_
 
-def collect_files(node):
+
+def collect_files(node, recur=True):
     osf_addon = node.get_addon('osfstorage')
     root_node = osf_addon.root_node
 
@@ -99,6 +99,7 @@ def collect_files(node):
     for file_node in collect_files_from_filenode(root_node):
             yield file_node
 
-    for component_node in node.nodes:
-        for file_node in collect_files(component_node):
-            yield file_node
+    if recur:
+        for component_node in node.nodes:
+            for file_node in collect_files(component_node):
+                yield file_node
