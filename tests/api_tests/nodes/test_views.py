@@ -102,7 +102,6 @@ class TestNodeList(ApiTestCase):
         assert_not_in(self.private._id, ids)
 
 
-
 class TestNodeFiltering(ApiTestCase):
 
     def setUp(self):
@@ -341,18 +340,18 @@ class TestNodeCreate(ApiTestCase):
                                 'public': False}
 
     def test_creates_public_project_logged_out(self):
-        res = self.app.post_json(self.url, self.public_project, expect_errors=True)
+        res = self.app.post(self.url, self.public_project, expect_errors=True)
         # This is 403 instead of 401 because basic authentication is only for unit tests and, in order to keep from
         # presenting a basic authentication dialog box in the front end. We may change this as we understand CAS
         # a little better
         assert_equal(res.status_code, 403)
 
     def test_creates_public_project_logged_in(self):
-        res = self.app.post_json(self.url, self.public_project, auth=self.basic_auth)
+        res = self.app.post(self.url, self.public_project, auth=self.basic_auth)
         assert_equal(res.status_code, 201)
-        assert_equal(res.json['data']['title'], self.public_project['title'])
-        assert_equal(res.json['data']['description'], self.public_project['description'])
-        assert_equal(res.json['data']['category'], self.public_project['category'])
+        assert_equal(res.json['data']['attributes']['title'], self.public_project['title'])
+        assert_equal(res.json['data']['attributes']['description'], self.public_project['description'])
+        assert_equal(res.json['data']['attributes']['category'], self.public_project['category'])
 
     def test_creates_private_project_logged_out(self):
         res = self.app.post_json(self.url, self.private_project, expect_errors=True)
@@ -362,17 +361,18 @@ class TestNodeCreate(ApiTestCase):
         assert_equal(res.status_code, 403)
 
     def test_creates_private_project_logged_in_contributor(self):
-        res = self.app.post_json(self.url, self.private_project, auth=self.basic_auth)
+        res = self.app.post(self.url, self.private_project, auth=self.basic_auth)
+        print res
         assert_equal(res.status_code, 201)
-        assert_equal(res.json['data']['title'], self.private_project['title'])
-        assert_equal(res.json['data']['description'], self.private_project['description'])
-        assert_equal(res.json['data']['category'], self.private_project['category'])
+        assert_equal(res.json['data']['attributes']['title'], self.private_project['title'])
+        assert_equal(res.json['data']['attributes']['description'], self.private_project['description'])
+        assert_equal(res.json['data']['attributes']['category'], self.private_project['category'])
 
     def test_creates_project_creates_project_and_sanitizes_html(self):
         title = '<em>Cool</em> <strong>Project</strong>'
         description = 'An <script>alert("even cooler")</script> project'
 
-        res = self.app.post_json(self.url, {
+        res = self.app.post(self.url, {
             'title': title,
             'description': description,
             'category': self.category,
@@ -383,9 +383,9 @@ class TestNodeCreate(ApiTestCase):
         url = '/{}nodes/{}/'.format(API_BASE, project_id)
 
         res = self.app.get(url, auth=self.basic_auth)
-        assert_equal(res.json['data']['title'], strip_html(title))
-        assert_equal(res.json['data']['description'], strip_html(description))
-        assert_equal(res.json['data']['category'], self.category)
+        assert_equal(res.json['data']['attributes']['title'], strip_html(title))
+        assert_equal(res.json['data']['attributes']['description'], strip_html(description))
+        assert_equal(res.json['data']['attributes']['category'], self.category)
 
 
 class TestNodeDetail(ApiTestCase):
@@ -1102,7 +1102,8 @@ class TestCreateNodePointer(ApiTestCase):
         assert_equal(res.json['data']['target_node_id'], self.public_project._id)
 
     def test_create_node_pointer_already_connected(self):
-        res = self.app.post(self.public_url, self.public_payload, auth=self.basic_auth)
+        res = self.app.post(self.public_url, self.public_payload, expect_errors=True, auth=self.basic_auth)
+        print res
         assert_equal(res.status_code, 201)
         assert_equal(res.json['data']['target_node_id'], self.public_pointer_project._id)
 
