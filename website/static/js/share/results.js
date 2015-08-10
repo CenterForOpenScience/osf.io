@@ -5,6 +5,7 @@ var $ = require('jquery');
 var m = require('mithril');
 var $osf = require('js/osfHelpers');
 var utils = require('./utils');
+require('truncate');
 
 var Results = {
     view: function(ctrl, params) {
@@ -101,7 +102,7 @@ var Description = {
                     ctrl.showAll = !ctrl.showAll;
                     }
                 },
-                ctrl.showAll ? result.description : $.trim(result.description.substring(0, 350) + '...')
+                ctrl.showAll ? result.description : $.truncate(result.description, {length: 350})
             );
         } else {
             return m('p.readable', result.description);
