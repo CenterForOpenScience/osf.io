@@ -17,7 +17,10 @@ ${self.on_submit()}
 <%def name="on_submit()">
     <script type="text/javascript">
         $(document).ready(function() {
-            $('#addonSettings${addon_short_name.capitalize()}').on('submit', AddonHelper.onSubmitSettings);
+            $('#addonSettings${addon_short_name.capitalize()}').on('submit',
+                function(){
+                    AddonHelper.onSubmitSettings({})
+                });
         });
     </script>
 </%def>

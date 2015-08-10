@@ -23,8 +23,8 @@ var AddonHelper = (function() {
      */
     function onSubmitSettings(options) {
         var $this = $(this);
-        var successUpdateMsg = options.successUpdateMsg | 'Setting updated';
-        var failUpdateMsg = options.failUpdateMsg | 'Setting not updated';
+        var successUpdateMsg = options.successUpdateMsg || 'Setting updated';
+        var failUpdateMsg = options.failUpdateMsg || 'Setting not updated';
 
         var addon = $this.attr('data-addon');
         var owner = $this.find('span[data-owner]').attr('data-owner');
