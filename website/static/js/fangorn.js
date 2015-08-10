@@ -763,7 +763,11 @@ function _fangornDropzoneError(treebeard, file, message, xhr) {
         }
     }
     if (msgText !== 'Upload canceled.') {
-        $osf.growl('Error', msgText);
+        $osf.growl(
+            'Error',
+            'Unable to reach the provider, please try again later. If the ' +
+            'problem persists, please contact <a href="mailto:support@osf.io">support@osf.io</a>.'
+            );
     }
     treebeard.options.uploadInProgress = false;
 }
@@ -872,7 +876,7 @@ function _removeEvent (event, items, col) {
         tb.modal.dismiss();
     }
     function runDelete(item) {
-        tb.select('.tb-modal-footer .text-danger').html('<i> Deleting...</i>').css('color', 'grey');
+        tb.select('.modal-footer .btn-danger').html('<i> Deleting...</i>').removeClass('btn-danger').addClass('btn-default disabled');
         // delete from server, if successful delete from view
         var url = resolveconfigOption.call(this, item, 'resolveDeleteUrl', [item]);
         url = url || waterbutler.buildTreeBeardDelete(item);

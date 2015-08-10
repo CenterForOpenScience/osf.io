@@ -226,7 +226,7 @@ class TestRubeus(OsfTestCase):
         # Public (Can View)
         public_project = ProjectFactory(is_public=True)
         collector = rubeus.NodeFileCollector(node=public_project, auth=another_auth)
-        node_name = u'{0}: {1}'.format(public_project.project_or_component.capitalize(), sanitize.safe_unescape_html(public_project.title))
+        node_name = u'{0}: {1}'.format(public_project.project_or_component.capitalize(), sanitize.unescape_entities(public_project.title))
         assert_equal(collector._get_node_name(public_project), node_name)
 
         # Private  (Can't View)
