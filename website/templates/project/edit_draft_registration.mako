@@ -40,7 +40,7 @@
                       <ul class="list-group" data-bind="foreach: {data: Object.keys(page.questions), as: 'qid'}">
                         <span data-bind="with: page.questions[qid]">
                           <li data-bind="css: {
-                                           list-item-warning: $root.currentQuestion().hasErrors(),
+                                           list-item-warning: !$data.value.isValid(),
                                            registration-editor-question-current: $root.currentQuestion().id === $data.id,
                                            list-group-item-danger: $root.showValidation() && $data.validationStatus()
                                          },

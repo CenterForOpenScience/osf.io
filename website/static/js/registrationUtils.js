@@ -176,6 +176,10 @@ var Question = function(data, id) {
         self.value.extend({
             required: true
         });
+    } else {
+      self.value.extend({
+        required: false
+      });
     }
 
     self.extra = {};
@@ -201,18 +205,6 @@ var Question = function(data, id) {
      **/
     self.isComplete = ko.computed(function() {
         return !$osf.isBlank(self.value());
-    });
-
-    /**
-     * @returns {Boolean} true if the value <input> does validate
-     **/
-    self.hasErrors = ko.computed(function() {
-        if( self.required ){
-            return self.isValid();
-        }
-        else {
-            return false;
-        }
     });
 
     /**
@@ -534,15 +526,6 @@ var RegistrationEditor = function(urls, editorId) {
         }
     });
 
-    self.markAsRequired = function() {
-
-        var questions = self.flatQuestions();
-        $.each(questions, function(idx, question) {
-            question.value.extend({ required: true});
-            question.value.required = true;
-        });
-    };
-
     self.iterObject = $osf.iterObject;
 
     // TODO: better extensions system?
@@ -819,7 +802,6 @@ RegistrationEditor.prototype.putSaveData = function(payload) {
  **/
 RegistrationEditor.prototype.save = function() {
     var self = this;
-
     var metaSchema = self.draft().metaSchema;
     var schema = metaSchema.schema;
     var data = {};
