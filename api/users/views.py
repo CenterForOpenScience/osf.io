@@ -72,7 +72,7 @@ class UserDetail(generics.RetrieveAPIView, UserMixin):
     """Details about a specific user.
     """
     serializer_class = UserSerializer
-    action = ''
+    action = 'detail'
     resource_name = 'users'
 
     # overrides RetrieveAPIView

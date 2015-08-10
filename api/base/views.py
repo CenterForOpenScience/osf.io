@@ -7,7 +7,7 @@ from api.users.serializers import UserSerializer
 
 
 class Root(APIView):
-    action = ''
+    action = 'list'
     def get(self, request, format=None):
         if request.user and not request.user.is_anonymous():
             user = request.user

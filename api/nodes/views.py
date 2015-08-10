@@ -96,7 +96,7 @@ class NodeDetail(generics.RetrieveUpdateDestroyAPIView, NodeMixin):
     )
 
     serializer_class = NodeSerializer
-    action = ''
+    action = 'detail'
     resource_name = 'nodes'
 
     # overrides RetrieveUpdateDestroyAPIView
@@ -248,7 +248,7 @@ class NodePointerDetail(generics.RetrieveDestroyAPIView, NodeMixin):
     )
 
     serializer_class = NodePointersSerializer
-    action = ''
+    action = 'detail'
     resource_name = 'pointers'
 
     # overrides RetrieveAPIView
