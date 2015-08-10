@@ -976,7 +976,7 @@ class TestNodeChildCreate(ApiTestCase):
                               'category': self.category,
                               'public': False}
 
-    def test_creates_public_child_logged_out_owner(self):
+    def test_creates_public_child_logged_out_user(self):
         res = self.app.post_json(self.url, self.public_child, expect_errors=True)
         # This is 403 instead of 401 because basic authentication is only for unit tests and, in order to keep from
         # presenting a basic authentication dialog box in the front end. We may change this as we understand CAS
@@ -990,7 +990,7 @@ class TestNodeChildCreate(ApiTestCase):
         assert_equal(res.json['data']['description'], self.public_child['description'])
         assert_equal(res.json['data']['category'], self.public_child['category'])
 
-    def test_creates_private_child_logged_out_owner(self):
+    def test_creates_private_child_logged_out_user(self):
         res = self.app.post_json(self.url, self.private_child, expect_errors=True)
         # This is 403 instead of 401 because basic authentication is only for unit tests and, in order to keep from
         # presenting a basic authentication dialog box in the front end. We may change this as we understand CAS
@@ -1025,7 +1025,7 @@ class TestNodeChildCreate(ApiTestCase):
         res = self.app.post_json(self.url, self.private_child, auth=self.user_two.auth, expect_errors=True)
         assert_equal(res.status_code, 403)
 
-    def test_creates_child_creates_child_and_sanitizes_html(self):
+    def test_creates_child_creates_child_and_sanitizes_html_logged_in_owner(self):
         title = '<em>Cool</em> <strong>Project</strong>'
         description = 'An <script>alert("even cooler")</script> child'
 
