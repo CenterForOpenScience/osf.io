@@ -1010,6 +1010,24 @@ class TestNodeChildCreate(ApiTestCase):
         assert_equal(res.json['data']['description'], self.private_child['description'])
         assert_equal(res.json['data']['category'], self.private_child['category'])
 
+    def test_creates_private_child_write_contributor(self):
+        self.project.add_contributor(self.user_two, permissions=['read', 'write'], auth=Auth(self.user), save=True)
+        self.project.reload()
+
+        res = self.app.post_json(self.url, self.private_child, auth=self.basic_auth_two)
+        assert_equal(res.status_code, 201)
+
+    def test_creates_private_child_read_contributor(self):
+        self.project.add_contributor(self.user_two, permissions=['read'], auth=Auth(self.user), save=True)
+        self.project.reload()
+
+        res = self.app.post_json(self.url, self.private_child, auth=self.basic_auth_two, expect_errors=True)
+        assert_equal(res.status_code, 403)
+
+    def test_creates_private_child_non_contributor(self):
+        res = self.app.post_json(self.url, self.private_child, auth=self.basic_auth_two, expect_errors=True)
+        assert_equal(res.status_code, 403)
+
     def test_creates_child_creates_child_and_sanitizes_html(self):
         title = '<em>Cool</em> <strong>Project</strong>'
         description = 'An <script>alert("even cooler")</script> child'
