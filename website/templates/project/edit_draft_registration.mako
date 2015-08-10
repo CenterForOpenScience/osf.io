@@ -44,7 +44,7 @@
                                            registration-editor-question-current: $root.currentQuestion().id === $data.id,
                                            list-group-item-danger: $root.showValidation() && $data.validationStatus()
                                          },
-                                         click:$root.currentQuestion.bind($root, $data)"
+                                         click: $root.currentQuestion.bind($root, $data)"
                               class="registration-editor-question list-group-item">
                             <a data-bind="attr.href: '#' + id, text: nav"></a>
                           </li>

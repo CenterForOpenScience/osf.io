@@ -204,7 +204,7 @@ var Question = function(data, id) {
     });
 
     /**
-     * @returns {Boolean} true if the value <input> does not validate
+     * @returns {Boolean} true if the value <input> does validate
      **/
     self.hasErrors = ko.computed(function() {
         if( self.required ){
